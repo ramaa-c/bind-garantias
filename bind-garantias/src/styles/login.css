@@ -170,3 +170,41 @@ button {
   background-color: var(--carbon-black);
   border-color: var(--white);
 }
+
+.flex-column {
+  flex-direction: column !important;
+  gap: 2rem;
+}
+
+.user-display-text {
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: #aaa;
+  font-weight: 400;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.text-white {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.card-instruction-text {
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--white);
+  font-size: 0.9rem;
+  text-align: center;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+
+.link-yellow {
+  color: var(--yellow);
+  cursor: pointer;
+  font-weight: bold;
+  margin-left: 0.5rem;
+}
+
+.link-yellow:hover {
+  text-decoration: underline;
+}
