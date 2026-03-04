@@ -2,27 +2,23 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
 import logoBind from "../assets/images/Logo-BIND.webp";
+import Navbar from "../components/navbar";
 
 const CrearPassword = () => {
   const navigate = useNavigate();
 
   return (
     <div className="login-page">
-      <header className="login-header">
-        <div className="header-logo-placeholder">
-          <img src={logoBind} alt="Logo BIND" />
-        </div>
-        <div className="header-link">
-          ¿TENÉS USUARIO?{" "}
-          <span className="link-yellow" onClick={() => navigate("/")}>
-            INGRESÁ ACÁ
-          </span>
-        </div>
-      </header>
+      <Navbar
+        texto="¿YA TENÉS USUARIO?"
+        textoEnlace="INGRESÁ ACÁ"
+        rutaDestino="/"
+      />
 
       <main className="login-main flex-column">
         <h2 className="user-display-text">
-          Tu usuario es <span className="text-white">ejemplo@mailinator.com</span>
+          Tu usuario es{" "}
+          <span className="text-white">ejemplo@mailinator.com</span>
         </h2>
 
         <div className="login-card">
@@ -42,7 +38,12 @@ const CrearPassword = () => {
             </div>
 
             <div className="input-group">
-              <input type="password" id="confirm-password" placeholder=" " required />
+              <input
+                type="password"
+                id="confirm-password"
+                placeholder=" "
+                required
+              />
               <label htmlFor="confirm-password">Confirmar contraseña *</label>
             </div>
 

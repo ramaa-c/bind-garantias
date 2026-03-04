@@ -2,23 +2,18 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/login.css";
 import logoBind from "../assets/images/Logo-BIND.webp";
+import Navbar from "../components/navbar";
 
 const Login = () => {
   const navigate = useNavigate();
 
   return (
     <div className="login-page">
-      <header className="login-header">
-        <div className="header-logo-placeholder">
-          <img src={logoBind} alt="Logo BIND" width="150" />
-        </div>
-        <div className="header-link">
-          ¿TENÉS USUARIO?
-          <span style={{cursor: 'pointer', color: 'var(--yellow)', fontWeight: 'bold', marginLeft: '0.5rem'}} onClick={() => navigate('/')}>
-            INGRESÁ ACÁ
-          </span>
-        </div>
-      </header>
+      <Navbar
+        texto="¿NO TENÉS USUARIO?"
+        textoEnlace="REGISTRATE ACÁ"
+        rutaDestino="/registro"
+      />
 
       <main className="login-main">
         <div className="login-card">
@@ -40,7 +35,7 @@ const Login = () => {
             <button type="submit" className="btn-primary">
               INGRESAR
             </button>
-            
+
             <button
               type="button"
               className="btn-secondary"
