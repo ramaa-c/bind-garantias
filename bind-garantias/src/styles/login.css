@@ -24,7 +24,8 @@
   border-bottom: 1px solid var(--graphite);
 }
 
-.header-logo-placeholder, .card-logo-placeholder {
+.header-logo-placeholder,
+.card-logo-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,7 +34,7 @@
 }
 
 .header-logo-placeholder img {
-  max-height: 40px; 
+  max-height: 40px;
   width: auto;
   object-fit: contain;
 }
@@ -130,8 +131,8 @@
   transition: 0.3s ease all;
 }
 
-.input-group input:focus ~ label,
-.input-group input:not(:placeholder-shown) ~ label {
+.input-group input:focus~label,
+.input-group input:not(:placeholder-shown)~label {
   top: -1rem;
   font-size: 0.8rem;
   color: var(--yellow);
@@ -310,7 +311,7 @@ button {
 }
 
 .input-group input {
-  padding-right: 2.5rem; 
+  padding-right: 2.5rem;
 }
 
 .toggle-password-btn {
@@ -326,9 +327,11 @@ button {
   align-items: center;
   justify-content: center;
   width: auto;
-color: #aaa;
-  transition: color 0.3s ease;}
+  color: #aaa;
+  transition: color 0.3s ease;
+}
 
 .toggle-password-btn:hover {
   background: none;
+  color: var(--yellow);
 }
