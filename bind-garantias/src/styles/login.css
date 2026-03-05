@@ -19,7 +19,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 3rem;
+  padding: 1rem 3rem;
   background-color: var(--carbon-black);
   border-bottom: 1px solid var(--graphite);
 }
@@ -80,11 +80,11 @@
   padding: 3rem;
   border-radius: 8px;
   width: 100%;
-  max-width: 400px;
+  max-width: 500px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .card-logo-placeholder {
@@ -101,7 +101,7 @@
 
 .input-group {
   position: relative;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .input-group input {
@@ -135,6 +135,16 @@
   top: -1rem;
   font-size: 0.8rem;
   color: var(--yellow);
+}
+
+/* --- MENSAJES DE ERROR --- */
+.error-text {
+  color: #ff5252;
+  font-size: 0.75rem;
+  font-family: 'IBM Plex Sans', sans-serif;
+  position: absolute;
+  bottom: -1.4rem;
+  left: 0;
 }
 
 /* --- BOTONES --- */
@@ -173,6 +183,11 @@ button {
 
 .flex-column {
   flex-direction: column !important;
+  gap: 1rem;
+}
+
+.flex-column-registro {
+  flex-direction: column !important;
   gap: 2rem;
 }
 
@@ -202,9 +217,118 @@ button {
   color: var(--yellow);
   cursor: pointer;
   font-weight: bold;
-  margin-left: 0.5rem;
+  margin-left: 0.2rem;
 }
 
 .link-yellow:hover {
   text-decoration: underline;
+}
+
+/* --- CONTENEDOR DE SOPORTE / AYUDA --- */
+
+.support-container {
+  background-color: var(--graphite);
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #aaa;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  font-family: 'IBM Plex Sans', sans-serif;
+  line-height: 1.5;
+}
+
+.support-container a.link-yellow {
+  word-break: break-all;
+}
+
+/* --- ESTILOS CONFIRMAR CORREO --- */
+
+.message-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--white);
+  font-size: 1.8rem;
+  font-weight: 500;
+  text-align: center;
+  margin-top: -2rem;
+}
+
+.envelope-icon {
+  margin: 2rem 0;
+  text-align: center;
+}
+
+.message-body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: #aaa;
+  font-size: 1.1rem;
+  text-align: center;
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+/* --- REQUISITOS DE CONTRASEÑA --- */
+
+.password-requirements {
+  font-family: 'IBM Plex Sans', sans-serif;
+  margin: -0.5rem 0 0.5rem 0;
+  color: #aaa;
+}
+
+.req-title {
+  font-size: 0.85rem;
+  margin-bottom: 0.8rem;
+  color: var(--white);
+  font-weight: 500;
+}
+
+.req-list {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.req-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  transition: color 0.3s ease;
+}
+
+.req-list li.valid {
+  color: var(--white);
+}
+
+.req-icon {
+  min-width: 16px;
+  transition: stroke 0.3s ease;
+}
+
+.input-group input {
+  padding-right: 2.5rem; 
+}
+
+.toggle-password-btn {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+color: #aaa;
+  transition: color 0.3s ease;}
+
+.toggle-password-btn:hover {
+  background: none;
 }
