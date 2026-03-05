@@ -1,6 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* Definimos tu paleta de colores globalmente */
+:root {
+  --carbon-black: #1A1A1A;
+  --yellow: #F4F500;
+  --white: #FFFEFE;
+  --graphite: #2E2E2E;
+  --yellow-2: #F4F500;
+}
+
 * {
-font-family: 'Raleway', Arial, Helvetica, sans-serif;
+  font-family: 'Raleway', Arial, Helvetica, sans-serif;
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -11,4 +21,5 @@ html, body, #root {
   padding: 0;
   min-height: 100vh;
   background-color: var(--carbon-black); 
+  color: var(--white); /* Clave para que el texto base se lea sobre el fondo oscuro */
 }
