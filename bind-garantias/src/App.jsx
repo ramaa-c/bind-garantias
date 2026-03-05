@@ -5,6 +5,7 @@ import Registro from "./pages/registro";
 import CrearClave from "./pages/crearClave";
 import ConfirmarCorreo from './pages/confirmarCorreo';
 import "./App.css";
+import Pantalla1 from './pages/pantalla1';
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
         <Route path="/crearClave" element={<CrearClave />} />
 
         <Route path="/confirmarCorreo" element={<ConfirmarCorreo />} />
+          
+        <Route path="/pantalla1" element={<Pantalla1/>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
