@@ -131,7 +131,8 @@
   color: var(--yellow);
 }
 
-.form-input, .form-select {
+.form-input,
+.form-select {
   padding: 10px;
   border: none;
   border-bottom: 2px solid var(--white);
@@ -153,7 +154,8 @@
   color: #000;
 }
 
-.form-input:focus, .form-select:focus {
+.form-input:focus,
+.form-select:focus {
   border-bottom-color: var(--yellow);
 }
 
@@ -339,7 +341,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0,0,0,0.8);
+  background-color: rgba(0, 0, 0, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -351,7 +353,7 @@
   width: 500px;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 .modal-header {
@@ -424,4 +426,129 @@
   position: absolute;
   bottom: -18px;
   left: 0;
+}
+
+/* --- ESTILOS ESPECÍFICOS DE PAGARÉ --- */
+
+.breakdown-container {
+  background-color: var(--graphite);
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 2rem;
+  margin-top: 2rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.breakdown-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--white);
+  border-bottom: 2px solid #444;
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.breakdown-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.breakdown-row {
+  display: flex;
+  justify-content: space-between;
+  color: #ccc;
+  font-size: 0.95rem;
+}
+
+.total-row {
+  border-top: 1px solid #444;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  font-weight: bold;
+}
+
+.text-yellow {
+  color: var(--yellow) !important;
+}
+
+/* --- TARJETAS EPYME --- */
+.epyme-boxes-container {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.epyme-card {
+  flex: 1;
+  background-color: var(--graphite);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.epyme-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--yellow);
+}
+
+.epyme-card p {
+  color: var(--white);
+  font-size: 0.95rem;
+  margin: 0;
+  line-height: 1.5;
+  flex-grow: 1; 
+  display: flex;
+  align-items: center;
+}
+
+.epyme-btn {
+  width: 100%; 
+  height: 48px;
+  margin-top: 1.5rem !important; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none; 
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 0;
+}
+
+.success-bar {
+  background-color: rgba(244, 245, 0, 0.1);
+  border-left: 4px solid var(--yellow);
+  border-right: 4px solid var(--yellow);
+  color: var(--white);
+  padding: 1rem;
+  font-weight: bold;
+  display: inline-block;
+  margin: 0 auto;
+}
+
+.btn-right-container-pagare {
+  margin-top: 40px;
+  text-align: right;
+  display: flex;
+  justify-content: space-between;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

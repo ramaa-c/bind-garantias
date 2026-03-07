@@ -27,7 +27,7 @@ const Registro = () => {
 
   const onSubmit = (data) => {
     // autenticación
-    navigate("/confirmarCorreo", { state: { emailIngresado: data.email } });
+    navigate("/confirmar-correo", { state: { emailIngresado: data.email } });
   };
 
   return (

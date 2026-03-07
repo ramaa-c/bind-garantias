@@ -1,11 +1,12 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/login";
-import Registro from "./pages/registro";
-import CrearClave from "./pages/crearClave";
-import ConfirmarCorreo from './pages/confirmarCorreo';
+import Login from "./pages/Login";
+import Registro from "./pages/Registro";
+import CrearClave from "./pages/CrearClave";
+import ConfirmarCorreo from "./pages/ConfirmarCorreo";
+import Cheques from "./pages/Cheques";
+import PagareUSD from "./pages/PagareUSD";
 import "./App.css";
-import Cheques from './pages/cheques';
 
 function App() {
   return (
@@ -16,11 +17,12 @@ function App() {
 
         <Route path="/registro" element={<Registro />} />
 
-        <Route path="/crearClave" element={<CrearClave />} />
+        <Route path="/crear-clave" element={<CrearClave />} />
+        <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
 
-        <Route path="/confirmarCorreo" element={<ConfirmarCorreo />} />
-          
-        <Route path="/cheques" element={<Cheques/>} />
+        <Route path="/cheques" element={<Cheques />} />
+
+        <Route path="/pagare-usd" element={<PagareUSD />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

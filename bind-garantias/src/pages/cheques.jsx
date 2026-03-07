@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Navbar from "../components/Navbar";
+import Banner from "../components/banner";
 import "../styles/cheques.css";
 
 const chequesSchema = z.object({
@@ -82,9 +83,7 @@ export default function Cheques() {
     <div className="cheques-page">
       <Navbar usuario="Usuario@email.com" />
 
-      <section className="cheques-banner">
-        <h2>[ Espacio para la foto del tractor ]</h2>
-      </section>
+      <Banner texto="[ Espacio para el banner ]" />
 
       <div className="form-main-container">
         <div className="contenedor-principal">
@@ -124,7 +123,6 @@ export default function Cheques() {
               </div>
             </div>
 
-            {/* 4. Envolvemos todo en la etiqueta <form> */}
             <form
               className="form-content"
               onSubmit={handleSubmit(onSubmitFinal)}
