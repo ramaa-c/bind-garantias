@@ -2,7 +2,8 @@
 
 :root {
   --carbon-black: #1A1A1A;
-  --yellow: #F4F500;
+  --yellow: #F4F500ff;
+  --yellow-oscuro: #F4F500;
   --white: #FFFEFE;
   --graphite: #2E2E2E;
 }

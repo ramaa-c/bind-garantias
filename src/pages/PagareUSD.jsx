@@ -3,23 +3,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Navbar from "../components/Navbar";
-import Banner from "../components/banner";
-import "../styles/cheques.css";
+import Banner from "../components/Banner";
 import { FaFileArrowDown, FaLink } from "react-icons/fa6";
+import "../styles/cheques.css";
+import "../styles/pagare.css";
 
 const pagareSchema = z.object({
-  // Paso 1
   monto: z.coerce
     .number()
     .min(1000, { message: "El monto mínimo es U$D 1.000" }),
   fechaPago: z.string().min(1, { message: "Seleccione una fecha" }),
-
-  // Paso 2
   agenteBolsa: z
     .string()
     .min(1, { message: "Debe seleccionar una sociedad de bolsa" }),
-
-  // Paso 3
   idEpyme: z.string().min(5, { message: "Ingrese un ID válido" }),
   mensaje: z.string().optional(),
 });
@@ -46,7 +42,6 @@ export default function PagareUSD() {
   const montoWatch = watch("monto") || 0;
 
   // --- CONTROLADORES ---
-
   const handleCalcularSimulacion = async () => {
     const esValido = await trigger(["monto", "fechaPago"]);
     if (esValido) {
@@ -61,22 +56,20 @@ export default function PagareUSD() {
 
   const onSubmitFinal = (data) => {
     console.log("Operación Finalizada:", data);
-    // llamada a la api
     setPasoActual(4);
   };
 
   return (
-    <div className="cheques-page">
+    <div className="pagare-page">
       <Navbar usuario="Usuario@email.com" />
 
       <Banner texto="Límite de crédito: U$D 40.000 - Vencimiento: 01/11/2026" />
 
-      <div className="form-main-container">
+      <div className="pagare-main-container">
         <div
-          className="contenedor-principal"
-          style={{ maxWidth: pasoActual === 4 ? "800px" : "1200px" }}
+          className={`pagare-contenedor-principal ${pasoActual === 4 ? "is-success" : ""}`}
         >
-          <div className="seccion-formulario">
+          <div className="pagare-seccion-formulario">
             {pasoActual > 1 && pasoActual < 4 && (
               <div className="back-button-container">
                 <button
@@ -97,7 +90,7 @@ export default function PagareUSD() {
             )}
 
             {/* Títulos */}
-            <h1 className="cheques-title">
+            <h1 className="pagare-title">
               {pasoActual === 1 &&
                 "Ingresás el monto del pagaré y la fecha de pago"}
               {pasoActual === 2 &&
@@ -107,6 +100,7 @@ export default function PagareUSD() {
               {pasoActual === 4 && "¡Felicitaciones!"}
             </h1>
 
+            {/* Progreso */}
             {pasoActual < 4 && (
               <div className="progress-container">
                 <p className="progress-text">Avance de solicitud</p>
@@ -127,23 +121,20 @@ export default function PagareUSD() {
             )}
 
             <form
-              className="form-content"
+              className="pagare-form-content"
               onSubmit={handleSubmit(onSubmitFinal)}
             >
-              {/* =========================================================
-                                  PASO 1: SIMULADOR 
-              ========================================================= */}
+              {/* === PASO 1: SIMULADOR === */}
               {pasoActual === 1 && (
-                <div className="paso-animado">
+                <div className="pagare-paso-animado">
                   <div className="form-row">
-                    <div className="form-col" style={{ position: "relative" }}>
+                    <div className="form-col">
                       <label className="form-label muted">Moneda *</label>
                       <input
                         type="text"
                         value="Dólar"
                         disabled
                         className="form-input"
-                        style={{ opacity: 0.5 }}
                       />
                     </div>
 
@@ -180,7 +171,7 @@ export default function PagareUSD() {
                   </div>
 
                   {!simulacionLista ? (
-                    <div style={{ textAlign: "right", marginTop: "2rem" }}>
+                    <div className="pagare-actions-right">
                       <button
                         type="button"
                         onClick={handleCalcularSimulacion}
@@ -190,31 +181,31 @@ export default function PagareUSD() {
                       </button>
                     </div>
                   ) : (
-                    <div className="breakdown-container">
-                      <div className="breakdown-header">
+                    <div className="pagare-breakdown-container">
+                      <div className="pagare-breakdown-header">
                         <span>Neto estimado a recibir:</span>
                         <span className="text-yellow">
                           USD {montoWatch * 0.96}
-                        </span>{" "}
+                        </span>
                       </div>
-                      <div className="breakdown-body">
-                        <div className="breakdown-row">
+                      <div className="pagare-breakdown-body">
+                        <div className="pagare-breakdown-row">
                           <span>Comisión SGR</span>
                           <span>USD 811</span>
                         </div>
-                        <div className="breakdown-row">
+                        <div className="pagare-breakdown-row">
                           <span>Descuento operado</span>
                           <span>USD 446</span>
                         </div>
-                        <div className="breakdown-row">
+                        <div className="pagare-breakdown-row">
                           <span>Derecho mercado</span>
                           <span>USD 24</span>
                         </div>
-                        <div className="breakdown-row">
+                        <div className="pagare-breakdown-row">
                           <span>IVA</span>
                           <span>USD 5</span>
                         </div>
-                        <div className="breakdown-row total-row">
+                        <div className="pagare-breakdown-row pagare-total-row">
                           <span className="text-yellow">Total de costos</span>
                           <span className="text-yellow">USD 1.286</span>
                         </div>
@@ -231,19 +222,11 @@ export default function PagareUSD() {
                         </p>
                       </div>
 
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          gap: "20px",
-                          marginTop: "2rem",
-                        }}
-                      >
+                      <div className="pagare-actions-right">
                         <button
                           type="button"
                           onClick={() => setSimulacionLista(false)}
                           className="btn-outline"
-                          style={{ marginTop: 0 }}
                         >
                           RECALCULAR
                         </button>
@@ -260,26 +243,17 @@ export default function PagareUSD() {
                 </div>
               )}
 
-              {/* =========================================================
-                                PASO 2: AGENTE DE BOLSA 
-              ========================================================= */}
+              {/* === PASO 2: AGENTE DE BOLSA === */}
               {pasoActual === 2 && (
-                <div className="paso-animado">
-                  <div
-                    style={{
-                      position: "relative",
-                      marginBottom: "3rem",
-                      maxWidth: "500px",
-                    }}
-                  >
+                <div className="pagare-paso-animado">
+                  <div className="pagare-input-group-md">
                     <label className="form-label">Sociedad de bolsa *</label>
                     <select
                       className="form-select"
                       {...register("agenteBolsa")}
                     >
                       <option value="">
-                        Seleccione la sociedad de bolsa con la que desea
-                        operar...
+                        Seleccione la sociedad de bolsa...
                       </option>
                       <option value="industrial">Industrial Valores S.A</option>
                       <option value="bullmarket">Bull Market Brokers</option>
@@ -292,7 +266,7 @@ export default function PagareUSD() {
                     )}
                   </div>
 
-                  <div className="btn-right-container">
+                  <div className="pagare-actions-right">
                     <button
                       type="button"
                       className="btn-action"
@@ -304,54 +278,49 @@ export default function PagareUSD() {
                 </div>
               )}
 
-              {/* =========================================================
-                                  PASO 3: EPYME E ID 
-              ========================================================= */}
+              {/* === PASO 3: EPYME E ID === */}
               {pasoActual === 3 && (
-                <div className="paso-animado">
-                  <h3
-                    className="step-subtitle"
-                    style={{ marginBottom: "2rem" }}
-                  >
+                <div className="pagare-paso-animado">
+                  <h3 className="pagare-subtitle">
                     El emisor ha sido pre-aprobado *
                   </h3>
 
-                  <div className="epyme-boxes-container">
-                    <div className="epyme-card">
-                      <div className="epyme-icon">
+                  <div className="pagare-epyme-container">
+                    <div className="pagare-epyme-card">
+                      <div className="pagare-epyme-icon">
                         <FaLink />
-                      </div>{" "}
+                      </div>
                       <p>Primero generá el pagaré desde el siguiente link</p>
                       <a
                         href="https://epyme.cajadevalores.com.ar/login"
                         target="_blank"
                         rel="noreferrer"
-                        className="btn-outline epyme-btn"
+                        className="btn-outline pagare-epyme-btn"
                       >
                         IR A ePYME
                       </a>
                     </div>
 
-                    <div className="epyme-card">
-                      <div className="epyme-icon">
+                    <div className="pagare-epyme-card">
+                      <div className="pagare-epyme-icon">
                         <FaFileArrowDown />
-                      </div>{" "}
+                      </div>
                       <p>
                         Completá la operación. Podés guiarte con este
                         instructivo.
                       </p>
-                      <button type="button" className="btn-outline epyme-btn">
+                      <button
+                        type="button"
+                        className="btn-outline pagare-epyme-btn"
+                      >
                         DESCARGAR INSTRUCTIVO
                       </button>
                     </div>
                   </div>
 
                   <div
-                    style={{
-                      position: "relative",
-                      marginBottom: "2rem",
-                      marginTop: "3rem",
-                    }}
+                    className="pagare-input-group-md"
+                    style={{ marginTop: "3rem", maxWidth: "100%" }}
                   >
                     <label className="form-label">
                       Luego ingresá el ID obtenido para finalizar la operación:
@@ -360,8 +329,7 @@ export default function PagareUSD() {
                     <input
                       type="text"
                       placeholder="Número identificatorio (ej: 1234789558666)"
-                      className="form-input"
-                      style={{ fontSize: "1.2rem", letterSpacing: "2px" }}
+                      className="form-input pagare-input-id"
                       {...register("idEpyme")}
                     />
                     {errors.idEpyme && (
@@ -371,77 +339,56 @@ export default function PagareUSD() {
                     )}
                   </div>
 
-                  <div style={{ position: "relative", marginBottom: "1rem" }}>
+                  <div
+                    className="pagare-input-group-md"
+                    style={{ maxWidth: "100%", marginBottom: "1rem" }}
+                  >
                     <label className="form-label muted">
                       ¿Tenés algún mensaje para el equipo de Bind Garantías?
                       (Opcional)
                     </label>
                     <textarea
-                      className="form-input"
+                      className="form-input pagare-textarea"
                       rows="3"
-                      style={{ resize: "none" }}
                       {...register("mensaje")}
                     ></textarea>
                   </div>
 
-                  <div className="btn-right-container-pagare">
-                    <p
-                      className="progress-text"
-                      style={{ fontSize: "0.8rem", marginTop: "1rem" }}
-                    >
+                  <div className="pagare-actions-flex">
+                    <p className="pagare-disclaimer-text">
                       * Sujeto a confirmación en la recepción de documentación
                       física y a cambios en el score.
                     </p>
-                    <button type="submit" className="btn-action">
+                    <button
+                      type="submit"
+                      className="btn-action"
+                      style={{ marginTop: "1rem" }}
+                    >
                       FINALIZAR SOLICITUD
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* =========================================================
-                                  PASO 4: ÉXITO 
-              ========================================================= */}
+              {/* === PASO 4: ÉXITO === */}
               {pasoActual === 4 && (
-                <div
-                  className="success-animado"
-                  style={{ textAlign: "center", padding: "3rem 0" }}
-                >
-                  <h2
-                    className="text-yellow"
-                    style={{ fontSize: "3rem", marginBottom: "1rem" }}
-                  >
-                    ¡Solicitud Aprobada!
-                  </h2>
-                  <div className="success-bar">
+                <div className="pagare-success-animado">
+                  <h2 className="pagare-success-title">¡Solicitud Aprobada!</h2>
+                  <div className="pagare-success-bar">
                     <span>Solicitud N° 4362</span>
                   </div>
 
-                  <p
-                    className="card-instruction-text"
-                    style={{
-                      maxWidth: "600px",
-                      margin: "2rem auto",
-                      fontSize: "1.1rem",
-                    }}
-                  >
+                  <p className="pagare-success-text">
                     Has finalizado todo el proceso necesario, nosotros estaremos
                     avalando y vendiendo el pagaré. Apenas tengamos novedades
                     nos estaremos poniendo en contacto.
                   </p>
-                  <p
-                    className="card-instruction-text"
-                    style={{
-                      maxWidth: "600px",
-                      margin: "0 auto",
-                      opacity: 0.7,
-                    }}
-                  >
+                  <p className="pagare-success-subtext">
                     Si aún no acordaste una tasa tope para la venta o ante
                     cualquier consulta no dudes en comunicarte con nosotros.
                   </p>
 
-                  <div style={{ marginTop: "4rem" }}>
+                  <div className="pagare-success-actions">
                     <button
                       type="button"
                       className="btn-outline"
@@ -455,7 +402,7 @@ export default function PagareUSD() {
             </form>
           </div>
 
-          {/* --- Columna Derecha (Oculta en paso 4) --- */}
+          {/* Columna Derecha */}
           {pasoActual < 4 && (
             <div className="panel-dudas">
               <h3 className="panel-dudas-title">Dudas frecuentes</h3>
