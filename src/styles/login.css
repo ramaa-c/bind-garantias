@@ -1,10 +1,3 @@
-:root {
-  --carbon-black: #1A1A1Aff;
-  --yellow: #F4F500ff;
-  --white: #FFFEFEff;
-  --graphite: #2E2E2Eff;
-}
-
 .login-page {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
@@ -12,31 +5,9 @@
   flex-direction: column;
   background-color: var(--carbon-black);
   color: var(--white);
-}
-
-/* --- HEADER --- */
-.login-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 3rem;
-  background-color: var(--carbon-black);
-  border-bottom: 1px solid var(--graphite);
-}
-
-.header-logo-placeholder,
-.card-logo-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-}
-
-.header-logo-placeholder img {
-  max-height: 40px;
-  width: auto;
-  object-fit: contain;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  background-position: center center;
 }
 
 .card-logo-placeholder img {
@@ -51,53 +22,101 @@
   letter-spacing: 1px;
 }
 
-.header-link {
-  font-size: 0.9rem;
-  color: var(--white);
-}
-
-.header-link a {
-  color: var(--yellow);
-  text-decoration: none;
-  font-weight: bold;
-  margin-left: 0.5rem;
-}
-
-.header-link a:hover {
-  text-decoration: underline;
-}
-
-/* --- CONTENEDOR PRINCIPAL --- */
-.login-main {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-}
-
-.login-card {
-  background-color: var(--graphite);
-  padding: 3rem;
-  border-radius: 8px;
-  width: 100%;
-  max-width: 500px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
 .card-logo-placeholder {
   margin-bottom: 1rem;
   height: 60px;
 }
 
-/* --- FORMULARIO --- */
-.login-form {
+/* --- LAYOUT --- */
+.login-layout-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100vh;
+  background-color: var(--carbon-black);
+  color: var(--white);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+@media (min-width: 900px) {
+  .login-layout-split {
+    grid-template-columns: 45% 55%;
+  }
+}
+
+/* --- COLUMNA FORMULARIO --- */
+.login-side-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: var(--carbon-black);
+  z-index: 2;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.login-card-modern {
+  width: 100%;
+  max-width: 380px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
+}
+
+.login-header-text h2 {
+  font-size: 1.8rem;
+  color: var(--white);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.login-header-text p {
+  color: #aaa;
+  font-size: 0.95rem;
+}
+
+/* --- COLUMNA MARCA (DERECHA) --- */
+.login-side-brand {
+  display: none;
+  background-color: var(--graphite);
+  background-image: radial-gradient(rgba(244, 245, 0, 0.08) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  background-position: center center;
+  position: relative;
+}
+
+@media (min-width: 900px) {
+  .login-side-brand {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+  }
+}
+
+.brand-content {
+  max-width: 500px;
+  text-align: left;
+}
+
+.brand-title {
+  font-size: 3rem;
+  color: var(--white);
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+}
+
+.brand-subtitle {
+  font-size: 1.2rem;
+  color: #aaa;
+  line-height: 1.5;
+}
+
+.form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .input-group {
@@ -108,6 +127,7 @@
 .input-group input {
   width: 100%;
   padding: 0.5rem 0;
+  padding-right: 2.5rem;
   font-size: 1rem;
   color: var(--white);
   background: transparent;
@@ -149,20 +169,25 @@
 }
 
 /* --- BOTONES --- */
-button {
+.btn-primary,
+.btn-secondary {
   width: 100%;
   padding: 0.8rem;
   font-size: 1rem;
   font-weight: bold;
-  border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .btn-primary {
   background-color: var(--yellow);
   color: var(--carbon-black);
+  border: none;
   margin-top: 1rem;
 }
 
@@ -227,47 +252,19 @@ button {
 
 /* --- CONTENEDOR DE SOPORTE / AYUDA --- */
 
-.support-container {
-  background-color: var(--graphite);
-  padding: 1.5rem;
-  border-radius: 8px;
-  width: 100%;
-  max-width: 500px;
-  text-align: center;
-  font-size: 0.9rem;
+.support-container-modern {
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #333;
+  font-size: 0.85rem;
   color: #aaa;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-  font-family: 'IBM Plex Sans', sans-serif;
   line-height: 1.5;
-}
-
-.support-container a.link-yellow {
-  word-break: break-all;
-}
-
-/* --- ESTILOS CONFIRMAR CORREO --- */
-
-.message-title {
+  text-align: center;
   font-family: 'IBM Plex Sans', sans-serif;
-  color: var(--white);
-  font-size: 1.8rem;
-  font-weight: 500;
-  text-align: center;
-  margin-top: -2rem;
 }
 
-.envelope-icon {
-  margin: 2rem 0;
-  text-align: center;
-}
-
-.message-body {
-  font-family: 'IBM Plex Sans', sans-serif;
-  color: #aaa;
-  font-size: 1.1rem;
-  text-align: center;
-  max-width: 600px;
-  line-height: 1.5;
+.support-container-modern p {
+  margin: 0 0 0.5rem 0;
 }
 
 /* --- REQUISITOS DE CONTRASEÑA --- */
@@ -308,10 +305,6 @@ button {
 .req-icon {
   min-width: 16px;
   transition: stroke 0.3s ease;
-}
-
-.input-group input {
-  padding-right: 2.5rem;
 }
 
 .toggle-password-btn {
