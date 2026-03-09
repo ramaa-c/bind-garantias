@@ -3,10 +3,9 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { FiEye, FiEyeOff, FiCheckCircle, FiCircle } from "react-icons/fi"; 
+import { FiEye, FiEyeOff, FiCheckCircle, FiCircle, FiShield } from "react-icons/fi"; 
 import "../styles/login.css";
-import logoBind from "../assets/images/Logo-BIND.webp";
-import Navbar from "../components/Navbar";
+import logoBind from "../assets/images/bind-g-logo.svg";
 
 const CheckIcon = ({ valid }) => {
   return valid ? (
@@ -16,6 +15,7 @@ const CheckIcon = ({ valid }) => {
   );
 };
 
+// --- ESQUEMA ZOD ---
 const getClaveSchema = (emailUsuario) => {
   const emailPrefix = emailUsuario.split('@')[0].toLowerCase();
 
@@ -69,26 +69,25 @@ const CrearClave = () => {
   };
 
   const onSubmit = (data) => {
-    // envio de datos
+    console.log("Contraseña creada exitosamente:", data);
+    // llamada api
   };
 
   return (
-    <div className="login-page">
-      <Navbar texto="¿YA TENÉS USUARIO?" textoEnlace="INGRESÁ ACÁ" rutaDestino="/" />
-
-      <main className="login-main flex-column">
-        <h2 className="user-display-text">
-          Tu usuario es <span className="text-white">{emailUsuario}</span>
-        </h2>
-
-        <div className="login-card">
-          <div className="card-logo-placeholder">
-            <img src={logoBind} alt="Logo BIND" />
+    <div className="login-layout-split">
+      
+      {/* --- COLUMNA IZQUIERDA --- */}
+      <section className="login-side-form">
+        <div className="login-card-modern">
+          
+          <div className="card-logo-placeholder" style={{ justifyContent: 'flex-start', padding: 0 }}>
+            <img src={logoBind} alt="Logo BIND" width="200" />
           </div>
 
-          <p className="card-instruction-text">
-            Ahora creá tu contraseña para ingresar a la plataforma.
-          </p>
+          <div className="login-header-text">
+            <h2>Creá tu contraseña</h2>
+            <p>Para el usuario: <span className="text-white" style={{ fontWeight: 'bold' }}>{emailUsuario}</span></p>
+          </div>
 
           <form className="login-form" onSubmit={handleSubmit(onSubmit)}>
             
@@ -108,11 +107,10 @@ const CrearClave = () => {
               >
                 {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
               </button>
-
               {errors.password && <span className="error-text">{errors.password.message}</span>}
             </div>
 
-            <div className="password-requirements">
+            <div className="password-requirements" style={{ margin: "0.5rem 0 1.5rem 0" }}>
               <p className="req-title">La contraseña debe incluir:</p>
               <ul className="req-list">
                 <li className={reqs.lower ? "valid" : ""}><CheckIcon valid={reqs.lower} /> Mínimo una minúscula.</li>
@@ -124,7 +122,7 @@ const CrearClave = () => {
               </ul>
             </div>
 
-            <div className="input-group">
+            <div className="input-group" style={{ marginBottom: "2rem" }}>
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 id="confirm-password"
@@ -140,21 +138,44 @@ const CrearClave = () => {
               >
                 {showConfirmPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
               </button>
-
               {errors.confirmPassword && <span className="error-text">{errors.confirmPassword.message}</span>}
             </div>
 
-            <button 
-              type="submit" 
-              className="btn-primary"
-              style={{ opacity: isValid ? 1 : 0.5, cursor: isValid ? 'pointer' : 'not-allowed' }}
-              disabled={!isValid}
-            >
-              INGRESAR
-            </button>
+            <div className="form-actions">
+              <button 
+                type="submit" 
+                className="btn-primary"
+                style={{ 
+                  opacity: isValid ? 1 : 0.5, 
+                  cursor: isValid ? 'pointer' : 'not-allowed',
+                  marginTop: 0
+                }}
+                disabled={!isValid}
+              >
+                CREAR E INGRESAR
+              </button>
+            </div>
+            
           </form>
         </div>
-      </main>
+      </section>
+
+      {/* --- COLUMNA DERECHA --- */}
+      <section className="login-side-brand" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center' }}>
+        
+        <div style={{ marginBottom: '2rem' }}>
+          <FiShield size={80} color="var(--yellow)" strokeWidth={1.5} />
+        </div>
+        
+        <div className="brand-content" style={{ textAlign: 'center' }}>
+          <h2 className="brand-title" style={{ fontSize: '2.5rem' }}>Protegé tu cuenta.</h2>
+          <p className="brand-subtitle">
+            Usá una contraseña fuerte y única. Nunca compartas tus credenciales de acceso con terceros.
+          </p>
+        </div>
+
+      </section>
+
     </div>
   );
 };

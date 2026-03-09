@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import "../styles/login.css";
-import logoBind from "../assets/images/Logo-BIND.webp";
-import Navbar from "../components/Navbar";
+import logoBind from "../assets/images/bind-g-logo.svg";
 
 const loginSchema = z.object({
   email: z
@@ -17,6 +17,7 @@ const loginSchema = z.object({
 
 const Login = () => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -27,21 +28,25 @@ const Login = () => {
   });
 
   const onSubmit = (data) => {
-    // autenticación
+    console.log("Autenticando...", data);
+    // Lógica de autenticación
   };
 
   return (
-    <div className="login-page">
-      <Navbar
-        texto="¿NO TENÉS USUARIO?"
-        textoEnlace="REGISTRATE ACÁ"
-        rutaDestino="/registro"
-      />
-
-      <main className="login-main">
-        <div className="login-card">
-          <div className="card-logo-placeholder">
+    <div className="login-layout-split">
+      {/* --- COLUMNA IZQUIERDA --- */}
+      <section className="login-side-form">
+        <div className="login-card-modern">
+          <div
+            className="card-logo-placeholder"
+            style={{ justifyContent: "flex-start", padding: 0 }}
+          >
             <img src={logoBind} alt="Logo BIND" width="200" />
+          </div>
+
+          <div className="login-header-text">
+            <h2>¡Hola! Bienvenido</h2>
+            <p>Ingresá tus datos para acceder a tu cuenta.</p>
           </div>
 
           <form className="login-form" onSubmit={handleSubmit(onSubmit)}>
@@ -57,34 +62,57 @@ const Login = () => {
                 <span className="error-text">{errors.email.message}</span>
               )}
             </div>
-
             <div className="input-group">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 id="password"
                 placeholder=" "
                 {...register("password")}
               />
               <label htmlFor="password">Contraseña *</label>
+
+              <button
+                type="button"
+                className="toggle-password-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+              </button>
+
               {errors.password && (
                 <span className="error-text">{errors.password.message}</span>
               )}
             </div>
 
-            <button type="submit" className="btn-primary">
-              INGRESAR
-            </button>
+            {/* Olvidé contraseña y registro */}
 
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={() => navigate("/registro")}
-            >
-              REGISTRARSE
-            </button>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary">
+                INGRESAR
+              </button>
+
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => navigate("/registro")}
+              >
+                REGISTRARSE
+              </button>
+            </div>
           </form>
         </div>
-      </main>
+      </section>
+
+      {/* --- COLUMNA DERECHA --- */}
+      <section className="login-side-brand">
+        <div className="brand-content">
+          <h2 className="brand-title">Financiamiento ágil para tu empresa.</h2>
+          <p className="brand-subtitle">
+            Gestioná tus avales y pagarés 100% online con las mejores tasas del
+            mercado.
+          </p>
+        </div>
+      </section>
     </div>
   );
 };
