@@ -5,11 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { pagareSchema } from "../schemas/pagareSchema";
 import "../styles/cheques.css";
 import "../styles/pagare.css";
-import PanelDudasPagare from "../components/PanelDudasPagare";
-import Paso1SimuladorPagare from "../components/form-steps-pagare/Paso1SimuladorPagare";
-import Paso2AgentePagare from "../components/form-steps-pagare/Paso2AgentePagare";
-import Paso3Epyme from "../components/form-steps-pagare/Paso3Epyme";
-import Paso4ExitoPagare from "../components/form-steps-pagare/Paso4ExitoPagare";
+import PanelDudasPagare from "../components/features/pagare/PanelDudasPagare";
+import Paso1SimuladorPagare from "../components/features/pagare/Paso1SimuladorPagare";
+import Paso2AgentePagare from "../components/features/pagare/Paso2AgentePagare";
+import Paso3Epyme from "../components/features/pagare/Paso3Epyme";
+import Paso4ExitoPagare from "../components/features/pagare/Paso4ExitoPagare";
 
 export default function PagareUSD() {
   const navigate = useNavigate();
@@ -44,22 +44,30 @@ export default function PagareUSD() {
   return (
     <div className="pagare-page">
       <div className="pagare-main-container">
-        <div className={`pagare-contenedor-principal ${pasoActual === 4 ? "is-success" : ""}`}>
-          
+        <div
+          className={`pagare-contenedor-principal ${pasoActual === 4 ? "is-success" : ""}`}
+        >
           {/* LADO IZQUIERDO: FORMULARIOS */}
           <div className="pagare-seccion-formulario">
-            
-            {/* NAVEGACIÓN VOLVER */}
+            {/* VOLVER */}
             {pasoActual > 1 && pasoActual < 4 && (
               <div className="back-button-container">
-                <button type="button" onClick={() => setPasoActual(pasoActual - 1)} className="btn-back">
+                <button
+                  type="button"
+                  onClick={() => setPasoActual(pasoActual - 1)}
+                  className="btn-back"
+                >
                   ← Volver al paso anterior
                 </button>
               </div>
             )}
             {pasoActual === 1 && (
               <div className="back-button-container">
-                <button type="button" onClick={() => navigate("/inicio")} className="btn-back">
+                <button
+                  type="button"
+                  onClick={() => navigate("/inicio")}
+                  className="btn-back"
+                >
                   ← Volver a la lista
                 </button>
               </div>
@@ -67,9 +75,12 @@ export default function PagareUSD() {
 
             {/* TÍTULOS */}
             <h1 className="pagare-title">
-              {pasoActual === 1 && "Ingresás el monto del pagaré y la fecha de pago"}
-              {pasoActual === 2 && "Seleccioná al agente de bolsa con quien operás"}
-              {pasoActual === 3 && "Generá el pagaré en Epyme y completá la operación"}
+              {pasoActual === 1 &&
+                "Ingresás el monto del pagaré y la fecha de pago"}
+              {pasoActual === 2 &&
+                "Seleccioná al agente de bolsa con quien operás"}
+              {pasoActual === 3 &&
+                "Generá el pagaré en Epyme y completá la operación"}
               {pasoActual === 4 && "¡Felicitaciones!"}
             </h1>
 
@@ -78,37 +89,54 @@ export default function PagareUSD() {
               <div className="progress-container">
                 <p className="progress-text">Avance de solicitud</p>
                 <div className="progress-track">
-                  <div 
-                    className="progress-fill" 
-                    style={{ width: pasoActual === 1 ? "33%" : pasoActual === 2 ? "66%" : "100%" }}
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width:
+                        pasoActual === 1
+                          ? "33%"
+                          : pasoActual === 2
+                            ? "66%"
+                            : "100%",
+                    }}
                   ></div>
                 </div>
               </div>
             )}
 
-            {/* FORMULARIO DINÁMICO */}
+            {/* FORMULARIO */}
             <FormProvider {...metodosFormulario}>
-              <form className="pagare-form-content" onSubmit={handleSubmit(onSubmitFinal)}>
-                
+              <form
+                className="pagare-form-content"
+                onSubmit={handleSubmit(onSubmitFinal)}
+              >
                 {pasoActual === 1 && (
-                  <Paso1SimuladorPagare 
-                    simulacionLista={simulacionLista} setSimulacionLista={setSimulacionLista} montoWatch={montoWatch} handleCalcularSimulacion={handleCalcularSimulacion} setPasoActual={setPasoActual} 
+                  <Paso1SimuladorPagare
+                    simulacionLista={simulacionLista}
+                    setSimulacionLista={setSimulacionLista}
+                    montoWatch={montoWatch}
+                    handleCalcularSimulacion={handleCalcularSimulacion}
+                    setPasoActual={setPasoActual}
                   />
                 )}
 
-                {pasoActual === 2 && <Paso2AgentePagare avanzarPaso={avanzarPaso} />}
+                {pasoActual === 2 && (
+                  <Paso2AgentePagare avanzarPaso={avanzarPaso} />
+                )}
 
                 {pasoActual === 3 && <Paso3Epyme />}
 
-                {pasoActual === 4 && <Paso4ExitoPagare onVolverLista={() => navigate("/solicitudes")} />}
-
+                {pasoActual === 4 && (
+                  <Paso4ExitoPagare
+                    onVolverLista={() => navigate("/solicitudes")}
+                  />
+                )}
               </form>
             </FormProvider>
           </div>
 
           {/* LADO DERECHO: PANEL DUDAS */}
           <PanelDudasPagare pasoActual={pasoActual} />
-
         </div>
       </div>
     </div>

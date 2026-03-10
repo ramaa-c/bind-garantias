@@ -7,9 +7,9 @@ import ConfirmarCorreo from "./pages/ConfirmarCorreo";
 import Inicio from "./pages/Inicio";
 import Cheques from "./pages/Cheques";
 import Prestamos from "./pages/Prestamos";
-import PagareUSD from "./pages/PagareUSD";
+import Pagare from "./pages/Pagare";
 import Solicitudes from "./pages/Solicitudes";
-import DashboardLayout from "./components/DashboardLayout";
+import DashboardLayout from "./components/layout/DashboardLayout";
 import "./App.css";
 
 function App() {
@@ -34,7 +34,7 @@ function App() {
           path="/pagare"
           element={
             <DashboardLayout>
-              <PagareUSD />
+              <Pagare />
             </DashboardLayout>
           }
         />

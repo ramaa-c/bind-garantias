@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiHome, FiFileText, FiCreditCard, FiBriefcase, FiSettings } from "react-icons/fi";
-import "../styles/layout.css";
+import "../../styles/layout.css";
 
 export default function Sidebar() {
   const navigate = useNavigate();

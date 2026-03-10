@@ -3,15 +3,15 @@ import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { chequesSchema } from "../schemas/chequesSchema";
 import "../styles/cheques.css";
-import Paso1Cuit from "../components/form-steps/Paso1Cuit";
-import Paso2Datos from "../components/form-steps/Paso2Datos";
-import Paso3Simulador from "../components/form-steps/Paso3Simulador";
-import Paso4Socios from "../components/form-steps/Paso4Socios";
-import Paso5Documentacion from "../components/form-steps/Paso5Documentacion";
-import Paso6Bolsa from "../components/form-steps/Paso6Bolsa";
-import Paso7Exito from "../components/form-steps/Paso7Exito";
-import ModalSms from "../components/ModalSms";
-import PanelDudas from "../components/form-steps/PanelDudas";
+import Paso1Cuit from "../components/features/compartidos/Paso1Cuit";
+import Paso2Datos from "../components/features/compartidos/Paso2Datos";
+import Paso3Simulador from "../components/features/compartidos/Paso3Simulador";
+import Paso4Socios from "../components/features/compartidos/Paso4Socios";
+import Paso5Documentacion from "../components/features/compartidos/Paso5Documentacion";
+import Paso6Bolsa from "../components/features/cheques/Paso6Bolsa";
+import Paso7Exito from "../components/features/compartidos/Paso7Exito";
+import ModalSms from "../components/ui/ModalSms";
+import PanelDudas from "../components/features/compartidos/PanelDudas";
 
 export default function Cheques() {
   const [pasoActual, setPasoActual] = useState(1);
