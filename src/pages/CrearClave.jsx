@@ -78,12 +78,13 @@ const CrearClave = () => {
       
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className="login-side-form">
-        <div className="login-card-modern">
-          
-          <div className="card-logo-placeholder" style={{ justifyContent: 'flex-start', padding: 0 }}>
-            <img src={logoBind} alt="Logo BIND" width="200" />
-          </div>
+        
+        {/* LOGO  */}
+        <div className="login-global-logo">
+          <img src={logoBind} alt="Logo BIND" width="120" />
+        </div>
 
+        <div className="login-card-modern">
           <div className="login-header-text">
             <h2>Creá tu contraseña</h2>
             <p>Para el usuario: <span className="text-white" style={{ fontWeight: 'bold' }}>{emailUsuario}</span></p>

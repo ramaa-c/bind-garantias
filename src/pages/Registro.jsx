@@ -33,11 +33,13 @@ const Registro = () => {
       
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className="login-side-form">
-        <div className="login-card-modern">
-          <div className="card-logo-placeholder" style={{ justifyContent: 'flex-start', padding: 0 }}>
-            <img src={logoBind} alt="Logo BIND" width="200" />
-          </div>
+        
+        {/* LOGO */}
+        <div className="login-global-logo">
+          <img src={logoBind} alt="Logo BIND" width="120" />
+        </div>
 
+        <div className="login-card-modern">
           <div className="login-header-text">
             <h2>Creá tu cuenta</h2>
             <p>Ingresá tu correo electrónico para comenzar a operar.</p>
@@ -88,9 +90,9 @@ const Registro = () => {
       {/* --- COLUMNA DERECHA --- */}
       <section className="login-side-brand">
         <div className="brand-content">
-          <h2 className="brand-title">Potenciá el crecimiento de tu empresa.</h2>
+          <h2 className="brand-title">Potenciando y transformando el financiamiento PyME.</h2>
           <p className="brand-subtitle">
-            Unite a la plataforma que simplifica y agiliza la obtención de avales para PyMEs en el mercado de capitales.
+            Accedé a la mejor financiación para tu empresa.
           </p>
         </div>
       </section>

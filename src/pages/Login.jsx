@@ -36,14 +36,14 @@ const Login = () => {
     <div className="login-layout-split">
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className="login-side-form">
-        <div className="login-card-modern">
-          <div
-            className="card-logo-placeholder"
-            style={{ justifyContent: "flex-start", padding: 0 }}
-          >
-            <img src={logoBind} alt="Logo BIND" width="200" />
-          </div>
+        
+        {/* LOGO */}
+        <div className="login-global-logo">
+          <img src={logoBind} alt="Logo BIND" width="120" />
+        </div>
 
+        {/* TARJETA DE LOGIN */}
+        <div className="login-card-modern">
           <div className="login-header-text">
             <h2>¡Hola! Bienvenido</h2>
             <p>Ingresá tus datos para acceder a tu cuenta.</p>
@@ -62,6 +62,7 @@ const Login = () => {
                 <span className="error-text">{errors.email.message}</span>
               )}
             </div>
+            
             <div className="input-group">
               <input
                 type={showPassword ? "text" : "password"}
@@ -84,8 +85,6 @@ const Login = () => {
               )}
             </div>
 
-            {/* Olvidé contraseña y registro */}
-
             <div className="form-actions">
               <button type="submit" className="btn-primary">
                 INGRESAR
@@ -106,9 +105,7 @@ const Login = () => {
       {/* --- COLUMNA DERECHA --- */}
       <section className="login-side-brand">
         <div className="brand-content">
-          <h2 className="brand-title">
-            Potenciando y transformando el financiamiento PyME.
-          </h2>
+          <h2 className="brand-title">Potenciando y transformando el financiamiento PyME.</h2>
           <p className="brand-subtitle">
             Accedé a la mejor financiación para tu empresa.
           </p>
