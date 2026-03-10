@@ -3,8 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Navbar from "../components/Navbar";
-import Banner from "../components/Banner";
 import { FaFileArrowDown, FaLink } from "react-icons/fa6";
 import "../styles/cheques.css";
 import "../styles/pagare.css";
@@ -63,9 +61,6 @@ export default function PagareUSD() {
 
   return (
     <div className="pagare-page">
-      <Navbar usuario="Usuario@email.com" />
-
-      <Banner texto="Límite de crédito: U$D 40.000 - Vencimiento: 01/11/2026" />
 
       <div className="pagare-main-container">
         <div
