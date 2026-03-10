@@ -8,7 +8,6 @@ export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
     formState: { errors },
   } = useFormContext();
 
-  // Escuchamos el CUIT para mostrarlo en el resumen
   const cuitIngresado = watch("cuit", "");
 
   return (
