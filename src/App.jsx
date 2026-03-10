@@ -6,6 +6,7 @@ import CrearClave from "./pages/CrearClave";
 import ConfirmarCorreo from "./pages/ConfirmarCorreo";
 import Inicio from "./pages/Inicio";
 import Cheques from "./pages/Cheques";
+import Prestamos from "./pages/Prestamos";
 import PagareUSD from "./pages/PagareUSD";
 import Solicitudes from "./pages/Solicitudes";
 import DashboardLayout from "./components/DashboardLayout";
@@ -42,6 +43,14 @@ function App() {
           element={
             <DashboardLayout>
               <Solicitudes />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/prestamos"
+          element={
+            <DashboardLayout>
+              <Prestamos />
             </DashboardLayout>
           }
         />
