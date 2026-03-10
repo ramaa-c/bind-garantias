@@ -1,0 +1,177 @@
+.inicio-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--carbon-black);
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--white);
+}
+
+/* --- Banner principal --- */
+.inicio-hero {
+  width: 100%;
+  background-color: #111;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px);
+  background-size: 30px 30px;
+  padding: 3rem 0;
+  border-bottom: 1px solid #333;
+}
+
+.inicio-hero-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.hero-card {
+  background-color: var(--graphite);
+  padding: 2.5rem;
+  border-radius: 8px;
+  display: inline-block;
+  min-width: 400px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  border-left: 4px solid var(--yellow);
+}
+
+.hero-eyebrow {
+  color: #aaa;
+  font-size: 0.9rem;
+  letter-spacing: 1px;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  margin: 0 0 20px 0;
+  line-height: 1.2;
+}
+
+.hero-detail-item {
+  color: #ccc;
+  font-size: 0.95rem;
+  margin: 5px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.inicio-main-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+.inicio-contenedor-principal {
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* --- PESTAÑAS --- */
+.tabs-header {
+  display: flex;
+  gap: 2rem;
+  border-bottom: 2px solid #333;
+  margin-bottom: 2rem;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 1.1rem;
+  padding: 10px 0;
+  cursor: pointer;
+  position: relative;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: var(--white);
+}
+
+.tab-btn.active {
+  color: var(--yellow);
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: var(--yellow);
+}
+
+/* --- TARJETA DE LÍNEAS --- */
+.tab-content {
+  animation: fadeIn 0.4s ease;
+}
+
+.linea-card-container {
+  background-color: var(--graphite);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #333;
+  max-width: 800px;
+}
+
+.linea-card-header {
+  padding: 2rem;
+  border-bottom: 1px solid #333;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.linea-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+  font-size: 0.85rem;
+  margin-bottom: 15px;
+}
+
+.linea-title {
+  font-size: 1.5rem;
+  margin: 0 0 10px 0;
+  font-weight: normal;
+}
+
+.linea-subtitle {
+  color: #aaa;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.linea-card-body {
+  padding: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: transparent;
+}
+
+.linea-body-title {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--white);
+  font-weight: normal;
+}
+
+.linea-actions {
+  display: flex;
+  gap: 15px;
+}
+
+/* --- ESTADOS VACÍOS --- */
+.empty-state-box {
+  padding: 4rem;
+  text-align: center;
+  background-color: var(--graphite);
+  border-radius: 8px;
+  border: 1px dashed #555;
+  color: #888;
+}

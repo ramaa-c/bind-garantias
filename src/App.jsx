@@ -4,8 +4,10 @@ import Login from "./pages/Login";
 import Registro from "./pages/Registro";
 import CrearClave from "./pages/CrearClave";
 import ConfirmarCorreo from "./pages/ConfirmarCorreo";
+import Inicio from "./pages/Inicio";
 import Cheques from "./pages/Cheques";
 import PagareUSD from "./pages/PagareUSD";
+import Solicitudes from "./pages/Solicitudes";
 import "./App.css";
 
 function App() {
@@ -18,7 +20,12 @@ function App() {
         <Route path="/registro" element={<Registro />} />
 
         <Route path="/crear-clave" element={<CrearClave />} />
+
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
+
+        <Route path="/inicio" element={<Inicio />} />
+
+        <Route path="/solicitudes" element={<Solicitudes />} />
 
         <Route path="/cheques" element={<Cheques />} />
 
