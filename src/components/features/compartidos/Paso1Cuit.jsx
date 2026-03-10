@@ -2,7 +2,6 @@ import React from "react";
 import { useFormContext } from "react-hook-form";
 
 export default function Paso1Cuit({ onValidar }) {
-  // useFormContext nos permite acceder a register y errors sin pasarlos por props!
   const {
     register,
     formState: { errors },

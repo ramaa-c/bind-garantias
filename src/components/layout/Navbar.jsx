@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import logoBind from "../assets/images/bind-g-logo.svg";
+import logoBind from "../../assets/images/bind-g-logo.svg";
 import { FaRegUserCircle } from "react-icons/fa";
 
 const Navbar = ({ texto, textoEnlace, rutaDestino, usuario }) => {
