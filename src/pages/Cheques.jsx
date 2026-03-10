@@ -13,21 +13,35 @@ import {
 } from "react-icons/fi";
 import "../styles/cheques.css";
 
+// --- 1. ESQUEMA ZOD ACTUALIZADO ---
 const chequesSchema = z.object({
-  cuit: z
-    .string()
-    .regex(/^\d{11}$/, { message: "Debe contener 11 números sin guiones" }),
+  cuit: z.string().regex(/^\d{11}$/, { message: "Debe contener 11 números sin guiones" }),
   direccion: z.string().min(3, { message: "La dirección es obligatoria" }),
   provincia: z.string().min(3, { message: "La provincia es obligatoria" }),
   localidad: z.string().min(3, { message: "La localidad es obligatoria" }),
-  celular: z.string().regex(/^\d{10}$/, {
-    message: "Debe contener 10 números (ej: 1122334455)",
-  }),
+  celular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números (ej: 1122334455)" }),
   moneda: z.string().min(1, { message: "Requerido" }),
   tipoProducto: z.string().min(1, { message: "Requerido" }),
   tipoCalculo: z.string().min(1, { message: "Requerido" }),
   monto: z.coerce.number().min(1000, { message: "El monto mínimo es $1000" }),
   plazo: z.string().min(1, { message: "Requerido" }),
+  
+  // --- NUEVAS VALIDACIONES (PASO 5 Y 6) ---
+  apoCuit: z.string().regex(/^\d{11}$/, { message: "Debe contener 11 números" }).optional().or(z.literal("")),
+  apoEmail: z.string().email({ message: "Email inválido" }).optional().or(z.literal("")),
+  apoCelular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números" }).optional().or(z.literal("")),
+  emailFacturacion: z.string().email({ message: "Email inválido" }).min(1, { message: "Requerido" }),
+  sociedadBolsa: z.string().optional(),
+  numeroCuentaBolsa: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // Validación condicional: Si elige sociedad de bolsa, exige el número de cuenta
+  if (data.sociedadBolsa && data.sociedadBolsa !== "" && !data.numeroCuentaBolsa) {
+    ctx.addIssue({
+      path: ["numeroCuentaBolsa"],
+      message: "El número de cuenta es obligatorio",
+      code: z.ZodIssueCode.custom,
+    });
+  }
 });
 
 export default function Cheques() {
@@ -43,33 +57,28 @@ export default function Cheques() {
   const [tempSocioNombre, setTempSocioNombre] = useState("");
   const [tempSocioParticipacion, setTempSocioParticipacion] = useState("");
 
-  // --- ESTADOS PASO 5 (DOCUMENTACIÓN, APODERADO, MAIL) ---
+  // --- ESTADOS PASO 5 (DOCUMENTACIÓN, APODERADO) ---
   const [docExpandido, setDocExpandido] = useState("estatuto");
   const [faseApoderado, setFaseApoderado] = useState("ingresar");
-  const [apoCuit, setApoCuit] = useState("");
   const [apoNombre, setApoNombre] = useState("");
   const [apoRol, setApoRol] = useState("Representante Legal");
-  const [apoEmail, setApoEmail] = useState("");
-  const [apoCelular, setApoCelular] = useState("");
-  const [emailFacturacion, setEmailFacturacion] = useState("");
-
-  // --- ESTADOS PASO 6 (BOLSA) ---
-  const [sociedadBolsa, setSociedadBolsa] = useState("");
-  const [numeroCuentaBolsa, setNumeroCuentaBolsa] = useState("");
 
   const {
     register,
     handleSubmit,
     trigger,
     watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(chequesSchema),
     mode: "onChange",
-    defaultValues: { moneda: "Pesos" },
+    defaultValues: { moneda: "Pesos", sociedadBolsa: "" },
   });
 
   const cuitIngresado = watch("cuit", "");
+  const apoCuitIngresado = watch("apoCuit", "");
+  const bolsaSeleccionada = watch("sociedadBolsa", "");
 
   // --- NAVEGACIÓN ---
   const handleValidarCuit = async () => {
@@ -88,7 +97,9 @@ export default function Cheques() {
       setPasoActual(3);
   };
 
-  const onSubmitFinal = (data) => setMostrarResultados(true);
+  const onSubmitFinal = (data) => {
+    console.log("Datos finales listos:", data);
+  };
 
   // --- LÓGICA PASO 4 (SOCIOS) ---
   const iniciarCargaSocio = () => {
@@ -121,14 +132,37 @@ export default function Cheques() {
 
   const continuarAlProximoPaso = () => setPasoActual(5);
 
-  // --- LÓGICA PASO 5 (APODERADO) ---
-  const validarCuitApoderado = () => {
-    setApoNombre("GOMEZ PEREZ JUAN");
-    setFaseApoderado("completar");
-  };
-
+  // --- LÓGICA PASO 5 Y 6 (VALIDACIONES ZOD) ---
   const toggleDoc = (seccion) => {
     setDocExpandido((prev) => (prev === seccion ? "" : seccion));
+  };
+
+  const validarCuitApoderado = async () => {
+    if (await trigger("apoCuit")) {
+      setApoNombre("GOMEZ PEREZ JUAN");
+      setFaseApoderado("completar");
+    }
+  };
+
+  const guardarApoderado = async () => {
+    const esValido = await trigger(["apoEmail", "apoCelular"]);
+    if (esValido) setFaseApoderado("guardado");
+  };
+
+  const avanzarPaso6 = async () => {
+    const esValido = await trigger("emailFacturacion");
+    if (esValido) setPasoActual(6);
+  };
+
+  const avanzarConBolsa = async () => {
+    const esValido = await trigger(["sociedadBolsa", "numeroCuentaBolsa"]);
+    if (esValido && bolsaSeleccionada !== "") setPasoActual(7);
+  };
+
+  const avanzarSinBolsa = () => {
+    setValue("sociedadBolsa", "");
+    setValue("numeroCuentaBolsa", "");
+    setPasoActual(7);
   };
 
   return (
@@ -281,6 +315,7 @@ export default function Cheques() {
                       className="form-input"
                       {...register("direccion")}
                     />
+                    {errors.direccion && <span className="error-text-inline">{errors.direccion.message}</span>}
                   </div>
                   <div className="form-row">
                     <div className="form-col" style={{ position: "relative" }}>
@@ -290,6 +325,7 @@ export default function Cheques() {
                         className="form-input"
                         {...register("provincia")}
                       />
+                      {errors.provincia && <span className="error-text-inline">{errors.provincia.message}</span>}
                     </div>
                     <div className="form-col" style={{ position: "relative" }}>
                       <label className="form-label">Localidad *</label>
@@ -298,6 +334,7 @@ export default function Cheques() {
                         className="form-input"
                         {...register("localidad")}
                       />
+                      {errors.localidad && <span className="error-text-inline">{errors.localidad.message}</span>}
                     </div>
                   </div>
                   <div
@@ -322,6 +359,7 @@ export default function Cheques() {
                         style={{ marginBottom: 0 }}
                         {...register("celular")}
                       />
+                      {errors.celular && <span className="error-text-inline" style={{bottom: '-25px'}}>{errors.celular.message}</span>}
                     </div>
                     <button
                       type="button"
@@ -382,7 +420,7 @@ export default function Cheques() {
                     </select>
                   </div>
                   <div className="form-row bolsa-container-animated">
-                    <div className="form-col">
+                    <div className="form-col" style={{position: 'relative'}}>
                       <label className="form-label muted">
                         Monto a financiar
                       </label>
@@ -391,6 +429,7 @@ export default function Cheques() {
                         className="form-input"
                         {...register("monto")}
                       />
+                      {errors.monto && <span className="error-text-inline">{errors.monto.message}</span>}
                     </div>
                     <div className="form-col">
                       <label className="form-label muted">Plazo</label>
@@ -400,10 +439,9 @@ export default function Cheques() {
                     </div>
                   </div>
 
-                  {/* Lógica condicional moderna de React en lugar de display: none/block */}
                   {!mostrarResultados && (
                     <div className="form-actions-right">
-                      <button type="submit" className="btn-action">
+                      <button type="button" className="btn-action" onClick={() => trigger(["monto", "tipoProducto", "tipoCalculo", "plazo"]).then(v => v && setMostrarResultados(true))}>
                         CALCULAR
                       </button>
                     </div>
@@ -733,7 +771,7 @@ export default function Cheques() {
                     </p>
                   ) : (
                     socios.map((socio, index) => {
-                      const socioId = `socio-${index}`; // Guardamos el ID en una variable para evitar errores
+                      const socioId = `socio-${index}`;
 
                       return (
                         <div className="accordion-item" key={index}>
@@ -813,21 +851,21 @@ export default function Cheques() {
                     </button>
                   </div>
 
-                  {/* SECCIÓN APODERADO */}
+                  {/* SECCIÓN APODERADO CON ZOD */}
                   <h3 className="title-apoderado">
                     CARGAR UN NUEVO REPRESENTANTE LEGAL / APODERADO
                   </h3>
 
                   {faseApoderado === "ingresar" && (
                     <div className="form-row-align">
-                      <div className="bolsa-container">
+                      <div className="bolsa-container" style={{position: 'relative'}}>
                         <label className="form-label muted">Cuit</label>
                         <input
                           type="text"
-                          value={apoCuit}
-                          onChange={(e) => setApoCuit(e.target.value)}
                           className="form-input input-width-md"
+                          {...register("apoCuit")}
                         />
+                        {errors.apoCuit && <span className="error-text-inline">{errors.apoCuit.message}</span>}
                       </div>
                       <button
                         type="button"
@@ -844,7 +882,7 @@ export default function Cheques() {
                       <div className="form-row">
                         <div className="form-col">
                           <label className="form-label muted">Cuit:</label>
-                          <p className="readonly-text">{apoCuit} ✓</p>
+                          <p className="readonly-text">{apoCuitIngresado} ✓</p>
                         </div>
                         <div className="form-col">
                           <label className="form-label muted">Nombre:</label>
@@ -878,23 +916,23 @@ export default function Cheques() {
                       </div>
 
                       <div className="form-row step-section">
-                        <div className="form-col">
+                        <div className="form-col" style={{position: 'relative'}}>
                           <label className="form-label muted">Email *</label>
                           <input
                             type="email"
-                            value={apoEmail}
-                            onChange={(e) => setApoEmail(e.target.value)}
                             className="form-input"
+                            {...register("apoEmail")}
                           />
+                          {errors.apoEmail && <span className="error-text-inline">{errors.apoEmail.message}</span>}
                         </div>
-                        <div className="form-col">
+                        <div className="form-col" style={{position: 'relative'}}>
                           <label className="form-label muted">Celular *</label>
                           <input
                             type="text"
-                            value={apoCelular}
-                            onChange={(e) => setApoCelular(e.target.value)}
                             className="form-input"
+                            {...register("apoCelular")}
                           />
+                          {errors.apoCelular && <span className="error-text-inline">{errors.apoCelular.message}</span>}
                         </div>
                       </div>
 
@@ -908,8 +946,8 @@ export default function Cheques() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setFaseApoderado("guardado")}
-                          className="btn-action"
+                          onClick={guardarApoderado}
+                          className="btn-action btn-rounded"
                         >
                           GUARDAR
                         </button>
@@ -927,7 +965,7 @@ export default function Cheques() {
                           {apoNombre} - {apoRol}
                         </p>
                         <span className="summary-label step-section">
-                          CUIT {apoCuit}
+                          CUIT {apoCuitIngresado}
                         </span>
                       </div>
                       <button
@@ -941,23 +979,23 @@ export default function Cheques() {
                     </div>
                   )}
 
-                  {/* MAIL DE FACTURACIÓN */}
-                  <div className="section-divider step-section-lg">
+                  {/* MAIL DE FACTURACIÓN CON ZOD */}
+                  <div className="section-divider step-section-lg" style={{position: 'relative'}}>
                     <h3 className="step-subtitle highlight small">
                       INDICANOS EL MAIL DONDE QUERES QUE TE LLEGUE LA FACTURA:
                     </h3>
                     <input
                       type="email"
-                      value={emailFacturacion}
-                      onChange={(e) => setEmailFacturacion(e.target.value)}
                       className="form-input input-width-md step-section"
+                      {...register("emailFacturacion")}
                     />
+                    {errors.emailFacturacion && <span className="error-text-inline" style={{bottom: '-25px'}}>{errors.emailFacturacion.message}</span>}
                   </div>
 
                   <div className="form-actions-right">
                     <button
                       type="button"
-                      onClick={() => setPasoActual(6)}
+                      onClick={avanzarPaso6}
                       className="btn-action"
                     >
                       CONTINUAR
@@ -979,9 +1017,8 @@ export default function Cheques() {
                       Sociedad de bolsa *
                     </label>
                     <select
-                      value={sociedadBolsa}
-                      onChange={(e) => setSociedadBolsa(e.target.value)}
                       className="form-select"
+                      {...register("sociedadBolsa")}
                     >
                       <option value="">Seleccionar...</option>
                       <option value="Tarallo S.A.">Tarallo S.A.</option>
@@ -991,31 +1028,32 @@ export default function Cheques() {
                     </select>
                   </div>
 
-                  {sociedadBolsa && (
-                    <div className="bolsa-container-animated">
+                  {/* Mostramos el número de cuenta solo si seleccionó una sociedad */}
+                  {watch("sociedadBolsa") && watch("sociedadBolsa") !== "" && (
+                    <div className="bolsa-container-animated" style={{position: 'relative'}}>
                       <label className="form-label muted readonly-text-highlight">
                         Número de cuenta de la sociedad de bolsa *
                       </label>
                       <input
                         type="text"
-                        value={numeroCuentaBolsa}
-                        onChange={(e) => setNumeroCuentaBolsa(e.target.value)}
                         className="form-input"
+                        {...register("numeroCuentaBolsa")}
                       />
+                      {errors.numeroCuentaBolsa && <span className="error-text-inline">{errors.numeroCuentaBolsa.message}</span>}
                     </div>
                   )}
 
                   <div className="bolsa-container step-section-lg">
                     <button
                       type="button"
-                      onClick={() => setPasoActual(7)}
+                      onClick={avanzarConBolsa}
                       className="btn-large-action"
                     >
                       CONTINUAR CON LA SOCIEDAD DE BOLSA SELECCIONADA
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPasoActual(7)}
+                      onClick={avanzarSinBolsa}
                       className="btn-large-outline"
                     >
                       NO TENGO SOCIEDAD DE BOLSA
