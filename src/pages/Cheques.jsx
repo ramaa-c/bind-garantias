@@ -2,7 +2,14 @@ import React, { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Navbar from "../components/Navbar";
+import {
+  FiTrash2,
+  FiEdit,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiXCircle,
+  FiHome,
+} from "react-icons/fi";
 import "../styles/cheques.css";
 
 // --- IMPORTAMOS TODOS LOS PASOS MODULARIZADOS ---
@@ -25,7 +32,7 @@ const chequesSchema = z.object({
   tipoProducto: z.string().min(1, { message: "Requerido" }),
   tipoCalculo: z.string().min(1, { message: "Requerido" }),
   monto: z.coerce.number().min(1000, { message: "El monto mínimo es $1000" }),
-  plazo: z.string().min(1, { message: "Requerido" }),
+  plazo: z.string().min(1, { message: "Requerido" }),  
   apoCuit: z.string().regex(/^\d{11}$/, { message: "Debe contener 11 números" }).optional().or(z.literal("")),
   apoEmail: z.string().email({ message: "Email inválido" }).optional().or(z.literal("")),
   apoCelular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números" }).optional().or(z.literal("")),
@@ -108,7 +115,6 @@ export default function Cheques() {
 
   return (
     <div className="cheques-page">
-      <Navbar usuario="Usuario@email.com" />
 
       {/* BANNER DINÁMICO */}
       <section className="cheques-banner">
@@ -124,7 +130,9 @@ export default function Cheques() {
             </h1>
             {pasoActual === 4 && (<p className="banner-subtitle">Completá información de tus socios para continuar</p>)}
           </div>
-        ) : (<h2>[ Espacio para imagen de la empresa ]</h2>)}
+        ) : (
+          <h2>[ Espacio para banner ]</h2>
+        )}
       </section>
 
       <div className="form-main-container">

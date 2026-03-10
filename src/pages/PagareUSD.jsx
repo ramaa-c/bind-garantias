@@ -1,9 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Navbar from "../components/Navbar";
-import Banner from "../components/Banner";
 import { FaFileArrowDown, FaLink } from "react-icons/fa6";
 import "../styles/cheques.css";
 import "../styles/pagare.css";
@@ -21,6 +20,7 @@ const pagareSchema = z.object({
 });
 
 export default function PagareUSD() {
+  const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
   const [simulacionLista, setSimulacionLista] = useState(false);
 
@@ -61,9 +61,6 @@ export default function PagareUSD() {
 
   return (
     <div className="pagare-page">
-      <Navbar usuario="Usuario@email.com" />
-
-      <Banner texto="Límite de crédito: U$D 40.000 - Vencimiento: 01/11/2026" />
 
       <div className="pagare-main-container">
         <div
@@ -83,7 +80,11 @@ export default function PagareUSD() {
             )}
             {pasoActual === 1 && (
               <div className="back-button-container">
-                <button type="button" className="btn-back">
+                <button
+                  type="button"
+                  onClick={() => navigate("/inicio")}
+                  className="btn-back"
+                >
                   ← Volver a la lista
                 </button>
               </div>
@@ -392,9 +393,9 @@ export default function PagareUSD() {
                     <button
                       type="button"
                       className="btn-outline"
-                      onClick={() => console.log("Volver al dashboard")}
+                      onClick={() => navigate("/solicitudes")}
                     >
-                      VOLVER AL INICIO
+                      VOLVER A LA LISTA
                     </button>
                   </div>
                 </div>
