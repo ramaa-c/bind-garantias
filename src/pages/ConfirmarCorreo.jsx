@@ -15,11 +15,13 @@ const ConfirmarCorreo = () => {
       
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className="login-side-form">
+        
+        {/* LOGO  */}
+        <div className="login-global-logo">
+          <img src={logoBind} alt="Logo BIND" width="120" />
+        </div>
+
         <div className="login-card-modern" style={{ textAlign: "left" }}>
-          
-          <div className="card-logo-placeholder" style={{ justifyContent: "flex-start", padding: 0, marginBottom: "2rem" }}>
-            <img src={logoBind} alt="Logo BIND" width="200" />
-          </div>
 
           <div className="login-header-text">
             <h2 style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>Revisá tu correo</h2>
