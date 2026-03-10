@@ -5,6 +5,7 @@ import Registro from "./pages/Registro";
 import CrearClave from "./pages/CrearClave";
 import ConfirmarCorreo from "./pages/ConfirmarCorreo";
 import Cheques from "./pages/Cheques";
+import Prestamos from "./pages/Prestamos";
 import PagareUSD from "./pages/PagareUSD";
 import "./App.css";
 
@@ -20,7 +21,9 @@ function App() {
         <Route path="/crear-clave" element={<CrearClave />} />
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
 
-        <Route path="/cheques" element={<Cheques />} />
+       <Route path="/cheques" element={<Cheques />} />
+
+        <Route path="/prestamos" element={<Prestamos />} />
 
         <Route path="/pagare-usd" element={<PagareUSD />} />
 
