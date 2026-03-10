@@ -1,6 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../components/Navbar";
 import { FiCalendar, FiFilter, FiList } from "react-icons/fi";
 import { FaMoneyBillWave } from "react-icons/fa";
 import "../styles/cheques.css";
@@ -55,8 +54,6 @@ export default function Solicitudes() {
 
   return (
     <div className="inicio-page">
-      <Navbar usuario="asesoramiento@mailinator.com" />
-
       {/* HEADER */}
       <div className="solicitudes-header-block">
         <div className="solicitudes-header-content">

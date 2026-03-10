@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Navbar from "../components/Navbar";
 import {
   FiTrash2,
   FiEdit,
@@ -26,7 +25,6 @@ const chequesSchema = z.object({
   monto: z.coerce.number().min(1000, { message: "El monto mínimo es $1000" }),
   plazo: z.string().min(1, { message: "Requerido" }),
   
-  // --- NUEVAS VALIDACIONES (PASO 5 Y 6) ---
   apoCuit: z.string().regex(/^\d{11}$/, { message: "Debe contener 11 números" }).optional().or(z.literal("")),
   apoEmail: z.string().email({ message: "Email inválido" }).optional().or(z.literal("")),
   apoCelular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números" }).optional().or(z.literal("")),
@@ -34,7 +32,6 @@ const chequesSchema = z.object({
   sociedadBolsa: z.string().optional(),
   numeroCuentaBolsa: z.string().optional(),
 }).superRefine((data, ctx) => {
-  // Validación condicional: Si elige sociedad de bolsa, exige el número de cuenta
   if (data.sociedadBolsa && data.sociedadBolsa !== "" && !data.numeroCuentaBolsa) {
     ctx.addIssue({
       path: ["numeroCuentaBolsa"],
@@ -167,7 +164,6 @@ export default function Cheques() {
 
   return (
     <div className="cheques-page">
-      <Navbar usuario="Usuario@email.com" />
 
       {/* BANNER DINÁMICO */}
       <section className="cheques-banner">
@@ -198,7 +194,7 @@ export default function Cheques() {
             )}
           </div>
         ) : (
-          <h2>[ Espacio para imagen de la empresa ]</h2>
+          <h2>[ Espacio para banner ]</h2>
         )}
       </section>
 

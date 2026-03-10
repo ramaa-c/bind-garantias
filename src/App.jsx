@@ -8,6 +8,7 @@ import Inicio from "./pages/Inicio";
 import Cheques from "./pages/Cheques";
 import PagareUSD from "./pages/PagareUSD";
 import Solicitudes from "./pages/Solicitudes";
+import DashboardLayout from "./components/DashboardLayout";
 import "./App.css";
 
 function App() {
@@ -16,20 +17,42 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/ingresar" element={<Login />} />
-
         <Route path="/registro" element={<Registro />} />
-
         <Route path="/crear-clave" element={<CrearClave />} />
-
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
 
-        <Route path="/inicio" element={<Inicio />} />
-
-        <Route path="/solicitudes" element={<Solicitudes />} />
-
-        <Route path="/cheques" element={<Cheques />} />
-
-        <Route path="/pagare-usd" element={<PagareUSD />} />
+        <Route
+          path="/inicio"
+          element={
+            <DashboardLayout>
+              <Inicio />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/pagare"
+          element={
+            <DashboardLayout>
+              <PagareUSD />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/solicitudes"
+          element={
+            <DashboardLayout>
+              <Solicitudes />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/cheques"
+          element={
+            <DashboardLayout>
+              <Cheques />
+            </DashboardLayout>
+          }
+        />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
