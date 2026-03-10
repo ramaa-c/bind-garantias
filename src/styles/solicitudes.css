@@ -1,0 +1,177 @@
+/* --- BLOQUE HEADER --- */
+.solicitudes-header-block {
+  background-color: var(--graphite);
+  border-bottom: 1px solid #333;
+  padding: 2rem 0;
+}
+
+.solicitudes-header-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+
+.solicitudes-title {
+  color: var(--white);
+  font-size: 1.5rem;
+  margin: 0 0 10px 0;
+  display: flex;
+  align-items: center;
+}
+
+.solicitudes-subtitle {
+  color: #aaa;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* --- Nueva Operación y Filtros --- */
+.solicitudes-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #333;
+  padding-bottom: 1.5rem;
+}
+
+.solicitudes-tools {
+  display: flex;
+  gap: 15px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  color: var(--white);
+}
+
+.icon-btn.active {
+  color: var(--yellow);
+}
+
+/* --- TARJETAS DE SOLICITUD --- */
+.solicitudes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.solicitud-card {
+  background-color: var(--graphite);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  border-left-width: 4px;
+}
+
+.solicitud-card:hover {
+  transform: translateY(-2px);
+  border-color: #555;
+}
+
+/* --- CABECERA DE TARJETA --- */
+.solicitud-card-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 1rem;
+}
+
+.solicitud-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.solicitud-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* --- COLORES DE ESTADOS --- */
+/* Esperando / Pendiente */
+.solicitud-card.status-waiting { border-left-color: var(--yellow); }
+.solicitud-status-badge.status-waiting { color: var(--yellow); }
+.solicitud-status-badge.status-waiting .status-dot { background-color: var(--yellow); }
+
+/* Aprobado */
+.solicitud-card.status-approved { border-left-color: #4caf50; }
+.solicitud-status-badge.status-approved { color: #4caf50; }
+.solicitud-status-badge.status-approved .status-dot { background-color: #4caf50; }
+
+/* Rechazado */
+.solicitud-card.status-rejected { border-left-color: #ff5252; }
+.solicitud-status-badge.status-rejected { color: #ff5252; }
+.solicitud-status-badge.status-rejected .status-dot { background-color: #ff5252; }
+
+
+/* --- CUERPO DE TARJETA --- */
+.solicitud-card-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.solicitud-info {
+  flex: 1;
+}
+
+.solicitud-main-text {
+  color: var(--white);
+  font-size: 1.2rem;
+  margin: 0 0 8px 0;
+  font-weight: normal;
+}
+
+.solicitud-sub-text {
+  color: #aaa;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* --- ACCIONES DERECHA --- */
+.solicitud-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 15px;
+}
+
+.btn-link.action-primary {
+  color: var(--yellow);
+  font-weight: bold;
+}
+
+.btn-link.action-secondary {
+  color: #aaa;
+  text-decoration: none;
+}
+
+.btn-link.action-secondary:hover {
+  color: var(--white);
+  text-decoration: underline;
+}

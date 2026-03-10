@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function BindSpinner({
+export default function ComponenteSpinner({
   size = 48,
   center = false,
   color = "#f5f400"

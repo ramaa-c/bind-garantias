@@ -106,10 +106,11 @@ const Login = () => {
       {/* --- COLUMNA DERECHA --- */}
       <section className="login-side-brand">
         <div className="brand-content">
-          <h2 className="brand-title">Financiamiento ágil para tu empresa.</h2>
+          <h2 className="brand-title">
+            Potenciando y transformando el financiamiento PyME.
+          </h2>
           <p className="brand-subtitle">
-            Gestioná tus avales y pagarés 100% online con las mejores tasas del
-            mercado.
+            Accedé a la mejor financiación para tu empresa.
           </p>
         </div>
       </section>
