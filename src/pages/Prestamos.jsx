@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import Navbar from "../components/Navbar";
-import "../styles/cheques.css"; // Podés usar el mismo CSS porque la estructura es idéntica
+import "../styles/cheques.css"; 
 
 // --- IMPORTAMOS LOS COMPONENTES (Omitimos el Paso 6) ---
 import Paso1Cuit from "../components/form-steps/Paso1Cuit";
@@ -52,7 +51,7 @@ export default function Prestamos() {
   const metodosFormulario = useForm({
     resolver: zodResolver(prestamosSchema),
     mode: "onChange",
-    // Seteamos "prestamo" por defecto para que el simulador arranque bien
+   
     defaultValues: { moneda: "Pesos", tipoProducto: "prestamo" },
   });
 
@@ -104,7 +103,7 @@ export default function Prestamos() {
 
   return (
     <div className="cheques-page">
-      <Navbar usuario="Usuario@email.com" />
+
 
       {/* BANNER DINÁMICO */}
       <section className="cheques-banner">
