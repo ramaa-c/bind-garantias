@@ -45,9 +45,10 @@ export default function PagareUSD() {
   return (
     <div className="pagare-page">
       <div className="pagare-main-container">
-        <div
-          className={`pagare-contenedor-principal ${pasoActual === 4 ? "is-success" : ""}`}
-        >
+        
+        {/* ELIMINAMOS TODOS LOS CONDICIONALES ACÁ. ES UN DIV PLANO. */}
+        <div className="pagare-contenedor-principal">
+          
           <div className="columna-formulario">
             {pasoActual > 1 && pasoActual < 4 && (
               <div className="back-button-container">
@@ -72,19 +73,17 @@ export default function PagareUSD() {
               </div>
             )}
 
+            {/* SE MANTIENE EL MISMO COLOR Y BORDE EN TODOS LOS PASOS */}
             <div className="pagare-seccion-formulario">
-              {/* TÍTULOS */}
-              <h1 className="pagare-title">
-                {pasoActual === 1 &&
-                  "Ingresás el monto del pagaré y la fecha de pago"}
-                {pasoActual === 2 &&
-                  "Seleccioná al agente de bolsa con quien operás"}
-                {pasoActual === 3 &&
-                  "Generá el pagaré en Epyme y completá la operación"}
-                {pasoActual === 4 && "¡Felicitaciones!"}
-              </h1>
+              
+              {pasoActual < 4 && (
+                <h1 className="pagare-title">
+                  {pasoActual === 1 && "Ingresás el monto del pagaré y la fecha de pago"}
+                  {pasoActual === 2 && "Seleccioná al agente de bolsa con quien operás"}
+                  {pasoActual === 3 && "Generá el pagaré en Epyme y completá la operación"}
+                </h1>
+              )}
 
-              {/* PROGRESO */}
               {pasoActual < 4 && (
                 <div className="progress-container">
                   <p className="progress-text">Avance de solicitud</p>
@@ -93,18 +92,13 @@ export default function PagareUSD() {
                       className="progress-fill"
                       style={{
                         width:
-                          pasoActual === 1
-                            ? "33%"
-                            : pasoActual === 2
-                              ? "66%"
-                              : "100%",
+                          pasoActual === 1 ? "33%" : pasoActual === 2 ? "66%" : "100%",
                       }}
                     ></div>
                   </div>
                 </div>
               )}
 
-              {/* FORMULARIO */}
               <FormProvider {...metodosFormulario}>
                 <form
                   className="pagare-form-content"
@@ -136,8 +130,9 @@ export default function PagareUSD() {
             </div>
           </div>
 
-          {/* LADO DERECHO: PANEL DUDAS */}
+          {/* LADO DERECHO: PANEL DUDAS (Sin restricciones) */}
           <PanelDudasPagare pasoActual={pasoActual} />
+          
         </div>
       </div>
     </div>

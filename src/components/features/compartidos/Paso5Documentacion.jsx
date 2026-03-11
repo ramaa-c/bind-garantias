@@ -1,7 +1,76 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { useFormContext } from "react-hook-form";
-import { FiCheckCircle, FiAlertCircle, FiEdit, FiHome } from "react-icons/fi";
+import { FiCheckCircle, FiAlertCircle, FiEdit, FiUploadCloud, FiFileText, FiTrash2 } from "react-icons/fi";
 
+// --- MINI-COMPONENTE: DROPZONE INTELIGENTE ---
+const DropzoneCard = ({ label = "Subir archivo", subtext = "PDF o ZIP menor a 5MB", accept = ".pdf,.zip" }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [file, setFile] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const clearFile = (e) => {
+    e.stopPropagation();
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  if (file) {
+    return (
+      <div className="upload-box loaded anim-fade-in">
+        <div className="loaded-info">
+          <FiFileText className="loaded-icon" />
+          <div className="loaded-text-group">
+            <span className="loaded-filename">{file.name}</span>
+            <span className="loaded-filesize">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+          </div>
+        </div>
+        <button type="button" onClick={clearFile} className="btn-icon-ghost danger" title="Eliminar archivo">
+          <FiTrash2 size={18} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`upload-box ${isDragging ? "dragging" : ""}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      onClick={() => fileInputRef.current.click()}
+    >
+      <input type="file" ref={fileInputRef} hidden onChange={handleFileChange} accept={accept} />
+      <FiUploadCloud className="upload-icon-modern" />
+      <span className="upload-text">{label}</span>
+      <span className="upload-subtext">{subtext}</span>
+    </div>
+  );
+};
+
+// --- COMPONENTE PRINCIPAL ---
 export default function Paso5Documentacion({
   docExpandido,
   toggleDoc,
@@ -24,34 +93,39 @@ export default function Paso5Documentacion({
 
   const apoCuitIngresado = watch("apoCuit", "");
 
+  // Estado para controlar qué socio está en modo "edición de datos"
+  const [editModes, setEditModes] = useState({});
+
+  const handleEditSocio = (e, socioId) => {
+    e.stopPropagation(); // Evita que se cierre el acordeón
+    setEditModes((prev) => ({ ...prev, [socioId]: true }));
+    if (docExpandido !== socioId) {
+      toggleDoc(socioId); // Lo abre si estaba cerrado
+    }
+  };
+
+  const handleGuardarDatosSocio = (socioId) => {
+    setEditModes((prev) => ({ ...prev, [socioId]: false }));
+  };
+
   return (
     <div className="paso-5-animado">
-      <h3 className="section-title-doc">Documentación</h3>
+      <h3 className="step-subtitle white" style={{ marginBottom: '2rem' }}>Documentación requerida</h3>
 
       {/* 1. Estatuto */}
       <div className="accordion-item">
         <div className="accordion-header" onClick={() => toggleDoc("estatuto")}>
           <div className="accordion-header-left">
-            <span className="status-icon status-check">
-              <FiCheckCircle />
-            </span>
+            <span className="status-icon status-check"><FiCheckCircle /></span>
             <span>Estatuto</span>
           </div>
-          <span className={`chevron-icon ${docExpandido === "estatuto" ? "open" : ""}`}>
-            ▼
-          </span>
+          <span className={`chevron-icon ${docExpandido === "estatuto" ? "open" : ""}`}>▼</span>
         </div>
         {docExpandido === "estatuto" && (
           <div className="accordion-body">
-            <div className="upload-box">
-              <span className="upload-icon">+</span>
-              <span className="upload-text">Subir archivo</span>
-              <span className="upload-subtext">
-                Podés subir hasta 3 archivos PDF o 1 ZIP menor a 5MB
-              </span>
-            </div>
+            <DropzoneCard />
             <div className="doc-info-box">
-              Los estatutos son las normas por las que se regirá el funcionamiento de la entidad. En ellos se contemplan temas de vital importancia.
+              Los estatutos son las normas por las que se regirá el funcionamiento de la entidad. En ellas se contemplan temas de vital importancia.
             </div>
           </div>
         )}
@@ -61,26 +135,16 @@ export default function Paso5Documentacion({
       <div className="accordion-item">
         <div className="accordion-header" onClick={() => toggleDoc("balance")}>
           <div className="accordion-header-left">
-            <span className="status-icon status-alert">
-              <FiAlertCircle />
-            </span>
+            <span className="status-icon status-alert"><FiAlertCircle /></span>
             <span>Último Balance exigible, certificado</span>
           </div>
-          <span className={`chevron-icon ${docExpandido === "balance" ? "open" : ""}`}>
-            ▼
-          </span>
+          <span className={`chevron-icon ${docExpandido === "balance" ? "open" : ""}`}>▼</span>
         </div>
         {docExpandido === "balance" && (
           <div className="accordion-body">
-            <div className="upload-box">
-              <span className="upload-icon">+</span>
-              <span className="upload-text">Subir archivo</span>
-              <span className="upload-subtext">
-                Podés subir hasta 3 archivos PDF o 1 ZIP menor a 5MB
-              </span>
-            </div>
+            <DropzoneCard />
             <div className="doc-info-box">
-              El estado de situación financiera se estructura a través de tres conceptos patrimoniales, el activo, el pasivo y el patrimonio neto. Este informe debe ser auditado.
+              El estado de situación financiera se estructura a través de tres conceptos patrimoniales. Este informe debe ser auditado por un contador.
             </div>
           </div>
         )}
@@ -90,26 +154,16 @@ export default function Paso5Documentacion({
       <div className="accordion-item">
         <div className="accordion-header" onClick={() => toggleDoc("acta")}>
           <div className="accordion-header-left">
-            <span className="status-icon status-alert">
-              <FiAlertCircle />
-            </span>
+            <span className="status-icon status-alert"><FiAlertCircle /></span>
             <span>Acta de designación de autoridades</span>
           </div>
-          <span className={`chevron-icon ${docExpandido === "acta" ? "open" : ""}`}>
-            ▼
-          </span>
+          <span className={`chevron-icon ${docExpandido === "acta" ? "open" : ""}`}>▼</span>
         </div>
         {docExpandido === "acta" && (
           <div className="accordion-body">
-            <div className="upload-box">
-              <span className="upload-icon">+</span>
-              <span className="upload-text">Subir archivo</span>
-              <span className="upload-subtext">
-                Podés subir hasta 3 archivos PDF o 1 ZIP menor a 5MB
-              </span>
-            </div>
+            <DropzoneCard />
             <div className="doc-info-box">
-              Copia certificada del acta de asamblea o reunión de directorio donde se efectúa la designación de las autoridades vigentes de la sociedad.
+              Copia certificada del acta de asamblea donde se designan las autoridades vigentes.
             </div>
           </div>
         )}
@@ -119,87 +173,137 @@ export default function Paso5Documentacion({
       <div className="accordion-item">
         <div className="accordion-header" onClick={() => toggleDoc("poderes")}>
           <div className="accordion-header-left">
-            <span className="status-icon status-warn">
-              <FiAlertCircle />
-            </span>
+            <span className="status-icon status-warn"><FiAlertCircle /></span>
             <span>Poderes</span>
           </div>
-          <span className={`chevron-icon ${docExpandido === "poderes" ? "open" : ""}`}>
-            ▼
-          </span>
+          <span className={`chevron-icon ${docExpandido === "poderes" ? "open" : ""}`}>▼</span>
         </div>
         {docExpandido === "poderes" && (
           <div className="accordion-body">
-            <div className="upload-box">
-              <span className="upload-icon">+</span>
-              <span className="upload-text">Subir archivo</span>
-              <span className="upload-subtext">
-                Podés subir hasta 3 archivos PDF o 1 ZIP menor a 5MB
-              </span>
-            </div>
+            <DropzoneCard />
             <div className="doc-info-box">
-              Copia de los poderes otorgados por la empresa a los representantes legales o apoderados para operar y representar a la sociedad.
+              Copia de los poderes otorgados para operar y representar a la sociedad.
             </div>
           </div>
         )}
       </div>
 
-      {/* SOCIOS */}
-      <h3 className="section-title-doc step-section-lg">SOCIOS</h3>
+      <hr className="section-divider" style={{ margin: '3rem 0' }} />
+
+      {/* SOCIOS (Documentación DNI + Edición de Datos) */}
+      <h3 className="step-subtitle white" style={{ marginBottom: '5px' }}>Completá la información y documentación de cada socio.</h3>
+      <p className="form-label muted" style={{ marginBottom: '2rem' }}>La dirección de mail tiene que ser personal (no de un sector de la empresa).</p>
 
       {socios.length === 0 ? (
-        <p className="empty-state-text">No hay socios cargados para solicitar DNI.</p>
+        <div className="warning-box-modern">
+          <FiAlertCircle className="warning-icon" />
+          <p className="warning-text">No hay socios cargados para completar información.</p>
+        </div>
       ) : (
         socios.map((socio, index) => {
           const socioId = `socio-${index}`;
+          const isEditing = editModes[socioId]; // Verifica si este socio está en modo edición
+          
           return (
             <div className="accordion-item" key={index}>
-              <div className="accordion-header" onClick={() => toggleDoc(socioId)}>
+              <div 
+  className="accordion-header" 
+  onClick={() => {
+    // Al tocar la barra normal, nos aseguramos de apagar el modo edición
+    setEditModes((prev) => ({ ...prev, [socioId]: false }));
+    toggleDoc(socioId);
+  }}
+>
                 <div className="accordion-header-left">
-                  <span className="status-icon status-alert">
-                    <FiAlertCircle />
-                  </span>
+                  <span className="status-icon status-alert"><FiAlertCircle /></span>
                   <div className="accordion-title-group">
-                    <span>{socio.nombre}</span>
-                    <span className="accordion-subtitle">CUIT {socio.cuit}</span>
+                    <span style={{ fontSize: '1.1rem' }}>CUIT {socio.cuit}</span>
                   </div>
                 </div>
-
-                <div className="accordion-action-group">
+                
+                <div className="accordion-action-group" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                   <button
                     type="button"
-                    className="action-icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log("Editar socio");
-                    }}
+                    className="btn-icon-ghost"
+                    style={{ color: 'var(--yellow)' }}
+                    onClick={(e) => handleEditSocio(e, socioId)}
+                    title="Editar datos de contacto"
                   >
-                    <FiEdit />
+                    <FiEdit size={20} />
                   </button>
-                  <span className={`chevron-icon ${docExpandido === socioId ? "open" : ""}`}>
-                    ▼
-                  </span>
+                  <span className={`chevron-icon ${docExpandido === socioId ? "open" : ""}`}>▼</span>
                 </div>
               </div>
 
               {docExpandido === socioId && (
-                <div className="accordion-body accordion-body-column">
-                  <p className="socio-detail-text">
-                    Socio &nbsp;&nbsp;&nbsp;&nbsp; {socio.participacion}% participación
-                  </p>
-                  <p className="socio-detail-address">
-                    <FiHome /> Domicilio: -
-                  </p>
-                  <div className="dni-upload-grid">
-                    <div className="upload-box upload-box-sm">
-                      <span className="upload-icon">+</span>
-                      <span className="upload-text">Subir DNI Frente</span>
+                <div className="accordion-body accordion-body-column anim-fade-in">
+                  
+                  {isEditing ? (
+                    /* ======== MODO EDICIÓN: FORMULARIO DE DATOS ======== */
+                    <div className="anim-fade-in">
+                      <div className="verified-summary-card" style={{ padding: '15px', marginBottom: '20px', backgroundColor: 'rgba(255, 255, 255, 0.05)', border: '1px dashed #555' }}>
+                        <p className="summary-value-business" style={{ margin: 0, color: '#aaa' }}>
+                          Editando datos de: <strong style={{color: 'var(--white)'}}>{socio.nombre}</strong>
+                        </p>
+                      </div>
+
+                      {/* FILA 2: EMAIL Y CELULAR */}
+                      <div className="form-row">
+                        <div className="form-col form-group-spaced">
+                          <label className="form-label">Email *</label>
+                          <input type="email" className="form-input" {...register(`socios.${index}.email`)} />
+                        </div>
+                        <div className="form-col form-group-spaced">
+                          <label className="form-label">Celular *</label>
+                          <input type="text" className="form-input" {...register(`socios.${index}.celular`)} />
+                        </div>
+                      </div>
+
+                      {/* FILA 3: DIRECCIÓN */}
+                      <div className="form-group-spaced">
+                        <label className="form-label">Dirección *</label>
+                        <input type="text" className="form-input" {...register(`socios.${index}.direccion`)} />
+                      </div>
+
+                      {/* FILA 4: PROVINCIA Y LOCALIDAD */}
+                      <div className="form-row">
+                        <div className="form-col form-group-spaced">
+                          <label className="form-label">Provincia *</label>
+                          <input type="text" className="form-input" {...register(`socios.${index}.provincia`)} />
+                        </div>
+                        <div className="form-col form-group-spaced">
+                          <label className="form-label">Localidad *</label>
+                          <input type="text" className="form-input" {...register(`socios.${index}.localidad`)} />
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'right', marginTop: '1rem', borderTop: '1px dashed #333', paddingTop: '1rem' }}>
+                        <button type="button" className="btn-action" onClick={() => handleGuardarDatosSocio(socioId)}>
+                          GUARDAR DATOS
+                        </button>
+                      </div>
                     </div>
-                    <div className="upload-box upload-box-sm">
-                      <span className="upload-icon">+</span>
-                      <span className="upload-text">Subir DNI Dorso</span>
+                  ) : (
+                    /* ======== MODO VISTA: DOCUMENTACIÓN DNI ======== */
+                    <div className="anim-fade-in">
+                      <div className="verified-summary-card" style={{ padding: '15px', marginBottom: '20px' }}>
+                        <p className="summary-value-business" style={{ margin: 0 }}>
+                          Participación: <strong style={{color: 'var(--yellow)'}}>{socio.participacion}%</strong>
+                          <span style={{color: '#888', marginLeft: '10px', fontSize: '0.9rem'}}>| {socio.nombre}</span>
+                        </p>
+                      </div>
+                      
+                      <div className="dynamic-inputs-row" style={{ gap: '20px' }}>
+                        <div style={{ flex: 1 }}>
+                          <DropzoneCard label="DNI Frente" subtext="Imagen clara" accept=".jpg,.png,.pdf" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <DropzoneCard label="DNI Dorso" subtext="Imagen clara" accept=".jpg,.png,.pdf" />
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  
                 </div>
               )}
             </div>
@@ -207,121 +311,118 @@ export default function Paso5Documentacion({
         })
       )}
 
-      {/* BOTÓN VOLVER A SOCIOS */}
-      <div className="step-section">
-        <button
-          type="button"
-          onClick={onVolverASocios}
-          className="btn-outline btn-sm"
-        >
-          RETORNAR A LA PANTALLA DE CARGA DE SOCIOS
+      <div style={{ marginTop: '1rem', textAlign: 'right' }}>
+        <button type="button" onClick={onVolverASocios} className="btn-link action-secondary">
+          Editar lista general de socios
         </button>
       </div>
 
-      {/* SECCIÓN APODERADO */}
-      <h3 className="title-apoderado">
-        CARGAR UN NUEVO REPRESENTANTE LEGAL / APODERADO
-      </h3>
+      <hr className="section-divider" style={{ margin: '3rem 0' }} />
+
+{/* SECCIÓN APODERADO */}
+      <h3 className="step-subtitle white" style={{ marginBottom: '2rem' }}>Representante Legal / Apoderado</h3>
 
       {faseApoderado === "ingresar" && (
-        <div className="form-row-align">
-          <div className="bolsa-container" style={{ position: "relative" }}>
-            <label className="form-label muted">Cuit</label>
+        <div className="search-cuit-container form-group-spaced">
+          <div className="input-with-icon flex-1">
             <input
               type="text"
-              className="form-input input-width-md"
+              placeholder="Ingresar CUIT del apoderado"
+              className="form-input form-input-pl"
+              style={{ marginBottom: 0 }}
               {...register("apoCuit")}
             />
-            {errors.apoCuit && (
-              <span className="error-text-inline">{errors.apoCuit.message}</span>
-            )}
           </div>
-          <button
-            type="button"
-            onClick={validarCuitApoderado}
-            className="btn-validate step-section"
-          >
-            VALIDAR CUIT
+          <button type="button" onClick={validarCuitApoderado} className="btn-action" style={{ height: '42px' }}>
+            VALIDAR
           </button>
+          {errors.apoCuit && <span className="error-text-absolute">{errors.apoCuit.message}</span>}
         </div>
       )}
 
       {faseApoderado === "completar" && (
-        <div className="step-section">
-          <div className="form-row">
+        <div className="step-section anim-fade-in">
+          
+          {/* CUIT CON BOTÓN DE EDICIÓN Y NOMBRE */}
+          <div className="form-row" style={{ alignItems: 'flex-start' }}>
             <div className="form-col">
-              <label className="form-label muted">Cuit:</label>
-              <p className="readonly-text">{apoCuitIngresado} ✓</p>
+              <label className="form-label muted">Cuit</label>
+              <div className="input-with-icon" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                 <input
+                  type="text"
+                  className="form-input"
+                  style={{ marginBottom: 0, backgroundColor: 'rgba(255,255,255,0.02)', color: '#aaa', borderColor: '#444' }}
+                  value={apoCuitIngresado}
+                  readOnly // Lo hacemos de solo lectura porque ya está validado
+                />
+                <button 
+                  type="button" 
+                  className="btn-icon-ghost" 
+                  onClick={() => setFaseApoderado("ingresar")}
+                  title="Cambiar CUIT"
+                >
+                  <FiEdit size={18} />
+                </button>
+              </div>
             </div>
             <div className="form-col">
-              <label className="form-label muted">Nombre:</label>
-              <p className="readonly-text">{apoNombre}</p>
+              <label className="form-label muted">Nombre y Apellido</label>
+              <input
+                type="text"
+                className="form-input"
+                style={{ marginBottom: 0, backgroundColor: 'rgba(255,255,255,0.02)', color: '#aaa', borderColor: '#444' }}
+                value={apoNombre}
+                readOnly
+              />
             </div>
           </div>
 
-          <div className="radio-group bolsa-container">
-            <label className="radio-label">
-              <input
-                type="radio"
-                name="rol"
-                value="Apoderado"
-                checked={apoRol === "Apoderado"}
-                onChange={(e) => setApoRol(e.target.value)}
-                className="radio-input"
+          {/* RADIO BUTTONS ALINEADOS */}
+          <div className="radio-group form-group-spaced" style={{ display: 'flex', gap: '30px', marginTop: '1.5rem', marginBottom: '1.5rem' }}>
+            <label className="radio-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: 'var(--white)' }}>
+              <input 
+                type="radio" 
+                name="rol" 
+                value="Apoderado" 
+                checked={apoRol === "Apoderado"} 
+                onChange={(e) => setApoRol(e.target.value)} 
+                className="radio-input" 
+                style={{ accentColor: 'var(--yellow)', width: '18px', height: '18px' }} // Estilo moderno para el radio
               />
               Apoderado
             </label>
-            <label className="radio-label">
-              <input
-                type="radio"
-                name="rol"
-                value="Representante Legal"
-                checked={apoRol === "Representante Legal"}
-                onChange={(e) => setApoRol(e.target.value)}
-                className="radio-input"
+            <label className="radio-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: 'var(--white)' }}>
+              <input 
+                type="radio" 
+                name="rol" 
+                value="Representante Legal" 
+                checked={apoRol === "Representante Legal"} 
+                onChange={(e) => setApoRol(e.target.value)} 
+                className="radio-input" 
+                style={{ accentColor: 'var(--yellow)', width: '18px', height: '18px' }}
               />
               Representante Legal
             </label>
           </div>
 
           <div className="form-row step-section">
-            <div className="form-col" style={{ position: "relative" }}>
-              <label className="form-label muted">Email *</label>
-              <input
-                type="email"
-                className="form-input"
-                {...register("apoEmail")}
-              />
-              {errors.apoEmail && (
-                <span className="error-text-inline">{errors.apoEmail.message}</span>
-              )}
+            <div className="form-col form-group-spaced">
+              <label className="form-label">Email *</label>
+              <input type="email" className="form-input" {...register("apoEmail")} />
+              {errors.apoEmail && <span className="error-text-absolute">{errors.apoEmail.message}</span>}
             </div>
-            <div className="form-col" style={{ position: "relative" }}>
-              <label className="form-label muted">Celular *</label>
-              <input
-                type="text"
-                className="form-input"
-                {...register("apoCelular")}
-              />
-              {errors.apoCelular && (
-                <span className="error-text-inline">{errors.apoCelular.message}</span>
-              )}
+            <div className="form-col form-group-spaced">
+              <label className="form-label">Celular *</label>
+              <input type="text" className="form-input" {...register("apoCelular")} />
+              {errors.apoCelular && <span className="error-text-absolute">{errors.apoCelular.message}</span>}
             </div>
           </div>
 
           <div className="form-actions-flex">
-            <button
-              type="button"
-              onClick={() => setFaseApoderado("ingresar")}
-              className="btn-cancel"
-            >
+            <button type="button" onClick={() => setFaseApoderado("ingresar")} className="btn-outline action-secondary" style={{ border: 'none' }}>
               CANCELAR
             </button>
-            <button
-              type="button"
-              onClick={guardarApoderado}
-              className="btn-action btn-rounded"
-            >
+            <button type="button" onClick={guardarApoderado} className="btn-action btn-rounded">
               GUARDAR
             </button>
           </div>
@@ -329,47 +430,42 @@ export default function Paso5Documentacion({
       )}
 
       {faseApoderado === "guardado" && (
-        <div className="summary-row form-row-align">
-          <span className="status-icon status-check readonly-text-highlight">
-            ✓
-          </span>
-          <div>
-            <p className="readonly-text socio-detail-text">
-              {apoNombre} - {apoRol}
-            </p>
-            <span className="summary-label step-section">
-              CUIT {apoCuitIngresado}
-            </span>
+        <div className="verified-summary-card anim-fade-in">
+          <div className="summary-info-group">
+            <div className="summary-status">
+              <FiCheckCircle className="status-icon-check" />
+              <span className="summary-label-modern">IDENTIDAD VALIDADA</span>
+            </div>
+            <p className="summary-value-highlight" style={{ fontSize: '1.2rem' }}>{apoNombre} - {apoRol}</p>
+            <p className="summary-value-business">CUIT: {apoCuitIngresado}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setFaseApoderado("completar")}
-            className="btn-link"
-            style={{ marginLeft: "auto" }}
-          >
-            Editar
+          <button type="button" onClick={() => setFaseApoderado("completar")} className="btn-edit-ghost">
+            <FiEdit size={14} /> Editar
           </button>
         </div>
       )}
 
       {/* MAIL DE FACTURACIÓN */}
-      <div className="section-divider step-section-lg" style={{ position: "relative" }}>
-        <h3 className="step-subtitle highlight small">
+      <hr className="section-divider" style={{ margin: '3rem 0' }} />
+      <div className="step-section-lg" style={{ position: "relative" }}>
+        <h3 className="step-subtitle white small" style={{ marginBottom: '1.5rem' }}>
           INDICANOS EL MAIL DONDE QUERES QUE TE LLEGUE LA FACTURA:
         </h3>
-        <input
-          type="email"
-          className="form-input input-width-md step-section"
-          {...register("emailFacturacion")}
-        />
-        {errors.emailFacturacion && (
-          <span className="error-text-inline" style={{ bottom: "-25px" }}>
-            {errors.emailFacturacion.message}
-          </span>
-        )}
+        <div className="form-group-spaced input-width-md">
+          <input
+            type="email"
+            placeholder="Ej: facturacion@empresa.com"
+            className="form-input"
+            style={{ marginBottom: 0 }}
+            {...register("emailFacturacion")}
+          />
+          {errors.emailFacturacion && (
+            <span className="error-text-absolute">{errors.emailFacturacion.message}</span>
+          )}
+        </div>
       </div>
 
-      <div className="form-actions-right">
+      <div className="form-actions-right" style={{ marginTop: '2rem' }}>
         <button type="button" onClick={avanzarPaso6} className="btn-action">
           CONTINUAR
         </button>
