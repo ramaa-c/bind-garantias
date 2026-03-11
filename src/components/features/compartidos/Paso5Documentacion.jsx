@@ -144,7 +144,7 @@ export default function Paso5Documentacion({
         )}
       </div>
 
-      {/* SECCIÓN SOCIOS */}
+      {/* SOCIOS */}
       <h3 className="section-title-doc step-section-lg">SOCIOS</h3>
 
       {socios.length === 0 ? (
@@ -218,7 +218,7 @@ export default function Paso5Documentacion({
         </button>
       </div>
 
-      {/* SECCIÓN APODERADO CON ZOD */}
+      {/* SECCIÓN APODERADO */}
       <h3 className="title-apoderado">
         CARGAR UN NUEVO REPRESENTANTE LEGAL / APODERADO
       </h3>
@@ -352,7 +352,7 @@ export default function Paso5Documentacion({
         </div>
       )}
 
-      {/* MAIL DE FACTURACIÓN CON ZOD */}
+      {/* MAIL DE FACTURACIÓN */}
       <div className="section-divider step-section-lg" style={{ position: "relative" }}>
         <h3 className="step-subtitle highlight small">
           INDICANOS EL MAIL DONDE QUERES QUE TE LLEGUE LA FACTURA:
