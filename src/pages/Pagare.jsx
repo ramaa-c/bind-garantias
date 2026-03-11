@@ -49,28 +49,38 @@ export default function PagareUSD() {
           className={`pagare-contenedor-principal ${pasoActual === 4 ? "is-success" : ""}`}
         >
           <div className="columna-formulario">
-            {pasoActual > 1 && pasoActual < 4 && (
+            {/*HEADER SUPERIOR*/}
+            <div className="form-top-navigation">
+              
               <div className="back-button-container">
-                <button
-                  type="button"
-                  onClick={() => setPasoActual(pasoActual - 1)}
-                  className="btn-back"
-                >
-                  <FaAngleLeft size={16} /> Volver al paso anterior
-                </button>
+                {pasoActual > 1 && pasoActual < 4 ? (
+                  <button
+                    type="button"
+                    onClick={() => setPasoActual(pasoActual - 1)}
+                    className="btn-back"
+                  >
+                    <FaAngleLeft size={16} /> Volver al paso anterior
+                  </button>
+                ) : pasoActual === 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/inicio")}
+                    className="btn-back"
+                  >
+                    <FaAngleLeft size={16} /> Volver a la lista
+                  </button>
+                ) : (
+                  <div></div> /* Div vacío para mantener el flexbox alineado en el paso 4 */
+                )}
               </div>
-            )}
-            {pasoActual === 1 && (
-              <div className="back-button-container">
-                <button
-                  type="button"
-                  onClick={() => navigate("/inicio")}
-                  className="btn-back"
-                >
-                  <FaAngleLeft size={16} /> Volver a la lista
-                </button>
-              </div>
-            )}
+
+              {/* EL BADGE DE PRODUCTO */}
+              {pasoActual < 4 && (
+                <div className="product-badge-modern">
+                  Pagaré Bursátil USD
+                </div>
+              )}
+            </div>
 
             <div className="pagare-seccion-formulario">
               {/* TÍTULOS */}
@@ -87,17 +97,12 @@ export default function PagareUSD() {
               {/* PROGRESO */}
               {pasoActual < 4 && (
                 <div className="progress-container">
-                  <p className="progress-text">Avance de solicitud</p>
+                  <p className="progress-text">Avance de solicitud: Paso {pasoActual} de 3</p>
                   <div className="progress-track">
                     <div
                       className="progress-fill"
                       style={{
-                        width:
-                          pasoActual === 1
-                            ? "33%"
-                            : pasoActual === 2
-                              ? "66%"
-                              : "100%",
+                        width: `${(pasoActual / 3) * 100}%`
                       }}
                     ></div>
                   </div>
@@ -110,27 +115,30 @@ export default function PagareUSD() {
                   className="pagare-form-content"
                   onSubmit={handleSubmit(onSubmitFinal)}
                 >
-                  {pasoActual === 1 && (
-                    <Paso1SimuladorPagare
-                      simulacionLista={simulacionLista}
-                      setSimulacionLista={setSimulacionLista}
-                      montoWatch={montoWatch}
-                      handleCalcularSimulacion={handleCalcularSimulacion}
-                      setPasoActual={setPasoActual}
-                    />
-                  )}
+                  {/* ANIMACIÓN:*/}
+                  <div key={pasoActual} className="animacion-paso">
+                    {pasoActual === 1 && (
+                      <Paso1SimuladorPagare
+                        simulacionLista={simulacionLista}
+                        setSimulacionLista={setSimulacionLista}
+                        montoWatch={montoWatch}
+                        handleCalcularSimulacion={handleCalcularSimulacion}
+                        setPasoActual={setPasoActual}
+                      />
+                    )}
 
-                  {pasoActual === 2 && (
-                    <Paso2AgentePagare avanzarPaso={avanzarPaso} />
-                  )}
+                    {pasoActual === 2 && (
+                      <Paso2AgentePagare avanzarPaso={avanzarPaso} />
+                    )}
 
-                  {pasoActual === 3 && <Paso3Epyme />}
+                    {pasoActual === 3 && <Paso3Epyme />}
 
-                  {pasoActual === 4 && (
-                    <Paso4ExitoPagare
-                      onVolverLista={() => navigate("/solicitudes")}
-                    />
-                  )}
+                    {pasoActual === 4 && (
+                      <Paso4ExitoPagare
+                        onVolverLista={() => navigate("/solicitudes")}
+                      />
+                    )}
+                  </div>
                 </form>
               </FormProvider>
             </div>
