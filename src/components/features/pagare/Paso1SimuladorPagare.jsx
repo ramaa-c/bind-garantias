@@ -6,19 +6,31 @@ export default function Paso1SimuladorPagare({ simulacionLista, setSimulacionLis
 
   return (
     <div className="pagare-paso-animado">
-      <div className="form-row">
-        <div className="form-col">
-          <label className="form-label muted">Moneda *</label>
-          <input type="text" value="Dólar" disabled className="form-input" />
+      
+      {/* EL INPUT GIGANTE DE DINERO */}
+      <div className="money-input-wrapper">
+        <label className="money-input-label">Monto del Pagaré</label>
+        <div className="money-input-container">
+          <span className="money-currency">U$D</span>
+          <input 
+            type="number" 
+            placeholder="0" 
+            className="input-money-huge" 
+            {...register("monto")} 
+            disabled={simulacionLista} 
+          />
+        </div>
+        {errors.monto && <span className="error-text-centered">{errors.monto.message}</span>}
+      </div>
+
+      {/* LOS DATOS SECUNDARIOS ABAJO */}
+      <div className="form-row" style={{ marginTop: '2rem', justifyContent: 'center' }}>
+        <div className="form-col" style={{ maxWidth: '200px' }}>
+          <label className="form-label muted">Moneda</label>
+          <input type="text" value="Dólar" disabled className="form-input text-center" />
         </div>
 
-        <div className="form-col" style={{ position: "relative" }}>
-          <label className="form-label">Monto del Pagaré *</label>
-          <input type="number" placeholder="Ej: 40000" className="form-input" {...register("monto")} disabled={simulacionLista} />
-          {errors.monto && <span className="error-text-inline">{errors.monto.message}</span>}
-        </div>
-
-        <div className="form-col" style={{ position: "relative" }}>
+        <div className="form-col" style={{ maxWidth: '200px', position: "relative" }}>
           <label className="form-label">Fecha de pago *</label>
           <input type="date" className="form-input" {...register("fechaPago")} disabled={simulacionLista} />
           {errors.fechaPago && <span className="error-text-inline">{errors.fechaPago.message}</span>}
@@ -26,14 +38,16 @@ export default function Paso1SimuladorPagare({ simulacionLista, setSimulacionLis
       </div>
 
       {!simulacionLista ? (
-        <div className="pagare-actions-right">
-          <button type="button" onClick={handleCalcularSimulacion} className="btn-action">CALCULAR</button>
+        <div className="pagare-actions-center">
+          <button type="button" onClick={handleCalcularSimulacion} className="btn-action btn-lg-modern">
+            SIMULAR COSTOS
+          </button>
         </div>
       ) : (
         <div className="pagare-breakdown-container">
           <div className="pagare-breakdown-header">
             <span>Neto estimado a recibir:</span>
-            <span className="text-yellow">USD {montoWatch * 0.96}</span>
+            <span className="text-yellow text-xl">USD {montoWatch * 0.96}</span>
           </div>
           <div className="pagare-breakdown-body">
             <div className="pagare-breakdown-row"><span>Comisión SGR</span><span>USD 811</span></div>
@@ -50,7 +64,7 @@ export default function Paso1SimuladorPagare({ simulacionLista, setSimulacionLis
           </div>
           <div className="pagare-actions-flex">
             <button type="button" onClick={() => setSimulacionLista(false)} className="btn-outline">RECALCULAR</button>
-            <button type="button" onClick={() => setPasoActual(2)} className="btn-action">CONTINUAR CON ESTA SIMULACIÓN</button>
+            <button type="button" onClick={() => setPasoActual(2)} className="btn-action">CONTINUAR</button>
           </div>
         </div>
       )}
