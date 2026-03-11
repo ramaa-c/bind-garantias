@@ -7,7 +7,6 @@ export default function Paso1SimuladorPagare({ simulacionLista, setSimulacionLis
   return (
     <div className="pagare-paso-animado">
       
-      {/* EL INPUT GIGANTE DE DINERO */}
       <div className="money-input-wrapper">
         <label className="money-input-label">Monto del Pagaré</label>
         <div className="money-input-container">
@@ -23,7 +22,6 @@ export default function Paso1SimuladorPagare({ simulacionLista, setSimulacionLis
         {errors.monto && <span className="error-text-centered">{errors.monto.message}</span>}
       </div>
 
-      {/* LOS DATOS SECUNDARIOS ABAJO */}
       <div className="form-row" style={{ marginTop: '2rem', justifyContent: 'center' }}>
         <div className="form-col" style={{ maxWidth: '200px' }}>
           <label className="form-label muted">Moneda</label>

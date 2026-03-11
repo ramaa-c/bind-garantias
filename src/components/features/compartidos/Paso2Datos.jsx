@@ -14,7 +14,6 @@ export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
   return (
     <div className="paso-2-animado">
       
-      {/* TARJETA DE RESUMEN VERIFICADO */}
       <div className="verified-summary-card">
         <div className="summary-info-group">
           <div className="summary-status">
@@ -33,7 +32,6 @@ export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
         Verificá y actualizá la información en caso de ser necesario
       </h3>
 
-      {/* INPUTS CON ESPACIO PARA ERRORES (Anti-Layout Shift) */}
       <div className="form-group-spaced">
         <label className="form-label">Dirección *</label>
         <input type="text" className="form-input" {...register("direccion")} />
@@ -59,7 +57,6 @@ export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
         </div>
       </div>
 
-      {/* ZONA DE VERIFICACIÓN DE CELULAR */}
       <div className="phone-verification-zone">
         <div className="phone-input-wrapper form-group-spaced">
           <label className="form-label">Celular *</label>

@@ -46,7 +46,6 @@ export default function PagareUSD() {
     <div className="pagare-page">
       <div className="pagare-main-container">
         
-        {/* ELIMINAMOS TODOS LOS CONDICIONALES ACÁ. ES UN DIV PLANO. */}
         <div className="pagare-contenedor-principal">
           
           <div className="columna-formulario">
@@ -73,7 +72,6 @@ export default function PagareUSD() {
               </div>
             )}
 
-            {/* SE MANTIENE EL MISMO COLOR Y BORDE EN TODOS LOS PASOS */}
             <div className="pagare-seccion-formulario">
               
               {pasoActual < 4 && (
@@ -130,7 +128,6 @@ export default function PagareUSD() {
             </div>
           </div>
 
-          {/* LADO DERECHO: PANEL DUDAS (Sin restricciones) */}
           <PanelDudasPagare pasoActual={pasoActual} />
           
         </div>

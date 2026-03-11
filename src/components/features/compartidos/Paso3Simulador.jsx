@@ -15,7 +15,6 @@ export default function Paso3Simulador({ mostrarResultados, onCalcular, onContin
   return (
     <div className="paso-3-animado">
       
-      {/* GRILLA SUPERIOR (Parámetros) */}
       <div className="simulador-params-grid" style={{ marginBottom: '3rem' }}>
         <div className="form-group-spaced" style={{ marginBottom: 0 }}>
           <label className="form-label muted">Moneda *</label>
@@ -40,10 +39,8 @@ export default function Paso3Simulador({ mostrarResultados, onCalcular, onContin
         </div>
       </div>
 
-      {/* ÁREA DINÁMICA: Monto y Fecha (Sin la línea divisoria) */}
       <div className="dynamic-inputs-row">
         
-        {/* INPUT DE DINERO GIGANTE */}
         <div className="money-input-wrapper" style={{ margin: 0, flex: 1 }}>
           <label className="money-input-label">
             {esPorMontoCheque ? "Monto de cheque *" : "Monto a financiar *"}
@@ -118,7 +115,6 @@ export default function Paso3Simulador({ mostrarResultados, onCalcular, onContin
             </div>
           </div>
 
-          {/* CAJA RESUMEN VERDE */}
           <div className="results-summary-box">
             <div className="summary-box-row">
               <span>{esPorMontoCheque ? "Vto del cheque" : "Plazo estimado"}</span>

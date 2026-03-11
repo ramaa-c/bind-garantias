@@ -5,7 +5,6 @@ export default function Paso7Exito({ onVolverInicio }) {
   return (
     <div className="paso-7-animado anim-fade-in">
       
-      {/* 1. HERO BANNER DE ÉXITO */}
       <div className="success-hero-modern">
         <div className="success-hero-glow"></div>
         <div className="success-hero-content">
@@ -21,10 +20,8 @@ export default function Paso7Exito({ onVolverInicio }) {
         Te contamos los pasos a seguir:
       </h3>
 
-      {/* 2. TARJETAS DE PRÓXIMOS PASOS */}
       <div className="next-steps-container">
         
-        {/* Paso 1 */}
         <div className="step-card-modern">
           <div className="step-card-number">1</div>
           <div className="step-card-content">
@@ -34,7 +31,6 @@ export default function Paso7Exito({ onVolverInicio }) {
               <span style={{ color: '#aaa', fontSize: '0.9rem' }}>¡Es firma simple, no hace falta certificar!</span>
             </p>
             
-            {/* Caja de descarga interactiva */}
             <div className="download-box-modern">
               <div className="download-info">
                 <FiFileText className="download-icon" />
@@ -47,7 +43,6 @@ export default function Paso7Exito({ onVolverInicio }) {
           </div>
         </div>
 
-        {/* Paso 2 */}
         <div className="step-card-modern">
           <div className="step-card-number">2</div>
           <div className="step-card-content">
@@ -69,7 +64,6 @@ export default function Paso7Exito({ onVolverInicio }) {
 
       <hr className="section-divider" style={{ margin: "3rem 0 2rem 0" }} />
 
-      {/* 3. BOTÓN VOLVER */}
       <div className="form-actions-left">
         <button 
           type="button" 

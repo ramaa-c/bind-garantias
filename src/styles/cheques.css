@@ -7,58 +7,6 @@
   font-family: 'IBM Plex Sans', sans-serif;
 }
 
-/* --- BANNER --- */
-.cheques-banner {
-  width: 100%;
-  height: 200px;
-  background-color: var(--graphite);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--yellow);
-  overflow: hidden;
-}
-
-.cheques-banner h2 {
-  color: #555;
-  font-weight: normal;
-}
-
-.banner-content-approved {
-  width: 100%;
-  padding: 0 40px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  z-index: 1;
-}
-
-.banner-title {
-  color: var(--yellow);
-  font-size: 32px;
-  margin: 0;
-  font-weight: bold;
-}
-
-.banner-subtitle {
-  color: var(--white);
-  font-size: 16px;
-  margin: 10px 0 0 0;
-  padding-bottom: 5px;
-  border-bottom: 3px solid var(--yellow);
-  display: inline-block;
-}
-
-.banner-title-xl {
-  font-size: 42px;
-}
-
-.banner-subtitle-highlight {
-  border: none;
-  color: var(--yellow);
-  font-weight: bold;
-}
-
 /* --- CONTENEDOR DE FORMULARIO --- */
 .form-main-container {
   display: flex;
@@ -452,17 +400,6 @@
   background-color: rgba(244, 245, 0, 0.1);
 }
 
-.btn-lg {
-  width: 100%;
-  padding: 15px 20px;
-  font-size: 16px;
-}
-
-.btn-sm {
-  font-size: 12px;
-  padding: 8px 15px;
-}
-
 .btn-link {
   background: none;
   border: none;
@@ -508,69 +445,6 @@
   margin-top: 50px;
 }
 
-.btn-large-action {
-  width: 100%;
-  background-color: var(--yellow);
-  color: var(--carbon-black);
-  border: none;
-  padding: 15px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  font-weight: bold;
-  margin-bottom: 10px;
-  transition: filter 0.2s, transform 0.2s;
-}
-
-.btn-large-action:hover {
-  filter: brightness(0.95);
-  transform: translateY(-2px);
-}
-
-.btn-large-outline {
-  width: 100%;
-  background-color: transparent;
-  color: var(--white);
-  border: 1px solid #555;
-  padding: 15px 20px;
-  font-size: 16px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
-  margin-top: 10px;
-}
-
-.btn-large-outline:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-
-
-/* --- SECCIONES DE RESUMEN (Textos de solo lectura) --- */
-.summary-row {
-  display: flex;
-  gap: 40px;
-  margin-bottom: 30px;
-  opacity: 0.7;
-}
-
-.summary-label {
-  font-size: 12px;
-  color: var(--white);
-  display: block;
-  margin-bottom: 4px;
-}
-
-.summary-value {
-  color: var(--white);
-  margin: 0;
-}
-
-.summary-value-highlight {
-  color: var(--yellow);
-  font-weight: bold;
-  margin: 0;
-}
-
 .readonly-text {
   color: var(--white);
   font-size: 18px;
@@ -582,28 +456,13 @@
   color: var(--yellow);
 }
 
-/* --- SECCIÓN SIMULADOR (Paso 3) --- */
-.warning-box {
-  background-color: rgba(244, 245, 0, 0.05);
-  border-left: 4px solid var(--yellow);
-  padding: 20px;
-  margin-bottom: 30px;
-}
+/* --- SECCIÓN SIMULADOR --- */
 
 .warning-text {
   color: var(--white);
   font-size: 14px;
   line-height: 1.5;
   margin: 0;
-}
-
-.results-container {
-  margin-top: 40px;
-  border: 1px solid #333;
-  border-radius: 8px;
-  padding: 30px;
-  background-color: rgba(255, 255, 255, 0.02);
-  animation: fadeInDown 0.5s ease forwards;
 }
 
 @keyframes fadeInDown {
@@ -616,98 +475,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.results-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #333;
-  padding-bottom: 15px;
-}
-
-.results-title {
-  color: var(--white);
-  font-size: 18px;
-  font-weight: normal;
-  margin: 0;
-}
-
-.results-amount {
-  color: var(--yellow);
-  font-size: 24px;
-  font-weight: bold;
-  margin: 0;
-}
-
-.info-box {
-  background-color: rgba(255, 255, 255, 0.03);
-  padding: 20px;
-  border-radius: 6px;
-  margin-bottom: 30px;
-}
-
-.info-box p {
-  color: var(--white);
-  font-size: 13px;
-  line-height: 1.6;
-  margin: 0 0 10px 0;
-  opacity: 0.8;
-}
-
-.info-box p:last-child {
-  margin-bottom: 0;
-}
-
-.info-box strong {
-  display: block;
-  margin: 15px 0 5px 0;
-  color: var(--white);
-  opacity: 1;
-}
-
-/* --- LISTA DE SOCIOS --- */
-.socio-list-container {
-  margin-top: 30px;
-}
-
-.socio-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #333;
-  padding: 20px 0;
-}
-
-.socio-info-main {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.socio-name {
-  color: var(--white);
-  font-size: 16px;
-  margin: 0 0 4px 0;
-  font-weight: normal;
-}
-
-.socio-cuit {
-  color: var(--white);
-  opacity: 0.6;
-  font-size: 12px;
-  margin: 0;
-}
-
-.socio-participacion {
-  color: var(--white);
-  font-size: 14px;
-}
-
-.socio-actions {
-  display: flex;
-  gap: 15px;
 }
 
 .action-icon {
@@ -810,22 +577,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.upload-box {
-  width: 220px;
-  height: 220px;
-  border: 2px dashed #555;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  background-color: rgba(255, 255, 255, 0.02);
-  text-align: center;
-  padding: 20px;
 }
 
 .upload-box:hover {
@@ -958,30 +709,6 @@
   margin-bottom: 20px;
 }
 
-/* --- PANTALLA ÉXITO --- */
-.success-container {
-  background-color: rgba(255, 255, 255, 0.03);
-  padding: 40px;
-  border-radius: 8px;
-  margin-top: 20px;
-  border-left: 4px solid var(--yellow);
-}
-
-.success-text {
-  color: var(--white);
-  font-size: 15px;
-  line-height: 1.6;
-  opacity: 0.9;
-}
-
-.info-footer-text {
-  color: #ff5252;
-  text-align: center;
-  font-size: 14px;
-  font-weight: bold;
-  margin-top: 15px;
-}
-
 .celular-row {
   display: flex;
   gap: 20px;
@@ -1108,7 +835,7 @@
   margin-top: 30px;
 }
 
-/* --- INPUT DE DINERO GIGANTE (Compartido) --- */
+/* --- INPUT DE DINERO GIGANTE --- */
 .money-input-wrapper {
   text-align: center;
   margin: 1rem 0 3rem 0;
@@ -1150,13 +877,16 @@
   padding: 0;
 }
 
-/* Ocultar flechas del input number */
 .input-money-huge::-webkit-outer-spin-button,
 .input-money-huge::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-.input-money-huge[type=number] { -moz-appearance: textfield; }
+
+.input-money-huge[type=number] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
 
 /* --- GRILLA DE PARÁMETROS --- */
 .simulador-params-grid {
@@ -1466,7 +1196,7 @@
   font-size: 0.8rem;
 }
 
-/* --- HERO BANNER DE ÉXITO --- */
+/* --- BANNER DE ÉXITO --- */
 .success-hero-modern {
   position: relative;
   background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(0, 0, 0, 0.4));
@@ -1518,7 +1248,6 @@
   font-weight: 700;
 }
 
-/* --- TARJETAS DE PRÓXIMOS PASOS --- */
 .next-steps-container {
   display: flex;
   flex-direction: column;
