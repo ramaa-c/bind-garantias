@@ -6,7 +6,7 @@ import { chequesSchema } from "../schemas/chequesSchema";
 import "../styles/cheques.css";
 import { FaAngleLeft } from "react-icons/fa";
 import { Paso1Cuit, Paso2Datos, Paso3Simulador, Paso4Socios, Paso5Documentacion, Paso6Bolsa, Paso7Exito, PanelDudas } from "../components/features";
-import { ModalSms } from "../components/ui";
+import { ModalSms, BarraProgreso } from "../components/ui"; 
 
 export default function Cheques() {
   const navigate = useNavigate();
@@ -26,10 +26,18 @@ export default function Cheques() {
   const [apoNombre, setApoNombre] = useState("");
   const [apoRol, setApoRol] = useState("Representante Legal");
 
-  const metodosFormulario = useForm({
+const metodosFormulario = useForm({
     resolver: zodResolver(chequesSchema),
     mode: "onChange",
-    defaultValues: { moneda: "Pesos", sociedadBolsa: "" },
+    defaultValues: { 
+      moneda: "Pesos", 
+      sociedadBolsa: "",
+      cuit: "",
+      direccion: "",
+      provincia: "",
+      localidad: "",
+      celular: ""
+    },
   });
 
   const { handleSubmit, trigger, watch, setValue } = metodosFormulario;
@@ -180,20 +188,23 @@ export default function Cheques() {
                 </h1>
               )}
 
-              {/* BARRA DE PROGRESO */}
+              {/* --- BARRA DE PROGRESO --- */}
               {pasoActual < 7 && (
-                <div className="progress-container">
-                  <p className="progress-text">Avance de solicitud: Paso {pasoActual} de 6</p>
-                  <div className="progress-track">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${(pasoActual / 6) * 100}%`
-                      }}
-                    ></div>
-                  </div>
-                </div>
+                (() => {
+                  
+                  let hitoVisual = 1;
+                  if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2; 
+                  if (pasoActual === 6) hitoVisual = 3; 
+
+                  return (
+                    <BarraProgreso 
+                      hitos={["Datos Básicos", "Documentación", "Confirmación"]}
+                      hitoActual={hitoVisual}
+                    />
+                  );
+                })()
               )}
+              {/* --- FIN BARRA NUEVA --- */}
 
               {/* FORMULARIO */}
               <FormProvider {...metodosFormulario}>

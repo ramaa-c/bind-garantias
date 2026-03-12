@@ -1,7 +1,7 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
 import { FiCheckCircle, FiEdit2 } from "react-icons/fi";
-import { Input, Button } from "../../../ui";
+import { InputFlotante, Button } from "../../../ui";
 import styles from "./Paso2Datos.module.css";
 
 export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
@@ -13,10 +13,19 @@ export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
 
   const cuitIngresado = watch("cuit", "");
 
+  const dirValue = watch("direccion") || "";
+  const provValue = watch("provincia") || "";
+  const locValue = watch("localidad") || "";
+  const celValue = watch("celular") || "";
+
+ const isDirValid = dirValue.trim().length >= 3 && !errors.direccion;
+  const isProvValid = provValue.trim().length >= 3 && !errors.provincia;
+  const isLocValid = locValue.trim().length >= 3 && !errors.localidad;
+  const isCelValid = celValue.trim().length === 10 && !errors.celular;
+
   return (
     <div className={styles.container}>
       
-      {/* Tarjeta de Resumen */}
       <div className={styles.summaryCard}>
         <div className={styles.summaryInfo}>
           <div className={styles.summaryStatus}>
@@ -41,56 +50,59 @@ export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
         Verificá y actualizá la información en caso de ser necesario
       </h3>
 
-      {/* Fila 1: Dirección */}
-      <div className={styles.formGroup}>
-        <Input 
-          label="Dirección *"
+      {/* Margen a 70px según tu ajuste visual */}
+      <div className={styles.formGroup} style={{ marginTop: "70px" }}>
+        <InputFlotante 
+          label="Dirección"
+          esValido={isDirValid}
           error={errors.direccion?.message}
           {...register("direccion")} 
         />
       </div>
 
-      {/* Fila 2: Provincia y Localidad */}
-      <div className={styles.formRow}>
+      <div className={styles.formRow} style={{ marginTop: "70px" }}>
         <div className={styles.formCol}>
-          <Input 
-            label="Provincia *"
+          <InputFlotante 
+            label="Provincia"
+            esValido={isProvValid}
             error={errors.provincia?.message}
             {...register("provincia")} 
           />
         </div>
         <div className={styles.formCol}>
-          <Input 
-            label="Localidad *"
+          <InputFlotante 
+            label="Localidad"
+            esValido={isLocValid}
             error={errors.localidad?.message}
             {...register("localidad")} 
           />
         </div>
       </div>
 
-      {/* Zona Celular y Verificación */}
-      <div className={styles.phoneZone}>
+      <div className={styles.phoneZone} style={{ marginTop: "70px", alignItems: "flex-start" }}>
         <div className={styles.phoneInputWrapper}>
-          <Input 
-            label="Celular *"
-            placeholder="Sin 15 y cód. área sin 0"
+          <InputFlotante 
+            label="Celular (Sin 15 ni 0)"
+            maxLength={10}
+            esValido={isCelValid}
             error={errors.celular?.message}
             {...register("celular")} 
           />
         </div>
         
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onAbrirModalSms}
-          className={`${styles.btnVerify} ${errors.celular ? styles.btnVerifyError : ""}`}
-        >
-          VERIFICAR SMS
-        </Button>
+        <div style={{ marginTop: "4px" }}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onAbrirModalSms}
+            className={`${styles.btnVerify} ${errors.celular ? styles.btnVerifyError : ""}`}
+          >
+            VERIFICAR SMS
+          </Button>
+        </div>
       </div>
 
-      {/* Acción Principal */}
-      <div className={styles.actionsRight}>
+      <div className={styles.actionsRight} style={{ marginTop: "30px" }}>
         <Button type="button" variant="primary" onClick={onContinuar}>
           CONTINUAR
         </Button>

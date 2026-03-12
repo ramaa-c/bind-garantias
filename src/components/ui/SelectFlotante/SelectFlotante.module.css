@@ -1,0 +1,81 @@
+.group {
+  position: relative !important;
+  width: 100% !important;
+  margin-bottom: 2rem !important;
+  display: block !important; /* Para asegurar que no se colapse */
+}
+
+.select {
+  width: 100%;
+  padding: 0.5rem 0;
+  padding-right: 2.5rem;
+  font-size: 1rem;
+  color: var(--white, #fff);
+  background: transparent !important; /* Forzamos transparencia */
+  border: none;
+  border-bottom: 2px solid var(--white, #fff);
+  outline: none !important; 
+  box-shadow: none !important;
+  
+  transition: border-color 0.3s;
+  font-family: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  border-radius: 0; 
+}
+
+.select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-bottom-color: var(--yellow, #f4f500);
+}
+
+/* La flecha personalizada */
+.arrow {
+  position: absolute;
+  right: 0;
+  top: 0.5rem;
+  pointer-events: none;
+  color: #aaa;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+
+/* Girar la flecha y pintarla de amarillo al abrir */
+.select:focus ~ .arrow {
+  transform: rotate(180deg);
+  color: var(--yellow, #f4f500);
+}
+
+.label {
+  position: absolute;
+  top: 0.5rem;
+  left: 0;
+  font-size: 1rem;
+  color: #aaa;
+  pointer-events: none;
+  transition: 0.3s ease all;
+}
+
+/* EL TRUCO MAGICO: Sube el label si está en foco o si seleccionaste algo válido */
+.select:focus ~ .label,
+.select:valid ~ .label {
+  top: -1.2rem;
+  font-size: 0.8rem;
+  color: var(--yellow, #f4f500);
+}
+
+.error {
+  color: #ff5252;
+  font-size: 0.75rem;
+  position: absolute;
+  bottom: -1.4rem;
+  left: 0;
+}
+
+/* Estilo para las opciones desplegadas (depende del navegador, pero ayuda) */
+.select option {
+  background-color: #2a2a2a;
+  color: #fff;
+  padding: 10px;
+}

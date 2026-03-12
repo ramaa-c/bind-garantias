@@ -12,18 +12,20 @@
 
 .dynamicRow {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-end; 
   gap: 40px;
-  align-items: flex-end;
-  flex-wrap: wrap;
+  margin-top: 50px;
+  margin-bottom: 50px;
 }
 
 .moneyCol {
-  flex: 1;
+  flex: 1.5; 
 }
 
 .dateCol {
-  flex: 1;
-  max-width: 250px;
+  flex: 1; 
+  margin-bottom: 8px; 
 }
 
 .calcBtnWrapper {
