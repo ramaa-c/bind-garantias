@@ -1,5 +1,6 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
+import { FiCheckCircle, FiEdit2, FiSmartphone } from "react-icons/fi";
 
 export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
   const {
@@ -12,84 +13,77 @@ export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
 
   return (
     <div className="paso-2-animado">
-      <div className="summary-row">
-        <div>
-          <span className="summary-label">Cuit:</span>
+      
+      <div className="verified-summary-card">
+        <div className="summary-info-group">
+          <div className="summary-status">
+            <FiCheckCircle className="status-icon-check" />
+            <span className="summary-label-modern">CUIT Validado</span>
+          </div>
           <p className="summary-value-highlight">{cuitIngresado}</p>
+          <p className="summary-value-business">EMPRESA DE PRUEBA S.A.</p>
         </div>
-        <div>
-          <span className="summary-label">Razón social:</span>
-          <p className="summary-value">EMPRESA DE PRUEBA S.A.</p>
-        </div>
-        <button type="button" onClick={onVolver} className="btn-link">
-          Editar CUIT
+        <button type="button" onClick={onVolver} className="btn-edit-ghost">
+          <FiEdit2 size={14} /> Editar
         </button>
       </div>
 
-      <h3 className="step-subtitle">
+      <h3 className="step-subtitle white" style={{ marginTop: '2rem' }}>
         Verificá y actualizá la información en caso de ser necesario
       </h3>
 
-      <div style={{ position: "relative", marginBottom: "2rem" }}>
+      <div className="form-group-spaced">
         <label className="form-label">Dirección *</label>
         <input type="text" className="form-input" {...register("direccion")} />
         {errors.direccion && (
-          <span className="error-text-inline">{errors.direccion.message}</span>
+          <span className="error-text-absolute">{errors.direccion.message}</span>
         )}
       </div>
 
       <div className="form-row">
-        <div className="form-col" style={{ position: "relative" }}>
+        <div className="form-col form-group-spaced">
           <label className="form-label">Provincia *</label>
           <input type="text" className="form-input" {...register("provincia")} />
           {errors.provincia && (
-            <span className="error-text-inline">{errors.provincia.message}</span>
+            <span className="error-text-absolute">{errors.provincia.message}</span>
           )}
         </div>
-        <div className="form-col" style={{ position: "relative" }}>
+        <div className="form-col form-group-spaced">
           <label className="form-label">Localidad *</label>
           <input type="text" className="form-input" {...register("localidad")} />
           {errors.localidad && (
-            <span className="error-text-inline">{errors.localidad.message}</span>
+            <span className="error-text-absolute">{errors.localidad.message}</span>
           )}
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "20px",
-          alignItems: "flex-end",
-          borderTop: "1px solid #333",
-          paddingTop: "30px",
-          marginTop: "30px",
-        }}
-      >
-        <div className="input-width-md" style={{ position: "relative" }}>
+      <div className="phone-verification-zone">
+        <div className="phone-input-wrapper form-group-spaced">
           <label className="form-label">Celular *</label>
-          <input
-            type="text"
-            placeholder="Sin 15 y cód. área sin 0"
-            className="form-input"
-            style={{ marginBottom: 0 }}
-            {...register("celular")}
-          />
+          <div className="input-with-icon">
+            <FiSmartphone className="input-icon" />
+            <input
+              type="text"
+              placeholder="Sin 15 y cód. área sin 0"
+              className="form-input form-input-pl"
+              {...register("celular")}
+            />
+          </div>
           {errors.celular && (
-            <span className="error-text-inline" style={{ bottom: "-25px" }}>
-              {errors.celular.message}
-            </span>
+            <span className="error-text-absolute">{errors.celular.message}</span>
           )}
         </div>
+        
         <button
           type="button"
           onClick={onAbrirModalSms}
-          className="btn-action btn-outline"
+          className="btn-outline btn-verify"
         >
-          VERIFICAR CELULAR
+          VERIFICAR SMS
         </button>
       </div>
 
-      <div className="btn-right-container">
+      <div className="form-actions-right">
         <button type="button" className="btn-action" onClick={onContinuar}>
           CONTINUAR
         </button>

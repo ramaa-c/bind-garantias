@@ -67,17 +67,18 @@
 }
 
 .solicitud-card {
-  background-color: var(--graphite);
+  background: linear-gradient(to right, var(--graphite), #1e1e1e);
   border: 1px solid #333;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 1.5rem 2rem;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: all 0.2s ease;
   border-left-width: 4px;
 }
 
 .solicitud-card:hover {
-  transform: translateY(-2px);
+  transform: scale(1.01);
   border-color: #555;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
 }
 
 /* --- CABECERA DE TARJETA --- */
@@ -89,12 +90,9 @@
 }
 
 .solicitud-status-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.8rem;
-  font-weight: bold;
-  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background-color: rgba(255,255,255,0.03);
 }
 
 .status-dot {
@@ -116,17 +114,17 @@
 /* Esperando / Pendiente */
 .solicitud-card.status-waiting { border-left-color: var(--yellow); }
 .solicitud-status-badge.status-waiting { color: var(--yellow); }
-.solicitud-status-badge.status-waiting .status-dot { background-color: var(--yellow); }
+.solicitud-status-badge.status-waiting .status-dot { background-color: var(--yellow); box-shadow: 0 0 8px var(--yellow);}
 
 /* Aprobado */
 .solicitud-card.status-approved { border-left-color: #4caf50; }
 .solicitud-status-badge.status-approved { color: #4caf50; }
-.solicitud-status-badge.status-approved .status-dot { background-color: #4caf50; }
+.solicitud-status-badge.status-approved .status-dot { background-color: #4caf50; box-shadow: 0 0 8px #4caf50;}
 
 /* Rechazado */
 .solicitud-card.status-rejected { border-left-color: #ff5252; }
 .solicitud-status-badge.status-rejected { color: #ff5252; }
-.solicitud-status-badge.status-rejected .status-dot { background-color: #ff5252; }
+.solicitud-status-badge.status-rejected .status-dot { background-color: #ff5252; box-shadow: 0 0 8px #ff5252;}
 
 
 /* --- CUERPO DE TARJETA --- */

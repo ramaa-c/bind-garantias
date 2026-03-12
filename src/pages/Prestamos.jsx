@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../schemas/prestamosSchema";
 import "../styles/cheques.css";
+import { FaAngleLeft } from "react-icons/fa";
 import Paso1Cuit from "../components/features/compartidos/Paso1Cuit";
 import Paso2Datos from "../components/features/compartidos/Paso2Datos";
 import Paso3Simulador from "../components/features/compartidos/Paso3Simulador";
@@ -13,6 +15,7 @@ import ModalSms from "../components/ui/ModalSms";
 import PanelDudas from "../components/features/compartidos/PanelDudas";
 
 export default function Prestamos() {
+  const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
   const [mostrarModal, setMostrarModal] = useState(false);
   const [codigoSms, setCodigoSms] = useState("");
@@ -38,28 +41,58 @@ export default function Prestamos() {
   const { handleSubmit, trigger } = metodosFormulario;
 
   // --- NAVEGACIÓN Y FUNCIONES ---
-  const handleValidarCuit = async () => { if (await trigger("cuit")) setPasoActual(2); };
-  
-  const handleVolver = () => { 
-    if (pasoActual === 7) setPasoActual(1); 
-    else setPasoActual(pasoActual - 1); 
+  const handleValidarCuit = async () => {
+    if (await trigger("cuit")) setPasoActual(2);
   };
-  
-  const abrirModalSms = async () => { if (await trigger("celular")) setMostrarModal(true); };
+
+  const handleVolver = () => {
+    if (pasoActual === 7) setPasoActual(1);
+    else setPasoActual(pasoActual - 1);
+  };
+
+  const abrirModalSms = async () => {
+    if (await trigger("celular")) setMostrarModal(true);
+  };
   const confirmarSms = () => setMostrarModal(false);
-  const handleContinuarPaso2 = async () => { if (await trigger(["direccion", "provincia", "localidad", "celular"])) setPasoActual(3); };
-  const onSubmitFinal = (data) => { console.log("Datos finales Préstamo listos:", data); };
+  const handleContinuarPaso2 = async () => {
+    if (await trigger(["direccion", "provincia", "localidad", "celular"]))
+      setPasoActual(3);
+  };
+  const onSubmitFinal = (data) => {
+    console.log("Datos finales Préstamo listos:", data);
+  };
 
   // Paso 3
-  const handleCalcularSimulador = () => { trigger(["monto", "tipoProducto", "tipoCalculo", "plazo"]).then(v => v && setMostrarResultados(true)); };
-  const handleContinuarSimulador = () => { setPasoActual(4); setFaseSocio(socios.length === 0 ? "ingresar_cuit" : "lista"); };
+  const handleCalcularSimulador = () => {
+    trigger(["monto", "tipoProducto", "tipoCalculo", "plazo"]).then(
+      (v) => v && setMostrarResultados(true),
+    );
+  };
+  const handleContinuarSimulador = () => {
+    setPasoActual(4);
+    setFaseSocio(socios.length === 0 ? "ingresar_cuit" : "lista");
+  };
 
   // Paso 4
-  const iniciarCargaSocio = () => { setTempSocioCuit(""); setTempSocioParticipacion(""); setFaseSocio("ingresar_cuit"); };
-  const validarCuitSocio = () => { setTempSocioNombre("SEOANE SUAREZ MARINA"); setFaseSocio("completar_datos"); };
+  const iniciarCargaSocio = () => {
+    setTempSocioCuit("");
+    setTempSocioParticipacion("");
+    setFaseSocio("ingresar_cuit");
+  };
+  const validarCuitSocio = () => {
+    setTempSocioNombre("SEOANE SUAREZ MARINA");
+    setFaseSocio("completar_datos");
+  };
   const guardarSocio = () => {
     if (!tempSocioParticipacion) return;
-    setSocios([...socios, { cuit: tempSocioCuit, nombre: tempSocioNombre, participacion: tempSocioParticipacion }]);
+    setSocios([
+      ...socios,
+      {
+        cuit: tempSocioCuit,
+        nombre: tempSocioNombre,
+        participacion: tempSocioParticipacion,
+      },
+    ]);
     setFaseSocio("lista");
   };
   const eliminarSocio = (index) => {
@@ -70,83 +103,161 @@ export default function Prestamos() {
   const continuarAlProximoPaso = () => setPasoActual(5);
 
   // Paso 5
-  const toggleDoc = (seccion) => { setDocExpandido((prev) => (prev === seccion ? "" : seccion)); };
-  const validarCuitApoderado = async () => { if (await trigger("apoCuit")) { setApoNombre("GOMEZ PEREZ JUAN"); setFaseApoderado("completar"); } };
-  const guardarApoderado = async () => { if (await trigger(["apoEmail", "apoCelular"])) setFaseApoderado("guardado"); };
-  
+  const toggleDoc = (seccion) => {
+    setDocExpandido((prev) => (prev === seccion ? "" : seccion));
+  };
+  const validarCuitApoderado = async () => {
+    if (await trigger("apoCuit")) {
+      setApoNombre("GOMEZ PEREZ JUAN");
+      setFaseApoderado("completar");
+    }
+  };
+  const guardarApoderado = async () => {
+    if (await trigger(["apoEmail", "apoCelular"])) setFaseApoderado("guardado");
+  };
+
   // Paso 7
-  const avanzarAlExito = async () => { 
-    if (await trigger("emailFacturacion")) setPasoActual(7); 
+  const avanzarAlExito = async () => {
+    if (await trigger("emailFacturacion")) setPasoActual(7);
   };
 
   return (
     <div className="cheques-page">
       <div className="form-main-container">
         <div className="contenedor-principal">
-          
-          <div className="seccion-formulario">
-            
-            {/* BOTÓN VOLVER */}
-            {pasoActual >= 3 && pasoActual <= 5 && (
+          <div className="columna-formulario">
+            {pasoActual > 1 && pasoActual < 7 && (
               <div className="back-button-container">
-                <button type="button" onClick={() => { handleVolver(); if (pasoActual === 3) setMostrarResultados(false); }} className="btn-back">
-                  ← Volver a la lista
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleVolver();
+                    if (pasoActual === 3) setMostrarResultados(false);
+                  }}
+                  className="btn-back"
+                >
+                  <FaAngleLeft size={16} /> Volver al paso anterior
+                </button>
+              </div>
+            )}
+            {pasoActual === 1 && (
+              <div className="back-button-container">
+                <button
+                  type="button"
+                  onClick={() => navigate("/inicio")}
+                  className="btn-back"
+                >
+                  <FaAngleLeft size={16} /> Volver a la lista
                 </button>
               </div>
             )}
 
-            {/* TÍTULO Y PROGRESO */}
-            {pasoActual < 4 && (
-              <>
-                <h1 className="cheques-title">
-                  {pasoActual === 3 ? "Ya podés seleccionar el monto y tipo de financiación que estás necesitando." : "Completá los siguientes datos básicos"}
-                </h1>
-                <div className="progress-container">
-                  <p className="progress-text">Avance de solicitud</p>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: pasoActual === 1 ? "10%" : pasoActual === 2 ? "40%" : "80%" }}></div>
+            {/* TARJETA PRINCIPAL FORMULARIO */}
+            <div className="seccion-formulario">
+              {/* TÍTULO Y PROGRESO */}
+              {pasoActual < 4 && (
+                <>
+                  <h1 className="cheques-title">
+                    {pasoActual === 3
+                      ? "Ya podés seleccionar el monto y tipo de financiación que estás necesitando."
+                      : "Completá los siguientes datos básicos"}
+                  </h1>
+                  <div className="progress-container">
+                    <p className="progress-text">Avance de solicitud</p>
+                    <div className="progress-track">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          width:
+                            pasoActual === 1
+                              ? "10%"
+                              : pasoActual === 2
+                                ? "40%"
+                                : "80%",
+                        }}
+                      ></div>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
 
-            {/* FORMULARIO */}
-            <FormProvider {...metodosFormulario}>
-              <form className="form-content" onSubmit={handleSubmit(onSubmitFinal)}>
-                
-                {pasoActual === 1 && <Paso1Cuit onValidar={handleValidarCuit} />}
-                
-                {pasoActual === 2 && <Paso2Datos onVolver={handleVolver} onAbrirModalSms={abrirModalSms} onContinuar={handleContinuarPaso2} />}
+              {/* FORMULARIO */}
+              <FormProvider {...metodosFormulario}>
+                <form
+                  className="form-content"
+                  onSubmit={handleSubmit(onSubmitFinal)}
+                >
+                  {pasoActual === 1 && (
+                    <Paso1Cuit onValidar={handleValidarCuit} />
+                  )}
 
-                {pasoActual === 3 && <Paso3Simulador mostrarResultados={mostrarResultados} onCalcular={handleCalcularSimulador} onContinuar={handleContinuarSimulador} />}
+                  {pasoActual === 2 && (
+                    <Paso2Datos
+                      onVolver={handleVolver}
+                      onAbrirModalSms={abrirModalSms}
+                      onContinuar={handleContinuarPaso2}
+                    />
+                  )}
 
-                {pasoActual === 4 && (
-                  <Paso4Socios 
-                    faseSocio={faseSocio} setFaseSocio={setFaseSocio} tempSocioCuit={tempSocioCuit} setTempSocioCuit={setTempSocioCuit} tempSocioNombre={tempSocioNombre} tempSocioParticipacion={tempSocioParticipacion} setTempSocioParticipacion={setTempSocioParticipacion} socios={socios} iniciarCargaSocio={iniciarCargaSocio} validarCuitSocio={validarCuitSocio} guardarSocio={guardarSocio} eliminarSocio={eliminarSocio} continuarAlProximoPaso={continuarAlProximoPaso}
-                  />
-                )}
+                  {pasoActual === 3 && (
+                    <Paso3Simulador
+                      mostrarResultados={mostrarResultados}
+                      onCalcular={handleCalcularSimulador}
+                      onContinuar={handleContinuarSimulador}
+                    />
+                  )}
 
-                {pasoActual === 5 && (
-                  <Paso5Documentacion 
-                    docExpandido={docExpandido} toggleDoc={toggleDoc} socios={socios} onVolverASocios={() => setPasoActual(4)} faseApoderado={faseApoderado} setFaseApoderado={setFaseApoderado} apoNombre={apoNombre} apoRol={apoRol} setApoRol={setApoRol} validarCuitApoderado={validarCuitApoderado} guardarApoderado={guardarApoderado} avanzarPaso6={avanzarAlExito}
-                  />
-                )}
+                  {pasoActual === 4 && (
+                    <Paso4Socios
+                      faseSocio={faseSocio}
+                      setFaseSocio={setFaseSocio}
+                      tempSocioCuit={tempSocioCuit}
+                      setTempSocioCuit={setTempSocioCuit}
+                      tempSocioNombre={tempSocioNombre}
+                      tempSocioParticipacion={tempSocioParticipacion}
+                      setTempSocioParticipacion={setTempSocioParticipacion}
+                      socios={socios}
+                      iniciarCargaSocio={iniciarCargaSocio}
+                      validarCuitSocio={validarCuitSocio}
+                      guardarSocio={guardarSocio}
+                      eliminarSocio={eliminarSocio}
+                      continuarAlProximoPaso={continuarAlProximoPaso}
+                    />
+                  )}
 
-                {pasoActual === 7 && <Paso7Exito onVolverInicio={() => setPasoActual(1)} />}
+                  {pasoActual === 5 && (
+                    <Paso5Documentacion
+                      docExpandido={docExpandido}
+                      toggleDoc={toggleDoc}
+                      socios={socios}
+                      onVolverASocios={() => setPasoActual(4)}
+                      faseApoderado={faseApoderado}
+                      setFaseApoderado={setFaseApoderado}
+                      apoNombre={apoNombre}
+                      apoRol={apoRol}
+                      setApoRol={setApoRol}
+                      validarCuitApoderado={validarCuitApoderado}
+                      guardarApoderado={guardarApoderado}
+                      avanzarPaso6={avanzarAlExito}
+                    />
+                  )}
 
-              </form>
-            </FormProvider>
+                  {pasoActual === 7 && (
+                    <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
+                  )}
+                </form>
+              </FormProvider>
+            </div>
           </div>
 
           {/* PANEL DERECHO */}
           <PanelDudas pasoActual={pasoActual} />
-
         </div>
       </div>
 
       {/* MODAL SMS */}
-      <ModalSms 
-        isOpen={mostrarModal} 
+      <ModalSms
+        isOpen={mostrarModal}
         onClose={() => setMostrarModal(false)}
         codigoSms={codigoSms}
         setCodigoSms={setCodigoSms}
