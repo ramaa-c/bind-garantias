@@ -74,7 +74,6 @@ export default function PagareUSD() {
                 )}
               </div>
 
-              {/* EL BADGE DE PRODUCTO */}
               {pasoActual < 4 && (
                 <div className="product-badge-modern">
                   Pagaré Bursátil USD
@@ -115,7 +114,6 @@ export default function PagareUSD() {
                   className="pagare-form-content"
                   onSubmit={handleSubmit(onSubmitFinal)}
                 >
-                  {/* ANIMACIÓN:*/}
                   <div key={pasoActual} className="animacion-paso">
                     {pasoActual === 1 && (
                       <Paso1SimuladorPagare
@@ -144,8 +142,8 @@ export default function PagareUSD() {
             </div>
           </div>
 
-          {/* LADO DERECHO: PANEL DUDAS */}
           <PanelDudasPagare pasoActual={pasoActual} />
+          
         </div>
       </div>
     </div>

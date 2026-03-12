@@ -162,23 +162,20 @@ export default function Cheques() {
                     <FaAngleLeft size={16} /> Volver a la lista
                   </button>
                 ) : (
-                  <div></div> /* Div vacío para alinear el flexbox en el paso del éxito */
+                  <div></div>
                 )}
               </div>
 
-              {/* BADGE DE CHEQUES */}
               {pasoActual < 7 && (
                 <div className="product-badge-modern">
                   Línea de Cheques
                 </div>
               )}
             </div>
-            {/* --- FIN HEADER SUPERIOR --- */}
 
-            {/* TARJETA PRINCIPAL FORMULARIO */}
+            {/* TARJETA FORMULARIO */}
             <div className="seccion-formulario">
               
-              {/* TÍTULO (Solo hasta el paso 3) */}
               {pasoActual < 4 && (
                 <h1 className="cheques-title">
                   {pasoActual === 3
