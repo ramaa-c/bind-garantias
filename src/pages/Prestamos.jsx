@@ -126,59 +126,68 @@ export default function Prestamos() {
       <div className="form-main-container">
         <div className="contenedor-principal">
           <div className="columna-formulario">
-            {pasoActual > 1 && pasoActual < 7 && (
+            
+            {/* --- NUEVO HEADER SUPERIOR: Botón Volver + Badge de Producto --- */}
+            <div className="form-top-navigation">
               <div className="back-button-container">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleVolver();
-                    if (pasoActual === 3) setMostrarResultados(false);
-                  }}
-                  className="btn-back"
-                >
-                  <FaAngleLeft size={16} /> Volver al paso anterior
-                </button>
+                {pasoActual > 1 && pasoActual < 7 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleVolver();
+                      if (pasoActual === 3) setMostrarResultados(false);
+                    }}
+                    className="btn-back"
+                  >
+                    <FaAngleLeft size={16} /> Volver al paso anterior
+                  </button>
+                ) : pasoActual === 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate("/inicio")}
+                    className="btn-back"
+                  >
+                    <FaAngleLeft size={16} /> Volver a la lista
+                  </button>
+                ) : (
+                  <div></div> /* Div vacío para alinear el flexbox en el paso del éxito */
+                )}
               </div>
-            )}
-            {pasoActual === 1 && (
-              <div className="back-button-container">
-                <button
-                  type="button"
-                  onClick={() => navigate("/inicio")}
-                  className="btn-back"
-                >
-                  <FaAngleLeft size={16} /> Volver a la lista
-                </button>
-              </div>
-            )}
+
+              {/* BADGE DE PRÉSTAMOS */}
+              {pasoActual < 7 && (
+                <div className="product-badge-modern">
+                  Línea de Préstamos
+                </div>
+              )}
+            </div>
+            {/* --- FIN HEADER SUPERIOR --- */}
 
             {/* TARJETA PRINCIPAL FORMULARIO */}
             <div className="seccion-formulario">
-              {/* TÍTULO Y PROGRESO */}
+              
+              {/* TÍTULO (Solo hasta el paso 3) */}
               {pasoActual < 4 && (
-                <>
-                  <h1 className="cheques-title">
-                    {pasoActual === 3
-                      ? "Ya podés seleccionar el monto y tipo de financiación que estás necesitando."
-                      : "Completá los siguientes datos básicos"}
-                  </h1>
-                  <div className="progress-container">
-                    <p className="progress-text">Avance de solicitud</p>
-                    <div className="progress-track">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width:
-                            pasoActual === 1
-                              ? "10%"
-                              : pasoActual === 2
-                                ? "40%"
-                                : "80%",
-                        }}
-                      ></div>
-                    </div>
+                <h1 className="cheques-title">
+                  {pasoActual === 3
+                    ? "Ya podés seleccionar el monto y tipo de financiación que estás necesitando."
+                    : "Completá los siguientes datos básicos"}
+                </h1>
+              )}
+
+              {/* BARRA DE PROGRESO INDEPENDIENTE (Sigue hasta el final) */}
+              {pasoActual < 7 && (
+                <div className="progress-container">
+                  <p className="progress-text">Avance de solicitud: Paso {pasoActual} de 5</p>
+                  <div className="progress-track">
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${(pasoActual / 5) * 100}%`
+                      }}
+                    ></div>
                   </div>
-                </>
+                </div>
               )}
 
               {/* FORMULARIO */}
@@ -187,70 +196,72 @@ export default function Prestamos() {
                   className="form-content"
                   onSubmit={handleSubmit(onSubmitFinal)}
                 >
-                  {pasoActual === 1 && (
-                    <Paso1Cuit onValidar={handleValidarCuit} />
-                  )}
+                  <div key={pasoActual} className="animacion-paso">
+                    {pasoActual === 1 && (
+                      <Paso1Cuit onValidar={handleValidarCuit} />
+                    )}
 
-                  {pasoActual === 2 && (
-                    <Paso2Datos
-                      onVolver={handleVolver}
-                      onAbrirModalSms={abrirModalSms}
-                      onContinuar={handleContinuarPaso2}
-                    />
-                  )}
+                    {pasoActual === 2 && (
+                      <Paso2Datos
+                        onVolver={handleVolver}
+                        onAbrirModalSms={abrirModalSms}
+                        onContinuar={handleContinuarPaso2}
+                      />
+                    )}
 
-                  {pasoActual === 3 && (
-                    <Paso3Simulador
-                      mostrarResultados={mostrarResultados}
-                      onCalcular={handleCalcularSimulador}
-                      onContinuar={handleContinuarSimulador}
-                    />
-                  )}
+                    {pasoActual === 3 && (
+                      <Paso3Simulador
+                        mostrarResultados={mostrarResultados}
+                        onCalcular={handleCalcularSimulador}
+                        onContinuar={handleContinuarSimulador}
+                      />
+                    )}
 
-                  {pasoActual === 4 && (
-                    <Paso4Socios
-                      faseSocio={faseSocio}
-                      setFaseSocio={setFaseSocio}
-                      tempSocioCuit={tempSocioCuit}
-                      setTempSocioCuit={setTempSocioCuit}
-                      tempSocioNombre={tempSocioNombre}
-                      tempSocioParticipacion={tempSocioParticipacion}
-                      setTempSocioParticipacion={setTempSocioParticipacion}
-                      socios={socios}
-                      iniciarCargaSocio={iniciarCargaSocio}
-                      validarCuitSocio={validarCuitSocio}
-                      guardarSocio={guardarSocio}
-                      eliminarSocio={eliminarSocio}
-                      continuarAlProximoPaso={continuarAlProximoPaso}
-                    />
-                  )}
+                    {pasoActual === 4 && (
+                      <Paso4Socios
+                        faseSocio={faseSocio}
+                        setFaseSocio={setFaseSocio}
+                        tempSocioCuit={tempSocioCuit}
+                        setTempSocioCuit={setTempSocioCuit}
+                        tempSocioNombre={tempSocioNombre}
+                        tempSocioParticipacion={tempSocioParticipacion}
+                        setTempSocioParticipacion={setTempSocioParticipacion}
+                        socios={socios}
+                        iniciarCargaSocio={iniciarCargaSocio}
+                        validarCuitSocio={validarCuitSocio}
+                        guardarSocio={guardarSocio}
+                        eliminarSocio={eliminarSocio}
+                        continuarAlProximoPaso={continuarAlProximoPaso}
+                      />
+                    )}
 
-                  {pasoActual === 5 && (
-                    <Paso5Documentacion
-                      docExpandido={docExpandido}
-                      toggleDoc={toggleDoc}
-                      socios={socios}
-                      onVolverASocios={() => setPasoActual(4)}
-                      faseApoderado={faseApoderado}
-                      setFaseApoderado={setFaseApoderado}
-                      apoNombre={apoNombre}
-                      apoRol={apoRol}
-                      setApoRol={setApoRol}
-                      validarCuitApoderado={validarCuitApoderado}
-                      guardarApoderado={guardarApoderado}
-                      avanzarPaso6={avanzarAlExito}
-                    />
-                  )}
+                    {pasoActual === 5 && (
+                      <Paso5Documentacion
+                        docExpandido={docExpandido}
+                        toggleDoc={toggleDoc}
+                        socios={socios}
+                        onVolverASocios={() => setPasoActual(4)}
+                        faseApoderado={faseApoderado}
+                        setFaseApoderado={setFaseApoderado}
+                        apoNombre={apoNombre}
+                        apoRol={apoRol}
+                        setApoRol={setApoRol}
+                        validarCuitApoderado={validarCuitApoderado}
+                        guardarApoderado={guardarApoderado}
+                        avanzarPaso6={avanzarAlExito}
+                      />
+                    )}
 
-                  {pasoActual === 7 && (
-                    <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
-                  )}
+                    {pasoActual === 7 && (
+                      <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
+                    )}
+                  </div>
                 </form>
               </FormProvider>
             </div>
           </div>
 
-          {/* PANEL DERECHO */}
+          {/* LADO DERECHO: PANEL DE DUDAS */}
           <PanelDudas pasoActual={pasoActual} />
         </div>
       </div>
