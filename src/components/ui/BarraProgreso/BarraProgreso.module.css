@@ -1,0 +1,27 @@
+.wrapper {
+  margin: 10px 0 30px 0;
+}
+
+.text {
+  color: var(--white);
+  opacity: 0.6;
+  font-size: 13px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.track {
+  width: 100%;
+  background-color: #2a2a2a;
+  height: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.fill {
+  background-color: var(--yellow);
+  height: 100%;
+  transition: width 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 0 10px rgba(244, 245, 0, 0.3);
+}

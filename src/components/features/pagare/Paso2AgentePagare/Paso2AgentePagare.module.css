@@ -1,0 +1,87 @@
+.container {
+  animation: fadeIn 0.4s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.listContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.listItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listItem:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.listItemSelected {
+  border-color: var(--yellow);
+  background-color: rgba(244, 245, 0, 0.05);
+}
+
+.itemLeft {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.agentIcon {
+  color: #888;
+  font-size: 1.2rem;
+  display: flex;
+}
+
+.listItemSelected .agentIcon {
+  color: var(--yellow);
+}
+
+.itemName {
+  color: var(--white);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* --- ESTADOS DE SELECCIÓN --- */
+.emptyCircle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #555;
+}
+
+.checkIcon {
+  color: var(--yellow);
+  font-size: 1.4rem;
+}
+
+/* --- ERROR Y ACCIONES --- */
+.errorText {
+  color: #ff5252;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-top: 15px;
+  display: block;
+}
+
+.actionsRight {
+  text-align: right;
+  margin-top: 2rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

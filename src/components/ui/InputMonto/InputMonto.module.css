@@ -1,0 +1,57 @@
+.wrapper {
+  text-align: center;
+  margin: 2rem 0 3rem 0;
+  position: relative;
+}
+
+.label {
+  color: #aaa;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.currency {
+  font-size: 2rem;
+  color: var(--yellow);
+  font-weight: 300;
+}
+
+.input {
+  background: transparent;
+  border: none;
+  color: var(--white);
+  font-size: 4.5rem;
+  font-weight: 700;
+  width: 100%;
+  max-width: 300px;
+  text-align: left;
+  outline: none;
+  padding: 0;
+  transition: text-shadow 0.3s ease;
+  appearance: textfield;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.error {
+  color: #ff5252;
+  font-size: 0.85rem;
+  position: absolute;
+  bottom: -25px;
+  left: 0;
+  right: 0;
+}

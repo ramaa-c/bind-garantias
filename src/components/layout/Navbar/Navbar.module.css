@@ -1,0 +1,46 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4rem;
+  background-color: var(--carbon-black);
+  border-bottom: 1px solid var(--graphite);
+  min-height: 80px;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 0.5rem 0;
+}
+
+.logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+.userContainer {
+  font-size: 0.95rem;
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.userIcon {
+  color: #aaa;
+}
+
+.loginContainer {
+  font-size: 0.9rem;
+  color: var(--white);
+}
+
+.link {
+  color: var(--yellow);
+  font-weight: bold;
+  margin-left: 0.5rem;
+  cursor: pointer;
+}

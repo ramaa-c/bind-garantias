@@ -9,7 +9,7 @@ import Cheques from "./pages/Cheques";
 import Prestamos from "./pages/Prestamos";
 import Pagare from "./pages/Pagare";
 import Solicitudes from "./pages/Solicitudes";
-import DashboardLayout from "./components/layout/DashboardLayout";
+import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
 import "./App.css";
 
 function App() {

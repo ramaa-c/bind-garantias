@@ -1,7 +1,6 @@
 import React from "react";
 
 export default function PanelDudas({ pasoActual }) {
-  if (pasoActual === 7) return null;
 
   return (
     <div className="panel-dudas">

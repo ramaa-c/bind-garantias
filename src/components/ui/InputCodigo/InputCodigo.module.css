@@ -1,0 +1,40 @@
+.container {
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--yellow);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.input {
+  width: 100%;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 2px solid var(--white);
+  background-color: rgba(255, 255, 255, 0.02);
+  color: var(--yellow);
+  font-size: 1.5rem;
+  font-family: 'Courier New', Courier, monospace;
+  outline: none;
+  letter-spacing: 6px;
+  text-align: center;
+  border-radius: 4px 4px 0 0;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+}
+
+.input:focus {
+  border-bottom-color: var(--yellow);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.input::placeholder {
+  color: #555;
+  letter-spacing: 2px;
+}

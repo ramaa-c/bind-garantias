@@ -1,0 +1,61 @@
+.card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.card:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: #555;
+}
+
+.selected {
+  border-color: var(--yellow);
+  background-color: rgba(244, 245, 0, 0.05);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.icon {
+  color: #888;
+  font-size: 1.2rem;
+  display: flex;
+}
+
+.selected .icon {
+  color: var(--yellow);
+}
+
+.title {
+  color: var(--white);
+  font-size: 1rem;
+  margin: 0;
+  font-weight: normal;
+}
+
+.circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #555;
+  transition: border-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.circleSelected {
+  color: var(--yellow);
+  font-size: 22px;
+}

@@ -1,0 +1,42 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.label {
+  color: var(--white);
+  font-size: 14px;
+  opacity: 0.7; /* muted por defecto como en tu diseño */
+}
+
+.field {
+  padding: 12px 15px 10px 15px;
+  border: none;
+  border-bottom: 2px solid #444;
+  background-color: rgba(255, 255, 255, 0.03);
+  border-radius: 6px 6px 0 0;
+  color: var(--white);
+  outline: none;
+  width: 100%;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.field:focus {
+  border-bottom-color: var(--yellow);
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.field:disabled {
+  opacity: 0.4;
+  background-color: transparent;
+  cursor: not-allowed;
+}
+
+.field option {
+  color: #000;
+}

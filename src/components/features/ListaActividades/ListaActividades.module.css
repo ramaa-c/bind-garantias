@@ -1,0 +1,74 @@
+.container {
+  background-color: var(--graphite);
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #333;
+  gap: 15px;
+  transition: background-color 0.2s;
+}
+
+.item:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.iconWrapper {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+}
+
+.details {
+  flex: 1;
+}
+
+.title {
+  margin: 0 0 3px 0;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--white);
+}
+
+.title span {
+  color: #888;
+  font-weight: normal;
+}
+
+.amount {
+  margin: 0;
+  color: #aaa;
+  font-size: 0.85rem;
+}
+
+.status {
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.statusEsperando {
+  background-color: rgba(244, 245, 0, 0.1);
+  color: var(--yellow);
+}
+
+.statusAprobado {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}

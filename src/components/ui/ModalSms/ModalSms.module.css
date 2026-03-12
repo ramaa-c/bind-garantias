@@ -1,0 +1,85 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.box {
+  background-color: #2E2E2E;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.3s ease;
+}
+
+.header {
+  background-color: var(--yellow);
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  margin: 0;
+  color: var(--carbon-black);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--carbon-black);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.body {
+  padding: 30px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.description {
+  color: var(--white);
+  font-size: 14px;
+  margin-bottom: 20px;
+  margin-top: 0;
+  opacity: 0.8;
+}
+
+.btnCancel {
+  border: none;
+  color: var(--yellow);
+}
+
+.btnCancel:hover {
+  background-color: rgba(244, 245, 0, 0.05);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

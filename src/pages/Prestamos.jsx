@@ -5,14 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../schemas/prestamosSchema";
 import "../styles/cheques.css";
 import { FaAngleLeft } from "react-icons/fa";
-import Paso1Cuit from "../components/features/compartidos/Paso1Cuit";
-import Paso2Datos from "../components/features/compartidos/Paso2Datos";
-import Paso3Simulador from "../components/features/compartidos/Paso3Simulador";
-import Paso4Socios from "../components/features/compartidos/Paso4Socios";
-import Paso5Documentacion from "../components/features/compartidos/Paso5Documentacion";
-import Paso7Exito from "../components/features/compartidos/Paso7Exito";
-import ModalSms from "../components/ui/ModalSms";
-import PanelDudas from "../components/features/compartidos/PanelDudas";
+import { Paso1Cuit, Paso2Datos, Paso3Simulador, Paso4Socios, Paso5Documentacion, Paso7Exito, PanelDudas } from "../components/features";
+import {ModalSms} from "../components/ui";
 
 export default function Prestamos() {
   const navigate = useNavigate();
