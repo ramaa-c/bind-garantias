@@ -1,0 +1,149 @@
+.container {
+  animation: fadeIn 0.4s ease;
+}
+
+/* --- GRILLAS --- */
+.topGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 3rem;
+}
+
+.dynamicRow {
+  display: flex;
+  gap: 40px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.moneyCol {
+  flex: 1;
+}
+
+.dateCol {
+  flex: 1;
+  max-width: 250px;
+}
+
+.calcBtnWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 3rem;
+}
+
+/* --- TICKET DE RESULTADOS --- */
+.resultsBox {
+  background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2));
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 2.5rem;
+  margin-top: 1rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.resultsHeader {
+  text-align: center;
+  border-bottom: 1px dashed #444;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.resultsTitle {
+  color: #aaa;
+  font-size: 1rem;
+  font-weight: normal;
+  margin: 0 0 10px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.resultsAmount {
+  color: var(--yellow);
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.resultsBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.resultRow {
+  display: flex;
+  justify-content: space-between;
+  color: #ccc;
+  font-size: 0.95rem;
+}
+
+.resultTotalRow {
+  border-top: 1px solid #444;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  font-weight: bold;
+}
+
+.textYellow { color: var(--yellow); }
+.textMuted { color: #aaa; }
+
+/* --- CAJA RESUMEN VERDE --- */
+.summaryBox {
+  background-color: rgba(76, 175, 80, 0.08);
+  border-left: 4px solid #4caf50;
+  border-radius: 6px;
+  padding: 20px;
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  color: var(--white);
+  font-size: 1.05rem;
+}
+
+.summaryRow strong {
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* --- BOTONES FINALES --- */
+.actionsFlex {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2rem;
+  gap: 15px;
+}
+
+.cancelBtn {
+  background: none;
+  border: none;
+  color: #888;
+  font-weight: 500;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.cancelBtn:hover {
+  color: var(--white);
+}
+
+.mtSmall {
+  margin-top: 10px;
+}
+
+.fullWidthMaxMd {
+  width: 100%;
+  max-width: 400px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

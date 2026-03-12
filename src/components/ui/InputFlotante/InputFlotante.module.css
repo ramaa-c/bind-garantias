@@ -1,0 +1,65 @@
+.group {
+  position: relative;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  padding: 0.5rem 0;
+  padding-right: 2.5rem;
+  font-size: 1rem;
+  color: var(--white);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--white);
+  outline: none;
+  transition: border-color 0.3s;
+  font-family: inherit;
+}
+
+.input:focus {
+  border-bottom-color: var(--yellow);
+}
+
+.label {
+  position: absolute;
+  top: 0.5rem;
+  left: 0;
+  font-size: 1rem;
+  color: #aaa;
+  pointer-events: none;
+  transition: 0.3s ease all;
+}
+
+.input:focus ~ .label,
+.input:not(:placeholder-shown) ~ .label {
+  top: -1.2rem;
+  font-size: 0.8rem;
+  color: var(--yellow);
+}
+
+.error {
+  color: #ff5252;
+  font-size: 0.75rem;
+  position: absolute;
+  bottom: -1.4rem;
+  left: 0;
+}
+
+.toggleBtn {
+  position: absolute;
+  right: 0;
+  top: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #aaa;
+  transition: color 0.3s ease;
+  padding: 0;
+  display: flex;
+}
+
+.toggleBtn:hover {
+  color: var(--yellow);
+}

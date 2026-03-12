@@ -5,11 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { pagareSchema } from "../schemas/pagareSchema";
 import "../styles/cheques.css";
 import "../styles/pagare.css";
-import PanelDudasPagare from "../components/features/pagare/PanelDudasPagare";
-import Paso1SimuladorPagare from "../components/features/pagare/Paso1SimuladorPagare";
-import Paso2AgentePagare from "../components/features/pagare/Paso2AgentePagare";
-import Paso3Epyme from "../components/features/pagare/Paso3Epyme";
-import Paso4ExitoPagare from "../components/features/pagare/Paso4ExitoPagare";
+import PanelDudasPagare from "../components/features/Pagare/PanelDudasPagare";
+import Paso1SimuladorPagare from "../components/features/Pagare/Paso1SimuladorPagare/Paso1SimuladorPagare";
+import Paso2AgentePagare from "../components/features/Pagare/Paso2AgentePagare/Paso2AgentePagare";
+import Paso3Epyme from "../components/features/Pagare/Paso3Epyme/Paso3Epyme";
+import Paso4ExitoPagare from "../components/features/Pagare/Paso4ExitoPagare/Paso4ExitoPagare";
 import { FaAngleLeft } from "react-icons/fa";
 
 export default function PagareUSD() {
