@@ -3,6 +3,7 @@ export * from './Alert/Alert';
 export * from './Avatar/Avatar';
 export * from './Badge/Badge';
 export * from './BarraProgreso/BarraProgreso';
+export * from './BotonVolver/BotonVolver';
 export * from './BotonIcono/BotonIcono';
 export * from './Button/Button';
 export * from './CargaArchivos/CargaArchivos';

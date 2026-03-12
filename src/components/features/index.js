@@ -21,3 +21,4 @@ export { default as PanelDudasPagare } from './Pagare/PanelDudasPagare';
 // --- OTROS ---
 export * from './ListaActividades/ListaActividades';
 export * from './TarjetaLinea/TarjetaLinea';
+export * from './TarjetaSolicitud/TarjetaSolicitud';

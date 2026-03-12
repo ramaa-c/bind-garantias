@@ -3,14 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { pagareSchema } from "../schemas/pagareSchema";
-import "../styles/cheques.css";
-import "../styles/pagare.css";
-import PanelDudasPagare from "../components/features/Pagare/PanelDudasPagare";
-import Paso1SimuladorPagare from "../components/features/Pagare/Paso1SimuladorPagare/Paso1SimuladorPagare";
-import Paso2AgentePagare from "../components/features/Pagare/Paso2AgentePagare/Paso2AgentePagare";
-import Paso3Epyme from "../components/features/Pagare/Paso3Epyme/Paso3Epyme";
-import Paso4ExitoPagare from "../components/features/Pagare/Paso4ExitoPagare/Paso4ExitoPagare";
-import { FaAngleLeft } from "react-icons/fa";
+import { BarraProgreso, BotonVolver } from "../components/ui";
+import {
+  PanelDudasPagare,
+  Paso1SimuladorPagare,
+  Paso2AgentePagare,
+  Paso3Epyme,
+  Paso4ExitoPagare,
+} from "../components/features";
+import styles from "./Pagare.module.css";
 
 export default function PagareUSD() {
   const navigate = useNavigate();
@@ -43,63 +44,40 @@ export default function PagareUSD() {
   };
 
   return (
-    <div className="pagare-page">
-      <div className="pagare-main-container">
-        
-        <div className="pagare-contenedor-principal">
-          
-          <div className="columna-formulario">
+    <div className={styles.pagarePage}>
+      <div className={styles.pagareMainContainer}>
+        <div className={styles.pagareContenedorPrincipal}>
+          <div className={styles.columnaFormulario}>
             {pasoActual > 1 && pasoActual < 4 && (
-              <div className="back-button-container">
-                <button
-                  type="button"
-                  onClick={() => setPasoActual(pasoActual - 1)}
-                  className="btn-back"
-                >
-                  <FaAngleLeft size={16} /> Volver al paso anterior
-                </button>
-              </div>
-            )}
-            {pasoActual === 1 && (
-              <div className="back-button-container">
-                <button
-                  type="button"
-                  onClick={() => navigate("/inicio")}
-                  className="btn-back"
-                >
-                  <FaAngleLeft size={16} /> Volver a la lista
-                </button>
-              </div>
+              <BotonVolver onClick={() => setPasoActual(pasoActual - 1)} />
             )}
 
-            <div className="pagare-seccion-formulario">
-              
+            {pasoActual === 1 && (
+              <BotonVolver
+                onClick={() => navigate("/inicio")}
+                texto="Volver a la lista"
+              />
+            )}
+
+            <div className={styles.pagareSeccionFormulario}>
               {pasoActual < 4 && (
-                <h1 className="pagare-title">
-                  {pasoActual === 1 && "Ingresás el monto del pagaré y la fecha de pago"}
-                  {pasoActual === 2 && "Seleccioná al agente de bolsa con quien operás"}
-                  {pasoActual === 3 && "Generá el pagaré en Epyme y completá la operación"}
+                <h1 className={styles.pagareTitle}>
+                  {pasoActual === 1 &&
+                    "Ingresás el monto del pagaré y la fecha de pago"}
+                  {pasoActual === 2 &&
+                    "Seleccioná al agente de bolsa con quien operás"}
+                  {pasoActual === 3 &&
+                    "Generá el pagaré en Epyme y completá la operación"}
                 </h1>
               )}
 
               {pasoActual < 4 && (
-                <div className="progress-container">
-                  <p className="progress-text">Avance de solicitud</p>
-                  <div className="progress-track">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width:
-                          pasoActual === 1 ? "33%" : pasoActual === 2 ? "66%" : "100%",
-                      }}
-                    ></div>
-                  </div>
-                </div>
+                <BarraProgreso currentStep={pasoActual} totalSteps={3} />
               )}
 
               <FormProvider {...metodosFormulario}>
                 <form
-                  className="pagare-form-content"
+                  className={styles.pagareFormContent}
                   onSubmit={handleSubmit(onSubmitFinal)}
                 >
                   {pasoActual === 1 && (
@@ -129,7 +107,6 @@ export default function PagareUSD() {
           </div>
 
           <PanelDudasPagare pasoActual={pasoActual} />
-          
         </div>
       </div>
     </div>

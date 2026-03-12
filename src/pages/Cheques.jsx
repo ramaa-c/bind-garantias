@@ -1,12 +1,20 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { chequesSchema } from "../schemas/chequesSchema";
-import "../styles/cheques.css";
-import { FaAngleLeft } from "react-icons/fa";
-import { Paso1Cuit, Paso2Datos, Paso3Simulador, Paso4Socios, Paso5Documentacion, Paso6Bolsa, Paso7Exito, PanelDudas } from "../components/features";
-import { ModalSms } from "../components/ui";
+import {
+  Paso1Cuit,
+  Paso2Datos,
+  Paso3Simulador,
+  Paso4Socios,
+  Paso5Documentacion,
+  Paso6Bolsa,
+  Paso7Exito,
+  PanelDudas,
+} from "../components/features";
+import { ModalSms, BarraProgreso, BotonVolver } from "../components/ui";
+import styles from "./Cheques.module.css";
 
 export default function Cheques() {
   const navigate = useNavigate();
@@ -127,69 +135,37 @@ export default function Cheques() {
   };
 
   return (
-    <div className="cheques-page">
-      <div className="form-main-container">
-        <div className="contenedor-principal">
-          <div className="columna-formulario">
+    <div className={styles.chequesPage}>
+      <div className={styles.formMainContainer}>
+        <div className={styles.contenedorPrincipal}>
+          <div className={styles.columnaFormulario}>
             {pasoActual > 1 && pasoActual < 7 && (
-              <div className="back-button-container">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleVolver();
-                    if (pasoActual === 3) setMostrarResultados(false);
-                  }}
-                  className="btn-back"
-                >
-                  <FaAngleLeft size={16} /> Volver al paso anterior
-                </button>
-              </div>
+              <BotonVolver
+                onClick={() => {
+                  handleVolver();
+                  if (pasoActual === 3) setMostrarResultados(false);
+                }}
+              />
             )}
+
             {pasoActual === 1 && (
-              <div className="back-button-container">
-                <button
-                  type="button"
-                  onClick={() => navigate("/inicio")}
-                  className="btn-back"
-                >
-                  <FaAngleLeft size={16} /> Volver a la lista
-                </button>
-              </div>
+              <BotonVolver
+                onClick={() => navigate("/inicio")}
+                texto="Volver a la lista"
+              />
             )}
 
             {/* TARJETA PRINCIPAL FORMULARIO */}
-            <div className="seccion-formulario">
-              {/* TÍTULO Y PROGRESO */}
+            <div className={styles.seccionFormulario}>
+
               {pasoActual < 4 && (
-                <>
-                  <h1 className="cheques-title">
-                    {pasoActual === 3
-                      ? "Ya podés seleccionar el monto y tipo de financiación que estás necesitando."
-                      : "Completá los siguientes datos básicos"}
-                  </h1>
-                  <div className="progress-container">
-                    <p className="progress-text">Avance de solicitud</p>
-                    <div className="progress-track">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width:
-                            pasoActual === 1
-                              ? "10%"
-                              : pasoActual === 2
-                                ? "40%"
-                                : "80%",
-                        }}
-                      ></div>
-                    </div>
-                  </div>
-                </>
+                <BarraProgreso currentStep={pasoActual} totalSteps={3} />
               )}
 
               {/* FORMULARIO */}
               <FormProvider {...metodosFormulario}>
                 <form
-                  className="form-content"
+                  className={styles.formContent}
                   onSubmit={handleSubmit(onSubmitFinal)}
                 >
                   {pasoActual === 1 && (
