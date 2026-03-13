@@ -144,33 +144,40 @@ export default function Prestamos() {
             )}
           </div>
 
-          <div className={styles.columnaFormulario}>
-              {/* TARJETA PRINCIPAL FORMULARIO */}
+          <div className={styles.contenedorPrincipal}>
+            {/* COLUMNA IZQUIERDA: FORMULARIO */}
+            <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
-                
                 {pasoActual === 1 && (
                   <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Solicitud de Préstamo</h1>
+                    <h1 className={styles.tituloBienvenida}>
+                      Solicitud de Préstamo
+                    </h1>
                     <p className={styles.subtituloBienvenida}>
-                      Obtené financiación para tu empresa de forma ágil y 100% online.
+                      Obtené financiación para tu empresa de forma ágil y 100%
+                      online.
                     </p>
                   </div>
                 )}
 
-                {pasoActual >= 2 && pasoActual < 7 && (
+                {pasoActual >= 2 &&
+                  pasoActual < 7 &&
                   (() => {
                     let hitoVisual = 1;
-                    if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2; 
-                    if (pasoActual >= 6) hitoVisual = 3; 
+                    if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2;
+                    if (pasoActual >= 6) hitoVisual = 3;
 
                     return (
-                      <BarraProgreso 
-                        hitos={["Datos Básicos", "Documentación", "Confirmación"]}
+                      <BarraProgreso
+                        hitos={[
+                          "Datos Básicos",
+                          "Documentación",
+                          "Confirmación",
+                        ]}
                         hitoActual={hitoVisual}
                       />
                     );
-                  })()
-                )}
+                  })()}
 
                 {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
@@ -242,8 +249,6 @@ export default function Prestamos() {
                 </FormProvider>
               </div>
             </div>
-            </div>
-
             {pasoActual < 7 && <PanelDudas pasoActual={pasoActual} />}
           </div>
         </div>
