@@ -10,32 +10,34 @@ export default function Paso1Cuit({ onValidar }) {
     formState: { errors },
   } = useFormContext();
 
-  // 1. Usamos el nombre correcto del campo que registramos abajo ("cuit")
   const cuitValue = watch("cuit") || "";
-  
-  // 2. La variable para el tilde verde se llama isCuitValid
-  const isCuitValid = cuitValue.length === 11 && !errors.cuit;
+
+
+
+
+  const isCuitValid = /^\d{11}$/.test(cuitValue) && !errors.cuit;
 
   return (
-   <div className={styles.searchContainerVertical}>
-  <div className={styles.searchInputFull}>
-    <InputFlotante
-      label="CUIT"
-      maxLength={11}
-      esValido={isCuitValid}
-      {...register("cuit")}
-    />
-  </div>
+    <div className={styles.searchContainerVertical}>
+      <div className={styles.searchInputFull}>
+        <InputFlotante
+          label="CUIT de la empresa"
+          maxLength={11}
+          esValido={isCuitValid}
+          error={errors.cuit?.message}
+          {...register("cuit")}
+        />
+      </div>
 
-  <div className={styles.buttonWrapperCentered}>
-    <Button
-      variant="primary"
-      size="lg"  
-      onClick={onValidar}
-    >
-      VALIDAR CUIT
-    </Button>
-  </div>
-</div>
+      <div className={styles.buttonWrapperCentered}>
+        <Button
+          variant="primary"
+          size="lg"
+          onClick={onValidar}
+        >
+          VALIDAR CUIT
+        </Button>
+      </div>
+    </div>
   );
 }

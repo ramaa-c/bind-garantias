@@ -29,7 +29,6 @@ export default function PagareUSD() {
   const { handleSubmit, trigger, watch } = metodosFormulario;
   const montoWatch = watch("monto") || 0;
 
-  // --- CONTROLADORES ---
   const handleCalcularSimulacion = async () => {
     const esValido = await trigger(["monto", "fechaPago"]);
     if (esValido) setSimulacionLista(true);
@@ -65,23 +64,24 @@ export default function PagareUSD() {
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
+                
+                {/* MANTENEMOS TUS TÍTULOS ORIGINALES */}
                 {pasoActual < 4 && (
                   <h1 className={styles.tituloVista}>
-                    {pasoActual === 1 &&
-                      "Ingresás el monto del pagaré y la fecha de pago"}
-                    {pasoActual === 2 &&
-                      "Seleccioná al agente de bolsa con quien operás"}
-                    {pasoActual === 3 &&
-                      "Generá el pagaré en Epyme y completá la operación"}
+                    {pasoActual === 1 && "Ingresás el monto del pagaré y la fecha de pago"}
+                    {pasoActual === 2 && "Seleccioná al agente de bolsa con quien operás"}
+                    {pasoActual === 3 && "Generá el pagaré en Epyme y completá la operación"}
                   </h1>
                 )}
 
-                {/* PROGRESO */}
+                {/* MODIFICADO: Solo la Barra de Progreso */}
                 {pasoActual < 4 && (
-                  <BarraProgreso currentStep={pasoActual} totalSteps={3} />
+                  <BarraProgreso 
+                    hitos={["Simulación", "Agente", "Confirmación"]}
+                    hitoActual={pasoActual}
+                  />
                 )}
 
-                {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
                   <form
                     className={styles.formContent}
@@ -97,25 +97,21 @@ export default function PagareUSD() {
                           setPasoActual={setPasoActual}
                         />
                       )}
+                      {pasoActual === 2 && (
+                        <Paso2AgentePagare avanzarPaso={avanzarPaso} />
+                      )}
+                      {pasoActual === 3 && <Paso3Epyme />}
+                      {pasoActual === 4 && (
+                        <Paso4ExitoPagare
+                          onVolverLista={() => navigate("/solicitudes")}
+                        />
+                      )}
                     </div>
-
-                    {pasoActual === 2 && (
-                      <Paso2AgentePagare avanzarPaso={avanzarPaso} />
-                    )}
-
-                    {pasoActual === 3 && <Paso3Epyme />}
-
-                    {pasoActual === 4 && (
-                      <Paso4ExitoPagare
-                        onVolverLista={() => navigate("/solicitudes")}
-                      />
-                    )}
                   </form>
                 </FormProvider>
               </div>
             </div>
 
-            {/* PANEL DE DUDAS */}
             {pasoActual < 4 && (
               <PanelDudas contexto="pagare" pasoActual={pasoActual} />
             )}

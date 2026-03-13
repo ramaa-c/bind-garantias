@@ -22,7 +22,10 @@
 
 .btnVolver:hover {
   background-color: rgba(255, 255, 255, 0.08);
-  color: var(--white);
-  transform: translateX(-4px);
+  color: var(--yellow); 
+  border-color: var(--yellow); 
+  box-shadow: 0 0 10px rgba(253, 252, 1, 0.2); 
+  transform: translateX(-4px); 
   text-decoration: none;
 }
+
