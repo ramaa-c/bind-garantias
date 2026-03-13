@@ -1,19 +1,20 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { chequesSchema } from "../schemas/chequesSchema";
-import "../styles/cheques.css";
-import { FaAngleLeft } from "react-icons/fa";
-import Paso1Cuit from "../components/features/compartidos/Paso1Cuit";
-import Paso2Datos from "../components/features/compartidos/Paso2Datos";
-import Paso3Simulador from "../components/features/compartidos/Paso3Simulador";
-import Paso4Socios from "../components/features/compartidos/Paso4Socios";
-import Paso5Documentacion from "../components/features/compartidos/Paso5Documentacion";
-import Paso6Bolsa from "../components/features/cheques/Paso6Bolsa";
-import Paso7Exito from "../components/features/compartidos/Paso7Exito";
-import ModalSms from "../components/ui/ModalSms";
-import PanelDudas from "../components/features/compartidos/PanelDudas";
+import {
+  Paso1Cuit,
+  Paso2Datos,
+  Paso3Simulador,
+  Paso4Socios,
+  Paso5Documentacion,
+  Paso6Bolsa,
+  Paso7Exito,
+  PanelDudas,
+} from "../components/features";
+import { ModalSms, BarraProgreso, BotonVolver } from "../components/ui";
+import styles from "./Cheques.module.css";
 
 export default function Cheques() {
   const navigate = useNavigate();
@@ -134,75 +135,37 @@ export default function Cheques() {
   };
 
   return (
-    <div className="cheques-page">
-      <div className="form-main-container">
-        <div className="contenedor-principal">
-          <div className="columna-formulario">
-            
-            {/*HEADER SUPERIOR*/}
-            <div className="form-top-navigation">
-              <div className="back-button-container">
-                {pasoActual > 1 && pasoActual < 7 ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      handleVolver();
-                      if (pasoActual === 3) setMostrarResultados(false);
-                    }}
-                    className="btn-back"
-                  >
-                    <FaAngleLeft size={16} /> Volver al paso anterior
-                  </button>
-                ) : pasoActual === 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => navigate("/inicio")}
-                    className="btn-back"
-                  >
-                    <FaAngleLeft size={16} /> Volver a la lista
-                  </button>
-                ) : (
-                  <div></div>
-                )}
-              </div>
+    <div className={styles.chequesPage}>
+      <div className={styles.formMainContainer}>
+        <div className={styles.contenedorPrincipal}>
+          <div className={styles.columnaFormulario}>
+            {pasoActual > 1 && pasoActual < 7 && (
+              <BotonVolver
+                onClick={() => {
+                  handleVolver();
+                  if (pasoActual === 3) setMostrarResultados(false);
+                }}
+              />
+            )}
 
-              {pasoActual < 7 && (
-                <div className="product-badge-modern">
-                  Línea de Cheques
-                </div>
-              )}
-            </div>
+            {pasoActual === 1 && (
+              <BotonVolver
+                onClick={() => navigate("/inicio")}
+                texto="Volver a la lista"
+              />
+            )}
 
-            {/* TARJETA FORMULARIO */}
-            <div className="seccion-formulario">
-              
+            {/* TARJETA PRINCIPAL FORMULARIO */}
+            <div className={styles.seccionFormulario}>
+
               {pasoActual < 4 && (
-                <h1 className="cheques-title">
-                  {pasoActual === 3
-                    ? "Ya podés seleccionar el monto y tipo de financiación que estás necesitando."
-                    : "Completá los siguientes datos básicos"}
-                </h1>
-              )}
-
-              {/* BARRA DE PROGRESO */}
-              {pasoActual < 7 && (
-                <div className="progress-container">
-                  <p className="progress-text">Avance de solicitud: Paso {pasoActual} de 6</p>
-                  <div className="progress-track">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${(pasoActual / 6) * 100}%`
-                      }}
-                    ></div>
-                  </div>
-                </div>
+                <BarraProgreso currentStep={pasoActual} totalSteps={3} />
               )}
 
               {/* FORMULARIO */}
               <FormProvider {...metodosFormulario}>
                 <form
-                  className="form-content"
+                  className={styles.formContent}
                   onSubmit={handleSubmit(onSubmitFinal)}
                 >
                   <div key={pasoActual} className="animacion-paso">

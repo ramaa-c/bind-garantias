@@ -1,0 +1,13 @@
+.container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.inputWrapper {
+  width: 300px;
+}
+
+.btnWrapper {
+  margin-top: 28px;
+}

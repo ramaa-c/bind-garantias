@@ -1,0 +1,98 @@
+.box {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 2px dashed #444;
+  border-radius: 12px;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.box:hover {
+  border-color: var(--yellow);
+  background-color: rgba(244, 245, 0, 0.02);
+}
+
+.dragging {
+  border-color: var(--yellow);
+  background-color: rgba(244, 245, 0, 0.05);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(244, 245, 0, 0.1);
+}
+
+.icon {
+  font-size: 2.5rem;
+  color: #888;
+  margin-bottom: 10px;
+  transition: color 0.3s;
+}
+
+.dragging .icon {
+  color: var(--yellow);
+}
+
+.text {
+  color: var(--white);
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+}
+
+.subtext {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* --- ESTADO: ARCHIVO CARGADO --- */
+.loaded {
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  background-color: rgba(76, 175, 80, 0.05);
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.loaded:hover {
+  transform: none;
+  border-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.08);
+}
+
+.loadedInfo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.loadedIcon {
+  font-size: 2rem;
+  color: #4caf50;
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.filename {
+  color: var(--white);
+  font-weight: 500;
+  font-size: 0.95rem;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filesize {
+  color: #888;
+  font-size: 0.8rem;
+}

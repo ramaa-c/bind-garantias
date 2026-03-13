@@ -1,0 +1,105 @@
+.container {
+  animation: fadeIn 0.4s ease;
+}
+
+/* --- GRILLA SUPERIOR --- */
+.montoWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.formRowCentered {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.formCol {
+  width: 100%;
+  max-width: 200px;
+}
+
+/* --- BOTÓN SIMULAR --- */
+.calcBtnWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+/* --- TICKET DE RESULTADOS --- */
+.breakdownContainer {
+  background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2));
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 2.5rem;
+  margin-top: 1rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.breakdownHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed #444;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #aaa;
+  font-size: 1.1rem;
+}
+
+.textYellow {
+  color: var(--yellow);
+}
+
+.textXl {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.breakdownBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.breakdownRow {
+  display: flex;
+  justify-content: space-between;
+  color: #ccc;
+  font-size: 0.95rem;
+}
+
+.totalRow {
+  border-top: 1px solid #444;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+  font-weight: bold;
+}
+
+/* --- UTILIDADES --- */
+.mtMedium {
+  margin-top: 20px;
+}
+
+.actionsFlex {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 2rem;
+}
+
+.inputCentrado :global(input) {
+  text-align: center;
+}
+
+.maxWidth200 {
+  max-width: 200px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

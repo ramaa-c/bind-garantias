@@ -1,0 +1,48 @@
+.chequesPage {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--carbon-black);
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+
+.formMainContainer {
+  display: flex;
+  justify-content: center;
+  padding-inline: 2.5rem;
+  padding-block: 1.5rem;
+}
+
+.contenedorPrincipal {
+  max-width: 1200px;
+  width: 100%;
+  display: flex;
+  gap: 60px;
+}
+
+.columnaFormulario {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.seccionFormulario {
+  flex: 1;
+  background-color: var(--graphite);
+  padding: 40px;
+  border-radius: 12px;
+  border: 1px solid #333;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.chequesTitle {
+  color: var(--white);
+  font-size: 22px;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.formContent {
+  margin-top: 1.5rem;
+}

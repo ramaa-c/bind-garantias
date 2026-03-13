@@ -1,0 +1,112 @@
+.container {
+  animation: fadeIn 0.4s ease;
+}
+
+.subtitle {
+  color: var(--white);
+  font-weight: bold;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 2rem;
+}
+
+.subtitleIcon {
+  font-size: 1.2rem;
+}
+
+/* --- TARJETAS DE ACCIÓN --- */
+.cardsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  margin-bottom: 3rem;
+}
+
+.card {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 25px;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 15px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: var(--yellow);
+  transform: translateY(-2px);
+}
+
+.cardIcon {
+  font-size: 2rem;
+  color: var(--yellow);
+  background-color: rgba(244, 245, 0, 0.1);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardText {
+  color: #ccc;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* --- SECCIÓN INPUT ID --- */
+.inputSection {
+  margin-bottom: 2.5rem;
+}
+
+.helperText {
+  color: #888;
+  font-size: 0.9rem;
+  margin-top: 1.5rem;
+}
+
+/* --- ÁREA DE TEXTO --- */
+.textareaWrapper {
+  margin-bottom: 2.5rem;
+}
+
+.textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* --- FOOTER Y ACCIONES --- */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+  padding-top: 2rem;
+  border-top: 1px dashed #333;
+}
+
+.disclaimer {
+  color: #666;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  flex: 1;
+  max-width: 60%;
+}
+
+.btnFinalizar {
+  padding: 12px 30px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,0 +1,115 @@
+.container {
+  animation: fadeIn 0.4s ease;
+}
+
+/* --- TARJETA DE RESUMEN VERIFICADO --- */
+.summaryCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background-color: rgba(76, 175, 80, 0.05);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 2rem;
+}
+
+.summaryInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summaryStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: #4caf50;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.summaryCuit {
+  color: var(--yellow);
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.summaryName {
+  color: var(--white);
+  font-size: 1rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* --- TÍTULO Y FORMULARIO --- */
+.subtitle {
+  color: var(--white);
+  font-weight: bold;
+  font-size: 18px;
+  margin: 2rem 0 1.5rem 0;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.formRow {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 1.5rem;
+}
+
+.formCol {
+  flex: 1;
+}
+
+/* --- ZONA CELULAR --- */
+.phoneZone {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  border-top: 1px dashed #444;
+  padding-top: 30px;
+  margin-top: 20px;
+  margin-bottom: 2rem;
+}
+
+.phoneInputWrapper {
+  flex: 1;
+  max-width: 300px;
+}
+
+.actionsRight {
+  text-align: right;
+  margin-top: 2rem;
+}
+
+/* --- UTILIDADES Y BOTONES --- */
+.btnEditGhost {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  border: 1px solid #555;
+  color: #aaa;
+}
+
+.iconMarginRight {
+  margin-right: 6px;
+}
+
+.btnVerify {
+  height: 46px;
+}
+
+.btnVerifyError {
+  margin-bottom: 22px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
