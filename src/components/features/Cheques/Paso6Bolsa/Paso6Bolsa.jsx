@@ -1,7 +1,7 @@
 import React from "react";
 import { useFormContext, Controller } from "react-hook-form";
 import { FiBriefcase, FiCheckCircle, FiArrowRight } from "react-icons/fi";
-import { Input, Button } from "../../../ui";
+import { InputFlotante, Button } from "../../../ui";
 import styles from "./Paso6Bolsa.module.css";
 
 const sociedades = [
@@ -13,9 +13,13 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
   const {
     register,
     control,
+    watch, 
     formState: { errors },
     setValue,
   } = useFormContext();
+
+  // Observamos el número de cuenta en tiempo real
+  const cuentaBolsa = watch("numeroCuentaBolsa", "");
 
   return (
     <div className={styles.container}>
@@ -60,13 +64,13 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
                     </div>
                   </div>
 
-                  {/* FORMULARIO DESPLEGABLE  */}
+                  {/* FORMULARIO DESPLEGABLE CON INPUT FLOTANTE */}
                   {isSelected && (
                     <div className={styles.expandedArea}>
-                      <div className={styles.inputWrapper}>
-                        <Input
-                          label={`Número de cuenta en ${sociedad.nombre} *`}
-                          placeholder="Ej: 12345678"
+                      <div className={styles.inputWrapper} style={{ marginTop: "30px", marginBottom: "25px" }}>
+                        <InputFlotante
+                          label={`Número de cuenta en ${sociedad.nombre}`}
+                          esValido={cuentaBolsa.length >= 4}
                           error={errors.numeroCuentaBolsa?.message}
                           {...register("numeroCuentaBolsa")}
                         />

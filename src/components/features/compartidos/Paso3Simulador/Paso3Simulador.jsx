@@ -1,7 +1,8 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { Input, Select, Button, Alert, InputMonto } from "../../../ui";
+import { InputFlotante, Button, Alert, InputMonto } from "../../../ui";
 import styles from "./Paso3Simulador.module.css";
+import { SelectFlotante } from "../../../ui/SelectFlotante/SelectFlotante";
 
 export default function Paso3Simulador({
   mostrarResultados,
@@ -17,12 +18,17 @@ export default function Paso3Simulador({
   const tipoCalculo = watch("tipoCalculo", "tasa_directa");
   const esPorMontoCheque = tipoCalculo === "por_monto_cheque";
 
+  // Observamos la fecha para pintarla de verde si el usuario ya seleccionó una
+  const fechaValue = watch(esPorMontoCheque ? "fechaPago" : "plazo") || "";
+  const isFechaValid = fechaValue.length > 0;
+
   return (
     <div className={styles.container}>
       {/* GRILLA SUPERIOR */}
-      <div className={styles.topGrid}>
-        <Select
-          label="Moneda *"
+      {/* Le damos un margin-top para que los labels flotantes respiren */}
+      <div className={styles.topGrid} style={{ marginTop: "20px" }}>
+        <SelectFlotante
+          label="Moneda"
           disabled={mostrarResultados}
           options={[
             { value: "Pesos", label: "Pesos" },
@@ -30,8 +36,8 @@ export default function Paso3Simulador({
           ]}
           {...register("moneda")}
         />
-        <Select
-          label="Tipo de producto *"
+        <SelectFlotante
+          label="Tipo de producto"
           disabled={mostrarResultados}
           options={[
             { value: "cheques_propios", label: "Cheques propios" },
@@ -39,8 +45,8 @@ export default function Paso3Simulador({
           ]}
           {...register("tipoProducto")}
         />
-        <Select
-          label="Tipo de cálculo *"
+        <SelectFlotante
+          label="Tipo de cálculo"
           disabled={mostrarResultados}
           options={[
             {
@@ -54,7 +60,8 @@ export default function Paso3Simulador({
       </div>
 
       {/* INPUTS DINÁMICOS */}
-      <div className={styles.dynamicRow}>
+      {/* Margen de 40px para que el calendario no se pegue a los selects de arriba */}
+      <div className={styles.dynamicRow} style={{ marginTop: "40px" }}>
         <div className={styles.moneyCol}>
           <InputMonto
             label={
@@ -67,9 +74,11 @@ export default function Paso3Simulador({
         </div>
 
         <div className={styles.dateCol}>
-          <Input
+          {/* Reemplazamos el input viejo por el flotante */}
+          <InputFlotante
             type="date"
-            label={esPorMontoCheque ? "Fecha de pago *" : "Plazo (Fecha) *"}
+            label={esPorMontoCheque ? "Fecha de pago" : "Plazo (Fecha)"}
+            esValido={isFechaValid}
             error={
               esPorMontoCheque
                 ? errors.fechaPago?.message

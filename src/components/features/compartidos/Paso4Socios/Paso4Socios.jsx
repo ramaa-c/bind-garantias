@@ -1,6 +1,7 @@
 import React from "react";
 import { FiEdit, FiTrash2, FiUserPlus, FiCheckCircle } from "react-icons/fi";
-import { Input, Button, Badge, Avatar, BotonIcono } from "../../../ui";
+// Reemplazamos Input por InputFlotante
+import { InputFlotante, Button, Badge, Avatar, BotonIcono } from "../../../ui";
 import styles from "./Paso4Socios.module.css";
 
 export default function Paso4Socios({
@@ -20,6 +21,8 @@ export default function Paso4Socios({
 }) {
   return (
     <div className={styles.container}>
+      
+      {/* --- FASE 1: INGRESAR CUIT --- */}
       {faseSocio === "ingresar_cuit" && (
         <div className={styles.section}>
           <h3 className={styles.headerTitle}>
@@ -29,21 +32,26 @@ export default function Paso4Socios({
             Ingresá el número de CUIT/CUIL para validar su identidad en AFIP.
           </p>
 
-          <div className={styles.searchRow}>
+          <div className={styles.searchRow} style={{ marginTop: "30px", alignItems: "flex-start" }}>
             <div className={styles.searchInput}>
-              <Input
-                placeholder="Ej: 20304050608"
+              <InputFlotante
+                label="CUIT del Socio"
+                maxLength={11}
                 value={tempSocioCuit}
+                esValido={tempSocioCuit.length === 11}
                 onChange={(e) => setTempSocioCuit(e.target.value)}
               />
             </div>
-            <Button
-              variant="primary"
-              onClick={validarCuitSocio}
-              className={styles.tallButton}
-            >
-              VALIDAR CUIT
-            </Button>
+            {/* Ajustamos el botón para que alinee con la línea del input */}
+            <div style={{ marginTop: "4px" }}>
+              <Button
+                variant="primary"
+                onClick={validarCuitSocio}
+                className={styles.tallButton}
+              >
+                VALIDAR CUIT
+              </Button>
+            </div>
           </div>
 
           {socios.length > 0 && (
@@ -60,6 +68,7 @@ export default function Paso4Socios({
         </div>
       )}
 
+      {/* --- FASE 2: COMPLETAR DATOS --- */}
       {faseSocio === "completar_datos" && (
         <div className={styles.section}>
           <h3 className={styles.headerTitle}>Completar datos del socio</h3>
@@ -73,12 +82,12 @@ export default function Paso4Socios({
             <p className={styles.summaryCuit}>CUIT: {tempSocioCuit}</p>
           </div>
 
-          <div className={styles.percentageWrapper}>
-            <Input
+          <div className={styles.percentageWrapper} style={{ marginTop: "40px" }}>
+            <InputFlotante
               type="number"
-              label="Porcentaje de participación (%) *"
-              placeholder="Ej: 50"
+              label="Porcentaje de participación (%)"
               value={tempSocioParticipacion}
+              esValido={tempSocioParticipacion > 0 && tempSocioParticipacion <= 100}
               onChange={(e) => setTempSocioParticipacion(e.target.value)}
             />
           </div>
@@ -102,6 +111,7 @@ export default function Paso4Socios({
         </div>
       )}
 
+      {/* --- FASE 3: LISTA DE SOCIOS --- */}
       {faseSocio === "lista" && (
         <div className={styles.section}>
           <div className={styles.listHeader}>

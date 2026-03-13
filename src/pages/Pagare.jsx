@@ -92,19 +92,19 @@ export default function PagareUSD() {
                         setPasoActual={setPasoActual}
                       />
                     )}
-
-                    {pasoActual === 2 && (
-                      <Paso2AgentePagare avanzarPaso={avanzarPaso} />
-                    )}
-
-                    {pasoActual === 3 && <Paso3Epyme />}
-
-                    {pasoActual === 4 && (
-                      <Paso4ExitoPagare
-                        onVolverLista={() => navigate("/solicitudes")}
-                      />
-                    )}
                   </div>
+
+                  {pasoActual === 2 && (
+                    <Paso2AgentePagare avanzarPaso={avanzarPaso} />
+                  )}
+
+                  {pasoActual === 3 && <Paso3Epyme />}
+
+                  {pasoActual === 4 && (
+                    <Paso4ExitoPagare
+                      onVolverLista={() => navigate("/solicitudes")}
+                    />
+                  )}
                 </form>
               </FormProvider>
             </div>

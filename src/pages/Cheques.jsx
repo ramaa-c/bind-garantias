@@ -34,10 +34,18 @@ export default function Cheques() {
   const [apoNombre, setApoNombre] = useState("");
   const [apoRol, setApoRol] = useState("Representante Legal");
 
-  const metodosFormulario = useForm({
+const metodosFormulario = useForm({
     resolver: zodResolver(chequesSchema),
     mode: "onChange",
-    defaultValues: { moneda: "Pesos", sociedadBolsa: "" },
+    defaultValues: { 
+      moneda: "Pesos", 
+      sociedadBolsa: "",
+      cuit: "",
+      direccion: "",
+      provincia: "",
+      localidad: "",
+      celular: ""
+    },
   });
 
   const { handleSubmit, trigger, watch, setValue } = metodosFormulario;
@@ -158,9 +166,23 @@ export default function Cheques() {
             {/* TARJETA PRINCIPAL FORMULARIO */}
             <div className={styles.seccionFormulario}>
 
-              {pasoActual < 4 && (
-                <BarraProgreso currentStep={pasoActual} totalSteps={3} />
+              {/* --- BARRA DE PROGRESO --- */}
+              {pasoActual < 7 && (
+                (() => {
+                  
+                  let hitoVisual = 1;
+                  if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2; 
+                  if (pasoActual === 6) hitoVisual = 3; 
+
+                  return (
+                    <BarraProgreso 
+                      hitos={["Datos Básicos", "Documentación", "Confirmación"]}
+                      hitoActual={hitoVisual}
+                    />
+                  );
+                })()
               )}
+              {/* --- FIN BARRA NUEVA --- */}
 
               {/* FORMULARIO */}
               <FormProvider {...metodosFormulario}>

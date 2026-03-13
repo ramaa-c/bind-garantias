@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { FiCheckCircle, FiEdit } from "react-icons/fi";
-import { Input, Button, Acordeon, CargaArchivos, Alert } from "../../../ui";
+import { InputFlotante, Button, Acordeon, CargaArchivos, Alert } from "../../../ui";
 import styles from "./Paso5Documentacion.module.css";
 
 export default function Paso5Documentacion({
@@ -42,54 +42,45 @@ export default function Paso5Documentacion({
   return (
     <div className={styles.container}>
       {/* SECCIÓN 1: DOCUMENTACIÓN EMPRESA */}
-
       <h3 className={styles.title}>Documentación requerida</h3>
 
       <Acordeon title="Estatuto" status="check" defaultOpen={true}>
         <CargaArchivos title="Subir archivo" subtitle="PDF o ZIP menor a 5MB" />
         <div className={styles.docInfoBox}>
           Los estatutos son las normas por las que se regirá el funcionamiento
-          de la entidad. En ellas se contemplan temas de vital importancia.
+          de la entidad.
         </div>
       </Acordeon>
 
       <Acordeon title="Último Balance exigible, certificado" status="alert">
         <CargaArchivos title="Subir archivo" subtitle="PDF o ZIP menor a 5MB" />
         <div className={styles.docInfoBox}>
-          El estado de situación financiera se estructura a través de tres
-          conceptos patrimoniales. Este informe debe ser auditado por un
-          contador.
+          Este informe debe ser auditado por un contador.
         </div>
       </Acordeon>
 
+      {/* REINCORPORADOS: Acta y Poderes */}
       <Acordeon title="Acta de designación de autoridades" status="alert">
         <CargaArchivos title="Subir archivo" subtitle="PDF o ZIP menor a 5MB" />
         <div className={styles.docInfoBox}>
-          Copia certificada del acta de asamblea donde se designan las
-          autoridades vigentes.
+          Copia certificada del acta de asamblea donde se designan las autoridades vigentes.
         </div>
       </Acordeon>
 
       <Acordeon title="Poderes" status="warn">
         <CargaArchivos title="Subir archivo" subtitle="PDF o ZIP menor a 5MB" />
         <div className={styles.docInfoBox}>
-          Copia de los poderes otorgados para operar y representar a la
-          sociedad.
+          Copia de los poderes otorgados para operar y representar a la sociedad.
         </div>
       </Acordeon>
 
       <hr className={styles.divider} />
 
       {/* SECCIÓN 2: DOCUMENTACIÓN SOCIOS */}
-
       <h3 className={`${styles.title} ${styles.titleSmallMargin}`}>
         Completá la información y documentación de cada socio.
       </h3>
-      <p className={styles.mutedText}>
-        La dirección de mail tiene que ser personal (no de un sector de la
-        empresa).
-      </p>
-
+      
       {socios.length === 0 ? (
         <Alert variant="warning" layout="box">
           No hay socios cargados para completar información.
@@ -98,6 +89,12 @@ export default function Paso5Documentacion({
         socios.map((socio, index) => {
           const socioId = `socio-${index}`;
           const isEditing = editModes[socioId];
+          
+          const sEmail = watch(`socios.${index}.email`) || "";
+          const sCel = watch(`socios.${index}.celular`) || "";
+          const sDir = watch(`socios.${index}.direccion`) || "";
+          const sProv = watch(`socios.${index}.provincia`) || "";
+          const sLoc = watch(`socios.${index}.localidad`) || "";
 
           return (
             <Acordeon key={index} title={`CUIT ${socio.cuit}`} status="alert">
@@ -114,62 +111,45 @@ export default function Paso5Documentacion({
 
                 {isEditing ? (
                   <div className={styles.container}>
-                    <p className={styles.editingSubtitle}>
-                      Editando datos de:{" "}
-                      <strong className={styles.textWhite}>
-                        {socio.nombre}
-                      </strong>
-                    </p>
-
-                    <div className={styles.row}>
+                    <div className={styles.row} style={{ marginTop: "30px" }}>
                       <div className={styles.col}>
-                        <Input
-                          label="Email *"
+                        <InputFlotante
+                          label="Email"
                           type="email"
+                          esValido={sEmail.includes("@")}
                           {...register(`socios.${index}.email`)}
                         />
                       </div>
                       <div className={styles.col}>
-                        <Input
-                          label="Celular *"
-                          type="text"
+                        <InputFlotante
+                          label="Celular"
+                          esValido={sCel.length >= 10}
                           {...register(`socios.${index}.celular`)}
                         />
                       </div>
                     </div>
 
-                    <div className={styles.row}>
+                    <div className={styles.row} style={{ marginTop: "40px" }}>
                       <div className={styles.col}>
-                        <Input
-                          label="Dirección *"
-                          type="text"
+                        <InputFlotante
+                          label="Dirección"
+                          esValido={sDir.length > 5}
                           {...register(`socios.${index}.direccion`)}
                         />
                       </div>
                     </div>
 
-                    <div className={styles.row}>
+                    <div className={styles.row} style={{ marginTop: "40px" }}>
                       <div className={styles.col}>
-                        <Input
-                          label="Provincia *"
-                          type="text"
-                          {...register(`socios.${index}.provincia`)}
-                        />
+                        <InputFlotante label="Provincia" esValido={sProv.length > 2} {...register(`socios.${index}.provincia`)} />
                       </div>
                       <div className={styles.col}>
-                        <Input
-                          label="Localidad *"
-                          type="text"
-                          {...register(`socios.${index}.localidad`)}
-                        />
+                        <InputFlotante label="Localidad" esValido={sLoc.length > 2} {...register(`socios.${index}.localidad`)} />
                       </div>
                     </div>
 
-                    <div className={styles.actionsRight}>
-                      <Button
-                        variant="primary"
-                        onClick={() => handleGuardarDatosSocio(socioId)}
-                      >
+                    <div className={styles.actionsRight} style={{ marginTop: "20px" }}>
+                      <Button variant="primary" onClick={() => handleGuardarDatosSocio(socioId)}>
                         GUARDAR DATOS
                       </Button>
                     </div>
@@ -177,24 +157,11 @@ export default function Paso5Documentacion({
                 ) : (
                   <div className={styles.container}>
                     <p className={styles.participationText}>
-                      Participación:{" "}
-                      <strong className={styles.textYellow}>
-                        {socio.participacion}%
-                      </strong>
-                      <span className={styles.mutedDetail}>
-                        | {socio.nombre}
-                      </span>
+                      Participación: <strong className={styles.textYellow}>{socio.participacion}%</strong>
                     </p>
-
                     <div className={styles.dropzoneGrid}>
-                      <CargaArchivos
-                        title="DNI Frente"
-                        subtitle="Imagen clara (.jpg, .png, .pdf)"
-                      />
-                      <CargaArchivos
-                        title="DNI Dorso"
-                        subtitle="Imagen clara (.jpg, .png, .pdf)"
-                      />
+                      <CargaArchivos title="DNI Frente" subtitle="Imagen clara" />
+                      <CargaArchivos title="DNI Dorso" subtitle="Imagen clara" />
                     </div>
                   </div>
                 )}
@@ -204,112 +171,51 @@ export default function Paso5Documentacion({
         })
       )}
 
-      <div className={styles.actionsRight}>
-        <Button
-          variant="outline"
-          className={styles.borderless}
-          onClick={onVolverASocios}
-        >
-          Editar lista general de socios
-        </Button>
-      </div>
-
       <hr className={styles.divider} />
 
-      {/* SECCIÓN 3: Representante Legal / Apoderado */}
-
+      {/* SECCIÓN 3: Representante Legal */}
       <h3 className={styles.title}>Representante Legal / Apoderado</h3>
 
       {faseApoderado === "ingresar" && (
-        <div className={styles.searchContainer}>
+        <div className={styles.searchContainer} style={{ alignItems: "flex-start", marginTop: "20px" }}>
           <div className={styles.col}>
-            <Input
-              placeholder="Ingresar CUIT del apoderado"
+            <InputFlotante
+              label="CUIT del apoderado"
+              maxLength={11}
+              esValido={apoCuitIngresado.length === 11}
               error={errors.apoCuit?.message}
               {...register("apoCuit")}
             />
           </div>
-          <Button
-            variant="primary"
-            className={styles.tallButton}
-            onClick={validarCuitApoderado}
-          >
-            VALIDAR
-          </Button>
+          <div style={{ marginTop: "4px" }}>
+            <Button variant="primary" className={styles.tallButton} onClick={validarCuitApoderado}>
+              VALIDAR
+            </Button>
+          </div>
         </div>
       )}
 
       {faseApoderado === "completar" && (
         <div className={styles.container}>
-          <div className={styles.row}>
+          <div className={styles.row} style={{ marginTop: "30px" }}>
             <div className={styles.col}>
-              <Input label="Cuit" value={apoCuitIngresado} readOnly disabled />
+              <InputFlotante label="Cuit" value={apoCuitIngresado} readOnly disabled esValido={true} />
             </div>
             <div className={styles.col}>
-              <Input
-                label="Nombre y Apellido"
-                value={apoNombre}
-                readOnly
-                disabled
-              />
+              <InputFlotante label="Nombre y Apellido" value={apoNombre} readOnly disabled esValido={true} />
             </div>
           </div>
-
-          <div className={styles.radioGroup}>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="rol"
-                value="Apoderado"
-                checked={apoRol === "Apoderado"}
-                onChange={(e) => setApoRol(e.target.value)}
-                className={styles.radioInput}
-              />
-              Apoderado
-            </label>
-            <label className={styles.radioLabel}>
-              <input
-                type="radio"
-                name="rol"
-                value="Representante Legal"
-                checked={apoRol === "Representante Legal"}
-                onChange={(e) => setApoRol(e.target.value)}
-                className={styles.radioInput}
-              />
-              Representante Legal
-            </label>
-          </div>
-
-          <div className={styles.row}>
+          <div className={styles.row} style={{ marginTop: "40px" }}>
             <div className={styles.col}>
-              <Input
-                label="Email *"
-                type="email"
-                error={errors.apoEmail?.message}
-                {...register("apoEmail")}
-              />
+              <InputFlotante label="Email" type="email" esValido={watch("apoEmail")?.includes("@")} {...register("apoEmail")} />
             </div>
             <div className={styles.col}>
-              <Input
-                label="Celular *"
-                type="text"
-                error={errors.apoCelular?.message}
-                {...register("apoCelular")}
-              />
+              <InputFlotante label="Celular" esValido={watch("apoCelular")?.length >= 10} {...register("apoCelular")} />
             </div>
           </div>
-
-          <div className={styles.actionsFlex}>
-            <Button
-              variant="outline"
-              className={styles.borderless}
-              onClick={() => setFaseApoderado("ingresar")}
-            >
-              CANCELAR
-            </Button>
-            <Button variant="primary" onClick={guardarApoderado}>
-              GUARDAR
-            </Button>
+          <div className={styles.actionsFlex} style={{ marginTop: "20px" }}>
+            <Button variant="outline" className={styles.borderless} onClick={() => setFaseApoderado("ingresar")}>CANCELAR</Button>
+            <Button variant="primary" onClick={guardarApoderado}>GUARDAR</Button>
           </div>
         </div>
       )}
@@ -317,48 +223,30 @@ export default function Paso5Documentacion({
       {faseApoderado === "guardado" && (
         <div className={styles.summaryCard}>
           <div className={styles.summaryInfo}>
-            <div className={styles.summaryStatus}>
-              <FiCheckCircle size={16} />
-              <span>IDENTIDAD VALIDADA</span>
-            </div>
-            <p className={styles.summaryName}>
-              {apoNombre} - {apoRol}
-            </p>
-            <p className={styles.summaryDetails}>CUIT: {apoCuitIngresado}</p>
+            <div className={styles.summaryStatus}><FiCheckCircle size={16} /><span>IDENTIDAD VALIDADA</span></div>
+            <p className={styles.summaryName}>{apoNombre} - {apoRol}</p>
           </div>
-
-          <Button
-            variant="outline"
-            className={styles.ghostButtonBordered}
-            onClick={() => setFaseApoderado("completar")}
-          >
-            <FiEdit className={styles.iconMarginRight} /> Editar
-          </Button>
+          <Button variant="outline" onClick={() => setFaseApoderado("completar")}><FiEdit /> Editar</Button>
         </div>
       )}
 
       <hr className={styles.divider} />
 
       {/* SECCIÓN 4: Facturación */}
-
       <div className={styles.billingSection}>
-        <h3 className={styles.titleSmall}>
-          INDICANOS EL MAIL DONDE QUERES QUE TE LLEGUE LA FACTURA:
-        </h3>
-        <div className={styles.billingInputWrapper}>
-          <Input
+        <h3 className={styles.titleSmall}>MAIL DE FACTURACIÓN:</h3>
+        <div className={styles.billingInputWrapper} style={{ marginTop: "40px" }}>
+          <InputFlotante
+            label="Email"
             type="email"
-            placeholder="Ej: facturacion@empresa.com"
-            error={errors.emailFacturacion?.message}
+            esValido={watch("emailFacturacion")?.includes("@")}
             {...register("emailFacturacion")}
           />
         </div>
       </div>
 
       <div className={styles.actionsRight}>
-        <Button variant="primary" onClick={avanzarPaso6}>
-          CONTINUAR
-        </Button>
+        <Button variant="primary" onClick={avanzarPaso6}>CONTINUAR</Button>
       </div>
     </div>
   );
