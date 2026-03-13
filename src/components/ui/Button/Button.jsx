@@ -1,18 +1,22 @@
+import React from "react";
 import styles from "./Button.module.css";
 
 export const Button = ({
   children,
+  onClick,
   variant = "primary",
   size = "md",
-  onClick,
-  type = "button",
   className = "",
-  ...props
+  type = "button",
 }) => {
-  const buttonClass = `${styles[variant]} ${size === "lg" ? styles["size-lg"] : ""} ${className}`;
+  const claseBoton = `
+    ${styles[variant] || styles.primary} 
+    ${styles[`size-${size}`] || ""} 
+    ${className}
+  `.trim();
 
   return (
-    <button className={buttonClass} onClick={onClick} type={type} {...props}>
+    <button type={type} className={claseBoton} onClick={onClick}>
       {children}
     </button>
   );

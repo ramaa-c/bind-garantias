@@ -8,6 +8,7 @@ import {
   FiArrowRight,
 } from "react-icons/fi";
 import { TbFileInvoice } from "react-icons/tb";
+import { Button } from "../components/ui";
 import styles from "./Inicio.module.css";
 
 // Mocks
@@ -35,6 +36,7 @@ export default function Inicio() {
     <div className={styles.inicioPage}>
       <main className={styles.inicioMainContainer}>
         <div className={styles.inicioContentWrapper}>
+          
           <header className={styles.inicioHeader}>
             <div>
               <h1 className={styles.inicioGreeting}>Hola, Asesoramiento</h1>
@@ -42,10 +44,10 @@ export default function Inicio() {
                 Aquí tenés el resumen de tus líneas de crédito.
               </p>
             </div>
-            <button className="btn-action" onClick={() => navigate("/pagare")}>
+            <Button variant="primary" onClick={() => navigate("/pagare")}>
               <FiPlusCircle size={18} style={{ marginRight: "8px" }} />
               NUEVA OPERACIÓN
-            </button>
+            </Button>
           </header>
 
           <section className={styles.kpiGrid}>
@@ -54,7 +56,7 @@ export default function Inicio() {
                 <FiTrendingUp />
               </div>
               <p className={styles.kpiLabel}>Disponible (Pagaré USD)</p>
-              <h2 className={`${styles.kpiValue} text-yellow`}>U$D 40.000</h2>
+              <h2 className={`${styles.kpiValue} ${styles.textYellow}`}>U$D 40.000</h2>
             </div>
 
             <div className={styles.kpiCard}>
@@ -75,6 +77,7 @@ export default function Inicio() {
           </section>
 
           <div className={styles.inicioBottomGrid}>
+            
             {/* COLUMNA IZQUIERDA */}
             <section>
               <div className={styles.sectionHeaderRow}>
@@ -87,12 +90,9 @@ export default function Inicio() {
                   <p>Operá en dólares de forma ágil.</p>
                 </div>
                 <div>
-                  <button
-                    className="btn-action btn-outline btn-sm"
-                    onClick={() => navigate("/pagare")}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => navigate("/pagare")}>
                     UTILIZAR LÍNEA
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -108,12 +108,9 @@ export default function Inicio() {
             <section>
               <div className={styles.sectionHeaderRow}>
                 <h3 className={styles.sectionTitle}>Actividad Reciente</h3>
-                <button
-                  className="btn-link text-sm"
-                  onClick={() => navigate("/solicitudes")}
-                >
-                  Ver todas <FiArrowRight />
-                </button>
+                <Button variant="link" size="sm" onClick={() => navigate("/solicitudes")}>
+                  Ver todas <FiArrowRight style={{ marginLeft: "4px" }} />
+                </Button>
               </div>
 
               <div className={styles.actividadList}>
@@ -147,7 +144,7 @@ export default function Inicio() {
                 ))}
 
                 {solicitudesRecientes.length === 0 && (
-                  <p className="empty-text">No hay actividad reciente.</p>
+                  <p className={styles.emptyText}>No hay actividad reciente.</p>
                 )}
               </div>
             </section>

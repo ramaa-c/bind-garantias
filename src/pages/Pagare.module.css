@@ -1,32 +1,49 @@
 .pagarePage {
   display: flex;
   flex-direction: column;
+  position: relative;
   background-color: var(--carbon-black);
   font-family: 'IBM Plex Sans', sans-serif;
+  min-height: 100vh;
 }
 
-.pagareMainContainer {
+.formMainContainer {
   display: flex;
   justify-content: center;
-  padding: 40px;
+  padding: 0 2.5rem;
 }
 
-.pagareContenedorPrincipal {
+.contentWrapper {
   width: 100%;
-  max-width: 1200px;
-  display: flex;
-  gap: 60px;
-  transition: max-width 0.3s ease;
-}
-
-.columnaFormulario {
-  flex: 1;
+  max-width: var(--form-container-width);
   display: flex;
   flex-direction: column;
 }
 
-.pagareSeccionFormulario {
-  flex: 1;
+.navegacionTop {
+  margin-bottom: 0.5rem;
+}
+
+.contenedorPrincipal {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 50px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .contenedorPrincipal {
+    grid-template-columns: 1fr;
+  }
+}
+
+.columnaFormulario {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.seccionFormulario {
   background-color: var(--graphite);
   padding: 40px;
   border-radius: 12px;
@@ -34,13 +51,14 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-.pagareTitle {
+.tituloVista {
   color: var(--white);
   font-size: 24px;
-  font-weight: normal;
-  margin: 0 0 20px 0;
+  font-weight: 500;
+  margin: 0 0 24px 0;
+  letter-spacing: -0.5px;
 }
 
-.pagareFormContent {
-  margin-top: 30px;
+.formContent {
+  margin-top: 1.5rem;
 }

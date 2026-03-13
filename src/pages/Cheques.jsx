@@ -34,17 +34,17 @@ export default function Cheques() {
   const [apoNombre, setApoNombre] = useState("");
   const [apoRol, setApoRol] = useState("Representante Legal");
 
-const metodosFormulario = useForm({
+  const metodosFormulario = useForm({
     resolver: zodResolver(chequesSchema),
     mode: "onChange",
-    defaultValues: { 
-      moneda: "Pesos", 
+    defaultValues: {
+      moneda: "Pesos",
       sociedadBolsa: "",
       cuit: "",
       direccion: "",
       provincia: "",
       localidad: "",
-      celular: ""
+      celular: "",
     },
   });
 
@@ -145,12 +145,8 @@ const metodosFormulario = useForm({
 return (
     <div className={styles.chequesPage}>
       <div className={styles.formMainContainer}>
-        
-        {/* Sacamos el título de "vuelo" de aquí para meterlo en la tarjeta */}
-
-        <div className={styles.contenedorPrincipal}>
-          <div className={styles.columnaFormulario}>
-            
+        <div className={styles.contentWrapper}>
+          <div className={styles.navegacionTop}>
             {pasoActual > 1 && pasoActual < 7 && (
               <BotonVolver
                 onClick={() => {
@@ -166,118 +162,119 @@ return (
                 texto="Volver a la lista"
               />
             )}
-
-            <div className={styles.seccionFormulario}>
-
-              {/* NUEVO: Título de Bienvenida (Dentro de la tarjeta, solo Paso 1) */}
-              {pasoActual === 1 && (
-                <div className={styles.bienvenidaHeader}>
-                  <h1 className={styles.tituloBienvenida}>Solicitud de Línea de Cheques</h1>
-                  <p className={styles.subtituloBienvenida}>
-                    Comenzá validando el CUIT de tu empresa para operar en el mercado de capitales.
-                  </p>
-                </div>
-              )}
-
-              {/* MODIFICADO: La barra solo aparece desde el Paso 2 al 6 */}
-              {pasoActual >= 2 && pasoActual < 7 && (
-                (() => {
-                  let hitoVisual = 1;
-                  if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2; 
-                  if (pasoActual === 6) hitoVisual = 3; 
-
-                  return (
-                    <BarraProgreso 
-                      hitos={["Datos Básicos", "Documentación", "Confirmación"]}
-                      hitoActual={hitoVisual}
-                    />
-                  );
-                })()
-              )}
-              {/* FORMULARIO */}
-              <FormProvider {...metodosFormulario}>
-                <form
-                  className={styles.formContent}
-                  onSubmit={handleSubmit(onSubmitFinal)}
-                >
-                  <div key={pasoActual} className="animacion-paso">
-                    {pasoActual === 1 && (
-                      <Paso1Cuit onValidar={handleValidarCuit} />
-                    )}
-
-                    {pasoActual === 2 && (
-                      <Paso2Datos
-                        onVolver={handleVolver}
-                        onAbrirModalSms={abrirModalSms}
-                        onContinuar={handleContinuarPaso2}
-                      />
-                    )}
-
-                    {pasoActual === 3 && (
-                      <Paso3Simulador
-                        mostrarResultados={mostrarResultados}
-                        onCalcular={handleCalcularSimulador}
-                        onContinuar={handleContinuarSimulador}
-                      />
-                    )}
-
-                    {pasoActual === 4 && (
-                      <Paso4Socios
-                        faseSocio={faseSocio}
-                        setFaseSocio={setFaseSocio}
-                        tempSocioCuit={tempSocioCuit}
-                        setTempSocioCuit={setTempSocioCuit}
-                        tempSocioNombre={tempSocioNombre}
-                        tempSocioParticipacion={tempSocioParticipacion}
-                        setTempSocioParticipacion={setTempSocioParticipacion}
-                        socios={socios}
-                        iniciarCargaSocio={iniciarCargaSocio}
-                        validarCuitSocio={validarCuitSocio}
-                        guardarSocio={guardarSocio}
-                        eliminarSocio={eliminarSocio}
-                        continuarAlProximoPaso={continuarAlProximoPaso}
-                      />
-                    )}
-
-                    {pasoActual === 5 && (
-                      <Paso5Documentacion
-                        docExpandido={docExpandido}
-                        toggleDoc={toggleDoc}
-                        socios={socios}
-                        onVolverASocios={() => setPasoActual(4)}
-                        faseApoderado={faseApoderado}
-                        setFaseApoderado={setFaseApoderado}
-                        apoNombre={apoNombre}
-                        apoRol={apoRol}
-                        setApoRol={setApoRol}
-                        validarCuitApoderado={validarCuitApoderado}
-                        guardarApoderado={guardarApoderado}
-                        avanzarPaso6={avanzarPaso6}
-                      />
-                    )}
-
-                    {pasoActual === 6 && (
-                      <Paso6Bolsa
-                        avanzarConBolsa={avanzarConBolsa}
-                        avanzarSinBolsa={avanzarSinBolsa}
-                      />
-                    )}
-
-                    {pasoActual === 7 && (
-                      <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
-                    )}
-                  </div>
-                </form>
-              </FormProvider>
-            </div>
           </div>
 
-          {/* LADO DERECHO: PANEL DE DUDAS */}
-          <PanelDudas pasoActual={pasoActual} />
+<div className={styles.contenedorPrincipal}>
+            <div className={styles.columnaFormulario}>
+              <div className={styles.seccionFormulario}>
+                
+                {pasoActual === 1 && (
+                  <div className={styles.bienvenidaHeader}>
+                    <h1 className={styles.tituloBienvenida}>Solicitud de Línea de Cheques</h1>
+                    <p className={styles.subtituloBienvenida}>
+                      Comenzá validando el CUIT de tu empresa para operar en el mercado de capitales.
+                    </p>
+                  </div>
+                )}
+
+                {pasoActual >= 2 && pasoActual < 7 &&
+                  (() => {
+                    let hitoVisual = 1;
+                    if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2;
+                    if (pasoActual === 6) hitoVisual = 3;
+
+                    return (
+                      <BarraProgreso
+                        hitos={["Datos Básicos", "Documentación", "Confirmación"]}
+                        hitoActual={hitoVisual}
+                      />
+                    );
+                  })()}
+
+                {/* FORMULARIO */}
+                <FormProvider {...metodosFormulario}>
+                  <form
+                    className={styles.formContent}
+                    onSubmit={handleSubmit(onSubmitFinal)}
+                  >
+                    <div key={pasoActual} className="animacion-paso">
+                      {pasoActual === 1 && (
+                        <Paso1Cuit onValidar={handleValidarCuit} />
+                      )}
+
+                      {pasoActual === 2 && (
+                        <Paso2Datos
+                          onVolver={handleVolver}
+                          onAbrirModalSms={abrirModalSms}
+                          onContinuar={handleContinuarPaso2}
+                        />
+                      )}
+
+                      {pasoActual === 3 && (
+                        <Paso3Simulador
+                          mostrarResultados={mostrarResultados}
+                          onCalcular={handleCalcularSimulador}
+                          onContinuar={handleContinuarSimulador}
+                        />
+                      )}
+
+                      {pasoActual === 4 && (
+                        <Paso4Socios
+                          faseSocio={faseSocio}
+                          setFaseSocio={setFaseSocio}
+                          tempSocioCuit={tempSocioCuit}
+                          setTempSocioCuit={setTempSocioCuit}
+                          tempSocioNombre={tempSocioNombre}
+                          tempSocioParticipacion={tempSocioParticipacion}
+                          setTempSocioParticipacion={setTempSocioParticipacion}
+                          socios={socios}
+                          iniciarCargaSocio={iniciarCargaSocio}
+                          validarCuitSocio={validarCuitSocio}
+                          guardarSocio={guardarSocio}
+                          eliminarSocio={eliminarSocio}
+                          continuarAlProximoPaso={continuarAlProximoPaso}
+                        />
+                      )}
+
+                      {pasoActual === 5 && (
+                        <Paso5Documentacion
+                          docExpandido={docExpandido}
+                          toggleDoc={toggleDoc}
+                          socios={socios}
+                          onVolverASocios={() => setPasoActual(4)}
+                          faseApoderado={faseApoderado}
+                          setFaseApoderado={setFaseApoderado}
+                          apoNombre={apoNombre}
+                          apoRol={apoRol}
+                          setApoRol={setApoRol}
+                          validarCuitApoderado={validarCuitApoderado}
+                          guardarApoderado={guardarApoderado}
+                          avanzarPaso6={avanzarPaso6}
+                        />
+                      )}
+
+                      {pasoActual === 6 && (
+                        <Paso6Bolsa
+                          avanzarConBolsa={avanzarConBolsa}
+                          avanzarSinBolsa={avanzarSinBolsa}
+                        />
+                      )}
+
+                      {pasoActual === 7 && (
+                        <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
+                      )}
+                    </div>
+                  </form>
+                </FormProvider>
+              </div>
+            </div>
+
+            {pasoActual < 7 && <PanelDudas pasoActual={pasoActual} />}
+          </div>
         </div>
       </div>
 
-      {/* MODAL DE SMS */}
+      {/* MODAL SMS */}
       <ModalSms
         isOpen={mostrarModal}
         onClose={() => setMostrarModal(false)}

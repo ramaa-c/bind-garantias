@@ -125,10 +125,8 @@ export default function Prestamos() {
   return (
     <div className={styles.prestamosPage}>
       <div className={styles.formMainContainer}>
-        <div className={styles.contenedorPrincipal}>
-          <div className={styles.columnaFormulario}>
-            
-            {/* Botones de Volver */}
+        <div className={styles.contentWrapper}>
+          <div className={styles.navegacionTop}>
             {pasoActual > 1 && pasoActual < 7 && (
               <BotonVolver
                 onClick={() => {
@@ -144,110 +142,110 @@ export default function Prestamos() {
                 texto="Volver a la lista"
               />
             )}
-
-            {/* TARJETA PRINCIPAL FORMULARIO */}
-            <div className={styles.seccionFormulario}>
-              
-              {/* NUEVO: Título de Bienvenida (Solo Paso 1) */}
-              {pasoActual === 1 && (
-                <div className={styles.bienvenidaHeader}>
-                  <h1 className={styles.tituloBienvenida}>Solicitud de Préstamo</h1>
-                  <p className={styles.subtituloBienvenida}>
-                    Obtené financiación para tu empresa de forma ágil y 100% online.
-                  </p>
-                </div>
-              )}
-
-              {/* BARRA DE PROGRESO: Ahora aparece desde el Paso 2 al 5 */}
-              {pasoActual >= 2 && pasoActual < 7 && (
-                (() => {
-                  // Ajustamos los hitos para que coincidan con la lógica de préstamos
-                  let hitoVisual = 1;
-                  if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2; 
-                  if (pasoActual >= 6) hitoVisual = 3; 
-
-                  return (
-                    <BarraProgreso 
-                      hitos={["Datos Básicos", "Documentación", "Confirmación"]}
-                      hitoActual={hitoVisual}
-                    />
-                  );
-                })()
-              )}
-
-              {/* FORMULARIO */}
-              <FormProvider {...metodosFormulario}>
-                <form
-                  className={styles.formContent}
-                  onSubmit={handleSubmit(onSubmitFinal)}
-                >
-                  <div key={pasoActual} className="animacion-paso">
-                    {pasoActual === 1 && (
-                      <Paso1Cuit onValidar={handleValidarCuit} />
-                    )}
-
-                    {pasoActual === 2 && (
-                      <Paso2Datos
-                        onVolver={handleVolver}
-                        onAbrirModalSms={abrirModalSms}
-                        onContinuar={handleContinuarPaso2}
-                      />
-                    )}
-
-                    {pasoActual === 3 && (
-                      <Paso3Simulador
-                        mostrarResultados={mostrarResultados}
-                        onCalcular={handleCalcularSimulador}
-                        onContinuar={handleContinuarSimulador}
-                      />
-                    )}
-
-                    {pasoActual === 4 && (
-                      <Paso4Socios
-                        faseSocio={faseSocio}
-                        setFaseSocio={setFaseSocio}
-                        tempSocioCuit={tempSocioCuit}
-                        setTempSocioCuit={setTempSocioCuit}
-                        tempSocioNombre={tempSocioNombre}
-                        tempSocioParticipacion={tempSocioParticipacion}
-                        setTempSocioParticipacion={setTempSocioParticipacion}
-                        socios={socios}
-                        iniciarCargaSocio={iniciarCargaSocio}
-                        validarCuitSocio={validarCuitSocio}
-                        guardarSocio={guardarSocio}
-                        eliminarSocio={eliminarSocio}
-                        continuarAlProximoPaso={continuarAlProximoPaso}
-                      />
-                    )}
-
-                    {pasoActual === 5 && (
-                      <Paso5Documentacion
-                        docExpandido={docExpandido}
-                        toggleDoc={toggleDoc}
-                        socios={socios}
-                        onVolverASocios={() => setPasoActual(4)}
-                        faseApoderado={faseApoderado}
-                        setFaseApoderado={setFaseApoderado}
-                        apoNombre={apoNombre}
-                        apoRol={apoRol}
-                        setApoRol={setApoRol}
-                        validarCuitApoderado={validarCuitApoderado}
-                        guardarApoderado={guardarApoderado}
-                        avanzarPaso6={avanzarAlExito}
-                      />
-                    )}
-
-                    {pasoActual === 7 && (
-                      <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
-                    )}
-                  </div>
-                </form>
-              </FormProvider>
-            </div>
           </div>
 
-          {/* LADO DERECHO: PANEL DE DUDAS */}
-          <PanelDudas pasoActual={pasoActual} />
+          <div className={styles.columnaFormulario}>
+              {/* TARJETA PRINCIPAL FORMULARIO */}
+              <div className={styles.seccionFormulario}>
+                
+                {pasoActual === 1 && (
+                  <div className={styles.bienvenidaHeader}>
+                    <h1 className={styles.tituloBienvenida}>Solicitud de Préstamo</h1>
+                    <p className={styles.subtituloBienvenida}>
+                      Obtené financiación para tu empresa de forma ágil y 100% online.
+                    </p>
+                  </div>
+                )}
+
+                {pasoActual >= 2 && pasoActual < 7 && (
+                  (() => {
+                    let hitoVisual = 1;
+                    if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2; 
+                    if (pasoActual >= 6) hitoVisual = 3; 
+
+                    return (
+                      <BarraProgreso 
+                        hitos={["Datos Básicos", "Documentación", "Confirmación"]}
+                        hitoActual={hitoVisual}
+                      />
+                    );
+                  })()
+                )}
+
+                {/* FORMULARIO */}
+                <FormProvider {...metodosFormulario}>
+                  <form
+                    className={styles.formContent}
+                    onSubmit={handleSubmit(onSubmitFinal)}
+                  >
+                    <div key={pasoActual} className="animacion-paso">
+                      {pasoActual === 1 && (
+                        <Paso1Cuit onValidar={handleValidarCuit} />
+                      )}
+
+                      {pasoActual === 2 && (
+                        <Paso2Datos
+                          onVolver={handleVolver}
+                          onAbrirModalSms={abrirModalSms}
+                          onContinuar={handleContinuarPaso2}
+                        />
+                      )}
+
+                      {pasoActual === 3 && (
+                        <Paso3Simulador
+                          mostrarResultados={mostrarResultados}
+                          onCalcular={handleCalcularSimulador}
+                          onContinuar={handleContinuarSimulador}
+                        />
+                      )}
+
+                      {pasoActual === 4 && (
+                        <Paso4Socios
+                          faseSocio={faseSocio}
+                          setFaseSocio={setFaseSocio}
+                          tempSocioCuit={tempSocioCuit}
+                          setTempSocioCuit={setTempSocioCuit}
+                          tempSocioNombre={tempSocioNombre}
+                          tempSocioParticipacion={tempSocioParticipacion}
+                          setTempSocioParticipacion={setTempSocioParticipacion}
+                          socios={socios}
+                          iniciarCargaSocio={iniciarCargaSocio}
+                          validarCuitSocio={validarCuitSocio}
+                          guardarSocio={guardarSocio}
+                          eliminarSocio={eliminarSocio}
+                          continuarAlProximoPaso={continuarAlProximoPaso}
+                        />
+                      )}
+
+                      {pasoActual === 5 && (
+                        <Paso5Documentacion
+                          docExpandido={docExpandido}
+                          toggleDoc={toggleDoc}
+                          socios={socios}
+                          onVolverASocios={() => setPasoActual(4)}
+                          faseApoderado={faseApoderado}
+                          setFaseApoderado={setFaseApoderado}
+                          apoNombre={apoNombre}
+                          apoRol={apoRol}
+                          setApoRol={setApoRol}
+                          validarCuitApoderado={validarCuitApoderado}
+                          guardarApoderado={guardarApoderado}
+                          avanzarPaso6={avanzarAlExito}
+                        />
+                      )}
+
+                      {pasoActual === 7 && (
+                        <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
+                      )}
+                    </div>
+                  </form>
+                </FormProvider>
+              </div>
+            </div>
+            </div>
+
+            {pasoActual < 7 && <PanelDudas pasoActual={pasoActual} />}
+          </div>
         </div>
       </div>
 
