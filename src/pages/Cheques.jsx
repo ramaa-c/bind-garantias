@@ -142,7 +142,7 @@ export default function Cheques() {
     setPasoActual(7);
   };
 
-  return (
+return (
     <div className={styles.chequesPage}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
@@ -164,11 +164,20 @@ export default function Cheques() {
             )}
           </div>
 
-          <div className={styles.contenedorPrincipal}>
+<div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
-                {/* BARRA PROGRESO */}
-                {pasoActual < 7 &&
+                
+                {pasoActual === 1 && (
+                  <div className={styles.bienvenidaHeader}>
+                    <h1 className={styles.tituloBienvenida}>Solicitud de Línea de Cheques</h1>
+                    <p className={styles.subtituloBienvenida}>
+                      Comenzá validando el CUIT de tu empresa para operar en el mercado de capitales.
+                    </p>
+                  </div>
+                )}
+
+                {pasoActual >= 2 && pasoActual < 7 &&
                   (() => {
                     let hitoVisual = 1;
                     if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2;
@@ -176,11 +185,7 @@ export default function Cheques() {
 
                     return (
                       <BarraProgreso
-                        hitos={[
-                          "Datos Básicos",
-                          "Documentación",
-                          "Confirmación",
-                        ]}
+                        hitos={["Datos Básicos", "Documentación", "Confirmación"]}
                         hitoActual={hitoVisual}
                       />
                     );

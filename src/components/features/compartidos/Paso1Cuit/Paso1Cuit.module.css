@@ -1,13 +1,36 @@
-.container {
+.searchContainerVertical {
   display: flex;
-  gap: 20px;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem; /* Ajustamos el espacio según lo que hablamos antes */
+  width: 100%;
+  animation: fadeIn 0.4s ease;
 }
 
-.inputWrapper {
-  width: 300px;
+.searchInputFull {
+  width: 100%;
+  max-width: 400px;
+  padding-top: 10px;
 }
 
-.btnWrapper {
-  margin-top: 28px;
+/* Centramos el texto del CUIT para que haga juego con el título */
+.searchInputFull :global(input) {
+  text-align: center;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
+}
+
+.buttonWrapperCentered {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px; /* Un pequeño ajuste manual de distancia */
+}
+
+/* Eliminamos la clase .validarBtn si no la usamos más, 
+   o la dejamos solo para márgenes externos */
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
