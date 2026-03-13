@@ -46,3 +46,35 @@
 .formContent {
   margin-top: 1.5rem;
 }
+
+.bienvenidaHeader {
+  text-align: center;
+  padding: 2rem 1rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.bienvenidaHeader {
+  text-align: center;
+  padding: 2.5rem 1rem 1.5rem 1rem;
+}
+
+.tituloBienvenida {
+  color: #ffffff;
+  font-size: 2.4rem;   
+  font-weight: 800;     
+  margin-bottom: 0.8rem;
+  letter-spacing: -1px; 
+}
+
+.subtituloBienvenida {
+  color: #aaa;
+  font-size: 1.1rem;
+  font-weight: 400;     
+  max-width: 450px;
+  margin: 0 auto;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

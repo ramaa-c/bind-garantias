@@ -46,3 +46,38 @@
 .formContent {
   margin-top: 1.5rem;
 }
+
+.bienvenidaHeader {
+  text-align: center;
+  padding: 2.5rem 1rem 1.5rem 1rem;
+  animation: fadeIn 0.5s ease;
+}
+
+.tituloBienvenida {
+  color: #fff;
+  font-size: 2.2rem; /* Tamaño protagónico */
+  font-weight: 800;  /* Raleway en peso alto */
+  margin-bottom: 0.8rem;
+  font-family: 'Raleway', sans-serif;
+  letter-spacing: -0.5px;
+}
+
+.subtituloBienvenida {
+  color: #aaa;
+  font-size: 1.1rem;
+  font-weight: 400;
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.5;
+  font-family: 'Raleway', sans-serif;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ajuste para que la tarjeta respire cuando aparece la barra */
+.seccionFormulario {
+  padding-top: 1rem;
+}

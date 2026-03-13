@@ -127,6 +127,8 @@ export default function Prestamos() {
       <div className={styles.formMainContainer}>
         <div className={styles.contenedorPrincipal}>
           <div className={styles.columnaFormulario}>
+            
+            {/* Botones de Volver */}
             {pasoActual > 1 && pasoActual < 7 && (
               <BotonVolver
                 onClick={() => {
@@ -145,8 +147,32 @@ export default function Prestamos() {
 
             {/* TARJETA PRINCIPAL FORMULARIO */}
             <div className={styles.seccionFormulario}>
-              {pasoActual < 4 && (
-                <BarraProgreso currentStep={pasoActual} totalSteps={3} />
+              
+              {/* NUEVO: Título de Bienvenida (Solo Paso 1) */}
+              {pasoActual === 1 && (
+                <div className={styles.bienvenidaHeader}>
+                  <h1 className={styles.tituloBienvenida}>Solicitud de Préstamo</h1>
+                  <p className={styles.subtituloBienvenida}>
+                    Obtené financiación para tu empresa de forma ágil y 100% online.
+                  </p>
+                </div>
+              )}
+
+              {/* BARRA DE PROGRESO: Ahora aparece desde el Paso 2 al 5 */}
+              {pasoActual >= 2 && pasoActual < 7 && (
+                (() => {
+                  // Ajustamos los hitos para que coincidan con la lógica de préstamos
+                  let hitoVisual = 1;
+                  if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2; 
+                  if (pasoActual >= 6) hitoVisual = 3; 
+
+                  return (
+                    <BarraProgreso 
+                      hitos={["Datos Básicos", "Documentación", "Confirmación"]}
+                      hitoActual={hitoVisual}
+                    />
+                  );
+                })()
               )}
 
               {/* FORMULARIO */}

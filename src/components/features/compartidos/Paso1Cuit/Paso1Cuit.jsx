@@ -10,28 +10,32 @@ export default function Paso1Cuit({ onValidar }) {
     formState: { errors },
   } = useFormContext();
 
+  // 1. Usamos el nombre correcto del campo que registramos abajo ("cuit")
   const cuitValue = watch("cuit") || "";
+  
+  // 2. La variable para el tilde verde se llama isCuitValid
   const isCuitValid = cuitValue.length === 11 && !errors.cuit;
 
   return (
-    <div className={styles.container} style={{ alignItems: "flex-start" }}>
-      
-      <div className={styles.inputWrapper} style={{ marginTop: "35px" }}>
-        <InputFlotante
-          label="CUIT"
-          maxLength={11}
-          esValido={isCuitValid}
-          error={errors.cuit?.message}
-          {...register("cuit")} /* <--- Limpio, sin el onChange raro */
-        />
-      </div>
+   <div className={styles.searchContainerVertical}>
+  <div className={styles.searchInputFull}>
+    <InputFlotante
+      label="CUIT"
+      maxLength={11}
+      esValido={isCuitValid}
+      {...register("cuit")}
+    />
+  </div>
 
-      <div className={styles.btnWrapper}>
-        <Button type="button" variant="primary" onClick={onValidar}>
-          VALIDAR CUIT
-        </Button>
-      </div>
-
-    </div>
+  <div className={styles.buttonWrapperCentered}>
+    <Button
+      variant="primary"
+      size="lg"  
+      onClick={onValidar}
+    >
+      VALIDAR CUIT
+    </Button>
+  </div>
+</div>
   );
 }
