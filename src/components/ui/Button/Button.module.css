@@ -60,3 +60,21 @@
   font-size: 1.1rem;
   letter-spacing: 1px;
 }
+
+.link {
+  composes: base;
+  background-color: transparent;
+  color: #aaa;
+  border: none;
+  padding: 0;
+}
+
+.link:hover {
+  color: var(--white);
+  text-decoration: underline;
+}
+
+.size-sm {
+  padding: 6px 16px;
+  font-size: 0.85rem;
+}
