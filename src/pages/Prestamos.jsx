@@ -125,8 +125,8 @@ export default function Prestamos() {
   return (
     <div className={styles.prestamosPage}>
       <div className={styles.formMainContainer}>
-        <div className={styles.contenedorPrincipal}>
-          <div className={styles.columnaFormulario}>
+        <div className={styles.contentWrapper}>
+          <div className={styles.navegacionTop}>
             {pasoActual > 1 && pasoActual < 7 && (
               <BotonVolver
                 onClick={() => {
@@ -142,86 +142,88 @@ export default function Prestamos() {
                 texto="Volver a la lista"
               />
             )}
-
-            {/* TARJETA PRINCIPAL FORMULARIO */}
-            <div className={styles.seccionFormulario}>
-              {pasoActual < 4 && (
-                <BarraProgreso currentStep={pasoActual} totalSteps={3} />
-              )}
-
-              {/* FORMULARIO */}
-              <FormProvider {...metodosFormulario}>
-                <form
-                  className={styles.formContent}
-                  onSubmit={handleSubmit(onSubmitFinal)}
-                >
-                  <div key={pasoActual} className="animacion-paso">
-                    {pasoActual === 1 && (
-                      <Paso1Cuit onValidar={handleValidarCuit} />
-                    )}
-
-                    {pasoActual === 2 && (
-                      <Paso2Datos
-                        onVolver={handleVolver}
-                        onAbrirModalSms={abrirModalSms}
-                        onContinuar={handleContinuarPaso2}
-                      />
-                    )}
-
-                    {pasoActual === 3 && (
-                      <Paso3Simulador
-                        mostrarResultados={mostrarResultados}
-                        onCalcular={handleCalcularSimulador}
-                        onContinuar={handleContinuarSimulador}
-                      />
-                    )}
-
-                    {pasoActual === 4 && (
-                      <Paso4Socios
-                        faseSocio={faseSocio}
-                        setFaseSocio={setFaseSocio}
-                        tempSocioCuit={tempSocioCuit}
-                        setTempSocioCuit={setTempSocioCuit}
-                        tempSocioNombre={tempSocioNombre}
-                        tempSocioParticipacion={tempSocioParticipacion}
-                        setTempSocioParticipacion={setTempSocioParticipacion}
-                        socios={socios}
-                        iniciarCargaSocio={iniciarCargaSocio}
-                        validarCuitSocio={validarCuitSocio}
-                        guardarSocio={guardarSocio}
-                        eliminarSocio={eliminarSocio}
-                        continuarAlProximoPaso={continuarAlProximoPaso}
-                      />
-                    )}
-
-                    {pasoActual === 5 && (
-                      <Paso5Documentacion
-                        docExpandido={docExpandido}
-                        toggleDoc={toggleDoc}
-                        socios={socios}
-                        onVolverASocios={() => setPasoActual(4)}
-                        faseApoderado={faseApoderado}
-                        setFaseApoderado={setFaseApoderado}
-                        apoNombre={apoNombre}
-                        apoRol={apoRol}
-                        setApoRol={setApoRol}
-                        validarCuitApoderado={validarCuitApoderado}
-                        guardarApoderado={guardarApoderado}
-                        avanzarPaso6={avanzarAlExito}
-                      />
-                    )}
-
-                    {pasoActual === 7 && (
-                      <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
-                    )}
-                  </div>
-                </form>
-              </FormProvider>
-            </div>
           </div>
 
-          {/* LADO DERECHO: PANEL DE DUDAS */}
-          <PanelDudas pasoActual={pasoActual} />
+          <div className={styles.contenedorPrincipal}>
+            <div className={styles.columnaFormulario}>
+              <div className={styles.seccionFormulario}>
+                {pasoActual < 4 && (
+                  <BarraProgreso currentStep={pasoActual} totalSteps={3} />
+                )}
+
+                {/* FORMULARIO */}
+                <FormProvider {...metodosFormulario}>
+                  <form
+                    className={styles.formContent}
+                    onSubmit={handleSubmit(onSubmitFinal)}
+                  >
+                    <div key={pasoActual} className="animacion-paso">
+                      {pasoActual === 1 && (
+                        <Paso1Cuit onValidar={handleValidarCuit} />
+                      )}
+
+                      {pasoActual === 2 && (
+                        <Paso2Datos
+                          onVolver={handleVolver}
+                          onAbrirModalSms={abrirModalSms}
+                          onContinuar={handleContinuarPaso2}
+                        />
+                      )}
+
+                      {pasoActual === 3 && (
+                        <Paso3Simulador
+                          mostrarResultados={mostrarResultados}
+                          onCalcular={handleCalcularSimulador}
+                          onContinuar={handleContinuarSimulador}
+                        />
+                      )}
+
+                      {pasoActual === 4 && (
+                        <Paso4Socios
+                          faseSocio={faseSocio}
+                          setFaseSocio={setFaseSocio}
+                          tempSocioCuit={tempSocioCuit}
+                          setTempSocioCuit={setTempSocioCuit}
+                          tempSocioNombre={tempSocioNombre}
+                          tempSocioParticipacion={tempSocioParticipacion}
+                          setTempSocioParticipacion={setTempSocioParticipacion}
+                          socios={socios}
+                          iniciarCargaSocio={iniciarCargaSocio}
+                          validarCuitSocio={validarCuitSocio}
+                          guardarSocio={guardarSocio}
+                          eliminarSocio={eliminarSocio}
+                          continuarAlProximoPaso={continuarAlProximoPaso}
+                        />
+                      )}
+
+                      {pasoActual === 5 && (
+                        <Paso5Documentacion
+                          docExpandido={docExpandido}
+                          toggleDoc={toggleDoc}
+                          socios={socios}
+                          onVolverASocios={() => setPasoActual(4)}
+                          faseApoderado={faseApoderado}
+                          setFaseApoderado={setFaseApoderado}
+                          apoNombre={apoNombre}
+                          apoRol={apoRol}
+                          setApoRol={setApoRol}
+                          validarCuitApoderado={validarCuitApoderado}
+                          guardarApoderado={guardarApoderado}
+                          avanzarPaso6={avanzarAlExito}
+                        />
+                      )}
+
+                      {pasoActual === 7 && (
+                        <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
+                      )}
+                    </div>
+                  </form>
+                </FormProvider>
+              </div>
+            </div>
+
+            {pasoActual < 7 && <PanelDudas pasoActual={pasoActual} />}
+          </div>
         </div>
       </div>
 
