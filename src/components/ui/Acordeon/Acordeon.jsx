@@ -1,3 +1,4 @@
+// src/components/ui/Acordeon/Acordeon.jsx
 import React, { useState } from 'react';
 import styles from './Acordeon.module.css';
 import { FiChevronDown, FiCheckCircle, FiAlertCircle, FiClock, FiCircle } from 'react-icons/fi';
@@ -6,10 +7,17 @@ export const Acordeon = ({
   title, 
   subtitle, 
   status = 'default',
+  isOpen: controlledIsOpen, // NUEVA PROP: Permite controlarlo desde el padre
   defaultOpen = false,
+  headerAction,
+  onToggle,    
   children 
 }) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [internalIsOpen, setInternalIsOpen] = useState(defaultOpen);
+  
+  // Magia de React: Si le pasan isOpen, obedece al padre. Si no, usa su propio estado interno.
+  const isControlled = controlledIsOpen !== undefined;
+  const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
 
   const getStatusConfig = () => {
     switch (status) {
@@ -22,12 +30,21 @@ export const Acordeon = ({
 
   const { Icon: StatusIcon, className: statusClass } = getStatusConfig();
 
+  const handleToggle = () => {
+    const newState = !isOpen;
+    if (!isControlled) {
+      setInternalIsOpen(newState);
+    }
+    if (onToggle) onToggle(newState); 
+  };
+
   return (
     <div className={styles.item}>
-      <button 
+      {/* CAMBIO CLAVE: Cambiamos <button> por <div> para que no haya botones anidados */}
+      <div 
         className={styles.header} 
-        onClick={() => setIsOpen(!isOpen)}
-        type="button"
+        onClick={handleToggle}
+        style={{ cursor: 'pointer' }}
       >
         <div className={styles.headerLeft}>
           <span className={`${styles.statusIcon} ${statusClass}`}>
@@ -39,8 +56,15 @@ export const Acordeon = ({
           </div>
         </div>
         
-        <FiChevronDown className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`} />
-      </button>
+        <div className={styles.headerRight}>
+          {headerAction && (
+            <div onClick={(e) => e.stopPropagation()}>
+              {headerAction}
+            </div>
+          )}
+          <FiChevronDown className={`${styles.chevron} ${isOpen ? styles.chevronOpen : ''}`} />
+        </div>
+      </div>
 
       {isOpen && (
         <div className={styles.body}>

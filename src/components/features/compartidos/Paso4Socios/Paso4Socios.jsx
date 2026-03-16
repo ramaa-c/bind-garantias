@@ -1,6 +1,5 @@
 import React from "react";
 import { FiEdit, FiTrash2, FiUserPlus, FiCheckCircle } from "react-icons/fi";
-// Reemplazamos Input por InputFlotante
 import { InputFlotante, Button, Badge, Avatar, BotonIcono } from "../../../ui";
 import styles from "./Paso4Socios.module.css";
 
@@ -42,7 +41,6 @@ export default function Paso4Socios({
                 onChange={(e) => setTempSocioCuit(e.target.value)}
               />
             </div>
-            {/* Ajustamos el botón para que alinee con la línea del input */}
             <div style={{ marginTop: "4px" }}>
               <Button
                 variant="primary"

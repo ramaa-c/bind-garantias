@@ -13,6 +13,8 @@
   position: relative;
   overflow: hidden;
   width: 100%;
+  height: 160px;
+  box-sizing: border-box;
 }
 
 .box:hover {
@@ -34,6 +36,10 @@
   transition: color 0.3s;
 }
 
+.box:hover .icon {
+  color: var(--yellow);
+}
+
 .dragging .icon {
   color: var(--yellow);
 }
@@ -52,11 +58,11 @@
 
 /* --- ESTADO: ARCHIVO CARGADO --- */
 .loaded {
-  border: 1px solid rgba(76, 175, 80, 0.3);
+  border: 2px solid rgba(76, 175, 80, 0.3);
   background-color: rgba(76, 175, 80, 0.05);
   flex-direction: row;
   justify-content: space-between;
-  padding: 20px;
+  padding: 30px 20px;
 }
 
 .loaded:hover {
@@ -69,24 +75,32 @@
   display: flex;
   align-items: center;
   gap: 15px;
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .loadedIcon {
   font-size: 2rem;
   color: #4caf50;
+  flex-shrink: 0;
 }
 
 .textGroup {
   display: flex;
   flex-direction: column;
   text-align: left;
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .filename {
   color: var(--white);
   font-weight: 500;
   font-size: 0.95rem;
-  max-width: 200px;
+  display: block;
+  max-width: 100%;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

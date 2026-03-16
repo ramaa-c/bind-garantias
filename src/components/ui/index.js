@@ -13,6 +13,7 @@ export * from './InputCodigo/InputCodigo';
 export * from './InputFlotante/InputFlotante';
 export * from './InputMonto/InputMonto';
 export { default as ModalSms } from './ModalSms/ModalSms';
+export * from './Modal/Modal';
 export * from './Select/Select';
 export * from './SinResultados/SinResultados';
 export * from './Spinner/Spinner';

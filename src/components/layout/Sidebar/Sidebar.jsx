@@ -21,7 +21,7 @@ export default function Sidebar() {
           <FiHome className="sidebar-icon" /> Inicio
         </button>
 
-        <p className="sidebar-heading" style={{ marginTop: '2rem' }}>PRODUCTOS</p>
+        <p className="sidebar-heading" style={{ marginTop: '2rem' }}>GESTIONES</p>
         <button 
           className={`sidebar-link ${isActive("/pagare") ? "active" : ""}`} 
           onClick={() => navigate("/pagare")}

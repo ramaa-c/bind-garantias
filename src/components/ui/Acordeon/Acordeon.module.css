@@ -27,6 +27,22 @@
   gap: 12px;
 }
 
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.chevron {
+  color: #888;
+  font-size: 18px;
+  transition: transform 0.3s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
 .titleGroup {
   display: flex;
   flex-direction: column;
@@ -60,23 +76,9 @@
 .statusWarn { color: var(--yellow); }
 .statusDefault { color: #888; }
 
-/* --- ICONO (FLECHA) --- */
-.chevron {
-  color: #888;
-  font-size: 18px;
-  transition: transform 0.3s ease;
-  margin-right: 1rem;
-}
-
-.chevronOpen {
-  transform: rotate(180deg);
-}
-
 /* --- CUERPO DEL ACORDEÓN --- */
 .body {
   padding: 10px 0 30px 0;
-  display: flex;
-  gap: 30px;
   animation: fadeIn 0.4s ease;
 }
 
