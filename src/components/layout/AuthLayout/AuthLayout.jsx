@@ -3,7 +3,7 @@ import logoBIND from '../../../assets/images/bind-g-logo.svg';
 
 export const AuthLayout = ({ 
   children, 
-  brandTitle = "Bienvenido a CentraLab", 
+  brandTitle = "Bienvenido a Bind Garantías", 
   brandSubtitle = "Gestioná tus garantías y pagarés de forma ágil y segura." 
 }) => {
   return (

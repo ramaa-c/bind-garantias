@@ -2,7 +2,6 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import zxcvbn from "zxcvbn";
 import * as z from "zod";
 import { getPasswordScore } from "../utils/PasswordSeguro";
 import { FiShield } from "react-icons/fi";
@@ -33,8 +32,7 @@ const getClaveSchema = (emailUsuario) => {
 const CrearClave = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const emailUsuario =
-    location.state?.emailIngresado || "ejemplo@mailinator.com";
+  const emailUsuario = location.state?.emailIngresado || "ejemplo@mailinator.com";
 
   const {
     register,
@@ -68,7 +66,7 @@ const CrearClave = () => {
             <h2>Creá tu contraseña</h2>
             <p>
               Para el usuario:{" "}
-              <strong style={{ color: "var(--white)" }}>{emailUsuario}</strong>
+              <strong className={styles.boldWhiteText}>{emailUsuario}</strong>
             </p>
           </div>
 
@@ -85,7 +83,7 @@ const CrearClave = () => {
               {...register("password")}
             />
 
-            <div style={{ marginTop: "1rem" }}>
+            <div className={styles.formFieldSpacing}>
               <InputFlotante
                 label="Confirmar contraseña"
                 type="password"
@@ -95,12 +93,12 @@ const CrearClave = () => {
               />
             </div>
 
-            <div className={styles.formActions} style={{ marginTop: "2rem" }}>
+            <div className={`${styles.formActions} ${styles.formActionsMargin}`}>
               <Button
                 type="submit"
                 variant="primary"
                 disabled={!isValid}
-                style={{ opacity: isValid ? 1 : 0.5 }}
+                className={!isValid ? styles.btnDisabled : ""}
               >
                 CREAR E INGRESAR
               </Button>
@@ -110,16 +108,13 @@ const CrearClave = () => {
       </section>
 
       {/* --- COLUMNA DERECHA --- */}
-      <section
-        className={styles.sideBrand}
-        style={{ flexDirection: "column", textAlign: "center" }}
-      >
-        <div style={{ marginBottom: "2rem" }}>
+      <section className={`${styles.sideBrand} ${styles.sideBrandCentered}`}>
+        <div className={styles.shieldIconWrapper}>
           <FiShield size={80} color="var(--yellow)" strokeWidth={1.5} />
         </div>
 
-        <div className={styles.brandContent} style={{ textAlign: "center" }}>
-          <h2 className={styles.brandTitle} style={{ fontSize: "2.5rem" }}>
+        <div className={styles.brandContentCentered}>
+          <h2 className={styles.brandTitleLarge}>
             Protegé tu cuenta.
           </h2>
           <p className={styles.brandSubtitle}>
