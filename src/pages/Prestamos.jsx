@@ -36,10 +36,18 @@ export default function Prestamos() {
   const metodosFormulario = useForm({
     resolver: zodResolver(prestamosSchema),
     mode: "onChange",
-    defaultValues: { moneda: "Pesos", tipoProducto: "prestamo" },
+    defaultValues: {
+      moneda: "Pesos",
+      tipoProducto: "prestamo",
+      cuit: "",
+      direccion: "",
+      provincia: "",
+      localidad: "",
+      celular: "",
+    },
   });
 
-  const { handleSubmit, trigger } = metodosFormulario;
+  const { handleSubmit, trigger, watch } = metodosFormulario;
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleValidarCuit = async () => {

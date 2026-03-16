@@ -17,16 +17,13 @@ export default function Paso3Simulador({
 
   const tipoCalculo = watch("tipoCalculo", "tasa_directa");
   const esPorMontoCheque = tipoCalculo === "por_monto_cheque";
-
-  // Observamos la fecha para pintarla de verde si el usuario ya seleccionó una
   const fechaValue = watch(esPorMontoCheque ? "fechaPago" : "plazo") || "";
   const isFechaValid = fechaValue.length > 0;
 
   return (
     <div className={styles.container}>
-      {/* GRILLA SUPERIOR */}
-      {/* Le damos un margin-top para que los labels flotantes respiren */}
-      <div className={styles.topGrid} style={{ marginTop: "20px" }}>
+      {/* GRILLA SUPERIOR*/}
+      <div className={styles.topGrid}>
         <SelectFlotante
           label="Moneda"
           disabled={mostrarResultados}
@@ -49,10 +46,7 @@ export default function Paso3Simulador({
           label="Tipo de cálculo"
           disabled={mostrarResultados}
           options={[
-            {
-              value: "tasa_directa",
-              label: "Tasa Directa / Monto a financiar",
-            },
+            { value: "tasa_directa", label: "Tasa Directa / Monto a financiar" },
             { value: "por_monto_cheque", label: "Por monto de cheque" },
           ]}
           {...register("tipoCalculo")}
@@ -60,7 +54,7 @@ export default function Paso3Simulador({
       </div>
 
       {/* INPUTS DINÁMICOS */}
-      {/* Margen de 40px para que el calendario no se pegue a los selects de arriba */}
+      
       <div className={styles.dynamicRow} style={{ marginTop: "40px" }}>
         <div className={styles.moneyCol}>
           <InputMonto
@@ -74,7 +68,6 @@ export default function Paso3Simulador({
         </div>
 
         <div className={styles.dateCol}>
-          {/* Reemplazamos el input viejo por el flotante */}
           <InputFlotante
             type="date"
             label={esPorMontoCheque ? "Fecha de pago" : "Plazo (Fecha)"}
