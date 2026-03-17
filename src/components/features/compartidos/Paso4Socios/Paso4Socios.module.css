@@ -32,6 +32,9 @@
 
 .searchInput {
   flex: 1;
+  /* AGREGA ESTA LÍNEA para bajar el input y alinearlo con el botón */
+  margin-top: 12px;
+  /* Prueba con valores entre 8px y 16px hasta que la línea base sea perfecta */
 }
 
 /* --- FASE 2: TARJETA DE RESUMEN --- */
@@ -176,6 +179,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

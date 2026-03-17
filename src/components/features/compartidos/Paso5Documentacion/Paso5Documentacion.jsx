@@ -335,8 +335,7 @@ export default function Paso5Documentacion({
             intentoAvanzar && !archivos["estatuto"],
           )}
           <div className={styles.docInfoBox}>
-            Los estatutos son las normas por las que se regirá el funcionamiento
-            de la entidad.
+            Los estatutos son las normas por las que se regirá el funcionamiento de la entidad.
           </div>
         </div>
       </Acordeon>
@@ -370,8 +369,7 @@ export default function Paso5Documentacion({
             intentoAvanzar && !archivos["acta"],
           )}
           <div className={styles.docInfoBox}>
-            Copia certificada del acta de asamblea donde se designan las
-            autoridades vigentes.
+            Copia certificada del acta de asamblea donde se designan las autoridades vigentes.
           </div>
         </div>
       </Acordeon>
@@ -385,8 +383,7 @@ export default function Paso5Documentacion({
             intentoAvanzar && !archivos["poderes"],
           )}
           <div className={styles.docInfoBox}>
-            Copia de los poderes otorgados para operar y representar a la
-            sociedad.
+            Copia de los poderes otorgados para operar y representar a la sociedad.
           </div>
         </div>
       </Acordeon>
