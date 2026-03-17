@@ -1,7 +1,7 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router-dom";
 import { chequesSchema } from "../schemas/chequesSchema";
 import {
   Paso1Cuit,
@@ -55,20 +55,40 @@ export default function Cheques() {
   const handleValidarCuit = async () => {
     if (await trigger("cuit")) setPasoActual(2);
   };
+  
   const handleVolver = () => {
     if (pasoActual === 7) setPasoActual(1);
     else setPasoActual(pasoActual - 1);
   };
+
+  const handleResetFlujoCompleto = () => {
+    setSocios([]);
+    setFaseSocio("lista");
+    setFaseApoderado("ingresar");
+    setApoNombre("");
+    setApoRol("Representante Legal");
+    setMostrarResultados(false);
+    setCodigoSms("");
+    setPasoActual(1);
+  };
+
   const abrirModalSms = async () => {
     if (await trigger("celular")) setMostrarModal(true);
   };
   const confirmarSms = () => setMostrarModal(false);
+  
   const handleContinuarPaso2 = async () => {
     if (await trigger(["direccion", "provincia", "localidad", "celular"]))
       setPasoActual(3);
   };
-  const onSubmitFinal = (data) => {
-    console.log("Datos finales listos:", data);
+
+  const onSubmitFinal = (dataFormulario) => {
+    const payloadFinal = {
+      ...dataFormulario,
+      sociosBasicos: socios,
+    };
+    
+    setPasoActual(7);
   };
 
   // Paso 3
@@ -104,6 +124,17 @@ export default function Cheques() {
     ]);
     setFaseSocio("lista");
   };
+  const editarSocio = (index) => {
+    const socioAEditar = socios[index];
+    setTempSocioCuit(socioAEditar.cuit);
+    setTempSocioNombre(socioAEditar.nombre);
+    setTempSocioParticipacion(socioAEditar.participacion);
+
+    const nuevos = socios.filter((_, i) => i !== index);
+    setSocios(nuevos);
+
+    setFaseSocio("completar_datos");
+  };
   const eliminarSocio = (index) => {
     const nuevos = socios.filter((_, i) => i !== index);
     setSocios(nuevos);
@@ -133,16 +164,18 @@ export default function Cheques() {
     if (
       (await trigger(["sociedadBolsa", "numeroCuentaBolsa"])) &&
       bolsaSeleccionada !== ""
-    )
-      setPasoActual(7);
+    ) {
+      handleSubmit(onSubmitFinal)();
+    }
   };
+
   const avanzarSinBolsa = () => {
     setValue("sociedadBolsa", "");
     setValue("numeroCuentaBolsa", "");
-    setPasoActual(7);
+    handleSubmit(onSubmitFinal)();
   };
 
-return (
+  return (
     <div className={styles.chequesPage}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
@@ -164,7 +197,7 @@ return (
             )}
           </div>
 
-<div className={styles.contenedorPrincipal}>
+          <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
                 
@@ -193,10 +226,7 @@ return (
 
                 {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
-                  <form
-                    className={styles.formContent}
-                    onSubmit={handleSubmit(onSubmitFinal)}
-                  >
+                  <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">
                       {pasoActual === 1 && (
                         <Paso1Cuit onValidar={handleValidarCuit} />
@@ -231,6 +261,7 @@ return (
                           iniciarCargaSocio={iniciarCargaSocio}
                           validarCuitSocio={validarCuitSocio}
                           guardarSocio={guardarSocio}
+                          editarSocio={editarSocio} // <--- Prop agregada!
                           eliminarSocio={eliminarSocio}
                           continuarAlProximoPaso={continuarAlProximoPaso}
                         />
@@ -261,7 +292,7 @@ return (
                       )}
 
                       {pasoActual === 7 && (
-                        <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
+                        <Paso7Exito onVolverInicio={handleResetFlujoCompleto} />
                       )}
                     </div>
                   </form>

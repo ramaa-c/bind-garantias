@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { useFormContext } from "react-hook-form";
-import { FiCheckCircle, FiEdit, FiAlertCircle, FiUser } from "react-icons/fi";
+import React, { useState, useEffect } from "react";
+import { useFormContext, useFormState } from "react-hook-form";
+import { FiCheckCircle, FiEdit, FiAlertCircle } from "react-icons/fi";
 import {
   InputFlotante,
   Button,
@@ -28,13 +28,43 @@ export default function Paso5Documentacion({
   const {
     register,
     watch,
-    formState: { errors },
+    control,
+    setValue,
+    trigger,
+    clearErrors,
+    getValues,
   } = useFormContext();
+  const { errors, dirtyFields } = useFormState({ control });
 
   const apoCuitIngresado = watch("apoCuit", "");
   const [archivos, setArchivos] = useState({});
   const [draggingKey, setDraggingKey] = useState(null);
+
+  const sociosFormValues = watch("socios") || [];
   const [socioActivoIndex, setSocioActivoIndex] = useState(null);
+
+  const [backupSocio, setBackupSocio] = useState({});
+  const [backupArchivos, setBackupArchivos] = useState({});
+
+  const socioActivoValues = watch(`socios.${socioActivoIndex}`);
+
+  const [errorApoCuit, setErrorApoCuit] = useState("");
+  const [errorGlobal, setErrorGlobal] = useState("");
+  const [intentoAvanzar, setIntentoAvanzar] = useState(false);
+  const [intentoGuardarSocio, setIntentoGuardarSocio] = useState(false);
+  const [intentoGuardarApo, setIntentoGuardarApo] = useState(false);
+
+  const {
+    ref: cuitRef,
+    onBlur: cuitOnBlur,
+    name: cuitName,
+  } = register("apoCuit");
+
+  useEffect(() => {
+    if (errorGlobal) setErrorGlobal("");
+  }, [archivos, sociosFormValues, faseApoderado]);
+
+  // --- HANDLERS DE ARCHIVOS ---
   const handleFileUpload = (key, file) => {
     if (file) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
@@ -42,6 +72,7 @@ export default function Paso5Documentacion({
       setArchivos((prev) => ({ ...prev, [key]: fileToStore }));
     }
   };
+
   const handleFileRemove = (key) => {
     setArchivos((prev) => {
       const nuevos = { ...prev };
@@ -49,7 +80,8 @@ export default function Paso5Documentacion({
       return nuevos;
     });
   };
-  const renderCargaArchivo = (key, title, subtitle) => {
+
+  const renderCargaArchivo = (key, title, subtitle, showError = false) => {
     return (
       <div className={styles.dropzoneWrapper}>
         <input
@@ -61,6 +93,7 @@ export default function Paso5Documentacion({
         <CargaArchivos
           title={title}
           subtitle={subtitle}
+          hasError={showError}
           file={
             archivos[key]
               ? { name: archivos[key].name, size: archivos[key].formattedSize }
@@ -87,23 +120,210 @@ export default function Paso5Documentacion({
   };
 
   const isSocioCompleto = (index) => {
-    const sEmail = watch(`socios.${index}.email`);
-    const sCel = watch(`socios.${index}.celular`);
-    const sDir = watch(`socios.${index}.direccion`);
+    const sEmail = getValues(`socios.${index}.email`);
+    const sCel = getValues(`socios.${index}.celular`);
+    const sDir = getValues(`socios.${index}.direccion`);
+    const sProv = getValues(`socios.${index}.provincia`);
+    const sLoc = getValues(`socios.${index}.localidad`);
+
+    const errs = errors?.socios?.[index];
+    const sinErrores = !errs || Object.keys(errs).length === 0;
+
     const dniFrenteSubido = archivos[`socio-${index}-frente`];
     const dniDorsoSubido = archivos[`socio-${index}-dorso`];
 
-    return !!(sEmail && sCel && sDir && dniFrenteSubido && dniDorsoSubido);
+    return !!(
+      sEmail &&
+      sCel &&
+      sDir &&
+      sProv &&
+      sLoc &&
+      sinErrores &&
+      dniFrenteSubido &&
+      dniDorsoSubido
+    );
   };
+
+  const validarCUIT = (cuit) => {
+    if (!cuit) return false;
+    const limpio = String(cuit).replace(/\D/g, "");
+    if (limpio.length !== 11) return false;
+
+    const mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+    const nums = limpio.split("").map(Number);
+    const suma = mult.reduce((acc, m, i) => acc + nums[i] * m, 0);
+    const mod = suma % 11;
+    const digito = mod === 0 ? 0 : mod === 1 ? 9 : 11 - mod;
+
+    return digito === nums[10];
+  };
+
+  const handleValidarApoderadoCuitClick = () => {
+    if (!apoCuitIngresado) {
+      setErrorApoCuit("El CUIT es obligatorio");
+      return;
+    }
+    if (!validarCUIT(apoCuitIngresado)) {
+      setErrorApoCuit("CUIT inválido o incorrecto");
+      return;
+    }
+
+    setErrorApoCuit("");
+    validarCuitApoderado();
+  };
+
+  const handleGuardarApoderadoFase2 = async () => {
+    setIntentoGuardarApo(true);
+    const camposValidosZod = await trigger(["apoEmail", "apoCelular"]);
+
+    const emailApo = getValues("apoEmail") || "";
+    const celApo = getValues("apoCelular") || "";
+
+    if (
+      camposValidosZod &&
+      emailApo.trim() !== "" &&
+      celApo.replace(/\D/g, "").length === 10
+    ) {
+      setIntentoGuardarApo(false);
+      guardarApoderado();
+    }
+  };
+
+  const handleAvanzarClick = () => {
+    setIntentoAvanzar(true);
+    const docsEmpresaListos =
+      archivos["estatuto"] &&
+      archivos["balance"] &&
+      archivos["acta"] &&
+      archivos["poderes"];
+    const todosSociosCompletos =
+      socios.length > 0 ? socios.every((_, i) => isSocioCompleto(i)) : true;
+    const apoderadoListo = faseApoderado === "guardado";
+
+    if (!docsEmpresaListos) {
+      setErrorGlobal(
+        "Falta subir documentación obligatoria de la empresa (Estatuto, Balance, Acta o Poderes).",
+      );
+      return;
+    }
+    if (!todosSociosCompletos) {
+      setErrorGlobal(
+        "Falta completar la información o subir el DNI de uno o más socios.",
+      );
+      return;
+    }
+    if (!apoderadoListo) {
+      setErrorGlobal(
+        "Falta validar y guardar los datos del Representante Legal / Apoderado.",
+      );
+      return;
+    }
+
+    setErrorGlobal("");
+    avanzarPaso6();
+  };
+
+  const handleAbrirModalSocio = (index) => {
+    setIntentoGuardarSocio(false);
+    const datosTextosActuales = getValues(`socios.${index}`) || {};
+    setBackupSocio(JSON.parse(JSON.stringify(datosTextosActuales)));
+    setBackupArchivos({
+      frente: archivos[`socio-${index}-frente`],
+      dorso: archivos[`socio-${index}-dorso`],
+    });
+    setSocioActivoIndex(index);
+  };
+
+  const handleCerrarModalSinGuardar = () => {
+    const campos = ["email", "celular", "direccion", "provincia", "localidad"];
+    campos.forEach((campo) => {
+      setValue(
+        `socios.${socioActivoIndex}.${campo}`,
+        backupSocio[campo] || "",
+        {
+          shouldValidate: false,
+          shouldDirty: false,
+        },
+      );
+    });
+    setArchivos((prev) => {
+      const nuevos = { ...prev };
+      if (backupArchivos.frente)
+        nuevos[`socio-${socioActivoIndex}-frente`] = backupArchivos.frente;
+      else delete nuevos[`socio-${socioActivoIndex}-frente`];
+      if (backupArchivos.dorso)
+        nuevos[`socio-${socioActivoIndex}-dorso`] = backupArchivos.dorso;
+      else delete nuevos[`socio-${socioActivoIndex}-dorso`];
+      return nuevos;
+    });
+    clearErrors(`socios.${socioActivoIndex}`);
+    setIntentoGuardarSocio(false);
+    setSocioActivoIndex(null);
+  };
+
+  const handleGuardarSocio = async () => {
+    setIntentoGuardarSocio(true);
+    const camposValidos = await trigger([
+      `socios.${socioActivoIndex}.email`,
+      `socios.${socioActivoIndex}.celular`,
+      `socios.${socioActivoIndex}.direccion`,
+      `socios.${socioActivoIndex}.provincia`,
+      `socios.${socioActivoIndex}.localidad`,
+    ]);
+    const dniFrente = archivos[`socio-${socioActivoIndex}-frente`];
+    const dniDorso = archivos[`socio-${socioActivoIndex}-dorso`];
+    if (camposValidos && dniFrente && dniDorso) {
+      setIntentoGuardarSocio(false);
+      setSocioActivoIndex(null);
+    }
+  };
+
+  const obtenerEstadoAcordeon = (archivoKey) => {
+    if (archivos[archivoKey]) return "check";
+    if (intentoAvanzar) return "alert";
+    return "warn";
+  };
+
+  const obtenerClaseAvatar = (index) => {
+    if (isSocioCompleto(index)) return styles.avatarReady;
+    if (intentoAvanzar) return styles.avatarError;
+    return styles.avatarWarning;
+  };
+
+  const getCampoModal = (campo) => {
+    if (socioActivoIndex === null) return { error: null, esValido: false };
+    const hasError = errors?.socios?.[socioActivoIndex]?.[campo];
+    const isDirty = dirtyFields?.socios?.[socioActivoIndex]?.[campo];
+    const val = socioActivoValues?.[campo];
+    const mostrarError = hasError && (isDirty || intentoGuardarSocio);
+    return {
+      error: mostrarError ? hasError.message : null,
+      esValido:
+        !hasError &&
+        val &&
+        val.toString().trim().length > 0 &&
+        (isDirty || intentoGuardarSocio),
+    };
+  };
+
+  const apoEmailVal = watch("apoEmail") || "";
+  const apoCelVal = watch("apoCelular") || "";
+  const errorApoEmail =
+    errors.apoEmail?.message ||
+    (intentoGuardarApo && apoEmailVal.trim() === "" ? "Requerido" : null);
+  const errorApoCel =
+    errors.apoCelular?.message ||
+    (intentoGuardarApo && apoCelVal.replace(/\D/g, "").length < 10
+      ? "Requerido"
+      : null);
 
   return (
     <div className={styles.container}>
-      {/* SECCIÓN 1: DOCUMENTACIÓN EMPRESA */}
       <h3 className={styles.title}>Documentación requerida</h3>
 
       <Acordeon
         title="Estatuto"
-        status={archivos["estatuto"] ? "check" : "default"}
+        status={obtenerEstadoAcordeon("estatuto")}
         defaultOpen={true}
       >
         <div className={styles.documentRow}>
@@ -111,6 +331,7 @@ export default function Paso5Documentacion({
             "estatuto",
             "Subir archivo",
             "PDF o ZIP menor a 5MB",
+            intentoAvanzar && !archivos["estatuto"],
           )}
           <div className={styles.docInfoBox}>
             Los estatutos son las normas por las que se regirá el funcionamiento
@@ -121,13 +342,14 @@ export default function Paso5Documentacion({
 
       <Acordeon
         title="Último Balance exigible, certificado"
-        status={archivos["balance"] ? "check" : "alert"}
+        status={obtenerEstadoAcordeon("balance")}
       >
         <div className={styles.documentRow}>
           {renderCargaArchivo(
             "balance",
             "Subir archivo",
             "PDF o ZIP menor a 5MB",
+            intentoAvanzar && !archivos["balance"],
           )}
           <div className={styles.docInfoBox}>
             Este informe debe ser auditado por un contador.
@@ -137,10 +359,15 @@ export default function Paso5Documentacion({
 
       <Acordeon
         title="Acta de designación de autoridades"
-        status={archivos["acta"] ? "check" : "alert"}
+        status={obtenerEstadoAcordeon("acta")}
       >
         <div className={styles.documentRow}>
-          {renderCargaArchivo("acta", "Subir archivo", "PDF o ZIP menor a 5MB")}
+          {renderCargaArchivo(
+            "acta",
+            "Subir archivo",
+            "PDF o ZIP menor a 5MB",
+            intentoAvanzar && !archivos["acta"],
+          )}
           <div className={styles.docInfoBox}>
             Copia certificada del acta de asamblea donde se designan las
             autoridades vigentes.
@@ -148,12 +375,13 @@ export default function Paso5Documentacion({
         </div>
       </Acordeon>
 
-      <Acordeon title="Poderes" status={archivos["poderes"] ? "check" : "warn"}>
+      <Acordeon title="Poderes" status={obtenerEstadoAcordeon("poderes")}>
         <div className={styles.documentRow}>
           {renderCargaArchivo(
             "poderes",
             "Subir archivo",
             "PDF o ZIP menor a 5MB",
+            intentoAvanzar && !archivos["poderes"],
           )}
           <div className={styles.docInfoBox}>
             Copia de los poderes otorgados para operar y representar a la
@@ -164,24 +392,26 @@ export default function Paso5Documentacion({
 
       <hr className={styles.divider} />
 
-      {/* SECCIÓN 2: TAREAS DE SOCIOS */}
       <h3 className={`${styles.title} ${styles.titleSmallMargin}`}>
         Completá la información y documentación de cada socio.
       </h3>
 
       {socios.length === 0 ? (
         <Alert variant="warning" layout="box">
-          No hay socios cargados para completar información.
+          No hay socios cargados.
         </Alert>
       ) : (
         socios.map((socio, index) => {
           const estaCompleto = isSocioCompleto(index);
-
+          const bordeError =
+            !estaCompleto && intentoAvanzar
+              ? { border: "1px solid #ff5252" }
+              : {};
           return (
-            <div className={styles.socioCard} key={index}>
+            <div className={styles.socioCard} key={index} style={bordeError}>
               <div className={styles.socioCardInfo}>
                 <div
-                  className={`${styles.socioAvatar} ${estaCompleto ? styles.avatarReady : styles.avatarPending}`}
+                  className={`${styles.socioAvatar} ${obtenerClaseAvatar(index)}`}
                 >
                   {estaCompleto ? <FiCheckCircle /> : <FiAlertCircle />}
                 </div>
@@ -192,10 +422,9 @@ export default function Paso5Documentacion({
                   </p>
                 </div>
               </div>
-
               <Button
                 variant={estaCompleto ? "outline" : "primary"}
-                onClick={() => setSocioActivoIndex(index)}
+                onClick={() => handleAbrirModalSocio(index)}
               >
                 {estaCompleto ? "Modificar" : "Completar datos"}
               </Button>
@@ -206,28 +435,40 @@ export default function Paso5Documentacion({
 
       <hr className={styles.divider} />
 
-      {/* SECCIÓN 3: Representante Legal */}
       <h3 className={styles.title}>Representante Legal / Apoderado</h3>
 
       {faseApoderado === "ingresar" && (
-        <div
-          className={styles.searchContainer}
-          style={{ alignItems: "flex-start", marginTop: "20px" }}
-        >
+        <div className={styles.searchContainerApoderado}>
           <div className={styles.col}>
             <InputFlotante
               label="CUIT del apoderado"
               maxLength={11}
-              esValido={apoCuitIngresado.length === 11}
-              error={errors.apoCuit?.message}
-              {...register("apoCuit")}
+              esValido={
+                apoCuitIngresado?.length === 11 &&
+                !errorApoCuit &&
+                validarCUIT(apoCuitIngresado)
+              }
+              error={errorApoCuit}
+              name={cuitName}
+              inputRef={cuitRef}
+              onBlur={cuitOnBlur}
+              value={apoCuitIngresado || ""}
+              onChange={(e) => {
+                const limpio = e.target.value.replace(/\D/g, "").slice(0, 11);
+                setValue("apoCuit", limpio, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                });
+                if (errorApoCuit) setErrorApoCuit("");
+              }}
             />
           </div>
-          <div style={{ marginTop: "4px" }}>
+          <div className={styles.btnWrapperSmall}>
             <Button
+              type="button"
               variant="primary"
               className={styles.tallButton}
-              onClick={validarCuitApoderado}
+              onClick={handleValidarApoderadoCuitClick}
             >
               VALIDAR
             </Button>
@@ -237,7 +478,7 @@ export default function Paso5Documentacion({
 
       {faseApoderado === "completar" && (
         <div className={styles.container}>
-          <div className={styles.row} style={{ marginTop: "30px" }}>
+          <div className={styles.rowMtMedium}>
             <div className={styles.col}>
               <InputFlotante
                 label="Cuit"
@@ -257,32 +498,59 @@ export default function Paso5Documentacion({
               />
             </div>
           </div>
-          <div className={styles.row} style={{ marginTop: "40px" }}>
+          <div className={styles.rowMtLarge}>
             <div className={styles.col}>
               <InputFlotante
                 label="Email"
                 type="email"
-                esValido={watch("apoEmail")?.includes("@")}
+                esValido={!errorApoEmail && apoEmailVal.trim() !== ""}
+                error={errorApoEmail}
                 {...register("apoEmail")}
               />
             </div>
             <div className={styles.col}>
               <InputFlotante
                 label="Celular"
-                esValido={watch("apoCelular")?.length >= 10}
+                maxLength={10}
+                esValido={
+                  !errorApoCel && apoCelVal.replace(/\D/g, "").length === 10
+                }
+                error={errorApoCel}
                 {...register("apoCelular")}
+                onChange={(e) => {
+                  e.target.value = e.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, 10);
+                  register("apoCelular").onChange(e);
+                }}
               />
             </div>
           </div>
-          <div className={styles.actionsFlex} style={{ marginTop: "20px" }}>
+          <div className={styles.actionsFlexMtMedium}>
             <Button
+              type="button"
               variant="outline"
               className={styles.borderless}
-              onClick={() => setFaseApoderado("ingresar")}
+              onClick={() => {
+                setValue("apoEmail", "", {
+                  shouldValidate: false,
+                  shouldDirty: false,
+                });
+                setValue("apoCelular", "", {
+                  shouldValidate: false,
+                  shouldDirty: false,
+                });
+                setIntentoGuardarApo(false);
+                setFaseApoderado("ingresar");
+              }}
             >
               CANCELAR
             </Button>
-            <Button variant="primary" onClick={guardarApoderado}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleGuardarApoderadoFase2}
+            >
               GUARDAR
             </Button>
           </div>
@@ -301,6 +569,7 @@ export default function Paso5Documentacion({
             </p>
           </div>
           <Button
+            type="button"
             variant="outline"
             onClick={() => setFaseApoderado("completar")}
           >
@@ -311,31 +580,36 @@ export default function Paso5Documentacion({
 
       <hr className={styles.divider} />
 
-      {/* SECCIÓN 4: Facturación */}
       <div className={styles.billingSection}>
         <h3 className={styles.titleSmall}>MAIL DE FACTURACIÓN:</h3>
-        <div
-          className={styles.billingInputWrapper}
-          style={{ marginTop: "40px" }}
-        >
+        <div className={styles.billingInputWrapper}>
           <InputFlotante
             label="Email"
             type="email"
-            esValido={watch("emailFacturacion")?.includes("@")}
+            esValido={!errors.emailFacturacion && dirtyFields.emailFacturacion}
+            error={errors.emailFacturacion?.message}
             {...register("emailFacturacion")}
           />
         </div>
       </div>
 
+      {errorGlobal && (
+        <div className={styles.globalErrorWrapper}>
+          <Alert variant="danger" layout="box">
+            {errorGlobal}
+          </Alert>
+        </div>
+      )}
+
       <div className={styles.actionsRight}>
-        <Button variant="primary" onClick={avanzarPaso6}>
+        <Button type="button" variant="primary" onClick={handleAvanzarClick}>
           CONTINUAR
         </Button>
       </div>
 
       <Modal
         isOpen={socioActivoIndex !== null}
-        onClose={() => setSocioActivoIndex(null)}
+        onClose={handleCerrarModalSinGuardar}
         title={
           socioActivoIndex !== null
             ? `Datos de ${socios[socioActivoIndex].nombre}`
@@ -353,19 +627,24 @@ export default function Paso5Documentacion({
                 <InputFlotante
                   label="Email"
                   type="email"
-                  esValido={watch(`socios.${socioActivoIndex}.email`)?.includes(
-                    "@",
-                  )}
+                  esValido={getCampoModal("email").esValido}
+                  error={getCampoModal("email").error}
                   {...register(`socios.${socioActivoIndex}.email`)}
                 />
               </div>
               <div className={styles.col}>
                 <InputFlotante
                   label="Celular"
-                  esValido={
-                    watch(`socios.${socioActivoIndex}.celular`)?.length >= 10
-                  }
+                  maxLength={10}
+                  esValido={getCampoModal("celular").esValido}
+                  error={getCampoModal("celular").error}
                   {...register(`socios.${socioActivoIndex}.celular`)}
+                  onChange={(e) => {
+                    e.target.value = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 10);
+                    register(`socios.${socioActivoIndex}.celular`).onChange(e);
+                  }}
                 />
               </div>
             </div>
@@ -374,9 +653,8 @@ export default function Paso5Documentacion({
               <div className={styles.col}>
                 <InputFlotante
                   label="Dirección"
-                  esValido={
-                    watch(`socios.${socioActivoIndex}.direccion`)?.length > 5
-                  }
+                  esValido={getCampoModal("direccion").esValido}
+                  error={getCampoModal("direccion").error}
                   {...register(`socios.${socioActivoIndex}.direccion`)}
                 />
               </div>
@@ -386,18 +664,16 @@ export default function Paso5Documentacion({
               <div className={styles.col}>
                 <InputFlotante
                   label="Provincia"
-                  esValido={
-                    watch(`socios.${socioActivoIndex}.provincia`)?.length > 2
-                  }
+                  esValido={getCampoModal("provincia").esValido}
+                  error={getCampoModal("provincia").error}
                   {...register(`socios.${socioActivoIndex}.provincia`)}
                 />
               </div>
               <div className={styles.col}>
                 <InputFlotante
                   label="Localidad"
-                  esValido={
-                    watch(`socios.${socioActivoIndex}.localidad`)?.length > 2
-                  }
+                  esValido={getCampoModal("localidad").esValido}
+                  error={getCampoModal("localidad").error}
                   {...register(`socios.${socioActivoIndex}.localidad`)}
                 />
               </div>
@@ -409,25 +685,50 @@ export default function Paso5Documentacion({
                 `socio-${socioActivoIndex}-frente`,
                 "DNI Frente",
                 "Imagen clara y legible",
+                intentoGuardarSocio &&
+                  !archivos[`socio-${socioActivoIndex}-frente`],
               )}
               {renderCargaArchivo(
                 `socio-${socioActivoIndex}-dorso`,
                 "DNI Dorso",
                 "Imagen clara y legible",
+                intentoGuardarSocio &&
+                  !archivos[`socio-${socioActivoIndex}-dorso`],
               )}
             </div>
 
-            <div className={styles.actionsFlex} style={{ marginTop: "40px" }}>
+            <div className={styles.actionsFlexMtLarge}>
               <Button
-                variant="primary"
-                onClick={() => setSocioActivoIndex(null)}
+                type="button"
+                variant="outline"
+                className={styles.borderless}
+                onClick={handleCerrarModalSinGuardar}
               >
-                GUARDAR Y CERRAR
+                CANCELAR
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleGuardarSocio}
+              >
+                GUARDAR
               </Button>
             </div>
           </div>
         )}
       </Modal>
+
+      <div style={{ display: "none" }}>
+        {socios.map((_, i) => (
+          <React.Fragment key={i}>
+            <input {...register(`socios.${i}.email`)} />
+            <input {...register(`socios.${i}.celular`)} />
+            <input {...register(`socios.${i}.direccion`)} />
+            <input {...register(`socios.${i}.provincia`)} />
+            <input {...register(`socios.${i}.localidad`)} />
+          </React.Fragment>
+        ))}
+      </div>
     </div>
   );
 }

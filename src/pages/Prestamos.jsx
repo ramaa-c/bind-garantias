@@ -59,16 +59,35 @@ export default function Prestamos() {
     else setPasoActual(pasoActual - 1);
   };
 
+  const handleResetFlujoCompleto = () => {
+    setSocios([]);
+    setFaseSocio("lista");
+    setFaseApoderado("ingresar");
+    setApoNombre("");
+    setApoRol("Representante Legal");
+    setMostrarResultados(false);
+    setCodigoSms("");
+    setPasoActual(1);
+  };
+
   const abrirModalSms = async () => {
     if (await trigger("celular")) setMostrarModal(true);
   };
+
   const confirmarSms = () => setMostrarModal(false);
+
   const handleContinuarPaso2 = async () => {
     if (await trigger(["direccion", "provincia", "localidad", "celular"]))
       setPasoActual(3);
   };
-  const onSubmitFinal = (data) => {
-    console.log("Datos finales Préstamo listos:", data);
+
+  const onSubmitFinal = (dataFormulario) => {
+    const payloadFinal = {
+      ...dataFormulario,
+      sociosBasicos: socios,
+    };
+
+    setPasoActual(7);
   };
 
   // Paso 3
@@ -88,10 +107,12 @@ export default function Prestamos() {
     setTempSocioParticipacion("");
     setFaseSocio("ingresar_cuit");
   };
+
   const validarCuitSocio = () => {
     setTempSocioNombre("SEOANE SUAREZ MARINA");
     setFaseSocio("completar_datos");
   };
+
   const guardarSocio = () => {
     if (!tempSocioParticipacion) return;
     setSocios([
@@ -104,30 +125,47 @@ export default function Prestamos() {
     ]);
     setFaseSocio("lista");
   };
+
+  const editarSocio = (index) => {
+    const socioAEditar = socios[index];
+    setTempSocioCuit(socioAEditar.cuit);
+    setTempSocioNombre(socioAEditar.nombre);
+    setTempSocioParticipacion(socioAEditar.participacion);
+
+    const nuevos = socios.filter((_, i) => i !== index);
+    setSocios(nuevos);
+
+    setFaseSocio("completar_datos");
+  };
+
   const eliminarSocio = (index) => {
     const nuevos = socios.filter((_, i) => i !== index);
     setSocios(nuevos);
     if (nuevos.length === 0) setFaseSocio("ingresar_cuit");
   };
+
   const continuarAlProximoPaso = () => setPasoActual(5);
 
   // Paso 5
   const toggleDoc = (seccion) => {
     setDocExpandido((prev) => (prev === seccion ? "" : seccion));
   };
+
   const validarCuitApoderado = async () => {
     if (await trigger("apoCuit")) {
       setApoNombre("GOMEZ PEREZ JUAN");
       setFaseApoderado("completar");
     }
   };
+
   const guardarApoderado = async () => {
     if (await trigger(["apoEmail", "apoCelular"])) setFaseApoderado("guardado");
   };
 
-  // Paso 7
   const avanzarAlExito = async () => {
-    if (await trigger("emailFacturacion")) setPasoActual(7);
+    if (await trigger("emailFacturacion")) {
+      handleSubmit(onSubmitFinal)();
+    }
   };
 
   return (
@@ -189,10 +227,7 @@ export default function Prestamos() {
 
                 {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
-                  <form
-                    className={styles.formContent}
-                    onSubmit={handleSubmit(onSubmitFinal)}
-                  >
+                  <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">
                       {pasoActual === 1 && (
                         <Paso1Cuit onValidar={handleValidarCuit} />
@@ -227,6 +262,7 @@ export default function Prestamos() {
                           iniciarCargaSocio={iniciarCargaSocio}
                           validarCuitSocio={validarCuitSocio}
                           guardarSocio={guardarSocio}
+                          editarSocio={editarSocio}
                           eliminarSocio={eliminarSocio}
                           continuarAlProximoPaso={continuarAlProximoPaso}
                         />
@@ -250,7 +286,7 @@ export default function Prestamos() {
                       )}
 
                       {pasoActual === 7 && (
-                        <Paso7Exito onVolverInicio={() => setPasoActual(1)} />
+                        <Paso7Exito onVolverInicio={handleResetFlujoCompleto} />
                       )}
                     </div>
                   </form>
