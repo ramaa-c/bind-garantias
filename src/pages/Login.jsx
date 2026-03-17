@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { FiEye, FiEyeOff } from "react-icons/fi";
-import "../styles/login.css";
+import { InputFlotante, Button } from "../components/ui";
+import styles from "./Login.module.css";
 import logoBind from "../assets/images/bind-g-logo.svg";
-
 
 const loginSchema = z.object({
   email: z
@@ -18,7 +17,6 @@ const loginSchema = z.object({
 
 const Login = () => {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -34,80 +32,63 @@ const Login = () => {
   };
 
   return (
-    <div className="login-layout-split">
+    <div className={styles.layoutSplit}>
       {/* --- COLUMNA IZQUIERDA --- */}
-      <section className="login-side-form">
-
-        {/* LOGO */}
-        <div className="login-global-logo">
+      <section className={styles.sideForm}>
+        <div className={styles.globalLogo}>
           <img src={logoBind} alt="Logo BIND" width="120" />
         </div>
 
-        {/* TARJETA DE LOGIN */}
-        <div className="login-card-modern">
-          <div className="login-header-text">
+        <div className={styles.cardModern}>
+          <div className={styles.headerText}>
             <h2>¡Hola! Bienvenido</h2>
             <p>Ingresá tus datos para acceder a tu cuenta.</p>
           </div>
 
-          <form className="login-form" onSubmit={handleSubmit(onSubmit)}>
-            <div className="input-group">
-              <input
-                type="email"
-                id="email"
-                placeholder=" "
-                {...register("email")}
-              />
-              <label htmlFor="email">Email *</label>
-              {errors.email && (
-                <span className="error-text">{errors.email.message}</span>
-              )}
-            </div>
+          <form
+            className={styles.formContent}
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <InputFlotante
+              label="Email"
+              type="email"
+              id="email"
+              error={errors.email?.message}
+              {...register("email")}
+            />
 
-            <div className="input-group">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                placeholder=" "
-                {...register("password")}
-              />
-              <label htmlFor="password">Contraseña *</label>
+            <InputFlotante
+              label="Contraseña"
+              type="password"
+              id="password"
+              error={errors.password?.message}
+              {...register("password")}
+            />
 
-              <button
-                type="button"
-                className="toggle-password-btn"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
-              </button>
-
-              {errors.password && (
-                <span className="error-text">{errors.password.message}</span>
-              )}
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" className="btn-primary">
+            <div className={styles.formActions}>
+              <Button type="submit" variant="primary">
                 INGRESAR
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
-                className="btn-secondary"
+                variant="outline"
                 onClick={() => navigate("/registro")}
               >
                 REGISTRARSE
-              </button>
+              </Button>
             </div>
           </form>
         </div>
       </section>
 
       {/* --- COLUMNA DERECHA --- */}
-      <section className="login-side-brand">
-        <div className="brand-content">
-          <h2 className="brand-title">Potenciando y transformando el financiamiento PyME.</h2>
-          <p className="brand-subtitle">
+      <section className={styles.sideBrand}>
+        <div className={styles.brandContent}>
+          <h2 className={styles.brandTitle}>
+            Potenciando y transformando el financiamiento PyME.
+          </h2>
+          <p className={styles.brandSubtitle}>
             Accedé a la mejor financiación para tu empresa.
           </p>
         </div>

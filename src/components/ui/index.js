@@ -12,6 +12,7 @@ export * from './Input/Input';
 export * from './InputCodigo/InputCodigo';
 export * from './InputFlotante/InputFlotante';
 export * from './InputMonto/InputMonto';
+export * from './InputPasswordSeguro/InputPasswordSeguro';
 export { default as ModalSms } from './ModalSms/ModalSms';
 export * from './Modal/Modal';
 export * from './Select/Select';
@@ -20,3 +21,9 @@ export * from './Spinner/Spinner';
 export * from './TarjetaEstado/TarjetaEstado';
 export * from './TarjetaMetrica/TarjetaMetrica';
 export * from './TarjetaSeleccionable/TarjetaSeleccionable';
+export * from './CustomScroll/Scroll';
+
+
+
+
+

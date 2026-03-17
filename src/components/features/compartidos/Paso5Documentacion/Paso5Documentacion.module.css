@@ -129,7 +129,7 @@
 .dropzoneWrapper {
   flex: 0 0 15rem;
   max-width: 100%;
-  min-width: 0; 
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -150,8 +150,9 @@
   .documentRow {
     flex-direction: column;
   }
+
   .dropzoneWrapper {
-    flex: 1 1 auto; 
+    flex: 1 1 auto;
   }
 }
 
@@ -236,8 +237,15 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- NUEVO: TARJETAS DE TAREAS (SOCIOS) --- */
@@ -277,9 +285,9 @@
 
 /* Semáforo de estados */
 .avatarPending {
-  background-color: rgba(255, 193, 7, 0.1);
-  color: var(--yellow);
-  border: 1px solid rgba(255, 193, 7, 0.3);
+  background-color: rgba(255, 82, 82, 0.1);
+  color: #ff5252;
+  border: 1px solid rgba(255, 82, 82, 0.3);
 }
 
 .avatarReady {

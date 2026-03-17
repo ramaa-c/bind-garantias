@@ -34,6 +34,7 @@ export default function Paso5Documentacion({
   const apoCuitIngresado = watch("apoCuit", "");
   const [archivos, setArchivos] = useState({});
   const [draggingKey, setDraggingKey] = useState(null);
+  const sociosFormValues = watch("socios") || [];
   const [socioActivoIndex, setSocioActivoIndex] = useState(null);
   const handleFileUpload = (key, file) => {
     if (file) {
@@ -87,13 +88,16 @@ export default function Paso5Documentacion({
   };
 
   const isSocioCompleto = (index) => {
-    const sEmail = watch(`socios.${index}.email`);
-    const sCel = watch(`socios.${index}.celular`);
-    const sDir = watch(`socios.${index}.direccion`);
+    const socioData = sociosFormValues[index] || {};
+
+    const sEmail = socioData.email;
+    const sCel = socioData.celular;
+    const sDir = socioData.direccion;
+    const sProv = socioData.provincia;
+    const sLoc = socioData.localidad;
     const dniFrenteSubido = archivos[`socio-${index}-frente`];
     const dniDorsoSubido = archivos[`socio-${index}-dorso`];
-
-    return !!(sEmail && sCel && sDir && dniFrenteSubido && dniDorsoSubido);
+    return !!(sEmail && sCel && sDir && sProv && sLoc && dniFrenteSubido && dniDorsoSubido);
   };
 
   return (
@@ -103,18 +107,13 @@ export default function Paso5Documentacion({
 
       <Acordeon
         title="Estatuto"
-        status={archivos["estatuto"] ? "check" : "default"}
+        status={archivos["estatuto"] ? "check" : "alert"}
         defaultOpen={true}
       >
         <div className={styles.documentRow}>
-          {renderCargaArchivo(
-            "estatuto",
-            "Subir archivo",
-            "PDF o ZIP menor a 5MB",
-          )}
+          {renderCargaArchivo("estatuto", "Subir archivo", "PDF o ZIP menor a 5MB")}
           <div className={styles.docInfoBox}>
-            Los estatutos son las normas por las que se regirá el funcionamiento
-            de la entidad.
+            Los estatutos son las normas por las que se regirá el funcionamiento de la entidad.
           </div>
         </div>
       </Acordeon>
@@ -124,11 +123,7 @@ export default function Paso5Documentacion({
         status={archivos["balance"] ? "check" : "alert"}
       >
         <div className={styles.documentRow}>
-          {renderCargaArchivo(
-            "balance",
-            "Subir archivo",
-            "PDF o ZIP menor a 5MB",
-          )}
+          {renderCargaArchivo("balance", "Subir archivo", "PDF o ZIP menor a 5MB")}
           <div className={styles.docInfoBox}>
             Este informe debe ser auditado por un contador.
           </div>
@@ -142,22 +137,19 @@ export default function Paso5Documentacion({
         <div className={styles.documentRow}>
           {renderCargaArchivo("acta", "Subir archivo", "PDF o ZIP menor a 5MB")}
           <div className={styles.docInfoBox}>
-            Copia certificada del acta de asamblea donde se designan las
-            autoridades vigentes.
+            Copia certificada del acta de asamblea donde se designan las autoridades vigentes.
           </div>
         </div>
       </Acordeon>
 
-      <Acordeon title="Poderes" status={archivos["poderes"] ? "check" : "warn"}>
+      <Acordeon
+        title="Poderes"
+        status={archivos["poderes"] ? "check" : "alert"}
+      >
         <div className={styles.documentRow}>
-          {renderCargaArchivo(
-            "poderes",
-            "Subir archivo",
-            "PDF o ZIP menor a 5MB",
-          )}
+          {renderCargaArchivo("poderes", "Subir archivo", "PDF o ZIP menor a 5MB")}
           <div className={styles.docInfoBox}>
-            Copia de los poderes otorgados para operar y representar a la
-            sociedad.
+            Copia de los poderes otorgados para operar y representar a la sociedad.
           </div>
         </div>
       </Acordeon>

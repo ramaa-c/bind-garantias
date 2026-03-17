@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import "../styles/login.css";
+import { InputFlotante, Button } from "../components/ui";
+import styles from "./Login.module.css"; 
 import logoBind from "../assets/images/bind-g-logo.svg";
 
 const registroSchema = z.object({
@@ -29,56 +30,48 @@ const Registro = () => {
   };
 
   return (
-    <div className="login-layout-split">
+    <div className={styles.layoutSplit}>
       
       {/* --- COLUMNA IZQUIERDA --- */}
-      <section className="login-side-form">
+      <section className={styles.sideForm}>
         
         {/* LOGO */}
-        <div className="login-global-logo">
+        <div className={styles.globalLogo}>
           <img src={logoBind} alt="Logo BIND" width="120" />
         </div>
 
-        <div className="login-card-modern">
-          <div className="login-header-text">
+        <div className={styles.cardModern}>
+          <div className={styles.headerText}>
             <h2>Creá tu cuenta</h2>
             <p>Ingresá tu correo electrónico para comenzar a operar.</p>
           </div>
 
-          <form className="login-form" onSubmit={handleSubmit(onSubmit)}>
-            <div className="input-group">
-              <input
-                type="email"
-                id="email"
-                placeholder=" "
-                {...register("email")}
-              />
-              <label htmlFor="email">Email *</label>
-              {errors.email && (
-                <span className="error-text">{errors.email.message}</span>
-              )}
-            </div>
+          <form className={styles.formContent} onSubmit={handleSubmit(onSubmit)}>
+            
+            <InputFlotante
+              type="email"
+              id="email"
+              label="Email *"
+              error={errors.email?.message}
+              {...register("email")}
+            />
 
-            <div className="form-actions">
-              <button type="submit" className="btn-primary">
+            <div className={styles.formActions}>
+              <Button type="submit" variant="primary">
                 REGISTRARSE
-              </button>
+              </Button>
               
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => navigate("/")}
-              >
+              <Button type="button" variant="outline" onClick={() => navigate("/")}>
                 YA TENGO CUENTA
-              </button>
+              </Button>
             </div>
           </form>
 
           {/* --- SOPORTE --- */}
-          <div className="support-container-modern">
+          <div className={styles.supportContainerModern}>
             <p>¿Tenés problemas o dudas para registrarte?</p>
             <p>Ponete en contacto con nosotros a{" "}
-              <a href="mailto:comerciales@bindgarantias.com.ar" className="link-yellow">
+              <a href="mailto:comerciales@bindgarantias.com.ar" className={styles.linkYellow}>
                 comerciales@bindgarantias.com.ar
               </a>
             </p>
@@ -88,10 +81,10 @@ const Registro = () => {
       </section>
 
       {/* --- COLUMNA DERECHA --- */}
-      <section className="login-side-brand">
-        <div className="brand-content">
-          <h2 className="brand-title">Potenciando y transformando el financiamiento PyME.</h2>
-          <p className="brand-subtitle">
+      <section className={styles.sideBrand}>
+        <div className={styles.brandContent}>
+          <h2 className={styles.brandTitle}>Potenciando y transformando el financiamiento PyME.</h2>
+          <p className={styles.brandSubtitle}>
             Accedé a la mejor financiación para tu empresa.
           </p>
         </div>

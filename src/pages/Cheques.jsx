@@ -13,7 +13,7 @@ import {
   Paso7Exito,
   PanelDudas,
 } from "../components/features";
-import { ModalSms, BarraProgreso, BotonVolver } from "../components/ui";
+import { ModalSms, BarraProgreso, BotonVolver, Scroll } from "../components/ui";
 import styles from "./Cheques.module.css";
 
 export default function Cheques() {
@@ -142,7 +142,7 @@ export default function Cheques() {
     setPasoActual(7);
   };
 
-return (
+  return (
     <div className={styles.chequesPage}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
@@ -164,10 +164,10 @@ return (
             )}
           </div>
 
-<div className={styles.contenedorPrincipal}>
+          <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
-                
+
                 {pasoActual === 1 && (
                   <div className={styles.bienvenidaHeader}>
                     <h1 className={styles.tituloBienvenida}>Solicitud de Línea de Cheques</h1>
@@ -197,6 +197,7 @@ return (
                     className={styles.formContent}
                     onSubmit={handleSubmit(onSubmitFinal)}
                   >
+
                     <div key={pasoActual} className="animacion-paso">
                       {pasoActual === 1 && (
                         <Paso1Cuit onValidar={handleValidarCuit} />
