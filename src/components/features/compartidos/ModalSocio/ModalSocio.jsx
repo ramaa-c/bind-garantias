@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
 import { Modal, InputFlotante, Button, CargaArchivos } from "../../../ui";
 import styles from "./ModalSocio.module.css";
@@ -7,7 +7,7 @@ export default function ModalSocio({
   socio,
   socioIndex,
   archivos,
-  intentoGuardar,
+  intentoGuardarSocio,
   onGuardar,
   onCerrar,
   onFileUpload,
@@ -16,24 +16,53 @@ export default function ModalSocio({
   onDragOver,
   onDragLeave,
   onDrop,
+  control,
 }) {
-  const { register } = useFormContext();
-  const { errors, dirtyFields } = useFormState();
+  const { register, watch, trigger } = useFormContext();
+  const { errors, dirtyFields } = useFormState({ control });
+
+  const valoresCampos = watch(`socios.${socioIndex}`) ?? {};
+  const isMounted = useRef(false);
+
+  useEffect(() => {
+    if (socioIndex === null) return;
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+    trigger([
+      `socios.${socioIndex}.email`,
+      `socios.${socioIndex}.celular`,
+      `socios.${socioIndex}.direccion`,
+      `socios.${socioIndex}.provincia`,
+      `socios.${socioIndex}.localidad`,
+    ]);
+  }, [valoresCampos]);
+
+  useEffect(() => {
+    if (socioIndex === null) {
+      isMounted.current = false;
+    }
+  }, [socioIndex]);
 
   const getCampo = (campo) => {
+    if (socioIndex === null) return { error: null, esValido: false };
     const hasError = errors?.socios?.[socioIndex]?.[campo];
     const isDirty = dirtyFields?.socios?.[socioIndex]?.[campo];
-    const mostrarError = hasError && (isDirty || intentoGuardar);
-    const val = archivos;
-
+    const val = valoresCampos[campo];
+    const mostrarError = hasError && (isDirty || intentoGuardarSocio);
     return {
       error: mostrarError ? hasError.message : null,
-      esValido: !hasError && (isDirty || intentoGuardar),
+      esValido:
+        !hasError &&
+        val &&
+        val.toString().trim().length > 0 &&
+        (isDirty || intentoGuardarSocio),
     };
   };
 
   const renderDropzone = (key, title, subtitle) => {
-    const tieneError = intentoGuardar && !archivos[key];
+    const tieneError = intentoGuardarSocio && !archivos[key];
     return (
       <div className={styles.dropzoneWrapper}>
         <input

@@ -35,6 +35,7 @@ export default function Paso5Documentacion({
     clearErrors,
     getValues,
   } = useFormContext();
+
   const { errors, dirtyFields } = useFormState({ control });
 
   const apoCuitIngresado = watch("apoCuit", "");
@@ -335,7 +336,8 @@ export default function Paso5Documentacion({
             intentoAvanzar && !archivos["estatuto"],
           )}
           <div className={styles.docInfoBox}>
-            Los estatutos son las normas por las que se regirá el funcionamiento de la entidad.
+            Los estatutos son las normas por las que se regirá el funcionamiento
+            de la entidad.
           </div>
         </div>
       </Acordeon>
@@ -369,7 +371,8 @@ export default function Paso5Documentacion({
             intentoAvanzar && !archivos["acta"],
           )}
           <div className={styles.docInfoBox}>
-            Copia certificada del acta de asamblea donde se designan las autoridades vigentes.
+            Copia certificada del acta de asamblea donde se designan las
+            autoridades vigentes.
           </div>
         </div>
       </Acordeon>
@@ -383,7 +386,8 @@ export default function Paso5Documentacion({
             intentoAvanzar && !archivos["poderes"],
           )}
           <div className={styles.docInfoBox}>
-            Copia de los poderes otorgados para operar y representar a la sociedad.
+            Copia de los poderes otorgados para operar y representar a la
+            sociedad.
           </div>
         </div>
       </Acordeon>
@@ -609,7 +613,7 @@ export default function Paso5Documentacion({
         socio={socioActivoIndex !== null ? socios[socioActivoIndex] : null}
         socioIndex={socioActivoIndex}
         archivos={archivos}
-        intentoGuardar={intentoGuardarSocio}
+        intentoGuardarSocio={intentoGuardarSocio}
         onGuardar={handleGuardarSocio}
         onCerrar={handleCerrarModalSinGuardar}
         onFileUpload={handleFileUpload}
@@ -618,6 +622,7 @@ export default function Paso5Documentacion({
         onDragOver={(key) => setDraggingKey(key)}
         onDragLeave={() => setDraggingKey(null)}
         onDrop={(key, file) => handleFileUpload(key, file)}
+        control={control}
       />
 
       <div style={{ display: "none" }}>
