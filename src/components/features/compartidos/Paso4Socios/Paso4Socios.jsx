@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { FiEdit, FiTrash2, FiUserPlus, FiCheckCircle } from "react-icons/fi";
 import { InputFlotante, Button, Badge, Avatar, BotonIcono } from "../../../ui";
 import styles from "./Paso4Socios.module.css";
@@ -16,11 +16,40 @@ export default function Paso4Socios({
   validarCuitSocio,
   guardarSocio,
   eliminarSocio,
+  editarSocio,
   continuarAlProximoPaso,
 }) {
+  const [errorCuit, setErrorCuit] = useState("");
+  const [errorParticipacion, setErrorParticipacion] = useState("");
+
+  const isCuitValido = tempSocioCuit?.length === 11;
+  const isParticipacionValida =
+    tempSocioParticipacion > 0 && tempSocioParticipacion <= 100;
+
+  const handleValidarClick = () => {
+    if (!tempSocioCuit) {
+      setErrorCuit("El CUIT es obligatorio");
+    } else if (tempSocioCuit.length < 11) {
+      setErrorCuit("Debe contener 11 números exactos");
+    } else {
+      setErrorCuit("");
+      validarCuitSocio();
+    }
+  };
+
+  const handleGuardarClick = () => {
+    if (!tempSocioParticipacion) {
+      setErrorParticipacion("Ingresá un porcentaje");
+    } else if (!isParticipacionValida) {
+      setErrorParticipacion("Debe ser mayor a 0 y hasta 100");
+    } else {
+      setErrorParticipacion("");
+      guardarSocio();
+    }
+  };
+
   return (
     <div className={styles.container}>
-      
       {/* --- FASE 1: INGRESAR CUIT --- */}
       {faseSocio === "ingresar_cuit" && (
         <div className={styles.section}>
@@ -31,20 +60,27 @@ export default function Paso4Socios({
             Ingresá el número de CUIT/CUIL para validar su identidad en AFIP.
           </p>
 
-          <div className={styles.searchRow} style={{ marginTop: "30px", alignItems: "flex-start" }}>
+          <div className={styles.searchRow}>
             <div className={styles.searchInput}>
               <InputFlotante
+                type="text"
                 label="CUIT del Socio"
                 maxLength={11}
                 value={tempSocioCuit}
-                esValido={tempSocioCuit.length === 11}
-                onChange={(e) => setTempSocioCuit(e.target.value)}
+                esValido={isCuitValido}
+                error={errorCuit}
+                onChange={(e) => {
+                  const soloNumeros = e.target.value.replace(/\D/g, "");
+                  setTempSocioCuit(soloNumeros);
+                  if (errorCuit) setErrorCuit("");
+                }}
               />
             </div>
-            <div style={{ marginTop: "4px" }}>
+            <div className={styles.btnWrapper}>
               <Button
+                type="button"
                 variant="primary"
-                onClick={validarCuitSocio}
+                onClick={handleValidarClick}
                 className={styles.tallButton}
               >
                 VALIDAR CUIT
@@ -55,8 +91,12 @@ export default function Paso4Socios({
           {socios.length > 0 && (
             <div className={styles.mtMedium}>
               <Button
+                type="button"
                 variant="outline"
-                onClick={() => setFaseSocio("lista")}
+                onClick={() => {
+                  setErrorCuit("");
+                  setFaseSocio("lista");
+                }}
                 className={styles.borderless}
               >
                 Cancelar y volver a la lista
@@ -80,29 +120,43 @@ export default function Paso4Socios({
             <p className={styles.summaryCuit}>CUIT: {tempSocioCuit}</p>
           </div>
 
-          <div className={styles.percentageWrapper} style={{ marginTop: "40px" }}>
+          <div className={styles.percentageWrapper}>
             <InputFlotante
-              type="number"
+              type="text"
               label="Porcentaje de participación (%)"
+              maxLength={3}
               value={tempSocioParticipacion}
-              esValido={tempSocioParticipacion > 0 && tempSocioParticipacion <= 100}
-              onChange={(e) => setTempSocioParticipacion(e.target.value)}
+              esValido={isParticipacionValida}
+              error={errorParticipacion}
+              onChange={(e) => {
+                const valorFiltro = e.target.value.replace(/\D/g, "");
+                if (valorFiltro === "" || Number(valorFiltro) <= 100) {
+                  setTempSocioParticipacion(valorFiltro);
+                  if (errorParticipacion) setErrorParticipacion("");
+                }
+              }}
             />
           </div>
 
           <div className={styles.actionFooter}>
             <Button
+              type="button"
               variant="outline"
-              onClick={() =>
+              onClick={() => {
+                setErrorParticipacion("");
                 socios.length === 0
                   ? setFaseSocio("ingresar_cuit")
-                  : setFaseSocio("lista")
-              }
+                  : setFaseSocio("lista");
+              }}
               className={styles.borderless}
             >
               CANCELAR
             </Button>
-            <Button variant="primary" onClick={guardarSocio}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleGuardarClick}
+            >
               GUARDAR SOCIO
             </Button>
           </div>
@@ -129,7 +183,7 @@ export default function Paso4Socios({
                   <div className={styles.itemInfo}>
                     <p className={styles.itemName}>{socio.nombre}</p>
                     <p className={styles.itemDetails}>
-                      CUIT {socio.cuit} • Participación:{" "}
+                      CUIT: {socio.cuit} • Participación:{" "}
                       <span className={styles.highlight}>
                         {socio.participacion}%
                       </span>
@@ -138,7 +192,11 @@ export default function Paso4Socios({
                 </div>
 
                 <div className={styles.itemActions}>
-                  <BotonIcono icon={FiEdit} title="Editar participación" />
+                  <BotonIcono
+                    icon={FiEdit}
+                    title="Editar participación"
+                    onClick={() => editarSocio(index)}
+                  />
                   <BotonIcono
                     icon={FiTrash2}
                     variant="danger"
@@ -151,10 +209,14 @@ export default function Paso4Socios({
           </div>
 
           <div className={styles.actionFooterBorder}>
-            <Button variant="outline" onClick={iniciarCargaSocio}>
+            <Button type="button" variant="outline" onClick={iniciarCargaSocio}>
               <FiUserPlus className={styles.iconMarginRight} /> AGREGAR SOCIO
             </Button>
-            <Button variant="primary" onClick={continuarAlProximoPaso}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={continuarAlProximoPaso}
+            >
               CONTINUAR
             </Button>
           </div>

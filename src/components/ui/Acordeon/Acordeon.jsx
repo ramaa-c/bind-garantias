@@ -1,4 +1,3 @@
-// src/components/ui/Acordeon/Acordeon.jsx
 import React, { useState } from 'react';
 import styles from './Acordeon.module.css';
 import { FiChevronDown, FiCheckCircle, FiAlertCircle, FiClock, FiCircle } from 'react-icons/fi';
@@ -7,7 +6,7 @@ export const Acordeon = ({
   title, 
   subtitle, 
   status = 'default',
-  isOpen: controlledIsOpen, // NUEVA PROP: Permite controlarlo desde el padre
+  isOpen: controlledIsOpen,
   defaultOpen = false,
   headerAction,
   onToggle,    
@@ -15,7 +14,6 @@ export const Acordeon = ({
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(defaultOpen);
   
-  // Magia de React: Si le pasan isOpen, obedece al padre. Si no, usa su propio estado interno.
   const isControlled = controlledIsOpen !== undefined;
   const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
 
@@ -40,11 +38,9 @@ export const Acordeon = ({
 
   return (
     <div className={styles.item}>
-      {/* CAMBIO CLAVE: Cambiamos <button> por <div> para que no haya botones anidados */}
       <div 
         className={styles.header} 
         onClick={handleToggle}
-        style={{ cursor: 'pointer' }}
       >
         <div className={styles.headerLeft}>
           <span className={`${styles.statusIcon} ${statusClass}`}>

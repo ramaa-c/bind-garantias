@@ -17,6 +17,18 @@ export const chequesSchema = z.object({
   emailFacturacion: z.string().email({ message: "Email inválido" }).min(1, { message: "Requerido" }),
   sociedadBolsa: z.string().optional(),
   numeroCuentaBolsa: z.string().optional(),
+
+  // --- VALIDACIÓN DE SOCIOS ---
+  socios: z.array(
+    z.object({
+      email: z.string().email({ message: "Email inválido" }),
+      celular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
+      direccion: z.string().min(3, { message: "Requerido" }),
+      provincia: z.string().min(3, { message: "Requerido" }),
+      localidad: z.string().min(3, { message: "Requerido" }),
+    })
+  ).optional(),
+
 }).superRefine((data, ctx) => {
   if (data.sociedadBolsa && data.sociedadBolsa !== "" && !data.numeroCuentaBolsa) {
     ctx.addIssue({

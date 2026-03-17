@@ -4,7 +4,7 @@
   position: relative;
   background-color: var(--carbon-black);
   font-family: 'IBM Plex Sans', sans-serif;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .formMainContainer {

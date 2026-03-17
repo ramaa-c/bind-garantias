@@ -15,4 +15,15 @@ export const prestamosSchema = z.object({
   apoEmail: z.string().email({ message: "Email inválido" }).optional().or(z.literal("")),
   apoCelular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números" }).optional().or(z.literal("")),
   emailFacturacion: z.string().email({ message: "Email inválido" }).min(1, { message: "Requerido" }),
+  
+  // ---  VALIDACIÓN PARA SOCIOS ---
+  socios: z.array(
+    z.object({
+      email: z.string().email({ message: "Email inválido" }),
+      celular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
+      direccion: z.string().min(3, { message: "Requerido" }),
+      provincia: z.string().min(3, { message: "Requerido" }),
+      localidad: z.string().min(3, { message: "Requerido" }),
+    })
+  ).optional(),
 });

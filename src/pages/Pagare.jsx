@@ -1,5 +1,3 @@
-// src/pages/Pagare.jsx
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
@@ -65,7 +63,6 @@ export default function PagareUSD() {
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
                 
-                {/* MANTENEMOS TUS TÍTULOS ORIGINALES */}
                 {pasoActual < 4 && (
                   <h1 className={styles.tituloVista}>
                     {pasoActual === 1 && "Ingresás el monto del pagaré y la fecha de pago"}
@@ -74,7 +71,6 @@ export default function PagareUSD() {
                   </h1>
                 )}
 
-                {/* MODIFICADO: Solo la Barra de Progreso */}
                 {pasoActual < 4 && (
                   <BarraProgreso 
                     hitos={["Simulación", "Agente", "Confirmación"]}
