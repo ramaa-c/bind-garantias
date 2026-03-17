@@ -7,6 +7,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import "../styles/login.css";
 import logoBind from "../assets/images/bind-g-logo.svg";
 
+
 const loginSchema = z.object({
   email: z
     .string()
@@ -36,7 +37,7 @@ const Login = () => {
     <div className="login-layout-split">
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className="login-side-form">
-        
+
         {/* LOGO */}
         <div className="login-global-logo">
           <img src={logoBind} alt="Logo BIND" width="120" />
@@ -62,7 +63,7 @@ const Login = () => {
                 <span className="error-text">{errors.email.message}</span>
               )}
             </div>
-            
+
             <div className="input-group">
               <input
                 type={showPassword ? "text" : "password"}
