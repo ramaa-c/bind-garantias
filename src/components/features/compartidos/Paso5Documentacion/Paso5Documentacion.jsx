@@ -9,6 +9,7 @@ import {
   Alert,
   Modal,
 } from "../../../ui";
+import ModalSocio from "../../../features/Compartidos/ModalSocio/ModalSocio";
 import styles from "./Paso5Documentacion.module.css";
 
 export default function Paso5Documentacion({
@@ -607,116 +608,20 @@ export default function Paso5Documentacion({
         </Button>
       </div>
 
-      <Modal
-        isOpen={socioActivoIndex !== null}
-        onClose={handleCerrarModalSinGuardar}
-        title={
-          socioActivoIndex !== null
-            ? `Datos de ${socios[socioActivoIndex].nombre}`
-            : ""
-        }
-        maxWidth="700px"
-      >
-        {socioActivoIndex !== null && (
-          <div className={styles.modalSocioBody}>
-            <h4 className={styles.modalSectionTitle}>
-              1. Información de contacto
-            </h4>
-            <div className={styles.row}>
-              <div className={styles.col}>
-                <InputFlotante
-                  label="Email"
-                  type="email"
-                  esValido={getCampoModal("email").esValido}
-                  error={getCampoModal("email").error}
-                  {...register(`socios.${socioActivoIndex}.email`)}
-                />
-              </div>
-              <div className={styles.col}>
-                <InputFlotante
-                  label="Celular"
-                  maxLength={10}
-                  esValido={getCampoModal("celular").esValido}
-                  error={getCampoModal("celular").error}
-                  {...register(`socios.${socioActivoIndex}.celular`)}
-                  onChange={(e) => {
-                    e.target.value = e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 10);
-                    register(`socios.${socioActivoIndex}.celular`).onChange(e);
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className={styles.row}>
-              <div className={styles.col}>
-                <InputFlotante
-                  label="Dirección"
-                  esValido={getCampoModal("direccion").esValido}
-                  error={getCampoModal("direccion").error}
-                  {...register(`socios.${socioActivoIndex}.direccion`)}
-                />
-              </div>
-            </div>
-
-            <div className={styles.row}>
-              <div className={styles.col}>
-                <InputFlotante
-                  label="Provincia"
-                  esValido={getCampoModal("provincia").esValido}
-                  error={getCampoModal("provincia").error}
-                  {...register(`socios.${socioActivoIndex}.provincia`)}
-                />
-              </div>
-              <div className={styles.col}>
-                <InputFlotante
-                  label="Localidad"
-                  esValido={getCampoModal("localidad").esValido}
-                  error={getCampoModal("localidad").error}
-                  {...register(`socios.${socioActivoIndex}.localidad`)}
-                />
-              </div>
-            </div>
-
-            <h4 className={styles.modalSectionTitle}>2. Identidad (DNI)</h4>
-            <div className={styles.dropzoneGrid}>
-              {renderCargaArchivo(
-                `socio-${socioActivoIndex}-frente`,
-                "DNI Frente",
-                "Imagen clara y legible",
-                intentoGuardarSocio &&
-                  !archivos[`socio-${socioActivoIndex}-frente`],
-              )}
-              {renderCargaArchivo(
-                `socio-${socioActivoIndex}-dorso`,
-                "DNI Dorso",
-                "Imagen clara y legible",
-                intentoGuardarSocio &&
-                  !archivos[`socio-${socioActivoIndex}-dorso`],
-              )}
-            </div>
-
-            <div className={styles.actionsFlexMtLarge}>
-              <Button
-                type="button"
-                variant="outline"
-                className={styles.borderless}
-                onClick={handleCerrarModalSinGuardar}
-              >
-                CANCELAR
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleGuardarSocio}
-              >
-                GUARDAR
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <ModalSocio
+        socio={socioActivoIndex !== null ? socios[socioActivoIndex] : null}
+        socioIndex={socioActivoIndex}
+        archivos={archivos}
+        intentoGuardar={intentoGuardarSocio}
+        onGuardar={handleGuardarSocio}
+        onCerrar={handleCerrarModalSinGuardar}
+        onFileUpload={handleFileUpload}
+        onFileRemove={handleFileRemove}
+        draggingKey={draggingKey}
+        onDragOver={(key) => setDraggingKey(key)}
+        onDragLeave={() => setDraggingKey(null)}
+        onDrop={(key, file) => handleFileUpload(key, file)}
+      />
 
       <div style={{ display: "none" }}>
         {socios.map((_, i) => (
