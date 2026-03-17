@@ -13,7 +13,7 @@ import {
   Paso7Exito,
   PanelDudas,
 } from "../components/features";
-import { ModalSms, BarraProgreso, BotonVolver } from "../components/ui";
+import { ModalSms, BarraProgreso, BotonVolver, Scroll } from "../components/ui";
 import styles from "./Cheques.module.css";
 
 export default function Cheques() {
@@ -200,7 +200,7 @@ export default function Cheques() {
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
-                
+
                 {pasoActual === 1 && (
                   <div className={styles.bienvenidaHeader}>
                     <h1 className={styles.tituloBienvenida}>Solicitud de Línea de Cheques</h1>

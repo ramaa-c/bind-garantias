@@ -2,7 +2,8 @@
   position: relative !important;
   width: 100% !important;
   margin-bottom: 2rem !important;
-  display: block !important; /* Para asegurar que no se colapse */
+  display: block !important;
+  /* Para asegurar que no se colapse */
 }
 
 .select {
@@ -11,18 +12,19 @@
   padding-right: 2.5rem;
   font-size: 1rem;
   color: var(--white, #fff);
-  background: transparent !important; /* Forzamos transparencia */
+  background: transparent !important;
+  /* Forzamos transparencia */
   border: none;
   border-bottom: 2px solid var(--white, #fff);
-  outline: none !important; 
+  outline: none !important;
   box-shadow: none !important;
-  
+
   transition: border-color 0.3s;
   font-family: inherit;
   appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
-  border-radius: 0; 
+  border-radius: 0;
 }
 
 .select:focus {
@@ -42,7 +44,7 @@
 }
 
 /* Girar la flecha y pintarla de amarillo al abrir */
-.select:focus ~ .arrow {
+.select:focus~.arrow {
   transform: rotate(180deg);
   color: var(--yellow, #f4f500);
 }
@@ -58,8 +60,9 @@
 }
 
 /* EL TRUCO MAGICO: Sube el label si está en foco o si seleccionaste algo válido */
-.select:focus ~ .label,
-.select:valid ~ .label {
+.select:focus~.label,
+.select:valid~.label,
+.select:disabled~.label {
   top: -1.2rem;
   font-size: 0.8rem;
   color: var(--yellow, #f4f500);

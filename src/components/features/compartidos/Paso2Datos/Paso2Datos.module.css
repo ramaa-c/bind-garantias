@@ -47,13 +47,13 @@
 }
 
 /* --- TÍTULOS DE SECCIÓN --- */
-.subtitle, 
+.subtitle,
 .subtitleContacto {
   color: var(--white);
   font-weight: bold;
   font-size: 18px;
   font-family: 'Raleway', sans-serif;
-  margin: 0; 
+  margin: 0;
 }
 
 .subtitle {
@@ -63,7 +63,7 @@
 /* --- BLOQUES DE FORMULARIO --- */
 .formGroup {
   margin-top: 35px;
-  margin-bottom: 20px; 
+  margin-bottom: 20px;
 }
 
 .formRow {
@@ -85,7 +85,7 @@
   gap: 10px;
   border-top: 1px dashed #444;
   padding-top: 30px;
-  margin-top: 10px; 
+  margin-top: 10px;
   width: 100%;
 }
 
@@ -101,7 +101,6 @@
 .btnVerifyWrapper {
   margin-top: -10px;
   margin-bottom: 0;
- 
 }
 
 .phoneInputWrapper {
@@ -130,10 +129,17 @@
 }
 
 .btnVerifyError {
-  margin-bottom: 22px; 
+  margin-bottom: 22px;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

@@ -10,6 +10,7 @@ import Prestamos from "./pages/Prestamos";
 import Pagare from "./pages/Pagare";
 import Solicitudes from "./pages/Solicitudes";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
+import './components/ui/CustomScroll/Scroll.module.css';
 import "./App.css";
 
 function App() {
