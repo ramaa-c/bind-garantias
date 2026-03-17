@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import styles from './InputFlotante.module.css';
 import { FiEye, FiEyeOff } from 'react-icons/fi';
-import { FaCheck } from 'react-icons/fa'; // <-- Agregamos el icono de éxito
+import { FaCheck } from 'react-icons/fa';
 
 export const InputFlotante = React.forwardRef(({ 
   label, 
   error, 
-  esValido, // <-- Nueva prop para saber si pintarlo de verde
+  esValido,
   type = 'text', 
   className = '', 
   ...props 
@@ -19,7 +19,6 @@ export const InputFlotante = React.forwardRef(({
     <div className={`${styles.group} ${className}`}>
       <input
         type={currentType}
-        // Le sumamos la clase isValid dinámicamente
         className={`${styles.input} ${esValido ? styles.isValid : ''}`}
         placeholder=" " 
         ref={ref}
@@ -38,10 +37,8 @@ export const InputFlotante = React.forwardRef(({
         </button>
       )}
 
-      {/* Mensaje de error original */}
       {error && <span className={styles.error}>{error}</span>}
 
-      {/* NUEVO: Mensaje de éxito si es válido y no hay errores */}
       {esValido && !error && (
         <span className={styles.success}>
           <FaCheck size={12} style={{ marginRight: '4px' }} /> Válido

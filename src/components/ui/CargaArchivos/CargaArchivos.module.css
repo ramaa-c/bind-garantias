@@ -110,3 +110,22 @@
   color: #888;
   font-size: 0.8rem;
 }
+
+/* --- ESTADO: ERROR --- */
+.error {
+  border-color: #ff5252;
+  background-color: rgba(255, 82, 82, 0.05);
+}
+
+.error .icon {
+  color: #ff5252;
+}
+
+.error:hover {
+  border-color: #ff5252;
+  background-color: rgba(255, 82, 82, 0.08);
+}
+
+.error:hover .icon {
+  color: #ff5252;
+}

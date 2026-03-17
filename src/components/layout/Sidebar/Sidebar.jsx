@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiHome, FiFileText, FiCreditCard, FiBriefcase, FiSettings } from "react-icons/fi";
-import "../../../styles/layout.css";
+import styles from "./Sidebar.module.css";
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -10,42 +10,40 @@ export default function Sidebar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <aside className="sidebar-container">
-      <nav className="sidebar-nav">
-        
-        <p className="sidebar-heading">GENERAL</p>
+    <aside className={styles.container}>
+      <nav>
+        <p className={styles.heading}>GENERAL</p>
         <button 
-          className={`sidebar-link ${isActive("/inicio") ? "active" : ""}`} 
+          className={`${styles.link} ${isActive("/inicio") ? styles.active : ""}`} 
           onClick={() => navigate("/inicio")}
         >
-          <FiHome className="sidebar-icon" /> Inicio
+          <FiHome className={styles.icon} /> Inicio
         </button>
 
-        <p className="sidebar-heading" style={{ marginTop: '2rem' }}>GESTIONES</p>
+        <p className={`${styles.heading} ${styles.headingSpacing}`}>GESTIONES</p>
         <button 
-          className={`sidebar-link ${isActive("/pagare") ? "active" : ""}`} 
+          className={`${styles.link} ${isActive("/pagare") ? styles.active : ""}`} 
           onClick={() => navigate("/pagare")}
         >
-          <FiFileText className="sidebar-icon" /> Pagaré USD
+          <FiFileText className={styles.icon} /> Pagaré USD
         </button>
         <button 
-          className={`sidebar-link ${isActive("/cheques") ? "active" : ""}`} 
+          className={`${styles.link} ${isActive("/cheques") ? styles.active : ""}`} 
           onClick={() => navigate("/cheques")}
         >
-          <FiCreditCard className="sidebar-icon" /> Cheques
+          <FiCreditCard className={styles.icon} /> Cheques
         </button>
         <button 
-          className={`sidebar-link ${isActive("/prestamos") ? "active" : ""}`} 
+          className={`${styles.link} ${isActive("/prestamos") ? styles.active : ""}`} 
           onClick={() => navigate("/prestamos")}
         >
-          <FiBriefcase className="sidebar-icon" /> Préstamos
+          <FiBriefcase className={styles.icon} /> Préstamos
         </button>
-
       </nav>
 
-      <div className="sidebar-footer">
-        <button className="sidebar-link">
-          <FiSettings className="sidebar-icon" /> Configuración
+      <div className={styles.footer}>
+        <button className={styles.link}>
+          <FiSettings className={styles.icon} /> Configuración
         </button>
       </div>
     </aside>

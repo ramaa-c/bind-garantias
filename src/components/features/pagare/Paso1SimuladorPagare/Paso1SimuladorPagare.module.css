@@ -13,13 +13,15 @@
 .formRowCentered {
   display: flex;
   gap: 30px;
-  justify-content: center;
+  align-items: flex-start;
   margin-bottom: 2rem;
 }
 
 .formCol {
-  width: 100%;
-  max-width: 200px;
+  flex: 1;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- BOTÓN SIMULAR --- */
@@ -31,7 +33,7 @@
 
 /* --- TICKET DE RESULTADOS --- */
 .breakdownContainer {
-  background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.02), rgba(0, 0, 0, 0.2));
   border: 1px solid #333;
   border-radius: 12px;
   padding: 2.5rem;
@@ -100,6 +102,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

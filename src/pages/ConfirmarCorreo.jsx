@@ -1,8 +1,8 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { FiMail } from "react-icons/fi";
 import { IoIosMailUnread } from "react-icons/io";
-import "../styles/login.css";
+import { Button } from "../components/ui";
+import styles from "./Login.module.css";
 import logoBind from "../assets/images/bind-g-logo.svg";
 
 const ConfirmarCorreo = () => {
@@ -11,70 +11,55 @@ const ConfirmarCorreo = () => {
   const emailUsuario = location.state?.emailIngresado || "tu correo";
 
   return (
-    <div className="login-layout-split">
-      
+    <div className={styles.layoutSplit}>
       {/* --- COLUMNA IZQUIERDA --- */}
-      <section className="login-side-form">
-        
-        {/* LOGO  */}
-        <div className="login-global-logo">
+      <section className={styles.sideForm}>
+        <div className={styles.globalLogo}>
           <img src={logoBind} alt="Logo BIND" width="120" />
         </div>
 
-        <div className="login-card-modern" style={{ textAlign: "left" }}>
-
-          <div className="login-header-text">
-            <h2 style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>Revisá tu correo</h2>
-            <p style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
+        <div className={`${styles.cardModern} ${styles.textLeft}`}>
+          <div className={styles.headerText}>
+            <h2 className={styles.titleJumbo}>Revisá tu correo</h2>
+            <p className={styles.textLead}>
               Te enviamos un enlace de confirmación a: <br />
-              <span className="text-white" style={{ fontWeight: "bold" }}>{emailUsuario}</span>
+              <span className={styles.boldWhiteText}>{emailUsuario}</span>
             </p>
           </div>
 
-          <div className="form-actions" style={{ marginTop: "2rem" }}>
-            <button
+          <div className={`${styles.formActions} ${styles.formActionsMargin}`}>
+            <Button
               type="button"
-              className="btn-secondary"
+              variant="outline"
               onClick={() => navigate("/")}
             >
               VOLVER AL INICIO
-            </button>
+            </Button>
           </div>
 
           {/* --- SOPORTE --- */}
-          <div className="support-container-modern" style={{ textAlign: "left", marginTop: "3rem", borderTop: "none", paddingTop: 0 }}>
+          <div
+            className={`${styles.supportContainerModern} ${styles.supportContainerClean}`}
+          >
             <p>¿No te llegó o el correo es incorrecto?</p>
             <p>
-              <span 
-                className="link-yellow" 
+              <span
+                className={`${styles.linkYellow} ${styles.linkYellowReset}`}
                 onClick={() => navigate("/registro")}
-                style={{ cursor: "pointer", marginLeft: 0 }}
               >
                 Registrate nuevamente
               </span>
             </p>
           </div>
-
         </div>
       </section>
 
       {/* --- COLUMNA DERECHA --- */}
-      <section className="login-side-brand" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        
-        <div style={{
-          backgroundColor: 'rgba(244, 245, 0, 0.05)',
-          borderRadius: '50%',
-          padding: '4rem',
-          boxShadow: '0 0 50px rgba(244, 245, 0, 0.1)',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
+      <section className={`${styles.sideBrand} ${styles.sideBrandCentered}`}>
+        <div className={styles.iconCircleWrapper}>
           <IoIosMailUnread size={180} color="var(--yellow)" strokeWidth={1} />
         </div>
-
       </section>
-
     </div>
   );
 };

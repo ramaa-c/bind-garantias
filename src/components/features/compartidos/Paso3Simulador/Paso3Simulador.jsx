@@ -1,5 +1,5 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useFormState } from "react-hook-form";
 import { InputFlotante, Button, Alert, InputMonto } from "../../../ui";
 import styles from "./Paso3Simulador.module.css";
 import { SelectFlotante } from "../../../ui/SelectFlotante/SelectFlotante";
@@ -9,16 +9,13 @@ export default function Paso3Simulador({
   onCalcular,
   onContinuar,
 }) {
-  const {
-    register,
-    watch,
-    formState: { errors },
-  } = useFormContext();
-
+  const { register, watch, control } = useFormContext();
+  const { errors, dirtyFields } = useFormState({ control });
   const tipoCalculo = watch("tipoCalculo", "tasa_directa");
   const esPorMontoCheque = tipoCalculo === "por_monto_cheque";
-  const fechaValue = watch(esPorMontoCheque ? "fechaPago" : "plazo") || "";
-  const isFechaValid = fechaValue.length > 0;
+  const campoFecha = esPorMontoCheque ? "fechaPago" : "plazo";
+  const isMontoValid = !errors.monto && dirtyFields.monto;
+  const isFechaValid = !errors[campoFecha] && dirtyFields[campoFecha];
 
   return (
     <div className={styles.container}>
@@ -54,13 +51,14 @@ export default function Paso3Simulador({
       </div>
 
       {/* INPUTS DINÁMICOS */}
-      
-      <div className={styles.dynamicRow} style={{ marginTop: "40px" }}>
+
+      <div className={styles.dynamicRow}>
         <div className={styles.moneyCol}>
           <InputMonto
             label={
               esPorMontoCheque ? "Monto de cheque *" : "Monto a financiar *"
             }
+            esValido={isMontoValid}
             error={errors.monto?.message}
             disabled={mostrarResultados}
             {...register("monto")}
@@ -72,13 +70,9 @@ export default function Paso3Simulador({
             type="date"
             label={esPorMontoCheque ? "Fecha de pago" : "Plazo (Fecha)"}
             esValido={isFechaValid}
-            error={
-              esPorMontoCheque
-                ? errors.fechaPago?.message
-                : errors.plazo?.message
-            }
+            error={errors[campoFecha]?.message} 
             disabled={mostrarResultados}
-            {...register(esPorMontoCheque ? "fechaPago" : "plazo")}
+            {...register(campoFecha)}
           />
         </div>
       </div>
