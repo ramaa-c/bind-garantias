@@ -107,6 +107,7 @@
   border-radius: 6px;
   padding: 20px;
   margin-top: 2rem;
+  margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
   gap: 10px;

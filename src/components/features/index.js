@@ -1,12 +1,13 @@
 // --- COMPARTIDOS ---
-export { default as Paso1Cuit } from './compartidos/Paso1Cuit/Paso1Cuit';
-export { default as Paso2Datos } from './compartidos/Paso2Datos/Paso2Datos';
-export { default as Paso3Simulador } from './compartidos/Paso3Simulador/Paso3Simulador';
-export { default as Paso4Socios } from './compartidos/Paso4Socios/Paso4Socios';
-export { default as Paso5Documentacion } from './compartidos/Paso5Documentacion/Paso5Documentacion';
-export { default as Paso7Exito } from './compartidos/Paso7Exito/Paso7Exito';
-export * from './compartidos/SocioItem/SocioItem';
-export * from './compartidos/PanelDudas/PanelDudas';
+export { default as Paso1Cuit } from './Compartidos/Paso1Cuit/Paso1Cuit';
+export { default as Paso2Datos } from './Compartidos/Paso2Datos/Paso2Datos';
+export { default as Paso3Simulador } from './Compartidos/Paso3Simulador/Paso3Simulador';
+export { default as Paso4Socios } from './Compartidos/Paso4Socios/Paso4Socios';
+export { default as Paso5Documentacion } from './Compartidos/Paso5Documentacion/Paso5Documentacion';
+export { default as Paso7Exito } from './Compartidos/Paso7Exito/Paso7Exito';
+export * from './Compartidos/SocioItem/SocioItem';
+export * from './Compartidos/PanelDudas/PanelDudas';
+export * from './Compartidos/ModalSocio/ModalSocio';
 
 // --- CHEQUES ---
 export { default as Paso6Bolsa } from './Cheques/Paso6Bolsa/Paso6Bolsa';
