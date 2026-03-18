@@ -12,7 +12,8 @@ export const CargaArchivos = ({
   onDragOver, 
   onDragLeave,
   onClick,
-  onRemove
+  onRemove,
+  hasError = false 
 }) => {
   
   if (file) {
@@ -33,7 +34,7 @@ export const CargaArchivos = ({
     );
   }
 
-  const boxClass = `${styles.box} ${isDragging ? styles.dragging : ''}`;
+  const boxClass = `${styles.box} ${isDragging ? styles.dragging : ''} ${hasError ? styles.error : ''}`;
 
   return (
     <div 
