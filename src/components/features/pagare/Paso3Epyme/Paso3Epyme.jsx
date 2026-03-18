@@ -1,87 +1,91 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { FaFileArrowDown, FaLink, FaLock } from "react-icons/fa6";
-import { Input, Button } from "../../../ui";
+import { FaExternalLinkAlt, FaFilePdf, FaLock } from "react-icons/fa";
+import { InputFlotante, Button } from "../../../ui";
 import styles from "./Paso3Epyme.module.css";
 
 export default function Paso3Epyme() {
-  const {
-    register,
-    formState: { errors },
-  } = useFormContext();
+  const { register, watch, setValue, formState: { errors } } = useFormContext();
+  const idEpymeValue = watch("idEpyme") || "";
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.subtitle}>
-        <FaLock className={styles.subtitleIcon} />
-        Generación y Vinculación de Pagaré
-      </h3>
+      <header className={styles.header}>
+        <div className={styles.iconLockWrapper}>
+          <FaLock />
+        </div>
+        <h3 className={styles.title}>Vinculación de Pagaré ePYME</h3>
+        <p className={styles.description}>
+          Para finalizar, necesitamos vincular el pagaré generado en la plataforma oficial.
+        </p>
+      </header>
 
-      <div className={styles.cardsContainer}>
+      <div className={styles.cardsGrid}>
         <a
           href="https://epyme.cajadevalores.com.ar/login"
           target="_blank"
           rel="noreferrer"
-          className={styles.card}
+          className={styles.cardPrimary}
         >
-          <div className={styles.cardIcon}>
-            <FaLink />
+          <div className={styles.cardContent}>
+            <div className={styles.cardIcon}>
+              <FaExternalLinkAlt />
+            </div>
+            <div>
+              <h4 className={styles.cardTitle}>Plataforma ePYME</h4>
+              <p className={styles.cardText}>Generá el pagaré en Caja de Valores.</p>
+            </div>
           </div>
-          <p className={styles.cardText}>
-            Primero generá el pagaré desde la plataforma oficial de Caja de
-            Valores.
-          </p>
-          <Button variant="outline" type="button" className={styles.borderless}>
-            IR A ePYME
-          </Button>
+          <span className={styles.linkAction}>IR AL SITIO</span>
         </a>
 
-        <div className={styles.card}>
-          <div className={styles.cardIcon}>
-            <FaFileArrowDown />
-          </div>
-          <p className={styles.cardText}>
-            ¿Dudas con la plataforma? Guiate paso a paso con este instructivo
-            detallado.
-          </p>
-          <Button variant="outline" type="button" className={styles.borderless}>
-            VER INSTRUCTIVO
-          </Button>
+        <div className={styles.cardSecondary}>
+          <FaFilePdf className={styles.pdfIcon} />
+          <p className={styles.cardText}>¿Necesitás ayuda? <br /><strong>Ver instructivo</strong></p>
         </div>
       </div>
 
-      <div className={styles.inputSection}>
-        <Input
-          label="ID de Operación ePYME *"
-          placeholder="EJ: 1234789558666"
-          error={errors.idEpyme?.message}
-          {...register("idEpyme")}
-        />
+      <div className={styles.formSection}>
         <p className={styles.helperText}>
-          Ingresá el número identificatorio generado para finalizar la
-          solicitud.
+          El número identificatorio que figura en tu comprobante de ePYME.
         </p>
+        <div className={styles.inputGroup}>
+          <InputFlotante
+            label="ID de Operación ePYME"
+            error={errors.idEpyme?.message}
+            maxLength={20}
+            esValido={idEpymeValue.length >= 10}
+            {...register("idEpyme", {
+              onChange: (e) => {
+                const onlyNums = e.target.value.replace(/\D/g, "");
+                setValue("idEpyme", onlyNums);
+              }
+            })}
+          />
+
+
+        </div>
+
+        <div className={styles.textareaGroup}>
+          <InputFlotante
+            label="Mensaje o aclaración (Opcional)"
+            as="textarea"
+            className={styles.customTextarea}
+            {...register("mensaje")}
+          />
+        </div>
       </div>
 
-      <div className={styles.textareaWrapper}>
-        <Input
-          label="¿Tenés algún mensaje o aclaración para el equipo? (Opcional)"
-          as="textarea"
-          className={styles.textarea}
-          placeholder="Escribí acá tus comentarios..."
-          {...register("mensaje")}
-        />
-      </div>
-
-      <div className={styles.footer}>
-        <p className={styles.disclaimer}>
-          * Sujeto a confirmación en la recepción de documentación física y a
-          cambios en el score.
-        </p>
-        <Button type="submit" variant="primary" className={styles.btnFinalizar}>
+      <footer className={styles.footer}>
+        <div className={styles.disclaimerBox}>
+          <p className={styles.disclaimerText}>
+            * Sujeto a revisión de documentación y score crediticio.
+          </p>
+        </div>
+        <Button type="submit" variant="primary" size="lg" className={styles.btnFinal}>
           FINALIZAR SOLICITUD
         </Button>
-      </div>
+      </footer>
     </div>
   );
 }

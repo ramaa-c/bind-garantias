@@ -4,82 +4,132 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.85);
+  /* Fondo más oscuro para enfoque */
+  backdrop-filter: blur(4px);
+  /* Efecto de desenfoque de fondo */
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease;
 }
 
-.box {
-  background-color: #2E2E2E;
-  width: 100%;
-  max-width: 500px;
-  border-radius: 8px;
+.modalContainer {
+  background-color: #1A1A1A;
+  /* Color carbón como el resto de la app */
+  width: 90%;
+  max-width: 420px;
+  border-radius: 16px;
+  border: 1px solid #333;
+  position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  animation: slideUp 0.3s ease;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.header {
-  background-color: var(--yellow);
-  padding: 15px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.title {
-  margin: 0;
-  color: var(--carbon-black);
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.close {
+.btnClose {
+  position: absolute;
+  top: 15px;
+  right: 15px;
   background: none;
   border: none;
-  font-size: 24px;
-  color: var(--carbon-black);
+  color: #888;
   cursor: pointer;
-  line-height: 1;
+  transition: color 0.2s;
+}
+
+.btnClose:hover {
+  color: var(--white);
 }
 
 .body {
-  padding: 30px;
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.iconWrapper {
+  width: 70px;
+  height: 70px;
+  background-color: rgba(244, 245, 0, 0.1);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--yellow);
+  margin-bottom: 20px;
+}
+
+.title {
+  color: var(--white);
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+}
+
+.description {
+  color: #aaa;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 30px 0;
+}
+
+.inputSection {
+  width: 100%;
+  margin-top: 15px;
+  margin-bottom: 0px;
+
+  text-align: left;
 }
 
 .footer {
   display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-  margin-top: 30px;
+  width: 100%;
+  gap: 12px;
 }
 
-.description {
-  color: var(--white);
-  font-size: 14px;
-  margin-bottom: 20px;
-  margin-top: 0;
-  opacity: 0.8;
+.btnCancel,
+.btnConfirm {
+  flex: 1;
+  /* Botones de igual tamaño */
+  font-weight: 600;
 }
 
-.btnCancel {
-  border: none;
+.resendText {
+  margin-top: 25px;
+  font-size: 13px;
+  color: #666;
+}
+
+.resendLink {
   color: var(--yellow);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
-.btnCancel:hover {
-  background-color: rgba(244, 245, 0, 0.05);
-}
-
+/* Animaciones */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
