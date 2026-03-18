@@ -1,0 +1,180 @@
+/* --- LAYOUT GENERAL --- */
+.modalLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  padding-top: 1rem;
+}
+
+.sectionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sectionTitle {
+  color: var(--white);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  margin: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.02rem;
+}
+
+.searchBox {
+  display: flex;
+  gap: 1.5rem;
+  align-items: baseline;
+}
+
+.inputWrapper {
+  flex: 1;
+}
+
+.completarContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.infoPill {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid var(--yellow);
+  padding: 1rem 1.25rem;
+  border-radius: 0 0.5rem 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.infoRow {
+  display: flex;
+  gap: 1rem;
+  align-items: baseline;
+}
+
+.infoLabel {
+  color: #888;
+  font-size: 0.85rem;
+  width: 60px;
+}
+
+.infoValue {
+  color: var(--white);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.inputRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.actionRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.ghostBtn {
+  border: none;
+  background: transparent;
+  color: #aaa;
+}
+
+.ghostBtn:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.successCard {
+  background: rgba(76, 175, 80, 0.05);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.successInfo {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.successIconWrapper {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(76, 175, 80, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.successIcon {
+  color: #4caf50;
+  font-size: 1.25rem;
+}
+
+.successText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.successName {
+  color: var(--white);
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.0625rem;
+}
+
+.successRole {
+  color: #888;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.editBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.facturacionWrapper {
+  padding-top: 0.5rem;
+}
+
+.modalFooter {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 768px) {
+  .searchBox {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .inputRow {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .successCard {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+
+  .editBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}

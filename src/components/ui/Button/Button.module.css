@@ -65,6 +65,16 @@
   letter-spacing: 1px;
 }
 
+.size-md {
+  padding: 10px 30px;
+  font-size: 0.95rem;
+}
+
+.size-sm {
+  padding: 6px 16px;
+  font-size: 0.85rem;
+}
+
 .link {
   composes: base;
   background-color: transparent;
@@ -76,9 +86,4 @@
 .link:hover {
   color: var(--white);
   text-decoration: underline;
-}
-
-.size-sm {
-  padding: 6px 16px;
-  font-size: 0.85rem;
 }
