@@ -1,0 +1,112 @@
+.card {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  margin-bottom: 1rem;
+}
+
+.card:hover {
+  border-color: #555;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.actionBtn {
+  min-width: 10.5rem; 
+  flex-shrink: 0;
+}
+
+/* --- ESTADOS DE TARJETA: ÉXITO --- */
+.card.cardSuccess {
+  border-color: rgba(76, 175, 80, 0.4);
+  background-color: rgba(76, 175, 80, 0.02);
+}
+
+.card.cardSuccess:hover {
+  border-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.05);
+}
+
+/* --- ESTADOS DE TARJETA: ERROR --- */
+.card.cardError {
+  border-color: rgba(255, 82, 82, 0.5);
+  background-color: rgba(255, 82, 82, 0.02);
+}
+
+.card.cardError:hover {
+  border-color: #ff5252;
+  background-color: rgba(255, 82, 82, 0.05);
+}
+
+.infoGroup {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.iconPill {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.375rem;
+}
+
+/* Estados Visuales */
+.statusWarn {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.statusCheck {
+  background: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.statusError {
+  background: rgba(255, 82, 82, 0.1);
+  color: #ff5252;
+  border: 1px solid rgba(255, 82, 82, 0.2);
+}
+
+.textGroup .nombre {
+  margin: 0;
+  color: var(--white);
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.textGroup .detalles {
+  margin: 0.25rem 0 0 0;
+  color: #888;
+  font-size: 0.875rem;
+}
+
+.textGroup .detalles strong {
+  color: #bbb;
+}
+
+.actionBtn {
+  min-width: 9.375rem;
+}
+
+@media (max-width: 600px) {
+  .card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+  
+  .actionBtn {
+    width: 100%;
+  }
+}

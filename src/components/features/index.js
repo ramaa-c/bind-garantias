@@ -7,7 +7,10 @@ export { default as Paso5Documentacion } from './Compartidos/Paso5Documentacion/
 export { default as Paso7Exito } from './Compartidos/Paso7Exito/Paso7Exito';
 export * from './Compartidos/SocioItem/SocioItem';
 export * from './Compartidos/PanelDudas/PanelDudas';
-export * from './Compartidos/ModalSocio/ModalSocio';
+export { default as ModalSocio } from './Compartidos/ModalSocio/ModalSocio';
+export * from './Compartidos/ModalDocumentosEmpresa/ModalDocumentosEmpresa';
+export * from './Compartidos/ModalRepresentanteFacturacion/ModalRepresentanteFacturacion';
+export * from './Compartidos/SocioTaskCard/SocioTaskCard';
 
 // --- CHEQUES ---
 export { default as Paso6Bolsa } from './Cheques/Paso6Bolsa/Paso6Bolsa';
