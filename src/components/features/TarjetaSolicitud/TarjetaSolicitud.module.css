@@ -1,119 +1,141 @@
 .solicitudCard {
-  background: linear-gradient(to right, var(--graphite), #1e1e1e);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid #333;
-  border-radius: 10px;
-  padding: 1.5rem 2rem;
-  transition: all 0.2s ease;
-  border-left-width: 4px;
+  border-left: 4px solid #555;
+  /* Borde lateral de estado */
+  border-radius: 12px;
+  padding: 20px 25px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 .solicitudCard:hover {
-  transform: scale(1.01);
-  border-color: #555;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  background: rgba(255, 255, 255, 0.04);
+  transform: translateX(5px);
+  border-color: #444;
 }
 
-.solicitudCardHeader {
+.cardMain {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 20px;
-  margin-bottom: 1rem;
 }
 
-.solicitudStatusBadge {
-  padding: 4px 10px;
-  border-radius: 20px;
-  background-color: rgba(255,255,255,0.03);
-  display: flex;
+/* --- BADGE DE ESTADO --- */
+.statusBadge {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
-  font-weight: bold;
-  letter-spacing: 1px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.2);
+  margin-bottom: 12px;
 }
 
 .statusDot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  display: inline-block;
 }
 
-.solicitudDate {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* --- COLORES DINÁMICOS --- */
+.statusApproved {
+  border-left-color: #4caf50;
+  color: #4caf50;
+}
+
+.statusApproved .statusDot {
+  background-color: #4caf50;
+  box-shadow: 0 0 8px #4caf50;
+}
+
+.statusWaiting {
+  border-left-color: var(--yellow);
+  color: var(--yellow);
+}
+
+.statusWaiting .statusDot {
+  background-color: var(--yellow);
+  box-shadow: 0 0 8px var(--yellow);
+}
+
+.statusRejected {
+  border-left-color: #ff5252;
+  color: #ff5252;
+}
+
+.statusRejected .statusDot {
+  background-color: #ff5252;
+  box-shadow: 0 0 8px #ff5252;
+}
+
+/* --- TEXTOS --- */
+.solicitudTitle {
+  color: var(--white);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.tipo {
   color: #888;
-  font-size: 0.85rem;
+  font-weight: 400;
 }
 
-/* --- COLORES DE ESTADOS --- */
-/* Esperando / Pendiente */
-.statusWaiting { border-left-color: var(--yellow); }
-.statusWaiting.solicitudStatusBadge { color: var(--yellow); }
-.statusWaiting .statusDot { background-color: var(--yellow); box-shadow: 0 0 8px var(--yellow); }
-
-/* Aprobado */
-.statusApproved { border-left-color: #4caf50; }
-.statusApproved.solicitudStatusBadge { color: #4caf50; }
-.statusApproved .statusDot { background-color: #4caf50; box-shadow: 0 0 8px #4caf50; }
-
-/* Rechazado */
-.statusRejected { border-left-color: #ff5252; }
-.statusRejected.solicitudStatusBadge { color: #ff5252; }
-.statusRejected .statusDot { background-color: #ff5252; box-shadow: 0 0 8px #ff5252; }
-
-/* --- CUERPO DE TARJETA --- */
-.solicitudCardBody {
+.montoRow {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  align-items: baseline;
+  gap: 8px;
 }
 
-.solicitudInfo {
-  flex: 1;
+.montoLabel {
+  color: #666;
+  font-size: 13px;
 }
 
-.solicitudMainText {
+.montoValue {
   color: var(--white);
   font-size: 1.2rem;
-  margin: 0 0 8px 0;
-  font-weight: normal;
+  font-weight: 700;
 }
 
-.solicitudSubText {
-  color: #aaa;
-  font-size: 0.95rem;
-  margin: 0;
-}
-
-/* --- ACCIONES DERECHA --- */
-.solicitudActions {
+/* --- DERECHA --- */
+.rightInfo {
+  text-align: right;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 15px;
 }
 
-.btnLink {
-  background: transparent;
-  border: none;
-  cursor: pointer;
+.dateBlock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #555;
   font-size: 13px;
-  padding: 0;
 }
 
-.actionPrimary {
+.btnDetalle {
+  background: none;
+  border: none;
   color: var(--yellow);
-  font-weight: bold;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 5px 0;
+  opacity: 0.8;
+  transition: opacity 0.2s;
 }
 
-.actionSecondary {
-  color: #aaa;
-  text-decoration: none;
-}
-
-.actionSecondary:hover {
-  color: var(--white);
-  text-decoration: underline;
+.btnDetalle:hover {
+  opacity: 1;
 }

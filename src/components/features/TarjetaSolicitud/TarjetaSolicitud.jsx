@@ -1,57 +1,54 @@
 import React from "react";
-import { FiCalendar } from "react-icons/fi";
+import { FiCalendar, FiChevronRight } from "react-icons/fi";
 import styles from "./TarjetaSolicitud.module.css";
 
 export const TarjetaSolicitud = ({ solicitud }) => {
-  const getStatusClass = (estado) => {
-    switch (estado) {
-      case "esperando":
-        return styles.statusWaiting;
-      case "rechazado":
-        return styles.statusRejected;
-      case "aprobado":
-        return styles.statusApproved;
-      default:
-        return "";
-    }
+  const getStatusKey = (estado) => {
+    const e = estado?.toLowerCase();
+    if (e?.includes("aprob")) return "statusApproved";
+    if (e?.includes("rechaz")) return "statusRejected";
+    return "statusWaiting";
   };
 
+  const statusKey = getStatusKey(solicitud.estado);
+
   return (
-    <div className={`${styles.solicitudCard} ${getStatusClass(solicitud.estado)}`}>
-      <div className={styles.solicitudCardHeader}>
-        <div className={`${styles.solicitudStatusBadge} ${getStatusClass(solicitud.estado)}`}>
-          <span className={styles.statusDot}></span>
-          {solicitud.estadoTexto}
-        </div>
-        <div className={styles.solicitudDate}>
-          <FiCalendar /> {solicitud.fechaAlta}
-        </div>
-      </div>
+    <div className={`${styles.solicitudCard} ${styles[statusKey]}`}>
+      <div className={styles.cardMain}>
+        <div className={styles.leftInfo}>
+          <div className={`${styles.statusBadge} ${styles[statusKey]}`}>
+            <span className={styles.statusDot}></span>
+            {solicitud.estado || "Pendiente"}
+          </div>
 
-      <div className={styles.solicitudCardBody}>
-        <div className={styles.solicitudInfo}>
-          <h3 className={styles.solicitudMainText}>
-            Solicitud N° {solicitud.id} por U$D {solicitud.monto}
+          <h3 className={styles.solicitudTitle}>
+            Solicitud N° {solicitud.id} • <span className={styles.tipo}>{solicitud.tipo || "Operación"}</span>
           </h3>
-          {solicitud.vencimiento && (
-            <p className={styles.solicitudSubText}>
-              Fecha de vencimiento: {solicitud.vencimiento}
-            </p>
-          )}
+
+          <div className={styles.montoRow}>
+            <span className={styles.montoLabel}>Monto:</span>
+            <span className={styles.montoValue}>U$D {solicitud.monto}</span>
+          </div>
         </div>
 
-        <div className={styles.solicitudActions}>
-          {solicitud.acciones.map((accion, i) => (
-            <button
-              key={i}
-              className={`${styles.btnLink} ${
-                accion === "CONTINUAR" ? styles.actionPrimary : styles.actionSecondary
-              }`}
-              onClick={() => console.log(`Acción: ${accion} en Solicitud ${solicitud.id}`)}
-            >
-              {accion}
-            </button>
-          ))}
+        <div className={styles.rightInfo}>
+          <div className={styles.dateBlock}>
+            <FiCalendar className={styles.calendarIcon} />
+            <span>{solicitud.fecha || "18/03/2026"}</span>
+          </div>
+
+          <div className={styles.actionsWrapper}>
+
+            {solicitud.acciones?.map((accion, i) => (
+              <button key={i} className={styles.btnAction}>
+                {accion}
+              </button>
+            )) || (
+                <button className={styles.btnDetalle}>
+                  VER DETALLE <FiChevronRight />
+                </button>
+              )}
+          </div>
         </div>
       </div>
     </div>

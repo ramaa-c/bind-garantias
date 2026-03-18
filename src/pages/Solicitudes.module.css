@@ -1,80 +1,169 @@
-.inicioPage {
+.pageContainer {
   background-color: var(--carbon-black);
   min-height: 100vh;
-  font-family: 'IBM Plex Sans', sans-serif;
+  animation: fadeIn 0.4s ease;
 }
 
-.solicitudesHeaderBlock {
-  background-color: var(--graphite);
+/* HEADER */
+.header {
+  background-color: #1A1A1A;
   border-bottom: 1px solid #333;
-  padding: 2rem 0;
+  padding: 40px 0;
 }
 
-.solicitudesHeaderContent {
-  max-width: 900px;
+.headerContent {
+  max-width: 1000px;
   margin: 0 auto;
   padding: 0 40px;
-}
-
-.solicitudesTitle {
-  color: var(--white);
-  font-size: 1.5rem;
-  margin: 0 0 10px 0;
-  display: flex;
-  align-items: center;
-}
-
-.solicitudesSubtitle {
-  color: #aaa;
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.inicioMainContainer {
-  padding: 40px;
-  display: flex;
-  justify-content: center;
-}
-
-.inicioContenedorPrincipal {
-  width: 100%;
-}
-
-.solicitudesToolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid #333;
-  padding-bottom: 1.5rem;
 }
 
-.solicitudesTools {
+.titleGroup {
   display: flex;
-  gap: 15px;
+  align-items: center;
+  gap: 20px;
+}
+
+.iconCircle {
+  width: 50px;
+  height: 50px;
+  background-color: rgba(244, 245, 0, 0.1);
+  color: var(--yellow);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.4rem;
+}
+
+.title {
+  color: var(--white);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.subtitle {
+  color: #888;
+  margin: 5px 0 0 0;
+  font-size: 0.95rem;
+}
+
+/* CAJA DE CRÉDITO */
+.creditInfo {
+  text-align: right;
+  background-color: rgba(255, 255, 255, 0.03);
+  padding: 15px 25px;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.creditLabel {
+  display: block;
+  color: #666;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.creditAmount {
+  display: block;
+  color: var(--yellow);
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 4px 0;
+}
+
+.creditExpiry {
+  color: #555;
+  font-size: 11px;
+}
+
+/* CUERPO PRINCIPAL */
+.main {
+  display: flex;
+  justify-content: center;
+  padding: 40px 0;
+}
+
+.content {
+  width: 100%;
+  max-width: 1000px;
+  padding: 0 40px;
+}
+
+.navigationRow {
+  margin-bottom: 25px;
+}
+
+/* TOOLBAR */
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #333;
+}
+
+.filterGroup {
+  display: flex;
+  gap: 10px;
+  background-color: #1A1A1A;
+  padding: 5px;
+  border-radius: 8px;
+  border: 1px solid #333;
 }
 
 .iconBtn {
   background: none;
   border: none;
-  color: #888;
+  color: #666;
+  padding: 8px 15px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: color 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.iconBtn:hover {
-  color: var(--white);
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
 .iconBtn.active {
+  background-color: rgba(244, 245, 0, 0.1);
   color: var(--yellow);
 }
 
-.solicitudesList {
+.iconBtn:hover:not(.active) {
+  color: var(--white);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.listContainer {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 15px;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px;
+  color: #555;
+  border: 2px dashed #222;
+  border-radius: 12px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

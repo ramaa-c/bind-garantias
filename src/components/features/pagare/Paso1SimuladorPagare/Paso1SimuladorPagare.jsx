@@ -1,72 +1,82 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { Input, Button, Alert, InputMonto } from "../../../ui";
+import { InputFlotante, Button, Alert, InputMonto } from "../../../ui";
+import { FiInfo } from "react-icons/fi";
 import styles from "./Paso1SimuladorPagare.module.css";
 
 export default function Paso1SimuladorPagare({
   simulacionLista,
   setSimulacionLista,
-  montoWatch,
   handleCalcularSimulacion,
   setPasoActual,
 }) {
   const {
     register,
+    watch,
     formState: { errors },
   } = useFormContext();
 
+  const montoValue = watch("monto");
+  const fechaValue = watch("fechaPago");
+
   return (
     <div className={styles.container}>
-      {/* MONTO PRINCIPAL */}
-      <div className={styles.montoWrapper}>
-        <InputMonto
-          label="Monto del Pagaré"
-          error={errors.monto?.message}
-          disabled={simulacionLista}
-          {...register("monto")}
-        />
+      {/* MONEDA */}
+      <div className={styles.headerSection}>
+        <div className={styles.monedaIndicator}>
+          <span className={styles.indicatorLabel}>Moneda de operación</span>
+          <div className={styles.badgeUSD}>
+            <span className={styles.dot}></span>
+            DÓLAR ESTADOUNIDENSE (USD)
+          </div>
+        </div>
       </div>
 
-      {/* FECHA Y MONEDA */}
-      <div className={styles.formRowCentered}>
-        <div className={`${styles.formCol} ${styles.inputCentrado}`}>
-          <Input
-            label="Moneda"
-            value="Dólar"
-            disabled
-            readOnly
-            className={styles.maxWidth200}
-          />
-        </div>
-
-        <div className={styles.formCol}>
-          <Input
-            type="date"
-            label="Fecha de pago *"
-            error={errors.fechaPago?.message}
+      <div className={styles.mainForm}>
+        {/* MONTO */}
+        <div className={styles.montoSection}>
+          <InputMonto
+            label="Monto del Pagaré"
+            error={errors.monto?.message}
             disabled={simulacionLista}
-            {...register("fechaPago")}
+            esValido={montoValue > 0}
+            {...register("monto")}
           />
+        </div>
+
+        {/* FECHA */}
+        <div className={styles.fechaSection}>
+          <div className={styles.inputWrapper}>
+            <InputFlotante
+              type="date"
+              label="Fecha de pago"
+              error={errors.fechaPago?.message}
+              disabled={simulacionLista}
+              esValido={!!fechaValue}
+              {...register("fechaPago")}
+            />
+          </div>
         </div>
       </div>
 
-      {/* ACCIONES O RESULTADOS */}
       {!simulacionLista ? (
         <div className={styles.calcBtnWrapper}>
           <Button
             variant="primary"
             size="lg"
             onClick={handleCalcularSimulacion}
+            disabled={!montoValue || !fechaValue}
           >
             SIMULAR COSTOS
           </Button>
         </div>
       ) : (
+        /* 3. tarjeta con degradado */
         <div className={styles.breakdownContainer}>
           <div className={styles.breakdownHeader}>
             <span>Neto estimado a recibir:</span>
-            <span className={`${styles.textYellow} ${styles.textXl}`}>
-              USD {montoWatch * 0.96}
+            <span className={styles.textXl}>
+              USD {(montoValue * 0.96).toLocaleString()}
             </span>
           </div>
 
@@ -95,13 +105,14 @@ export default function Paso1SimuladorPagare({
 
           <div className={styles.mtMedium}>
             <Alert variant="warning" layout="box">
+              <FiInfo style={{ marginRight: '8px' }} />
               <strong>IMPORTANTE:</strong> Tasa de interés utilizada para el
               cálculo: % TNA (cierre al día hábil cambiario anterior).
             </Alert>
           </div>
 
           <div className={styles.actionsFlex}>
-            <Button variant="outline" onClick={() => setSimulacionLista(false)}>
+            <Button variant="outline" onClick={() => setSimulacionLista(false)} className={styles.borderless}>
               RECALCULAR
             </Button>
             <Button variant="primary" onClick={() => setPasoActual(2)}>
