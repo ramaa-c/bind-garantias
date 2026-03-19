@@ -105,14 +105,17 @@ export default function Paso1SimuladorPagare({
 
           <div className={styles.mtMedium}>
             <Alert variant="warning" layout="box">
-              <FiInfo style={{ marginRight: '8px' }} />
               <strong>IMPORTANTE:</strong> Tasa de interés utilizada para el
               cálculo: % TNA (cierre al día hábil cambiario anterior).
             </Alert>
           </div>
 
           <div className={styles.actionsFlex}>
-            <Button variant="outline" onClick={() => setSimulacionLista(false)} className={styles.borderless}>
+            <Button
+              variant="outline"
+              onClick={() => setSimulacionLista(false)}
+              className={styles.borderless}
+            >
               RECALCULAR
             </Button>
             <Button variant="primary" onClick={() => setPasoActual(2)}>
