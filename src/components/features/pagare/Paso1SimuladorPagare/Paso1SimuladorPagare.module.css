@@ -22,7 +22,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  position: relative;
 }
 
 .indicatorLabel {
@@ -34,11 +33,8 @@
   margin-left: 0.25rem;
 }
 
-/* BADGES (Moneda y Fecha) */
-.badgeSolid,
-.badgeInteractive {
+.badgeSolid {
   height: 3.25rem;
-  /* 52px */
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 0 1rem;
@@ -51,116 +47,12 @@
   width: 100%;
 }
 
-.badgeInteractive {
-  cursor: pointer;
-  transition: all 0.2s ease;
-  outline: none;
-}
-
-.badgeInteractive:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.badgeInteractive:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.badgeSuccess {
-  border-color: #4caf50;
-  background-color: rgba(76, 175, 80, 0.05);
-}
-
-.badgeError {
-  border-color: #ff5252;
-  background-color: rgba(255, 82, 82, 0.05);
-}
-
 .dot {
   width: 0.5rem;
   height: 0.5rem;
   background-color: var(--yellow);
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(244, 245, 0, 0.5);
-}
-
-.calendarIcon {
-  color: var(--yellow);
-  font-size: 1.1rem;
-}
-
-.placeholderText {
-  color: #888;
-}
-
-.dateText {
-  color: var(--white);
-  font-weight: 500;
-  text-transform: capitalize;
-}
-
-.errorContainer {
-  min-height: 1.2rem;
-  margin-left: 0.25rem;
-}
-
-.errorText {
-  color: #ff5252;
-  font-size: 0.8rem;
-  display: block;
-  animation: fadeIn 0.2s ease;
-}
-
-.calendarPopover {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  left: 0;
-  z-index: 50;
-  background-color: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 0.75rem;
-  padding: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-  animation: fadeIn 0.2s ease;
-}
-
-/* --- MODIFICADORES REACT-DAY-PICKER --- */
-:global(.rdp-root) {
-  --rdp-accent-color: var(--yellow);
-  --rdp-accent-background-color: rgba(244, 245, 0, 0.1);
-  --rdp-today-color: var(--yellow);
-  --rdp-selected-border: 2px solid var(--yellow);
-  --rdp-day-height: 40px;
-  --rdp-day-width: 40px;
-  margin: 0;
-  color: var(--white);
-}
-
-:global(.rdp-chevron) {
-  fill: var(--yellow) !important;
-}
-
-:global(.rdp-nav_button:hover) {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-:global(.rdp-selected),
-:global(.rdp-selected .rdp-day_button) {
-  background-color: var(--yellow) !important;
-  color: #000 !important;
-  font-weight: bold;
-  border-radius: 50%;
-}
-
-:global(.rdp-day_button:hover:not([disabled]):not(.rdp-selected)) {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  color: var(--white) !important;
-}
-
-:global(.rdp-today:not(.rdp-selected)) {
-  color: var(--yellow);
-  font-weight: bold;
 }
 
 /* --- SECCIÓN MONTO --- */
@@ -251,13 +143,6 @@
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }

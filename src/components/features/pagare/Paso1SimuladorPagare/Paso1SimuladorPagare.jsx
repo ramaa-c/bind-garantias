@@ -1,11 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import { useFormContext } from "react-hook-form";
-import { FiCalendar } from "react-icons/fi";
-import { DayPicker } from "react-day-picker";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import { Button, Alert, InputMonto } from "../../../ui";
-import "react-day-picker/dist/style.css";
+import { SelectFecha } from "../../../ui";
 import styles from "./Paso1SimuladorPagare.module.css";
 
 export default function Paso1SimuladorPagare({
@@ -17,40 +13,12 @@ export default function Paso1SimuladorPagare({
   const {
     register,
     watch,
-    setValue,
-    trigger,
     formState: { errors },
   } = useFormContext();
-
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const calendarRef = useRef(null);
 
   const montoValue = watch("monto");
   const fechaValue = watch("fechaPago");
 
-  const dateObj = fechaValue ? new Date(fechaValue + "T00:00:00") : undefined;
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
-        setIsCalendarOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleDateSelect = async (date) => {
-    if (!date) return;
-    const dateString = format(date, "yyyy-MM-dd");
-
-    setValue("fechaPago", dateString, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
-    setIsCalendarOpen(false);
-    await trigger("fechaPago");
-  };
   return (
     <div className={styles.container}>
       <div className={styles.topGrid}>
@@ -64,53 +32,11 @@ export default function Paso1SimuladorPagare({
         </div>
 
         {/* FECHA */}
-        <div className={styles.indicatorWrapper} ref={calendarRef}>
-          <span className={styles.indicatorLabel}>Fecha de pago</span>
-          <button
-            type="button"
-            disabled={simulacionLista}
-            className={`${styles.badgeInteractive} ${errors.fechaPago ? styles.badgeError : ""} ${fechaValue ? styles.badgeSuccess : ""}`}
-            onClick={() =>
-              !simulacionLista && setIsCalendarOpen(!isCalendarOpen)
-            }
-          >
-            <FiCalendar className={styles.calendarIcon} />
-            {dateObj ? (
-              <span className={styles.dateText}>
-                {format(dateObj, "dd 'de' MMMM, yyyy", { locale: es })}
-              </span>
-            ) : (
-              <span className={styles.placeholderText}>Seleccionar fecha</span>
-            )}
-          </button>
-
-          {isCalendarOpen && (
-            <div className={styles.calendarPopover}>
-              <DayPicker
-                mode="single"
-                selected={dateObj}
-                onSelect={handleDateSelect}
-                locale={es}
-                disabled={{ before: new Date() }}
-                required
-              />
-            </div>
-          )}
-
-          <input
-            type="hidden"
-            value={fechaValue || ""}
-            {...register("fechaPago")}
-          />
-
-          <div className={styles.errorContainer}>
-            {errors.fechaPago && (
-              <span className={styles.errorText}>
-                {errors.fechaPago.message}
-              </span>
-            )}
-          </div>
-        </div>
+        <SelectFecha
+          name="fechaPago"
+          label="Fecha de pago"
+          disabled={simulacionLista}
+        />
       </div>
 
       <div className={styles.mainForm}>

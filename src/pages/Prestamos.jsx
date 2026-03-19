@@ -246,6 +246,7 @@ export default function Prestamos() {
                           mostrarResultados={mostrarResultados}
                           onCalcular={handleCalcularSimulador}
                           onContinuar={handleContinuarSimulador}
+                          onCancelar={() => setMostrarResultados(false)}
                         />
                       )}
 

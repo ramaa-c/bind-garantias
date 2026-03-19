@@ -1,59 +1,77 @@
 import React from "react";
 import { useFormContext, useFormState } from "react-hook-form";
-import { InputFlotante, Button, Alert, InputMonto } from "../../../ui";
+import { Button, Alert, InputMonto } from "../../../ui";
+import { SelectFecha } from "../../../ui";
 import styles from "./Paso3Simulador.module.css";
-import { SelectFlotante } from "../../../ui/SelectFlotante/SelectFlotante";
 
 export default function Paso3Simulador({
   mostrarResultados,
   onCalcular,
   onContinuar,
+  onCancelar,
 }) {
   const { register, watch, control } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
+
   const tipoCalculo = watch("tipoCalculo", "tasa_directa");
   const esPorMontoCheque = tipoCalculo === "por_monto_cheque";
   const campoFecha = esPorMontoCheque ? "fechaPago" : "plazo";
+
   const isMontoValid = !errors.monto && dirtyFields.monto;
-  const isFechaValid = !errors[campoFecha] && dirtyFields[campoFecha];
 
   return (
     <div className={styles.container}>
-      {/* GRILLA SUPERIOR*/}
       <div className={styles.topGrid}>
-        <SelectFlotante
-          label="Moneda"
-          disabled={mostrarResultados}
-          options={[
-            { value: "Pesos", label: "Pesos" },
-            { value: "Dolares", label: "Dólares" },
-          ]}
-          {...register("moneda")}
-        />
-        <SelectFlotante
-          label="Tipo de producto"
-          disabled={mostrarResultados}
-          options={[
-            { value: "cheques_propios", label: "Cheques propios" },
-            { value: "cheques_terceros", label: "Cheques de terceros" },
-          ]}
-          {...register("tipoProducto")}
-        />
-        <SelectFlotante
-          label="Tipo de cálculo"
-          disabled={mostrarResultados}
-          options={[
-            { value: "tasa_directa", label: "Tasa Directa / Monto a financiar" },
-            { value: "por_monto_cheque", label: "Por monto de cheque" },
-          ]}
-          {...register("tipoCalculo")}
-        />
+        <div className={styles.indicatorWrapper}>
+          <span className={styles.indicatorLabel}>Moneda</span>
+          <select
+            className={styles.badgeSelect}
+            disabled={mostrarResultados}
+            {...register("moneda")}
+          >
+            <option value="Pesos">Pesos</option>
+            <option value="Dolares">Dólares</option>
+          </select>
+        </div>
+
+        <div className={styles.indicatorWrapper}>
+          <span className={styles.indicatorLabel}>Tipo de producto</span>
+          <select
+            className={styles.badgeSelect}
+            disabled={mostrarResultados}
+            {...register("tipoProducto")}
+          >
+            <option value="cheques_propios">Cheques propios</option>
+            <option value="cheques_terceros">Cheques de terceros</option>
+          </select>
+        </div>
+
+        <div className={styles.indicatorWrapper}>
+          <span className={styles.indicatorLabel}>Tipo de cálculo</span>
+          <select
+            className={styles.badgeSelect}
+            disabled={mostrarResultados}
+            {...register("tipoCalculo")}
+          >
+            <option value="tasa_directa">
+              Tasa Directa / Monto a financiar
+            </option>
+            <option value="por_monto_cheque">Por monto de cheque</option>
+          </select>
+        </div>
+
+        <div className={styles.indicatorWrapper}>
+          <SelectFecha
+            name={campoFecha}
+            label={esPorMontoCheque ? "Fecha de pago" : "Plazo (Fecha)"}
+            disabled={mostrarResultados}
+          />
+        </div>
       </div>
 
-      {/* INPUTS DINÁMICOS */}
-
-      <div className={styles.dynamicRow}>
-        <div className={styles.moneyCol}>
+      {/* --- MONTO --- */}
+      <div className={styles.mainForm}>
+        <div className={styles.montoSection}>
           <InputMonto
             label={
               esPorMontoCheque ? "Monto de cheque *" : "Monto a financiar *"
@@ -64,20 +82,9 @@ export default function Paso3Simulador({
             {...register("monto")}
           />
         </div>
-
-        <div className={styles.dateCol}>
-          <InputFlotante
-            type="date"
-            label={esPorMontoCheque ? "Fecha de pago" : "Plazo (Fecha)"}
-            esValido={isFechaValid}
-            error={errors[campoFecha]?.message} 
-            disabled={mostrarResultados}
-            {...register(campoFecha)}
-          />
-        </div>
       </div>
 
-      {/* ACCIONES Y RESULTADOS */}
+      {/* --- ACCIONES Y RESULTADOS --- */}
       {!mostrarResultados ? (
         <div className={styles.calcBtnWrapper}>
           <Button variant="primary" size="lg" onClick={onCalcular}>
@@ -164,7 +171,11 @@ export default function Paso3Simulador({
             >
               CONTINUAR
             </Button>
-            <button type="button" className={styles.cancelBtn}>
+            <button
+              type="button"
+              className={styles.cancelBtn}
+              onClick={onCancelar}
+            >
               Desisto de avanzar
             </button>
           </div>
