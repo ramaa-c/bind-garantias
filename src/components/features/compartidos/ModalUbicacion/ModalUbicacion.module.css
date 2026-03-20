@@ -20,6 +20,11 @@
     position: relative;
 }
 
+.btnFullWidth {
+  width: 100%;
+  height: 3rem;
+}
+
 .btnClose {
     position: absolute;
     top: 20px;

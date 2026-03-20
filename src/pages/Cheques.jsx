@@ -37,6 +37,7 @@ export default function Cheques() {
   const metodosFormulario = useForm({
     resolver: zodResolver(chequesSchema),
     mode: "onChange",
+    shouldUnregister: false,
     defaultValues: {
       moneda: "Pesos",
       sociedadBolsa: "",

@@ -14,7 +14,6 @@
     background-color: #1a1a1a;
     width: 90%;
     max-width: 450px;
-    /* Un poco más angosta que la de ubicación */
     border-radius: 20px;
     border: 1px solid #333;
     padding: 40px;
@@ -91,7 +90,6 @@
     width: 100%;
 }
 
-/* LINKS Y REENVÍO (del estilo de tu modal SMS) */
 .linkEdit {
     color: var(--yellow);
     cursor: pointer;
