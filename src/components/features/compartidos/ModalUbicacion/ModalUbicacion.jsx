@@ -32,7 +32,7 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
         }
     };
 
-    // TRUCO PARA EVITAR CIERRE AL ARRASTRAR
+
     const handleOverlayMouseDown = (e) => {
         if (e.target === e.currentTarget) {
             onClose();
