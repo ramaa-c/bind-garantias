@@ -1,55 +1,170 @@
-.modalBody {
-  padding: 0.5rem 0;
+/* --- ESTÉTICA BASE DE MODAL --- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease;
 }
 
-.accordionList {
+.modalContainer {
+  background-color: #1a1a1a;
+  width: 90%;
+  max-width: 650px;
+  max-height: 95vh;
+  overflow-y: auto;
+  border-radius: 20px;
+  border: 1px solid #333;
+  padding: 25px 40px;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modalContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modalContainer::-webkit-scrollbar-thumb {
+  background-color: #444;
+  border-radius: 10px;
+}
+
+.btnClose {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.btnClose:hover {
+  color: var(--white);
+}
+
+.body {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  margin-top: 0.5rem;
+  align-items: center;
+  text-align: center;
+}
+
+.iconWrapper {
+  width: 50px;
+  height: 50px;
+  background-color: rgba(244, 245, 0, 0.1);
+  color: var(--yellow);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.title {
+  color: var(--white);
+  font-size: 1.35rem;
+  margin: 0;
+}
+
+.description {
+  color: #888;
+  margin-top: 4px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+/* --- SECCIÓN DEL FORMULARIO Y ACORDEONES --- */
+.formSection {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: left;
+}
+
+
+.accordionCard {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  overflow: hidden;
+
+}
+
+
+.accordionCard:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
 }
 
 .documentRow {
   display: flex;
-  flex-direction: row;
-  gap: 1.5rem;
-  align-items: flex-start;
-  padding: 1rem 0;
+  flex-direction: column;
+  gap: 15px;
+  padding: 15px 20px 20px 20px;
 }
 
 .docInfoBox {
-  flex: 1;
   background-color: rgba(255, 255, 255, 0.03);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  color: #888;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-left: 3px solid #888;
+  padding: 10px 15px;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.85rem;
+  color: #ccc;
 }
 
-.dropzoneWrapper {
-  flex: 0 0 18.75rem;
+.docInfoBox strong {
+  color: var(--white);
+  margin-right: 5px;
 }
 
-.actions {
+.dropzoneWrapper input {
+  display: none;
+}
+
+/* --- FOOTER --- */
+.modalFooter {
+  margin-top: 1.5rem;
   display: flex;
-  justify-content: flex-end;
-  margin-top: 1rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  justify-content: center;
+  width: 100%;
 }
 
+/* --- ANIMACIONES --- */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* --- RESPONSIVE --- */
 @media (max-width: 768px) {
-  .documentRow {
-    flex-direction: column;
+  .modalContainer {
+    padding: 25px 20px;
   }
-  
-  .dropzoneWrapper {
-    width: 100%;
-    flex: none;
-  }
+}
+
+.accordionCard button[class*="header"],
+.accordionCard div[class*="header"] {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+}
+
+
+.accordionCard [class*="titleContainer"] {
+  gap: 15px !important;
+
 }

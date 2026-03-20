@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
-import { Modal, InputFlotante, Button, CargaArchivos } from "../../../ui";
+import { FiUser, FiX } from "react-icons/fi";
+import { InputFlotante, Button, CargaArchivos } from "../../../ui";
 import styles from "./ModalSocio.module.css";
 
 export default function ModalSocio({
@@ -23,6 +24,7 @@ export default function ModalSocio({
 
   const valoresCampos = watch(`socios.${socioIndex}`) ?? {};
   const isMounted = useRef(false);
+
 
   useEffect(() => {
     if (socioIndex === null) return;
@@ -97,19 +99,36 @@ export default function ModalSocio({
     );
   };
 
-  return (
-    <Modal
-      isOpen={socioIndex !== null}
-      onClose={onCerrar}
-      title={socio ? `Datos de ${socio.nombre}` : ""}
-      maxWidth="700px"
-    >
-      {socio && (
-        <div className={styles.body}>
-          <h4 className={styles.sectionTitle}>1. Información de contacto</h4>
+  // --- TRUCO ANTI-CIERRE ACCIDENTAL ---
+  const handleOverlayMouseDown = (e) => {
+    if (e.target === e.currentTarget) {
+      onCerrar();
+    }
+  };
 
-          <div className={styles.row}>
-            <div className={styles.col}>
+  if (socioIndex === null || !socio) return null;
+
+  return (
+    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
+      <div className={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
+        <button className={styles.btnClose} onClick={onCerrar}>
+          <FiX size={20} />
+        </button>
+
+        <div className={styles.body}>
+          <div className={styles.iconWrapper}>
+            <FiUser size={30} />
+          </div>
+
+          <h2 className={styles.title}>Datos de {socio.nombre}</h2>
+          <p className={styles.description}>
+            Completá la información de contacto y cargá la documentación.
+          </p>
+
+          <div className={styles.formSection}>
+            <h4 className={styles.sectionTitle}>1. Información de contacto</h4>
+
+            <div className={styles.inputRow}>
               <InputFlotante
                 label="Email"
                 type="email"
@@ -117,8 +136,6 @@ export default function ModalSocio({
                 error={getCampo("email").error}
                 {...register(`socios.${socioIndex}.email`)}
               />
-            </div>
-            <div className={styles.col}>
               <InputFlotante
                 label="Celular"
                 maxLength={10}
@@ -126,36 +143,26 @@ export default function ModalSocio({
                 error={getCampo("celular").error}
                 {...register(`socios.${socioIndex}.celular`)}
                 onChange={(e) => {
-                  e.target.value = e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 10);
+                  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
                   register(`socios.${socioIndex}.celular`).onChange(e);
                 }}
               />
             </div>
-          </div>
 
-          <div className={styles.row}>
-            <div className={styles.col}>
-              <InputFlotante
-                label="Dirección"
-                esValido={getCampo("direccion").esValido}
-                error={getCampo("direccion").error}
-                {...register(`socios.${socioIndex}.direccion`)}
-              />
-            </div>
-          </div>
+            <InputFlotante
+              label="Dirección"
+              esValido={getCampo("direccion").esValido}
+              error={getCampo("direccion").error}
+              {...register(`socios.${socioIndex}.direccion`)}
+            />
 
-          <div className={styles.row}>
-            <div className={styles.col}>
+            <div className={styles.inputRow}>
               <InputFlotante
                 label="Provincia"
                 esValido={getCampo("provincia").esValido}
                 error={getCampo("provincia").error}
                 {...register(`socios.${socioIndex}.provincia`)}
               />
-            </div>
-            <div className={styles.col}>
               <InputFlotante
                 label="Localidad"
                 esValido={getCampo("localidad").esValido}
@@ -163,38 +170,30 @@ export default function ModalSocio({
                 {...register(`socios.${socioIndex}.localidad`)}
               />
             </div>
-          </div>
 
-          <h4 className={styles.sectionTitle}>2. Identidad (DNI)</h4>
+            <h4 className={styles.sectionTitle}>2. Identidad (DNI)</h4>
 
-          <div className={styles.dropzoneGrid}>
-            {renderDropzone(
-              `socio-${socioIndex}-frente`,
-              "DNI Frente",
-              "Imagen clara y legible",
-            )}
-            {renderDropzone(
-              `socio-${socioIndex}-dorso`,
-              "DNI Dorso",
-              "Imagen clara y legible",
-            )}
+            <div className={styles.dropzoneGrid}>
+              {renderDropzone(`socio-${socioIndex}-frente`, "DNI Frente", "Imagen clara y legible")}
+              {renderDropzone(`socio-${socioIndex}-dorso`, "DNI Dorso", "Imagen clara y legible")}
+            </div>
           </div>
 
           <div className={styles.actions}>
             <Button
               type="button"
               variant="outline"
-              className={styles.borderless}
+              className={styles.ghostBtn}
               onClick={onCerrar}
             >
               CANCELAR
             </Button>
             <Button type="button" variant="primary" onClick={onGuardar}>
-              GUARDAR
+              GUARDAR DATOS
             </Button>
           </div>
         </div>
-      )}
-    </Modal>
+      </div>
+    </div>
   );
 }
