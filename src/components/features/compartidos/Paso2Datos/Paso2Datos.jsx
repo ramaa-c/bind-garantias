@@ -1,106 +1,146 @@
-import React from "react";
-import { useFormContext, useFormState } from "react-hook-form";
-import { FiCheckCircle, FiEdit2 } from "react-icons/fi";
-import { InputFlotante, Button } from "../../../ui";
+import React, { useState, useEffect } from "react";
+import { useFormContext } from "react-hook-form";
+import { FiCheckCircle, FiAlertCircle, FiMapPin, FiPhone, FiEdit2 } from "react-icons/fi";
+import { Button } from "../../../ui";
+import { ModalUbicacion, ModalContacto } from "../../../features";
 import styles from "./Paso2Datos.module.css";
 
-export default function Paso2Datos({ onVolver, onAbrirModalSms, onContinuar }) {
-  const { register, watch, control } = useFormContext();
-  const { errors, dirtyFields } = useFormState({ control });
+export default function Paso2Datos({ onVolver, onContinuar }) {
+  const { watch, setValue, register } = useFormContext();
+
+  const [modalUbicacionOpen, setModalUbicacionOpen] = useState(false);
+  const [modalContactoOpen, setModalContactoOpen] = useState(false);
+  const [intentoAvanzar, setIntentoAvanzar] = useState(false);
+
+  // Valores observados en tiempo real
   const cuitIngresado = watch("cuit", "");
-  const isDirValid = !errors.direccion && dirtyFields.direccion;
-  const isProvValid = !errors.provincia && dirtyFields.provincia;
-  const isLocValid = !errors.localidad && dirtyFields.localidad;
-  const isCelValid = !errors.celular && dirtyFields.celular;
+  const dirValue = watch("direccion") || "";
+  const locValue = watch("localidad") || "";
+  const celValue = watch("celular") || "";
+
+  // ESTADOS LOCALES UI (Garantizan que las tarjetas cambien de color al instante)
+  const [ubicacionOk, setUbicacionOk] = useState(false);
+  const [contactoOk, setContactoOk] = useState(false);
+
+  // Si ya había datos cargados al montar el componente, los pinta de verde
+  useEffect(() => {
+    if (dirValue.length >= 5) setUbicacionOk(true);
+    if (watch("smsVerificado")) setContactoOk(true);
+  }, [dirValue, watch]);
+
+  // --- HANDLERS QUE RECIBEN EL "OK" DE LAS MODALES ---
+  const handleGuardarUbicacion = () => {
+    setUbicacionOk(true); // Pinta de verde la tarjeta
+    setModalUbicacionOpen(false); // Cierra la modal
+  };
+
+  const handleGuardarContacto = () => {
+    setValue("smsVerificado", true); // Guarda el dato en el form por las dudas
+    setContactoOk(true); // Pinta de verde la tarjeta
+    setModalContactoOpen(false); // Cierra la modal
+  };
+
+  const handleAvanzarClick = () => {
+    setIntentoAvanzar(true);
+    if (ubicacionOk && contactoOk) {
+      onContinuar();
+    }
+  };
+
+  // Helpers visuales
+  const getClassUbicacion = () => {
+    if (ubicacionOk) return styles.statusCheck;
+    if (intentoAvanzar) return styles.statusError;
+    return styles.statusWarn;
+  };
+
+  const getClassContacto = () => {
+    if (contactoOk) return styles.statusCheck;
+    if (intentoAvanzar) return styles.statusError;
+    return styles.statusWarn;
+  };
 
   return (
     <div className={styles.container}>
-      
-      {/* RESUMEN CUIT */}
+      <div className={styles.headerSteps}>
+        <h3 className={styles.title}>Información de la Solicitud</h3>
+        <p className={styles.mutedText}>Completá los datos requeridos para la validación final.</p>
+      </div>
+
       <div className={styles.summaryCard}>
         <div className={styles.summaryInfo}>
-          <div className={styles.summaryStatus}>
-            <FiCheckCircle size={16} />
-            <span>CUIT Validado</span>
-          </div>
-          <p className={styles.summaryCuit}>{cuitIngresado}</p>
+          <div className={styles.summaryStatus}><FiCheckCircle size={14} /> CUIT VALIDADO</div>
+          <p className={styles.summaryCuit}>{cuitIngresado || "20-12345678-9"}</p>
           <p className={styles.summaryName}>EMPRESA DE PRUEBA S.A.</p>
         </div>
-        
-        <Button 
-          type="button" 
-          variant="outline" 
-          onClick={onVolver}
-          className={styles.btnEditGhost}
+        <button className={styles.btnEdit} onClick={onVolver}><FiEdit2 /> EDITAR</button>
+      </div>
+
+      <div className={styles.sectionGroup}>
+        {/* CARD 1: UBICACIÓN */}
+        <div
+          className={`${styles.taskCard} ${ubicacionOk ? styles.cardSuccess : intentoAvanzar && !ubicacionOk ? styles.cardError : ""}`}
+          onClick={() => setModalUbicacionOpen(true)}
         >
-          <FiEdit2 size={14} className={styles.iconMarginRight} /> Editar
-        </Button>
-      </div>
-
-      {/* SECCIÓN UBICACIÓN */}
-      <div className={styles.seccionForm}>
-        <h3 className={styles.subtitle}>Datos de Ubicación</h3>
-        <div className={styles.formGroup}>
-          <InputFlotante 
-            label="Dirección"
-            esValido={isDirValid}
-            error={errors.direccion?.message}
-            {...register("direccion")} 
-          />
+          <div className={styles.taskCardInfo}>
+            <div className={`${styles.statusIconPill} ${getClassUbicacion()}`}>
+              {ubicacionOk ? <FiCheckCircle /> : intentoAvanzar ? <FiAlertCircle /> : <FiMapPin />}
+            </div>
+            <div className={styles.taskCardText}>
+              <h4>Datos de Ubicación</h4>
+              <p>{ubicacionOk && dirValue ? `${dirValue}, ${locValue}` : "Dirección, Provincia y Localidad"}</p>
+            </div>
+          </div>
+          <Button variant={ubicacionOk ? "outline" : "primary"} size="sm" className={styles.taskBtn}>
+            {ubicacionOk ? "MODIFICAR" : "COMPLETAR"}
+          </Button>
         </div>
 
-        <div className={styles.formRow}>
-          <div className={styles.formCol}>
-            <InputFlotante 
-              label="Provincia"
-              esValido={isProvValid}
-              error={errors.provincia?.message}
-              {...register("provincia")} 
-            />
+        {/* CARD 2: CONTACTO / SMS */}
+        <div
+          className={`${styles.taskCard} ${contactoOk ? styles.cardSuccess : intentoAvanzar && !contactoOk ? styles.cardError : ""}`}
+          onClick={() => setModalContactoOpen(true)}
+          style={{ marginTop: '15px' }}
+        >
+          <div className={styles.taskCardInfo}>
+            <div className={`${styles.statusIconPill} ${getClassContacto()}`}>
+              {contactoOk ? <FiCheckCircle /> : intentoAvanzar ? <FiAlertCircle /> : <FiPhone />}
+            </div>
+            <div className={styles.taskCardText}>
+              <h4>Verificación de Contacto</h4>
+              <p>{contactoOk ? `Cel: ${celValue}` : "Validación mediante SMS"}</p>
+            </div>
           </div>
-          <div className={styles.formCol}>
-            <InputFlotante 
-              label="Localidad"
-              esValido={isLocValid}
-              error={errors.localidad?.message}
-              {...register("localidad")} 
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className={styles.phoneZone}>
-        <h3 className={styles.subtitleContacto}>Datos de Contacto</h3> 
-        <div className={styles.phoneRow}>
-          <div className={styles.phoneInputWrapper}>
-            <InputFlotante 
-              label="Celular (Sin 15 ni 0)"
-              maxLength={10}
-              esValido={isCelValid}
-              error={errors.celular?.message}
-              {...register("celular")} 
-            />
-          </div>
-          
-          <div className={styles.btnVerifyWrapper}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onAbrirModalSms}
-              className={`${styles.btnVerify} ${errors.celular ? styles.btnVerifyError : ""}`}
-            >
-              VERIFICAR SMS
-            </Button>
-          </div>
+          <Button variant={contactoOk ? "outline" : "primary"} size="sm" className={styles.taskBtn}>
+            {contactoOk ? "MODIFICAR" : "VERIFICAR"}
+          </Button>
         </div>
       </div>
 
       <div className={styles.actionsRight}>
-        <Button type="button" variant="primary" onClick={onContinuar}>
+        <Button variant="primary" onClick={handleAvanzarClick} className={styles.tallButton}>
           CONTINUAR
         </Button>
       </div>
 
+      <ModalUbicacion
+        isOpen={modalUbicacionOpen}
+        onClose={() => setModalUbicacionOpen(false)}
+        onGuardar={handleGuardarUbicacion}
+      />
+
+      <ModalContacto
+        isOpen={modalContactoOpen}
+        onClose={() => setModalContactoOpen(false)}
+        onGuardar={handleGuardarContacto}
+      />
+      <div style={{ display: "none" }}>
+        <input {...register("direccion")} />
+        <input {...register("provincia")} />
+        <input {...register("localidad")} />
+        <input {...register("celular")} />
+        <input {...register("smsVerificado")} />
+      </div>
     </div>
   );
 }

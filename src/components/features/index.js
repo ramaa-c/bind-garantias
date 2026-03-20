@@ -11,6 +11,9 @@ export { default as ModalSocio } from './Compartidos/ModalSocio/ModalSocio';
 export * from './Compartidos/ModalDocumentosEmpresa/ModalDocumentosEmpresa';
 export * from './Compartidos/ModalRepresentanteFacturacion/ModalRepresentanteFacturacion';
 export * from './Compartidos/SocioTaskCard/SocioTaskCard';
+export { default as ModalUbicacion } from "./compartidos/ModalUbicacion/ModalUbicacion";
+export { default as ModalContacto } from "./compartidos/ModalContacto/ModalContacto";
+
 
 // --- CHEQUES ---
 export { default as Paso6Bolsa } from './Cheques/Paso6Bolsa/Paso6Bolsa';

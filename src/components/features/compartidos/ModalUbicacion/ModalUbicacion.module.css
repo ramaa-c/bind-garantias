@@ -1,0 +1,96 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(6px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease;
+}
+
+.modalContainer {
+    background-color: #1a1a1a;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 20px;
+    border: 1px solid #333;
+    padding: 40px;
+    position: relative;
+}
+
+.btnClose {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+}
+
+.btnClose:hover {
+    color: var(--white);
+}
+
+.body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.iconWrapper {
+    width: 60px;
+    height: 60px;
+    background-color: rgba(244, 245, 0, 0.1);
+    color: var(--yellow);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.title {
+    color: var(--white);
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.description {
+    color: #888;
+    margin-top: 8px;
+    margin-bottom: 30px;
+}
+
+.formSection {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    margin-bottom: 30px;
+    text-align: left;
+}
+
+.inputRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.btnSave {
+    width: 100%;
+    height: 48px;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
