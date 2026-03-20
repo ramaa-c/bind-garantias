@@ -49,33 +49,55 @@ export const ModalRepresentanteFacturacion = ({
       return;
     }
     setErrorApoCuit("");
-    onValidarCuit(); 
+    onValidarCuit();
   };
 
   const handleGuardarApoderadoFase2 = async () => {
     setIntentoGuardarApo(true);
     const okZod = await trigger(["apoEmail", "apoCelular"]);
-    
-    if (okZod && apoEmailVal.trim() !== "" && apoCelVal.replace(/\D/g, "").length === 10) {
+
+    if (
+      okZod &&
+      apoEmailVal.trim() !== "" &&
+      apoCelVal.replace(/\D/g, "").length === 10
+    ) {
       setIntentoGuardarApo(false);
-      onGuardarApoderado(); 
+      onGuardarApoderado();
     }
   };
 
-  const { ref: cuitRef, onBlur: cuitOnBlur, name: cuitName } = register("apoCuit");
+  const { onChange, ...restCuit } = register("apoCuit");
 
-  const errorEmail = errors.apoEmail?.message || (intentoGuardarApo && apoEmailVal.trim() === "" ? "Requerido" : null);
-  const errorCel = errors.apoCelular?.message || (intentoGuardarApo && apoCelVal.replace(/\D/g, "").length < 10 ? "Requerido" : null);
-  const isEmailValido = !errorEmail && apoEmailVal.trim() !== "" && (dirtyFields.apoEmail || intentoGuardarApo);
-  const isCelValido = !errorCel && apoCelVal.replace(/\D/g, "").length === 10 && (dirtyFields.apoCelular || intentoGuardarApo);
+  const errorEmail =
+    errors.apoEmail?.message ||
+    (intentoGuardarApo && apoEmailVal.trim() === "" ? "Requerido" : null);
+  const errorCel =
+    errors.apoCelular?.message ||
+    (intentoGuardarApo && apoCelVal.replace(/\D/g, "").length < 10
+      ? "Requerido"
+      : null);
+  const isEmailValido =
+    !errorEmail &&
+    apoEmailVal.trim() !== "" &&
+    (dirtyFields.apoEmail || intentoGuardarApo);
+  const isCelValido =
+    !errorCel &&
+    apoCelVal.replace(/\D/g, "").length === 10 &&
+    (dirtyFields.apoCelular || intentoGuardarApo);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Representante Legal y Facturación" maxWidth="650px">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Representante Legal y Facturación"
+      maxWidth="650px"
+    >
       <div className={styles.modalLayout}>
-        
         {/* --- SECCIÓN 1: APODERADO --- */}
         <section className={styles.sectionBlock}>
-          <h4 className={styles.sectionTitle}>1. Representante Legal / Apoderado</h4>
+          <h4 className={styles.sectionTitle}>
+            1. Representante Legal / Apoderado
+          </h4>
 
           {faseApoderado === "ingresar" && (
             <div className={styles.searchBox}>
@@ -83,20 +105,34 @@ export const ModalRepresentanteFacturacion = ({
                 <InputFlotante
                   label="CUIT del apoderado"
                   maxLength={11}
-                  esValido={apoCuitIngresado.length === 11 && !errorApoCuit && validarCUIT(apoCuitIngresado)}
+                  esValido={
+                    apoCuitIngresado.length === 11 &&
+                    !errorApoCuit &&
+                    validarCUIT(apoCuitIngresado)
+                  }
                   error={errorApoCuit}
-                  name={cuitName}
-                  inputRef={cuitRef}
-                  onBlur={cuitOnBlur}
+                  {...restCuit}
                   value={apoCuitIngresado}
                   onChange={(e) => {
-                    const limpio = e.target.value.replace(/\D/g, "").slice(0, 11);
-                    setValue("apoCuit", limpio, { shouldValidate: true, shouldDirty: true });
+                    const limpio = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 11);
+                    e.target.value = limpio;
+                    onChange(e);
+                    setValue("apoCuit", limpio, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+
                     if (errorApoCuit) setErrorApoCuit("");
                   }}
                 />
               </div>
-              <Button variant="primary" size="sm" onClick={handleValidarApoderadoCuitClick}>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleValidarApoderadoCuitClick}
+              >
                 VALIDAR
               </Button>
             </div>
@@ -114,7 +150,7 @@ export const ModalRepresentanteFacturacion = ({
                   <span className={styles.infoValue}>{apoNombre}</span>
                 </div>
               </div>
-              
+
               <div className={styles.inputRow}>
                 <InputFlotante
                   label="Email Personal"
@@ -130,17 +166,23 @@ export const ModalRepresentanteFacturacion = ({
                   error={errorCel}
                   {...register("apoCelular")}
                   onChange={(e) => {
-                    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    e.target.value = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 10);
                     register("apoCelular").onChange(e);
                   }}
                 />
               </div>
               <div className={styles.actionRow}>
-                <Button variant="outline" className={styles.ghostBtn} onClick={() => {
-                  setValue("apoCuit", "");
-                  setErrorApoCuit("");
-                  setFaseApoderado("ingresar");
-                }}>
+                <Button
+                  variant="outline"
+                  className={styles.ghostBtn}
+                  onClick={() => {
+                    setValue("apoCuit", "");
+                    setErrorApoCuit("");
+                    setFaseApoderado("ingresar");
+                  }}
+                >
                   CANCELAR
                 </Button>
                 <Button variant="primary" onClick={handleGuardarApoderadoFase2}>
@@ -158,10 +200,17 @@ export const ModalRepresentanteFacturacion = ({
                 </div>
                 <div className={styles.successText}>
                   <p className={styles.successName}>{apoNombre}</p>
-                  <p className={styles.successRole}>Identidad Validada ({apoCuitIngresado})</p>
+                  <p className={styles.successRole}>
+                    Identidad Validada ({apoCuitIngresado})
+                  </p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" className={styles.editBtn} onClick={() => setFaseApoderado("completar")}>
+              <Button
+                variant="outline"
+                size="sm"
+                className={styles.editBtn}
+                onClick={() => setFaseApoderado("completar")}
+              >
                 <FiEdit /> MODIFICAR
               </Button>
             </div>
@@ -175,7 +224,9 @@ export const ModalRepresentanteFacturacion = ({
             <InputFlotante
               label="Email de Facturación"
               type="email"
-              esValido={!errors.emailFacturacion && dirtyFields.emailFacturacion}
+              esValido={
+                !errors.emailFacturacion && dirtyFields.emailFacturacion
+              }
               error={errors.emailFacturacion?.message}
               {...register("emailFacturacion")}
             />
