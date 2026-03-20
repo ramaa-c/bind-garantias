@@ -56,18 +56,34 @@ export const ModalRepresentanteFacturacion = ({
     setIntentoGuardarApo(true);
     const okZod = await trigger(["apoEmail", "apoCelular"]);
 
-    if (okZod && apoEmailVal.trim() !== "" && apoCelVal.replace(/\D/g, "").length === 10) {
+    if (
+      okZod &&
+      apoEmailVal.trim() !== "" &&
+      apoCelVal.replace(/\D/g, "").length === 10
+    ) {
       setIntentoGuardarApo(false);
       onGuardarApoderado();
     }
   };
 
-  const { ref: cuitRef, onBlur: cuitOnBlur, name: cuitName } = register("apoCuit");
+  const { onChange, ...restCuit } = register("apoCuit");
 
-  const errorEmail = errors.apoEmail?.message || (intentoGuardarApo && apoEmailVal.trim() === "" ? "Requerido" : null);
-  const errorCel = errors.apoCelular?.message || (intentoGuardarApo && apoCelVal.replace(/\D/g, "").length < 10 ? "Requerido" : null);
-  const isEmailValido = !errorEmail && apoEmailVal.trim() !== "" && (dirtyFields.apoEmail || intentoGuardarApo);
-  const isCelValido = !errorCel && apoCelVal.replace(/\D/g, "").length === 10 && (dirtyFields.apoCelular || intentoGuardarApo);
+  const errorEmail =
+    errors.apoEmail?.message ||
+    (intentoGuardarApo && apoEmailVal.trim() === "" ? "Requerido" : null);
+  const errorCel =
+    errors.apoCelular?.message ||
+    (intentoGuardarApo && apoCelVal.replace(/\D/g, "").length < 10
+      ? "Requerido"
+      : null);
+  const isEmailValido =
+    !errorEmail &&
+    apoEmailVal.trim() !== "" &&
+    (dirtyFields.apoEmail || intentoGuardarApo);
+  const isCelValido =
+    !errorCel &&
+    apoCelVal.replace(/\D/g, "").length === 10 &&
+    (dirtyFields.apoCelular || intentoGuardarApo);
 
   // --- ANTI-CIERRE ACCIDENTAL ---
   const handleOverlayMouseDown = (e) => {
