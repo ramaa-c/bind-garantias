@@ -1,7 +1,7 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { InputFlotante, Button, Alert, InputMonto } from "../../../ui";
-import { FiInfo } from "react-icons/fi";
+import { Button, Alert, InputMonto } from "../../../ui";
+import { SelectFecha } from "../../../ui";
 import styles from "./Paso1SimuladorPagare.module.css";
 
 export default function Paso1SimuladorPagare({
@@ -21,15 +21,22 @@ export default function Paso1SimuladorPagare({
 
   return (
     <div className={styles.container}>
-      {/* MONEDA */}
-      <div className={styles.headerSection}>
-        <div className={styles.monedaIndicator}>
+      <div className={styles.topGrid}>
+        {/* MONEDA  */}
+        <div className={styles.indicatorWrapper}>
           <span className={styles.indicatorLabel}>Moneda de operación</span>
-          <div className={styles.badgeUSD}>
+          <div className={styles.badgeSolid}>
             <span className={styles.dot}></span>
             DÓLAR ESTADOUNIDENSE (USD)
           </div>
         </div>
+
+        {/* FECHA */}
+        <SelectFecha
+          name="fechaPago"
+          label="Fecha de pago"
+          disabled={simulacionLista}
+        />
       </div>
 
       <div className={styles.mainForm}>
@@ -42,20 +49,6 @@ export default function Paso1SimuladorPagare({
             esValido={montoValue > 0}
             {...register("monto")}
           />
-        </div>
-
-        {/* FECHA */}
-        <div className={styles.fechaSection}>
-          <div className={styles.inputWrapper}>
-            <InputFlotante
-              type="date"
-              label="Fecha de pago"
-              error={errors.fechaPago?.message}
-              disabled={simulacionLista}
-              esValido={!!fechaValue}
-              {...register("fechaPago")}
-            />
-          </div>
         </div>
       </div>
 
@@ -71,12 +64,12 @@ export default function Paso1SimuladorPagare({
           </Button>
         </div>
       ) : (
-        /* 3. tarjeta con degradado */
+        /* --- TICKET RESULTADOS --- */
         <div className={styles.breakdownContainer}>
           <div className={styles.breakdownHeader}>
             <span>Neto estimado a recibir:</span>
             <span className={styles.textXl}>
-              USD {(montoValue * 0.96).toLocaleString()}
+              USD {(montoValue * 0.96).toLocaleString("es-AR")}
             </span>
           </div>
 

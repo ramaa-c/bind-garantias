@@ -245,6 +245,7 @@ export default function Cheques() {
                           mostrarResultados={mostrarResultados}
                           onCalcular={handleCalcularSimulador}
                           onContinuar={handleContinuarSimulador}
+                          onCancelar={() => setMostrarResultados(false)}
                         />
                       )}
 

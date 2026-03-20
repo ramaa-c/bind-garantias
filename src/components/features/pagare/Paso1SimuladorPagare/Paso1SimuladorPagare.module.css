@@ -1,66 +1,74 @@
 .container {
   animation: fadeIn 0.4s ease;
+  max-width: 45rem;
+  margin: 0 auto;
 }
 
-.headerDescription {
-  color: #aaa;
-  font-size: 14px;
-  margin-bottom: 2.5rem;
-  line-height: 1.5;
-}
-
-/* GRILLA */
-.formGrid {
+.topGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  margin-bottom: 2rem;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
 }
 
-.fullWidth {
-  grid-column: 1 / span 2;
+@media (max-width: 600px) {
+  .topGrid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
 }
 
-/* INDICADOR DE MONEDA */
-.monedaIndicator {
+.indicatorWrapper {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .indicatorLabel {
-  font-size: 12px;
-  color: #666;
+  font-size: 0.75rem;
+  color: #888;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05rem;
+  font-weight: 600;
+  margin-left: 0.25rem;
 }
 
-.badgeUSD {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid #333;
-  padding: 12px 15px;
-  border-radius: 8px;
+.badgeSolid {
+  height: 3.25rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 1rem;
+  border-radius: 0.5rem;
   color: var(--white);
-  font-size: 14px;
+  font-size: 0.95rem;
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 48px;
+  gap: 0.75rem;
+  width: 100%;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
   background-color: var(--yellow);
   border-radius: 50%;
   box-shadow: 0 0 10px rgba(244, 245, 0, 0.5);
 }
 
-/* TICKET DE RESULTADOS (DEGRADADO RECUPERADO) */
+/* --- SECCIÓN MONTO --- */
+.mainForm {
+  margin-bottom: 2.5rem;
+}
+
+.montoSection {
+  max-width: 100%;
+}
+
+/* --- TICKET RESULTADOS --- */
 .breakdownContainer {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.2) 100%);
   border: 1px solid #333;
-  border-radius: 12px;
+  border-radius: 0.75rem;
   padding: 2.5rem;
   margin-top: 1rem;
   animation: fadeIn 0.5s ease;
@@ -70,7 +78,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px dashed #444;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
   padding-bottom: 1.5rem;
   margin-bottom: 1.5rem;
   color: #aaa;
@@ -96,7 +104,7 @@
 }
 
 .totalRow {
-  border-top: 1px solid #444;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 1rem;
   margin-top: 0.5rem;
   font-weight: bold;
@@ -110,31 +118,31 @@
 .calcBtnWrapper {
   display: flex;
   justify-content: center;
+  margin-top: 3rem;
 }
 
 .actionsFlex {
   display: flex;
   justify-content: flex-end;
-  gap: 15px;
-  margin-top: 2rem;
+  gap: 1rem;
+  margin-top: 2.5rem;
 }
 
 .borderless {
   border: none;
+  background: transparent;
+  color: #aaa;
+}
+
+.borderless:hover {
+  color: var(--white);
 }
 
 .mtMedium {
-  margin-top: 20px;
+  margin-top: 1.5rem;
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }

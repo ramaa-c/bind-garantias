@@ -22,6 +22,7 @@ export * from './TarjetaEstado/TarjetaEstado';
 export * from './TarjetaMetrica/TarjetaMetrica';
 export * from './TarjetaSeleccionable/TarjetaSeleccionable';
 export * from './CustomScroll/Scroll';
+export * from './SelectFecha/SelectFecha';
 
 
 

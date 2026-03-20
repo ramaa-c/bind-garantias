@@ -1,54 +1,44 @@
 .container {
   animation: fadeIn 0.4s ease;
+  max-width: 45rem;
+  margin: 0 auto;
   padding-top: 10px;
 }
 
-/* --- GRILLAS --- */
 .topGrid {
   display: grid;
-  grid-template-columns: 0.8fr 1.2fr 1.5fr; 
-  gap: 25px;
-  margin-top: 35px; 
-  margin-bottom: 3rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-top: 25px;
+  margin-bottom: 2.5rem;
 }
 
-
-@media (max-width: 850px) {
+@media (max-width: 768px) {
   .topGrid {
     grid-template-columns: 1fr;
-    margin-top: 25px;
   }
 }
 
-.dynamicRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end; 
-  gap: 40px;
-  margin-top: 2.5rem; 
-  margin-bottom: 50px;
+/* --- SECCIÓN MONTO --- */
+.mainForm {
+  margin-bottom: 2.5rem;
 }
 
-.moneyCol {
-  flex: 1.5; 
+.montoSection {
+  max-width: 100%;
 }
 
-.dateCol {
-  flex: 1; 
-  margin-bottom: 8px; 
-}
-
+/* --- UTILIDADES --- */
 .calcBtnWrapper {
   display: flex;
   justify-content: center;
   margin-top: 3rem;
 }
 
-/* --- TICKET DE RESULTADOS --- */
 .resultsBox {
-  background: linear-gradient(145deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2));
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.2) 100%);
   border: 1px solid #333;
-  border-radius: 12px;
+  border-radius: 0.75rem;
   padding: 2.5rem;
   margin-top: 1rem;
   animation: fadeIn 0.5s ease;
@@ -97,10 +87,15 @@
   font-weight: bold;
 }
 
-.textYellow { color: var(--yellow); }
-.textMuted { color: #aaa; }
+.textYellow {
+  color: var(--yellow);
+}
 
-/* --- CAJA RESUMEN VERDE --- */
+.textMuted {
+  color: #aaa;
+}
+
+/* --- CAJA RESUMEN --- */
 .summaryBox {
   background-color: rgba(76, 175, 80, 0.08);
   border-left: 4px solid #4caf50;
@@ -130,7 +125,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 2rem;
+  margin-top: 2.5rem;
   gap: 15px;
 }
 
@@ -157,6 +152,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
