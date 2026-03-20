@@ -12,32 +12,32 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
   const [modalContactoOpen, setModalContactoOpen] = useState(false);
   const [intentoAvanzar, setIntentoAvanzar] = useState(false);
 
-  // Valores observados en tiempo real
+
   const cuitIngresado = watch("cuit", "");
   const dirValue = watch("direccion") || "";
   const locValue = watch("localidad") || "";
   const celValue = watch("celular") || "";
 
-  // ESTADOS LOCALES UI (Garantizan que las tarjetas cambien de color al instante)
+
   const [ubicacionOk, setUbicacionOk] = useState(false);
   const [contactoOk, setContactoOk] = useState(false);
 
-  // Si ya había datos cargados al montar el componente, los pinta de verde
+
   useEffect(() => {
     if (dirValue.length >= 5) setUbicacionOk(true);
     if (watch("smsVerificado")) setContactoOk(true);
   }, [dirValue, watch]);
 
-  // --- HANDLERS QUE RECIBEN EL "OK" DE LAS MODALES ---
+
   const handleGuardarUbicacion = () => {
-    setUbicacionOk(true); // Pinta de verde la tarjeta
-    setModalUbicacionOpen(false); // Cierra la modal
+    setUbicacionOk(true);
+    setModalUbicacionOpen(false);
   };
 
   const handleGuardarContacto = () => {
-    setValue("smsVerificado", true); // Guarda el dato en el form por las dudas
-    setContactoOk(true); // Pinta de verde la tarjeta
-    setModalContactoOpen(false); // Cierra la modal
+    setValue("smsVerificado", true);
+    setContactoOk(true);
+    setModalContactoOpen(false);
   };
 
   const handleAvanzarClick = () => {
@@ -47,7 +47,7 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
     }
   };
 
-  // Helpers visuales
+
   const getClassUbicacion = () => {
     if (ubicacionOk) return styles.statusCheck;
     if (intentoAvanzar) return styles.statusError;

@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, Acordeon, Button, Alert, CargaArchivos } from "../../../ui";
+import { FiFileText, FiX } from "react-icons/fi";
+import { Acordeon, Button, CargaArchivos } from "../../../ui";
 import styles from "./ModalDocumentosEmpresa.module.css";
 
 export const ModalDocumentosEmpresa = ({
@@ -17,42 +18,74 @@ export const ModalDocumentosEmpresa = ({
     { key: "poderes", title: "Poderes", info: "Copia de representación." },
   ];
 
+  const handleOverlayMouseDown = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Documentación Legal" maxWidth="750px">
-      <div className={styles.modalBody}>
-        {docs.map((doc) => (
-          <Acordeon 
-            key={doc.key} 
-            title={doc.title} 
-            status={archivos[doc.key] ? "check" : (intentoAvanzar ? "alert" : "warn")}
-          >
-            <div className={styles.documentRow}>
-              <div className={styles.dropzoneWrapper}>
-                <CargaArchivos
+    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
+      <div className={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
+        <button className={styles.btnClose} onClick={onClose} aria-label="Cerrar">
+          <FiX size={20} />
+        </button>
+
+        <div className={styles.body}>
+          <div className={styles.iconWrapper}>
+            <FiFileText size={30} />
+          </div>
+
+          <h2 className={styles.title}>Documentación Legal</h2>
+          <p className={styles.description}>
+            Subí los archivos requeridos para validar la entidad.
+          </p>
+
+          <div className={styles.formSection}>
+            {docs.map((doc) => (
+              /* ---Wrapper --- */
+              <div key={doc.key} className={styles.accordionCard}>
+                <Acordeon
                   title={doc.title}
-                  hasError={intentoAvanzar && !archivos[doc.key]}
-                  file={archivos[doc.key] ? { 
-                    name: archivos[doc.key].name, 
-                    size: archivos[doc.key].formattedSize 
-                  } : null}
-                  onClick={() => document.getElementById(`file-input-${doc.key}`).click()}
-                  onRemove={() => onFileRemove(doc.key)}
-                />
-                <input 
-                  type="file" 
-                  id={`file-input-${doc.key}`} 
-                  style={{ display: "none" }} 
-                  onChange={(e) => onFileUpload(doc.key, e.target.files[0])} 
-                />
+                  status={archivos[doc.key] ? "check" : (intentoAvanzar ? "alert" : "warn")}
+                >
+                  <div className={styles.documentRow}>
+                    <div className={styles.docInfoBox}>
+                      <strong>Requisito:</strong> {doc.info}
+                    </div>
+                    <div className={styles.dropzoneWrapper}>
+                      <CargaArchivos
+                        title={doc.title}
+                        hasError={intentoAvanzar && !archivos[doc.key]}
+                        file={archivos[doc.key] ? {
+                          name: archivos[doc.key].name,
+                          size: archivos[doc.key].formattedSize
+                        } : null}
+                        onClick={() => document.getElementById(`file-input-${doc.key}`).click()}
+                        onRemove={() => onFileRemove(doc.key)}
+                      />
+                      <input
+                        type="file"
+                        id={`file-input-${doc.key}`}
+                        style={{ display: "none" }}
+                        onChange={(e) => onFileUpload(doc.key, e.target.files[0])}
+                      />
+                    </div>
+                  </div>
+                </Acordeon>
               </div>
-              <div className={styles.docInfoBox}>{doc.info}</div>
-            </div>
-          </Acordeon>
-        ))}
-        <Button variant="primary" onClick={onClose} className={styles.tallButton}>
-          VOLVER
-        </Button>
+            ))}
+          </div>
+
+          <div className={styles.modalFooter}>
+            <Button variant="primary" onClick={onClose}>
+              GUARDAR Y CERRAR
+            </Button>
+          </div>
+        </div>
       </div>
-    </Modal>
+    </div>
   );
 };
