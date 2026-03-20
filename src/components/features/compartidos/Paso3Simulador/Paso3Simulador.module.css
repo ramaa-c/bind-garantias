@@ -19,65 +19,6 @@
   }
 }
 
-/* --- BADGES Y SELECTS --- */
-.indicatorWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  position: relative;
-  width: 100%;
-}
-
-.indicatorLabel {
-  font-size: 0.75rem;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.05rem;
-  font-weight: 600;
-  margin-left: 0.25rem;
-}
-
-.badgeSelect {
-  appearance: auto;
-  height: 3.25rem;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0 1rem;
-  border-radius: 0.5rem;
-  color: var(--white);
-  font-size: 0.95rem;
-  width: 100%;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.badgeSelect:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.badgeSelect:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.badgeSelect option {
-  background-color: #242424;
-  color: var(--white);
-  padding: 0.75rem 1rem;
-  font-weight: 500;
-  font-size: 1rem;
-}
-
-.badgeSelect option:checked,
-.badgeSelect option:hover,
-.badgeSelect option:focus {
-  background-color: rgba(244, 245, 0, 0.2);
-  color: var(--yellow);
-}
-
 /* --- SECCIÓN MONTO --- */
 .mainForm {
   margin-bottom: 2.5rem;

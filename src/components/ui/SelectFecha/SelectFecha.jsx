@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, Controller } from "react-hook-form";
 import { FiCalendar } from "react-icons/fi";
 import { DayPicker } from "react-day-picker";
 import { format } from "date-fns";
@@ -14,18 +14,12 @@ export const SelectFecha = ({
   minDate = new Date(),
 }) => {
   const {
-    register,
-    watch,
-    setValue,
-    trigger,
+    control,
     formState: { errors },
   } = useFormContext();
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarRef = useRef(null);
-
-  const fechaValue = watch(name);
-  const dateObj = fechaValue ? new Date(fechaValue + "T00:00:00") : undefined;
 
   const error = name.split(".").reduce((obj, key) => obj?.[key], errors);
 
@@ -39,54 +33,64 @@ export const SelectFecha = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleDateSelect = async (date) => {
-    if (!date) return;
-    const dateString = format(date, "yyyy-MM-dd");
-
-    setValue(name, dateString, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
-    setIsCalendarOpen(false);
-    await trigger(name);
-  };
-
   return (
     <div className={styles.indicatorWrapper} ref={calendarRef}>
-      <span className={styles.indicatorLabel}>{label}</span>
-      <button
-        type="button"
-        disabled={disabled}
-        className={`${styles.badgeInteractive} ${error ? styles.badgeError : ""} ${fechaValue ? styles.badgeSuccess : ""}`}
-        onClick={() => !disabled && setIsCalendarOpen(!isCalendarOpen)}
-      >
-        <FiCalendar className={styles.calendarIcon} />
-        {dateObj ? (
-          <span className={styles.dateText}>
-            {format(dateObj, "dd 'de' MMMM, yyyy", { locale: es })}
-          </span>
-        ) : (
-          <span className={styles.placeholderText}>Seleccionar fecha</span>
-        )}
-      </button>
+      {label && <span className={styles.indicatorLabel}>{label}</span>}
 
-      {isCalendarOpen && (
-        <div className={styles.calendarPopover}>
-          <DayPicker
-            mode="single"
-            selected={dateObj}
-            onSelect={handleDateSelect}
-            locale={es}
-            disabled={{ before: minDate }}
-            required
-            captionLayout="dropdown-years"
-            fromYear={new Date().getFullYear()}
-            toYear={new Date().getFullYear() + 10}
-          />
-        </div>
-      )}
+      <Controller
+        name={name}
+        control={control}
+        defaultValue=""
+        render={({ field: { onChange, value, onBlur } }) => {
+          const dateObj = value ? new Date(value + "T00:00:00") : undefined;
 
-      <input type="hidden" value={fechaValue || ""} {...register(name)} />
+          const handleDateSelect = (date) => {
+            if (!date) return;
+            const dateString = format(date, "yyyy-MM-dd");
+            onChange(dateString);
+            setIsCalendarOpen(false);
+          };
+
+          return (
+            <>
+              <button
+                type="button"
+                disabled={disabled}
+                onBlur={onBlur}
+                className={`${styles.badgeInteractive} ${error ? styles.badgeError : ""} ${value ? styles.badgeSuccess : ""}`}
+                onClick={() => !disabled && setIsCalendarOpen(!isCalendarOpen)}
+              >
+                <FiCalendar className={styles.calendarIcon} />
+                {dateObj ? (
+                  <span className={styles.dateText}>
+                    {format(dateObj, "dd 'de' MMMM, yyyy", { locale: es })}
+                  </span>
+                ) : (
+                  <span className={styles.placeholderText}>
+                    Seleccionar fecha
+                  </span>
+                )}
+              </button>
+
+              {isCalendarOpen && (
+                <div className={styles.calendarPopover}>
+                  <DayPicker
+                    mode="single"
+                    selected={dateObj}
+                    onSelect={handleDateSelect}
+                    locale={es}
+                    disabled={{ before: minDate }}
+                    required
+                    captionLayout="dropdown-years"
+                    fromYear={new Date().getFullYear()}
+                    toYear={new Date().getFullYear() + 10}
+                  />
+                </div>
+              )}
+            </>
+          );
+        }}
+      />
 
       <div className={styles.errorContainer}>
         {error && <span className={styles.errorText}>{error.message}</span>}

@@ -1,8 +1,20 @@
 import React from "react";
 import { useFormContext, useFormState } from "react-hook-form";
-import { Button, Alert, InputMonto } from "../../../ui";
-import { SelectFecha } from "../../../ui";
+import { Button, Alert, InputMonto, SelectFecha, Select } from "../../../ui";
 import styles from "./Paso3Simulador.module.css";
+
+const opcionesMoneda = [
+  { value: "Pesos", label: "Pesos" },
+  { value: "Dolares", label: "Dólares" }
+];
+const opcionesProducto = [
+  { value: "cheques_propios", label: "Cheques propios" },
+  { value: "cheques_terceros", label: "Cheques de terceros" }
+];
+const opcionesCalculo = [
+  { value: "tasa_directa", label: "Tasa Directa / Monto a financiar" },
+  { value: "por_monto_cheque", label: "Por monto de cheque" }
+];
 
 export default function Paso3Simulador({
   mostrarResultados,
@@ -22,51 +34,39 @@ export default function Paso3Simulador({
   return (
     <div className={styles.container}>
       <div className={styles.topGrid}>
-        <div className={styles.indicatorWrapper}>
-          <span className={styles.indicatorLabel}>Moneda</span>
-          <select
-            className={styles.badgeSelect}
-            disabled={mostrarResultados}
-            {...register("moneda")}
-          >
-            <option value="Pesos">Pesos</option>
-            <option value="Dolares">Dólares</option>
-          </select>
-        </div>
+        
+        <Select
+          name="moneda"
+          control={control}
+          label="Moneda"
+          options={opcionesMoneda}
+          disabled={mostrarResultados}
+          error={errors.moneda?.message}
+        />
 
-        <div className={styles.indicatorWrapper}>
-          <span className={styles.indicatorLabel}>Tipo de producto</span>
-          <select
-            className={styles.badgeSelect}
-            disabled={mostrarResultados}
-            {...register("tipoProducto")}
-          >
-            <option value="cheques_propios">Cheques propios</option>
-            <option value="cheques_terceros">Cheques de terceros</option>
-          </select>
-        </div>
+        <Select
+          name="tipoProducto"
+          control={control}
+          label="Tipo de producto"
+          options={opcionesProducto}
+          disabled={mostrarResultados}
+          error={errors.tipoProducto?.message}
+        />
 
-        <div className={styles.indicatorWrapper}>
-          <span className={styles.indicatorLabel}>Tipo de cálculo</span>
-          <select
-            className={styles.badgeSelect}
-            disabled={mostrarResultados}
-            {...register("tipoCalculo")}
-          >
-            <option value="tasa_directa">
-              Tasa Directa / Monto a financiar
-            </option>
-            <option value="por_monto_cheque">Por monto de cheque</option>
-          </select>
-        </div>
+        <Select
+          name="tipoCalculo"
+          control={control}
+          label="Tipo de cálculo"
+          options={opcionesCalculo}
+          disabled={mostrarResultados}
+          error={errors.tipoCalculo?.message}
+        />
 
-        <div className={styles.indicatorWrapper}>
-          <SelectFecha
-            name={campoFecha}
-            label={esPorMontoCheque ? "Fecha de pago" : "Plazo (Fecha)"}
-            disabled={mostrarResultados}
-          />
-        </div>
+        <SelectFecha
+          name={campoFecha}
+          label={esPorMontoCheque ? "Fecha de pago" : "Plazo (Fecha)"}
+          disabled={mostrarResultados}
+        />
       </div>
 
       {/* --- MONTO --- */}
