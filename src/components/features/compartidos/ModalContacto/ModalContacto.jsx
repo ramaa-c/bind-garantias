@@ -1,157 +1,190 @@
-import React, { useState } from "react";
-import { FiSmartphone, FiX, FiCheckCircle, FiMessageSquare } from "react-icons/fi";
-import { useFormContext, useFormState } from "react-hook-form";
+import React, { useState, useEffect } from "react";
+import {
+  FiSmartphone,
+  FiX,
+  FiCheckCircle,
+  FiMessageSquare,
+} from "react-icons/fi";
+import { useFormContext } from "react-hook-form";
 import { Button, InputFlotante } from "../../../ui";
 import styles from "./ModalContacto.module.css";
 
 export default function ModalContacto({ isOpen, onClose, onGuardar }) {
-    const { register, watch, trigger, control, setValue } = useFormContext();
-    const { errors, dirtyFields } = useFormState({ control });
+  const { getValues, setValue } = useFormContext();
 
-    const [fase, setFase] = useState("ingresar");
-    const [intentoSolicitarSms, setIntentoSolicitarSms] = useState(false);
-    const [procesando, setProcesando] = useState(false);
-    const [codigoSms, setCodigoSms] = useState("");
+  const [fase, setFase] = useState("ingresar");
+  const [intentoSolicitarSms, setIntentoSolicitarSms] = useState(false);
+  const [procesando, setProcesando] = useState(false);
+  const [codigoSms, setCodigoSms] = useState("");
 
-    const celVal = watch("celular") || "";
+  const [celLocal, setCelLocal] = useState("");
 
-    const errorCel = errors.celular?.message || (intentoSolicitarSms && celVal.replace(/\D/g, "").length < 10 ? "Debe tener 10 números" : null);
-    const isCelValido = !errorCel && celVal.replace(/\D/g, "").length === 10 && (dirtyFields.celular || intentoSolicitarSms);
+  useEffect(() => {
+    if (isOpen) {
+      setCelLocal(getValues("celular") || "");
+      setFase("ingresar");
+      setCodigoSms("");
+      setProcesando(false);
+      setIntentoSolicitarSms(false);
+    }
+  }, [isOpen]);
 
-    const handleSolicitarSms = async () => {
-        setIntentoSolicitarSms(true);
-        const okZod = await trigger(["celular"]);
+  if (!isOpen) return null;
 
-        if (okZod && celVal.replace(/\D/g, "").length === 10) {
-            setFase("verificar");
-        }
-    };
+  const errorCel =
+    intentoSolicitarSms && celLocal.length < 10
+      ? "Debe tener 10 números"
+      : null;
+  const isCelValido = !errorCel && celLocal.length === 10;
 
-    const handleVerificarSms = () => {
-        if (codigoSms.length === 6 && !procesando) {
-            setProcesando(true);
-            setFase("exito");
+  const handleSolicitarSms = () => {
+    setIntentoSolicitarSms(true);
+    if (isCelValido) {
+      setValue("celular", celLocal, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+      setFase("verificar");
+    }
+  };
 
-            setTimeout(() => {
-                onGuardar();
+  const handleVerificarSms = () => {
+    if (codigoSms.length === 6 && !procesando) {
+      setProcesando(true);
+      setFase("exito");
 
-                setTimeout(() => {
-                    setFase("ingresar");
-                    setCodigoSms("");
-                    setProcesando(false);
-                }, 300);
-            }, 1200);
-        }
-    };
+      setTimeout(() => {
+        onGuardar();
+        setTimeout(() => {
+          setFase("ingresar");
+          setCodigoSms("");
+          setProcesando(false);
+        }, 300);
+      }, 1200);
+    }
+  };
 
-    const handleClose = () => {
-        if (procesando) return;
-        setFase("ingresar");
-        setCodigoSms("");
-        onClose();
-    };
+  const handleClose = () => {
+    if (procesando) return;
+    setFase("ingresar");
+    setCodigoSms("");
+    onClose();
+  };
 
-    // TRUCO PARA EVITAR CIERRE AL ARRASTRAR
-    const handleOverlayMouseDown = (e) => {
-        if (e.target === e.currentTarget) {
-            handleClose();
-        }
-    };
+  const handleOverlayMouseDown = (e) => {
+    if (e.target === e.currentTarget) handleClose();
+  };
 
-    if (!isOpen) return null;
+  return (
+    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
+      <div className={styles.modalContainer}>
+        {!procesando && (
+          <button
+            className={styles.btnClose}
+            onClick={handleClose}
+            aria-label="Cerrar"
+          >
+            <FiX size={20} />
+          </button>
+        )}
 
-    return (
-        <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-            <div className={styles.modalContainer}>
+        <div className={styles.body}>
+          {fase === "ingresar" && (
+            <>
+              <div className={styles.iconWrapper}>
+                <FiSmartphone size={30} />
+              </div>
+              <h2 className={styles.title}>Verificá tu celular</h2>
+              <p className={styles.description}>
+                Ingresá tu número. Te enviaremos un SMS con un código de
+                validación.
+              </p>
+              <div className={styles.formSection}>
+                <InputFlotante
+                  label="Celular (Sin 0 ni 15)"
+                  maxLength={10}
+                  error={errorCel}
+                  esValido={isCelValido}
+                  value={celLocal}
+                  onChange={(e) =>
+                    setCelLocal(e.target.value.replace(/\D/g, ""))
+                  }
+                />
+              </div>
+              <div className={styles.btnSave}>
+                {/* 4. Cambio de px a rem */}
+                <Button
+                  variant="primary"
+                  onClick={handleSolicitarSms}
+                  style={{ width: "100%", minHeight: "3rem" }}
+                >
+                  ENVIAR CÓDIGO SMS
+                </Button>
+              </div>
+            </>
+          )}
 
-                {!procesando && (
-                    <button className={styles.btnClose} onClick={handleClose} aria-label="Cerrar">
-                        <FiX size={20} />
-                    </button>
-                )}
+          {fase === "verificar" && (
+            <>
+              <div className={styles.iconWrapperSuccess}>
+                <FiMessageSquare size={30} />
+              </div>
+              <h2 className={styles.title}>Código enviado</h2>
+              <p className={styles.description}>
+                Ingresalo a continuación. <br />
+                <span
+                  className={styles.linkEdit}
+                  onClick={() => setFase("ingresar")}
+                >
+                  ¿Te equivocaste de número?
+                </span>
+              </p>
+              <div className={styles.formSection}>
+                <InputFlotante
+                  label="Código de verificación"
+                  value={codigoSms}
+                  maxLength={6}
+                  onChange={(e) =>
+                    setCodigoSms(e.target.value.replace(/\D/g, ""))
+                  }
+                  esValido={codigoSms.length === 6}
+                />
+              </div>
+              <div className={styles.btnSave}>
+                <Button
+                  variant="primary"
+                  onClick={handleVerificarSms}
+                  disabled={codigoSms.length < 6 || procesando}
+                  style={{ width: "100%", minHeight: "3rem" }}
+                >
+                  VERIFICAR IDENTIDAD
+                </Button>
+              </div>
+              <p className={styles.resendText}>
+                ¿No recibiste el código?{" "}
+                <span className={styles.resendLink}>Reenviar SMS</span>
+              </p>
+            </>
+          )}
 
-                <div className={styles.body}>
-
-                    {fase === "ingresar" && (
-                        <>
-                            <div className={styles.iconWrapper}>
-                                <FiSmartphone size={30} />
-                            </div>
-                            <h2 className={styles.title}>Verificá tu celular</h2>
-                            <p className={styles.description}>
-                                Ingresá tu número. Te enviaremos un SMS con un código de validación.
-                            </p>
-                            <div className={styles.formSection}>
-                                <InputFlotante
-                                    label="Celular (Sin 0 ni 15)"
-                                    maxLength={10}
-                                    error={errorCel}
-                                    esValido={isCelValido}
-                                    {...register("celular", {
-                                        onChange: (e) => {
-                                            const nums = e.target.value.replace(/\D/g, "");
-                                            setValue("celular", nums, { shouldValidate: true });
-                                        }
-                                    })}
-                                />
-                            </div>
-                            <div className={styles.btnSave}>
-                                <Button variant="primary" onClick={handleSolicitarSms} style={{ width: '100%', height: '48px' }}>
-                                    ENVIAR CÓDIGO SMS
-                                </Button>
-                            </div>
-                        </>
-                    )}
-
-                    {fase === "verificar" && (
-                        <>
-                            <div className={styles.iconWrapperSuccess}>
-                                <FiMessageSquare size={30} />
-                            </div>
-                            <h2 className={styles.title}>Código enviado</h2>
-                            <p className={styles.description}>
-                                Ingresalo a continuación. <br />
-                                <span className={styles.linkEdit} onClick={() => setFase("ingresar")}>¿Te equivocaste de número?</span>
-                            </p>
-                            <div className={styles.formSection}>
-                                <InputFlotante
-                                    label="Código de verificación"
-                                    value={codigoSms}
-                                    maxLength={6}
-                                    onChange={(e) => setCodigoSms(e.target.value.replace(/\D/g, ""))}
-                                    esValido={codigoSms.length === 6}
-                                />
-                            </div>
-                            <div className={styles.btnSave}>
-                                <Button
-                                    variant="primary"
-                                    onClick={handleVerificarSms}
-                                    disabled={codigoSms.length < 6 || procesando}
-                                    style={{ width: '100%', height: '48px' }}
-                                >
-                                    VERIFICAR IDENTIDAD
-                                </Button>
-                            </div>
-                            <p className={styles.resendText}>
-                                ¿No recibiste el código? <span className={styles.resendLink}>Reenviar SMS</span>
-                            </p>
-                        </>
-                    )}
-
-                    {fase === "exito" && (
-                        <div style={{ animation: "scaleIn 0.5s ease", textAlign: 'center' }}>
-                            <div className={styles.iconWrapperSuccess} style={{ margin: "0 auto 20px auto" }}>
-                                <FiCheckCircle size={40} />
-                            </div>
-                            <h2 className={styles.title}>¡Celular Verificado!</h2>
-                            <p className={styles.description}>
-                                Guardando tus datos para continuar...
-                            </p>
-                        </div>
-                    )}
-
-                </div>
+          {fase === "exito" && (
+            <div
+              style={{ animation: "scaleIn 0.5s ease", textAlign: "center" }}
+            >
+              <div
+                className={styles.iconWrapperSuccess}
+                style={{ margin: "0 auto 20px auto" }}
+              >
+                <FiCheckCircle size={40} />
+              </div>
+              <h2 className={styles.title}>¡Celular Verificado!</h2>
+              <p className={styles.description}>
+                Guardando tus datos para continuar...
+              </p>
             </div>
+          )}
         </div>
-    );
+      </div>
+    </div>
+  );
 }

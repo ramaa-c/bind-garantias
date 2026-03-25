@@ -1,25 +1,36 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import logoBind from "../../../assets/images/bind-g-logo.svg";
 import { FaRegUserCircle } from "react-icons/fa";
+import { FiMenu } from "react-icons/fi";
+import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
 
-const Navbar = ({ texto, textoEnlace, rutaDestino, usuario }) => {
+const Navbar = ({
+  texto,
+  textoEnlace,
+  rutaDestino,
+  usuario,
+  onToggleSidebar,
+}) => {
   const navigate = useNavigate();
 
   return (
     <header className={styles.header}>
-      
-      {/* Logo */}
-      <div
-        className={styles.logoContainer}
-        onClick={() => navigate("/")}
-      >
-        <img
-          src={logoBind}
-          alt="Logo BIND"
-          className={styles.logo}
-        />
+      <div className={styles.leftSection}>
+        {onToggleSidebar && (
+          <button
+            className={styles.menuButton}
+            onClick={onToggleSidebar}
+            aria-label="Alternar menú"
+          >
+            <FiMenu size={24} color="var(--white)" />
+          </button>
+        )}
+
+        {/* Logo */}
+        <div className={styles.logoContainer} onClick={() => navigate("/")}>
+          <img src={logoBind} alt="Logo BIND" className={styles.logo} />
+        </div>
       </div>
 
       {/* Lado derecho */}
@@ -28,17 +39,14 @@ const Navbar = ({ texto, textoEnlace, rutaDestino, usuario }) => {
           <span className={styles.userIcon}>
             <FaRegUserCircle size={20} color={"var(--yellow)"} />
           </span>
-          {usuario}
+          <span className={styles.userName}>{usuario}</span>
         </div>
       ) : (
         texto &&
         textoEnlace && (
           <div className={styles.loginContainer}>
             {texto}
-            <span
-              className={styles.link}
-              onClick={() => navigate(rutaDestino)}
-            >
+            <span className={styles.link} onClick={() => navigate(rutaDestino)}>
               {textoEnlace}
             </span>
           </div>

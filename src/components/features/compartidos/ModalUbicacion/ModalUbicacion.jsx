@@ -1,93 +1,123 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiMapPin, FiX } from "react-icons/fi";
-import { useFormContext, useFormState } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { Button, InputFlotante } from "../../../ui";
 import styles from "./ModalUbicacion.module.css";
 
 export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
-    const { register, watch, trigger, control } = useFormContext();
-    const { errors, dirtyFields } = useFormState({ control });
+  console.log("Render ModalUbicacion");
+  const { getValues, setValue, trigger } = useFormContext();
 
-    const [intentoGuardar, setIntentoGuardar] = useState(false);
+  const [dirLocal, setDirLocal] = useState("");
+  const [provLocal, setProvLocal] = useState("");
+  const [locLocal, setLocLocal] = useState("");
+  const [intentoGuardar, setIntentoGuardar] = useState(false);
 
-    const dirVal = watch("direccion") || "";
-    const provVal = watch("provincia") || "";
-    const locVal = watch("localidad") || "";
+  useEffect(() => {
+    if (isOpen) {
+      setDirLocal(getValues("direccion") || "");
+      setProvLocal(getValues("provincia") || "");
+      setLocLocal(getValues("localidad") || "");
+      setIntentoGuardar(false);
+    }
+  }, [isOpen, getValues]);
 
-    const errorDir = errors.direccion?.message || (intentoGuardar && dirVal.trim().length < 5 ? "Mínimo 5 caracteres" : null);
-    const errorProv = errors.provincia?.message || (intentoGuardar && provVal.trim().length < 3 ? "Requerido" : null);
-    const errorLoc = errors.localidad?.message || (intentoGuardar && locVal.trim().length < 3 ? "Requerido" : null);
+  if (!isOpen) return null;
 
-    const isDirValido = !errorDir && dirVal.trim().length >= 5 && (dirtyFields.direccion || intentoGuardar);
-    const isProvValido = !errorProv && provVal.trim().length >= 3 && (dirtyFields.provincia || intentoGuardar);
-    const isLocValido = !errorLoc && locVal.trim().length >= 3 && (dirtyFields.localidad || intentoGuardar);
+  const errorDir =
+    intentoGuardar && dirLocal.trim().length < 5 ? "Mínimo 5 caracteres" : null;
+  const errorProv =
+    intentoGuardar && provLocal.trim().length < 3 ? "Requerido" : null;
+  const errorLoc =
+    intentoGuardar && locLocal.trim().length < 3 ? "Requerido" : null;
 
-    const handleGuardar = async () => {
-        setIntentoGuardar(true);
-        const okZod = await trigger(["direccion", "provincia", "localidad"]);
+  const isDirValido = !errorDir && dirLocal.trim().length >= 5;
+  const isProvValido = !errorProv && provLocal.trim().length >= 3;
+  const isLocValido = !errorLoc && locLocal.trim().length >= 3;
 
-        if (okZod && dirVal.trim().length >= 5 && provVal.trim().length >= 3 && locVal.trim().length >= 3) {
-            setIntentoGuardar(false);
-            onGuardar();
-        }
-    };
+  const handleGuardar = async () => {
+    setIntentoGuardar(true);
 
+    if (isDirValido && isProvValido && isLocValido) {
+      setValue("direccion", dirLocal, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+      setValue("provincia", provLocal, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
+      setValue("localidad", locLocal, {
+        shouldValidate: true,
+        shouldDirty: true,
+      });
 
-    const handleOverlayMouseDown = (e) => {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
-    };
+      const okZod = await trigger(["direccion", "provincia", "localidad"]);
 
-    if (!isOpen) return null;
+      if (okZod) {
+        onGuardar();
+      }
+    }
+  };
 
-    return (
-        <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-            <div className={styles.modalContainer}>
-                <button className={styles.btnClose} onClick={onClose}>
-                    <FiX size={20} />
-                </button>
+  const handleOverlayMouseDown = (e) => {
+    if (e.target === e.currentTarget) onClose();
+  };
 
-                <div className={styles.body}>
-                    <div className={styles.iconWrapper}>
-                        <FiMapPin size={30} />
-                    </div>
+  return (
+    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
+      <div className={styles.modalContainer}>
+        <button className={styles.btnClose} onClick={onClose}>
+          <FiX size={20} />
+        </button>
 
-                    <h2 className={styles.title}>Datos de Ubicación</h2>
-                    <p className={styles.description}>
-                        Ingresá el domicilio fiscal de la empresa.
-                    </p>
+        <div className={styles.body}>
+          <div className={styles.iconWrapper}>
+            <FiMapPin size={30} />
+          </div>
 
-                    <div className={styles.formSection}>
-                        <InputFlotante
-                            label="Dirección"
-                            error={errorDir}
-                            esValido={isDirValido}
-                            {...register("direccion")}
-                        />
-                        <div className={styles.inputRow}>
-                            <InputFlotante
-                                label="Provincia"
-                                error={errorProv}
-                                esValido={isProvValido}
-                                {...register("provincia")}
-                            />
-                            <InputFlotante
-                                label="Localidad"
-                                error={errorLoc}
-                                esValido={isLocValido}
-                                {...register("localidad")}
-                            />
-                        </div>
-                    </div>
+          <h2 className={styles.title}>Datos de Ubicación</h2>
+          <p className={styles.description}>
+            Ingresá el domicilio fiscal de la empresa.
+          </p>
 
-                    <div className={styles.btnSave}>
-                        <Button variant="primary" onClick={handleGuardar} style={{ width: '100%', height: '48px' }}>
-                            GUARDAR DATOS
-                        </Button>
-                    </div>
-                </div>
+          <div className={styles.formSection}>
+            <InputFlotante
+              label="Dirección"
+              error={errorDir}
+              esValido={isDirValido}
+              value={dirLocal}
+              onChange={(e) => setDirLocal(e.target.value)}
+            />
+            <div className={styles.inputRow}>
+              <InputFlotante
+                label="Provincia"
+                error={errorProv}
+                esValido={isProvValido}
+                value={provLocal}
+                onChange={(e) => setProvLocal(e.target.value)}
+              />
+              <InputFlotante
+                label="Localidad"
+                error={errorLoc}
+                esValido={isLocValido}
+                value={locLocal}
+                onChange={(e) => setLocLocal(e.target.value)}
+              />
             </div>
+          </div>
+
+          <div className={styles.btnSave}>
+            <Button
+              variant="primary"
+              onClick={handleGuardar}
+              style={{ width: "100%", minHeight: "3rem" }}
+            >
+              GUARDAR DATOS
+            </Button>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 }

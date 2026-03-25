@@ -6,27 +6,22 @@
   color: var(--white);
 }
 
-@media (min-width: 56.25rem) {
-  .layoutSplit {
-    grid-template-columns: 45% 55%;
-  }
-}
-
 .sideForm {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 2rem;
+  padding: 1.5rem;
   background-color: var(--carbon-black);
   z-index: 2;
   box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
   position: relative;
+  min-height: 100vh;
 }
 
 .globalLogo {
   position: absolute;
-  top: 2.5rem;
-  left: 3.125rem;
+  top: 1.5rem;
+  left: 1.5rem;
   z-index: 10;
 }
 
@@ -35,11 +30,12 @@
   max-width: 23.75rem;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
+  margin-top: 3rem;
 }
 
 .headerText h2 {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   color: var(--white);
   margin-bottom: 0.5rem;
   font-weight: 600;
@@ -49,6 +45,19 @@
   color: #aaa;
   font-size: 0.95rem;
   margin: 0;
+}
+
+.titleJumbo {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: var(--white);
+  font-weight: 600;
+}
+
+.textLead {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #aaa;
 }
 
 .formContent {
@@ -63,7 +72,7 @@
   gap: 1rem;
 }
 
-/* --- COLUMNA MARCA (DERECHA) --- */
+/* --- COLUMNA DERECHA --- */
 .sideBrand {
   display: none;
   background-color: var(--graphite);
@@ -73,36 +82,28 @@
   position: relative;
 }
 
-@media (min-width: 56.25rem) {
-  .sideBrand {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 4rem;
-  }
-}
-
 .brandContent {
   max-width: 31.25rem;
   text-align: left;
 }
 
 .brandTitle {
-  font-size: 3rem;
+  font-size: 2rem;
   color: var(--white);
   line-height: 1.2;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   font-weight: bold;
   margin-top: 0;
 }
 
 .brandSubtitle {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: #aaa;
   line-height: 1.5;
   margin: 0;
 }
 
+/* Utilidades */
 .supportContainerModern {
   margin-top: 1rem;
   padding-top: 1.5rem;
@@ -129,8 +130,6 @@
   text-decoration: underline;
 }
 
-/* --- CREAR CLAVE --- */
-
 .boldWhiteText {
   color: var(--white);
   font-weight: 600;
@@ -149,7 +148,6 @@
 }
 
 .sideBrandCentered {
-  display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -165,35 +163,20 @@
 }
 
 .brandTitleLarge {
-  font-size: 2.5rem;
+  font-size: 2rem;
   color: var(--white);
   line-height: 1.2;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   font-weight: bold;
 }
-
-/* --- CLASES ESPECÍFICAS PARA CONFIRMAR CORREO --- */
 
 .textLeft {
   text-align: left;
 }
 
-.titleJumbo {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: var(--white);
-  font-weight: 600;
-}
-
-.textLead {
-  font-size: 1.1rem;
-  line-height: 1.6;
-  color: #aaa;
-}
-
 .supportContainerClean {
   text-align: left;
-  margin-top: 3rem;
+  margin-top: 2rem;
   border-top: none;
   padding-top: 0;
 }
@@ -205,9 +188,72 @@
 .iconCircleWrapper {
   background-color: rgba(244, 245, 0, 0.05);
   border-radius: 50%;
-  padding: 4rem;
+  padding: 3rem;
   box-shadow: 0 0 50px rgba(244, 245, 0, 0.1);
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+
+/* RESPONSIVE */
+@media (min-width: 56.25rem) {
+  .layoutSplit {
+    grid-template-columns: 45% 55%;
+  }
+
+  .sideForm {
+    padding: 2rem;
+  }
+
+  .globalLogo {
+    top: 2.5rem;
+    left: 3.125rem;
+  }
+
+  .cardModern {
+    gap: 2rem;
+    margin-top: 0;
+  }
+
+  .headerText h2 {
+    font-size: 1.8rem;
+  }
+
+  .titleJumbo {
+    font-size: 2.5rem;
+  }
+
+  .textLead {
+    font-size: 1.1rem;
+  }
+
+  .sideBrand {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+  }
+
+  .brandTitle {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .brandSubtitle {
+    font-size: 1.2rem;
+  }
+
+  .brandTitleLarge {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .supportContainerClean {
+    margin-top: 3rem;
+  }
+
+  .iconCircleWrapper {
+    padding: 4rem;
+  }
 }

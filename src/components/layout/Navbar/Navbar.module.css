@@ -2,10 +2,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 4rem;
+  padding: 0 1.5rem;
   background-color: var(--carbon-black);
   border-bottom: 1px solid var(--graphite);
-  min-height: 80px;
+  min-height: 5rem;
+}
+
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.menuButton {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  cursor: pointer;
+  margin-left: -0.5rem;
 }
 
 .logoContainer {
@@ -16,7 +33,7 @@
 }
 
 .logo {
-  height: 60px;
+  height: 2.5rem;
   width: auto;
   object-fit: contain;
 }
@@ -26,11 +43,17 @@
   color: var(--white);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0.625rem;
+}
+
+.userName {
+  display: none; 
 }
 
 .userIcon {
   color: #aaa;
+  display: flex;
+  align-items: center;
 }
 
 .loginContainer {
@@ -43,4 +66,24 @@
   font-weight: bold;
   margin-left: 0.5rem;
   cursor: pointer;
+}
+
+/* ESCRITORIO */
+
+@media (min-width: 56.25rem) {
+  .header {
+    padding: 0 4rem;
+  }
+
+  .menuButton {
+    display: none; 
+  }
+
+  .logo {
+    height: 3.75rem;
+  }
+
+  .userName {
+    display: inline;
+  }
 }
