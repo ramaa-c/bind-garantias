@@ -1,4 +1,6 @@
-/* --- ESTÉTICA BASE --- */
+/* ========================================================== */
+/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
+/* ========================================================== */
 .overlay {
   position: fixed;
   inset: 0;
@@ -13,39 +15,41 @@
 
 .modalContainer {
   background-color: #1a1a1a;
-  width: 90%;
-  max-width: 700px;
-  max-height: 95vh;
+  width: 92%;
+  max-width: 43.75rem;
+  /* 700px */
+  max-height: 92vh;
   overflow-y: auto;
-  border-radius: 20px;
+  border-radius: 1.25rem;
+  /* 20px */
   border: 1px solid #333;
-  padding: 25px 40px;
+  padding: 1.5625rem 1.25rem;
+  /* 25px 20px */
   position: relative;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1.25rem 2.5rem rgba(0, 0, 0, 0.5);
 }
 
 .modalContainer::-webkit-scrollbar {
-  width: 6px;
+  width: 0.375rem;
 }
 
 .modalContainer::-webkit-scrollbar-thumb {
   background-color: #444;
-  border-radius: 10px;
+  border-radius: 0.625rem;
 }
 
 .btnClose {
   position: absolute;
-  top: 15px;
-  right: 20px;
+  top: 0.9375rem;
+  /* 15px */
+  right: 1.25rem;
+  /* 20px */
   background: none;
   border: none;
   color: #666;
   cursor: pointer;
-  transition: color 0.2s;
-}
-
-.btnClose:hover {
-  color: var(--white);
+  z-index: 10;
+  padding: 0.3125rem;
 }
 
 .body {
@@ -56,76 +60,114 @@
 }
 
 .iconWrapper {
-  width: 50px;
-  height: 50px;
+  width: 3.125rem;
+  /* 50px */
+  height: 3.125rem;
   background-color: rgba(244, 245, 0, 0.1);
   color: var(--yellow);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 0.625rem;
+  flex-shrink: 0;
 }
 
 .title {
   color: var(--white);
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   margin: 0;
+  line-height: 1.2;
 }
 
 .description {
   color: #888;
-  margin-top: 4px;
-  margin-bottom: 15px;
-  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
 }
 
 .formSection {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 1rem;
+  /* 16px */
   text-align: left;
 }
 
-.inputRow {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
+/* Grillas por defecto en una columna para móvil */
+.inputRow,
+.dropzoneGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-/* --- ESTILOS ESPECÍFICOS DE SOCIOS --- */
 .sectionTitle {
   color: var(--white);
-  font-size: 1rem;
-  margin: 5px 0 15px 0;
-  padding-bottom: 5px;
+  font-size: 0.9375rem;
+  margin: 0.3125rem 0 1rem 0;
+  padding-bottom: 0.3125rem;
   border-bottom: 1px solid #333;
-}
-
-.dropzoneGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-.dropzoneWrapper input {
-  display: none;
 }
 
 /* --- BOTONES DE ACCIÓN --- */
 .actions {
   display: flex;
-  gap: 15px;
+  flex-direction: column;
+  /* Apilados en celu */
+  gap: 0.9375rem;
+  /* 15px */
   width: 100%;
-  justify-content: flex-end;
-  margin-top: 20px;
+  margin-top: 1.25rem;
 }
 
+.actions :global(button) {
+  width: 100%;
+  /* Botones de lado a lado en celu */
+}
+
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+  .modalContainer {
+    padding: 1.5625rem 2.5rem;
+    /* 25px 40px */
+  }
+
+  .title {
+    font-size: 1.35rem;
+  }
+
+  /* Volvemos a las dos columnas en PC */
+  .inputRow,
+  .dropzoneGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.9375rem;
+  }
+
+  .actions {
+    flex-direction: row;
+    /* Botones en línea */
+    justify-content: flex-end;
+  }
+
+  .actions :global(button) {
+    width: auto;
+    min-width: 9.375rem;
+    /* 150px */
+  }
+}
+
+/* --- UTILIDADES --- */
 .ghostBtn {
   border: none;
   background: transparent;
   color: #aaa;
+  transition: color 0.2s, background 0.2s;
 }
 
 .ghostBtn:hover {
@@ -133,7 +175,10 @@
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* --- ANIMACIONES --- */
+.dropzoneWrapper input {
+  display: none;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -141,17 +186,5 @@
 
   to {
     opacity: 1;
-  }
-}
-
-/* --- RESPONSIVE --- */
-@media (max-width: 768px) {
-  .modalContainer {
-    padding: 25px 20px;
-  }
-
-  .inputRow,
-  .dropzoneGrid {
-    grid-template-columns: 1fr;
   }
 }

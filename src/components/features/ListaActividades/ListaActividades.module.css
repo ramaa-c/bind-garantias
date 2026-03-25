@@ -1,17 +1,28 @@
+/* ========================================================== */
+/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
+/* ========================================================== */
 .container {
   background-color: var(--graphite);
   border: 1px solid #333;
-  border-radius: 8px;
+  border-radius: 0.5rem;
+  /* 8px */
   overflow: hidden;
+  width: 100%;
 }
 
 .item {
   display: flex;
+  flex-direction: row;
+  /* Mantenemos row pero con ajustes de wrapping */
   align-items: center;
-  padding: 1rem 1.5rem;
+  padding: 1rem;
+  /* Un poco menos de padding lateral en celu */
   border-bottom: 1px solid #333;
-  gap: 15px;
+  gap: 0.9375rem;
+  /* 15px */
   transition: background-color 0.2s;
+  flex-wrap: wrap;
+  /* Permite que el 'status' baje si no hay espacio */
 }
 
 .item:hover {
@@ -25,23 +36,33 @@
 .iconWrapper {
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 2.5rem;
+  /* 40px */
+  height: 2.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 1.2rem;
+  flex-shrink: 0;
+  /* Que el icono nunca se aplaste */
 }
 
 .details {
   flex: 1;
+  min-width: 0;
+  /* Vital para que el texto trunque y no rompa el flex */
 }
 
 .title {
-  margin: 0 0 3px 0;
+  margin: 0 0 0.1875rem 0;
+  /* 3px */
   font-weight: 500;
   font-size: 0.95rem;
   color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Corta con "..." si el nombre de la actividad es largo */
 }
 
 .title span {
@@ -58,11 +79,34 @@
 .status {
   font-size: 0.75rem;
   font-weight: bold;
-  padding: 5px 10px;
-  border-radius: 20px;
+  padding: 0.3125rem 0.625rem;
+  /* 5px 10px */
+  border-radius: 1.25rem;
+  /* 20px */
   text-transform: uppercase;
+  white-space: nowrap;
+  /* En móviles muy chicos, el status puede quedar alineado a la izquierda abajo */
+  margin-left: auto;
 }
 
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+  .item {
+    padding: 1rem 1.5rem;
+    flex-wrap: nowrap;
+    /* En PC siempre todo en una línea */
+  }
+
+  .title {
+    white-space: normal;
+    /* En PC hay espacio, mostramos el título completo */
+    overflow: visible;
+  }
+}
+
+/* --- ESTADOS --- */
 .statusEsperando {
   background-color: rgba(244, 245, 0, 0.1);
   color: var(--yellow);

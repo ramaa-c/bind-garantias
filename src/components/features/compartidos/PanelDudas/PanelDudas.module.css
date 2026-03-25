@@ -1,11 +1,19 @@
+/* ========================================================== */
+/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
+/* ========================================================== */
 .panelContainer {
   background-color: var(--graphite);
   border: 1px solid #333;
-  border-radius: 12px;
-  padding: 24px;
-  position: sticky;
-  top: 40px; 
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  border-radius: 0.75rem;
+  /* 12px */
+  padding: 1.5rem;
+  /* 24px */
+  /* En móvil NO es sticky para no tapar el contenido */
+  position: relative;
+  top: 0;
+  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);
+  margin-top: 2rem;
+  /* Espacio para que no se pegue al formulario anterior */
 }
 
 .panelTitle {
@@ -20,6 +28,8 @@
 .faqList {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+  /* Agregamos un poco de aire entre preguntas */
 }
 
 .respuesta {
@@ -27,5 +37,19 @@
   font-size: 0.85rem;
   line-height: 1.6;
   margin: 0;
-  padding-left: 28px;
+  padding-left: 1.75rem;
+  /* 28px */
+}
+
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+  .panelContainer {
+    /* En PC sí lo dejamos fijo mientras scrollea */
+    position: sticky;
+    top: 2.5rem;
+    /* 40px */
+    margin-top: 0;
+  }
 }
