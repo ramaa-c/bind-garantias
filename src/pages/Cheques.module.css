@@ -10,7 +10,7 @@
 .formMainContainer {
   display: flex;
   justify-content: center;
-  padding: 1.5rem 2.5rem;
+  padding: 1.5rem 1rem;
 }
 
 .contentWrapper {
@@ -26,15 +26,9 @@
 
 .contenedorPrincipal {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 50px;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
   align-items: start;
-}
-
-@media (max-width: 900px) {
-  .contenedorPrincipal {
-    grid-template-columns: 1fr;
-  }
 }
 
 .columnaFormulario {
@@ -45,18 +39,18 @@
 
 .seccionFormulario {
   background-color: var(--graphite);
-  padding: 40px;
-  border-radius: 12px;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
   border: 1px solid #333;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .tituloVista {
   color: var(--white);
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 500;
-  margin: 0 0 24px 0;
-  letter-spacing: -0.5px;
+  margin: 0 0 1.5rem 0;
+  letter-spacing: -0.03125rem;
 }
 
 .formContent {
@@ -65,32 +59,63 @@
 
 .bienvenidaHeader {
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 1.5rem 0;
   animation: fadeIn 0.5s ease;
-}
-
-.bienvenidaHeader {
-  text-align: center;
-  padding: 2.5rem 1rem 1.5rem 1rem;
 }
 
 .tituloBienvenida {
   color: #ffffff;
-  font-size: 2.4rem;   
-  font-weight: 800;     
+  font-size: 1.8rem;
+  font-weight: 800;
   margin-bottom: 0.8rem;
-  letter-spacing: -1px; 
+  letter-spacing: -0.0625rem;
 }
 
 .subtituloBienvenida {
   color: #aaa;
-  font-size: 1.1rem;
-  font-weight: 400;     
-  max-width: 450px;
+  font-size: 1rem;
+  font-weight: 400;
+  max-width: 28.125rem;
   margin: 0 auto;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-0.625rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ESCRITORIO */
+
+@media (min-width: 56.25rem) {
+  .formMainContainer {
+    padding: 1.5rem 2.5rem;
+  }
+
+  .contenedorPrincipal {
+    grid-template-columns: 1fr 20rem;
+    gap: 3.125rem;
+  }
+
+  .seccionFormulario {
+    padding: 2.5rem;
+  }
+
+  .bienvenidaHeader {
+    padding: 2.5rem 1rem 1.5rem 1rem;
+  }
+
+  .tituloBienvenida {
+    font-size: 2.4rem;
+  }
+
+  .subtituloBienvenida {
+    font-size: 1.1rem;
+  }
 }

@@ -10,10 +10,57 @@
   display: flex;
   flex: 1;
   overflow: hidden;
+  position: relative;
 }
 
 .content {
   flex: 1;
   overflow-y: auto;
   background-color: var(--carbon-black);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.content::-webkit-scrollbar {
+  display: none;
+}
+
+.overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  z-index: 40;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+@media (max-width: 56.24rem) {
+
+  .content {
+    scrollbar-width: auto;
+    -ms-overflow-style: auto;
+  }
+
+  .content::-webkit-scrollbar {
+    display: block;
+    width: 8px;
+  }
+
+  .content::-webkit-scrollbar-thumb {
+    background-color: #555;
+    border-radius: 4px;
+  }
+
+  .content::-webkit-scrollbar-track {
+    background-color: var(--carbon-black);
+  }
+
+  .overlayActive {
+    display: block;
+    opacity: 1;
+  }
 }
