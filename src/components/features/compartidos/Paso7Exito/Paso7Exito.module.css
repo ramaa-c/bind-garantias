@@ -1,6 +1,3 @@
-/* ========================================================== */
-/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
-/* ========================================================== */
 .container {
   padding: 0 1rem;
   animation: fadeIn 0.4s ease;
@@ -12,9 +9,7 @@
   background: linear-gradient(145deg, rgba(76, 175, 80, 0.08), rgba(0, 0, 0, 0.2));
   border: 1px solid rgba(76, 175, 80, 0.2);
   border-radius: 0.75rem;
-  /* 12px */
   padding: 2rem 1.25rem;
-  /* Más compacto en móvil */
   text-align: center;
   overflow: hidden;
 }
@@ -25,7 +20,6 @@
   left: 50%;
   transform: translateX(-50%);
   width: 12.5rem;
-  /* 200px */
   height: 12.5rem;
   background: rgba(76, 175, 80, 0.2);
   filter: blur(80px);
@@ -39,13 +33,11 @@
   flex-direction: column;
   align-items: center;
   gap: 0.9375rem;
-  /* 15px */
 }
 
 .heroIcon {
   color: #4caf50;
   font-size: 3rem;
-  /* Un poco más chico en celu */
 }
 
 .heroSubtitle {
@@ -58,7 +50,6 @@
 .heroTitle {
   color: var(--white);
   font-size: 1.5rem;
-  /* Tamaño optimizado para móvil */
   font-weight: bold;
   margin: 0;
   line-height: 1.2;
@@ -69,7 +60,6 @@
   color: var(--white);
   font-weight: bold;
   font-size: 1.125rem;
-  /* 18px */
   margin-top: 2rem;
   margin-bottom: 1rem;
 }
@@ -89,12 +79,10 @@
 .stepCard {
   display: flex;
   flex-direction: column;
-  /* En celu, número arriba y contenido abajo */
   gap: 1rem;
   background-color: rgba(255, 255, 255, 0.02);
   border: 1px solid #333;
   border-radius: 0.5rem;
-  /* 8px */
   padding: 1.25rem;
   align-items: flex-start;
 }
@@ -103,7 +91,6 @@
   background-color: var(--yellow);
   color: #000;
   width: 2rem;
-  /* 32px */
   height: 2rem;
   border-radius: 50%;
   display: flex;
@@ -125,7 +112,6 @@
 .downloadBox {
   display: flex;
   flex-direction: column;
-  /* Apilado en celu */
   gap: 1rem;
   align-items: flex-start;
   background-color: rgba(0, 0, 0, 0.3);
@@ -137,14 +123,12 @@
 
 .downloadBox :global(button) {
   width: 100%;
-  /* Botón de descarga ancho completo en celu */
 }
 
 /* --- ACCIONES INFERIORES --- */
 .actionsLeft {
   display: flex;
   justify-content: center;
-  /* Centrado en celu */
   width: 100%;
   margin-top: 2rem;
 }
@@ -153,9 +137,7 @@
   width: 100%;
 }
 
-/* ========================================================== */
-/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
-/* ========================================================== */
+/* Escritorio */
 @media (min-width: 768px) {
   .container {
     padding: 0;
@@ -175,7 +157,6 @@
 
   .stepCard {
     flex-direction: row;
-    /* Vuelve a horizontal en PC */
     gap: 1.25rem;
     padding: 1.5625rem;
     /* 25px */
@@ -183,7 +164,6 @@
 
   .downloadBox {
     flex-direction: row;
-    /* Info a la izquierda, botón a la derecha */
     justify-content: space-between;
     align-items: center;
   }

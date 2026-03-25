@@ -1,16 +1,10 @@
-/* ========================================================== */
-/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
-/* ========================================================== */
 .container {
   display: flex;
-  /* En móviles muy angostos, si hay acciones a la derecha, 
-     permitimos que bajen para no apretar el nombre */
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #333;
   padding: 1rem 0.5rem;
-  /* 16px 8px -> 1rem 0.5rem */
   transition: background-color 0.2s;
   gap: 0.625rem;
 }
@@ -23,11 +17,8 @@
   display: flex;
   align-items: center;
   gap: 0.9375rem;
-  /* 15px */
   flex: 1;
-  /* Ocupa el espacio disponible */
   min-width: 0;
-  /* Evita que el texto desborde el flex */
 }
 
 .textGroup {
@@ -39,10 +30,8 @@
 .name {
   color: var(--white);
   font-size: 0.9375rem;
-  /* 15px */
   margin: 0;
   font-weight: 500;
-  /* Truncamos el nombre si es ridículamente largo en celu */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -51,23 +40,16 @@
 .cuit {
   color: #888;
   font-size: 0.75rem;
-  /* 12px */
   margin: 0.125rem 0 0 0;
-  /* 2px */
 }
 
-/* ========================================================== */
-/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
-/* ========================================================== */
+/* Escritorio */
 @media (min-width: 768px) {
   .container {
     padding: 1rem 1rem;
-    /* Más aire a los costados en PC */
   }
 
   .name {
-    /* En PC podemos permitir que el nombre se vea completo 
-       o tenga un max-width más generoso */
     white-space: normal;
     overflow: visible;
   }

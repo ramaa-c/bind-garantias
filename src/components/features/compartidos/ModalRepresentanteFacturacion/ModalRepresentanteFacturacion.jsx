@@ -3,6 +3,7 @@ import { useFormContext, useFormState } from "react-hook-form";
 import { FiCheckCircle, FiEdit, FiBriefcase, FiX } from "react-icons/fi";
 import { InputFlotante, Button } from "../../../ui";
 import styles from "./ModalRepresentanteFacturacion.module.css";
+import { useEscape } from "../../../../hooks/useEscape";
 
 export const ModalRepresentanteFacturacion = ({
   isOpen,
@@ -24,7 +25,8 @@ export const ModalRepresentanteFacturacion = ({
   const apoEmailVal = watch("apoEmail") || "";
   const apoCelVal = watch("apoCelular") || "";
 
-  // --- LÓGICA DE VALIDACIÓN  ---
+  useEscape(onClose, isOpen);
+
   const validarCUIT = (cuit) => {
     if (!cuit) return false;
     const limpio = String(cuit).replace(/\D/g, "");
@@ -85,7 +87,6 @@ export const ModalRepresentanteFacturacion = ({
     apoCelVal.replace(/\D/g, "").length === 10 &&
     (dirtyFields.apoCelular || intentoGuardarApo);
 
-  // --- ANTI-CIERRE ACCIDENTAL ---
   const handleOverlayMouseDown = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
@@ -201,9 +202,9 @@ export const ModalRepresentanteFacturacion = ({
                     />
                   </div>
                   <div className={styles.actionRow}>
+                    {/* Usamos el nuevo variant="ghost" */}
                     <Button
-                      variant="outline"
-                      className={styles.ghostBtn}
+                      variant="ghost"
                       onClick={() => {
                         setValue("apoCuit", "");
                         setErrorApoCuit("");
@@ -235,10 +236,10 @@ export const ModalRepresentanteFacturacion = ({
                       </p>
                     </div>
                   </div>
+                  {/* Usamos el nuevo variant="ghost" */}
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className={styles.editBtn}
                     onClick={() => setFaseApoderado("completar")}
                   >
                     <FiEdit /> MODIFICAR

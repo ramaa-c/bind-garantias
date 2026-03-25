@@ -38,7 +38,6 @@ export default function PagareUSD() {
   };
 
   const onSubmitFinal = (data) => {
-    console.log("Operación Finalizada:", data);
     setPasoActual(4);
   };
 

@@ -3,15 +3,17 @@ import { FiMapPin, FiX } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
 import { Button, InputFlotante } from "../../../ui";
 import styles from "./ModalUbicacion.module.css";
+import { useEscape } from "../../../../hooks/useEscape";
 
 export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
-  console.log("Render ModalUbicacion");
   const { getValues, setValue, trigger } = useFormContext();
 
   const [dirLocal, setDirLocal] = useState("");
   const [provLocal, setProvLocal] = useState("");
   const [locLocal, setLocLocal] = useState("");
   const [intentoGuardar, setIntentoGuardar] = useState(false);
+
+  useEscape(onClose, isOpen);
 
   useEffect(() => {
     if (isOpen) {

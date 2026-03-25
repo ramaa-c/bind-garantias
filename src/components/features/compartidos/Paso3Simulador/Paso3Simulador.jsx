@@ -5,15 +5,15 @@ import styles from "./Paso3Simulador.module.css";
 
 const opcionesMoneda = [
   { value: "Pesos", label: "Pesos" },
-  { value: "Dolares", label: "Dólares" }
+  { value: "Dolares", label: "Dólares" },
 ];
 const opcionesProducto = [
   { value: "cheques_propios", label: "Cheques propios" },
-  { value: "cheques_terceros", label: "Cheques de terceros" }
+  { value: "cheques_terceros", label: "Cheques de terceros" },
 ];
 const opcionesCalculo = [
   { value: "tasa_directa", label: "Tasa Directa / Monto a financiar" },
-  { value: "por_monto_cheque", label: "Por monto de cheque" }
+  { value: "por_monto_cheque", label: "Por monto de cheque" },
 ];
 
 export default function Paso3Simulador({
@@ -34,11 +34,11 @@ export default function Paso3Simulador({
   return (
     <div className={styles.container}>
       <div className={styles.topGrid}>
-        
         <Select
           name="moneda"
           control={control}
           label="Moneda"
+          placeholder="Seleccione moneda"
           options={opcionesMoneda}
           disabled={mostrarResultados}
           error={errors.moneda?.message}
@@ -48,6 +48,7 @@ export default function Paso3Simulador({
           name="tipoProducto"
           control={control}
           label="Tipo de producto"
+          placeholder="Seleccione producto"
           options={opcionesProducto}
           disabled={mostrarResultados}
           error={errors.tipoProducto?.message}
@@ -57,6 +58,7 @@ export default function Paso3Simulador({
           name="tipoCalculo"
           control={control}
           label="Tipo de cálculo"
+          placeholder="Seleccione tipo"
           options={opcionesCalculo}
           disabled={mostrarResultados}
           error={errors.tipoCalculo?.message}

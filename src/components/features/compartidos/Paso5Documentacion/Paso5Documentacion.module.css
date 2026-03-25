@@ -1,9 +1,7 @@
-/* --- DISEÑO BASE (CELULAR) --- */
 .container {
   max-width: 50rem;
   margin: 0 auto;
   padding: 0 1rem;
-  /* Margen de seguridad para móviles */
   animation: fadeIn 0.4s ease;
 }
 
@@ -12,7 +10,6 @@
   margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
-  /* Apilado en celu */
   align-items: flex-start;
 }
 
@@ -27,7 +24,6 @@
   color: #aaa;
   font-size: 0.875rem;
   margin-left: 0;
-  /* Sin margen en celu */
 }
 
 /* --- ORGANIZACIÓN POR SECCIONES --- */
@@ -49,10 +45,8 @@
   border: 1px solid #333;
   border-radius: 0.75rem;
   padding: 1.25rem;
-  /* Ajustado para móvil */
   display: flex;
   flex-direction: column;
-  /* Apilado en celu */
   gap: 1.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -78,7 +72,6 @@
 
 .taskBtn {
   width: 100%;
-  /* Botón ancho completo en celu */
   flex-shrink: 0;
 }
 
@@ -99,22 +92,17 @@
   margin-top: 2.5rem;
   display: flex;
   flex-direction: column;
-  /* Botón apilado en celu */
 }
 
 .tallButton {
   height: 2.875rem;
   width: 100%;
-  /* Botón CONTINUAR ancho completo */
 }
 
-/* ----------------------------------------------------------- */
-/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
-/* ----------------------------------------------------------- */
-@media (min-width: 768px) {
+/* Escritorio */
+@media (min-width: 48rem) {
   .headerSteps {
     flex-direction: row;
-    /* Vuelve a línea */
     align-items: baseline;
   }
 
@@ -124,7 +112,6 @@
 
   .taskCard {
     flex-direction: row;
-    /* Info a la izquierda, botón a la derecha */
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
@@ -133,7 +120,7 @@
   .taskCardInfo {
     gap: 1.25rem;
   }
-
+  
   .taskBtn {
     width: auto;
     min-width: 10.5rem;
@@ -155,7 +142,7 @@
   }
 }
 
-/* --- ESTADOS DE TARJETA (Se mantienen igual) --- */
+/* --- ESTADOS DE TARJETA --- */
 .taskCard.cardSuccess {
   border-color: rgba(76, 175, 80, 0.4);
   background-color: rgba(76, 175, 80, 0.02);
@@ -182,11 +169,9 @@
   transform: translateY(-0.125rem);
 }
 
-/* 2px -> 0.125rem */
-
 .statusWarn {
   background: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
+  color: var(--yellow);
   border: 1px solid rgba(255, 193, 7, 0.2);
 }
 

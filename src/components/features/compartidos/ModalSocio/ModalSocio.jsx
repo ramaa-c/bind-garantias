@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
 import { FiUser, FiX } from "react-icons/fi";
 import { InputFlotante, Button, CargaArchivos } from "../../../ui";
+import { useEscape } from "../../../../hooks/useEscape";
 import styles from "./ModalSocio.module.css";
 
 export default function ModalSocio({
@@ -25,6 +26,8 @@ export default function ModalSocio({
   const valoresCampos = watch(`socios.${socioIndex}`) ?? {};
   const isMounted = useRef(false);
 
+  const isModalOpen = socioIndex !== null;
+  useEscape(onCerrar, isModalOpen);
 
   useEffect(() => {
     if (socioIndex === null) return;
@@ -99,18 +102,20 @@ export default function ModalSocio({
     );
   };
 
-  // --- TRUCO ANTI-CIERRE ACCIDENTAL ---
   const handleOverlayMouseDown = (e) => {
     if (e.target === e.currentTarget) {
       onCerrar();
     }
   };
 
-  if (socioIndex === null || !socio) return null;
+  if (!isModalOpen || !socio) return null;
 
   return (
     <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div className={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
+      <div
+        className={styles.modalContainer}
+        onClick={(e) => e.stopPropagation()}
+      >
         <button className={styles.btnClose} onClick={onCerrar}>
           <FiX size={20} />
         </button>
@@ -143,7 +148,9 @@ export default function ModalSocio({
                 error={getCampo("celular").error}
                 {...register(`socios.${socioIndex}.celular`)}
                 onChange={(e) => {
-                  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  e.target.value = e.target.value
+                    .replace(/\D/g, "")
+                    .slice(0, 10);
                   register(`socios.${socioIndex}.celular`).onChange(e);
                 }}
               />
@@ -174,18 +181,21 @@ export default function ModalSocio({
             <h4 className={styles.sectionTitle}>2. Identidad (DNI)</h4>
 
             <div className={styles.dropzoneGrid}>
-              {renderDropzone(`socio-${socioIndex}-frente`, "DNI Frente", "Imagen clara y legible")}
-              {renderDropzone(`socio-${socioIndex}-dorso`, "DNI Dorso", "Imagen clara y legible")}
+              {renderDropzone(
+                `socio-${socioIndex}-frente`,
+                "DNI Frente",
+                "Imagen clara y legible",
+              )}
+              {renderDropzone(
+                `socio-${socioIndex}-dorso`,
+                "DNI Dorso",
+                "Imagen clara y legible",
+              )}
             </div>
           </div>
 
           <div className={styles.actions}>
-            <Button
-              type="button"
-              variant="outline"
-              className={styles.ghostBtn}
-              onClick={onCerrar}
-            >
+            <Button type="button" variant="outline" onClick={onCerrar}>
               CANCELAR
             </Button>
             <Button type="button" variant="primary" onClick={onGuardar}>

@@ -1,6 +1,3 @@
-/* ========================================================== */
-/* --- DISEÑO BASE (MOBILE FIRST - PENSADO PARA CELULAR) --- */
-/* ========================================================== */
 .container {
   animation: fadeIn 0.4s ease;
   padding: 0 1rem;
@@ -59,7 +56,6 @@
 .listItem {
   display: flex;
   flex-direction: column;
-  /* Apilado en móvil: Info arriba, Acciones abajo */
   gap: 1.5rem;
   padding: 1.25rem;
   background-color: rgba(255, 255, 255, 0.03);
@@ -67,7 +63,6 @@
   border-radius: 0.5rem;
 }
 
-/* El "itemLeft" ahora SIEMPRE es horizontal para que la 'S' no se separe del nombre */
 .itemLeft {
   display: flex;
   flex-direction: row !important;
@@ -89,7 +84,6 @@
   gap: 1rem;
 }
 
-/* Botones grandes en móvil para facilidad táctil */
 .itemActions button {
   flex: 1;
   display: flex;
@@ -112,9 +106,7 @@
   margin-top: 2rem;
 }
 
-/* ========================================================== */
-/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
-/* ========================================================== */
+/* Escritorio */
 @media (min-width: 768px) {
   .container {
     padding: 0;
@@ -140,7 +132,6 @@
     width: auto;
   }
 
-  /* Restaurando diseño original en PC */
   .listItem {
     flex-direction: row;
     justify-content: space-between;

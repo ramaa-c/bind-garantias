@@ -49,7 +49,6 @@ const CrearClave = () => {
   const isPasswordValid = !errors.password && dirtyFields.password;
 
   const onSubmit = (data) => {
-    console.log("Contraseña creada exitosamente:", data);
     // llamada api
   };
 

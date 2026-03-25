@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
-import { FiCheckCircle, FiAlertCircle } from "react-icons/fi";
+import { FiCheckCircle, FiAlertCircle, FiEdit2 } from "react-icons/fi";
 import { Button } from "../../../ui";
 import {
   SocioTaskCard,
@@ -281,13 +281,23 @@ export default function Paso5Documentacion({
               <p>{cantDocsCargados} de 4 cargados</p>
             </div>
           </div>
-          <Button
-            variant={docsEmpresaListos ? "outline" : "primary"}
-            size="sm"
-            className={styles.taskBtn}
-          >
-            {docsEmpresaListos ? "MODIFICAR" : "CARGAR DATOS"}
-          </Button>
+
+          {docsEmpresaListos ? (
+            <button
+              type="button"
+              className={styles.btnEdit}
+              onClick={(e) => {
+                e.stopPropagation();
+                setModalDocsOpen(true);
+              }}
+            >
+              <FiEdit2 size={12} /> MODIFICAR
+            </button>
+          ) : (
+            <Button variant="outline" size="sm" className={styles.taskBtn}>
+              CARGAR DATOS
+            </Button>
+          )}
         </div>
       </div>
 
@@ -330,17 +340,26 @@ export default function Paso5Documentacion({
               </p>
             </div>
           </div>
-          <Button
-            variant={seccionApoFacturacionLista ? "outline" : "primary"}
-            size="sm"
-            className={styles.taskBtn}
-          >
-            {seccionApoFacturacionLista ? "MODIFICAR" : "CONFIGURAR"}
-          </Button>
+
+          {seccionApoFacturacionLista ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={styles.actionBtn}
+              onClick={(e) => {
+                e.stopPropagation();
+                setModalApoOpen(true);
+              }}
+            >
+              <FiEdit2 size={12} /> MODIFICAR
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className={styles.taskBtn}>
+              CONFIGURAR
+            </Button>
+          )}
         </div>
       </div>
-
-      {/* El Alert global fue removido intencionalmente, el feedback visual está en las tarjetas */}
 
       <div className={styles.actionsRight}>
         <Button
