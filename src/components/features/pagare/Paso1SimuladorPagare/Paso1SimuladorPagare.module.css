@@ -1,21 +1,20 @@
+/* ========================================================== */
+/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
+/* ========================================================== */
 .container {
   animation: fadeIn 0.4s ease;
   max-width: 45rem;
   margin: 0 auto;
+  padding: 0 1rem;
+  /* Aire lateral para el celu */
 }
 
 .topGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
+  /* Una columna por defecto */
   gap: 1.5rem;
   margin-bottom: 2.5rem;
-}
-
-@media (max-width: 600px) {
-  .topGrid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
 }
 
 .indicatorWrapper {
@@ -52,7 +51,8 @@
   height: 0.5rem;
   background-color: var(--yellow);
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(244, 245, 0, 0.5);
+  box-shadow: 0 0 0.625rem rgba(244, 245, 0, 0.5);
+  /* 10px -> 0.625rem */
 }
 
 /* --- SECCIÓN MONTO --- */
@@ -60,16 +60,13 @@
   margin-bottom: 2.5rem;
 }
 
-.montoSection {
-  max-width: 100%;
-}
-
-/* --- TICKET RESULTADOS --- */
+/* --- TICKET RESULTADOS (TICKET STYLE) --- */
 .breakdownContainer {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.2) 100%);
   border: 1px solid #333;
   border-radius: 0.75rem;
-  padding: 2.5rem;
+  padding: 1.5rem;
+  /* Reducido para móvil */
   margin-top: 1rem;
   animation: fadeIn 0.5s ease;
 }
@@ -85,7 +82,8 @@
 }
 
 .textXl {
-  font-size: 1.8rem;
+  font-size: 1.5rem;
+  /* Un poco más chico en móvil para que no desborde */
   font-weight: bold;
   color: var(--yellow);
 }
@@ -110,28 +108,81 @@
   font-weight: bold;
 }
 
-.textYellow {
-  color: var(--yellow);
-}
-
-/* UTILIDADES */
+/* --- ACCIONES --- */
 .calcBtnWrapper {
   display: flex;
   justify-content: center;
-  margin-top: 3rem;
+  margin-top: 2rem;
+}
+
+.calcBtnWrapper :global(button) {
+  width: 100%;
+  /* Botón "Calcular" ancho completo */
 }
 
 .actionsFlex {
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  /* Botones apilados en móvil */
   gap: 1rem;
   margin-top: 2.5rem;
+}
+
+.actionsFlex :global(button) {
+  width: 100%;
+  /* Botón "Siguiente" ancho completo */
+}
+
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+  .container {
+    padding: 0;
+  }
+
+  .topGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Volvemos a las dos columnas */
+  }
+
+  .breakdownContainer {
+    padding: 2.5rem;
+    /* Más aire en desktop */
+  }
+
+  .textXl {
+    font-size: 1.8rem;
+  }
+
+  .calcBtnWrapper :global(button) {
+    width: auto;
+    min-width: 12.5rem;
+  }
+
+  .actionsFlex {
+    flex-direction: row;
+    /* Botones en línea */
+    justify-content: flex-end;
+  }
+
+  .actionsFlex :global(button) {
+    width: auto;
+    min-width: 12.5rem;
+  }
+}
+
+/* UTILIDADES */
+.textYellow {
+  color: var(--yellow);
 }
 
 .borderless {
   border: none;
   background: transparent;
   color: #aaa;
+  cursor: pointer;
 }
 
 .borderless:hover {
@@ -143,6 +194,14 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(0.3125rem);
+  }
+
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

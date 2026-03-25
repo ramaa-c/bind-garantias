@@ -1,7 +1,12 @@
+/* ========================================================== */
+/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
+/* ========================================================== */
 .container {
   animation: fadeIn 0.4s ease;
-  max-width: 700px;
+  max-width: 43.75rem;
+  /* 700px */
   margin: 0 auto;
+  padding: 0 1rem;
 }
 
 .header {
@@ -12,7 +17,8 @@
 .iconLockWrapper {
   color: var(--yellow);
   font-size: 1.5rem;
-  margin-bottom: 10px;
+  margin-bottom: 0.625rem;
+  /* 10px */
   opacity: 0.8;
 }
 
@@ -20,7 +26,8 @@
   color: var(--white);
   font-size: 1.4rem;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 0.5rem;
+  /* 8px */
 }
 
 .description {
@@ -30,17 +37,21 @@
 
 /* TARJETAS */
 .cardsGrid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr;
-  gap: 15px;
+  display: flex;
+  flex-direction: column;
+  /* Apiladas en celu */
+  gap: 0.9375rem;
+  /* 15px */
   margin-bottom: 3rem;
 }
 
 .cardPrimary {
   background: linear-gradient(145deg, rgba(244, 245, 0, 0.08) 0%, rgba(0, 0, 0, 0.2) 100%);
   border: 1px solid rgba(244, 245, 0, 0.2);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 0.75rem;
+  /* 12px */
+  padding: 1.25rem;
+  /* 20px */
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -48,22 +59,18 @@
   transition: all 0.3s ease;
 }
 
-.cardPrimary:hover {
-  border-color: var(--yellow);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
-
 .cardContent {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 0.9375rem;
+  /* 15px */
   text-align: left;
 }
 
 .cardIcon {
   color: var(--yellow);
   font-size: 1.4rem;
+  flex-shrink: 0;
 }
 
 .cardTitle {
@@ -76,71 +83,107 @@
 .cardText {
   color: #aaa;
   font-size: 0.85rem;
-  margin: 2px 0 0 0;
+  margin: 0.125rem 0 0 0;
+  /* 2px */
 }
 
 .linkAction {
   color: var(--yellow);
   font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: 0.0625rem;
+  /* 1px */
   border-left: 1px solid rgba(255, 255, 255, 0.1);
-  padding-left: 15px;
+  padding-left: 0.9375rem;
+  /* 15px */
+  flex-shrink: 0;
 }
 
 .cardSecondary {
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid #333;
-  border-radius: 12px;
-  padding: 15px;
+  border-radius: 0.75rem;
+  /* 12px */
+  padding: 0.9375rem;
+  /* 15px */
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
+  /* 12px */
   cursor: pointer;
   transition: background 0.2s;
-}
-
-.cardSecondary:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-}
-
-.pdfIcon {
-  color: #888;
-  font-size: 1.5rem;
 }
 
 /* FORMULARIO */
 .formSection {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 1.875rem;
+  /* 30px */
   margin-bottom: 1rem;
 }
 
 .helperText {
   color: #666;
   font-size: 0.85rem;
-  margin-top: 10px;
-  margin-bottom: 5px;
-}
-
-.customTextarea {
-  min-height: 80px;
+  margin-top: 0.625rem;
+  margin-bottom: 0.3125rem;
 }
 
 /* FOOTER */
 .footer {
   display: flex;
+  flex-direction: column-reverse;
+  /* El disclaimer abajo del botón en celu */
   align-items: center;
-  justify-content: space-between;
   padding-top: 0.8rem;
   border-top: 1px solid #333;
-  gap: 20px;
+  gap: 1.25rem;
+  /* 20px */
   margin-top: 0;
 }
 
-.disclaimerBox {
-  flex: 1;
+.footer :global(button) {
+  width: 100%;
+  /* Botón "Confirmar" ancho completo */
+}
+
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+  .container {
+    padding: 0;
+  }
+
+  .cardsGrid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    /* Volvemos a la grilla asimétrica */
+  }
+
+  .cardPrimary:hover {
+    border-color: var(--yellow);
+    transform: translateY(-0.125rem);
+    /* 2px */
+    box-shadow: 0 0.3125rem 0.9375rem rgba(0, 0, 0, 0.3);
+  }
+
+  .footer {
+    flex-direction: row;
+    /* Botón a la derecha en PC */
+    justify-content: space-between;
+  }
+
+  .footer :global(button) {
+    width: auto;
+    min-width: 12.5rem;
+  }
+}
+
+/* UTILIDADES */
+.customTextarea {
+  min-height: 5rem;
 }
 
 .disclaimerText {
@@ -148,14 +191,22 @@
   font-size: 0.8rem;
   font-style: italic;
   margin: 0;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .disclaimerText {
+    text-align: left;
+  }
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(0.625rem);
   }
 
+  /* 10px */
   to {
     opacity: 1;
     transform: translateY(0);

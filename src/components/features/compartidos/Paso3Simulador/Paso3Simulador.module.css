@@ -1,31 +1,25 @@
+/* --- DISEÑO BASE (CELULAR) --- */
 .container {
   animation: fadeIn 0.4s ease;
   max-width: 45rem;
   margin: 0 auto;
-  padding-top: 10px;
+  padding: 0.625rem 1rem 0 1rem;
+  /* 10px -> 0.625rem + padding lateral */
 }
 
 .topGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
+  /* Una sola columna por defecto */
   gap: 1.5rem;
-  margin-top: 25px;
+  margin-top: 1.5625rem;
+  /* 25px -> 1.5625rem */
   margin-bottom: 2.5rem;
-}
-
-@media (max-width: 768px) {
-  .topGrid {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* --- SECCIÓN MONTO --- */
 .mainForm {
   margin-bottom: 2.5rem;
-}
-
-.montoSection {
-  max-width: 100%;
 }
 
 /* --- UTILIDADES --- */
@@ -35,11 +29,17 @@
   margin-top: 3rem;
 }
 
+/* Forzamos que el botón de calcular sea ancho completo en celu */
+.calcBtnWrapper :global(button) {
+  width: 100%;
+}
+
 .resultsBox {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.2) 100%);
   border: 1px solid #333;
   border-radius: 0.75rem;
-  padding: 2.5rem;
+  padding: 1.5rem;
+  /* Reducido para móvil (de 2.5rem a 1.5rem) */
   margin-top: 1rem;
   animation: fadeIn 0.5s ease;
 }
@@ -55,14 +55,15 @@
   color: #aaa;
   font-size: 1rem;
   font-weight: normal;
-  margin: 0 0 10px 0;
+  margin: 0 0 0.625rem 0;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.0625rem;
 }
 
 .resultsAmount {
   color: var(--yellow);
-  font-size: 2.5rem;
+  font-size: 2rem;
+  /* Un poco más chico para que no rompa en celus angostos */
   font-weight: bold;
   margin: 0;
 }
@@ -87,37 +88,27 @@
   font-weight: bold;
 }
 
-.textYellow {
-  color: var(--yellow);
-}
-
-.textMuted {
-  color: #aaa;
-}
-
 /* --- CAJA RESUMEN --- */
 .summaryBox {
   background-color: rgba(76, 175, 80, 0.08);
   border-left: 4px solid #4caf50;
-  border-radius: 6px;
-  padding: 20px;
+  border-radius: 0.375rem;
+  /* 6px -> 0.375rem */
+  padding: 1.25rem;
+  /* 20px -> 1.25rem */
   margin-top: 2rem;
   margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .summaryRow {
   display: flex;
   justify-content: space-between;
   color: var(--white);
-  font-size: 1.05rem;
-}
-
-.summaryRow strong {
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-size: 1rem;
+  /* Ajustado para móvil */
 }
 
 /* --- BOTONES FINALES --- */
@@ -126,7 +117,12 @@
   flex-direction: column;
   align-items: center;
   margin-top: 2.5rem;
-  gap: 15px;
+  gap: 0.9375rem;
+  /* 15px -> 0.9375rem */
+}
+
+.fullWidthMaxMd {
+  width: 100%;
 }
 
 .cancelBtn {
@@ -136,25 +132,63 @@
   font-weight: 500;
   cursor: pointer;
   font-size: 0.9rem;
+  padding: 0.625rem;
+  /* Más área de click */
 }
 
-.cancelBtn:hover {
-  color: var(--white);
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+  .topGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    /* Volvemos a las dos columnas */
+  }
+
+  .calcBtnWrapper :global(button) {
+    width: auto;
+    min-width: 12.5rem;
+  }
+
+  .resultsBox {
+    padding: 2.5rem;
+    /* Más aire en desktop */
+  }
+
+  .resultsAmount {
+    font-size: 2.5rem;
+    /* Tamaño original */
+  }
+
+  .summaryRow {
+    font-size: 1.05rem;
+  }
+
+  .fullWidthMaxMd {
+    width: auto;
+    min-width: 25rem;
+    /* 400px -> 25rem */
+  }
+}
+
+/* --- UTILIDADES --- */
+.textYellow {
+  color: var(--yellow);
+}
+
+.textMuted {
+  color: #aaa;
 }
 
 .mtSmall {
-  margin-top: 10px;
-}
-
-.fullWidthMaxMd {
-  width: 100%;
-  max-width: 400px;
+  margin-top: 0.625rem;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(0.625rem);
   }
 
   to {

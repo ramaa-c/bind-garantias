@@ -1,45 +1,55 @@
+/* ========================================================== */
+/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
+/* ========================================================== */
 .solicitudCard {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid #333;
-  border-left: 4px solid #555;
-  /* Borde lateral de estado */
-  border-radius: 12px;
-  padding: 20px 25px;
+  border-left: 0.25rem solid #555;
+  /* 4px */
+  border-radius: 0.75rem;
+  /* 12px */
+  padding: 1.25rem;
+  /* 20px */
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-}
-
-.solicitudCard:hover {
-  background: rgba(255, 255, 255, 0.04);
-  transform: translateX(5px);
-  border-color: #444;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .cardMain {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  /* Apilado en celu */
+  gap: 1rem;
 }
 
 /* --- BADGE DE ESTADO --- */
 .statusBadge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 11px;
+  gap: 0.5rem;
+  /* 8px */
+  padding: 0.25rem 0.75rem;
+  /* 4px 12px */
+  border-radius: 1.25rem;
+  /* 20px */
+  font-size: 0.6875rem;
+  /* 11px */
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.0313rem;
+  /* 0.5px */
   background: rgba(0, 0, 0, 0.2);
-  margin-bottom: 12px;
+  align-self: flex-start;
+  /* No ocupa todo el ancho */
 }
 
 .statusDot {
-  width: 6px;
-  height: 6px;
+  width: 0.375rem;
+  /* 6px */
+  height: 0.375rem;
   border-radius: 50%;
 }
 
@@ -51,7 +61,7 @@
 
 .statusApproved .statusDot {
   background-color: #4caf50;
-  box-shadow: 0 0 8px #4caf50;
+  box-shadow: 0 0 0.5rem #4caf50;
 }
 
 .statusWaiting {
@@ -61,7 +71,7 @@
 
 .statusWaiting .statusDot {
   background-color: var(--yellow);
-  box-shadow: 0 0 8px var(--yellow);
+  box-shadow: 0 0 0.5rem var(--yellow);
 }
 
 .statusRejected {
@@ -71,7 +81,7 @@
 
 .statusRejected .statusDot {
   background-color: #ff5252;
-  box-shadow: 0 0 8px #ff5252;
+  box-shadow: 0 0 0.5rem #ff5252;
 }
 
 /* --- TEXTOS --- */
@@ -79,7 +89,8 @@
   color: var(--white);
   font-size: 1.1rem;
   font-weight: 600;
-  margin: 0 0 8px 0;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
 }
 
 .tipo {
@@ -90,12 +101,13 @@
 .montoRow {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .montoLabel {
   color: #666;
-  font-size: 13px;
+  font-size: 0.8125rem;
+  /* 13px */
 }
 
 .montoValue {
@@ -104,38 +116,72 @@
   font-weight: 700;
 }
 
-/* --- DERECHA --- */
+/* --- SECCIÓN INFERIOR/DERECHA --- */
 .rightInfo {
-  text-align: right;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 15px;
+  flex-direction: row;
+  /* En celu, fecha y botón uno al lado del otro */
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  width: 100%;
 }
 
 .dateBlock {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   color: #555;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .btnDetalle {
   background: none;
   border: none;
   color: var(--yellow);
-  font-size: 12px;
+  font-size: 0.75rem;
+  /* 12px */
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 0.3125rem;
   cursor: pointer;
-  padding: 5px 0;
+  padding: 0.3125rem 0;
   opacity: 0.8;
-  transition: opacity 0.2s;
 }
 
-.btnDetalle:hover {
-  opacity: 1;
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+  .solicitudCard {
+    padding: 1.25rem 1.5625rem;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .solicitudCard:hover {
+    background: rgba(255, 255, 255, 0.04);
+    transform: translateX(0.3125rem);
+    /* 5px */
+    border-color: #444;
+  }
+
+  .cardMain {
+    flex-direction: column;
+    gap: 0;
+    align-items: flex-start;
+  }
+
+  .rightInfo {
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    border-top: none;
+    padding-top: 0;
+    width: auto;
+    gap: 0.9375rem;
+  }
 }

@@ -1,6 +1,9 @@
+/* --- DISEÑO BASE (CELULAR) --- */
 .container {
   max-width: 50rem;
   margin: 0 auto;
+  padding: 0 1rem;
+  /* Margen de seguridad para móviles */
   animation: fadeIn 0.4s ease;
 }
 
@@ -8,20 +11,23 @@
 .headerSteps {
   margin-bottom: 1.5rem;
   display: flex;
-  align-items: baseline;
+  flex-direction: column;
+  /* Apilado en celu */
+  align-items: flex-start;
 }
 
 .title {
   color: var(--white);
   font-weight: bold;
   font-size: 1.125rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .mutedText {
   color: #aaa;
   font-size: 0.875rem;
-  margin-left: 0.5rem;
+  margin-left: 0;
+  /* Sin margen en celu */
 }
 
 /* --- ORGANIZACIÓN POR SECCIONES --- */
@@ -42,46 +48,20 @@
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid #333;
   border-radius: 0.75rem;
-  padding: 1.25rem 1.5rem;
+  padding: 1.25rem;
+  /* Ajustado para móvil */
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  /* Apilado en celu */
+  gap: 1.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
-}
-
-.taskCard:hover {
-  border-color: #555;
-  background-color: rgba(255, 255, 255, 0.05);
-  transform: translateY(-2px);
-}
-
-/* --- ESTADOS DE TARJETA: ÉXITO --- */
-.taskCard.cardSuccess {
-  border-color: rgba(76, 175, 80, 0.4);
-  background-color: rgba(76, 175, 80, 0.02);
-}
-
-.taskCard.cardSuccess:hover {
-  border-color: #4caf50;
-  background-color: rgba(76, 175, 80, 0.05);
-}
-
-/* --- ESTADOS DE TARJETA: ERROR --- */
-.taskCard.cardError {
-  border-color: rgba(255, 82, 82, 0.5);
-  background-color: rgba(255, 82, 82, 0.02);
-}
-
-.taskCard.cardError:hover {
-  border-color: #ff5252;
-  background-color: rgba(255, 82, 82, 0.05);
 }
 
 .taskCardInfo {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .taskCardText h4 {
@@ -97,7 +77,8 @@
 }
 
 .taskBtn {
-  min-width: 10.5rem;
+  width: 100%;
+  /* Botón ancho completo en celu */
   flex-shrink: 0;
 }
 
@@ -112,6 +93,96 @@
   font-size: 1.25rem;
   flex-shrink: 0;
 }
+
+/* --- ACCIONES Y ALERTAS --- */
+.actionsRight {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  /* Botón apilado en celu */
+}
+
+.tallButton {
+  height: 2.875rem;
+  width: 100%;
+  /* Botón CONTINUAR ancho completo */
+}
+
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+  .headerSteps {
+    flex-direction: row;
+    /* Vuelve a línea */
+    align-items: baseline;
+  }
+
+  .mutedText {
+    margin-left: 0.5rem;
+  }
+
+  .taskCard {
+    flex-direction: row;
+    /* Info a la izquierda, botón a la derecha */
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .taskCardInfo {
+    gap: 1.25rem;
+  }
+
+  .taskBtn {
+    width: auto;
+    min-width: 10.5rem;
+  }
+
+  .actionsRight {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 3rem;
+  }
+
+  .tallButton {
+    width: auto;
+    min-width: 12.5rem;
+  }
+
+  .container {
+    padding: 0;
+  }
+}
+
+/* --- ESTADOS DE TARJETA (Se mantienen igual) --- */
+.taskCard.cardSuccess {
+  border-color: rgba(76, 175, 80, 0.4);
+  background-color: rgba(76, 175, 80, 0.02);
+}
+
+.taskCard.cardSuccess:hover {
+  border-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.05);
+}
+
+.taskCard.cardError {
+  border-color: rgba(255, 82, 82, 0.5);
+  background-color: rgba(255, 82, 82, 0.02);
+}
+
+.taskCard.cardError:hover {
+  border-color: #ff5252;
+  background-color: rgba(255, 82, 82, 0.05);
+}
+
+.taskCard:hover {
+  border-color: #555;
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateY(-0.125rem);
+}
+
+/* 2px -> 0.125rem */
 
 .statusWarn {
   background: rgba(255, 193, 7, 0.1);
@@ -131,48 +202,14 @@
   border: 1px solid rgba(255, 82, 82, 0.2);
 }
 
-/* --- ACCIONES Y ALERTAS --- */
-.actionsRight {
-  text-align: right;
-  margin-top: 3rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.tallButton {
-  height: 2.875rem;
-  min-width: 12.5rem;
-}
-
-.globalErrorWrapper {
-  margin-top: 2rem;
-}
-
-/* --- ANIMACIONES --- */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(5px);
+    transform: translateY(0.3125rem);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-/* --- RESPONSIVE --- */
-@media (max-width: 600px) {
-  .taskCard {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1.25rem;
-  }
-  
-  .actionsRight {
-    width: 100%;
-  }
-  
-  .tallButton {
-    width: 100%;
   }
 }

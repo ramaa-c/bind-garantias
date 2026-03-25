@@ -1,11 +1,16 @@
+/* ========================================================== */
+/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
+/* ========================================================== */
 .container {
   animation: fadeIn 0.4s ease;
+  padding: 0 1rem;
 }
 
 .title {
   color: var(--white);
   font-weight: bold;
-  font-size: 18px;
+  font-size: 1.125rem;
+  /* 18px */
   margin-bottom: 2rem;
 }
 
@@ -20,17 +25,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 18px 20px;
+  padding: 1.125rem 1.25rem;
+  /* 18px 20px */
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid #333;
-  border-radius: 8px;
+  border-radius: 0.5rem;
+  /* 8px */
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 12px;
-}
-
-.listItem:hover {
-  background-color: rgba(255, 255, 255, 0.06);
+  margin-bottom: 0.75rem;
+  /* 12px */
 }
 
 .listItemSelected {
@@ -44,13 +48,15 @@
 .itemLeft {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 0.9375rem;
+  /* 15px */
 }
 
 .agentIcon {
   color: #888;
   font-size: 1.2rem;
   display: flex;
+  flex-shrink: 0;
 }
 
 .listItemSelected .agentIcon {
@@ -61,38 +67,44 @@
   color: var(--white);
   font-size: 1rem;
   font-weight: 500;
+  line-height: 1.2;
 }
 
 /* --- ICONOS DE ESTADO --- */
 .emptyCircle {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  /* 20px */
+  height: 1.25rem;
   border-radius: 50%;
   border: 2px solid #555;
+  flex-shrink: 0;
 }
 
 .checkIcon {
   color: var(--yellow);
   font-size: 1.4rem;
+  flex-shrink: 0;
 }
 
 /* --- ÁREA EXPANDIDA (INPUT) --- */
 .expandedArea {
-  padding: 25px 20px;
+  padding: 1.5625rem 1.25rem;
+  /* 25px 20px */
   background-color: rgba(244, 245, 0, 0.02);
   border: 1px solid var(--yellow);
   border-top: 1px dashed rgba(244, 245, 0, 0.2);
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-  margin-bottom: 12px;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+  margin-bottom: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.25rem;
   animation: fadeIn 0.3s ease;
 }
 
 .inputWrapper {
-  max-width: 400px;
+  width: 100%;
+  /* En celu el input de búsqueda de agente ocupa todo */
 }
 
 /* --- SECCIÓN ALTERNATIVA (SIN BOLSA) --- */
@@ -102,7 +114,7 @@
   border-top: 1px dashed #333;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 0.9375rem;
 }
 
 .altText {
@@ -112,14 +124,51 @@
 }
 
 .altButtonWrapper {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
 }
 
+.altButtonWrapper :global(button) {
+  width: 100%;
+  /* Botón "NO OPERO CON BOLSA" ancho completo en celu */
+}
+
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+  .container {
+    padding: 0;
+  }
+
+  .inputWrapper {
+    max-width: 25rem;
+    /* 400px */
+  }
+
+  .altButtonWrapper {
+    display: inline-flex;
+    width: auto;
+  }
+
+  .altButtonWrapper :global(button) {
+    width: auto;
+  }
+}
+
+/* --- UTILIDADES --- */
 .iconRight {
-  margin-left: 8px;
+  margin-left: 0.5rem;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(0.3125rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

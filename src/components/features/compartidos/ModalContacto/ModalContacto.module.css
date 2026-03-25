@@ -1,3 +1,6 @@
+/* ========================================================== */
+/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
+/* ========================================================== */
 .overlay {
     position: fixed;
     inset: 0;
@@ -12,28 +15,34 @@
 
 .modalContainer {
     background-color: #1a1a1a;
-    width: 90%;
-    max-width: 450px;
-    border-radius: 20px;
+    width: 92%;
+    /* Un poco más de aire en los bordes del celu */
+    max-width: 28.125rem;
+    /* 450px */
+    border-radius: 1.25rem;
+    /* 20px */
     border: 1px solid #333;
-    padding: 40px;
+    padding: 1.5rem;
+    /* 24px - Reducido para móvil */
     position: relative;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 1.25rem 2.5rem rgba(0, 0, 0, 0.5);
     animation: slideUp 0.4s ease;
+    max-height: 90vh;
+    /* Evita que se salga de la pantalla */
+    overflow-y: auto;
 }
 
 .btnClose {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 1rem;
+    right: 1rem;
     background: none;
     border: none;
     color: #666;
     cursor: pointer;
-}
-
-.btnClose:hover {
-    color: var(--white);
+    padding: 0.5rem;
+    display: flex;
+    z-index: 10;
 }
 
 .body {
@@ -45,13 +54,15 @@
 
 .iconWrapper,
 .iconWrapperSuccess {
-    width: 60px;
-    height: 60px;
+    width: 3.125rem;
+    /* 50px en celu */
+    height: 3.125rem;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
 }
 
 .iconWrapper {
@@ -66,23 +77,27 @@
 
 .title {
     color: var(--white);
-    font-size: 1.5rem;
+    font-size: 1.25rem;
+    /* Más balanceado para móvil */
     margin: 0;
+    line-height: 1.2;
 }
 
 .description {
     color: #888;
-    margin-top: 8px;
-    margin-bottom: 30px;
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
     line-height: 1.4;
+    font-size: 0.9375rem;
 }
 
 .formSection {
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 25px;
-    margin-bottom: 30px;
+    gap: 1.25rem;
+    /* 20px */
+    margin-bottom: 1.5rem;
     text-align: left;
 }
 
@@ -90,27 +105,71 @@
     width: 100%;
 }
 
-.linkEdit {
-    color: var(--yellow);
-    cursor: pointer;
-    font-size: 0.85rem;
-    text-decoration: underline;
-}
-
 .resendText {
-    margin-top: 25px;
-    font-size: 13px;
+    margin-top: 1.5rem;
+    font-size: 0.8125rem;
+    /* 13px */
     color: #666;
 }
 
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
+@media (min-width: 768px) {
+    .modalContainer {
+        padding: 2.5rem;
+        /* 40px - Volvemos al original */
+    }
+
+    .btnClose {
+        top: 1.25rem;
+        right: 1.25rem;
+    }
+
+    .iconWrapper,
+    .iconWrapperSuccess {
+        width: 3.75rem;
+        /* 60px */
+        height: 3.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .description {
+        margin-bottom: 1.875rem;
+        /* 30px */
+    }
+
+    .formSection {
+        gap: 1.5625rem;
+        /* 25px */
+        margin-bottom: 1.875rem;
+    }
+
+    .resendText {
+        margin-top: 1.5625rem;
+    }
+}
+
+/* --- UTILIDADES Y ANIMACIONES --- */
+.linkEdit,
 .resendLink {
     color: var(--yellow);
-    font-weight: 600;
     cursor: pointer;
     text-decoration: underline;
 }
 
-/* Animaciones */
+.linkEdit {
+    font-size: 0.85rem;
+}
+
+.resendLink {
+    font-weight: 600;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -124,7 +183,7 @@
 @keyframes slideUp {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(1.25rem);
     }
 
     to {
