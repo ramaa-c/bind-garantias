@@ -1,5 +1,5 @@
 import React from "react";
-import { FiCheckCircle, FiAlertCircle } from "react-icons/fi";
+import { FiCheckCircle, FiAlertCircle, FiEdit2 } from "react-icons/fi";
 import { Button } from "../../../ui";
 import styles from "./SocioTaskCard.module.css";
 
@@ -35,13 +35,24 @@ export const SocioTaskCard = ({
         </div>
       </div>
 
-      <Button
-        variant={isCompleto ? "outline" : "primary"}
-        size="sm"
-        className={styles.actionBtn}
-      >
-        {isCompleto ? "MODIFICAR" : "COMPLETAR DATOS"}
-      </Button>
+      {isCompleto ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.actionBtn}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEdit(index);
+          }}
+        >
+          <FiEdit2 size={12} /> MODIFICAR
+        </Button>
+      ) : (
+        <Button variant="outline" size="sm" className={styles.actionBtn}>
+          COMPLETAR DATOS
+        </Button>
+      )}
     </div>
   );
 };

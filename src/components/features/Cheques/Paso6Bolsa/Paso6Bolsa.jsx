@@ -13,17 +13,15 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
   const {
     register,
     control,
-    watch, 
+    watch,
     formState: { errors },
     setValue,
   } = useFormContext();
 
-  // Observamos el número de cuenta en tiempo real
   const cuentaBolsa = watch("numeroCuentaBolsa", "");
 
   return (
     <div className={styles.container}>
-      
       <h3 className={styles.title}>
         ¿Operás con alguna de estas sociedades de bolsa?
       </h3>
@@ -38,7 +36,6 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
 
               return (
                 <React.Fragment key={sociedad.id}>
-                  
                   {/* TARJETA SELECCIONABLE */}
                   <div
                     className={`${styles.listItem} ${isSelected ? styles.listItemSelected : ""}`}
@@ -67,7 +64,10 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
                   {/* FORMULARIO DESPLEGABLE CON INPUT FLOTANTE */}
                   {isSelected && (
                     <div className={styles.expandedArea}>
-                      <div className={styles.inputWrapper} style={{ marginTop: "30px", marginBottom: "25px" }}>
+                      <div
+                        className={styles.inputWrapper}
+                        style={{ marginTop: "30px", marginBottom: "25px" }}
+                      >
                         <InputFlotante
                           label={`Número de cuenta en ${sociedad.nombre}`}
                           esValido={cuentaBolsa.length >= 4}
@@ -77,13 +77,16 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
                       </div>
 
                       <div>
-                        <Button type="button" variant="primary" onClick={avanzarConBolsa}>
+                        <Button
+                          type="button"
+                          variant="primary"
+                          onClick={avanzarConBolsa}
+                        >
                           CONFIRMAR Y AVANZAR
                         </Button>
                       </div>
                     </div>
                   )}
-                  
                 </React.Fragment>
               );
             })}
@@ -98,11 +101,11 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
         </p>
         <div className={styles.altButtonWrapper}>
           <Button type="button" variant="outline" onClick={avanzarSinBolsa}>
-            CONTINUAR SIN SOCIEDAD DE BOLSA <FiArrowRight className={styles.iconRight} />
+            CONTINUAR SIN SOCIEDAD DE BOLSA{" "}
+            <FiArrowRight className={styles.iconRight} />
           </Button>
         </div>
       </div>
-
     </div>
   );
 }

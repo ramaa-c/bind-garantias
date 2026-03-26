@@ -1,15 +1,10 @@
-/* ========================================================== */
-/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
-/* ========================================================== */
 .card {
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid #333;
   border-radius: 0.75rem;
   padding: 1.25rem;
-  /* Reducido un poco para aprovechar el ancho en celu */
   display: flex;
   flex-direction: column;
-  /* Apilado en celu */
   align-items: flex-start;
   gap: 1.25rem;
   cursor: pointer;
@@ -21,12 +16,10 @@
   border-color: #555;
   background-color: rgba(255, 255, 255, 0.05);
   transform: translateY(-0.125rem);
-  /* 2px -> 0.125rem */
 }
 
 .actionBtn {
   width: 100%;
-  /* Botón ancho completo en celu */
   flex-shrink: 0;
 }
 
@@ -51,7 +44,6 @@
 .textGroup {
   flex: 1;
   min-width: 0;
-  /* Evita desbordes de texto */
 }
 
 .textGroup .nombre {
@@ -72,13 +64,10 @@
   color: #bbb;
 }
 
-/* ========================================================== */
-/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
-/* ========================================================== */
-@media (min-width: 768px) {
+/* Escritorio */
+@media (min-width: 48rem) {
   .card {
     flex-direction: row;
-    /* Vuelve a horizontal en PC */
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
@@ -87,7 +76,6 @@
   .actionBtn {
     width: auto;
     min-width: 9.375rem;
-    /* Respetamos tu valor original */
   }
 
   .infoGroup {
@@ -95,7 +83,7 @@
   }
 }
 
-/* --- ESTADOS DE TARJETA (Se mantienen igual) --- */
+/* --- ESTADOS DE TARJETA --- */
 .card.cardSuccess {
   border-color: rgba(76, 175, 80, 0.4);
   background-color: rgba(76, 175, 80, 0.02);
@@ -119,7 +107,7 @@
 /* --- SEMÁFORO DE ESTADOS --- */
 .statusWarn {
   background: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
+  color: var(--yellow);
   border: 1px solid rgba(255, 193, 7, 0.2);
 }
 

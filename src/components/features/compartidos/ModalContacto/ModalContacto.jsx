@@ -8,6 +8,7 @@ import {
 import { useFormContext } from "react-hook-form";
 import { Button, InputFlotante } from "../../../ui";
 import styles from "./ModalContacto.module.css";
+import { useEscape } from "../../../../hooks/useEscape";
 
 export default function ModalContacto({ isOpen, onClose, onGuardar }) {
   const { getValues, setValue } = useFormContext();
@@ -27,7 +28,16 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
       setProcesando(false);
       setIntentoSolicitarSms(false);
     }
-  }, [isOpen]);
+  }, [isOpen, getValues]);
+
+  const handleClose = () => {
+    if (procesando) return;
+    setFase("ingresar");
+    setCodigoSms("");
+    onClose();
+  };
+
+  useEscape(handleClose, isOpen);
 
   if (!isOpen) return null;
 
@@ -62,13 +72,6 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
         }, 300);
       }, 1200);
     }
-  };
-
-  const handleClose = () => {
-    if (procesando) return;
-    setFase("ingresar");
-    setCodigoSms("");
-    onClose();
   };
 
   const handleOverlayMouseDown = (e) => {
@@ -112,7 +115,6 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
                 />
               </div>
               <div className={styles.btnSave}>
-                {/* 4. Cambio de px a rem */}
                 <Button
                   variant="primary"
                   onClick={handleSolicitarSms}

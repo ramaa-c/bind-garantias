@@ -1,18 +1,13 @@
-/* ========================================================== */
-/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
-/* ========================================================== */
 .container {
   animation: fadeIn 0.4s ease;
   max-width: 45rem;
   margin: 0 auto;
   padding: 0 1rem;
-  /* Aire lateral para el celu */
 }
 
 .topGrid {
   display: flex;
   flex-direction: column;
-  /* Una columna por defecto */
   gap: 1.5rem;
   margin-bottom: 2.5rem;
 }
@@ -52,7 +47,6 @@
   background-color: var(--yellow);
   border-radius: 50%;
   box-shadow: 0 0 0.625rem rgba(244, 245, 0, 0.5);
-  /* 10px -> 0.625rem */
 }
 
 /* --- SECCIÓN MONTO --- */
@@ -60,13 +54,16 @@
   margin-bottom: 2.5rem;
 }
 
-/* --- TICKET RESULTADOS (TICKET STYLE) --- */
+/* --- TICKET RESULTADOS --- */
 .breakdownContainer {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.2) 100%);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
   border: 1px solid #333;
   border-radius: 0.75rem;
   padding: 1.5rem;
-  /* Reducido para móvil */
   margin-top: 1rem;
   animation: fadeIn 0.5s ease;
 }
@@ -83,7 +80,6 @@
 
 .textXl {
   font-size: 1.5rem;
-  /* Un poco más chico en móvil para que no desborde */
   font-weight: bold;
   color: var(--yellow);
 }
@@ -117,25 +113,20 @@
 
 .calcBtnWrapper :global(button) {
   width: 100%;
-  /* Botón "Calcular" ancho completo */
 }
 
 .actionsFlex {
   display: flex;
   flex-direction: column;
-  /* Botones apilados en móvil */
   gap: 1rem;
   margin-top: 2.5rem;
 }
 
 .actionsFlex :global(button) {
   width: 100%;
-  /* Botón "Siguiente" ancho completo */
 }
 
-/* ----------------------------------------------------------- */
-/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
-/* ----------------------------------------------------------- */
+/* Escritorio */
 @media (min-width: 768px) {
   .container {
     padding: 0;
@@ -144,12 +135,10 @@
   .topGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    /* Volvemos a las dos columnas */
   }
 
   .breakdownContainer {
     padding: 2.5rem;
-    /* Más aire en desktop */
   }
 
   .textXl {
@@ -163,7 +152,6 @@
 
   .actionsFlex {
     flex-direction: row;
-    /* Botones en línea */
     justify-content: flex-end;
   }
 
@@ -198,7 +186,6 @@
     opacity: 0;
     transform: translateY(0.3125rem);
   }
-
 
   to {
     opacity: 1;

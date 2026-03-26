@@ -1,6 +1,13 @@
 import React, { useState } from "react";
 import { FiEdit, FiTrash2, FiUserPlus, FiCheckCircle } from "react-icons/fi";
-import { InputFlotante, Button, Badge, Avatar, BotonIcono } from "../../../ui";
+import {
+  InputFlotante,
+  Button,
+  Badge,
+  Avatar,
+  BotonIcono,
+  BuscadorCuit,
+} from "../../../ui";
 import styles from "./Paso4Socios.module.css";
 
 export default function Paso4Socios({
@@ -53,40 +60,27 @@ export default function Paso4Socios({
       {/* --- FASE 1: INGRESAR CUIT --- */}
       {faseSocio === "ingresar_cuit" && (
         <div className={styles.section}>
-          <h3 className={styles.headerTitle}>
-            <FiUserPlus /> Añadir nuevo socio
-          </h3>
-          <p className={styles.helperText}>
-            Ingresá el número de CUIT/CUIL para validar su identidad en AFIP.
-          </p>
-
-          <div className={styles.searchRow}>
-            <div className={styles.searchInput}>
-              <InputFlotante
-                type="text"
-                label="CUIT del Socio"
-                maxLength={11}
-                value={tempSocioCuit}
-                esValido={isCuitValido}
-                error={errorCuit}
-                onChange={(e) => {
-                  const soloNumeros = e.target.value.replace(/\D/g, "");
-                  setTempSocioCuit(soloNumeros);
-                  if (errorCuit) setErrorCuit("");
-                }}
-              />
-            </div>
-            <div className={styles.btnWrapper}>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={handleValidarClick}
-                className={styles.tallButton}
-              >
-                VALIDAR CUIT
-              </Button>
-            </div>
+          <div className={styles.headerTitleRow}>
+            <h3 className={styles.headerTitle}>
+              <FiUserPlus /> Añadir nuevo socio
+            </h3>
+            <p className={styles.helperText}>
+              Ingresá el número de CUIT/CUIL para validar su identidad en AFIP.
+            </p>
           </div>
+
+          <BuscadorCuit
+            label="CUIT del Socio"
+            value={tempSocioCuit}
+            onChange={(e) => {
+              setTempSocioCuit(e.target.value);
+              if (errorCuit) setErrorCuit("");
+            }}
+            onValidar={handleValidarClick}
+            error={errorCuit}
+            esValido={isCuitValido}
+            buttonText="VALIDAR CUIT"
+          />
 
           {socios.length > 0 && (
             <div className={styles.mtMedium}>
@@ -97,7 +91,6 @@ export default function Paso4Socios({
                   setErrorCuit("");
                   setFaseSocio("lista");
                 }}
-                className={styles.borderless}
               >
                 Cancelar y volver a la lista
               </Button>
@@ -148,7 +141,6 @@ export default function Paso4Socios({
                   ? setFaseSocio("ingresar_cuit")
                   : setFaseSocio("lista");
               }}
-              className={styles.borderless}
             >
               CANCELAR
             </Button>

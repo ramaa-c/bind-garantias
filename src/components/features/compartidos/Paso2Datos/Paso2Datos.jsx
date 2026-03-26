@@ -12,23 +12,20 @@ import { ModalUbicacion, ModalContacto } from "../../../features";
 import styles from "./Paso2Datos.module.css";
 
 export default function Paso2Datos({ onVolver, onContinuar }) {
-  // Solo necesitamos getValues, setValue y trigger. Watch fuera.
   const { setValue, getValues, trigger } = useFormContext();
 
   const [modalUbicacionOpen, setModalUbicacionOpen] = useState(false);
   const [modalContactoOpen, setModalContactoOpen] = useState(false);
   const [intentoAvanzar, setIntentoAvanzar] = useState(false);
 
-  // 1. ESTADO LOCAL: Sincronizado explícitamente para visualización instantánea
   const [displayData, setDisplayData] = useState({
     direccion: "",
     localidad: "",
     celular: "",
     smsVerificado: false,
-    cuit: ""
+    cuit: "",
   });
 
-  // 2. Al montar el componente, cargamos lo que haya en memoria
   useEffect(() => {
     const vals = getValues();
     setDisplayData({
@@ -36,44 +33,47 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
       localidad: vals.localidad || "",
       celular: vals.celular || "",
       smsVerificado: vals.smsVerificado || false,
-      cuit: vals.cuit || ""
+      cuit: vals.cuit || "",
     });
   }, [getValues]);
 
-  // 3. Validaciones visuales basadas en el estado LOCAL (displayData)
   const ubicacionOk = displayData.direccion.trim().length >= 5;
   const contactoOk = !!displayData.smsVerificado;
 
   const handleGuardarUbicacion = () => {
-    // 4. ¡LA CLAVE! La modal ya hizo setValue global. 
-    // Ahora leemos la memoria fresca y actualizamos el estado LOCAL para forzar el render.
     const nuevosValores = getValues();
-    setDisplayData(prev => ({
-        ...prev,
-        direccion: nuevosValores.direccion || "",
-        localidad: nuevosValores.localidad || ""
+    setDisplayData((prev) => ({
+      ...prev,
+      direccion: nuevosValores.direccion || "",
+      localidad: nuevosValores.localidad || "",
     }));
     setModalUbicacionOpen(false);
   };
 
   const handleGuardarContacto = () => {
-    // Sincronizamos SMS y marcamos flag global
-    setValue("smsVerificado", true, { shouldValidate: true, shouldDirty: true });
-    
+    setValue("smsVerificado", true, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
     const nuevosValores = getValues();
-    setDisplayData(prev => ({
-        ...prev,
-        celular: nuevosValores.celular || "",
-        smsVerificado: true
+    setDisplayData((prev) => ({
+      ...prev,
+      celular: nuevosValores.celular || "",
+      smsVerificado: true,
     }));
     setModalContactoOpen(false);
   };
 
   const handleAvanzarClick = async () => {
     setIntentoAvanzar(true);
-    // Forzamos validación de Zod global antes de ir al Paso 3
-    const esValidoGlobal = await trigger(["direccion", "provincia", "localidad", "celular"]);
-    
+    const esValidoGlobal = await trigger([
+      "direccion",
+      "provincia",
+      "localidad",
+      "celular",
+    ]);
+
     if (ubicacionOk && contactoOk && esValidoGlobal) {
       onContinuar();
     }
@@ -110,9 +110,14 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
           </p>
           <p className={styles.summaryName}>EMPRESA DE PRUEBA S.A.</p>
         </div>
-        <button className={styles.btnEdit} onClick={onVolver}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.actionBtn}
+          onClick={onVolver}
+        >
           <FiEdit2 /> EDITAR
-        </button>
+        </Button>
       </div>
 
       <div className={styles.sectionGroup}>
@@ -134,27 +139,38 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
             <div className={styles.taskCardText}>
               <h4>Datos de Ubicación</h4>
               <p>
-                {/* 5. Usamos displayData para visualización instantánea */}
                 {ubicacionOk && displayData.direccion
                   ? `${displayData.direccion}, ${displayData.localidad}`
                   : "Dirección, Provincia y Localidad"}
               </p>
             </div>
           </div>
-          <Button
-            variant={ubicacionOk ? "outline" : "primary"}
-            size="sm"
-            className={styles.taskBtn}
-          >
-            {ubicacionOk ? "MODIFICAR" : "COMPLETAR"}
-          </Button>
+
+          {ubicacionOk ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={styles.actionBtn}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setModalUbicacionOpen(true);
+              }}
+            >
+              <FiEdit2 size={12} /> MODIFICAR
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className={styles.taskBtn}>
+              COMPLETAR
+            </Button>
+          )}
         </div>
 
         {/* CARD 2: CONTACTO / SMS */}
         <div
           className={`${styles.taskCard} ${contactoOk ? styles.cardSuccess : intentoAvanzar && !contactoOk ? styles.cardError : ""}`}
           onClick={() => setModalContactoOpen(true)}
-          style={{ marginTop: "1rem" }} 
+          style={{ marginTop: "1rem" }}
         >
           <div className={styles.taskCardInfo}>
             <div className={`${styles.statusIconPill} ${getClassContacto()}`}>
@@ -169,17 +185,31 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
             <div className={styles.taskCardText}>
               <h4>Verificación de Contacto</h4>
               <p>
-                {contactoOk ? `Cel: ${displayData.celular}` : "Validación mediante SMS"}
+                {contactoOk
+                  ? `Cel: ${displayData.celular}`
+                  : "Validación mediante SMS"}
               </p>
             </div>
           </div>
-          <Button
-            variant={contactoOk ? "outline" : "primary"}
-            size="sm"
-            className={styles.taskBtn}
-          >
-            {contactoOk ? "MODIFICAR" : "VERIFICAR"}
-          </Button>
+
+          {contactoOk ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={styles.actionBtn}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setModalContactoOpen(true);
+              }}
+            >
+              <FiEdit2 size={12} /> MODIFICAR
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className={styles.taskBtn}>
+              VERIFICAR
+            </Button>
+          )}
         </div>
       </div>
 
@@ -204,8 +234,6 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
         onClose={() => setModalContactoOpen(false)}
         onGuardar={handleGuardarContacto}
       />
-      
-      {/* CERO INPUTS OCULTOS, CERO TRUCOS. Estado local sincronizado. */}
     </div>
   );
 }

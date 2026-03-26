@@ -38,7 +38,6 @@ export default function PagareUSD() {
   };
 
   const onSubmitFinal = (data) => {
-    console.log("Operación Finalizada:", data);
     setPasoActual(4);
   };
 
@@ -62,18 +61,20 @@ export default function PagareUSD() {
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
-                
                 {pasoActual < 4 && (
                   <h1 className={styles.tituloVista}>
-                    {pasoActual === 1 && "Ingresás el monto del pagaré y la fecha de pago"}
-                    {pasoActual === 2 && "Seleccioná al agente de bolsa con quien operás"}
-                    {pasoActual === 3 && "Generá el pagaré en Epyme y completá la operación"}
+                    {pasoActual === 1 &&
+                      "Ingresás el monto del pagaré y la fecha de pago"}
+                    {pasoActual === 2 &&
+                      "Seleccioná al agente de bolsa con quien operás"}
+                    {pasoActual === 3 &&
+                      "Generá el pagaré en Epyme y completá la operación"}
                   </h1>
                 )}
 
                 {pasoActual < 4 && (
-                  <BarraProgreso 
-                    hitos={["Simulación", "Agente", "Confirmación"]}
+                  <BarraProgreso
+                    hitos={["Simulador", "Agente", "Firma Epyme"]}
                     hitoActual={pasoActual}
                   />
                 )}

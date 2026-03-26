@@ -27,7 +27,6 @@ const Login = () => {
   });
 
   const onSubmit = (data) => {
-    console.log("Autenticando...", data);
     // Lógica de autenticación
   };
 

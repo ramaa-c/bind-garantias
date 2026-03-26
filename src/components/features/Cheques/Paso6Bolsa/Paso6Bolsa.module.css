@@ -1,6 +1,3 @@
-/* ========================================================== */
-/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
-/* ========================================================== */
 .container {
   animation: fadeIn 0.4s ease;
   padding: 0 1rem;
@@ -10,7 +7,6 @@
   color: var(--white);
   font-weight: bold;
   font-size: 1.125rem;
-  /* 18px */
   margin-bottom: 2rem;
 }
 
@@ -26,15 +22,12 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.125rem 1.25rem;
-  /* 18px 20px */
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid #333;
   border-radius: 0.5rem;
-  /* 8px */
   cursor: pointer;
   transition: all 0.2s ease;
   margin-bottom: 0.75rem;
-  /* 12px */
 }
 
 .listItemSelected {
@@ -49,7 +42,6 @@
   display: flex;
   align-items: center;
   gap: 0.9375rem;
-  /* 15px */
 }
 
 .agentIcon {
@@ -73,7 +65,6 @@
 /* --- ICONOS DE ESTADO --- */
 .emptyCircle {
   width: 1.25rem;
-  /* 20px */
   height: 1.25rem;
   border-radius: 50%;
   border: 2px solid #555;
@@ -89,7 +80,6 @@
 /* --- ÁREA EXPANDIDA (INPUT) --- */
 .expandedArea {
   padding: 1.5625rem 1.25rem;
-  /* 25px 20px */
   background-color: rgba(244, 245, 0, 0.02);
   border: 1px solid var(--yellow);
   border-top: 1px dashed rgba(244, 245, 0, 0.2);
@@ -104,10 +94,9 @@
 
 .inputWrapper {
   width: 100%;
-  /* En celu el input de búsqueda de agente ocupa todo */
 }
 
-/* --- SECCIÓN ALTERNATIVA (SIN BOLSA) --- */
+/* --- SECCIÓN ALTERNATIVA --- */
 .altSection {
   margin-top: 3rem;
   padding-top: 2rem;
@@ -130,12 +119,9 @@
 
 .altButtonWrapper :global(button) {
   width: 100%;
-  /* Botón "NO OPERO CON BOLSA" ancho completo en celu */
 }
 
-/* ----------------------------------------------------------- */
-/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
-/* ----------------------------------------------------------- */
+/* Escritorio */
 @media (min-width: 768px) {
   .container {
     padding: 0;
@@ -143,7 +129,6 @@
 
   .inputWrapper {
     max-width: 25rem;
-    /* 400px */
   }
 
   .altButtonWrapper {

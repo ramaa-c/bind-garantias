@@ -2,6 +2,7 @@ import React from "react";
 import { FiFileText, FiX } from "react-icons/fi";
 import { Acordeon, Button, CargaArchivos } from "../../../ui";
 import styles from "./ModalDocumentosEmpresa.module.css";
+import { useEscape } from "../../../../hooks/useEscape";
 
 export const ModalDocumentosEmpresa = ({
   isOpen,
@@ -12,8 +13,16 @@ export const ModalDocumentosEmpresa = ({
   intentoAvanzar,
 }) => {
   const docs = [
-    { key: "estatuto", title: "Estatuto Social", info: "Normas de la entidad." },
-    { key: "balance", title: "Último Balance", info: "Certificado por contador." },
+    {
+      key: "estatuto",
+      title: "Estatuto Social",
+      info: "Normas de la entidad.",
+    },
+    {
+      key: "balance",
+      title: "Último Balance",
+      info: "Certificado por contador.",
+    },
     { key: "acta", title: "Acta de Autoridades", info: "Designación vigente." },
     { key: "poderes", title: "Poderes", info: "Copia de representación." },
   ];
@@ -24,12 +33,21 @@ export const ModalDocumentosEmpresa = ({
     }
   };
 
+  useEscape(onClose, isOpen);
+
   if (!isOpen) return null;
 
   return (
     <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div className={styles.modalContainer} onClick={(e) => e.stopPropagation()}>
-        <button className={styles.btnClose} onClick={onClose} aria-label="Cerrar">
+      <div
+        className={styles.modalContainer}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className={styles.btnClose}
+          onClick={onClose}
+          aria-label="Cerrar"
+        >
           <FiX size={20} />
         </button>
 
@@ -49,7 +67,13 @@ export const ModalDocumentosEmpresa = ({
               <div key={doc.key} className={styles.accordionCard}>
                 <Acordeon
                   title={doc.title}
-                  status={archivos[doc.key] ? "check" : (intentoAvanzar ? "alert" : "warn")}
+                  status={
+                    archivos[doc.key]
+                      ? "check"
+                      : intentoAvanzar
+                        ? "alert"
+                        : "warn"
+                  }
                 >
                   <div className={styles.documentRow}>
                     <div className={styles.docInfoBox}>
@@ -59,18 +83,28 @@ export const ModalDocumentosEmpresa = ({
                       <CargaArchivos
                         title={doc.title}
                         hasError={intentoAvanzar && !archivos[doc.key]}
-                        file={archivos[doc.key] ? {
-                          name: archivos[doc.key].name,
-                          size: archivos[doc.key].formattedSize
-                        } : null}
-                        onClick={() => document.getElementById(`file-input-${doc.key}`).click()}
+                        file={
+                          archivos[doc.key]
+                            ? {
+                                name: archivos[doc.key].name,
+                                size: archivos[doc.key].formattedSize,
+                              }
+                            : null
+                        }
+                        onClick={() =>
+                          document
+                            .getElementById(`file-input-${doc.key}`)
+                            .click()
+                        }
                         onRemove={() => onFileRemove(doc.key)}
                       />
                       <input
                         type="file"
                         id={`file-input-${doc.key}`}
                         style={{ display: "none" }}
-                        onChange={(e) => onFileUpload(doc.key, e.target.files[0])}
+                        onChange={(e) =>
+                          onFileUpload(doc.key, e.target.files[0])
+                        }
                       />
                     </div>
                   </div>

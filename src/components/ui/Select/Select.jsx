@@ -32,14 +32,24 @@ const selectStyles = (hasError) => ({
       backgroundColor: "rgba(255, 255, 255, 0.06)",
     },
   }),
+
+  placeholder: (base) => ({
+    ...base,
+    color: "#666",
+    fontSize: "0.95rem",
+    fontWeight: "400",
+  }),
+
   menu: (base) => ({
     ...base,
     backgroundColor: "#1e1e1e",
     border: "1px solid #333",
     borderRadius: "0.5rem",
     zIndex: 50,
+    padding: "0.5rem 0",
     overflow: "hidden",
   }),
+
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
@@ -55,19 +65,23 @@ const selectStyles = (hasError) => ({
     cursor: "pointer",
     fontWeight: state.isSelected ? "bold" : "500",
     padding: "0.75rem 1rem",
+    transition: "all 0.1s ease",
     "&:active": {
       backgroundColor: "var(--yellow)",
       color: "#000",
     },
   }),
+
   singleValue: (base) => ({
     ...base,
     color: "var(--white)",
     fontWeight: "500",
   }),
+
   indicatorSeparator: () => ({
     display: "none",
   }),
+
   dropdownIndicator: (base, state) => ({
     ...base,
     color: state.isFocused ? "var(--yellow)" : "#888",
@@ -76,6 +90,11 @@ const selectStyles = (hasError) => ({
       color: "var(--yellow)",
     },
   }),
+
+  input: (base) => ({
+    ...base,
+    color: "var(--white)",
+  }),
 });
 
 export const Select = ({
@@ -83,6 +102,7 @@ export const Select = ({
   control,
   label,
   options,
+  placeholder = "Seleccione...",
   disabled = false,
   isSearchable = false,
   error,
@@ -102,8 +122,10 @@ export const Select = ({
             styles={selectStyles(!!error)}
             isDisabled={disabled}
             isSearchable={isSearchable}
+            placeholder={placeholder}
             value={options.find((c) => c.value === field.value) || null}
             onChange={(val) => field.onChange(val ? val.value : "")}
+            aria-label={label || placeholder}
           />
         )}
       />

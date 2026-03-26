@@ -210,16 +210,13 @@ export default function Prestamos() {
                   pasoActual < 7 &&
                   (() => {
                     let hitoVisual = 1;
-                    if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2;
-                    if (pasoActual >= 6) hitoVisual = 3;
+                    if (pasoActual === 3) hitoVisual = 2;
+                    if (pasoActual === 4) hitoVisual = 3;
+                    if (pasoActual === 5) hitoVisual = 4;
 
                     return (
                       <BarraProgreso
-                        hitos={[
-                          "Datos Básicos",
-                          "Documentación",
-                          "Confirmación",
-                        ]}
+                        hitos={["Empresa", "Operación", "Socios", "Documentos"]}
                         hitoActual={hitoVisual}
                       />
                     );
