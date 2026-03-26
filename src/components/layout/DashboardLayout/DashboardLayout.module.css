@@ -30,6 +30,8 @@
   .content {
     scrollbar-width: auto;
     -ms-overflow-style: auto;
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
   }
 
   .content::-webkit-scrollbar {
@@ -42,8 +44,9 @@
   }
 
   .content::-webkit-scrollbar-track {
-    background-color: var(--carbon-black);
+    background-color: transparent;
   }
+  
 }
 
 .overlay {

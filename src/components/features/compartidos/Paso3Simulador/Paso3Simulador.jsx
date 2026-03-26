@@ -1,18 +1,21 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
-import { Button, Alert, InputMonto, SelectFecha, Select } from "../../../ui";
+import {
+  Button,
+  InputMonto,
+  SelectFecha,
+  Select,
+  TicketSimulacion,
+} from "../../../ui";
 import styles from "./Paso3Simulador.module.css";
 
 const opcionesMoneda = [
   { value: "Pesos", label: "Pesos" },
   { value: "Dolares", label: "Dólares" },
 ];
-const opcionesProducto = [
-  { value: "cheques_propios", label: "Cheques propios" },
-  { value: "cheques_terceros", label: "Cheques de terceros" },
-];
+
 const opcionesCalculo = [
-  { value: "tasa_directa", label: "Tasa Directa / Monto a financiar" },
+  { value: "por_monto_factura", label: "Por monto de factura" },
   { value: "por_monto_cheque", label: "Por monto de cheque" },
 ];
 
@@ -21,18 +24,60 @@ export default function Paso3Simulador({
   onCalcular,
   onContinuar,
   onCancelar,
+  opcionesProducto,
+  mostrarTipoCalculo = true,
+  labelFecha = "Fecha de pago",
+  labelMonto = "Monto",
 }) {
-  const { register, watch, control } = useFormContext();
+  const { register, watch, control, trigger, setError, clearErrors, setValue } =
+    useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
+  const isMontoValid = !errors.monto && dirtyFields.monto;
 
-  const tipoCalculo = watch("tipoCalculo", "tasa_directa");
+  const tipoCalculo = watch("tipoCalculo", "");
   const esPorMontoCheque = tipoCalculo === "por_monto_cheque";
   const campoFecha = esPorMontoCheque ? "fechaPago" : "plazo";
 
-  const isMontoValid = !errors.monto && dirtyFields.monto;
+  useEffect(() => {
+    if (opcionesProducto?.length === 1) {
+      setValue("tipoProducto", opcionesProducto[0].value, {
+        shouldValidate: false,
+      });
+    }
+  }, [opcionesProducto, setValue]);
+
+  const handleLocalCalcular = async () => {
+    const camposATrigger = ["moneda", "monto", "tipoProducto"];
+    if (mostrarTipoCalculo) camposATrigger.push("tipoCalculo");
+
+    const esValido = await trigger(camposATrigger);
+
+    const valorFecha = watch(campoFecha);
+    if (!valorFecha || valorFecha.trim() === "") {
+      setError(campoFecha, {
+        type: "manual",
+        message: esPorMontoCheque
+          ? "La fecha de pago es requerida"
+          : "El plazo es requerido",
+      });
+      return;
+    } else {
+      clearErrors(campoFecha);
+    }
+
+    if (esValido) {
+      onCalcular();
+    }
+  };
 
   return (
     <div className={styles.container}>
+      {!mostrarResultados && (
+        <h2 className={styles.headerTitle}>
+          Selecciona el monto y tipo de financiación que necesitas
+        </h2>
+      )}
+
       <div className={styles.topGrid}>
         <Select
           name="moneda"
@@ -54,31 +99,31 @@ export default function Paso3Simulador({
           error={errors.tipoProducto?.message}
         />
 
-        <Select
-          name="tipoCalculo"
-          control={control}
-          label="Tipo de cálculo"
-          placeholder="Seleccione tipo"
-          options={opcionesCalculo}
-          disabled={mostrarResultados}
-          error={errors.tipoCalculo?.message}
-        />
+        {mostrarTipoCalculo && (
+          <Select
+            name="tipoCalculo"
+            control={control}
+            label="Tipo de cálculo"
+            placeholder="Seleccione tipo"
+            options={opcionesCalculo}
+            disabled={mostrarResultados}
+            error={errors.tipoCalculo?.message}
+          />
+        )}
 
         <SelectFecha
           name={campoFecha}
-          label={esPorMontoCheque ? "Fecha de pago" : "Plazo (Fecha)"}
+          label={labelFecha}
           disabled={mostrarResultados}
+          error={errors[campoFecha]?.message}
         />
       </div>
 
-      {/* --- MONTO --- */}
       <div className={styles.mainForm}>
         <div className={styles.montoSection}>
           <InputMonto
-            label={
-              esPorMontoCheque ? "Monto de cheque *" : "Monto a financiar *"
-            }
-            esValido={isMontoValid}
+            label={labelMonto}
+            esValido={isMontoValid || watch("monto") > 0}
             error={errors.monto?.message}
             disabled={mostrarResultados}
             {...register("monto")}
@@ -86,102 +131,44 @@ export default function Paso3Simulador({
         </div>
       </div>
 
-      {/* --- ACCIONES Y RESULTADOS --- */}
       {!mostrarResultados ? (
         <div className={styles.calcBtnWrapper}>
-          <Button variant="primary" size="lg" onClick={onCalcular}>
+          <Button variant="primary" size="lg" onClick={handleLocalCalcular}>
             CALCULAR
           </Button>
         </div>
       ) : (
-        <div className={styles.resultsBox}>
-          <div className={styles.resultsHeader}>
-            <h3 className={styles.resultsTitle}>Neto estimado a recibir:</h3>
-            <p className={styles.resultsAmount}>$ 2.712.752</p>
-          </div>
-
-          <div className={styles.resultsBody}>
-            <div className={styles.resultRow}>
-              <span>Comisión Garantías (2.5%)</span>
-              <span>$ 15.822</span>
-            </div>
-            <div className={styles.resultRow}>
-              <span>Intereses (43.34% TNA*)</span>
-              <span>$ 254.299</span>
-            </div>
-            <div className={styles.resultRow}>
-              <span>Derecho bolsa</span>
-              <span>$ 0</span>
-            </div>
-            <div className={styles.resultRow}>
-              <span>Derecho mercado (0.06%)</span>
-              <span>$ 1.428</span>
-            </div>
-            <div className={styles.resultRow}>
-              <span>Arancel Soc Bolsa</span>
-              <span>$ 6.658</span>
-            </div>
-            <div className={styles.resultRow}>
-              <span>Valores al cobro</span>
-              <span>$ 6.000</span>
-            </div>
-            <div className={styles.resultRow}>
-              <span>Gestión de cobro</span>
-              <span>$ 70</span>
-            </div>
-            <div className={styles.resultRow}>
-              <span>IVA</span>
-              <span>$ 2.973</span>
-            </div>
-
-            <div className={`${styles.resultRow} ${styles.resultTotalRow}`}>
-              <span className={styles.textYellow}>Total de costos</span>
-              <span className={styles.textYellow}>$ 287.248</span>
-            </div>
-
-            <div className={`${styles.resultRow} ${styles.mtSmall}`}>
-              <span className={styles.textMuted}>CFT estimado</span>
-              <span className={styles.textMuted}>49.55% anual</span>
-            </div>
-          </div>
-
-          <div className={styles.summaryBox}>
-            <div className={styles.summaryRow}>
-              <span>
-                {esPorMontoCheque ? "Vto del cheque" : "Plazo estimado"}
-              </span>
-              <strong>31/07/2026</strong>
-            </div>
-            <div className={styles.summaryRow}>
-              <span>
-                {esPorMontoCheque ? "Monto del cheque" : "Monto a financiar"}
-              </span>
-              <strong>$ 3.000.000</strong>
-            </div>
-          </div>
-
-          <Alert variant="default" layout="box">
-            Tasa promocional subvencionada. IMPORTANTE: La tasa de interés
-            utilizada en el simulador es estimativa.
-          </Alert>
-
-          <div className={styles.actionsFlex}>
-            <Button
-              variant="primary"
-              onClick={onContinuar}
-              className={styles.fullWidthMaxMd}
-            >
-              CONTINUAR
-            </Button>
-            <button
-              type="button"
-              className={styles.cancelBtn}
-              onClick={onCancelar}
-            >
-              Desisto de avanzar
-            </button>
-          </div>
-        </div>
+        <TicketSimulacion
+          netoRecibir="$ 2.712.752"
+          filasCostos={[
+            { label: "Comisión Garantías (2.5%)", value: "$ 15.822" },
+            { label: "Intereses (43.34% TNA*)", value: "$ 254.299" },
+            { label: "Derecho bolsa", value: "$ 0" },
+            { label: "Derecho mercado (0.06%)", value: "$ 1.428" },
+            { label: "Arancel Soc Bolsa", value: "$ 6.658" },
+            { label: "Valores al cobro", value: "$ 6.000" },
+            { label: "Gestión de cobro", value: "$ 70" },
+            { label: "IVA", value: "$ 2.973" },
+          ]}
+          totalCostos="$ 287.248"
+          datoExtraTotal={{ label: "CFT estimado", value: "49.55% anual" }}
+          datosResumen={[
+            {
+              label: esPorMontoCheque ? "Vto del cheque" : "Plazo estimado",
+              value: "31/07/2026",
+            },
+            {
+              label: esPorMontoCheque
+                ? "Monto del cheque"
+                : "Monto a financiar",
+              value: "$ 3.000.000",
+            },
+          ]}
+          textoAlerta="Tasa promocional subvencionada. IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa."
+          onRecalcular={onCancelar}
+          onContinuar={onContinuar}
+          textoBotonSecundario="Desisto de avanzar"
+        />
       )}
     </div>
   );
