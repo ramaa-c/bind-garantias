@@ -7,6 +7,7 @@ import {
   Avatar,
   BotonIcono,
   BuscadorCuit,
+  BotonVolver,
 } from "../../../ui";
 import styles from "./Paso4Socios.module.css";
 
@@ -102,48 +103,63 @@ export default function Paso4Socios({
       {/* --- FASE 2: COMPLETAR DATOS --- */}
       {faseSocio === "completar_datos" && (
         <div className={styles.section}>
-          <h3 className={styles.headerTitle}>Completar datos del socio</h3>
-
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryStatus}>
-              <FiCheckCircle size={16} />
-              <span>IDENTIDAD VALIDADA</span>
-            </div>
-            <p className={styles.summaryName}>{tempSocioNombre}</p>
-            <p className={styles.summaryCuit}>CUIT: {tempSocioCuit}</p>
-          </div>
-
-          <div className={styles.percentageWrapper}>
-            <InputFlotante
-              type="text"
-              label="Porcentaje de participación (%)"
-              maxLength={3}
-              value={tempSocioParticipacion}
-              esValido={isParticipacionValida}
-              error={errorParticipacion}
-              onChange={(e) => {
-                const valorFiltro = e.target.value.replace(/\D/g, "");
-                if (valorFiltro === "" || Number(valorFiltro) <= 100) {
-                  setTempSocioParticipacion(valorFiltro);
-                  if (errorParticipacion) setErrorParticipacion("");
-                }
-              }}
-            />
-          </div>
-
-          <div className={styles.actionFooter}>
-            <Button
-              type="button"
-              variant="outline"
+          <div className={styles.topBackButtonWrapper}>
+            <BotonVolver
+              texto="VOLVER"
               onClick={() => {
                 setErrorParticipacion("");
                 socios.length === 0
                   ? setFaseSocio("ingresar_cuit")
                   : setFaseSocio("lista");
               }}
-            >
-              CANCELAR
-            </Button>
+            />
+          </div>
+
+          <h3 className={styles.headerTitle}>Completar datos del socio</h3>
+
+          <div className={styles.summaryCard}>
+            {/* --- SECCIÓN SUPERIOR: DATOS DEL SOCIO --- */}
+            <div className={styles.summaryTop}>
+              <div className={styles.summaryStatus}>
+                <FiCheckCircle size={16} />
+                <span>IDENTIDAD VALIDADA</span>
+              </div>
+              <p className={styles.summaryName}>{tempSocioNombre}</p>
+              <p className={styles.summaryCuit}>CUIT: {tempSocioCuit}</p>
+            </div>
+
+            {/* --- LÍNEA DIVISORIA --- */}
+            <div className={styles.summaryDivider}></div>
+
+            {/* --- SECCIÓN INFERIOR: PORCENTAJE (NUEVO DISEÑO) --- */}
+            <div className={styles.summaryBottom}>
+              <label className={styles.percentageLabel}>Participación del socio</label>
+
+              <div className={`${styles.customInputWrapper} ${errorParticipacion ? styles.wrapperError : ""}`}>
+                <input
+                  type="text"
+                  className={styles.customInput}
+                  maxLength={3}
+                  value={tempSocioParticipacion}
+                  onChange={(e) => {
+                    const valorFiltro = e.target.value.replace(/\D/g, "");
+                    if (valorFiltro === "" || Number(valorFiltro) <= 100) {
+                      setTempSocioParticipacion(valorFiltro);
+                      if (errorParticipacion) setErrorParticipacion("");
+                    }
+                  }}
+                />
+                <span className={styles.percentageSymbol}>%</span>
+              </div>
+
+              {/* Mensaje de error si hace falta */}
+              {errorParticipacion && (
+                <span className={styles.errorText}>{errorParticipacion}</span>
+              )}
+            </div>
+          </div>
+
+          <div className={styles.saveActionRowCentrado}>
             <Button
               type="button"
               variant="primary"

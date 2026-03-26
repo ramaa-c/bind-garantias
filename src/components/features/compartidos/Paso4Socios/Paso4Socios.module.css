@@ -31,6 +31,144 @@
   margin: 0;
 }
 
+/* --- NUEVOS ESTILOS FASE 2 --- */
+.topBackButtonWrapper {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.topBackButtonWrapper>div {
+  justify-content: flex-start !important;
+}
+
+/* Centrado del botón guardar en móvil */
+.saveActionRowCentrado {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 1.5rem;
+}
+
+.saveActionRowCentrado :global(button) {
+  width: 100%;
+}
+
+/* --- LA TARJETA PRINCIPAL (Fase 2) --- */
+.summaryCard {
+  background-color: rgba(76, 175, 80, 0.05);
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  border-radius: 0.5rem;
+  margin: 1.5rem 0 2rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Info de arriba */
+.summaryTop {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.summaryStatus {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.375rem;
+  color: #4caf50;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.0625rem;
+  margin-bottom: 0.25rem;
+}
+
+.summaryName {
+  color: var(--yellow);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.summaryCuit {
+  color: var(--white);
+  font-size: 1rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+/* La línea divisoria */
+.summaryDivider {
+  width: 100%;
+  height: 1px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+/* El sector del input nuevo */
+.summaryBottom {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.percentageLabel {
+  color: #ccc;
+  font-size: 0.9375rem;
+}
+
+/* El input específico de porcentaje */
+.customInputWrapper {
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid #444;
+  border-radius: 0.5rem;
+  padding: 0 1rem;
+  width: 7.5rem;
+  height: 3rem;
+  transition: all 0.2s ease;
+}
+
+.customInputWrapper:focus-within {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 2px rgba(244, 245, 0, 0.1);
+}
+
+.wrapperError {
+  border-color: #ff5252;
+}
+
+.customInput {
+  background: transparent;
+  border: none;
+  color: var(--white);
+  font-size: 1.25rem;
+  font-weight: bold;
+  width: 100%;
+  text-align: center;
+  outline: none;
+}
+
+.percentageSymbol {
+  color: var(--yellow);
+  font-size: 1.1rem;
+  font-weight: bold;
+  opacity: 0.8;
+}
+
+.errorText {
+  color: #ff5252;
+  font-size: 0.8125rem;
+  margin-top: -0.25rem;
+}
+
 /* --- FASE 3: LISTA DE SOCIOS --- */
 .listHeader {
   display: flex;
@@ -76,6 +214,23 @@
   flex: 1;
 }
 
+.itemName {
+  color: var(--white);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.itemDetails {
+  color: #888;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.highlight {
+  color: var(--yellow);
+  font-weight: 600;
+}
+
 .itemActions {
   display: flex;
   width: 100%;
@@ -112,7 +267,9 @@
   margin-top: 1.5rem;
 }
 
-/* Escritorio */
+/* ========================================================== */
+/* --- ESCRITORIO --- */
+/* ========================================================== */
 @media (min-width: 48rem) {
   .headerTitleRow {
     flex-direction: row;
@@ -125,6 +282,44 @@
     padding: 0;
   }
 
+  /* Ajustes Fase 2 para Escritorio */
+  .saveActionRowCentrado {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .saveActionRowCentrado :global(button) {
+    width: auto;
+    min-width: 12.5rem;
+  }
+
+  .summaryCard {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .summaryTop {
+    flex: 1;
+    text-align: left;
+  }
+
+  .summaryStatus {
+    justify-content: flex-start;
+  }
+
+  .summaryDivider {
+    width: 1px;
+    height: auto;
+    border-top: none;
+    border-left: 1px dashed rgba(255, 255, 255, 0.15);
+  }
+
+  .summaryBottom {
+    width: 15rem;
+    justify-content: center;
+  }
+
+  /* Ajustes Fase 3 (Lista) para Escritorio */
   .listHeader {
     flex-direction: row;
     justify-content: space-between;
@@ -168,67 +363,12 @@
   }
 }
 
-/* --- ESTADOS Y UTILIDADES --- */
-.summaryCard {
-  background-color: rgba(76, 175, 80, 0.05);
-  border: 1px solid rgba(76, 175, 80, 0.2);
-  border-radius: 0.5rem;
-  padding: 1.25rem;
-  margin: 1.5rem 0 2rem 0;
-}
-
-.summaryStatus {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: #4caf50;
-  font-size: 0.8rem;
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.0625rem;
-  margin-bottom: 0.5rem;
-}
-
-.itemName {
-  color: var(--white);
-  font-size: 1rem;
-  margin: 0;
-}
-
-.itemDetails {
-  color: #888;
-  font-size: 0.85rem;
-  margin: 0;
-}
-
-.highlight {
-  color: var(--yellow);
-  font-weight: 600;
-}
-
-.summaryName {
-  color: var(--yellow);
-  font-size: 1.1rem;
-  font-weight: 500;
-  margin: 0;
-}
-
-.summaryCuit {
-  color: var(--white);
-  font-size: 1rem;
-  opacity: 0.8;
-  margin: 0;
-}
-
-.percentageWrapper {
-  max-width: 100%;
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(0.3125rem);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
