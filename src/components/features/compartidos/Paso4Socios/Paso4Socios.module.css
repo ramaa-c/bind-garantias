@@ -4,6 +4,13 @@
 }
 
 /* --- CABECERA --- */
+.headerTitleRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 3rem;
+}
+
 .headerTitle {
   color: var(--white);
   font-weight: bold;
@@ -11,26 +18,17 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  margin-bottom: 0.3125rem;
+  margin: 0;
+}
+
+.noMargin {
+  margin: 0;
 }
 
 .helperText {
   color: #aaa;
   font-size: 0.875rem;
-  margin-bottom: 1.25rem;
-}
-
-/* --- FASE 1: BÚSQUEDA --- */
-.searchRow {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: stretch;
-  width: 100%;
-}
-
-.searchRow :global(button) {
-  width: 100%;
+  margin: 0;
 }
 
 /* --- FASE 3: LISTA DE SOCIOS --- */
@@ -52,7 +50,7 @@
   gap: 0.5rem;
 }
 
-/* --- LA TARJETA DEL SOCIO (ESTRUCTURA CORREGIDA) --- */
+/* --- LA TARJETA DEL SOCIO --- */
 .listItem {
   display: flex;
   flex-direction: column;
@@ -106,20 +104,25 @@
   margin-top: 2rem;
 }
 
+.iconMarginRight {
+  margin-right: 0.5rem;
+}
+
+.mtMedium {
+  margin-top: 1.5rem;
+}
+
 /* Escritorio */
-@media (min-width: 768px) {
+@media (min-width: 48rem) {
+  .headerTitleRow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
   .container {
     padding: 0;
-  }
-
-  .searchRow {
-    flex-direction: row;
-    align-items: flex-start;
-    max-width: 31.25rem;
-  }
-
-  .searchRow :global(button) {
-    width: auto;
   }
 
   .listHeader {
@@ -177,13 +180,13 @@
 .summaryStatus {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.375rem;
   color: #4caf50;
   font-size: 0.8rem;
   font-weight: bold;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
+  letter-spacing: 0.0625rem;
+  margin-bottom: 0.5rem;
 }
 
 .itemName {
@@ -203,10 +206,6 @@
   font-weight: 600;
 }
 
-.tallButton {
-  height: 2.875rem;
-}
-
 .summaryName {
   color: var(--yellow);
   font-size: 1.1rem;
@@ -221,12 +220,15 @@
   margin: 0;
 }
 
+.percentageWrapper {
+  max-width: 100%;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(0.3125rem);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);

@@ -56,7 +56,7 @@ export default function Cheques() {
   const handleValidarCuit = async () => {
     if (await trigger("cuit")) setPasoActual(2);
   };
-  
+
   const handleVolver = () => {
     if (pasoActual === 7) setPasoActual(1);
     else setPasoActual(pasoActual - 1);
@@ -77,7 +77,7 @@ export default function Cheques() {
     if (await trigger("celular")) setMostrarModal(true);
   };
   const confirmarSms = () => setMostrarModal(false);
-  
+
   const handleContinuarPaso2 = async () => {
     if (await trigger(["direccion", "provincia", "localidad", "celular"]))
       setPasoActual(3);
@@ -88,7 +88,7 @@ export default function Cheques() {
       ...dataFormulario,
       sociosBasicos: socios,
     };
-    
+
     setPasoActual(7);
   };
 
@@ -201,30 +201,41 @@ export default function Cheques() {
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
-
                 {pasoActual === 1 && (
                   <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Solicitud de Línea de Cheques</h1>
+                    <h1 className={styles.tituloBienvenida}>
+                      Solicitud de Línea de Cheques
+                    </h1>
                     <p className={styles.subtituloBienvenida}>
-                      Comenzá validando el CUIT de tu empresa para operar en el mercado de capitales.
+                      Comenzá validando el CUIT de tu empresa para operar en el
+                      mercado de capitales.
                     </p>
                   </div>
                 )}
 
-                {pasoActual >= 2 && pasoActual < 7 &&
+                {pasoActual >= 2 &&
+                  pasoActual < 7 &&
                   (() => {
                     let hitoVisual = 1;
-                    if (pasoActual > 3 && pasoActual <= 5) hitoVisual = 2;
-                    if (pasoActual === 6) hitoVisual = 3;
+                    if (pasoActual === 3) hitoVisual = 2;
+                    if (pasoActual === 4) hitoVisual = 3;
+                    if (pasoActual === 5) hitoVisual = 4;
+                    if (pasoActual === 6) hitoVisual = 5;
 
                     return (
                       <BarraProgreso
-                        hitos={["Datos Básicos", "Documentación", "Confirmación"]}
+                        hitos={[
+                          "Empresa",
+                          "Operación",
+                          "Socios",
+                          "Documentos",
+                          "Confirmación",
+                        ]}
                         hitoActual={hitoVisual}
                       />
                     );
                   })()}
-
+ 
                 {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
