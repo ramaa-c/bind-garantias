@@ -6,6 +6,7 @@ import {
   FiMapPin,
   FiPhone,
   FiEdit2,
+  FiChevronRight
 } from "react-icons/fi";
 import { Button } from "../../../ui";
 import { ModalUbicacion, ModalContacto } from "../../../features";
@@ -216,6 +217,7 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
       <div className={styles.actionsRight}>
         <Button
           variant="primary"
+          iconRight={<FiChevronRight />}
           onClick={handleAvanzarClick}
           className={styles.tallButton}
         >

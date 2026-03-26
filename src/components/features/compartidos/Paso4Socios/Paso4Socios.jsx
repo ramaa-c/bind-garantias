@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { FiEdit, FiTrash2, FiUserPlus, FiCheckCircle } from "react-icons/fi";
+import {
+  FiEdit,
+  FiTrash2,
+  FiUserPlus,
+  FiCheckCircle,
+  FiChevronRight,
+} from "react-icons/fi";
 import {
   InputFlotante,
   Button,
@@ -223,6 +229,7 @@ export default function Paso4Socios({
             <Button
               type="button"
               variant="primary"
+              iconRight={<FiChevronRight />}
               onClick={continuarAlProximoPaso}
             >
               CONTINUAR

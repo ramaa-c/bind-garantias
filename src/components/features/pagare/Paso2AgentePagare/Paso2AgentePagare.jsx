@@ -1,6 +1,6 @@
 import React from "react";
 import { useFormContext, Controller } from "react-hook-form";
-import { FiBriefcase, FiCheckCircle } from "react-icons/fi";
+import { FiBriefcase, FiCheckCircle, FiChevronRight } from "react-icons/fi";
 import { Button } from "../../../ui";
 import styles from "./Paso2AgentePagare.module.css";
 
@@ -63,6 +63,7 @@ export default function Paso2AgentePagare({ avanzarPaso }) {
           type="button"
           variant="primary"
           onClick={() => avanzarPaso(["agenteBolsa"], 3)}
+          iconRight={<FiChevronRight />}
         >
           CONTINUAR
         </Button>
