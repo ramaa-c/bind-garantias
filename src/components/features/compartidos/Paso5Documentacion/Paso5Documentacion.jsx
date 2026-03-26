@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
-import { FiCheckCircle, FiAlertCircle, FiEdit2 } from "react-icons/fi";
+import { FiCheckCircle, FiAlertCircle, FiEdit2,FiChevronRight  } from "react-icons/fi";
 import { Button } from "../../../ui";
 import {
   SocioTaskCard,
@@ -364,6 +364,7 @@ export default function Paso5Documentacion({
       <div className={styles.actionsRight}>
         <Button
           variant="primary"
+          iconRight={<FiChevronRight />}
           onClick={handleAvanzarClick}
           className={styles.tallButton}
         >

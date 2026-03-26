@@ -2,6 +2,7 @@ import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Button, Alert, InputMonto } from "../../../ui";
 import { SelectFecha } from "../../../ui";
+import { FiChevronRight } from "react-icons/fi";
 import styles from "./Paso1SimuladorPagare.module.css";
 
 export default function Paso1SimuladorPagare({
@@ -111,7 +112,11 @@ export default function Paso1SimuladorPagare({
             >
               RECALCULAR
             </Button>
-            <Button variant="primary" onClick={() => setPasoActual(2)}>
+            <Button
+              variant="primary"
+              iconRight={<FiChevronRight />}
+              onClick={() => setPasoActual(2)}
+            >
               CONTINUAR
             </Button>
           </div>
