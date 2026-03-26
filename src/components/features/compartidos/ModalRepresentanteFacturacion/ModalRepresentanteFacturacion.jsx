@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
 import { FiCheckCircle, FiEdit, FiBriefcase, FiX } from "react-icons/fi";
-import { InputFlotante, Button } from "../../../ui";
+import { InputFlotante, Button, BotonVolver } from "../../../ui";
 import styles from "./ModalRepresentanteFacturacion.module.css";
 import { useEscape } from "../../../../hooks/useEscape";
 
@@ -166,6 +166,17 @@ export const ModalRepresentanteFacturacion = ({
 
               {faseApoderado === "completar" && (
                 <div className={styles.completarContainer}>
+                  <div className={styles.topBackButtonWrapper}>
+                    <BotonVolver
+                      texto="CANCELAR"
+                      onClick={() => {
+                        setValue("apoCuit", "");
+                        setErrorApoCuit("");
+                        setFaseApoderado("ingresar");
+                      }}
+                    />
+                  </div>
+
                   <div className={styles.infoPill}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>CUIT:</span>
@@ -201,18 +212,8 @@ export const ModalRepresentanteFacturacion = ({
                       }}
                     />
                   </div>
-                  <div className={styles.actionRow}>
-                    {/* Usamos el nuevo variant="ghost" */}
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setValue("apoCuit", "");
-                        setErrorApoCuit("");
-                        setFaseApoderado("ingresar");
-                      }}
-                    >
-                      CANCELAR
-                    </Button>
+
+                  <div className={styles.saveActionRowCentrado}>
                     <Button
                       variant="primary"
                       onClick={handleGuardarApoderadoFase2}
@@ -236,7 +237,6 @@ export const ModalRepresentanteFacturacion = ({
                       </p>
                     </div>
                   </div>
-                  {/* Usamos el nuevo variant="ghost" */}
                   <Button
                     variant="ghost"
                     size="sm"

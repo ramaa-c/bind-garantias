@@ -1,8 +1,11 @@
+/* ========================================================== */
+/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
+/* ========================================================== */
 .overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(6px);
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -13,14 +16,14 @@
 .modalContainer {
   background-color: #1a1a1a;
   width: 92%;
-  max-width: 40.625rem;
-  max-height: 92vh;
+  max-width: 32rem;
+  max-height: 90vh;
   overflow-y: auto;
   border-radius: 1.25rem;
   border: 1px solid #333;
   padding: 1.5rem 1.25rem;
   position: relative;
-  box-shadow: 0 1.25rem 2.5rem rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
 }
 
 .modalContainer::-webkit-scrollbar {
@@ -41,7 +44,11 @@
   color: #666;
   cursor: pointer;
   z-index: 10;
-  padding: 0.3125rem;
+  padding: 0.5rem;
+}
+
+.btnClose:hover {
+  color: var(--white);
 }
 
 .body {
@@ -73,8 +80,8 @@
 
 .description {
   color: #888;
-  margin-top: 0.25rem;
-  margin-bottom: 1.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
   font-size: 0.875rem;
 }
 
@@ -83,7 +90,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   text-align: left;
 }
 
@@ -96,28 +103,55 @@
 .sectionTitle {
   color: var(--white);
   font-size: 0.9375rem;
-  margin: 0 0 0.625rem 0;
+  margin: 0 0 0.25rem 0;
   padding-bottom: 0.3125rem;
   border-bottom: 1px solid #333;
 }
 
 /* --- ESTILOS DE FASES --- */
+
 .searchBox {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: stretch;
+  width: 100%;
+  margin-top: 1.25rem;
+}
+
+
+.searchBox :global(button) {
+  width: 100%;
 }
 
 .inputWrapper {
   flex: 1;
+  width: 100%;
+}
+
+/* --- FASE COMPLETAR --- */
+.completarContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0 !important;
+}
+
+.topBackButtonWrapper {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.topBackButtonWrapper>div {
+  justify-content: flex-start !important;
 }
 
 .infoPill {
   background: rgba(255, 255, 255, 0.03);
   border-left: 3px solid var(--yellow);
   padding: 1rem;
-  border-radius: 0 0.5rem 0.5rem 0;
+  border-radius: 0.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -145,7 +179,26 @@
 .inputRow {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0;
+}
+
+/* SECCIÓN FACTURACIÓN */
+.facturacionWrapper {
+  margin-top: 0.75rem;
+}
+
+/* BOTÓN GUARDAR DATOS */
+.saveActionRowCentrado {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.saveActionRowCentrado :global(button) {
+  width: 100%;
 }
 
 /* ESTADOS DE ÉXITO */
@@ -203,8 +256,9 @@
   gap: 0.5rem;
 }
 
+/* FOOTER FINAL */
 .modalFooter {
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   display: flex;
   justify-content: center;
   width: 100%;
@@ -214,26 +268,50 @@
   width: 100%;
 }
 
-/* Escritorio */
+/* ----------------------------------------------------------- */
+/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
+/* ----------------------------------------------------------- */
 @media (min-width: 768px) {
   .modalContainer {
-    padding: 1.5625rem 2.5rem;
+    padding: 2.5rem;
   }
 
   .modalLayout {
-    gap: 2rem;
+    gap: 1.5rem;
+  }
+
+  .completarContainer {
+    gap: 0 !important;
   }
 
   .searchBox {
     flex-direction: row;
     align-items: baseline;
     gap: 1.5rem;
+    margin-top: 1rem;
+
+  }
+
+  .searchBox :global(button) {
+    width: auto;
+    min-width: 9.375rem;
   }
 
   .inputRow {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
+    margin-top: 2rem;
+    margin-bottom: 0;
+  }
+
+  .saveActionRowCentrado {
+    margin-top: 0;
+  }
+
+  .saveActionRowCentrado :global(button) {
+    width: auto;
+    min-width: 12.5rem;
   }
 
   .successCard {
