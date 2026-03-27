@@ -49,6 +49,10 @@ export default function Prestamos() {
       provincia: "",
       localidad: "",
       celular: "",
+      apoCuit: "",
+      apoEmail: "",
+      apoCelular: "",
+      emailFacturacion: "",
     },
   });
   const { handleSubmit, trigger } = metodosFormulario;

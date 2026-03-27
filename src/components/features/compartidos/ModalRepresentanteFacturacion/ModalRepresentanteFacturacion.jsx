@@ -258,7 +258,14 @@ export const ModalRepresentanteFacturacion = ({
 
             {/* --- FOOTER --- */}
             <div className={styles.modalFooter}>
-              <Button variant="primary" size="md" onClick={onClose}>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={async () => {
+                  await trigger("emailFacturacion");
+                  onClose();
+                }}
+              >
                 GUARDAR Y CERRAR
               </Button>
             </div>

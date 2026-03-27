@@ -353,6 +353,10 @@ export default function Paso5Documentacion({
             <input {...register(`socios.${i}.localidad`)} />
           </React.Fragment>
         ))}
+        <input {...register("apoCuit")} />
+        <input {...register("apoEmail")} />
+        <input {...register("apoCelular")} />
+        <input {...register("emailFacturacion")} />
       </div>
     </div>
   );

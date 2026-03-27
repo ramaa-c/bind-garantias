@@ -46,6 +46,10 @@ export default function Cheques() {
       provincia: "",
       localidad: "",
       celular: "",
+      apoCuit: "",
+      apoEmail: "",
+      apoCelular: "",
+      emailFacturacion: "",
     },
   });
 
