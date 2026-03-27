@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { FiMapPin, FiX } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
-import { Button, InputFlotante } from "../../../ui";
+import { Button, InputFlotante, Modal } from "../../../ui";
 import styles from "./ModalUbicacion.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
 
 export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
   const { getValues, setValue, trigger } = useFormContext();
@@ -24,10 +23,6 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
   } else if (!isOpen && prevIsOpen) {
     setPrevIsOpen(false);
   }
-
-  useEscape(onClose, isOpen);
-
-  if (!isOpen) return null;
 
   const errorDir =
     intentoGuardar && dirLocal.trim().length < 5 ? "Mínimo 5 caracteres" : null;
@@ -65,64 +60,64 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
     }
   };
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div className={styles.modalContainer}>
-        <button className={styles.btnClose} onClick={onClose}>
-          <FiX size={20} />
-        </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      overlayClassName={styles.overlay}
+      modalClassName={styles.modalContainer}
+      hideCloseButton={true}
+    >
+      <button className={styles.btnClose} onClick={onClose}>
+        <FiX size={20} />
+      </button>
 
-        <div className={styles.body}>
-          <div className={styles.iconWrapper}>
-            <FiMapPin size={30} />
-          </div>
+      <div className={styles.body}>
+        <div className={styles.iconWrapper}>
+          <FiMapPin size={30} />
+        </div>
 
-          <h2 className={styles.title}>Datos de Ubicación</h2>
-          <p className={styles.description}>
-            Ingresá el domicilio fiscal de la empresa.
-          </p>
+        <h2 className={styles.title}>Datos de Ubicación</h2>
+        <p className={styles.description}>
+          Ingresá el domicilio fiscal de la empresa.
+        </p>
 
-          <div className={styles.formSection}>
+        <div className={styles.formSection}>
+          <InputFlotante
+            label="Dirección"
+            error={errorDir}
+            esValido={isDirValido}
+            value={dirLocal}
+            onChange={(e) => setDirLocal(e.target.value)}
+          />
+          <div className={styles.inputRow}>
             <InputFlotante
-              label="Dirección"
-              error={errorDir}
-              esValido={isDirValido}
-              value={dirLocal}
-              onChange={(e) => setDirLocal(e.target.value)}
+              label="Provincia"
+              error={errorProv}
+              esValido={isProvValido}
+              value={provLocal}
+              onChange={(e) => setProvLocal(e.target.value)}
             />
-            <div className={styles.inputRow}>
-              <InputFlotante
-                label="Provincia"
-                error={errorProv}
-                esValido={isProvValido}
-                value={provLocal}
-                onChange={(e) => setProvLocal(e.target.value)}
-              />
-              <InputFlotante
-                label="Localidad"
-                error={errorLoc}
-                esValido={isLocValido}
-                value={locLocal}
-                onChange={(e) => setLocLocal(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className={styles.btnSave}>
-            <Button
-              variant="primary"
-              onClick={handleGuardar}
-              style={{ width: "100%", minHeight: "3rem" }}
-            >
-              GUARDAR DATOS
-            </Button>
+            <InputFlotante
+              label="Localidad"
+              error={errorLoc}
+              esValido={isLocValido}
+              value={locLocal}
+              onChange={(e) => setLocLocal(e.target.value)}
+            />
           </div>
         </div>
+
+        <div className={styles.btnSave}>
+          <Button
+            variant="primary"
+            onClick={handleGuardar}
+            style={{ width: "100%", minHeight: "3rem" }}
+          >
+            GUARDAR DATOS
+          </Button>
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

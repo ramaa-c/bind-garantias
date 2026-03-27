@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
 import { FiCheckCircle, FiEdit, FiBriefcase, FiX } from "react-icons/fi";
-import { InputFlotante, Button, BotonVolver } from "../../../ui";
+import { InputFlotante, Button, BotonVolver, Modal } from "../../../ui";
 import styles from "./ModalRepresentanteFacturacion.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
 
 export const ModalRepresentanteFacturacion = ({
   isOpen,
@@ -23,8 +22,6 @@ export const ModalRepresentanteFacturacion = ({
   const apoCuitIngresado = watch("apoCuit") || "";
   const apoEmailVal = watch("apoEmail") || "";
   const apoCelVal = watch("apoCelular") || "";
-
-  useEscape(onClose, isOpen);
 
   const validarCUIT = (cuit) => {
     if (!cuit) return false;
@@ -86,36 +83,30 @@ export const ModalRepresentanteFacturacion = ({
     apoCelVal.replace(/\D/g, "").length === 10 &&
     (dirtyFields.apoCelular || intentoGuardarApo);
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  if (!isOpen) return null;
-
   const { onChange: onCelChange, ...restCel } = register("apoCelular");
 
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div
-        className={styles.modalContainer}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button className={styles.btnClose} onClick={onClose}>
-          <FiX size={20} />
-        </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      overlayClassName={styles.overlay}
+      modalClassName={styles.modalContainer}
+      hideCloseButton={true}
+    >
+      <button className={styles.btnClose} onClick={onClose}>
+        <FiX size={20} />
+      </button>
 
-        <div className={styles.body}>
-          <div className={styles.iconWrapper}>
-            <FiBriefcase size={30} />
-          </div>
+      <div className={styles.body}>
+        <div className={styles.iconWrapper}>
+          <FiBriefcase size={30} />
+        </div>
 
-          <h2 className={styles.title}>Gestión y Contacto</h2>
-          <p className={styles.description}>
-            Designá al representante legal y configurá el contacto para
-            facturación.
-          </p>
+        <h2 className={styles.title}>Gestión y Contacto</h2>
+        <p className={styles.description}>
+          Designá al representante legal y configurá el contacto para
+          facturación.
+        </p>
 
           <div className={styles.modalLayout}>
             {/* --- SECCIÓN 1: APODERADO --- */}
@@ -271,9 +262,8 @@ export const ModalRepresentanteFacturacion = ({
                 GUARDAR Y CERRAR
               </Button>
             </div>
-          </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
+import { useEscape } from '../../../hooks/useEscape';
 import styles from './Modal.module.css';
 
 export const Modal = ({ 
@@ -8,9 +9,17 @@ export const Modal = ({
   onClose, 
   title, 
   children, 
-  maxWidth = '600px'
+  maxWidth = '600px',
+  overlayClassName,
+  modalClassName,
+  hideCloseButton = false,
+  onOverlayClick,
 }) => {
   
+  useEscape(onClose, isOpen);
+
+  const modalRef = useRef(null);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -25,20 +34,36 @@ export const Modal = ({
 
   if (!isOpen) return null;
 
+  const handleOverlayClick = (e) => {
+    if (onOverlayClick) {
+      onOverlayClick(e);
+      return;
+    }
+    if (modalRef.current && !modalRef.current.contains(e.target)) {
+      onClose();
+    }
+  };
+
   return createPortal(
-    <div className={styles.overlay} onClick={onClose}>
+    <div
+      className={overlayClassName || styles.overlay}
+      onMouseDown={handleOverlayClick}
+    >
       <div 
-        className={styles.modalBox} 
-        style={{ maxWidth }}
+        className={modalClassName || styles.modalBox}
+        style={modalClassName ? {} : { maxWidth }}
+        ref={modalRef}
         onClick={(e) => e.stopPropagation()}
       >
-        <button 
-          className={styles.closeButton} 
-          onClick={onClose} 
-          aria-label="Cerrar modal"
-        >
-          <FiX />
-        </button>
+        {!hideCloseButton && (
+          <button
+            className={styles.closeButton}
+            onClick={onClose}
+            aria-label="Cerrar modal"
+          >
+            <FiX />
+          </button>
+        )}
         
         {title && <h2 className={styles.title}>{title}</h2>}
         
