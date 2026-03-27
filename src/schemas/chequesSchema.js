@@ -1,40 +1,107 @@
 import * as z from "zod";
 
-export const chequesSchema = z.object({
-  cuit: z.string().regex(/^\d{11}$/, { message: "Debe contener 11 números sin guiones" }),
-  direccion: z.string().min(3, { message: "La dirección es obligatoria" }),
-  provincia: z.string().min(3, { message: "La provincia es obligatoria" }),
-  localidad: z.string().min(3, { message: "La localidad es obligatoria" }),
-  celular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
-  moneda: z.string().min(1, { message: "Requerido" }),
-  tipoProducto: z.string().min(1, { message: "Requerido" }),
-  tipoCalculo: z.string().min(1, { message: "Requerido" }),
-  monto: z.coerce.number().min(1000, { message: "El monto mínimo es $1000" }),
-  plazo: z.string().min(1, { message: "Requerido" }),  
-  apoCuit: z.string().regex(/^\d{11}$/, { message: "Debe contener 11 números" }).optional().or(z.literal("")),
-  apoEmail: z.string().email({ message: "Email inválido" }).optional().or(z.literal("")),
-  apoCelular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números" }).optional().or(z.literal("")),
-  emailFacturacion: z.string().email({ message: "Email inválido" }).min(1, { message: "Requerido" }),
-  sociedadBolsa: z.string().optional(),
-  numeroCuentaBolsa: z.string().optional(),
+export const chequesSchema = z
+  .object({
+    cuit: z
+      .string()
+      .regex(/^\d{11}$/, { message: "Debe contener 11 números sin guiones" }),
 
-  // --- VALIDACIÓN DE SOCIOS ---
-  socios: z.array(
-    z.object({
-      email: z.string().email({ message: "Email inválido" }),
-      celular: z.string().regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
-      direccion: z.string().min(3, { message: "Requerido" }),
-      provincia: z.string().min(3, { message: "Requerido" }),
-      localidad: z.string().min(3, { message: "Requerido" }),
-    })
-  ).optional(),
+    direccion: z
+      .string()
+      .trim()
+      .min(3, { message: "La dirección es obligatoria" }),
+    provincia: z.string().min(3, { message: "La provincia es obligatoria" }),
+    localidad: z.string().min(3, { message: "La localidad es obligatoria" }),
 
-}).superRefine((data, ctx) => {
-  if (data.sociedadBolsa && data.sociedadBolsa !== "" && !data.numeroCuentaBolsa) {
-    ctx.addIssue({
-      path: ["numeroCuentaBolsa"],
-      message: "El número de cuenta es obligatorio",
-      code: z.ZodIssueCode.custom,
-    });
-  }
-});
+    celular: z
+      .string()
+      .regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
+
+    // SELECTS
+    moneda: z.string().min(1, { message: "Seleccioná una moneda" }),
+    tipoProducto: z.string().min(1, { message: "Seleccioná el producto" }),
+    tipoCalculo: z
+      .string()
+      .min(1, { message: "Seleccioná el tipo de cálculo" }),
+
+    // MONTO
+    monto: z
+      .preprocess(
+        (val) => {
+          if (val === "" || val === undefined || val === null) return undefined;
+          const cleanValue =
+            typeof val === "string"
+              ? val.replace(/\./g, "").replace(",", ".")
+              : val;
+          const num = Number(cleanValue);
+          return isNaN(num) ? val : num;
+        },
+        z
+          .number({
+            invalid_type_error: "Ingresá un número válido",
+          })
+          .min(1000, { message: "El monto mínimo es $1000" })
+          .optional(),
+      )
+      .refine((val) => val !== undefined, {
+        message: "El monto es obligatorio",
+      }),
+
+    // CAMPOS DE FECHA
+    plazo: z.string().optional(),
+    fechaPago: z.string().optional(),
+
+    // APODERADOS
+    apoCuit: z
+      .string()
+      .regex(/^\d{11}$/, { message: "Debe contener 11 números" })
+      .optional()
+      .or(z.literal("")),
+    apoEmail: z
+      .string()
+      .email({ message: "Email inválido" })
+      .optional()
+      .or(z.literal("")),
+    apoCelular: z
+      .string()
+      .regex(/^\d{10}$/, { message: "Debe contener 10 números" })
+      .optional()
+      .or(z.literal("")),
+
+    emailFacturacion: z
+      .string()
+      .email({ message: "Email inválido" })
+      .min(1, { message: "Requerido" }),
+
+    sociedadBolsa: z.string().optional().or(z.literal("")),
+    numeroCuentaBolsa: z.string().optional().or(z.literal("")),
+
+    // SOCIOS
+    socios: z
+      .array(
+        z.object({
+          email: z.string().email({ message: "Email inválido" }),
+          celular: z
+            .string()
+            .regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
+          direccion: z.string().min(3, { message: "Requerido" }),
+          provincia: z.string().min(3, { message: "Requerido" }),
+          localidad: z.string().min(3, { message: "Requerido" }),
+        }),
+      )
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (
+      data.sociedadBolsa &&
+      data.sociedadBolsa !== "" &&
+      (!data.numeroCuentaBolsa || data.numeroCuentaBolsa.trim() === "")
+    ) {
+      ctx.addIssue({
+        path: ["numeroCuentaBolsa"],
+        message:
+          "El número de cuenta es obligatorio si seleccionaste una bolsa",
+        code: z.ZodIssueCode.custom,
+      });
+    }
+  });

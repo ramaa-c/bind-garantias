@@ -1,31 +1,40 @@
-import React from 'react';
-import styles from './Alert.module.css';
-import { FiInfo, FiAlertTriangle, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import React from "react";
+import {
+  FiInfo,
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiXCircle,
+} from "react-icons/fi";
+import styles from "./Alert.module.css";
 
-export const Alert = ({ 
-  children, 
-  variant = 'default',
-  layout = 'box',
+const ICON_MAP = {
+  warning: FiAlertTriangle,
+  success: FiCheckCircle,
+  error: FiXCircle,
+  info: FiInfo,
+};
+
+export const Alert = ({
+  children,
+  variant = "info",
+  layout = "horizontal",
+  className = "",
   icon: CustomIcon,
-  className = ''
 }) => {
-  
-  const getDefaultIcon = () => {
-    switch (variant) {
-      case 'warning': return FiAlertTriangle;
-      case 'success': return FiCheckCircle;
-      case 'error': return FiXCircle;
-      default: return FiInfo;
-    }
-  };
-
-  const IconToRender = CustomIcon || getDefaultIcon();
-
+  const DefaultIcon = ICON_MAP[variant] || ICON_MAP.info;
   const containerClass = `${styles.base} ${styles[layout]} ${styles[variant]} ${className}`;
 
   return (
     <div className={containerClass} role="alert">
-      <IconToRender className={styles.icon} />
+      {CustomIcon ? (
+        React.isValidElement(CustomIcon) ? (
+          React.cloneElement(CustomIcon, { className: styles.icon })
+        ) : (
+          <CustomIcon className={styles.icon} />
+        )
+      ) : (
+        <DefaultIcon className={styles.icon} />
+      )}
       <p className={styles.text}>{children}</p>
     </div>
   );

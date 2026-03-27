@@ -1,8 +1,6 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
-import { Button, Alert, InputMonto } from "../../../ui";
-import { SelectFecha } from "../../../ui";
-import { FiChevronRight } from "react-icons/fi";
+import { useFormContext, useFormState } from "react-hook-form";
+import { Button, InputMonto, SelectFecha, TicketSimulacion } from "../../../ui";
 import styles from "./Paso1SimuladorPagare.module.css";
 
 export default function Paso1SimuladorPagare({
@@ -11,14 +9,19 @@ export default function Paso1SimuladorPagare({
   handleCalcularSimulacion,
   setPasoActual,
 }) {
-  const {
-    register,
-    watch,
-    formState: { errors },
-  } = useFormContext();
-
+  const { register, watch, control, trigger } = useFormContext();
+  const { errors, dirtyFields } = useFormState({ control });
+  
   const montoValue = watch("monto");
-  const fechaValue = watch("fechaPago");
+  const isMontoValid = !errors.monto && dirtyFields.monto;
+
+  const onSimularClick = async () => {
+    const camposValidos = await trigger(["monto", "fechaPago"]);
+    
+    if (camposValidos) {
+      handleCalcularSimulacion();
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -37,6 +40,7 @@ export default function Paso1SimuladorPagare({
           name="fechaPago"
           label="Fecha de pago"
           disabled={simulacionLista}
+          error={errors.fechaPago?.message}
         />
       </div>
 
@@ -47,7 +51,7 @@ export default function Paso1SimuladorPagare({
             label="Monto del Pagaré"
             error={errors.monto?.message}
             disabled={simulacionLista}
-            esValido={montoValue > 0}
+            esValido={isMontoValid || montoValue > 0}
             {...register("monto")}
           />
         </div>
@@ -58,69 +62,30 @@ export default function Paso1SimuladorPagare({
           <Button
             variant="primary"
             size="lg"
-            onClick={handleCalcularSimulacion}
-            disabled={!montoValue || !fechaValue}
+            onClick={onSimularClick}
           >
             SIMULAR COSTOS
           </Button>
         </div>
       ) : (
-        /* --- TICKET RESULTADOS --- */
-        <div className={styles.breakdownContainer}>
-          <div className={styles.breakdownHeader}>
-            <span>Neto estimado a recibir:</span>
-            <span className={styles.textXl}>
-              USD {(montoValue * 0.96).toLocaleString("es-AR")}
-            </span>
-          </div>
-
-          <div className={styles.breakdownBody}>
-            <div className={styles.breakdownRow}>
-              <span>Comisión SGR</span>
-              <span>USD 811</span>
-            </div>
-            <div className={styles.breakdownRow}>
-              <span>Descuento operado</span>
-              <span>USD 446</span>
-            </div>
-            <div className={styles.breakdownRow}>
-              <span>Derecho mercado</span>
-              <span>USD 24</span>
-            </div>
-            <div className={styles.breakdownRow}>
-              <span>IVA</span>
-              <span>USD 5</span>
-            </div>
-            <div className={`${styles.breakdownRow} ${styles.totalRow}`}>
-              <span className={styles.textYellow}>Total de costos</span>
-              <span className={styles.textYellow}>USD 1.286</span>
-            </div>
-          </div>
-
-          <div className={styles.mtMedium}>
-            <Alert variant="warning" layout="box">
+        <TicketSimulacion
+          netoRecibir={`USD ${(montoValue * 0.96).toLocaleString("es-AR")}`}
+          filasCostos={[
+            { label: "Comisión SGR", value: "USD 811" },
+            { label: "Descuento operado", value: "USD 446" },
+            { label: "Derecho mercado", value: "USD 24" },
+            { label: "IVA", value: "USD 5" },
+          ]}
+          totalCostos="USD 1.286"
+          textoAlerta={
+            <>
               <strong>IMPORTANTE:</strong> Tasa de interés utilizada para el
               cálculo: % TNA (cierre al día hábil cambiario anterior).
-            </Alert>
-          </div>
-
-          <div className={styles.actionsFlex}>
-            <Button
-              variant="outline"
-              onClick={() => setSimulacionLista(false)}
-              className={styles.borderless}
-            >
-              RECALCULAR
-            </Button>
-            <Button
-              variant="primary"
-              iconRight={<FiChevronRight />}
-              onClick={() => setPasoActual(2)}
-            >
-              CONTINUAR
-            </Button>
-          </div>
-        </div>
+            </>
+          }
+          onRecalcular={() => setSimulacionLista(false)}
+          onContinuar={() => setPasoActual(2)}
+        />
       )}
     </div>
   );

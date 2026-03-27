@@ -83,21 +83,15 @@ export default function Cheques() {
       setPasoActual(3);
   };
 
-  const onSubmitFinal = (dataFormulario) => {
-    const payloadFinal = {
-      ...dataFormulario,
-      sociosBasicos: socios,
-    };
-
+  const onSubmitFinal = () => {
     setPasoActual(7);
   };
 
   // Paso 3
   const handleCalcularSimulador = () => {
-    trigger(["monto", "tipoProducto", "tipoCalculo", "plazo"]).then(
-      (v) => v && setMostrarResultados(true),
-    );
+    setMostrarResultados(true);
   };
+
   const handleContinuarSimulador = () => {
     setPasoActual(4);
     setFaseSocio(socios.length === 0 ? "ingresar_cuit" : "lista");
@@ -235,7 +229,7 @@ export default function Cheques() {
                       />
                     );
                   })()}
- 
+
                 {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
@@ -258,6 +252,15 @@ export default function Cheques() {
                           onCalcular={handleCalcularSimulador}
                           onContinuar={handleContinuarSimulador}
                           onCancelar={() => setMostrarResultados(false)}
+                          opcionesProducto={[
+                            {
+                              value: "cheques_propios",
+                              label: "Cheques propios",
+                            },
+                          ]}
+                          mostrarTipoCalculo={true}
+                          labelFecha="Fecha de pago"
+                          labelMonto="Monto de cheque"
                         />
                       )}
 

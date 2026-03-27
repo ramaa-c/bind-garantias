@@ -46,7 +46,7 @@
   height: 0.5rem;
   background-color: var(--yellow);
   border-radius: 50%;
-  box-shadow: 0 0 0.625rem rgba(244, 245, 0, 0.5);
+  box-shadow: 0 0 10px rgba(244, 245, 0, 0.5);
 }
 
 /* --- SECCIÓN MONTO --- */
@@ -54,57 +54,7 @@
   margin-bottom: 2.5rem;
 }
 
-/* --- TICKET RESULTADOS --- */
-.breakdownContainer {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    rgba(0, 0, 0, 0.2) 100%
-  );
-  border: 1px solid #333;
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-top: 1rem;
-  animation: fadeIn 0.5s ease;
-}
-
-.breakdownHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.5rem;
-  color: #aaa;
-}
-
-.textXl {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--yellow);
-}
-
-.breakdownBody {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-}
-
-.breakdownRow {
-  display: flex;
-  justify-content: space-between;
-  color: #ccc;
-  font-size: 0.95rem;
-}
-
-.totalRow {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding-top: 1rem;
-  margin-top: 0.5rem;
-  font-weight: bold;
-}
-
-/* --- ACCIONES --- */
+/* --- ACCIONES INICIALES (Botón "Calcular") --- */
 .calcBtnWrapper {
   display: flex;
   justify-content: center;
@@ -115,19 +65,8 @@
   width: 100%;
 }
 
-.actionsFlex {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-top: 2.5rem;
-}
-
-.actionsFlex :global(button) {
-  width: 100%;
-}
-
-/* Escritorio */
-@media (min-width: 768px) {
+/* ESCRITORIO */
+@media (min-width: 48rem) {
   .container {
     padding: 0;
   }
@@ -137,48 +76,10 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  .breakdownContainer {
-    padding: 2.5rem;
-  }
-
-  .textXl {
-    font-size: 1.8rem;
-  }
-
   .calcBtnWrapper :global(button) {
     width: auto;
     min-width: 12.5rem;
   }
-
-  .actionsFlex {
-    flex-direction: row;
-    justify-content: flex-end;
-  }
-
-  .actionsFlex :global(button) {
-    width: auto;
-    min-width: 12.5rem;
-  }
-}
-
-/* UTILIDADES */
-.textYellow {
-  color: var(--yellow);
-}
-
-.borderless {
-  border: none;
-  background: transparent;
-  color: #aaa;
-  cursor: pointer;
-}
-
-.borderless:hover {
-  color: var(--white);
-}
-
-.mtMedium {
-  margin-top: 1.5rem;
 }
 
 @keyframes fadeIn {

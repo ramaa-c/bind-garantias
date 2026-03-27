@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -30,7 +30,6 @@ const getClaveSchema = (emailUsuario) => {
 };
 
 const CrearClave = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const emailUsuario = location.state?.emailIngresado || "ejemplo@mailinator.com";
 
@@ -48,7 +47,7 @@ const CrearClave = () => {
 
   const isPasswordValid = !errors.password && dirtyFields.password;
 
-  const onSubmit = (data) => {
+  const onSubmit = () => {
     // llamada api
   };
 

@@ -26,7 +26,7 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (data) => {
+  const onSubmit = () => {
     // Lógica de autenticación
   };
 

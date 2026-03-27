@@ -24,6 +24,7 @@ export * from './TarjetaSeleccionable/TarjetaSeleccionable';
 export * from './CustomScroll/Scroll';
 export * from './SelectFecha/SelectFecha';
 export * from './BuscadorCuit/BuscadorCuit'
+export * from './TicketSimulacion/TicketSimulacion'
 
 
 

@@ -36,9 +36,14 @@ export default function Prestamos() {
   const metodosFormulario = useForm({
     resolver: zodResolver(prestamosSchema),
     mode: "onChange",
+    shouldUnregister: false,
     defaultValues: {
       moneda: "Pesos",
       tipoProducto: "prestamo",
+      tipoCalculo: "",
+      monto: "",
+      plazo: "",
+      fechaPago: "",
       cuit: "",
       direccion: "",
       provincia: "",
@@ -46,8 +51,7 @@ export default function Prestamos() {
       celular: "",
     },
   });
-
-  const { handleSubmit, trigger, watch } = metodosFormulario;
+  const { handleSubmit, trigger } = metodosFormulario;
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleValidarCuit = async () => {
@@ -81,21 +85,15 @@ export default function Prestamos() {
       setPasoActual(3);
   };
 
-  const onSubmitFinal = (dataFormulario) => {
-    const payloadFinal = {
-      ...dataFormulario,
-      sociosBasicos: socios,
-    };
-
+  const onSubmitFinal = () => {
     setPasoActual(7);
   };
 
   // Paso 3
   const handleCalcularSimulador = () => {
-    trigger(["monto", "tipoProducto", "tipoCalculo", "plazo"]).then(
-      (v) => v && setMostrarResultados(true),
-    );
+    setMostrarResultados(true);
   };
+
   const handleContinuarSimulador = () => {
     setPasoActual(4);
     setFaseSocio(socios.length === 0 ? "ingresar_cuit" : "lista");
@@ -244,6 +242,15 @@ export default function Prestamos() {
                           onCalcular={handleCalcularSimulador}
                           onContinuar={handleContinuarSimulador}
                           onCancelar={() => setMostrarResultados(false)}
+                          opcionesProducto={[
+                            {
+                              value: "prestamo",
+                              label: "Préstamo",
+                            },
+                          ]}
+                          mostrarTipoCalculo={false}
+                          labelFecha="Plazo"
+                          labelMonto="Monto a financiar"
                         />
                       )}
 

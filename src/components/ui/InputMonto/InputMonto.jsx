@@ -2,7 +2,17 @@ import React from "react";
 import styles from "./InputMonto.module.css";
 
 export const InputMonto = React.forwardRef(
-  ({ label, error, currency = "$", esValido, ...props }, ref) => {
+  (
+    {
+      label,
+      error,
+      currency = "$",
+      // eslint-disable-next-line no-unused-vars
+      esValido,
+      ...props
+    },
+    ref,
+  ) => {
     return (
       <div className={styles.wrapper}>
         {label && <label className={styles.label}>{label}</label>}
@@ -24,5 +34,4 @@ export const InputMonto = React.forwardRef(
     );
   },
 );
-
 InputMonto.displayName = "InputMonto";

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useFormContext, Controller } from "react-hook-form";
+import { useFormContext, useFormState, Controller } from "react-hook-form";
 import { FiCalendar } from "react-icons/fi";
 import { DayPicker } from "react-day-picker";
 import { format } from "date-fns";
@@ -12,16 +12,19 @@ export const SelectFecha = ({
   label = "Fecha",
   disabled = false,
   minDate = new Date(),
+  error: errorExterno,
 }) => {
-  const {
-    control,
-    formState: { errors },
-  } = useFormContext();
+  const { control } = useFormContext();
+
+  const { errors } = useFormState({ control });
+
+  const errorContexto = name
+    .split(".")
+    .reduce((obj, key) => obj?.[key], errors);
+  const errorDisplay = errorExterno || errorContexto?.message;
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const calendarRef = useRef(null);
-
-  const error = name.split(".").reduce((obj, key) => obj?.[key], errors);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -57,7 +60,11 @@ export const SelectFecha = ({
                 type="button"
                 disabled={disabled}
                 onBlur={onBlur}
-                className={`${styles.badgeInteractive} ${error ? styles.badgeError : ""} ${value ? styles.badgeSuccess : ""}`}
+                className={`
+                  ${styles.badgeInteractive}
+                  ${errorDisplay ? styles.badgeError : ""}
+                  ${value && !errorDisplay ? styles.badgeSuccess : ""}
+                `}
                 onClick={() => !disabled && setIsCalendarOpen(!isCalendarOpen)}
               >
                 <FiCalendar className={styles.calendarIcon} />
@@ -93,7 +100,9 @@ export const SelectFecha = ({
       />
 
       <div className={styles.errorContainer}>
-        {error && <span className={styles.errorText}>{error.message}</span>}
+        {errorDisplay && (
+          <span className={styles.errorText}>{errorDisplay}</span>
+        )}
       </div>
     </div>
   );
