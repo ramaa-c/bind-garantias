@@ -10,23 +10,20 @@ export const getPersistedFormData = (storageKey, defaultValues) => {
 };
 
 /**
- * Custom Hook para manejar la persistencia del paso, listas extra (como socios) 
+ * Custom Hook para manejar la persistencia del paso, listas extra (como socios)
  * y la suscripción en tiempo real de React Hook Form.
  */
 export const useFormPersist = ({ storageKey, watch }) => {
-  // 1. Lazy initialization para el paso actual
   const [pasoActual, setPasoActual] = useState(() => {
     const saved = sessionStorage.getItem(`${storageKey}_paso`);
     return saved ? Number(saved) : 1;
   });
 
-  // 2. Lazy initialization para listas dinámicas (socios, cheques cargados, etc.)
   const [listaExtra, setListaExtra] = useState(() => {
     const saved = sessionStorage.getItem(`${storageKey}_lista`);
     return saved ? JSON.parse(saved) : [];
   });
 
-  // 3. Suscripciones para guardado automático en tiempo real
   useEffect(() => {
     sessionStorage.setItem(`${storageKey}_paso`, pasoActual.toString());
   }, [pasoActual, storageKey]);
@@ -43,7 +40,6 @@ export const useFormPersist = ({ storageKey, watch }) => {
     return () => subscription.unsubscribe();
   }, [watch, storageKey]);
 
-  // 4. Limpieza total (al finalizar con éxito)
   const clearStorage = () => {
     sessionStorage.removeItem(`${storageKey}_data`);
     sessionStorage.removeItem(`${storageKey}_paso`);
@@ -53,8 +49,8 @@ export const useFormPersist = ({ storageKey, watch }) => {
   return {
     pasoActual,
     setPasoActual,
-    listaExtra,      // En Préstamos serán los "socios"
-    setListaExtra,   // En Préstamos será "setSocios"
+    listaExtra,
+    setListaExtra,
     clearStorage,
   };
 };

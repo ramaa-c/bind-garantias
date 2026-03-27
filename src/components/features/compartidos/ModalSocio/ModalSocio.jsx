@@ -56,14 +56,12 @@ export default function ModalSocio({
     const hasError = errors?.socios?.[socioIndex]?.[campo];
     const isDirty = dirtyFields?.socios?.[socioIndex]?.[campo];
     const val = valoresCampos[campo];
+
     const mostrarError = hasError && (isDirty || intentoGuardarSocio);
+
     return {
       error: mostrarError ? hasError.message : null,
-      esValido:
-        !hasError &&
-        val &&
-        val.toString().trim().length > 0 &&
-        (isDirty || intentoGuardarSocio),
+      esValido: !hasError && val && val.toString().trim().length > 0,
     };
   };
 

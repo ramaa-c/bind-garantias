@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useFormContext, useFormState } from "react-hook-form";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { FiCheckCircle, FiEdit, FiBriefcase, FiX } from "react-icons/fi";
 import { InputFlotante, Button, BotonVolver } from "../../../ui";
 import styles from "./ModalRepresentanteFacturacion.module.css";
@@ -14,15 +14,16 @@ export const ModalRepresentanteFacturacion = ({
   onValidarCuit,
   onGuardarApoderado,
 }) => {
-  const { register, watch, setValue, trigger, control } = useFormContext();
-  const { errors, dirtyFields } = useFormState({ control });
+  const { setValue, trigger, control } = useFormContext();
+  const { errors } = useFormState({ control });
 
   const [errorApoCuit, setErrorApoCuit] = useState("");
   const [intentoGuardarApo, setIntentoGuardarApo] = useState(false);
 
-  const apoCuitIngresado = watch("apoCuit") || "";
-  const apoEmailVal = watch("apoEmail") || "";
-  const apoCelVal = watch("apoCelular") || "";
+  const apoCuitIngresado = useWatch({ control, name: "apoCuit" }) || "";
+  const apoEmailVal = useWatch({ control, name: "apoEmail" }) || "";
+  const apoCelVal = useWatch({ control, name: "apoCelular" }) || "";
+  const emailFacVal = useWatch({ control, name: "emailFacturacion" }) || "";
 
   useEscape(onClose, isOpen);
 
@@ -67,7 +68,30 @@ export const ModalRepresentanteFacturacion = ({
     }
   };
 
-  const { onChange, ...restCuit } = register("apoCuit");
+  const handleGuardarYCerrar = async () => {
+    let apoderadoOk = faseApoderado === "guardado";
+
+    if (faseApoderado === "completar") {
+      setIntentoGuardarApo(true);
+      const okApo = await trigger(["apoEmail", "apoCelular"]);
+      if (
+        okApo &&
+        apoEmailVal.trim() !== "" &&
+        apoCelVal.replace(/\D/g, "").length === 10
+      ) {
+        setIntentoGuardarApo(false);
+        onGuardarApoderado();
+        setFaseApoderado("guardado");
+        apoderadoOk = true;
+      }
+    }
+
+    const facturacionOk = await trigger("emailFacturacion");
+
+    if (apoderadoOk && facturacionOk && emailFacVal.trim() !== "") {
+      onClose();
+    }
+  };
 
   const errorEmail =
     errors.apoEmail?.message ||
@@ -77,14 +101,9 @@ export const ModalRepresentanteFacturacion = ({
     (intentoGuardarApo && apoCelVal.replace(/\D/g, "").length < 10
       ? "Requerido"
       : null);
-  const isEmailValido =
-    !errorEmail &&
-    apoEmailVal.trim() !== "" &&
-    (dirtyFields.apoEmail || intentoGuardarApo);
-  const isCelValido =
-    !errorCel &&
-    apoCelVal.replace(/\D/g, "").length === 10 &&
-    (dirtyFields.apoCelular || intentoGuardarApo);
+
+  const isEmailValido = !errorEmail && apoEmailVal.trim() !== "";
+  const isCelValido = !errorCel && apoCelVal.replace(/\D/g, "").length === 10;
 
   const handleOverlayMouseDown = (e) => {
     if (e.target === e.currentTarget) {
@@ -93,8 +112,6 @@ export const ModalRepresentanteFacturacion = ({
   };
 
   if (!isOpen) return null;
-
-  const { onChange: onCelChange, ...restCel } = register("apoCelular");
 
   return (
     <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
@@ -128,6 +145,7 @@ export const ModalRepresentanteFacturacion = ({
                 <div className={styles.searchBox}>
                   <div className={styles.inputWrapper}>
                     <InputFlotante
+                      name="apoCuit"
                       label="CUIT del apoderado"
                       maxLength={11}
                       esValido={
@@ -136,19 +154,15 @@ export const ModalRepresentanteFacturacion = ({
                         validarCUIT(apoCuitIngresado)
                       }
                       error={errorApoCuit}
-                      {...restCuit}
                       value={apoCuitIngresado}
                       onChange={(e) => {
                         const limpio = e.target.value
                           .replace(/\D/g, "")
                           .slice(0, 11);
-                        e.target.value = limpio;
-                        onChange(e);
                         setValue("apoCuit", limpio, {
                           shouldValidate: true,
                           shouldDirty: true,
                         });
-
                         if (errorApoCuit) setErrorApoCuit("");
                       }}
                     />
@@ -191,23 +205,34 @@ export const ModalRepresentanteFacturacion = ({
 
                   <div className={styles.inputRow}>
                     <InputFlotante
+                      name="apoEmail"
                       label="Email Personal"
                       type="email"
                       esValido={isEmailValido}
                       error={errorEmail}
-                      {...register("apoEmail")}
+                      value={apoEmailVal}
+                      onChange={(e) =>
+                        setValue("apoEmail", e.target.value, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        })
+                      }
                     />
                     <InputFlotante
+                      name="apoCelular"
                       label="Celular"
                       maxLength={10}
                       esValido={isCelValido}
                       error={errorCel}
-                      {...restCel}
+                      value={apoCelVal}
                       onChange={(e) => {
-                        e.target.value = e.target.value
+                        const limpio = e.target.value
                           .replace(/\D/g, "")
                           .slice(0, 10);
-                        onCelChange(e);
+                        setValue("apoCelular", limpio, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
                       }}
                     />
                   </div>
@@ -254,20 +279,31 @@ export const ModalRepresentanteFacturacion = ({
               </h4>
               <div className={styles.facturacionWrapper}>
                 <InputFlotante
+                  name="emailFacturacion"
                   label="Email de Facturación"
                   type="email"
                   esValido={
-                    !errors.emailFacturacion && dirtyFields.emailFacturacion
+                    !errors.emailFacturacion && emailFacVal.trim().length > 0
                   }
                   error={errors.emailFacturacion?.message}
-                  {...register("emailFacturacion")}
+                  value={emailFacVal}
+                  onChange={(e) =>
+                    setValue("emailFacturacion", e.target.value, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
                 />
               </div>
             </section>
 
             {/* --- FOOTER --- */}
             <div className={styles.modalFooter}>
-              <Button variant="primary" size="md" onClick={onClose}>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleGuardarYCerrar}
+              >
                 GUARDAR Y CERRAR
               </Button>
             </div>

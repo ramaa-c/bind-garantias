@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useFormContext, useFormState } from "react-hook-form";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import {
   FiCheckCircle,
   FiAlertCircle,
@@ -51,7 +51,8 @@ export default function Paso5Documentacion({
   const [intentoAvanzar, setIntentoAvanzar] = useState(false);
   const [intentoGuardarSocio, setIntentoGuardarSocio] = useState(false);
 
-  const emailFacturacionVal = watch("emailFacturacion") || "";
+  const emailFacturacionVal =
+    useWatch({ control, name: "emailFacturacion" }) || "";
 
   // --- HANDLERS DE ARCHIVOS ---
   const handleFileUpload = (key, file) => {
@@ -215,16 +216,17 @@ export default function Paso5Documentacion({
           </div>
 
           {docsEmpresaListos ? (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
-              className={styles.btnEdit}
               onClick={(e) => {
                 e.stopPropagation();
                 setModalDocsOpen(true);
               }}
             >
               <FiEdit2 size={12} /> MODIFICAR
-            </button>
+            </Button>
           ) : (
             <Button variant="outline" size="sm" className={styles.taskBtn}>
               CARGAR DATOS
@@ -277,7 +279,6 @@ export default function Paso5Documentacion({
             <Button
               variant="ghost"
               size="sm"
-              className={styles.actionBtn}
               onClick={(e) => {
                 e.stopPropagation();
                 setModalApoOpen(true);
@@ -343,6 +344,11 @@ export default function Paso5Documentacion({
 
       {/* PERSISTENCIA */}
       <div style={{ display: "none" }}>
+        <input {...register("apoCuit")} />
+        <input {...register("apoEmail")} />
+        <input {...register("apoCelular")} />
+        <input {...register("emailFacturacion")} />
+
         {socios.map((_, i) => (
           <React.Fragment key={i}>
             <input {...register(`socios.${i}.email`)} />
