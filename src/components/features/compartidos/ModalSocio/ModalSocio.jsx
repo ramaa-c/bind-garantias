@@ -20,7 +20,7 @@ export default function ModalSocio({
   onDrop,
   control,
 }) {
-  const { register, watch, trigger } = useFormContext();
+  const { watch, trigger, setValue } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
 
   const rawWatch = watch(`socios.${socioIndex}`);
@@ -53,15 +53,18 @@ export default function ModalSocio({
 
   const getCampo = (campo) => {
     if (socioIndex === null) return { error: null, esValido: false };
+
     const hasError = errors?.socios?.[socioIndex]?.[campo];
     const isDirty = dirtyFields?.socios?.[socioIndex]?.[campo];
     const val = valoresCampos[campo];
+    const hasValue = val !== undefined && val.toString().trim().length > 0;
 
-    const mostrarError = hasError && (isDirty || intentoGuardarSocio);
+    const mostrarError =
+      hasError && (isDirty || hasValue || intentoGuardarSocio);
 
     return {
       error: mostrarError ? hasError.message : null,
-      esValido: !hasError && val && val.toString().trim().length > 0,
+      esValido: !hasError && hasValue,
     };
   };
 
@@ -109,6 +112,13 @@ export default function ModalSocio({
 
   if (!isModalOpen || !socio) return null;
 
+  const setCampoValue = (campo, valor) => {
+    setValue(`socios.${socioIndex}.${campo}`, valor, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
   return (
     <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
       <div
@@ -138,19 +148,18 @@ export default function ModalSocio({
                 type="email"
                 esValido={getCampo("email").esValido}
                 error={getCampo("email").error}
-                {...register(`socios.${socioIndex}.email`)}
+                value={valoresCampos.email || ""}
+                onChange={(e) => setCampoValue("email", e.target.value)}
               />
               <InputFlotante
                 label="Celular"
                 maxLength={10}
                 esValido={getCampo("celular").esValido}
                 error={getCampo("celular").error}
-                {...register(`socios.${socioIndex}.celular`)}
+                value={valoresCampos.celular || ""}
                 onChange={(e) => {
-                  e.target.value = e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 10);
-                  register(`socios.${socioIndex}.celular`).onChange(e);
+                  const limpio = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  setCampoValue("celular", limpio);
                 }}
               />
             </div>
@@ -159,7 +168,8 @@ export default function ModalSocio({
               label="Dirección"
               esValido={getCampo("direccion").esValido}
               error={getCampo("direccion").error}
-              {...register(`socios.${socioIndex}.direccion`)}
+              value={valoresCampos.direccion || ""}
+              onChange={(e) => setCampoValue("direccion", e.target.value)}
             />
 
             <div className={styles.inputRow}>
@@ -167,13 +177,15 @@ export default function ModalSocio({
                 label="Provincia"
                 esValido={getCampo("provincia").esValido}
                 error={getCampo("provincia").error}
-                {...register(`socios.${socioIndex}.provincia`)}
+                value={valoresCampos.provincia || ""}
+                onChange={(e) => setCampoValue("provincia", e.target.value)}
               />
               <InputFlotante
                 label="Localidad"
                 esValido={getCampo("localidad").esValido}
                 error={getCampo("localidad").error}
-                {...register(`socios.${socioIndex}.localidad`)}
+                value={valoresCampos.localidad || ""}
+                onChange={(e) => setCampoValue("localidad", e.target.value)}
               />
             </div>
 
