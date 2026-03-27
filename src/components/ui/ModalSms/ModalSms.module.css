@@ -5,9 +5,7 @@
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.85);
-  /* Fondo más oscuro para enfoque */
   backdrop-filter: blur(4px);
-  /* Efecto de desenfoque de fondo */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -16,8 +14,7 @@
 }
 
 .modalContainer {
-  background-color: #1A1A1A;
-  /* Color carbón como el resto de la app */
+  background-color: #1a1a1a;
   width: 90%;
   max-width: 420px;
   border-radius: 16px;
@@ -94,7 +91,6 @@
 .btnCancel,
 .btnConfirm {
   flex: 1;
-  /* Botones de igual tamaño */
   font-weight: 600;
 }
 

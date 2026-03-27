@@ -83,12 +83,7 @@ export default function Cheques() {
       setPasoActual(3);
   };
 
-  const onSubmitFinal = (dataFormulario) => {
-    const payloadFinal = {
-      ...dataFormulario,
-      sociosBasicos: socios,
-    };
-
+  const onSubmitFinal = () => {
     setPasoActual(7);
   };
 

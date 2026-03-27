@@ -51,7 +51,7 @@ export default function Prestamos() {
       celular: "",
     },
   });
-  const { handleSubmit, trigger, watch } = metodosFormulario;
+  const { handleSubmit, trigger } = metodosFormulario;
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleValidarCuit = async () => {
@@ -85,12 +85,7 @@ export default function Prestamos() {
       setPasoActual(3);
   };
 
-  const onSubmitFinal = (dataFormulario) => {
-    const payloadFinal = {
-      ...dataFormulario,
-      sociosBasicos: socios,
-    };
-
+  const onSubmitFinal = () => {
     setPasoActual(7);
   };
 

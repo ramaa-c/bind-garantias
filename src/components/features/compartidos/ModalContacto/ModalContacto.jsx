@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   FiSmartphone,
   FiX,
@@ -17,18 +17,20 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
   const [intentoSolicitarSms, setIntentoSolicitarSms] = useState(false);
   const [procesando, setProcesando] = useState(false);
   const [codigoSms, setCodigoSms] = useState("");
-
   const [celLocal, setCelLocal] = useState("");
 
-  useEffect(() => {
-    if (isOpen) {
-      setCelLocal(getValues("celular") || "");
-      setFase("ingresar");
-      setCodigoSms("");
-      setProcesando(false);
-      setIntentoSolicitarSms(false);
-    }
-  }, [isOpen, getValues]);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (isOpen && !prevIsOpen) {
+    setPrevIsOpen(true);
+    setCelLocal(getValues("celular") || "");
+    setFase("ingresar");
+    setCodigoSms("");
+    setProcesando(false);
+    setIntentoSolicitarSms(false);
+  } else if (!isOpen && prevIsOpen) {
+    setPrevIsOpen(false);
+  }
 
   const handleClose = () => {
     if (procesando) return;

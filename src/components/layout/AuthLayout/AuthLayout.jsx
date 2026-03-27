@@ -1,5 +1,4 @@
 import styles from './AuthLayout.module.css';
-import logoBIND from '../../../assets/images/bind-g-logo.svg';
 
 export const AuthLayout = ({ 
   children, 

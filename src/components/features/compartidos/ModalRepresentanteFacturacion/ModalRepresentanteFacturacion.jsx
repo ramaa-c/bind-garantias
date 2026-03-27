@@ -11,7 +11,6 @@ export const ModalRepresentanteFacturacion = ({
   faseApoderado,
   setFaseApoderado,
   apoNombre,
-  apoRol,
   onValidarCuit,
   onGuardarApoderado,
 }) => {

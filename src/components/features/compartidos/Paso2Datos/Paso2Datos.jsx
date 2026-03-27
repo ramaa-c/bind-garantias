@@ -1,53 +1,34 @@
-import React, { useState, useEffect } from "react";
-import { useFormContext } from "react-hook-form";
+import React, { useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import {
   FiCheckCircle,
   FiAlertCircle,
   FiMapPin,
   FiPhone,
   FiEdit2,
-  FiChevronRight
+  FiChevronRight,
 } from "react-icons/fi";
 import { Button } from "../../../ui";
 import { ModalUbicacion, ModalContacto } from "../../../features";
 import styles from "./Paso2Datos.module.css";
 
 export default function Paso2Datos({ onVolver, onContinuar }) {
-  const { setValue, getValues, trigger } = useFormContext();
+  const { setValue, trigger, control } = useFormContext();
 
   const [modalUbicacionOpen, setModalUbicacionOpen] = useState(false);
   const [modalContactoOpen, setModalContactoOpen] = useState(false);
   const [intentoAvanzar, setIntentoAvanzar] = useState(false);
 
-  const [displayData, setDisplayData] = useState({
-    direccion: "",
-    localidad: "",
-    celular: "",
-    smsVerificado: false,
-    cuit: "",
-  });
+  const direccion = useWatch({ control, name: "direccion" }) || "";
+  const localidad = useWatch({ control, name: "localidad" }) || "";
+  const celular = useWatch({ control, name: "celular" }) || "";
+  const smsVerificado = useWatch({ control, name: "smsVerificado" }) || false;
+  const cuit = useWatch({ control, name: "cuit" }) || "";
 
-  useEffect(() => {
-    const vals = getValues();
-    setDisplayData({
-      direccion: vals.direccion || "",
-      localidad: vals.localidad || "",
-      celular: vals.celular || "",
-      smsVerificado: vals.smsVerificado || false,
-      cuit: vals.cuit || "",
-    });
-  }, [getValues]);
-
-  const ubicacionOk = displayData.direccion.trim().length >= 5;
-  const contactoOk = !!displayData.smsVerificado;
+  const ubicacionOk = direccion.trim().length >= 5;
+  const contactoOk = !!smsVerificado;
 
   const handleGuardarUbicacion = () => {
-    const nuevosValores = getValues();
-    setDisplayData((prev) => ({
-      ...prev,
-      direccion: nuevosValores.direccion || "",
-      localidad: nuevosValores.localidad || "",
-    }));
     setModalUbicacionOpen(false);
   };
 
@@ -56,13 +37,6 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
       shouldValidate: true,
       shouldDirty: true,
     });
-
-    const nuevosValores = getValues();
-    setDisplayData((prev) => ({
-      ...prev,
-      celular: nuevosValores.celular || "",
-      smsVerificado: true,
-    }));
     setModalContactoOpen(false);
   };
 
@@ -106,9 +80,7 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
           <div className={styles.summaryStatus}>
             <FiCheckCircle size={14} /> CUIT VALIDADO
           </div>
-          <p className={styles.summaryCuit}>
-            {displayData.cuit || "20-12345678-9"}
-          </p>
+          <p className={styles.summaryCuit}>{cuit || "20-12345678-9"}</p>
           <p className={styles.summaryName}>EMPRESA DE PRUEBA S.A.</p>
         </div>
         <Button
@@ -140,8 +112,8 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
             <div className={styles.taskCardText}>
               <h4>Datos de Ubicación</h4>
               <p>
-                {ubicacionOk && displayData.direccion
-                  ? `${displayData.direccion}, ${displayData.localidad}`
+                {ubicacionOk && direccion
+                  ? `${direccion}, ${localidad}`
                   : "Dirección, Provincia y Localidad"}
               </p>
             </div>
@@ -186,9 +158,7 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
             <div className={styles.taskCardText}>
               <h4>Verificación de Contacto</h4>
               <p>
-                {contactoOk
-                  ? `Cel: ${displayData.celular}`
-                  : "Validación mediante SMS"}
+                {contactoOk ? `Cel: ${celular}` : "Validación mediante SMS"}
               </p>
             </div>
           </div>

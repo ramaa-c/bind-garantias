@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { FiMapPin, FiX } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
 import { Button, InputFlotante } from "../../../ui";
@@ -13,16 +13,19 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
   const [locLocal, setLocLocal] = useState("");
   const [intentoGuardar, setIntentoGuardar] = useState(false);
 
-  useEscape(onClose, isOpen);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  useEffect(() => {
-    if (isOpen) {
-      setDirLocal(getValues("direccion") || "");
-      setProvLocal(getValues("provincia") || "");
-      setLocLocal(getValues("localidad") || "");
-      setIntentoGuardar(false);
-    }
-  }, [isOpen, getValues]);
+  if (isOpen && !prevIsOpen) {
+    setPrevIsOpen(true);
+    setDirLocal(getValues("direccion") || "");
+    setProvLocal(getValues("provincia") || "");
+    setLocLocal(getValues("localidad") || "");
+    setIntentoGuardar(false);
+  } else if (!isOpen && prevIsOpen) {
+    setPrevIsOpen(false);
+  }
+
+  useEscape(onClose, isOpen);
 
   if (!isOpen) return null;
 

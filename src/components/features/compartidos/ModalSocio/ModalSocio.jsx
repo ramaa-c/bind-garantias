@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useMemo } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
 import { FiUser, FiX } from "react-icons/fi";
 import { InputFlotante, Button, CargaArchivos } from "../../../ui";
@@ -23,7 +23,8 @@ export default function ModalSocio({
   const { register, watch, trigger } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
 
-  const valoresCampos = watch(`socios.${socioIndex}`) ?? {};
+  const rawWatch = watch(`socios.${socioIndex}`);
+  const valoresCampos = useMemo(() => rawWatch ?? {}, [rawWatch]);
   const isMounted = useRef(false);
 
   const isModalOpen = socioIndex !== null;
@@ -42,7 +43,7 @@ export default function ModalSocio({
       `socios.${socioIndex}.provincia`,
       `socios.${socioIndex}.localidad`,
     ]);
-  }, [valoresCampos]);
+  }, [valoresCampos, socioIndex, trigger]);
 
   useEffect(() => {
     if (socioIndex === null) {

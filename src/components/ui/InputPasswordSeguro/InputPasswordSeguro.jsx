@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { FaCheck } from "react-icons/fa";
-import zxcvbn from "zxcvbn";
 import { getPasswordScore } from "../../../utils/PasswordSeguro";
 import styles from "./InputPasswordSeguro.module.css";
 

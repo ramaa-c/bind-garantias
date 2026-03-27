@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
-import { FiCheckCircle, FiAlertCircle, FiEdit2,FiChevronRight  } from "react-icons/fi";
+import {
+  FiCheckCircle,
+  FiAlertCircle,
+  FiEdit2,
+  FiChevronRight,
+} from "react-icons/fi";
 import { Button } from "../../../ui";
 import {
   SocioTaskCard,
@@ -30,7 +35,8 @@ export default function Paso5Documentacion({
     clearErrors,
     getValues,
   } = useFormContext();
-  const { errors, dirtyFields } = useFormState({ control });
+
+  const { errors } = useFormState({ control });
 
   // --- ESTADOS LOCALES ---
   const [archivos, setArchivos] = useState({});
@@ -42,19 +48,10 @@ export default function Paso5Documentacion({
   const [backupSocio, setBackupSocio] = useState({});
   const [backupArchivos, setBackupArchivos] = useState({});
 
-  const [errorGlobal, setErrorGlobal] = useState("");
   const [intentoAvanzar, setIntentoAvanzar] = useState(false);
   const [intentoGuardarSocio, setIntentoGuardarSocio] = useState(false);
-  const [intentoGuardarApo, setIntentoGuardarApo] = useState(false);
 
   const emailFacturacionVal = watch("emailFacturacion") || "";
-  const apoEmailVal = watch("apoEmail") || "";
-  const apoCelVal = watch("apoCelular") || "";
-  const apoCuitIngresado = watch("apoCuit", "");
-
-  useEffect(() => {
-    if (errorGlobal) setErrorGlobal("");
-  }, [archivos, faseApoderado, emailFacturacionVal]);
 
   // --- HANDLERS DE ARCHIVOS ---
   const handleFileUpload = (key, file) => {
@@ -113,29 +110,6 @@ export default function Paso5Documentacion({
     !errors.emailFacturacion &&
     emailFacturacionVal.trim() !== "";
 
-  const errorApoEmail =
-    errors.apoEmail?.message ||
-    (intentoGuardarApo && apoEmailVal.trim() === "" ? "Requerido" : null);
-  const errorApoCel =
-    errors.apoCelular?.message ||
-    (intentoGuardarApo && apoCelVal.replace(/\D/g, "").length < 10
-      ? "Requerido"
-      : null);
-
-  const getCampoApoderado = (campo) => {
-    if (campo === "apoEmail")
-      return {
-        error: errorApoEmail,
-        esValido: !errorApoEmail && apoEmailVal.trim() !== "",
-      };
-    if (campo === "apoCelular")
-      return {
-        error: errorApoCel,
-        esValido: !errorApoCel && apoCelVal.replace(/\D/g, "").length === 10,
-      };
-    return { error: errors[campo]?.message, esValido: false };
-  };
-
   // --- HANDLERS ACCIONES ---
   const handleAbrirModalSocio = (index) => {
     setIntentoGuardarSocio(false);
@@ -192,19 +166,6 @@ export default function Paso5Documentacion({
     }
   };
 
-  const handleGuardarApoFinal = async () => {
-    setIntentoGuardarApo(true);
-    const camposValidosZod = await trigger(["apoEmail", "apoCelular"]);
-    if (
-      camposValidosZod &&
-      apoEmailVal.trim() !== "" &&
-      apoCelVal.replace(/\D/g, "").length === 10
-    ) {
-      setIntentoGuardarApo(false);
-      guardarApoderado();
-    }
-  };
-
   const handleAvanzarClick = () => {
     setIntentoAvanzar(true);
     const todosSociosOk = socios.every((_, i) => isSocioCompleto(i));
@@ -212,35 +173,6 @@ export default function Paso5Documentacion({
     if (docsEmpresaListos && todosSociosOk && seccionApoFacturacionLista) {
       avanzarPaso6();
     }
-  };
-
-  const [errorApoCuit, setErrorApoCuit] = useState("");
-
-  const validarCUIT = (cuit) => {
-    if (!cuit) return false;
-    const limpio = String(cuit).replace(/\D/g, "");
-    if (limpio.length !== 11) return false;
-
-    const mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-    const nums = limpio.split("").map(Number);
-    const suma = mult.reduce((acc, m, i) => acc + nums[i] * m, 0);
-    const mod = suma % 11;
-    const digito = mod === 0 ? 0 : mod === 1 ? 9 : 11 - mod;
-
-    return digito === nums[10];
-  };
-
-  const handleValidarApoderadoCuitClick = () => {
-    if (!apoCuitIngresado) {
-      setErrorApoCuit("El CUIT es obligatorio");
-      return;
-    }
-    if (!validarCUIT(apoCuitIngresado)) {
-      setErrorApoCuit("CUIT inválido o incorrecto");
-      return;
-    }
-    setErrorApoCuit("");
-    validarCuitApoderado();
   };
 
   // --- HELPERS VISUALES ---
@@ -259,7 +191,7 @@ export default function Paso5Documentacion({
   return (
     <div className={styles.container}>
       <div className={styles.headerSteps}>
-        <h3 className={styles.title}>Configuración de la Solicitud </h3>
+        <h3 className={styles.title}>Configuración de la Solicitud</h3>
         <p className={styles.mutedText}>
           Completá los 3 bloques de información obligatoria.
         </p>

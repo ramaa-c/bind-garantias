@@ -37,7 +37,7 @@ export default function PagareUSD() {
     if (esValido) setPasoActual(siguientePaso);
   };
 
-  const onSubmitFinal = (data) => {
+  const onSubmitFinal = () => {
     setPasoActual(4);
   };
 

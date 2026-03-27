@@ -13,7 +13,6 @@ export default function Paso1SimuladorPagare({
   const { errors, dirtyFields } = useFormState({ control });
   
   const montoValue = watch("monto");
-  const fechaValue = watch("fechaPago");
   const isMontoValid = !errors.monto && dirtyFields.monto;
 
   const onSimularClick = async () => {
