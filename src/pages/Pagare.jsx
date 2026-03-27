@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { pagareSchema } from "../schemas/pagareSchema";
 import { BarraProgreso, BotonVolver } from "../components/ui";
 import {
@@ -13,18 +14,29 @@ import {
 } from "../components/features";
 import styles from "./Pagare.module.css";
 
+const STORAGE_KEY = "draft_pagare";
+
 export default function PagareUSD() {
   const navigate = useNavigate();
-  const [pasoActual, setPasoActual] = useState(1);
+
   const [simulacionLista, setSimulacionLista] = useState(false);
 
   const metodosFormulario = useForm({
     resolver: zodResolver(pagareSchema),
     mode: "onChange",
-    defaultValues: { moneda: "Dólar", tipoCalculo: "monto" },
+    defaultValues: getPersistedFormData(STORAGE_KEY, {
+      moneda: "Dólar",
+      tipoCalculo: "monto",
+    }),
   });
 
   const { handleSubmit, trigger, watch } = metodosFormulario;
+
+  const { pasoActual, setPasoActual, clearStorage } = useFormPersist({
+    storageKey: STORAGE_KEY,
+    watch,
+  });
+
   const montoWatch = watch("monto") || 0;
 
   const handleCalcularSimulacion = async () => {
@@ -41,6 +53,11 @@ export default function PagareUSD() {
     setPasoActual(4);
   };
 
+  const handleVolverLista = () => {
+    clearStorage();
+    navigate("/solicitudes");
+  };
+
   return (
     <div className={styles.pagarePage}>
       <main className={styles.formMainContainer}>
@@ -49,7 +66,6 @@ export default function PagareUSD() {
             {pasoActual > 1 && pasoActual < 4 && (
               <BotonVolver onClick={() => setPasoActual(pasoActual - 1)} />
             )}
-
             {pasoActual === 1 && (
               <BotonVolver
                 onClick={() => navigate("/inicio")}
@@ -99,9 +115,7 @@ export default function PagareUSD() {
                       )}
                       {pasoActual === 3 && <Paso3Epyme />}
                       {pasoActual === 4 && (
-                        <Paso4ExitoPagare
-                          onVolverLista={() => navigate("/solicitudes")}
-                        />
+                        <Paso4ExitoPagare onVolverLista={handleVolverLista} />
                       )}
                     </div>
                   </form>

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
+import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { chequesSchema } from "../schemas/chequesSchema";
@@ -16,14 +17,15 @@ import {
 import { ModalSms, BarraProgreso, BotonVolver, Scroll } from "../components/ui";
 import styles from "./Cheques.module.css";
 
+const STORAGE_KEY = "draft_cheques";
+
 export default function Cheques() {
   const navigate = useNavigate();
-  const [pasoActual, setPasoActual] = useState(1);
+
   const [mostrarModal, setMostrarModal] = useState(false);
   const [codigoSms, setCodigoSms] = useState("");
   const [mostrarResultados, setMostrarResultados] = useState(false);
 
-  const [socios, setSocios] = useState([]);
   const [faseSocio, setFaseSocio] = useState("lista");
   const [tempSocioCuit, setTempSocioCuit] = useState("");
   const [tempSocioNombre, setTempSocioNombre] = useState("");
@@ -38,7 +40,7 @@ export default function Cheques() {
     resolver: zodResolver(chequesSchema),
     mode: "onChange",
     shouldUnregister: false,
-    defaultValues: {
+    defaultValues: getPersistedFormData(STORAGE_KEY, {
       moneda: "Pesos",
       sociedadBolsa: "",
       cuit: "",
@@ -46,10 +48,22 @@ export default function Cheques() {
       provincia: "",
       localidad: "",
       celular: "",
-    },
+    }),
   });
 
   const { handleSubmit, trigger, watch, setValue } = metodosFormulario;
+
+  const {
+    pasoActual,
+    setPasoActual,
+    listaExtra: socios,
+    setListaExtra: setSocios,
+    clearStorage,
+  } = useFormPersist({
+    storageKey: STORAGE_KEY,
+    watch,
+  });
+
   const bolsaSeleccionada = watch("sociedadBolsa", "");
 
   // --- NAVEGACIÓN Y FUNCIONES ---
@@ -63,6 +77,16 @@ export default function Cheques() {
   };
 
   const handleResetFlujoCompleto = () => {
+    clearStorage();
+    metodosFormulario.reset({
+      moneda: "Pesos",
+      sociedadBolsa: "",
+      cuit: "",
+      direccion: "",
+      provincia: "",
+      localidad: "",
+      celular: "",
+    });
     setSocios([]);
     setFaseSocio("lista");
     setFaseApoderado("ingresar");

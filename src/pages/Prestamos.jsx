@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
+import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../schemas/prestamosSchema";
@@ -15,29 +16,16 @@ import {
 } from "../components/features";
 import styles from "./Prestamos.module.css";
 
+const STORAGE_KEY = "draft_prestamos";
+
 export default function Prestamos() {
   const navigate = useNavigate();
-  const [pasoActual, setPasoActual] = useState(1);
-  const [mostrarModal, setMostrarModal] = useState(false);
-  const [codigoSms, setCodigoSms] = useState("");
-  const [mostrarResultados, setMostrarResultados] = useState(false);
-
-  const [socios, setSocios] = useState([]);
-  const [faseSocio, setFaseSocio] = useState("lista");
-  const [tempSocioCuit, setTempSocioCuit] = useState("");
-  const [tempSocioNombre, setTempSocioNombre] = useState("");
-  const [tempSocioParticipacion, setTempSocioParticipacion] = useState("");
-
-  const [docExpandido, setDocExpandido] = useState("estatuto");
-  const [faseApoderado, setFaseApoderado] = useState("ingresar");
-  const [apoNombre, setApoNombre] = useState("");
-  const [apoRol, setApoRol] = useState("Representante Legal");
-
+  
   const metodosFormulario = useForm({
     resolver: zodResolver(prestamosSchema),
     mode: "onChange",
     shouldUnregister: false,
-    defaultValues: {
+    defaultValues: getPersistedFormData(STORAGE_KEY, {
       moneda: "Pesos",
       tipoProducto: "prestamo",
       tipoCalculo: "",
@@ -49,9 +37,35 @@ export default function Prestamos() {
       provincia: "",
       localidad: "",
       celular: "",
-    },
+    }),
   });
-  const { handleSubmit, trigger } = metodosFormulario;
+
+  const { handleSubmit, trigger, watch } = metodosFormulario;
+
+  const {
+    pasoActual,
+    setPasoActual,
+    listaExtra: socios,
+    setListaExtra: setSocios,
+    clearStorage,
+  } = useFormPersist({
+    storageKey: STORAGE_KEY,
+    watch,
+  });
+
+  const [mostrarModal, setMostrarModal] = useState(false);
+  const [codigoSms, setCodigoSms] = useState("");
+  const [mostrarResultados, setMostrarResultados] = useState(false);
+
+  const [faseSocio, setFaseSocio] = useState("lista");
+  const [tempSocioCuit, setTempSocioCuit] = useState("");
+  const [tempSocioNombre, setTempSocioNombre] = useState("");
+  const [tempSocioParticipacion, setTempSocioParticipacion] = useState("");
+
+  const [docExpandido, setDocExpandido] = useState("estatuto");
+  const [faseApoderado, setFaseApoderado] = useState("ingresar");
+  const [apoNombre, setApoNombre] = useState("");
+  const [apoRol, setApoRol] = useState("Representante Legal");
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleValidarCuit = async () => {
@@ -64,6 +78,8 @@ export default function Prestamos() {
   };
 
   const handleResetFlujoCompleto = () => {
+    clearStorage();
+    metodosFormulario.reset();
     setSocios([]);
     setFaseSocio("lista");
     setFaseApoderado("ingresar");
