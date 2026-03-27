@@ -215,19 +215,20 @@ export default function Paso5Documentacion({
           </div>
 
           {docsEmpresaListos ? (
-            <button
-              type="button"
-              className={styles.btnEdit}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={styles.actionBtn}
               onClick={(e) => {
                 e.stopPropagation();
                 setModalDocsOpen(true);
               }}
             >
               <FiEdit2 size={12} /> MODIFICAR
-            </button>
+            </Button>
           ) : (
             <Button variant="outline" size="sm" className={styles.taskBtn}>
-              CARGAR DATOS
+              COMPLETAR DATOS
             </Button>
           )}
         </div>
@@ -287,7 +288,7 @@ export default function Paso5Documentacion({
             </Button>
           ) : (
             <Button variant="outline" size="sm" className={styles.taskBtn}>
-              CONFIGURAR
+              COMPLETAR DATOS
             </Button>
           )}
         </div>
