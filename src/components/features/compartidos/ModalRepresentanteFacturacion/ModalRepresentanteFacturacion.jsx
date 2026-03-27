@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { FiCheckCircle, FiEdit, FiBriefcase, FiX } from "react-icons/fi";
-import { InputFlotante, Button, BotonVolver } from "../../../ui";
+import { InputFlotante, Button, BotonVolver, Modal } from "../../../ui";
 import styles from "./ModalRepresentanteFacturacion.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
 
 export const ModalRepresentanteFacturacion = ({
   isOpen,
@@ -24,8 +23,6 @@ export const ModalRepresentanteFacturacion = ({
   const apoEmailVal = useWatch({ control, name: "apoEmail" }) || "";
   const apoCelVal = useWatch({ control, name: "apoCelular" }) || "";
   const emailFacVal = useWatch({ control, name: "emailFacturacion" }) || "";
-
-  useEscape(onClose, isOpen);
 
   const validarCUIT = (cuit) => {
     if (!cuit) return false;
@@ -105,25 +102,19 @@ export const ModalRepresentanteFacturacion = ({
   const isEmailValido = !errorEmail && apoEmailVal.trim() !== "";
   const isCelValido = !errorCel && apoCelVal.replace(/\D/g, "").length === 10;
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div
-        className={styles.modalContainer}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button className={styles.btnClose} onClick={onClose}>
-          <FiX size={20} />
-        </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      overlayClassName={styles.overlay}
+      className={styles.modalContainer}
+      hideCloseButton={true}
+    >
+      <button className={styles.btnClose} onClick={onClose}>
+        <FiX size={20} />
+      </button>
 
-        <div className={styles.body}>
+      <div className={styles.body}>
           <div className={styles.iconWrapper}>
             <FiBriefcase size={30} />
           </div>
@@ -309,7 +300,6 @@ export const ModalRepresentanteFacturacion = ({
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

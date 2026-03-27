@@ -28,7 +28,6 @@ export default function Paso5Documentacion({
 }) {
   const {
     register,
-    watch,
     control,
     setValue,
     trigger,

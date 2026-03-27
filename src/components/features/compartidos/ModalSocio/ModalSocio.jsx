@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useMemo } from "react";
 import { useFormContext, useFormState } from "react-hook-form";
 import { FiUser, FiX } from "react-icons/fi";
-import { InputFlotante, Button, CargaArchivos } from "../../../ui";
-import { useEscape } from "../../../../hooks/useEscape";
+import { InputFlotante, Button, CargaArchivos, Modal } from "../../../ui";
 import styles from "./ModalSocio.module.css";
 
 export default function ModalSocio({
@@ -28,7 +27,6 @@ export default function ModalSocio({
   const isMounted = useRef(false);
 
   const isModalOpen = socioIndex !== null;
-  useEscape(onCerrar, isModalOpen);
 
   useEffect(() => {
     if (socioIndex === null) return;
@@ -101,108 +99,103 @@ export default function ModalSocio({
     );
   };
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) {
-      onCerrar();
-    }
-  };
-
-  if (!isModalOpen || !socio) return null;
+  if (!socio) return null; // We still check socio, but isModalOpen handled by Modal
 
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div
-        className={styles.modalContainer}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button className={styles.btnClose} onClick={onCerrar}>
-          <FiX size={20} />
-        </button>
+    <Modal
+      isOpen={isModalOpen}
+      onClose={onCerrar}
+      overlayClassName={styles.overlay}
+      className={styles.modalContainer}
+      hideCloseButton={true}
+    >
+      <button className={styles.btnClose} onClick={onCerrar}>
+        <FiX size={20} />
+      </button>
 
-        <div className={styles.body}>
-          <div className={styles.iconWrapper}>
-            <FiUser size={30} />
-          </div>
+      <div className={styles.body}>
+        <div className={styles.iconWrapper}>
+          <FiUser size={30} />
+        </div>
 
-          <h2 className={styles.title}>Datos de {socio.nombre}</h2>
-          <p className={styles.description}>
-            Completá la información de contacto y cargá la documentación.
-          </p>
+        <h2 className={styles.title}>Datos de {socio.nombre}</h2>
+        <p className={styles.description}>
+          Completá la información de contacto y cargá la documentación.
+        </p>
 
-          <div className={styles.formSection}>
-            <h4 className={styles.sectionTitle}>1. Información de contacto</h4>
+        <div className={styles.formSection}>
+          <h4 className={styles.sectionTitle}>1. Información de contacto</h4>
 
-            <div className={styles.inputRow}>
-              <InputFlotante
-                label="Email"
-                type="email"
-                esValido={getCampo("email").esValido}
-                error={getCampo("email").error}
-                {...register(`socios.${socioIndex}.email`)}
-              />
-              <InputFlotante
-                label="Celular"
-                maxLength={10}
-                esValido={getCampo("celular").esValido}
-                error={getCampo("celular").error}
-                {...register(`socios.${socioIndex}.celular`)}
-                onChange={(e) => {
-                  e.target.value = e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 10);
-                  register(`socios.${socioIndex}.celular`).onChange(e);
-                }}
-              />
-            </div>
-
+          <div className={styles.inputRow}>
             <InputFlotante
-              label="Dirección"
-              esValido={getCampo("direccion").esValido}
-              error={getCampo("direccion").error}
-              {...register(`socios.${socioIndex}.direccion`)}
+              label="Email"
+              type="email"
+              esValido={getCampo("email").esValido}
+              error={getCampo("email").error}
+              {...register(`socios.${socioIndex}.email`)}
             />
-
-            <div className={styles.inputRow}>
-              <InputFlotante
-                label="Provincia"
-                esValido={getCampo("provincia").esValido}
-                error={getCampo("provincia").error}
-                {...register(`socios.${socioIndex}.provincia`)}
-              />
-              <InputFlotante
-                label="Localidad"
-                esValido={getCampo("localidad").esValido}
-                error={getCampo("localidad").error}
-                {...register(`socios.${socioIndex}.localidad`)}
-              />
-            </div>
-
-            <h4 className={styles.sectionTitle}>2. Identidad (DNI)</h4>
-
-            <div className={styles.dropzoneGrid}>
-              {renderDropzone(
-                `socio-${socioIndex}-frente`,
-                "DNI Frente",
-                "Imagen clara y legible",
-              )}
-              {renderDropzone(
-                `socio-${socioIndex}-dorso`,
-                "DNI Dorso",
-                "Imagen clara y legible",
-              )}
-            </div>
+            <InputFlotante
+              label="Celular"
+              maxLength={10}
+              esValido={getCampo("celular").esValido}
+              error={getCampo("celular").error}
+              {...register(`socios.${socioIndex}.celular`)}
+              onChange={(e) => {
+                e.target.value = e.target.value
+                  .replace(/\D/g, "")
+                  .slice(0, 10);
+                register(`socios.${socioIndex}.celular`).onChange(e);
+              }}
+            />
           </div>
 
-          <div className={styles.actions}>
-            <Button type="button" variant="outline" onClick={onCerrar}>
-              CANCELAR
-            </Button>
-            <Button type="button" variant="primary" onClick={onGuardar}>
-              GUARDAR DATOS
-            </Button>
+          <InputFlotante
+            label="Dirección"
+            esValido={getCampo("direccion").esValido}
+            error={getCampo("direccion").error}
+            {...register(`socios.${socioIndex}.direccion`)}
+          />
+
+          <div className={styles.inputRow}>
+            <InputFlotante
+              label="Provincia"
+              esValido={getCampo("provincia").esValido}
+              error={getCampo("provincia").error}
+              {...register(`socios.${socioIndex}.provincia`)}
+            />
+            <InputFlotante
+              label="Localidad"
+              esValido={getCampo("localidad").esValido}
+              error={getCampo("localidad").error}
+              {...register(`socios.${socioIndex}.localidad`)}
+            />
+          </div>
+
+          <h4 className={styles.sectionTitle}>2. Identidad (DNI)</h4>
+
+          <div className={styles.dropzoneGrid}>
+            {renderDropzone(
+              `socio-${socioIndex}-frente`,
+              "DNI Frente",
+              "Imagen clara y legible",
+            )}
+            {renderDropzone(
+              `socio-${socioIndex}-dorso`,
+              "DNI Dorso",
+              "Imagen clara y legible",
+            )}
           </div>
         </div>
+
+        <div className={styles.actions}>
+          <Button type="button" variant="outline" onClick={onCerrar}>
+            CANCELAR
+          </Button>
+          <Button type="button" variant="primary" onClick={onGuardar}>
+            GUARDAR DATOS
+          </Button>
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

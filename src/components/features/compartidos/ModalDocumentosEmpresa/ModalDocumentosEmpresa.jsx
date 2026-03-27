@@ -1,8 +1,7 @@
 import React from "react";
 import { FiFileText, FiX } from "react-icons/fi";
-import { Acordeon, Button, CargaArchivos } from "../../../ui";
+import { Acordeon, Button, CargaArchivos, Modal } from "../../../ui";
 import styles from "./ModalDocumentosEmpresa.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
 
 export const ModalDocumentosEmpresa = ({
   isOpen,
@@ -27,31 +26,23 @@ export const ModalDocumentosEmpresa = ({
     { key: "poderes", title: "Poderes", info: "Copia de representación." },
   ];
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  useEscape(onClose, isOpen);
-
-  if (!isOpen) return null;
-
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div
-        className={styles.modalContainer}
-        onClick={(e) => e.stopPropagation()}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      overlayClassName={styles.overlay}
+      className={styles.modalContainer}
+      hideCloseButton={true}
+    >
+      <button
+        className={styles.btnClose}
+        onClick={onClose}
+        aria-label="Cerrar"
       >
-        <button
-          className={styles.btnClose}
-          onClick={onClose}
-          aria-label="Cerrar"
-        >
-          <FiX size={20} />
-        </button>
+        <FiX size={20} />
+      </button>
 
-        <div className={styles.body}>
+      <div className={styles.body}>
           <div className={styles.iconWrapper}>
             <FiFileText size={30} />
           </div>
@@ -119,7 +110,6 @@ export const ModalDocumentosEmpresa = ({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
