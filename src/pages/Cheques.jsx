@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Navbar from "../components/Navbar";
-import Banner from "../components/banner";
+import Banner from "../components/Banner";
 import "../styles/cheques.css";
 
 const chequesSchema = z.object({
@@ -75,7 +75,7 @@ export default function Cheques() {
     }
   };
 
-  const onSubmitFinal = (data) => {
+  const onSubmitFinal = (/* data */) => {
     // envio de datos
   };
 
