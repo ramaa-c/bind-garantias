@@ -3,7 +3,7 @@
   flex-direction: column;
   position: relative;
   background-color: var(--carbon-black);
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-secundaria);
   min-height: 100%;
 }
 
@@ -68,7 +68,7 @@
   font-size: 1.8rem;
   font-weight: 800;
   margin-bottom: 0.8rem;
-  font-family: 'Raleway', sans-serif;
+  font-family: var(--font-principal);
   letter-spacing: -0.03125rem;
 }
 
@@ -79,7 +79,7 @@
   max-width: 30rem;
   margin: 0 auto;
   line-height: 1.5;
-  font-family: 'Raleway', sans-serif;
+  font-family: var(--font-principal);
 }
 
 @keyframes fadeIn {
