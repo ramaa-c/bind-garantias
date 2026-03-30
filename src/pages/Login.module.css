@@ -34,17 +34,23 @@
   margin-top: 3rem;
 }
 
+.headerText{
+  margin-bottom: 1rem;
+}
+
 .headerText h2 {
   font-size: 1.5rem;
   color: var(--white);
   margin-bottom: 0.5rem;
   font-weight: 600;
+  text-align: center;
 }
 
 .headerText p {
   color: #aaa;
   font-size: 0.95rem;
   margin: 0;
+  text-align: center;
 }
 
 .titleJumbo {
@@ -175,8 +181,8 @@
 }
 
 .supportContainerClean {
-  text-align: left;
-  margin-top: 2rem;
+  text-align: center;
+  margin-top: 1rem;
   border-top: none;
   padding-top: 0;
 }
@@ -250,7 +256,7 @@
   }
 
   .supportContainerClean {
-    margin-top: 3rem;
+    margin-top: 0.5rem;
   }
 
   .iconCircleWrapper {
