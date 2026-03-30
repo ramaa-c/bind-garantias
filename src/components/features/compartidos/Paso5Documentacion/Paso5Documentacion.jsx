@@ -285,7 +285,7 @@ export default function Paso5Documentacion({
         <h4 className={styles.sectionTitle}>2. Información de Socios</h4>
         {socios.map((socio, index) => (
           <SocioTaskCard
-            key={index}
+            key={socio.cuit}
             socio={socio}
             index={index}
             isCompleto={isSocioCompleto(index)}

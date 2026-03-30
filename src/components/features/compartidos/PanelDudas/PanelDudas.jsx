@@ -37,8 +37,8 @@ export const PanelDudas = ({ contexto = "cheques", pasoActual = 1 }) => {
       <h3 className={styles.panelTitle}>Dudas frecuentes</h3>
       
       <div className={styles.faqList}>
-        {preguntasActuales.map((item, index) => (
-          <Acordeon key={index} title={item.p}>
+        {preguntasActuales.map((item) => (
+          <Acordeon key={item.p} title={item.p}>
             <p className={styles.respuesta}>{item.r}</p>
           </Acordeon>
         ))}

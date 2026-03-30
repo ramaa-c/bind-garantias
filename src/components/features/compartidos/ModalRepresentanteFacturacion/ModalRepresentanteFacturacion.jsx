@@ -19,7 +19,7 @@ export const ModalRepresentanteFacturacion = ({
 
   const [errorApoCuit, setErrorApoCuit] = useState("");
   const [intentoGuardarApo, setIntentoGuardarApo] = useState(false);
-  const [faseInterna, setFaseInterna] = useState(faseApoderado);
+  const [faseInterna, setFaseInterna] = useState(() => faseApoderado);
 
   const apoCuitIngresado = useWatch({ control, name: "apoCuit" }) || "";
   const apoEmailVal = useWatch({ control, name: "apoEmail" }) || "";
@@ -27,9 +27,15 @@ export const ModalRepresentanteFacturacion = ({
   const emailFacVal = useWatch({ control, name: "emailFacturacion" }) || "";
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevFaseApoderado, setPrevFaseApoderado] = useState(() => faseApoderado);
 
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
+  if (isOpen !== prevIsOpen || faseApoderado !== prevFaseApoderado) {
+    if (isOpen !== prevIsOpen) {
+      setPrevIsOpen(isOpen);
+    }
+    if (faseApoderado !== prevFaseApoderado) {
+      setPrevFaseApoderado(faseApoderado);
+    }
     if (isOpen) {
       setFaseInterna(faseApoderado);
     }
@@ -125,10 +131,23 @@ export const ModalRepresentanteFacturacion = ({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
+    <div
+      className={styles.overlay}
+      onMouseDown={handleOverlayMouseDown}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
       <div
         className={styles.modalContainer}
         onClick={(e) => e.stopPropagation()}
+        role="presentation"
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <button className={styles.btnClose} onClick={onClose}>
           <FiX size={20} />

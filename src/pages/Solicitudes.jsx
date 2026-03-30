@@ -71,8 +71,8 @@ export default function Solicitudes() {
           {/* LISTA DE SOLICITUDES */}
           <div className={styles.listContainer}>
             {mockSolicitudes.length > 0 ? (
-              mockSolicitudes.map((item, index) => (
-                <TarjetaSolicitud key={index} solicitud={item} />
+              mockSolicitudes.map((item) => (
+                <TarjetaSolicitud key={item.id} solicitud={item} />
               ))
             ) : (
               <div className={styles.emptyState}>
