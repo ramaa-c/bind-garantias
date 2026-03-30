@@ -36,7 +36,9 @@ export default function ModalSms({
       <div
         className={styles.modalContainer}
         ref={modalRef}
+        role="presentation"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <button className={styles.btnClose} onClick={onClose}>
           <FiX size={20} />

@@ -154,7 +154,15 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
                 Ingresalo a continuación. <br />
                 <span
                   className={styles.linkEdit}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setFase("ingresar")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setFase("ingresar");
+                    }
+                  }}
                 >
                   ¿Te equivocaste de número?
                 </span>

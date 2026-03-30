@@ -45,7 +45,15 @@ const ConfirmarCorreo = () => {
             <p>
               <span
                 className={`${styles.linkYellow} ${styles.linkYellowReset}`}
+                role="button"
+                tabIndex={0}
                 onClick={() => navigate("/registro")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/registro");
+                  }
+                }}
               >
                 Registrate nuevamente
               </span>

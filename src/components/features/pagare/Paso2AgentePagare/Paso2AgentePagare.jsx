@@ -30,8 +30,16 @@ export default function Paso2AgentePagare({ avanzarPaso }) {
               return (
                 <div
                   key={agente.id}
+                  role="button"
+                  tabIndex={0}
                   className={`${styles.listItem} ${isSelected ? styles.listItemSelected : ""}`}
                   onClick={() => onChange(agente.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onChange(agente.id);
+                    }
+                  }}
                 >
                   <div className={styles.itemLeft}>
                     <span className={styles.agentIcon}>{agente.icono}</span>

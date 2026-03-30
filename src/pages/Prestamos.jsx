@@ -253,7 +253,7 @@ export default function Prestamos() {
                         updateUiState={updateUiState}
                         socios={socios}
                         handleValidarCuit={handleValidarCuit}
-                        handleVolver={() => setPasoActual(pasoActual - 1)}
+                        handleVolver={() => setPasoActual(prev => prev - 1)}
                         abrirModalSms={abrirModalSms}
                         handleContinuarPaso2={handleContinuarPaso2}
                         handleCalcularSimulador={handleCalcularSimulador}

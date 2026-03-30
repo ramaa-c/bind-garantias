@@ -37,17 +37,27 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
             {sociedades.map((sociedad) => {
               const isSelected = value === sociedad.nombre;
 
+              const handleSelect = () => {
+                if (isSelected) {
+                  onChange("");
+                  setValue("numeroCuentaBolsa", "");
+                } else {
+                  onChange(sociedad.nombre);
+                }
+              };
+
               return (
                 <React.Fragment key={sociedad.id}>
                   {/* TARJETA SELECCIONABLE */}
                   <div
                     className={`${styles.listItem} ${isSelected ? styles.listItemSelected : ""}`}
-                    onClick={() => {
-                      if (isSelected) {
-                        onChange("");
-                        setValue("numeroCuentaBolsa", "");
-                      } else {
-                        onChange(sociedad.nombre);
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleSelect}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleSelect();
                       }
                     }}
                   >
