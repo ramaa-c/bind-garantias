@@ -201,6 +201,14 @@ export default function Paso5Documentacion({
       <div className={styles.sectionGroup}>
         <h4 className={styles.sectionTitle}>1. Documentación Legal</h4>
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setModalDocsOpen(true);
+            }
+          }}
           className={`${styles.taskCard} ${docsEmpresaListos ? styles.cardSuccess : intentoAvanzar ? styles.cardError : ""}`}
           onClick={() => setModalDocsOpen(true)}
         >
@@ -253,6 +261,14 @@ export default function Paso5Documentacion({
       <div className={styles.sectionGroup}>
         <h4 className={styles.sectionTitle}>3. Gestión y Contacto</h4>
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setModalApoOpen(true);
+            }
+          }}
           className={`${styles.taskCard} ${seccionApoFacturacionLista ? styles.cardSuccess : intentoAvanzar ? styles.cardError : ""}`}
           onClick={() => setModalApoOpen(true)}
         >

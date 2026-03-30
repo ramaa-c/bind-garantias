@@ -96,6 +96,14 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
       <div className={styles.sectionGroup}>
         {/* CARD 1: UBICACIÓN */}
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setModalUbicacionOpen(true);
+            }
+          }}
           className={`${styles.taskCard} ${ubicacionOk ? styles.cardSuccess : intentoAvanzar && !ubicacionOk ? styles.cardError : ""}`}
           onClick={() => setModalUbicacionOpen(true)}
         >
@@ -141,6 +149,14 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
 
         {/* CARD 2: CONTACTO / SMS */}
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setModalContactoOpen(true);
+            }
+          }}
           className={`${styles.taskCard} ${contactoOk ? styles.cardSuccess : intentoAvanzar && !contactoOk ? styles.cardError : ""}`}
           onClick={() => setModalContactoOpen(true)}
           style={{ marginTop: "1rem" }}

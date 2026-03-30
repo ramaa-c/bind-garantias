@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
@@ -51,7 +51,7 @@ export default function Cheques() {
     }),
   });
 
-  const { handleSubmit, trigger, watch, setValue } = metodosFormulario;
+  const { handleSubmit, trigger, watch, setValue, control } = metodosFormulario;
 
   const {
     pasoActual,
@@ -64,7 +64,7 @@ export default function Cheques() {
     watch,
   });
 
-  const bolsaSeleccionada = watch("sociedadBolsa", "");
+  const bolsaSeleccionada = useWatch({ control, name: "sociedadBolsa", defaultValue: "" });
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleValidarCuit = async () => {
@@ -72,8 +72,7 @@ export default function Cheques() {
   };
 
   const handleVolver = () => {
-    if (pasoActual === 7) setPasoActual(1);
-    else setPasoActual(pasoActual - 1);
+    setPasoActual((prev) => (prev === 7 ? 1 : prev - 1));
   };
 
   const handleResetFlujoCompleto = () => {

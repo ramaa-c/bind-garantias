@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { getPasswordScore } from "../utils/PasswordSeguro";
@@ -36,14 +36,14 @@ const CrearClave = () => {
   const {
     register,
     handleSubmit,
-    watch,
+    control,
     formState: { errors, isValid, dirtyFields },
   } = useForm({
     resolver: zodResolver(getClaveSchema(emailUsuario)),
     mode: "onChange",
   });
 
-  const currentPassword = watch("password", "");
+  const currentPassword = useWatch({ control, name: "password", defaultValue: "" });
 
   const isPasswordValid = !errors.password && dirtyFields.password;
 

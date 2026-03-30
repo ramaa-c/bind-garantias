@@ -16,11 +16,11 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
   if (isOpen && !prevIsOpen) {
-    setPrevIsOpen(true);
     setDirLocal(getValues("direccion") || "");
     setProvLocal(getValues("provincia") || "");
     setLocLocal(getValues("localidad") || "");
     setIntentoGuardar(false);
+    setPrevIsOpen(true);
   } else if (!isOpen && prevIsOpen) {
     setPrevIsOpen(false);
   }

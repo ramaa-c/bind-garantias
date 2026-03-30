@@ -2,8 +2,10 @@ import React from "react";
 import styles from "./SelectFlotante.module.css";
 import { FiChevronDown } from "react-icons/fi";
 
+const EMPTY_ARRAY = [];
+
 export const SelectFlotante = React.forwardRef(
-  ({ label, error, options = [], className = "", ...props }, ref) => {
+  ({ label, error, options = EMPTY_ARRAY, className = "", ...props }, ref) => {
     return (
       <div className={`${styles.group} ${className}`}>
         <select className={styles.select} ref={ref} required {...props}>
