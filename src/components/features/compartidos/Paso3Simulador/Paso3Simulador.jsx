@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useFormContext, useFormState } from "react-hook-form";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import {
   Button,
   InputMonto,
@@ -29,14 +29,16 @@ export default function Paso3Simulador({
   labelFecha = "Fecha de pago",
   labelMonto = "Monto",
 }) {
-  const { register, watch, control, trigger, setError, clearErrors, setValue } =
+  const { register, control, trigger, setError, clearErrors, setValue, getValues } =
     useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
   const isMontoValid = !errors.monto && dirtyFields.monto;
 
-  const tipoCalculo = watch("tipoCalculo", "");
+  const tipoCalculo = useWatch({ control, name: "tipoCalculo", defaultValue: "" });
   const esPorMontoCheque = tipoCalculo === "por_monto_cheque";
   const campoFecha = esPorMontoCheque ? "fechaPago" : "plazo";
+
+  const montoValue = useWatch({ control, name: "monto" });
 
   useEffect(() => {
     if (opcionesProducto?.length === 1) {
@@ -52,7 +54,7 @@ export default function Paso3Simulador({
 
     const esValido = await trigger(camposATrigger);
 
-    const valorFecha = watch(campoFecha);
+    const valorFecha = getValues(campoFecha);
     if (!valorFecha || valorFecha.trim() === "") {
       setError(campoFecha, {
         type: "manual",
@@ -123,7 +125,7 @@ export default function Paso3Simulador({
         <div className={styles.montoSection}>
           <InputMonto
             label={labelMonto}
-            esValido={isMontoValid || watch("monto") > 0}
+            esValido={isMontoValid || montoValue > 0}
             error={errors.monto?.message}
             disabled={mostrarResultados}
             {...register("monto")}

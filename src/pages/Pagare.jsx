@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { pagareSchema } from "../schemas/pagareSchema";
@@ -30,14 +30,14 @@ export default function PagareUSD() {
     }),
   });
 
-  const { handleSubmit, trigger, watch } = metodosFormulario;
+  const { handleSubmit, trigger, watch, control } = metodosFormulario;
 
   const { pasoActual, setPasoActual, clearStorage } = useFormPersist({
     storageKey: STORAGE_KEY,
     watch,
   });
 
-  const montoWatch = watch("monto") || 0;
+  const montoWatch = useWatch({ control, name: "monto", defaultValue: 0 });
 
   const handleCalcularSimulacion = async () => {
     const esValido = await trigger(["monto", "fechaPago"]);
@@ -64,7 +64,7 @@ export default function PagareUSD() {
         <div className={styles.contentWrapper}>
           <div className={styles.navegacionTop}>
             {pasoActual > 1 && pasoActual < 4 && (
-              <BotonVolver onClick={() => setPasoActual(pasoActual - 1)} />
+              <BotonVolver onClick={() => setPasoActual((prev) => prev - 1)} />
             )}
             {pasoActual === 1 && (
               <BotonVolver

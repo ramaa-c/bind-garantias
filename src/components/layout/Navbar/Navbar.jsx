@@ -28,7 +28,18 @@ const Navbar = ({
         )}
 
         {/* Logo */}
-        <div className={styles.logoContainer} onClick={() => navigate("/")}>
+        <div
+          className={styles.logoContainer}
+          onClick={() => navigate("/")}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              navigate("/");
+            }
+          }}
+        >
           <img src={logoBind} alt="Logo BIND" className={styles.logo} />
         </div>
       </div>
@@ -46,7 +57,18 @@ const Navbar = ({
         textoEnlace && (
           <div className={styles.loginContainer}>
             {texto}
-            <span className={styles.link} onClick={() => navigate(rutaDestino)}>
+            <span
+              className={styles.link}
+              onClick={() => navigate(rutaDestino)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  navigate(rutaDestino);
+                }
+              }}
+            >
               {textoEnlace}
             </span>
           </div>

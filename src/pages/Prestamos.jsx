@@ -73,8 +73,7 @@ export default function Prestamos() {
   };
 
   const handleVolver = () => {
-    if (pasoActual === 7) setPasoActual(1);
-    else setPasoActual(pasoActual - 1);
+    setPasoActual((prev) => (prev === 7 ? 1 : prev - 1));
   };
 
   const handleResetFlujoCompleto = () => {

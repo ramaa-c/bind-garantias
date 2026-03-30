@@ -2,12 +2,14 @@ import React from "react";
 import { Button, Alert } from "../../ui";
 import styles from "./TicketSimulacion.module.css";
 
+const EMPTY_ARRAY = [];
+
 export const TicketSimulacion = ({
   netoRecibir,
-  filasCostos = [],
+  filasCostos = EMPTY_ARRAY,
   totalCostos,
   datoExtraTotal,
-  datosResumen = [],
+  datosResumen = EMPTY_ARRAY,
   textoAlerta,
   onContinuar,
   onRecalcular,

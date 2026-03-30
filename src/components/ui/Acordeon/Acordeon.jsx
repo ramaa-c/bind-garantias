@@ -39,6 +39,14 @@ export const Acordeon = ({
   return (
     <div className={styles.item}>
       <div 
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleToggle();
+          }
+        }}
         className={styles.header} 
         onClick={handleToggle}
       >
@@ -54,7 +62,16 @@ export const Acordeon = ({
         
         <div className={styles.headerRight}>
           {headerAction && (
-            <div onClick={(e) => e.stopPropagation()}>
+            <div
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
               {headerAction}
             </div>
           )}

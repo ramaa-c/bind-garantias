@@ -22,12 +22,12 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
   if (isOpen && !prevIsOpen) {
-    setPrevIsOpen(true);
     setCelLocal(getValues("celular") || "");
     setFase("ingresar");
     setCodigoSms("");
     setProcesando(false);
     setIntentoSolicitarSms(false);
+    setPrevIsOpen(true);
   } else if (!isOpen && prevIsOpen) {
     setPrevIsOpen(false);
   }

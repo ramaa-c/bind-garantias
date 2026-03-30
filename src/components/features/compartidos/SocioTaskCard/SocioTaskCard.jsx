@@ -18,6 +18,14 @@ export const SocioTaskCard = ({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onEdit(index);
+        }
+      }}
       className={`${styles.card} ${isCompleto ? styles.cardSuccess : intentoAvanzar ? styles.cardError : ""}`}
       onClick={() => onEdit(index)}
     >

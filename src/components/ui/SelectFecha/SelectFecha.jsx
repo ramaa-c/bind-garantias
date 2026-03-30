@@ -11,10 +11,11 @@ export const SelectFecha = ({
   name,
   label = "Fecha",
   disabled = false,
-  minDate = new Date(),
+  minDate,
   error: errorExterno,
 }) => {
   const { control } = useFormContext();
+  const effectiveMinDate = minDate || new Date();
 
   const { errors } = useFormState({ control });
 
@@ -86,11 +87,11 @@ export const SelectFecha = ({
                     selected={dateObj}
                     onSelect={handleDateSelect}
                     locale={es}
-                    disabled={{ before: minDate }}
+                    disabled={{ before: effectiveMinDate }}
                     required
                     captionLayout="dropdown-years"
-                    fromYear={new Date().getFullYear()}
-                    toYear={new Date().getFullYear() + 10}
+                    fromYear={effectiveMinDate.getFullYear()}
+                    toYear={effectiveMinDate.getFullYear() + 10}
                   />
                 </div>
               )}

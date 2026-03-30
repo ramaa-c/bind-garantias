@@ -1,5 +1,5 @@
 import React from "react";
-import { useFormContext, useFormState } from "react-hook-form";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { Button, InputMonto, SelectFecha, TicketSimulacion } from "../../../ui";
 import styles from "./Paso1SimuladorPagare.module.css";
 
@@ -9,10 +9,10 @@ export default function Paso1SimuladorPagare({
   handleCalcularSimulacion,
   setPasoActual,
 }) {
-  const { register, watch, control, trigger } = useFormContext();
+  const { register, control, trigger } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
   
-  const montoValue = watch("monto");
+  const montoValue = useWatch({ control, name: "monto" });
   const isMontoValid = !errors.monto && dirtyFields.monto;
 
   const onSimularClick = async () => {

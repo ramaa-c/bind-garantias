@@ -1,12 +1,12 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { FaExternalLinkAlt, FaFilePdf, FaLock } from "react-icons/fa";
 import { InputFlotante, Button } from "../../../ui";
 import styles from "./Paso3Epyme.module.css";
 
 export default function Paso3Epyme() {
-  const { register, watch, setValue, formState: { errors } } = useFormContext();
-  const idEpymeValue = watch("idEpyme") || "";
+  const { register, setValue, control, formState: { errors } } = useFormContext();
+  const idEpymeValue = useWatch({ control, name: "idEpyme", defaultValue: "" });
 
   return (
     <div className={styles.container}>
