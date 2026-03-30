@@ -5,16 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../components/ui";
-import {
-  Paso1Cuit,
-  Paso2Datos,
-  Paso3Simulador,
-  Paso4Socios,
-  Paso5Documentacion,
-  Paso7Exito,
-  PanelDudas,
-} from "../components/features";
+import { PanelDudas } from "../components/features";
 import styles from "./Prestamos.module.css";
+import { PrestamosPasos } from "./PrestamosPasos";
 
 const STORAGE_KEY = "draft_prestamos";
 
@@ -53,19 +46,23 @@ export default function Prestamos() {
     watch,
   });
 
-  const [mostrarModal, setMostrarModal] = useState(false);
-  const [codigoSms, setCodigoSms] = useState("");
-  const [mostrarResultados, setMostrarResultados] = useState(false);
+  const [uiState, setUiState] = useState({
+    mostrarModal: false,
+    codigoSms: "",
+    mostrarResultados: false,
+    faseSocio: "lista",
+    tempSocioCuit: "",
+    tempSocioNombre: "",
+    tempSocioParticipacion: "",
+    docExpandido: "estatuto",
+    faseApoderado: "ingresar",
+    apoNombre: "",
+    apoRol: "Representante Legal",
+  });
 
-  const [faseSocio, setFaseSocio] = useState("lista");
-  const [tempSocioCuit, setTempSocioCuit] = useState("");
-  const [tempSocioNombre, setTempSocioNombre] = useState("");
-  const [tempSocioParticipacion, setTempSocioParticipacion] = useState("");
-
-  const [docExpandido, setDocExpandido] = useState("estatuto");
-  const [faseApoderado, setFaseApoderado] = useState("ingresar");
-  const [apoNombre, setApoNombre] = useState("");
-  const [apoRol, setApoRol] = useState("Representante Legal");
+  const updateUiState = (updates) => {
+    setUiState((prev) => ({ ...prev, ...updates }));
+  };
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleValidarCuit = async () => {
@@ -80,20 +77,22 @@ export default function Prestamos() {
     clearStorage();
     metodosFormulario.reset();
     setSocios([]);
-    setFaseSocio("lista");
-    setFaseApoderado("ingresar");
-    setApoNombre("");
-    setApoRol("Representante Legal");
-    setMostrarResultados(false);
-    setCodigoSms("");
+    updateUiState({
+      faseSocio: "lista",
+      faseApoderado: "ingresar",
+      apoNombre: "",
+      apoRol: "Representante Legal",
+      mostrarResultados: false,
+      codigoSms: "",
+    });
     setPasoActual(1);
   };
 
   const abrirModalSms = async () => {
-    if (await trigger("celular")) setMostrarModal(true);
+    if (await trigger("celular")) updateUiState({ mostrarModal: true });
   };
 
-  const confirmarSms = () => setMostrarModal(false);
+  const confirmarSms = () => updateUiState({ mostrarModal: false });
 
   const handleContinuarPaso2 = async () => {
     if (await trigger(["direccion", "provincia", "localidad", "celular"]))
@@ -106,73 +105,82 @@ export default function Prestamos() {
 
   // Paso 3
   const handleCalcularSimulador = () => {
-    setMostrarResultados(true);
+    updateUiState({ mostrarResultados: true });
   };
 
   const handleContinuarSimulador = () => {
     setPasoActual(4);
-    setFaseSocio(socios.length === 0 ? "ingresar_cuit" : "lista");
+    updateUiState({ faseSocio: socios.length === 0 ? "ingresar_cuit" : "lista" });
   };
 
   // Paso 4
   const iniciarCargaSocio = () => {
-    setTempSocioCuit("");
-    setTempSocioParticipacion("");
-    setFaseSocio("ingresar_cuit");
+    updateUiState({
+      tempSocioCuit: "",
+      tempSocioParticipacion: "",
+      faseSocio: "ingresar_cuit",
+    });
   };
 
   const validarCuitSocio = () => {
-    setTempSocioNombre("SEOANE SUAREZ MARINA");
-    setFaseSocio("completar_datos");
+    updateUiState({
+      tempSocioNombre: "SEOANE SUAREZ MARINA",
+      faseSocio: "completar_datos",
+    });
   };
 
   const guardarSocio = () => {
-    if (!tempSocioParticipacion) return;
+    if (!uiState.tempSocioParticipacion) return;
     setSocios([
       ...socios,
       {
-        cuit: tempSocioCuit,
-        nombre: tempSocioNombre,
-        participacion: tempSocioParticipacion,
+        cuit: uiState.tempSocioCuit,
+        nombre: uiState.tempSocioNombre,
+        participacion: uiState.tempSocioParticipacion,
       },
     ]);
-    setFaseSocio("lista");
+    updateUiState({ faseSocio: "lista" });
   };
 
   const editarSocio = (index) => {
     const socioAEditar = socios[index];
-    setTempSocioCuit(socioAEditar.cuit);
-    setTempSocioNombre(socioAEditar.nombre);
-    setTempSocioParticipacion(socioAEditar.participacion);
+    updateUiState({
+      tempSocioCuit: socioAEditar.cuit,
+      tempSocioNombre: socioAEditar.nombre,
+      tempSocioParticipacion: socioAEditar.participacion,
+      faseSocio: "completar_datos",
+    });
 
     const nuevos = socios.filter((_, i) => i !== index);
     setSocios(nuevos);
-
-    setFaseSocio("completar_datos");
   };
 
   const eliminarSocio = (index) => {
     const nuevos = socios.filter((_, i) => i !== index);
     setSocios(nuevos);
-    if (nuevos.length === 0) setFaseSocio("ingresar_cuit");
+    if (nuevos.length === 0) updateUiState({ faseSocio: "ingresar_cuit" });
   };
 
   const continuarAlProximoPaso = () => setPasoActual(5);
 
   // Paso 5
   const toggleDoc = (seccion) => {
-    setDocExpandido((prev) => (prev === seccion ? "" : seccion));
+    updateUiState({ docExpandido: uiState.docExpandido === seccion ? "" : seccion });
   };
 
   const validarCuitApoderado = async () => {
     if (await trigger("apoCuit")) {
-      setApoNombre("GOMEZ PEREZ JUAN");
-      setFaseApoderado("completar");
+      updateUiState({
+        apoNombre: "GOMEZ PEREZ JUAN",
+        faseApoderado: "completar",
+      });
     }
   };
 
   const guardarApoderado = async () => {
-    if (await trigger(["apoEmail", "apoCelular", "emailFacturacion"])) setFaseApoderado("guardado");
+    if (await trigger(["apoEmail", "apoCelular", "emailFacturacion"])) {
+      updateUiState({ faseApoderado: "guardado" });
+    }
   };
 
   const avanzarAlExito = async () => {
@@ -190,7 +198,7 @@ export default function Prestamos() {
               <BotonVolver
                 onClick={() => {
                   handleVolver();
-                  if (pasoActual === 3) setMostrarResultados(false);
+                  if (pasoActual === 3) updateUiState({ mostrarResultados: false });
                 }}
               />
             )}
@@ -239,75 +247,29 @@ export default function Prestamos() {
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">
-                      {pasoActual === 1 && (
-                        <Paso1Cuit onValidar={handleValidarCuit} />
-                      )}
-
-                      {pasoActual === 2 && (
-                        <Paso2Datos
-                          onVolver={handleVolver}
-                          onAbrirModalSms={abrirModalSms}
-                          onContinuar={handleContinuarPaso2}
-                        />
-                      )}
-
-                      {pasoActual === 3 && (
-                        <Paso3Simulador
-                          mostrarResultados={mostrarResultados}
-                          onCalcular={handleCalcularSimulador}
-                          onContinuar={handleContinuarSimulador}
-                          onCancelar={() => setMostrarResultados(false)}
-                          opcionesProducto={[
-                            {
-                              value: "prestamo",
-                              label: "Préstamo",
-                            },
-                          ]}
-                          mostrarTipoCalculo={false}
-                          labelFecha="Plazo"
-                          labelMonto="Monto a financiar"
-                        />
-                      )}
-
-                      {pasoActual === 4 && (
-                        <Paso4Socios
-                          faseSocio={faseSocio}
-                          setFaseSocio={setFaseSocio}
-                          tempSocioCuit={tempSocioCuit}
-                          setTempSocioCuit={setTempSocioCuit}
-                          tempSocioNombre={tempSocioNombre}
-                          tempSocioParticipacion={tempSocioParticipacion}
-                          setTempSocioParticipacion={setTempSocioParticipacion}
-                          socios={socios}
-                          iniciarCargaSocio={iniciarCargaSocio}
-                          validarCuitSocio={validarCuitSocio}
-                          guardarSocio={guardarSocio}
-                          editarSocio={editarSocio}
-                          eliminarSocio={eliminarSocio}
-                          continuarAlProximoPaso={continuarAlProximoPaso}
-                        />
-                      )}
-
-                      {pasoActual === 5 && (
-                        <Paso5Documentacion
-                          docExpandido={docExpandido}
-                          toggleDoc={toggleDoc}
-                          socios={socios}
-                          onVolverASocios={() => setPasoActual(4)}
-                          faseApoderado={faseApoderado}
-                          setFaseApoderado={setFaseApoderado}
-                          apoNombre={apoNombre}
-                          apoRol={apoRol}
-                          setApoRol={setApoRol}
-                          validarCuitApoderado={validarCuitApoderado}
-                          guardarApoderado={guardarApoderado}
-                          avanzarPaso6={avanzarAlExito}
-                        />
-                      )}
-
-                      {pasoActual === 7 && (
-                        <Paso7Exito onVolverInicio={handleResetFlujoCompleto} />
-                      )}
+                      <PrestamosPasos
+                        pasoActual={pasoActual}
+                        uiState={uiState}
+                        updateUiState={updateUiState}
+                        socios={socios}
+                        handleValidarCuit={handleValidarCuit}
+                        handleVolver={() => setPasoActual(pasoActual - 1)}
+                        abrirModalSms={abrirModalSms}
+                        handleContinuarPaso2={handleContinuarPaso2}
+                        handleCalcularSimulador={handleCalcularSimulador}
+                        handleContinuarSimulador={handleContinuarSimulador}
+                        iniciarCargaSocio={iniciarCargaSocio}
+                        validarCuitSocio={validarCuitSocio}
+                        guardarSocio={guardarSocio}
+                        editarSocio={editarSocio}
+                        eliminarSocio={eliminarSocio}
+                        continuarAlProximoPaso={continuarAlProximoPaso}
+                        toggleDoc={toggleDoc}
+                        validarCuitApoderado={validarCuitApoderado}
+                        guardarApoderado={guardarApoderado}
+                        avanzarAlExito={avanzarAlExito}
+                        handleResetFlujoCompleto={handleResetFlujoCompleto}
+                      />
                     </div>
                   </form>
                 </FormProvider>
@@ -320,10 +282,10 @@ export default function Prestamos() {
 
       {/* MODAL SMS */}
       <ModalSms
-        isOpen={mostrarModal}
-        onClose={() => setMostrarModal(false)}
-        codigoSms={codigoSms}
-        setCodigoSms={setCodigoSms}
+        isOpen={uiState.mostrarModal}
+        onClose={() => updateUiState({ mostrarModal: false })}
+        codigoSms={uiState.codigoSms}
+        setCodigoSms={(cod) => updateUiState({ codigoSms: cod })}
         onConfirmar={confirmarSms}
       />
     </div>

@@ -21,7 +21,18 @@ export default function ModalSms({
   };
 
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayClick}>
+    <div
+      className={styles.overlay}
+      onMouseDown={handleOverlayClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
       <div
         className={styles.modalContainer}
         ref={modalRef}

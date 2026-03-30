@@ -114,8 +114,8 @@ export default function Inicio() {
               </div>
 
               <div className={styles.actividadList}>
-                {solicitudesRecientes.map((sol, index) => (
-                  <div className={styles.actividadItem} key={index}>
+                {solicitudesRecientes.map((sol) => (
+                  <div className={styles.actividadItem} key={sol.id}>
                     <div className={styles.actividadIcon}>
                       <FiClock
                         color={

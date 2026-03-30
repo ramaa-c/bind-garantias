@@ -14,7 +14,7 @@ export const BarraProgreso = ({
 
         return (
           <div
-            key={index}
+              key={hito}
             className={`${styles.item} ${isCompleted ? styles.completed : ""} ${
               isCurrent ? styles.current : ""
             }`}

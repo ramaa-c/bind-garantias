@@ -70,8 +70,24 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
   };
 
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div className={styles.modalContainer}>
+    <div
+      className={styles.overlay}
+      onMouseDown={handleOverlayMouseDown}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
+      <div
+        className={styles.modalContainer}
+        onClick={(e) => e.stopPropagation()}
+        role="presentation"
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <button className={styles.btnClose} onClick={onClose}>
           <FiX size={20} />
         </button>
