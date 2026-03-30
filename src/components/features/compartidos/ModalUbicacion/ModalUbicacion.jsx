@@ -15,14 +15,14 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  if (isOpen && !prevIsOpen) {
-    setDirLocal(getValues("direccion") || "");
-    setProvLocal(getValues("provincia") || "");
-    setLocLocal(getValues("localidad") || "");
-    setIntentoGuardar(false);
-    setPrevIsOpen(true);
-  } else if (!isOpen && prevIsOpen) {
-    setPrevIsOpen(false);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setDirLocal(getValues("direccion") || "");
+      setProvLocal(getValues("provincia") || "");
+      setLocLocal(getValues("localidad") || "");
+      setIntentoGuardar(false);
+    }
   }
 
   useEscape(onClose, isOpen);

@@ -139,10 +139,11 @@ export default function Paso4Socios({
 
             {/* --- SECCIÓN INFERIOR: PORCENTAJE (NUEVO DISEÑO) --- */}
             <div className={styles.summaryBottom}>
-              <label className={styles.percentageLabel}>Participación del socio</label>
+              <label htmlFor="participacionSocioInput" className={styles.percentageLabel}>Participación del socio</label>
 
               <div className={`${styles.customInputWrapper} ${errorParticipacion ? styles.wrapperError : ""}`}>
                 <input
+                  id="participacionSocioInput"
                   type="text"
                   className={styles.customInput}
                   maxLength={3}

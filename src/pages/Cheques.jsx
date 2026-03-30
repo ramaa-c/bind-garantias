@@ -171,7 +171,7 @@ export default function Cheques() {
     }
   };
   const guardarApoderado = async () => {
-    if (await trigger(["apoEmail", "apoCelular"])) setFaseApoderado("guardado");
+    if (await trigger(["apoEmail", "apoCelular", "emailFacturacion"])) setFaseApoderado("guardado");
   };
   const avanzarPaso6 = async () => {
     if (await trigger("emailFacturacion")) setPasoActual(6);
