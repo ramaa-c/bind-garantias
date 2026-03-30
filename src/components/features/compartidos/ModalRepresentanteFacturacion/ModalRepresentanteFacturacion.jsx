@@ -19,11 +19,21 @@ export const ModalRepresentanteFacturacion = ({
 
   const [errorApoCuit, setErrorApoCuit] = useState("");
   const [intentoGuardarApo, setIntentoGuardarApo] = useState(false);
+  const [faseInterna, setFaseInterna] = useState(faseApoderado);
 
   const apoCuitIngresado = useWatch({ control, name: "apoCuit" }) || "";
   const apoEmailVal = useWatch({ control, name: "apoEmail" }) || "";
   const apoCelVal = useWatch({ control, name: "apoCelular" }) || "";
   const emailFacVal = useWatch({ control, name: "emailFacturacion" }) || "";
+
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setFaseInterna(faseApoderado);
+    }
+  }
 
   useEscape(onClose, isOpen);
 
@@ -64,14 +74,14 @@ export const ModalRepresentanteFacturacion = ({
       apoCelVal.replace(/\D/g, "").length === 10
     ) {
       setIntentoGuardarApo(false);
-      onGuardarApoderado();
+      setFaseInterna("guardado");
     }
   };
 
   const handleGuardarYCerrar = async () => {
-    let apoderadoOk = faseApoderado === "guardado";
+    let apoderadoOk = faseInterna === "guardado";
 
-    if (faseApoderado === "completar") {
+    if (faseInterna === "completar") {
       setIntentoGuardarApo(true);
       const okApo = await trigger(["apoEmail", "apoCelular"]);
       if (
@@ -80,8 +90,7 @@ export const ModalRepresentanteFacturacion = ({
         apoCelVal.replace(/\D/g, "").length === 10
       ) {
         setIntentoGuardarApo(false);
-        onGuardarApoderado();
-        setFaseApoderado("guardado");
+        setFaseInterna("guardado");
         apoderadoOk = true;
       }
     }
@@ -89,6 +98,8 @@ export const ModalRepresentanteFacturacion = ({
     const facturacionOk = await trigger("emailFacturacion");
 
     if (apoderadoOk && facturacionOk && emailFacVal.trim() !== "") {
+      setFaseApoderado("guardado");
+      onGuardarApoderado();
       onClose();
     }
   };
@@ -141,7 +152,7 @@ export const ModalRepresentanteFacturacion = ({
                 1. Representante Legal / Apoderado
               </h4>
 
-              {faseApoderado === "ingresar" && (
+              {faseInterna === "ingresar" && (
                 <div className={styles.searchBox}>
                   <div className={styles.inputWrapper}>
                     <InputFlotante
@@ -177,7 +188,7 @@ export const ModalRepresentanteFacturacion = ({
                 </div>
               )}
 
-              {faseApoderado === "completar" && (
+              {faseInterna === "completar" && (
                 <div className={styles.completarContainer}>
                   <div className={styles.topBackButtonWrapper}>
                     <BotonVolver
@@ -185,7 +196,7 @@ export const ModalRepresentanteFacturacion = ({
                       onClick={() => {
                         setValue("apoCuit", "");
                         setErrorApoCuit("");
-                        setFaseApoderado("ingresar");
+                        setFaseInterna("ingresar");
                       }}
                     />
                   </div>
@@ -248,7 +259,7 @@ export const ModalRepresentanteFacturacion = ({
                 </div>
               )}
 
-              {faseApoderado === "guardado" && (
+              {faseInterna === "guardado" && (
                 <div className={styles.successCard}>
                   <div className={styles.successInfo}>
                     <div className={styles.successIconWrapper}>
@@ -264,7 +275,7 @@ export const ModalRepresentanteFacturacion = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setFaseApoderado("completar")}
+                    onClick={() => setFaseInterna("completar")}
                   >
                     <FiEdit /> MODIFICAR
                   </Button>

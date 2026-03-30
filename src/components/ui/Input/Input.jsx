@@ -9,10 +9,14 @@ export const Input = React.forwardRef(({
   className = '', 
   as = 'input',
   centered = false,
+  id,
   ...props 
 }, ref) => {
   
   const Component = as;
+
+  const generatedId = React.useId();
+  const inputId = id || props.name || generatedId;
 
   const fieldClass = `
     ${styles.field} 
@@ -23,9 +27,10 @@ export const Input = React.forwardRef(({
 
   return (
     <div className={`${styles.wrapper} ${className}`}>
-      {label && <label className={styles.label}>{label}</label>}
+      {label && <label htmlFor={inputId} className={styles.label}>{label}</label>}
       
       <Component
+        id={inputId}
         type={as === 'input' ? type : undefined}
         className={fieldClass}
         placeholder={placeholder}

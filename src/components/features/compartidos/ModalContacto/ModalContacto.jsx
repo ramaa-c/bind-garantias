@@ -21,15 +21,15 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  if (isOpen && !prevIsOpen) {
-    setCelLocal(getValues("celular") || "");
-    setFase("ingresar");
-    setCodigoSms("");
-    setProcesando(false);
-    setIntentoSolicitarSms(false);
-    setPrevIsOpen(true);
-  } else if (!isOpen && prevIsOpen) {
-    setPrevIsOpen(false);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setCelLocal(getValues("celular") || "");
+      setFase("ingresar");
+      setCodigoSms("");
+      setProcesando(false);
+      setIntentoSolicitarSms(false);
+    }
   }
 
   const handleClose = () => {

@@ -12,7 +12,7 @@ export const Acordeon = ({
   onToggle,    
   children 
 }) => {
-  const [internalIsOpen, setInternalIsOpen] = useState(defaultOpen);
+  const [internalIsOpen, setInternalIsOpen] = useState(() => defaultOpen);
   
   const isControlled = controlledIsOpen !== undefined;
   const isOpen = isControlled ? controlledIsOpen : internalIsOpen;

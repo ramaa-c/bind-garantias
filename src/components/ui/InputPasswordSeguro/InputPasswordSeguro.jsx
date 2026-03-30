@@ -12,11 +12,14 @@ export const InputPasswordSeguro = React.forwardRef(
       email = "",
       esValido,
       className = "",
+      id,
       ...props
     },
     ref,
   ) => {
+    const generatedId = React.useId();
     const [showPassword, setShowPassword] = useState(false);
+    const inputId = id || props.name || generatedId;
 
     const getStrength = (pass) => {
       if (!pass) return { width: "0%", color: "transparent", mensaje: "" };
@@ -68,13 +71,14 @@ export const InputPasswordSeguro = React.forwardRef(
     return (
       <div className={`${styles.group} ${className}`}>
         <input
+          id={inputId}
           type={showPassword ? "text" : "password"}
           className={styles.input}
           placeholder=" "
           ref={ref}
           {...props}
         />
-        <label className={styles.label}>{label}</label>
+        <label htmlFor={inputId} className={styles.label}>{label}</label>
 
         {esValido && (
           <span className={styles.successIcon}>

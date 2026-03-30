@@ -172,7 +172,7 @@ export default function Prestamos() {
   };
 
   const guardarApoderado = async () => {
-    if (await trigger(["apoEmail", "apoCelular"])) setFaseApoderado("guardado");
+    if (await trigger(["apoEmail", "apoCelular", "emailFacturacion"])) setFaseApoderado("guardado");
   };
 
   const avanzarAlExito = async () => {
