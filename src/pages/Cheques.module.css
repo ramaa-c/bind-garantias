@@ -3,7 +3,7 @@
   flex-direction: column;
   position: relative;
   background-color: var(--carbon-black);
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-secundaria);
   min-height: 100%;
 }
 

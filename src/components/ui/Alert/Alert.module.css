@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   border-radius: 6px;
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-secundaria);
 }
 
 /* Formato Caja (Ancho completo) */
