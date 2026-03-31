@@ -13,6 +13,7 @@ import {
   Paso6Bolsa,
   Paso7Exito,
   PanelDudas,
+  ModalConfirmacionBorrador,
 } from "../components/features";
 import { ModalSms, BarraProgreso, BotonVolver, Scroll } from "../components/ui";
 import styles from "./Cheques.module.css";
@@ -35,6 +36,8 @@ export default function Cheques() {
   const [faseApoderado, setFaseApoderado] = useState("ingresar");
   const [apoNombre, setApoNombre] = useState("");
   const [apoRol, setApoRol] = useState("Representante Legal");
+
+  const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
 
   const metodosFormulario = useForm({
     resolver: zodResolver(chequesSchema),
@@ -97,9 +100,12 @@ export default function Cheques() {
   };
 
   const handleReiniciarAlta = () => {
-    if (window.confirm("¿Estás seguro de que deseas reiniciar la solicitud? Se perderán todos los datos no confirmados.")) {
-      handleResetFlujoCompleto();
-    }
+    setIsModalReiniciarAbierto(true);
+  };
+
+  const confirmarReinicioAlta = () => {
+    handleResetFlujoCompleto();
+    setIsModalReiniciarAbierto(false);
   };
 
   const abrirModalSms = async () => {
@@ -204,28 +210,31 @@ export default function Cheques() {
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
           <div className={styles.navegacionTop}>
-            {pasoActual > 1 && pasoActual < 7 && (
-              <BotonVolver
-                onClick={() => {
-                  handleVolver();
-                  if (pasoActual === 3) setMostrarResultados(false);
-                }}
-              />
-            )}
+            <div className={styles.botonesNavegacion}>
+              {pasoActual > 1 && pasoActual < 7 && (
+                <BotonVolver
+                  onClick={() => {
+                    handleVolver();
+                    if (pasoActual === 3) setMostrarResultados(false);
+                  }}
+                />
+              )}
 
-            {pasoActual === 1 && (
-              <BotonVolver
-                onClick={() => navigate("/inicio")}
-                texto="Volver a la lista"
-              />
-            )}
+              {pasoActual === 1 && (
+                <BotonVolver
+                  onClick={() => navigate("/inicio")}
+                  texto="Volver a la lista"
+                />
+              )}
 
-            {pasoActual < 7 && (
-              <BotonVolver
-                onClick={handleReiniciarAlta}
-                texto="Reiniciar alta"
-              />
-            )}
+              {pasoActual < 7 && (
+                <BotonVolver
+                  onClick={handleReiniciarAlta}
+                  texto="Reiniciar alta"
+                />
+              )}
+            </div>
+            <div>{/* Espacio para la columna derecha si la hubiera */}</div>
           </div>
 
           <div className={styles.contenedorPrincipal}>
@@ -357,7 +366,13 @@ export default function Cheques() {
         </div>
       </div>
 
-      {/* MODAL SMS */}
+      {/* MODALES */}
+      <ModalConfirmacionBorrador
+        isOpen={isModalReiniciarAbierto}
+        onClose={() => setIsModalReiniciarAbierto(false)}
+        onConfirm={confirmarReinicioAlta}
+      />
+
       <ModalSms
         isOpen={mostrarModal}
         onClose={() => setMostrarModal(false)}

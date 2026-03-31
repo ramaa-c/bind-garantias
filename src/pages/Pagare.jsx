@@ -11,6 +11,7 @@ import {
   Paso3Epyme,
   Paso4ExitoPagare,
   PanelDudas,
+  ModalConfirmacionBorrador,
 } from "../components/features";
 import styles from "./Pagare.module.css";
 
@@ -20,6 +21,7 @@ export default function PagareUSD() {
   const navigate = useNavigate();
 
   const [simulacionLista, setSimulacionLista] = useState(false);
+  const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
 
   const metodosFormulario = useForm({
     resolver: zodResolver(pagareSchema),
@@ -59,15 +61,18 @@ export default function PagareUSD() {
   };
 
   const handleReiniciarAlta = () => {
-    if (window.confirm("¿Estás seguro de que deseas reiniciar la solicitud? Se perderán todos los datos no confirmados.")) {
-      clearStorage();
-      metodosFormulario.reset({
-        moneda: "Dólar",
-        tipoCalculo: "monto",
-      });
-      setSimulacionLista(false);
-      setPasoActual(1);
-    }
+    setIsModalReiniciarAbierto(true);
+  };
+
+  const confirmarReinicioAlta = () => {
+    clearStorage();
+    metodosFormulario.reset({
+      moneda: "Dólar",
+      tipoCalculo: "monto",
+    });
+    setSimulacionLista(false);
+    setPasoActual(1);
+    setIsModalReiniciarAbierto(false);
   };
 
   return (
@@ -75,22 +80,25 @@ export default function PagareUSD() {
       <main className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
           <div className={styles.navegacionTop}>
-            {pasoActual > 1 && pasoActual < 4 && (
-              <BotonVolver onClick={() => setPasoActual((prev) => prev - 1)} />
-            )}
-            {pasoActual === 1 && (
-              <BotonVolver
-                onClick={() => navigate("/inicio")}
-                texto="Volver a la lista"
-              />
-            )}
+            <div className={styles.botonesNavegacion}>
+              {pasoActual > 1 && pasoActual < 4 && (
+                <BotonVolver onClick={() => setPasoActual((prev) => prev - 1)} />
+              )}
+              {pasoActual === 1 && (
+                <BotonVolver
+                  onClick={() => navigate("/inicio")}
+                  texto="Volver a la lista"
+                />
+              )}
 
-            {pasoActual < 4 && (
-              <BotonVolver
-                onClick={handleReiniciarAlta}
-                texto="Reiniciar alta"
-              />
-            )}
+              {pasoActual < 4 && (
+                <BotonVolver
+                  onClick={handleReiniciarAlta}
+                  texto="Reiniciar alta"
+                />
+              )}
+            </div>
+            <div></div>
           </div>
 
           <div className={styles.contenedorPrincipal}>
@@ -148,6 +156,12 @@ export default function PagareUSD() {
           </div>
         </div>
       </main>
+
+      <ModalConfirmacionBorrador
+        isOpen={isModalReiniciarAbierto}
+        onClose={() => setIsModalReiniciarAbierto(false)}
+        onConfirm={confirmarReinicioAlta}
+      />
     </div>
   );
 }
