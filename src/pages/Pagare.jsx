@@ -58,6 +58,18 @@ export default function PagareUSD() {
     navigate("/solicitudes");
   };
 
+  const handleReiniciarAlta = () => {
+    if (window.confirm("¿Estás seguro de que deseas reiniciar la solicitud? Se perderán todos los datos no confirmados.")) {
+      clearStorage();
+      metodosFormulario.reset({
+        moneda: "Dólar",
+        tipoCalculo: "monto",
+      });
+      setSimulacionLista(false);
+      setPasoActual(1);
+    }
+  };
+
   return (
     <div className={styles.pagarePage}>
       <main className={styles.formMainContainer}>
@@ -70,6 +82,13 @@ export default function PagareUSD() {
               <BotonVolver
                 onClick={() => navigate("/inicio")}
                 texto="Volver a la lista"
+              />
+            )}
+
+            {pasoActual < 4 && (
+              <BotonVolver
+                onClick={handleReiniciarAlta}
+                texto="Reiniciar alta"
               />
             )}
           </div>

@@ -22,6 +22,9 @@
 
 .navegacionTop {
   margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .contenedorPrincipal {

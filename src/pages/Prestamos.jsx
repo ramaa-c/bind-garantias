@@ -88,6 +88,12 @@ export default function Prestamos() {
     setPasoActual(1);
   };
 
+  const handleReiniciarAlta = () => {
+    if (window.confirm("¿Estás seguro de que deseas reiniciar la solicitud? Se perderán todos los datos no confirmados.")) {
+      handleResetFlujoCompleto();
+    }
+  };
+
   const abrirModalSms = async () => {
     if (await trigger("celular")) updateUiState({ mostrarModal: true });
   };
@@ -207,6 +213,13 @@ export default function Prestamos() {
               <BotonVolver
                 onClick={() => navigate("/inicio")}
                 texto="Volver a la lista"
+              />
+            )}
+
+            {pasoActual < 7 && (
+              <BotonVolver
+                onClick={handleReiniciarAlta}
+                texto="Reiniciar alta"
               />
             )}
           </div>

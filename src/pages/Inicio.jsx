@@ -32,6 +32,22 @@ const solicitudesRecientes = [
 export default function Inicio() {
   const navigate = useNavigate();
 
+  const handleNuevaOperacion = (ruta, draftKey) => {
+    const hasDraft = sessionStorage.getItem(`${draftKey}_data`) || sessionStorage.getItem(`${draftKey}_paso`);
+    if (hasDraft) {
+      if (window.confirm("Tienes una solicitud en curso. ¿Deseas descartar el borrador y empezar una nueva? (Si cancelas, continuarás donde lo dejaste).")) {
+        sessionStorage.removeItem(`${draftKey}_data`);
+        sessionStorage.removeItem(`${draftKey}_paso`);
+        sessionStorage.removeItem(`${draftKey}_lista`);
+        navigate(ruta);
+      } else {
+        navigate(ruta);
+      }
+    } else {
+      navigate(ruta);
+    }
+  };
+
   return (
     <div className={styles.inicioPage}>
       <main className={styles.inicioMainContainer}>
@@ -44,7 +60,7 @@ export default function Inicio() {
                 Aquí tenés el resumen de tus líneas de crédito.
               </p>
             </div>
-            <Button variant="primary" onClick={() => navigate("/pagare")}>
+            <Button variant="primary" onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}>
               <FiPlusCircle size={18} style={{ marginRight: "8px" }} />
               NUEVA OPERACIÓN
             </Button>
@@ -90,7 +106,7 @@ export default function Inicio() {
                   <p>Operá en dólares de forma ágil.</p>
                 </div>
                 <div>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/pagare")}>
+                  <Button variant="outline" size="sm" onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}>
                     UTILIZAR LÍNEA
                   </Button>
                 </div>
