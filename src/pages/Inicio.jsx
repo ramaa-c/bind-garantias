@@ -32,20 +32,46 @@ const solicitudesRecientes = [
   },
 ];
 
+const hasMeaningfulData = (dataString) => {
+  if (!dataString) return false;
+  try {
+    const data = JSON.parse(dataString);
+    if (typeof data !== "object" || data === null) return false;
+    return Object.values(data).some((value) => {
+      if (value === "" || value === null || value === undefined || value === false) {
+        return false;
+      }
+      if (Array.isArray(value) && value.length === 0) {
+        return false;
+      }
+      return true;
+    });
+  } catch {
+    return false;
+  }
+};
+
 export default function Inicio() {
   const navigate = useNavigate();
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
 
   const handleNuevaOperacion = (ruta, draftKey) => {
-    const hasDraft =
-      sessionStorage.getItem(`${draftKey}_data`) ||
-      sessionStorage.getItem(`${draftKey}_paso`);
+    const dataString = sessionStorage.getItem(`${draftKey}_data`);
+    const pasoString = sessionStorage.getItem(`${draftKey}_paso`);
+    const currentPaso = parseInt(pasoString, 10) || 1;
 
-    if (hasDraft) {
+    const hasMeaningful = hasMeaningfulData(dataString);
+    const hasAdvancedStep = currentPaso > 1;
+
+    if (hasAdvancedStep || hasMeaningful) {
       setFlujoPendiente(ruta);
       setDraftKeyPendiente(draftKey);
     } else {
+      // It's a "ghost draft" (step 1 or missing, empty/default data)
+      sessionStorage.removeItem(`${draftKey}_data`);
+      sessionStorage.removeItem(`${draftKey}_paso`);
+      sessionStorage.removeItem(`${draftKey}_lista`);
       navigate(ruta);
     }
   };
