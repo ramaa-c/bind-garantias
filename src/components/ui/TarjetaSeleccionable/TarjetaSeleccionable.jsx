@@ -5,7 +5,15 @@ export const TarjetaSeleccionable = ({ title, icon: Icon, isSelected, onClick })
   return (
     <div 
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       <div className={styles.left}>
         {Icon && <span className={styles.icon}><Icon /></span>}

@@ -18,6 +18,14 @@ export const SocioTaskCard = ({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onEdit(index);
+        }
+      }}
       className={`${styles.card} ${isCompleto ? styles.cardSuccess : intentoAvanzar ? styles.cardError : ""}`}
       onClick={() => onEdit(index)}
     >
@@ -39,7 +47,6 @@ export const SocioTaskCard = ({
         <Button
           variant="ghost"
           size="sm"
-          className={styles.actionBtn}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -49,7 +56,7 @@ export const SocioTaskCard = ({
           <FiEdit2 size={12} /> MODIFICAR
         </Button>
       ) : (
-        <Button variant="outline" size="sm" className={styles.actionBtn}>
+        <Button variant="outline" size="sm">
           COMPLETAR DATOS
         </Button>
       )}

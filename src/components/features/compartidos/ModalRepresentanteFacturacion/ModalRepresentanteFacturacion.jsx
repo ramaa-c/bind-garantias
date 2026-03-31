@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useFormContext, useFormState } from "react-hook-form";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { FiCheckCircle, FiEdit, FiBriefcase, FiX } from "react-icons/fi";
 import { InputFlotante, Button, BotonVolver } from "../../../ui";
 import styles from "./ModalRepresentanteFacturacion.module.css";
@@ -14,15 +14,32 @@ export const ModalRepresentanteFacturacion = ({
   onValidarCuit,
   onGuardarApoderado,
 }) => {
-  const { register, watch, setValue, trigger, control } = useFormContext();
-  const { errors, dirtyFields } = useFormState({ control });
+  const { setValue, trigger, control } = useFormContext();
+  const { errors } = useFormState({ control });
 
   const [errorApoCuit, setErrorApoCuit] = useState("");
   const [intentoGuardarApo, setIntentoGuardarApo] = useState(false);
+  const [faseInterna, setFaseInterna] = useState(() => faseApoderado);
 
-  const apoCuitIngresado = watch("apoCuit") || "";
-  const apoEmailVal = watch("apoEmail") || "";
-  const apoCelVal = watch("apoCelular") || "";
+  const apoCuitIngresado = useWatch({ control, name: "apoCuit" }) || "";
+  const apoEmailVal = useWatch({ control, name: "apoEmail" }) || "";
+  const apoCelVal = useWatch({ control, name: "apoCelular" }) || "";
+  const emailFacVal = useWatch({ control, name: "emailFacturacion" }) || "";
+
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  const [prevFaseApoderado, setPrevFaseApoderado] = useState(() => faseApoderado);
+
+  if (isOpen !== prevIsOpen || faseApoderado !== prevFaseApoderado) {
+    if (isOpen !== prevIsOpen) {
+      setPrevIsOpen(isOpen);
+    }
+    if (faseApoderado !== prevFaseApoderado) {
+      setPrevFaseApoderado(faseApoderado);
+    }
+    if (isOpen) {
+      setFaseInterna(faseApoderado);
+    }
+  }
 
   useEscape(onClose, isOpen);
 
@@ -63,11 +80,35 @@ export const ModalRepresentanteFacturacion = ({
       apoCelVal.replace(/\D/g, "").length === 10
     ) {
       setIntentoGuardarApo(false);
-      onGuardarApoderado();
+      setFaseInterna("guardado");
     }
   };
 
-  const { onChange, ...restCuit } = register("apoCuit");
+  const handleGuardarYCerrar = async () => {
+    let apoderadoOk = faseInterna === "guardado";
+
+    if (faseInterna === "completar") {
+      setIntentoGuardarApo(true);
+      const okApo = await trigger(["apoEmail", "apoCelular"]);
+      if (
+        okApo &&
+        apoEmailVal.trim() !== "" &&
+        apoCelVal.replace(/\D/g, "").length === 10
+      ) {
+        setIntentoGuardarApo(false);
+        setFaseInterna("guardado");
+        apoderadoOk = true;
+      }
+    }
+
+    const facturacionOk = await trigger("emailFacturacion");
+
+    if (apoderadoOk && facturacionOk && emailFacVal.trim() !== "") {
+      setFaseApoderado("guardado");
+      onGuardarApoderado();
+      onClose();
+    }
+  };
 
   const errorEmail =
     errors.apoEmail?.message ||
@@ -77,14 +118,9 @@ export const ModalRepresentanteFacturacion = ({
     (intentoGuardarApo && apoCelVal.replace(/\D/g, "").length < 10
       ? "Requerido"
       : null);
-  const isEmailValido =
-    !errorEmail &&
-    apoEmailVal.trim() !== "" &&
-    (dirtyFields.apoEmail || intentoGuardarApo);
-  const isCelValido =
-    !errorCel &&
-    apoCelVal.replace(/\D/g, "").length === 10 &&
-    (dirtyFields.apoCelular || intentoGuardarApo);
+
+  const isEmailValido = !errorEmail && apoEmailVal.trim() !== "";
+  const isCelValido = !errorCel && apoCelVal.replace(/\D/g, "").length === 10;
 
   const handleOverlayMouseDown = (e) => {
     if (e.target === e.currentTarget) {
@@ -94,13 +130,24 @@ export const ModalRepresentanteFacturacion = ({
 
   if (!isOpen) return null;
 
-  const { onChange: onCelChange, ...restCel } = register("apoCelular");
-
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
+    <div
+      className={styles.overlay}
+      onMouseDown={handleOverlayMouseDown}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
       <div
         className={styles.modalContainer}
         onClick={(e) => e.stopPropagation()}
+        role="presentation"
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <button className={styles.btnClose} onClick={onClose}>
           <FiX size={20} />
@@ -124,10 +171,11 @@ export const ModalRepresentanteFacturacion = ({
                 1. Representante Legal / Apoderado
               </h4>
 
-              {faseApoderado === "ingresar" && (
+              {faseInterna === "ingresar" && (
                 <div className={styles.searchBox}>
                   <div className={styles.inputWrapper}>
                     <InputFlotante
+                      name="apoCuit"
                       label="CUIT del apoderado"
                       maxLength={11}
                       esValido={
@@ -136,19 +184,15 @@ export const ModalRepresentanteFacturacion = ({
                         validarCUIT(apoCuitIngresado)
                       }
                       error={errorApoCuit}
-                      {...restCuit}
                       value={apoCuitIngresado}
                       onChange={(e) => {
                         const limpio = e.target.value
                           .replace(/\D/g, "")
                           .slice(0, 11);
-                        e.target.value = limpio;
-                        onChange(e);
                         setValue("apoCuit", limpio, {
                           shouldValidate: true,
                           shouldDirty: true,
                         });
-
                         if (errorApoCuit) setErrorApoCuit("");
                       }}
                     />
@@ -163,7 +207,7 @@ export const ModalRepresentanteFacturacion = ({
                 </div>
               )}
 
-              {faseApoderado === "completar" && (
+              {faseInterna === "completar" && (
                 <div className={styles.completarContainer}>
                   <div className={styles.topBackButtonWrapper}>
                     <BotonVolver
@@ -171,7 +215,7 @@ export const ModalRepresentanteFacturacion = ({
                       onClick={() => {
                         setValue("apoCuit", "");
                         setErrorApoCuit("");
-                        setFaseApoderado("ingresar");
+                        setFaseInterna("ingresar");
                       }}
                     />
                   </div>
@@ -191,23 +235,34 @@ export const ModalRepresentanteFacturacion = ({
 
                   <div className={styles.inputRow}>
                     <InputFlotante
+                      name="apoEmail"
                       label="Email Personal"
                       type="email"
                       esValido={isEmailValido}
                       error={errorEmail}
-                      {...register("apoEmail")}
+                      value={apoEmailVal}
+                      onChange={(e) =>
+                        setValue("apoEmail", e.target.value, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        })
+                      }
                     />
                     <InputFlotante
+                      name="apoCelular"
                       label="Celular"
                       maxLength={10}
                       esValido={isCelValido}
                       error={errorCel}
-                      {...restCel}
+                      value={apoCelVal}
                       onChange={(e) => {
-                        e.target.value = e.target.value
+                        const limpio = e.target.value
                           .replace(/\D/g, "")
                           .slice(0, 10);
-                        onCelChange(e);
+                        setValue("apoCelular", limpio, {
+                          shouldValidate: true,
+                          shouldDirty: true,
+                        });
                       }}
                     />
                   </div>
@@ -223,7 +278,7 @@ export const ModalRepresentanteFacturacion = ({
                 </div>
               )}
 
-              {faseApoderado === "guardado" && (
+              {faseInterna === "guardado" && (
                 <div className={styles.successCard}>
                   <div className={styles.successInfo}>
                     <div className={styles.successIconWrapper}>
@@ -239,7 +294,7 @@ export const ModalRepresentanteFacturacion = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setFaseApoderado("completar")}
+                    onClick={() => setFaseInterna("completar")}
                   >
                     <FiEdit /> MODIFICAR
                   </Button>
@@ -254,20 +309,31 @@ export const ModalRepresentanteFacturacion = ({
               </h4>
               <div className={styles.facturacionWrapper}>
                 <InputFlotante
+                  name="emailFacturacion"
                   label="Email de Facturación"
                   type="email"
                   esValido={
-                    !errors.emailFacturacion && dirtyFields.emailFacturacion
+                    !errors.emailFacturacion && emailFacVal.trim().length > 0
                   }
                   error={errors.emailFacturacion?.message}
-                  {...register("emailFacturacion")}
+                  value={emailFacVal}
+                  onChange={(e) =>
+                    setValue("emailFacturacion", e.target.value, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                  }
                 />
               </div>
             </section>
 
             {/* --- FOOTER --- */}
             <div className={styles.modalFooter}>
-              <Button variant="primary" size="md" onClick={onClose}>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={handleGuardarYCerrar}
+              >
                 GUARDAR Y CERRAR
               </Button>
             </div>

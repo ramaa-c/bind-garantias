@@ -39,10 +39,18 @@ export const CargaArchivos = ({
   return (
     <div 
       className={boxClass}
+      role="button"
+      tabIndex={0}
       onClick={onClick}
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       <FiUploadCloud className={styles.icon} />
       <h4 className={styles.text}>{title}</h4>

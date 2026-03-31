@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
+import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { chequesSchema } from "../schemas/chequesSchema";
@@ -12,18 +13,20 @@ import {
   Paso6Bolsa,
   Paso7Exito,
   PanelDudas,
+  ModalConfirmacionBorrador,
 } from "../components/features";
 import { ModalSms, BarraProgreso, BotonVolver, Scroll } from "../components/ui";
 import styles from "./Cheques.module.css";
 
+const STORAGE_KEY = "draft_cheques";
+
 export default function Cheques() {
   const navigate = useNavigate();
-  const [pasoActual, setPasoActual] = useState(1);
+
   const [mostrarModal, setMostrarModal] = useState(false);
   const [codigoSms, setCodigoSms] = useState("");
   const [mostrarResultados, setMostrarResultados] = useState(false);
 
-  const [socios, setSocios] = useState([]);
   const [faseSocio, setFaseSocio] = useState("lista");
   const [tempSocioCuit, setTempSocioCuit] = useState("");
   const [tempSocioNombre, setTempSocioNombre] = useState("");
@@ -34,11 +37,13 @@ export default function Cheques() {
   const [apoNombre, setApoNombre] = useState("");
   const [apoRol, setApoRol] = useState("Representante Legal");
 
+  const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
+
   const metodosFormulario = useForm({
     resolver: zodResolver(chequesSchema),
     mode: "onChange",
     shouldUnregister: false,
-    defaultValues: {
+    defaultValues: getPersistedFormData(STORAGE_KEY, {
       moneda: "Pesos",
       sociedadBolsa: "",
       cuit: "",
@@ -46,11 +51,23 @@ export default function Cheques() {
       provincia: "",
       localidad: "",
       celular: "",
-    },
+    }),
   });
 
-  const { handleSubmit, trigger, watch, setValue } = metodosFormulario;
-  const bolsaSeleccionada = watch("sociedadBolsa", "");
+  const { handleSubmit, trigger, watch, setValue, control } = metodosFormulario;
+
+  const {
+    pasoActual,
+    setPasoActual,
+    listaExtra: socios,
+    setListaExtra: setSocios,
+    clearStorage,
+  } = useFormPersist({
+    storageKey: STORAGE_KEY,
+    watch,
+  });
+
+  const bolsaSeleccionada = useWatch({ control, name: "sociedadBolsa", defaultValue: "" });
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleValidarCuit = async () => {
@@ -58,11 +75,20 @@ export default function Cheques() {
   };
 
   const handleVolver = () => {
-    if (pasoActual === 7) setPasoActual(1);
-    else setPasoActual(pasoActual - 1);
+    setPasoActual((prev) => (prev === 7 ? 1 : prev - 1));
   };
 
   const handleResetFlujoCompleto = () => {
+    clearStorage();
+    metodosFormulario.reset({
+      moneda: "Pesos",
+      sociedadBolsa: "",
+      cuit: "",
+      direccion: "",
+      provincia: "",
+      localidad: "",
+      celular: "",
+    });
     setSocios([]);
     setFaseSocio("lista");
     setFaseApoderado("ingresar");
@@ -71,6 +97,15 @@ export default function Cheques() {
     setMostrarResultados(false);
     setCodigoSms("");
     setPasoActual(1);
+  };
+
+  const handleReiniciarAlta = () => {
+    setIsModalReiniciarAbierto(true);
+  };
+
+  const confirmarReinicioAlta = () => {
+    handleResetFlujoCompleto();
+    setIsModalReiniciarAbierto(false);
   };
 
   const abrirModalSms = async () => {
@@ -148,7 +183,7 @@ export default function Cheques() {
     }
   };
   const guardarApoderado = async () => {
-    if (await trigger(["apoEmail", "apoCelular"])) setFaseApoderado("guardado");
+    if (await trigger(["apoEmail", "apoCelular", "emailFacturacion"])) setFaseApoderado("guardado");
   };
   const avanzarPaso6 = async () => {
     if (await trigger("emailFacturacion")) setPasoActual(6);
@@ -175,21 +210,31 @@ export default function Cheques() {
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
           <div className={styles.navegacionTop}>
-            {pasoActual > 1 && pasoActual < 7 && (
-              <BotonVolver
-                onClick={() => {
-                  handleVolver();
-                  if (pasoActual === 3) setMostrarResultados(false);
-                }}
-              />
-            )}
+            <div className={styles.botonesNavegacion}>
+              {pasoActual > 1 && pasoActual < 7 && (
+                <BotonVolver
+                  onClick={() => {
+                    handleVolver();
+                    if (pasoActual === 3) setMostrarResultados(false);
+                  }}
+                />
+              )}
 
-            {pasoActual === 1 && (
-              <BotonVolver
-                onClick={() => navigate("/inicio")}
-                texto="Volver a la lista"
-              />
-            )}
+              {pasoActual === 1 && (
+                <BotonVolver
+                  onClick={() => navigate("/inicio")}
+                  texto="Volver a la lista"
+                />
+              )}
+
+              {pasoActual < 7 && (
+                <BotonVolver
+                  onClick={handleReiniciarAlta}
+                  texto="Reiniciar alta"
+                />
+              )}
+            </div>
+            <div>{/* Espacio para la columna derecha si la hubiera */}</div>
           </div>
 
           <div className={styles.contenedorPrincipal}>
@@ -321,7 +366,13 @@ export default function Cheques() {
         </div>
       </div>
 
-      {/* MODAL SMS */}
+      {/* MODALES */}
+      <ModalConfirmacionBorrador
+        isOpen={isModalReiniciarAbierto}
+        onClose={() => setIsModalReiniciarAbierto(false)}
+        onConfirm={confirmarReinicioAlta}
+      />
+
       <ModalSms
         isOpen={mostrarModal}
         onClose={() => setMostrarModal(false)}

@@ -26,11 +26,24 @@ export const Modal = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className={styles.overlay} onClick={onClose}>
+    <div
+      className={styles.overlay}
+      onClick={onClose}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          onClose();
+        }
+      }}
+    >
       <div 
         className={styles.modalBox} 
         style={{ maxWidth }}
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <button 
           className={styles.closeButton} 

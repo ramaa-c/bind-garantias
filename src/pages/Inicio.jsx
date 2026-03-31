@@ -1,14 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  FiFileText,
+  FiBriefcase,
+  FiDollarSign,
+  FiArrowRight,
   FiTrendingUp,
   FiCalendar,
   FiClock,
-  FiPlusCircle,
-  FiArrowRight,
 } from "react-icons/fi";
 import { TbFileInvoice } from "react-icons/tb";
 import { Button } from "../components/ui";
+import ModalConfirmacionBorrador from "../components/features/compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
 import styles from "./Inicio.module.css";
 
 // Mocks
@@ -31,12 +34,47 @@ const solicitudesRecientes = [
 
 export default function Inicio() {
   const navigate = useNavigate();
+  const [flujoPendiente, setFlujoPendiente] = useState(null);
+  const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
+
+  const handleNuevaOperacion = (ruta, draftKey) => {
+    const hasDraft =
+      sessionStorage.getItem(`${draftKey}_data`) ||
+      sessionStorage.getItem(`${draftKey}_paso`);
+
+    if (hasDraft) {
+      setFlujoPendiente(ruta);
+      setDraftKeyPendiente(draftKey);
+    } else {
+      navigate(ruta);
+    }
+  };
+
+  const handleConfirmStartNew = () => {
+    if (draftKeyPendiente) {
+      sessionStorage.removeItem(`${draftKeyPendiente}_data`);
+      sessionStorage.removeItem(`${draftKeyPendiente}_paso`);
+      sessionStorage.removeItem(`${draftKeyPendiente}_lista`);
+    }
+    if (flujoPendiente) {
+      navigate(flujoPendiente);
+    }
+    setFlujoPendiente(null);
+    setDraftKeyPendiente(null);
+  };
+
+  const handleCloseContinueDraft = () => {
+    if (flujoPendiente) {
+      navigate(flujoPendiente);
+    }
+    setFlujoPendiente(null);
+    setDraftKeyPendiente(null);
+  };
 
   return (
     <div className={styles.inicioPage}>
       <main className={styles.inicioMainContainer}>
         <div className={styles.inicioContentWrapper}>
-          
           <header className={styles.inicioHeader}>
             <div>
               <h1 className={styles.inicioGreeting}>Hola, Asesoramiento</h1>
@@ -44,10 +82,6 @@ export default function Inicio() {
                 Aquí tenés el resumen de tus líneas de crédito.
               </p>
             </div>
-            <Button variant="primary" onClick={() => navigate("/pagare")}>
-              <FiPlusCircle size={18} style={{ marginRight: "8px" }} />
-              NUEVA OPERACIÓN
-            </Button>
           </header>
 
           <section className={styles.kpiGrid}>
@@ -77,35 +111,110 @@ export default function Inicio() {
           </section>
 
           <div className={styles.inicioBottomGrid}>
-            
             {/* COLUMNA IZQUIERDA */}
-            <section>
+            <section className={styles.leftColumn}>
               <div className={styles.sectionHeaderRow}>
                 <h3 className={styles.sectionTitle}>Mis Líneas Activas</h3>
               </div>
 
-              <div className={styles.lineaModernCard}>
-                <div className={styles.lineaModernInfo}>
-                  <h4>Línea Pagaré Bursátil</h4>
-                  <p>Operá en dólares de forma ágil.</p>
+              <div className={styles.taskCardsGrid}>
+            {/* Tarjeta Pagaré */}
+            <div className={styles.taskCard}>
+              <div className={styles.taskCardHeader}>
+                <div className={styles.taskCardIcon}>
+                  <FiFileText />
                 </div>
-                <div>
-                  <Button variant="outline" size="sm" onClick={() => navigate("/pagare")}>
-                    UTILIZAR LÍNEA
-                  </Button>
-                </div>
+                <h3 className={styles.taskCardTitle}>Pagaré</h3>
               </div>
+              <p className={styles.taskCardDescription}>
+                Emití y negociá pagarés bursátiles en dólares de forma ágil y
+                sencilla.
+              </p>
+              <div className={styles.taskCardFooter}>
+                <Button
+                  variant="primary"
+                  onClick={() =>
+                    handleNuevaOperacion("/pagare", "draft_pagare")
+                  }
+                >
+                  Nueva Operación
+                  <FiArrowRight style={{ marginLeft: "0.5rem" }} />
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/solicitudes")}
+                >
+                  Solicitudes
+                </Button>
+              </div>
+            </div>
 
-              <div className={`${styles.lineaModernCard} ${styles.disabled}`}>
-                <div className={styles.lineaModernInfo}>
-                  <h4>Línea Cheques (Próximamente)</h4>
-                  <p>Descuento de cheques de pago diferido.</p>
+            {/* Tarjeta Cheques */}
+            <div className={styles.taskCard}>
+              <div className={styles.taskCardHeader}>
+                <div className={styles.taskCardIcon}>
+                  <FiBriefcase />
                 </div>
+                <h3 className={styles.taskCardTitle}>Cheques</h3>
+              </div>
+              <p className={styles.taskCardDescription}>
+                Descontá tus cheques de pago diferido y obtené liquidez
+                inmediata para tu negocio.
+              </p>
+              <div className={styles.taskCardFooter}>
+                <Button
+                  variant="primary"
+                  onClick={() =>
+                    handleNuevaOperacion("/cheques", "draft_cheques")
+                  }
+                >
+                  Nueva Operación
+                  <FiArrowRight style={{ marginLeft: "0.5rem" }} />
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/solicitudes")}
+                >
+                  Solicitudes
+                </Button>
+              </div>
+            </div>
+
+            {/* Tarjeta Préstamos */}
+            <div className={styles.taskCard}>
+              <div className={styles.taskCardHeader}>
+                <div className={styles.taskCardIcon}>
+                  <FiDollarSign />
+                </div>
+                <h3 className={styles.taskCardTitle}>Préstamos</h3>
+              </div>
+              <p className={styles.taskCardDescription}>
+                Accedé a líneas de crédito a medida para financiar tus proyectos
+                de inversión.
+              </p>
+              <div className={styles.taskCardFooter}>
+                <Button
+                  variant="primary"
+                  onClick={() =>
+                    handleNuevaOperacion("/prestamos", "draft_prestamos")
+                  }
+                >
+                  Nueva Operación
+                  <FiArrowRight style={{ marginLeft: "0.5rem" }} />
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/solicitudes")}
+                >
+                  Solicitudes
+                </Button>
+              </div>
+            </div>
               </div>
             </section>
 
             {/* COLUMNA DERECHA */}
-            <section>
+            <section className={styles.rightColumn}>
               <div className={styles.sectionHeaderRow}>
                 <h3 className={styles.sectionTitle}>Actividad Reciente</h3>
                 <Button variant="link" size="sm" onClick={() => navigate("/solicitudes")}>
@@ -114,8 +223,8 @@ export default function Inicio() {
               </div>
 
               <div className={styles.actividadList}>
-                {solicitudesRecientes.map((sol, index) => (
-                  <div className={styles.actividadItem} key={index}>
+                {solicitudesRecientes.map((sol) => (
+                  <div className={styles.actividadItem} key={sol.id}>
                     <div className={styles.actividadIcon}>
                       <FiClock
                         color={
@@ -151,6 +260,13 @@ export default function Inicio() {
           </div>
         </div>
       </main>
+
+      {/* Modal Interceptor */}
+      <ModalConfirmacionBorrador
+        isOpen={!!flujoPendiente}
+        onClose={handleCloseContinueDraft}
+        onConfirm={handleConfirmStartNew}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useFormContext, useFormState } from "react-hook-form";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import {
   FiCheckCircle,
   FiAlertCircle,
@@ -16,6 +16,25 @@ import {
 
 import styles from "./Paso5Documentacion.module.css";
 
+const PersistenciaOculta = ({ register, socios }) => (
+  <div style={{ display: "none" }}>
+    <input {...register("apoCuit")} />
+    <input {...register("apoEmail")} />
+    <input {...register("apoCelular")} />
+    <input {...register("emailFacturacion")} />
+
+    {socios.map((socio, i) => (
+      <React.Fragment key={socio.cuit || i}>
+        <input {...register(`socios.${i}.email`)} />
+        <input {...register(`socios.${i}.celular`)} />
+        <input {...register(`socios.${i}.direccion`)} />
+        <input {...register(`socios.${i}.provincia`)} />
+        <input {...register(`socios.${i}.localidad`)} />
+      </React.Fragment>
+    ))}
+  </div>
+);
+
 export default function Paso5Documentacion({
   socios,
   faseApoderado,
@@ -28,7 +47,6 @@ export default function Paso5Documentacion({
 }) {
   const {
     register,
-    watch,
     control,
     setValue,
     trigger,
@@ -39,36 +57,57 @@ export default function Paso5Documentacion({
   const { errors } = useFormState({ control });
 
   // --- ESTADOS LOCALES ---
-  const [archivos, setArchivos] = useState({});
-  const [socioActivoIndex, setSocioActivoIndex] = useState(null);
-  const [modalDocsOpen, setModalDocsOpen] = useState(false);
-  const [modalApoOpen, setModalApoOpen] = useState(false);
-  const [draggingKey, setDraggingKey] = useState(null);
+  const [uiState, setUiState] = useState({
+    archivos: {},
+    socioActivoIndex: null,
+    modalDocsOpen: false,
+    modalApoOpen: false,
+    draggingKey: null,
+    backupSocio: {},
+    backupArchivos: {},
+    intentoAvanzar: false,
+    intentoGuardarSocio: false,
+  });
 
-  const [backupSocio, setBackupSocio] = useState({});
-  const [backupArchivos, setBackupArchivos] = useState({});
+  const {
+    archivos,
+    socioActivoIndex,
+    modalDocsOpen,
+    modalApoOpen,
+    draggingKey,
+    backupSocio,
+    intentoAvanzar,
+    intentoGuardarSocio,
+  } = uiState;
 
-  const [intentoAvanzar, setIntentoAvanzar] = useState(false);
-  const [intentoGuardarSocio, setIntentoGuardarSocio] = useState(false);
+  const updateState = (updates) => {
+    setUiState((prev) => ({
+      ...prev,
+      ...(typeof updates === "function" ? updates(prev) : updates),
+    }));
+  };
 
-  const emailFacturacionVal = watch("emailFacturacion") || "";
+  const emailFacturacionVal =
+    useWatch({ control, name: "emailFacturacion" }) || "";
 
   // --- HANDLERS DE ARCHIVOS ---
   const handleFileUpload = (key, file) => {
     if (file) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
-      setArchivos((prev) => ({
-        ...prev,
-        [key]: Object.assign(file, { formattedSize: sizeMB }),
+      updateState((prev) => ({
+        archivos: {
+          ...prev.archivos,
+          [key]: Object.assign(file, { formattedSize: sizeMB }),
+        },
       }));
     }
   };
 
   const handleFileRemove = (key) => {
-    setArchivos((prev) => {
-      const nuevos = { ...prev };
+    updateState((prev) => {
+      const nuevos = { ...prev.archivos };
       delete nuevos[key];
-      return nuevos;
+      return { archivos: nuevos };
     });
   };
 
@@ -112,14 +151,16 @@ export default function Paso5Documentacion({
 
   // --- HANDLERS ACCIONES ---
   const handleAbrirModalSocio = (index) => {
-    setIntentoGuardarSocio(false);
     const datosTextosActuales = getValues(`socios.${index}`) || {};
-    setBackupSocio(JSON.parse(JSON.stringify(datosTextosActuales)));
-    setBackupArchivos({
-      frente: archivos[`socio-${index}-frente`],
-      dorso: archivos[`socio-${index}-dorso`],
+    updateState({
+      intentoGuardarSocio: false,
+      backupSocio: JSON.parse(JSON.stringify(datosTextosActuales)),
+      backupArchivos: {
+        frente: archivos[`socio-${index}-frente`],
+        dorso: archivos[`socio-${index}-dorso`],
+      },
+      socioActivoIndex: index,
     });
-    setSocioActivoIndex(index);
   };
 
   const handleCerrarModalSinGuardar = () => {
@@ -134,23 +175,21 @@ export default function Paso5Documentacion({
         },
       );
     });
-    setArchivos((prev) => {
-      const nuevos = { ...prev };
-      if (backupArchivos.frente)
-        nuevos[`socio-${socioActivoIndex}-frente`] = backupArchivos.frente;
-      else delete nuevos[`socio-${socioActivoIndex}-frente`];
-      if (backupArchivos.dorso)
-        nuevos[`socio-${socioActivoIndex}-dorso`] = backupArchivos.dorso;
-      else delete nuevos[`socio-${socioActivoIndex}-dorso`];
-      return nuevos;
+    updateState((prev) => {
+      const nuevos = { ...prev.archivos };
+      if (prev.backupArchivos.frente)
+        nuevos[`socio-${prev.socioActivoIndex}-frente`] = prev.backupArchivos.frente;
+      else delete nuevos[`socio-${prev.socioActivoIndex}-frente`];
+      if (prev.backupArchivos.dorso)
+        nuevos[`socio-${prev.socioActivoIndex}-dorso`] = prev.backupArchivos.dorso;
+      else delete nuevos[`socio-${prev.socioActivoIndex}-dorso`];
+      return { archivos: nuevos, intentoGuardarSocio: false, socioActivoIndex: null };
     });
     clearErrors(`socios.${socioActivoIndex}`);
-    setIntentoGuardarSocio(false);
-    setSocioActivoIndex(null);
   };
 
   const handleGuardarSocioModal = async () => {
-    setIntentoGuardarSocio(true);
+    updateState({ intentoGuardarSocio: true });
     const camposValidos = await trigger([
       `socios.${socioActivoIndex}.email`,
       `socios.${socioActivoIndex}.celular`,
@@ -161,13 +200,12 @@ export default function Paso5Documentacion({
     const dniFrente = archivos[`socio-${socioActivoIndex}-frente`];
     const dniDorso = archivos[`socio-${socioActivoIndex}-dorso`];
     if (camposValidos && dniFrente && dniDorso) {
-      setIntentoGuardarSocio(false);
-      setSocioActivoIndex(null);
+      updateState({ intentoGuardarSocio: false, socioActivoIndex: null });
     }
   };
 
   const handleAvanzarClick = () => {
-    setIntentoAvanzar(true);
+    updateState({ intentoAvanzar: true });
     const todosSociosOk = socios.every((_, i) => isSocioCompleto(i));
 
     if (docsEmpresaListos && todosSociosOk && seccionApoFacturacionLista) {
@@ -201,8 +239,16 @@ export default function Paso5Documentacion({
       <div className={styles.sectionGroup}>
         <h4 className={styles.sectionTitle}>1. Documentación Legal</h4>
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              updateState({ modalDocsOpen: true });
+            }
+          }}
           className={`${styles.taskCard} ${docsEmpresaListos ? styles.cardSuccess : intentoAvanzar ? styles.cardError : ""}`}
-          onClick={() => setModalDocsOpen(true)}
+          onClick={() => updateState({ modalDocsOpen: true })}
         >
           <div className={styles.taskCardInfo}>
             <div className={`${styles.statusIconPill} ${getClassEmpresa()}`}>
@@ -215,16 +261,17 @@ export default function Paso5Documentacion({
           </div>
 
           {docsEmpresaListos ? (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
-              className={styles.btnEdit}
               onClick={(e) => {
                 e.stopPropagation();
-                setModalDocsOpen(true);
+                updateState({ modalDocsOpen: true });
               }}
             >
               <FiEdit2 size={12} /> MODIFICAR
-            </button>
+            </Button>
           ) : (
             <Button variant="outline" size="sm" className={styles.taskBtn}>
               CARGAR DATOS
@@ -238,7 +285,7 @@ export default function Paso5Documentacion({
         <h4 className={styles.sectionTitle}>2. Información de Socios</h4>
         {socios.map((socio, index) => (
           <SocioTaskCard
-            key={index}
+            key={socio.cuit}
             socio={socio}
             index={index}
             isCompleto={isSocioCompleto(index)}
@@ -252,8 +299,16 @@ export default function Paso5Documentacion({
       <div className={styles.sectionGroup}>
         <h4 className={styles.sectionTitle}>3. Gestión y Contacto</h4>
         <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              updateState({ modalApoOpen: true });
+            }
+          }}
           className={`${styles.taskCard} ${seccionApoFacturacionLista ? styles.cardSuccess : intentoAvanzar ? styles.cardError : ""}`}
-          onClick={() => setModalApoOpen(true)}
+          onClick={() => updateState({ modalApoOpen: true })}
         >
           <div className={styles.taskCardInfo}>
             <div className={`${styles.statusIconPill} ${getClassApoderado()}`}>
@@ -277,10 +332,9 @@ export default function Paso5Documentacion({
             <Button
               variant="ghost"
               size="sm"
-              className={styles.actionBtn}
               onClick={(e) => {
                 e.stopPropagation();
-                setModalApoOpen(true);
+                updateState({ modalApoOpen: true });
               }}
             >
               <FiEdit2 size={12} /> MODIFICAR
@@ -307,7 +361,7 @@ export default function Paso5Documentacion({
       {/* --- MODALES --- */}
       <ModalDocumentosEmpresa
         isOpen={modalDocsOpen}
-        onClose={() => setModalDocsOpen(false)}
+        onClose={() => updateState({ modalDocsOpen: false })}
         archivos={archivos}
         onFileUpload={handleFileUpload}
         onFileRemove={handleFileRemove}
@@ -316,7 +370,7 @@ export default function Paso5Documentacion({
 
       <ModalRepresentanteFacturacion
         isOpen={modalApoOpen}
-        onClose={() => setModalApoOpen(false)}
+        onClose={() => updateState({ modalApoOpen: false })}
         faseApoderado={faseApoderado}
         setFaseApoderado={setFaseApoderado}
         apoNombre={apoNombre}
@@ -335,24 +389,14 @@ export default function Paso5Documentacion({
         onFileUpload={handleFileUpload}
         onFileRemove={handleFileRemove}
         draggingKey={draggingKey}
-        onDragOver={(key) => setDraggingKey(key)}
-        onDragLeave={() => setDraggingKey(null)}
+        onDragOver={(key) => updateState({ draggingKey: key })}
+        onDragLeave={() => updateState({ draggingKey: null })}
         onDrop={(key, file) => handleFileUpload(key, file)}
         control={control}
       />
 
       {/* PERSISTENCIA */}
-      <div style={{ display: "none" }}>
-        {socios.map((_, i) => (
-          <React.Fragment key={i}>
-            <input {...register(`socios.${i}.email`)} />
-            <input {...register(`socios.${i}.celular`)} />
-            <input {...register(`socios.${i}.direccion`)} />
-            <input {...register(`socios.${i}.provincia`)} />
-            <input {...register(`socios.${i}.localidad`)} />
-          </React.Fragment>
-        ))}
-      </div>
+      <PersistenciaOculta register={register} socios={socios} />
     </div>
   );
 }

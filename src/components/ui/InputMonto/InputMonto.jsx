@@ -9,18 +9,22 @@ export const InputMonto = React.forwardRef(
       currency = "$",
       // eslint-disable-next-line no-unused-vars
       esValido,
+      id,
       ...props
     },
     ref,
   ) => {
+    const generatedId = React.useId();
+    const inputId = id || props.name || generatedId;
     return (
       <div className={styles.wrapper}>
-        {label && <label className={styles.label}>{label}</label>}
+        {label && <label htmlFor={inputId} className={styles.label}>{label}</label>}
 
         <div className={styles.container}>
           <span className={styles.currency}>{currency}</span>
 
           <input
+            id={inputId}
             type="number"
             className={styles.input}
             placeholder="0"

@@ -1,5 +1,5 @@
 import React from "react";
-import { useFormContext, Controller } from "react-hook-form";
+import { useFormContext, Controller, useWatch } from "react-hook-form";
 import { FiBriefcase, FiCheckCircle, FiArrowRight } from "react-icons/fi";
 import { InputFlotante, Button } from "../../../ui";
 import styles from "./Paso6Bolsa.module.css";
@@ -13,12 +13,15 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
   const {
     register,
     control,
-    watch,
     formState: { errors },
     setValue,
   } = useFormContext();
 
-  const cuentaBolsa = watch("numeroCuentaBolsa", "");
+  const cuentaBolsa = useWatch({
+    control,
+    name: "numeroCuentaBolsa",
+    defaultValue: "",
+  });
 
   return (
     <div className={styles.container}>
@@ -34,17 +37,27 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
             {sociedades.map((sociedad) => {
               const isSelected = value === sociedad.nombre;
 
+              const handleSelect = () => {
+                if (isSelected) {
+                  onChange("");
+                  setValue("numeroCuentaBolsa", "");
+                } else {
+                  onChange(sociedad.nombre);
+                }
+              };
+
               return (
                 <React.Fragment key={sociedad.id}>
                   {/* TARJETA SELECCIONABLE */}
                   <div
                     className={`${styles.listItem} ${isSelected ? styles.listItemSelected : ""}`}
-                    onClick={() => {
-                      if (isSelected) {
-                        onChange("");
-                        setValue("numeroCuentaBolsa", "");
-                      } else {
-                        onChange(sociedad.nombre);
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleSelect}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        handleSelect();
                       }
                     }}
                   >

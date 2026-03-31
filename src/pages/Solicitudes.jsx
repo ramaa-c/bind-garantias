@@ -17,6 +17,22 @@ const mockSolicitudes = [
 export default function Solicitudes() {
   const navigate = useNavigate();
 
+  const handleNuevaOperacion = (ruta, draftKey) => {
+    const hasDraft = sessionStorage.getItem(`${draftKey}_data`) || sessionStorage.getItem(`${draftKey}_paso`);
+    if (hasDraft) {
+      if (window.confirm("Tienes una solicitud en curso. ¿Deseas descartar el borrador y empezar una nueva? (Si cancelas, continuarás donde lo dejaste).")) {
+        sessionStorage.removeItem(`${draftKey}_data`);
+        sessionStorage.removeItem(`${draftKey}_paso`);
+        sessionStorage.removeItem(`${draftKey}_lista`);
+        navigate(ruta);
+      } else {
+        navigate(ruta);
+      }
+    } else {
+      navigate(ruta);
+    }
+  };
+
   return (
     <div className={styles.pageContainer}>
       {/* HEADER TIPO DASHBOARD */}
@@ -50,7 +66,7 @@ export default function Solicitudes() {
           <div className={styles.toolbar}>
             <Button
               variant="primary"
-              onClick={() => navigate("/pagare")}
+              onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}
               className={styles.btnNuevaOp}
             >
               <FiPlus style={{ marginRight: '8px' }} /> NUEVA OPERACIÓN
@@ -71,8 +87,8 @@ export default function Solicitudes() {
           {/* LISTA DE SOLICITUDES */}
           <div className={styles.listContainer}>
             {mockSolicitudes.length > 0 ? (
-              mockSolicitudes.map((item, index) => (
-                <TarjetaSolicitud key={index} solicitud={item} />
+              mockSolicitudes.map((item) => (
+                <TarjetaSolicitud key={item.id} solicitud={item} />
               ))
             ) : (
               <div className={styles.emptyState}>

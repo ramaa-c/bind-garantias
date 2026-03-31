@@ -2,12 +2,14 @@ import React from "react";
 import { Button, Alert } from "../../ui";
 import styles from "./TicketSimulacion.module.css";
 
+const EMPTY_ARRAY = [];
+
 export const TicketSimulacion = ({
   netoRecibir,
-  filasCostos = [],
+  filasCostos = EMPTY_ARRAY,
   totalCostos,
   datoExtraTotal,
-  datosResumen = [],
+  datosResumen = EMPTY_ARRAY,
   textoAlerta,
   onContinuar,
   onRecalcular,
@@ -24,8 +26,8 @@ export const TicketSimulacion = ({
 
       {/* BODY: DESGLOSE DE COSTOS */}
       <div className={styles.resultsBody}>
-        {filasCostos.map((fila, index) => (
-          <div key={index} className={styles.resultRow}>
+        {filasCostos.map((fila) => (
+          <div key={fila.label} className={styles.resultRow}>
             <span>{fila.label}</span>
             <span>{fila.value}</span>
           </div>
@@ -47,8 +49,8 @@ export const TicketSimulacion = ({
       {/* CAJA DE RESUMEN */}
       {datosResumen.length > 0 && (
         <div className={styles.summaryBox}>
-          {datosResumen.map((dato, index) => (
-            <div key={index} className={styles.summaryRow}>
+          {datosResumen.map((dato) => (
+            <div key={dato.label} className={styles.summaryRow}>
               <span>{dato.label}</span>
               <strong>{dato.value}</strong>
             </div>

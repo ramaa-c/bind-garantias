@@ -21,11 +21,24 @@ export default function ModalSms({
   };
 
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayClick}>
+    <div
+      className={styles.overlay}
+      onMouseDown={handleOverlayClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
+    >
       <div
         className={styles.modalContainer}
         ref={modalRef}
+        role="presentation"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <button className={styles.btnClose} onClick={onClose}>
           <FiX size={20} />

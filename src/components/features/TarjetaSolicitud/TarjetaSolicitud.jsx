@@ -39,8 +39,8 @@ export const TarjetaSolicitud = ({ solicitud }) => {
 
           <div className={styles.actionsWrapper}>
 
-            {solicitud.acciones?.map((accion, i) => (
-              <button key={i} className={styles.btnAction}>
+            {solicitud.acciones?.map((accion) => (
+              <button key={accion} className={styles.btnAction}>
                 {accion}
               </button>
             )) || (

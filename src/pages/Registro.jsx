@@ -43,7 +43,7 @@ const Registro = () => {
         <div className={styles.cardModern}>
           <div className={styles.headerText}>
             <h2>Creá tu cuenta</h2>
-            <p>Ingresá tu correo electrónico para comenzar a operar.</p>
+            <p>Ingresá tu correo electrónico para comenzar.</p>
           </div>
 
           <form className={styles.formContent} onSubmit={handleSubmit(onSubmit)}>

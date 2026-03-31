@@ -21,15 +21,15 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  if (isOpen && !prevIsOpen) {
-    setPrevIsOpen(true);
-    setCelLocal(getValues("celular") || "");
-    setFase("ingresar");
-    setCodigoSms("");
-    setProcesando(false);
-    setIntentoSolicitarSms(false);
-  } else if (!isOpen && prevIsOpen) {
-    setPrevIsOpen(false);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      setCelLocal(getValues("celular") || "");
+      setFase("ingresar");
+      setCodigoSms("");
+      setProcesando(false);
+      setIntentoSolicitarSms(false);
+    }
   }
 
   const handleClose = () => {
@@ -81,8 +81,24 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
   };
 
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div className={styles.modalContainer}>
+    <div
+      className={styles.overlay}
+      onMouseDown={handleOverlayMouseDown}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.stopPropagation();
+          handleClose();
+        }
+      }}
+    >
+      <div
+        className={styles.modalContainer}
+        onClick={(e) => e.stopPropagation()}
+        role="presentation"
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         {!procesando && (
           <button
             className={styles.btnClose}
@@ -138,7 +154,15 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
                 Ingresalo a continuación. <br />
                 <span
                   className={styles.linkEdit}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setFase("ingresar")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setFase("ingresar");
+                    }
+                  }}
                 >
                   ¿Te equivocaste de número?
                 </span>

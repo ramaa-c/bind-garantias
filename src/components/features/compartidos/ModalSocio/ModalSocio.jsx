@@ -1,9 +1,57 @@
 import React, { useEffect, useRef, useMemo } from "react";
-import { useFormContext, useFormState } from "react-hook-form";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { FiUser, FiX } from "react-icons/fi";
 import { InputFlotante, Button, CargaArchivos } from "../../../ui";
 import { useEscape } from "../../../../hooks/useEscape";
 import styles from "./ModalSocio.module.css";
+
+const DropzoneField = ({
+  fileKey,
+  title,
+  subtitle,
+  intentoGuardarSocio,
+  archivos,
+  draggingKey,
+  onFileUpload,
+  onFileRemove,
+  onDragOver,
+  onDragLeave,
+  onDrop,
+}) => {
+  const tieneError = intentoGuardarSocio && !archivos[fileKey];
+  return (
+    <div className={styles.dropzoneWrapper}>
+      <input
+        type="file"
+        id={`file-input-${fileKey}`}
+        style={{ display: "none" }}
+        onChange={(e) => onFileUpload(fileKey, e.target.files[0])}
+      />
+      <CargaArchivos
+        title={title}
+        subtitle={subtitle}
+        hasError={tieneError}
+        file={
+          archivos[fileKey]
+            ? { name: archivos[fileKey].name, size: archivos[fileKey].formattedSize }
+            : null
+        }
+        onClick={() => document.getElementById(`file-input-${fileKey}`).click()}
+        onRemove={() => onFileRemove(fileKey)}
+        isDragging={draggingKey === fileKey}
+        onDragOver={(e) => {
+          e.preventDefault();
+          onDragOver(fileKey);
+        }}
+        onDragLeave={onDragLeave}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (e.dataTransfer.files?.[0]) onDrop(fileKey, e.dataTransfer.files[0]);
+        }}
+      />
+    </div>
+  );
+};
 
 export default function ModalSocio({
   socio,
@@ -20,10 +68,10 @@ export default function ModalSocio({
   onDrop,
   control,
 }) {
-  const { register, watch, trigger } = useFormContext();
+  const { trigger, setValue } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
 
-  const rawWatch = watch(`socios.${socioIndex}`);
+  const rawWatch = useWatch({ control, name: `socios.${socioIndex}` });
   const valoresCampos = useMemo(() => rawWatch ?? {}, [rawWatch]);
   const isMounted = useRef(false);
 
@@ -53,54 +101,19 @@ export default function ModalSocio({
 
   const getCampo = (campo) => {
     if (socioIndex === null) return { error: null, esValido: false };
+
     const hasError = errors?.socios?.[socioIndex]?.[campo];
     const isDirty = dirtyFields?.socios?.[socioIndex]?.[campo];
     const val = valoresCampos[campo];
-    const mostrarError = hasError && (isDirty || intentoGuardarSocio);
+    const hasValue = val !== undefined && val.toString().trim().length > 0;
+
+    const mostrarError =
+      hasError && (isDirty || hasValue || intentoGuardarSocio);
+
     return {
       error: mostrarError ? hasError.message : null,
-      esValido:
-        !hasError &&
-        val &&
-        val.toString().trim().length > 0 &&
-        (isDirty || intentoGuardarSocio),
+      esValido: !hasError && hasValue,
     };
-  };
-
-  const renderDropzone = (key, title, subtitle) => {
-    const tieneError = intentoGuardarSocio && !archivos[key];
-    return (
-      <div className={styles.dropzoneWrapper}>
-        <input
-          type="file"
-          id={`file-input-${key}`}
-          style={{ display: "none" }}
-          onChange={(e) => onFileUpload(key, e.target.files[0])}
-        />
-        <CargaArchivos
-          title={title}
-          subtitle={subtitle}
-          hasError={tieneError}
-          file={
-            archivos[key]
-              ? { name: archivos[key].name, size: archivos[key].formattedSize }
-              : null
-          }
-          onClick={() => document.getElementById(`file-input-${key}`).click()}
-          onRemove={() => onFileRemove(key)}
-          isDragging={draggingKey === key}
-          onDragOver={(e) => {
-            e.preventDefault();
-            onDragOver(key);
-          }}
-          onDragLeave={onDragLeave}
-          onDrop={(e) => {
-            e.preventDefault();
-            if (e.dataTransfer.files?.[0]) onDrop(key, e.dataTransfer.files[0]);
-          }}
-        />
-      </div>
-    );
   };
 
   const handleOverlayMouseDown = (e) => {
@@ -111,11 +124,31 @@ export default function ModalSocio({
 
   if (!isModalOpen || !socio) return null;
 
+  const setCampoValue = (campo, valor) => {
+    setValue(`socios.${socioIndex}.${campo}`, valor, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+
   return (
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
+    <div
+      className={styles.overlay}
+      onMouseDown={handleOverlayMouseDown}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.stopPropagation();
+          onCerrar();
+        }
+      }}
+    >
       <div
         className={styles.modalContainer}
         onClick={(e) => e.stopPropagation()}
+        role="presentation"
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <button className={styles.btnClose} onClick={onCerrar}>
           <FiX size={20} />
@@ -140,19 +173,18 @@ export default function ModalSocio({
                 type="email"
                 esValido={getCampo("email").esValido}
                 error={getCampo("email").error}
-                {...register(`socios.${socioIndex}.email`)}
+                value={valoresCampos.email || ""}
+                onChange={(e) => setCampoValue("email", e.target.value)}
               />
               <InputFlotante
                 label="Celular"
                 maxLength={10}
                 esValido={getCampo("celular").esValido}
                 error={getCampo("celular").error}
-                {...register(`socios.${socioIndex}.celular`)}
+                value={valoresCampos.celular || ""}
                 onChange={(e) => {
-                  e.target.value = e.target.value
-                    .replace(/\D/g, "")
-                    .slice(0, 10);
-                  register(`socios.${socioIndex}.celular`).onChange(e);
+                  const limpio = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  setCampoValue("celular", limpio);
                 }}
               />
             </div>
@@ -161,7 +193,8 @@ export default function ModalSocio({
               label="Dirección"
               esValido={getCampo("direccion").esValido}
               error={getCampo("direccion").error}
-              {...register(`socios.${socioIndex}.direccion`)}
+              value={valoresCampos.direccion || ""}
+              onChange={(e) => setCampoValue("direccion", e.target.value)}
             />
 
             <div className={styles.inputRow}>
@@ -169,29 +202,47 @@ export default function ModalSocio({
                 label="Provincia"
                 esValido={getCampo("provincia").esValido}
                 error={getCampo("provincia").error}
-                {...register(`socios.${socioIndex}.provincia`)}
+                value={valoresCampos.provincia || ""}
+                onChange={(e) => setCampoValue("provincia", e.target.value)}
               />
               <InputFlotante
                 label="Localidad"
                 esValido={getCampo("localidad").esValido}
                 error={getCampo("localidad").error}
-                {...register(`socios.${socioIndex}.localidad`)}
+                value={valoresCampos.localidad || ""}
+                onChange={(e) => setCampoValue("localidad", e.target.value)}
               />
             </div>
 
             <h4 className={styles.sectionTitle}>2. Identidad (DNI)</h4>
 
             <div className={styles.dropzoneGrid}>
-              {renderDropzone(
-                `socio-${socioIndex}-frente`,
-                "DNI Frente",
-                "Imagen clara y legible",
-              )}
-              {renderDropzone(
-                `socio-${socioIndex}-dorso`,
-                "DNI Dorso",
-                "Imagen clara y legible",
-              )}
+              <DropzoneField
+                fileKey={`socio-${socioIndex}-frente`}
+                title="DNI Frente"
+                subtitle="Imagen clara y legible"
+                intentoGuardarSocio={intentoGuardarSocio}
+                archivos={archivos}
+                draggingKey={draggingKey}
+                onFileUpload={onFileUpload}
+                onFileRemove={onFileRemove}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+              />
+              <DropzoneField
+                fileKey={`socio-${socioIndex}-dorso`}
+                title="DNI Dorso"
+                subtitle="Imagen clara y legible"
+                intentoGuardarSocio={intentoGuardarSocio}
+                archivos={archivos}
+                draggingKey={draggingKey}
+                onFileUpload={onFileUpload}
+                onFileRemove={onFileRemove}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDrop={onDrop}
+              />
             </div>
           </div>
 
