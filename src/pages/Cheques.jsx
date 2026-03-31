@@ -96,6 +96,12 @@ export default function Cheques() {
     setPasoActual(1);
   };
 
+  const handleReiniciarAlta = () => {
+    if (window.confirm("¿Estás seguro de que deseas reiniciar la solicitud? Se perderán todos los datos no confirmados.")) {
+      handleResetFlujoCompleto();
+    }
+  };
+
   const abrirModalSms = async () => {
     if (await trigger("celular")) setMostrarModal(true);
   };
@@ -211,6 +217,13 @@ export default function Cheques() {
               <BotonVolver
                 onClick={() => navigate("/inicio")}
                 texto="Volver a la lista"
+              />
+            )}
+
+            {pasoActual < 7 && (
+              <BotonVolver
+                onClick={handleReiniciarAlta}
+                texto="Reiniciar alta"
               />
             )}
           </div>
