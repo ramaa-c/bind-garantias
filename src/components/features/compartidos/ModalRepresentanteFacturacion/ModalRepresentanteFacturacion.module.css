@@ -119,7 +119,6 @@
   margin-top: 1.25rem;
 }
 
-
 .searchBox :global(button) {
   width: 100%;
 }
@@ -271,7 +270,7 @@
 /* ----------------------------------------------------------- */
 /* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
 /* ----------------------------------------------------------- */
-@media (min-width: 768px) {
+@media (min-width: 48rem) {
   .modalContainer {
     padding: 2.5rem;
   }

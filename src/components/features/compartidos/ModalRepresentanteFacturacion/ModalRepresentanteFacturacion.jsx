@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
-import { FiCheckCircle, FiEdit, FiBriefcase, FiX } from "react-icons/fi";
+import { FiBriefcase, FiX } from "react-icons/fi";
 import { InputFlotante, Button, BotonVolver } from "../../../ui";
 import styles from "./ModalRepresentanteFacturacion.module.css";
 import { useEscape } from "../../../../hooks/useEscape";
@@ -18,7 +18,7 @@ export const ModalRepresentanteFacturacion = ({
   const { errors } = useFormState({ control });
 
   const [errorApoCuit, setErrorApoCuit] = useState("");
-  const [intentoGuardarApo, setIntentoGuardarApo] = useState(false);
+  const [intentoGuardar, setIntentoGuardar] = useState(false);
   const [faseInterna, setFaseInterna] = useState(() => faseApoderado);
 
   const apoCuitIngresado = useWatch({ control, name: "apoCuit" }) || "";
@@ -26,22 +26,16 @@ export const ModalRepresentanteFacturacion = ({
   const apoCelVal = useWatch({ control, name: "apoCelular" }) || "";
   const emailFacVal = useWatch({ control, name: "emailFacturacion" }) || "";
 
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-  const [prevFaseApoderado, setPrevFaseApoderado] = useState(() => faseApoderado);
-
-  if (isOpen !== prevIsOpen || faseApoderado !== prevFaseApoderado) {
-    if (isOpen !== prevIsOpen) {
-      setPrevIsOpen(isOpen);
-    }
-    if (faseApoderado !== prevFaseApoderado) {
-      setPrevFaseApoderado(faseApoderado);
-    }
+  useEffect(() => {
     if (isOpen) {
       setFaseInterna(faseApoderado);
+      setIntentoGuardar(false);
     }
-  }
+  }, [isOpen, faseApoderado]);
 
   useEscape(onClose, isOpen);
+
+  if (!isOpen) return null;
 
   const validarCUIT = (cuit) => {
     if (!cuit) return false;
@@ -70,86 +64,46 @@ export const ModalRepresentanteFacturacion = ({
     onValidarCuit();
   };
 
-  const handleGuardarApoderadoFase2 = async () => {
-    setIntentoGuardarApo(true);
-    const okZod = await trigger(["apoEmail", "apoCelular"]);
-
-    if (
-      okZod &&
-      apoEmailVal.trim() !== "" &&
-      apoCelVal.replace(/\D/g, "").length === 10
-    ) {
-      setIntentoGuardarApo(false);
-      setFaseInterna("guardado");
-    }
-  };
-
   const handleGuardarYCerrar = async () => {
-    let apoderadoOk = faseInterna === "guardado";
+    setIntentoGuardar(true);
 
-    if (faseInterna === "completar") {
-      setIntentoGuardarApo(true);
-      const okApo = await trigger(["apoEmail", "apoCelular"]);
-      if (
-        okApo &&
-        apoEmailVal.trim() !== "" &&
-        apoCelVal.replace(/\D/g, "").length === 10
-      ) {
-        setIntentoGuardarApo(false);
-        setFaseInterna("guardado");
-        apoderadoOk = true;
-      }
-    }
+    const okCampos = await trigger(["apoEmail", "apoCelular", "emailFacturacion"]);
 
-    const facturacionOk = await trigger("emailFacturacion");
+    const isValid =
+      okCampos &&
+      apoEmailVal.trim() !== "" &&
+      apoCelVal.replace(/\D/g, "").length === 10 &&
+      emailFacVal.trim() !== "";
 
-    if (apoderadoOk && facturacionOk && emailFacVal.trim() !== "") {
+    if (isValid) {
       setFaseApoderado("guardado");
       onGuardarApoderado();
       onClose();
     }
   };
 
+  const handleOverlayMouseDown = (e) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
   const errorEmail =
     errors.apoEmail?.message ||
-    (intentoGuardarApo && apoEmailVal.trim() === "" ? "Requerido" : null);
+    (intentoGuardar && apoEmailVal.trim() === "" ? "Requerido" : null);
   const errorCel =
     errors.apoCelular?.message ||
-    (intentoGuardarApo && apoCelVal.replace(/\D/g, "").length < 10
-      ? "Requerido"
-      : null);
+    (intentoGuardar && apoCelVal.replace(/\D/g, "").length < 10 ? "Requerido" : null);
+  const errorEmailFac =
+    errors.emailFacturacion?.message ||
+    (intentoGuardar && emailFacVal.trim() === "" ? "Requerido" : null);
 
   const isEmailValido = !errorEmail && apoEmailVal.trim() !== "";
   const isCelValido = !errorCel && apoCelVal.replace(/\D/g, "").length === 10;
-
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
-  if (!isOpen) return null;
+  const isEmailFacValido = !errorEmailFac && emailFacVal.trim() !== "";
 
   return (
-    <div
-      className={styles.overlay}
-      onMouseDown={handleOverlayMouseDown}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.stopPropagation();
-          onClose();
-        }
-      }}
-    >
-      <div
-        className={styles.modalContainer}
-        onClick={(e) => e.stopPropagation()}
-        role="presentation"
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <button className={styles.btnClose} onClick={onClose}>
+    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
+      <div className={styles.modalContainer}>
+        <button className={styles.btnClose} onClick={onClose} aria-label="Cerrar">
           <FiX size={20} />
         </button>
 
@@ -160,16 +114,13 @@ export const ModalRepresentanteFacturacion = ({
 
           <h2 className={styles.title}>Gestión y Contacto</h2>
           <p className={styles.description}>
-            Designá al representante legal y configurá el contacto para
-            facturación.
+            Designá al representante legal y configurá el contacto para facturación.
           </p>
 
           <div className={styles.modalLayout}>
             {/* --- SECCIÓN 1: APODERADO --- */}
             <section className={styles.sectionBlock}>
-              <h4 className={styles.sectionTitle}>
-                1. Representante Legal / Apoderado
-              </h4>
+
 
               {faseInterna === "ingresar" && (
                 <div className={styles.searchBox}>
@@ -186,9 +137,7 @@ export const ModalRepresentanteFacturacion = ({
                       error={errorApoCuit}
                       value={apoCuitIngresado}
                       onChange={(e) => {
-                        const limpio = e.target.value
-                          .replace(/\D/g, "")
-                          .slice(0, 11);
+                        const limpio = e.target.value.replace(/\D/g, "").slice(0, 11);
                         setValue("apoCuit", limpio, {
                           shouldValidate: true,
                           shouldDirty: true,
@@ -211,7 +160,7 @@ export const ModalRepresentanteFacturacion = ({
                 <div className={styles.completarContainer}>
                   <div className={styles.topBackButtonWrapper}>
                     <BotonVolver
-                      texto="CANCELAR"
+                      texto="MODIFICAR CUIT"
                       onClick={() => {
                         setValue("apoCuit", "");
                         setErrorApoCuit("");
@@ -223,9 +172,7 @@ export const ModalRepresentanteFacturacion = ({
                   <div className={styles.infoPill}>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>CUIT:</span>
-                      <span className={styles.infoValue}>
-                        {apoCuitIngresado}
-                      </span>
+                      <span className={styles.infoValue}>{apoCuitIngresado}</span>
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Nombre:</span>
@@ -256,9 +203,7 @@ export const ModalRepresentanteFacturacion = ({
                       error={errorCel}
                       value={apoCelVal}
                       onChange={(e) => {
-                        const limpio = e.target.value
-                          .replace(/\D/g, "")
-                          .slice(0, 10);
+                        const limpio = e.target.value.replace(/\D/g, "").slice(0, 10);
                         setValue("apoCelular", limpio, {
                           shouldValidate: true,
                           shouldDirty: true,
@@ -266,77 +211,41 @@ export const ModalRepresentanteFacturacion = ({
                       }}
                     />
                   </div>
-
-                  <div className={styles.saveActionRowCentrado}>
-                    <Button
-                      variant="primary"
-                      onClick={handleGuardarApoderadoFase2}
-                    >
-                      GUARDAR DATOS
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {faseInterna === "guardado" && (
-                <div className={styles.successCard}>
-                  <div className={styles.successInfo}>
-                    <div className={styles.successIconWrapper}>
-                      <FiCheckCircle className={styles.successIcon} />
-                    </div>
-                    <div className={styles.successText}>
-                      <p className={styles.successName}>{apoNombre}</p>
-                      <p className={styles.successRole}>
-                        Identidad Validada ({apoCuitIngresado})
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setFaseInterna("completar")}
-                  >
-                    <FiEdit /> MODIFICAR
-                  </Button>
                 </div>
               )}
             </section>
 
             {/* --- SECCIÓN 2: FACTURACIÓN --- */}
-            <section className={styles.sectionBlock}>
-              <h4 className={styles.sectionTitle}>
-                2. Contacto de Facturación
-              </h4>
-              <div className={styles.facturacionWrapper}>
-                <InputFlotante
-                  name="emailFacturacion"
-                  label="Email de Facturación"
-                  type="email"
-                  esValido={
-                    !errors.emailFacturacion && emailFacVal.trim().length > 0
-                  }
-                  error={errors.emailFacturacion?.message}
-                  value={emailFacVal}
-                  onChange={(e) =>
-                    setValue("emailFacturacion", e.target.value, {
-                      shouldValidate: true,
-                      shouldDirty: true,
-                    })
-                  }
-                />
-              </div>
-            </section>
+            {faseInterna === "completar" && (
+              <section className={styles.sectionBlock}>
+                <h4 className={styles.sectionTitle}>2. Contacto de Facturación</h4>
+                <div className={styles.facturacionWrapper}>
+                  <InputFlotante
+                    name="emailFacturacion"
+                    label="Email de Facturación"
+                    type="email"
+                    esValido={isEmailFacValido}
+                    error={errorEmailFac}
+                    value={emailFacVal}
+                    onChange={(e) =>
+                      setValue("emailFacturacion", e.target.value, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                  />
+                </div>
+              </section>
+            )}
 
-            {/* --- FOOTER --- */}
-            <div className={styles.modalFooter}>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleGuardarYCerrar}
-              >
-                GUARDAR Y CERRAR
-              </Button>
-            </div>
+            {/* --- FOOTER UNIFICADO --- */}
+            {faseInterna === "completar" && (
+              <div className={styles.modalFooter}>
+                <Button variant="primary" size="md" onClick={handleGuardarYCerrar}>
+                  GUARDAR Y CERRAR
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
