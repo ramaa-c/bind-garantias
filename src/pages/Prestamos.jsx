@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../components/ui";
-import { PanelDudas } from "../components/features";
+import { PanelDudas, ModalConfirmacionBorrador } from "../components/features";
 import styles from "./Prestamos.module.css";
 import { PrestamosPasos } from "./PrestamosPasos";
 
@@ -45,6 +45,8 @@ export default function Prestamos() {
     storageKey: STORAGE_KEY,
     watch,
   });
+
+  const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
 
   const [uiState, setUiState] = useState({
     mostrarModal: false,
@@ -89,9 +91,12 @@ export default function Prestamos() {
   };
 
   const handleReiniciarAlta = () => {
-    if (window.confirm("¿Estás seguro de que deseas reiniciar la solicitud? Se perderán todos los datos no confirmados.")) {
-      handleResetFlujoCompleto();
-    }
+    setIsModalReiniciarAbierto(true);
+  };
+
+  const confirmarReinicioAlta = () => {
+    handleResetFlujoCompleto();
+    setIsModalReiniciarAbierto(false);
   };
 
   const abrirModalSms = async () => {
@@ -200,28 +205,31 @@ export default function Prestamos() {
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
           <div className={styles.navegacionTop}>
-            {pasoActual > 1 && pasoActual < 7 && (
-              <BotonVolver
-                onClick={() => {
-                  handleVolver();
-                  if (pasoActual === 3) updateUiState({ mostrarResultados: false });
-                }}
-              />
-            )}
+            <div className={styles.botonesNavegacion}>
+              {pasoActual > 1 && pasoActual < 7 && (
+                <BotonVolver
+                  onClick={() => {
+                    handleVolver();
+                    if (pasoActual === 3) updateUiState({ mostrarResultados: false });
+                  }}
+                />
+              )}
 
-            {pasoActual === 1 && (
-              <BotonVolver
-                onClick={() => navigate("/inicio")}
-                texto="Volver a la lista"
-              />
-            )}
+              {pasoActual === 1 && (
+                <BotonVolver
+                  onClick={() => navigate("/inicio")}
+                  texto="Volver a la lista"
+                />
+              )}
 
-            {pasoActual < 7 && (
-              <BotonVolver
-                onClick={handleReiniciarAlta}
-                texto="Reiniciar alta"
-              />
-            )}
+              {pasoActual < 7 && (
+                <BotonVolver
+                  onClick={handleReiniciarAlta}
+                  texto="Reiniciar alta"
+                />
+              )}
+            </div>
+            <div></div>
           </div>
 
           <div className={styles.contenedorPrincipal}>
@@ -293,7 +301,13 @@ export default function Prestamos() {
         </div>
       </div>
 
-      {/* MODAL SMS */}
+      {/* MODALES */}
+      <ModalConfirmacionBorrador
+        isOpen={isModalReiniciarAbierto}
+        onClose={() => setIsModalReiniciarAbierto(false)}
+        onConfirm={confirmarReinicioAlta}
+      />
+
       <ModalSms
         isOpen={uiState.mostrarModal}
         onClose={() => updateUiState({ mostrarModal: false })}

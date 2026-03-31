@@ -22,9 +22,17 @@
 
 .navegacionTop {
   margin-bottom: 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.botonesNavegacion {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .contenedorPrincipal {
@@ -97,6 +105,7 @@
     padding: 1.5rem 2.5rem;
   }
 
+  .navegacionTop,
   .contenedorPrincipal {
     grid-template-columns: 1fr 20rem;
     gap: 3.125rem;

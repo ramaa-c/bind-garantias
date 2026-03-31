@@ -13,6 +13,7 @@ export * from './compartidos/ModalRepresentanteFacturacion/ModalRepresentanteFac
 export * from './compartidos/SocioTaskCard/SocioTaskCard';
 export { default as ModalUbicacion } from "./compartidos/ModalUbicacion/ModalUbicacion";
 export { default as ModalContacto } from "./compartidos/ModalContacto/ModalContacto";
+export { default as ModalConfirmacionBorrador } from "./compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
 
 
 // --- CHEQUES ---
