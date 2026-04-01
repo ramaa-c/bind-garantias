@@ -1,8 +1,13 @@
 .prestamosPage {
+  background-color: var(--carbon-black);
+  background-image:
+    linear-gradient(rgba(245, 244, 0, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 244, 0, 0.018) 1px, transparent 1px);
+  background-size: 48px 48px;
+  color: var(--white-muted);
   display: flex;
   flex-direction: column;
   position: relative;
-  background-color: var(--carbon-black);
   font-family: var(--font-secundaria);
   min-height: 100%;
 }
@@ -94,13 +99,18 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-0.625rem); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-0.625rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Escritorio */
 @media (min-width: 56.25rem) {
-  
   .formMainContainer {
     padding: 1.5rem 2.5rem;
   }
@@ -126,5 +136,4 @@
   .subtituloBienvenida {
     font-size: 1.1rem;
   }
-
 }
