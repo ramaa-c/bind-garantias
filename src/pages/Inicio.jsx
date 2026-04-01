@@ -54,41 +54,41 @@ export default function Inicio() {
         <div className={styles.inicioContentWrapper}>
           
           <header className={styles.inicioHeader}>
-            <div>
+            <div className={styles.headerText}>
               <h1 className={styles.inicioGreeting}>Hola, Asesoramiento</h1>
               <p className={styles.inicioSubGreeting}>
                 Aquí tenés el resumen de tus líneas de crédito.
               </p>
             </div>
             <Button variant="primary" onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}>
-              <FiPlusCircle size={18} style={{ marginRight: "8px" }} />
+              <FiPlusCircle size={18} style={{ marginRight: "0.5rem" }} />
               NUEVA OPERACIÓN
             </Button>
           </header>
 
           <section className={styles.kpiGrid}>
             <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>
-                <FiTrendingUp />
+              <div className={styles.kpiIconWrapper}>
+                <FiTrendingUp className={styles.kpiIconPrimary} />
               </div>
               <p className={styles.kpiLabel}>Disponible (Pagaré USD)</p>
-              <h2 className={`${styles.kpiValue} ${styles.textYellow}`}>U$D 40.000</h2>
+              <h2 className={styles.kpiValuePrimary}>U$D 40.000</h2>
             </div>
 
             <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon} style={{ color: "#aaa" }}>
-                <TbFileInvoice />
+              <div className={styles.kpiIconWrapper}>
+                <TbFileInvoice className={styles.kpiIconSecondary} />
               </div>
               <p className={styles.kpiLabel}>Límite Total Aprobado</p>
-              <h2 className={styles.kpiValue}>U$D 40.000</h2>
+              <h2 className={styles.kpiValueSecondary}>U$D 40.000</h2>
             </div>
 
             <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon} style={{ color: "#ff5252" }}>
-                <FiCalendar />
+              <div className={styles.kpiIconWrapper}>
+                <FiCalendar className={styles.kpiIconAlert} />
               </div>
               <p className={styles.kpiLabel}>Próximo Vencimiento</p>
-              <h2 className={styles.kpiValue}>01/11/2026</h2>
+              <h2 className={styles.kpiValueSecondary}>01/11/2026</h2>
             </div>
           </section>
 
@@ -124,26 +124,20 @@ export default function Inicio() {
             <section>
               <div className={styles.sectionHeaderRow}>
                 <h3 className={styles.sectionTitle}>Actividad Reciente</h3>
-                <Button variant="link" size="sm" onClick={() => navigate("/solicitudes")}>
-                  Ver todas <FiArrowRight style={{ marginLeft: "4px" }} />
+                <Button variant="link" size="sm" onClick={() => navigate("/solicitudes")} className={styles.btnLinkBlue}>
+                  Ver todas <FiArrowRight style={{ marginLeft: "0.25rem" }} />
                 </Button>
               </div>
 
               <div className={styles.actividadList}>
                 {solicitudesRecientes.map((sol) => (
                   <div className={styles.actividadItem} key={sol.id}>
-                    <div className={styles.actividadIcon}>
-                      <FiClock
-                        color={
-                          sol.estado === "esperando"
-                            ? "var(--yellow)"
-                            : "#4caf50"
-                        }
-                      />
+                    <div className={`${styles.actividadIconWrapper} ${sol.estado === "esperando" ? styles.iconEsperando : styles.iconAprobado}`}>
+                      <FiClock />
                     </div>
                     <div className={styles.actividadDetails}>
                       <p className={styles.actividadTitle}>
-                        Solicitud N° {sol.id} <span>• {sol.tipo}</span>
+                        Solicitud N° {sol.id} <span className={styles.actividadSubtitle}>• {sol.tipo}</span>
                       </p>
                       <p className={styles.actividadMonto}>U$D {sol.monto}</p>
                     </div>
