@@ -43,9 +43,7 @@ export default function FirmaDocumento() {
   return (
     <div className={styles.firmaPage}>
       <main className={styles.firmaMainContainer}>
-        <div className={styles.firmaContentWrapper}>
-
-          {/* HEADER TIPO STANDALONE */}
+        <div className={styles.firmaContainer}>
           <header className={styles.firmaHeader}>
             <div>
               <h1 className={styles.firmaTitle}>Contrato OB-20436209011</h1>

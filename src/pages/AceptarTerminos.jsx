@@ -67,6 +67,44 @@ export default function AceptarTerminos() {
             incidentales o consecuentes derivados del uso o la imposibilidad de
             uso del servicio por fallas técnicas externas.
           </p>
+          <p>
+            <strong>1. Aceptación de los Términos</strong>
+            <br />
+            Al acceder y utilizar la plataforma BIND Garantías, usted acepta
+            estar sujeto a estos Términos y Condiciones. Si no está de acuerdo
+            con alguna parte de los términos, no podrá acceder a nuestros
+            servicios financieros.
+          </p>
+          <p>
+            <strong>2. Uso de la Plataforma</strong>
+            <br />
+            El usuario se compromete a hacer un uso adecuado y lícito de la
+            plataforma, así como de los contenidos y servicios, de conformidad
+            con la legislación aplicable, las buenas costumbres y el orden
+            público.
+          </p>
+          <p>
+            <strong>3. Privacidad y Datos Personales</strong>
+            <br />
+            El tratamiento de sus datos personales y financieros se regirá por
+            nuestra estricta Política de Privacidad. Garantizamos la
+            confidencialidad y el manejo seguro de la información proporcionada
+            bajo normativas del BCRA.
+          </p>
+          <p>
+            <strong>4. Operaciones y Firmas Digitales</strong>
+            <br />
+            Todas las operaciones validadas mediante firma electrónica o digital
+            dentro de este entorno tienen carácter vinculante y validez legal
+            conforme a la Ley de Firma Digital (Ley 25.506).
+          </p>
+          <p>
+            <strong>5. Limitación de Responsabilidad</strong>
+            <br />
+            En ningún caso la empresa será responsable por daños indirectos,
+            incidentales o consecuentes derivados del uso o la imposibilidad de
+            uso del servicio por fallas técnicas externas.
+          </p>
         </div>
 
         <label className={styles.checkboxContainer}>
