@@ -12,6 +12,8 @@ export const ModalRepresentanteFacturacion = ({
   setFaseApoderado,
   apoNombre,
   onValidarCuit,
+  apoRol,
+  setApoRol,
   onGuardarApoderado,
 }) => {
   const { setValue, trigger, control } = useFormContext();
@@ -127,7 +129,7 @@ export const ModalRepresentanteFacturacion = ({
                   <div className={styles.inputWrapper}>
                     <InputFlotante
                       name="apoCuit"
-                      label="CUIT del apoderado"
+                      label="CUIT"
                       maxLength={11}
                       esValido={
                         apoCuitIngresado.length === 11 &&
@@ -179,6 +181,33 @@ export const ModalRepresentanteFacturacion = ({
                       <span className={styles.infoValue}>{apoNombre}</span>
                     </div>
                   </div>
+                  {/* --- NUEVA SECCIÓN DE ROLES ESTÉTICA --- */}
+                  <div className={styles.radioGroup}>
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="apoRol"
+                        value="Apoderado"
+                        checked={apoRol === "Apoderado"}
+                        onChange={(e) => setApoRol(e.target.value)}
+                      />
+                      <div className={styles.customRadio}></div>
+                      <span className={styles.radioText}>Apoderado</span>
+                    </label>
+
+                    <label className={styles.radioLabel}>
+                      <input
+                        type="radio"
+                        name="apoRol"
+                        value="Representante Legal"
+                        checked={apoRol === "Representante Legal"}
+                        onChange={(e) => setApoRol(e.target.value)}
+                      />
+                      <div className={styles.customRadio}></div>
+                      <span className={styles.radioText}>Representante Legal</span>
+                    </label>
+                  </div>
+                  {/* -------------------------------- */}
 
                   <div className={styles.inputRow}>
                     <InputFlotante
