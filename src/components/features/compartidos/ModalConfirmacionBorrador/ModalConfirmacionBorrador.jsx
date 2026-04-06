@@ -59,7 +59,7 @@ export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }
               Empezar nueva
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={onClose}
               className={styles.btnCancel}
             >

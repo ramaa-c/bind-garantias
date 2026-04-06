@@ -9,6 +9,7 @@
   border-radius: 1.875rem;
   font-family: inherit;
   gap: 0.5rem; 
+  line-height: 1.2;
 }
 
 .hasIconRight {
@@ -32,10 +33,9 @@
 .hasIconRight.size-lg { padding: 0.9375rem 1.5rem 0.9375rem 2rem; }
 .hasIconRight.size-md { padding: 0.625rem 1.25rem 0.625rem 1.5rem; }
 .hasIconRight.size-sm { padding: 0.375rem 0.75rem 0.375rem 1rem; }
-
+.hasIconRight.size-xs { padding: 0.25rem 0.5rem 0.25rem 0.875rem; }
 
 /* --- VARIANTES DE COLOR --- */
-
 .primary {
   composes: base;
   background-color: var(--yellow);
@@ -134,4 +134,14 @@
 .size-sm {
   padding: 0.375rem 1rem;
   font-size: 0.85rem;
+}
+
+.size-xs {
+  padding: 0.35rem 0.875rem;
+  font-size: 0.75rem;
+}
+
+.size-none {
+  padding: 0;
+  font-size: 0.75rem;
 }

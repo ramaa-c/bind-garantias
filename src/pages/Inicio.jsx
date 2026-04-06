@@ -7,7 +7,7 @@ import {
   FiArrowRight,
   FiTrendingUp,
   FiCalendar,
-  FiClock,
+  FiActivity,
 } from "react-icons/fi";
 import { TbFileInvoice } from "react-icons/tb";
 import { Button } from "../components/ui";
@@ -16,20 +16,8 @@ import styles from "./Inicio.module.css";
 
 // Mocks
 const solicitudesRecientes = [
-  {
-    id: "4362",
-    tipo: "Pagaré USD",
-    monto: "40.000",
-    estado: "esperando",
-    texto: "Esperando Docs",
-  },
-  {
-    id: "4361",
-    tipo: "Cheque",
-    monto: "15.000",
-    estado: "aprobado",
-    texto: "Aprobado",
-  },
+  { id: "4362", tipo: "Pagaré USD", monto: "40.000", estado: "esperando", texto: "Esperando Docs" },
+  { id: "4361", tipo: "Cheque", monto: "15.000", estado: "aprobado", texto: "Aprobado" },
 ];
 
 const hasMeaningfulData = (dataString) => {
@@ -38,12 +26,8 @@ const hasMeaningfulData = (dataString) => {
     const data = JSON.parse(dataString);
     if (typeof data !== "object" || data === null) return false;
     return Object.values(data).some((value) => {
-      if (value === "" || value === null || value === undefined || value === false) {
-        return false;
-      }
-      if (Array.isArray(value) && value.length === 0) {
-        return false;
-      }
+      if (value === "" || value === null || value === undefined || value === false) return false;
+      if (Array.isArray(value) && value.length === 0) return false;
       return true;
     });
   } catch {
@@ -68,7 +52,6 @@ export default function Inicio() {
       setFlujoPendiente(ruta);
       setDraftKeyPendiente(draftKey);
     } else {
-      // It's a "ghost draft" (step 1 or missing, empty/default data)
       sessionStorage.removeItem(`${draftKey}_data`);
       sessionStorage.removeItem(`${draftKey}_paso`);
       sessionStorage.removeItem(`${draftKey}_lista`);
@@ -101,26 +84,33 @@ export default function Inicio() {
     <div className={styles.inicioPage}>
       <main className={styles.inicioMainContainer}>
         <div className={styles.inicioContentWrapper}>
+
+          {/* ── HEADER ── */}
           <header className={styles.inicioHeader}>
             <div>
-              <h1 className={styles.inicioGreeting}>Hola, Asesoramiento</h1>
+              <h1 className={styles.inicioGreeting}>
+                Hola, <em>Asesoramiento</em>
+              </h1>
               <p className={styles.inicioSubGreeting}>
-                Aquí tenés el resumen de tus líneas de crédito.
+                Resumen de líneas de crédito activas
               </p>
             </div>
           </header>
 
+          {/* ── KPI GRID ── */}
           <section className={styles.kpiGrid}>
             <div className={styles.kpiCard}>
               <div className={styles.kpiIcon}>
                 <FiTrendingUp />
               </div>
-              <p className={styles.kpiLabel}>Disponible (Pagaré USD)</p>
-              <h2 className={`${styles.kpiValue} ${styles.textYellow}`}>U$D 40.000</h2>
+              <p className={styles.kpiLabel}>Disponible · Pagaré USD</p>
+              <h2 className={`${styles.kpiValue} ${styles.textYellow}`}>
+                U$D 40.000
+              </h2>
             </div>
 
             <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon} style={{ color: "#aaa" }}>
+              <div className={styles.kpiIcon}>
                 <TbFileInvoice />
               </div>
               <p className={styles.kpiLabel}>Límite Total Aprobado</p>
@@ -128,7 +118,7 @@ export default function Inicio() {
             </div>
 
             <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon} style={{ color: "#ff5252" }}>
+              <div className={styles.kpiIcon}>
                 <FiCalendar />
               </div>
               <p className={styles.kpiLabel}>Próximo Vencimiento</p>
@@ -136,7 +126,9 @@ export default function Inicio() {
             </div>
           </section>
 
+          {/* ── BOTTOM GRID ── */}
           <div className={styles.inicioBottomGrid}>
+
             {/* COLUMNA IZQUIERDA */}
             <section className={styles.leftColumn}>
               <div className={styles.sectionHeaderRow}>
@@ -144,98 +136,95 @@ export default function Inicio() {
               </div>
 
               <div className={styles.taskCardsGrid}>
-            {/* Tarjeta Pagaré */}
-            <div className={styles.taskCard}>
-              <div className={styles.taskCardHeader}>
-                <div className={styles.taskCardIcon}>
-                  <FiFileText />
+                {/* Tarjeta Pagaré */}
+                <div className={styles.taskCard}>
+                  <div className={styles.taskCardIcon}>
+                    <FiFileText />
+                  </div>
+                  <div className={styles.taskCardBody}>
+                    <h3 className={styles.taskCardTitle}>Ingresar Pagaré en USD</h3>
+                    <p className={styles.taskCardDescription}>
+                      Emití y negociá pagarés bursátiles en dólares de forma ágil y sencilla.
+                    </p>
+                  </div>
+                  <div className={styles.taskCardActions}>
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}
+                    >
+                      Nueva Operación
+                      <FiArrowRight />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => navigate("/solicitudes")}
+                    >
+                      Solicitudes
+                    </Button>
+                  </div>
                 </div>
-                <h3 className={styles.taskCardTitle}>Pagaré</h3>
-              </div>
-              <p className={styles.taskCardDescription}>
-                Emití y negociá pagarés bursátiles en dólares de forma ágil y
-                sencilla.
-              </p>
-              <div className={styles.taskCardFooter}>
-                <Button
-                  variant="primary"
-                  onClick={() =>
-                    handleNuevaOperacion("/pagare", "draft_pagare")
-                  }
-                >
-                  Nueva Operación
-                  <FiArrowRight style={{ marginLeft: "0.5rem" }} />
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/solicitudes")}
-                >
-                  Solicitudes
-                </Button>
-              </div>
-            </div>
 
-            {/* Tarjeta Cheques */}
-            <div className={styles.taskCard}>
-              <div className={styles.taskCardHeader}>
-                <div className={styles.taskCardIcon}>
-                  <FiBriefcase />
+                {/* Tarjeta Cheques */}
+                <div className={styles.taskCard}>
+                  <div className={styles.taskCardIcon}>
+                    <FiBriefcase />
+                  </div>
+                  <div className={styles.taskCardBody}>
+                    <h3 className={styles.taskCardTitle}>Solicitar Línea de Cheques</h3>
+                    <p className={styles.taskCardDescription}>
+                      Descontá tus cheques de pago diferido y obtené liquidez inmediata para tu negocio.
+                    </p>
+                  </div>
+                  <div className={styles.taskCardActions}>
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      onClick={() => handleNuevaOperacion("/cheques", "draft_cheques")}
+                    >
+                      Nueva Operación
+                      <FiArrowRight />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => navigate("/solicitudes")}
+                    >
+                      Solicitudes
+                    </Button>
+                  </div>
                 </div>
-                <h3 className={styles.taskCardTitle}>Cheques</h3>
-              </div>
-              <p className={styles.taskCardDescription}>
-                Descontá tus cheques de pago diferido y obtené liquidez
-                inmediata para tu negocio.
-              </p>
-              <div className={styles.taskCardFooter}>
-                <Button
-                  variant="primary"
-                  onClick={() =>
-                    handleNuevaOperacion("/cheques", "draft_cheques")
-                  }
-                >
-                  Nueva Operación
-                  <FiArrowRight style={{ marginLeft: "0.5rem" }} />
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/solicitudes")}
-                >
-                  Solicitudes
-                </Button>
-              </div>
-            </div>
 
-            {/* Tarjeta Préstamos */}
-            <div className={styles.taskCard}>
-              <div className={styles.taskCardHeader}>
-                <div className={styles.taskCardIcon}>
-                  <FiDollarSign />
+                {/* Tarjeta Préstamos */}
+                <div className={styles.taskCard}>
+                  <div className={styles.taskCardIcon}>
+                    <FiDollarSign />
+                  </div>
+                  <div className={styles.taskCardBody}>
+                    <h3 className={styles.taskCardTitle}>Solicitar Línea de Préstamos</h3>
+                    <p className={styles.taskCardDescription}>
+                      Accedé a líneas de crédito a medida para financiar tus proyectos de inversión.
+                    </p>
+                  </div>
+                  <div className={styles.taskCardActions}>
+                    <Button
+                      variant="primary"
+                      size="xs"
+                      onClick={() => handleNuevaOperacion("/prestamos", "draft_prestamos")}
+                    >
+                      Nueva Operación
+                      <FiArrowRight />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => navigate("/solicitudes")}
+                    >
+                      Solicitudes
+                    </Button>
+                  </div>
                 </div>
-                <h3 className={styles.taskCardTitle}>Préstamos</h3>
-              </div>
-              <p className={styles.taskCardDescription}>
-                Accedé a líneas de crédito a medida para financiar tus proyectos
-                de inversión.
-              </p>
-              <div className={styles.taskCardFooter}>
-                <Button
-                  variant="primary"
-                  onClick={() =>
-                    handleNuevaOperacion("/prestamos", "draft_prestamos")
-                  }
-                >
-                  Nueva Operación
-                  <FiArrowRight style={{ marginLeft: "0.5rem" }} />
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/solicitudes")}
-                >
-                  Solicitudes
-                </Button>
-              </div>
-            </div>
               </div>
             </section>
 
@@ -243,8 +232,12 @@ export default function Inicio() {
             <section className={styles.rightColumn}>
               <div className={styles.sectionHeaderRow}>
                 <h3 className={styles.sectionTitle}>Actividad Reciente</h3>
-                <Button variant="link" size="sm" onClick={() => navigate("/solicitudes")}>
-                  Ver todas <FiArrowRight style={{ marginLeft: "4px" }} />
+                <Button
+                  variant="link"
+                  size="none"
+                  onClick={() => navigate("/solicitudes")}
+                >
+                  Ver todas <FiArrowRight className={styles.arrowIconSmall} />
                 </Button>
               </div>
 
@@ -252,25 +245,21 @@ export default function Inicio() {
                 {solicitudesRecientes.map((sol) => (
                   <div className={styles.actividadItem} key={sol.id}>
                     <div className={styles.actividadIcon}>
-                      <FiClock
-                        color={
-                          sol.estado === "esperando"
-                            ? "var(--yellow)"
-                            : "#4caf50"
+                      <FiActivity
+                        className={
+                          sol.estado === "esperando" ? styles.iconEsperando : styles.iconAprobado
                         }
                       />
                     </div>
                     <div className={styles.actividadDetails}>
                       <p className={styles.actividadTitle}>
-                        Solicitud N° {sol.id} <span>• {sol.tipo}</span>
+                        #{sol.id} <span>· {sol.tipo}</span>
                       </p>
                       <p className={styles.actividadMonto}>U$D {sol.monto}</p>
                     </div>
                     <div
                       className={`${styles.actividadStatus} ${
-                        sol.estado === "esperando"
-                          ? styles.statusEsperando
-                          : styles.statusAprobado
+                        sol.estado === "esperando" ? styles.statusEsperando : styles.statusAprobado
                       }`}
                     >
                       {sol.texto}
@@ -283,11 +272,11 @@ export default function Inicio() {
                 )}
               </div>
             </section>
+
           </div>
         </div>
       </main>
 
-      {/* Modal Interceptor */}
       <ModalConfirmacionBorrador
         isOpen={!!flujoPendiente}
         onClose={handleCloseContinueDraft}

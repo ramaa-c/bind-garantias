@@ -3,43 +3,36 @@
   src: url('./assets/fonts/metropolis/Metropolis-Light.otf') format('opentype');
   font-weight: 300;
 }
-
 @font-face {
   font-family: 'Metropolis';
   src: url('./assets/fonts/metropolis/Metropolis-Regular.otf') format('opentype');
   font-weight: 400;
 }
-
 @font-face {
   font-family: 'Metropolis';
   src: url('./assets/fonts/metropolis/Metropolis-Medium.otf') format('opentype');
   font-weight: 500;
 }
-
 @font-face {
   font-family: 'Metropolis';
   src: url('./assets/fonts/metropolis/Metropolis-SemiBold.otf') format('opentype');
   font-weight: 600;
 }
-
 @font-face {
   font-family: 'Metropolis';
   src: url('./assets/fonts/metropolis/Metropolis-Bold.otf') format('opentype');
   font-weight: 700;
 }
-
 @font-face {
   font-family: 'Metropolis';
   src: url('./assets/fonts/metropolis/Metropolis-ExtraBold.otf') format('opentype');
   font-weight: 800;
 }
-
 @font-face {
   font-family: 'Museo';
   src: url('./assets/fonts/museo/Museo300-Regular.otf') format('opentype');
   font-weight: 300;
 }
-
 @font-face {
   font-family: 'Museo';
   src: url('./assets/fonts/museo/Museo700-Regular.otf') format('opentype');
@@ -58,6 +51,15 @@
   --soft-gray: #f8f9fb;
   --graphite: #2E2E2E;
   --form-container-width: 1200px;
+
+  /* Nuevos */
+  --border: #252525;
+  --border-hover: #3a3a3a;
+  --text-muted: #666666;
+  --text-dim: #444444;
+  --white-muted: #f0f0f0;
+  --success-green: #3ddc84;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 * {
