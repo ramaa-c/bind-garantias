@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../components/ui";
@@ -224,6 +225,7 @@ export default function Prestamos() {
 
               {pasoActual < 7 && (
                 <BotonVolver
+                  icon={FiRotateCcw }
                   onClick={handleReiniciarAlta}
                   texto="Reiniciar alta"
                 />

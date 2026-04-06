@@ -4,6 +4,7 @@ import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { chequesSchema } from "../schemas/chequesSchema";
+import { FiRotateCcw } from "react-icons/fi";
 import {
   Paso1Cuit,
   Paso2Datos,
@@ -230,6 +231,7 @@ export default function Cheques() {
               {pasoActual < 7 && (
                 <BotonVolver
                   onClick={handleReiniciarAlta}
+                  icon={FiRotateCcw }
                   texto="Reiniciar alta"
                 />
               )}
