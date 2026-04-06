@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button, BotonVolver } from "../components/ui";
+import { Button } from "../components/ui";
 import ModalFirmaProceso from "../components/features/Compartidos/ModalFirmaProceso/ModalFirmaProceso";
 import logoSignatura from "../assets/images/logo-signatura.svg";
 import styles from "./FirmaDocumento.module.css";
@@ -44,10 +44,6 @@ export default function FirmaDocumento() {
     <div className={styles.firmaPage}>
       <main className={styles.firmaMainContainer}>
         <div className={styles.firmaContentWrapper}>
-          <BotonVolver
-            onClick={() => navigate("/solicitudes")}
-            texto="Volver a solicitudes"
-          />
 
           {/* HEADER TIPO STANDALONE */}
           <header className={styles.firmaHeader}>
@@ -58,13 +54,6 @@ export default function FirmaDocumento() {
                 de firmar.
               </p>
             </div>
-            <Button
-              variant="primary"
-              disabled={!isCompletamenteLeido}
-              onClick={handleAbrirModalFirma}
-            >
-              Firmar
-            </Button>
           </header>
 
           {/* Simulador PDF */}

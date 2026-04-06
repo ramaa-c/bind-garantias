@@ -10,6 +10,7 @@ import Prestamos from "./pages/Prestamos";
 import Pagare from "./pages/Pagare";
 import Solicitudes from "./pages/Solicitudes";
 import FirmaDocumento from "./pages/FirmaDocumento";
+import AceptarTerminos from "./pages/AceptarTerminos";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
@@ -66,6 +67,8 @@ function App() {
         />
 
         <Route path="/firma-documento" element={<FirmaDocumento />} />
+
+        <Route path="/terminos" element={<AceptarTerminos />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
