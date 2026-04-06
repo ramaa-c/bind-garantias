@@ -9,8 +9,9 @@ import Cheques from "./pages/Cheques";
 import Prestamos from "./pages/Prestamos";
 import Pagare from "./pages/Pagare";
 import Solicitudes from "./pages/Solicitudes";
+import FirmaDocumento from "./pages/FirmaDocumento";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-import './components/ui/CustomScroll/Scroll.module.css';
+import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
 function App() {
@@ -63,6 +64,8 @@ function App() {
             </DashboardLayout>
           }
         />
+
+        <Route path="/firma-documento" element={<FirmaDocumento />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

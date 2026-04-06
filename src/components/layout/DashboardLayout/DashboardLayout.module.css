@@ -30,7 +30,6 @@
   .content {
     scrollbar-width: auto;
     -ms-overflow-style: auto;
-    overflow-y: scroll;
     scrollbar-gutter: stable;
   }
 
