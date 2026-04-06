@@ -43,6 +43,7 @@ export default function Paso5Documentacion({
   apoRol,
   validarCuitApoderado,
   guardarApoderado,
+  setApoRol,
   avanzarPaso6,
 }) {
   const {
@@ -327,13 +328,13 @@ export default function Paso5Documentacion({
               </p>
             </div>
           </div>
-
           {seccionApoFacturacionLista ? (
             <Button
               variant="ghost"
               size="sm"
               onClick={(e) => {
                 e.stopPropagation();
+                setFaseApoderado("completar");
                 updateState({ modalApoOpen: true });
               }}
             >
@@ -375,6 +376,7 @@ export default function Paso5Documentacion({
         setFaseApoderado={setFaseApoderado}
         apoNombre={apoNombre}
         apoRol={apoRol}
+        setApoRol={setApoRol}
         onValidarCuit={validarCuitApoderado}
         onGuardarApoderado={guardarApoderado}
       />

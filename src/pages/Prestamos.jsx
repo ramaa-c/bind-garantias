@@ -13,7 +13,7 @@ const STORAGE_KEY = "draft_prestamos";
 
 export default function Prestamos() {
   const navigate = useNavigate();
-  
+
   const metodosFormulario = useForm({
     resolver: zodResolver(prestamosSchema),
     mode: "onChange",
@@ -115,13 +115,19 @@ export default function Prestamos() {
   };
 
   // Paso 3
-  const handleCalcularSimulador = () => {
-    updateUiState({ mostrarResultados: true });
+  const handleCalcularSimulador = async () => {
+    // Validamos que los campos del préstamo estén completos antes de simular
+    if (await trigger(["monto", "tipoProducto", "plazo"])) {
+      updateUiState({ mostrarResultados: true });
+    }
   };
 
-  const handleContinuarSimulador = () => {
-    setPasoActual(4);
-    updateUiState({ faseSocio: socios.length === 0 ? "ingresar_cuit" : "lista" });
+  const handleContinuarSimulador = async () => {
+    // Validamos una vez más antes de dejarlo ir al Paso 4
+    if (await trigger(["monto", "tipoProducto", "plazo"])) {
+      setPasoActual(4);
+      updateUiState({ faseSocio: socios.length === 0 ? "ingresar_cuit" : "lista" });
+    }
   };
 
   // Paso 4
