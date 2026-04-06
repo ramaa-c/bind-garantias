@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { pagareSchema } from "../schemas/pagareSchema";
 import { BarraProgreso, BotonVolver } from "../components/ui";
+import { FiRotateCcw } from "react-icons/fi";
 import {
   Paso1SimuladorPagare,
   Paso2AgentePagare,
@@ -93,6 +94,7 @@ export default function PagareUSD() {
 
               {pasoActual < 4 && (
                 <BotonVolver
+                  icon={FiRotateCcw }
                   onClick={handleReiniciarAlta}
                   texto="Reiniciar alta"
                 />
