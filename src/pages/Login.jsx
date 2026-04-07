@@ -83,6 +83,8 @@ const Login = () => {
 
       {/* --- COLUMNA DERECHA --- */}
       <section className={styles.sideBrand}>
+        <div className={styles.blobBlue}></div>
+        <div className={styles.blobYellow}></div>
         <div className={styles.brandContent}>
           <h2 className={styles.brandTitle}>
             Potenciando y transformando el financiamiento PyME.

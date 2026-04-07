@@ -32,6 +32,11 @@
   flex-direction: column;
   gap: 1.5rem;
   margin-top: 3rem;
+  background: rgba(46, 46, 46, 0.4);
+  backdrop-filter: blur(10px);
+  border-radius: 1.5rem;
+  padding: 2.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .headerText{
@@ -43,14 +48,14 @@
   color: var(--white);
   margin-bottom: 0.5rem;
   font-weight: 600;
-  text-align: center;
+  text-align: left;
 }
 
 .headerText p {
   color: #aaa;
   font-size: 0.95rem;
   margin: 0;
-  text-align: center;
+  text-align: left;
 }
 
 .titleJumbo {
@@ -81,16 +86,42 @@
 /* --- COLUMNA DERECHA --- */
 .sideBrand {
   display: none;
-  background-color: var(--graphite);
-  background-image: radial-gradient(rgba(244, 245, 0, 0.08) 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
-  background-position: center center;
+  background: linear-gradient(135deg, var(--graphite) 0%, #1a224a 100%);
   position: relative;
+  overflow: hidden;
 }
 
 .brandContent {
   max-width: 31.25rem;
   text-align: left;
+  z-index: 1;
+  position: relative;
+}
+
+.blobBlue {
+  position: absolute;
+  width: 30rem;
+  height: 30rem;
+  background: #4C65E6;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.15;
+  top: -10%;
+  right: -10%;
+  z-index: 0;
+}
+
+.blobYellow {
+  position: absolute;
+  width: 25rem;
+  height: 25rem;
+  background: var(--yellow);
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.1;
+  bottom: -10%;
+  left: -10%;
+  z-index: 0;
 }
 
 .brandTitle {
@@ -242,12 +273,12 @@
   }
 
   .brandTitle {
-    font-size: 3rem;
+    font-size: 3.5rem;
     margin-bottom: 1.5rem;
   }
 
   .brandSubtitle {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
   }
 
   .brandTitleLarge {

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui";
-import ModalFirmaProceso from "../components/features/Compartidos/ModalFirmaProceso/ModalFirmaProceso";
+import ModalFirmaProceso from "../components/features/compartidos/ModalFirmaProceso/ModalFirmaProceso";
 import logoSignatura from "../assets/images/logo-signatura.svg";
 import styles from "./FirmaDocumento.module.css";
 
