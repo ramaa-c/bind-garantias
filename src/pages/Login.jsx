@@ -35,7 +35,7 @@ const Login = () => {
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img src={logoBind} alt="Logo BIND" width="120" />
+          <img src={logoBind} alt="Logo BIND" />
         </div>
 
         <div className={styles.cardModern}>
