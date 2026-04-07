@@ -1,11 +1,12 @@
 .panelContainer {
-  background-color: var(--graphite);
-  border: 1px solid #333;
-  border-radius: 0.75rem;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.5rem;
   padding: 1.5rem;
   position: relative;
   top: 0;
-  box-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.2);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
   margin-top: 2rem;
 }
 

@@ -1,12 +1,17 @@
 .pageContainer {
   background-color: var(--carbon-black);
+  background-image:
+    radial-gradient(circle at 10% 10%, rgba(245, 244, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 90% 90%, rgba(76, 101, 230, 0.08) 0%, transparent 50%);
+  min-height: 100%;
   animation: fadeIn 0.4s ease;
 }
 
 /* HEADER */
 .header {
-  background-color: #1A1A1A;
-  border-bottom: 1px solid #333;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding: 1.5rem 0;
 }
 
@@ -56,10 +61,11 @@
 /* CAJA DE CRÉDITO */
 .creditInfo {
   text-align: left;
-  background-color: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
   padding: 1rem 1.25rem;
-  border-radius: 0.75rem;
-  border: 1px solid #333;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   width: 100%;
 }
 
@@ -109,16 +115,17 @@
   align-items: stretch;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .filterGroup {
   display: flex;
   gap: 0.5rem;
-  background-color: #1A1A1A;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
   padding: 0.3rem;
-  border-radius: 0.5rem;
-  border: 1px solid #333;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   overflow-x: auto;
   scrollbar-width: none;
 }
