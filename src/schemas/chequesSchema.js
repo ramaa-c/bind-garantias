@@ -51,28 +51,15 @@ export const chequesSchema = z
     plazo: z.string().optional(),
     fechaPago: z.string().optional(),
 
-    // APODERADOS
-    apoCuit: z
-      .string()
-      .regex(/^\d{11}$/, { message: "Debe contener 11 números" })
-      .optional()
-      .or(z.literal("")),
-    apoEmail: z
-      .string()
-      .email({ message: "Email inválido" })
-      .optional()
-      .or(z.literal("")),
-    apoCelular: z
-      .string()
-      .regex(/^\d{10}$/, { message: "Debe contener 10 números" })
-      .optional()
-      .or(z.literal("")),
-
+    // EMAIL FACTURACIÓN
     emailFacturacion: z
       .string()
       .email({ message: "Email inválido" })
-      .min(1, { message: "Requerido" }),
+      .min(1, { message: "Requerido" })
+      .optional()
+      .or(z.literal("")),
 
+    // BOLSA
     sociedadBolsa: z.string().optional().or(z.literal("")),
     numeroCuentaBolsa: z.string().optional().or(z.literal("")),
 
@@ -87,6 +74,23 @@ export const chequesSchema = z
           direccion: z.string().min(3, { message: "Requerido" }),
           provincia: z.string().min(3, { message: "Requerido" }),
           localidad: z.string().min(3, { message: "Requerido" }),
+        }),
+      )
+      .optional(),
+
+    // REPRESENTANTES
+    representantes: z
+      .array(
+        z.object({
+          cuit: z
+            .string()
+            .regex(/^\d{11}$/, { message: "Debe contener 11 números" }),
+          nombre: z.string().min(1, { message: "Requerido" }),
+          rol: z.string().min(1, { message: "Requerido" }),
+          email: z.string().email({ message: "Email inválido" }),
+          celular: z
+            .string()
+            .regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
         }),
       )
       .optional(),

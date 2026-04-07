@@ -31,6 +31,8 @@ export default function Prestamos() {
       provincia: "",
       localidad: "",
       celular: "",
+      representantes: [],
+      emailFacturacion: "",
     }),
   });
 
@@ -58,9 +60,6 @@ export default function Prestamos() {
     tempSocioNombre: "",
     tempSocioParticipacion: "",
     docExpandido: "estatuto",
-    faseApoderado: "ingresar",
-    apoNombre: "",
-    apoRol: "Representante Legal",
   });
 
   const updateUiState = (updates) => {
@@ -78,13 +77,24 @@ export default function Prestamos() {
 
   const handleResetFlujoCompleto = () => {
     clearStorage();
-    metodosFormulario.reset();
+    metodosFormulario.reset({
+      moneda: "Pesos",
+      tipoProducto: "prestamo",
+      tipoCalculo: "",
+      monto: "",
+      plazo: "",
+      fechaPago: "",
+      cuit: "",
+      direccion: "",
+      provincia: "",
+      localidad: "",
+      celular: "",
+      representantes: [],
+      emailFacturacion: "",
+    });
     setSocios([]);
     updateUiState({
       faseSocio: "lista",
-      faseApoderado: "ingresar",
-      apoNombre: "",
-      apoRol: "Representante Legal",
       mostrarResultados: false,
       codigoSms: "",
     });
@@ -117,17 +127,17 @@ export default function Prestamos() {
 
   // Paso 3
   const handleCalcularSimulador = async () => {
-    // Validamos que los campos del préstamo estén completos antes de simular
     if (await trigger(["monto", "tipoProducto", "plazo"])) {
       updateUiState({ mostrarResultados: true });
     }
   };
 
   const handleContinuarSimulador = async () => {
-    // Validamos una vez más antes de dejarlo ir al Paso 4
     if (await trigger(["monto", "tipoProducto", "plazo"])) {
       setPasoActual(4);
-      updateUiState({ faseSocio: socios.length === 0 ? "ingresar_cuit" : "lista" });
+      updateUiState({
+        faseSocio: socios.length === 0 ? "ingresar_cuit" : "lista",
+      });
     }
   };
 
@@ -168,9 +178,7 @@ export default function Prestamos() {
       tempSocioParticipacion: socioAEditar.participacion,
       faseSocio: "completar_datos",
     });
-
-    const nuevos = socios.filter((_, i) => i !== index);
-    setSocios(nuevos);
+    setSocios(socios.filter((_, i) => i !== index));
   };
 
   const eliminarSocio = (index) => {
@@ -183,26 +191,16 @@ export default function Prestamos() {
 
   // Paso 5
   const toggleDoc = (seccion) => {
-    updateUiState({ docExpandido: uiState.docExpandido === seccion ? "" : seccion });
-  };
-
-  const validarCuitApoderado = async () => {
-    if (await trigger("apoCuit")) {
-      updateUiState({
-        apoNombre: "GOMEZ PEREZ JUAN",
-        faseApoderado: "completar",
-      });
-    }
-  };
-
-  const guardarApoderado = async () => {
-    if (await trigger(["apoEmail", "apoCelular", "emailFacturacion"])) {
-      updateUiState({ faseApoderado: "guardado" });
-    }
+    updateUiState({
+      docExpandido: uiState.docExpandido === seccion ? "" : seccion,
+    });
   };
 
   const avanzarAlExito = async () => {
-    if (await trigger("emailFacturacion")) {
+    const okFacturacion = await trigger("emailFacturacion");
+    const representantes = metodosFormulario.getValues("representantes");
+
+    if (okFacturacion && representantes?.length > 0) {
       handleSubmit(onSubmitFinal)();
     }
   };
@@ -217,21 +215,20 @@ export default function Prestamos() {
                 <BotonVolver
                   onClick={() => {
                     handleVolver();
-                    if (pasoActual === 3) updateUiState({ mostrarResultados: false });
+                    if (pasoActual === 3)
+                      updateUiState({ mostrarResultados: false });
                   }}
                 />
               )}
-
               {pasoActual === 1 && (
                 <BotonVolver
                   onClick={() => navigate("/inicio")}
                   texto="Volver a la lista"
                 />
               )}
-
               {pasoActual < 7 && (
                 <BotonVolver
-                  icon={FiRotateCcw }
+                  icon={FiRotateCcw}
                   onClick={handleReiniciarAlta}
                   texto="Reiniciar alta"
                 />
@@ -241,7 +238,6 @@ export default function Prestamos() {
           </div>
 
           <div className={styles.contenedorPrincipal}>
-            {/* COLUMNA IZQUIERDA: FORMULARIO */}
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
                 {pasoActual === 1 && (
@@ -263,7 +259,6 @@ export default function Prestamos() {
                     if (pasoActual === 3) hitoVisual = 2;
                     if (pasoActual === 4) hitoVisual = 3;
                     if (pasoActual === 5) hitoVisual = 4;
-
                     return (
                       <BarraProgreso
                         hitos={["Empresa", "Operación", "Socios", "Documentos"]}
@@ -272,7 +267,6 @@ export default function Prestamos() {
                     );
                   })()}
 
-                {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">
@@ -282,7 +276,7 @@ export default function Prestamos() {
                         updateUiState={updateUiState}
                         socios={socios}
                         handleValidarCuit={handleValidarCuit}
-                        handleVolver={() => setPasoActual(prev => prev - 1)}
+                        handleVolver={() => setPasoActual((prev) => prev - 1)}
                         abrirModalSms={abrirModalSms}
                         handleContinuarPaso2={handleContinuarPaso2}
                         handleCalcularSimulador={handleCalcularSimulador}
@@ -294,8 +288,6 @@ export default function Prestamos() {
                         eliminarSocio={eliminarSocio}
                         continuarAlProximoPaso={continuarAlProximoPaso}
                         toggleDoc={toggleDoc}
-                        validarCuitApoderado={validarCuitApoderado}
-                        guardarApoderado={guardarApoderado}
                         avanzarAlExito={avanzarAlExito}
                         handleResetFlujoCompleto={handleResetFlujoCompleto}
                       />
@@ -309,13 +301,11 @@ export default function Prestamos() {
         </div>
       </div>
 
-      {/* MODALES */}
       <ModalConfirmacionBorrador
         isOpen={isModalReiniciarAbierto}
         onClose={() => setIsModalReiniciarAbierto(false)}
         onConfirm={confirmarReinicioAlta}
       />
-
       <ModalSms
         isOpen={uiState.mostrarModal}
         onClose={() => updateUiState({ mostrarModal: false })}

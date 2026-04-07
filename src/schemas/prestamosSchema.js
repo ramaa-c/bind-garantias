@@ -18,7 +18,7 @@ export const prestamosSchema = z.object({
   moneda: z.string().min(1, { message: "Seleccioná una moneda" }),
   tipoProducto: z.string().min(1, { message: "Seleccioná el producto" }),
 
-  // MODIFICADO: Ahora es opcional porque no se usa en Préstamos
+  // MODIFICADO
   tipoCalculo: z.string().optional(),
 
   // MONTO
@@ -48,27 +48,30 @@ export const prestamosSchema = z.object({
   plazo: z.string().optional(),
   fechaPago: z.string().optional(),
 
-  // APODERADOS
-  apoCuit: z
-    .string()
-    .regex(/^\d{11}$/, { message: "Debe contener 11 números" })
-    .optional()
-    .or(z.literal("")),
-  apoEmail: z
-    .string()
-    .email({ message: "Email inválido" })
-    .optional()
-    .or(z.literal("")),
-  apoCelular: z
-    .string()
-    .regex(/^\d{10}$/, { message: "Debe contener 10 números" })
-    .optional()
-    .or(z.literal("")),
-
+  // EMAIL FACTURACIÓN
   emailFacturacion: z
     .string()
     .email({ message: "Email inválido" })
-    .min(1, { message: "Requerido" }),
+    .min(1, { message: "Requerido" })
+    .optional()
+    .or(z.literal("")),
+
+  // REPRESENTANTES
+  representantes: z
+    .array(
+      z.object({
+        cuit: z
+          .string()
+          .regex(/^\d{11}$/, { message: "Debe contener 11 números" }),
+        nombre: z.string().min(1, { message: "Requerido" }),
+        rol: z.string().min(1, { message: "Requerido" }),
+        email: z.string().email({ message: "Email inválido" }),
+        celular: z
+          .string()
+          .regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
+      }),
+    )
+    .optional(),
 
   // SOCIOS
   socios: z

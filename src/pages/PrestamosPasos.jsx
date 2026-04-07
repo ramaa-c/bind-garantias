@@ -25,9 +25,6 @@ export const PrestamosPasos = ({
   editarSocio,
   eliminarSocio,
   continuarAlProximoPaso,
-  toggleDoc,
-  validarCuitApoderado,
-  guardarApoderado,
   avanzarAlExito,
   handleResetFlujoCompleto,
 }) => {
@@ -82,20 +79,7 @@ export const PrestamosPasos = ({
 
     case 5:
       return (
-        <Paso5Documentacion
-          docExpandido={uiState.docExpandido}
-          toggleDoc={toggleDoc}
-          socios={socios}
-          onVolverASocios={() => handleVolver()}
-          faseApoderado={uiState.faseApoderado}
-          setFaseApoderado={(fase) => updateUiState({ faseApoderado: fase })}
-          apoNombre={uiState.apoNombre}
-          apoRol={uiState.apoRol}
-          setApoRol={(rol) => updateUiState({ apoRol: rol })}
-          validarCuitApoderado={validarCuitApoderado}
-          guardarApoderado={guardarApoderado}
-          avanzarPaso6={avanzarAlExito}
-        />
+        <Paso5Documentacion socios={socios} avanzarPaso6={avanzarAlExito} />
       );
 
     case 7:
