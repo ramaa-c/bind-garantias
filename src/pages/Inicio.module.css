@@ -1,9 +1,8 @@
 .inicioPage {
   background-color: var(--carbon-black);
   background-image:
-    linear-gradient(rgba(245, 244, 0, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(245, 244, 0, 0.018) 1px, transparent 1px);
-  background-size: 48px 48px;
+    radial-gradient(circle at 10% 10%, rgba(245, 244, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 90% 90%, rgba(76, 101, 230, 0.08) 0%, transparent 50%);
   color: var(--white-muted);
   display: flex;
   flex-direction: column;
@@ -64,7 +63,7 @@
   align-items: flex-start;
   gap: 0.4rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
   animation: fadeUp 0.5s var(--ease-out) both;
 }
@@ -84,7 +83,7 @@
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.03em;
-  color: var(--white-muted);
+  color: var(--white);
   font-family: var(--font-principal);
 }
 
@@ -111,9 +110,11 @@
 }
 
 .kpiCard {
-  background-color: var(--color-gris-bind);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  border-radius: 1rem;
   padding: 1.25rem 1.5rem;
   display: grid;
   grid-template-columns: auto 1fr;
@@ -122,9 +123,7 @@
   align-items: center;
   position: relative;
   overflow: hidden;
-  transition:
-    border-color 0.2s,
-    background-color 0.2s;
+  transition: all 0.3s var(--ease-out);
 }
 
 .kpiCard::before {
@@ -140,8 +139,9 @@
 }
 
 .kpiCard:hover {
-  border-color: var(--border-hover);
-  background-color: var(--carbon-black);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
 }
 
 .kpiCard:hover::before {
@@ -247,9 +247,11 @@
 
 /* ─── TASK CARD (Horizontal) ─────────────────────────── */
 .taskCard {
-  background-color: var(--color-gris-bind);
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  border-radius: 1rem;
   padding: 1.8rem;
   display: flex;
   flex-direction: row;
@@ -257,7 +259,7 @@
   gap: 1.25rem;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.25s var(--ease-out), background-color 0.25s;
+  transition: all 0.3s var(--ease-out);
 }
 
 .taskCard::after {
@@ -271,8 +273,9 @@
 }
 
 .taskCard:hover {
-  border-color: var(--border-hover);
-  background-color: var(--carbon-black);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.3);
 }
 
 .taskCard:hover::after {
@@ -310,7 +313,7 @@
   font-size: 1rem;
   font-weight: 700;
   margin: 0;
-  color: var(--white-muted);
+  color: var(--white);
   letter-spacing: -0.01em;
 }
 
@@ -341,8 +344,11 @@
 
 /* ─── ACTIVIDAD LIST ─────────────────────────────────── */
 .actividadList {
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  border-radius: 1rem;
   overflow: hidden;
   position: relative;
 }
@@ -354,7 +360,7 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background: var(--border);
+  background: rgba(255, 255, 255, 0.08);
   pointer-events: none;
 }
 
@@ -362,15 +368,15 @@
   display: flex;
   align-items: center;
   padding: 0.9rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   gap: 0.875rem;
   transition: background-color 0.15s;
   position: relative;
-  background: var(--color-gris-bind);
+  background: transparent;
 }
 
 .actividadItem:hover {
-  background-color: var(--carbon-black);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .actividadItem:last-child {
@@ -387,9 +393,9 @@
   flex-shrink: 0;
   position: relative;
   z-index: 1;
-  background: var(--carbon-black);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 50%;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .actividadDetails {
@@ -404,7 +410,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--white-muted);
+  color: var(--white);
   font-family: var(--font-secundaria);
 }
 

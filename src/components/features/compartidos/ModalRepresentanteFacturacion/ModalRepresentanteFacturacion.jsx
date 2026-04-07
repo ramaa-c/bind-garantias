@@ -30,8 +30,10 @@ export const ModalRepresentanteFacturacion = ({
 
   useEffect(() => {
     if (isOpen) {
-      setFaseInterna(faseApoderado);
-      setIntentoGuardar(false);
+      setTimeout(() => {
+        setFaseInterna((prev) => (prev !== faseApoderado ? faseApoderado : prev));
+        setIntentoGuardar(false);
+      }, 0);
     }
   }, [isOpen, faseApoderado]);
 

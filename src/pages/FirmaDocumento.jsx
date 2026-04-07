@@ -1,13 +1,10 @@
 import React, { useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../components/ui";
 import ModalFirmaProceso from "../components/features/compartidos/ModalFirmaProceso/ModalFirmaProceso";
 import logoSignatura from "../assets/images/logo-signatura.svg";
 import styles from "./FirmaDocumento.module.css";
 
 export default function FirmaDocumento() {
-  const navigate = useNavigate();
-  const { idSolicitud } = useParams();
 
   const scrollContainerRef = useRef(null);
   const [porcentajeVisto, setPorcentajeVisto] = useState(0);

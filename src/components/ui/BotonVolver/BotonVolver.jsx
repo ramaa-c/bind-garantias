@@ -5,8 +5,9 @@ import styles from "./BotonVolver.module.css";
 export const BotonVolver = ({ 
   onClick, 
   texto = "Volver al paso anterior",
-  icon: Icon = FaAngleLeft
+  icon = FaAngleLeft
 }) => {
+  const Icon = icon;
   return (
     <div className={styles.contenedorBoton}>
       <button type="button" onClick={onClick} className={styles.btnVolver}>
