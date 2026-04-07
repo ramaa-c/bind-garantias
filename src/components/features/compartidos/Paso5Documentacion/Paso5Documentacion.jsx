@@ -1,28 +1,31 @@
 import React, { useState } from "react";
-import { useFormContext, useFormState, useWatch } from "react-hook-form";
+import {
+  useFormContext,
+  useFormState,
+  useWatch,
+  useFieldArray,
+} from "react-hook-form";
 import {
   FiCheckCircle,
   FiAlertCircle,
   FiEdit2,
   FiChevronRight,
+  FiPlus,
+  FiTrash2,
 } from "react-icons/fi";
-import { Button } from "../../../ui";
+import { Button, InputFlotante } from "../../../ui";
 import {
   SocioTaskCard,
   ModalDocumentosEmpresa,
-  ModalRepresentanteFacturacion,
+  ModalRepresentante,
   ModalSocio,
 } from "../../../features";
 
 import styles from "./Paso5Documentacion.module.css";
 
-const PersistenciaOculta = ({ register, socios }) => (
+const PersistenciaOculta = ({ register, socios, representantes }) => (
   <div style={{ display: "none" }}>
-    <input {...register("apoCuit")} />
-    <input {...register("apoEmail")} />
-    <input {...register("apoCelular")} />
     <input {...register("emailFacturacion")} />
-
     {socios.map((socio, i) => (
       <React.Fragment key={socio.cuit || i}>
         <input {...register(`socios.${i}.email`)} />
@@ -32,37 +35,38 @@ const PersistenciaOculta = ({ register, socios }) => (
         <input {...register(`socios.${i}.localidad`)} />
       </React.Fragment>
     ))}
+    {representantes.map((rep, i) => (
+      <React.Fragment key={rep.id}>
+        <input {...register(`representantes.${i}.cuit`)} />
+        <input {...register(`representantes.${i}.nombre`)} />
+        <input {...register(`representantes.${i}.rol`)} />
+        <input {...register(`representantes.${i}.email`)} />
+        <input {...register(`representantes.${i}.celular`)} />
+      </React.Fragment>
+    ))}
   </div>
 );
 
-export default function Paso5Documentacion({
-  socios,
-  faseApoderado,
-  setFaseApoderado,
-  apoNombre,
-  apoRol,
-  validarCuitApoderado,
-  guardarApoderado,
-  setApoRol,
-  avanzarPaso6,
-}) {
-  const {
-    register,
-    control,
-    setValue,
-    trigger,
-    clearErrors,
-    getValues,
-  } = useFormContext();
-
+export default function Paso5Documentacion({ socios, avanzarPaso6 }) {
+  const { register, control, setValue, trigger, clearErrors, getValues } =
+    useFormContext();
   const { errors } = useFormState({ control });
+  const {
+    fields: representantes,
+    append: appendRep,
+    update: updateRep,
+    remove: removeRep,
+  } = useFieldArray({
+    control,
+    name: "representantes",
+  });
 
-  // --- ESTADOS LOCALES ---
   const [uiState, setUiState] = useState({
     archivos: {},
     socioActivoIndex: null,
+    repActivoIndex: null,
     modalDocsOpen: false,
-    modalApoOpen: false,
+    modalRepOpen: false,
     draggingKey: null,
     backupSocio: {},
     backupArchivos: {},
@@ -73,8 +77,9 @@ export default function Paso5Documentacion({
   const {
     archivos,
     socioActivoIndex,
+    repActivoIndex,
     modalDocsOpen,
-    modalApoOpen,
+    modalRepOpen,
     draggingKey,
     backupSocio,
     intentoAvanzar,
@@ -91,7 +96,7 @@ export default function Paso5Documentacion({
   const emailFacturacionVal =
     useWatch({ control, name: "emailFacturacion" }) || "";
 
-  // --- HANDLERS DE ARCHIVOS ---
+  // --- HANDLERS ---
   const handleFileUpload = (key, file) => {
     if (file) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
@@ -112,7 +117,6 @@ export default function Paso5Documentacion({
     });
   };
 
-  // --- VALIDACIONES ---
   const docsEmpresaListos = ["estatuto", "balance", "acta", "poderes"].every(
     (k) => archivos[k],
   );
@@ -126,13 +130,10 @@ export default function Paso5Documentacion({
     const sDir = getValues(`socios.${index}.direccion`);
     const sProv = getValues(`socios.${index}.provincia`);
     const sLoc = getValues(`socios.${index}.localidad`);
-
     const errs = errors?.socios?.[index];
     const sinErrores = !errs || Object.keys(errs).length === 0;
-
     const dniFrenteSubido = archivos[`socio-${index}-frente`];
     const dniDorsoSubido = archivos[`socio-${index}-dorso`];
-
     return !!(
       sEmail &&
       sCel &&
@@ -145,12 +146,6 @@ export default function Paso5Documentacion({
     );
   };
 
-  const seccionApoFacturacionLista =
-    faseApoderado === "guardado" &&
-    !errors.emailFacturacion &&
-    emailFacturacionVal.trim() !== "";
-
-  // --- HANDLERS ACCIONES ---
   const handleAbrirModalSocio = (index) => {
     const datosTextosActuales = getValues(`socios.${index}`) || {};
     updateState({
@@ -170,21 +165,24 @@ export default function Paso5Documentacion({
       setValue(
         `socios.${socioActivoIndex}.${campo}`,
         backupSocio[campo] || "",
-        {
-          shouldValidate: false,
-          shouldDirty: false,
-        },
+        { shouldValidate: false, shouldDirty: false },
       );
     });
     updateState((prev) => {
       const nuevos = { ...prev.archivos };
       if (prev.backupArchivos.frente)
-        nuevos[`socio-${prev.socioActivoIndex}-frente`] = prev.backupArchivos.frente;
+        nuevos[`socio-${prev.socioActivoIndex}-frente`] =
+          prev.backupArchivos.frente;
       else delete nuevos[`socio-${prev.socioActivoIndex}-frente`];
       if (prev.backupArchivos.dorso)
-        nuevos[`socio-${prev.socioActivoIndex}-dorso`] = prev.backupArchivos.dorso;
+        nuevos[`socio-${prev.socioActivoIndex}-dorso`] =
+          prev.backupArchivos.dorso;
       else delete nuevos[`socio-${prev.socioActivoIndex}-dorso`];
-      return { archivos: nuevos, intentoGuardarSocio: false, socioActivoIndex: null };
+      return {
+        archivos: nuevos,
+        intentoGuardarSocio: false,
+        socioActivoIndex: null,
+      };
     });
     clearErrors(`socios.${socioActivoIndex}`);
   };
@@ -205,49 +203,59 @@ export default function Paso5Documentacion({
     }
   };
 
-  const handleAvanzarClick = () => {
+  const handleAbrirModalRep = (index) =>
+    updateState({ repActivoIndex: index, modalRepOpen: true });
+  const handleGuardarRep = (repData) =>
+    repActivoIndex !== null
+      ? updateRep(repActivoIndex, repData)
+      : appendRep(repData);
+
+  const handleAvanzarClick = async () => {
     updateState({ intentoAvanzar: true });
     const todosSociosOk = socios.every((_, i) => isSocioCompleto(i));
+    const tieneRepresentantes = representantes.length > 0;
+    const emailFacValido = await trigger("emailFacturacion");
 
-    if (docsEmpresaListos && todosSociosOk && seccionApoFacturacionLista) {
+    if (
+      docsEmpresaListos &&
+      todosSociosOk &&
+      tieneRepresentantes &&
+      emailFacValido &&
+      emailFacturacionVal.trim() !== ""
+    ) {
       avanzarPaso6();
     }
   };
 
-  // --- HELPERS VISUALES ---
   const getClassEmpresa = () => {
     if (docsEmpresaListos) return styles.statusCheck;
     if (intentoAvanzar) return styles.statusError;
     return styles.statusWarn;
   };
 
-  const getClassApoderado = () => {
-    if (seccionApoFacturacionLista) return styles.statusCheck;
-    if (intentoAvanzar) return styles.statusError;
-    return styles.statusWarn;
-  };
+  const errorEmailFacturacion =
+    errors.emailFacturacion?.message ||
+    (intentoAvanzar && emailFacturacionVal.trim() === ""
+      ? "Obligatorio"
+      : null);
+  const isEmailFacturacionValido =
+    !errorEmailFacturacion && emailFacturacionVal.trim() !== "";
 
   return (
     <div className={styles.container}>
       <div className={styles.headerSteps}>
         <h3 className={styles.title}>Configuración de la Solicitud</h3>
         <p className={styles.mutedText}>
-          Completá los 3 bloques de información obligatoria.
+          Completá la información requerida para estructurar la línea.
         </p>
       </div>
 
       {/* 1. DOCUMENTACIÓN EMPRESA */}
       <div className={styles.sectionGroup}>
-        <h4 className={styles.sectionTitle}>1. Documentación Legal</h4>
+        <div className={styles.sectionHeaderRow}>
+          <h4 className={styles.sectionTitle}>1. Documentación Legal</h4>
+        </div>
         <div
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              updateState({ modalDocsOpen: true });
-            }
-          }}
           className={`${styles.taskCard} ${docsEmpresaListos ? styles.cardSuccess : intentoAvanzar ? styles.cardError : ""}`}
           onClick={() => updateState({ modalDocsOpen: true })}
         >
@@ -260,12 +268,12 @@ export default function Paso5Documentacion({
               <p>{cantDocsCargados} de 4 cargados</p>
             </div>
           </div>
-
           {docsEmpresaListos ? (
             <Button
               variant="ghost"
               size="sm"
               type="button"
+              className={styles.taskBtn}
               onClick={(e) => {
                 e.stopPropagation();
                 updateState({ modalDocsOpen: true });
@@ -283,7 +291,9 @@ export default function Paso5Documentacion({
 
       {/* 2. SOCIOS */}
       <div className={styles.sectionGroup}>
-        <h4 className={styles.sectionTitle}>2. Información de Socios</h4>
+        <div className={styles.sectionHeaderRow}>
+          <h4 className={styles.sectionTitle}>2. Información de Socios</h4>
+        </div>
         {socios.map((socio, index) => (
           <SocioTaskCard
             key={socio.cuit}
@@ -296,55 +306,133 @@ export default function Paso5Documentacion({
         ))}
       </div>
 
-      {/* 3. APODERADO Y FACTURACIÓN */}
+      {/* 3. REPRESENTANTES LEGALES */}
       <div className={styles.sectionGroup}>
-        <h4 className={styles.sectionTitle}>3. Gestión y Contacto</h4>
-        <div
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              updateState({ modalApoOpen: true });
-            }
-          }}
-          className={`${styles.taskCard} ${seccionApoFacturacionLista ? styles.cardSuccess : intentoAvanzar ? styles.cardError : ""}`}
-          onClick={() => updateState({ modalApoOpen: true })}
-        >
-          <div className={styles.taskCardInfo}>
-            <div className={`${styles.statusIconPill} ${getClassApoderado()}`}>
-              {seccionApoFacturacionLista ? (
-                <FiCheckCircle />
-              ) : (
-                <FiAlertCircle />
-              )}
-            </div>
-            <div className={styles.taskCardText}>
-              <h4>Representante y Facturación</h4>
-              <p>
-                {faseApoderado === "guardado"
-                  ? apoNombre
-                  : "Identidad y mail de facturación"}
-              </p>
-            </div>
-          </div>
-          {seccionApoFacturacionLista ? (
+        <div className={styles.sectionHeaderRow}>
+          <h4 className={styles.sectionTitle}>
+            3. Representantes y Apoderados
+          </h4>
+          {representantes.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setFaseApoderado("completar");
-                updateState({ modalApoOpen: true });
-              }}
+              className={styles.addBtnSmall}
+              onClick={() => handleAbrirModalRep(null)}
             >
-              <FiEdit2 size={12} /> MODIFICAR
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" className={styles.taskBtn}>
-              CONFIGURAR
+              <FiPlus /> AGREGAR
             </Button>
           )}
+        </div>
+
+        {representantes.length === 0 ? (
+          <div
+            className={`${styles.taskCard} ${intentoAvanzar ? styles.cardError : ""}`}
+            onClick={() => handleAbrirModalRep(null)}
+          >
+            <div className={styles.taskCardInfo}>
+              <div
+                className={`${styles.statusIconPill} ${intentoAvanzar ? styles.statusError : styles.statusWarn}`}
+              >
+                <FiAlertCircle />
+              </div>
+              <div className={styles.taskCardText}>
+                <h4>Falta designar representantes</h4>
+                <p>Agregá al menos un representante o apoderado para firmar.</p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" className={styles.taskBtn}>
+              AGREGAR
+            </Button>
+          </div>
+        ) : (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          >
+            {representantes.map((rep, index) => (
+              <div
+                key={rep.id}
+                className={`${styles.taskCard} ${styles.cardSuccess}`}
+              >
+                <div className={styles.taskCardInfo}>
+                  <div
+                    className={`${styles.statusIconPill} ${styles.statusCheck}`}
+                  >
+                    <FiCheckCircle />
+                  </div>
+                  <div className={styles.taskCardText}>
+                    <h4>{rep.nombre}</h4>
+                    <p>
+                      {rep.rol} · CUIT {rep.cuit}
+                    </p>
+                  </div>
+                </div>
+                <div className={styles.actionButtonsGroup}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={styles.btnEditAction}
+                    onClick={() => handleAbrirModalRep(index)}
+                  >
+                    <FiEdit2 size={14} />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={styles.btnDeleteAction}
+                    onClick={() => removeRep(index)}
+                  >
+                    <FiTrash2 size={14} />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 4. FACTURACIÓN */}
+      <div className={styles.sectionGroup}>
+        <div className={styles.sectionHeaderRow}>
+          <h4 className={styles.sectionTitle}>4. Contacto de Facturación</h4>
+        </div>
+
+        <div
+          className={`${styles.inputCard} ${errorEmailFacturacion ? styles.cardError : isEmailFacturacionValido ? styles.cardSuccess : ""}`}
+        >
+          <div className={styles.taskCardInfo} style={{ width: "100%" }}>
+            <div
+              className={`${styles.statusIconPill} ${isEmailFacturacionValido ? styles.statusCheck : errorEmailFacturacion ? styles.statusError : styles.statusWarn}`}
+            >
+              {isEmailFacturacionValido ? <FiCheckCircle /> : <FiAlertCircle />}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div
+                className={styles.taskCardText}
+                style={{ marginBottom: "2rem" }}
+              >
+                <h4>Recepción de Comprobantes</h4>
+                <p>
+                  Indicá el correo electrónico donde recibirás la facturación.
+                </p>
+              </div>
+              <InputFlotante
+                compact
+                name="emailFacturacion"
+                label="Email de facturación"
+                autoComplete="none"
+                type="email"
+                error={errorEmailFacturacion}
+                esValido={isEmailFacturacionValido}
+                value={emailFacturacionVal}
+                onChange={(e) =>
+                  setValue("emailFacturacion", e.target.value, {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                  })
+                }
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -368,19 +456,6 @@ export default function Paso5Documentacion({
         onFileRemove={handleFileRemove}
         intentoAvanzar={intentoAvanzar}
       />
-
-      <ModalRepresentanteFacturacion
-        isOpen={modalApoOpen}
-        onClose={() => updateState({ modalApoOpen: false })}
-        faseApoderado={faseApoderado}
-        setFaseApoderado={setFaseApoderado}
-        apoNombre={apoNombre}
-        apoRol={apoRol}
-        setApoRol={setApoRol}
-        onValidarCuit={validarCuitApoderado}
-        onGuardarApoderado={guardarApoderado}
-      />
-
       <ModalSocio
         socio={socioActivoIndex !== null ? socios[socioActivoIndex] : null}
         socioIndex={socioActivoIndex}
@@ -396,9 +471,22 @@ export default function Paso5Documentacion({
         onDrop={(key, file) => handleFileUpload(key, file)}
         control={control}
       />
+      <ModalRepresentante
+        isOpen={modalRepOpen}
+        onClose={() =>
+          updateState({ modalRepOpen: false, repActivoIndex: null })
+        }
+        representanteInicial={
+          repActivoIndex !== null ? representantes[repActivoIndex] : null
+        }
+        onGuardar={handleGuardarRep}
+      />
 
-      {/* PERSISTENCIA */}
-      <PersistenciaOculta register={register} socios={socios} />
+      <PersistenciaOculta
+        register={register}
+        socios={socios}
+        representantes={representantes}
+      />
     </div>
   );
 }

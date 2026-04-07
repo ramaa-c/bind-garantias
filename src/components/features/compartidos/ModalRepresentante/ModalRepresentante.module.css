@@ -1,6 +1,3 @@
-/* ========================================================== */
-/* --- DISEÑO BASE (MOBILE FIRST - CELULAR) --- */
-/* ========================================================== */
 .overlay {
   position: fixed;
   inset: 0;
@@ -267,9 +264,7 @@
   width: 100%;
 }
 
-/* ----------------------------------------------------------- */
-/* --- MEJORAS PARA PANTALLAS GRANDES (TABLET / DESKTOP) --- */
-/* ----------------------------------------------------------- */
+/* Escritorio */
 @media (min-width: 48rem) {
   .modalContainer {
     padding: 2.5rem;
@@ -339,9 +334,7 @@
   }
 }
 
-/* ========================================================== */
-/* --- RADIO BUTTONS PERSONALIZADOS (CUSTOM RADIOS) --- */
-/* ========================================================== */
+/* Radio Buttons */
 .radioGroup {
   display: flex;
   gap: 1.5rem;
@@ -364,7 +357,6 @@
   color: var(--white);
 }
 
-/* Ocultamos el input nativo pero mantenemos la accesibilidad */
 .radioLabel input[type="radio"] {
   position: absolute;
   opacity: 0;
@@ -372,7 +364,6 @@
   height: 0;
 }
 
-/* El círculo exterior vacío */
 .customRadio {
   width: 1.25rem;
   height: 1.25rem;
@@ -386,7 +377,6 @@
   flex-shrink: 0;
 }
 
-/* El puntito interior (arranca en escala 0 para estar invisible) */
 .customRadio::after {
   content: "";
   width: 0.625rem;
@@ -394,17 +384,14 @@
   background-color: var(--yellow);
   border-radius: 50%;
   transform: scale(0);
-  /* Efecto de rebote elástico suave al aparecer */
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* --- HOVER ESTADO (El nuevo Azul) --- */
 .radioLabel:hover .customRadio {
-  border-color: #4C65E6;
+  border-color: var(--yellow);
   box-shadow: 0 0 8px rgba(76, 101, 230, 0.4);
 }
 
-/* --- ESTADO SELECCIONADO (CHECKED) --- */
 .radioLabel input[type="radio"]:checked~.customRadio {
   border-color: var(--yellow);
   background-color: rgba(244, 245, 0, 0.05);

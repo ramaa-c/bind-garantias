@@ -31,15 +31,30 @@
   margin-bottom: 2rem;
 }
 
+.sectionHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .sectionTitle {
   color: #888;
   font-size: 0.8125rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05rem;
-  margin-bottom: 1rem;
+  margin: 0;
 }
 
+.addBtnSmall {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  height: auto;
+  min-width: auto;
+}
+
+/* --- TASK CARDS (Interactivas) --- */
 .taskCard {
   background-color: rgba(255, 255, 255, 0.03);
   border: 1px solid #333;
@@ -52,9 +67,50 @@
   transition: all 0.3s ease;
 }
 
+.taskCard:hover {
+  border-color: #555;
+  background-color: rgba(255, 255, 255, 0.05);
+  transform: translateY(-0.125rem);
+}
+
+/* --- INPUT CARDS --- */
+.inputCard {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid #333;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+/* --- ESTADOS DE TARJETA --- */
+.cardSuccess {
+  border-color: rgba(76, 175, 80, 0.4) !important;
+  background-color: rgba(76, 175, 80, 0.02) !important;
+}
+
+.taskCard.cardSuccess:hover {
+  border-color: #4caf50 !important;
+  background-color: rgba(76, 175, 80, 0.05) !important;
+}
+
+.cardError {
+  border-color: rgba(255, 82, 82, 0.5) !important;
+  background-color: rgba(255, 82, 82, 0.02) !important;
+}
+
+.taskCard.cardError:hover {
+  border-color: #ff5252 !important;
+  background-color: rgba(255, 82, 82, 0.05) !important;
+}
+
+/* --- ELEMENTOS INTERNOS DE TARJETAS --- */
 .taskCardInfo {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
 }
 
@@ -87,88 +143,6 @@
   flex-shrink: 0;
 }
 
-/* --- ACCIONES Y ALERTAS --- */
-.actionsRight {
-  margin-top: 2.5rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.tallButton {
-  height: 2.875rem;
-  width: 100%;
-}
-
-/* Escritorio */
-@media (min-width: 48rem) {
-  .headerSteps {
-    flex-direction: row;
-    align-items: baseline;
-  }
-
-  .mutedText {
-    margin-left: 0.5rem;
-  }
-
-  .taskCard {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.25rem 1.5rem;
-  }
-
-  .taskCardInfo {
-    gap: 1.25rem;
-  }
-  
-  .taskBtn {
-    width: auto;
-    min-width: 10.5rem;
-  }
-
-  .actionsRight {
-    flex-direction: row;
-    justify-content: flex-end;
-    margin-top: 3rem;
-  }
-
-  .tallButton {
-    width: auto;
-    min-width: 12.5rem;
-  }
-
-  .container {
-    padding: 0;
-  }
-}
-
-/* --- ESTADOS DE TARJETA --- */
-.taskCard.cardSuccess {
-  border-color: rgba(76, 175, 80, 0.4);
-  background-color: rgba(76, 175, 80, 0.02);
-}
-
-.taskCard.cardSuccess:hover {
-  border-color: #4caf50;
-  background-color: rgba(76, 175, 80, 0.05);
-}
-
-.taskCard.cardError {
-  border-color: rgba(255, 82, 82, 0.5);
-  background-color: rgba(255, 82, 82, 0.02);
-}
-
-.taskCard.cardError:hover {
-  border-color: #ff5252;
-  background-color: rgba(255, 82, 82, 0.05);
-}
-
-.taskCard:hover {
-  border-color: #555;
-  background-color: rgba(255, 255, 255, 0.05);
-  transform: translateY(-0.125rem);
-}
-
 .statusWarn {
   background: rgba(255, 193, 7, 0.1);
   color: var(--yellow);
@@ -187,12 +161,93 @@
   border: 1px solid rgba(255, 82, 82, 0.2);
 }
 
+/* --- ACCIONES Y ALERTAS --- */
+.actionsRight {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.tallButton {
+  height: 2.875rem;
+  width: 100%;
+}
+
+.actionButtonsGroup {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.btnEditAction {
+  transition: all 0.2s ease;
+}
+.btnEditAction:hover {
+  color: var(--yellow) !important;
+  background-color: rgba(244, 245, 0, 0.1) !important;
+  border-color: var(--yellow) !important;
+}
+
+.btnDeleteAction {
+  color: var(--text-muted) !important;
+  transition: all 0.2s ease;
+}
+.btnDeleteAction:hover {
+  color: #ff5252 !important;
+  background-color: rgba(255, 82, 82, 0.1) !important;
+  border-color: #ff5252 !important;
+}
+
+/* Escritorio */
+@media (min-width: 48rem) {
+  .headerSteps {
+    flex-direction: row;
+    align-items: baseline;
+  }
+  .mutedText {
+    margin-left: 0.5rem;
+  }
+  .taskCard,
+  .inputCard {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+  }
+  .inputCard {
+    align-items: flex-start;
+  }
+  .taskCardInfo {
+    gap: 1.25rem;
+  }
+  .taskBtn {
+    width: auto;
+    min-width: 10.5rem;
+  }
+  .actionsRight {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 3rem;
+  }
+  .tallButton {
+    width: auto;
+    min-width: 12.5rem;
+  }
+  .container {
+    padding: 0;
+  }
+  .actionButtonsGroup {
+    width: auto;
+    min-width: 10.5rem;
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(0.3125rem);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);

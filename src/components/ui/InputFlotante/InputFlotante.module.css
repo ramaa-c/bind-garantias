@@ -4,6 +4,16 @@
   width: 100%;
 }
 
+.group.compact {
+  margin-bottom: 1.2rem;
+}
+
+@media (min-width: 48rem) {
+  .group.compact {
+    width: 60%;
+  }
+}
+
 .input {
   width: 100%;
   padding: 0.5rem 0;
@@ -72,7 +82,6 @@
   border-bottom-color: #4caf50 !important;
 }
 
-/* Texto de éxito (Verde) */
 .success {
   color: #4caf50;
   font-size: 0.75rem;
@@ -90,7 +99,6 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Aseguramos que el error tampoco salte de línea */
 .error {
   color: #ff5252;
   font-size: 0.75rem;

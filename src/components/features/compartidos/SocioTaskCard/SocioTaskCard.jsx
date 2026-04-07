@@ -47,6 +47,7 @@ export const SocioTaskCard = ({
         <Button
           variant="ghost"
           size="sm"
+          className={styles.taskBtn}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -56,7 +57,7 @@ export const SocioTaskCard = ({
           <FiEdit2 size={12} /> MODIFICAR
         </Button>
       ) : (
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" className={styles.taskBtn}>
           COMPLETAR DATOS
         </Button>
       )}

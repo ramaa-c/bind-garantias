@@ -5,7 +5,16 @@ import { FaCheck } from "react-icons/fa";
 
 export const InputFlotante = React.forwardRef(
   (
-    { label, error, esValido, type = "text", className = "", id, ...props },
+    {
+      label,
+      error,
+      esValido,
+      type = "text",
+      className = "",
+      id,
+      compact = false,
+      ...props
+    },
     ref,
   ) => {
     const generatedId = React.useId();
@@ -15,7 +24,9 @@ export const InputFlotante = React.forwardRef(
     const inputId = id || props.name || generatedId;
 
     return (
-      <div className={`${styles.group} ${className}`}>
+      <div
+        className={`${styles.group} ${compact ? styles.compact : ""} ${className}`}
+      >
         <input
           id={inputId}
           type={currentType}
@@ -25,7 +36,9 @@ export const InputFlotante = React.forwardRef(
           {...props}
         />
 
-        <label htmlFor={inputId} className={styles.label}>{label}</label>
+        <label htmlFor={inputId} className={styles.label}>
+          {label}
+        </label>
 
         {isPassword && (
           <button

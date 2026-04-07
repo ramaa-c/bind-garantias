@@ -34,12 +34,9 @@ export default function Cheques() {
   const [tempSocioParticipacion, setTempSocioParticipacion] = useState("");
 
   const [docExpandido, setDocExpandido] = useState("estatuto");
-  const [faseApoderado, setFaseApoderado] = useState("ingresar");
-  const [apoNombre, setApoNombre] = useState("");
-  const [apoRol, setApoRol] = useState("Representante Legal");
-
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
 
+  // --- 1. ACTUALIZAMOS DEFAULT VALUES ---
   const metodosFormulario = useForm({
     resolver: zodResolver(chequesSchema),
     mode: "onChange",
@@ -52,6 +49,8 @@ export default function Cheques() {
       provincia: "",
       localidad: "",
       celular: "",
+      representantes: [],
+      emailFacturacion: "",
     }),
   });
 
@@ -68,7 +67,11 @@ export default function Cheques() {
     watch,
   });
 
-  const bolsaSeleccionada = useWatch({ control, name: "sociedadBolsa", defaultValue: "" });
+  const bolsaSeleccionada = useWatch({
+    control,
+    name: "sociedadBolsa",
+    defaultValue: "",
+  });
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleValidarCuit = async () => {
@@ -89,12 +92,11 @@ export default function Cheques() {
       provincia: "",
       localidad: "",
       celular: "",
+      representantes: [],
+      emailFacturacion: "",
     });
     setSocios([]);
     setFaseSocio("lista");
-    setFaseApoderado("ingresar");
-    setApoNombre("");
-    setApoRol("Representante Legal");
     setMostrarResultados(false);
     setCodigoSms("");
     setPasoActual(1);
@@ -124,10 +126,7 @@ export default function Cheques() {
   };
 
   // Paso 3
-  const handleCalcularSimulador = () => {
-    setMostrarResultados(true);
-  };
-
+  const handleCalcularSimulador = () => setMostrarResultados(true);
   const handleContinuarSimulador = () => {
     setPasoActual(4);
     setFaseSocio(socios.length === 0 ? "ingresar_cuit" : "lista");
@@ -160,10 +159,7 @@ export default function Cheques() {
     setTempSocioCuit(socioAEditar.cuit);
     setTempSocioNombre(socioAEditar.nombre);
     setTempSocioParticipacion(socioAEditar.participacion);
-
-    const nuevos = socios.filter((_, i) => i !== index);
-    setSocios(nuevos);
-
+    setSocios(socios.filter((_, i) => i !== index));
     setFaseSocio("completar_datos");
   };
   const eliminarSocio = (index) => {
@@ -177,17 +173,13 @@ export default function Cheques() {
   const toggleDoc = (seccion) => {
     setDocExpandido((prev) => (prev === seccion ? "" : seccion));
   };
-  const validarCuitApoderado = async () => {
-    if (await trigger("apoCuit")) {
-      setApoNombre("GOMEZ PEREZ JUAN");
-      setFaseApoderado("completar");
-    }
-  };
-  const guardarApoderado = async () => {
-    if (await trigger(["apoEmail", "apoCelular", "emailFacturacion"])) setFaseApoderado("guardado");
-  };
+
   const avanzarPaso6 = async () => {
-    if (await trigger("emailFacturacion")) setPasoActual(6);
+    const okFacturacion = await trigger("emailFacturacion");
+    const representantes = metodosFormulario.getValues("representantes");
+    if (okFacturacion && representantes?.length > 0) {
+      setPasoActual(6);
+    }
   };
 
   // Paso 6
@@ -199,7 +191,6 @@ export default function Cheques() {
       handleSubmit(onSubmitFinal)();
     }
   };
-
   const avanzarSinBolsa = () => {
     setValue("sociedadBolsa", "");
     setValue("numeroCuentaBolsa", "");
@@ -220,23 +211,20 @@ export default function Cheques() {
                   }}
                 />
               )}
-
               {pasoActual === 1 && (
                 <BotonVolver
                   onClick={() => navigate("/inicio")}
                   texto="Volver a la lista"
                 />
               )}
-
               {pasoActual < 7 && (
                 <BotonVolver
                   onClick={handleReiniciarAlta}
-                  icon={FiRotateCcw }
+                  icon={FiRotateCcw}
                   texto="Reiniciar alta"
                 />
               )}
             </div>
-            <div>{/* Espacio para la columna derecha si la hubiera */}</div>
           </div>
 
           <div className={styles.contenedorPrincipal}>
@@ -262,7 +250,6 @@ export default function Cheques() {
                     if (pasoActual === 4) hitoVisual = 3;
                     if (pasoActual === 5) hitoVisual = 4;
                     if (pasoActual === 6) hitoVisual = 5;
-
                     return (
                       <BarraProgreso
                         hitos={[
@@ -277,14 +264,12 @@ export default function Cheques() {
                     );
                   })()}
 
-                {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">
                       {pasoActual === 1 && (
                         <Paso1Cuit onValidar={handleValidarCuit} />
                       )}
-
                       {pasoActual === 2 && (
                         <Paso2Datos
                           onVolver={handleVolver}
@@ -292,7 +277,6 @@ export default function Cheques() {
                           onContinuar={handleContinuarPaso2}
                         />
                       )}
-
                       {pasoActual === 3 && (
                         <Paso3Simulador
                           mostrarResultados={mostrarResultados}
@@ -310,7 +294,6 @@ export default function Cheques() {
                           labelMonto="Monto de cheque"
                         />
                       )}
-
                       {pasoActual === 4 && (
                         <Paso4Socios
                           faseSocio={faseSocio}
@@ -324,7 +307,7 @@ export default function Cheques() {
                           iniciarCargaSocio={iniciarCargaSocio}
                           validarCuitSocio={validarCuitSocio}
                           guardarSocio={guardarSocio}
-                          editarSocio={editarSocio} // <--- Prop agregada!
+                          editarSocio={editarSocio}
                           eliminarSocio={eliminarSocio}
                           continuarAlProximoPaso={continuarAlProximoPaso}
                         />
@@ -336,13 +319,6 @@ export default function Cheques() {
                           toggleDoc={toggleDoc}
                           socios={socios}
                           onVolverASocios={() => setPasoActual(4)}
-                          faseApoderado={faseApoderado}
-                          setFaseApoderado={setFaseApoderado}
-                          apoNombre={apoNombre}
-                          apoRol={apoRol}
-                          setApoRol={setApoRol}
-                          validarCuitApoderado={validarCuitApoderado}
-                          guardarApoderado={guardarApoderado}
                           avanzarPaso6={avanzarPaso6}
                         />
                       )}
@@ -353,7 +329,6 @@ export default function Cheques() {
                           avanzarSinBolsa={avanzarSinBolsa}
                         />
                       )}
-
                       {pasoActual === 7 && (
                         <Paso7Exito onVolverInicio={handleResetFlujoCompleto} />
                       )}
@@ -362,19 +337,16 @@ export default function Cheques() {
                 </FormProvider>
               </div>
             </div>
-
             {pasoActual < 7 && <PanelDudas pasoActual={pasoActual} />}
           </div>
         </div>
       </div>
 
-      {/* MODALES */}
       <ModalConfirmacionBorrador
         isOpen={isModalReiniciarAbierto}
         onClose={() => setIsModalReiniciarAbierto(false)}
         onConfirm={confirmarReinicioAlta}
       />
-
       <ModalSms
         isOpen={mostrarModal}
         onClose={() => setMostrarModal(false)}
