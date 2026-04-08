@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import {
   FiSmartphone,
   FiX,
@@ -82,7 +83,7 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
     if (e.target === e.currentTarget) handleClose();
   };
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayMouseDown}
@@ -213,6 +214,7 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
           )}
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

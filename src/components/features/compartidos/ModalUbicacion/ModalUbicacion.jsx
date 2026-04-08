@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { FiMapPin, FiX } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
 import { Button, InputFlotante } from "../../../ui";
@@ -70,7 +71,7 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
     if (e.target === e.currentTarget) onClose();
   };
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayMouseDown}
@@ -130,6 +131,7 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

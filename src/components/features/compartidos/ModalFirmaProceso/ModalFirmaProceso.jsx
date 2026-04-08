@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { FiX, FiUser, FiCheck, FiPenTool, FiDownload } from "react-icons/fi";
 import { Button } from "../../../ui";
@@ -24,7 +25,7 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
     navigate("/inicio");
   };
 
-  return (
+  return createPortal(
     <div className={styles.modalOverlay} onMouseDown={onClose}>
       <div className={styles.modalContent} onMouseDown={(e) => e.stopPropagation()}>
         {paso < 3 && (
@@ -151,6 +152,7 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

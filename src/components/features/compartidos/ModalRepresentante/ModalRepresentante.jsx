@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiBriefcase, FiX } from "react-icons/fi";
 import { InputFlotante, Button, BotonVolver } from "../../../ui";
 import styles from "./ModalRepresentante.module.css";
@@ -113,7 +114,7 @@ export const ModalRepresentante = ({
     if (e.target === e.currentTarget) onClose();
   };
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
       <div className={styles.modalContainer} onMouseDown={(e) => e.stopPropagation()}>
         <button
@@ -278,6 +279,7 @@ export const ModalRepresentante = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
