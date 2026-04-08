@@ -41,22 +41,13 @@ export const ModalDocumentosEmpresa = ({
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayMouseDown}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.stopPropagation();
-          onClose();
-        }
-      }}
     >
       <div
         className={styles.modalContainer}
-        onClick={(e) => e.stopPropagation()}
-        role="presentation"
-        onKeyDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <button
+          type="button"
           className={styles.btnClose}
           onClick={onClose}
           aria-label="Cerrar"
@@ -127,7 +118,7 @@ export const ModalDocumentosEmpresa = ({
           </div>
 
           <div className={styles.modalFooter}>
-            <Button variant="primary" onClick={onClose}>
+            <Button type="button" variant="primary" onClick={onClose}>
               GUARDAR Y CERRAR
             </Button>
           </div>

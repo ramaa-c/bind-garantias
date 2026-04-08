@@ -49,7 +49,8 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
       : null;
   const isCelValido = !errorCel && celLocal.length === 10;
 
-  const handleSolicitarSms = () => {
+  const handleSolicitarSms = (e) => {
+    if (e) e.preventDefault();
     setIntentoSolicitarSms(true);
     if (isCelValido) {
       setValue("celular", celLocal, {
@@ -60,7 +61,8 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
     }
   };
 
-  const handleVerificarSms = () => {
+  const handleVerificarSms = (e) => {
+    if (e) e.preventDefault();
     if (codigoSms.length === 6 && !procesando) {
       setProcesando(true);
       setFase("exito");
@@ -84,23 +86,14 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayMouseDown}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.stopPropagation();
-          handleClose();
-        }
-      }}
     >
       <div
         className={styles.modalContainer}
-        onClick={(e) => e.stopPropagation()}
-        role="presentation"
-        onKeyDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {!procesando && (
           <button
+            type="button"
             className={styles.btnClose}
             onClick={handleClose}
             aria-label="Cerrar"
@@ -109,7 +102,14 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
           </button>
         )}
 
-        <div className={styles.body}>
+        <form className={styles.body} onSubmit={(e) => {
+          e.preventDefault();
+          if (fase === "ingresar") {
+            handleSolicitarSms(e);
+          } else if (fase === "verificar") {
+            handleVerificarSms(e);
+          }
+        }}>
           {fase === "ingresar" && (
             <>
               <div className={styles.iconWrapper}>
@@ -134,8 +134,8 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
               </div>
               <div className={styles.btnSave}>
                 <Button
+                  type="submit"
                   variant="primary"
-                  onClick={handleSolicitarSms}
                   style={{ width: "100%", minHeight: "3rem" }}
                 >
                   ENVIAR CÓDIGO SMS
@@ -180,8 +180,8 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
               </div>
               <div className={styles.btnSave}>
                 <Button
+                  type="submit"
                   variant="primary"
-                  onClick={handleVerificarSms}
                   disabled={codigoSms.length < 6 || procesando}
                   style={{ width: "100%", minHeight: "3rem" }}
                 >
@@ -211,7 +211,7 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
               </p>
             </div>
           )}
-        </div>
+        </form>
       </div>
     </div>
   );
