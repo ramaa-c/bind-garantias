@@ -1,6 +1,8 @@
 import React, { useRef } from "react";
+import { createPortal } from "react-dom";
 import { FiSmartphone, FiX } from "react-icons/fi";
 import { Button, InputFlotante } from "../";
+import { useEscape } from "../../../hooks/useEscape";
 import styles from "./ModalSms.module.css";
 
 export default function ModalSms({
@@ -12,6 +14,8 @@ export default function ModalSms({
 }) {
   const modalRef = useRef(null);
 
+  useEscape(onClose, isOpen);
+
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
@@ -20,31 +24,29 @@ export default function ModalSms({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.stopPropagation();
-          onClose();
-        }
-      }}
     >
       <div
         className={styles.modalContainer}
         ref={modalRef}
-        role="presentation"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
-        <button className={styles.btnClose} onClick={onClose}>
+        <button type="button" className={styles.btnClose} onClick={onClose}>
           <FiX size={20} />
         </button>
 
-        <div className={styles.body}>
+        <form
+          className={styles.body}
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (codigoSms.length === 6) {
+              onConfirmar();
+            }
+          }}
+        >
           <div className={styles.iconWrapper}>
             <FiSmartphone size={32} />
           </div>
@@ -68,8 +70,8 @@ export default function ModalSms({
 
           <div className={styles.footer}>
             <Button
+              type="submit"
               variant="primary"
-              onClick={onConfirmar}
               className={styles.btnConfirm}
               disabled={codigoSms.length < 6}
             >
@@ -81,8 +83,9 @@ export default function ModalSms({
             ¿No recibiste el código?{" "}
             <span className={styles.resendLink}>Reenviar SMS</span>
           </p>
-        </div>
+        </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -163,6 +163,7 @@ export default function PagareUSD() {
         isOpen={isModalReiniciarAbierto}
         onClose={() => setIsModalReiniciarAbierto(false)}
         onConfirm={confirmarReinicioAlta}
+        onContinueBorrador={() => setIsModalReiniciarAbierto(false)}
       />
     </div>
   );

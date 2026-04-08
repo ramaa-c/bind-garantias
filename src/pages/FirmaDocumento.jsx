@@ -6,8 +6,10 @@ import logoSignatura from "../assets/images/logo-signatura.svg";
 import styles from "./FirmaDocumento.module.css";
 
 export default function FirmaDocumento() {
-  const navigate = useNavigate();
-  const { idSolicitud } = useParams();
+
+  const _navigate = useNavigate();
+
+  const { idSolicitud: _idSolicitud } = useParams();
 
   const scrollContainerRef = useRef(null);
   const [porcentajeVisto, setPorcentajeVisto] = useState(0);

@@ -80,6 +80,11 @@ export default function Inicio() {
     setDraftKeyPendiente(null);
   };
 
+  const handleCloseModalOnly = () => {
+    setFlujoPendiente(null);
+    setDraftKeyPendiente(null);
+  };
+
   return (
     <div className={styles.inicioPage}>
       <main className={styles.inicioMainContainer}>
@@ -279,8 +284,9 @@ export default function Inicio() {
 
       <ModalConfirmacionBorrador
         isOpen={!!flujoPendiente}
-        onClose={handleCloseContinueDraft}
+        onClose={handleCloseModalOnly}
         onConfirm={handleConfirmStartNew}
+        onContinueBorrador={handleCloseContinueDraft}
       />
     </div>
   );

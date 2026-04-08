@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiBriefcase, FiX } from "react-icons/fi";
 import { InputFlotante, Button, BotonVolver } from "../../../ui";
 import styles from "./ModalRepresentante.module.css";
@@ -22,20 +23,33 @@ export const ModalRepresentante = ({
   useEffect(() => {
     if (isOpen) {
       if (representanteInicial) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCuit(representanteInicial.cuit);
+
         setNombre(representanteInicial.nombre);
+
         setRol(representanteInicial.rol);
+
         setEmail(representanteInicial.email);
+
         setCelular(representanteInicial.celular);
+
         setFaseInterna("completar");
       } else {
+
         setCuit("");
+
         setNombre("");
+
         setRol("Representante Legal");
+
         setEmail("");
+
         setCelular("");
+
         setFaseInterna("ingresar");
       }
+
       setErrores({});
     }
   }, [isOpen, representanteInicial]);
@@ -61,7 +75,8 @@ export const ModalRepresentante = ({
     !errores.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isCelularValido = !errores.celular && celular.length === 10;
 
-  const handleValidarCuit = () => {
+  const handleValidarCuit = (e) => {
+    if (e) e.preventDefault();
     if (!cuit || cuit.trim() === "") {
       setErrores({ cuit: "El CUIT es obligatorio" });
       return;
@@ -76,7 +91,8 @@ export const ModalRepresentante = ({
     setFaseInterna("completar");
   };
 
-  const handleGuardarYCerrar = () => {
+  const handleGuardarYCerrar = (e) => {
+    if (e) e.preventDefault();
     const nuevosErrores = {};
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       nuevosErrores.email = "Email inválido";
@@ -98,10 +114,11 @@ export const ModalRepresentante = ({
     if (e.target === e.currentTarget) onClose();
   };
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div className={styles.modalContainer}>
+      <div className={styles.modalContainer} onMouseDown={(e) => e.stopPropagation()}>
         <button
+          type="button"
           className={styles.btnClose}
           onClick={onClose}
           aria-label="Cerrar"
@@ -109,7 +126,14 @@ export const ModalRepresentante = ({
           <FiX size={20} />
         </button>
 
-        <div className={styles.body}>
+        <form className={styles.body} onSubmit={(e) => {
+          e.preventDefault();
+          if (faseInterna === "ingresar") {
+            handleValidarCuit(e);
+          } else {
+            handleGuardarYCerrar(e);
+          }
+        }}>
           <div className={styles.iconWrapper}>
             <FiBriefcase size={30} />
           </div>
@@ -144,9 +168,9 @@ export const ModalRepresentante = ({
                     />
                   </div>
                   <Button
+                    type="submit"
                     variant="primary"
                     size="sm"
-                    onClick={handleValidarCuit}
                   >
                     VALIDAR
                   </Button>
@@ -244,17 +268,18 @@ export const ModalRepresentante = ({
             {faseInterna === "completar" && (
               <div className={styles.modalFooter}>
                 <Button
+                  type="submit"
                   variant="primary"
                   size="md"
-                  onClick={handleGuardarYCerrar}
                 >
                   GUARDAR REPRESENTANTE
                 </Button>
               </div>
             )}
           </div>
-        </div>
+        </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

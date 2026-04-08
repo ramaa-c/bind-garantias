@@ -1,13 +1,17 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { FiX, FiUser, FiCheck, FiPenTool, FiDownload } from "react-icons/fi";
 import { Button } from "../../../ui";
+import { useEscape } from "../../../../hooks/useEscape";
 import styles from "./ModalFirmaProceso.module.css";
 import logoAfip from "../../../../assets/images/afip.svg";
 
 export default function ModalFirmaProceso({ isOpen, onClose }) {
   const navigate = useNavigate();
   const [paso, setPaso] = useState(1);
+
+  useEscape(onClose, isOpen);
 
   if (!isOpen) return null;
 
@@ -21,11 +25,11 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
     navigate("/inicio");
   };
 
-  return (
-    <div className={styles.modalOverlay}>
-      <div className={styles.modalContent}>
+  return createPortal(
+    <div className={styles.modalOverlay} onMouseDown={onClose}>
+      <div className={styles.modalContent} onMouseDown={(e) => e.stopPropagation()}>
         {paso < 3 && (
-          <button className={styles.closeButton} onClick={onClose}>
+          <button type="button" className={styles.closeButton} onClick={onClose}>
             <FiX />
           </button>
         )}
@@ -88,6 +92,7 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
                 <FiCheck color="var(--yellow)" />
               </div>
               <Button
+                type="button"
                 variant="primary"
                 className={`${styles.btnAccion} ${styles.btnAfip}`}
                 onClick={handleNextStep}
@@ -110,6 +115,7 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
                 electrónica de este documento.
               </p>
               <Button
+                type="button"
                 variant="primary"
                 className={styles.btnAccion}
                 onClick={handleNextStep}
@@ -127,6 +133,7 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
                 Recibirá una copia en su correo.
               </p>
               <Button
+                type="button"
                 variant="outline"
                 className={styles.btnAccion}
                 onClick={() => console.log("Descargando PDF...")}
@@ -134,6 +141,7 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
                 <FiDownload style={{ marginRight: "8px" }} /> Descargar Copia
               </Button>
               <Button
+                type="button"
                 variant="primary"
                 className={styles.btnAccion}
                 onClick={handleFinalizar}
@@ -144,6 +152,7 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

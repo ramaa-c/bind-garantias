@@ -1,10 +1,14 @@
 import React, { useRef } from "react";
+import { createPortal } from "react-dom";
 import { FiAlertCircle, FiX } from "react-icons/fi";
 import { Button } from "../../../ui";
+import { useEscape } from "../../../../hooks/useEscape";
 import styles from "./ModalConfirmacionBorrador.module.css";
 
-export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }) {
+export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm, onContinueBorrador }) {
   const modalRef = useRef(null);
+
+  useEscape(onClose, isOpen);
 
   if (!isOpen) return null;
 
@@ -14,27 +18,17 @@ export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }
     }
   };
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.stopPropagation();
-          onClose();
-        }
-      }}
     >
       <div
         className={styles.modalContainer}
         ref={modalRef}
-        role="presentation"
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
       >
-        <button className={styles.btnClose} onClick={onClose}>
+        <button type="button" className={styles.btnClose} onClick={onClose}>
           <FiX size={20} />
         </button>
 
@@ -52,6 +46,7 @@ export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }
 
           <div className={styles.footer}>
             <Button
+              type="button"
               variant="primary"
               onClick={onConfirm}
               className={styles.btnConfirm}
@@ -59,8 +54,9 @@ export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }
               Empezar nueva
             </Button>
             <Button
+              type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={onContinueBorrador}
               className={styles.btnCancel}
             >
               Continuar borrador
@@ -68,6 +64,7 @@ export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -305,6 +305,7 @@ export default function Prestamos() {
         isOpen={isModalReiniciarAbierto}
         onClose={() => setIsModalReiniciarAbierto(false)}
         onConfirm={confirmarReinicioAlta}
+        onContinueBorrador={() => setIsModalReiniciarAbierto(false)}
       />
       <ModalSms
         isOpen={uiState.mostrarModal}

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { FiUser, FiX } from "react-icons/fi";
 import { InputFlotante, Button, CargaArchivos } from "../../../ui";
@@ -131,30 +132,23 @@ export default function ModalSocio({
     });
   };
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayMouseDown}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.stopPropagation();
-          onCerrar();
-        }
-      }}
     >
       <div
         className={styles.modalContainer}
-        onClick={(e) => e.stopPropagation()}
-        role="presentation"
-        onKeyDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
-        <button className={styles.btnClose} onClick={onCerrar}>
+        <button type="button" className={styles.btnClose} onClick={onCerrar}>
           <FiX size={20} />
         </button>
 
-        <div className={styles.body}>
+        <form className={styles.body} onSubmit={(e) => {
+          e.preventDefault();
+          onGuardar();
+        }}>
           <div className={styles.iconWrapper}>
             <FiUser size={30} />
           </div>
@@ -250,12 +244,13 @@ export default function ModalSocio({
             <Button type="button" variant="outline" onClick={onCerrar}>
               CANCELAR
             </Button>
-            <Button type="button" variant="primary" onClick={onGuardar}>
+            <Button type="submit" variant="primary">
               GUARDAR DATOS
             </Button>
           </div>
-        </div>
+        </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
