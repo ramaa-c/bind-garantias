@@ -1,0 +1,190 @@
+.container {
+  animation: fadeIn 0.4s ease;
+  width: 100%;
+}
+
+/* --- CABECERA --- */
+.headerTitleRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  /* Distancia estándar hacia el formulario */
+}
+
+.headerTitle {
+  color: var(--white);
+  font-weight: bold;
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.helperText {
+  color: #aaa;
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.formContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- TARJETAS TIPO DE CHEQUE --- */
+.radioGroup {
+  display: flex;
+  flex-direction: column;
+  /* Apiladas en móvil por si la pantalla es muy chica */
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.radioCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: rgba(30, 30, 30, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.radioCard:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.radioCard.selected {
+  background: rgba(245, 244, 0, 0.05);
+  /* Fondo amarillento */
+  border-color: var(--yellow);
+  /* Usamos tu variable */
+}
+
+.radioIcon {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s ease;
+}
+
+.radioCard.selected .radioIcon {
+  color: var(--yellow);
+}
+
+.radioLabel {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--white);
+}
+
+.errorText {
+  color: #ff5252;
+  font-size: 0.8125rem;
+  margin-top: 0.5rem;
+}
+
+/* --- FORMULARIO DINÁMICO --- */
+.dynamicForm {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inputAnim {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* --- TEXTAREA --- */
+.textareaWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.optional {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  font-weight: normal;
+}
+
+.textarea {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(30, 30, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: var(--white);
+  font-family: inherit;
+  /* Hereda la tipografía de tu proyecto */
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 6.25rem;
+  /* 100px */
+  transition: all 0.2s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--yellow);
+  background: rgba(0, 0, 0, 0.2);
+  /* Oscurece el fondo al hacer foco, igual que tus select */
+}
+
+/* --- BOTÓN FINALIZAR --- */
+.actions {
+  display: flex;
+  justify-content: center;
+  /* Centrado en móvil */
+  margin-top: 2.5rem;
+  width: 100%;
+}
+
+.actions :global(button) {
+  width: 100%;
+  /* Ocupa todo el ancho en móvil */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================================== */
+/* --- ESCRITORIO --- */
+/* ========================================================== */
+@media (min-width: 48rem) {
+  .radioGroup {
+    flex-direction: row;
+    /* En PC se ponen una al lado de la otra */
+  }
+
+  .actions {
+    justify-content: flex-end;
+    /* En PC se va a la derecha */
+  }
+
+  .actions :global(button) {
+    width: auto;
+    min-width: 12.5rem;
+  }
+}

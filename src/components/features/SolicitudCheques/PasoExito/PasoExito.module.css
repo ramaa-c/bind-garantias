@@ -180,7 +180,7 @@
   font-size: 1.2rem;
 }
 
-/* --- ACCIONES INFERIORES --- */
+/* --- ACCIONES INFERIORES Y BOTÓN VOLVER --- */
 .actionsLeft {
   display: flex;
   justify-content: flex-start;
@@ -193,14 +193,18 @@
 
 .actionsLeft :global(button):hover {
   color: #4c65e6 !important;
+  /* Texto azul */
   background-color: rgba(76, 101, 230, 0.08) !important;
+  /* Fondo azul sutil */
   border-color: rgba(76, 101, 230, 0.5) !important;
+  /* ACÁ MATAMOS EL BORDE AMARILLO */
 }
 
 .actionsLeft :global(button):hover svg {
   color: #4c65e6 !important;
 }
 
+/* Por las dudas, si alguien hace clic o usa la tecla Tab, sacamos el resplandor amarillo */
 .actionsLeft :global(button):focus {
   border-color: #4c65e6 !important;
   box-shadow: 0 0 0 2px rgba(76, 101, 230, 0.2) !important;

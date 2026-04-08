@@ -19,6 +19,12 @@ export { default as ModalConfirmacionBorrador } from "./compartidos/ModalConfirm
 // --- CHEQUES ---
 export { default as Paso6Bolsa } from './Cheques/Paso6Bolsa/Paso6Bolsa';
 
+// --- SOLICITUD CHEQUES (INGRESO DE CHEQUES) ---
+export { default as PasoEmisor } from './SolicitudCheques/PasoEmisor/PasoEmisor';
+export { default as PasoBolsa } from './SolicitudCheques/PasoBolsa/PasoBolsa';
+export { default as PasoDetalles } from './SolicitudCheques/PasoDetalles/PasoDetalles';
+export { default as PasoExito } from './SolicitudCheques/PasoExito/PasoExito';
+
 // --- PAGARE ---
 export { default as Paso1SimuladorPagare } from './pagare/Paso1SimuladorPagare/Paso1SimuladorPagare';
 export { default as Paso2AgentePagare } from './pagare/Paso2AgentePagare/Paso2AgentePagare';

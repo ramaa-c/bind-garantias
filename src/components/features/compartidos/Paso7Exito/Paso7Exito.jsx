@@ -4,10 +4,9 @@ import {
   FiCheckCircle,
   FiDownload,
   FiEdit3,
-  FiArrowLeft,
   FiFileText,
 } from "react-icons/fi";
-import { Button, Alert } from "../../../ui";
+import { Button, Alert, BotonVolver } from "../../../ui"; // Importamos BotonVolver
 import styles from "./Paso7Exito.module.css";
 
 export default function Paso7Exito({ onVolverInicio }) {
@@ -40,13 +39,10 @@ export default function Paso7Exito({ onVolverInicio }) {
       <h3 className={styles.subtitle}>Te contamos los pasos a seguir:</h3>
 
       <div className={styles.stepsContainer}>
-        {/* --- PASO 1 --- */}
         <div className={styles.stepCard}>
           <div className={styles.stepNumber}>1</div>
           <div className={styles.stepContent}>
-            <h4 className={styles.stepTitle}>
-              Descargá y enviá la instrucción
-            </h4>
+            <h4 className={styles.stepTitle}>Descargá y enviá la instrucción</h4>
             <p className={styles.stepText}>
               Descargá este documento, firmalo y envialo escaneado vía mail a{" "}
               <a
@@ -73,13 +69,10 @@ export default function Paso7Exito({ onVolverInicio }) {
           </div>
         </div>
 
-        {/* --- PASO 2 --- */}
         <div className={styles.stepCard}>
           <div className={styles.stepNumber}>2</div>
           <div className={styles.stepContent}>
-            <h4 className={styles.stepTitle}>
-              Firmá electrónicamente el Contrato y Fianza
-            </h4>
+            <h4 className={styles.stepTitle}>Firmá electrónicamente el Contrato y Fianza</h4>
             <p className={styles.stepText}>
               Una vez validada la documentación ingresada, recibirán por mail la
               solicitud de firma de la{" "}
@@ -104,17 +97,11 @@ export default function Paso7Exito({ onVolverInicio }) {
 
       <hr className={styles.divider} />
 
-      {/* --- ACCIONES --- */}
       <div className={styles.actionsLeft}>
-        <Button
-          type="button"
-          variant="outline"
+        <BotonVolver
+          texto="VOLVER A LA LISTA DE SOLICITUDES"
           onClick={handleFinalizar}
-          className={styles.borderless}
-        >
-          <FiArrowLeft className={styles.iconMarginRight} /> VOLVER A LA LISTA
-          DE SOLICITUDES
-        </Button>
+        />
       </div>
     </div>
   );
