@@ -1,0 +1,123 @@
+.pageContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.formMainContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.contentWrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.navegacionTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.botonesNavegacion {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.contenedorPrincipal {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .contenedorPrincipal {
+    grid-template-columns: 2fr 1fr;
+    gap: 3rem;
+  }
+}
+
+.columnaFormulario {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.seccionFormulario {
+  background: rgba(30, 30, 30, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1.5rem;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.seccionFormulario::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+}
+
+.bienvenidaHeader {
+  margin-bottom: 1rem;
+}
+
+.tituloBienvenida {
+  font-family: 'Metropolis', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.5rem;
+}
+
+.subtituloBienvenida {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.formContent {
+  display: flex;
+  flex-direction: column;
+  min-height: 400px; /* Prevenir saltos bruscos de altura */
+}
+
+/* Animación global para las transiciones de pasos */
+:global(.animacion-paso) {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

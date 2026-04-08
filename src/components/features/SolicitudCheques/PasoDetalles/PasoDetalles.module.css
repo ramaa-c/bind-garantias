@@ -1,0 +1,124 @@
+.radioGroup {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.radioCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: rgba(30, 30, 30, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.radioCard:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.radioCard.selected {
+  background: rgba(245, 244, 0, 0.05);
+  border-color: #f5f400;
+}
+
+.radioIcon {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.2s ease;
+}
+
+.radioCard.selected .radioIcon {
+  color: #f5f400;
+}
+
+.radioLabel {
+  font-family: 'Metropolis', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.errorText {
+  color: #ff4d4f;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: block;
+}
+
+.dynamicForm {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inputAnim {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.textareaWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Metropolis', sans-serif;
+  font-weight: 500;
+}
+
+.optional {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  font-weight: normal;
+}
+
+.textarea {
+  width: 100%;
+  padding: 1rem;
+  background: rgba(30, 30, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: #fff;
+  font-family: 'Museo', sans-serif;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 100px;
+  transition: all 0.2s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #f5f400;
+  background: rgba(40, 40, 40, 0.8);
+  box-shadow: 0 0 0 1px rgba(245, 244, 0, 0.5);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 3rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

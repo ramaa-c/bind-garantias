@@ -9,6 +9,7 @@ import Cheques from "./pages/Cheques";
 import Prestamos from "./pages/Prestamos";
 import Pagare from "./pages/Pagare";
 import Solicitudes from "./pages/Solicitudes";
+import SolicitudCheques from "./pages/SolicitudCheques";
 import FirmaDocumento from "./pages/FirmaDocumento";
 import AceptarTerminos from "./pages/AceptarTerminos";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
@@ -62,6 +63,14 @@ function App() {
           element={
             <DashboardLayout>
               <Cheques />
+            </DashboardLayout>
+          }
+        />
+        <Route
+          path="/solicitud-cheques"
+          element={
+            <DashboardLayout>
+              <SolicitudCheques />
             </DashboardLayout>
           }
         />

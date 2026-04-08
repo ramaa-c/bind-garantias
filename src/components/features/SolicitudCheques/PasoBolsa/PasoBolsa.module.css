@@ -1,0 +1,123 @@
+.listContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: rgba(30, 30, 30, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.listItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.listItemSelected {
+  background: rgba(245, 244, 0, 0.05);
+  border-color: #f5f400;
+}
+
+.itemLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.agentIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.25rem;
+}
+
+.listItemSelected .agentIcon {
+  background: #f5f400;
+  color: #1e1e1e;
+}
+
+.itemName {
+  font-family: 'Metropolis', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #fff;
+}
+
+.emptyCircle {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.checkIcon {
+  font-size: 1.5rem;
+  color: #f5f400;
+}
+
+.expandedArea {
+  padding: 1rem 1.25rem 2rem 1.25rem;
+  background: rgba(20, 20, 20, 0.5);
+  border: 1px solid rgba(245, 244, 0, 0.3);
+  border-top: none;
+  border-radius: 0 0 0.75rem 0.75rem;
+  margin-top: -1rem; /* solapa visualmente con la card */
+  animation: slideDown 0.3s ease-out forwards;
+}
+
+.inputWrapper {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.btnActionWrapper {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.altSection {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.altText {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.altButtonWrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.iconRight {
+  margin-left: 0.5rem;
+}

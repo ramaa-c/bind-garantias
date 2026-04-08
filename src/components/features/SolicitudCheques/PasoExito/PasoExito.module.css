@@ -1,0 +1,234 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* HERO SECTION */
+.hero {
+  position: relative;
+  background: rgba(30, 30, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 2.5rem 2rem;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.heroGlow {
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 140%;
+  height: 140%;
+  background: radial-gradient(
+    circle,
+    rgba(245, 244, 0, 0.1) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.5rem;
+  z-index: 1;
+}
+
+@media (min-width: 768px) {
+  .heroContent {
+    flex-direction: row;
+    text-align: left;
+    align-items: flex-start;
+  }
+}
+
+.heroIcon {
+  font-size: 4rem;
+  color: #f5f400;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 10px rgba(245, 244, 0, 0.5));
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.heroSubtitle {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.heroTitle {
+  font-family: 'Metropolis', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-family: 'Metropolis', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 1.5rem;
+}
+
+/* STEPS */
+.stepsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stepCard {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  background: rgba(30, 30, 30, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+}
+
+.stepNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(76, 101, 230, 0.1);
+  border: 1px solid rgba(76, 101, 230, 0.3);
+  color: #4c65e6;
+  font-family: 'Metropolis', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stepTitle {
+  font-family: 'Metropolis', sans-serif;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.stepText {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+}
+
+.textHighlight {
+  color: #f5f400;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.textHighlight:hover {
+  text-decoration: underline;
+}
+
+.textMuted {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+.mtSmall {
+  margin-top: 1rem;
+}
+
+/* DOWNLOAD BOX */
+.downloadBox {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .downloadBox {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.downloadInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #fff;
+  font-weight: 500;
+}
+
+.downloadIcon {
+  font-size: 1.5rem;
+  color: #4c65e6;
+}
+
+.epymeBtnWrapper {
+  margin-top: 1rem;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 2.5rem 0 1.5rem 0;
+}
+
+.actionsLeft {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.borderless {
+  border: none !important;
+  background: transparent !important;
+  padding-left: 0 !important;
+}
+
+.borderless:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  padding-left: 1rem !important;
+}
+
+.iconMarginRight {
+  margin-right: 0.5rem;
+}
+
+.iconMarginLeft {
+  margin-left: 0.5rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
