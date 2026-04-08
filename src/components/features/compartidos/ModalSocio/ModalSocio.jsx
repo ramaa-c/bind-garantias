@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { FiUser, FiX } from "react-icons/fi";
 import { InputFlotante, Button, CargaArchivos } from "../../../ui";
@@ -131,7 +132,7 @@ export default function ModalSocio({
     });
   };
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayMouseDown}
@@ -249,6 +250,7 @@ export default function ModalSocio({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

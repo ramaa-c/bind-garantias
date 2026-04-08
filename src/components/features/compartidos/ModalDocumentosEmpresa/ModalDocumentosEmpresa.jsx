@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { FiFileText, FiX } from "react-icons/fi";
 import { Acordeon, Button, CargaArchivos } from "../../../ui";
 import styles from "./ModalDocumentosEmpresa.module.css";
@@ -37,7 +38,7 @@ export const ModalDocumentosEmpresa = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayMouseDown}
@@ -124,6 +125,7 @@ export const ModalDocumentosEmpresa = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
