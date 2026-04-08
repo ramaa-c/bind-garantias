@@ -40,7 +40,8 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
   const isProvValido = !errorProv && provLocal.trim().length >= 3;
   const isLocValido = !errorLoc && locLocal.trim().length >= 3;
 
-  const handleGuardar = async () => {
+  const handleGuardar = async (e) => {
+    e.preventDefault();
     setIntentoGuardar(true);
 
     if (isDirValido && isProvValido && isLocValido) {
@@ -73,26 +74,16 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayMouseDown}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.stopPropagation();
-          onClose();
-        }
-      }}
     >
       <div
         className={styles.modalContainer}
-        onClick={(e) => e.stopPropagation()}
-        role="presentation"
-        onKeyDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
-        <button className={styles.btnClose} onClick={onClose}>
+        <button type="button" className={styles.btnClose} onClick={onClose}>
           <FiX size={20} />
         </button>
 
-        <div className={styles.body}>
+        <form className={styles.body} onSubmit={handleGuardar}>
           <div className={styles.iconWrapper}>
             <FiMapPin size={30} />
           </div>
@@ -130,14 +121,14 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
 
           <div className={styles.btnSave}>
             <Button
+              type="submit"
               variant="primary"
-              onClick={handleGuardar}
               style={{ width: "100%", minHeight: "3rem" }}
             >
               GUARDAR DATOS
             </Button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { FiX } from 'react-icons/fi';
+import { useEscape } from '../../../hooks/useEscape';
 import styles from './Modal.module.css';
 
 export const Modal = ({ 
@@ -11,6 +12,8 @@ export const Modal = ({
   maxWidth = '600px'
 }) => {
   
+  useEscape(onClose, isOpen);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -28,24 +31,17 @@ export const Modal = ({
   return createPortal(
     <div
       className={styles.overlay}
-      onClick={onClose}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          onClose();
-        }
-      }}
+      onMouseDown={onClose}
     >
       <div 
         className={styles.modalBox} 
         style={{ maxWidth }}
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        onKeyDown={(e) => e.stopPropagation()}
       >
         <button 
+          type="button"
           className={styles.closeButton} 
           onClick={onClose} 
           aria-label="Cerrar modal"

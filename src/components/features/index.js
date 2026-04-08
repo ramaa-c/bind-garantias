@@ -9,7 +9,7 @@ export * from './compartidos/SocioItem/SocioItem';
 export * from './compartidos/PanelDudas/PanelDudas';
 export { default as ModalSocio } from './compartidos/ModalSocio/ModalSocio';
 export * from './compartidos/ModalDocumentosEmpresa/ModalDocumentosEmpresa';
-export * from './Compartidos/ModalRepresentante/ModalRepresentante';
+export * from './compartidos/ModalRepresentante/ModalRepresentante';
 export * from './compartidos/SocioTaskCard/SocioTaskCard';
 export { default as ModalUbicacion } from "./compartidos/ModalUbicacion/ModalUbicacion";
 export { default as ModalContacto } from "./compartidos/ModalContacto/ModalContacto";
