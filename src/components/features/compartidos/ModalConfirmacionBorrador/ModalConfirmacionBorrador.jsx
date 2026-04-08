@@ -1,10 +1,11 @@
 import React, { useRef } from "react";
+import { createPortal } from "react-dom";
 import { FiAlertCircle, FiX } from "react-icons/fi";
 import { Button } from "../../../ui";
 import { useEscape } from "../../../../hooks/useEscape";
 import styles from "./ModalConfirmacionBorrador.module.css";
 
-export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }) {
+export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm, onContinueBorrador }) {
   const modalRef = useRef(null);
 
   useEscape(onClose, isOpen);
@@ -17,7 +18,7 @@ export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }
     }
   };
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayClick}
@@ -55,7 +56,7 @@ export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={onContinueBorrador}
               className={styles.btnCancel}
             >
               Continuar borrador
@@ -63,6 +64,7 @@ export default function ModalConfirmacionBorrador({ isOpen, onClose, onConfirm }
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
