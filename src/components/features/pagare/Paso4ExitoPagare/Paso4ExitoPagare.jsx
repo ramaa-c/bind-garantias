@@ -1,13 +1,11 @@
 import React from "react";
-import { FiCheckCircle, FiArrowLeft, FiClock } from "react-icons/fi";
-import { Button } from "../../../ui";
+import { FiCheckCircle, FiClock } from "react-icons/fi";
+import { BotonVolver } from "../../../ui"; // Cambiamos Button por BotonVolver
 import styles from "./Paso4ExitoPagare.module.css";
 
 export default function Paso4ExitoPagare({ onVolverLista }) {
   return (
     <div className={styles.container}>
-      
-      {/* HERO DE ÉXITO */}
       <div className={styles.hero}>
         <div className={styles.heroGlow}></div>
         <div className={styles.heroContent}>
@@ -23,7 +21,6 @@ export default function Paso4ExitoPagare({ onVolverLista }) {
         </div>
       </div>
 
-      {/* TARJETA DE NOTIFICACIÓN */}
       <div className={styles.stepsContainer}>
         <div className={styles.stepCard}>
           <div className={styles.stepIconBadge}>
@@ -44,15 +41,11 @@ export default function Paso4ExitoPagare({ onVolverLista }) {
 
       <hr className={styles.divider} />
 
-      {/* ACCIONES */}
       <div className={styles.actionsLeft}>
-        <Button
-          variant="outline"
+        <BotonVolver
+          texto="VOLVER A LA LISTA DE SOLICITUDES"
           onClick={onVolverLista}
-          style={{ border: 'none' }}
-        >
-          <FiArrowLeft className={styles.iconMarginRight} /> VOLVER A LA LISTA DE SOLICITUDES
-        </Button>
+        />
       </div>
     </div>
   );

@@ -4,11 +4,10 @@ import {
   FiCheckCircle,
   FiDownload,
   FiExternalLink,
-  FiArrowLeft,
   FiFileText,
   FiInfo,
 } from "react-icons/fi";
-import { Button, Alert } from "../../../ui";
+import { Button, Alert, BotonVolver } from "../../../ui";
 import styles from "./PasoExito.module.css";
 
 export default function PasoExito({ onVolverInicio }) {
@@ -43,19 +42,15 @@ export default function PasoExito({ onVolverInicio }) {
 
       <div className={styles.stepsContainer}>
         {tipoCheque === "fisico" ? (
-          /* PASOS PARA CHEQUE FÍSICO */
           <>
             <div className={styles.stepCard}>
               <div className={styles.stepNumber}>1</div>
               <div className={styles.stepContent}>
-                <h4 className={styles.stepTitle}>
-                  Descargá la Nota de Remisión
-                </h4>
+                <h4 className={styles.stepTitle}>Descargá la Nota de Remisión</h4>
                 <p className={styles.stepText}>
                   Descargá este documento, firmalo y adjuntalo junto con el cheque
                   físico para enviarlo por correo postal o entregarlo en nuestras oficinas.
                 </p>
-
                 <div className={styles.downloadBox}>
                   <div className={styles.downloadInfo}>
                     <FiFileText className={styles.downloadIcon} />
@@ -70,15 +65,13 @@ export default function PasoExito({ onVolverInicio }) {
             <div className={styles.stepCard}>
               <div className={styles.stepNumber}>2</div>
               <div className={styles.stepContent}>
-                <h4 className={styles.stepTitle}>
-                  Endosá y enviá el cheque
-                </h4>
+                <h4 className={styles.stepTitle}>Endosá y enviá el cheque</h4>
                 <p className={styles.stepText}>
                   Asegurate de endosar correctamente el cheque a nombre de
                   BIND Garantías antes de enviarlo.
                 </p>
                 <div className={styles.mtSmall}>
-                  <Button type="button" variant="link" size="sm">
+                  <Button type="button" variant="link" size="sm" style={{ padding: 0 }}>
                     <FiInfo className={styles.iconMarginRight} /> Ver instructivo de endoso
                   </Button>
                 </div>
@@ -86,14 +79,11 @@ export default function PasoExito({ onVolverInicio }) {
             </div>
           </>
         ) : (
-          /* PASOS PARA ECHECK */
           <>
             <div className={styles.stepCard}>
               <div className={styles.stepNumber}>1</div>
               <div className={styles.stepContent}>
-                <h4 className={styles.stepTitle}>
-                  Aceptá el eCheck en tu Home Banking
-                </h4>
+                <h4 className={styles.stepTitle}>Aceptá el eCheck en tu Home Banking</h4>
                 <p className={styles.stepText}>
                   Ingresá a tu plataforma bancaria y aceptá el eCheck
                   correspondiente al ID Coelsa ingresado.
@@ -103,9 +93,7 @@ export default function PasoExito({ onVolverInicio }) {
             <div className={styles.stepCard}>
               <div className={styles.stepNumber}>2</div>
               <div className={styles.stepContent}>
-                <h4 className={styles.stepTitle}>
-                  Endosá a BIND Garantías a través de Epyme
-                </h4>
+                <h4 className={styles.stepTitle}>Endosá a BIND Garantías a través de Epyme</h4>
                 <p className={styles.stepText}>
                   Dirigite a la plataforma Epyme Caja de Valores para realizar el endoso
                   del eCheck a favor de BIND Garantías.
@@ -128,17 +116,11 @@ export default function PasoExito({ onVolverInicio }) {
 
       <hr className={styles.divider} />
 
-      {/* --- ACCIONES --- */}
       <div className={styles.actionsLeft}>
-        <Button
-          type="button"
-          variant="outline"
+        <BotonVolver
+          texto="VOLVER A LA LISTA DE SOLICITUDES"
           onClick={handleFinalizar}
-          className={styles.borderless}
-        >
-          <FiArrowLeft className={styles.iconMarginRight} /> VOLVER A LA LISTA
-          DE SOLICITUDES
-        </Button>
+        />
       </div>
     </div>
   );

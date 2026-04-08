@@ -40,8 +40,7 @@ export const solicitudChequesSchema = z
       .regex(/^\d{11}$/, { message: "Debe contener 11 números sin guiones" }),
 
     // PASO 3 - Bolsa
-    sociedadBolsa: z.string().optional().or(z.literal("")),
-    numeroCuentaBolsa: z.string().optional().or(z.literal("")),
+    sociedadBolsa: z.string().min(1, { message: "Seleccioná una sociedad de bolsa" }),
 
     // PASO 4 - Detalles
     tipoCheque: z.enum(["fisico", "echeck"], {
@@ -52,19 +51,6 @@ export const solicitudChequesSchema = z
     mensaje: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    // Validar cuenta bolsa si seleccionó bolsa
-    if (
-      data.sociedadBolsa &&
-      data.sociedadBolsa !== "" &&
-      (!data.numeroCuentaBolsa || data.numeroCuentaBolsa.trim() === "")
-    ) {
-      ctx.addIssue({
-        path: ["numeroCuentaBolsa"],
-        message:
-          "El número de cuenta es obligatorio si seleccionaste una bolsa",
-        code: z.ZodIssueCode.custom,
-      });
-    }
 
     // Validar CMC7 si es fisico
     if (

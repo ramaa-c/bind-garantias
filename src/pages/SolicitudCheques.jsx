@@ -99,13 +99,9 @@ export default function SolicitudCheques() {
   };
 
   // Paso 3: Bolsa
-  const avanzarConBolsa = async () => {
-    if (
-      (await trigger(["sociedadBolsa", "numeroCuentaBolsa"])) &&
-      bolsaSeleccionada !== ""
-    ) {
-      setPasoActual(4);
-    }
+  const avanzarConBolsa = () => {
+
+    setPasoActual(4);
   };
 
   const avanzarSinBolsa = () => {
@@ -116,8 +112,22 @@ export default function SolicitudCheques() {
 
   // Paso 4: Detalles
   const handleContinuarDetalles = async () => {
-    if (await trigger(["tipoCheque", "cmc7", "idCoelsa"])) {
+    // 1. Obtenemos el tipo seleccionado actualmente
+    const tipo = watch("tipoCheque");
+
+    // 2. Definimos qué campos son obligatorios validar según el caso
+    const camposAValidar = ["tipoCheque"];
+    if (tipo === "fisico") camposAValidar.push("cmc7");
+    if (tipo === "echeck") camposAValidar.push("idCoelsa");
+
+    // 3. Solo disparamos el trigger para los campos que corresponden
+    const esValido = await trigger(camposAValidar);
+
+    if (esValido) {
+      // Si todo está ok, disparamos el submit final
       handleSubmit(onSubmitFinal)();
+    } else {
+      console.log("Errores de validación en Detalles:", metodosFormulario.formState.errors);
     }
   };
 
@@ -171,15 +181,14 @@ export default function SolicitudCheques() {
                   pasoActual < 5 && (
                     <BarraProgreso
                       hitos={[
-                        "Simulador",
-                        "Emisor",
-                        "Sociedad de Bolsa",
-                        "Detalles",
+                        "SIMULADOR",
+                        "EMISOR",
+                        "SOCIEDAD DE BOLSA",
+                        "DETALLES",
                       ]}
                       hitoActual={pasoActual}
                     />
                   )}
-
                 {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
@@ -216,7 +225,6 @@ export default function SolicitudCheques() {
                       {pasoActual === 3 && (
                         <PasoBolsa
                           avanzarConBolsa={avanzarConBolsa}
-                          avanzarSinBolsa={avanzarSinBolsa}
                         />
                       )}
 

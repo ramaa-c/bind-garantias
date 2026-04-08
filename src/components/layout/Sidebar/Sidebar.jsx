@@ -62,7 +62,16 @@ export default function Sidebar({ isOpen, onClose }) {
             onClose();
           }}
         >
-          <FiCreditCard className={styles.icon} /> Cheques
+          <FiCreditCard className={styles.icon} /> Alta de Cheques
+        </button>
+        <button
+          className={`${styles.link} ${isActive("/solicitud-cheques") ? styles.active : ""}`}
+          onClick={() => {
+            navigate("/solicitud-cheques");
+            onClose();
+          }}
+        >
+          <FiCreditCard className={styles.icon} /> Operar Cheques
         </button>
         <button
           className={`${styles.link} ${isActive("/prestamos") ? styles.active : ""}`}
