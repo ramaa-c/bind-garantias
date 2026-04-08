@@ -97,6 +97,11 @@ export default function Solicitudes() {
     setDraftKeyPendiente(null);
   };
 
+  const handleCloseModalOnly = () => {
+    setFlujoPendiente(null);
+    setDraftKeyPendiente(null);
+  };
+
   return (
     <div className={styles.pageContainer}>
       <header className={styles.header}>
@@ -171,8 +176,9 @@ export default function Solicitudes() {
       {/* Modal Interceptor */}
       <ModalConfirmacionBorrador
         isOpen={!!flujoPendiente}
-        onClose={handleCloseContinueDraft}
+        onClose={handleCloseModalOnly}
         onConfirm={handleConfirmStartNew}
+        onContinueBorrador={handleCloseContinueDraft}
       />
     </div>
   );

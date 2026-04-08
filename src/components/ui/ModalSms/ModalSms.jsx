@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { createPortal } from "react-dom";
 import { FiSmartphone, FiX } from "react-icons/fi";
 import { Button, InputFlotante } from "../";
 import { useEscape } from "../../../hooks/useEscape";
@@ -23,7 +24,7 @@ export default function ModalSms({
     }
   };
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={handleOverlayClick}
@@ -84,6 +85,7 @@ export default function ModalSms({
           </p>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

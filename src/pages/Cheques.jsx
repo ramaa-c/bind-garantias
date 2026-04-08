@@ -346,6 +346,7 @@ export default function Cheques() {
         isOpen={isModalReiniciarAbierto}
         onClose={() => setIsModalReiniciarAbierto(false)}
         onConfirm={confirmarReinicioAlta}
+        onContinueBorrador={() => setIsModalReiniciarAbierto(false)}
       />
       <ModalSms
         isOpen={mostrarModal}
