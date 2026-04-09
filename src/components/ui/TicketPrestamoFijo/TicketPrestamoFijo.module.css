@@ -1,0 +1,166 @@
+.ticketContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  animation: fadeIn 0.5s ease;
+}
+
+.ticketBox {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+  border: 1px solid #333;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ticketHeader {
+  text-align: left;
+  border-bottom: 1px dashed #444;
+  padding-bottom: 1.5rem;
+}
+
+.ticketTitle {
+  color: var(--color-azul-bind);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* --- TABLA DE CARACTERÍSTICAS --- */
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.infoTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.columnHeader {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.tdLabelPlazo {
+  vertical-align: top;
+  width: 40%;
+  padding-right: 2rem;
+  border-right: 1px solid #444;
+}
+
+.cellContent {
+  font-size: 1rem;
+  color: var(--white);
+  font-weight: 500;
+}
+
+.tdDataGroups {
+  vertical-align: top;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding-left: 2rem;
+}
+
+.dataRow {
+  display: flex;
+  justify-content: space-between;
+  color: #ccc;
+  font-size: 0.95rem;
+}
+
+.dataLabel {
+  color: #ccc;
+}
+
+.dataValue {
+  color: var(--white);
+  font-weight: 500;
+  text-align: right;
+}
+
+.dataUnidad {
+  color: #aaa;
+  font-size: 0.85rem;
+  font-weight: 400;
+  margin-left: 0.3rem;
+}
+
+/* --- ACCIONES Y ALERTAS --- */
+.actionsFlex {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.actionsFlex > button:first-child {
+  width: 100%;
+  max-width: 22rem;
+}
+
+.textoAlerta {
+  color: #aaa;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  text-align: center;
+  margin: 0;
+  padding: 0 1rem;
+}
+
+/* --- RESPONSIVIDAD --- */
+@media (min-width: 48rem) {
+  .ticketBox {
+    padding: 2.5rem;
+  }
+}
+
+@media (max-width: 48rem) {
+  .infoTable,
+  .infoTable tbody,
+  .infoTable tr,
+  .infoTable td {
+    display: block;
+  }
+  .tdLabelPlazo {
+    width: 100%;
+    padding-right: 0;
+    border-right: none;
+    border-bottom: 1px solid #444;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+  }
+  .tdDataGroups {
+    padding-left: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.625rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

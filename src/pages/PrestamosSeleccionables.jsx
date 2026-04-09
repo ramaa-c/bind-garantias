@@ -4,16 +4,15 @@ import { useFormPersist, getPersistedFormData } from "../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-// TODO: Asegúrate de tener o crear el esquema para pagaré
-import { prestamosSchema } from "../schemas/prestamosSchema"; 
+import { prestamosSchema } from "../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../components/ui";
 import { PanelDudas, ModalConfirmacionBorrador } from "../components/features";
-import styles from "./Prestamos.module.css"; // Puedes reutilizar el CSS
-import { PagarePasos } from "./PagarePasos"; // Componente de pasos para Pagaré
+import styles from "./Prestamos.module.css";
+import { PrestamosSeleccionablesPasos } from "./PrestamosSeleccionablesPasos";
 
-const STORAGE_KEY = "draft_pagare";
+const STORAGE_KEY = "draft_prestamos";
 
-export default function Pagare() {
+export default function Prestamos() {
   const navigate = useNavigate();
 
   const metodosFormulario = useForm({
@@ -22,8 +21,8 @@ export default function Pagare() {
     shouldUnregister: false,
     defaultValues: getPersistedFormData(STORAGE_KEY, {
       moneda: "Pesos",
-      tipoProducto: "pagare",          // Set por defecto
-      tipoCalculo: "por_monto_pagare", // Set por defecto
+      tipoProducto: "prestamo",
+      tipoCalculo: "",
       monto: "",
       plazo: "",
       fechaPago: "",
@@ -80,8 +79,8 @@ export default function Pagare() {
     clearStorage();
     metodosFormulario.reset({
       moneda: "Pesos",
-      tipoProducto: "pagare",
-      tipoCalculo: "por_monto_pagare",
+      tipoProducto: "prestamo",
+      tipoCalculo: "",
       monto: "",
       plazo: "",
       fechaPago: "",
@@ -102,7 +101,10 @@ export default function Pagare() {
     setPasoActual(1);
   };
 
-  const handleReiniciarAlta = () => setIsModalReiniciarAbierto(true);
+  const handleReiniciarAlta = () => {
+    setIsModalReiniciarAbierto(true);
+  };
+
   const confirmarReinicioAlta = () => {
     handleResetFlujoCompleto();
     setIsModalReiniciarAbierto(false);
@@ -111,6 +113,7 @@ export default function Pagare() {
   const abrirModalSms = async () => {
     if (await trigger("celular")) updateUiState({ mostrarModal: true });
   };
+
   const confirmarSms = () => updateUiState({ mostrarModal: false });
 
   const handleContinuarPaso2 = async () => {
@@ -118,17 +121,19 @@ export default function Pagare() {
       setPasoActual(3);
   };
 
-  const onSubmitFinal = () => setPasoActual(7);
+  const onSubmitFinal = () => {
+    setPasoActual(7);
+  };
 
   // Paso 3
   const handleCalcularSimulador = async () => {
-    if (await trigger(["monto", "tipoProducto"])) {
+    if (await trigger(["monto", "tipoProducto", "plazo"])) {
       updateUiState({ mostrarResultados: true });
     }
   };
 
   const handleContinuarSimulador = async () => {
-    if (await trigger(["monto", "tipoProducto"])) {
+    if (await trigger(["monto", "tipoProducto", "plazo"])) {
       setPasoActual(4);
       updateUiState({
         faseSocio: socios.length === 0 ? "ingresar_cuit" : "lista",
@@ -138,35 +143,63 @@ export default function Pagare() {
 
   // Paso 4
   const iniciarCargaSocio = () => {
-    updateUiState({ tempSocioCuit: "", tempSocioParticipacion: "", faseSocio: "ingresar_cuit" });
+    updateUiState({
+      tempSocioCuit: "",
+      tempSocioParticipacion: "",
+      faseSocio: "ingresar_cuit",
+    });
   };
+
   const validarCuitSocio = () => {
-    updateUiState({ tempSocioNombre: "SEOANE SUAREZ MARINA", faseSocio: "completar_datos" });
+    updateUiState({
+      tempSocioNombre: "SEOANE SUAREZ MARINA",
+      faseSocio: "completar_datos",
+    });
   };
+
   const guardarSocio = () => {
     if (!uiState.tempSocioParticipacion) return;
-    setSocios([...socios, { cuit: uiState.tempSocioCuit, nombre: uiState.tempSocioNombre, participacion: uiState.tempSocioParticipacion }]);
+    setSocios([
+      ...socios,
+      {
+        cuit: uiState.tempSocioCuit,
+        nombre: uiState.tempSocioNombre,
+        participacion: uiState.tempSocioParticipacion,
+      },
+    ]);
     updateUiState({ faseSocio: "lista" });
   };
+
   const editarSocio = (index) => {
-    const socio = socios[index];
-    updateUiState({ tempSocioCuit: socio.cuit, tempSocioNombre: socio.nombre, tempSocioParticipacion: socio.participacion, faseSocio: "completar_datos" });
+    const socioAEditar = socios[index];
+    updateUiState({
+      tempSocioCuit: socioAEditar.cuit,
+      tempSocioNombre: socioAEditar.nombre,
+      tempSocioParticipacion: socioAEditar.participacion,
+      faseSocio: "completar_datos",
+    });
     setSocios(socios.filter((_, i) => i !== index));
   };
+
   const eliminarSocio = (index) => {
     const nuevos = socios.filter((_, i) => i !== index);
     setSocios(nuevos);
     if (nuevos.length === 0) updateUiState({ faseSocio: "ingresar_cuit" });
   };
+
   const continuarAlProximoPaso = () => setPasoActual(5);
 
   // Paso 5
   const toggleDoc = (seccion) => {
-    updateUiState({ docExpandido: uiState.docExpandido === seccion ? "" : seccion });
+    updateUiState({
+      docExpandido: uiState.docExpandido === seccion ? "" : seccion,
+    });
   };
+
   const avanzarAlExito = async () => {
     const okFacturacion = await trigger("emailFacturacion");
     const representantes = metodosFormulario.getValues("representantes");
+
     if (okFacturacion && representantes?.length > 0) {
       handleSubmit(onSubmitFinal)();
     }
@@ -179,16 +212,26 @@ export default function Pagare() {
           <div className={styles.navegacionTop}>
             <div className={styles.botonesNavegacion}>
               {pasoActual > 1 && pasoActual < 7 && (
-                <BotonVolver onClick={() => {
-                  handleVolver();
-                  if (pasoActual === 3) updateUiState({ mostrarResultados: false });
-                }} />
+                <BotonVolver
+                  onClick={() => {
+                    handleVolver();
+                    if (pasoActual === 3)
+                      updateUiState({ mostrarResultados: false });
+                  }}
+                />
               )}
               {pasoActual === 1 && (
-                <BotonVolver onClick={() => navigate("/inicio")} texto="Volver a la lista" />
+                <BotonVolver
+                  onClick={() => navigate("/inicio")}
+                  texto="Volver a la lista"
+                />
               )}
               {pasoActual < 7 && (
-                <BotonVolver icon={FiRotateCcw} onClick={handleReiniciarAlta} texto="Reiniciar alta" />
+                <BotonVolver
+                  icon={FiRotateCcw}
+                  onClick={handleReiniciarAlta}
+                  texto="Reiniciar alta"
+                />
               )}
             </div>
             <div></div>
@@ -199,24 +242,35 @@ export default function Pagare() {
               <div className={styles.seccionFormulario}>
                 {pasoActual === 1 && (
                   <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Solicitud de Línea de Pagaré</h1>
+                    <h1 className={styles.tituloBienvenida}>
+                      Solicitud de Línea de Préstamo
+                    </h1>
                     <p className={styles.subtituloBienvenida}>
-                      Emití y negociá pagarés bursátiles de forma ágil y 100% online.
+                      Obtené financiación para tu empresa de forma ágil y 100%
+                      online.
                     </p>
                   </div>
                 )}
 
-                {pasoActual >= 2 && pasoActual < 7 && (
-                  <BarraProgreso
-                    hitos={["Empresa", "Operación", "Socios", "Documentos"]}
-                    hitoActual={pasoActual === 3 ? 2 : pasoActual === 4 ? 3 : pasoActual === 5 ? 4 : 1}
-                  />
-                )}
+                {pasoActual >= 2 &&
+                  pasoActual < 7 &&
+                  (() => {
+                    let hitoVisual = 1;
+                    if (pasoActual === 3) hitoVisual = 2;
+                    if (pasoActual === 4) hitoVisual = 3;
+                    if (pasoActual === 5) hitoVisual = 4;
+                    return (
+                      <BarraProgreso
+                        hitos={["Empresa", "Operación", "Socios", "Documentos"]}
+                        hitoActual={hitoVisual}
+                      />
+                    );
+                  })()}
 
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">
-                      <PagarePasos
+                      <PrestamosSeleccionablesPasos
                         pasoActual={pasoActual}
                         uiState={uiState}
                         updateUiState={updateUiState}
