@@ -6,6 +6,7 @@ import CrearClave from "./pages/CrearClave";
 import ConfirmarCorreo from "./pages/ConfirmarCorreo";
 import Inicio from "./pages/Inicio";
 import Cheques from "./pages/Cheques";
+import CargaMasivaCheques from "./pages/CargaMasivaCheques";
 import Prestamos from "./pages/Prestamos";
 import Pagare from "./pages/Pagare";
 import Solicitudes from "./pages/Solicitudes";
@@ -71,6 +72,15 @@ function App() {
           element={
             <DashboardLayout>
               <SolicitudCheques />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/carga-masiva-cheques"
+          element={
+            <DashboardLayout>
+              <CargaMasivaCheques />
             </DashboardLayout>
           }
         />

@@ -25,6 +25,12 @@ export { default as PasoBolsa } from './SolicitudCheques/PasoBolsa/PasoBolsa';
 export { default as PasoDetalles } from './SolicitudCheques/PasoDetalles/PasoDetalles';
 export { default as PasoExito } from './SolicitudCheques/PasoExito/PasoExito';
 
+// --- CARGA MASIVA CHEQUES ---
+export * from './CargaMasivaCheques/Paso1CargaMasiva/Paso1CargaMasiva';
+export * from './CargaMasivaCheques/Paso2RevisionCheques/Paso2RevisionCheques';
+export * from './CargaMasivaCheques/Paso3Confirmacion/Paso3Confirmacion';
+export * from './CargaMasivaCheques/Paso4ExitoEpyme/Paso4ExitoEpyme';
+
 // --- PAGARE ---
 export { default as Paso1SimuladorPagare } from './pagare/Paso1SimuladorPagare/Paso1SimuladorPagare';
 export { default as Paso2AgentePagare } from './pagare/Paso2AgentePagare/Paso2AgentePagare';

@@ -74,6 +74,15 @@ export default function Sidebar({ isOpen, onClose }) {
           <FiCreditCard className={styles.icon} /> Operar Cheques
         </button>
         <button
+          className={`${styles.link} ${isActive("/carga-masiva-cheques") ? styles.active : ""}`}
+          onClick={() => {
+            navigate("/carga-masiva-cheques");
+            onClose();
+          }}
+        >
+          <FiCreditCard className={styles.icon} /> Carga Masiva Cheques
+        </button>
+        <button
           className={`${styles.link} ${isActive("/prestamos") ? styles.active : ""}`}
           onClick={() => {
             navigate("/prestamos");
