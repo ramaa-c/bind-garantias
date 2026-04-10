@@ -100,24 +100,18 @@ export const chequesSchema = z
       });
     }
 
-    const esFechaEspecifica =
-      data.tipoCalculo === "por_monto_cheque" ||
-      data.tipoCalculo === "por_monto_pagare";
+    if (data.tipoProducto !== "prestamo_fijo") {
+      const esFechaEspecifica =
+        data.tipoCalculo === "por_monto_cheque" ||
+        data.tipoCalculo === "por_monto_pagare";
+      
+      const campoRequerido = esFechaEspecifica ? "fechaPago" : "plazo";
 
-    if (esFechaEspecifica) {
-      if (!data.fechaPago || data.fechaPago.trim() === "") {
+      if (!data[campoRequerido] || data[campoRequerido].trim() === "") {
         ctx.addIssue({
-          path: ["fechaPago"],
           code: z.ZodIssueCode.custom,
-          message: "La fecha de pago es requerida",
-        });
-      }
-    } else {
-      if (!data.plazo || data.plazo.trim() === "") {
-        ctx.addIssue({
-          path: ["plazo"],
-          code: z.ZodIssueCode.custom,
-          message: "El plazo es requerido",
+          message: "Este campo es obligatorio",
+          path: [campoRequerido],
         });
       }
     }

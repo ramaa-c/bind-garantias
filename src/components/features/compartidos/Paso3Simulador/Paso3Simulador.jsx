@@ -37,6 +37,8 @@ export default function Paso3Simulador({
 }) {
   const { register, control, trigger, setValue } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
+  const errorFechaPago = errors?.fechaPago?.message;
+  const errorPlazo = errors?.plazo?.message;
   const isMontoValid = !errors.monto && dirtyFields.monto;
 
   const tipoCalculo = useWatch({
@@ -74,7 +76,9 @@ export default function Paso3Simulador({
 
     const esValido = await trigger(camposATrigger);
 
-    if (esValido) onCalcular();
+    if (esValido) {
+      onCalcular();
+    }
   };
 
   return (
@@ -124,7 +128,7 @@ export default function Paso3Simulador({
             name={campoFecha}
             label={labelFecha}
             disabled={mostrarResultados}
-            error={errors[campoFecha]?.message}
+            error={esFechaEspecifica ? errorFechaPago : errorPlazo}
           />
         )}
       </div>

@@ -94,5 +94,19 @@ export const prestamosSchema = z
           path: ["monto"],
         });
       }
+
+      const esFechaEspecifica =
+        data.tipoCalculo === "por_monto_cheque" ||
+        data.tipoCalculo === "por_monto_pagare";
+      
+      const campoRequerido = esFechaEspecifica ? "fechaPago" : "plazo";
+
+      if (!data[campoRequerido] || data[campoRequerido].trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Este campo es obligatorio",
+          path: [campoRequerido],
+        });
+      }
     }
   });
