@@ -35,15 +35,7 @@ export default function Paso3Simulador({
   labelMonto = "Monto",
   usarTicketPrestamoFijo = false,
 }) {
-  const {
-    register,
-    control,
-    trigger,
-    setError,
-    clearErrors,
-    setValue,
-    getValues,
-  } = useFormContext();
+  const { register, control, trigger, setValue } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
   const isMontoValid = !errors.monto && dirtyFields.monto;
 
@@ -78,27 +70,11 @@ export default function Paso3Simulador({
     const camposATrigger = ["moneda", "tipoProducto"];
     if (mostrarMonto) camposATrigger.push("monto");
     if (mostrarTipoCalculo) camposATrigger.push("tipoCalculo");
+    if (mostrarFecha) camposATrigger.push(campoFecha);
 
     const esValido = await trigger(camposATrigger);
 
-    if (mostrarFecha) {
-      const valorFecha = getValues(campoFecha);
-      if (!valorFecha || valorFecha.trim() === "") {
-        setError(campoFecha, {
-          type: "manual",
-          message: esFechaEspecifica
-            ? "La fecha de pago es requerida"
-            : "El plazo es requerido",
-        });
-        return;
-      } else {
-        clearErrors(campoFecha);
-      }
-    }
-
-    if (esValido) {
-      onCalcular();
-    }
+    if (esValido) onCalcular();
   };
 
   return (
@@ -144,6 +120,7 @@ export default function Paso3Simulador({
 
         {mostrarFecha && (
           <SelectFecha
+            key={campoFecha}
             name={campoFecha}
             label={labelFecha}
             disabled={mostrarResultados}
@@ -172,8 +149,7 @@ export default function Paso3Simulador({
             {textoAccion}
           </Button>
         </div>
-      ) :
-      usarTicketPrestamoFijo ? (
+      ) : usarTicketPrestamoFijo ? (
         <TicketPrestamoFijo
           datosTabla={[
             {

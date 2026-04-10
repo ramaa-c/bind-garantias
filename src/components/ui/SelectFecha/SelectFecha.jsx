@@ -17,7 +17,7 @@ export const SelectFecha = ({
   const { control } = useFormContext();
   const effectiveMinDate = minDate || new Date();
 
-  const { errors } = useFormState({ control });
+  const { errors } = useFormState({ control, name });
 
   const errorContexto = name
     .split(".")
