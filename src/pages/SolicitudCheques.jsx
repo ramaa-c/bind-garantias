@@ -12,7 +12,7 @@ import {
   PasoEmisor,
   PasoBolsa,
   PasoDetalles,
-  PasoExito
+  PasoExito,
 } from "../components/features";
 import { BarraProgreso, BotonVolver } from "../components/ui";
 import styles from "./SolicitudCheques.module.css";
@@ -40,16 +40,16 @@ export default function SolicitudCheques() {
 
   const { handleSubmit, trigger, watch, setValue, control } = metodosFormulario;
 
-  const {
-    pasoActual,
-    setPasoActual,
-    clearStorage,
-  } = useFormPersist({
+  const { pasoActual, setPasoActual, clearStorage } = useFormPersist({
     storageKey: STORAGE_KEY,
     watch,
   });
 
-  const bolsaSeleccionada = useWatch({ control, name: "sociedadBolsa", defaultValue: "" });
+  const bolsaSeleccionada = useWatch({
+    control,
+    name: "sociedadBolsa",
+    defaultValue: "",
+  });
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleVolver = () => {
@@ -100,7 +100,6 @@ export default function SolicitudCheques() {
 
   // Paso 3: Bolsa
   const avanzarConBolsa = () => {
-
     setPasoActual(4);
   };
 
@@ -112,22 +111,21 @@ export default function SolicitudCheques() {
 
   // Paso 4: Detalles
   const handleContinuarDetalles = async () => {
-    // 1. Obtenemos el tipo seleccionado actualmente
     const tipo = watch("tipoCheque");
 
-    // 2. Definimos qué campos son obligatorios validar según el caso
     const camposAValidar = ["tipoCheque"];
     if (tipo === "fisico") camposAValidar.push("cmc7");
     if (tipo === "echeck") camposAValidar.push("idCoelsa");
 
-    // 3. Solo disparamos el trigger para los campos que corresponden
     const esValido = await trigger(camposAValidar);
 
     if (esValido) {
-      // Si todo está ok, disparamos el submit final
       handleSubmit(onSubmitFinal)();
     } else {
-      console.log("Errores de validación en Detalles:", metodosFormulario.formState.errors);
+      console.log(
+        "Errores de validación en Detalles:",
+        metodosFormulario.formState.errors,
+      );
     }
   };
 
@@ -172,23 +170,23 @@ export default function SolicitudCheques() {
                       Ingreso de Cheques
                     </h1>
                     <p className={styles.subtituloBienvenida}>
-                      Simulá la operación para conocer los costos estimados antes de continuar.
+                      Simulá la operación para conocer los costos estimados
+                      antes de continuar.
                     </p>
                   </div>
                 )}
 
-                {pasoActual >= 1 &&
-                  pasoActual < 5 && (
-                    <BarraProgreso
-                      hitos={[
-                        "SIMULADOR",
-                        "EMISOR",
-                        "SOCIEDAD DE BOLSA",
-                        "DETALLES",
-                      ]}
-                      hitoActual={pasoActual}
-                    />
-                  )}
+                {pasoActual >= 1 && pasoActual < 5 && (
+                  <BarraProgreso
+                    hitos={[
+                      "SIMULADOR",
+                      "EMISOR",
+                      "SOCIEDAD DE BOLSA",
+                      "DETALLES",
+                    ]}
+                    hitoActual={pasoActual}
+                  />
+                )}
                 {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
@@ -207,7 +205,7 @@ export default function SolicitudCheques() {
                             {
                               value: "cheques_terceros",
                               label: "Cheques de terceros",
-                            }
+                            },
                           ]}
                           mostrarTipoCalculo={true}
                           labelFecha="Fecha de pago"
@@ -223,9 +221,7 @@ export default function SolicitudCheques() {
                       )}
 
                       {pasoActual === 3 && (
-                        <PasoBolsa
-                          avanzarConBolsa={avanzarConBolsa}
-                        />
+                        <PasoBolsa avanzarConBolsa={avanzarConBolsa} />
                       )}
 
                       {pasoActual === 4 && (
