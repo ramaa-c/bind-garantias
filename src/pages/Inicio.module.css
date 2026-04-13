@@ -23,7 +23,7 @@
   max-width: 76rem;
   display: flex;
   flex-direction: column;
-  gap: 2.75rem;
+  gap: 2.25rem;
 }
 
 /* ─── ANIMACIONES ─────────────────────────────────────── */
@@ -219,6 +219,43 @@
   margin-bottom: 1.25rem;
 }
 
+/* ─── TABS COMPONENT ─────────────────────────────────── */
+.tabsContainer {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 2rem;
+  padding: 0.25rem;
+  gap: 0.25rem;
+}
+
+.tabButton {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-family: var(--font-secundaria);
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+}
+
+.tabButton:hover:not(.tabActive) {
+  color: var(--white-muted);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabActive {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-amarillo-bind);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
 .sectionTitle {
   font-size: 0.7rem;
   font-weight: 400;
@@ -269,7 +306,7 @@
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
   /* Deepened shadow */
   border-radius: 1.5rem;
-  padding: 1.8rem;
+  padding: 1.6rem;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -358,6 +395,7 @@
 
 /* ─── RIGHT COLUMN ───────────────────────────────────── */
 .rightColumn {
+  margin-top: 1rem;
   animation: fadeUp 0.5s var(--ease-out) 0.1s both;
 }
 
@@ -521,7 +559,7 @@
 /* ─── DESKTOP ─────────────────────────────────────────── */
 @media (min-width: 56.25rem) {
   .inicioMainContainer {
-    padding: 3rem 2rem;
+    padding: 2.75rem 2rem;
   }
 
   .inicioHeader {
@@ -554,7 +592,7 @@
   }
 
   .sectionHeaderRow {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .actividadItem {

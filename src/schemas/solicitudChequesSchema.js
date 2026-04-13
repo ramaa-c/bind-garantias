@@ -75,4 +75,20 @@ export const solicitudChequesSchema = z
         code: z.ZodIssueCode.custom,
       });
     }
+
+    if (data.tipoProducto !== "prestamo_fijo") {
+      const esFechaEspecifica =
+        data.tipoCalculo === "por_monto_cheque" ||
+        data.tipoCalculo === "por_monto_pagare";
+      
+      const campoRequerido = esFechaEspecifica ? "fechaPago" : "plazo";
+
+      if (!data[campoRequerido] || data[campoRequerido].trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Este campo es obligatorio",
+          path: [campoRequerido],
+        });
+      }
+    }
   });

@@ -6,6 +6,7 @@ import {
   SelectFecha,
   Select,
   TicketSimulacion,
+  TicketPrestamoFijo,
 } from "../../../ui";
 import styles from "./Paso3Simulador.module.css";
 
@@ -14,7 +15,7 @@ const opcionesMoneda = [
   { value: "Dolares", label: "Dólares" },
 ];
 
-const opcionesCalculo = [
+const defaultOpcionesCalculo = [
   { value: "por_monto_factura", label: "Por monto de factura" },
   { value: "por_monto_cheque", label: "Por monto de cheque" },
 ];
@@ -25,18 +26,29 @@ export default function Paso3Simulador({
   onContinuar,
   onCancelar,
   opcionesProducto,
+  opcionesCalculo = defaultOpcionesCalculo,
   mostrarTipoCalculo = true,
+  mostrarMonto = true,
+  mostrarFecha = true,
+  textoAccion = "CALCULAR",
   labelFecha = "Fecha de pago",
   labelMonto = "Monto",
+  usarTicketPrestamoFijo = false,
 }) {
-  const { register, control, trigger, setError, clearErrors, setValue, getValues } =
-    useFormContext();
+  const { register, control, trigger, setValue } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
+  const errorFechaPago = errors?.fechaPago?.message;
+  const errorPlazo = errors?.plazo?.message;
   const isMontoValid = !errors.monto && dirtyFields.monto;
 
-  const tipoCalculo = useWatch({ control, name: "tipoCalculo", defaultValue: "" });
-  const esPorMontoCheque = tipoCalculo === "por_monto_cheque";
-  const campoFecha = esPorMontoCheque ? "fechaPago" : "plazo";
+  const tipoCalculo = useWatch({
+    control,
+    name: "tipoCalculo",
+    defaultValue: "",
+  });
+  const esFechaEspecifica =
+    tipoCalculo === "por_monto_cheque" || tipoCalculo === "por_monto_pagare";
+  const campoFecha = esFechaEspecifica ? "fechaPago" : "plazo";
 
   const montoValue = useWatch({ control, name: "monto" });
 
@@ -48,24 +60,21 @@ export default function Paso3Simulador({
     }
   }, [opcionesProducto, setValue]);
 
+  useEffect(() => {
+    if (opcionesCalculo?.length === 1 && mostrarTipoCalculo) {
+      setValue("tipoCalculo", opcionesCalculo[0].value, {
+        shouldValidate: false,
+      });
+    }
+  }, [opcionesCalculo, setValue, mostrarTipoCalculo]);
+
   const handleLocalCalcular = async () => {
-    const camposATrigger = ["moneda", "monto", "tipoProducto"];
+    const camposATrigger = ["moneda", "tipoProducto"];
+    if (mostrarMonto) camposATrigger.push("monto");
     if (mostrarTipoCalculo) camposATrigger.push("tipoCalculo");
+    if (mostrarFecha) camposATrigger.push(campoFecha);
 
     const esValido = await trigger(camposATrigger);
-
-    const valorFecha = getValues(campoFecha);
-    if (!valorFecha || valorFecha.trim() === "") {
-      setError(campoFecha, {
-        type: "manual",
-        message: esPorMontoCheque
-          ? "La fecha de pago es requerida"
-          : "El plazo es requerido",
-      });
-      return;
-    } else {
-      clearErrors(campoFecha);
-    }
 
     if (esValido) {
       onCalcular();
@@ -76,7 +85,7 @@ export default function Paso3Simulador({
     <div className={styles.container}>
       {!mostrarResultados && (
         <h2 className={styles.headerTitle}>
-          Selecciona el monto y tipo de financiación que necesitas
+          Selecciona el tipo de financiación que necesitas
         </h2>
       )}
 
@@ -113,60 +122,61 @@ export default function Paso3Simulador({
           />
         )}
 
-        <SelectFecha
-          name={campoFecha}
-          label={labelFecha}
-          disabled={mostrarResultados}
-          error={errors[campoFecha]?.message}
-        />
+        {mostrarFecha && (
+          <SelectFecha
+            key={campoFecha}
+            name={campoFecha}
+            label={labelFecha}
+            disabled={mostrarResultados}
+            error={esFechaEspecifica ? errorFechaPago : errorPlazo}
+          />
+        )}
       </div>
 
-      <div className={styles.mainForm}>
-        <div className={styles.montoSection}>
-          <InputMonto
-            label={labelMonto}
-            esValido={isMontoValid || montoValue > 0}
-            error={errors.monto?.message}
-            disabled={mostrarResultados}
-            {...register("monto")}
-          />
+      {mostrarMonto && (
+        <div className={styles.mainForm}>
+          <div className={styles.montoSection}>
+            <InputMonto
+              label={labelMonto}
+              esValido={isMontoValid || montoValue > 0}
+              error={errors.monto?.message}
+              disabled={mostrarResultados}
+              {...register("monto")}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {!mostrarResultados ? (
         <div className={styles.calcBtnWrapper}>
           <Button variant="primary" size="lg" onClick={handleLocalCalcular}>
-            CALCULAR
+            {textoAccion}
           </Button>
         </div>
+      ) : usarTicketPrestamoFijo ? (
+        <TicketPrestamoFijo
+          datosTabla={[
+            {
+              plazo: "181 a 360 días",
+              conceptos: [
+                { label: "Monto hasta", value: "$5.000.000", unidad: "" },
+                { label: "Tasa", value: "44%", unidad: "TNA" },
+                { label: "Comisión Banco", value: "1%", unidad: "Directo" },
+                { label: "Comisión SGR", value: "2%", unidad: "TNA" },
+              ],
+            },
+          ]}
+          onContinuar={onContinuar}
+          onRecalcular={onCancelar}
+        />
       ) : (
         <TicketSimulacion
           netoRecibir="$ 2.712.752"
-          filasCostos={[
-            { label: "Comisión Garantías (2.5%)", value: "$ 15.822" },
-            { label: "Intereses (43.34% TNA*)", value: "$ 254.299" },
-            { label: "Derecho bolsa", value: "$ 0" },
-            { label: "Derecho mercado (0.06%)", value: "$ 1.428" },
-            { label: "Arancel Soc Bolsa", value: "$ 6.658" },
-            { label: "Valores al cobro", value: "$ 6.000" },
-            { label: "Gestión de cobro", value: "$ 70" },
-            { label: "IVA", value: "$ 2.973" },
-          ]}
+          filasCostos={[]}
           totalCostos="$ 287.248"
           datoExtraTotal={{ label: "CFT estimado", value: "49.55% anual" }}
-          datosResumen={[
-            {
-              label: esPorMontoCheque ? "Vto del cheque" : "Plazo estimado",
-              value: "31/07/2026",
-            },
-            {
-              label: esPorMontoCheque
-                ? "Monto del cheque"
-                : "Monto a financiar",
-              value: "$ 3.000.000",
-            },
-          ]}
-          textoAlerta="Tasa promocional subvencionada. IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa."
+          datosResumen={[]}
+          textoAlerta="IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa."
           onRecalcular={onCancelar}
           onContinuar={onContinuar}
           textoBotonSecundario="Desisto de avanzar"

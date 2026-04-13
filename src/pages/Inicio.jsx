@@ -16,8 +16,20 @@ import styles from "./Inicio.module.css";
 
 // Mocks
 const solicitudesRecientes = [
-  { id: "4362", tipo: "Pagaré USD", monto: "40.000", estado: "esperando", texto: "Esperando Docs" },
-  { id: "4361", tipo: "Cheque", monto: "15.000", estado: "aprobado", texto: "Aprobado" },
+  {
+    id: "4362",
+    tipo: "Pagaré USD",
+    monto: "40.000",
+    estado: "esperando",
+    texto: "Esperando Docs",
+  },
+  {
+    id: "4361",
+    tipo: "Cheque",
+    monto: "15.000",
+    estado: "aprobado",
+    texto: "Aprobado",
+  },
 ];
 
 const hasMeaningfulData = (dataString) => {
@@ -26,7 +38,13 @@ const hasMeaningfulData = (dataString) => {
     const data = JSON.parse(dataString);
     if (typeof data !== "object" || data === null) return false;
     return Object.values(data).some((value) => {
-      if (value === "" || value === null || value === undefined || value === false) return false;
+      if (
+        value === "" ||
+        value === null ||
+        value === undefined ||
+        value === false
+      )
+        return false;
       if (Array.isArray(value) && value.length === 0) return false;
       return true;
     });
@@ -39,6 +57,8 @@ export default function Inicio() {
   const navigate = useNavigate();
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
+
+  const [activeTab, setActiveTab] = useState("propias");
 
   const handleNuevaOperacion = (ruta, draftKey) => {
     const dataString = sessionStorage.getItem(`${draftKey}_data`);
@@ -89,7 +109,6 @@ export default function Inicio() {
     <div className={styles.inicioPage}>
       <main className={styles.inicioMainContainer}>
         <div className={styles.inicioContentWrapper}>
-
           {/* ── HEADER ── */}
           <header className={styles.inicioHeader}>
             <div>
@@ -133,103 +152,258 @@ export default function Inicio() {
 
           {/* ── BOTTOM GRID ── */}
           <div className={styles.inicioBottomGrid}>
-
             {/* COLUMNA IZQUIERDA */}
             <section className={styles.leftColumn}>
               <div className={styles.sectionHeaderRow}>
-                <h3 className={styles.sectionTitle}>Mis Líneas Activas</h3>
+                <div className={styles.tabsContainer}>
+                  <button
+                    className={`${styles.tabButton} ${activeTab === "propias" ? styles.tabActive : ""}`}
+                    onClick={() => setActiveTab("propias")}
+                  >
+                    Mis Líneas
+                  </button>
+                  <button
+                    className={`${styles.tabButton} ${activeTab === "terceros" ? styles.tabActive : ""}`}
+                    onClick={() => setActiveTab("terceros")}
+                  >
+                    Terceros
+                  </button>
+                </div>
               </div>
 
               <div className={styles.taskCardsGrid}>
-                {/* Tarjeta Pagaré */}
-                <div className={styles.taskCard}>
-                  <div className={styles.taskCardIcon}>
-                    <FiFileText />
-                  </div>
-                  <div className={styles.taskCardBody}>
-                    <h3 className={styles.taskCardTitle}>Ingresar Pagaré en USD</h3>
-                    <p className={styles.taskCardDescription}>
-                      Emití y negociá pagarés bursátiles en dólares de forma ágil y sencilla.
-                    </p>
-                  </div>
-                  <div className={styles.taskCardActions}>
-                    <Button
-                      variant="primary"
-                      size="xs"
-                      onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}
-                    >
-                      Nueva Operación
-                      <FiArrowRight />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      onClick={() => navigate("/solicitudes")}
-                    >
-                      Solicitudes
-                    </Button>
-                  </div>
-                </div>
+                {activeTab === "propias" && (
+                  <>
+                    {/* Tarjeta Pagaré */}
+                    <div className={styles.taskCard}>
+                      <div className={styles.taskCardIcon}>
+                        <FiFileText />
+                      </div>
+                      <div className={styles.taskCardBody}>
+                        <h3 className={styles.taskCardTitle}>
+                          Ingresar Pagaré en USD
+                        </h3>
+                        <p className={styles.taskCardDescription}>
+                          Emití y negociá pagarés bursátiles en dólares de forma
+                          ágil y sencilla.
+                        </p>
+                      </div>
+                      <div className={styles.taskCardActions}>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          onClick={() =>
+                            handleNuevaOperacion("/pagare", "draft_pagare")
+                          }
+                        >
+                          Nueva Operación
+                          <FiArrowRight />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => navigate("/solicitudes")}
+                        >
+                          Solicitudes
+                        </Button>
+                      </div>
+                    </div>
 
-                {/* Tarjeta Cheques */}
-                <div className={styles.taskCard}>
-                  <div className={styles.taskCardIcon}>
-                    <FiBriefcase />
-                  </div>
-                  <div className={styles.taskCardBody}>
-                    <h3 className={styles.taskCardTitle}>Solicitar Línea de Cheques</h3>
-                    <p className={styles.taskCardDescription}>
-                      Descontá tus cheques de pago diferido y obtené liquidez inmediata para tu negocio.
-                    </p>
-                  </div>
-                  <div className={styles.taskCardActions}>
-                    <Button
-                      variant="primary"
-                      size="xs"
-                      onClick={() => handleNuevaOperacion("/cheques", "draft_cheques")}
-                    >
-                      Nueva Operación
-                      <FiArrowRight />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      onClick={() => navigate("/solicitudes")}
-                    >
-                      Solicitudes
-                    </Button>
-                  </div>
-                </div>
+                    {/* Tarjeta Cheques */}
+                    <div className={styles.taskCard}>
+                      <div className={styles.taskCardIcon}>
+                        <FiBriefcase />
+                      </div>
+                      <div className={styles.taskCardBody}>
+                        <h3 className={styles.taskCardTitle}>
+                          Solicitar Línea de Cheques
+                        </h3>
+                        <p className={styles.taskCardDescription}>
+                          Descontá tus cheques de pago diferido y obtené
+                          liquidez inmediata para tu negocio.
+                        </p>
+                      </div>
+                      <div className={styles.taskCardActions}>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          onClick={() =>
+                            handleNuevaOperacion("/cheques", "draft_cheques")
+                          }
+                        >
+                          Nueva Operación
+                          <FiArrowRight />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => navigate("/solicitudes")}
+                        >
+                          Solicitudes
+                        </Button>
+                      </div>
+                    </div>
 
-                {/* Tarjeta Préstamos */}
-                <div className={styles.taskCard}>
-                  <div className={styles.taskCardIcon}>
-                    <FiDollarSign />
-                  </div>
-                  <div className={styles.taskCardBody}>
-                    <h3 className={styles.taskCardTitle}>Solicitar Línea de Préstamos</h3>
-                    <p className={styles.taskCardDescription}>
-                      Accedé a líneas de crédito a medida para financiar tus proyectos de inversión.
-                    </p>
-                  </div>
-                  <div className={styles.taskCardActions}>
-                    <Button
-                      variant="primary"
-                      size="xs"
-                      onClick={() => handleNuevaOperacion("/prestamos", "draft_prestamos")}
-                    >
-                      Nueva Operación
-                      <FiArrowRight />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="xs"
-                      onClick={() => navigate("/solicitudes")}
-                    >
-                      Solicitudes
-                    </Button>
-                  </div>
-                </div>
+                    {/* Tarjeta Préstamos */}
+                    <div className={styles.taskCard}>
+                      <div className={styles.taskCardIcon}>
+                        <FiDollarSign />
+                      </div>
+                      <div className={styles.taskCardBody}>
+                        <h3 className={styles.taskCardTitle}>
+                          Solicitar Línea de Préstamos
+                        </h3>
+                        <p className={styles.taskCardDescription}>
+                          Accedé a líneas de crédito a medida para financiar tus
+                          proyectos de inversión.
+                        </p>
+                      </div>
+                      <div className={styles.taskCardActions}>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          onClick={() =>
+                            handleNuevaOperacion(
+                              "/prestamos",
+                              "draft_prestamos",
+                            )
+                          }
+                        >
+                          Nueva Operación
+                          <FiArrowRight />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => navigate("/solicitudes")}
+                        >
+                          Solicitudes
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {activeTab === "terceros" && (
+                  <>
+                    <div className={styles.taskCard}>
+                      <div className={styles.taskCardIcon}>
+                        <FiBriefcase />
+                      </div>
+                      <div className={styles.taskCardBody}>
+                        <h3 className={styles.taskCardTitle}>
+                          Operaciones con Cheques
+                        </h3>
+                        <p className={styles.taskCardDescription}>
+                          Gestioná cheques de terceros, operalos de forma
+                          individual o realizá cargas masivas.
+                        </p>
+                      </div>
+                      <div className={styles.taskCardActions}>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          onClick={() =>
+                            handleNuevaOperacion(
+                              "/cheques/operar",
+                              "draft_cheques_terceros",
+                            )
+                          }
+                        >
+                          Operar Cheques
+                          <FiArrowRight />
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          onClick={() => navigate("/cheques/carga-masiva")}
+                        >
+                          Carga Masiva
+                          <FiArrowRight />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => navigate("/solicitudes")}
+                        >
+                          Solicitudes
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className={styles.taskCard}>
+                      <div className={styles.taskCardIcon}>
+                        <FiFileText />
+                      </div>
+                      <div className={styles.taskCardBody}>
+                        <h3 className={styles.taskCardTitle}>
+                          Operaciones con Pagarés
+                        </h3>
+                        <p className={styles.taskCardDescription}>
+                          Emití y negociá pagarés de terceros de forma ágil y
+                          centralizada.
+                        </p>
+                      </div>
+                      <div className={styles.taskCardActions}>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          onClick={() => navigate("/solicitud-pagare")}
+                        >
+                          Operar Pagaré
+                          <FiArrowRight />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => navigate("/solicitudes")}
+                        >
+                          Solicitudes
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className={styles.taskCard}>
+                      <div className={styles.taskCardIcon}>
+                        <FiDollarSign />
+                      </div>
+                      <div className={styles.taskCardBody}>
+                        <h3 className={styles.taskCardTitle}>
+                          Préstamos a Terceros
+                        </h3>
+                        <p className={styles.taskCardDescription}>
+                          Gestioná las líneas de crédito y préstamos habilitados
+                          para terceros.
+                        </p>
+                      </div>
+                      <div className={styles.taskCardActions}>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          onClick={() => navigate("/prestamos-seleccionables")}
+                        >
+                          Seleccionables
+                          <FiArrowRight />
+                        </Button>
+                        <Button
+                          variant="primary"
+                          size="xs"
+                          onClick={() => navigate("/prestamos-fijos")}
+                        >
+                          Préstamos Fijos
+                          <FiArrowRight />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={() => navigate("/solicitudes")}
+                        >
+                          Solicitudes
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </section>
 
@@ -252,7 +426,9 @@ export default function Inicio() {
                     <div className={styles.actividadIcon}>
                       <FiActivity
                         className={
-                          sol.estado === "esperando" ? styles.iconEsperando : styles.iconAprobado
+                          sol.estado === "esperando"
+                            ? styles.iconEsperando
+                            : styles.iconAprobado
                         }
                       />
                     </div>
@@ -264,7 +440,9 @@ export default function Inicio() {
                     </div>
                     <div
                       className={`${styles.actividadStatus} ${
-                        sol.estado === "esperando" ? styles.statusEsperando : styles.statusAprobado
+                        sol.estado === "esperando"
+                          ? styles.statusEsperando
+                          : styles.statusAprobado
                       }`}
                     >
                       {sol.texto}
@@ -277,7 +455,6 @@ export default function Inicio() {
                 )}
               </div>
             </section>
-
           </div>
         </div>
       </main>

@@ -243,7 +243,7 @@ export default function Prestamos() {
                 {pasoActual === 1 && (
                   <div className={styles.bienvenidaHeader}>
                     <h1 className={styles.tituloBienvenida}>
-                      Solicitud de Préstamo
+                      Solicitud de Línea de Préstamo
                     </h1>
                     <p className={styles.subtituloBienvenida}>
                       Obtené financiación para tu empresa de forma ágil y 100%

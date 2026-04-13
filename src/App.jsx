@@ -6,8 +6,12 @@ import CrearClave from "./pages/CrearClave";
 import ConfirmarCorreo from "./pages/ConfirmarCorreo";
 import Inicio from "./pages/Inicio";
 import Cheques from "./pages/Cheques";
+import CargaMasivaCheques from "./pages/CargaMasivaCheques";
 import Prestamos from "./pages/Prestamos";
+import PrestamosSeleccionables from "./pages/PrestamosSeleccionables";
+import PrestamosFijos from "./pages/PrestamosFijos";
 import Pagare from "./pages/Pagare";
+import SolicitudPagare from "./pages/SolicitudPagare";
 import Solicitudes from "./pages/Solicitudes";
 import SolicitudCheques from "./pages/SolicitudCheques";
 import FirmaDocumento from "./pages/FirmaDocumento";
@@ -42,6 +46,16 @@ function App() {
             </DashboardLayout>
           }
         />
+
+        <Route
+          path="/solicitud-pagare"
+          element={
+            <DashboardLayout>
+              <SolicitudPagare />
+            </DashboardLayout>
+          }
+        />
+
         <Route
           path="/solicitudes"
           element={
@@ -50,6 +64,7 @@ function App() {
             </DashboardLayout>
           }
         />
+
         <Route
           path="/prestamos"
           element={
@@ -58,6 +73,25 @@ function App() {
             </DashboardLayout>
           }
         />
+
+        <Route
+          path="/prestamos-seleccionables"
+          element={
+            <DashboardLayout>
+              <PrestamosSeleccionables />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/prestamos-fijos"
+          element={
+            <DashboardLayout>
+              <PrestamosFijos />
+            </DashboardLayout>
+          }
+        />
+
         <Route
           path="/cheques"
           element={
@@ -66,11 +100,21 @@ function App() {
             </DashboardLayout>
           }
         />
+
         <Route
           path="/solicitud-cheques"
           element={
             <DashboardLayout>
               <SolicitudCheques />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/carga-masiva-cheques"
+          element={
+            <DashboardLayout>
+              <CargaMasivaCheques />
             </DashboardLayout>
           }
         />

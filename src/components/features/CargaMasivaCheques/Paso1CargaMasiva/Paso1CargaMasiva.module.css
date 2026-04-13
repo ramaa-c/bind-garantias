@@ -1,0 +1,63 @@
+.seccion {
+  margin-bottom: 2rem;
+}
+
+.seccionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05rem;
+}
+
+.seccionText {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.descargaBox {
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  background-color: var(--bg-surface);
+}
+
+.descargaLabel {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.btnDescargar {
+  width: 100%;
+}
+
+.dropzoneWrapper {
+  width: 100%;
+  outline: none;
+}
+
+.actionFooter {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .descargaBox {
+    max-width: 25rem;
+  }
+  .dropzoneWrapper {
+    max-width: 25rem;
+  }
+  .actionFooter {
+    justify-content: flex-start;
+  }
+}

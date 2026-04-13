@@ -17,14 +17,12 @@ export const chequesSchema = z
       .string()
       .regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
 
-    // SELECTS
     moneda: z.string().min(1, { message: "Seleccioná una moneda" }),
     tipoProducto: z.string().min(1, { message: "Seleccioná el producto" }),
     tipoCalculo: z
       .string()
       .min(1, { message: "Seleccioná el tipo de cálculo" }),
 
-    // MONTO
     monto: z
       .preprocess(
         (val) => {
@@ -37,9 +35,7 @@ export const chequesSchema = z
           return isNaN(num) ? val : num;
         },
         z
-          .number({
-            invalid_type_error: "Ingresá un número válido",
-          })
+          .number({ invalid_type_error: "Ingresá un número válido" })
           .min(1000, { message: "El monto mínimo es $1000" })
           .optional(),
       )
@@ -47,11 +43,9 @@ export const chequesSchema = z
         message: "El monto es obligatorio",
       }),
 
-    // CAMPOS DE FECHA
     plazo: z.string().optional(),
     fechaPago: z.string().optional(),
 
-    // EMAIL FACTURACIÓN
     emailFacturacion: z
       .string()
       .email({ message: "Email inválido" })
@@ -59,11 +53,9 @@ export const chequesSchema = z
       .optional()
       .or(z.literal("")),
 
-    // BOLSA
     sociedadBolsa: z.string().optional().or(z.literal("")),
     numeroCuentaBolsa: z.string().optional().or(z.literal("")),
 
-    // SOCIOS
     socios: z
       .array(
         z.object({
@@ -78,7 +70,6 @@ export const chequesSchema = z
       )
       .optional(),
 
-    // REPRESENTANTES
     representantes: z
       .array(
         z.object({
@@ -107,5 +98,21 @@ export const chequesSchema = z
           "El número de cuenta es obligatorio si seleccionaste una bolsa",
         code: z.ZodIssueCode.custom,
       });
+    }
+
+    if (data.tipoProducto !== "prestamo_fijo") {
+      const esFechaEspecifica =
+        data.tipoCalculo === "por_monto_cheque" ||
+        data.tipoCalculo === "por_monto_pagare";
+      
+      const campoRequerido = esFechaEspecifica ? "fechaPago" : "plazo";
+
+      if (!data[campoRequerido] || data[campoRequerido].trim() === "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Este campo es obligatorio",
+          path: [campoRequerido],
+        });
+      }
     }
   });

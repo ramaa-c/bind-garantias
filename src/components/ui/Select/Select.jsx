@@ -10,9 +10,11 @@ const selectStyles = (hasError) => ({
     minHeight: "3.25rem",
     backgroundColor: state.isDisabled
       ? "rgba(255, 255, 255, 0.01)"
-      : state.isFocused
-        ? "rgba(255, 255, 255, 0.06)"
-        : "rgba(255, 255, 255, 0.03)",
+      : hasError
+        ? "rgba(255, 82, 82, 0.05)"
+        : state.isFocused
+          ? "rgba(255, 255, 255, 0.06)"
+          : "rgba(255, 255, 255, 0.03)",
     borderColor: hasError
       ? "#ff5252"
       : state.isFocused
@@ -29,7 +31,9 @@ const selectStyles = (hasError) => ({
         : state.isFocused
           ? "var(--yellow)"
           : "rgba(255, 255, 255, 0.3)",
-      backgroundColor: "rgba(255, 255, 255, 0.06)",
+      backgroundColor: hasError
+        ? "rgba(255, 82, 82, 0.05)"
+        : "rgba(255, 255, 255, 0.06)",
     },
   }),
 
@@ -106,6 +110,7 @@ export const Select = ({
   disabled = false,
   isSearchable = false,
   error,
+  hideErrorSpace = false,
 }) => {
   return (
     <div className={styles.indicatorWrapper}>
@@ -130,9 +135,11 @@ export const Select = ({
         )}
       />
 
-      <div className={styles.errorContainer}>
-        {error && <span className={styles.errorText}>{error}</span>}
-      </div>
+      {!hideErrorSpace && (
+        <div className={styles.errorContainer}>
+          {error && <span className={styles.errorText}>{error}</span>}
+        </div>
+      )}
     </div>
   );
 };
