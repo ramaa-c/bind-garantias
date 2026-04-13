@@ -99,9 +99,10 @@ export default function SolicitudCheques() {
   };
 
   // Paso 3: Bolsa
-  const avanzarConBolsa = () => {
-
-    setPasoActual(4);
+  const avanzarConBolsa = async () => {
+    if (await trigger("sociedadBolsa")) {
+      setPasoActual(4);
+    }
   };
 
   const avanzarSinBolsa = () => {
