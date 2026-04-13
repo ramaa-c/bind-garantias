@@ -110,6 +110,7 @@ export const Select = ({
   disabled = false,
   isSearchable = false,
   error,
+  hideErrorSpace = false,
 }) => {
   return (
     <div className={styles.indicatorWrapper}>
@@ -134,9 +135,11 @@ export const Select = ({
         )}
       />
 
-      <div className={styles.errorContainer}>
-        {error && <span className={styles.errorText}>{error}</span>}
-      </div>
+      {!hideErrorSpace && (
+        <div className={styles.errorContainer}>
+          {error && <span className={styles.errorText}>{error}</span>}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiFilter, FiList, FiPlus } from "react-icons/fi";
+import { useForm } from "react-hook-form";
+import { FiPlus, FiSearch } from "react-icons/fi";
 import { FaMoneyBillWave } from "react-icons/fa";
-
-import { BotonVolver, Button } from "../components/ui";
+import { BotonVolver, Button, Select } from "../components/ui";
 import { TarjetaSolicitud } from "../components/features";
 import ModalConfirmacionBorrador from "../components/features/compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
 
@@ -25,6 +25,18 @@ const mockSolicitudes = [
     estado: "Pendiente",
     fecha: "15/03/2026",
   },
+];
+
+const opcionesEstado = [
+  { value: "todos", label: "Todos los estados" },
+  { value: "pendiente", label: "Pendiente" },
+  { value: "aprobada", label: "Aprobada" },
+  { value: "rechazada", label: "Rechazada" },
+];
+
+const opcionesOrden = [
+  { value: "desc", label: "Más recientes" },
+  { value: "asc", label: "Más antiguas" },
 ];
 
 const hasMeaningfulData = (dataString) => {
@@ -53,6 +65,14 @@ const hasMeaningfulData = (dataString) => {
 
 export default function Solicitudes() {
   const navigate = useNavigate();
+
+  const { control, register } = useForm({
+    defaultValues: {
+      busqueda: "",
+      estado: "",
+      orden: "desc",
+    },
+  });
 
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
@@ -135,26 +155,51 @@ export default function Solicitudes() {
               onClick={() => navigate("/inicio")}
               texto="Volver al inicio"
             />
-          </div>
 
-          <div className={styles.toolbar}>
             <Button
               variant="primary"
+              size="sm"
               onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}
               className={styles.btnNuevaOp}
             >
-              <FiPlus style={{ marginRight: "8px" }} /> NUEVA OPERACIÓN
+              <FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN
             </Button>
+          </div>
 
-            <div className={styles.filterGroup}>
-              <button className={`${styles.iconBtn} ${styles.active}`}>
-                <FiList size={20} />
-                <span>Lista</span>
-              </button>
-              <button className={styles.iconBtn}>
-                <FiFilter size={20} />
-                <span>Filtrar</span>
-              </button>
+          <div className={styles.toolbar}>
+            <div className={styles.filtersWrapper}>
+              <div className={styles.searchBox}>
+                <FiSearch className={styles.searchIcon} />
+                <input
+                  type="text"
+                  placeholder="Buscar por nombre o CUIT..."
+                  className={styles.searchInput}
+                  {...register("busqueda")}
+                />
+              </div>
+
+              <div className={styles.selectGroup}>
+                <div className={styles.customSelectWrapper}>
+                  <Select
+                    name="estado"
+                    control={control}
+                    options={opcionesEstado}
+                    placeholder="Estado"
+                    isSearchable={false}
+                    hideErrorSpace
+                  />
+                </div>
+
+                <div className={styles.customSelectWrapper}>
+                  <Select
+                    name="orden"
+                    control={control}
+                    options={opcionesOrden}
+                    isSearchable={false}
+                    hideErrorSpace
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
