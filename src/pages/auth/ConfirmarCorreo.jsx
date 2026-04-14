@@ -15,7 +15,7 @@ const ConfirmarCorreo = () => {
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img src={logoBind} alt="Logo BIND" width="120" />
+          <img src={logoBind} alt="Logo BIND" width="120" onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
         </div>
 
         <div className={`${styles.cardModern} ${styles.textLeft}`}>
