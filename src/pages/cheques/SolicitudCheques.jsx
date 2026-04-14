@@ -169,6 +169,7 @@ export default function SolicitudCheques() {
                     <h1 className={styles.tituloBienvenida}>
                       Ingreso de Cheques
                     </h1>
+                    <div className={styles.titleAccent}></div>
                     <p className={styles.subtituloBienvenida}>
                       Simulá la operación para conocer los costos estimados
                       antes de continuar.

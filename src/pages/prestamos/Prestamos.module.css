@@ -98,6 +98,14 @@
   font-family: var(--font-principal);
 }
 
+.titleAccent {
+  width: 220px;
+  height: 3px;
+  background-color: var(--yellow);
+  border-radius: 2px;
+  margin: 0.75rem auto 1rem auto;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

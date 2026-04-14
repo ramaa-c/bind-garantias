@@ -227,6 +227,7 @@ export default function PrestamosFijos() {
                     <h1 className={styles.tituloBienvenida}>
                       Línea de Préstamo Fijo
                     </h1>
+                    <div className={styles.titleAccent}></div>
                     <p className={styles.subtituloBienvenida}>
                       Solicitá la habilitación de tu línea de crédito
                       pre-aprobada.

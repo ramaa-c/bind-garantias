@@ -1,6 +1,6 @@
 import React from "react";
 import { useDropzone } from "react-dropzone";
-import { ContenedorPaso, CargaArchivos, Button } from "../../../../ui";
+import { CargaArchivos, Button } from "../../../../ui";
 import styles from "./Paso1CargaMasiva.module.css";
 
 export const Paso1CargaMasiva = ({
@@ -38,10 +38,7 @@ export const Paso1CargaMasiva = ({
   };
 
   return (
-    <ContenedorPaso
-      title="Carga masiva de cheques"
-      subtitle="Descargá el archivo modelo, completalo con los cheques a negociar y subilo para procesarlo."
-    >
+    <div className={styles.pasoContainer}>
       <div className={styles.seccion}>
         <h3 className={styles.seccionTitle}>Descargar Template</h3>
         <p className={styles.seccionText}>
@@ -93,6 +90,6 @@ export const Paso1CargaMasiva = ({
           </div>
         )}
       </div>
-    </ContenedorPaso>
+    </div>
   );
 };

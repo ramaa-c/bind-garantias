@@ -151,6 +151,15 @@ export default function CargaMasivaCheques() {
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
+                {pasoActual === 1 && (
+                  <div className={styles.bienvenidaHeader}>
+                    <h1 className={styles.tituloBienvenida}>Carga masiva de cheques</h1>
+                    <div className={styles.titleAccent}></div>
+                    <p className={styles.subtituloBienvenida}>
+                      Descargá el archivo modelo, completalo con los cheques a negociar y subilo para procesarlo.
+                    </p>
+                  </div>
+                )}
                 {pasoActual < 4 && (
                   <BarraProgreso
                     hitos={["Carga", "Revisión", "Confirmación"]}

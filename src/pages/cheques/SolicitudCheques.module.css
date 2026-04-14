@@ -55,7 +55,7 @@
 .seccionFormulario {
   background: rgba(30, 30, 30, 0.85);
   backdrop-filter: blur(12px);
-  padding: 1.5rem;
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
   border-radius: 1.5rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
@@ -67,8 +67,8 @@
 
 /* --- TEXTOS DE BIENVENIDA --- */
 .bienvenidaHeader {
-  text-align: left;
-  padding: 0 0 0.5rem 0;
+  text-align: center;
+  padding: 1.5rem 0;
   animation: fadeIn 0.5s ease;
 }
 
@@ -85,7 +85,14 @@
   font-size: 1rem;
   font-weight: 400;
   margin: 0;
+}
 
+.titleAccent {
+  width: 220px;
+  height: 3px;
+  background-color: var(--yellow); 
+  border-radius: 2px;
+  margin: 0.75rem auto 1rem auto; 
 }
 
 
@@ -120,11 +127,11 @@
   }
 
   .seccionFormulario {
-    padding: 2.5rem;
+    padding: 1rem 2.5rem 2.5rem 2.5rem;
   }
 
   .bienvenidaHeader {
-    padding: 0 0 1rem 0;
+    padding: 2.5rem 1rem 1.5rem 1rem;
   }
 
   .tituloBienvenida {
