@@ -35,7 +35,7 @@ const Login = () => {
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img src={logoBind} alt="Logo BIND" />
+          <img src={logoBind} alt="Logo BIND" onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
         </div>
 
         <div className={styles.cardModern}>

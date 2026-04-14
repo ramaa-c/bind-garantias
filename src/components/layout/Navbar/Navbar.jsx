@@ -30,7 +30,7 @@ const Navbar = ({
         {/* Logo */}
         <div
           className={styles.logoContainer}
-          onClick={() => navigate("/")}
+          onClick={() => navigate("/inicio")}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {

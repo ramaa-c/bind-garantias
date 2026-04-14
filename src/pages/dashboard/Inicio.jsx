@@ -305,7 +305,7 @@ export default function Inicio() {
                           size="xs"
                           onClick={() =>
                             handleNuevaOperacion(
-                              "/cheques/operar",
+                              "/solicitud-cheques",
                               "draft_cheques_terceros",
                             )
                           }
@@ -316,7 +316,7 @@ export default function Inicio() {
                         <Button
                           variant="primary"
                           size="xs"
-                          onClick={() => navigate("/cheques/carga-masiva")}
+                          onClick={() => navigate("/carga-masiva-cheques")}
                         >
                           Carga Masiva
                           <FiArrowRight />

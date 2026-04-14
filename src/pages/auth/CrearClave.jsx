@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -31,6 +31,7 @@ const getClaveSchema = (emailUsuario) => {
 
 const CrearClave = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const emailUsuario = location.state?.emailIngresado || "ejemplo@mailinator.com";
 
   const {
@@ -56,7 +57,7 @@ const CrearClave = () => {
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img src={logoBind} alt="Logo BIND" width="120" />
+          <img src={logoBind} alt="Logo BIND" width="120" onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
         </div>
 
         <div className={styles.cardModern}>
