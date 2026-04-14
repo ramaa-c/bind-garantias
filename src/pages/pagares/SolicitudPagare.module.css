@@ -147,3 +147,17 @@
     font-size: 1.1rem;
   }
 }
+
+
+/* Space for sticky footer */
+@media (max-width: 56.24rem) {
+  .seccionFormulario {
+    padding-bottom: 5rem; 
+  }
+}
+@media (min-width: 56.25rem) {
+  .seccionFormulario {
+    padding-bottom: 2.5rem; 
+  }
+}
+

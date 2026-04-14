@@ -77,3 +77,31 @@
     justify-content: flex-start;
   }
 }
+
+
+/* Sticky Mobile Footer Action injected by UX Architecture */
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper, .actionFooter, .footer, .summaryActions, .actionButtonsGroup, .actionFooterBorder, .actionsRight, .actions, .saveActionRowCentrado {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(12px);
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+    border-bottom-left-radius: 1.5rem;
+    border-bottom-right-radius: 1.5rem;
+  }
+}
+@media (min-width: 56.25rem) {
+  .calcBtnWrapper, .actionFooter, .footer, .summaryActions, .actionButtonsGroup, .actionFooterBorder, .actionsRight, .actions, .saveActionRowCentrado {
+    position: relative;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    border-top: none;
+    margin: 1.5rem 0 0 0;
+  }
+}
+
