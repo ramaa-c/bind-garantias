@@ -7,6 +7,7 @@ export { default as Paso5Documentacion } from './shared/Compartidos/Paso5Documen
 export { default as Paso7Exito } from './shared/Compartidos/Paso7Exito/Paso7Exito';
 export * from './shared/Compartidos/SocioItem/SocioItem';
 export * from './shared/Compartidos/PanelDudas/PanelDudas';
+export * from './shared/Compartidos/PanelDudas/BotonAyudaFlotante';
 export { default as ModalSocio } from './shared/Compartidos/ModalSocio/ModalSocio';
 export * from './shared/Compartidos/ModalDocumentosEmpresa/ModalDocumentosEmpresa';
 export * from './shared/Compartidos/ModalRepresentante/ModalRepresentante';

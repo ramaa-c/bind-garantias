@@ -9,6 +9,7 @@ import {
   Paso3Simulador,
   ModalConfirmacionBorrador,
   PanelDudas,
+  BotonAyudaFlotante,
   PasoEmisor,
   PasoBolsa,
   PasoDetalles,
@@ -238,7 +239,12 @@ export default function SolicitudCheques() {
               </div>
             </div>
 
-            {pasoActual < 5 && <PanelDudas pasoActual={pasoActual} />}
+            {pasoActual < 5 && (
+              <>
+                <PanelDudas contexto="solicitud_cheques" pasoActual={pasoActual} />
+                <BotonAyudaFlotante contexto="solicitud_cheques" pasoActual={pasoActual} />
+              </>
+            )}
           </div>
         </div>
       </div>

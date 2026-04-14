@@ -3,7 +3,7 @@ import { useForm, FormProvider } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { FiRotateCcw } from "react-icons/fi";
 import { BarraProgreso, BotonVolver } from "../../components/ui";
-import { PanelDudas, ModalConfirmacionBorrador } from "../../components/features";
+import { PanelDudas, BotonAyudaFlotante, ModalConfirmacionBorrador } from "../../components/features";
 import {
   Paso1CargaMasiva,
   Paso2RevisionCheques,
@@ -213,7 +213,12 @@ export default function CargaMasivaCheques() {
               </div>
             </div>
 
-            {pasoActual < 4 && <PanelDudas pasoActual={pasoActual} />}
+            {pasoActual < 4 && (
+              <>
+                <PanelDudas contexto="carga_masiva_cheques" pasoActual={pasoActual} />
+                <BotonAyudaFlotante contexto="carga_masiva_cheques" pasoActual={pasoActual} />
+              </>
+            )}
           </div>
         </div>
       </div>

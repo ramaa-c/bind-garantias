@@ -1,0 +1,26 @@
+.contenidoDudas {
+  display: flex;
+  flex-direction: column;
+}
+
+.contenidoTitle {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+  color: var(--white);
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.respuesta {
+  font-size: 0.875rem;
+  color: #ccc;
+  line-height: 1.5;
+  margin: 0;
+}
