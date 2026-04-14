@@ -124,7 +124,6 @@
   background-color: rgba(245, 244, 0, 0.05);
   border: 1px solid rgba(245, 244, 0, 0.15);
   color: var(--color-amarillo-bind, #f5f400);
-  font-weight: 600;
 }
 
 .active .icon {
