@@ -1,0 +1,205 @@
+.listContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.introText {
+  font-size: 0.875rem;
+  color: var(--white-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+/* --- TARJETA CHEQUE --- */
+.chequeCard {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  background-color: rgba(255, 255, 255, 0.015);
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.chequeCard:hover {
+  border-color: var(--border-hover);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.chequeCard.selected {
+  background-color: rgba(76, 101, 230, 0.05);
+  border-color: var(--color-azul-bind);
+}
+
+.chequeCard.selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--color-azul-bind);
+  border-radius: 4px 0 0 4px;
+}
+
+.cardContent {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.5rem;
+}
+
+.dataGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dataRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.dataLabel {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.dataValue {
+  font-size: 0.875rem;
+  color: var(--white);
+  font-weight: 500;
+}
+
+.dataHighlight {
+  color: var(--color-amarillo-bind);
+  font-weight: 700;
+}
+
+.checkIndicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 4px;
+  border: 2px solid var(--border-hover);
+  color: transparent;
+  transition: all 0.2s var(--ease-out);
+  flex-shrink: 0;
+}
+
+.selected .checkIndicator {
+  background-color: var(--color-azul-bind);
+  border-color: var(--color-azul-bind);
+  color: var(--white);
+}
+
+/* --- BARRA DE RESUMEN  --- */
+.summaryContainer {
+  margin-top: 2rem;
+  padding-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.summaryBox {
+  background: rgba(30, 30, 30, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  gap: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.summaryInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.summaryLabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.summaryAmount {
+  font-family: var(--font-secundaria);
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--color-amarillo-bind);
+  line-height: 1;
+  margin: 0.25rem 0;
+}
+
+.summaryCount {
+  font-size: 0.875rem;
+  color: var(--white-muted);
+  font-weight: 500;
+}
+
+.summaryActions {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  min-width: 100%;
+  gap: 1rem;
+}
+
+.btnContinuar {
+  width: 100%;
+}
+
+.btnDesistir {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s var(--ease-out);
+  white-space: nowrap;
+}
+
+.btnDesistir:hover {
+  color: var(--white);
+}
+
+@media (min-width: 768px) {
+  .summaryBox {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 2rem;
+    text-align: left;
+    gap: 2rem;
+  }
+  .summaryActions {
+    flex-direction: row;
+    min-width: 320px;
+    gap: 1.5rem;
+  }
+  .btnContinuar {
+    flex: 1;
+    width: auto;
+  }
+}

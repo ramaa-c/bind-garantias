@@ -1,0 +1,229 @@
+import React, { useState } from "react";
+import { useForm, FormProvider } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+import { FiRotateCcw } from "react-icons/fi";
+import { BarraProgreso, BotonVolver } from "../../components/ui";
+import { PanelDudas, ModalConfirmacionBorrador } from "../../components/features";
+import {
+  Paso1CargaMasiva,
+  Paso2RevisionCheques,
+  Paso3Confirmacion,
+  Paso4ExitoEpyme,
+} from "../../components/features";
+
+import styles from "./CargaMasivaCheques.module.css";
+
+export default function CargaMasivaCheques() {
+  const navigate = useNavigate();
+
+  const [pasoActual, setPasoActual] = useState(1);
+  const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const [chequesParseados, setChequesParseados] = useState([]);
+  const [chequesAprobados, setChequesAprobados] = useState([]);
+
+  const [archivoCargado, setArchivoCargado] = useState(null);
+
+  const metodosFormulario = useForm({
+    mode: "onChange",
+  });
+
+  const simularLlamadaApi = (datos) => {
+    return new Promise((resolve) => setTimeout(() => resolve(datos), 1500));
+  };
+
+  const MOCK_CHEQUES_PARSADOS = [
+    {
+      id: "1",
+      emisor: "AGRO EMPRESA S.A.",
+      vencimiento: "14/12/2026",
+      montoEstimado: "$405.905",
+      cft: "36,01%",
+      coelsaId: "XJE27G36WXON7MY",
+      montoNominal: "$500.000",
+      montoNumerico: 500000,
+      montoEstimadoNumerico: 405905,
+      cuit: "30-70123456-1",
+      solicitudId: "4438",
+      montoNominalFormateado: "$500.000",
+    },
+    {
+      id: "2",
+      emisor: "CONSTRUCTORA DEL SUR S.R.L.",
+      vencimiento: "15/12/2026",
+      montoEstimado: "$405.488",
+      cft: "36,05%",
+      coelsaId: "6ZO9W10D1V325GP",
+      montoNominal: "$500.000",
+      montoNumerico: 500000,
+      montoEstimadoNumerico: 405488,
+      cuit: "30-70987654-3",
+      solicitudId: "4439",
+      montoNominalFormateado: "$500.000",
+    },
+  ];
+
+  // --- HANDLERS DE NAVEGACIÓN ---
+  const handleVolver = () => {
+    setPasoActual((prev) => (prev > 1 ? prev - 1 : 1));
+  };
+
+  const handleResetFlujoCompleto = () => {
+    setChequesParseados([]);
+    setChequesAprobados([]);
+    setPasoActual(1);
+  };
+
+  const handleReiniciarAlta = () => setIsModalReiniciarAbierto(true);
+
+  const confirmarReinicioAlta = () => {
+    handleResetFlujoCompleto();
+    setIsModalReiniciarAbierto(false);
+  };
+
+  // --- HANDLERS DE PASOS ---
+  const handleProcesarArchivo = async (file) => {
+    setIsProcessing(true);
+    const response = await simularLlamadaApi(MOCK_CHEQUES_PARSADOS);
+    setChequesParseados(response);
+    setIsProcessing(false);
+    setPasoActual(2);
+  };
+
+  const handleDescargarTemplate = () => {
+    console.log("Descargando template...");
+  };
+
+  // PASO 2: Revisión
+  const handleContinuarRevision = (chequesSeleccionados) => {
+    setChequesAprobados(chequesSeleccionados);
+    setPasoActual(3);
+  };
+
+  const handleDesistir = () => {
+    handleResetFlujoCompleto();
+  };
+
+  // PASO 3: Confirmación Final
+  const handleAceptarFinal = async () => {
+    setIsProcessing(true);
+    await simularLlamadaApi({ success: true });
+    setIsProcessing(false);
+    setPasoActual(4);
+  };
+
+  // PASO 4: Éxito
+  const handleDescargarInstructivo = () => {
+    console.log("Descargando PDF instructivo...");
+  };
+
+  return (
+    <div className={styles.chequesPage}>
+      <div className={styles.formMainContainer}>
+        <div className={styles.contentWrapper}>
+          <div className={styles.navegacionTop}>
+            <div className={styles.botonesNavegacion}>
+              {/* LÓGICA DE VOLVER */}
+              {pasoActual > 1 && pasoActual < 4 ? (
+                <BotonVolver onClick={handleVolver} />
+              ) : (
+                <BotonVolver
+                  onClick={() => navigate("/inicio")}
+                  texto="Volver a la lista"
+                />
+              )}
+
+              <BotonVolver
+                onClick={
+                  pasoActual === 4
+                    ? handleResetFlujoCompleto
+                    : handleReiniciarAlta
+                }
+                icon={FiRotateCcw}
+                texto={
+                  pasoActual === 4 ? "Cargar nuevos cheques" : "Reiniciar carga"
+                }
+              />
+            </div>
+          </div>
+
+          <div className={styles.contenedorPrincipal}>
+            <div className={styles.columnaFormulario}>
+              <div className={styles.seccionFormulario}>
+                {pasoActual === 1 && (
+                  <div className={styles.bienvenidaHeader}>
+                    <h1 className={styles.tituloBienvenida}>Carga masiva de cheques</h1>
+                    <div className={styles.titleAccent}></div>
+                    <p className={styles.subtituloBienvenida}>
+                      Descargá el archivo modelo, completalo con los cheques a negociar y subilo para procesarlo.
+                    </p>
+                  </div>
+                )}
+                {pasoActual < 4 && (
+                  <BarraProgreso
+                    hitos={["Carga", "Revisión", "Confirmación"]}
+                    hitoActual={pasoActual}
+                  />
+                )}
+
+                <FormProvider {...metodosFormulario}>
+                  <form
+                    className={styles.formContent}
+                    onSubmit={(e) => e.preventDefault()}
+                  >
+                    <div key={pasoActual} className="animacion-paso">
+                      {pasoActual === 1 && (
+                        <Paso1CargaMasiva
+                          archivoCargado={archivoCargado}
+                          setArchivoCargado={setArchivoCargado}
+                          onProcesarArchivo={handleProcesarArchivo}
+                          onDescargarTemplate={handleDescargarTemplate}
+                          isProcessing={isProcessing}
+                        />
+                      )}
+
+                      {pasoActual === 2 && (
+                        <Paso2RevisionCheques
+                          chequesProcesados={chequesParseados}
+                          chequesYaAprobados={chequesAprobados}
+                          onContinuar={handleContinuarRevision}
+                          onDesistir={handleDesistir}
+                        />
+                      )}
+
+                      {pasoActual === 3 && (
+                        <Paso3Confirmacion
+                          chequesAprobados={chequesAprobados}
+                          onAceptar={handleAceptarFinal}
+                          isSubmitting={isProcessing}
+                        />
+                      )}
+
+                      {pasoActual === 4 && (
+                        <Paso4ExitoEpyme
+                          chequesFinales={chequesAprobados}
+                          onDescargarInstructivo={handleDescargarInstructivo}
+                          urlEpyme="https://epyme.cajadevalores.com.ar/"
+                        />
+                      )}
+                    </div>
+                  </form>
+                </FormProvider>
+              </div>
+            </div>
+
+            {pasoActual < 4 && <PanelDudas pasoActual={pasoActual} />}
+          </div>
+        </div>
+      </div>
+
+      <ModalConfirmacionBorrador
+        isOpen={isModalReiniciarAbierto}
+        onClose={() => setIsModalReiniciarAbierto(false)}
+        onConfirm={confirmarReinicioAlta}
+        onContinueBorrador={() => setIsModalReiniciarAbierto(false)}
+      />
+    </div>
+  );
+}

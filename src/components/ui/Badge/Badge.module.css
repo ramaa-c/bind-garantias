@@ -1,0 +1,13 @@
+.badge {
+  background-color: rgba(244, 245, 0, 0.1);
+  color: var(--yellow);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(244, 245, 0, 0.2);
+}

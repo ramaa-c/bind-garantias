@@ -1,0 +1,183 @@
+.indicatorWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  width: 100%;
+}
+
+.indicatorLabel {
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  font-weight: 600;
+  margin-left: 0.25rem;
+}
+
+.badgeInteractive {
+  height: 3.25rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 1rem;
+  border-radius: 0.5rem;
+  color: var(--white);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.badgeInteractive:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.badgeInteractive:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.badgeSuccess {
+  border-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.05);
+}
+
+.badgeError {
+  border-color: #ff5252;
+  background-color: rgba(255, 82, 82, 0.05);
+}
+
+.calendarIcon {
+  color: var(--yellow);
+  font-size: 1.1rem;
+}
+
+.placeholderText {
+  color: #888;
+}
+
+.dateText {
+  color: var(--white);
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.errorContainer {
+  min-height: 1.2rem;
+  margin-left: 0.25rem;
+}
+
+.errorText {
+  color: #ff5252;
+  font-size: 0.8rem;
+  display: block;
+  animation: fadeIn 0.2s ease;
+}
+
+.calendarPopover {
+  position: absolute;
+  top: calc(100% + -1rem);
+  left: 0;
+  z-index: 50;
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  animation: fadeIn 0.2s ease;
+}
+
+/* --- MODIFICADORES REACT-DAY-PICKER --- */
+:global(.rdp-root) {
+  --rdp-accent-color: var(--yellow);
+  --rdp-accent-background-color: rgba(244, 245, 0, 0.1);
+  --rdp-today-color: var(--yellow);
+  --rdp-selected-border: 2px solid var(--yellow);
+  --rdp-day-height: 40px;
+  --rdp-day-width: 40px;
+  margin: 0;
+  color: var(--white);
+}
+
+:global(.rdp-chevron) {
+  fill: var(--yellow) !important;
+}
+
+:global(.rdp-nav_button:hover) {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+:global(.rdp-selected),
+:global(.rdp-selected .rdp-day_button) {
+  background-color: var(--yellow) !important;
+  color: #000 !important;
+  font-weight: bold;
+  border-radius: 50%;
+}
+
+:global(.rdp-day_button:hover:not([disabled]):not(.rdp-selected)) {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--white) !important;
+}
+
+:global(.rdp-today:not(.rdp-selected)) {
+  color: var(--yellow);
+  font-weight: bold;
+}
+
+:global(.rdp-caption_label) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+}
+
+:global(.rdp-caption_dropdowns .rdp-caption_label) {
+  display: none; 
+}
+
+:global(.rdp-dropdown) {
+  appearance: auto;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+:global(.rdp-dropdown:hover),
+:global(.rdp-dropdown:focus) {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-color: var(--yellow);
+}
+
+:global(.rdp-dropdown option) {
+  background-color: #1e1e1e;
+  color: var(--white);
+  font-weight: 500;
+  padding: 0.5rem;
+}
+
+:global(.rdp-caption_dropdowns) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: capitalize;
+  font-weight: bold;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}

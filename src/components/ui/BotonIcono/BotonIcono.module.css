@@ -1,0 +1,23 @@
+.btnIcon {
+  background: transparent;
+  border: none;
+  color: #888;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnIcon:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--white);
+}
+
+.danger:hover {
+  background-color: rgba(255, 82, 82, 0.1);
+  color: #ff5252;
+}

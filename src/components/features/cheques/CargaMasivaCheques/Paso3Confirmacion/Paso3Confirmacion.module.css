@@ -1,0 +1,140 @@
+.introText {
+  font-size: 1rem;
+  color: var(--white-muted);
+  font-weight: 400;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.listContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+
+.chequeCard {
+  background-color: rgba(61, 220, 132, 0.03);
+  border: 1px solid rgba(61, 220, 132, 0.2);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.chequeCard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background-color: var(--success-green);
+  border-radius: 4px 0 0 4px;
+}
+
+.cardContent {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.dataGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dataRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.dataLabel {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.dataValue {
+  font-size: 0.875rem;
+  color: var(--white);
+  font-weight: 500;
+}
+
+.successIcon {
+  color: var(--success-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 1rem;
+}
+
+/* --- Totales Finales --- */
+.summaryBox {
+  background: rgba(30, 30, 30, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.summaryRow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+}
+
+.summaryText {
+  font-size: 0.875rem;
+  color: var(--white-muted);
+  font-weight: 500;
+}
+
+.summaryHighlight {
+  font-family: var(--font-secundaria);
+  font-size: 1.5rem;
+  color: var(--color-amarillo-bind);
+  font-weight: 700;
+}
+
+.actionFooter {
+  display: flex;
+  justify-content: center;
+}
+
+.btnAceptar {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .summaryBox {
+    padding: 1.5rem 2rem;
+  }
+  .summaryRow {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+  }
+  .actionFooter {
+    justify-content: flex-start;
+  }
+  .btnAceptar {
+    min-width: 200px;
+    width: auto;
+  }
+}
