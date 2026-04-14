@@ -1,5 +1,13 @@
+.pasoContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}
+
 .seccion {
-  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .seccionTitle {
@@ -51,11 +59,18 @@
 }
 
 @media (min-width: 768px) {
+  .pasoContainer {
+    flex-direction: row;
+    gap: 3rem;
+  }
+  .seccion {
+    flex: 1;
+  }
   .descargaBox {
-    max-width: 25rem;
+    max-width: 100%;
   }
   .dropzoneWrapper {
-    max-width: 25rem;
+    max-width: 100%;
   }
   .actionFooter {
     justify-content: flex-start;

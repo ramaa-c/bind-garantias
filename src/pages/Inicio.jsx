@@ -305,8 +305,8 @@ export default function Inicio() {
                           size="xs"
                           onClick={() =>
                             handleNuevaOperacion(
-                              "/cheques/operar",
-                              "draft_cheques_terceros",
+                              "/solicitud-cheques",
+                              "draft_solicitud_cheques",
                             )
                           }
                         >
@@ -316,7 +316,7 @@ export default function Inicio() {
                         <Button
                           variant="primary"
                           size="xs"
-                          onClick={() => navigate("/cheques/carga-masiva")}
+                          onClick={() => navigate("/carga-masiva-cheques")}
                         >
                           Carga Masiva
                           <FiArrowRight />
@@ -348,7 +348,12 @@ export default function Inicio() {
                         <Button
                           variant="primary"
                           size="xs"
-                          onClick={() => navigate("/solicitud-pagare")}
+                          onClick={() =>
+                            handleNuevaOperacion(
+                              "/solicitud-pagare",
+                              "draft_pagare",
+                            )
+                          }
                         >
                           Operar Pagaré
                           <FiArrowRight />
@@ -380,7 +385,12 @@ export default function Inicio() {
                         <Button
                           variant="primary"
                           size="xs"
-                          onClick={() => navigate("/prestamos-seleccionables")}
+                          onClick={() =>
+                            handleNuevaOperacion(
+                              "/prestamos-seleccionables",
+                              "draft_prestamos",
+                            )
+                          }
                         >
                           Seleccionables
                           <FiArrowRight />
@@ -388,7 +398,12 @@ export default function Inicio() {
                         <Button
                           variant="primary"
                           size="xs"
-                          onClick={() => navigate("/prestamos-fijos")}
+                          onClick={() =>
+                            handleNuevaOperacion(
+                              "/prestamos-fijos",
+                              "draft_prestamos_fijos",
+                            )
+                          }
                         >
                           Préstamos Fijos
                           <FiArrowRight />

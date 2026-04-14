@@ -106,15 +106,14 @@ export default function PagareUSD() {
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
               <div className={styles.seccionFormulario}>
-                {pasoActual < 4 && (
-                  <h1 className={styles.tituloVista}>
-                    {pasoActual === 1 &&
-                      "Ingresás el monto del pagaré y la fecha de pago"}
-                    {pasoActual === 2 &&
-                      "Seleccioná al agente de bolsa con quien operás"}
-                    {pasoActual === 3 &&
-                      "Generá el pagaré en Epyme y completá la operación"}
-                  </h1>
+                {pasoActual === 1 && (
+                  <div className={styles.bienvenidaHeader}>
+                    <h1 className={styles.tituloBienvenida}>Ingreso de Pagaré</h1>
+                    <div className={styles.titleAccent}></div>
+                    <p className={styles.subtituloBienvenida}>
+                      Ingresás el monto del pagaré y la fecha de pago
+                    </p>
+                  </div>
                 )}
 
                 {pasoActual < 4 && (

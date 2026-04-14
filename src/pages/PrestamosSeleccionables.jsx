@@ -245,6 +245,7 @@ export default function Prestamos() {
                     <h1 className={styles.tituloBienvenida}>
                       Solicitud de Línea de Préstamo
                     </h1>
+                    <div className={styles.titleAccent}></div>
                     <p className={styles.subtituloBienvenida}>
                       Obtené financiación para tu empresa de forma ágil y 100%
                       online.

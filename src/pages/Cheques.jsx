@@ -235,6 +235,7 @@ export default function Cheques() {
                     <h1 className={styles.tituloBienvenida}>
                       Solicitud de Línea de Cheques
                     </h1>
+                    <div className={styles.titleAccent}></div>
                     <p className={styles.subtituloBienvenida}>
                       Comenzá validando el CUIT de tu empresa para operar en el
                       mercado de capitales.

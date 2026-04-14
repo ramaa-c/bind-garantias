@@ -200,6 +200,7 @@ export default function Pagare() {
                 {pasoActual === 1 && (
                   <div className={styles.bienvenidaHeader}>
                     <h1 className={styles.tituloBienvenida}>Solicitud de Línea de Pagaré</h1>
+                    <div className={styles.titleAccent}></div>
                     <p className={styles.subtituloBienvenida}>
                       Emití y negociá pagarés bursátiles de forma ágil y 100% online.
                     </p>
