@@ -133,6 +133,34 @@
   width: 100%;
 }
 
+/* --- INDICADOR DE PASOS --- */
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin: 0.5rem 0 0;
+}
+
+.stepDot {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+  background: #444;
+  flex-shrink: 0;
+  transition: background 0.3s ease;
+}
+
+.stepDotActive {
+  background: var(--yellow);
+}
+
+.stepLine {
+  flex: 1;
+  height: 2px;
+  background: #333;
+  margin: 0 0.4rem;
+}
+
 /* Escritorio */
 @media (min-width: 48rem) {
   .modalContainer {
@@ -167,6 +195,53 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@media (max-width: 56.24rem) {
+  .overlay {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modalContainer {
+    width: 90%;
+    max-width: 420px;
+    max-height: 85vh;
+    position: relative;
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    margin: 1.5rem;
+  }
+
+  .actions {
+    flex-direction: row !important;
+    gap: 0.625rem !important;
+    margin-top: 1.75rem !important;
+  }
+
+  .actions :global(button):first-child {
+    flex: 2;
+    width: auto !important;
+  }
+
+  .actions :global(button):last-child {
+    flex: 3;
+    width: auto !important;
+  }
+
+  .stepIndicator {
+    display: flex;
+  }
+
+  .formSection {
+    padding-bottom: 1rem;
+  }
+}
+
+@media (min-width: 56.25rem) {
+  .stepIndicator {
+    display: none;
   }
 }
 
@@ -224,7 +299,6 @@
   }
 }
 
-/* Mobile: hide button icons to keep text centred inside sticky footer */
 @media (max-width: 56.24rem) {
   .calcBtnWrapper button svg,
   .calcBtnWrapper button .iconContainer,

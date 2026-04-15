@@ -1,8 +1,11 @@
 /* SkeletonCard.module.css */
 
-/* ─── Container ─────────────────────────────────── */
 .card {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.2) 100%);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
   border: 1px solid #2a2a2a;
   border-radius: 0.75rem;
   padding: 1.5rem;
@@ -21,7 +24,6 @@
   width: 100%;
 }
 
-/* ─── Shimmer base ───────────────────────────────── */
 .shimmer {
   background: linear-gradient(
     90deg,
@@ -35,11 +37,14 @@
 }
 
 @keyframes shimmerPulse {
-  0%   { background-position: 200% center; }
-  100% { background-position: -200% center; }
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
 }
 
-/* ─── Header ─────────────────────────────────────── */
 .header {
   display: flex;
   align-items: center;
@@ -62,13 +67,23 @@
   flex: 1;
 }
 
-/* ─── Lines ──────────────────────────────────────── */
-.lineLong  { height: 0.875rem; width: 65%; }
-.lineShort { height: 0.75rem;  width: 40%; }
-.lineLabel { height: 0.75rem;  width: 35%; }
-.lineValue { height: 0.75rem;  width: 25%; }
+.lineLong {
+  height: 0.875rem;
+  width: 65%;
+}
+.lineShort {
+  height: 0.75rem;
+  width: 40%;
+}
+.lineLabel {
+  height: 0.75rem;
+  width: 35%;
+}
+.lineValue {
+  height: 0.75rem;
+  width: 25%;
+}
 
-/* ─── Body rows ──────────────────────────────────── */
 .body {
   display: flex;
   flex-direction: column;
@@ -81,7 +96,6 @@
   align-items: center;
 }
 
-/* ─── Footer (button placeholder) ────────────────── */
 .footer {
   padding-top: 1.5rem;
   border-top: 1px solid #1e1e1e;
@@ -95,7 +109,6 @@
   border-radius: 0.5rem;
 }
 
-/* ─── Responsive ─────────────────────────────────── */
 @media (min-width: 56.25rem) {
   .card {
     padding: 2rem;

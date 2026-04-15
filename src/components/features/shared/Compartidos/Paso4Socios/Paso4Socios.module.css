@@ -31,7 +31,6 @@
   margin: 0;
 }
 
-/* --- NUEVOS ESTILOS FASE 2 --- */
 .topBackButtonWrapper {
   display: flex;
   justify-content: flex-start;
@@ -43,7 +42,6 @@
   justify-content: flex-start !important;
 }
 
-/* Centrado del botón guardar en móvil */
 .saveActionRowCentrado {
   display: flex;
   justify-content: center;
@@ -56,7 +54,6 @@
   width: 100%;
 }
 
-/* --- LA TARJETA PRINCIPAL (Fase 2) --- */
 .summaryCard {
   background-color: rgba(76, 175, 80, 0.05);
   border: 1px solid rgba(76, 175, 80, 0.2);
@@ -66,7 +63,6 @@
   flex-direction: column;
 }
 
-/* Info de arriba */
 .summaryTop {
   padding: 1.25rem;
   display: flex;
@@ -102,14 +98,12 @@
   margin: 0;
 }
 
-/* La línea divisoria */
 .summaryDivider {
   width: 100%;
   height: 1px;
   border-top: 1px dashed rgba(255, 255, 255, 0.15);
 }
 
-/* El sector del input nuevo */
 .summaryBottom {
   padding: 1.25rem;
   display: flex;
@@ -123,7 +117,6 @@
   font-size: 0.9375rem;
 }
 
-/* El input específico de porcentaje */
 .customInputWrapper {
   display: flex;
   align-items: center;
@@ -267,9 +260,7 @@
   margin-top: 1.5rem;
 }
 
-/* ========================================================== */
 /* --- ESCRITORIO --- */
-/* ========================================================== */
 @media (min-width: 48rem) {
   .headerTitleRow {
     flex-direction: row;
@@ -282,7 +273,6 @@
     padding: 0;
   }
 
-  /* Ajustes Fase 2 para Escritorio */
   .saveActionRowCentrado {
     flex-direction: row;
     justify-content: center;
@@ -319,7 +309,6 @@
     justify-content: center;
   }
 
-  /* Ajustes Fase 3 (Lista) para Escritorio */
   .listHeader {
     flex-direction: row;
     justify-content: space-between;
@@ -429,7 +418,6 @@
   }
 }
 
-/* Mobile: hide button icons to keep text centred inside sticky footer */
 @media (max-width: 56.24rem) {
   .calcBtnWrapper button svg,
   .calcBtnWrapper button .iconContainer,

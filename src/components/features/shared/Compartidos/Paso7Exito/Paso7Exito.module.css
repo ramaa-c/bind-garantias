@@ -4,7 +4,6 @@
   width: 100%;
 }
 
-/* --- HERO DE ÉXITO (Diseño Pagare/Préstamos) --- */
 .hero {
   position: relative;
   background: linear-gradient(
@@ -78,7 +77,7 @@
   margin: 2rem 0 1.5rem 0;
 }
 
-/* --- TARJETAS DE PASOS (Diseño Cheques/Préstamos) --- */
+/* --- TARJETAS DE PASOS --- */
 .stepsContainer {
   display: flex;
   flex-direction: column;
@@ -346,7 +345,6 @@
   }
 }
 
-/* Mobile: hide button icons to keep text centred inside sticky footer */
 @media (max-width: 56.24rem) {
   .calcBtnWrapper button svg,
   .calcBtnWrapper button .iconContainer,

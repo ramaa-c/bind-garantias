@@ -132,7 +132,6 @@
   }
 }
 
-/* Mobile: hide button icons to keep text centred inside sticky footer */
 @media (max-width: 56.24rem) {
   .calcBtnWrapper button svg,
   .calcBtnWrapper button .iconContainer,

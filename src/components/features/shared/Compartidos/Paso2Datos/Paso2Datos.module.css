@@ -78,7 +78,6 @@
   gap: 1rem;
 }
 
-/* --- Agregado para que los textos queden bien formateados --- */
 .taskCardText h4 {
   margin: 0 0 0.25rem 0;
   font-size: 1rem;
@@ -255,7 +254,6 @@
   }
 }
 
-/* Mobile: hide button icons to keep text centred inside sticky footer */
 @media (max-width: 56.24rem) {
   .calcBtnWrapper button svg,
   .calcBtnWrapper button .iconContainer,
