@@ -9,7 +9,6 @@
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 2rem;
-  /* Distancia estándar hacia el formulario */
 }
 
 .headerTitle {
@@ -30,11 +29,10 @@
   flex-direction: column;
 }
 
-/* --- TARJETAS TIPO DE CHEQUE --- */
+/* --- TARJETAS CHEQUE --- */
 .radioGroup {
   display: flex;
   flex-direction: column;
-  /* Apiladas en móvil por si la pantalla es muy chica */
   gap: 1rem;
   margin-bottom: 0.5rem;
 }
@@ -61,9 +59,7 @@
 
 .radioCard.selected {
   background: rgba(245, 244, 0, 0.05);
-  /* Fondo amarillento */
   border-color: var(--yellow);
-  /* Usamos tu variable */
 }
 
 .radioIcon {
@@ -128,11 +124,9 @@
   border-radius: 0.5rem;
   color: var(--white);
   font-family: inherit;
-  /* Hereda la tipografía de tu proyecto */
   font-size: 1rem;
   resize: vertical;
   min-height: 6.25rem;
-  /* 100px */
   transition: all 0.2s ease;
 }
 
@@ -140,21 +134,18 @@
   outline: none;
   border-color: var(--yellow);
   background: rgba(0, 0, 0, 0.2);
-  /* Oscurece el fondo al hacer foco, igual que tus select */
 }
 
 /* --- BOTÓN FINALIZAR --- */
 .actions {
   display: flex;
   justify-content: center;
-  /* Centrado en móvil */
   margin-top: 2.5rem;
   width: 100%;
 }
 
 .actions :global(button) {
   width: 100%;
-  /* Ocupa todo el ancho en móvil */
 }
 
 @keyframes fadeIn {
@@ -169,18 +160,14 @@
   }
 }
 
-/* ========================================================== */
 /* --- ESCRITORIO --- */
-/* ========================================================== */
 @media (min-width: 48rem) {
   .radioGroup {
     flex-direction: row;
-    /* En PC se ponen una al lado de la otra */
   }
 
   .actions {
     justify-content: flex-end;
-    /* En PC se va a la derecha */
   }
 
   .actions :global(button) {
@@ -189,9 +176,16 @@
   }
 }
 
-/* Sticky Mobile Footer Action injected by UX Architecture */
 @media (max-width: 56.24rem) {
-  .calcBtnWrapper, .actionFooter, .footer, .summaryActions, .actionButtonsGroup, .actionFooterBorder, .actionsRight, .actions, .saveActionRowCentrado {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
     position: sticky;
     bottom: 0;
     z-index: 40;
@@ -203,9 +197,30 @@
     border-bottom-left-radius: 1.5rem;
     border-bottom-right-radius: 1.5rem;
   }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    width: calc(100% - 7rem) !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
 }
 @media (min-width: 56.25rem) {
-  .calcBtnWrapper, .actionFooter, .footer, .summaryActions, .actionButtonsGroup, .actionFooterBorder, .actionsRight, .actions, .saveActionRowCentrado {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
     position: relative;
     background: transparent;
     backdrop-filter: none;
@@ -215,3 +230,37 @@
   }
 }
 
+/* Mobile: hide button icons to keep text centred inside sticky footer */
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper button svg,
+  .calcBtnWrapper button .iconContainer,
+  .actionFooter button svg,
+  .actionFooter button .iconContainer,
+  .footer button svg,
+  .footer button .iconContainer,
+  .summaryActions button svg,
+  .summaryActions button .iconContainer,
+  .actionButtonsGroup button svg,
+  .actionButtonsGroup button .iconContainer,
+  .actionFooterBorder button svg,
+  .actionFooterBorder button .iconContainer,
+  .actionsRight button svg,
+  .actionsRight button .iconContainer,
+  .actions button svg,
+  .actions button .iconContainer,
+  .saveActionRowCentrado button svg,
+  .saveActionRowCentrado button .iconContainer {
+    display: none !important;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    justify-content: center !important;
+  }
+}

@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from "react";
-import { ContenedorPaso, Button } from "../../../../ui";
+import { ContenedorPaso, Button, SkeletonList } from "../../../../ui";
 import { ChequeItemCard } from "../components/ChequeItemCard/ChequeItemCard";
 import styles from "./Paso2RevisionCheques.module.css";
 
 export const Paso2RevisionCheques = ({
   chequesProcesados = [],
   chequesYaAprobados = [],
+  isLoading = false,
   onContinuar,
   onDesistir,
 }) => {
@@ -61,14 +62,18 @@ export const Paso2RevisionCheques = ({
       </p>
 
       <div className={styles.listContainer}>
-        {chequesProcesados.map((cheque) => (
-          <ChequeItemCard
-            key={cheque.id}
-            cheque={cheque}
-            isSelected={selectedIds.includes(cheque.id)}
-            onToggle={handleToggleCheque}
-          />
-        ))}
+        {isLoading ? (
+          <SkeletonList count={3} rows={3} showHeader={false} />
+        ) : (
+          chequesProcesados.map((cheque) => (
+            <ChequeItemCard
+              key={cheque.id}
+              cheque={cheque}
+              isSelected={selectedIds.includes(cheque.id)}
+              onToggle={handleToggleCheque}
+            />
+          ))
+        )}
       </div>
 
       <div className={styles.summaryContainer}>

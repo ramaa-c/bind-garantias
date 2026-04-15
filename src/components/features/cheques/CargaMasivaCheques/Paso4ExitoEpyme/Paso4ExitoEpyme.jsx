@@ -30,9 +30,9 @@ export const Paso4ExitoEpyme = ({
             <tbody>
               {chequesFinales.map((cheque, index) => (
                 <tr key={cheque.id || index}>
-                  <td className={styles.td}>{cheque.montoNominalFormateado}</td>
-                  <td className={styles.td}>{cheque.cuit}</td>
-                  <td className={styles.td}>{cheque.emisor}</td>
+                  <td className={styles.td} data-label="Monto">{cheque.montoNominalFormateado}</td>
+                  <td className={styles.td} data-label="CUIT">{cheque.cuit}</td>
+                  <td className={styles.td} data-label="Emisor">{cheque.emisor}</td>
                 </tr>
               ))}
             </tbody>

@@ -155,3 +155,11 @@
   }
 }
 
+
+
+/* Enhanced Space for sticky footer */
+@media (max-width: 56.24rem) {
+  .seccionFormulario {
+    padding-bottom: 8rem !important; /* Extra breathing room so inputs aren't blocked */
+  }
+}

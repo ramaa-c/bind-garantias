@@ -71,6 +71,8 @@ export default function PagareUSD() {
     metodosFormulario.reset({
       moneda: "Dólar",
       tipoCalculo: "monto",
+      monto: "",
+      fechaPago: "",
     });
     setSimulacionLista(false);
     setPasoActual(1);

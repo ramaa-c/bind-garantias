@@ -79,6 +79,7 @@
   font-size: 0.875rem;
   color: var(--white);
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .dataHighlight {
@@ -148,6 +149,8 @@
   color: var(--color-amarillo-bind);
   line-height: 1;
   margin: 0.25rem 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 .summaryCount {
@@ -204,10 +207,16 @@
   }
 }
 
-
-/* Sticky Mobile Footer Action injected by UX Architecture */
 @media (max-width: 56.24rem) {
-  .calcBtnWrapper, .actionFooter, .footer, .summaryActions, .actionButtonsGroup, .actionFooterBorder, .actionsRight, .actions, .saveActionRowCentrado {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
     position: sticky;
     bottom: 0;
     z-index: 40;
@@ -219,9 +228,30 @@
     border-bottom-left-radius: 1.5rem;
     border-bottom-right-radius: 1.5rem;
   }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    width: calc(100% - 7rem) !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
 }
 @media (min-width: 56.25rem) {
-  .calcBtnWrapper, .actionFooter, .footer, .summaryActions, .actionButtonsGroup, .actionFooterBorder, .actionsRight, .actions, .saveActionRowCentrado {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
     position: relative;
     background: transparent;
     backdrop-filter: none;
@@ -231,3 +261,37 @@
   }
 }
 
+/* Mobile: hide button icons to keep text centred inside sticky footer */
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper button svg,
+  .calcBtnWrapper button .iconContainer,
+  .actionFooter button svg,
+  .actionFooter button .iconContainer,
+  .footer button svg,
+  .footer button .iconContainer,
+  .summaryActions button svg,
+  .summaryActions button .iconContainer,
+  .actionButtonsGroup button svg,
+  .actionButtonsGroup button .iconContainer,
+  .actionFooterBorder button svg,
+  .actionFooterBorder button .iconContainer,
+  .actionsRight button svg,
+  .actionsRight button .iconContainer,
+  .actions button svg,
+  .actions button .iconContainer,
+  .saveActionRowCentrado button svg,
+  .saveActionRowCentrado button .iconContainer {
+    display: none !important;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    justify-content: center !important;
+  }
+}

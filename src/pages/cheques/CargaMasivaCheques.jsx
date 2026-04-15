@@ -72,6 +72,7 @@ export default function CargaMasivaCheques() {
   const handleResetFlujoCompleto = () => {
     setChequesParseados([]);
     setChequesAprobados([]);
+    metodosFormulario.reset();
     setPasoActual(1);
   };
 
@@ -187,6 +188,7 @@ export default function CargaMasivaCheques() {
                         <Paso2RevisionCheques
                           chequesProcesados={chequesParseados}
                           chequesYaAprobados={chequesAprobados}
+                          isLoading={isProcessing}
                           onContinuar={handleContinuarRevision}
                           onDesistir={handleDesistir}
                         />

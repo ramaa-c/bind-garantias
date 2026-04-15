@@ -65,6 +65,8 @@ export default function SolicitudCheques() {
       sociedadBolsa: "",
       emisorCuit: "",
       tipoCheque: "fisico",
+      monto: "",
+      fechaPago: "",
     });
     setMostrarResultados(false);
     setPasoActual(1);

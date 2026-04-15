@@ -95,6 +95,8 @@ export default function Cheques() {
       celular: "",
       representantes: [],
       emailFacturacion: "",
+      monto: "",
+      fechaPago: "",
     });
     setSocios([]);
     setFaseSocio("lista");
