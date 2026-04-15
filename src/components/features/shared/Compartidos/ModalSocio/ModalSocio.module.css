@@ -205,8 +205,7 @@
   }
 
   .modalContainer {
-    width: 90%;
-    max-width: 420px;
+    width: 92%;
     max-height: 85vh;
     position: relative;
     border-radius: 1.25rem;

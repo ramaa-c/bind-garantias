@@ -13,9 +13,9 @@
 .modalBox {
   background-color: var(--graphite);
   border: 1px solid #333;
-  border-radius: 12px;
+  border-radius: 1.25rem;
   padding: 30px;
-  width: 90%;
+  width: 92%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;

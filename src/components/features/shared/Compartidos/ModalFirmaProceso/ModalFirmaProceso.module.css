@@ -13,8 +13,8 @@
 .modalContent {
   background-color: var(--carbon-black);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  width: 90%;
+  border-radius: 1.25rem;
+  width: 92%;
   max-width: 32rem;
   padding: 2rem;
   position: relative;
