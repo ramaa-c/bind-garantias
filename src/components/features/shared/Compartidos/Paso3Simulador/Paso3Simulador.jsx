@@ -32,7 +32,7 @@ export default function Paso3Simulador({
   labelMonto = "Monto",
   usarTicketPrestamoFijo = false,
 }) {
-  const { register, control, trigger, setValue } = useFormContext();
+  const { control, trigger, setValue } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
 
   const errorFechaPago = errors?.fechaPago?.message;
@@ -109,9 +109,14 @@ export default function Paso3Simulador({
     if (error) return false;
     if (val === undefined || val === null) return false;
     if (Array.isArray(val) && val.length === 0) return false;
-    
+
     const strVal = String(val).trim();
-    return strVal !== "" && strVal !== "0" && strVal !== "false" && strVal !== "[object Object]";
+    return (
+      strVal !== "" &&
+      strVal !== "0" &&
+      strVal !== "false" &&
+      strVal !== "[object Object]"
+    );
   };
 
   return (
