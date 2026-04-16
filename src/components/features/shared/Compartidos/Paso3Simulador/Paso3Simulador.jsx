@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
+import { FiDollarSign, FiBriefcase, FiSliders } from "react-icons/fi";
 import {
   Button,
   InputMonto,
   SelectFecha,
-  Select,
+  SelectSocio,
   TicketSimulacion,
   TicketPrestamoFijo,
 } from "../../../../ui";
 import styles from "./Paso3Simulador.module.css";
-
-// IMPORTAMOS EL SERVICIO (Ajustá la ruta según la ubicación real de tu archivo)
 import { catalogosService } from "../../../../../services/catalogosService";
-
-// Borramos la lista quemada de opcionesMoneda de acá arriba
 
 const defaultOpcionesCalculo = [
   { value: "por_monto_factura", label: "Por monto de factura" },
@@ -37,42 +34,41 @@ export default function Paso3Simulador({
 }) {
   const { register, control, trigger, setValue } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
+
   const errorFechaPago = errors?.fechaPago?.message;
   const errorPlazo = errors?.plazo?.message;
-  const isMontoValid = !errors.monto && dirtyFields.monto;
 
-  // --- NUEVO ESTADO PARA LAS MONEDAS ---
   const [opcionesMoneda, setOpcionesMoneda] = useState([]);
   const [cargandoMonedas, setCargandoMonedas] = useState(false);
-  // --------------------------------------
 
   const tipoCalculo = useWatch({
     control,
     name: "tipoCalculo",
     defaultValue: "",
   });
+  const monedaValue = useWatch({ control, name: "moneda", defaultValue: "" });
+  const tipoProductoValue = useWatch({
+    control,
+    name: "tipoProducto",
+    defaultValue: "",
+  });
+  const montoValue = useWatch({ control, name: "monto" });
+
+  const isMontoValid = !errors.monto && dirtyFields.monto;
   const esFechaEspecifica =
     tipoCalculo === "por_monto_cheque" || tipoCalculo === "por_monto_pagare";
   const campoFecha = esFechaEspecifica ? "fechaPago" : "plazo";
 
-  const montoValue = useWatch({ control, name: "monto" });
-
-  // --- NUEVO EFECTO PARA TRAER LAS MONEDAS DE LA API ---
   useEffect(() => {
     const cargarMonedas = async () => {
       setCargandoMonedas(true);
       try {
         const data = await catalogosService.obtenerMonedas();
-
-        // Mapeo exacto con la estructura confirmada de BIND
         const mapeadas = data.map((moneda) => ({
           value: moneda.monedaid.toString(),
           label: moneda.descripcion,
         }));
-
-        // Las ordenamos alfabéticamente para que queden prolijas
         mapeadas.sort((a, b) => a.label.localeCompare(b.label));
-
         setOpcionesMoneda(mapeadas);
       } catch (error) {
         console.error("Error al cargar las monedas:", error);
@@ -80,10 +76,8 @@ export default function Paso3Simulador({
         setCargandoMonedas(false);
       }
     };
-
     cargarMonedas();
   }, []);
-  // -----------------------------------------------------
 
   useEffect(() => {
     if (opcionesProducto?.length === 1) {
@@ -108,10 +102,16 @@ export default function Paso3Simulador({
     if (mostrarFecha) camposATrigger.push(campoFecha);
 
     const esValido = await trigger(camposATrigger);
+    if (esValido) onCalcular();
+  };
 
-    if (esValido) {
-      onCalcular();
-    }
+  const isValidSelection = (error, val) => {
+    if (error) return false;
+    if (val === undefined || val === null) return false;
+    if (Array.isArray(val) && val.length === 0) return false;
+    
+    const strVal = String(val).trim();
+    return strVal !== "" && strVal !== "0" && strVal !== "false" && strVal !== "[object Object]";
   };
 
   return (
@@ -123,37 +123,38 @@ export default function Paso3Simulador({
       )}
 
       <div className={styles.topGrid}>
-        <Select
+        <SelectSocio
           name="moneda"
           control={control}
-          label="Moneda"
-          // Cambiamos el placeholder dinámicamente si está cargando
-          placeholder={cargandoMonedas ? "Cargando..." : "Seleccione moneda"}
+          label={cargandoMonedas ? "Cargando..." : "Moneda"}
+          icon={<FiDollarSign />}
           options={opcionesMoneda}
-          // Bloqueamos el select si está buscando los datos en la VPN
           disabled={mostrarResultados || cargandoMonedas}
           error={errors.moneda?.message}
+          esValido={isValidSelection(errors.moneda, monedaValue)}
         />
 
-        <Select
+        <SelectSocio
           name="tipoProducto"
           control={control}
           label="Tipo de producto"
-          placeholder="Seleccione producto"
+          icon={<FiBriefcase />}
           options={opcionesProducto}
           disabled={mostrarResultados}
           error={errors.tipoProducto?.message}
+          esValido={isValidSelection(errors.tipoProducto, tipoProductoValue)}
         />
 
         {mostrarTipoCalculo && (
-          <Select
+          <SelectSocio
             name="tipoCalculo"
             control={control}
             label="Tipo de cálculo"
-            placeholder="Seleccione tipo"
+            icon={<FiSliders />}
             options={opcionesCalculo}
             disabled={mostrarResultados}
             error={errors.tipoCalculo?.message}
+            esValido={isValidSelection(errors.tipoCalculo, tipoCalculo)}
           />
         )}
 
@@ -172,11 +173,12 @@ export default function Paso3Simulador({
         <div className={styles.mainForm}>
           <div className={styles.montoSection}>
             <InputMonto
+              name="monto"
+              control={control}
               label={labelMonto}
               esValido={isMontoValid || montoValue > 0}
               error={errors.monto?.message}
               disabled={mostrarResultados}
-              {...register("monto")}
             />
           </div>
         </div>
