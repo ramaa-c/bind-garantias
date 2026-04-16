@@ -1,87 +1,123 @@
-.indicatorWrapper {
+.container {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  position: relative;
+  align-items: flex-end;
   width: 100%;
+  position: relative;
+  padding-bottom: 1.25rem;
 }
 
-.indicatorLabel {
-  font-size: 0.75rem;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.05rem;
-  font-weight: 600;
-  margin-left: 0.25rem;
-}
-
-.badgeInteractive {
-  height: 3.25rem;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0 1rem;
-  border-radius: 0.5rem;
-  color: var(--white);
-  font-size: 0.95rem;
+.innerGroup {
+  width: 100%;
+  height: 3.2rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  outline: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.6rem;
+  position: relative;
+  transition: border-color 0.3s ease;
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
-.badgeInteractive:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.badgeInteractive:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.badgeSuccess {
-  border-color: #4caf50;
-  background-color: rgba(76, 175, 80, 0.05);
-}
-
-.badgeError {
-  border-color: #ff5252;
-  background-color: rgba(255, 82, 82, 0.05);
-}
-
-.calendarIcon {
-  color: var(--yellow);
-  font-size: 1.1rem;
-}
-
-.placeholderText {
+.icon {
+  width: 3.2rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #888;
+  transition: color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.fieldGroup {
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+
+.triggerBtn {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  padding: 1.1rem 1rem 0.4rem 1rem;
+  text-align: left;
+  cursor: pointer;
+  outline: none;
 }
 
 .dateText {
   color: var(--white);
+  font-size: 1rem;
   font-weight: 500;
   text-transform: capitalize;
 }
 
-.errorContainer {
-  min-height: 1.2rem;
-  margin-left: 0.25rem;
+.label {
+  position: absolute;
+  top: 1.1rem;
+  left: 1rem;
+  font-size: 1rem;
+  color: #888;
+  pointer-events: none;
+  transition: 0.3s var(--ease-out) all;
+  background-color: #1a1a1a;
+  padding: 0 0.3rem;
+  border-radius: 4px;
 }
 
-.errorText {
+/* COMPORTAMIENTO REACTIVO: FOCUS, OPEN & HAS VALUE */
+.container:focus-within .innerGroup,
+.container.hasValue:focus-within .innerGroup {
+  border-color: var(--yellow);
+}
+
+.container:focus-within .icon,
+.container.hasValue:focus-within .icon {
+  color: var(--yellow);
+}
+
+.container:focus-within .label,
+.container.hasValue .label {
+  top: -0.6rem;
+  left: 0.8rem;
+  font-size: 0.75rem;
+  color: var(--yellow);
+}
+
+.container.hasValue:not(:focus-within) .label {
+  color: #aaa;
+}
+
+.container.isDisabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.container.isDisabled .triggerBtn { cursor: not-allowed; }
+
+/* ESTADO DE ERROR */
+.container.hasError .innerGroup { border-color: #ff5252; }
+.container.hasError .icon { color: #ff5252; }
+.container.hasError .label { color: #ff5252; }
+
+/* ESTADO VÁLIDO */
+.container.isValid:not(:focus-within) .innerGroup { border-color: #4caf50; }
+.container.isValid:not(:focus-within) .icon { color: #4caf50; }
+.container.isValid:not(:focus-within) .label { color: #4caf50; }
+
+.errorMsg {
+  position: absolute;
+  bottom: 0;
+  left: 1rem;
+  font-size: 0.75rem;
   color: #ff5252;
-  font-size: 0.8rem;
-  display: block;
-  animation: fadeIn 0.2s ease;
+  white-space: nowrap;
+  animation: slideIn 0.3s ease;
 }
 
 .calendarPopover {
   position: absolute;
-  top: calc(100% + -1rem);
+  top: calc(100% - 1rem); /* Ajustado por la reserva de padding-bottom */
   left: 0;
   z-index: 50;
   background-color: #1e1e1e;
@@ -91,6 +127,7 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   animation: fadeIn 0.2s ease;
 }
+
 
 /* --- MODIFICADORES REACT-DAY-PICKER --- */
 :global(.rdp-root) {

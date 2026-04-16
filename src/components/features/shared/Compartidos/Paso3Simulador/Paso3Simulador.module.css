@@ -15,7 +15,7 @@
 .topGrid {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.5rem;
   margin-top: 1.5625rem;
   margin-bottom: 2.5rem;
 }
