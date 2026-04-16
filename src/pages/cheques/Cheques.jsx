@@ -14,6 +14,7 @@ import {
   Paso6Bolsa,
   Paso7Exito,
   PanelDudas,
+  BotonAyudaFlotante,
   ModalConfirmacionBorrador,
 } from "../../components/features";
 import { ModalSms, BarraProgreso, BotonVolver, Scroll } from "../../components/ui";
@@ -94,6 +95,8 @@ export default function Cheques() {
       celular: "",
       representantes: [],
       emailFacturacion: "",
+      monto: "",
+      fechaPago: "",
     });
     setSocios([]);
     setFaseSocio("lista");
@@ -338,7 +341,12 @@ export default function Cheques() {
                 </FormProvider>
               </div>
             </div>
-            {pasoActual < 7 && <PanelDudas pasoActual={pasoActual} />}
+            {pasoActual < 7 && (
+              <>
+                <PanelDudas contexto="cheques" pasoActual={pasoActual} />
+                <BotonAyudaFlotante contexto="cheques" pasoActual={pasoActual} />
+              </>
+            )}
           </div>
         </div>
       </div>

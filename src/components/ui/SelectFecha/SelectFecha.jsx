@@ -46,7 +46,8 @@ export const SelectFecha = ({
         control={control}
         defaultValue=""
         render={({ field: { onChange, value, onBlur } }) => {
-          const dateObj = value ? new Date(value + "T00:00:00") : undefined;
+          const safeValue = value || "";
+          const dateObj = safeValue ? new Date(safeValue + "T00:00:00") : undefined;
 
           const handleDateSelect = (date) => {
             if (!date) return;

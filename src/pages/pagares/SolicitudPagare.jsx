@@ -12,6 +12,7 @@ import {
   Paso3Epyme,
   Paso4ExitoPagare,
   PanelDudas,
+  BotonAyudaFlotante,
   ModalConfirmacionBorrador,
 } from "../../components/features";
 import styles from "./SolicitudPagare.module.css";
@@ -70,6 +71,8 @@ export default function PagareUSD() {
     metodosFormulario.reset({
       moneda: "Dólar",
       tipoCalculo: "monto",
+      monto: "",
+      fechaPago: "",
     });
     setSimulacionLista(false);
     setPasoActual(1);
@@ -160,7 +163,10 @@ export default function PagareUSD() {
             </div>
 
             {pasoActual < 4 && (
-              <PanelDudas contexto="pagare" pasoActual={pasoActual} />
+              <>
+                <PanelDudas contexto="pagare" pasoActual={pasoActual} />
+                <BotonAyudaFlotante contexto="pagare" pasoActual={pasoActual} />
+              </>
             )}
           </div>
         </div>

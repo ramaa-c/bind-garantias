@@ -6,7 +6,7 @@ import { FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../../components/ui";
-import { PanelDudas, ModalConfirmacionBorrador } from "../../components/features";
+import { PanelDudas, BotonAyudaFlotante, ModalConfirmacionBorrador } from "../../components/features";
 import styles from "./Prestamos.module.css";
 import { PrestamosFijosPasos } from "./PrestamosFijosPasos";
 
@@ -279,7 +279,12 @@ export default function PrestamosFijos() {
                 </FormProvider>
               </div>
             </div>
-            {pasoActual < 7 && <PanelDudas pasoActual={pasoActual} />}
+            {pasoActual < 7 && (
+              <>
+                <PanelDudas contexto="prestamos_fijos" pasoActual={pasoActual} />
+                <BotonAyudaFlotante contexto="prestamos_fijos" pasoActual={pasoActual} />
+              </>
+            )}
           </div>
         </div>
       </div>

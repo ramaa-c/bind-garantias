@@ -5,7 +5,8 @@ export const pagareSchema = z.object({
     .preprocess(
       (val) => {
         if (val === "" || val === undefined || val === null) return undefined;
-        const num = Number(val);
+        const cleanVal = typeof val === "string" ? val.replace(/\D/g, "") : val;
+        const num = Number(cleanVal);
         return isNaN(num) ? val : num;
       },
       z
