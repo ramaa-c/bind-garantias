@@ -9,6 +9,7 @@ export const InputFlotante = React.forwardRef(
       label,
       error,
       esValido,
+      icon,
       type = "text",
       className = "",
       id,
@@ -25,7 +26,7 @@ export const InputFlotante = React.forwardRef(
 
     return (
       <div
-        className={`${styles.group} ${compact ? styles.compact : ""} ${className}`}
+        className={`${styles.group} ${compact ? styles.compact : ""} ${icon ? styles.hasIcon : ""} ${className}`}
       >
         <input
           id={inputId}
@@ -39,6 +40,8 @@ export const InputFlotante = React.forwardRef(
         <label htmlFor={inputId} className={styles.label}>
           {label}
         </label>
+
+        {icon && <span className={styles.icon}>{icon}</span>}
 
         {isPassword && (
           <button
