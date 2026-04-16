@@ -1,12 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useFormContext, Controller } from "react-hook-form";
-import { FiUser, FiX, FiArrowRight } from "react-icons/fi";
-import { InputFlotante, Button, CargaArchivos } from "../../../../ui";
+import { useFormContext } from "react-hook-form";
+import {
+  FiUser,
+  FiX,
+  FiArrowRight,
+  FiMail,
+  FiSmartphone,
+  FiMapPin,
+  FiMap,
+} from "react-icons/fi";
+import { InputSocioMasked, Button, CargaArchivos } from "../../../../ui";
 import { useEscape } from "../../../../../hooks/useEscape";
 import styles from "./ModalSocio.module.css";
 
-/*  Sub-componente: Dropzone  */
+/* ─── Sub-componente: Dropzone ─── */
 const DropzoneField = ({
   fileKey,
   title,
@@ -59,6 +67,7 @@ const DropzoneField = ({
   );
 };
 
+/* ─── Hook: detección de móvil ─── */
 function useIsMobile(breakpointPx = 900) {
   const [isMobile, setIsMobile] = useState(
     typeof window !== "undefined" ? window.innerWidth < breakpointPx : false,
@@ -73,7 +82,6 @@ function useIsMobile(breakpointPx = 900) {
   return isMobile;
 }
 
-/*  Componente Principal  */
 export default function ModalSocio({
   socio,
   socioIndex,
@@ -89,8 +97,12 @@ export default function ModalSocio({
   onDrop,
   control,
 }) {
-  const { trigger, clearErrors } = useFormContext();
-  const isMounted = useRef(false);
+  const {
+    trigger,
+    clearErrors,
+    formState: { errors },
+    watch,
+  } = useFormContext();
   const isMobile = useIsMobile(900);
 
   const [step, setStep] = useState(1);
@@ -102,7 +114,6 @@ export default function ModalSocio({
 
   useEffect(() => {
     if (socioIndex === null) {
-      isMounted.current = false;
       setStep(1);
       setHaIntentadoAvanzar(false);
       setHaIntentadoFinalizar(false);
@@ -149,18 +160,31 @@ export default function ModalSocio({
     onGuardar();
   };
 
-  const enPaso1Movil = isMobile && step === 1;
+  const getError = (campo) => {
+    const errorObj = errors?.socios?.[socioIndex]?.[campo];
+    if (!errorObj) return null;
 
-  const evaluarError = (fieldState, value) => {
-    const hasValue = value !== undefined && value.toString().trim().length > 0;
-    const mostrarError =
-      fieldState.error &&
-      (fieldState.isDirty ||
-        hasValue ||
+    const valor = watch(`socios.${socioIndex}.${campo}`);
+    const hasValue = valor !== undefined && valor.toString().trim().length > 0;
+
+    const mostrar =
+      errorObj &&
+      (hasValue ||
         intentoGuardarSocio ||
-        haIntentadoAvanzar);
-    return mostrarError ? fieldState.error.message : null;
+        haIntentadoAvanzar ||
+        haIntentadoFinalizar);
+    return mostrar ? errorObj.message : null;
   };
+
+  const getEsValido = (campo) => {
+    const errorObj = errors?.socios?.[socioIndex]?.[campo];
+    const valor = watch(`socios.${socioIndex}.${campo}`);
+    const hasValue = valor !== undefined && valor.toString().trim().length > 0;
+
+    return !errorObj && hasValue;
+  };
+
+  const enPaso1Movil = isMobile && step === 1;
 
   return createPortal(
     <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
@@ -200,110 +224,63 @@ export default function ModalSocio({
           </p>
 
           <div className={styles.formSection}>
+            {/* ── PASO 1 / ESCRITORIO ── */}
             {(!isMobile || step === 1) && (
               <>
                 <h4 className={styles.sectionTitle}>
                   1. Información de contacto
                 </h4>
-
                 <div className={styles.inputRow}>
-                  <Controller
+                  <InputSocioMasked
                     name={`socios.${socioIndex}.email`}
                     control={control}
-                    render={({ field, fieldState }) => (
-                      <InputFlotante
-                        label="Email"
-                        type="email"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        error={evaluarError(fieldState, field.value)}
-                        esValido={
-                          !fieldState.error &&
-                          field.value?.toString().trim().length > 0
-                        }
-                      />
-                    )}
+                    label="Email"
+                    icon={<FiMail />}
+                    error={getError("email")}
+                    esValido={getEsValido("email")}
                   />
-
-                  <Controller
+                  <InputSocioMasked
                     name={`socios.${socioIndex}.celular`}
                     control={control}
-                    render={({ field, fieldState }) => (
-                      <InputFlotante
-                        label="Celular"
-                        maxLength={10}
-                        value={field.value || ""}
-                        onChange={(e) => {
-                          const limpio = e.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, 10);
-                          field.onChange(limpio);
-                        }}
-                        error={evaluarError(fieldState, field.value)}
-                        esValido={
-                          !fieldState.error &&
-                          field.value?.toString().trim().length > 0
-                        }
-                      />
-                    )}
+                    label="Celular"
+                    icon={<FiSmartphone />}
+                    mask="+54 9 000 0000-0000"
+                    error={getError("celular")}
+                    esValido={getEsValido("celular")}
                   />
                 </div>
 
-                <Controller
+                <InputSocioMasked
                   name={`socios.${socioIndex}.direccion`}
                   control={control}
-                  render={({ field, fieldState }) => (
-                    <InputFlotante
-                      label="Dirección"
-                      value={field.value || ""}
-                      onChange={field.onChange}
-                      error={evaluarError(fieldState, field.value)}
-                      esValido={
-                        !fieldState.error &&
-                        field.value?.toString().trim().length > 0
-                      }
-                    />
-                  )}
+                  label="Dirección"
+                  icon={<FiMapPin />}
+                  error={getError("direccion")}
+                  esValido={getEsValido("direccion")}
                 />
 
                 <div className={styles.inputRow}>
-                  <Controller
+                  <InputSocioMasked
                     name={`socios.${socioIndex}.provincia`}
                     control={control}
-                    render={({ field, fieldState }) => (
-                      <InputFlotante
-                        label="Provincia"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        error={evaluarError(fieldState, field.value)}
-                        esValido={
-                          !fieldState.error &&
-                          field.value?.toString().trim().length > 0
-                        }
-                      />
-                    )}
+                    label="Provincia"
+                    icon={<FiMap />}
+                    error={getError("provincia")}
+                    esValido={getEsValido("provincia")}
                   />
-
-                  <Controller
+                  <InputSocioMasked
                     name={`socios.${socioIndex}.localidad`}
                     control={control}
-                    render={({ field, fieldState }) => (
-                      <InputFlotante
-                        label="Localidad"
-                        value={field.value || ""}
-                        onChange={field.onChange}
-                        error={evaluarError(fieldState, field.value)}
-                        esValido={
-                          !fieldState.error &&
-                          field.value?.toString().trim().length > 0
-                        }
-                      />
-                    )}
+                    label="Localidad"
+                    icon={<FiMap />}
+                    error={getError("localidad")}
+                    esValido={getEsValido("localidad")}
                   />
                 </div>
               </>
             )}
 
+            {/* ── PASO 2 / ESCRITORIO ── */}
             {(!isMobile || step === 2) && (
               <>
                 <h4 className={styles.sectionTitle}>
@@ -341,7 +318,6 @@ export default function ModalSocio({
             )}
           </div>
 
-          {/* ── Footer de Acciones ── */}
           <div className={styles.actions}>
             <Button
               type="button"
@@ -355,7 +331,7 @@ export default function ModalSocio({
               <Button
                 type="button"
                 variant="primary"
-                onClick={(e) => handleSiguiente(e)}
+                onClick={handleSiguiente}
                 iconRight={<FiArrowRight />}
               >
                 SIGUIENTE
