@@ -97,7 +97,7 @@ export default function PagareUSD() {
 
               {pasoActual < 4 && (
                 <BotonVolver
-                  icon={FiRotateCcw }
+                  icon={FiRotateCcw}
                   onClick={handleReiniciarAlta}
                   texto="Reiniciar alta"
                 />

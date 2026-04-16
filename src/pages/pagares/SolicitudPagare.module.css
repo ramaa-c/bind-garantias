@@ -98,9 +98,9 @@
 .titleAccent {
   width: 220px;
   height: 3px;
-  background-color: var(--yellow); 
+  background-color: var(--yellow);
   border-radius: 2px;
-  margin: 0.75rem auto 1rem auto; 
+  margin: 0.75rem auto 1rem auto;
 }
 
 :global(.animacion-paso) {
@@ -113,6 +113,7 @@
     opacity: 0;
     transform: translateY(-0.625rem);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -153,8 +154,9 @@
     padding-bottom: 3rem; 
   }
 }
+
 @media (min-width: 56.25rem) {
   .seccionFormulario {
-    padding-bottom: 2.5rem; 
+    padding-bottom: 2.5rem;
   }
 }

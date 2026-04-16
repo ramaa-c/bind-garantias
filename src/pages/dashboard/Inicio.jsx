@@ -454,11 +454,10 @@ export default function Inicio() {
                       <p className={styles.actividadMonto}>U$D {sol.monto}</p>
                     </div>
                     <div
-                      className={`${styles.actividadStatus} ${
-                        sol.estado === "esperando"
-                          ? styles.statusEsperando
-                          : styles.statusAprobado
-                      }`}
+                      className={`${styles.actividadStatus} ${sol.estado === "esperando"
+                        ? styles.statusEsperando
+                        : styles.statusAprobado
+                        }`}
                     >
                       {sol.texto}
                     </div>
