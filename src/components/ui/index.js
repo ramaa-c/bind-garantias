@@ -16,6 +16,7 @@ export * from './InputPasswordSeguro/InputPasswordSeguro';
 export { default as ModalSms } from './ModalSms/ModalSms';
 export * from './Modal/Modal';
 export * from './Select/Select';
+export * from './SelectFlotante/SelectFlotante';
 export * from './SinResultados/SinResultados';
 export * from './Spinner/Spinner';
 export * from './TarjetaEstado/TarjetaEstado';

@@ -1,10 +1,6 @@
 import React from "react";
 import { useDropzone } from "react-dropzone";
-<<<<<<< HEAD:src/components/features/CargaMasivaCheques/Paso1CargaMasiva/Paso1CargaMasiva.jsx
-import { CargaArchivos, Button } from "../../../ui";
-=======
 import { CargaArchivos, Button } from "../../../../ui";
->>>>>>> 3c4085b1b113aa88a92a7c139e5f9a3c41558b4f:src/components/features/cheques/CargaMasivaCheques/Paso1CargaMasiva/Paso1CargaMasiva.jsx
 import styles from "./Paso1CargaMasiva.module.css";
 
 export const Paso1CargaMasiva = ({

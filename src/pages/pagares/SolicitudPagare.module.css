@@ -95,17 +95,14 @@
   margin: 0 auto;
 }
 
-<<<<<<< HEAD:src/pages/SolicitudPagare.module.css
-=======
 .titleAccent {
   width: 220px;
   height: 3px;
-  background-color: var(--yellow); 
+  background-color: var(--yellow);
   border-radius: 2px;
-  margin: 0.75rem auto 1rem auto; 
+  margin: 0.75rem auto 1rem auto;
 }
 
->>>>>>> 3c4085b1b113aa88a92a7c139e5f9a3c41558b4f:src/pages/pagares/SolicitudPagare.module.css
 :global(.animacion-paso) {
   animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
@@ -116,10 +113,7 @@
     opacity: 0;
     transform: translateY(-0.625rem);
   }
-<<<<<<< HEAD:src/pages/SolicitudPagare.module.css
 
-=======
->>>>>>> 3c4085b1b113aa88a92a7c139e5f9a3c41558b4f:src/pages/pagares/SolicitudPagare.module.css
   to {
     opacity: 1;
     transform: translateY(0);
@@ -155,25 +149,17 @@
   }
 }
 
-<<<<<<< HEAD:src/pages/SolicitudPagare.module.css
-.titleAccent {
-  width: 220px;
-  height: 3px;
-  background-color: var(--yellow); 
-  border-radius: 2px;
-  margin: 0.75rem auto 1rem auto; 
-}
-=======
 
 /* Space for sticky footer */
 @media (max-width: 56.24rem) {
   .seccionFormulario {
-    padding-bottom: 5rem; 
+    padding-bottom: 5rem;
   }
 }
+
 @media (min-width: 56.25rem) {
   .seccionFormulario {
-    padding-bottom: 2.5rem; 
+    padding-bottom: 2.5rem;
   }
 }
 
@@ -182,7 +168,7 @@
 /* Enhanced Space for sticky footer */
 @media (max-width: 56.24rem) {
   .seccionFormulario {
-    padding-bottom: 8rem !important; /* Extra breathing room so inputs aren't blocked */
+    padding-bottom: 8rem !important;
+    /* Extra breathing room so inputs aren't blocked */
   }
 }
->>>>>>> 3c4085b1b113aa88a92a7c139e5f9a3c41558b4f:src/pages/pagares/SolicitudPagare.module.css

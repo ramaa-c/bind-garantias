@@ -145,20 +145,19 @@
   .subtituloBienvenida {
     font-size: 1.1rem;
   }
-<<<<<<< HEAD:src/pages/Prestamos.module.css
-=======
 }
 
 
 /* Space for sticky footer */
 @media (max-width: 56.24rem) {
   .seccionFormulario {
-    padding-bottom: 5rem; 
+    padding-bottom: 5rem;
   }
 }
+
 @media (min-width: 56.25rem) {
   .seccionFormulario {
-    padding-bottom: 2.5rem; 
+    padding-bottom: 2.5rem;
   }
 }
 
@@ -167,7 +166,7 @@
 /* Enhanced Space for sticky footer */
 @media (max-width: 56.24rem) {
   .seccionFormulario {
-    padding-bottom: 8rem !important; /* Extra breathing room so inputs aren't blocked */
+    padding-bottom: 8rem !important;
+    /* Extra breathing room so inputs aren't blocked */
   }
->>>>>>> 3c4085b1b113aa88a92a7c139e5f9a3c41558b4f:src/pages/prestamos/Prestamos.module.css
 }

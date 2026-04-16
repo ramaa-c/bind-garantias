@@ -97,7 +97,7 @@ export default function PagareUSD() {
 
               {pasoActual < 4 && (
                 <BotonVolver
-                  icon={FiRotateCcw }
+                  icon={FiRotateCcw}
                   onClick={handleReiniciarAlta}
                   texto="Reiniciar alta"
                 />
@@ -117,8 +117,6 @@ export default function PagareUSD() {
                       Ingresás el monto del pagaré y la fecha de pago
                     </p>
                   </div>
-<<<<<<< HEAD:src/pages/SolicitudPagare.jsx
-=======
                 )}
                 {pasoActual > 1 && pasoActual < 4 && (
                   <h1 className={styles.tituloVista}>
@@ -127,7 +125,6 @@ export default function PagareUSD() {
                     {pasoActual === 3 &&
                       "Generá el pagaré en Epyme y completá la operación"}
                   </h1>
->>>>>>> 3c4085b1b113aa88a92a7c139e5f9a3c41558b4f:src/pages/pagares/SolicitudPagare.jsx
                 )}
 
                 {pasoActual < 4 && (
