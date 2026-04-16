@@ -3,64 +3,6 @@ import { Controller } from "react-hook-form";
 import ReactSelect from "react-select";
 import styles from "./SelectSocio.module.css";
 
-const customStyles = {
-  control: (base) => ({
-    ...base,
-    minHeight: "100%",
-    height: "100%",
-    backgroundColor: "transparent",
-    border: "none",
-    boxShadow: "none",
-    cursor: "pointer",
-  }),
-  valueContainer: (base) => ({
-    ...base,
-    padding: "1.1rem 1rem 0.4rem 1rem",
-  }),
-  placeholder: (base) => ({
-    ...base,
-    color: "transparent",
-  }),
-  singleValue: (base) => ({
-    ...base,
-    color: "var(--white)",
-    margin: 0,
-  }),
-  input: (base) => ({
-    ...base,
-    color: "var(--white)",
-    margin: 0,
-    padding: 0,
-  }),
-  indicatorSeparator: () => ({ display: "none" }),
-  dropdownIndicator: (base, state) => ({
-    ...base,
-    color: state.isFocused ? "var(--yellow)" : "#888",
-    padding: "0 1rem 0 0",
-    "&:hover": { color: "var(--yellow)" },
-  }),
-  menu: (base) => ({
-    ...base,
-    backgroundColor: "#1e1e1e",
-    border: "1px solid #333",
-    borderRadius: "0.5rem",
-    zIndex: 50,
-    overflow: "hidden",
-  }),
-  option: (base, state) => ({
-    ...base,
-    backgroundColor: state.isSelected
-      ? "var(--yellow)"
-      : state.isFocused
-        ? "rgba(244, 245, 0, 0.1)"
-        : "transparent",
-    color: state.isSelected ? "#000" : state.isFocused ? "var(--yellow)" : "var(--white)",
-    cursor: "pointer",
-    padding: "0.75rem 1rem",
-    "&:active": { backgroundColor: "var(--yellow)", color: "#000" },
-  }),
-};
-
 export const SelectSocio = ({
   control,
   name,
@@ -72,6 +14,72 @@ export const SelectSocio = ({
   className = "",
   ...props
 }) => {
+
+  // Movimos los estilos acá adentro para poder leer la propiedad "icon"
+  const customStyles = {
+    control: (base) => ({
+      ...base,
+      minHeight: "100%",
+      height: "100%",
+      backgroundColor: "transparent",
+      border: "none",
+      boxShadow: "none",
+      cursor: "pointer",
+    }),
+    valueContainer: (base) => ({
+      ...base,
+      padding: "1.1rem 1rem 0.4rem 1rem",
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: "transparent",
+    }),
+    singleValue: (base) => ({
+      ...base,
+      color: "var(--white)",
+      margin: 0,
+    }),
+    input: (base) => ({
+      ...base,
+      color: "var(--white)",
+      margin: 0,
+      padding: 0,
+    }),
+    indicatorSeparator: () => ({ display: "none" }),
+    dropdownIndicator: (base, state) => ({
+      ...base,
+      color: state.isFocused ? "var(--yellow)" : "#888",
+      padding: "0 1rem 0 0",
+      "&:hover": { color: "var(--yellow)" },
+    }),
+    menu: (base) => ({
+      ...base,
+      backgroundColor: "#1e1e1e",
+      border: "1px solid #333",
+      borderRadius: "0.5rem",
+      zIndex: 50,
+      overflow: "hidden",
+
+      // LA MAGIA DEL ANCHO ESTÁ ACÁ:
+      // Si hay ícono, la lista mide su 100% normal + los 3.2rem del ícono, 
+      // y se corre a la izquierda para alinearse perfecto.
+      width: icon ? "calc(100% + 3.2rem)" : "100%",
+      marginLeft: icon ? "-3.2rem" : "0",
+    }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isSelected
+        ? "var(--yellow)"
+        : state.isFocused
+          ? "rgba(244, 245, 0, 0.1)"
+          : "transparent",
+      color: state.isSelected ? "#000" : state.isFocused ? "var(--yellow)" : "var(--white)",
+      cursor: "pointer",
+      padding: "0.75rem 1rem",
+      "&:active": { backgroundColor: "var(--yellow)", color: "#000" },
+    }),
+  };
+
   return (
     <Controller
       name={name}
@@ -83,9 +91,8 @@ export const SelectSocio = ({
 
         return (
           <div
-            className={`${styles.container} ${hasError ? styles.hasError : ""} ${
-              !hasError && esValido ? styles.isValid : ""
-            } ${hasValue ? styles.hasValue : ""} ${className}`}
+            className={`${styles.container} ${hasError ? styles.hasError : ""} ${!hasError && esValido ? styles.isValid : ""
+              } ${hasValue ? styles.hasValue : ""} ${className}`}
           >
             <div className={styles.innerGroup}>
               {icon && <div className={styles.icon}>{icon}</div>}
