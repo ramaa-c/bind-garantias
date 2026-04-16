@@ -1,0 +1,167 @@
+.pasoContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}
+
+.seccion {
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.seccionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05rem;
+}
+
+.seccionText {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.descargaBox {
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  background-color: var(--bg-surface);
+}
+
+.descargaLabel {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+.btnDescargar {
+  width: 100%;
+}
+
+.dropzoneWrapper {
+  width: 100%;
+  outline: none;
+}
+
+.actionFooter {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .pasoContainer {
+    flex-direction: row;
+    gap: 3rem;
+  }
+  .seccion {
+    flex: 1;
+  }
+  .descargaBox {
+    max-width: 100%;
+  }
+  .dropzoneWrapper {
+    max-width: 100%;
+  }
+  .actionFooter {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(12px);
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+    border-bottom-left-radius: 1.5rem;
+    border-bottom-right-radius: 1.5rem;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    width: calc(100% - 7rem) !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+}
+@media (min-width: 56.25rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: relative;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    border-top: none;
+    margin: 1.5rem 0 0 0;
+  }
+}
+
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper button svg,
+  .calcBtnWrapper button .iconContainer,
+  .actionFooter button svg,
+  .actionFooter button .iconContainer,
+  .footer button svg,
+  .footer button .iconContainer,
+  .summaryActions button svg,
+  .summaryActions button .iconContainer,
+  .actionButtonsGroup button svg,
+  .actionButtonsGroup button .iconContainer,
+  .actionFooterBorder button svg,
+  .actionFooterBorder button .iconContainer,
+  .actionsRight button svg,
+  .actionsRight button .iconContainer,
+  .actions button svg,
+  .actions button .iconContainer,
+  .saveActionRowCentrado button svg,
+  .saveActionRowCentrado button .iconContainer {
+    display: none !important;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    justify-content: center !important;
+  }
+}

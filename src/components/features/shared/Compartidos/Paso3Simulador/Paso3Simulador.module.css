@@ -1,0 +1,154 @@
+.container {
+  animation: fadeIn 0.4s ease;
+  max-width: 45rem;
+  margin: 0 auto;
+  padding: 0.625rem 1rem 0 1rem;
+}
+
+.headerTitle {
+  color: var(--white);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.topGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5625rem;
+  margin-bottom: 2.5rem;
+}
+
+/* --- SECCIÓN MONTO --- */
+.mainForm {
+  margin-bottom: 2.5rem;
+}
+
+/* --- UTILIDADES --- */
+.calcBtnWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 3rem;
+}
+
+.calcBtnWrapper :global(button) {
+  width: 100%;
+}
+
+/* ESCRITORIO */
+@media (min-width: 48rem) {
+  .container {
+    padding: 0;
+  }
+
+  .topGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .calcBtnWrapper :global(button) {
+    width: auto;
+    min-width: 12.5rem;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.625rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(12px);
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+    border-bottom-left-radius: 1.5rem;
+    border-bottom-right-radius: 1.5rem;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    width: calc(100% - 7rem) !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+}
+@media (min-width: 56.25rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: relative;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    border-top: none;
+    margin: 1.5rem 0 0 0;
+  }
+}
+
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper button svg,
+  .calcBtnWrapper button .iconContainer,
+  .actionFooter button svg,
+  .actionFooter button .iconContainer,
+  .footer button svg,
+  .footer button .iconContainer,
+  .summaryActions button svg,
+  .summaryActions button .iconContainer,
+  .actionButtonsGroup button svg,
+  .actionButtonsGroup button .iconContainer,
+  .actionFooterBorder button svg,
+  .actionFooterBorder button .iconContainer,
+  .actionsRight button svg,
+  .actionsRight button .iconContainer,
+  .actions button svg,
+  .actions button .iconContainer,
+  .saveActionRowCentrado button svg,
+  .saveActionRowCentrado button .iconContainer {
+    display: none !important;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    justify-content: center !important;
+  }
+}

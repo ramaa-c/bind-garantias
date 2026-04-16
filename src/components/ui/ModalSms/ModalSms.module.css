@@ -12,9 +12,9 @@
 
 .modalContainer {
   background-color: #1a1a1a;
-  width: 90%;
+  width: 92%;
   max-width: 420px;
-  border-radius: 16px;
+  border-radius: 1.25rem;
   border: 1px solid #333;
   position: relative;
   overflow: hidden;

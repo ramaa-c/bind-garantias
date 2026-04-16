@@ -27,9 +27,7 @@ export const prestamosSchema = z
       (val) => {
         if (val === "" || val === undefined || val === null) return undefined;
         const cleanValue =
-          typeof val === "string"
-            ? val.replace(/\./g, "").replace(",", ".")
-            : val;
+          typeof val === "string" ? val.replace(/\D/g, "") : val;
         const num = Number(cleanValue);
         return isNaN(num) ? val : num;
       },

@@ -1,0 +1,45 @@
+.panelContainer {
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  position: relative;
+  top: 0;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  margin-top: 2rem;
+  display: none; /* Oculto en móvil por defecto */
+}
+
+.panelTitle {
+  color: var(--white);
+  font-size: 1.1rem;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--yellow);
+  display: inline-block;
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.respuesta {
+  color: #aaa;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 1.75rem;
+}
+
+/* Escritorio */
+@media (min-width: 56.25rem) {
+  .panelContainer {
+    display: block; /* Visible en escritorio */
+    position: sticky;
+    top: 2.5rem;
+    margin-top: 0;
+  }
+}

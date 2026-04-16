@@ -1,5 +1,9 @@
 .resultsBox {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(0, 0, 0, 0.2) 100%);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
   border: 1px solid #333;
   border-radius: 0.75rem;
   padding: 1.5rem;
@@ -30,6 +34,8 @@
   font-size: 2rem;
   font-weight: bold;
   margin: 0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 .resultsBody {
@@ -43,6 +49,7 @@
   justify-content: space-between;
   color: #ccc;
   font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .resultTotalRow {
@@ -69,6 +76,7 @@
   justify-content: space-between;
   color: var(--white);
   font-size: 1rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .alertWrapper {
@@ -90,16 +98,34 @@
 }
 
 @media (min-width: 48rem) {
-  .resultsBox { padding: 2.5rem; }
-  .resultsAmount { font-size: 2.5rem; }
-  .summaryRow { font-size: 1.05rem; }
+  .resultsBox {
+    padding: 2.5rem;
+  }
+  .resultsAmount {
+    font-size: 2.5rem;
+  }
+  .summaryRow {
+    font-size: 1.05rem;
+  }
 }
 
-.textYellow { color: var(--yellow); }
-.textMuted { color: #aaa; }
-.mtSmall { margin-top: 0.625rem; }
+.textYellow {
+  color: var(--yellow);
+}
+.textMuted {
+  color: #aaa;
+}
+.mtSmall {
+  margin-top: 0.625rem;
+}
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(0.625rem); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(0.625rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
