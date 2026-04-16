@@ -1,25 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiMapPin, FiX } from "react-icons/fi";
+import { FiMapPin, FiMap, FiX } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
-import { Button, InputFlotante, Select } from "../../../../ui";
+import { Button, InputSocioMasked, SelectSocio } from "../../../../ui";
 import styles from "./ModalUbicacion.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
 import { catalogosService } from "../../../../../services/catalogosService";
 
 export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
-  const { getValues, setValue, trigger } = useFormContext();
+  const { control, trigger, watch, formState: { errors } } = useFormContext();
 
-  const [dirLocal, setDirLocal] = useState("");
-  const [provLocal, setProvLocal] = useState("");
-  const [locLocal, setLocLocal] = useState("");
   const [intentoGuardar, setIntentoGuardar] = useState(false);
-
-  // --- NUEVOS ESTADOS PARA LA API ---
   const [opcionesProvincias, setOpcionesProvincias] = useState([]);
   const [cargandoProvincias, setCargandoProvincias] = useState(false);
-  // ----------------------------------
-
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
   useEffect(() => {
@@ -33,7 +26,6 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
             label: prov.descripcion,
           }));
           opcionesMapeadas.sort((a, b) => a.label.localeCompare(b.label));
-
           setOpcionesProvincias(opcionesMapeadas);
         } catch (error) {
           console.error("Error cargando provincias:", error);
@@ -41,7 +33,6 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
           setCargandoProvincias(false);
         }
       };
-
       cargarProvincias();
     }
   }, [isOpen]);
@@ -49,9 +40,6 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) {
-      setDirLocal(getValues("direccion") || "");
-      setProvLocal(getValues("provincia") || "");
-      setLocLocal(getValues("localidad") || "");
       setIntentoGuardar(false);
     }
   }
@@ -60,28 +48,28 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
 
   if (!isOpen) return null;
 
-  const errorDir = intentoGuardar && dirLocal.trim().length < 5 ? "Mínimo 5 caracteres" : null;
-  const errorProv = intentoGuardar && !provLocal ? "Seleccione una provincia" : null;
-  const errorLoc = intentoGuardar && locLocal.trim().length < 3 ? "Requerido" : null;
+  // Lógica de validación visual conectada a RHF
+  const getError = (campo) => {
+    const err = errors?.[campo];
+    const val = watch(campo);
+    const hasValue = val !== undefined && val.toString().trim().length > 0;
+    return err && (hasValue || intentoGuardar) ? err.message : null;
+  };
 
-  const isDirValido = !errorDir && dirLocal.trim().length >= 5;
-  const isProvValido = !errorProv && provLocal !== "";
-  const isLocValido = !errorLoc && locLocal.trim().length >= 3;
+  const getEsValido = (campo) => {
+    const err = errors?.[campo];
+    const val = watch(campo);
+    const hasValue = val !== undefined && val.toString().trim().length > 0;
+    return !err && hasValue;
+  };
 
   const handleGuardar = async (e) => {
     e.preventDefault();
     setIntentoGuardar(true);
 
-    if (isDirValido && isProvValido && isLocValido) {
-      setValue("direccion", dirLocal, { shouldValidate: true, shouldDirty: true });
-      setValue("provincia", provLocal, { shouldValidate: true, shouldDirty: true });
-      setValue("localidad", locLocal, { shouldValidate: true, shouldDirty: true });
-
-      const okZod = await trigger(["direccion", "provincia", "localidad"]);
-
-      if (okZod) {
-        onGuardar();
-      }
+    const okZod = await trigger(["direccion", "provincia", "localidad"]);
+    if (okZod) {
+      onGuardar();
     }
   };
 
@@ -105,34 +93,34 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
           <p className={styles.description}>Ingresá el domicilio fiscal de la empresa.</p>
 
           <div className={styles.formSection}>
-            <InputFlotante
+            <InputSocioMasked
+              name="direccion"
+              control={control}
               label="Dirección"
-              error={errorDir}
-              esValido={isDirValido}
-              value={dirLocal}
-              onChange={(e) => setDirLocal(e.target.value)}
+              icon={<FiMapPin />}
+              error={getError("direccion")}
+              esValido={getEsValido("direccion")}
             />
+            
             <div className={styles.inputRow}>
+              <SelectSocio
+                name="provincia"
+                control={control}
+                label={cargandoProvincias ? "Cargando..." : "Provincia"}
+                icon={<FiMap />}
+                options={opcionesProvincias}
+                disabled={cargandoProvincias}
+                error={getError("provincia")}
+                esValido={getEsValido("provincia")}
+              />
 
-              <div className={styles.selectWrapper} style={{ flex: 1 }}>
-                <Select
-                  name="provincia"
-                  placeholder={cargandoProvincias ? "Cargando..." : "Provincia"}
-                  error={errorProv}
-                  options={opcionesProvincias}
-                  value={provLocal}
-                  onChange={(val) => setProvLocal(val)}
-                  disabled={cargandoProvincias}
-                  isSearchable={true}
-                />
-              </div>
-
-              <InputFlotante
+              <InputSocioMasked
+                name="localidad"
+                control={control}
                 label="Localidad"
-                error={errorLoc}
-                esValido={isLocValido}
-                value={locLocal}
-                onChange={(e) => setLocLocal(e.target.value)}
+                icon={<FiMap />}
+                error={getError("localidad")}
+                esValido={getEsValido("localidad")}
               />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import {
   Button,
@@ -10,10 +10,10 @@ import {
 } from "../../../../ui";
 import styles from "./Paso3Simulador.module.css";
 
-const opcionesMoneda = [
-  { value: "Pesos", label: "Pesos" },
-  { value: "Dolares", label: "Dólares" },
-];
+// IMPORTAMOS EL SERVICIO (Ajustá la ruta según la ubicación real de tu archivo)
+import { catalogosService } from "../../../../../services/catalogosService";
+
+// Borramos la lista quemada de opcionesMoneda de acá arriba
 
 const defaultOpcionesCalculo = [
   { value: "por_monto_factura", label: "Por monto de factura" },
@@ -41,6 +41,11 @@ export default function Paso3Simulador({
   const errorPlazo = errors?.plazo?.message;
   const isMontoValid = !errors.monto && dirtyFields.monto;
 
+  // --- NUEVO ESTADO PARA LAS MONEDAS ---
+  const [opcionesMoneda, setOpcionesMoneda] = useState([]);
+  const [cargandoMonedas, setCargandoMonedas] = useState(false);
+  // --------------------------------------
+
   const tipoCalculo = useWatch({
     control,
     name: "tipoCalculo",
@@ -51,6 +56,34 @@ export default function Paso3Simulador({
   const campoFecha = esFechaEspecifica ? "fechaPago" : "plazo";
 
   const montoValue = useWatch({ control, name: "monto" });
+
+  // --- NUEVO EFECTO PARA TRAER LAS MONEDAS DE LA API ---
+  useEffect(() => {
+    const cargarMonedas = async () => {
+      setCargandoMonedas(true);
+      try {
+        const data = await catalogosService.obtenerMonedas();
+
+        // Mapeo exacto con la estructura confirmada de BIND
+        const mapeadas = data.map((moneda) => ({
+          value: moneda.monedaid.toString(),
+          label: moneda.descripcion,
+        }));
+
+        // Las ordenamos alfabéticamente para que queden prolijas
+        mapeadas.sort((a, b) => a.label.localeCompare(b.label));
+
+        setOpcionesMoneda(mapeadas);
+      } catch (error) {
+        console.error("Error al cargar las monedas:", error);
+      } finally {
+        setCargandoMonedas(false);
+      }
+    };
+
+    cargarMonedas();
+  }, []);
+  // -----------------------------------------------------
 
   useEffect(() => {
     if (opcionesProducto?.length === 1) {
@@ -94,9 +127,11 @@ export default function Paso3Simulador({
           name="moneda"
           control={control}
           label="Moneda"
-          placeholder="Seleccione moneda"
+          // Cambiamos el placeholder dinámicamente si está cargando
+          placeholder={cargandoMonedas ? "Cargando..." : "Seleccione moneda"}
           options={opcionesMoneda}
-          disabled={mostrarResultados}
+          // Bloqueamos el select si está buscando los datos en la VPN
+          disabled={mostrarResultados || cargandoMonedas}
           error={errors.moneda?.message}
         />
 

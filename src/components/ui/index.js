@@ -13,6 +13,7 @@ export * from './InputCodigo/InputCodigo';
 export * from './InputFlotante/InputFlotante';
 export * from './InputMonto/InputMonto';
 export * from './InputSocioMasked/InputSocioMasked';
+export * from './SelectSocio/SelectSocio';
 export * from './InputPasswordSeguro/InputPasswordSeguro';
 export { default as ModalSms } from './ModalSms/ModalSms';
 export * from './Modal/Modal';

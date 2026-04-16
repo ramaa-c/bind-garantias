@@ -1,0 +1,130 @@
+.container {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  position: relative;
+  padding-bottom: 1.25rem;
+}
+
+.innerGroup {
+  width: 100%;
+  height: 3.2rem;
+  display: flex;
+  align-items: center;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.6rem;
+  position: relative;
+  transition: border-color 0.3s ease;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.icon {
+  width: 3.2rem;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+
+  /* LÍNEAS AGREGADAS PARA EL SEPARADOR */
+  border-right: 1.5px solid rgba(255, 255, 255, 0.1);
+  transition: color 0.3s ease, border-color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.container:focus-within .icon {
+  color: var(--yellow);
+  border-right-color: rgba(245, 244, 0, 0.2);
+}
+
+.fieldGroup {
+  flex: 1;
+  position: relative;
+  height: 100%;
+}
+
+.selectWrapper {
+  width: 100%;
+  height: 100%;
+}
+
+.label {
+  position: absolute;
+  top: 1.1rem;
+  left: 1rem;
+  font-size: 1rem;
+  color: #888;
+  pointer-events: none;
+  transition: 0.3s var(--ease-out) all;
+  background-color: #1a1a1a;
+  padding: 0 0.3rem;
+  border-radius: 4px;
+}
+
+.container:focus-within .innerGroup {
+  border-color: var(--yellow);
+}
+
+.container:focus-within .icon {
+  color: var(--yellow);
+}
+
+.container:focus-within .label,
+.container.hasValue .label {
+  top: -0.6rem;
+  left: 0.8rem;
+  font-size: 0.75rem;
+  color: var(--yellow);
+}
+
+.container.hasValue:not(:focus-within) .label {
+  color: #aaa;
+}
+
+/* ESTADO DE ERROR */
+.container.hasError .innerGroup {
+  border-color: #ff5252;
+}
+
+.container.hasError .icon {
+  color: #ff5252;
+}
+
+.container.hasError .label {
+  color: #ff5252;
+}
+
+/* ESTADO VÁLIDO */
+.container.isValid:not(:focus-within) .innerGroup {
+  border-color: #4caf50;
+}
+
+.container.isValid:not(:focus-within) .icon {
+  color: #4caf50;
+}
+
+.container.isValid:not(:focus-within) .label {
+  color: #4caf50;
+}
+
+.errorMsg {
+  position: absolute;
+  bottom: 0;
+  left: 1rem;
+  font-size: 0.75rem;
+  color: #ff5252;
+  white-space: nowrap;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
