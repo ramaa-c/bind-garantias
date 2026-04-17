@@ -124,13 +124,15 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
               <div className={styles.formSection}>
                 <InputSocioMasked
                   label="Celular (Sin 0 ni 15)"
-                  maxLength={10}
+                  mask={[
+                    { mask: "00 0000-0000" },
+                    { mask: "000 000-0000" }
+                  ]}
+                  unmask={true}
                   error={errorCel}
                   esValido={isCelValido}
                   value={celLocal}
-                  onChange={(val) =>
-                    setCelLocal(val.replace(/\D/g, ""))
-                  }
+                  onChange={(val) => setCelLocal(typeof val === 'string' ? val : val.target?.value || "")}
                   icon={<FiSmartphone />}
                 />
               </div>
@@ -174,12 +176,11 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
               <div className={styles.formSection}>
                 <InputSocioMasked
                   label="Código de verificación"
+                  mask="000000"
+                  unmask={true}
                   value={codigoSms}
-                  maxLength={6}
-                  onChange={(val) =>
-                    setCodigoSms(val.replace(/\D/g, ""))
-                  }
                   esValido={codigoSms.length === 6}
+                  onChange={(val) => setCodigoSms(typeof val === 'string' ? val : val.target?.value || "")}
                   icon={<FiMessageSquare />}
                 />
               </div>

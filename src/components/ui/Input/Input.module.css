@@ -63,10 +63,14 @@
   text-align: center;
 }
 
-.textarea {
-  min-height: 100px;
-  resize: vertical;
-  padding-top: 12px;
-  line-height: 1.5;
-  font-family: inherit;
+
+/* --- RESET DE AUTOCOMPLETADO DEL NAVEGADOR --- */
+.field:-webkit-autofill,
+.field:-webkit-autofill:hover, 
+.field:-webkit-autofill:focus, 
+.field:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+  -webkit-text-fill-color: var(--white, #ffffff) !important;
+  caret-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
 }

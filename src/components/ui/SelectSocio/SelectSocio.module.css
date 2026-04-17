@@ -85,6 +85,7 @@
 }
 
 .container.hasError .icon {
+  border-right-color: #ff5252;
   color: #ff5252;
 }
 
