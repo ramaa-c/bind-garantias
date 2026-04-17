@@ -61,12 +61,11 @@
   color: #888;
   pointer-events: none;
   transition: 0.3s var(--ease-out) all;
-  background-color: #1a1a1a;
+  background-color: rgba(30, 30, 30, 0.85);
   padding: 0 0.3rem;
   border-radius: 4px;
 }
 
-/* COMPORTAMIENTO REACTIVO: FOCUS, OPEN & HAS VALUE */
 .container:focus-within .innerGroup,
 .container.hasValue:focus-within .innerGroup {
   border-color: var(--yellow);
@@ -93,17 +92,31 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
-.container.isDisabled .triggerBtn { cursor: not-allowed; }
+.container.isDisabled .triggerBtn {
+  cursor: not-allowed;
+}
 
 /* ESTADO DE ERROR */
-.container.hasError .innerGroup { border-color: #ff5252; }
-.container.hasError .icon { color: #ff5252; }
-.container.hasError .label { color: #ff5252; }
+.container.hasError .innerGroup {
+  border-color: #ff5252;
+}
+.container.hasError .icon {
+  color: #ff5252;
+}
+.container.hasError .label {
+  color: #ff5252;
+}
 
 /* ESTADO VÁLIDO */
-.container.isValid:not(:focus-within) .innerGroup { border-color: #4caf50; }
-.container.isValid:not(:focus-within) .icon { color: #4caf50; }
-.container.isValid:not(:focus-within) .label { color: #4caf50; }
+.container.isValid:not(:focus-within) .innerGroup {
+  border-color: #4caf50;
+}
+.container.isValid:not(:focus-within) .icon {
+  color: #4caf50;
+}
+.container.isValid:not(:focus-within) .label {
+  color: #4caf50;
+}
 
 .errorMsg {
   position: absolute;
@@ -117,7 +130,7 @@
 
 .calendarPopover {
   position: absolute;
-  top: calc(100% - 1rem); /* Ajustado por la reserva de padding-bottom */
+  top: calc(100% - 1rem);
   left: 0;
   z-index: 50;
   background-color: #1e1e1e;
@@ -127,7 +140,6 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
   animation: fadeIn 0.2s ease;
 }
-
 
 /* --- MODIFICADORES REACT-DAY-PICKER --- */
 :global(.rdp-root) {
@@ -175,7 +187,7 @@
 }
 
 :global(.rdp-caption_dropdowns .rdp-caption_label) {
-  display: none; 
+  display: none;
 }
 
 :global(.rdp-dropdown) {
@@ -215,6 +227,12 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
