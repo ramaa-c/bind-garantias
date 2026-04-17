@@ -13,7 +13,7 @@
 .modalContainer {
   background-color: #1a1a1a;
   width: 92%;
-  max-width: 32rem;
+  max-width: 38rem;
   max-height: 90vh;
   overflow-y: auto;
   border-radius: 1.25rem;
@@ -132,15 +132,32 @@
   gap: 0 !important;
 }
 
-.topBackButtonWrapper {
+.pillHeader {
   display: flex;
-  justify-content: flex-start;
-  width: 100%;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 0.5rem;
 }
 
-.topBackButtonWrapper > div {
-  justify-content: flex-start !important;
+.editButton {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--yellow, #f4f500);
+  border-radius: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.editButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 
 .infoPill {

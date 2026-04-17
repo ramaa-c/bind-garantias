@@ -39,6 +39,11 @@
   padding: 0;
   transition: text-shadow 0.3s ease;
   appearance: textfield;
+  margin-bottom: 0.5rem;
+}
+
+.error {
+  color: #ff5252;
 }
 
 .input::-webkit-outer-spin-button,

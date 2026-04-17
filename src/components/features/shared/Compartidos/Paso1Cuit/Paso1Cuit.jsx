@@ -4,7 +4,7 @@ import { BuscadorCuit } from "../../../../ui";
 import styles from "./Paso1Cuit.module.css";
 
 export default function Paso1Cuit({ onValidar }) {
-  const { register, control } = useFormContext();
+  const { control } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
 
   const isCuitValid = !errors.cuit && dirtyFields.cuit;
@@ -12,12 +12,13 @@ export default function Paso1Cuit({ onValidar }) {
   return (
     <div className={styles.pasoContainer}>
       <BuscadorCuit
-        label="CUIT de la empresa *"
+        name="cuit"
+        control={control}
+        label="CUIT de la empresa"
         onValidar={onValidar}
         error={errors.cuit?.message}
         esValido={isCuitValid}
         buttonText="VALIDAR CUIT"
-        {...register("cuit")}
       />
     </div>
   );
