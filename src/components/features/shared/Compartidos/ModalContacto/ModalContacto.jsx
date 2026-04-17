@@ -7,7 +7,7 @@ import {
   FiMessageSquare,
 } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
-import { Button, InputFlotante } from "../../../../ui";
+import { Button, InputSocioMasked } from "../../../../ui";
 import styles from "./ModalContacto.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
 
@@ -122,21 +122,24 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
                 validación.
               </p>
               <div className={styles.formSection}>
-                <InputFlotante
+                <InputSocioMasked
                   label="Celular (Sin 0 ni 15)"
                   maxLength={10}
                   error={errorCel}
                   esValido={isCelValido}
                   value={celLocal}
-                  onChange={(e) =>
-                    setCelLocal(e.target.value.replace(/\D/g, ""))
+                  onChange={(val) =>
+                    setCelLocal(val.replace(/\D/g, ""))
                   }
+                  icon={<FiSmartphone />}
                 />
               </div>
               <div className={styles.btnSave}>
                 <Button
-                  type="submit"
+                  type="button"
                   variant="primary"
+                  onClick={handleSolicitarSms}
+                  disabled={procesando || celLocal.length < 10}
                   style={{ width: "100%", minHeight: "3rem" }}
                 >
                   ENVIAR CÓDIGO SMS
@@ -169,20 +172,22 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
                 </span>
               </p>
               <div className={styles.formSection}>
-                <InputFlotante
+                <InputSocioMasked
                   label="Código de verificación"
                   value={codigoSms}
                   maxLength={6}
-                  onChange={(e) =>
-                    setCodigoSms(e.target.value.replace(/\D/g, ""))
+                  onChange={(val) =>
+                    setCodigoSms(val.replace(/\D/g, ""))
                   }
                   esValido={codigoSms.length === 6}
+                  icon={<FiMessageSquare />}
                 />
               </div>
               <div className={styles.btnSave}>
                 <Button
-                  type="submit"
+                  type="button"
                   variant="primary"
+                  onClick={handleVerificarSms}
                   disabled={codigoSms.length < 6 || procesando}
                   style={{ width: "100%", minHeight: "3rem" }}
                 >
