@@ -56,16 +56,31 @@
   height: 100%;
 }
 
-/* --- FASE 2: BOTÓN VOLVER Y TARJETA --- */
-.topBackButtonWrapper {
+.cardHeader {
   display: flex;
-  justify-content: flex-start;
-  width: 100%;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 0.75rem;
 }
 
-.topBackButtonWrapper > div {
-  justify-content: flex-start !important;
+.editButton {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--yellow, #f4f500);
+  border-radius: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 
 .summaryCard {

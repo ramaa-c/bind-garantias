@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { FiCheckCircle } from "react-icons/fi";
-import { BuscadorCuit, Button, BotonVolver } from "../../../../ui";
+import { FiCheckCircle, FiEdit2 } from "react-icons/fi";
+import { BuscadorCuit, Button } from "../../../../ui";
 import styles from "./PasoEmisor.module.css";
 
 export default function PasoEmisor({ onValidar }) {
@@ -25,14 +25,12 @@ export default function PasoEmisor({ onValidar }) {
       return;
     }
 
-    // Validamos con Zod primero
     const pasaZod = await trigger("emisorCuit");
     if (!pasaZod) return;
 
     setErrorCuitLocal("");
     setValidando(true);
 
-    // Simulamos la llamada a la base de datos
     setTimeout(() => {
       setRazonSocial("AGROPECUARIA PAMPEANA S.A.");
       setValidando(false);
@@ -49,7 +47,6 @@ export default function PasoEmisor({ onValidar }) {
   return (
     <div className={styles.container}>
 
-      {/* --- REEMPLAZO DEL CONTENEDOR PASO POR EL ESTILO DEL PASO 4 --- */}
       <div className={styles.headerTitleRow}>
         <h3 className={styles.headerTitle}>Datos del Emisor</h3>
         <p className={styles.helperText}>
@@ -78,19 +75,25 @@ export default function PasoEmisor({ onValidar }) {
       {/* --- FASE 2: TARJETA DE RESULTADO --- */}
       {faseEmisor === "validado" && (
         <div className={styles.sectionAnimada}>
-          <div className={styles.topBackButtonWrapper}>
-            <BotonVolver
-              texto="MODIFICAR CUIT"
-              onClick={handleModificarCuit}
-            />
-          </div>
-
           <div className={styles.summaryCard}>
             <div className={styles.summaryTop}>
-              <div className={styles.summaryStatus}>
-                <FiCheckCircle size={16} />
-                <span>EMISOR ENCONTRADO</span>
+              <div className={styles.cardHeader}>
+                <div className={styles.summaryStatus}>
+                  <FiCheckCircle size={16} />
+                  <span>EMISOR ENCONTRADO</span>
+                </div>
+                
+                <button 
+                  type="button" 
+                  className={styles.editButton} 
+                  onClick={handleModificarCuit}
+                  title="Modificar CUIT"
+                  aria-label="Modificar CUIT"
+                >
+                  <FiEdit2 size={16} />
+                </button>
               </div>
+
               <p className={styles.summaryName}>{razonSocial}</p>
               <p className={styles.summaryCuit}>CUIT: {cuitActual}</p>
             </div>

@@ -8,7 +8,7 @@
   flex-direction: column;
   position: relative;
   font-family: var(--font-secundaria);
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .formMainContainer {
