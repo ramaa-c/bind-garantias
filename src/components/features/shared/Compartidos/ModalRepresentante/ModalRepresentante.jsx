@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiBriefcase, FiX } from "react-icons/fi";
-import { InputFlotante, Button, BotonVolver } from "../../../../ui";
+import { FiBriefcase, FiX, FiMail, FiSmartphone, FiCreditCard } from "react-icons/fi";
+import { InputSocioMasked, Button, BotonVolver } from "../../../../ui";
 import styles from "./ModalRepresentante.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
 
@@ -148,17 +148,18 @@ export const ModalRepresentante = ({
               {faseInterna === "ingresar" && (
                 <div className={styles.searchBox}>
                   <div className={styles.inputWrapper}>
-                    <InputFlotante
+                    <InputSocioMasked
                       name="cuit"
                       label="CUIT"
                       maxLength={11}
+                      icon={<FiCreditCard />}
                       esValido={
                         cuit.length === 11 && !errores.cuit && validarCUIT(cuit)
                       }
                       error={errores.cuit}
                       value={cuit}
-                      onChange={(e) => {
-                        const limpio = e.target.value
+                      onChange={(val) => {
+                        const limpio = val
                           .replace(/\D/g, "")
                           .slice(0, 11);
                         setCuit(limpio);
@@ -168,9 +169,10 @@ export const ModalRepresentante = ({
                     />
                   </div>
                   <Button
-                    type="submit"
+                    type="button"
                     variant="primary"
                     size="sm"
+                    onClick={handleValidarCuit}
                   >
                     VALIDAR
                   </Button>
@@ -230,29 +232,31 @@ export const ModalRepresentante = ({
                   </div>
 
                   <div className={styles.inputRow}>
-                    <InputFlotante
+                    <InputSocioMasked
                       name="modalRepEmail_unique"
                       label="Email Personal"
                       type="email"
+                      icon={<FiMail />}
                       error={errores.email}
                       esValido={isEmailValido}
                       value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
+                      onChange={(val) => {
+                        setEmail(val);
                         if (errores.email)
                           setErrores({ ...errores, email: null });
                       }}
                     />
-                    <InputFlotante
+                    <InputSocioMasked
                       name="modalRepCelular_unique"
                       label="Celular"
                       maxLength={10}
                       autoComplete="off"
+                      icon={<FiSmartphone />}
                       error={errores.celular}
                       esValido={isCelularValido}
                       value={celular}
-                      onChange={(e) => {
-                        const limpio = e.target.value
+                      onChange={(val) => {
+                        const limpio = val
                           .replace(/\D/g, "")
                           .slice(0, 10);
                         setCelular(limpio);
@@ -268,9 +272,10 @@ export const ModalRepresentante = ({
             {faseInterna === "completar" && (
               <div className={styles.modalFooter}>
                 <Button
-                  type="submit"
+                  type="button"
                   variant="primary"
                   size="md"
+                  onClick={handleGuardarYCerrar}
                 >
                   GUARDAR REPRESENTANTE
                 </Button>
