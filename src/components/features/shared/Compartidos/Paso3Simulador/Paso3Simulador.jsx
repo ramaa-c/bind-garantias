@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { FiDollarSign, FiBriefcase, FiSliders } from "react-icons/fi";
 import {
@@ -10,7 +10,7 @@ import {
   TicketPrestamoFijo,
 } from "../../../../ui";
 import styles from "./Paso3Simulador.module.css";
-import { catalogosService } from "../../../../../services/catalogosService";
+import { useMonedas } from "../../../../../hooks/useCatalogos";
 
 const defaultOpcionesCalculo = [
   { value: "por_monto_factura", label: "Por monto de factura" },
@@ -38,8 +38,8 @@ export default function Paso3Simulador({
   const errorFechaPago = errors?.fechaPago?.message;
   const errorPlazo = errors?.plazo?.message;
 
-  const [opcionesMoneda, setOpcionesMoneda] = useState([]);
-  const [cargandoMonedas, setCargandoMonedas] = useState(false);
+  const { data: monedasData, isLoading: cargandoMonedas } = useMonedas();
+  const opcionesMoneda = monedasData?.opciones || [];
 
   const tipoCalculo = useWatch({
     control,
@@ -60,26 +60,6 @@ export default function Paso3Simulador({
   const campoFecha = esFechaEspecifica ? "fechaPago" : "plazo";
 
   useEffect(() => {
-    const cargarMonedas = async () => {
-      setCargandoMonedas(true);
-      try {
-        const data = await catalogosService.obtenerMonedas();
-        const mapeadas = data.map((moneda) => ({
-          value: moneda.monedaid.toString(),
-          label: moneda.descripcion,
-        }));
-        mapeadas.sort((a, b) => a.label.localeCompare(b.label));
-        setOpcionesMoneda(mapeadas);
-      } catch (error) {
-        console.error("Error al cargar las monedas:", error);
-      } finally {
-        setCargandoMonedas(false);
-      }
-    };
-    cargarMonedas();
-  }, []);
-
-  useEffect(() => {
     if (opcionesProducto?.length === 1) {
       setValue("tipoProducto", opcionesProducto[0].value, {
         shouldValidate: false,
@@ -94,6 +74,10 @@ export default function Paso3Simulador({
       });
     }
   }, [opcionesCalculo, setValue, mostrarTipoCalculo]);
+
+  const simboloActual =
+    monedasData?.raw.find((m) => m.monedaid.toString() === monedaValue)
+      ?.simbolo || "$";
 
   const handleLocalCalcular = async () => {
     const camposATrigger = ["moneda", "tipoProducto"];
@@ -181,6 +165,7 @@ export default function Paso3Simulador({
               name="monto"
               control={control}
               label={labelMonto}
+              currency={simboloActual}
               esValido={isMontoValid || montoValue > 0}
               error={errors.monto?.message}
               disabled={mostrarResultados}

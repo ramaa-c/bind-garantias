@@ -48,14 +48,14 @@ export const InputMonto = ({
               <IMaskInput
                 id={inputId}
                 mask={Number}
-                scale={0} // 0 para enteros, cambiar a 2 si se permiten centavos
+                scale={0}
                 thousandsSeparator="."
-                radix="," 
-                unmask={true} // Vital: Devuelve el número limpio a RHF
+                radix=","
+                unmask={true}
                 value={value?.toString() || ""}
                 onAccept={(unmaskedValue) => {
-                  // RHF espera números, así que parseamos el valor limpio
-                  const numValue = unmaskedValue === "" ? "" : Number(unmaskedValue);
+                  const numValue =
+                    unmaskedValue === "" ? "" : Number(unmaskedValue);
                   onChange(numValue);
                 }}
                 inputMode="numeric"

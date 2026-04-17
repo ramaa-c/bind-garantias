@@ -13,8 +13,8 @@ import {
 // 1. AGREGAMOS SelectSocio A LA IMPORTACIÓN DE UI
 import { InputSocioMasked, Button, CargaArchivos, SelectSocio } from "../../../../ui";
 import { useEscape } from "../../../../../hooks/useEscape";
-// 2. IMPORTAMOS EL SERVICIO DE CATÁLOGOS
-import { catalogosService } from "../../../../../services/catalogosService";
+// 2. IMPORTAMOS EL HOOK DE CATÁLOGOS (TanStack Query)
+import { useProvincias } from "../../../../../hooks/useCatalogos";
 import styles from "./ModalSocio.module.css";
 
 /* ─── Sub-componente: Dropzone ─── */
@@ -112,36 +112,12 @@ export default function ModalSocio({
   const [haIntentadoAvanzar, setHaIntentadoAvanzar] = useState(false);
   const [haIntentadoFinalizar, setHaIntentadoFinalizar] = useState(false);
 
-  // 3. NUEVOS ESTADOS PARA LAS PROVINCIAS
-  const [opcionesProvincias, setOpcionesProvincias] = useState([]);
-  const [cargandoProvincias, setCargandoProvincias] = useState(false);
+  // 3. MAGIA DE TANSTACK QUERY: Datos de provincias con caché y estado de carga
+  const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
+  const opcionesProvincias = provinciasData?.opciones || [];
 
   const isModalOpen = socioIndex !== null;
   useEscape(onCerrar, isModalOpen);
-
-  // 4. NUEVO EFECTO: TRAER PROVINCIAS AL ABRIR LA MODAL
-  useEffect(() => {
-    if (isModalOpen) {
-      const cargarProvincias = async () => {
-        setCargandoProvincias(true);
-        try {
-          const data = await catalogosService.obtenerProvincias();
-          const mapeadas = data.map((prov) => ({
-            value: prov.provinciaid.toString(),
-            label: prov.descripcion,
-          }));
-          mapeadas.sort((a, b) => a.label.localeCompare(b.label));
-          setOpcionesProvincias(mapeadas);
-        } catch (error) {
-          console.error("Error al cargar provincias:", error);
-        } finally {
-          setCargandoProvincias(false);
-        }
-      };
-
-      cargarProvincias();
-    }
-  }, [isModalOpen]);
 
   useEffect(() => {
     if (socioIndex === null) {
@@ -291,7 +267,6 @@ export default function ModalSocio({
                 />
 
                 <div className={styles.inputRow}>
-                  {/* 5. REEMPLAZAMOS InputSocioMasked POR SelectSocio */}
                   <SelectSocio
                     name={`socios.${socioIndex}.provincia`}
                     control={control}
@@ -299,8 +274,7 @@ export default function ModalSocio({
                     icon={<FiMap />}
                     options={opcionesProvincias}
                     disabled={cargandoProvincias}
-                    // Opcional: si tu SelectSocio acepta placeholder dinámico
-                    // placeholder={cargandoProvincias ? "Cargando..." : ""}
+                    placeholder={cargandoProvincias ? "Cargando..." : ""}
                     error={getError("provincia")}
                     esValido={getEsValido("provincia")}
                   />
