@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiBriefcase, FiX, FiMail, FiSmartphone, FiCreditCard } from "react-icons/fi";
-import { InputSocioMasked, Button, BotonVolver } from "../../../../ui";
+import { FiBriefcase, FiX, FiMail, FiSmartphone, FiCreditCard, FiEdit2 } from "react-icons/fi";
+import { InputSocioMasked, Button } from "../../../../ui";
 import styles from "./ModalRepresentante.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
 
@@ -151,20 +151,20 @@ export const ModalRepresentante = ({
                     <InputSocioMasked
                       name="cuit"
                       label="CUIT"
-                      maxLength={11}
                       icon={<FiCreditCard />}
+                      mask="00-00000000-0"
                       esValido={
-                        cuit.length === 11 && !errores.cuit && validarCUIT(cuit)
+                        cuit?.length === 11 && !errores.cuit && validarCUIT(cuit)
                       }
                       error={errores.cuit}
-                      value={cuit}
+                      value={cuit || ""}
                       onChange={(val) => {
-                        const limpio = val
-                          .replace(/\D/g, "")
-                          .slice(0, 11);
+                        const limpio = val ? String(val).replace(/\D/g, "").slice(0, 11) : "";
                         setCuit(limpio);
-                        if (errores.cuit)
+                        
+                        if (errores.cuit) {
                           setErrores({ ...errores, cuit: null });
+                        }
                       }}
                     />
                   </div>
@@ -181,23 +181,29 @@ export const ModalRepresentante = ({
 
               {faseInterna === "completar" && (
                 <div className={styles.completarContainer}>
-                  {!representanteInicial && (
-                    <div className={styles.topBackButtonWrapper}>
-                      <BotonVolver
-                        texto="MODIFICAR CUIT"
-                        onClick={() => {
-                          setCuit("");
-                          setErrores({});
-                          setFaseInterna("ingresar");
-                        }}
-                      />
-                    </div>
-                  )}
-
+                  
                   <div className={styles.infoPill}>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>CUIT:</span>
-                      <span className={styles.infoValue}>{cuit}</span>
+                    <div className={styles.pillHeader}>
+                      <div className={styles.infoRow} style={{ marginBottom: 0 }}>
+                        <span className={styles.infoLabel}>CUIT:</span>
+                        <span className={styles.infoValue}>{cuit}</span>
+                      </div>
+                      
+                      {!representanteInicial && (
+                        <button
+                          type="button"
+                          className={styles.editButton}
+                          onClick={() => {
+                            setCuit("");
+                            setErrores({});
+                            setFaseInterna("ingresar");
+                          }}
+                          title="Modificar CUIT"
+                          aria-label="Modificar CUIT"
+                        >
+                          <FiEdit2 size={16} />
+                        </button>
+                      )}
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Nombre:</span>
@@ -248,20 +254,21 @@ export const ModalRepresentante = ({
                     />
                     <InputSocioMasked
                       name="modalRepCelular_unique"
-                      label="Celular"
-                      maxLength={10}
+                      label="Celular (Sin 0 ni 15)"
                       autoComplete="off"
                       icon={<FiSmartphone />}
+                      mask={[
+                        { mask: "00 0000-0000" },
+                        { mask: "000 000-0000" }
+                      ]}
                       error={errores.celular}
                       esValido={isCelularValido}
                       value={celular}
                       onChange={(val) => {
-                        const limpio = val
-                          .replace(/\D/g, "")
-                          .slice(0, 10);
-                        setCelular(limpio);
-                        if (errores.celular)
+                        setCelular(val);
+                        if (errores.celular) {
                           setErrores({ ...errores, celular: null });
+                        }
                       }}
                     />
                   </div>

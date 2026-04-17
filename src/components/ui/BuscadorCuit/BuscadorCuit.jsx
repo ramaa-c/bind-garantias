@@ -1,5 +1,6 @@
 import React, { forwardRef } from "react";
-import { InputFlotante, Button } from "../../ui";
+import { FiCreditCard } from "react-icons/fi";
+import { InputSocioMasked, Button } from "../../ui";
 import styles from "./BuscadorCuit.module.css";
 
 export const BuscadorCuit = forwardRef(({
@@ -14,18 +15,23 @@ export const BuscadorCuit = forwardRef(({
   return (
     <div className={styles.container}>
       <div className={styles.inputWrapper}>
-        <InputFlotante
+        <InputSocioMasked
           ref={ref}
           label={label}
           type="text"
-          maxLength={11}
+          mask="00-00000000-0"
+          icon={<FiCreditCard />}
           esValido={esValido}
           error={error}
           disabled={isLoading}
           {...rest}
-          onChange={(e) => {
-            e.target.value = e.target.value.replace(/\D/g, "").slice(0, 11);
-            if (rest.onChange) rest.onChange(e);
+          value={rest.value || ""}
+          onChange={(val) => {
+            const limpio = val ? String(val).replace(/\D/g, "").slice(0, 11) : "";
+            
+            if (rest.onChange) {
+              rest.onChange({ target: { value: limpio } });
+            }
           }}
         />
       </div>
