@@ -1,4 +1,3 @@
-// Salimos de 'services' y entramos a 'api'
 import api from '../api/axios';
 
 export const catalogosService = {

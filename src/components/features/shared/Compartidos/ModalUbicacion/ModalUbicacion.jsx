@@ -1,41 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { FiMapPin, FiMap, FiX } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
 import { Button, InputSocioMasked, SelectSocio } from "../../../../ui";
 import styles from "./ModalUbicacion.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
-import { catalogosService } from "../../../../../services/catalogosService";
+import { useProvincias } from "../../../../../hooks/useCatalogos";
 
 export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
   const { control, trigger, watch, formState: { errors } } = useFormContext();
 
   const [intentoGuardar, setIntentoGuardar] = useState(false);
-  const [opcionesProvincias, setOpcionesProvincias] = useState([]);
-  const [cargandoProvincias, setCargandoProvincias] = useState(false);
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  useEffect(() => {
-    if (isOpen) {
-      const cargarProvincias = async () => {
-        setCargandoProvincias(true);
-        try {
-          const data = await catalogosService.obtenerProvincias();
-          const opcionesMapeadas = data.map((prov) => ({
-            value: prov.provinciaid.toString(),
-            label: prov.descripcion,
-          }));
-          opcionesMapeadas.sort((a, b) => a.label.localeCompare(b.label));
-          setOpcionesProvincias(opcionesMapeadas);
-        } catch (error) {
-          console.error("Error cargando provincias:", error);
-        } finally {
-          setCargandoProvincias(false);
-        }
-      };
-      cargarProvincias();
-    }
-  }, [isOpen]);
+  const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
+  const opcionesProvincias = provinciasData?.opciones || [];
 
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
@@ -48,7 +27,6 @@ export default function ModalUbicacion({ isOpen, onClose, onGuardar }) {
 
   if (!isOpen) return null;
 
-  // Lógica de validación visual conectada a RHF
   const getError = (campo) => {
     const err = errors?.[campo];
     const val = watch(campo);
