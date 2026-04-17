@@ -10,7 +10,7 @@ import {
   TicketPrestamoFijo,
 } from "../../../../ui";
 import styles from "./Paso3Simulador.module.css";
-import { useMonedas } from "../../../../../hooks/useCatalogos";
+import { useMonedas, useTiposProducto } from "../../../../../hooks/useCatalogos";
 
 const defaultOpcionesCalculo = [
   { value: "por_monto_factura", label: "Por monto de factura" },
@@ -22,7 +22,6 @@ export default function Paso3Simulador({
   onCalcular,
   onContinuar,
   onCancelar,
-  opcionesProducto,
   opcionesCalculo = defaultOpcionesCalculo,
   mostrarTipoCalculo = true,
   mostrarMonto = true,
@@ -40,6 +39,9 @@ export default function Paso3Simulador({
 
   const { data: monedasData, isLoading: cargandoMonedas } = useMonedas();
   const opcionesMoneda = monedasData?.opciones || [];
+
+  const { data: productosData, isLoading: cargandoProductos } = useTiposProducto();
+  const opcionesProducto = productosData?.opciones || [];
 
   const tipoCalculo = useWatch({
     control,
@@ -126,10 +128,10 @@ export default function Paso3Simulador({
         <SelectSocio
           name="tipoProducto"
           control={control}
-          label="Tipo de producto"
+          label={cargandoProductos ? "Cargando..." : "Tipo de producto"}
           icon={<FiBriefcase />}
           options={opcionesProducto}
-          disabled={mostrarResultados}
+          disabled={mostrarResultados || cargandoProductos}
           error={errors.tipoProducto?.message}
           esValido={isValidSelection(errors.tipoProducto, tipoProductoValue)}
         />

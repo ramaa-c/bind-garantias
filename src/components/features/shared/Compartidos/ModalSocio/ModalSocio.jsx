@@ -10,10 +10,13 @@ import {
   FiMapPin,
   FiMap,
 } from "react-icons/fi";
-// 1. AGREGAMOS SelectSocio A LA IMPORTACIÓN DE UI
-import { InputSocioMasked, Button, CargaArchivos, SelectSocio } from "../../../../ui";
+import {
+  InputSocioMasked,
+  Button,
+  CargaArchivos,
+  SelectSocio,
+} from "../../../../ui";
 import { useEscape } from "../../../../../hooks/useEscape";
-// 2. IMPORTAMOS EL HOOK DE CATÁLOGOS (TanStack Query)
 import { useProvincias } from "../../../../../hooks/useCatalogos";
 import styles from "./ModalSocio.module.css";
 
@@ -47,9 +50,9 @@ const DropzoneField = ({
         file={
           archivos[fileKey]
             ? {
-              name: archivos[fileKey].name,
-              size: archivos[fileKey].formattedSize,
-            }
+                name: archivos[fileKey].name,
+                size: archivos[fileKey].formattedSize,
+              }
             : null
         }
         onClick={() => document.getElementById(`file-input-${fileKey}`).click()}
@@ -112,8 +115,8 @@ export default function ModalSocio({
   const [haIntentadoAvanzar, setHaIntentadoAvanzar] = useState(false);
   const [haIntentadoFinalizar, setHaIntentadoFinalizar] = useState(false);
 
-  // 3. MAGIA DE TANSTACK QUERY: Datos de provincias con caché y estado de carga
-  const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
+  const { data: provinciasData, isLoading: cargandoProvincias } =
+    useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
 
   const isModalOpen = socioIndex !== null;
@@ -247,13 +250,16 @@ export default function ModalSocio({
                     esValido={getEsValido("email")}
                   />
                   <InputSocioMasked
-                    name={`socios.${socioIndex}.celular`}
                     control={control}
-                    label="Celular"
-                    icon={<FiSmartphone />}
-                    mask="+54 9 000 0000-0000"
+                    name={`socios.${socioIndex}.celular`}
+                    label="Celular (Sin 0 ni 15)"
+                    mask={[
+                      { mask: "00 0000-0000" },
+                      { mask: "000 000-0000" }
+                    ]}
                     error={getError("celular")}
                     esValido={getEsValido("celular")}
+                    icon={<FiSmartphone />}
                   />
                 </div>
 
