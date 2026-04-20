@@ -1,3 +1,4 @@
+// Salimos de 'services' y entramos a 'api'
 import api from '../api/axios';
 
 export const catalogosService = {
@@ -17,16 +18,6 @@ export const catalogosService = {
             return response.data;
         } catch (error) {
             console.error("Error al traer las monedas:", error);
-            throw error;
-        }
-    },
-
-    obtenerTiposProducto: async () => {
-        try {
-            const response = await api.get('/TipoLimite');
-            return response.data;
-        } catch (error) {
-            console.error("Error al traer los tipos de producto:", error);
             throw error;
         }
     }
