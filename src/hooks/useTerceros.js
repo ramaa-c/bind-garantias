@@ -69,3 +69,9 @@ export const useGuardarRelacionesSocio = () => {
     },
   });
 };
+
+export const useBuscarTerceroPorCuit = () => {
+  return useMutation({
+    mutationFn: (cuit) => tercerosService.obtenerTerceros({ Cuit: cuit }),
+  });
+};

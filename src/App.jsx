@@ -17,6 +17,7 @@ import SolicitudCheques from "./pages/cheques/SolicitudCheques";
 import FirmaDocumento from "./pages/pagares/FirmaDocumento";
 import AceptarTerminos from "./pages/auth/AceptarTerminos";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
+import Pruebas from "./pages/pruebas";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
@@ -29,6 +30,11 @@ function App() {
         <Route path="/registro" element={<Registro />} />
         <Route path="/crear-clave" element={<CrearClave />} />
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
+
+        <Route path="/pruebas" element={
+          <DashboardLayout>
+            <Pruebas />
+          </DashboardLayout> } />
 
         <Route
           path="/inicio"

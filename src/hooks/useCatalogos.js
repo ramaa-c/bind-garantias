@@ -184,7 +184,11 @@ export const useTipoSocio = () =>
     queryKey: ["catalogos", "tipoSocio"],
     queryFn: catalogosService.obtenerTipoSocio,
     staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tiposocioid"),
+    select: (data) => {
+      const arrayReal = Array.isArray(data) ? data : data?.list || [];
+      const arrayLimpio = arrayReal.filter((item) => item !== null);
+      return mapAndSort(arrayLimpio, "tiposocioid");
+    },
   });
 
 export const useProvincias = () =>

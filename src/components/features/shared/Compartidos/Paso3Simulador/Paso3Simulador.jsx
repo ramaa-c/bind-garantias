@@ -10,19 +10,17 @@ import {
   TicketPrestamoFijo,
 } from "../../../../ui";
 import styles from "./Paso3Simulador.module.css";
-import { useMonedas, useTiposProducto } from "../../../../../hooks/useCatalogos";
-
-const defaultOpcionesCalculo = [
-  { value: "por_monto_factura", label: "Por monto de factura" },
-  { value: "por_monto_cheque", label: "Por monto de cheque" },
-];
+import {
+  useMonedas,
+  useTiposProducto,
+  useTipoContrato,
+} from "../../../../../hooks/useCatalogos";
 
 export default function Paso3Simulador({
   mostrarResultados,
   onCalcular,
   onContinuar,
   onCancelar,
-  opcionesCalculo = defaultOpcionesCalculo,
   mostrarTipoCalculo = true,
   mostrarMonto = true,
   mostrarFecha = true,
@@ -34,14 +32,18 @@ export default function Paso3Simulador({
   const { control, trigger, setValue } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
 
-  const errorFechaPago = errors?.fechaPago?.message;
   const errorPlazo = errors?.plazo?.message;
 
   const { data: monedasData, isLoading: cargandoMonedas } = useMonedas();
   const opcionesMoneda = monedasData?.opciones || [];
 
-  const { data: productosData, isLoading: cargandoProductos } = useTiposProducto();
+  const { data: productosData, isLoading: cargandoProductos } =
+    useTiposProducto();
   const opcionesProducto = productosData?.opciones || [];
+
+  const { data: contratosData, isLoading: cargandoContratos } =
+    useTipoContrato();
+  const opcionesCalculo = contratosData?.opciones || [];
 
   const tipoCalculo = useWatch({
     control,
@@ -57,9 +59,8 @@ export default function Paso3Simulador({
   const montoValue = useWatch({ control, name: "monto" });
 
   const isMontoValid = !errors.monto && dirtyFields.monto;
-  const esFechaEspecifica =
-    tipoCalculo === "por_monto_cheque" || tipoCalculo === "por_monto_pagare";
-  const campoFecha = esFechaEspecifica ? "fechaPago" : "plazo";
+
+  const campoFecha = "plazo";
 
   useEffect(() => {
     if (opcionesProducto?.length === 1) {
@@ -95,7 +96,6 @@ export default function Paso3Simulador({
     if (error) return false;
     if (val === undefined || val === null) return false;
     if (Array.isArray(val) && val.length === 0) return false;
-
     const strVal = String(val).trim();
     return (
       strVal !== "" &&
@@ -140,10 +140,10 @@ export default function Paso3Simulador({
           <SelectSocio
             name="tipoCalculo"
             control={control}
-            label="Tipo de cálculo"
+            label={cargandoContratos ? "Cargando..." : "Tipo de cálculo"}
             icon={<FiSliders />}
             options={opcionesCalculo}
-            disabled={mostrarResultados}
+            disabled={mostrarResultados || cargandoContratos}
             error={errors.tipoCalculo?.message}
             esValido={isValidSelection(errors.tipoCalculo, tipoCalculo)}
           />
@@ -155,7 +155,7 @@ export default function Paso3Simulador({
             name={campoFecha}
             label={labelFecha}
             disabled={mostrarResultados}
-            error={esFechaEspecifica ? errorFechaPago : errorPlazo}
+            error={errorPlazo}
           />
         )}
       </div>
