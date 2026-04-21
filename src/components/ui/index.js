@@ -29,9 +29,8 @@ export * from './SelectFecha/SelectFecha';
 export * from './BuscadorCuit/BuscadorCuit'
 export * from './TicketSimulacion/TicketSimulacion'
 export * from './TicketPrestamoFijo/TicketPrestamoFijo'
-export * from './Skeleton/SkeletonCard'
-
-
-
-
-
+export * from './SkeletonCard/SkeletonCard'
+export * from './SkeletonTable/SkeletonTable'
+export * from './Paginacion/Paginacion';
+export * from './BuscadorListado/BuscadorListado';
+export * from './FormSection/FormSection';

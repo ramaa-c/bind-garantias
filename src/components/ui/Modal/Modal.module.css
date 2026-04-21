@@ -11,7 +11,7 @@
 }
 
 .modalBox {
-  background-color: var(--graphite);
+  background-color: #1a1a1a;
   border: 1px solid #333;
   border-radius: 1.25rem;
   padding: 30px;

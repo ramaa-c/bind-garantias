@@ -3,8 +3,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { FiSearch, FiHash, FiX } from "react-icons/fi";
 import { InputSocioMasked, Button } from "../../../ui";
 import { useBuscarTerceroPorCuit } from "../../../../hooks/useTerceros";
-
-const CUIT_REGEX = /^\d{11}$/;
+import { CUIT_REGEX } from "../../../../utils/validators";
+import styles from "./BuscadorTerceros.module.css";
 
 export const BuscadorTerceros = ({
   onEncontrado,
@@ -29,20 +29,24 @@ export const BuscadorTerceros = ({
 
     if (esValido) {
       const cuitIngresado = getValues("cuitBusqueda");
-      try {
-        const resultados = await mutacionBuscar.mutateAsync(cuitIngresado);
 
-        if (resultados && resultados.length > 0) {
+      const resultados = await mutacionBuscar
+        .mutateAsync(cuitIngresado)
+        .catch((error) => {
+          if (error.response?.status === 404) {
+            return null;
+          }
+          throw error;
+        });
+
+      if (resultados) {
+        if (resultados.length > 0) {
           onEncontrado(resultados[0]);
         } else {
           onNoEncontrado(cuitIngresado);
         }
-      } catch (error) {
-        if (error.response && error.response.status === 404) {
-          onNoEncontrado(cuitIngresado);
-        } else {
-          console.error("Error al buscar el CUIT:", error);
-        }
+      } else {
+        onNoEncontrado(cuitIngresado);
       }
     }
   };
@@ -51,19 +55,17 @@ export const BuscadorTerceros = ({
   const mostrarErrorRed = mutacionBuscar.isError && !errorEs404;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      <div style={{ borderBottom: "1px solid #333", paddingBottom: "1rem" }}>
-        <h3 style={{ color: "var(--white)", margin: "0 0 0.5rem 0" }}>
-          Buscar Tercero
-        </h3>
-        <p style={{ color: "#aaa", margin: 0, fontSize: "0.95rem" }}>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h3 className={styles.title}>Buscar Tercero</h3>
+        <p className={styles.subtitle}>
           Ingresá el CUIT para verificar si la persona o empresa ya está
           registrada en el padrón.
         </p>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-        <div style={{ maxWidth: "400px" }}>
+      <div className={styles.formContainer}>
+        <div className={styles.inputContainer}>
           <InputSocioMasked
             name="cuitBusqueda"
             control={control}
@@ -83,12 +85,12 @@ export const BuscadorTerceros = ({
         </div>
 
         {mostrarErrorRed && (
-          <p style={{ color: "#ff4444", margin: 0, fontSize: "0.9rem" }}>
+          <p className={styles.errorText}>
             Hubo un problema al conectar con el servidor. Intentá nuevamente.
           </p>
         )}
 
-        <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+        <div className={styles.actions}>
           <Button
             type="button"
             variant="outline"

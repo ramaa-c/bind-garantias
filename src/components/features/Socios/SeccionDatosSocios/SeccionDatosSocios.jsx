@@ -2,11 +2,10 @@ import React from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { FiUser, FiHash, FiCalendar, FiMail } from "react-icons/fi";
 import { InputSocioMasked, SelectFecha } from "../../../ui";
+import { CUIT_REGEX, EMAIL_REGEX } from "../../../../utils/validators";
+import styles from "./SeccionDatosSocios.module.css";
 
-const CUIT_REGEX = /^\d{11}$/;
-const EMAIL_REGEX = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-
-export const SeccionDatosSocio = () => {
+export const SeccionDatosSocios = () => {
   const {
     control,
     formState: { errors },
@@ -19,25 +18,9 @@ export const SeccionDatosSocio = () => {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      <h3
-        style={{
-          color: "var(--white)",
-          borderBottom: "1px solid #333",
-          paddingBottom: "0.5rem",
-          margin: 0,
-        }}
-      >
-        Datos Identificatorios
-      </h3>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "1.5rem",
-        }}
-      >
-        {/* Razón Social */}
+    <div>
+      <h3 className={styles.sectionTitle}>Datos Identificatorios</h3>
+      <div className={styles.inputRow}>
         <InputSocioMasked
           name="razonsocial"
           control={control}
@@ -48,7 +31,6 @@ export const SeccionDatosSocio = () => {
           error={errors.razonsocial?.message}
         />
 
-        {/* CUIT */}
         <InputSocioMasked
           name="cuit"
           control={control}
@@ -63,7 +45,6 @@ export const SeccionDatosSocio = () => {
           error={errors.cuit?.message}
         />
 
-        {/* Fecha Constitución */}
         <SelectFecha
           name="fechaconstitucion"
           control={control}
@@ -72,7 +53,6 @@ export const SeccionDatosSocio = () => {
           error={errors.fechaconstitucion?.message}
         />
 
-        {/* Email */}
         <InputSocioMasked
           name="email"
           control={control}

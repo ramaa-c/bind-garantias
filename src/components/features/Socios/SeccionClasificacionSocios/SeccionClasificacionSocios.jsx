@@ -1,5 +1,5 @@
 import React from "react";
-import { useFormContext, useWatch } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import {
   FiTag,
   FiBriefcase,
@@ -15,12 +15,10 @@ import {
   useTamanioEmpresa,
   useTipoRegimenIva,
 } from "../../../../hooks/useCatalogos";
+import styles from "./SeccionClasificacionSocios.module.css";
 
-export const SeccionClasificacionSocio = () => {
-  const {
-    control,
-    formState: { errors },
-  } = useFormContext();
+export const SeccionClasificacionSocios = () => {
+  const { control } = useFormContext();
 
   const { data: personaData, isLoading: l1 } = useTipoPersona();
   const { data: bcraData, isLoading: l2 } = useTipoActividadBCRA();
@@ -28,38 +26,10 @@ export const SeccionClasificacionSocio = () => {
   const { data: tamanioData, isLoading: l4 } = useTamanioEmpresa();
   const { data: ivaData, isLoading: l5 } = useTipoRegimenIva();
 
-  const values = useWatch({
-    control,
-    name: [
-      "tipopersonaid",
-      "tiporegimenivaid",
-      "tamanioempresaid",
-      "tipoactividadbcraid",
-      "tipoactividadsepymeid",
-    ],
-  });
-
-  const esValido = (val, err) => !!val && !err;
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      <h3
-        style={{
-          color: "var(--white)",
-          borderBottom: "1px solid #333",
-          paddingBottom: "0.5rem",
-          margin: 0,
-        }}
-      >
-        Clasificación e IVA
-      </h3>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "1.5rem",
-        }}
-      >
+    <div>
+      <h3 className={styles.sectionTitle}>Clasificación e IVA</h3>
+      <div className={styles.inputRow}>
         <SelectSocio
           name="tipopersonaid"
           control={control}
@@ -67,7 +37,6 @@ export const SeccionClasificacionSocio = () => {
           icon={<FiTag />}
           options={personaData?.opciones || []}
           disabled={l1}
-          esValido={esValido(values[0], errors.tipopersonaid)}
         />
         <SelectSocio
           name="tiporegimenivaid"
@@ -76,7 +45,6 @@ export const SeccionClasificacionSocio = () => {
           icon={<FiFileText />}
           options={ivaData?.opciones || []}
           disabled={l5}
-          esValido={esValido(values[1], errors.tiporegimenivaid)}
         />
         <SelectSocio
           name="tamanioempresaid"
@@ -85,7 +53,6 @@ export const SeccionClasificacionSocio = () => {
           icon={<FiBarChart2 />}
           options={tamanioData?.opciones || []}
           disabled={l4}
-          esValido={esValido(values[2], errors.tamanioempresaid)}
         />
         <SelectSocio
           name="tipoactividadbcraid"
@@ -94,7 +61,6 @@ export const SeccionClasificacionSocio = () => {
           icon={<FiAward />}
           options={bcraData?.opciones || []}
           disabled={l2}
-          esValido={esValido(values[3], errors.tipoactividadbcraid)}
         />
         <SelectSocio
           name="tipoactividadsepymeid"
@@ -103,7 +69,6 @@ export const SeccionClasificacionSocio = () => {
           icon={<FiBriefcase />}
           options={sepymeData?.opciones || []}
           disabled={l3}
-          esValido={esValido(values[4], errors.tipoactividadsepymeid)}
         />
       </div>
     </div>

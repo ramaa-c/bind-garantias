@@ -27,6 +27,12 @@ export const tercerosService = {
     return response.data;
   },
 
+  // Actualiza un tercero relacionado
+  actualizarTercero: async (terceroData) => {
+    const response = await api.put("/TerceroRelacionado", terceroData);
+    return response.data;
+  },
+
   //------- SOCIO - TERCERO RELACIÓN ---------
 
   // Trae todas las relaciones que tiene un socio
@@ -38,6 +44,12 @@ export const tercerosService = {
   // Guarda las relaciones de un socio
   guardarRelacionesDeSocio: async (relacionData) => {
     const response = await api.post("/SocioTerceroRelacion", relacionData);
+    return response.data;
+  },
+
+  // Actualiza una relación de socio
+  actualizarRelacionDeSocio: async (relacionData) => {
+    const response = await api.put("/SocioTerceroRelacion", relacionData);
     return response.data;
   },
 };

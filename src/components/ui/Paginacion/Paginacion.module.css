@@ -1,0 +1,58 @@
+.container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pageButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.5rem;
+  background-color: transparent;
+  color: var(--white, #fff);
+  border: 1px solid #333;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.pageButton:hover:not(:disabled) {
+  transform: translateY(-0.1875rem);
+  filter: brightness(1.05);
+  box-shadow:
+    0 10px 20px rgba(253, 252, 1, 0.3),
+    0 0 10px rgba(253, 252, 1, 0.2);
+}
+
+.pageButtonActive {
+  background-color: var(--yellow);
+  color: #000;
+  border-color: var(--yellow);
+  font-weight: bold;
+}
+
+.pageButton:disabled {
+  color: #555;
+  cursor: not-allowed;
+  border-color: #222;
+}
+
+.pageButton:disabled:hover {
+  background-color: transparent;
+  border-color: #222;
+}
+
+.icon {
+  font-size: 1.25rem;
+}

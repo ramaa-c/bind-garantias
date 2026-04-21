@@ -18,6 +18,7 @@ import FirmaDocumento from "./pages/pagares/FirmaDocumento";
 import AceptarTerminos from "./pages/auth/AceptarTerminos";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
 import Pruebas from "./pages/pruebas";
+import {PantallaGestionSocios} from "./components/features";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
@@ -31,10 +32,23 @@ function App() {
         <Route path="/crear-clave" element={<CrearClave />} />
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
 
-        <Route path="/pruebas" element={
-          <DashboardLayout>
-            <Pruebas />
-          </DashboardLayout> } />
+        <Route
+          path="/pruebas"
+          element={
+            <DashboardLayout>
+              <Pruebas />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/socios"
+          element={
+            <DashboardLayout>
+              <PantallaGestionSocios />
+            </DashboardLayout>
+          }
+        />
 
         <Route
           path="/inicio"

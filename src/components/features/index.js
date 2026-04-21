@@ -38,6 +38,20 @@ export { default as Paso2AgentePagare } from './pagares/Pagare/Paso2AgentePagare
 export { default as Paso3Epyme } from './pagares/Pagare/Paso3Epyme/Paso3Epyme';
 export { default as Paso4ExitoPagare } from './pagares/Pagare/Paso4ExitoPagare/Paso4ExitoPagare';
 
+// --- SOCIOS ---
+export * from './Socios/PantallaGestionSocios/PantallaGestionSocios';
+export * from './Socios/TablaSocios/TablaSocios';
+export * from './Socios/FormularioSocios/FormularioSocios';
+export * from './Socios/SeccionDatosSocios/SeccionDatosSocios';
+export * from './Socios/SeccionClasificacionSocios/SeccionClasificacionSocios';
+
+// --- TERCEROS ---
+export * from './Terceros/BuscadorTerceros/BuscadorTerceros';
+export * from './Terceros/FormularioTerceros/FormularioTerceros';
+export * from './Terceros/SeccionDatosTerceros/SeccionDatosTerceros';
+export * from './Terceros/GestorRelaciones/GestorRelaciones';
+export * from './Terceros/FormularioVincular/FormularioVincular';
+
 // --- OTROS ---
 export * from './dashboard/ListaActividades/ListaActividades';
 export * from './dashboard/TarjetaLinea/TarjetaLinea';

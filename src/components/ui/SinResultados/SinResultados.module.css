@@ -3,23 +3,36 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
-  text-align: center;
-  background-color: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
+  padding: 4rem 1rem;
+  color: #888;
+  background-color: #1a1a1a;
+  border-radius: 0.5rem;
   border: 1px dashed #333;
-  margin: 20px 0;
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.compact {
+  padding: 2rem 1rem;
 }
 
 .icon {
-  font-size: 2.5rem;
+  font-size: 3rem;
+  margin-bottom: 1rem;
   color: #444;
-  margin-bottom: 15px;
+}
+
+.title {
+  margin: 0 0 0.5rem 0;
+  color: #fff;
+  font-size: 1.125rem;
 }
 
 .text {
-  color: #888;
-  font-size: 0.95rem;
-  font-style: italic;
   margin: 0;
+  font-size: 0.875rem;
+}
+
+.actionButton {
+  margin-top: 1.5rem;
 }
