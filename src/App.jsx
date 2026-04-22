@@ -19,7 +19,6 @@ import AceptarTerminos from "./pages/auth/AceptarTerminos";
 import PosicionConsolidada from "./pages/posicion-consolidada/PosicionConsolidada";
 import CadenaDetalle from "./pages/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-// import Pruebas from "./pages/pruebas";
 import {PantallaGestionSocios} from "./components/features";
 import { PantallaGestionUsuarios } from "./pages/usuarios/PantallaGestionUsuarios";
 import "./components/ui/CustomScroll/Scroll.module.css";
