@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
-import { useFormPersist, getPersistedFormData } from "../../hooks/useFormPersist";
+import {
+  useFormPersist,
+  getPersistedFormData,
+} from "../../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { chequesSchema } from "../../schemas/chequesSchema";
@@ -17,7 +20,13 @@ import {
   BotonAyudaFlotante,
   ModalConfirmacionBorrador,
 } from "../../components/features";
-import { ModalSms, BarraProgreso, BotonVolver, Scroll } from "../../components/ui";
+import { sociosService } from "../../services/sociosService";
+import {
+  ModalSms,
+  BarraProgreso,
+  BotonVolver,
+  Scroll,
+} from "../../components/ui";
 import styles from "./Cheques.module.css";
 
 const STORAGE_KEY = "draft_cheques";
@@ -141,12 +150,46 @@ export default function Cheques() {
     setTempSocioParticipacion("");
     setFaseSocio("ingresar_cuit");
   };
-  const validarCuitSocio = () => {
-    setTempSocioNombre("SEOANE SUAREZ MARINA");
+
+  const validarCuitSocio = async () => {
+    try {
+      const response = await sociosService.obtenerSocios({
+        Cuit: tempSocioCuit,
+        page: 1,
+        page_size: 10,
+      });
+
+      const resultados = Array.isArray(response)
+        ? response
+        : response?.items || response?.data || [];
+
+      if (resultados.length > 0) {
+        setTempSocioNombre(resultados[0].denominacion);
+      } else {
+        setTempSocioNombre("SEOANE SUAREZ MARINA (Mock AFIP)");
+      }
+    } catch (error) {
+      console.error("Error al buscar el socio:", error);
+      setTempSocioNombre("SEOANE SUAREZ MARINA (Error Back)");
+    }
+
     setFaseSocio("completar_datos");
   };
+
+  const totalParticipacionActual = socios.reduce(
+    (acc, s) => acc + Number(s.participacion),
+    0,
+  );
+
   const guardarSocio = () => {
-    if (!tempSocioParticipacion) return;
+    const participacionNueva = Number(tempSocioParticipacion);
+
+    if (!participacionNueva) return;
+
+    if (totalParticipacionActual + participacionNueva > 100) {
+      return false;
+    }
+
     setSocios([
       ...socios,
       {
@@ -156,7 +199,9 @@ export default function Cheques() {
       },
     ]);
     setFaseSocio("lista");
+    return true;
   };
+
   const editarSocio = (index) => {
     const socioAEditar = socios[index];
     setTempSocioCuit(socioAEditar.cuit);
@@ -344,7 +389,10 @@ export default function Cheques() {
             {pasoActual < 7 && (
               <>
                 <PanelDudas contexto="cheques" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="cheques" pasoActual={pasoActual} />
+                <BotonAyudaFlotante
+                  contexto="cheques"
+                  pasoActual={pasoActual}
+                />
               </>
             )}
           </div>

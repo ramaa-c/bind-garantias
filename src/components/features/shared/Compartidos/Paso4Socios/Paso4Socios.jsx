@@ -37,9 +37,14 @@ export default function Paso4Socios({
   const [errorParticipacion, setErrorParticipacion] = useState("");
 
   const isCuitValido = tempSocioCuit?.length === 11;
-  const isParticipacionValida =
-    tempSocioParticipacion > 0 && tempSocioParticipacion <= 100;
 
+  const totalGuardado = socios.reduce(
+    (acc, s) => acc + Number(s.participacion),
+    0,
+  );
+  const restante = 100 - totalGuardado;
+
+  // --- HANDLERS ---
   const handleValidarClick = () => {
     if (!tempSocioCuit) {
       setErrorCuit("El CUIT es obligatorio");
@@ -52,10 +57,16 @@ export default function Paso4Socios({
   };
 
   const handleGuardarClick = () => {
+    const valorNum = Number(tempSocioParticipacion);
+
     if (!tempSocioParticipacion) {
       setErrorParticipacion("Ingresá un porcentaje");
-    } else if (!isParticipacionValida) {
-      setErrorParticipacion("Debe ser mayor a 0 y hasta 100");
+    } else if (valorNum <= 0 || valorNum > 100) {
+      setErrorParticipacion("Debe ser entre 1 y 100");
+    } else if (valorNum > restante) {
+      setErrorParticipacion(
+        `No puede superar el 100% total. Máximo disponible: ${restante}%`,
+      );
     } else {
       setErrorParticipacion("");
       guardarSocio();
@@ -124,7 +135,6 @@ export default function Paso4Socios({
           <h3 className={styles.headerTitle}>Completar datos del socio</h3>
 
           <div className={styles.summaryCard}>
-            {/* --- SECCIÓN SUPERIOR: DATOS DEL SOCIO --- */}
             <div className={styles.summaryTop}>
               <div className={styles.summaryStatus}>
                 <FiCheckCircle size={16} />
@@ -134,18 +144,40 @@ export default function Paso4Socios({
               <p className={styles.summaryCuit}>CUIT: {tempSocioCuit}</p>
             </div>
 
-            {/* --- LÍNEA DIVISORIA --- */}
             <div className={styles.summaryDivider}></div>
 
-            {/* --- SECCIÓN INFERIOR: PORCENTAJE (NUEVO DISEÑO) --- */}
             <div className={styles.summaryBottom}>
-              <label htmlFor="participacionSocioInput" className={styles.percentageLabel}>Participación del socio</label>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <label
+                  htmlFor="participacionSocioInput"
+                  className={styles.percentageLabel}
+                >
+                  Participación del socio
+                </label>
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    color: restante === 0 ? "#ff4444" : "#888",
+                  }}
+                >
+                  {restante > 0 ? `Disponible: ${restante}%` : "Cupo completo"}
+                </span>
+              </div>
 
-              <div className={`${styles.customInputWrapper} ${errorParticipacion ? styles.wrapperError : ""}`}>
+              <div
+                className={`${styles.customInputWrapper} ${errorParticipacion ? styles.wrapperError : ""}`}
+              >
                 <input
                   id="participacionSocioInput"
                   type="text"
                   className={styles.customInput}
+                  placeholder="0"
                   maxLength={3}
                   value={tempSocioParticipacion}
                   onChange={(e) => {
@@ -159,7 +191,6 @@ export default function Paso4Socios({
                 <span className={styles.percentageSymbol}>%</span>
               </div>
 
-              {/* Mensaje de error si hace falta */}
               {errorParticipacion && (
                 <span className={styles.errorText}>{errorParticipacion}</span>
               )}
@@ -171,6 +202,7 @@ export default function Paso4Socios({
               type="button"
               variant="primary"
               onClick={handleGuardarClick}
+              disabled={restante === 0 && !tempSocioParticipacion}
             >
               GUARDAR SOCIO
             </Button>
@@ -182,12 +214,21 @@ export default function Paso4Socios({
       {faseSocio === "lista" && (
         <div className={styles.section}>
           <div className={styles.listHeader}>
-            <h3 className={`${styles.headerTitle} ${styles.noMargin}`}>
-              Socios declarados
-            </h3>
-            <Badge>
-              {socios.length} socio{socios.length > 1 ? "s" : ""}
-            </Badge>
+            <h3 className={styles.headerTitle}>Socios declarados</h3>
+            <div style={{ textAlign: "right" }}>
+              <Badge>
+                {socios.length} socio{socios.length > 1 ? "s" : ""}
+              </Badge>
+              <p
+                style={{
+                  fontSize: "0.7rem",
+                  color: totalGuardado === 100 ? "#4CAF50" : "#888",
+                  marginTop: "4px",
+                }}
+              >
+                Total: {totalGuardado}% / 100%
+              </p>
+            </div>
           </div>
 
           <div className={styles.listContainer}>
@@ -224,7 +265,12 @@ export default function Paso4Socios({
           </div>
 
           <div className={styles.actionFooterBorder}>
-            <Button type="button" variant="outline" onClick={iniciarCargaSocio}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={iniciarCargaSocio}
+              disabled={totalGuardado >= 100}
+            >
               <FiUserPlus className={styles.iconMarginRight} /> AGREGAR SOCIO
             </Button>
             <Button
@@ -232,6 +278,7 @@ export default function Paso4Socios({
               variant="primary"
               iconRight={<FiChevronRight />}
               onClick={continuarAlProximoPaso}
+              disabled={totalGuardado !== 100}
             >
               CONTINUAR
             </Button>
