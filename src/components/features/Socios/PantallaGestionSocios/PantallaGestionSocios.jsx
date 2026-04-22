@@ -3,7 +3,7 @@ import { FiPlus, FiUsers } from "react-icons/fi";
 import { useDebounce } from "use-debounce";
 import { Button, BuscadorListado, Paginacion, Modal } from "../../../ui";
 import { TablaSocios, FormularioSocios } from "../../../features";
-import { useSocios } from "../../../../hooks/useSocios";
+import { useObtenerSocios } from "../../../../hooks/useSocios";
 import styles from "./PantallaGestionSocios.module.css";
 
 export const PantallaGestionSocios = () => {
@@ -27,7 +27,7 @@ export const PantallaGestionSocios = () => {
     Cuit: debouncedBusqueda && esBusquedaNumerica ? debouncedBusqueda : undefined,
   };
 
-  const { data: sociosBackend, isLoading } = useSocios(filtros);
+  const { data: sociosBackend, isLoading } = useObtenerSocios(filtros);
 
   const rawSocios =
     sociosBackend?.items ||

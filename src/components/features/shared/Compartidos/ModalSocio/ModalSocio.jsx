@@ -34,7 +34,7 @@ const DropzoneField = ({
   onDragLeave,
   onDrop,
 }) => {
-  const tieneError = intentoGuardarSocio && !archivos[fileKey];
+  const tieneError = false;
   return (
     <div className={styles.dropzoneWrapper}>
       <input
@@ -102,6 +102,7 @@ export default function ModalSocio({
   onDragLeave,
   onDrop,
   control,
+  isGuardando,
 }) {
   const {
     trigger,
@@ -253,10 +254,7 @@ export default function ModalSocio({
                     control={control}
                     name={`socios.${socioIndex}.celular`}
                     label="Celular (Sin 0 ni 15)"
-                    mask={[
-                      { mask: "00 0000-0000" },
-                      { mask: "000 000-0000" }
-                    ]}
+                    mask={[{ mask: "00 0000-0000" }, { mask: "000 000-0000" }]}
                     error={getError("celular")}
                     esValido={getEsValido("celular")}
                     icon={<FiSmartphone />}
@@ -307,8 +305,7 @@ export default function ModalSocio({
                   <DropzoneField
                     fileKey={`socio-${socioIndex}-frente`}
                     title="DNI Frente"
-                    subtitle="Imagen clara y legible"
-                    intentoGuardarSocio={haIntentadoFinalizar}
+                    subtitle="Imagen clara y legible (Opcional)"
                     archivos={archivos}
                     draggingKey={draggingKey}
                     onFileUpload={onFileUpload}
@@ -320,8 +317,7 @@ export default function ModalSocio({
                   <DropzoneField
                     fileKey={`socio-${socioIndex}-dorso`}
                     title="DNI Dorso"
-                    subtitle="Imagen clara y legible"
-                    intentoGuardarSocio={haIntentadoFinalizar}
+                    subtitle="Imagen clara y legible (Opcional)"
                     archivos={archivos}
                     draggingKey={draggingKey}
                     onFileUpload={onFileUpload}
@@ -339,6 +335,7 @@ export default function ModalSocio({
             <Button
               type="button"
               variant="outline"
+              disabled={isGuardando}
               onClick={isMobile && step === 2 ? () => setStep(1) : onCerrar}
             >
               {isMobile && step === 2 ? "VOLVER" : "CANCELAR"}
@@ -354,8 +351,8 @@ export default function ModalSocio({
                 SIGUIENTE
               </Button>
             ) : (
-              <Button type="submit" variant="primary">
-                GUARDAR DATOS
+              <Button type="submit" variant="primary" disabled={isGuardando}>
+                {isGuardando ? "GUARDANDO..." : "GUARDAR DATOS"}
               </Button>
             )}
           </div>

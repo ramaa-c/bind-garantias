@@ -37,36 +37,37 @@ export const useCrearTercero = () => {
 };
 
 export const useObtenerTiposHabilitados = (terceroId) => {
-    return useQuery({
-        queryKey: ['terceros', 'tiposHabilitados', terceroId],
-        queryFn: () => tercerosService.obtenerTiposHabilitados(terceroId),
-        enabled: !!terceroId
-    });
+  return useQuery({
+    queryKey: ["terceros", "tiposHabilitados", terceroId],
+    queryFn: () => tercerosService.obtenerTiposHabilitados(terceroId),
+    enabled: !!terceroId,
+  });
 };
 
-export const useRelacionesSocio = (socioId) => {
-    return useQuery({
-        queryKey: ['socioTerceroRelacion', socioId],
-        queryFn: () => tercerosService.obtenerRelacionesDeSocio(socioId),
-        enabled: !!socioId
-    });
+export const useObtenerRelacionesDeSocio = (socioId) => {
+  return useQuery({
+    queryKey: ["socioTerceroRelacion", socioId],
+    queryFn: () => tercerosService.obtenerRelacionesDeSocio(socioId),
+    enabled: !!socioId,
+  });
 };
-export const useGuardarRelacionesSocio = () => {
-    const queryClient = useQueryClient();
 
-    return useMutation({
-        mutationFn: tercerosService.guardarRelacionesDeSocio,
-        onSuccess: (data, variables) => {
-            return Promise.all([
-                queryClient.invalidateQueries({
-                    queryKey: ["relacionesSocio", variables.socioid],
-                }),
-            ]);
-        },
-        onError: (error) => {
-            console.error("Error al guardar las relaciones del socio:", error);
-        },
-    });
+export const useGuardarRelacionesDeSocio = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: tercerosService.guardarRelacionesDeSocio,
+    onSuccess: (data, variables) => {
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["relacionesSocio", variables.socioid],
+        }),
+      ]);
+    },
+    onError: (error) => {
+      console.error("Error al guardar las relaciones del socio:", error);
+    },
+  });
 };
 
 export const useBuscarTerceroPorCuit = () => {
