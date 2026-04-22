@@ -15,6 +15,7 @@ export * from './shared/Compartidos/SocioTaskCard/SocioTaskCard';
 export { default as ModalUbicacion } from "./shared/Compartidos/ModalUbicacion/ModalUbicacion";
 export { default as ModalContacto } from "./shared/Compartidos/ModalContacto/ModalContacto";
 export { default as ModalConfirmacionBorrador } from "./shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
+export * from "./ModalHistorialEstado/ModalHistorialEstado";
 
 
 // --- CHEQUES ---

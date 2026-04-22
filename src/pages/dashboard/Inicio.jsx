@@ -140,35 +140,6 @@ export default function Inicio() {
             </div>
           </header>
 
-          {/* ── KPI GRID ── */}
-          <section className={styles.kpiGrid}>
-            <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>
-                <FiTrendingUp />
-              </div>
-              <p className={styles.kpiLabel}>Disponible · Pagaré USD</p>
-              <h2 className={`${styles.kpiValue} ${styles.textYellow}`}>
-                U$D 40.000
-              </h2>
-            </div>
-
-            <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>
-                <TbFileInvoice />
-              </div>
-              <p className={styles.kpiLabel}>Límite Total Aprobado</p>
-              <h2 className={styles.kpiValue}>U$D 40.000</h2>
-            </div>
-
-            <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>
-                <FiCalendar />
-              </div>
-              <p className={styles.kpiLabel}>Próximo Vencimiento</p>
-              <h2 className={styles.kpiValue}>01/11/2026</h2>
-            </div>
-          </section>
-
           {/* ── BOTTOM GRID ── */}
           <div className={styles.inicioBottomGrid}>
             {/* COLUMNA IZQUIERDA */}

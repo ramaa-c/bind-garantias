@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { usuarioService } from '../services/usuarioService';
 
 export const useLogin = () => {
@@ -8,14 +8,22 @@ export const useLogin = () => {
 };
 
 export const useBloquearUsuario = () => {
+    const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (usuarioId) => usuarioService.bloquearUsuario(usuarioId)
+        mutationFn: (usuarioId) => usuarioService.bloquearUsuario(usuarioId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['usuarios', 'busqueda'] });
+        }
     });
 };
 
 export const useReactivarUsuario = () => {
+    const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (usuarioId) => usuarioService.reactivarUsuario(usuarioId)
+        mutationFn: (usuarioId) => usuarioService.reactivarUsuario(usuarioId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['usuarios', 'busqueda'] });
+        }
     });
 };
 
@@ -48,7 +56,9 @@ export const useObtenerPorNombreOEmail = (identificador) => {
 export const useBuscarUsuarios = (page = 1, pageSize = 10, email = "", nombre = "") => {
     return useQuery({
         queryKey: ['usuarios', 'busqueda', page, pageSize, email, nombre],
-        queryFn: () => usuarioService.buscarUsuarios(page, pageSize, email, nombre)
+        queryFn: () => usuarioService.buscarUsuarios(page, pageSize, email, nombre),
+        staleTime: 1000 * 60 * 2,
+        placeholderData: keepPreviousData
     });
 };
 

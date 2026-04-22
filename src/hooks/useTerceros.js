@@ -1,18 +1,22 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { tercerosService } from '../services/tercerosService';
 
 export const useObtenerTerceros = (params = {}) => {
     return useQuery({
-        queryKey: ['terceros', params],
-        queryFn: () => tercerosService.obtenerTerceros(params)
+        queryKey: ['terceros', 'lista', params],
+        queryFn: () => tercerosService.obtenerTerceros(params),
+        staleTime: 1000 * 60 * 2,
+        placeholderData: keepPreviousData
     });
 };
 
 export const useObtenerTerceroPorId = (terceroId) => {
     return useQuery({
-        queryKey: ['terceros', terceroId],
+        queryKey: ['terceros', 'detalle', terceroId],
         queryFn: () => tercerosService.obtenerTerceroPorId(terceroId),
-        enabled: !!terceroId
+        enabled: !!terceroId,
+        staleTime: 1000 * 60 * 5,
+        placeholderData: keepPreviousData
     });
 };
 
@@ -40,27 +44,29 @@ export const useObtenerTiposHabilitados = (terceroId) => {
     });
 };
 
-export const useObtenerRelacionesDeSocio = (socioId) => {
+export const useRelacionesSocio = (socioId) => {
     return useQuery({
         queryKey: ['socioTerceroRelacion', socioId],
         queryFn: () => tercerosService.obtenerRelacionesDeSocio(socioId),
         enabled: !!socioId
     });
 };
+export const useGuardarRelacionesSocio = () => {
+    const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: tercerosService.guardarRelacionesDeSocio,
-    onSuccess: (data, variables) => {
-      return Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["relacionesSocio", variables.socioid],
-        }),
-      ]);
-    },
-    onError: (error) => {
-      console.error("Error al guardar las relaciones del socio:", error);
-    },
-  });
+    return useMutation({
+        mutationFn: tercerosService.guardarRelacionesDeSocio,
+        onSuccess: (data, variables) => {
+            return Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ["relacionesSocio", variables.socioid],
+                }),
+            ]);
+        },
+        onError: (error) => {
+            console.error("Error al guardar las relaciones del socio:", error);
+        },
+    });
 };
 
 export const useBuscarTerceroPorCuit = () => {

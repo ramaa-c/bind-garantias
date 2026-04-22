@@ -105,14 +105,18 @@
 .kpiGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-
-.kpiCard {
+  gap: 1.5rem;
   background: rgba(30, 30, 30, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1rem;
   padding: 1.5rem;
+}
+
+.kpiCard {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
   display: flex;
   align-items: center;
   gap: 1.25rem;
@@ -225,6 +229,17 @@
 .listItem:hover {
   background: rgba(255, 255, 255, 0.04);
 }
+
+.interactiveListItem {
+  cursor: pointer;
+}
+
+.interactiveListItem:hover {
+  background: rgba(245, 244, 0, 0.1);
+  border-color: rgba(245, 244, 0, 0.3);
+  transform: translateX(4px);
+}
+
 
 .listIcon {
   color: var(--color-amarillo-bind);
@@ -350,6 +365,26 @@
 .pageBtn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+
+.miniHistoryBtn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+    margin-left: 0.5rem;
+}
+
+.miniHistoryBtn:hover {
+    background: #eee;
+    color: #ff8c00;
+    transform: scale(1.1);
 }
 
 .pageInfo {

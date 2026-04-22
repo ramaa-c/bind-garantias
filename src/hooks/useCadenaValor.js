@@ -1,10 +1,12 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { cadenaValorService } from '../services/cadenaValorService';
 
 export const useObtenerTodas = (page = 1, pageSize = 10) => {
     return useQuery({
         queryKey: ['cadenaValor', 'todas', page, pageSize],
-        queryFn: () => cadenaValorService.obtenerTodas(page, pageSize)
+        queryFn: () => cadenaValorService.obtenerTodas(page, pageSize),
+        staleTime: 1000 * 60 * 5,
+        placeholderData: keepPreviousData
     });
 };
 
@@ -28,7 +30,9 @@ export const useObtenerLibradores = (cadenaValorId, page = 1, pageSize = 10) => 
     return useQuery({
         queryKey: ['cadenaValor', 'libradores', cadenaValorId, page, pageSize],
         queryFn: () => cadenaValorService.obtenerLibradores(cadenaValorId, page, pageSize),
-        enabled: !!cadenaValorId
+        enabled: !!cadenaValorId,
+        staleTime: 1000 * 60 * 5,
+        placeholderData: keepPreviousData
     });
 };
 
@@ -44,7 +48,9 @@ export const useObtenerLineas = (cadenaValorId, page = 1, pageSize = 10) => {
     return useQuery({
         queryKey: ['cadenaValor', 'lineas', cadenaValorId, page, pageSize],
         queryFn: () => cadenaValorService.obtenerLineas(cadenaValorId, page, pageSize),
-        enabled: !!cadenaValorId
+        enabled: !!cadenaValorId,
+        staleTime: 1000 * 60 * 5,
+        placeholderData: keepPreviousData
     });
 };
 
