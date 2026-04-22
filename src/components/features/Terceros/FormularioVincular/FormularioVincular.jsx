@@ -8,7 +8,7 @@ import {
   SelectFecha,
 } from "../../../ui";
 import { useTipoRelacionSocio } from "../../../../hooks/useCatalogos";
-import { useGuardarRelacionesSocio } from "../../../../hooks/useTerceros";
+import { useGuardarRelacionesDeSocio } from "../../../../hooks/useTerceros";
 import styles from "./FormularioVincular.module.css";
 
 export const FormularioVincular = ({
@@ -36,7 +36,7 @@ export const FormularioVincular = ({
 
   const { data: relacionesData, isLoading: cargandoRelaciones } =
     useTipoRelacionSocio();
-  const mutacionVincular = useGuardarRelacionesSocio();
+  const mutacionVincular = useGuardarRelacionesDeSocio();
 
   const relacionSeleccionada = watch("tiporelacionsocioid");
   const esAccionista =
