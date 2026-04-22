@@ -13,7 +13,6 @@ import {
   Avatar,
   BotonIcono,
   BuscadorCuit,
-  BotonVolver,
 } from "../../../../ui";
 import styles from "./Paso4Socios.module.css";
 
@@ -64,13 +63,16 @@ export default function Paso4Socios({
     } else if (valorNum <= 0 || valorNum > 100) {
       setErrorParticipacion("Debe ser entre 1 y 100");
     } else if (valorNum > restante) {
-      setErrorParticipacion(
-        `No puede superar el 100% total. Máximo disponible: ${restante}%`,
-      );
+      setErrorParticipacion(`No puede superar el 100% total.`);
     } else {
       setErrorParticipacion("");
       guardarSocio();
     }
+  };
+
+  const handleVolverAEdicion = () => {
+    setErrorParticipacion("");
+    socios.length === 0 ? setFaseSocio("ingresar_cuit") : setFaseSocio("lista");
   };
 
   return (
@@ -120,22 +122,19 @@ export default function Paso4Socios({
       {/* --- FASE 2: COMPLETAR DATOS --- */}
       {faseSocio === "completar_datos" && (
         <div className={styles.section}>
-          <div className={styles.topBackButtonWrapper}>
-            <BotonVolver
-              texto="VOLVER"
-              onClick={() => {
-                setErrorParticipacion("");
-                socios.length === 0
-                  ? setFaseSocio("ingresar_cuit")
-                  : setFaseSocio("lista");
-              }}
-            />
-          </div>
-
           <h3 className={styles.headerTitle}>Completar datos del socio</h3>
 
           <div className={styles.summaryCard}>
             <div className={styles.summaryTop}>
+              <button
+                type="button"
+                className={styles.editIconBtn}
+                onClick={handleVolverAEdicion}
+                title="Editar identidad"
+              >
+                <FiEdit size={18} />
+              </button>
+
               <div className={styles.summaryStatus}>
                 <FiCheckCircle size={16} />
                 <span>IDENTIDAD VALIDADA</span>
@@ -147,13 +146,7 @@ export default function Paso4Socios({
             <div className={styles.summaryDivider}></div>
 
             <div className={styles.summaryBottom}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
+              <div className={styles.labelColumn}>
                 <label
                   htmlFor="participacionSocioInput"
                   className={styles.percentageLabel}
@@ -161,17 +154,18 @@ export default function Paso4Socios({
                   Participación del socio
                 </label>
                 <span
-                  style={{
-                    fontSize: "0.75rem",
-                    color: restante === 0 ? "#ff4444" : "#888",
-                  }}
+                  className={`${styles.availableText} ${
+                    restante === 0 ? styles.availableTextError : ""
+                  }`}
                 >
                   {restante > 0 ? `Disponible: ${restante}%` : "Cupo completo"}
                 </span>
               </div>
 
               <div
-                className={`${styles.customInputWrapper} ${errorParticipacion ? styles.wrapperError : ""}`}
+                className={`${styles.customInputWrapper} ${
+                  errorParticipacion ? styles.wrapperError : ""
+                }`}
               >
                 <input
                   id="participacionSocioInput"
@@ -191,9 +185,11 @@ export default function Paso4Socios({
                 <span className={styles.percentageSymbol}>%</span>
               </div>
 
-              {errorParticipacion && (
-                <span className={styles.errorText}>{errorParticipacion}</span>
-              )}
+              <div className={styles.errorContainer}>
+                {errorParticipacion && (
+                  <span className={styles.errorText}>{errorParticipacion}</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -215,19 +211,18 @@ export default function Paso4Socios({
         <div className={styles.section}>
           <div className={styles.listHeader}>
             <h3 className={styles.headerTitle}>Socios declarados</h3>
-            <div style={{ textAlign: "right" }}>
+
+            <div className={styles.statsGroup}>
               <Badge>
                 {socios.length} socio{socios.length > 1 ? "s" : ""}
               </Badge>
-              <p
-                style={{
-                  fontSize: "0.7rem",
-                  color: totalGuardado === 100 ? "#4CAF50" : "#888",
-                  marginTop: "4px",
-                }}
+              <span
+                className={`${styles.totalText} ${
+                  totalGuardado === 100 ? styles.totalTextSuccess : ""
+                }`}
               >
                 Total: {totalGuardado}% / 100%
-              </p>
+              </span>
             </div>
           </div>
 

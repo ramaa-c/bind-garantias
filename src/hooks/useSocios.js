@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sociosService } from '../services/sociosService';
 
 export const useObtenerSocios = (params = {}) => {

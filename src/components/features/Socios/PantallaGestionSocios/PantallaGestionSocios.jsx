@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FiPlus, FiUsers } from "react-icons/fi";
 import { Button, BuscadorListado, Paginacion, Modal } from "../../../ui";
 import { TablaSocios, FormularioSocios } from "../../../features";
-import { useSocios } from "../../../../hooks/useSocios";
+import { useObtenerSocios } from "../../../../hooks/useSocios";
 import styles from "./PantallaGestionSocios.module.css";
 
 export const PantallaGestionSocios = () => {
@@ -23,7 +23,7 @@ export const PantallaGestionSocios = () => {
     Cuit: terminoBusqueda && esBusquedaNumerica ? terminoBusqueda : undefined,
   };
 
-  const { data: sociosBackend, isLoading } = useSocios(filtros);
+  const { data: sociosBackend, isLoading } = useObtenerSocios(filtros);
 
   const rawSocios =
     sociosBackend?.items ||

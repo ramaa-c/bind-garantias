@@ -1,19 +1,19 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { tercerosService } from '../services/tercerosService';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { tercerosService } from "../services/tercerosService";
 
 export const useObtenerTerceros = (params = {}) => {
-    return useQuery({
-        queryKey: ['terceros', params],
-        queryFn: () => tercerosService.obtenerTerceros(params)
-    });
+  return useQuery({
+    queryKey: ["terceros", params],
+    queryFn: () => tercerosService.obtenerTerceros(params),
+  });
 };
 
 export const useObtenerTerceroPorId = (terceroId) => {
-    return useQuery({
-        queryKey: ['terceros', terceroId],
-        queryFn: () => tercerosService.obtenerTerceroPorId(terceroId),
-        enabled: !!terceroId
-    });
+  return useQuery({
+    queryKey: ["terceros", terceroId],
+    queryFn: () => tercerosService.obtenerTerceroPorId(terceroId),
+    enabled: !!terceroId,
+  });
 };
 
 export const useCrearTercero = () => {
@@ -33,20 +33,23 @@ export const useCrearTercero = () => {
 };
 
 export const useObtenerTiposHabilitados = (terceroId) => {
-    return useQuery({
-        queryKey: ['terceros', 'tiposHabilitados', terceroId],
-        queryFn: () => tercerosService.obtenerTiposHabilitados(terceroId),
-        enabled: !!terceroId
-    });
+  return useQuery({
+    queryKey: ["terceros", "tiposHabilitados", terceroId],
+    queryFn: () => tercerosService.obtenerTiposHabilitados(terceroId),
+    enabled: !!terceroId,
+  });
 };
 
 export const useObtenerRelacionesDeSocio = (socioId) => {
-    return useQuery({
-        queryKey: ['socioTerceroRelacion', socioId],
-        queryFn: () => tercerosService.obtenerRelacionesDeSocio(socioId),
-        enabled: !!socioId
-    });
+  return useQuery({
+    queryKey: ["socioTerceroRelacion", socioId],
+    queryFn: () => tercerosService.obtenerRelacionesDeSocio(socioId),
+    enabled: !!socioId,
+  });
 };
+
+export const useGuardarRelacionesDeSocio = () => {
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: tercerosService.guardarRelacionesDeSocio,

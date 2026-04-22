@@ -20,7 +20,6 @@ import {
   ModalRepresentante,
   ModalSocio,
 } from "../../../../features";
-
 import styles from "./Paso5Documentacion.module.css";
 
 const PersistenciaOculta = ({ register, socios, representantes }) => (
@@ -47,7 +46,11 @@ const PersistenciaOculta = ({ register, socios, representantes }) => (
   </div>
 );
 
-export default function Paso5Documentacion({ socios, avanzarPaso6 }) {
+export default function Paso5Documentacion({
+  socios,
+  avanzarPaso6,
+  onGuardarSocioDb,
+}) {
   const { register, control, setValue, trigger, clearErrors, getValues } =
     useFormContext();
   const { errors } = useFormState({ control });
@@ -72,6 +75,7 @@ export default function Paso5Documentacion({ socios, avanzarPaso6 }) {
     backupArchivos: {},
     intentoAvanzar: false,
     intentoGuardarSocio: false,
+    isGuardando: false,
   });
 
   const {
@@ -84,6 +88,7 @@ export default function Paso5Documentacion({ socios, avanzarPaso6 }) {
     backupSocio,
     intentoAvanzar,
     intentoGuardarSocio,
+    isGuardando,
   } = uiState;
 
   const updateState = (updates) => {
@@ -132,25 +137,37 @@ export default function Paso5Documentacion({ socios, avanzarPaso6 }) {
     const sLoc = getValues(`socios.${index}.localidad`);
     const errs = errors?.socios?.[index];
     const sinErrores = !errs || Object.keys(errs).length === 0;
-    const dniFrenteSubido = archivos[`socio-${index}-frente`];
-    const dniDorsoSubido = archivos[`socio-${index}-dorso`];
-    return !!(
-      sEmail &&
-      sCel &&
-      sDir &&
-      sProv &&
-      sLoc &&
-      sinErrores &&
-      dniFrenteSubido &&
-      dniDorsoSubido
-    );
+
+    return !!(sEmail && sCel && sDir && sProv && sLoc && sinErrores);
   };
 
   const handleAbrirModalSocio = (index) => {
-    const datosTextosActuales = getValues(`socios.${index}`) || {};
+    const socioTarget = socios[index];
+    const db = socioTarget.dataOriginal || {};
+
+    const currentFormValues = getValues(`socios.${index}`) || {};
+
+    const emailHydrated = currentFormValues.email || db.email || "";
+    const celularHydrated = currentFormValues.celular || db.telefono || "";
+    const direccionHydrated = currentFormValues.direccion || db.calle || "";
+
+    setValue(`socios.${index}.email`, emailHydrated, { shouldValidate: true });
+    setValue(`socios.${index}.celular`, celularHydrated, {
+      shouldValidate: true,
+    });
+    setValue(`socios.${index}.direccion`, direccionHydrated, {
+      shouldValidate: true,
+    });
+
     updateState({
       intentoGuardarSocio: false,
-      backupSocio: JSON.parse(JSON.stringify(datosTextosActuales)),
+      backupSocio: {
+        email: emailHydrated,
+        celular: celularHydrated,
+        direccion: direccionHydrated,
+        provincia: currentFormValues.provincia || "",
+        localidad: currentFormValues.localidad || "",
+      },
       backupArchivos: {
         frente: archivos[`socio-${index}-frente`],
         dorso: archivos[`socio-${index}-dorso`],
@@ -188,7 +205,8 @@ export default function Paso5Documentacion({ socios, avanzarPaso6 }) {
   };
 
   const handleGuardarSocioModal = async () => {
-    updateState({ intentoGuardarSocio: true });
+    updateState({ intentoGuardarSocio: true, isGuardando: true });
+
     const camposValidos = await trigger([
       `socios.${socioActivoIndex}.email`,
       `socios.${socioActivoIndex}.celular`,
@@ -196,15 +214,30 @@ export default function Paso5Documentacion({ socios, avanzarPaso6 }) {
       `socios.${socioActivoIndex}.provincia`,
       `socios.${socioActivoIndex}.localidad`,
     ]);
-    const dniFrente = archivos[`socio-${socioActivoIndex}-frente`];
-    const dniDorso = archivos[`socio-${socioActivoIndex}-dorso`];
-    if (camposValidos && dniFrente && dniDorso) {
-      updateState({ intentoGuardarSocio: false, socioActivoIndex: null });
+
+    if (camposValidos) {
+      try {
+        const datosForm = getValues(`socios.${socioActivoIndex}`);
+
+        await onGuardarSocioDb(socioActivoIndex, datosForm);
+
+        updateState({
+          intentoGuardarSocio: false,
+          socioActivoIndex: null,
+          isGuardando: false,
+        });
+      } catch (error) {
+        console.error("Fallo al guardar socio en DB:", error);
+        updateState({ intentoGuardarSocio: false, isGuardando: false });
+      }
+    } else {
+      updateState({ intentoGuardarSocio: false, isGuardando: false });
     }
   };
 
   const handleAbrirModalRep = (index) =>
     updateState({ repActivoIndex: index, modalRepOpen: true });
+
   const handleGuardarRep = (repData) =>
     repActivoIndex !== null
       ? updateRep(repActivoIndex, repData)
@@ -462,6 +495,7 @@ export default function Paso5Documentacion({ socios, avanzarPaso6 }) {
         archivos={archivos}
         intentoGuardarSocio={intentoGuardarSocio}
         onGuardar={handleGuardarSocioModal}
+        isGuardando={isGuardando}
         onCerrar={handleCerrarModalSinGuardar}
         onFileUpload={handleFileUpload}
         onFileRemove={handleFileRemove}
