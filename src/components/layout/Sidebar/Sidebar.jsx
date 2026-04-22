@@ -48,6 +48,12 @@ export default function Sidebar({ isOpen, onClose }) {
         >
           <FiHome className={styles.icon} /> Inicio
         </button>
+        <button
+          className={`${styles.link} ${isActive("/posicion-consolidada") ? styles.active : ""}`}
+          onClick={() => handleNavigate("/posicion-consolidada")}
+        >
+          <FiLayers className={styles.icon} /> Posición Consolidada
+        </button>
 
         {/* ─── SECCIÓN: MIS LÍNEAS ─── */}
         <p className={`${styles.heading} ${styles.headingSpacing}`}>

@@ -1,23 +1,36 @@
-import api from './axios';
+import api from '../api/axios';
 
 export const cadenaValorService = {
     // GET /CadenaValor/ObtenerTodas
-    obtenerTodas: async () => (await api.get('/CadenaValor/ObtenerTodas')).data,
+    obtenerTodas: async (page = 1, pageSize = 10) => (await api.get('/CadenaValor/ObtenerTodas', { params: { page, page_size: pageSize } })).data,
     
     // GET /CadenaValor/ObtenerTodas/{cursaPlataforma}
-    obtenerTodasPorPlataforma: async (cursaPlataforma) => (await api.get(`/CadenaValor/ObtenerTodas/${cursaPlataforma}`)).data,
+    obtenerTodasPorPlataforma: async (cursaPlataforma, page = 1, pageSize = 10) => (await api.get(`/CadenaValor/ObtenerTodas/${cursaPlataforma}`, { params: { page, page_size: pageSize } })).data,
     
     // GET /CadenaValor/Obtener/{CadenaValorID}
     obtenerPorId: async (cadenaValorId) => (await api.get(`/CadenaValor/Obtener/${cadenaValorId}`)).data,
     
     // GET /CadenaValor/Libradores/{CadenaValorID}
-    obtenerLibradores: async (cadenaValorId, page = 1, pageSize = 10) => (await api.get(`/CadenaValor/Libradores/${cadenaValorId}`, { params: { page, page_size: pageSize } })).data,
+    obtenerLibradores: async (cadenaValorId, page = 1, pageSize = 10) => {
+        console.log(`Llamando Libradores Listado: ID=${cadenaValorId}, Page=${page}`);
+        return (await api.get(`/CadenaValor/Libradores/${cadenaValorId}`, { params: { page, page_size: pageSize } })).data;
+    },
     
     // GET /CadenaValor/Libradores/{CadenaValorID}/{CuitLibrador}
-    obtenerLibradorPorCuit: async (cadenaValorId, cuitLibrador) => (await api.get(`/CadenaValor/Libradores/${cadenaValorId}/${cuitLibrador}`)).data,
+    obtenerLibradorPorCuit: async (cadenaValorId, cuitLibrador) => {
+        console.log(`Llamando Librador Search CUIT: ID=${cadenaValorId}, CUIT=${cuitLibrador}`);
+        const response = await api.get(`/CadenaValor/Libradores/${cadenaValorId}/${cuitLibrador}`, {
+            transformResponse: [(data) => {
+                try { return JSON.parse(data); } catch (e) { return data; } // Si no es JSON, lo devuelve como texto
+            }]
+        });
+        return response.data;
+    },
     
     // GET /CadenaValor/Lineas/{CadenaValorID}
-    obtenerLineas: async (cadenaValorId) => (await api.get(`/CadenaValor/Lineas/${cadenaValorId}`)).data,
+    obtenerLineas: async (cadenaValorId, page = 1, pageSize = 10) => {
+        return (await api.get(`/CadenaValor/Lineas/${cadenaValorId}`, { params: { page, page_size: pageSize } })).data;
+    },
     
     // GET /CadenaValor/Relaciones/{CadenaValorID}/{email}
     verificarAutorizacionEmail: async (cadenaValorId, email) => (await api.get(`/CadenaValor/Relaciones/${cadenaValorId}/${email}`)).data,

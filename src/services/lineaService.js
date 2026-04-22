@@ -1,6 +1,6 @@
-import api from './axios';
+import api from '../api/axios';
 
-export const tipoLimiteSocioService = {
+export const lineaService = {
     // GET /api/TipoLimiteSocioCambioEstado/{TipoLimiteSocioID}
     obtenerCambiosEstado: async (tipoLimiteSocioId) => (await api.get(`/api/TipoLimiteSocioCambioEstado/${tipoLimiteSocioId}`)).data,
 

@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { cadenaValorService } from '../services/cadenaValorService';
 
-export const useObtenerTodas = () => {
+export const useObtenerTodas = (page = 1, pageSize = 10) => {
     return useQuery({
-        queryKey: ['cadenaValor', 'todas'],
-        queryFn: () => cadenaValorService.obtenerTodas()
+        queryKey: ['cadenaValor', 'todas', page, pageSize],
+        queryFn: () => cadenaValorService.obtenerTodas(page, pageSize)
     });
 };
 
-export const useObtenerTodasPorPlataforma = (cursaPlataforma) => {
+export const useObtenerTodasPorPlataforma = (cursaPlataforma, page = 1, pageSize = 10) => {
     return useQuery({
-        queryKey: ['cadenaValor', 'plataforma', cursaPlataforma],
-        queryFn: () => cadenaValorService.obtenerTodasPorPlataforma(cursaPlataforma),
+        queryKey: ['cadenaValor', 'plataforma', cursaPlataforma, page, pageSize],
+        queryFn: () => cadenaValorService.obtenerTodasPorPlataforma(cursaPlataforma, page, pageSize),
         enabled: !!cursaPlataforma
     });
 };
@@ -40,10 +40,10 @@ export const useObtenerLibradorPorCuit = (cadenaValorId, cuitLibrador) => {
     });
 };
 
-export const useObtenerLineas = (cadenaValorId) => {
+export const useObtenerLineas = (cadenaValorId, page = 1, pageSize = 10) => {
     return useQuery({
-        queryKey: ['cadenaValor', 'lineas', cadenaValorId],
-        queryFn: () => cadenaValorService.obtenerLineas(cadenaValorId),
+        queryKey: ['cadenaValor', 'lineas', cadenaValorId, page, pageSize],
+        queryFn: () => cadenaValorService.obtenerLineas(cadenaValorId, page, pageSize),
         enabled: !!cadenaValorId
     });
 };
