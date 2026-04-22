@@ -17,9 +17,19 @@ export const useObtenerTerceroPorId = (terceroId) => {
 };
 
 export const useCrearTercero = () => {
-    return useMutation({
-        mutationFn: (terceroData) => tercerosService.crearTercero(terceroData)
-    });
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: tercerosService.crearTercero,
+    onSuccess: () => {
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["terceros", "lista"] }),
+      ]);
+    },
+    onError: (error) => {
+      console.error("Error al crear el tercero:", error);
+    },
+  });
 };
 
 export const useObtenerTiposHabilitados = (terceroId) => {
@@ -38,8 +48,69 @@ export const useObtenerRelacionesDeSocio = (socioId) => {
     });
 };
 
-export const useGuardarRelacionesDeSocio = () => {
-    return useMutation({
-        mutationFn: (relacionData) => tercerosService.guardarRelacionesDeSocio(relacionData)
-    });
+  return useMutation({
+    mutationFn: tercerosService.guardarRelacionesDeSocio,
+    onSuccess: (data, variables) => {
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["relacionesSocio", variables.socioid],
+        }),
+      ]);
+    },
+    onError: (error) => {
+      console.error("Error al guardar las relaciones del socio:", error);
+    },
+  });
+};
+
+export const useBuscarTerceroPorCuit = () => {
+  return useMutation({
+    mutationFn: (cuit) => tercerosService.obtenerTerceros({ Cuit: cuit }),
+  });
+};
+
+export const useActualizarTercero = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: tercerosService.actualizarTercero,
+    onSuccess: (data, variables) => {
+      return Promise.all(
+        [
+          queryClient.invalidateQueries({ queryKey: ["terceros", "lista"] }),
+          variables.tercerorelacionadoid &&
+            queryClient
+              .invalidateQueries({
+                queryKey: [
+                  "terceros",
+                  "detalle",
+                  variables.tercerorelacionadoid,
+                ],
+              })
+              .catch(() => {}),
+        ].filter(Boolean),
+      );
+    },
+    onError: (error) => {
+      console.error("Error al actualizar el tercero:", error);
+    },
+  });
+};
+
+export const useActualizarRelacionSocio = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: tercerosService.actualizarRelacionDeSocio,
+    onSuccess: (data, variables) => {
+      return Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["relacionesSocio", variables.socioid],
+        }),
+      ]);
+    },
+    onError: (error) => {
+      console.error("Error al actualizar la relación del socio:", error);
+    },
+  });
 };

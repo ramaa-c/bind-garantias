@@ -1,0 +1,68 @@
+.container {
+  width: 100%;
+  max-width: 25rem;
+}
+
+.searchIcon {
+  color: #888;
+  font-size: 1.25rem;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.control {
+  background-color: #1a1a1a !important;
+  border-color: #333 !important;
+  border-radius: 0.5rem !important;
+  padding: 0 0.5rem !important;
+  box-shadow: none !important;
+  min-height: 48px !important;
+}
+
+.control:hover {
+  border-color: #555 !important;
+  cursor: pointer !important;
+}
+
+.controlFocused {
+  background-color: #1a1a1a !important;
+  border-color: var(--yellow) !important;
+  border-radius: 0.5rem !important;
+  padding: 0 0.5rem !important;
+  box-shadow: none !important;
+  min-height: 48px !important;
+}
+
+.controlFocused:hover {
+  border-color: var(--yellow) !important;
+}
+
+.input {
+  color: var(--white, #fff) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.placeholder {
+  color: #888 !important;
+  font-size: 1rem !important;
+  margin: 0 !important;
+}
+
+.valueContainer {
+  padding: 0 0.5rem !important;
+}
+
+.clearIndicator {
+  color: #888 !important;
+  cursor: pointer !important;
+  padding: 0.5rem !important;
+}
+
+.clearIndicator:hover {
+  color: #ffc107 !important;
+}
+
+.hidden {
+  display: none !important;
+}

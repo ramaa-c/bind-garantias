@@ -15,11 +15,26 @@ export const tercerosService = {
   // Trae los tipos de relación que tiene este tercero
   obtenerTiposHabilitados: async (terceroId) => (await api.get(`/api/TerceroTipoHabilitado/${terceroId}`)).data,
 
+  // Actualiza un tercero relacionado
+  actualizarTercero: async (terceroData) => {
+    const response = await api.put("/TerceroRelacionado", terceroData);
+    return response.data;
+  },
+
   //------- SOCIO - TERCERO RELACIÓN ---------
 
   // Trae todas las relaciones que tiene un socio
   obtenerRelacionesDeSocio: async (socioId) => (await api.get(`/api/SocioTerceroRelacion/${socioId}`)).data,
 
   // Guarda las relaciones de un socio
-  guardarRelacionesDeSocio: async (relacionData) => (await api.post("/api/SocioTerceroRelacion", relacionData)).data,
+  guardarRelacionesDeSocio: async (relacionData) => {
+    const response = await api.post("/SocioTerceroRelacion", relacionData);
+    return response.data;
+  },
+
+  // Actualiza una relación de socio
+  actualizarRelacionDeSocio: async (relacionData) => {
+    const response = await api.put("/SocioTerceroRelacion", relacionData);
+    return response.data;
+  },
 };

@@ -1,0 +1,156 @@
+.tableContainer {
+  overflow-x: auto;
+  background-color: #1a1a1a;
+  border-radius: 0.5rem;
+  border: 1px solid #333;
+  margin-top: 1rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+  color: var(--white, #fff);
+}
+
+.th {
+  text-align: left;
+  padding: 1rem;
+  background-color: #222;
+  border-bottom: 1px solid #333;
+  color: #aaa;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.thLeftRadius {
+  border-top-left-radius: 0.5rem;
+}
+
+.thRightRadius {
+  border-top-right-radius: 0.5rem;
+}
+
+.thRightAlign {
+  text-align: right;
+}
+
+.tr {
+  transition: background-color 0.2s ease;
+}
+
+.td {
+  padding: 1rem;
+  border-bottom: 1px solid #333;
+  vertical-align: middle;
+}
+
+.tdMuted {
+  color: #aaa;
+}
+
+.tdBold {
+  font-weight: 500;
+}
+
+.tdRightAlign {
+  text-align: right;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.badgeActive {
+  background-color: rgba(40, 167, 69, 0.1);
+  color: #28a745;
+  border: 1px solid rgba(40, 167, 69, 0.2);
+}
+
+.badgeInactive {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.actionButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: transparent;
+  color: var(--yellow);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: bold;
+  transition: all 0.2s ease;
+}
+
+.actionButton:hover {
+  background-color: rgba(255, 193, 7, 0.1);
+  border-color: var(--yellow);
+}
+
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.skeletonRow {
+  height: 4rem;
+  background-color: #222;
+  border-radius: 0.5rem;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+  color: #888;
+  background-color: #1a1a1a;
+  border-radius: 0.5rem;
+  border: 1px dashed #333;
+  margin-top: 1rem;
+}
+
+.emptyIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #444;
+}
+
+.emptyTitle {
+  margin: 0 0 0.5rem 0;
+  color: #fff;
+  font-size: 1.125rem;
+}
+
+.emptyText {
+  margin: 0;
+  font-size: 0.875rem;
+}
