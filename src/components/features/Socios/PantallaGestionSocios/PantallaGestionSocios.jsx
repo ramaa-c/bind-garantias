@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FiPlus, FiUsers } from "react-icons/fi";
+import { useDebounce } from "use-debounce";
 import { Button, BuscadorListado, Paginacion, Modal } from "../../../ui";
 import { TablaSocios, FormularioSocios } from "../../../features";
 import { useObtenerSocios } from "../../../../hooks/useSocios";
@@ -7,7 +8,10 @@ import styles from "./PantallaGestionSocios.module.css";
 
 export const PantallaGestionSocios = () => {
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
-  const esBusquedaNumerica = /^\d+$/.test(terminoBusqueda);
+  // Aplicamos debounce de 400ms al término para no saturar al servidor mientras se escribe
+  const [debouncedBusqueda] = useDebounce(terminoBusqueda, 400);
+
+  const esBusquedaNumerica = /^\d+$/.test(debouncedBusqueda);
   const [paginaActual, setPaginaActual] = useState(1);
   const [knownEndPage, setKnownEndPage] = useState(null);
   const elementosPorPagina = 10;
@@ -19,8 +23,8 @@ export const PantallaGestionSocios = () => {
     page: paginaActual,
     page_size: elementosPorPagina,
     Denominacion:
-      terminoBusqueda && !esBusquedaNumerica ? terminoBusqueda : undefined,
-    Cuit: terminoBusqueda && esBusquedaNumerica ? terminoBusqueda : undefined,
+      debouncedBusqueda && !esBusquedaNumerica ? debouncedBusqueda : undefined,
+    Cuit: debouncedBusqueda && esBusquedaNumerica ? debouncedBusqueda : undefined,
   };
 
   const { data: sociosBackend, isLoading } = useObtenerSocios(filtros);

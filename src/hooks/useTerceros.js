@@ -1,19 +1,23 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { tercerosService } from "../services/tercerosService";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { tercerosService } from '../services/tercerosService';
 
 export const useObtenerTerceros = (params = {}) => {
-  return useQuery({
-    queryKey: ["terceros", params],
-    queryFn: () => tercerosService.obtenerTerceros(params),
-  });
+    return useQuery({
+        queryKey: ['terceros', 'lista', params],
+        queryFn: () => tercerosService.obtenerTerceros(params),
+        staleTime: 1000 * 60 * 2,
+        placeholderData: keepPreviousData
+    });
 };
 
 export const useObtenerTerceroPorId = (terceroId) => {
-  return useQuery({
-    queryKey: ["terceros", terceroId],
-    queryFn: () => tercerosService.obtenerTerceroPorId(terceroId),
-    enabled: !!terceroId,
-  });
+    return useQuery({
+        queryKey: ['terceros', 'detalle', terceroId],
+        queryFn: () => tercerosService.obtenerTerceroPorId(terceroId),
+        enabled: !!terceroId,
+        staleTime: 1000 * 60 * 5,
+        placeholderData: keepPreviousData
+    });
 };
 
 export const useCrearTercero = () => {

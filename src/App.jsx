@@ -19,8 +19,9 @@ import AceptarTerminos from "./pages/auth/AceptarTerminos";
 import PosicionConsolidada from "./pages/posicion-consolidada/PosicionConsolidada";
 import CadenaDetalle from "./pages/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-import Pruebas from "./pages/pruebas";
+// import Pruebas from "./pages/pruebas";
 import {PantallaGestionSocios} from "./components/features";
+import { PantallaGestionUsuarios } from "./pages/usuarios/PantallaGestionUsuarios";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
@@ -34,6 +35,7 @@ function App() {
         <Route path="/crear-clave" element={<CrearClave />} />
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
 
+        {/* 
         <Route
           path="/pruebas"
           element={
@@ -42,12 +44,22 @@ function App() {
             </DashboardLayout>
           }
         />
+        */}
 
         <Route
           path="/socios"
           element={
             <DashboardLayout>
               <PantallaGestionSocios />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/usuarios"
+          element={
+            <DashboardLayout>
+              <PantallaGestionUsuarios />
             </DashboardLayout>
           }
         />

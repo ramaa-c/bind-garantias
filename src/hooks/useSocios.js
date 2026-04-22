@@ -1,12 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { sociosService } from '../services/sociosService';
 
 export const useObtenerSocios = (params = {}) => {
     return useQuery({
-        queryKey: ['socios', params],
-        queryFn: () => sociosService.obtenerSocios(params)
+        queryKey: ['socios', 'lista', params],
+        queryFn: () => sociosService.obtenerSocios(params),
+        staleTime: 1000 * 60 * 2, // 2 minutos para el listado
+        placeholderData: keepPreviousData,
     });
 };
+
+export const useSocios = useObtenerSocios; // Alias para compatibilidad con PantallaGestionSocios
 
 export const useSocioPorId = (socioId) => {
   return useQuery({
