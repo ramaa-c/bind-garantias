@@ -16,6 +16,8 @@ import Solicitudes from "./pages/solicitudes/Solicitudes";
 import SolicitudCheques from "./pages/cheques/SolicitudCheques";
 import FirmaDocumento from "./pages/pagares/FirmaDocumento";
 import AceptarTerminos from "./pages/auth/AceptarTerminos";
+import PosicionConsolidada from "./pages/posicion-consolidada/PosicionConsolidada";
+import CadenaDetalle from "./pages/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
@@ -122,6 +124,26 @@ function App() {
         <Route path="/firma-documento" element={<FirmaDocumento />} />
 
         <Route path="/terminos" element={<AceptarTerminos />} />
+
+        <Route
+          path="/posicion-consolidada"
+          element={
+            <DashboardLayout>
+              <PosicionConsolidada />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/cadenas-valor/:id"
+          element={
+            <DashboardLayout>
+              <CadenaDetalle />
+            </DashboardLayout>
+          }
+        />
+
+
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

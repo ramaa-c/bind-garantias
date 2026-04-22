@@ -1,43 +1,25 @@
-import api from "../api/axios";
+import api from '../api/axios';
 
 export const tercerosService = {
   //------ TERCERO RELACIONADO --------
 
   // Lista de terceros
-  obtenerTerceros: async (params = {}) => {
-    const response = await api.get("/TerceroRelacionado", { params });
-    return response.data;
-  },
+  obtenerTerceros: async (params = {}) => (await api.get("/api/TerceroRelacionado", { params })).data,
 
   // Tercero puntual por ID
-  obtenerTerceroPorId: async (terceroId) => {
-    const response = await api.get(`/TerceroRelacionado/${terceroId}`);
-    return response.data;
-  },
+  obtenerTerceroPorId: async (terceroId) => (await api.get(`/api/TerceroRelacionado/${terceroId}`)).data,
 
   // Crea nuevo tercero relacionado
-  crearTercero: async (terceroData) => {
-    const response = await api.post("/TerceroRelacionado", terceroData);
-    return response.data;
-  },
+  crearTercero: async (terceroData) => (await api.post("/api/TerceroRelacionado", terceroData)).data,
 
   // Trae los tipos de relación que tiene este tercero
-  obtenerTiposHabilitados: async (terceroId) => {
-    const response = await api.get(`/TerceroTipoHabilitado/${terceroId}`);
-    return response.data;
-  },
+  obtenerTiposHabilitados: async (terceroId) => (await api.get(`/api/TerceroTipoHabilitado/${terceroId}`)).data,
 
   //------- SOCIO - TERCERO RELACIÓN ---------
 
   // Trae todas las relaciones que tiene un socio
-  obtenerRelacionesDeSocio: async (socioId) => {
-    const response = await api.get(`/SocioTerceroRelacion/${socioId}`);
-    return response.data;
-  },
+  obtenerRelacionesDeSocio: async (socioId) => (await api.get(`/api/SocioTerceroRelacion/${socioId}`)).data,
 
   // Guarda las relaciones de un socio
-  guardarRelacionesDeSocio: async (relacionData) => {
-    const response = await api.post("/SocioTerceroRelacion", relacionData);
-    return response.data;
-  },
+  guardarRelacionesDeSocio: async (relacionData) => (await api.post("/api/SocioTerceroRelacion", relacionData)).data,
 };

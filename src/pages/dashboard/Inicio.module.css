@@ -287,6 +287,7 @@
 /* ─── LEFT COLUMN ────────────────────────────────────── */
 .leftColumn {
   animation: fadeUp 0.5s var(--ease-out) 0.1s both;
+  min-width: 0;
 }
 
 /* ─── TASK CARDS GRID ────────────────────────────────── */
@@ -397,15 +398,23 @@
 .rightColumn {
   margin-top: 1rem;
   animation: fadeUp 0.5s var(--ease-out) 0.1s both;
+  min-width: 0;
 }
 
 /* ─── ACTIVIDAD LIST ─────────────────────────────────── */
-.actividadList {
+.actividadCard {
   background: rgba(30, 30, 30, 0.85);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
   border-radius: 1.5rem;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.actividadList {
   overflow: hidden;
   position: relative;
 }
@@ -421,6 +430,28 @@
   pointer-events: none;
 }
 
+.scrollableList {
+  max-height: calc(100vh - 26rem);
+  min-height: 15rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar for activity list */
+.scrollableList::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollableList::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollableList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.scrollableList::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .actividadItem {
   display: flex;
   align-items: center;
@@ -430,6 +461,15 @@
   transition: background-color 0.15s;
   position: relative;
   background: transparent;
+  min-width: 0;
+}
+
+.actividadItemClickable {
+  cursor: pointer;
+}
+
+.actividadItemClickable:hover {
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .actividadItem:hover {
@@ -598,4 +638,67 @@
   .actividadItem {
     padding: 1rem 1.5rem;
   }
+}
+
+/* PAGINACIÓN DASHBOARD */
+.miniPagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom-left-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+}
+
+.miniPagination button {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--white-muted);
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.miniPagination button:hover:not(:disabled) {
+  background: var(--color-amarillo-bind);
+  color: var(--carbon-black);
+  border-color: var(--color-amarillo-bind);
+}
+
+.miniPagination button:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+}
+
+.miniPagination span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-family: var(--font-secundaria);
+  font-weight: 500;
+}
+
+/* LOADING STATE INICIO */
+.loadingWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 2rem;
+  gap: 1.5rem;
+}
+
+.loadingWrapper p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-family: var(--font-secundaria);
+  margin: 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
