@@ -25,7 +25,6 @@ const DropzoneField = ({
   fileKey,
   title,
   subtitle,
-  intentoGuardarSocio,
   archivos,
   draggingKey,
   onFileUpload,
@@ -82,7 +81,6 @@ function useIsMobile(breakpointPx = 900) {
     const mq = window.matchMedia(`(max-width: ${breakpointPx - 1}px)`);
     const handler = (e) => setIsMobile(e.matches);
     mq.addEventListener("change", handler);
-    setIsMobile(mq.matches);
     return () => mq.removeEventListener("change", handler);
   }, [breakpointPx]);
   return isMobile;

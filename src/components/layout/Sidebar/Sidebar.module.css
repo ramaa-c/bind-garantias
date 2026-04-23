@@ -69,6 +69,18 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 1rem 1.5rem 2rem 1.5rem;
   margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.versionText {
+  color: var(--text-muted, #666);
+  font-size: 0.75rem;
+  margin: 0;
+  letter-spacing: 0.02em;
+  text-align: center;
+  user-select: none;
 }
 
 /* --- LINKS --- */
@@ -102,7 +114,9 @@
 .collapsibleContent {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease-out, opacity 0.2s;
+  transition:
+    max-height 0.3s ease-out,
+    opacity 0.2s;
   opacity: 0;
 }
 

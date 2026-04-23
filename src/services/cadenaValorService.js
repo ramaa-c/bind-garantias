@@ -21,7 +21,7 @@ export const cadenaValorService = {
         console.log(`Llamando Librador Search CUIT: ID=${cadenaValorId}, CUIT=${cuitLibrador}`);
         const response = await api.get(`/CadenaValor/Libradores/${cadenaValorId}/${cuitLibrador}`, {
             transformResponse: [(data) => {
-                try { return JSON.parse(data); } catch (e) { return data; } // Si no es JSON, lo devuelve como texto
+                try { return JSON.parse(data); } catch { return data; } // Si no es JSON, lo devuelve como texto
             }]
         });
         return response.data;

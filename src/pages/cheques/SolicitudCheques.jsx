@@ -46,11 +46,7 @@ export default function SolicitudCheques() {
     watch,
   });
 
-  const bolsaSeleccionada = useWatch({
-    control,
-    name: "sociedadBolsa",
-    defaultValue: "",
-  });
+
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleVolver = () => {
@@ -106,11 +102,7 @@ export default function SolicitudCheques() {
     setPasoActual(4);
   };
 
-  const avanzarSinBolsa = () => {
-    setValue("sociedadBolsa", "");
-    setValue("numeroCuentaBolsa", "");
-    setPasoActual(4);
-  };
+
 
   // Paso 4: Detalles
   const handleContinuarDetalles = async () => {

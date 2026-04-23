@@ -3,12 +3,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  min-height: 100%;
+  flex: 1;
   padding: 4rem 1rem;
-  color: #888;
-  background-color: #1a1a1a;
-  border-radius: 0.5rem;
-  border: 1px dashed #333;
   margin-top: 1rem;
+  background-color: var(--bg-primary, #1a1a1a);
+  border-radius: 0.5rem;
+  border: 1px dashed var(--border-subtle, #333);
+  color: var(--text-secondary, #888);
   text-align: center;
 }
 
@@ -19,18 +22,20 @@
 .icon {
   font-size: 3rem;
   margin-bottom: 1rem;
-  color: #444;
+  color: var(--text-muted, #444);
 }
 
 .title {
   margin: 0 0 0.5rem 0;
-  color: #fff;
+  color: var(--text-primary, #fff);
   font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .text {
   margin: 0;
   font-size: 0.875rem;
+  line-height: 1.5;
 }
 
 .actionButton {

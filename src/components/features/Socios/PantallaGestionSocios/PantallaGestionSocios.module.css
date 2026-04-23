@@ -1,29 +1,61 @@
+/* ─── LAYOUT BASE ────────────────────────────────────── */
 .container {
-  padding: 2rem;
+  padding: 2.5rem 2rem;
   max-width: 1200px;
   margin: 0 auto;
+  font-family: var(--font-principal, system-ui, sans-serif);
+  animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
+/* ─── HEADER Y TOOLBAR ───────────────────────────────── */
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   margin-bottom: 2rem;
-  border-bottom: 1px solid #333;
-  padding-bottom: 1rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.toolbar {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: flex-start;
+  flex-shrink: 0;
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 5rem;
+  height: 1px;
+  background: var(--color-amarillo-bind, #f5f400);
 }
 
 .headerLeft {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .iconContainer {
-  background: rgba(0, 123, 255, 0.1);
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  color: #007bff;
+  background-color: rgba(245, 244, 0, 0.05);
+  border: 1px solid rgba(245, 244, 0, 0.15);
+  padding: 1rem;
+  border-radius: 50%;
+  color: var(--color-amarillo-bind, #f5f400);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 20px rgba(245, 244, 0, 0.1);
 }
 
 .iconContainer > svg {
@@ -33,17 +65,69 @@
 .title {
   color: var(--white, #fff);
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
   color: #888;
   margin: 0.25rem 0 0 0;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--font-secundaria, sans-serif);
 }
 
 .toolbar {
   margin-bottom: 1.5rem;
   display: flex;
   justify-content: flex-start;
+}
+
+/* ─── CARD DE LA TABLA (GLASSMORPHISM) ───────────────── */
+.listCard {
+  background: rgba(30, 30, 30, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  border-radius: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.tableWrapper {
+  flex: 1;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.tableWrapper::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.tableWrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+.tableWrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+.tableWrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ─── PAGINACIÓN INTEGRADA ───────────────────────────── */
+.paginationWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }

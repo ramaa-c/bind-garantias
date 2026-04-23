@@ -8,7 +8,6 @@ import styles from "./PantallaGestionSocios.module.css";
 
 export const PantallaGestionSocios = () => {
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
-  // Aplicamos debounce de 400ms al término para no saturar al servidor mientras se escribe
   const [debouncedBusqueda] = useDebounce(terminoBusqueda, 400);
 
   const esBusquedaNumerica = /^\d+$/.test(debouncedBusqueda);
@@ -24,7 +23,8 @@ export const PantallaGestionSocios = () => {
     page_size: elementosPorPagina,
     Denominacion:
       debouncedBusqueda && !esBusquedaNumerica ? debouncedBusqueda : undefined,
-    Cuit: debouncedBusqueda && esBusquedaNumerica ? debouncedBusqueda : undefined,
+    Cuit:
+      debouncedBusqueda && esBusquedaNumerica ? debouncedBusqueda : undefined,
   };
 
   const { data: sociosBackend, isLoading } = useObtenerSocios(filtros);
@@ -74,7 +74,7 @@ export const PantallaGestionSocios = () => {
     cerrarModal();
   };
 
-  return (
+return (
     <div className={styles.container}>
       {/* HEADER DE LA PANTALLA */}
       <header className={styles.header}>
@@ -110,23 +110,29 @@ export const PantallaGestionSocios = () => {
         />
       </div>
 
-      {/* GRILLA DE DATOS */}
-      <TablaSocios
-        socios={sociosPaginados}
-        isLoading={isLoading}
-        onEditarSocio={abrirModalEdicion}
-      />
+      {/* ─── NUEVO CONTENEDOR TIPO CARD ─── */}
+      <div className={styles.listCard}>
+        <div className={styles.tableWrapper}>
+          <TablaSocios
+            socios={sociosPaginados}
+            isLoading={isLoading}
+            onEditarSocio={abrirModalEdicion}
+          />
+        </div>
 
-      {/* PAGINADOR */}
-      {(sociosPaginados.length > 0 || paginaActual > 1) && (
-        <Paginacion
-          page={paginaActual}
-          onPageChange={setPaginaActual}
-          hasMoreData={hasMoreData}
-          isLoading={isLoading}
-          knownEndPage={knownEndPage}
-        />
-      )}
+        {/* PAGINADOR INTEGRADO AL PIE DE LA TARJETA */}
+        {(sociosPaginados.length > 0 || paginaActual > 1) && (
+          <div className={styles.paginationWrapper}>
+            <Paginacion
+              page={paginaActual}
+              onPageChange={setPaginaActual}
+              hasMoreData={hasMoreData}
+              isLoading={isLoading}
+              knownEndPage={knownEndPage}
+            />
+          </div>
+        )}
+      </div>
 
       {/* MODAL DE ALTA / EDICIÓN */}
       <Modal

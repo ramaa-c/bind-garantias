@@ -29,8 +29,6 @@ export const PantallaGestionUsuarios = () => {
     const usuarios = Array.isArray(rawUsuarios) ? rawUsuarios : [];
     
     // Suponemos total = 10 o usamos lo del backend
-    const totalItems = usuariosData?.total || usuariosData?.totalCount || (usuarios.length === elementosPorPagina ? paginaActual * elementosPorPagina + 1 : paginaActual * elementosPorPagina);
-    const totalPages = Math.ceil(totalItems / elementosPorPagina) || 1;
     const hasMoreData = usuarios.length === elementosPorPagina;
 
     // Handlers
