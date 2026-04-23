@@ -1,7 +1,13 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaRegUserCircle } from "react-icons/fa";
-import { FiMenu } from "react-icons/fi";
+import {
+  FiMenu,
+  FiChevronDown,
+  FiFileText,
+  FiFolder,
+  FiTrendingUp,
+} from "react-icons/fi";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
 
@@ -13,6 +19,23 @@ const Navbar = ({
   onToggleSidebar,
 }) => {
   const navigate = useNavigate();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleMenuAction = (path) => {
+    setIsDropdownOpen(false);
+    navigate(path);
+  };
 
   return (
     <header className={styles.header}>
@@ -27,7 +50,6 @@ const Navbar = ({
           </button>
         )}
 
-        {/* Logo */}
         <div
           className={styles.logoContainer}
           onClick={() => navigate("/inicio")}
@@ -44,13 +66,46 @@ const Navbar = ({
         </div>
       </div>
 
-      {/* Lado derecho */}
       {usuario ? (
-        <div className={styles.userContainer}>
-          <span className={styles.userIcon}>
-            <FaRegUserCircle size={20} color={"var(--yellow)"} />
-          </span>
-          <span className={styles.userName}>{usuario}</span>
+        <div className={styles.userSection} ref={dropdownRef}>
+          <button
+            className={styles.userButton}
+            onClick={() => setIsDropdownOpen((prev) => !prev)}
+            aria-expanded={isDropdownOpen}
+            aria-haspopup="true"
+          >
+            <span className={styles.userIcon}>
+              <FaRegUserCircle size={20} color={"var(--yellow, #f5f400)"} />
+            </span>
+            <span className={styles.userName}>{usuario}</span>
+            <FiChevronDown
+              className={`${styles.chevron} ${isDropdownOpen ? styles.chevronOpen : ""}`}
+            />
+          </button>
+
+          {/* Menú Desplegable */}
+          {isDropdownOpen && (
+            <div className={styles.dropdownMenu}>
+              <button
+                className={styles.dropdownItem}
+                onClick={() => handleMenuAction("/solicitudes")}
+              >
+                <FiFileText className={styles.itemIcon} /> Mis solicitudes
+              </button>
+              <button
+                className={styles.dropdownItem}
+                onClick={() => handleMenuAction("/documentacion")}
+              >
+                <FiFolder className={styles.itemIcon} /> Documentación
+              </button>
+              <button
+                className={styles.dropdownItem}
+                onClick={() => handleMenuAction("/tasas")}
+              >
+                <FiTrendingUp className={styles.itemIcon} /> Tasas
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         texto &&

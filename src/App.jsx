@@ -16,11 +16,13 @@ import Solicitudes from "./pages/solicitudes/Solicitudes";
 import SolicitudCheques from "./pages/cheques/SolicitudCheques";
 import FirmaDocumento from "./pages/pagares/FirmaDocumento";
 import AceptarTerminos from "./pages/auth/AceptarTerminos";
+import RecuperarPassword from "./pages/auth/RecuperarPassword";
 import PosicionConsolidada from "./pages/posicion-consolidada/PosicionConsolidada";
 import CadenaDetalle from "./pages/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-import {PantallaGestionSocios} from "./components/features";
+import { PantallaGestionSocios } from "./components/features";
 import { PantallaGestionUsuarios } from "./pages/usuarios/PantallaGestionUsuarios";
+import DocumentacionView from "./pages/documentacion/DocumentacionView";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
@@ -33,6 +35,7 @@ function App() {
         <Route path="/registro" element={<Registro />} />
         <Route path="/crear-clave" element={<CrearClave />} />
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
+        <Route path="/recuperar-password" element={<RecuperarPassword />} />
 
         {/* 
         <Route
@@ -59,6 +62,15 @@ function App() {
           element={
             <DashboardLayout>
               <PantallaGestionUsuarios />
+            </DashboardLayout>
+          }
+        />
+
+        <Route
+          path="/documentacion"
+          element={
+            <DashboardLayout>
+              <DocumentacionView />
             </DashboardLayout>
           }
         />
@@ -173,8 +185,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
-
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

@@ -22,11 +22,11 @@ import {
 } from "../../../../features";
 import styles from "./Paso5Documentacion.module.css";
 
-const PersistenciaOculta = ({ register, socios, representantes }) => (
+const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
   <div style={{ display: "none" }}>
     <input {...register("emailFacturacion")} />
     {socios.map((socio, i) => (
-      <React.Fragment key={socio.cuit || i}>
+      <React.Fragment key={socio?.cuit || i}>
         <input {...register(`socios.${i}.email`)} />
         <input {...register(`socios.${i}.celular`)} />
         <input {...register(`socios.${i}.direccion`)} />
@@ -35,7 +35,7 @@ const PersistenciaOculta = ({ register, socios, representantes }) => (
       </React.Fragment>
     ))}
     {representantes.map((rep, i) => (
-      <React.Fragment key={rep.id}>
+      <React.Fragment key={rep?.id || i}>
         <input {...register(`representantes.${i}.cuit`)} />
         <input {...register(`representantes.${i}.nombre`)} />
         <input {...register(`representantes.${i}.rol`)} />
@@ -47,7 +47,7 @@ const PersistenciaOculta = ({ register, socios, representantes }) => (
 );
 
 export default function Paso5Documentacion({
-  socios,
+  socios = [],
   avanzarPaso6,
   onGuardarSocioDb,
 }) {
@@ -143,7 +143,7 @@ export default function Paso5Documentacion({
 
   const handleAbrirModalSocio = (index) => {
     const socioTarget = socios[index];
-    const db = socioTarget.dataOriginal || {};
+    const db = socioTarget?.dataOriginal || {};
 
     const currentFormValues = getValues(`socios.${index}`) || {};
 
@@ -218,8 +218,9 @@ export default function Paso5Documentacion({
     if (camposValidos) {
       try {
         const datosForm = getValues(`socios.${socioActivoIndex}`);
-
-        await onGuardarSocioDb(socioActivoIndex, datosForm);
+        if (onGuardarSocioDb) {
+          await onGuardarSocioDb(socioActivoIndex, datosForm);
+        }
 
         updateState({
           intentoGuardarSocio: false,
@@ -256,7 +257,7 @@ export default function Paso5Documentacion({
       emailFacValido &&
       emailFacturacionVal.trim() !== ""
     ) {
-      avanzarPaso6();
+      if (avanzarPaso6) avanzarPaso6();
     }
   };
 
@@ -329,7 +330,7 @@ export default function Paso5Documentacion({
         </div>
         {socios.map((socio, index) => (
           <SocioTaskCard
-            key={socio.cuit}
+            key={socio?.cuit || index}
             socio={socio}
             index={index}
             isCompleto={isSocioCompleto(index)}
@@ -383,7 +384,7 @@ export default function Paso5Documentacion({
           >
             {representantes.map((rep, index) => (
               <div
-                key={rep.id}
+                key={rep?.id || index}
                 className={`${styles.taskCard} ${styles.cardSuccess}`}
               >
                 <div className={styles.taskCardInfo}>

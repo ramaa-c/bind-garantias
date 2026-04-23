@@ -3,9 +3,11 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 1.5rem;
-  background-color: var(--carbon-black);
-  border-bottom: 1px solid var(--graphite);
+  background-color: var(--carbon-black, #1e1e1e);
+  border-bottom: 1px solid var(--graphite, rgba(255, 255, 255, 0.08));
   min-height: 5rem;
+  position: relative;
+  z-index: 40;
 }
 
 .leftSection {
@@ -38,16 +40,35 @@
   object-fit: contain;
 }
 
-.userContainer {
-  font-size: 0.95rem;
-  color: var(--white);
+/* --- SECCIÓN DE USUARIO Y DROPDOWN --- */
+.userSection {
+  position: relative;
+}
+
+.userButton {
+  background: transparent;
+  border: 1px solid transparent;
   display: flex;
   align-items: center;
   gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  color: var(--white, #ffffff);
+  transition: all 0.2s ease;
+}
+
+.userButton:hover,
+.userButton[aria-expanded="true"] {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .userName {
-  display: none; 
+  display: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
 }
 
 .userIcon {
@@ -56,34 +77,110 @@
   align-items: center;
 }
 
+.chevron {
+  color: #aaa;
+  font-size: 1rem;
+  transition: transform 0.3s ease;
+  display: none;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Menú Flotante */
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.5rem;
+  background-color: rgba(30, 30, 30, 0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--graphite, rgba(255, 255, 255, 0.08));
+  border-radius: 0.5rem;
+  min-width: 14rem;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  animation: slideDownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top right;
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-0.5rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #ccc;
+  font-size: 0.9rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.itemIcon {
+  font-size: 1.1rem;
+  color: #888;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.dropdownItem:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--white, #ffffff);
+}
+
+.dropdownItem:hover .itemIcon {
+  color: var(--yellow, #f5f400);
+}
+
+/* --- LOGIN FALLBACK --- */
 .loginContainer {
   font-size: 0.9rem;
-  color: var(--white);
+  color: var(--white, #ffffff);
 }
 
 .link {
-  color: var(--yellow);
+  color: var(--yellow, #f5f400);
   font-weight: bold;
   margin-left: 0.5rem;
   cursor: pointer;
 }
 
-/* ESCRITORIO */
-
+/* --- ESCRITORIO --- */
 @media (min-width: 56.25rem) {
   .header {
     padding: 0 4rem;
   }
 
   .menuButton {
-    display: none; 
+    display: none;
   }
 
   .logo {
     height: 3.75rem;
   }
 
-  .userName {
-    display: inline;
+  .userName,
+  .chevron {
+    display: inline-flex;
   }
 }
