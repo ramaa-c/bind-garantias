@@ -15,7 +15,7 @@ const customStyles = {
   }),
   valueContainer: (base) => ({
     ...base,
-    padding: "1.1rem 1rem 0.4rem 1rem",
+    padding: "0 1rem",
   }),
   placeholder: (base) => ({
     ...base,

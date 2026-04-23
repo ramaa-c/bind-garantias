@@ -28,6 +28,7 @@ export default function Paso3Simulador({
   labelFecha = "Fecha de pago",
   labelMonto = "Monto",
   usarTicketPrestamoFijo = false,
+  opcionesProducto: propOpcionesProducto,
 }) {
   const { control, trigger, setValue } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
@@ -37,9 +38,9 @@ export default function Paso3Simulador({
   const { data: monedasData, isLoading: cargandoMonedas } = useMonedas();
   const opcionesMoneda = monedasData?.opciones || [];
 
-  const { data: productosData, isLoading: cargandoProductos } =
-    useTiposProducto();
-  const opcionesProducto = productosData?.opciones || [];
+  const { data: productosData, isLoading: isLoadingProductos } = useTiposProducto();
+  const opcionesProducto = propOpcionesProducto || productosData?.opciones || [];
+  const cargandoProductos = !propOpcionesProducto && isLoadingProductos;
 
   const { data: contratosData, isLoading: cargandoContratos } =
     useTipoContrato();

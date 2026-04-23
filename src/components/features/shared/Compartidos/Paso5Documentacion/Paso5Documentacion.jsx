@@ -12,8 +12,9 @@ import {
   FiChevronRight,
   FiPlus,
   FiTrash2,
+  FiMail,
 } from "react-icons/fi";
-import { Button, InputFlotante } from "../../../../ui";
+import { Button, InputFlotante, InputSocioMasked } from "../../../../ui";
 import {
   SocioTaskCard,
   ModalDocumentosEmpresa,
@@ -448,21 +449,14 @@ export default function Paso5Documentacion({
                   Indicá el correo electrónico donde recibirás la facturación.
                 </p>
               </div>
-              <InputFlotante
-                compact
+              <InputSocioMasked
+                control={control}
                 name="emailFacturacion"
                 label="Email de facturación"
-                autoComplete="none"
+                icon={<FiMail />}
                 type="email"
                 error={errorEmailFacturacion}
                 esValido={isEmailFacturacionValido}
-                value={emailFacturacionVal}
-                onChange={(e) =>
-                  setValue("emailFacturacion", e.target.value, {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                  })
-                }
               />
             </div>
           </div>
