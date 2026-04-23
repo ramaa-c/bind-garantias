@@ -237,7 +237,7 @@ export default function PrestamosFijos() {
 
                 {pasoActual >= 2 && pasoActual < 7 && (
                   <BarraProgreso
-                    hitos={["Empresa", "Operación", "Socios", "Documentos"]}
+                    hitos={["EMPRESA", "OPERACIÓN", "SOCIOS", "DOCUMENTOS"]}
                     hitoActual={
                       pasoActual === 3
                         ? 2
