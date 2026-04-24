@@ -23,6 +23,13 @@ import {
 } from "../../../../features";
 import styles from "./Paso5Documentacion.module.css";
 
+const DOC_ITEMS = [
+  { key: "estatuto", label: "Estatuto" },
+  { key: "balance", label: "Balance" },
+  { key: "acta", label: "Acta" },
+  { key: "poderes", label: "Poderes" },
+];
+
 const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
   <div style={{ display: "none" }}>
     <input {...register("emailFacturacion")} />
@@ -60,10 +67,7 @@ export default function Paso5Documentacion({
     append: appendRep,
     update: updateRep,
     remove: removeRep,
-  } = useFieldArray({
-    control,
-    name: "representantes",
-  });
+  } = useFieldArray({ control, name: "representantes" });
 
   const [uiState, setUiState] = useState({
     archivos: {},
@@ -102,7 +106,7 @@ export default function Paso5Documentacion({
   const emailFacturacionVal =
     useWatch({ control, name: "emailFacturacion" }) || "";
 
-  // --- HANDLERS ---
+  // ── handlers  ──────────────────────────────────────────────────
   const handleFileUpload = (key, file) => {
     if (file) {
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
@@ -123,12 +127,7 @@ export default function Paso5Documentacion({
     });
   };
 
-  const docsEmpresaListos = ["estatuto", "balance", "acta", "poderes"].every(
-    (k) => archivos[k],
-  );
-  const cantDocsCargados = ["estatuto", "balance", "acta", "poderes"].filter(
-    (k) => archivos[k],
-  ).length;
+  const docsEmpresaListos = DOC_ITEMS.every(({ key }) => archivos[key]);
 
   const isSocioCompleto = (index) => {
     const sEmail = getValues(`socios.${index}.email`);
@@ -138,20 +137,27 @@ export default function Paso5Documentacion({
     const sLoc = getValues(`socios.${index}.localidad`);
     const errs = errors?.socios?.[index];
     const sinErrores = !errs || Object.keys(errs).length === 0;
-
     return !!(sEmail && sCel && sDir && sProv && sLoc && sinErrores);
   };
+
+  const todosSociosOk =
+    socios.length > 0 && socios.every((_, i) => isSocioCompleto(i));
 
   const handleAbrirModalSocio = (index) => {
     const socioTarget = socios[index];
     const db = socioTarget?.dataOriginal || {};
-
     const currentFormValues = getValues(`socios.${index}`) || {};
-
-    const emailHydrated = currentFormValues.email || db.email || db.emailfacturacion || "";
-    const celularHydrated = currentFormValues.celular || db.celular || db.telefono || db.telefono2 || "";
-    const direccionHydrated = currentFormValues.direccion || (db.calle ? `${db.calle} ${db.numero || ''}`.trim() : "");
-
+    const emailHydrated =
+      currentFormValues.email || db.email || db.emailfacturacion || "";
+    const celularHydrated =
+      currentFormValues.celular ||
+      db.celular ||
+      db.telefono ||
+      db.telefono2 ||
+      "";
+    const direccionHydrated =
+      currentFormValues.direccion ||
+      (db.calle ? `${db.calle} ${db.numero || ""}`.trim() : "");
     setValue(`socios.${index}.email`, emailHydrated, { shouldValidate: true });
     setValue(`socios.${index}.celular`, celularHydrated, {
       shouldValidate: true,
@@ -159,7 +165,6 @@ export default function Paso5Documentacion({
     setValue(`socios.${index}.direccion`, direccionHydrated, {
       shouldValidate: true,
     });
-
     updateState({
       intentoGuardarSocio: false,
       backupSocio: {
@@ -178,14 +183,18 @@ export default function Paso5Documentacion({
   };
 
   const handleCerrarModalSinGuardar = () => {
-    const campos = ["email", "celular", "direccion", "provincia", "localidad"];
-    campos.forEach((campo) => {
-      setValue(
-        `socios.${socioActivoIndex}.${campo}`,
-        backupSocio[campo] || "",
-        { shouldValidate: false, shouldDirty: false },
-      );
-    });
+    ["email", "celular", "direccion", "provincia", "localidad"].forEach(
+      (campo) => {
+        setValue(
+          `socios.${socioActivoIndex}.${campo}`,
+          backupSocio[campo] || "",
+          {
+            shouldValidate: false,
+            shouldDirty: false,
+          },
+        );
+      },
+    );
     updateState((prev) => {
       const nuevos = { ...prev.archivos };
       if (prev.backupArchivos.frente)
@@ -207,7 +216,6 @@ export default function Paso5Documentacion({
 
   const handleGuardarSocioModal = async () => {
     updateState({ intentoGuardarSocio: true, isGuardando: true });
-
     const camposValidos = await trigger([
       `socios.${socioActivoIndex}.email`,
       `socios.${socioActivoIndex}.celular`,
@@ -215,14 +223,11 @@ export default function Paso5Documentacion({
       `socios.${socioActivoIndex}.provincia`,
       `socios.${socioActivoIndex}.localidad`,
     ]);
-
     if (camposValidos) {
       try {
         const datosForm = getValues(`socios.${socioActivoIndex}`);
-        if (onGuardarSocioDb) {
+        if (onGuardarSocioDb)
           await onGuardarSocioDb(socioActivoIndex, datosForm);
-        }
-
         updateState({
           intentoGuardarSocio: false,
           socioActivoIndex: null,
@@ -239,7 +244,6 @@ export default function Paso5Documentacion({
 
   const handleAbrirModalRep = (index) =>
     updateState({ repActivoIndex: index, modalRepOpen: true });
-
   const handleGuardarRep = (repData) =>
     repActivoIndex !== null
       ? updateRep(repActivoIndex, repData)
@@ -247,25 +251,18 @@ export default function Paso5Documentacion({
 
   const handleAvanzarClick = async () => {
     updateState({ intentoAvanzar: true });
-    const todosSociosOk = socios.every((_, i) => isSocioCompleto(i));
+    const todosSociosOkLocal = socios.every((_, i) => isSocioCompleto(i));
     const tieneRepresentantes = representantes.length > 0;
     const emailFacValido = await trigger("emailFacturacion");
-
     if (
       docsEmpresaListos &&
-      todosSociosOk &&
+      todosSociosOkLocal &&
       tieneRepresentantes &&
       emailFacValido &&
       emailFacturacionVal.trim() !== ""
     ) {
       if (avanzarPaso6) avanzarPaso6();
     }
-  };
-
-  const getClassEmpresa = () => {
-    if (docsEmpresaListos) return styles.statusCheck;
-    if (intentoAvanzar) return styles.statusError;
-    return styles.statusWarn;
   };
 
   const errorEmailFacturacion =
@@ -276,206 +273,245 @@ export default function Paso5Documentacion({
   const isEmailFacturacionValido =
     !errorEmailFacturacion && emailFacturacionVal.trim() !== "";
 
+  // ── pill helpers ────────────────────────────────────────────────────────────
+  const pill = (done, warn) => {
+    if (done) return styles.pillDone;
+    if (warn) return styles.pillError;
+    return styles.pillPending;
+  };
+
   return (
     <div className={styles.container}>
-      <div className={styles.headerSteps}>
-        <h3 className={styles.title}>Configuración de la Solicitud</h3>
-        <p className={styles.mutedText}>
-          Completá la información requerida para estructurar la línea.
-        </p>
-      </div>
-
-      {/* 1. DOCUMENTACIÓN EMPRESA */}
-      <div className={styles.sectionGroup}>
-        <div className={styles.sectionHeaderRow}>
-          <h4 className={styles.sectionTitle}>1. Documentación Legal</h4>
+      {/* HEADER ─────────────────────────────────────────────────────────────── */}
+      <div className={styles.header}>
+        <div className={styles.headerText}>
+          <h3 className={styles.title}>Configuración de la Solicitud</h3>
+          <p className={styles.subtitle}>
+            Completá la información requerida para estructurar la línea.
+          </p>
         </div>
-        <div
-          className={`${styles.taskCard} ${docsEmpresaListos ? styles.cardSuccess : intentoAvanzar ? styles.cardError : ""}`}
-          onClick={() => updateState({ modalDocsOpen: true })}
-        >
-          <div className={styles.taskCardInfo}>
-            <div className={`${styles.statusIconPill} ${getClassEmpresa()}`}>
-              {docsEmpresaListos ? <FiCheckCircle /> : <FiAlertCircle />}
-            </div>
-            <div className={styles.taskCardText}>
-              <h4>Documentos de la Sociedad</h4>
-              <p>{cantDocsCargados} de 4 cargados</p>
-            </div>
-          </div>
-          {docsEmpresaListos ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              className={styles.taskBtn}
-              onClick={(e) => {
-                e.stopPropagation();
-                updateState({ modalDocsOpen: true });
-              }}
-            >
-              <FiEdit2 size={12} /> MODIFICAR
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" className={styles.taskBtn}>
-              CARGAR DATOS
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* 2. SOCIOS */}
-      <div className={styles.sectionGroup}>
-        <div className={styles.sectionHeaderRow}>
-          <h4 className={styles.sectionTitle}>2. Información de Socios</h4>
-        </div>
-        {socios.map((socio, index) => (
-          <SocioTaskCard
-            key={socio?.cuit || index}
-            socio={socio}
-            index={index}
-            isCompleto={isSocioCompleto(index)}
-            intentoAvanzar={intentoAvanzar}
-            onEdit={() => handleAbrirModalSocio(index)}
-          />
-        ))}
-      </div>
-
-      {/* 3. REPRESENTANTES LEGALES */}
-      <div className={styles.sectionGroup}>
-        <div className={styles.sectionHeaderRow}>
-          <h4 className={styles.sectionTitle}>
-            3. Representantes y Apoderados
-          </h4>
-          {representantes.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={styles.addBtnSmall}
-              onClick={() => handleAbrirModalRep(null)}
-            >
-              <FiPlus /> AGREGAR
-            </Button>
-          )}
-        </div>
-
-        {representantes.length === 0 ? (
-          <div
-            className={`${styles.taskCard} ${intentoAvanzar ? styles.cardError : ""}`}
-            onClick={() => handleAbrirModalRep(null)}
+        <div className={styles.completionPills}>
+          <span
+            className={`${styles.pill} ${pill(docsEmpresaListos, intentoAvanzar)}`}
           >
-            <div className={styles.taskCardInfo}>
-              <div
-                className={`${styles.statusIconPill} ${intentoAvanzar ? styles.statusError : styles.statusWarn}`}
-              >
-                <FiAlertCircle />
-              </div>
-              <div className={styles.taskCardText}>
-                <h4>Falta designar representantes</h4>
-                <p>Agregá al menos un representante o apoderado para firmar.</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className={styles.taskBtn}>
-              AGREGAR
-            </Button>
-          </div>
-        ) : (
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+            {docsEmpresaListos ? (
+              <FiCheckCircle size={11} />
+            ) : (
+              <FiAlertCircle size={11} />
+            )}
+            Documentos
+          </span>
+          <span
+            className={`${styles.pill} ${pill(representantes.length > 0, intentoAvanzar)}`}
           >
-            {representantes.map((rep, index) => (
-              <div
-                key={rep?.id || index}
-                className={`${styles.taskCard} ${styles.cardSuccess}`}
-              >
-                <div className={styles.taskCardInfo}>
-                  <div
-                    className={`${styles.statusIconPill} ${styles.statusCheck}`}
-                  >
-                    <FiCheckCircle />
-                  </div>
-                  <div className={styles.taskCardText}>
-                    <h4>{rep.nombre}</h4>
-                    <p>
-                      {rep.rol} · CUIT {rep.cuit}
-                    </p>
-                  </div>
-                </div>
-                <div className={styles.actionButtonsGroup}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={styles.btnEditAction}
-                    onClick={() => handleAbrirModalRep(index)}
-                  >
-                    <FiEdit2 size={14} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={styles.btnDeleteAction}
-                    onClick={() => removeRep(index)}
-                  >
-                    <FiTrash2 size={14} />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+            {representantes.length > 0 ? (
+              <FiCheckCircle size={11} />
+            ) : (
+              <FiAlertCircle size={11} />
+            )}
+            Representantes
+          </span>
+          <span
+            className={`${styles.pill} ${pill(todosSociosOk, intentoAvanzar)}`}
+          >
+            {todosSociosOk ? (
+              <FiCheckCircle size={11} />
+            ) : (
+              <FiAlertCircle size={11} />
+            )}
+            Socios
+          </span>
+          <span
+            className={`${styles.pill} ${pill(isEmailFacturacionValido, intentoAvanzar && !isEmailFacturacionValido)}`}
+          >
+            {isEmailFacturacionValido ? (
+              <FiCheckCircle size={11} />
+            ) : (
+              <FiAlertCircle size={11} />
+            )}
+            Facturación
+          </span>
+        </div>
       </div>
 
-      {/* 4. FACTURACIÓN */}
-      <div className={styles.sectionGroup}>
-        <div className={styles.sectionHeaderRow}>
-          <h4 className={styles.sectionTitle}>4. Contacto de Facturación</h4>
-        </div>
-
-        <div
-          className={`${styles.inputCard} ${errorEmailFacturacion ? styles.cardError : isEmailFacturacionValido ? styles.cardSuccess : ""}`}
-        >
-          <div className={styles.taskCardInfo} style={{ width: "100%" }}>
+      {/* GRID ────────────────────────────────────────────────────────────────── */}
+      <div className={styles.grid}>
+        {/* ── COLUMNA IZQUIERDA ───────────────────────────────────────────── */}
+        <div className={styles.col}>
+          {/* DOCUMENTACIÓN */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeaderRow}>
+              <span className={styles.sectionLabel}>Documentación Legal</span>
+              <button
+                type="button"
+                className={`${styles.actionLink} ${docsEmpresaListos ? styles.actionLinkEdit : intentoAvanzar ? styles.actionLinkError : ""}`}
+                onClick={() => updateState({ modalDocsOpen: true })}
+              >
+                {docsEmpresaListos ? (
+                  <>
+                    <FiEdit2 size={11} /> Modificar
+                  </>
+                ) : (
+                  <>Cargar documentos →</>
+                )}
+              </button>
+            </div>
             <div
-              className={`${styles.statusIconPill} ${isEmailFacturacionValido ? styles.statusCheck : errorEmailFacturacion ? styles.statusError : styles.statusWarn}`}
+              className={styles.docGrid}
+              onClick={() => updateState({ modalDocsOpen: true })}
             >
-              {isEmailFacturacionValido ? <FiCheckCircle /> : <FiAlertCircle />}
+              {DOC_ITEMS.map(({ key, label }) => (
+                <div
+                  key={key}
+                  className={`${styles.docChip} ${
+                    archivos[key]
+                      ? styles.docChipDone
+                      : intentoAvanzar
+                        ? styles.docChipError
+                        : styles.docChipPending
+                  }`}
+                >
+                  {archivos[key] ? (
+                    <FiCheckCircle size={12} />
+                  ) : (
+                    <FiAlertCircle size={12} />
+                  )}
+                  <span>{label}</span>
+                </div>
+              ))}
             </div>
-            <div style={{ flex: 1 }}>
-              <div
-                className={styles.taskCardText}
-                style={{ marginBottom: "2rem" }}
+          </section>
+
+          {/* REPRESENTANTES */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeaderRow}>
+              <span className={styles.sectionLabel}>
+                Representantes y Apoderados
+              </span>
+              {representantes.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.actionLink}
+                  onClick={() => handleAbrirModalRep(null)}
+                >
+                  <FiPlus size={11} /> Agregar
+                </button>
+              )}
+            </div>
+
+            {representantes.length === 0 ? (
+              <button
+                type="button"
+                className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
+                onClick={() => handleAbrirModalRep(null)}
               >
-                <h4>Recepción de Comprobantes</h4>
-                <p>
-                  Indicá el correo electrónico donde recibirás la facturación.
-                </p>
+                <FiPlus size={14} />
+                <span>Agregar representante o apoderado</span>
+              </button>
+            ) : (
+              <div className={styles.compactList}>
+                {representantes.map((rep, index) => (
+                  <div
+                    key={rep?.id || index}
+                    className={`${styles.compactRow} ${styles.compactRowSuccess}`}
+                  >
+                    <span
+                      className={`${styles.statusDot} ${styles.dotGreen}`}
+                    />
+                    <div className={styles.rowInfo}>
+                      <strong className={styles.rowName}>{rep.nombre}</strong>
+                      <span className={styles.rowSub}>
+                        {rep.rol} · {rep.cuit}
+                      </span>
+                    </div>
+                    <div className={styles.rowActions}>
+                      <button
+                        type="button"
+                        className={styles.iconBtn}
+                        onClick={() => handleAbrirModalRep(index)}
+                        title="Editar"
+                      >
+                        <FiEdit2 size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                        onClick={() => removeRep(index)}
+                        title="Eliminar"
+                      >
+                        <FiTrash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <InputSocioMasked
-                control={control}
-                name="emailFacturacion"
-                label="Email de facturación"
-                icon={<FiMail />}
-                type="email"
-                error={errorEmailFacturacion}
-                esValido={isEmailFacturacionValido}
-              />
+            )}
+          </section>
+        </div>
+
+        {/* ── COLUMNA DERECHA ─────────────────────────────────────────────── */}
+        <div className={styles.col}>
+          {/* SOCIOS */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeaderRow}>
+              <span className={styles.sectionLabel}>Socios</span>
+              {socios.length > 0 && (
+                <span className={styles.countBadge}>
+                  {socios.filter((_, i) => isSocioCompleto(i)).length}/
+                  {socios.length} completos
+                </span>
+              )}
             </div>
-          </div>
+            <div className={styles.compactList}>
+              {socios.map((socio, index) => (
+                <SocioTaskCard
+                  key={socio?.cuit || index}
+                  socio={socio}
+                  index={index}
+                  isCompleto={isSocioCompleto(index)}
+                  intentoAvanzar={intentoAvanzar}
+                  onEdit={() => handleAbrirModalSocio(index)}
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* EMAIL FACTURACIÓN */}
+          <section className={styles.section}>
+            <div className={styles.sectionHeaderRow}>
+              <span className={styles.sectionLabel}>Email de Facturación</span>
+              {isEmailFacturacionValido && (
+                <span className={styles.validBadge}>
+                  <FiCheckCircle size={11} /> Configurado
+                </span>
+              )}
+            </div>
+            <InputSocioMasked
+              control={control}
+              name="emailFacturacion"
+              label="Dirección de correo electrónico"
+              icon={<FiMail />}
+              type="email"
+              error={errorEmailFacturacion}
+              esValido={isEmailFacturacionValido}
+            />
+          </section>
         </div>
       </div>
 
-      <div className={styles.actionsRight}>
+      {/* FOOTER ──────────────────────────────────────────────────────────────── */}
+      <div className={styles.footer}>
         <Button
           variant="primary"
           iconRight={<FiChevronRight />}
           onClick={handleAvanzarClick}
-          className={styles.tallButton}
+          className={styles.continueBtn}
         >
           CONTINUAR
         </Button>
       </div>
 
-      {/* --- MODALES --- */}
+      {/* MODALS ──────────────────────────────────────────────────────────────── */}
       <ModalDocumentosEmpresa
         isOpen={modalDocsOpen}
         onClose={() => updateState({ modalDocsOpen: false })}
@@ -510,7 +546,6 @@ export default function Paso5Documentacion({
         }
         onGuardar={handleGuardarRep}
       />
-
       <PersistenciaOculta
         register={register}
         socios={socios}

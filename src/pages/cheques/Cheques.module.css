@@ -145,6 +145,7 @@
 
   .bienvenidaHeader {
     padding: 1.5rem 1rem 1.5rem 1rem;
+    padding-bottom: 2.5rem; 
   }
 
   .tituloBienvenida {
@@ -159,10 +160,5 @@
 @media (max-width: 56.24rem) {
   .seccionFormulario {
     padding-bottom: 3rem; 
-  }
-}
-@media (min-width: 56.25rem) {
-  .seccionFormulario {
-    padding-bottom: 2.5rem; 
   }
 }
