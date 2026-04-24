@@ -262,7 +262,7 @@ export default function Prestamos() {
                     if (pasoActual === 5) hitoVisual = 4;
                     return (
                       <BarraProgreso
-                        hitos={["Empresa", "Operación", "Socios", "Documentos"]}
+                        hitos={["EMPRESA", "OPERACIÓN", "SOCIOS", "DOCUMENTOS"]}
                         hitoActual={hitoVisual}
                       />
                     );

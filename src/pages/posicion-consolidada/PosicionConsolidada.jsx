@@ -2,36 +2,26 @@ import React, { useState } from 'react';
 import { FiSearch, FiCalendar, FiFilter } from 'react-icons/fi';
 import styles from './PosicionConsolidada.module.css';
 import { Button } from '../../components/ui';
+import { useObtenerContragarantiaSocio, useObtenerLimiteSocio } from '../../hooks/usePosicionConsolidada';
+import Spinner from '../../components/ui/Spinner/Spinner';
 
 export default function PosicionConsolidada() {
-  const [searchTerm, setSearchTerm] = useState('ZAMMITTO SRL');
+  const [searchTerm, setSearchTerm] = useState('115458'); // Por defecto para probar
+  const [socioId, setSocioId] = useState(115458);
 
-  // Mocks simplificados para la maquetación
-  const calificaciones = [
-    { tipo: 'CHEQUES PROP Y 3ROS CON PRESTAMOS', estado: 'Vencida', venc: '31/8/2024', importe: 21000000.00, utilizado: 3416422.17, disponible: 0.00 },
-    { tipo: 'RIESGO DE TERCEROS', estado: 'Propuesta A...', venc: '31/12/2031', importe: 20000000.00, utilizado: 10188888.89, disponible: 9811111.11 },
-    { tipo: 'RIESGO PROPIOS', estado: 'Propuesta A...', venc: '31/12/2031', importe: 15000000.00, utilizado: 10000000.00, disponible: 5000000.00 },
-  ];
+  const { data: contragarantiasData, isLoading: isLoadingContra } = useObtenerContragarantiaSocio(socioId);
+  const { data: limitesData, isLoading: isLoadingLimites } = useObtenerLimiteSocio(socioId);
 
-  const productos = [
-    { tipo: 'CPDS TERCEROS', moneda: 'Pesos Argentinos', importe: 7500000.00, riesgo: 7500000.00 },
-    { tipo: 'ECHEQ TERCERO MERCADO', moneda: 'Pesos Argentinos', importe: 2688888.89, riesgo: 2688888.89 },
-    { tipo: 'ECHEQ PROPIO MERCADO', moneda: 'Pesos Argentinos', importe: 10000000.00, riesgo: 10000000.00 },
-    { tipo: 'PRESTAMOS', moneda: 'Pesos Argentinos', importe: 15000000.00, riesgo: 3416422.17 },
-  ];
+  const handleBuscar = () => {
+    if (searchTerm) setSocioId(searchTerm);
+  };
 
-  const cuotas = [
-    { cuota: 1, venc: '5/4/2023', cap: 833333.33, int: 452054.79, estado: 'Cancelada' },
-    { cuota: 2, venc: '5/5/2023', cap: 833333.33, int: 414383.56, estado: 'Cancelada' },
-    { cuota: 3, venc: '5/6/2023', cap: 833333.33, int: 389269.41, estado: 'Cancelada' },
-    { cuota: 4, venc: '5/7/2023', cap: 833333.33, int: 339041.10, estado: 'Cancelada' },
-    { cuota: 5, venc: '7/8/2023', cap: 833333.33, int: 331506.85, estado: 'Cancelada' },
-  ];
+  const limites = Array.isArray(limitesData) ? limitesData : (limitesData ? [limitesData] : []);
+  const contragarantias = Array.isArray(contragarantiasData) ? contragarantiasData : (contragarantiasData ? [contragarantiasData] : []);
 
-  const certificados = [
-    { cert: '2243', sub: '1', entidad: 'BANCO DE GALICIA Y BUENOS AIRES S A', monetizacion: '6/3/2023', venc: '5/3/2024', moneda: 'Pesos Argentinos', importe: 10000000.00, saldo: 0.00 },
-    { cert: '2370', sub: '1', entidad: 'BANCO CREDICOOP COOPERATIVO LTDO', monetizacion: '27/4/2023', venc: '29/4/2024', moneda: 'Pesos Argentinos', importe: 5000000.00, saldo: 1194200.01 },
-  ];
+  const productos = [];
+  const cuotas = [];
+  const certificados = [];
 
   const formatMonto = (num) => new Intl.NumberFormat('es-AR', { minimumFractionDigits: 2 }).format(num);
 
@@ -70,7 +60,9 @@ export default function PosicionConsolidada() {
             <span>Visualizar vencidos</span>
           </label>
 
-          <Button variant="primary" size="md">Buscar</Button>
+          <Button variant="primary" size="md" onClick={handleBuscar} disabled={isLoadingContra || isLoadingLimites}>
+            {isLoadingContra || isLoadingLimites ? <Spinner size={20} color="white" /> : "Buscar"}
+          </Button>
         </div>
       </header>
 
@@ -92,24 +84,24 @@ export default function PosicionConsolidada() {
           <div className={styles.cardContent}>
             <div className={styles.row}>
               <span>Productor</span>
-              <strong>Genérico</strong>
+              <strong>-</strong>
             </div>
             <div className={styles.row}>
               <span>Vto Certificado PYME</span>
-              <strong>31/7/2026</strong>
+              <strong>-</strong>
             </div>
             <div className={styles.divider}></div>
             <div className={styles.row}>
               <span>CPDS TERCEROS</span>
-              <strong>100.00</strong>
+              <strong>-</strong>
             </div>
             <div className={styles.row}>
               <span>CPDS PROPIOS</span>
-              <strong>100.00</strong>
+              <strong>-</strong>
             </div>
             <div className={styles.row}>
               <span>Pagarés Propios</span>
-              <strong>100.00</strong>
+              <strong>-</strong>
             </div>
           </div>
         </div>
@@ -127,25 +119,43 @@ export default function PosicionConsolidada() {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>Fianza personal en $ARG</td>
-                  <td className={styles.textRight}>31/12/2029</td>
-                  <td className={styles.textRight}>{formatMonto(25000000)}</td>
-                </tr>
+                {isLoadingContra ? (
+                  <tr>
+                    <td colSpan="3" style={{ textAlign: "center", padding: "1rem" }}>
+                      <div style={{ display: "flex", justifyContent: "center" }}><Spinner size={32} /></div>
+                    </td>
+                  </tr>
+                ) : contragarantias.length > 0 ? (
+                  contragarantias.map((c, i) => (
+                    <tr key={i}>
+                      <td>{c.descripcion}</td>
+                      <td className={styles.textRight}>{c.fechavencimiento ? new Date(c.fechavencimiento).toLocaleDateString() : ''}</td>
+                      <td className={styles.textRight}>{formatMonto(c.importe)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" style={{ textAlign: "center", padding: "1rem" }}>No se encontraron contragarantías</td>
+                  </tr>
+                )}
                 <tr className={styles.spacerRow}><td colSpan="3"></td></tr>
               </tbody>
               <tfoot>
                 <tr>
                   <td>Total</td>
                   <td></td>
-                  <td className={styles.textRight}>{formatMonto(25000000)}</td>
+                  <td className={styles.textRight}>
+                    {formatMonto(
+                      contragarantias.reduce((acc, curr) => acc + (curr.importe || 0), 0)
+                    )}
+                  </td>
                 </tr>
               </tfoot>
             </table>
           </div>
         </div>
 
-        {/* CALIFICACIÓN */}
+        {/* CALIFICACIÓN (Límites) */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>Calificación</div>
           <div className={styles.cardTableWrapper}>
@@ -161,24 +171,48 @@ export default function PosicionConsolidada() {
                 </tr>
               </thead>
               <tbody>
-                {calificaciones.map((c, i) => (
-                  <tr key={i}>
-                    <td>{c.tipo}</td>
-                    <td>{c.estado}</td>
-                    <td className={styles.textRight}>{c.venc}</td>
-                    <td className={styles.textRight}>{formatMonto(c.importe)}</td>
-                    <td className={styles.textRight}>{formatMonto(c.utilizado)}</td>
-                    <td className={styles.textRight}>{formatMonto(c.disponible)}</td>
+                {isLoadingLimites ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: "center", padding: "1rem" }}>
+                      <div style={{ display: "flex", justifyContent: "center" }}><Spinner size={32} /></div>
+                    </td>
                   </tr>
-                ))}
+                ) : limites.length > 0 ? (
+                  limites.map((c, i) => (
+                    <tr key={i}>
+                      <td>{c.descripcion}</td>
+                      <td>{c.estadodescripcion}</td>
+                      <td className={styles.textRight}>{c.fechavigenciahasta ? new Date(c.fechavigenciahasta).toLocaleDateString() : ''}</td>
+                      <td className={styles.textRight}>{formatMonto(c.importelimite)}</td>
+                      <td className={styles.textRight}>{formatMonto(c.importeutilizado)}</td>
+                      <td className={styles.textRight}>{formatMonto(c.importedisponible)}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: "center", padding: "1rem" }}>No se encontraron calificaciones</td>
+                  </tr>
+                )}
                 <tr className={styles.spacerRow}><td colSpan="6"></td></tr>
               </tbody>
               <tfoot>
                 <tr>
                   <td colSpan="3">Riesgo Total</td>
-                  <td className={styles.textRight}>{formatMonto(56000000.00)}</td>
-                  <td className={styles.textRight}>{formatMonto(23605311.06)}</td>
-                  <td className={styles.textRight}>{formatMonto(14811111.11)}</td>
+                  <td className={styles.textRight}>
+                    {formatMonto(
+                      limites.reduce((acc, curr) => acc + (curr.importelimite || 0), 0)
+                    )}
+                  </td>
+                  <td className={styles.textRight}>
+                    {formatMonto(
+                      limites.reduce((acc, curr) => acc + (curr.importeutilizado || 0), 0)
+                    )}
+                  </td>
+                  <td className={styles.textRight}>
+                    {formatMonto(
+                      limites.reduce((acc, curr) => acc + (curr.importedisponible || 0), 0)
+                    )}
+                  </td>
                 </tr>
               </tfoot>
             </table>
@@ -200,7 +234,7 @@ export default function PosicionConsolidada() {
                 </tr>
               </thead>
               <tbody>
-                {productos.map((p, i) => (
+                {productos.length > 0 ? productos.map((p, i) => (
                   <tr key={i}>
                     <td>{p.tipo}</td>
                     <td>{p.moneda}</td>
@@ -208,15 +242,17 @@ export default function PosicionConsolidada() {
                     <td className={styles.textRight}>{formatMonto(p.importe)}</td>
                     <td className={styles.textRight}>{formatMonto(p.riesgo)}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr><td colSpan="5" style={{ textAlign: "center", padding: "1rem" }}>No se encontraron productos</td></tr>
+                )}
                 <tr className={styles.spacerRow}><td colSpan="5"></td></tr>
               </tbody>
               <tfoot>
                 <tr>
                   <td colSpan="2">Total</td>
                   <td className={styles.textRight}></td>
-                  <td className={styles.textRight}>{formatMonto(35188888.89)}</td>
-                  <td className={styles.textRight}>{formatMonto(23605311.06)}</td>
+                  <td className={styles.textRight}>{formatMonto(0)}</td>
+                  <td className={styles.textRight}>{formatMonto(0)}</td>
                 </tr>
               </tfoot>
             </table>
@@ -238,7 +274,7 @@ export default function PosicionConsolidada() {
                 </tr>
               </thead>
               <tbody>
-                {cuotas.map((c, i) => (
+                {cuotas.length > 0 ? cuotas.map((c, i) => (
                   <tr key={i}>
                     <td>{c.cuota}</td>
                     <td>{c.venc}</td>
@@ -246,7 +282,9 @@ export default function PosicionConsolidada() {
                     <td className={styles.textRight}>{formatMonto(c.int)}</td>
                     <td>{c.estado}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr><td colSpan="5" style={{ textAlign: "center", padding: "1rem" }}>No se encontraron cuotas</td></tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -270,7 +308,7 @@ export default function PosicionConsolidada() {
                 </tr>
               </thead>
               <tbody>
-                {certificados.map((c, i) => (
+                {certificados.length > 0 ? certificados.map((c, i) => (
                   <tr key={i} className={i === 0 ? styles.tableRowActive : ''}>
                     <td>{c.cert}</td>
                     <td>{c.sub}</td>
@@ -281,7 +319,9 @@ export default function PosicionConsolidada() {
                     <td className={styles.textRight}>{formatMonto(c.importe)}</td>
                     <td className={styles.textRight}>{formatMonto(c.saldo)}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr><td colSpan="8" style={{ textAlign: "center", padding: "1rem" }}>No se encontraron certificados</td></tr>
+                )}
               </tbody>
             </table>
           </div>

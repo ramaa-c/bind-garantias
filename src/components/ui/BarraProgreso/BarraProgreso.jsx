@@ -22,7 +22,7 @@ export const BarraProgreso = ({
             <div className={styles.dot}>
               {isCompleted && <FiCheck size={14} className={styles.checkIcon} />}
             </div>
-            <div className={styles.text}>{hito}</div>
+            <div className={styles.text}>{hito.toUpperCase()}</div>
           </div>
         );
       })}

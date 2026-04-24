@@ -129,7 +129,7 @@ export default function PagareUSD() {
 
                 {pasoActual < 4 && (
                   <BarraProgreso
-                    hitos={["Simulador", "Agente", "Firma Epyme"]}
+                    hitos={["SIMULADOR", "AGENTE", "FIRMA EPYME"]}
                     hitoActual={pasoActual}
                   />
                 )}

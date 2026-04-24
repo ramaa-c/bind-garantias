@@ -7,6 +7,7 @@ export const TarjetaSolicitud = ({ solicitud }) => {
     const e = estado?.toLowerCase();
     if (e?.includes("aprob")) return "statusApproved";
     if (e?.includes("rechaz")) return "statusRejected";
+    if (e?.includes("cancel")) return "statusCancelled";
     return "statusWaiting";
   };
 
@@ -27,7 +28,7 @@ export const TarjetaSolicitud = ({ solicitud }) => {
 
           <div className={styles.montoRow}>
             <span className={styles.montoLabel}>Monto:</span>
-            <span className={styles.montoValue}>U$D {solicitud.monto}</span>
+            <span className={styles.montoValue}>{solicitud.moneda || "$"} {solicitud.monto}</span>
           </div>
         </div>
 

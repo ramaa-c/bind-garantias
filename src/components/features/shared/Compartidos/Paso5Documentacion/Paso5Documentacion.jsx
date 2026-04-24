@@ -148,9 +148,9 @@ export default function Paso5Documentacion({
 
     const currentFormValues = getValues(`socios.${index}`) || {};
 
-    const emailHydrated = currentFormValues.email || db.email || "";
-    const celularHydrated = currentFormValues.celular || db.telefono || "";
-    const direccionHydrated = currentFormValues.direccion || db.calle || "";
+    const emailHydrated = currentFormValues.email || db.email || db.emailfacturacion || "";
+    const celularHydrated = currentFormValues.celular || db.celular || db.telefono || db.telefono2 || "";
+    const direccionHydrated = currentFormValues.direccion || (db.calle ? `${db.calle} ${db.numero || ''}`.trim() : "");
 
     setValue(`socios.${index}.email`, emailHydrated, { shouldValidate: true });
     setValue(`socios.${index}.celular`, celularHydrated, {

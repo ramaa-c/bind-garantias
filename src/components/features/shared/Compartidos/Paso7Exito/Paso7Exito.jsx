@@ -10,10 +10,7 @@ import { Button, Alert, BotonVolver } from "../../../../ui";
 import styles from "./Paso7Exito.module.css";
 
 export default function Paso7Exito({ onVolverInicio }) {
-  const { reset } = useFormContext();
-
   const handleFinalizar = () => {
-    reset();
     onVolverInicio();
   };
 

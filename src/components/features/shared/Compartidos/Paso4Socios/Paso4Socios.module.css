@@ -319,6 +319,14 @@
   margin-top: 1.5rem;
 }
 
+.warningText {
+  color: var(--yellow);
+  font-size: 0.85rem;
+  align-self: center;
+  margin-right: auto;
+  white-space: nowrap;
+}
+
 /* --- ESCRITORIO --- */
 @media (min-width: 48rem) {
   .headerTitleRow {
@@ -413,6 +421,7 @@
   .actionFooterBorder {
     flex-direction: row;
     justify-content: flex-end;
+    align-items: center;
   }
 }
 

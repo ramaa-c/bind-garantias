@@ -209,7 +209,7 @@ export default function Pagare() {
 
                 {pasoActual >= 2 && pasoActual < 7 && (
                   <BarraProgreso
-                    hitos={["Empresa", "Operación", "Socios", "Documentos"]}
+                    hitos={["EMPRESA", "OPERACIÓN", "SOCIOS", "DOCUMENTOS"]}
                     hitoActual={pasoActual === 3 ? 2 : pasoActual === 4 ? 3 : pasoActual === 5 ? 4 : 1}
                   />
                 )}

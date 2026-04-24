@@ -390,11 +390,11 @@ export default function Cheques() {
                     return (
                       <BarraProgreso
                         hitos={[
-                          "Empresa",
-                          "Operación",
-                          "Socios",
-                          "Documentos",
-                          "Confirmación",
+                          "EMPRESA",
+                          "OPERACIÓN",
+                          "SOCIOS",
+                          "DOCUMENTOS",
+                          "CONFIRMACIÓN",
                         ]}
                         hitoActual={hitoVisual}
                       />
