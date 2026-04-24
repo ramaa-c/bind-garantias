@@ -15,11 +15,14 @@ import {
   Paso7Exito 
 } from '../index';
 import styles from '../../../pages/cheques/SolicitudCheques.module.css'; 
+import { sociosService } from '../../../services/sociosService';
 
 export const WizardOperaciones = () => {
   const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
   const [mostrarResultados, setMostrarResultados] = useState(false);
+  const [validandoCuit, setValidandoCuit] = useState(false);
+  const [validandoSocioSecundario, setValidandoSocioSecundario] = useState(false);
 
   // Estados locales para Socios / Documentos
   const [socios, setSocios] = useState([]);
@@ -28,6 +31,7 @@ export const WizardOperaciones = () => {
     tempSocioCuit: "",
     tempSocioNombre: "",
     tempSocioParticipacion: "",
+    tempSocioData: null,
     docExpandido: "estatuto",
   });
 
@@ -37,6 +41,9 @@ export const WizardOperaciones = () => {
     mode: 'onChange',
     defaultValues: {
       cuit: '',
+      razonSocial: '',
+      esSocioExistente: false,
+      ubicacionConfirmada: false,
       direccion: '',
       localidad: '',
       celular: '',
@@ -77,13 +84,73 @@ export const WizardOperaciones = () => {
     setPasoActual(6); // Pantalla de éxito de préstamos
   };
 
+  const handleIrASolicitudes = () => {
+    const data = metodosFormulario.getValues();
+    
+    // Determine currency symbol from endpoint IDs
+    let simbolo = "$";
+    if (String(data.moneda) === "2") simbolo = "U$D";
+    else if (String(data.moneda) === "500") simbolo = "€";
+    else if (String(data.moneda) === "10") simbolo = "UVAS";
+    else if (String(data.moneda) === "5000") simbolo = "$";
+
+    const montoLimpio = Number(String(data.monto || "0").replace(/\D/g, ""));
+    const montoFormateado = montoLimpio.toLocaleString("es-AR");
+
+    const nuevaSolicitud = {
+      id: String(Math.floor(Math.random() * 9000) + 1000),
+      tipo: data.tipoProducto === 'cheque' ? 'Cheque' : 'Préstamo',
+      monto: montoFormateado,
+      moneda: simbolo,
+      estado: "Pendiente",
+      fecha: new Date().toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" }),
+    };
+
+    metodosFormulario.reset();
+    setPasoActual(1);
+    setSocios([]);
+    updateUiState({ faseSocio: "ingresar_cuit" });
+    
+    navigate("/solicitudes", { state: { nuevaSolicitud } });
+  };
+
   // ----- MÉTODOS DE SOCIOS Y DOCUMENTOS -----
   const iniciarCargaSocio = () => updateUiState({ tempSocioCuit: "", tempSocioParticipacion: "", faseSocio: "ingresar_cuit" });
-  const validarCuitSocio = () => updateUiState({ tempSocioNombre: "Socio Validado (Mock)", faseSocio: "completar_datos" });
+  
+  const validarCuitSocio = async () => {
+    if (!uiState.tempSocioCuit) return;
+    setValidandoSocioSecundario(true);
+
+    try {
+      let resp = await sociosService.obtenerSocios({ Cuit: uiState.tempSocioCuit });
+      let socioDb = Array.isArray(resp) ? resp[0] : (resp?.items?.[0] || resp?.data?.[0]);
+
+      if (!socioDb) {
+        const respWeb = await sociosService.obtenerSociosWeb({ Cuit: uiState.tempSocioCuit });
+        socioDb = Array.isArray(respWeb) ? respWeb[0] : (respWeb?.items?.[0] || respWeb?.data?.[0]);
+      }
+
+      if (socioDb) {
+        updateUiState({ tempSocioNombre: socioDb.denominacion || "Sin Razón Social", tempSocioData: socioDb, faseSocio: "completar_datos" });
+      } else {
+        updateUiState({ tempSocioNombre: "Socio Nuevo o No Encontrado", tempSocioData: null, faseSocio: "completar_datos" });
+      }
+    } catch (err) {
+      console.error("Error buscando socio secundario:", err);
+      updateUiState({ tempSocioNombre: "Error al buscar socio", faseSocio: "completar_datos" });
+    } finally {
+      setValidandoSocioSecundario(false);
+    }
+  };
   const guardarSocio = () => {
     if (!uiState.tempSocioParticipacion) return;
-    setSocios([...socios, { cuit: uiState.tempSocioCuit, nombre: uiState.tempSocioNombre, participacion: uiState.tempSocioParticipacion }]);
-    updateUiState({ faseSocio: "lista" });
+    setSocios([...socios, { 
+      cuit: uiState.tempSocioCuit, 
+      nombre: uiState.tempSocioNombre, 
+      participacion: uiState.tempSocioParticipacion,
+      dataOriginal: uiState.tempSocioData || {}
+    }]);
+    updateUiState({ faseSocio: "lista", tempSocioData: null });
   };
   const editarSocio = (index) => {
     const s = socios[index];
@@ -102,9 +169,58 @@ export const WizardOperaciones = () => {
   const handleGuardarSocioDb = async () => true; 
 
   // ----- RENDERIZADO DINÁMICO DE PASOS -----
+  const handleValidarCuit = async () => {
+    const isOk = await trigger("cuit");
+    if (!isOk) return;
+
+    const cuitIngresado = metodosFormulario.getValues("cuit");
+    setValidandoCuit(true);
+    
+    try {
+      let resp = await sociosService.obtenerSocios({ Cuit: cuitIngresado });
+      let socioDb = Array.isArray(resp) ? resp[0] : (resp?.items?.[0] || resp?.data?.[0]);
+      let esSocioExistente = true;
+
+      // Fallback a /api/Socios si no se encuentra en sgrplus
+      if (!socioDb) {
+        const respWeb = await sociosService.obtenerSociosWeb({ Cuit: cuitIngresado });
+        socioDb = Array.isArray(respWeb) ? respWeb[0] : (respWeb?.items?.[0] || respWeb?.data?.[0]);
+        esSocioExistente = false;
+      }
+
+      if (socioDb) {
+        setValue("razonSocial", socioDb.denominacion || "Sin Razón Social", { shouldValidate: true });
+        setValue("esSocioExistente", esSocioExistente);
+        
+        if (socioDb.calle) {
+          setValue("direccion", `${socioDb.calle} ${socioDb.numero || ''}`.trim(), { shouldValidate: true });
+        }
+        
+        const telefono = socioDb.telefono || socioDb.celular || socioDb.telefono2 || "";
+        if (telefono) {
+          setValue("celular", telefono, { shouldValidate: true });
+        }
+        
+        if (socioDb.email || socioDb.emailfacturacion) {
+          setValue("emailFacturacion", socioDb.emailfacturacion || socioDb.email, { shouldValidate: true });
+        }
+      } else {
+        setValue("razonSocial", "Socio Nuevo o No Encontrado", { shouldValidate: true });
+        setValue("esSocioExistente", false);
+      }
+    } catch (err) {
+      console.error("Error buscando socio:", err);
+      setValue("razonSocial", "Error al buscar socio", { shouldValidate: true });
+      setValue("esSocioExistente", false);
+    } finally {
+      setValidandoCuit(false);
+      setPasoActual(2);
+    }
+  };
+
   const renderPasoDinamico = () => {
     // 1, 2, 3 SON COMPARTIDOS TOTALMENTE
-    if (pasoActual === 1) return <Paso1Cuit onValidar={async () => { if (await trigger("cuit")) setPasoActual(2); }} />;
+    if (pasoActual === 1) return <Paso1Cuit onValidar={handleValidarCuit} isLoading={validandoCuit} />;
     if (pasoActual === 2) return <Paso2Datos onVolver={handleVolver} onContinuar={() => setPasoActual(3)} />;
     if (pasoActual === 3) {
       return (
@@ -130,6 +246,7 @@ export const WizardOperaciones = () => {
     if (pasoActual === 4) {
       return (
         <Paso4Socios
+          isLoading={validandoSocioSecundario}
           faseSocio={uiState.faseSocio}
           setFaseSocio={(fase) => updateUiState({ faseSocio: fase })}
           tempSocioCuit={uiState.tempSocioCuit}
@@ -183,9 +300,9 @@ export const WizardOperaciones = () => {
           />
         );
       }
-      if (pasoActual === 7) return <Paso7Exito onVolverInicio={handleResetFlujoCompleto} />;
+      if (pasoActual === 7) return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     } else if (tipoProducto === 'prestamo') {
-      if (pasoActual === 6) return <Paso7Exito onVolverInicio={handleResetFlujoCompleto} />;
+      if (pasoActual === 6) return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     }
 
     return null;

@@ -31,6 +31,7 @@ export default function Paso4Socios({
   eliminarSocio,
   editarSocio,
   continuarAlProximoPaso,
+  isLoading,
 }) {
   const [errorCuit, setErrorCuit] = useState("");
   const [errorParticipacion, setErrorParticipacion] = useState("");
@@ -100,6 +101,7 @@ export default function Paso4Socios({
             error={errorCuit}
             esValido={isCuitValido}
             buttonText="VALIDAR CUIT"
+            isLoading={isLoading}
           />
 
           {socios.length > 0 && (
@@ -154,18 +156,16 @@ export default function Paso4Socios({
                   Participación del socio
                 </label>
                 <span
-                  className={`${styles.availableText} ${
-                    restante === 0 ? styles.availableTextError : ""
-                  }`}
+                  className={`${styles.availableText} ${restante === 0 ? styles.availableTextError : ""
+                    }`}
                 >
                   {restante > 0 ? `Disponible: ${restante}%` : "Cupo completo"}
                 </span>
               </div>
 
               <div
-                className={`${styles.customInputWrapper} ${
-                  errorParticipacion ? styles.wrapperError : ""
-                }`}
+                className={`${styles.customInputWrapper} ${errorParticipacion ? styles.wrapperError : ""
+                  }`}
               >
                 <input
                   id="participacionSocioInput"
@@ -217,9 +217,8 @@ export default function Paso4Socios({
                 {socios.length} socio{socios.length > 1 ? "s" : ""}
               </Badge>
               <span
-                className={`${styles.totalText} ${
-                  totalGuardado === 100 ? styles.totalTextSuccess : ""
-                }`}
+                className={`${styles.totalText} ${totalGuardado === 100 ? styles.totalTextSuccess : ""
+                  }`}
               >
                 Total: {totalGuardado}% / 100%
               </span>
@@ -260,6 +259,11 @@ export default function Paso4Socios({
           </div>
 
           <div className={styles.actionFooterBorder}>
+            {totalGuardado !== 100 && (
+              <span className={styles.warningText}>
+                Debe completar el 100% para continuar
+              </span>
+            )}
             <Button
               type="button"
               variant="outline"

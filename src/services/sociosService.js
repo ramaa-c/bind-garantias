@@ -7,6 +7,12 @@ export const sociosService = {
     return response.data;
   },
 
+  // Trae lista de socios (Esquema Web / Legacy)
+  obtenerSociosWeb: async (params = {}) => {
+    const response = await api.get("/api/Socios", { params });
+    return response.data;
+  },
+
   // Trae un socio por ID (SGRPlus)
   obtenerSocioPorId: async (socioId) => {
     const response = await api.get(`/sgrplus/Socio/${socioId}`);

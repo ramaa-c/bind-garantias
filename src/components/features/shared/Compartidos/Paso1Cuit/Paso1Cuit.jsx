@@ -3,7 +3,7 @@ import { useFormContext, useFormState } from "react-hook-form";
 import { BuscadorCuit } from "../../../../ui";
 import styles from "./Paso1Cuit.module.css";
 
-export default function Paso1Cuit({ onValidar }) {
+export default function Paso1Cuit({ onValidar, isLoading }) {
   const { control } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
 
@@ -19,6 +19,7 @@ export default function Paso1Cuit({ onValidar }) {
         error={errors.cuit?.message}
         esValido={isCuitValid}
         buttonText="VALIDAR CUIT"
+        isLoading={isLoading}
       />
     </div>
   );

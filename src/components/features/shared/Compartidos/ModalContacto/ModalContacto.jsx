@@ -64,7 +64,7 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
 
   const handleVerificarSms = (e) => {
     if (e) e.preventDefault();
-    if (codigoSms.length === 6 && !procesando) {
+    if (codigoSms.length === 4 && !procesando) {
       setProcesando(true);
       setFase("exito");
 
@@ -176,10 +176,10 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
               <div className={styles.formSection}>
                 <InputSocioMasked
                   label="Código de verificación"
-                  mask="000000"
+                  mask="0000"
                   unmask={true}
                   value={codigoSms}
-                  esValido={codigoSms.length === 6}
+                  esValido={codigoSms.length === 4}
                   onChange={(val) => setCodigoSms(typeof val === 'string' ? val : val.target?.value || "")}
                   icon={<FiMessageSquare />}
                 />
@@ -189,7 +189,7 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
                   type="button"
                   variant="primary"
                   onClick={handleVerificarSms}
-                  disabled={codigoSms.length < 6 || procesando}
+                  disabled={codigoSms.length < 4 || procesando}
                   style={{ width: "100%", minHeight: "3rem" }}
                 >
                   VERIFICAR IDENTIDAD

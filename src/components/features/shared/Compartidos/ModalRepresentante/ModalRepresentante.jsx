@@ -4,6 +4,7 @@ import { FiBriefcase, FiX, FiMail, FiSmartphone, FiCreditCard, FiEdit2 } from "r
 import { InputSocioMasked, Button } from "../../../../ui";
 import styles from "./ModalRepresentante.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
+import { sociosService } from "../../../../../services/sociosService";
 
 export const ModalRepresentante = ({
   isOpen,
@@ -19,6 +20,7 @@ export const ModalRepresentante = ({
   const [celular, setCelular] = useState("");
 
   const [errores, setErrores] = useState({});
+  const [validando, setValidando] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -75,7 +77,7 @@ export const ModalRepresentante = ({
     !errores.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isCelularValido = !errores.celular && celular.length === 10;
 
-  const handleValidarCuit = (e) => {
+  const handleValidarCuit = async (e) => {
     if (e) e.preventDefault();
     if (!cuit || cuit.trim() === "") {
       setErrores({ cuit: "El CUIT es obligatorio" });
@@ -86,9 +88,37 @@ export const ModalRepresentante = ({
       return;
     }
     setErrores({});
-    // MOCK
-    setNombre("GOMEZ PEREZ JUAN");
-    setFaseInterna("completar");
+    setValidando(true);
+
+    try {
+      let resp = await sociosService.obtenerSocios({ Cuit: cuit });
+      let socioDb = Array.isArray(resp) ? resp[0] : (resp?.items?.[0] || resp?.data?.[0]);
+
+      if (!socioDb) {
+        const respWeb = await sociosService.obtenerSociosWeb({ Cuit: cuit });
+        socioDb = Array.isArray(respWeb) ? respWeb[0] : (respWeb?.items?.[0] || respWeb?.data?.[0]);
+      }
+
+      if (socioDb) {
+        setNombre(socioDb.denominacion || "Representante sin nombre");
+        
+        const dbEmail = socioDb.email || socioDb.emailfacturacion || "";
+        const dbCelular = socioDb.celular || socioDb.telefono || socioDb.telefono2 || "";
+        
+        if (dbEmail) setEmail(dbEmail);
+        if (dbCelular) setCelular(dbCelular);
+
+      } else {
+        setNombre("Representante Nuevo");
+      }
+      setFaseInterna("completar");
+    } catch (err) {
+      console.error("Error validando representante:", err);
+      setNombre("Error al validar representante");
+      setFaseInterna("completar");
+    } finally {
+      setValidando(false);
+    }
   };
 
   const handleGuardarYCerrar = (e) => {
@@ -158,6 +188,7 @@ export const ModalRepresentante = ({
                       }
                       error={errores.cuit}
                       value={cuit || ""}
+                      disabled={validando}
                       onChange={(val) => {
                         const limpio = val ? String(val).replace(/\D/g, "").slice(0, 11) : "";
                         setCuit(limpio);
@@ -173,8 +204,9 @@ export const ModalRepresentante = ({
                     variant="primary"
                     size="sm"
                     onClick={handleValidarCuit}
+                    disabled={validando}
                   >
-                    VALIDAR
+                    {validando ? "BUSCANDO..." : "VALIDAR"}
                   </Button>
                 </div>
               )}

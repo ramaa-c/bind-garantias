@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FiPlus, FiSearch } from "react-icons/fi";
 import { FaMoneyBillWave } from "react-icons/fa";
@@ -9,12 +9,12 @@ import ModalConfirmacionBorrador from "../../components/features/shared/Comparti
 
 import styles from "./Solicitudes.module.css";
 
-// Mocks
-const mockSolicitudes = [
+const mockSolicitudesBase = [
   {
     id: "4362",
     tipo: "Pagaré USD",
     monto: "40.000",
+    moneda: "U$D",
     estado: "Aprobada",
     fecha: "18/03/2026",
   },
@@ -22,8 +22,17 @@ const mockSolicitudes = [
     id: "4361",
     tipo: "Cheque",
     monto: "150.000",
-    estado: "Pendiente",
+    moneda: "$",
+    estado: "Rechazada",
     fecha: "15/03/2026",
+  },
+  {
+    id: "4360",
+    tipo: "Línea de Crédito",
+    monto: "250.000",
+    moneda: "$",
+    estado: "Cancelada",
+    fecha: "10/02/2026",
   },
 ];
 
@@ -65,6 +74,7 @@ const hasMeaningfulData = (dataString) => {
 
 export default function Solicitudes() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { control, register } = useForm({
     defaultValues: {
@@ -76,6 +86,17 @@ export default function Solicitudes() {
 
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
+  const [listaSolicitudes, setListaSolicitudes] = useState(mockSolicitudesBase);
+
+  useEffect(() => {
+    if (location.state?.nuevaSolicitud) {
+      setListaSolicitudes((prev) => {
+        if (prev.some(s => s.id === location.state.nuevaSolicitud.id)) return prev;
+        return [location.state.nuevaSolicitud, ...prev];
+      });
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleNuevaOperacion = (ruta, draftKey) => {
     const dataString = sessionStorage.getItem(`${draftKey}_data`);
@@ -203,10 +224,9 @@ export default function Solicitudes() {
             </div>
           </div>
 
-          {/* LISTA DE SOLICITUDES */}
           <div className={styles.listContainer}>
-            {mockSolicitudes.length > 0 ? (
-              mockSolicitudes.map((item) => (
+            {listaSolicitudes.length > 0 ? (
+              listaSolicitudes.map((item) => (
                 <TarjetaSolicitud key={item.id} solicitud={item} />
               ))
             ) : (

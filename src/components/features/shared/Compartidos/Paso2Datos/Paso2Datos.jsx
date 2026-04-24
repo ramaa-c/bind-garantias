@@ -24,11 +24,14 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
   const celular = useWatch({ control, name: "celular" }) || "";
   const smsVerificado = useWatch({ control, name: "smsVerificado" }) || false;
   const cuit = useWatch({ control, name: "cuit" }) || "";
+  const razonSocial = useWatch({ control, name: "razonSocial" }) || "Razón Social Desconocida";
+  const ubicacionConfirmada = useWatch({ control, name: "ubicacionConfirmada" }) || false;
 
-  const ubicacionOk = direccion.trim().length >= 5;
+  const ubicacionOk = ubicacionConfirmada && direccion.trim().length >= 5;
   const contactoOk = !!smsVerificado;
 
   const handleGuardarUbicacion = () => {
+    setValue("ubicacionConfirmada", true, { shouldValidate: true, shouldDirty: true });
     setModalUbicacionOpen(false);
   };
 
@@ -78,10 +81,10 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
       <div className={styles.summaryCard}>
         <div className={styles.summaryInfo}>
           <div className={styles.summaryStatus}>
-            <FiCheckCircle size={14} /> CUIT VALIDADO
+            <FiCheckCircle size={14} /> SOCIO VALIDADO
           </div>
-          <p className={styles.summaryCuit}>{cuit || "20-12345678-9"}</p>
-          <p className={styles.summaryName}>EMPRESA DE PRUEBA S.A.</p>
+          <h2 className={styles.summaryName}>{razonSocial}</h2>
+          <p className={styles.summaryCuit}>CUIT: {cuit || "20-12345678-9"}</p>
         </div>
         <Button
           variant="ghost"
