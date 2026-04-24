@@ -2,13 +2,13 @@
   position: relative;
   z-index: 1;
   color: var(--white-muted, #cccccc);
-  padding: 2rem 1.5rem;
+  padding: 1.25rem 1rem;
+  gap: 1rem;
   max-width: 64rem;
   margin: 0 auto;
   min-height: calc(100vh - 5rem);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
 }
 
 .pageContainer > * {
@@ -51,13 +51,13 @@
 .pageHeader {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
   border-bottom: 1px solid var(--graphite, rgba(255, 255, 255, 0.08));
-  padding-bottom: 1.5rem;
+  padding-bottom: 1rem;
 }
 
 .title {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 600;
   color: var(--white, #ffffff);
   margin: 0;
@@ -80,10 +80,9 @@
 
 .actionsContainer {
   display: flex;
-  justify-content: flex-end;
-  padding-top: 1.5rem;
+  justify-content: center;
   margin-top: auto;
-  border-top: 1px solid var(--graphite, rgba(255, 255, 255, 0.08));
+  border-top: none;
 }
 
 .submitBtn {
@@ -99,6 +98,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 95%;
   min-width: 12rem;
 }
 
@@ -115,8 +115,28 @@
 }
 
 /* ESCRITORIO */
-@media (min-width: 56.25rem) {
+@media (min-width: 48rem) {
   .pageContainer {
-    padding: 3rem;
+    padding: 2rem 1.5rem;
+    gap: 2rem;
+  }
+
+  .pageHeader {
+    padding-bottom: 1.5rem;
+    gap: 0.5rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .actionsContainer {
+    padding-top: 1.5rem;
+    justify-content: flex-end;
+    border-top: 1px solid var(--graphite, rgba(255, 255, 255, 0.08));
+  }
+
+  .submitBtn {
+    width: auto;
   }
 }
