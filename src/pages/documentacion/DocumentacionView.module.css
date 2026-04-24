@@ -1,4 +1,7 @@
 .pageContainer {
+  position: relative;
+  z-index: 1;
+  color: var(--white-muted, #cccccc);
   padding: 2rem 1.5rem;
   max-width: 64rem;
   margin: 0 auto;
@@ -6,7 +9,32 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  animation: fadeIn 0.3s ease-in-out;
+}
+
+.pageContainer > * {
+  animation: fadeIn 0.3s ease-in-out backwards;
+}
+
+.pageContainer::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--carbon-black, #121212);
+  background-image:
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(245, 244, 0, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 90% 90%,
+      rgba(76, 101, 230, 0.08) 0%,
+      transparent 50%
+    );
 }
 
 @keyframes fadeIn {
@@ -43,20 +71,11 @@
   line-height: 1.5;
 }
 
-.contentWrapper {
-  background: rgba(30, 30, 30, 0.6);
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--graphite, rgba(255, 255, 255, 0.08));
-  border-radius: 0.75rem;
-  padding: 2rem;
-  min-height: 25rem;
-}
-
 .formLayout {
   display: flex;
   flex-direction: column;
   gap: 2rem;
-  height: 100%;
+  width: 100%;
 }
 
 .actionsContainer {

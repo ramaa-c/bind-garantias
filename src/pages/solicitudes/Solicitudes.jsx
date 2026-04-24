@@ -50,12 +50,9 @@ const hasMeaningfulData = (dataString) => {
         value === null ||
         value === undefined ||
         value === false
-      ) {
+      )
         return false;
-      }
-      if (Array.isArray(value) && value.length === 0) {
-        return false;
-      }
+      if (Array.isArray(value) && value.length === 0) return false;
       return true;
     });
   } catch {
@@ -102,17 +99,13 @@ export default function Solicitudes() {
       sessionStorage.removeItem(`${draftKeyPendiente}_paso`);
       sessionStorage.removeItem(`${draftKeyPendiente}_lista`);
     }
-    if (flujoPendiente) {
-      navigate(flujoPendiente);
-    }
+    if (flujoPendiente) navigate(flujoPendiente);
     setFlujoPendiente(null);
     setDraftKeyPendiente(null);
   };
 
   const handleCloseContinueDraft = () => {
-    if (flujoPendiente) {
-      navigate(flujoPendiente);
-    }
+    if (flujoPendiente) navigate(flujoPendiente);
     setFlujoPendiente(null);
     setDraftKeyPendiente(null);
   };
@@ -124,101 +117,99 @@ export default function Solicitudes() {
 
   return (
     <div className={styles.pageContainer}>
+      {/* HEADER */}
       <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.titleGroup}>
-            <div className={styles.iconCircle}>
-              <FaMoneyBillWave />
-            </div>
-            <div>
-              <h1 className={styles.title}>Mis Solicitudes</h1>
-              <p className={styles.subtitle}>
-                Gestioná y hacé el seguimiento de tus operaciones.
-              </p>
-            </div>
+        <div className={styles.titleGroup}>
+          <div className={styles.iconCircle}>
+            <FaMoneyBillWave />
           </div>
+          <div>
+            <h1 className={styles.title}>Mis Solicitudes</h1>
+            <p className={styles.subtitle}>
+              Gestioná y hacé el seguimiento de tus operaciones.
+            </p>
+          </div>
+        </div>
 
-          <div className={styles.creditInfo}>
-            <span className={styles.creditLabel}>
-              Límite de crédito disponible
-            </span>
-            <span className={styles.creditAmount}>U$D 40.000</span>
-            <span className={styles.creditExpiry}>Vence: 01/11/2026</span>
-          </div>
+        <div className={styles.creditInfo}>
+          <span className={styles.creditLabel}>
+            Límite de crédito disponible
+          </span>
+          <span className={styles.creditAmount}>U$D 40.000</span>
+          <span className={styles.creditExpiry}>Vence: 01/11/2026</span>
         </div>
       </header>
 
+      {/* CUERPO PRINCIPAL */}
       <main className={styles.main}>
-        <div className={styles.content}>
-          <div className={styles.navigationRow}>
-            <BotonVolver
-              onClick={() => navigate("/inicio")}
-              texto="Volver al inicio"
-            />
+        <div className={styles.navigationRow}>
+          <BotonVolver
+            onClick={() => navigate("/inicio")}
+            texto="Volver al inicio"
+          />
 
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}
-              className={styles.btnNuevaOp}
-            >
-              <FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN
-            </Button>
-          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}
+            className={styles.btnNuevaOp}
+          >
+            <FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN
+          </Button>
+        </div>
 
-          <div className={styles.toolbar}>
-            <div className={styles.filtersWrapper}>
-              <div className={styles.searchBox}>
-                <FiSearch className={styles.searchIcon} />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre o CUIT..."
-                  className={styles.searchInput}
-                  {...register("busqueda")}
+        <div className={styles.toolbar}>
+          <div className={styles.filtersWrapper}>
+            <div className={styles.searchBox}>
+              <FiSearch className={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Buscar por nombre o CUIT..."
+                className={styles.searchInput}
+                {...register("busqueda")}
+              />
+            </div>
+
+            <div className={styles.selectGroup}>
+              <div className={styles.customSelectWrapper}>
+                <Select
+                  name="estado"
+                  control={control}
+                  options={opcionesEstado}
+                  placeholder="Estado"
+                  isSearchable={false}
+                  hideErrorSpace
                 />
               </div>
 
-              <div className={styles.selectGroup}>
-                <div className={styles.customSelectWrapper}>
-                  <Select
-                    name="estado"
-                    control={control}
-                    options={opcionesEstado}
-                    placeholder="Estado"
-                    isSearchable={false}
-                    hideErrorSpace
-                  />
-                </div>
-
-                <div className={styles.customSelectWrapper}>
-                  <Select
-                    name="orden"
-                    control={control}
-                    options={opcionesOrden}
-                    isSearchable={false}
-                    hideErrorSpace
-                  />
-                </div>
+              <div className={styles.customSelectWrapper}>
+                <Select
+                  name="orden"
+                  control={control}
+                  options={opcionesOrden}
+                  placeholder="Orden"
+                  isSearchable={false}
+                  hideErrorSpace
+                />
               </div>
             </div>
           </div>
+        </div>
 
-          {/* LISTA DE SOLICITUDES */}
-          <div className={styles.listContainer}>
-            {mockSolicitudes.length > 0 ? (
-              mockSolicitudes.map((item) => (
-                <TarjetaSolicitud key={item.id} solicitud={item} />
-              ))
-            ) : (
-              <div className={styles.emptyState}>
-                <p>No tenés solicitudes activas en este momento.</p>
-              </div>
-            )}
-          </div>
+        {/* LISTA DE SOLICITUDES */}
+        <div className={styles.listContainer}>
+          {mockSolicitudes.length > 0 ? (
+            mockSolicitudes.map((item) => (
+              <TarjetaSolicitud key={item.id} solicitud={item} />
+            ))
+          ) : (
+            <div className={styles.emptyState}>
+              <p>No tenés solicitudes activas en este momento.</p>
+            </div>
+          )}
         </div>
       </main>
 
-      {/* Modal Interceptor */}
       <ModalConfirmacionBorrador
         isOpen={!!flujoPendiente}
         onClose={handleCloseModalOnly}

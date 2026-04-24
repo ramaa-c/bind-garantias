@@ -1,5 +1,27 @@
 .pageContainer {
-  background-color: var(--carbon-black);
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.pageContainer > * {
+  animation: fadeIn 0.4s ease backwards;
+}
+
+.pageContainer::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--carbon-black, #121212);
   background-image:
     radial-gradient(
       circle at 10% 10%,
@@ -11,24 +33,12 @@
       rgba(76, 101, 230, 0.08) 0%,
       transparent 50%
     );
-  min-height: 100%;
-  animation: fadeIn 0.4s ease;
 }
 
 /* HEADER */
 .header {
-  background: rgba(30, 30, 30, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 1.5rem 0;
-}
-
-.headerContent {
-  width: 100%;
-  max-width: 62.5rem;
-  margin: 0 auto;
-  padding: 0 1rem;
+  padding-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -114,14 +124,9 @@
 /* CUERPO PRINCIPAL */
 .main {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   padding: 1.5rem 0;
-}
-
-.content {
   width: 100%;
-  max-width: 62.5rem;
-  padding: 0 1rem;
 }
 
 .navigationRow {
@@ -244,12 +249,11 @@
 
 /* ESCRITORIO */
 @media (min-width: 56.25rem) {
-  .header {
-    padding: 2.5rem 0;
+  .pageContainer {
+    padding: 2.5rem;
   }
 
-  .headerContent {
-    padding: 0 2.5rem;
+  .header {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
@@ -273,10 +277,6 @@
 
   .main {
     padding: 2.5rem 0;
-  }
-
-  .content {
-    padding: 0 2.5rem;
   }
 
   .toolbar {
