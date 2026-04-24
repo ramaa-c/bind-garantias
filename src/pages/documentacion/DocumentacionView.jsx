@@ -1,6 +1,6 @@
 import React from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import Paso5Documentacion from "../../components/features/shared/Compartidos/Paso5Documentacion/Paso5Documentacion";
+import { DocumentosLegajo } from "../../components/features";
 import styles from "./DocumentacionView.module.css";
 
 export default function DocumentacionView() {
@@ -10,14 +10,17 @@ export default function DocumentacionView() {
       email: "",
       celular: "",
       direccion: "",
-      dniFrente: null,
-      dniDorso: null,
+      estatuto: null,
+      balance: null,
+      acta: null,
+      poderes: null,
+      intentoAvanzar: false,
     },
   });
 
   const onSubmit = async (data) => {
     try {
-      console.info("Ejecutando mutación PUT con payload:", data);
+      console.info("Ejecutando mutación con payload:", data);
     } catch (error) {
       console.error("Fallo al actualizar documentación:", error);
     }
@@ -28,36 +31,33 @@ export default function DocumentacionView() {
       <header className={styles.pageHeader}>
         <h1 className={styles.title}>Documentación</h1>
         <p className={styles.subtitle}>
-          Gestioná y mantené actualizados tus documentos y datos de contacto
-          para operar.
+          Gestioná y mantené actualizados los documentos corporativos para
+          operar.
         </p>
       </header>
 
-      <main className={styles.contentWrapper}>
-        <FormProvider {...methods}>
-          <form
-            onSubmit={methods.handleSubmit(onSubmit)}
-            className={styles.formLayout}
-            noValidate
-          >
-            <Paso5Documentacion />
+      <FormProvider {...methods}>
+        <form
+          onSubmit={methods.handleSubmit(onSubmit)}
+          className={styles.formLayout}
+          noValidate
+        >
+          <DocumentosLegajo />
 
-            <div className={styles.actionsContainer}>
-              <button
-                type="submit"
-                className={styles.submitBtn}
-                disabled={
-                  !methods.formState.isValid || methods.formState.isSubmitting
-                }
-              >
-                {methods.formState.isSubmitting
-                  ? "Guardando..."
-                  : "Guardar Documentación"}
-              </button>
-            </div>
-          </form>
-        </FormProvider>
-      </main>
+          <div className={styles.actionsContainer}>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              onClick={() => methods.setValue("intentoAvanzar", true)}
+              disabled={methods.formState.isSubmitting}
+            >
+              {methods.formState.isSubmitting
+                ? "Guardando..."
+                : "Guardar Legajo"}
+            </button>
+          </div>
+        </form>
+      </FormProvider>
     </section>
   );
 }

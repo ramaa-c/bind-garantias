@@ -16,7 +16,7 @@ export { default as ModalUbicacion } from "./shared/Compartidos/ModalUbicacion/M
 export { default as ModalContacto } from "./shared/Compartidos/ModalContacto/ModalContacto";
 export { default as ModalConfirmacionBorrador } from "./shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
 export * from "./ModalHistorialEstado/ModalHistorialEstado";
-
+export * from "./shared/Compartidos/DocumentosLegajo/DocumentosLegajo";
 
 // --- CHEQUES ---
 export { default as Paso6Bolsa } from './cheques/Cheques/Paso6Bolsa/Paso6Bolsa';
