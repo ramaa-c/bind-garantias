@@ -1,14 +1,25 @@
 .inicioPage {
-  background-color: var(--carbon-black);
-  background-image:
-    radial-gradient(circle at 10% 10%, rgba(245, 244, 0, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(76, 101, 230, 0.08) 0%, transparent 50%);
+  position: relative;
+  z-index: 1;
   color: var(--white-muted);
-  display: flex;
-  flex-direction: column;
   min-height: 100%;
   font-family: var(--font-principal);
-  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.inicioPage::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--carbon-black, #121212);
+  background-image: 
+    radial-gradient(circle at 10% 10%, rgba(245, 244, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 90% 90%, rgba(76, 101, 230, 0.08) 0%, transparent 50%);
 }
 
 .inicioMainContainer {
@@ -40,7 +51,6 @@
 }
 
 @keyframes pulse {
-
   0%,
   100% {
     opacity: 1;
@@ -314,17 +324,24 @@
   gap: 1.25rem;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.25s var(--ease-out), box-shadow 0.25s;
+  transition:
+    border-color 0.25s var(--ease-out),
+    box-shadow 0.25s;
 }
 
 .taskCard::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--color-amarillo-bind), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-amarillo-bind),
+    transparent
+  );
   transform: translateX(-100%);
   transition: transform 0.4s var(--ease-out);
 }
@@ -350,7 +367,10 @@
   font-size: 1.25rem;
   color: var(--color-amarillo-bind);
   flex-shrink: 0;
-  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .taskCard:hover .taskCardIcon {
@@ -390,7 +410,7 @@
   width: 10rem;
 }
 
-.taskCardActions>button {
+.taskCardActions > button {
   width: 100%;
 }
 
