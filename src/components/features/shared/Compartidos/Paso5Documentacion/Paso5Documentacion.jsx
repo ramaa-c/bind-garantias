@@ -55,9 +55,13 @@ const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
 );
 
 export default function Paso5Documentacion({
+  docExpandido,
+  toggleDoc,
   socios = [],
+  onVolverASocios,
   avanzarPaso6,
   onGuardarSocioDb,
+  isSubmitting,
 }) {
   const { register, control, setValue, trigger, clearErrors, getValues } =
     useFormContext();
@@ -383,7 +387,7 @@ export default function Paso5Documentacion({
           </section>
 
           {/* REPRESENTANTES */}
-          <section className={styles.section}>
+          <section className={`${styles.section} ${styles.alignBottom}`}>
             <div className={styles.sectionHeaderRow}>
               <span className={styles.sectionLabel}>
                 Representantes y Apoderados
@@ -477,7 +481,7 @@ export default function Paso5Documentacion({
           </section>
 
           {/* EMAIL FACTURACIÓN */}
-          <section className={styles.section}>
+          <section className={`${styles.section} ${styles.alignBottom}`}>
             <div className={styles.sectionHeaderRow}>
               <span className={styles.sectionLabel}>Email de Facturación</span>
               {isEmailFacturacionValido && (
@@ -503,11 +507,13 @@ export default function Paso5Documentacion({
       <div className={styles.footer}>
         <Button
           variant="primary"
-          iconRight={<FiChevronRight />}
+          iconRight={!isSubmitting && <FiChevronRight />}
           onClick={handleAvanzarClick}
           className={styles.continueBtn}
+          isLoading={isSubmitting}
+          disabled={isSubmitting}
         >
-          CONTINUAR
+          {isSubmitting ? "ENVIANDO..." : "CONTINUAR"}
         </Button>
       </div>
 

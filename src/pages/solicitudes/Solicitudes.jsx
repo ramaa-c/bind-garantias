@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FiPlus, FiSearch } from "react-icons/fi";
 import { FaMoneyBillWave } from "react-icons/fa";
-import { BotonVolver, Button, Select } from "../../components/ui";
+import { BotonVolver, Button, Select, Spinner } from "../../components/ui";
 import { TarjetaSolicitud } from "../../components/features";
 import ModalConfirmacionBorrador from "../../components/features/shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
+import { useObtenerSolicitudesEnProceso } from "../../hooks/useSolicitudes";
 
 import styles from "./Solicitudes.module.css";
 
@@ -83,11 +84,28 @@ export default function Solicitudes() {
 
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
-  const [listaSolicitudes, setListaSolicitudes] = useState(mockSolicitudesBase);
+  const [nuevasSolicitudesLocales, setNuevasSolicitudesLocales] = useState([]);
+
+  // Integración con Backend
+  const { data: solicitudesReal, isLoading } = useObtenerSolicitudesEnProceso("30708909382"); // CUIT de prueba
+
+  const listaSolicitudes = useMemo(() => {
+    const reales = (solicitudesReal || []).map(s => ({
+      id: s.solicitudenprocesoid?.toString() || Math.random().toString(),
+      tipo: s.tipolimiteid === 1 ? "Cheque" : "Préstamo",
+      monto: s.importe ? new Intl.NumberFormat("es-AR").format(s.importe) : "0",
+      moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
+      estado: "Pendiente", // El endpoint SolicitudEnProceso siempre son pendientes
+      fecha: s.fechacreacion ? new Date(s.fechacreacion).toLocaleDateString() : "Hoy",
+      isReal: true
+    }));
+
+    return [...reales, ...nuevasSolicitudesLocales, ...mockSolicitudesBase];
+  }, [solicitudesReal, nuevasSolicitudesLocales]);
 
   useEffect(() => {
     if (location.state?.nuevaSolicitud) {
-      setListaSolicitudes((prev) => {
+      setNuevasSolicitudesLocales((prev) => {
         if (prev.some((s) => s.id === location.state.nuevaSolicitud.id))
           return prev;
         return [location.state.nuevaSolicitud, ...prev];
@@ -153,13 +171,6 @@ export default function Solicitudes() {
           </div>
         </div>
 
-        <div className={styles.creditInfo}>
-          <span className={styles.creditLabel}>
-            Límite de crédito disponible
-          </span>
-          <span className={styles.creditAmount}>U$D 40.000</span>
-          <span className={styles.creditExpiry}>Vence: 01/11/2026</span>
-        </div>
       </header>
 
       {/* CUERPO PRINCIPAL */}
@@ -218,7 +229,12 @@ export default function Solicitudes() {
           </div>
         </div>
         <div className={styles.listContainer}>
-          {listaSolicitudes.length > 0 ? (
+          {isLoading ? (
+            <div className={styles.loadingContainer}>
+              <Spinner />
+              <p>Cargando solicitudes...</p>
+            </div>
+          ) : listaSolicitudes.length > 0 ? (
             listaSolicitudes.map((item) => (
               <TarjetaSolicitud key={item.id} solicitud={item} />
             ))
