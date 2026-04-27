@@ -88,7 +88,8 @@ export default function Solicitudes() {
   useEffect(() => {
     if (location.state?.nuevaSolicitud) {
       setListaSolicitudes((prev) => {
-        if (prev.some(s => s.id === location.state.nuevaSolicitud.id)) return prev;
+        if (prev.some((s) => s.id === location.state.nuevaSolicitud.id))
+          return prev;
         return [location.state.nuevaSolicitud, ...prev];
       });
       window.history.replaceState({}, document.title);
@@ -216,18 +217,16 @@ export default function Solicitudes() {
             </div>
           </div>
         </div>
-
-          <div className={styles.listContainer}>
-            {listaSolicitudes.length > 0 ? (
-              listaSolicitudes.map((item) => (
-                <TarjetaSolicitud key={item.id} solicitud={item} />
-              ))
-            ) : (
-              <div className={styles.emptyState}>
-                <p>No tenés solicitudes activas en este momento.</p>
-              </div>
-            )}
-          </div>
+        <div className={styles.listContainer}>
+          {listaSolicitudes.length > 0 ? (
+            listaSolicitudes.map((item) => (
+              <TarjetaSolicitud key={item.id} solicitud={item} />
+            ))
+          ) : (
+            <div className={styles.emptyState}>
+              <p>No tenés solicitudes activas en este momento.</p>
+            </div>
+          )}
         </div>
       </main>
 
