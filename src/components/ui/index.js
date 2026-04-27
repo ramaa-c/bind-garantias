@@ -20,7 +20,7 @@ export * from './Modal/Modal';
 export * from './Select/Select';
 export * from './SelectFlotante/SelectFlotante';
 export * from './SinResultados/SinResultados';
-export * from './Spinner/Spinner';
+export { default as Spinner } from './Spinner/Spinner';
 export * from './TarjetaEstado/TarjetaEstado';
 export * from './TarjetaMetrica/TarjetaMetrica';
 export * from './TarjetaSeleccionable/TarjetaSeleccionable';

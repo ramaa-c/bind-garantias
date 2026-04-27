@@ -1,11 +1,11 @@
 import React, { useMemo, useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { FiBriefcase, FiArrowRight } from "react-icons/fi";
-import { InputFlotante, Button, SelectSocio } from "../../../../ui";
+import { InputSocioMasked, Button, SelectSocio } from "../../../../ui";
 import styles from "./Paso6Bolsa.module.css";
 import { useTipoTerceroRelacionado } from "../../../../../hooks/useCatalogos";
 
-export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
+export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa, isSubmitting }) {
   const {
     register,
     control,
@@ -92,11 +92,13 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
       {sociedadSeleccionadaId && (
         <div className={styles.expandedArea}>
           <div className={styles.inputWrapper}>
-            <InputFlotante
+            <InputSocioMasked
               label={`Número de cuenta en ${nombreSociedadSeleccionada}`}
               esValido={cuentaBolsa.length >= 4}
               error={errors.numeroCuentaBolsa?.message}
-              {...register("numeroCuentaBolsa")}
+              control={control}
+              name="numeroCuentaBolsa"
+              disabled={isSubmitting}
             />
           </div>
 
@@ -106,8 +108,10 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
               variant="primary"
               size="md"
               onClick={avanzarConBolsa}
+              isLoading={isSubmitting}
+              disabled={isSubmitting}
             >
-              CONFIRMAR Y AVANZAR
+              {isSubmitting ? "FINALIZANDO..." : "CONFIRMAR Y FINALIZAR"}
             </Button>
           </div>
         </div>
@@ -118,9 +122,14 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa }) {
           ¿No tenés cuenta en ninguna de las opciones anteriores?
         </p>
         <div className={styles.altButtonWrapper}>
-          <Button type="button" variant="outline" onClick={avanzarSinBolsa}>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={avanzarSinBolsa}
+            disabled={isSubmitting}
+          >
             CONTINUAR SIN SOCIEDAD DE BOLSA{" "}
-            <FiArrowRight className={styles.iconRight} />
+            {!isSubmitting && <FiArrowRight className={styles.iconRight} />}
           </Button>
         </div>
       </div>

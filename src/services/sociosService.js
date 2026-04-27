@@ -1,15 +1,41 @@
 import api from "../api/axios";
 
+// Caché en memoria para búsquedas por CUIT (evita llamadas repetidas en el Wizard)
+const cuitCache = new Map();
+const cuitWebCache = new Map();
+
 export const sociosService = {
   // Trae lista de socios (SGRPlus)
   obtenerSocios: async (params = {}) => {
+    const isCuitSearch = params.Cuit && Object.keys(params).length === 1;
+    const cacheKey = isCuitSearch ? String(params.Cuit).trim() : null;
+
+    if (isCuitSearch && cuitCache.has(cacheKey)) {
+      return JSON.parse(JSON.stringify(cuitCache.get(cacheKey))); // Deep clone prevent mutations
+    }
+    
     const response = await api.get("/sgrplus/Socios", { params });
+    
+    if (isCuitSearch && response.data) {
+      cuitCache.set(cacheKey, JSON.parse(JSON.stringify(response.data)));
+    }
     return response.data;
   },
 
   // Trae lista de socios (Esquema Web / Legacy)
   obtenerSociosWeb: async (params = {}) => {
+    const isCuitSearch = params.Cuit && Object.keys(params).length === 1;
+    const cacheKey = isCuitSearch ? String(params.Cuit).trim() : null;
+
+    if (isCuitSearch && cuitWebCache.has(cacheKey)) {
+      return JSON.parse(JSON.stringify(cuitWebCache.get(cacheKey))); // Deep clone
+    }
+
     const response = await api.get("/api/Socios", { params });
+
+    if (isCuitSearch && response.data) {
+      cuitWebCache.set(cacheKey, JSON.parse(JSON.stringify(response.data)));
+    }
     return response.data;
   },
 

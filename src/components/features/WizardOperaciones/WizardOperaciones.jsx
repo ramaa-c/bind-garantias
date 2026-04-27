@@ -16,6 +16,7 @@ import {
 } from '../index';
 import styles from '../../../pages/cheques/SolicitudCheques.module.css'; 
 import { sociosService } from '../../../services/sociosService';
+import { solicitudesService } from '../../../services/solicitudesService';
 
 export const WizardOperaciones = () => {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export const WizardOperaciones = () => {
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [validandoCuit, setValidandoCuit] = useState(false);
   const [validandoSocioSecundario, setValidandoSocioSecundario] = useState(false);
+  const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
 
   // Estados locales para Socios / Documentos
   const [socios, setSocios] = useState([]);
@@ -74,14 +76,46 @@ export const WizardOperaciones = () => {
     updateUiState({ faseSocio: "ingresar_cuit" });
   };
 
+  const enviarSolicitud = async (data) => {
+    setEnviandoSolicitud(true);
+    try {
+      const montoLimpio = Number(String(data.monto || "0").replace(/\D/g, ""));
+      
+      const payload = {
+        solicitudenprocesoid: 0,
+        fechacarga: new Date().toISOString(),
+        cuit: data.cuit,
+        tipolimiteid: data.tipoProducto === 'cheque' ? 1 : 2, // TODO: Ajustar IDs correctos (1=Cheque, 2=Préstamo)
+        cadenavalorid: 950274, // TODO: ID de Banco Nación hardcodeado, sacar del Contexto/URL a futuro
+        monedaid: Number(data.moneda) || 1, 
+        importe: montoLimpio,
+        estadosolicitud: 1, // 1 = Pendiente
+        idexterno: 0,
+        terceroviaid: data.sociedadBolsa ? Number(data.sociedadBolsa) : 0
+      };
+
+      console.log("Enviando Payload Final:", payload);
+      await solicitudesService.crearSolicitudEnProceso(payload);
+      
+      if (data.tipoProducto === 'cheque') {
+        setPasoActual(7); // Pantalla de éxito de cheques
+      } else {
+        setPasoActual(6); // Pantalla de éxito de préstamos
+      }
+    } catch (error) {
+      console.error("Error al enviar la solicitud:", error);
+      alert("Hubo un error al enviar la solicitud. Por favor, intente nuevamente.");
+    } finally {
+      setEnviandoSolicitud(false);
+    }
+  };
+
   const onSubmitFinalCheques = () => {
-    console.log("Payload Final Cheques:", metodosFormulario.getValues());
-    setPasoActual(7); // Pantalla de éxito de cheques
+    enviarSolicitud(metodosFormulario.getValues());
   };
 
   const onSubmitFinalPrestamos = () => {
-    console.log("Payload Final Préstamos:", metodosFormulario.getValues());
-    setPasoActual(6); // Pantalla de éxito de préstamos
+    enviarSolicitud(metodosFormulario.getValues());
   };
 
   const handleIrASolicitudes = () => {
@@ -137,7 +171,8 @@ export const WizardOperaciones = () => {
       }
     } catch (err) {
       console.error("Error buscando socio secundario:", err);
-      updateUiState({ tempSocioNombre: "Error al buscar socio", faseSocio: "completar_datos" });
+      alert("Hubo un error de conexión al buscar el CUIT del socio. Por favor, reintente.");
+      // No cambiamos la faseSocio, así se queda en 'ingresar_cuit'
     } finally {
       setValidandoSocioSecundario(false);
     }
@@ -208,13 +243,19 @@ export const WizardOperaciones = () => {
         setValue("razonSocial", "Socio Nuevo o No Encontrado", { shouldValidate: true });
         setValue("esSocioExistente", false);
       }
+      
+      // Si todo salió bien (sea socio existente o nuevo), avanzamos
+      setPasoActual(2);
+      
     } catch (err) {
       console.error("Error buscando socio:", err);
-      setValue("razonSocial", "Error al buscar socio", { shouldValidate: true });
-      setValue("esSocioExistente", false);
+      metodosFormulario.setError("cuit", { 
+        type: "manual", 
+        message: "Error de red al buscar el CUIT. Por favor, vuelva a intentarlo." 
+      });
+      // Importante: No avanzamos de paso si hay error
     } finally {
       setValidandoCuit(false);
-      setPasoActual(2);
     }
   };
 
@@ -280,6 +321,7 @@ export const WizardOperaciones = () => {
             }
           }}
           onGuardarSocioDb={handleGuardarSocioDb}
+          isSubmitting={enviandoSolicitud}
         />
       );
     }
@@ -297,6 +339,7 @@ export const WizardOperaciones = () => {
               setValue("numeroCuentaBolsa", "");
               handleSubmit(onSubmitFinalCheques)();
             }}
+            isSubmitting={enviandoSolicitud}
           />
         );
       }

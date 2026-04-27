@@ -8,6 +8,7 @@ import {
   SelectSocio,
   TicketSimulacion,
   TicketPrestamoFijo,
+  Modal,
 } from "../../../../ui";
 import styles from "./Paso3Simulador.module.css";
 import {
@@ -106,6 +107,57 @@ export default function Paso3Simulador({
     );
   };
 
+  // --- CÁLCULOS SIMULADOS BASADOS EN EL MONTO INGRESADO ---
+  const montoNumerico = Number(String(montoValue || "0").replace(/\D/g, ""));
+  const formatCurrency = (val) =>
+    new Intl.NumberFormat("es-AR", {
+      style: "currency",
+      currency: "ARS",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(val);
+
+  // Cálculos para Cheque (basados en la imagen de referencia)
+  const comisionBind = montoNumerico * 0.025; // 2.5%
+  const intereses = montoNumerico * 0.0847; // 43.34% TNA ajustado al plazo simulado
+  const derechoMercado = montoNumerico * 0.000476; // 0.06% aprox
+  const arancelBolsa = montoNumerico * 0.002219; 
+  const valoresCobro = 6000;
+  const gestionCobro = 70;
+  const iva = (comisionBind + arancelBolsa + valoresCobro) * 0.21; 
+  const totalCostosCheque =
+    comisionBind + intereses + derechoMercado + arancelBolsa + valoresCobro + gestionCobro + iva;
+  const netoCheque = montoNumerico - totalCostosCheque;
+
+  const filasCostosCheque = [
+    { label: "Comisión Bind Garantías (2.5%)", value: formatCurrency(comisionBind) },
+    { label: "Intereses (43.34% TNA*)", value: formatCurrency(intereses) },
+    { label: "Derecho bolsa", value: "$ 0" },
+    { label: "Derecho mercado (0.06%)", value: formatCurrency(derechoMercado) },
+    { label: "Arancel Soc Bolsa", value: formatCurrency(arancelBolsa) },
+    { label: "Valores al cobro", value: formatCurrency(valoresCobro) },
+    { label: "Gestión de cobro", value: formatCurrency(gestionCobro) },
+    { label: "IVA", value: formatCurrency(iva) },
+  ];
+
+  const datosResumenCheque = [
+    { label: "Vto del cheque", value: "31/07/2026" },
+    { label: "Monto del cheque", value: formatCurrency(montoNumerico) },
+  ];
+
+  // Datos para Préstamo (basados en la imagen de referencia)
+  const datosTablaPrestamo = [
+    {
+      plazo: "181 a 360 días",
+      conceptos: [
+        { label: "Monto hasta", value: formatCurrency(montoNumerico), unidad: "" },
+        { label: "Tasa", value: "44%", unidad: "TNA" },
+        { label: "Comisión Banco", value: "1%", unidad: "Directo" },
+        { label: "Comisión SGR", value: "2%", unidad: "TNA" },
+      ],
+    },
+  ];
+
   return (
     <div className={styles.container}>
       {!mostrarResultados && (
@@ -177,41 +229,38 @@ export default function Paso3Simulador({
         </div>
       )}
 
-      {!mostrarResultados ? (
-        <div className={styles.calcBtnWrapper}>
-          <Button variant="primary" size="lg" onClick={handleLocalCalcular}>
-            {textoAccion}
-          </Button>
-        </div>
-      ) : usarTicketPrestamoFijo ? (
-        <TicketPrestamoFijo
-          datosTabla={[
-            {
-              plazo: "181 a 360 días",
-              conceptos: [
-                { label: "Monto hasta", value: "$5.000.000", unidad: "" },
-                { label: "Tasa", value: "44%", unidad: "TNA" },
-                { label: "Comisión Banco", value: "1%", unidad: "Directo" },
-                { label: "Comisión SGR", value: "2%", unidad: "TNA" },
-              ],
-            },
-          ]}
-          onContinuar={onContinuar}
-          onRecalcular={onCancelar}
-        />
-      ) : (
-        <TicketSimulacion
-          netoRecibir="$ 2.712.752"
-          filasCostos={[]}
-          totalCostos="$ 287.248"
-          datoExtraTotal={{ label: "CFT estimado", value: "49.55% anual" }}
-          datosResumen={[]}
-          textoAlerta="IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa."
-          onRecalcular={onCancelar}
-          onContinuar={onContinuar}
-          textoBotonSecundario="Desisto de avanzar"
-        />
-      )}
+      <div className={styles.calcBtnWrapper}>
+        <Button variant="primary" size="lg" onClick={handleLocalCalcular}>
+          {textoAccion}
+        </Button>
+      </div>
+
+      <Modal 
+        isOpen={mostrarResultados} 
+        onClose={onCancelar} 
+        title="Resultado de la Simulación"
+        maxWidth="800px"
+      >
+        {usarTicketPrestamoFijo || tipoProductoValue === "prestamo" ? (
+          <TicketPrestamoFijo
+            datosTabla={datosTablaPrestamo}
+            onContinuar={onContinuar}
+            onRecalcular={onCancelar}
+          />
+        ) : (
+          <TicketSimulacion
+            netoRecibir={formatCurrency(netoCheque)}
+            filasCostos={filasCostosCheque}
+            totalCostos={formatCurrency(totalCostosCheque)}
+            datoExtraTotal={{ label: "CFT estimado", value: "49,55% anual" }}
+            datosResumen={datosResumenCheque}
+            textoAlerta="IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa."
+            onRecalcular={onCancelar}
+            onContinuar={onContinuar}
+            textoBotonSecundario="Desisto de avanzar"
+          />
+        )}
+      </Modal>
     </div>
   );
 }
