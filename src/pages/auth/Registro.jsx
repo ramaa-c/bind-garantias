@@ -3,16 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { toast } from "sonner";
+
 import { InputFlotante, Button } from "../../components/ui";
 import { useCrearUsuario } from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
+// --- SCHEMA ---
 const registroSchema = z.object({
   email: z
     .string()
     .min(1, { message: "El email es obligatorio" })
-    .email({ message: "Formato de email inválido" }),
+    .email({ message: "Formato de email inválido" })
+    .toLowerCase()
+    .trim(),
 });
 
 const Registro = () => {
@@ -28,41 +33,45 @@ const Registro = () => {
     resolver: zodResolver(registroSchema),
   });
 
-const onSubmit = async (data) => {
+  const onSubmit = async (data) => {
     const getCSharpIsoDate = (addYears = 0) => {
       const date = new Date();
       if (addYears) date.setFullYear(date.getFullYear() + addYears);
-      return date.toISOString().split('.')[0]; 
+      return date.toISOString().split(".")[0];
     };
 
     const payloadSkeletor = {
-      usuarioid: "", 
       email: data.email,
       usuariowebid: 0,
-      fchalta: getCSharpIsoDate(),            
-      fchvencimiento: getCSharpIsoDate(1),    
+      fchalta: getCSharpIsoDate(),
+      fchvencimiento: getCSharpIsoDate(1),
       hashseguridad: "",
       estado: "",
       debecambiarclave: "",
-      esadministrador: "", 
+      esadministrador: "",
       denominacion: "",
     };
 
     try {
       await crearUsuario(payloadSkeletor);
-      navigate("/confirmar-correo", { state: { emailIngresado: data.email } });
+
+      toast.success(
+        "¡Registro exitoso! Revisá tu casilla de correo para continuar.",
+      );
+
+      navigate("/login", { replace: true });
     } catch (error) {
-      console.error("Fallo al registrar usuario:", error);
-      
       if (error?.response?.status === 409) {
-        setError("email", { 
-          type: "manual", 
-          message: "Este correo ya se encuentra registrado en el sistema." 
+        setError("email", {
+          type: "server",
+          message: "Este correo ya se encuentra registrado.",
         });
       } else {
-        setError("root", { 
-          type: "server", 
-          message: "Ocurrió un error al intentar registrarte. Intentá nuevamente." 
+        setError("email", {
+          type: "server",
+          message:
+            error?.response?.data?.message ||
+            "Error de conexión. Intentá nuevamente.",
         });
       }
     }
@@ -70,15 +79,14 @@ const onSubmit = async (data) => {
 
   return (
     <div className={styles.layoutSplit}>
-      {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
           <img
             src={logoBind}
             alt="Logo BIND"
             width="120"
+            className={styles.clickableLogo}
             onClick={() => navigate("/")}
-            style={{ cursor: "pointer" }}
           />
         </div>
 
@@ -91,6 +99,7 @@ const onSubmit = async (data) => {
           <form
             className={styles.formContent}
             onSubmit={handleSubmit(onSubmit)}
+            noValidate
           >
             <InputFlotante
               type="email"
@@ -101,19 +110,6 @@ const onSubmit = async (data) => {
               {...register("email")}
             />
 
-            {errors.root && (
-              <div
-                style={{
-                  color: "var(--red, #e74c3c)",
-                  fontSize: "0.85rem",
-                  marginTop: "-0.5rem",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                {errors.root.message}
-              </div>
-            )}
-
             <div className={styles.formActions}>
               <Button type="submit" variant="primary" disabled={isPending}>
                 {isPending ? "REGISTRANDO..." : "REGISTRARSE"}
@@ -122,7 +118,7 @@ const onSubmit = async (data) => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/")}
+                onClick={() => navigate("/login")}
                 disabled={isPending}
               >
                 YA TENGO CUENTA
@@ -130,7 +126,6 @@ const onSubmit = async (data) => {
             </div>
           </form>
 
-          {/* --- SOPORTE --- */}
           <div className={styles.supportContainerModern}>
             <p>¿Tenés problemas o dudas para registrarte?</p>
             <p>
@@ -146,7 +141,6 @@ const onSubmit = async (data) => {
         </div>
       </section>
 
-      {/* --- COLUMNA DERECHA --- */}
       <section className={styles.sideBrand}>
         <div className={styles.brandContent}>
           <h2 className={styles.brandTitle}>

@@ -4,9 +4,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { InputFlotante, Button } from "../../components/ui";
+import { useLogin } from "../../hooks/useUsuario";
+import { useAuthStore } from "../../store/useAuthStore";
+
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
+// --- SCHEMA ---
 const loginSchema = z.object({
   email: z
     .string()
@@ -18,24 +22,54 @@ const loginSchema = z.object({
 const Login = () => {
   const navigate = useNavigate();
 
+  const setUser = useAuthStore((state) => state.setUser);
+  const { mutate: iniciarSesion, isPending } = useLogin();
+
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = () => {
-    // Lógica de autenticación
+  const onSubmit = (formData) => {
+    iniciarSesion(formData, {
+      onSuccess: (usuarioData) => {
+        setUser(usuarioData);
+
+        if (
+          usuarioData.debecambiarclave === "1" ||
+          String(usuarioData.debecambiarclave).toLowerCase() === "true"
+        ) {
+          navigate("/crear-clave", { replace: true });
+          return;
+        }
+
+        navigate("inicio", { replace: true });
+      },
+      onError: (error) => {
+        setError("password", {
+          type: "server",
+          message:
+            error?.response?.data?.message ||
+            "Credenciales inválidas o error de conexión.",
+        });
+      },
+    });
   };
 
   return (
     <div className={styles.layoutSplit}>
-      {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img src={logoBind} alt="Logo BIND" onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
+          <img
+            src={logoBind}
+            alt="Logo BIND"
+            onClick={() => navigate("/")}
+            className={styles.clickableLogo}
+          />
         </div>
 
         <div className={styles.cardModern}>
@@ -47,12 +81,14 @@ const Login = () => {
           <form
             className={styles.formContent}
             onSubmit={handleSubmit(onSubmit)}
+            noValidate
           >
             <InputFlotante
               label="Email"
               type="email"
               id="email"
               error={errors.email?.message}
+              disabled={isPending}
               {...register("email")}
             />
 
@@ -61,18 +97,20 @@ const Login = () => {
               type="password"
               id="password"
               error={errors.password?.message}
+              disabled={isPending}
               {...register("password")}
             />
 
             <div className={styles.formActions}>
-              <Button type="submit" variant="primary">
-                INGRESAR
+              <Button type="submit" variant="primary" disabled={isPending}>
+                {isPending ? "VERIFICANDO..." : "INGRESAR"}
               </Button>
 
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate("/registro")}
+                disabled={isPending}
               >
                 REGISTRARSE
               </Button>
@@ -81,7 +119,6 @@ const Login = () => {
         </div>
       </section>
 
-      {/* --- COLUMNA DERECHA --- */}
       <section className={styles.sideBrand}>
         <div className={styles.blobBlue}></div>
         <div className={styles.blobYellow}></div>

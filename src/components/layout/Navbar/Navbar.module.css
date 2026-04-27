@@ -152,7 +152,31 @@
   color: var(--yellow, #f5f400);
 }
 
-/* --- LOGIN FALLBACK --- */
+/* --- LOGOUT --- */
+.dropdownDivider {
+  border: none;
+  border-top: 1px solid var(--graphite, rgba(255, 255, 255, 0.08));
+  margin: 0.25rem 0;
+  width: 100%;
+}
+
+.logoutItem {
+  color: #e57373;
+}
+
+.logoutItem .itemIcon {
+  color: #e57373;
+}
+
+.logoutItem:hover {
+  background-color: rgba(229, 115, 115, 0.1);
+  color: #ef5350;
+}
+
+.logoutItem:hover .itemIcon {
+  color: #ef5350;
+}
+
 .loginContainer {
   font-size: 0.9rem;
   color: var(--white, #ffffff);
