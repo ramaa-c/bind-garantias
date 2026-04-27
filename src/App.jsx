@@ -20,8 +20,10 @@ import RecuperarPassword from "./pages/auth/RecuperarPassword";
 import PosicionConsolidada from "./pages/posicion-consolidada/PosicionConsolidada";
 import CadenaDetalle from "./pages/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-// import Pruebas from "./pages/pruebas";
-import { PantallaGestionSocios, WizardOperaciones } from "./components/features";
+import {
+  PantallaGestionSocios,
+  WizardOperaciones,
+} from "./components/features";
 import { PantallaGestionUsuarios } from "./pages/usuarios/PantallaGestionUsuarios";
 import DocumentacionView from "./pages/documentacion/DocumentacionView";
 import "./components/ui/CustomScroll/Scroll.module.css";
@@ -37,17 +39,6 @@ function App() {
         <Route path="/crear-clave" element={<CrearClave />} />
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
         <Route path="/recuperar-password" element={<RecuperarPassword />} />
-
-        {/* 
-        <Route
-          path="/pruebas"
-          element={
-            <DashboardLayout>
-              <Pruebas />
-            </DashboardLayout>
-          }
-        />
-        */}
 
         <Route
           path="/socios"
@@ -195,8 +186,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
-
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
