@@ -23,7 +23,7 @@ import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout
 import {
   PantallaGestionSocios,
 } from "./components/features";
-import { WizardOperaciones } from "./pages/wizard-operaciones/WizardOperaciones";
+import { AltaOperacion } from "./pages/alta-operacion/AltaOperacion";
 import { PantallaGestionUsuarios } from "./pages/usuarios/PantallaGestionUsuarios";
 import DocumentacionView from "./pages/documentacion/DocumentacionView";
 import "./components/ui/CustomScroll/Scroll.module.css";
@@ -179,10 +179,10 @@ function App() {
         />
 
         <Route
-          path="/wizard-operaciones"
+          path="/alta-operacion"
           element={
             <DashboardLayout>
-              <WizardOperaciones />
+              <AltaOperacion />
             </DashboardLayout>
           }
         />

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const wizardOperacionesSchema = z
+export const AltaOperacionSchema = z
   .object({
     cuit: z
       .string()
