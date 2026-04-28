@@ -10,18 +10,27 @@ import { useAuthStore } from "../../store/useAuthStore";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
+// --- UTILIDAD NATIVA DE HASH (Zero-dependency) ---
+const hashPasswordSHA256 = async (password) => {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+};
+
 // --- SCHEMA ---
 const loginSchema = z.object({
   email: z
     .string()
     .min(1, { message: "El email es obligatorio" })
-    .email({ message: "Formato de email inválido" }),
+    .email({ message: "Formato de email inválido" })
+    .toLowerCase()
+    .trim(),
   password: z.string().min(1, { message: "La contraseña es obligatoria" }),
 });
 
 const Login = () => {
   const navigate = useNavigate();
-
   const setUser = useAuthStore((state) => state.setUser);
   const { mutate: iniciarSesion, isPending } = useLogin();
 
@@ -34,30 +43,60 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = (formData) => {
-    iniciarSesion(formData, {
-      onSuccess: (usuarioData) => {
-        setUser(usuarioData);
+  const onSubmit = async (formData) => {
+    try {
+      // 1. Hashear la contraseña nativamente
+      const hashedPassword = await hashPasswordSHA256(formData.password);
 
-        if (
-          usuarioData.debecambiarclave === "1" ||
-          String(usuarioData.debecambiarclave).toLowerCase() === "true"
-        ) {
-          navigate("/crear-clave", { replace: true });
-          return;
-        }
+      // 2. Generar Fechas ISO para C#
+      const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
 
-        navigate("inicio", { replace: true });
-      },
-      onError: (error) => {
-        setError("password", {
-          type: "server",
-          message:
-            error?.response?.data?.message ||
-            "Credenciales inválidas o error de conexión.",
-        });
-      },
-    });
+      // 3. Construir el Payload Estricto (Fobia al Null)
+      const payloadSkeletor = {
+        email: formData.email,
+        usuariowebid: 0,
+        fchalta: getCSharpIsoDate(),
+        fchvencimiento: getCSharpIsoDate(),
+        hashseguridad: hashedPassword,
+        estado: "",
+        debecambiarclave: "",
+        esadministrador: "",
+        denominacion: "",
+      };
+
+      // 4. Ejecutar Mutación
+      iniciarSesion(payloadSkeletor, {
+        onSuccess: (usuarioData) => {
+          setUser(usuarioData);
+
+          // Control de Flujo: Redirección obligatoria si la clave expiró o es temporal
+          if (
+            usuarioData.debecambiarclave === "1" ||
+            String(usuarioData.debecambiarclave).toLowerCase() === "true" ||
+            usuarioData.debecambiarclave === "S"
+          ) {
+            navigate("/crear-clave", { replace: true });
+            return;
+          }
+
+          navigate("/inicio", { replace: true });
+        },
+        onError: (error) => {
+          setError("password", {
+            type: "server",
+            message:
+              error?.response?.data?.message ||
+              "Credenciales inválidas o error de conexión.",
+          });
+        },
+      });
+    } catch (err) {
+      console.error("Error procesando el login:", err);
+      setError("password", {
+        type: "server",
+        message: "Error interno al procesar las credenciales.",
+      });
+    }
   };
 
   return (
