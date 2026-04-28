@@ -14,12 +14,18 @@ export const sociosService = {
       return JSON.parse(JSON.stringify(cuitCache.get(cacheKey))); // Deep clone prevent mutations
     }
     
-    const response = await api.get("/sgrplus/Socios", { params });
-    
-    if (isCuitSearch && response.data) {
-      cuitCache.set(cacheKey, JSON.parse(JSON.stringify(response.data)));
+    try {
+      const response = await api.get("/sgrplus/Socios", { params });
+      if (isCuitSearch && response.data) {
+        cuitCache.set(cacheKey, JSON.parse(JSON.stringify(response.data)));
+      }
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return [];
+      }
+      throw error;
     }
-    return response.data;
   },
 
   // Trae lista de socios (Esquema Web / Legacy)
@@ -31,12 +37,18 @@ export const sociosService = {
       return JSON.parse(JSON.stringify(cuitWebCache.get(cacheKey))); // Deep clone
     }
 
-    const response = await api.get("/api/Socios", { params });
-
-    if (isCuitSearch && response.data) {
-      cuitWebCache.set(cacheKey, JSON.parse(JSON.stringify(response.data)));
+    try {
+      const response = await api.get("/api/Socios", { params });
+      if (isCuitSearch && response.data) {
+        cuitWebCache.set(cacheKey, JSON.parse(JSON.stringify(response.data)));
+      }
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return [];
+      }
+      throw error;
     }
-    return response.data;
   },
 
   // Trae un socio por ID (SGRPlus)

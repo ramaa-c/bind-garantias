@@ -87,7 +87,7 @@ export default function Solicitudes() {
   const [nuevasSolicitudesLocales, setNuevasSolicitudesLocales] = useState([]);
 
   // Integración con Backend
-  const { data: solicitudesReal, isLoading } = useObtenerSolicitudesEnProceso("30708909382"); // CUIT de prueba
+  const { data: solicitudesReal, isLoading } = useObtenerSolicitudesEnProceso("30714562343"); // CUIT de prueba
 
   const listaSolicitudes = useMemo(() => {
     const reales = (solicitudesReal || []).map(s => ({
