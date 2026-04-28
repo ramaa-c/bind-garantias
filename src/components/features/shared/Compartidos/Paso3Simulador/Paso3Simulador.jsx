@@ -39,8 +39,10 @@ export default function Paso3Simulador({
   const { data: monedasData, isLoading: cargandoMonedas } = useMonedas();
   const opcionesMoneda = monedasData?.opciones || [];
 
-  const { data: productosData, isLoading: isLoadingProductos } = useTiposProducto();
-  const opcionesProducto = propOpcionesProducto || productosData?.opciones || [];
+  const { data: productosData, isLoading: isLoadingProductos } =
+    useTiposProducto();
+  const opcionesProducto =
+    propOpcionesProducto || productosData?.opciones || [];
   const cargandoProductos = !propOpcionesProducto && isLoadingProductos;
 
   const { data: contratosData, isLoading: cargandoContratos } =
@@ -117,20 +119,28 @@ export default function Paso3Simulador({
       maximumFractionDigits: 0,
     }).format(val);
 
-  // Cálculos para Cheque (basados en la imagen de referencia)
-  const comisionBind = montoNumerico * 0.025; // 2.5%
-  const intereses = montoNumerico * 0.0847; // 43.34% TNA ajustado al plazo simulado
-  const derechoMercado = montoNumerico * 0.000476; // 0.06% aprox
-  const arancelBolsa = montoNumerico * 0.002219; 
+  const comisionBind = montoNumerico * 0.025;
+  const intereses = montoNumerico * 0.0847;
+  const derechoMercado = montoNumerico * 0.000476;
+  const arancelBolsa = montoNumerico * 0.002219;
   const valoresCobro = 6000;
   const gestionCobro = 70;
-  const iva = (comisionBind + arancelBolsa + valoresCobro) * 0.21; 
+  const iva = (comisionBind + arancelBolsa + valoresCobro) * 0.21;
   const totalCostosCheque =
-    comisionBind + intereses + derechoMercado + arancelBolsa + valoresCobro + gestionCobro + iva;
+    comisionBind +
+    intereses +
+    derechoMercado +
+    arancelBolsa +
+    valoresCobro +
+    gestionCobro +
+    iva;
   const netoCheque = montoNumerico - totalCostosCheque;
 
   const filasCostosCheque = [
-    { label: "Comisión Bind Garantías (2.5%)", value: formatCurrency(comisionBind) },
+    {
+      label: "Comisión Bind Garantías (2.5%)",
+      value: formatCurrency(comisionBind),
+    },
     { label: "Intereses (43.34% TNA*)", value: formatCurrency(intereses) },
     { label: "Derecho bolsa", value: "$ 0" },
     { label: "Derecho mercado (0.06%)", value: formatCurrency(derechoMercado) },
@@ -145,12 +155,15 @@ export default function Paso3Simulador({
     { label: "Monto del cheque", value: formatCurrency(montoNumerico) },
   ];
 
-  // Datos para Préstamo (basados en la imagen de referencia)
   const datosTablaPrestamo = [
     {
       plazo: "181 a 360 días",
       conceptos: [
-        { label: "Monto hasta", value: formatCurrency(montoNumerico), unidad: "" },
+        {
+          label: "Monto hasta",
+          value: formatCurrency(montoNumerico),
+          unidad: "",
+        },
         { label: "Tasa", value: "44%", unidad: "TNA" },
         { label: "Comisión Banco", value: "1%", unidad: "Directo" },
         { label: "Comisión SGR", value: "2%", unidad: "TNA" },
@@ -235,9 +248,9 @@ export default function Paso3Simulador({
         </Button>
       </div>
 
-      <Modal 
-        isOpen={mostrarResultados} 
-        onClose={onCancelar} 
+      <Modal
+        isOpen={mostrarResultados}
+        onClose={onCancelar}
         title="Resultado de la Simulación"
         maxWidth="800px"
       >

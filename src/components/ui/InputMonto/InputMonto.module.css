@@ -43,7 +43,14 @@
 }
 
 .error {
-  color: #ff5252;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--color-danger, #ef4444);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .input::-webkit-outer-spin-button,

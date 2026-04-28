@@ -17,9 +17,17 @@
   z-index: -1;
   pointer-events: none;
   background-color: var(--carbon-black, #121212);
-  background-image: 
-    radial-gradient(circle at 10% 10%, rgba(245, 244, 0, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(76, 101, 230, 0.08) 0%, transparent 50%);
+  background-image:
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(245, 244, 0, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 90% 90%,
+      rgba(76, 101, 230, 0.08) 0%,
+      transparent 50%
+    );
 }
 
 .formMainContainer {
@@ -101,11 +109,10 @@
 .titleAccent {
   width: 220px;
   height: 3px;
-  background-color: var(--yellow); 
+  background-color: var(--yellow);
   border-radius: 2px;
-  margin: 0.75rem auto 1rem auto; 
+  margin: 0.75rem auto 1rem auto;
 }
-
 
 :global(.animacion-paso) {
   animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -123,7 +130,6 @@
     transform: translateY(0);
   }
 }
-
 
 /* --- ESCRITORIO --- */
 @media (min-width: 56.25rem) {
@@ -156,11 +162,28 @@
 
 @media (max-width: 56.24rem) {
   .seccionFormulario {
-    padding-bottom: 1rem; 
+    padding-bottom: 1rem;
   }
 }
 @media (min-width: 56.25rem) {
   .seccionFormulario {
-    padding-bottom: 2.5rem; 
+    padding-bottom: 2.5rem;
   }
+}
+
+:global(.input-wrapper),
+:global(.form-group) {
+  position: relative;
+  min-height: 5rem;
+  margin-bottom: 0.5rem;
+}
+
+:global(.error-text) {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  color: var(--color-danger, #ef4444);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  animation: fadeIn 0.3s ease;
 }
