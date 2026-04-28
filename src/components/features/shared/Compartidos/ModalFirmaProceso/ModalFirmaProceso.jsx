@@ -27,9 +27,16 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
 
   return createPortal(
     <div className={styles.modalOverlay} onMouseDown={onClose}>
-      <div className={styles.modalContent} onMouseDown={(e) => e.stopPropagation()}>
+      <div
+        className={styles.modalContent}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         {paso < 3 && (
-          <button type="button" className={styles.closeButton} onClick={onClose}>
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={onClose}
+          >
             <FiX />
           </button>
         )}
@@ -127,7 +134,10 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
 
           {paso === 3 && (
             <>
-              <h3 className={styles.stepTitle}>¡Gracias por firmar!</h3>
+              <div className={styles.successIcon}>
+                <FiCheck />
+              </div>
+              <h3 className={styles.stepTitle}>¡Documento firmado!</h3>
               <p className={styles.userInfoText}>
                 El documento ha sido firmado electrónicamente con éxito.
                 Recibirá una copia en su correo.
@@ -153,6 +163,6 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

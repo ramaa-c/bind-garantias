@@ -1,3 +1,5 @@
+/* ── PAGE ────────────────────────────────────────────────────────────────────── */
+
 .firmaPage {
   position: relative;
   z-index: 1;
@@ -16,97 +18,152 @@
   z-index: -1;
   pointer-events: none;
   background-color: var(--carbon-black, #121212);
-  background-image: 
-    radial-gradient(circle at 10% 10%, rgba(245, 244, 0, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(76, 101, 230, 0.08) 0%, transparent 50%);
+  background-image:
+    radial-gradient(
+      circle at 10% 10%,
+      rgba(245, 244, 0, 0.06) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 90% 90%,
+      rgba(76, 101, 230, 0.06) 0%,
+      transparent 50%
+    );
 }
+
+/* ── CONTENEDOR PRINCIPAL ────────────────────────────────────────────────────── */
 
 .firmaMainContainer {
   display: flex;
   justify-content: center;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 1rem 2rem;
   flex: 1;
 }
 
 .firmaContainer {
-  background-color: var(--graphite);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 2.5rem;
+  background: rgba(18, 18, 18, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   width: 100%;
   max-width: 70rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  height: fit-content;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
-/* ─── HEADER ───────────────────────────────── */
+/* ── HEADER ──────────────────────────────────────────────────────────────────── */
+
 .firmaHeader {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1.5rem;
+  flex-direction: column;
+  gap: 0.875rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.firmaHeaderMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.firmaBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.625rem;
+  background: rgba(244, 245, 0, 0.07);
+  border: 1px solid rgba(244, 245, 0, 0.18);
+  border-radius: 999px;
+  color: var(--yellow, #f4f500);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.firmaId {
+  font-size: 0.72rem;
+  color: #444;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
 }
 
 .firmaTitle {
-  font-size: 1.5rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: var(--white);
-  margin: 0 0 0.25rem 0;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .firmaSubtitle {
-  color: var(--text-muted);
-  font-size: 0.85rem;
+  color: #555;
+  font-size: 0.8125rem;
   margin: 0;
+  line-height: 1.5;
 }
 
-/* ─── VISOR DEL DOCUMENTO (A4 Simulation) ────────────── */
+/* ── VISOR DEL DOCUMENTO ─────────────────────────────────────────────────────── */
+
+.documentViewerWrapper {
+  border-radius: 0.625rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 .documentViewer {
-  background-color: var(--white);
+  background-color: #fafaf8;
   color: #1a1a1a;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  height: 38rem;
+  height: 36rem;
   overflow-y: auto;
-  padding: 2rem;
-  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
-  font-family: serif;
-  line-height: 1.8;
-  font-size: 0.95rem;
+  padding: 3rem 3.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.85;
+  font-size: 0.9375rem;
 }
 
 .documentViewer::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 .documentViewer::-webkit-scrollbar-track {
-  background: #e0e0e0;
+  background: #ebebeb;
 }
 .documentViewer::-webkit-scrollbar-thumb {
-  background: #a0a0a0;
-  border-radius: 4px;
+  background: #c8c8c8;
+  border-radius: 3px;
+}
+.documentViewer::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
 }
 
 .documentContent p {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.375rem;
   text-align: justify;
+  color: #222;
 }
 
 .documentContent h3 {
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  font-size: 1.1rem;
+  margin: 2rem 0 1.25rem;
+  font-size: 1rem;
   text-align: center;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #111;
+  font-weight: 700;
 }
 
 .documentFooter {
   margin-top: 4rem;
-  padding-top: 2rem;
-  border-top: 1px solid #ccc;
+  padding-top: 1.5rem;
+  border-top: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -114,31 +171,35 @@
 }
 
 .signaturaLogo {
-  height: 1.5rem;
-  opacity: 0.7;
+  height: 1.375rem;
+  opacity: 0.5;
 }
 
 .signaturaText {
-  font-size: 0.75rem;
-  color: #666;
+  font-size: 0.72rem;
+  color: #999;
   font-family: var(--font-principal);
+  letter-spacing: 0.02em;
 }
 
-/* ─── BOTTOM STICKY BAR ──────────────────────────────── */
+/* ── BOTTOM STICKY BAR ───────────────────────────────────────────────────────── */
+
 .bottomTrackerBar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: var(--graphite);
-  border-top: 1px solid var(--border);
-  padding: 1.5rem;
+  background: rgba(14, 14, 14, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1.125rem 1.5rem;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 50;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
-  min-height: 6rem;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+  min-height: 5rem;
 }
 
 .trackerContent {
@@ -148,8 +209,50 @@
   align-items: center;
 }
 
-/* Estado de Carga */
+/* PROGRESO */
 .progressContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.progressTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.progressHint {
+  font-size: 0.75rem;
+  color: #444;
+}
+
+.progressText {
+  color: var(--yellow, #f4f500);
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+}
+
+.progressBarTrack {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background: var(--yellow, #f4f500);
+  border-radius: 2px;
+  transition: width 0.15s ease-out;
+}
+
+/* ACCIÓN LISTA */
+.actionContainer {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -157,39 +260,47 @@
   gap: 0.5rem;
 }
 
-.progressText {
-  color: var(--yellow);
-  font-size: 1rem;
+.actionReady {
+  font-size: 0.72rem;
+  color: #4caf50;
   font-weight: 600;
-  font-family: var(--font-mono);
-  letter-spacing: 0.05em;
-}
-
-.progressBarTrack {
-  width: 100%;
-  height: 6px;
-  background-color: var(--carbon-black);
-  border-radius: 3px;
-  overflow: hidden;
-}
-
-.progressBarFill {
-  height: 100%;
-  background-color: var(--yellow);
-  transition: width 0.1s ease-out;
-}
-
-/* Estado Completo */
-.actionContainer {
-  width: 100%;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 0.3rem;
 }
 
 .btnFirmarGigante {
   width: 100%;
   max-width: 18rem;
-  font-size: 1rem;
-  padding: 0.5rem;
-  height: auto;
+  height: 2.875rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* ── DESKTOP ─────────────────────────────────────────────────────────────────── */
+
+@media (min-width: 48rem) {
+  .firmaMainContainer {
+    padding: 2rem 2rem 2rem;
+  }
+
+  .firmaContainer {
+    padding: 2rem 2.5rem;
+    gap: 1.5rem;
+  }
+
+  .firmaHeader {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 1.5rem;
+  }
+
+  .documentViewer {
+    height: 40rem;
+    padding: 3.5rem 5rem;
+  }
 }

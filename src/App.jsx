@@ -1,5 +1,6 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "sonner";
 import Login from "./pages/auth/Login";
 import Registro from "./pages/auth/Registro";
 import CrearClave from "./pages/auth/CrearClave";
@@ -20,9 +21,7 @@ import RecuperarPassword from "./pages/auth/RecuperarPassword";
 import PosicionConsolidada from "./pages/posicion-consolidada/PosicionConsolidada";
 import CadenaDetalle from "./pages/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-import {
-  PantallaGestionSocios,
-} from "./components/features";
+import { PantallaGestionSocios } from "./components/features";
 import { AltaOperacion } from "./pages/alta-operacion/AltaOperacion";
 import { PantallaGestionUsuarios } from "./pages/usuarios/PantallaGestionUsuarios";
 import DocumentacionView from "./pages/documentacion/DocumentacionView";
@@ -32,11 +31,12 @@ import "./App.css";
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" richColors closeButton theme="dark" />
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/ingresar" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
-        <Route path="/crear-clave" element={<CrearClave />} />
+        <Route path="/crear-clave/:canal/:token" element={<CrearClave />} />
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
         <Route path="/recuperar-password" element={<RecuperarPassword />} />
 

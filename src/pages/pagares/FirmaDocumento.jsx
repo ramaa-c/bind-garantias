@@ -6,7 +6,6 @@ import logoSignatura from "../../assets/images/logo-signatura.svg";
 import styles from "./FirmaDocumento.module.css";
 
 export default function FirmaDocumento() {
-
   const _navigate = useNavigate();
 
   const { idSolicitud: _idSolicitud } = useParams();
@@ -48,21 +47,27 @@ export default function FirmaDocumento() {
         <div className={styles.firmaContainer}>
           <header className={styles.firmaHeader}>
             <div>
-              <h1 className={styles.firmaTitle}>Contrato OB-20436209011</h1>
+              <div className={styles.firmaHeaderMeta}>
+                <span className={styles.firmaBadge}>Firma electrónica</span>
+                <span className={styles.firmaId}>OB-20436209011</span>
+              </div>
+              <h1 className={styles.firmaTitle}>
+                Contrato de Garantía Recíproca
+              </h1>
               <p className={styles.firmaSubtitle}>
-                Enviado por BIND Garantías. Debe ver el documento completo antes
-                de firmar.
+                Enviado por BIND Garantías · Debe leer el documento completo
+                antes de firmar.
               </p>
             </div>
           </header>
 
           {/* Simulador PDF */}
-          <div
-            className={styles.documentViewer}
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-          >
-            <div className={styles.documentContent}>
+          <div className={styles.documentViewerWrapper}>
+            <div
+              className={styles.documentViewer}
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+            >
               <h3>Oferta de Contrato de Garantía Recíproca</h3>
               {[...Array(15)].map((_, i) => (
                 <p key={i}>
@@ -100,9 +105,12 @@ export default function FirmaDocumento() {
         <div className={styles.trackerContent}>
           {!isCompletamenteLeido ? (
             <div className={styles.progressContainer}>
-              <span className={styles.progressText}>
-                {porcentajeVisto}% visto
-              </span>
+              <div className={styles.progressTop}>
+                <span className={styles.progressHint}>
+                  Desplazá para leer el documento
+                </span>
+                <span className={styles.progressText}>{porcentajeVisto}%</span>
+              </div>
               <div className={styles.progressBarTrack}>
                 <div
                   className={styles.progressBarFill}
@@ -112,6 +120,9 @@ export default function FirmaDocumento() {
             </div>
           ) : (
             <div className={styles.actionContainer}>
+              <span className={styles.actionReady}>
+                ✓ Documento leído completamente
+              </span>
               <Button
                 variant="primary"
                 className={styles.btnFirmarGigante}
