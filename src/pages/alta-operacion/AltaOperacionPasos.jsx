@@ -1,7 +1,7 @@
 import React from 'react';
-import styles from './WizardOperaciones.module.css';
+import styles from './AltaOperacion.module.css';
 
-export const WizardStepper = ({ currentStep }) => {
+export const AltaOperacionPasos = ({ currentStep }) => {
   const steps = [
     { num: 1, label: 'Datos Pyme' },
     { num: 2, label: 'Datos Usuario' },

@@ -8,8 +8,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { FiRotateCcw } from "react-icons/fi";
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import { wizardOperacionesSchema } from "../../schemas/wizardOperacionesSchema";
+import { AltaOperacionSchema } from "../../schemas/AltaOperacionSchema";
 import {
   useFormPersist,
   getPersistedFormData,
@@ -31,9 +30,9 @@ import styles from "../cheques/SolicitudCheques.module.css";
 import { sociosService } from "../../services/sociosService";
 import { solicitudesService } from "../../services/solicitudesService";
 
-const STORAGE_KEY = "draft_wizard_operaciones";
+const STORAGE_KEY = "draft_alta_operacion";
 
-export const WizardOperaciones = () => {
+export const AltaOperacion = () => {
   const navigate = useNavigate();
   const [validandoCuit, setValidandoCuit] = useState(false);
   const [validandoSocioSecundario, setValidandoSocioSecundario] =
@@ -57,7 +56,7 @@ export const WizardOperaciones = () => {
   }, []);
 
   const metodosFormulario = useForm({
-    resolver: zodResolver(wizardOperacionesSchema),
+    resolver: zodResolver(AltaOperacionSchema),
     mode: "onTouched",
     defaultValues: getPersistedFormData(STORAGE_KEY, {
       cuit: "",
@@ -609,11 +608,11 @@ export const WizardOperaciones = () => {
               !(pasoActual === 6 && tipoProducto === "prestamo") && (
                 <>
                   <PanelDudas
-                    contexto="wizard_dinamico"
+                    contexto="alta_operacion"
                     pasoActual={pasoActual}
                   />
                   <BotonAyudaFlotante
-                    contexto="wizard_dinamico"
+                    contexto="alta_operacion"
                     pasoActual={pasoActual}
                   />
                 </>
