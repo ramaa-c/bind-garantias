@@ -1,91 +1,105 @@
 .pageContainer {
-  min-height: 100%;
+  min-height: 100vh;
   background-color: var(--carbon-black);
   background-image:
     linear-gradient(rgba(244, 245, 0, 0.018) 1px, transparent 1px),
     linear-gradient(90deg, rgba(244, 245, 0, 0.018) 1px, transparent 1px);
-  background-size: 48px 48px;
+  background-size: 3rem 3rem;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 2rem 1.5rem;
+  align-items: flex-start;
+  padding: 3rem 1.5rem;
 }
 
-/* ─── CONTENEDOR PRINCIPAL ───────────────────────────── */
+/* ─── EL DOCUMENTO LEGAL (HOJA A4) ───────────────────────────── */
 .tycContainer {
-  background-color: var(--graphite);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 2.5rem;
+  background-color: #ffffff;
+  color: #000000;
+  border-radius: 0.25rem;
+  padding: 3rem 4rem;
+  width: 100%;
+  max-width: 75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.tycContainer::-webkit-scrollbar {
+  width: 8px;
+}
+.tycContainer::-webkit-scrollbar-track {
+  background: #f0f0f0;
+}
+.tycContainer::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-radius: 4px;
+}
+
+/* ─── TIPOGRAFÍA Y ESTRUCTURA LEGAL ───────────────────────── */
+
+.seccionTerminos {
+  margin-bottom: 1rem;
+}
+
+.tituloSeccion {
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  text-decoration: underline;
+  margin: 1.5rem 0 0.5rem 0;
+}
+
+.seccionTerminos p {
+  font-size: 0.875rem;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+  text-align: left;
+}
+
+.seccionTerminos:first-child p:first-child {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 1.5rem;
+}
+
+/* ─── TABLA LEGAL ─── */
+.tablaLegal {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+}
+
+.tablaLegal td {
+  border: 1px solid #000000;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+.tablaLegal td:first-child {
+  width: 25%;
+  font-weight: 600;
+}
+
+/* ─── FOOTER Y ACCIONES ───────────────────────── */
+.tycFooter {
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
-  width: 100%;
-  max-width: 70rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  animation: slideUp 0.3s var(--ease-out);
-}
-.tycHeader {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1.5rem;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 3rem;
+  padding-top: 2rem;
 }
 
-.tycTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--white);
-  margin: 0 0 0.25rem 0;
-}
-
-.tycSubtitle {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.scrollBox {
-  background-color: var(--white);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  height: 34rem;
-  overflow-y: auto;
-  padding: 1.5rem 2rem;
-  color: var(--carbon-black);
-  font-size: 0.95rem;
-  line-height: 1.7;
-}
-
-.scrollBox::-webkit-scrollbar {
-  width: 6px;
-}
-.scrollBox::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollBox::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-.scrollBox::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-.scrollBox p {
-  margin-bottom: 1rem;
-  text-align: justify;
-}
-
-.scrollBox p:last-child {
-  margin-bottom: 0;
-}
-
-/* ─── CHECKBOX PERSONALIZADO ─────────────── */
+/* ─── CHECKBOX (Adaptado a fondo blanco) ─────────────── */
 .checkboxContainer {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   cursor: pointer;
   user-select: none;
-  padding: 0.5rem 0;
 }
 
 .hiddenCheckbox {
@@ -99,18 +113,14 @@
 .customCheckmark {
   height: 1.25rem;
   width: 1.25rem;
-  background-color: var(--carbon-black);
+  background-color: #ffffff;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: 0.25rem;
   display: flex;
   justify-content: center;
   align-items: center;
   transition: all 0.2s;
   flex-shrink: 0;
-}
-
-.checkboxContainer:hover .hiddenCheckbox ~ .customCheckmark {
-  border-color: var(--yellow);
 }
 
 .hiddenCheckbox:checked ~ .customCheckmark {
@@ -123,7 +133,7 @@
   display: none;
   width: 4px;
   height: 10px;
-  border: solid var(--carbon-black);
+  border: solid #000000;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
   margin-bottom: 2px;
@@ -134,24 +144,11 @@
 }
 
 .checkboxLabel {
-  color: var(--white);
+  color: #000000;
   font-size: 0.95rem;
-  font-weight: 500;
-}
-
-/* ─── CONTROLES ─────────────────────────────── */
-.tycFooter {
-  display: flex;
-  justify-content: flex-end;
-  border-top: 1px solid var(--border);
-  padding-top: 1.5rem;
+  font-weight: 600;
 }
 
 .btnAceptar {
-  min-width: 12rem;
-}
-
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  min-width: 16rem;
 }

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui";
+import { TERMINOS_Y_CONDICIONES } from "../../constants/terminosCondiciones";
 import styles from "./AceptarTerminos.module.css";
 
 export default function AceptarTerminos() {
@@ -20,114 +21,67 @@ export default function AceptarTerminos() {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.tycContainer}>
-        <div className={styles.tycHeader}>
-          <h1 className={styles.tycTitle}>Términos y Condiciones de Uso</h1>
-          <p className={styles.tycSubtitle}>
-            Por favor, lea detenidamente el siguiente documento antes de
-            continuar.
-          </p>
-        </div>
+        {TERMINOS_Y_CONDICIONES.map((seccion) => (
+          <div key={seccion.id} className={styles.seccionTerminos}>
+            {seccion.titulo && (
+              <h3 className={styles.tituloSeccion}>{seccion.titulo}</h3>
+            )}
 
-        <div className={styles.scrollBox}>
-          <p>
-            <strong>1. Aceptación de los Términos</strong>
-            <br />
-            Al acceder y utilizar la plataforma BIND Garantías, usted acepta
-            estar sujeto a estos Términos y Condiciones. Si no está de acuerdo
-            con alguna parte de los términos, no podrá acceder a nuestros
-            servicios financieros.
-          </p>
-          <p>
-            <strong>2. Uso de la Plataforma</strong>
-            <br />
-            El usuario se compromete a hacer un uso adecuado y lícito de la
-            plataforma, así como de los contenidos y servicios, de conformidad
-            con la legislación aplicable, las buenas costumbres y el orden
-            público.
-          </p>
-          <p>
-            <strong>3. Privacidad y Datos Personales</strong>
-            <br />
-            El tratamiento de sus datos personales y financieros se regirá por
-            nuestra estricta Política de Privacidad. Garantizamos la
-            confidencialidad y el manejo seguro de la información proporcionada
-            bajo normativas del BCRA.
-          </p>
-          <p>
-            <strong>4. Operaciones y Firmas Digitales</strong>
-            <br />
-            Todas las operaciones validadas mediante firma electrónica o digital
-            dentro de este entorno tienen carácter vinculante y validez legal
-            conforme a la Ley de Firma Digital (Ley 25.506).
-          </p>
-          <p>
-            <strong>5. Limitación de Responsabilidad</strong>
-            <br />
-            En ningún caso la empresa será responsable por daños indirectos,
-            incidentales o consecuentes derivados del uso o la imposibilidad de
-            uso del servicio por fallas técnicas externas.
-          </p>
-          <p>
-            <strong>1. Aceptación de los Términos</strong>
-            <br />
-            Al acceder y utilizar la plataforma BIND Garantías, usted acepta
-            estar sujeto a estos Términos y Condiciones. Si no está de acuerdo
-            con alguna parte de los términos, no podrá acceder a nuestros
-            servicios financieros.
-          </p>
-          <p>
-            <strong>2. Uso de la Plataforma</strong>
-            <br />
-            El usuario se compromete a hacer un uso adecuado y lícito de la
-            plataforma, así como de los contenidos y servicios, de conformidad
-            con la legislación aplicable, las buenas costumbres y el orden
-            público.
-          </p>
-          <p>
-            <strong>3. Privacidad y Datos Personales</strong>
-            <br />
-            El tratamiento de sus datos personales y financieros se regirá por
-            nuestra estricta Política de Privacidad. Garantizamos la
-            confidencialidad y el manejo seguro de la información proporcionada
-            bajo normativas del BCRA.
-          </p>
-          <p>
-            <strong>4. Operaciones y Firmas Digitales</strong>
-            <br />
-            Todas las operaciones validadas mediante firma electrónica o digital
-            dentro de este entorno tienen carácter vinculante y validez legal
-            conforme a la Ley de Firma Digital (Ley 25.506).
-          </p>
-          <p>
-            <strong>5. Limitación de Responsabilidad</strong>
-            <br />
-            En ningún caso la empresa será responsable por daños indirectos,
-            incidentales o consecuentes derivados del uso o la imposibilidad de
-            uso del servicio por fallas técnicas externas.
-          </p>
-        </div>
-
-        <label className={styles.checkboxContainer}>
-          <input
-            type="checkbox"
-            className={styles.hiddenCheckbox}
-            checked={aceptado}
-            onChange={handleToggle}
-          />
-          <div className={styles.customCheckmark}></div>
-          <span className={styles.checkboxLabel}>
-            He leído y acepto los términos y condiciones
-          </span>
-        </label>
+            {seccion.esTabla ? (
+              <table className={styles.tablaLegal}>
+                <tbody>
+                  <tr>
+                    <td>Usuario</td>
+                    <td>
+                      Cliente que accede a la Plataforma, y que interactúa con
+                      ella con total acceso a las funcionalidades que esta
+                      provee. El mismo podrá darse de alta como cliente,
+                      solicitar una línea de aval crediticio, así como requerir
+                      pedidos de emisión de avales, todo ello sujeto a las
+                      políticas vigentes y la aprobación de Garantías Bind SGR
+                      (de ahora en adelante “BIND SGR”).
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Usuario Autorizado</td>
+                    <td>
+                      Es un usuario, que se encuentra habilitado para acceder a
+                      la Plataforma y que podrá utilizar recursos específicos
+                      dentro de dicho sistema. Puntualmente podrá dar de alta al
+                      Cliente para que el mismo pueda ser calificado.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            ) : (
+              seccion.parrafos.map((parrafo, index) => (
+                <p key={`${seccion.id}-p-${index}`}>{parrafo}</p>
+              ))
+            )}
+          </div>
+        ))}
 
         <div className={styles.tycFooter}>
+          <label className={styles.checkboxContainer}>
+            <input
+              type="checkbox"
+              className={styles.hiddenCheckbox}
+              checked={aceptado}
+              onChange={handleToggle}
+            />
+            <div className={styles.customCheckmark}></div>
+            <span className={styles.checkboxLabel}>
+              Acepto los términos y condiciones
+            </span>
+          </label>
+
           <Button
             variant="primary"
             disabled={!aceptado}
             onClick={handleAceptarTerminos}
             className={styles.btnAceptar}
           >
-            Aceptar y Continuar
+            CONTINUAR
           </Button>
         </div>
       </div>
