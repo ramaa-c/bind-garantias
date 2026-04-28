@@ -69,121 +69,16 @@ export default function Sidebar({ isOpen, onClose }) {
           className={`${styles.collapsibleContent} ${expandedSections.general ? styles.expanded : ""}`}
         >
           <button
-            className={`${styles.link} ${isActive("/inicio") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/inicio")}
+            className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
+            onClick={() => handleNavigate("/solicitudes")}
           >
-            <FiHome className={styles.icon} /> Inicio
+            <FiFileText className={styles.icon} /> Solicitudes
           </button>
           <button
-            className={`${styles.link} ${isActive("/posicion-consolidada") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/posicion-consolidada")}
+            className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
+            onClick={() => handleNavigate("/documentacion")}
           >
-            <FiLayers className={styles.icon} /> Posición Consolidada
-          </button>
-        </div>
-
-        {/* ─── SECCIÓN: MIS LÍNEAS ─── */}
-        <div
-          className={`${styles.sectionHeader} ${styles.headingSpacing}`}
-          onClick={() => toggleSection("misLineas")}
-        >
-          <p className={styles.heading}>MIS LÍNEAS</p>
-          <FiChevronDown
-            className={`${styles.chevron} ${expandedSections.misLineas ? styles.chevronOpen : ""}`}
-          />
-        </div>
-        <div
-          className={`${styles.collapsibleContent} ${expandedSections.misLineas ? styles.expanded : ""}`}
-        >
-          <button
-            className={`${styles.link} ${isActive("/pagare") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/pagare")}
-          >
-            <FiFileText className={styles.icon} /> Línea de Pagaré USD
-          </button>
-          <button
-            className={`${styles.link} ${isActive("/cheques") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/cheques")}
-          >
-            <FiBriefcase className={styles.icon} /> Línea de Cheques
-          </button>
-          <button
-            className={`${styles.link} ${isActive("/prestamos") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/prestamos")}
-          >
-            <FiDollarSign className={styles.icon} /> Línea de Préstamos
-          </button>
-        </div>
-
-        {/* ─── SECCIÓN: TERCEROS ─── */}
-        <div
-          className={`${styles.sectionHeader} ${styles.headingSpacing}`}
-          onClick={() => toggleSection("terceros")}
-        >
-          <p className={styles.heading}>TERCEROS</p>
-          <FiChevronDown
-            className={`${styles.chevron} ${expandedSections.terceros ? styles.chevronOpen : ""}`}
-          />
-        </div>
-        <div
-          className={`${styles.collapsibleContent} ${expandedSections.terceros ? styles.expanded : ""}`}
-        >
-          <button
-            className={`${styles.link} ${isActive("/solicitud-cheques") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/solicitud-cheques")}
-          >
-            <FiEdit className={styles.icon} /> Operar Cheques
-          </button>
-          <button
-            className={`${styles.link} ${isActive("/carga-masiva-cheques") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/carga-masiva-cheques")}
-          >
-            <FiLayers className={styles.icon} /> Carga Masiva Cheques
-          </button>
-          <button
-            className={`${styles.link} ${isActive("/solicitud-pagare") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/solicitud-pagare")}
-          >
-            <FiFileText className={styles.icon} /> Operar Pagaré
-          </button>
-          <button
-            className={`${styles.link} ${isActive("/prestamos-seleccionables") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/prestamos-seleccionables")}
-          >
-            <FiUsers className={styles.icon} /> Préstamos Seleccionables
-          </button>
-          <button
-            className={`${styles.link} ${isActive("/prestamos-fijos") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/prestamos-fijos")}
-          >
-            <FiLayers className={styles.icon} /> Préstamos Fijos
-          </button>
-        </div>
-
-        {/* ─── SECCIÓN: ADMINISTRACIÓN ─── */}
-        <div
-          className={`${styles.sectionHeader} ${styles.headingSpacing}`}
-          onClick={() => toggleSection("administracion")}
-        >
-          <p className={styles.heading}>ADMINISTRACIÓN</p>
-          <FiChevronDown
-            className={`${styles.chevron} ${expandedSections.administracion ? styles.chevronOpen : ""}`}
-          />
-        </div>
-        <div
-          className={`${styles.collapsibleContent} ${expandedSections.administracion ? styles.expanded : ""}`}
-        >
-          <button
-            className={`${styles.link} ${isActive("/socios") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/socios")}
-          >
-            <FiUsers className={styles.icon} /> Directorio de Socios
-          </button>
-          <button
-            className={`${styles.link} ${isActive("/usuarios") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/usuarios")}
-          >
-            <FiShield className={styles.icon} /> Gestión de Usuarios
+            <FiLayers className={styles.icon} /> Documentación
           </button>
         </div>
       </nav>
