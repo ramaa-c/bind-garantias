@@ -104,6 +104,7 @@ export const AltaOperacion = () => {
   });
 
   const tipoProducto = useWatch({ control, name: "tipoProducto" });
+  const moneda = useWatch({ control, name: "moneda" });
   const faseSocio = useWatch({ control, name: "faseSocio" });
   const tempSocioCuit = useWatch({ control, name: "tempSocioCuit" });
   const tempSocioNombre = useWatch({ control, name: "tempSocioNombre" });
@@ -235,7 +236,7 @@ export const AltaOperacion = () => {
 
     const nuevaSolicitud = {
       id: String(Math.floor(Math.random() * 9000) + 1000),
-      tipo: data.tipoProducto === "cheque" ? "Cheque" : "Préstamo",
+      tipo: data.tipoProducto === "cheque" ? "Cheque" : data.tipoProducto === "pagare" ? "Pagaré" : "Préstamo",
       monto: montoFormateado,
       moneda: simbolo,
       estado: "Pendiente",
@@ -308,6 +309,11 @@ export const AltaOperacion = () => {
       nombre: tempSocioNombre,
       participacion: Number(tempSocioParticipacion),
       dataOriginal: tempSocioData || {},
+      email: "",
+      celular: "",
+      direccion: "",
+      provincia: "",
+      localidad: "",
     });
     setValue("faseSocio", "lista");
     setValue("tempSocioData", null);
@@ -344,7 +350,15 @@ export const AltaOperacion = () => {
         calle: datosFormulario.direccion || "",
       };
 
-      const sData = { ...socioTarget, dataOriginal: payloadPut };
+      const sData = {
+        ...socioTarget,
+        dataOriginal: payloadPut,
+        email: datosFormulario.email || "",
+        celular: datosFormulario.celular || "",
+        direccion: datosFormulario.direccion || "",
+        provincia: datosFormulario.provincia || "",
+        localidad: datosFormulario.localidad || "",
+      };
       update(socioIndex, sData);
       return true;
     } catch (err) {
@@ -441,20 +455,54 @@ export const AltaOperacion = () => {
         />
       );
     if (pasoActual === 3) {
+      const IS_DLR = String(moneda) === "2";
+      
+      let opcionesProducto = [];
+      let opcionesCalculo = [];
+      let mostrarTipoCalculo = false;
+      let disableTipoProducto = false;
+      let disableTipoCalculo = false;
+      let opcionesMoneda = [
+        { value: "5000", label: "Pesos ($)" },
+        { value: "2", label: "Dólar (U$D)" }
+      ];
+
+      if (IS_DLR) {
+        opcionesProducto = [{ value: "pagare", label: "Pagaré" }];
+        disableTipoProducto = true;
+        mostrarTipoCalculo = true;
+        opcionesCalculo = [{ value: "monto_pagare", label: "por monto de pagare" }];
+        disableTipoCalculo = true;
+      } else {
+        opcionesProducto = [
+          { value: "cheque", label: "Cheques propios" },
+          { value: "prestamo", label: "Préstamos" },
+        ];
+        if (tipoProducto === "cheque") {
+          mostrarTipoCalculo = true;
+          opcionesCalculo = [
+            { value: "monto_factura", label: "por monto de factura" },
+            { value: "monto_cheque", label: "por monto de cheque" }
+          ];
+        }
+      }
+
       return (
         <Paso3Simulador
           mostrarResultados={mostrarResultados}
           onCalcular={async () => {
-            if (await trigger(["monto", "tipoProducto", "plazo"]))
-              setMostrarResultados(true);
+            const campos = ["monto", "tipoProducto", "plazo"];
+            if (mostrarTipoCalculo) campos.push("tipoCalculo");
+            if (await trigger(campos)) setMostrarResultados(true);
           }}
           onContinuar={() => setPasoActual(4)}
           onCancelar={() => setMostrarResultados(false)}
-          opcionesProducto={[
-            { value: "cheque", label: "Línea de Cheques" },
-            { value: "prestamo", label: "Línea de Préstamo" },
-          ]}
-          mostrarTipoCalculo={false}
+          opcionesMoneda={opcionesMoneda}
+          opcionesProducto={opcionesProducto}
+          opcionesCalculo={opcionesCalculo}
+          mostrarTipoCalculo={mostrarTipoCalculo}
+          disableTipoProducto={disableTipoProducto}
+          disableTipoCalculo={disableTipoCalculo}
           labelFecha="Plazo estimado"
           labelMonto="Monto requerido"
         />
@@ -480,8 +528,8 @@ export const AltaOperacion = () => {
           guardarSocio={guardarSocio}
           editarSocio={editarSocio}
           eliminarSocio={eliminarSocio}
-          continuarAlProximoPaso={async () => {
-            if (await trigger("socios")) setPasoActual(5);
+          continuarAlProximoPaso={() => {
+            setPasoActual(5);
           }}
         />
       );
@@ -526,7 +574,7 @@ export const AltaOperacion = () => {
       }
       if (pasoActual === 7)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
-    } else if (tipoProducto === "prestamo") {
+    } else if (tipoProducto === "prestamo" || tipoProducto === "pagare") {
       if (pasoActual === 6)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     }
@@ -537,7 +585,7 @@ export const AltaOperacion = () => {
   const renderBarraProgreso = () => {
     if (pasoActual === 1) return null;
     if (pasoActual === 7 && tipoProducto === "cheque") return null;
-    if (pasoActual === 6 && tipoProducto === "prestamo") return null;
+    if (pasoActual === 6 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) return null;
 
     let hitos = ["DATOS", "SIMULADOR", "SOCIOS", "DOCUMENTOS"];
     let hitoActual = pasoActual - 1;
@@ -553,7 +601,7 @@ export const AltaOperacion = () => {
   const mostrarBotonVolver =
     pasoActual > 1 &&
     !(pasoActual === 7 && tipoProducto === "cheque") &&
-    !(pasoActual === 6 && tipoProducto === "prestamo");
+    !(pasoActual === 6 && (tipoProducto === "prestamo" || tipoProducto === "pagare"));
 
   return (
     <div className={styles.pageContainer}>
@@ -605,7 +653,7 @@ export const AltaOperacion = () => {
             </div>
 
             {!(pasoActual === 7 && tipoProducto === "cheque") &&
-              !(pasoActual === 6 && tipoProducto === "prestamo") && (
+              !(pasoActual === 6 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) && (
                 <>
                   <PanelDudas
                     contexto="alta_operacion"

@@ -43,6 +43,11 @@ export const AltaOperacionSchema = z
           nombre: z.string().min(1, "Nombre obligatorio"),
           participacion: z.number().or(z.string()).transform(Number),
           dataOriginal: z.any().optional(),
+          email: z.string().email("Email inválido").min(1, "El email es obligatorio"),
+          celular: z.string().min(10, "El celular debe ser válido"),
+          direccion: z.string().min(1, "La dirección es obligatoria"),
+          provincia: z.string().min(1, "La provincia es obligatoria"),
+          localidad: z.string().min(1, "La localidad es obligatoria"),
         }),
       )
       .optional(),

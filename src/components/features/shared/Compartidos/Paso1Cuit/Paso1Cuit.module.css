@@ -1,6 +1,58 @@
 .pasoContainer {
   width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding-top: 1.5rem; 
+  padding-top: 0.5rem;
+  gap: 1.75rem;
+}
+
+.decorativeBanner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.875rem;
+  background: rgba(245, 244, 0, 0.04);
+  border: 1px solid rgba(245, 244, 0, 0.12);
+  width: 100%;
+  max-width: 28rem;
+}
+
+.bannerIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgba(245, 244, 0, 0.08);
+  border: 1px solid rgba(245, 244, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--yellow);
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+
+.bannerText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.bannerTitle {
+  color: var(--white);
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.bannerSub {
+  color: #666;
+  font-size: 0.75rem;
+  margin: 0;
+}
+
+.inputWrapper {
+  width: 100%;
 }

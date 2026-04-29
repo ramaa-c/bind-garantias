@@ -57,4 +57,5 @@ export * from './Terceros/FormularioVincular/FormularioVincular';
 export * from './dashboard/ListaActividades/ListaActividades';
 export * from './dashboard/TarjetaLinea/TarjetaLinea';
 export * from './solicitudes/TarjetaSolicitud/TarjetaSolicitud';
+export * from './solicitudes/ModalDetalleSolicitud/ModalDetalleSolicitud';
 
