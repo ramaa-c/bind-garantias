@@ -1,135 +1,194 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui";
+import { TERMINOS_Y_CONDICIONES } from "../../constants/terminosCondiciones";
 import styles from "./AceptarTerminos.module.css";
+
+const TABLA_CONTENIDO = TERMINOS_Y_CONDICIONES.filter(
+  (s) => s.titulo && !s.esTabla,
+).map((s) => ({ id: s.id, titulo: s.titulo }));
 
 export default function AceptarTerminos() {
   const navigate = useNavigate();
   const [aceptado, setAceptado] = useState(false);
-
-  const handleToggle = () => {
-    setAceptado(!aceptado);
-  };
+  const [seccionActiva, setSeccionActiva] = useState(null);
+  const [progreso, setProgreso] = useState(0);
+  const scrollRef = useRef(null);
 
   const handleAceptarTerminos = () => {
-    if (aceptado) {
-      navigate("/inicio");
-    }
+    if (aceptado) navigate("/inicio");
+  };
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      const pct = Math.min(
+        100,
+        Math.round((scrollTop / (scrollHeight - clientHeight)) * 100),
+      );
+      setProgreso(pct);
+
+      const secciones = el.querySelectorAll("[data-section-id]");
+      let activa = null;
+      secciones.forEach((s) => {
+        const top =
+          s.getBoundingClientRect().top - el.getBoundingClientRect().top;
+        if (top <= 80) activa = s.dataset.sectionId;
+      });
+      if (activa) setSeccionActiva(activa);
+    };
+
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollTo = (id) => {
+    const el = scrollRef.current;
+    const target = el?.querySelector(`[data-section-id="${id}"]`);
+    if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.tycContainer}>
-        <div className={styles.tycHeader}>
-          <h1 className={styles.tycTitle}>Términos y Condiciones de Uso</h1>
-          <p className={styles.tycSubtitle}>
-            Por favor, lea detenidamente el siguiente documento antes de
-            continuar.
+    <div className={styles.page}>
+      {/* DOCUMENTO ────────────────────────────────────────────────────────── */}
+      <div className={styles.document}>
+        {/* ENCABEZADO DEL DOCUMENTO */}
+        <header className={styles.docHeader}>
+          <div className={styles.docHeaderMeta}>
+            <span className={styles.docBadge}>Documento legal</span>
+            <span className={styles.docVersion}>
+              Versión 1.0 · {new Date().getFullYear()}
+            </span>
+          </div>
+          <h1 className={styles.docTitle}>Términos y Condiciones</h1>
+          <p className={styles.docSubtitle}>
+            Plataforma de Alta de Línea de Clientes y Pedidos de Emisión de
+            Avales — <strong>Garantías Bind SGR</strong>
           </p>
+          <div className={styles.progressBar}>
+            <div
+              className={styles.progressFill}
+              style={{ width: `${progreso}%` }}
+            />
+          </div>
+          <span className={styles.progressLabel}>{progreso}% leído</span>
+        </header>
+
+        <div className={styles.docBody}>
+          {/* SIDEBAR TOC */}
+          <aside className={styles.toc}>
+            <p className={styles.tocTitle}>Contenido</p>
+            <nav>
+              {TABLA_CONTENIDO.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`${styles.tocItem} ${seccionActiva === item.id ? styles.tocItemActive : ""}`}
+                  onClick={() => scrollTo(item.id)}
+                >
+                  {item.titulo}
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          {/* CONTENIDO LEGAL */}
+          <main className={styles.content} ref={scrollRef}>
+            {TERMINOS_Y_CONDICIONES.map((seccion) => (
+              <div
+                key={seccion.id}
+                data-section-id={seccion.id}
+                className={styles.seccion}
+              >
+                {seccion.titulo && (
+                  <h2 className={styles.seccionTitulo}>{seccion.titulo}</h2>
+                )}
+
+                {seccion.esTabla ? (
+                  <table className={styles.tabla}>
+                    <tbody>
+                      <tr>
+                        <td className={styles.tablaTerm}>Usuario</td>
+                        <td>
+                          Cliente que accede a la Plataforma, y que interactúa
+                          con ella con total acceso a las funcionalidades que
+                          esta provee. El mismo podrá darse de alta como
+                          cliente, solicitar una línea de aval crediticio, así
+                          como requerir pedidos de emisión de avales, todo ello
+                          sujeto a las políticas vigentes y la aprobación de
+                          Garantías Bind SGR (de ahora en adelante "BIND SGR").
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className={styles.tablaTerm}>Usuario Autorizado</td>
+                        <td>
+                          Es un usuario, que se encuentra habilitado para
+                          acceder a la Plataforma y que podrá utilizar recursos
+                          específicos dentro de dicho sistema. Puntualmente
+                          podrá dar de alta al Cliente para que el mismo pueda
+                          ser calificado.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                ) : (
+                  seccion.parrafos.map((parrafo, i) => (
+                    <p key={`${seccion.id}-p-${i}`} className={styles.parrafo}>
+                      {parrafo}
+                    </p>
+                  ))
+                )}
+              </div>
+            ))}
+
+            <div style={{ height: "2rem" }} />
+          </main>
         </div>
 
-        <div className={styles.scrollBox}>
-          <p>
-            <strong>1. Aceptación de los Términos</strong>
-            <br />
-            Al acceder y utilizar la plataforma BIND Garantías, usted acepta
-            estar sujeto a estos Términos y Condiciones. Si no está de acuerdo
-            con alguna parte de los términos, no podrá acceder a nuestros
-            servicios financieros.
-          </p>
-          <p>
-            <strong>2. Uso de la Plataforma</strong>
-            <br />
-            El usuario se compromete a hacer un uso adecuado y lícito de la
-            plataforma, así como de los contenidos y servicios, de conformidad
-            con la legislación aplicable, las buenas costumbres y el orden
-            público.
-          </p>
-          <p>
-            <strong>3. Privacidad y Datos Personales</strong>
-            <br />
-            El tratamiento de sus datos personales y financieros se regirá por
-            nuestra estricta Política de Privacidad. Garantizamos la
-            confidencialidad y el manejo seguro de la información proporcionada
-            bajo normativas del BCRA.
-          </p>
-          <p>
-            <strong>4. Operaciones y Firmas Digitales</strong>
-            <br />
-            Todas las operaciones validadas mediante firma electrónica o digital
-            dentro de este entorno tienen carácter vinculante y validez legal
-            conforme a la Ley de Firma Digital (Ley 25.506).
-          </p>
-          <p>
-            <strong>5. Limitación de Responsabilidad</strong>
-            <br />
-            En ningún caso la empresa será responsable por daños indirectos,
-            incidentales o consecuentes derivados del uso o la imposibilidad de
-            uso del servicio por fallas técnicas externas.
-          </p>
-          <p>
-            <strong>1. Aceptación de los Términos</strong>
-            <br />
-            Al acceder y utilizar la plataforma BIND Garantías, usted acepta
-            estar sujeto a estos Términos y Condiciones. Si no está de acuerdo
-            con alguna parte de los términos, no podrá acceder a nuestros
-            servicios financieros.
-          </p>
-          <p>
-            <strong>2. Uso de la Plataforma</strong>
-            <br />
-            El usuario se compromete a hacer un uso adecuado y lícito de la
-            plataforma, así como de los contenidos y servicios, de conformidad
-            con la legislación aplicable, las buenas costumbres y el orden
-            público.
-          </p>
-          <p>
-            <strong>3. Privacidad y Datos Personales</strong>
-            <br />
-            El tratamiento de sus datos personales y financieros se regirá por
-            nuestra estricta Política de Privacidad. Garantizamos la
-            confidencialidad y el manejo seguro de la información proporcionada
-            bajo normativas del BCRA.
-          </p>
-          <p>
-            <strong>4. Operaciones y Firmas Digitales</strong>
-            <br />
-            Todas las operaciones validadas mediante firma electrónica o digital
-            dentro de este entorno tienen carácter vinculante y validez legal
-            conforme a la Ley de Firma Digital (Ley 25.506).
-          </p>
-          <p>
-            <strong>5. Limitación de Responsabilidad</strong>
-            <br />
-            En ningún caso la empresa será responsable por daños indirectos,
-            incidentales o consecuentes derivados del uso o la imposibilidad de
-            uso del servicio por fallas técnicas externas.
-          </p>
-        </div>
+        {/* FOOTER DE ACEPTACIÓN */}
+        <footer className={styles.docFooter}>
+          <label className={styles.checkboxRow}>
+            <span className={styles.checkboxWrapper}>
+              <input
+                type="checkbox"
+                className={styles.hiddenCheckbox}
+                checked={aceptado}
+                onChange={() => setAceptado(!aceptado)}
+              />
+              <span
+                className={`${styles.checkmark} ${aceptado ? styles.checkmarkActive : ""}`}
+              >
+                {aceptado && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path
+                      d="M1 4L3.5 6.5L9 1"
+                      stroke="#000"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </span>
+            </span>
+            <span className={styles.checkboxLabel}>
+              He leído y acepto los términos y condiciones de uso de la
+              plataforma
+            </span>
+          </label>
 
-        <label className={styles.checkboxContainer}>
-          <input
-            type="checkbox"
-            className={styles.hiddenCheckbox}
-            checked={aceptado}
-            onChange={handleToggle}
-          />
-          <div className={styles.customCheckmark}></div>
-          <span className={styles.checkboxLabel}>
-            He leído y acepto los términos y condiciones
-          </span>
-        </label>
-
-        <div className={styles.tycFooter}>
           <Button
             variant="primary"
             disabled={!aceptado}
             onClick={handleAceptarTerminos}
             className={styles.btnAceptar}
           >
-            Aceptar y Continuar
+            ACEPTAR Y CONTINUAR
           </Button>
-        </div>
+        </footer>
       </div>
     </div>
   );

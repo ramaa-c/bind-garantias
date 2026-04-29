@@ -7,32 +7,27 @@ export default function DocumentacionView() {
   const methods = useForm({
     mode: "onChange",
     defaultValues: {
-      email: "",
-      celular: "",
-      direccion: "",
-      estatuto: null,
-      balance: null,
-      acta: null,
+      certificadoPyme: null,
       poderes: null,
+      otrosDocumentos: null,
       intentoAvanzar: false,
     },
   });
 
   const onSubmit = async (data) => {
     try {
-      console.info("Ejecutando mutación con payload:", data);
+      console.info("Ejecutando mutación con payload (PUT / POST):", data);
     } catch (error) {
-      console.error("Fallo al actualizar documentación:", error);
+      console.error("Fallo al actualizar el legajo digital:", error);
     }
   };
 
   return (
     <section className={styles.pageContainer}>
       <header className={styles.pageHeader}>
-        <h1 className={styles.title}>Documentación</h1>
+        <h1 className={styles.title}>Tu perfil digital</h1>
         <p className={styles.subtitle}>
-          Gestioná y mantené actualizados los documentos corporativos para
-          operar.
+          Gestioná y mantené actualizados los datos corporativos y documentos operativos.
         </p>
       </header>
 

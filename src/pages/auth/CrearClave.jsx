@@ -1,152 +1,96 @@
-import React, { useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useForm, useWatch } from "react-hook-form";
+import React from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getPasswordScore } from "../../utils/PasswordSeguro";
-import { FiShield } from "react-icons/fi";
-
-import {
-  InputFlotante,
-  Button,
-  InputPasswordSeguro,
-} from "../../components/ui";
-import { useCambiarPassword } from "../../hooks/useUsuario";
-import { useAuthStore } from "../../store/useAuthStore";
-
+import { toast } from "sonner";
+import { FiShield, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import { InputPasswordSeguro, Button } from "../../components/ui";
+import { useEstablecerClave } from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
-// --- SCHEMA ---
-const getClaveSchema = (emailUsuario) => {
-  return z
-    .object({
-      password: z
-        .string()
-        .min(12, { message: "Mínimo 12 caracteres" })
-        .regex(/[a-z]/, { message: "Falta una minúscula" })
-        .regex(/[A-Z]/, { message: "Falta una mayúscula" })
-        .regex(/[0-9]/, { message: "Falta un número" })
-        .regex(/[!_.*@#$%^&()\-+]/, { message: "Falta un caracter especial" })
-        .refine(
-          (val) => {
-            const score = getPasswordScore(val, emailUsuario);
-            return score >= 3;
-          },
-          { message: "La contraseña es muy fácil de adivinar" },
-        ),
-
-      confirmPassword: z.string(),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-      message: "Las contraseñas no coinciden",
-      path: ["confirmPassword"],
-    });
-};
+const passwordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(12, { message: "Mínimo 12 caracteres" })
+      .regex(/[a-z]/, { message: "Incluir una minúscula" })
+      .regex(/[A-Z]/, { message: "Incluir una mayúscula" })
+      .regex(/[0-9]/, { message: "Incluir un número" })
+      .regex(/[!_.*@#$%^&()\-+]/, { message: "Incluir un caracter especial" }),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmPassword"],
+  });
 
 const CrearClave = () => {
+  const { canal, token } = useParams();
   const navigate = useNavigate();
-
-  const user = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
-
-  const emailUsuario = user?.email || "usuario@bind.com.ar";
-
-  const { mutate: actualizarClave, isPending } = useCambiarPassword();
+  const { mutate, isPending } = useEstablecerClave();
 
   const {
     register,
     handleSubmit,
-    control,
+    formState: { errors, isValid },
     setError,
-    formState: { errors, isValid, dirtyFields },
   } = useForm({
-    resolver: zodResolver(getClaveSchema(emailUsuario)),
+    resolver: zodResolver(passwordSchema),
     mode: "onChange",
   });
 
-  const currentPassword = useWatch({
-    control,
-    name: "password",
-    defaultValue: "",
-  });
-  const isPasswordValid = !errors.password && dirtyFields.password;
-
-  useEffect(() => {
-    if (!user) {
-      navigate("/login", { replace: true });
-    }
-  }, [user, navigate]);
-
   const onSubmit = (data) => {
-    if (!user) return;
-
-    const payloadCompleto = {
-      ...user,
-      hashseguridad: data.password,
-      debecambiarclave: "0",
-    };
-
-    actualizarClave(payloadCompleto, {
-      onSuccess: (updatedUser) => {
-        setUser(updatedUser || payloadCompleto);
-        navigate("/", { replace: true });
+    mutate(
+      {
+        token,
+        canal,
+        password: data.password,
       },
-      onError: (error) => {
-        setError("root.serverError", {
-          type: "manual",
-          message:
-            error?.response?.data?.message ||
-            "Ocurrió un error al intentar cambiar la clave. Intente nuevamente.",
-        });
+      {
+        onSuccess: () => {
+          toast.success("Contraseña establecida correctamente", {
+            description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
+            duration: 5000,
+          });
+          navigate("/login");
+        },
+        onError: (err) => {
+          const errMsg =
+            err.response?.data?.message || "Token inválido o expirado.";
+          toast.error("Error de activación", { description: errMsg });
+          setError("root.serverError", { type: "manual", message: errMsg });
+        },
       },
-    });
+    );
   };
 
-  if (!user) return null;
-
   return (
-    <div className={styles.layoutSplit}>
-      <section className={styles.sideForm}>
-        <div className={styles.globalLogo}>
-          <img
-            src={logoBind}
-            alt="Logo BIND"
-            width="120"
-            onClick={() => navigate("/")}
-            className={styles.clickableLogo}
-          />
+    <div className={styles.loginContainer}>
+      <section className={styles.loginFormSection}>
+        <div className={styles.loginHeader}>
+          <img src={logoBind} alt="Logo" className={styles.logo} />
+          <h1 className={styles.loginTitle}>Crear nueva contraseña</h1>
+          <p className={styles.loginSubtitle}>
+            Establecé las credenciales para acceder a tu cuenta.
+          </p>
         </div>
 
-        <div className={styles.cardModern}>
-          <div className={styles.headerText}>
-            <h2>Creá tu contraseña</h2>
-            <p>
-              Para el usuario:{" "}
-              <strong className={styles.boldWhiteText}>{emailUsuario}</strong>
-            </p>
-          </div>
+        <div className={styles.formWrapper}>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <div className={styles.inputGroup}>
+              <InputPasswordSeguro
+                label="Nueva Contraseña"
+                error={errors.password?.message}
+                disabled={isPending}
+                {...register("password")}
+              />
+            </div>
 
-          <form
-            className={styles.formContent}
-            onSubmit={handleSubmit(onSubmit)}
-            noValidate
-          >
-            <InputPasswordSeguro
-              label="Contraseña"
-              id="password"
-              currentValue={currentPassword}
-              email={emailUsuario}
-              esValido={isPasswordValid}
-              disabled={isPending}
-              {...register("password")}
-            />
-
-            <div className={styles.formFieldSpacing}>
-              <InputFlotante
-                label="Confirmar contraseña"
-                type="password"
-                id="confirmPassword"
+            <div className={styles.inputGroup}>
+              <InputPasswordSeguro
+                label="Confirmar Contraseña"
                 error={errors.confirmPassword?.message}
                 disabled={isPending}
                 {...register("confirmPassword")}
@@ -155,20 +99,17 @@ const CrearClave = () => {
 
             {errors.root?.serverError && (
               <div className={styles.serverErrorAlert}>
-                {errors.root.serverError.message}
+                <FiXCircle /> {errors.root.serverError.message}
               </div>
             )}
 
-            <div
-              className={`${styles.formActions} ${styles.formActionsMargin}`}
-            >
+            <div className={styles.formActions}>
               <Button
                 type="submit"
                 variant="primary"
                 disabled={!isValid || isPending}
-                className={!isValid || isPending ? styles.btnDisabled : ""}
               >
-                {isPending ? "ACTUALIZANDO..." : "CREAR E INGRESAR"}
+                {isPending ? "PROCESANDO..." : "ACTIVAR CUENTA"}
               </Button>
             </div>
           </form>
@@ -179,13 +120,19 @@ const CrearClave = () => {
         <div className={styles.shieldIconWrapper}>
           <FiShield size={80} color="var(--yellow)" strokeWidth={1.5} />
         </div>
-
         <div className={styles.brandContentCentered}>
-          <h2 className={styles.brandTitleLarge}>Protegé tu cuenta.</h2>
-          <p className={styles.brandSubtitle}>
-            Usá una contraseña fuerte y única. Nunca compartas tus credenciales
-            de acceso con terceros.
-          </p>
+          <h2 className={styles.brandTitleLarge}>Seguridad garantizada.</h2>
+          <ul className={styles.securityList}>
+            <li>
+              <FiCheckCircle /> Mínimo 12 caracteres
+            </li>
+            <li>
+              <FiCheckCircle /> Complejidad alfanumérica
+            </li>
+            <li>
+              <FiCheckCircle /> Caracteres especiales
+            </li>
+          </ul>
         </div>
       </section>
     </div>
