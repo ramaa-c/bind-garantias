@@ -10,6 +10,7 @@ import {
 } from "react-icons/fi";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
+import { TasasModal } from "../../features/TasasModal/TasasModal";
 
 const Navbar = ({
   texto,
@@ -20,6 +21,7 @@ const Navbar = ({
 }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isTasasModalOpen, setIsTasasModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +37,11 @@ const Navbar = ({
   const handleMenuAction = (path) => {
     setIsDropdownOpen(false);
     navigate(path);
+  };
+
+  const handleLogout = () => {
+    setIsDropdownOpen(false);
+    navigate("/login");
   };
 
   return (
@@ -83,27 +90,42 @@ const Navbar = ({
             />
           </button>
 
-          {/* Menú Desplegable */}
           {isDropdownOpen && (
             <div className={styles.dropdownMenu}>
-              <button
-                className={styles.dropdownItem}
-                onClick={() => handleMenuAction("/solicitudes")}
-              >
-                <FiFileText className={styles.itemIcon} /> Mis solicitudes
-              </button>
-              <button
-                className={styles.dropdownItem}
-                onClick={() => handleMenuAction("/documentacion")}
-              >
-                <FiFolder className={styles.itemIcon} /> Documentación
-              </button>
-              <button
-                className={styles.dropdownItem}
-                onClick={() => handleMenuAction("/tasas")}
-              >
-                <FiTrendingUp className={styles.itemIcon} /> Tasas
-              </button>
+              <div className={styles.dropdownHeader}>
+                <span className={styles.dropdownTitle}>{usuario}</span>
+                <span className={styles.dropdownSubtitle}>Administrador</span>
+              </div>
+
+              <div className={styles.dropdownBody}>
+                <button
+                  className={styles.dropdownItem}
+                  onClick={() => handleMenuAction("/solicitudes")}
+                >
+                  <FiFileText className={styles.itemIcon} /> Mis solicitudes
+                </button>
+                <button
+                  className={styles.dropdownItem}
+                  onClick={() => handleMenuAction("/documentacion")}
+                >
+                  <FiFolder className={styles.itemIcon} /> Documentación
+                </button>
+                <button
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    setIsTasasModalOpen(true);
+                  }}
+                >
+                  <FiTrendingUp className={styles.itemIcon} /> Tasas
+                </button>
+              </div>
+
+              <div className={styles.dropdownFooter}>
+                <button className={styles.logoutBtn} onClick={handleLogout}>
+                  Cerrar sesión
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -129,6 +151,11 @@ const Navbar = ({
           </div>
         )
       )}
+
+      <TasasModal
+        isOpen={isTasasModalOpen}
+        onClose={() => setIsTasasModalOpen(false)}
+      />
     </header>
   );
 };

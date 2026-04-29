@@ -94,18 +94,17 @@
   top: 100%;
   right: 0;
   margin-top: 0.5rem;
-  background-color: rgba(30, 30, 30, 0.95);
-  backdrop-filter: blur(12px);
+  background-color: var(--carbon-black, #1e1e1e);
   border: 1px solid var(--graphite, rgba(255, 255, 255, 0.08));
-  border-radius: 0.5rem;
-  min-width: 14rem;
-  padding: 0.5rem;
+  border-radius: 0.75rem;
+  min-width: 15rem;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   animation: slideDownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform-origin: top right;
+  z-index: 50;
 }
 
 @keyframes slideDownFade {
@@ -119,6 +118,39 @@
   }
 }
 
+/* Identidad (Header) */
+.dropdownHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem 0.5rem 1.5rem 0.5rem;
+  gap: 0.25rem;
+}
+
+.dropdownTitle {
+  color: var(--white, #ffffff);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.dropdownSubtitle {
+  color: var(--text-muted, #aaaaaa);
+  font-size: 0.75rem;
+}
+
+.dropdownBody {
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  padding: 0.375rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  margin-bottom: 0.75rem;
+}
+
 .dropdownItem {
   display: flex;
   align-items: center;
@@ -126,8 +158,9 @@
   width: 100%;
   background: transparent;
   border: none;
-  color: #ccc;
-  font-size: 0.9rem;
+  color: #cccccc;
+  font-size: 0.875rem;
+  font-weight: 500;
   padding: 0.75rem 1rem;
   border-radius: 0.375rem;
   cursor: pointer;
@@ -137,56 +170,42 @@
 }
 
 .itemIcon {
-  font-size: 1.1rem;
-  color: #888;
+  font-size: 1.125rem;
+  color: #888888;
   transition: color 0.2s ease;
   flex-shrink: 0;
 }
 
 .dropdownItem:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.06);
   color: var(--white, #ffffff);
 }
 
 .dropdownItem:hover .itemIcon {
-  color: var(--yellow, #f5f400);
-}
-
-/* --- LOGOUT --- */
-.dropdownDivider {
-  border: none;
-  border-top: 1px solid var(--graphite, rgba(255, 255, 255, 0.08));
-  margin: 0.25rem 0;
-  width: 100%;
-}
-
-.logoutItem {
-  color: #e57373;
-}
-
-.logoutItem .itemIcon {
-  color: #e57373;
-}
-
-.logoutItem:hover {
-  background-color: rgba(229, 115, 115, 0.1);
-  color: #ef5350;
-}
-
-.logoutItem:hover .itemIcon {
-  color: #ef5350;
-}
-
-.loginContainer {
-  font-size: 0.9rem;
   color: var(--white, #ffffff);
 }
 
-.link {
-  color: var(--yellow, #f5f400);
-  font-weight: bold;
-  margin-left: 0.5rem;
+.dropdownFooter {
+  display: flex;
+  width: 100%;
+}
+
+.logoutBtn {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--white, #ffffff);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.75rem;
+  border-radius: 2rem;
+  border: none;
   cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.logoutBtn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 /* --- ESCRITORIO --- */
