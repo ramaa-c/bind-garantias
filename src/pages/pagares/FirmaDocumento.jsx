@@ -7,70 +7,70 @@ import styles from "./FirmaDocumento.module.css";
 
 export default function FirmaDocumento() {
   const _navigate = useNavigate();
-
   const { idSolicitud: _idSolicitud } = useParams();
 
-  const scrollContainerRef = useRef(null);
-  const [porcentajeVisto, setPorcentajeVisto] = useState(0);
-
+  const scrollRef = useRef(null);
+  const [progreso, setProgreso] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleScroll = () => {
-    if (!scrollContainerRef.current) return;
-
-    const { scrollTop, scrollHeight, clientHeight } =
-      scrollContainerRef.current;
-
+    if (!scrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
     if (scrollHeight <= clientHeight) {
-      setPorcentajeVisto(100);
+      setProgreso(100);
       return;
     }
-
-    const scrolled = (scrollTop / (scrollHeight - clientHeight)) * 100;
-
-    const porcentajeCalculado = Math.min(100, Math.max(0, scrolled));
-
-    setPorcentajeVisto((prev) =>
-      Math.max(prev, Math.round(porcentajeCalculado)),
+    const pct = Math.min(
+      100,
+      Math.round((scrollTop / (scrollHeight - clientHeight)) * 100),
     );
+    setProgreso((prev) => Math.max(prev, pct));
   };
 
-  const isCompletamenteLeido = porcentajeVisto === 100;
-
-  const handleAbrirModalFirma = () => {
-    setIsModalOpen(true);
-  };
+  const leido = progreso === 100;
 
   return (
-    <div className={styles.firmaPage}>
-      <main className={styles.firmaMainContainer}>
-        <div className={styles.firmaContainer}>
-          <header className={styles.firmaHeader}>
-            <div>
-              <div className={styles.firmaHeaderMeta}>
-                <span className={styles.firmaBadge}>Firma electrónica</span>
-                <span className={styles.firmaId}>OB-20436209011</span>
-              </div>
-              <h1 className={styles.firmaTitle}>
-                Contrato de Garantía Recíproca
-              </h1>
-              <p className={styles.firmaSubtitle}>
-                Enviado por BIND Garantías · Debe leer el documento completo
-                antes de firmar.
-              </p>
-            </div>
-          </header>
-
-          {/* Simulador PDF */}
-          <div className={styles.documentViewerWrapper}>
+    <div className={styles.page}>
+      <div className={styles.document}>
+        {/* ENCABEZADO */}
+        <header className={styles.docHeader}>
+          <div className={styles.docHeaderMeta}>
+            <span className={styles.docBadge}>Firma electrónica</span>
+            <span className={styles.docVersion}>Contrato OB-20436209011</span>
+          </div>
+          <h1 className={styles.docTitle}>Contrato de Garantía Recíproca</h1>
+          <p className={styles.docSubtitle}>
+            Enviado por <strong>BIND Garantías</strong>. Debe leer el documento
+            completo antes de poder firmarlo.
+          </p>
+          <div className={styles.progressBar}>
             <div
-              className={styles.documentViewer}
-              ref={scrollContainerRef}
-              onScroll={handleScroll}
-            >
-              <h3>Oferta de Contrato de Garantía Recíproca</h3>
+              className={styles.progressFill}
+              style={{ width: `${progreso}%` }}
+            />
+          </div>
+          <div className={styles.progressMeta}>
+            <span className={styles.progressLabel}>{progreso}% leído</span>
+            {leido && (
+              <span className={styles.progressDone}>✓ Listo para firmar</span>
+            )}
+          </div>
+        </header>
+
+        {/* VISOR */}
+        <div className={styles.docBody}>
+          <div
+            className={styles.viewer}
+            ref={scrollRef}
+            onScroll={handleScroll}
+          >
+            <div className={styles.viewerContent}>
+              <h3 className={styles.viewerTitle}>
+                Oferta de Contrato de Garantía Recíproca
+              </h3>
+
               {[...Array(15)].map((_, i) => (
-                <p key={i}>
+                <p key={i} className={styles.viewerParagraph}>
                   Por medio de la presente, el Banco de Servicios Financieros
                   S.A., sociedad inscripta en el Registro Público de Comercio,
                   con domicilio en la Ciudad Autónoma de Buenos Aires, establece
@@ -85,7 +85,7 @@ export default function FirmaDocumento() {
                 </p>
               ))}
 
-              <div className={styles.documentFooter}>
+              <div className={styles.viewerFooter}>
                 <img
                   src={logoSignatura}
                   alt="Signatura"
@@ -98,42 +98,38 @@ export default function FirmaDocumento() {
             </div>
           </div>
         </div>
-      </main>
 
-      {/* BOTTOM TRACKER BAR */}
-      <div className={styles.bottomTrackerBar}>
-        <div className={styles.trackerContent}>
-          {!isCompletamenteLeido ? (
-            <div className={styles.progressContainer}>
-              <div className={styles.progressTop}>
-                <span className={styles.progressHint}>
-                  Desplazá para leer el documento
-                </span>
-                <span className={styles.progressText}>{porcentajeVisto}%</span>
-              </div>
-              <div className={styles.progressBarTrack}>
+        {/* FOOTER DE FIRMA */}
+        <footer className={styles.docFooter}>
+          {!leido ? (
+            <div className={styles.footerPending}>
+              <div className={styles.footerTrack}>
                 <div
-                  className={styles.progressBarFill}
-                  style={{ width: `${porcentajeVisto}%` }}
+                  className={styles.footerFill}
+                  style={{ width: `${progreso}%` }}
                 />
               </div>
+              <span className={styles.footerHint}>
+                Desplace el documento para habilitiar la firma
+              </span>
             </div>
           ) : (
-            <div className={styles.actionContainer}>
-              <span className={styles.actionReady}>
-                ✓ Documento leído completamente
+            <div className={styles.footerReady}>
+              <span className={styles.footerReadyText}>
+                Documento leído al 100% — puede proceder con la firma
               </span>
               <Button
                 variant="primary"
-                className={styles.btnFirmarGigante}
-                onClick={handleAbrirModalFirma}
+                className={styles.btnFirmar}
+                onClick={() => setIsModalOpen(true)}
               >
                 Firmar Documento
               </Button>
             </div>
           )}
-        </div>
+        </footer>
       </div>
+
       <ModalFirmaProceso
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

@@ -7,17 +7,18 @@ import { useEscape } from "../../../../../hooks/useEscape";
 import styles from "./ModalFirmaProceso.module.css";
 import logoAfip from "../../../../../assets/images/afip.svg";
 
+const PASOS = [
+  { label: "Identidad", icon: <FiUser size={15} /> },
+  { label: "Firmar", icon: <FiPenTool size={15} /> },
+  { label: "Listo", icon: <FiCheck size={15} /> },
+];
+
 export default function ModalFirmaProceso({ isOpen, onClose }) {
   const navigate = useNavigate();
   const [paso, setPaso] = useState(1);
 
   useEscape(onClose, isOpen);
-
   if (!isOpen) return null;
-
-  const handleNextStep = () => {
-    setPaso((prev) => prev + 1);
-  };
 
   const handleFinalizar = () => {
     setPaso(1);
@@ -26,138 +27,135 @@ export default function ModalFirmaProceso({ isOpen, onClose }) {
   };
 
   return createPortal(
-    <div className={styles.modalOverlay} onMouseDown={onClose}>
-      <div
-        className={styles.modalContent}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+    <div className={styles.overlay} onMouseDown={onClose}>
+      <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
         {paso < 3 && (
-          <button
-            type="button"
-            className={styles.closeButton}
-            onClick={onClose}
-          >
-            <FiX />
+          <button type="button" className={styles.closeBtn} onClick={onClose}>
+            <FiX size={16} />
           </button>
         )}
 
-        <div className={styles.stepper}>
-          {/* Paso 1: Identidad */}
-          <div className={styles.stepItem}>
-            <div
-              className={`${styles.stepCircle} ${paso >= 1 ? (paso > 1 ? styles.completed : styles.active) : ""}`}
-            >
-              {paso > 1 ? <FiCheck /> : <FiUser />}
-            </div>
-            <span
-              className={`${styles.stepLabel} ${paso >= 1 ? styles.active : ""}`}
-            >
-              Identidad
-            </span>
-          </div>
-          <div className={styles.stepperLine} />
-
-          {/* Paso 2: Firmar */}
-          <div className={styles.stepItem}>
-            <div
-              className={`${styles.stepCircle} ${paso >= 2 ? (paso > 2 ? styles.completed : styles.active) : ""}`}
-            >
-              {paso > 2 ? <FiCheck /> : <FiPenTool />}
-            </div>
-            <span
-              className={`${styles.stepLabel} ${paso >= 2 ? styles.active : ""}`}
-            >
-              Firmar
-            </span>
-          </div>
-          <div className={styles.stepperLine} />
-
-          {/* Paso 3: Completado */}
-          <div className={styles.stepItem}>
-            <div
-              className={`${styles.stepCircle} ${paso === 3 ? styles.completed : ""}`}
-            >
-              <FiCheck />
-            </div>
-            <span
-              className={`${styles.stepLabel} ${paso === 3 ? styles.active : ""}`}
-            >
-              Completado
-            </span>
-          </div>
+        <div className={styles.modalMeta}>
+          <span className={styles.modalBadge}>Firma electrónica</span>
         </div>
 
-        {/* CONTENIDO DINÁMICO POR PASO */}
-        <div className={styles.stepBody}>
+        <div className={styles.stepper}>
+          {PASOS.map((p, i) => {
+            const num = i + 1;
+            const isActive = paso === num;
+            const isDone = paso > num;
+            return (
+              <React.Fragment key={p.label}>
+                <div className={styles.stepItem}>
+                  <div
+                    className={`${styles.stepCircle} ${isActive ? styles.stepActive : ""} ${isDone ? styles.stepDone : ""}`}
+                  >
+                    {isDone ? <FiCheck size={14} /> : p.icon}
+                  </div>
+                  <span
+                    className={`${styles.stepLabel} ${isActive || isDone ? styles.stepLabelActive : ""}`}
+                  >
+                    {p.label}
+                  </span>
+                </div>
+                {i < PASOS.length - 1 && (
+                  <div
+                    className={`${styles.stepLine} ${isDone ? styles.stepLineDone : ""}`}
+                  />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* CUERPO */}
+        <div className={styles.body}>
+          {/* PASO 1 */}
           {paso === 1 && (
             <>
-              <h3 className={styles.stepTitle}>
-                Por favor valide su identidad
-              </h3>
-              <div className={styles.userDataBox}>
-                <span>asesoramiento@bindgarantias.com.ar</span>
-                <FiCheck color="var(--yellow)" />
+              <h3 className={styles.bodyTitle}>Validá tu identidad</h3>
+              <p className={styles.bodyText}>
+                Antes de firmar, confirme que usted es el titular registrado en
+                la plataforma.
+              </p>
+              <div className={styles.identityCard}>
+                <span className={styles.identityEmail}>
+                  asesoramiento@bindgarantias.com.ar
+                </span>
+                <FiCheck size={14} color="#4caf50" />
               </div>
+              <p className={styles.identityName}>
+                BIND ASESORAMIENTO · CUIT 30-71111111-2
+              </p>
               <Button
                 type="button"
                 variant="primary"
-                className={`${styles.btnAccion} ${styles.btnAfip}`}
-                onClick={handleNextStep}
+                className={styles.btnAction}
+                onClick={() => setPaso(2)}
               >
-                Validar AFIP{" "}
+                Validar con AFIP
                 <img src={logoAfip} alt="AFIP" className={styles.logoAfip} />
               </Button>
-              <p className={styles.userInfoText}>
-                Registrado como BIND ASESORAMIENTO <br />
-                CUIT 30-71111111-2
-              </p>
             </>
           )}
 
+          {/* PASO 2 */}
           {paso === 2 && (
             <>
-              <h3 className={styles.stepTitle}>Identidad verificada</h3>
-              <p className={styles.userInfoText}>
-                Al presionar el botón debajo, usted confirma la firma
-                electrónica de este documento.
+              <div className={styles.successIcon}>
+                <FiCheck size={24} />
+              </div>
+              <h3 className={styles.bodyTitle}>Identidad verificada</h3>
+              <p className={styles.bodyText}>
+                Al presionar el botón confirma la firma electrónica de este
+                documento. Esta acción es irrevocable.
               </p>
+              <div className={styles.legalNotice}>
+                La firma electrónica tiene plena validez jurídica conforme a la
+                Ley 25.506 de Firma Digital de la República Argentina.
+              </div>
               <Button
                 type="button"
                 variant="primary"
-                className={styles.btnAccion}
-                onClick={handleNextStep}
+                className={styles.btnAction}
+                onClick={() => setPaso(3)}
               >
-                Firmar Documento
+                <FiPenTool size={14} /> Firmar Documento
               </Button>
             </>
           )}
 
+          {/* PASO 3 */}
           {paso === 3 && (
             <>
-              <div className={styles.successIcon}>
-                <FiCheck />
+              <div
+                className={`${styles.successIcon} ${styles.successIconDone}`}
+              >
+                <FiCheck size={24} />
               </div>
-              <h3 className={styles.stepTitle}>¡Documento firmado!</h3>
-              <p className={styles.userInfoText}>
+              <h3 className={styles.bodyTitle}>¡Documento firmado!</h3>
+              <p className={styles.bodyText}>
                 El documento ha sido firmado electrónicamente con éxito.
-                Recibirá una copia en su correo.
+                Recibirá una copia en su correo electrónico registrado.
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                className={styles.btnAccion}
-                onClick={() => console.log("Descargando PDF...")}
-              >
-                <FiDownload style={{ marginRight: "8px" }} /> Descargar Copia
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                className={styles.btnAccion}
-                onClick={handleFinalizar}
-              >
-                Finalizar
-              </Button>
+              <div className={styles.btnGroup}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className={styles.btnAction}
+                  onClick={() => console.log("Descargando PDF...")}
+                >
+                  <FiDownload size={13} /> Descargar copia
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  className={styles.btnAction}
+                  onClick={handleFinalizar}
+                >
+                  Finalizar
+                </Button>
+              </div>
             </>
           )}
         </div>

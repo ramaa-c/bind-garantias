@@ -1,169 +1,190 @@
 /* ── PAGE ────────────────────────────────────────────────────────────────────── */
 
-.firmaPage {
-  position: relative;
-  z-index: 1;
+.page {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  padding-bottom: 6rem;
-}
-
-.firmaPage::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  pointer-events: none;
   background-color: var(--carbon-black, #121212);
   background-image:
     radial-gradient(
       circle at 10% 10%,
-      rgba(245, 244, 0, 0.06) 0%,
+      rgba(244, 245, 0, 0.05) 0%,
       transparent 50%
     ),
     radial-gradient(
       circle at 90% 90%,
-      rgba(76, 101, 230, 0.06) 0%,
+      rgba(76, 101, 230, 0.05) 0%,
       transparent 50%
     );
-}
-
-/* ── CONTENEDOR PRINCIPAL ────────────────────────────────────────────────────── */
-
-.firmaMainContainer {
   display: flex;
   justify-content: center;
-  padding: 1.5rem 1rem 2rem;
-  flex: 1;
+  align-items: flex-start;
+  padding: 2rem 1rem;
 }
 
-.firmaContainer {
+/* ── DOCUMENTO ───────────────────────────────────────────────────────────────── */
+
+.document {
+  width: 100%;
+  max-width: 60rem;
   background: rgba(18, 18, 18, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 1.25rem;
-  padding: 1.5rem;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  width: 100%;
-  max-width: 70rem;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04),
     0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
-/* ── HEADER ──────────────────────────────────────────────────────────────────── */
+/* ── ENCABEZADO ──────────────────────────────────────────────────────────────── */
 
-.firmaHeader {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-  padding-bottom: 1.25rem;
+.docHeader {
+  padding: 1.75rem 2rem 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.015);
 }
 
-.firmaHeaderMeta {
+.docHeaderMeta {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
+  margin-bottom: 0.875rem;
 }
 
-.firmaBadge {
+.docBadge {
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.625rem;
-  background: rgba(244, 245, 0, 0.07);
-  border: 1px solid rgba(244, 245, 0, 0.18);
+  background: rgba(244, 245, 0, 0.08);
+  border: 1px solid rgba(244, 245, 0, 0.2);
   border-radius: 999px;
   color: var(--yellow, #f4f500);
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
 }
 
-.firmaId {
-  font-size: 0.72rem;
+.docVersion {
+  font-size: 0.75rem;
   color: #444;
-  font-family: var(--font-mono);
-  letter-spacing: 0.04em;
+  font-family: var(--font-mono, monospace);
 }
 
-.firmaTitle {
-  font-size: 1.125rem;
+.docTitle {
+  color: var(--white, #fff);
+  font-size: 1.375rem;
   font-weight: 700;
-  color: var(--white);
-  margin: 0;
-  letter-spacing: -0.02em;
+  margin: 0 0 0.375rem;
+  letter-spacing: -0.025em;
   line-height: 1.2;
 }
 
-.firmaSubtitle {
+.docSubtitle {
   color: #555;
-  font-size: 0.8125rem;
-  margin: 0;
+  font-size: 0.875rem;
+  margin: 0 0 1.25rem;
   line-height: 1.5;
 }
 
-/* ── VISOR DEL DOCUMENTO ─────────────────────────────────────────────────────── */
-
-.documentViewerWrapper {
-  border-radius: 0.625rem;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+.docSubtitle strong {
+  color: #888;
+  font-weight: 600;
 }
 
-.documentViewer {
-  background-color: #fafaf8;
-  color: #1a1a1a;
+/* BARRA DE PROGRESO */
+.progressBar {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--yellow, #f4f500);
+  border-radius: 1px;
+  transition: width 0.2s ease-out;
+}
+
+.progressMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progressLabel {
+  font-size: 0.68rem;
+  color: #444;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressDone {
+  font-size: 0.68rem;
+  color: #4caf50;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ── CUERPO / VISOR ──────────────────────────────────────────────────────────── */
+
+.docBody {
+  flex: 1;
+}
+
+.viewer {
   height: 36rem;
   overflow-y: auto;
-  padding: 3rem 3.5rem;
-  font-family: Georgia, "Times New Roman", serif;
-  line-height: 1.85;
-  font-size: 0.9375rem;
+  padding: 2rem 2rem 1rem;
+  scroll-behavior: smooth;
 }
 
-.documentViewer::-webkit-scrollbar {
-  width: 6px;
+.viewer::-webkit-scrollbar {
+  width: 5px;
 }
-.documentViewer::-webkit-scrollbar-track {
-  background: #ebebeb;
+.viewer::-webkit-scrollbar-track {
+  background: transparent;
 }
-.documentViewer::-webkit-scrollbar-thumb {
-  background: #c8c8c8;
+.viewer::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
 }
-.documentViewer::-webkit-scrollbar-thumb:hover {
-  background: #aaa;
+.viewer::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
-.documentContent p {
-  margin-bottom: 1.375rem;
-  text-align: justify;
-  color: #222;
+/* CONTENIDO DEL DOCUMENTO */
+.viewerContent {
+  max-width: 52rem;
+  margin: 0 auto;
 }
 
-.documentContent h3 {
-  margin: 2rem 0 1.25rem;
-  font-size: 1rem;
-  text-align: center;
+.viewerTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #111;
-  font-weight: 700;
+  color: var(--yellow, #f4f500);
+  text-align: center;
+  margin: 0 0 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(244, 245, 0, 0.1);
 }
 
-.documentFooter {
-  margin-top: 4rem;
+.viewerParagraph {
+  font-size: 0.875rem;
+  line-height: 1.8;
+  color: #888;
+  margin: 0 0 1.25rem;
+  text-align: justify;
+}
+
+.viewerFooter {
+  margin-top: 3rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -171,136 +192,118 @@
 }
 
 .signaturaLogo {
-  height: 1.375rem;
-  opacity: 0.5;
+  height: 1.25rem;
+  opacity: 0.4;
+  filter: invert(1);
 }
 
 .signaturaText {
   font-size: 0.72rem;
-  color: #999;
-  font-family: var(--font-principal);
-  letter-spacing: 0.02em;
+  color: #333;
+  font-family: var(--font-mono, monospace);
 }
 
-/* ── BOTTOM STICKY BAR ───────────────────────────────────────────────────────── */
+/* ── FOOTER DE FIRMA ─────────────────────────────────────────────────────────── */
 
-.bottomTrackerBar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(14, 14, 14, 0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 1.125rem 1.5rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 50;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
-  min-height: 5rem;
-}
-
-.trackerContent {
-  width: 100%;
-  max-width: 52rem;
+.docFooter {
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+  padding: 1.25rem 2rem;
+  min-height: 4.5rem;
   display: flex;
   align-items: center;
 }
 
-/* PROGRESO */
-.progressContainer {
+/* Estado: pendiente */
+.footerPending {
   width: 100%;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.625rem;
 }
 
-.progressTop {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.progressHint {
-  font-size: 0.75rem;
-  color: #444;
-}
-
-.progressText {
-  color: var(--yellow, #f4f500);
-  font-size: 0.875rem;
-  font-weight: 700;
-  font-family: var(--font-mono);
-  letter-spacing: 0.06em;
-}
-
-.progressBarTrack {
+.footerTrack {
   width: 100%;
+  max-width: 28rem;
   height: 3px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 2px;
   overflow: hidden;
 }
 
-.progressBarFill {
+.footerFill {
   height: 100%;
   background: var(--yellow, #f4f500);
   border-radius: 2px;
-  transition: width 0.15s ease-out;
+  transition: width 0.2s ease-out;
 }
 
-/* ACCIÓN LISTA */
-.actionContainer {
+.footerHint {
+  font-size: 0.75rem;
+  color: #333;
+  letter-spacing: 0.02em;
+}
+
+/* Estado: listo */
+.footerReady {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
-.actionReady {
-  font-size: 0.72rem;
+.footerReadyText {
+  font-size: 0.78rem;
   color: #4caf50;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
 }
 
-.btnFirmarGigante {
-  width: 100%;
-  max-width: 18rem;
+.btnFirmar {
+  min-width: 14rem;
   height: 2.875rem;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
 }
 
 /* ── DESKTOP ─────────────────────────────────────────────────────────────────── */
 
-@media (min-width: 48rem) {
-  .firmaMainContainer {
-    padding: 2rem 2rem 2rem;
+@media (min-width: 56.25rem) {
+  .page {
+    padding: 2.5rem 2rem;
+    align-items: center;
+    min-height: 100vh;
   }
 
-  .firmaContainer {
-    padding: 2rem 2.5rem;
-    gap: 1.5rem;
+  .document {
+    height: 90vh;
+    max-height: 52rem;
   }
 
-  .firmaHeader {
+  .docBody {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .viewer {
+    height: 100%;
+  }
+
+  .footerReady {
     flex-direction: row;
     justify-content: space-between;
-    align-items: flex-end;
-    padding-bottom: 1.5rem;
   }
 
-  .documentViewer {
-    height: 40rem;
-    padding: 3.5rem 5rem;
+  .footerPending {
+    flex-direction: row;
+    justify-content: center;
+    gap: 1.25rem;
+    align-items: center;
+  }
+
+  .footerTrack {
+    flex: 1;
+    max-width: 24rem;
   }
 }

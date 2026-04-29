@@ -106,11 +106,32 @@
 .viewerInfo {
   color: var(--text-muted, #aaaaaa);
   font-size: 0.875rem;
-  margin: 0;
+  line-height: 1.5;
+  display: inline-block;
 }
 
 .viewerInfo strong {
   color: #cccccc;
+}
+
+.helperLink {
+  color: var(--yellow, #f5f400);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.25rem;
+  transition: opacity 0.2s ease;
+}
+
+.helperLink:hover {
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.linkIcon {
+  margin-top: 1px;
 }
 
 .dropzoneContainer {
@@ -121,6 +142,96 @@
 
 .dropzoneContainer > * {
   width: 100%;
+}
+
+/* EXTENSIÓN PARA PERFIL Y DATOS IDENTIFICATORIOS */
+.perfilContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.perfilGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.perfilDataRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.perfilLabelContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.perfilIcon {
+  color: var(--text-muted, #aaaaaa);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.perfilLabel {
+  color: var(--text-muted, #aaaaaa);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.perfilValue {
+  color: var(--white, #ffffff);
+  font-size: 0.95rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.sociosContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background-color: rgba(76, 222, 128, 0.05);
+  border: 1px dashed rgba(76, 222, 128, 0.2);
+  border-radius: 0.5rem;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  flex-grow: 1;
+  min-height: 15rem;
+}
+
+.sociosPlaceholderIcon {
+  color: #4ade80;
+  opacity: 0.8;
+}
+
+.sociosPlaceholderText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sociosPlaceholderText p {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #4ade80;
+}
+
+.sociosPlaceholderText span {
+  font-size: 0.875rem;
+  color: var(--text-muted, #aaaaaa);
+  max-width: 20rem;
 }
 
 /* Escritorio */
@@ -186,5 +297,17 @@
     background-color: transparent;
     height: 100%;
     overflow-y: auto;
+  }
+
+  .perfilDataRow {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .perfilLabelContainer {
+    width: 10rem;
+    flex-shrink: 0;
+    margin-top: 0.15rem;
   }
 }
