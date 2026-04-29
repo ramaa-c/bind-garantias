@@ -229,7 +229,7 @@ export default function Paso4Socios({
             {socios.map((socio, index) => (
               <div className={styles.listItem} key={socio.cuit}>
                 <div className={styles.itemLeft}>
-                  <Avatar name={socio.nombre} />
+                  <Avatar name={socio.nombre} number={index + 1} />
                   <div className={styles.itemInfo}>
                     <p className={styles.itemName}>{socio.nombre}</p>
                     <p className={styles.itemDetails}>

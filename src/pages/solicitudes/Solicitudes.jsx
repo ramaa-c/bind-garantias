@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { FiPlus, FiSearch } from "react-icons/fi";
 import { FaMoneyBillWave } from "react-icons/fa";
 import { BotonVolver, Button, Select, Spinner } from "../../components/ui";
-import { TarjetaSolicitud } from "../../components/features";
+import { TarjetaSolicitud, ModalDetalleSolicitud } from "../../components/features";
 import ModalConfirmacionBorrador from "../../components/features/shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
 import { useObtenerSolicitudesEnProceso } from "../../hooks/useSolicitudes";
 
@@ -84,10 +84,10 @@ export default function Solicitudes() {
 
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
-  const [nuevasSolicitudesLocales, setNuevasSolicitudesLocales] = useState([]);
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
 
   // Integración con Backend
-  const { data: solicitudesReal, isLoading } = useObtenerSolicitudesEnProceso("30714562343"); // CUIT de prueba
+  const { data: solicitudesReal, isLoading } = useObtenerSolicitudesEnProceso("33711316839"); // CUIT de prueba
 
   const listaSolicitudes = useMemo(() => {
     const reales = (solicitudesReal || []).map(s => ({
@@ -100,16 +100,11 @@ export default function Solicitudes() {
       isReal: true
     }));
 
-    return [...reales, ...nuevasSolicitudesLocales, ...mockSolicitudesBase];
-  }, [solicitudesReal, nuevasSolicitudesLocales]);
+    return [...reales, ...mockSolicitudesBase];
+  }, [solicitudesReal]);
 
   useEffect(() => {
     if (location.state?.nuevaSolicitud) {
-      setNuevasSolicitudesLocales((prev) => {
-        if (prev.some((s) => s.id === location.state.nuevaSolicitud.id))
-          return prev;
-        return [location.state.nuevaSolicitud, ...prev];
-      });
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -236,7 +231,7 @@ export default function Solicitudes() {
             </div>
           ) : listaSolicitudes.length > 0 ? (
             listaSolicitudes.map((item) => (
-              <TarjetaSolicitud key={item.id} solicitud={item} />
+              <TarjetaSolicitud key={item.id} solicitud={item} onVerDetalle={setSolicitudSeleccionada} />
             ))
           ) : (
             <div className={styles.emptyState}>
@@ -251,6 +246,11 @@ export default function Solicitudes() {
         onClose={handleCloseModalOnly}
         onConfirm={handleConfirmStartNew}
         onContinueBorrador={handleCloseContinueDraft}
+      />
+      <ModalDetalleSolicitud
+        isOpen={!!solicitudSeleccionada}
+        onClose={() => setSolicitudSeleccionada(null)}
+        solicitud={solicitudSeleccionada}
       />
     </div>
   );

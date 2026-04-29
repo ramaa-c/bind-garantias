@@ -41,28 +41,36 @@ const customStyles = {
   }),
   menu: (base, state) => ({
     ...base,
-    backgroundColor: "#1e1e1e",
-    border: "1px solid #333",
-    borderRadius: "0.5rem",
+    backgroundColor: "#181818",
+    border: "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "0.75rem",
+    boxShadow: "0 16px 48px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)",
     zIndex: 50,
     overflow: "hidden",
     width: state.selectProps.icon ? "calc(100% + 3.2rem)" : "100%",
     marginLeft: state.selectProps.icon ? "-3.2rem" : "0",
+    marginTop: "0.375rem",
+  }),
+  menuList: (base) => ({
+    ...base,
+    padding: "0.375rem",
   }),
   option: (base, state) => ({
     ...base,
     backgroundColor: state.isSelected
       ? "var(--yellow)"
       : state.isFocused
-        ? "rgba(244, 245, 0, 0.1)"
+        ? "rgba(244, 245, 0, 0.08)"
         : "transparent",
     color: state.isSelected
       ? "#000"
       : state.isFocused
         ? "var(--yellow)"
-        : "var(--white)",
+        : "#ccc",
     cursor: "pointer",
     padding: "0.75rem 1rem",
+    borderRadius: "0.5rem",
+    fontSize: "0.9rem",
     "&:active": { backgroundColor: "var(--yellow)", color: "#000" },
   }),
 };
