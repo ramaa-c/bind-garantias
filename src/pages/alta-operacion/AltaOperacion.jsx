@@ -612,8 +612,8 @@ export const AltaOperacion = () => {
               {mostrarBotonVolver && <BotonVolver onClick={handleVolver} />}
               {pasoActual === 1 && (
                 <BotonVolver
-                  onClick={() => navigate("/inicio")}
-                  texto="Volver al inicio"
+                  onClick={() => navigate("/solicitudes")}
+                  texto="Volver a lista"
                 />
               )}
               <BotonVolver

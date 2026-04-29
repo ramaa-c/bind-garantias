@@ -152,40 +152,32 @@ export default function Solicitudes() {
 
   return (
     <div className={styles.pageContainer}>
-      {/* HEADER */}
-      <header className={styles.header}>
-        <div className={styles.titleGroup}>
-          <div className={styles.iconCircle}>
+      {/* HEADER COMPACTO */}
+      <header className={styles.compactHeader}>
+        <div className={styles.headerLeft}>
+          <div className={styles.iconCircleSmall}>
             <FaMoneyBillWave />
           </div>
-          <div>
+          <div className={styles.titleWrapper}>
             <h1 className={styles.title}>Mis Solicitudes</h1>
             <p className={styles.subtitle}>
-              Gestioná y hacé el seguimiento de tus operaciones.
+              Gestioná tus operaciones.
             </p>
           </div>
         </div>
 
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => handleNuevaOperacion("/alta-operacion", "draft_alta_operacion")}
+          className={styles.btnNuevaOp}
+        >
+          <FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN
+        </Button>
       </header>
 
       {/* CUERPO PRINCIPAL */}
       <main className={styles.main}>
-        <div className={styles.navigationRow}>
-          <BotonVolver
-            onClick={() => navigate("/inicio")}
-            texto="Volver al inicio"
-          />
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}
-            className={styles.btnNuevaOp}
-          >
-            <FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN
-          </Button>
-        </div>
-
         <div className={styles.toolbar}>
           <div className={styles.filtersWrapper}>
             <div className={styles.searchBox}>
