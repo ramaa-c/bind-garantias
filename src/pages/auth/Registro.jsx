@@ -59,7 +59,13 @@ const Registro = () => {
         "¡Registro exitoso! Revisá tu casilla de correo para continuar.",
       );
 
-      navigate("/login", { replace: true });
+      navigate("/confirmar-correo", {
+        replace: true,
+        state: {
+          usuarioSkeletor: payloadSkeletor,
+          canal: "email",
+        },
+      });
     } catch (error) {
       if (error?.response?.status === 409) {
         setError("email", {
@@ -144,7 +150,7 @@ const Registro = () => {
       <section className={styles.sideBrand}>
         <div className={styles.brandContent}>
           <h2 className={styles.brandTitle}>
-            Potenciando y transformando el financiamiento PyME.
+            Potenciando y transformando el <em>financiamiento PyME.</em>
           </h2>
           <p className={styles.brandSubtitle}>
             Accedé a la mejor financiación para tu empresa.

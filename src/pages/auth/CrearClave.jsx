@@ -1,12 +1,21 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { FiShield, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import {
+  FiShield,
+  FiCheckCircle,
+  FiXCircle,
+  FiAlertCircle,
+} from "react-icons/fi";
 import { InputPasswordSeguro, Button } from "../../components/ui";
-import { useEstablecerClave } from "../../hooks/useUsuario";
+
+import {
+  useObtenerUsuarioPorEncrypt,
+  useCambiarPassword,
+} from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
@@ -27,9 +36,25 @@ const passwordSchema = z
   });
 
 const CrearClave = () => {
-  const { canal, token } = useParams();
+  const { canal, "*": tokenCrudo } = useParams();
   const navigate = useNavigate();
-  const { mutate, isPending } = useEstablecerClave();
+
+  const tokenOriginal = useMemo(() => {
+    if (!tokenCrudo) return "";
+    
+    const tokenDecodificado = decodeURIComponent(tokenCrudo);
+    
+    return tokenDecodificado.replace(/-/g, "+").replace(/_/g, "/");
+  }, [tokenCrudo]);
+
+  const {
+    data: usuario,
+    isLoading: verificandoToken,
+    isError: tokenExpirado,
+  } = useObtenerUsuarioPorEncrypt(tokenOriginal);
+
+  const { mutate: cambiarPassword, isPending: guardandoClave } =
+    useCambiarPassword();
 
   const {
     register,
@@ -41,29 +66,31 @@ const CrearClave = () => {
     mode: "onChange",
   });
 
-  const onSubmit = (data) => {
-    mutate(
-      {
-        token,
-        canal,
-        password: data.password,
+  const onSubmit = (formData) => {
+    const payload = {
+      usuarioid: usuario?.usuariowebid,
+      canal: canal,
+      data: {
+        oldpassword: "",
+        newpassword: formData.password,
       },
-      {
-        onSuccess: () => {
-          toast.success("Contraseña establecida correctamente", {
-            description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
-            duration: 5000,
-          });
-          navigate("/login");
-        },
-        onError: (err) => {
-          const errMsg =
-            err.response?.data?.message || "Token inválido o expirado.";
-          toast.error("Error de activación", { description: errMsg });
-          setError("root.serverError", { type: "manual", message: errMsg });
-        },
+    };
+
+    cambiarPassword(payload, {
+      onSuccess: () => {
+        toast.success("Contraseña establecida correctamente", {
+          description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
+          duration: 5000,
+        });
+        navigate("/login", { replace: true });
       },
-    );
+      onError: (err) => {
+        const errMsg =
+          err.response?.data?.message || "Error al establecer la credencial.";
+        toast.error("Error de activación", { description: errMsg });
+        setError("root.serverError", { type: "manual", message: errMsg });
+      },
+    });
   };
 
   return (
@@ -78,41 +105,67 @@ const CrearClave = () => {
         </div>
 
         <div className={styles.formWrapper}>
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className={styles.inputGroup}>
-              <InputPasswordSeguro
-                label="Nueva Contraseña"
-                error={errors.password?.message}
-                disabled={isPending}
-                {...register("password")}
-              />
+          {verificandoToken && (
+            <div className={styles.loadingStatePlaceholder}>
+              <p>Validando enlace de seguridad...</p>
             </div>
+          )}
 
-            <div className={styles.inputGroup}>
-              <InputPasswordSeguro
-                label="Confirmar Contraseña"
-                error={errors.confirmPassword?.message}
-                disabled={isPending}
-                {...register("confirmPassword")}
-              />
-            </div>
-
-            {errors.root?.serverError && (
-              <div className={styles.serverErrorAlert}>
-                <FiXCircle /> {errors.root.serverError.message}
-              </div>
-            )}
-
-            <div className={styles.formActions}>
+          {tokenExpirado && !verificandoToken && (
+            <div className={styles.expiredTokenContainer}>
+              <FiAlertCircle size={48} color="var(--red)" />
+              <h3>El enlace ha expirado</h3>
+              <p>
+                Por seguridad, los enlaces de activación tienen una validez de 5
+                minutos.
+              </p>
               <Button
-                type="submit"
                 variant="primary"
-                disabled={!isValid || isPending}
+                onClick={() => navigate("/registro")}
+                style={{ marginTop: "1.5rem" }}
               >
-                {isPending ? "PROCESANDO..." : "ACTIVAR CUENTA"}
+                SOLICITAR NUEVO ENLACE
               </Button>
             </div>
-          </form>
+          )}
+
+          {!verificandoToken && !tokenExpirado && usuario && (
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <div className={styles.inputGroup}>
+                <InputPasswordSeguro
+                  label="Nueva Contraseña"
+                  error={errors.password?.message}
+                  disabled={guardandoClave}
+                  {...register("password")}
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <InputPasswordSeguro
+                  label="Confirmar Contraseña"
+                  error={errors.confirmPassword?.message}
+                  disabled={guardandoClave}
+                  {...register("confirmPassword")}
+                />
+              </div>
+
+              {errors.root?.serverError && (
+                <div className={styles.serverErrorAlert}>
+                  <FiXCircle /> {errors.root.serverError.message}
+                </div>
+              )}
+
+              <div className={styles.formActions}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={!isValid || guardandoClave}
+                >
+                  {guardandoClave ? "PROCESANDO..." : "ACTIVAR CUENTA"}
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </section>
 

@@ -1,21 +1,74 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { IoIosMailUnread } from "react-icons/io";
+import { toast } from "sonner";
 import { Button } from "../../components/ui";
+import { useResetearPassword } from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
 const ConfirmarCorreo = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const emailUsuario = location.state?.emailIngresado || "tu correo";
+
+  const usuarioSkeletor = location.state?.usuarioSkeletor || null;
+  const canal = location.state?.canal || "";
+  const emailUsuario =
+    usuarioSkeletor?.email || location.state?.emailIngresado || "tu correo";
+
+  const { mutate: reenviarCorreo, isPending } = useResetearPassword();
+
+  const handleReenviar = () => {
+    if (emailUsuario === "tu correo") {
+      toast.error("No tenemos registro de tu sesión.", {
+        description: "Por favor, registrate nuevamente.",
+      });
+      navigate("/registro");
+      return;
+    }
+
+    const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
+
+    const payloadReset = {
+      email: emailUsuario,
+      usuariowebid: 0,
+      fchalta: usuarioSkeletor?.fchalta || getCSharpIsoDate(),
+      fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(),
+      hashseguridad: canal,
+      estado: "",
+      debecambiarclave: "",
+      esadministrador: "",
+      denominacion: "",
+    };
+
+    reenviarCorreo(payloadReset, {
+      onSuccess: () => {
+        toast.success("Enlace reenviado", {
+          description: "Revisá tu bandeja de entrada o la carpeta de SPAM.",
+        });
+      },
+      onError: (err) => {
+        toast.error("Error al reenviar", {
+          description:
+            err.response?.data?.message ||
+            "Ocurrió un error. Intentá más tarde.",
+        });
+      },
+    });
+  };
 
   return (
     <div className={styles.layoutSplit}>
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img src={logoBind} alt="Logo BIND" width="120" onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
+          <img
+            src={logoBind}
+            alt="Logo BIND"
+            width="120"
+            onClick={() => navigate("/")}
+            className={styles.clickableLogo}
+          />
         </div>
 
         <div className={`${styles.cardModern} ${styles.textLeft}`}>
@@ -27,22 +80,33 @@ const ConfirmarCorreo = () => {
             </p>
           </div>
 
-          <div className={`${styles.formActions} ${styles.formActionsMargin}`}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate("/")}
-            >
-              VOLVER AL INICIO
-            </Button>
-          </div>
-
           {/* --- SOPORTE --- */}
           <div
             className={`${styles.supportContainerModern} ${styles.supportContainerClean}`}
           >
-            <p>¿No te llegó o el correo es incorrecto?</p>
+            <p style={{ marginBottom: "0.5rem" }}>
+              ¿No te llegó el correo?{" "}
+              <span
+                className={`${styles.linkYellow} ${isPending ? styles.disabledLink : ""}`}
+                role="button"
+                tabIndex={isPending ? -1 : 0}
+                onClick={!isPending ? handleReenviar : undefined}
+                onKeyDown={(e) => {
+                  if (!isPending && (e.key === "Enter" || e.key === " ")) {
+                    e.preventDefault();
+                    handleReenviar();
+                  }
+                }}
+                style={{
+                  opacity: isPending ? 0.6 : 1,
+                  cursor: isPending ? "not-allowed" : "pointer",
+                }}
+              >
+                {isPending ? "Reenviando..." : "Reenviar enlace"}
+              </span>
+            </p>
             <p>
+              ¿El correo es incorrecto?{" "}
               <span
                 className={`${styles.linkYellow} ${styles.linkYellowReset}`}
                 role="button"
