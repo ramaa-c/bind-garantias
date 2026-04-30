@@ -30,9 +30,29 @@
   z-index: 10;
 }
 
+.logosWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+}
+
+.logoSeparator {
+  width: 1px;
+  height: 2rem;
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
 .globalLogo img {
-  width: 11rem;
+  width: 8.5rem;
   height: auto;
+}
+
+.channelLogo {
+  height: 2.2rem;
+  max-width: 10rem;
+  width: auto;
+  object-fit: contain;
 }
 
 .cardModern {
@@ -287,8 +307,16 @@
     transform: none;
   }
 
+  .logosWrapper {
+    justify-content: flex-start;
+  }
+
   .globalLogo img {
-    width: 7.5rem;
+    width: 7rem;
+  }
+
+  .channelLogo {
+    height: 1.8rem;
   }
 
   .cardModern {

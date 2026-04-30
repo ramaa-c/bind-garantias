@@ -1,5 +1,6 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { ChannelProvider } from "./context/ChannelContext";
 import { Toaster } from "sonner";
 import Login from "./pages/auth/Login";
 import Registro from "./pages/auth/Registro";
@@ -36,6 +37,15 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/ingresar" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
+        
+        {/* Nueva estructura para canales */}
+        <Route path="/:canal" element={<ChannelProvider><Outlet /></ChannelProvider>}>
+          <Route index element={<Login />} />
+          <Route path="login" element={<Login />} />
+          <Route path="registro" element={<Registro />} />
+          <Route path=":token" element={<CrearClave />} />
+        </Route>
+
         <Route path="/crear-clave/:canal/:token" element={<CrearClave />} />
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
         <Route path="/recuperar-password" element={<RecuperarPassword />} />
