@@ -110,7 +110,15 @@ const CrearClave = () => {
     <div className={styles.loginContainer}>
       <section className={styles.loginFormSection}>
         <div className={styles.loginHeader}>
-          <img src={logoBind} alt="Logo" className={styles.logo} />
+          <div className={styles.logosWrapper} style={{ justifyContent: 'center', marginBottom: '2rem' }}>
+            <img src={logoBind} alt="Logo BIND" className={styles.logo} style={{ margin: 0, height: '2.5rem', width: 'auto' }} />
+            {channelInfo.id !== 'default' && (
+              <>
+                <div className={styles.logoSeparator} />
+                <img src={channelInfo.logo} alt={`Logo ${channelInfo.nombre}`} className={styles.channelLogo} style={{ height: '2.5rem' }} />
+              </>
+            )}
+          </div>
           <h1 className={styles.loginTitle}>Crear nueva contraseña</h1>
           <p className={styles.loginSubtitle}>
             Establecé las credenciales para acceder a tu cuenta.

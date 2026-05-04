@@ -7,6 +7,7 @@ import { InputFlotante, Button } from "../../components/ui";
 import { useLogin } from "../../hooks/useUsuario";
 import { useAuthStore } from "../../store/useAuthStore";
 
+import { useChannel } from "../../context/ChannelContext";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
@@ -24,6 +25,7 @@ const loginSchema = z.object({
 const Login = () => {
   const navigate = useNavigate();
   const setUser = useAuthStore((state) => state.setUser);
+  const { channelInfo } = useChannel();
   const { mutate: iniciarSesion, isPending } = useLogin();
 
   const {
@@ -65,12 +67,24 @@ const Login = () => {
     <div className={styles.layoutSplit}>
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img
-            src={logoBind}
-            alt="Logo BIND"
-            onClick={() => navigate("/")}
-            className={styles.clickableLogo}
-          />
+          <div className={styles.logosWrapper}>
+            <img
+              src={logoBind}
+              alt="Logo BIND"
+              onClick={() => navigate("/")}
+              className={styles.clickableLogo}
+            />
+            {channelInfo.id !== 'default' && (
+              <>
+                <div className={styles.logoSeparator} />
+                <img
+                  src={channelInfo.logo}
+                  alt={`Logo ${channelInfo.nombre}`}
+                  className={styles.channelLogo}
+                />
+              </>
+            )}
+          </div>
         </div>
 
         <div className={styles.cardModern}>

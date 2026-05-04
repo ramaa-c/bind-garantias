@@ -1,5 +1,6 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { ChannelProvider } from "./context/ChannelContext";
 import { Toaster } from "sonner";
 import Login from "./pages/auth/Login";
 import Registro from "./pages/auth/Registro";
