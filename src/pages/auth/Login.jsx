@@ -33,9 +33,10 @@ const Login = () => {
 
   const onSubmit = (formData) => {
     iniciarSesion(formData, {
-      onSuccess: () => {
-        setUser({ email: formData.email });
-        navigate("/inicio", { replace: true });
+      onSuccess: (data) => {
+        // Guardamos todo el objeto de usuario (incluyendo el CUIT, etc)
+        setUser({ ...data, email: formData.email });
+        navigate("/solicitudes", { replace: true });
       },
       onError: (error) => {
         setError("password", {

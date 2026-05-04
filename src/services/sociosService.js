@@ -6,7 +6,8 @@ const cuitWebCache = new Map();
 export const sociosService = {
   // Trae lista de socios (SGRPlus)
   obtenerSocios: async (params = {}) => {
-    const isCuitSearch = params.Cuit && Object.keys(params).length === 1;
+    // Si la búsqueda es primariamente por CUIT (aunque traiga página)
+    const isCuitSearch = Boolean(params.Cuit);
     const cacheKey = isCuitSearch ? String(params.Cuit).trim() : null;
 
     if (isCuitSearch && cuitCache.has(cacheKey)) {
@@ -29,7 +30,7 @@ export const sociosService = {
 
   // Trae lista de socios (Esquema Web / Legacy)
   obtenerSociosWeb: async (params = {}) => {
-    const isCuitSearch = params.Cuit && Object.keys(params).length === 1;
+    const isCuitSearch = Boolean(params.Cuit);
     const cacheKey = isCuitSearch ? String(params.Cuit).trim() : null;
 
     if (isCuitSearch && cuitWebCache.has(cacheKey)) {
