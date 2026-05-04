@@ -58,7 +58,7 @@ const CrearClave = () => {
   const {
     data: usuario,
     isLoading: verificandoToken,
-    isError: tokenExpirado,
+    isError: errorObteniendoUsuario, // Renombrado para mayor claridad semántica
   } = useObtenerUsuarioPorEncrypt(tokenIntegridad);
 
   const { mutate: establecerClave, isPending: guardandoClave } =
@@ -103,6 +103,9 @@ const CrearClave = () => {
     });
   };
 
+  const mostrarErrorFaltaUsuario =
+    !usuario && errorObteniendoUsuario && !verificandoToken;
+
   return (
     <div className={styles.loginContainer}>
       <section className={styles.loginFormSection}>
@@ -136,17 +139,17 @@ const CrearClave = () => {
             </div>
           )}
 
-          {tokenExpirado && !verificandoToken && !tokenInvalidoDeOrigen && (
+          {mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen && (
             <div className={styles.expiredTokenContainer}>
               <FiAlertCircle size={48} color="var(--red)" />
               <h3>El enlace ha expirado o es inválido</h3>
               <p>
-                Por seguridad, los enlaces de activación tienen una validez de 5
-                minutos.
+                No pudimos recuperar tu información. Solicitá un nuevo enlace
+                para continuar.
               </p>
               <Button
                 variant="primary"
-                onClick={() => navigate("/registro")}
+                onClick={() => navigate("/recuperar-password")}
                 style={{ marginTop: "1.5rem" }}
               >
                 SOLICITAR NUEVO ENLACE
@@ -154,50 +157,47 @@ const CrearClave = () => {
             </div>
           )}
 
-          {!verificandoToken &&
-            !tokenExpirado &&
-            !tokenInvalidoDeOrigen &&
-            usuario && (
-              <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                <div className={styles.inputGroup}>
-                  <InputPasswordSeguro
-                    label="Nueva Contraseña"
-                    currentValue={passwordValue}
-                    esValido={!!passwordValue && !errors.password}
-                    error={errors.password?.message}
-                    disabled={guardandoClave}
-                    {...register("password")}
-                  />
-                </div>
+          {!verificandoToken && !tokenInvalidoDeOrigen && usuario && (
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <div className={styles.inputGroup}>
+                <InputPasswordSeguro
+                  label="Nueva Contraseña"
+                  currentValue={passwordValue}
+                  esValido={!!passwordValue && !errors.password}
+                  error={errors.password?.message}
+                  disabled={guardandoClave}
+                  {...register("password")}
+                />
+              </div>
 
-                <div className={styles.inputGroup}>
-                  <InputPasswordSeguro
-                    label="Confirmar Contraseña"
-                    currentValue={confirmPasswordValue}
-                    esValido={!!confirmPasswordValue && !errors.confirmPassword}
-                    error={errors.confirmPassword?.message}
-                    disabled={guardandoClave}
-                    {...register("confirmPassword")}
-                  />
-                </div>
+              <div className={styles.inputGroup}>
+                <InputPasswordSeguro
+                  label="Confirmar Contraseña"
+                  currentValue={confirmPasswordValue}
+                  esValido={!!confirmPasswordValue && !errors.confirmPassword}
+                  error={errors.confirmPassword?.message}
+                  disabled={guardandoClave}
+                  {...register("confirmPassword")}
+                />
+              </div>
 
-                {errors.root?.serverError && (
-                  <div className={styles.serverErrorAlert}>
-                    <FiXCircle /> {errors.root.serverError.message}
-                  </div>
-                )}
-
-                <div className={styles.formActions}>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={!isValid || guardandoClave}
-                  >
-                    {guardandoClave ? "PROCESANDO..." : "ACTIVAR CUENTA"}
-                  </Button>
+              {errors.root?.serverError && (
+                <div className={styles.serverErrorAlert}>
+                  <FiXCircle /> {errors.root.serverError.message}
                 </div>
-              </form>
-            )}
+              )}
+
+              <div className={styles.formActions}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={!isValid || guardandoClave}
+                >
+                  {guardandoClave ? "PROCESANDO..." : "ACTIVAR CUENTA"}
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </section>
 
