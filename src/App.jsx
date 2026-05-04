@@ -29,6 +29,21 @@ import DocumentacionView from "./pages/documentacion/DocumentacionView";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
+if (typeof window !== "undefined") {
+  const currentPath = window.location.pathname;
+  const match = currentPath.match(/^\/([^/]+)\/crear_clave\/(.+)$/);
+
+  if (match) {
+    const [, canal, tokenFragment] = match;
+    const rawToken = `${tokenFragment}${window.location.hash || ""}`;
+
+    sessionStorage.setItem("secure_recovery_token", rawToken);
+    sessionStorage.setItem("secure_recovery_canal", canal);
+
+    window.history.replaceState(null, "", `/${canal}/crear_clave`);
+  }
+}
+
 function App() {
   return (
     <BrowserRouter>
@@ -37,16 +52,9 @@ function App() {
         <Route path="/" element={<Login />} />
         <Route path="/ingresar" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
-        
-        {/* Nueva estructura para canales */}
-        <Route path="/:canal" element={<ChannelProvider><Outlet /></ChannelProvider>}>
-          <Route index element={<Login />} />
-          <Route path="login" element={<Login />} />
-          <Route path="registro" element={<Registro />} />
-          <Route path=":token" element={<CrearClave />} />
-        </Route>
 
-        <Route path="/crear-clave/:canal/:token" element={<CrearClave />} />
+        <Route path="/:canal/crear_clave/*" element={<CrearClave />} />
+
         <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
         <Route path="/recuperar-password" element={<RecuperarPassword />} />
 
@@ -58,7 +66,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/usuarios"
           element={
@@ -67,7 +74,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/documentacion"
           element={
@@ -76,7 +82,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/inicio"
           element={
@@ -93,7 +98,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/solicitud-pagare"
           element={
@@ -102,7 +106,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/solicitudes"
           element={
@@ -111,7 +114,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/prestamos"
           element={
@@ -120,7 +122,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/prestamos-seleccionables"
           element={
@@ -129,7 +130,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/prestamos-fijos"
           element={
@@ -138,7 +138,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/cheques"
           element={
@@ -147,7 +146,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/solicitud-cheques"
           element={
@@ -156,7 +154,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/carga-masiva-cheques"
           element={
@@ -165,11 +162,8 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route path="/firma-documento" element={<FirmaDocumento />} />
-
         <Route path="/terminos" element={<AceptarTerminos />} />
-
         <Route
           path="/posicion-consolidada"
           element={
@@ -178,7 +172,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/cadenas-valor/:id"
           element={
@@ -187,7 +180,6 @@ function App() {
             </DashboardLayout>
           }
         />
-
         <Route
           path="/alta-operacion"
           element={

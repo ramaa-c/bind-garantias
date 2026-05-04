@@ -1,13 +1,20 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { FiShield, FiCheckCircle, FiXCircle } from "react-icons/fi";
+import {
+  FiShield,
+  FiCheckCircle,
+  FiXCircle,
+  FiAlertCircle,
+} from "react-icons/fi";
 import { InputPasswordSeguro, Button } from "../../components/ui";
-import { useEstablecerClave } from "../../hooks/useUsuario";
-import { useChannel } from "../../context/ChannelContext";
+import {
+  useObtenerUsuarioPorEncrypt,
+  useEstablecerClave,
+} from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
@@ -28,14 +35,39 @@ const passwordSchema = z
   });
 
 const CrearClave = () => {
-  const { canal, token } = useParams();
-  const { channelInfo } = useChannel();
+  const { canal: canalRouter } = useParams();
   const navigate = useNavigate();
-  const { mutate, isPending } = useEstablecerClave();
+
+  const [tokenIntegridad] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const savedToken = sessionStorage.getItem("secure_recovery_token") || "";
+    sessionStorage.removeItem("secure_recovery_token");
+    return savedToken;
+  });
+
+  const [canalIntegridad] = useState(() => {
+    if (typeof window === "undefined") return canalRouter || "";
+    const savedCanal =
+      sessionStorage.getItem("secure_recovery_canal") || canalRouter;
+    sessionStorage.removeItem("secure_recovery_canal");
+    return savedCanal;
+  });
+
+  const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
+
+  const {
+    data: usuario,
+    isLoading: verificandoToken,
+    isError: errorObteniendoUsuario, // Renombrado para mayor claridad semántica
+  } = useObtenerUsuarioPorEncrypt(tokenIntegridad);
+
+  const { mutate: establecerClave, isPending: guardandoClave } =
+    useEstablecerClave();
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isValid },
     setError,
   } = useForm({
@@ -43,30 +75,36 @@ const CrearClave = () => {
     mode: "onChange",
   });
 
-  const onSubmit = (data) => {
-    mutate(
-      {
-        token,
-        canal,
-        password: data.password,
+  const passwordValue = watch("password");
+  const confirmPasswordValue = watch("confirmPassword");
+
+  const onSubmit = (formData) => {
+    const payload = {
+      usuarioid: usuario?.usuariowebid,
+      data: {
+        newpassword: formData.password,
       },
-      {
-        onSuccess: () => {
-          toast.success("Contraseña establecida correctamente", {
-            description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
-            duration: 5000,
-          });
-          navigate("/login");
-        },
-        onError: (err) => {
-          const errMsg =
-            err.response?.data?.message || "Token inválido o expirado.";
-          toast.error("Error de activación", { description: errMsg });
-          setError("root.serverError", { type: "manual", message: errMsg });
-        },
+    };
+
+    establecerClave(payload, {
+      onSuccess: () => {
+        toast.success("Contraseña establecida correctamente", {
+          description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
+          duration: 5000,
+        });
+        navigate("/login", { replace: true });
       },
-    );
+      onError: (err) => {
+        const errMsg =
+          err.response?.data?.message || "Error al establecer la credencial.";
+        toast.error("Error de activación", { description: errMsg });
+        setError("root.serverError", { type: "manual", message: errMsg });
+      },
+    });
   };
+
+  const mostrarErrorFaltaUsuario =
+    !usuario && errorObteniendoUsuario && !verificandoToken;
 
   return (
     <div className={styles.loginContainer}>
@@ -88,41 +126,86 @@ const CrearClave = () => {
         </div>
 
         <div className={styles.formWrapper}>
-          <form onSubmit={handleSubmit(onSubmit)} noValidate>
-            <div className={styles.inputGroup}>
-              <InputPasswordSeguro
-                label="Nueva Contraseña"
-                error={errors.password?.message}
-                disabled={isPending}
-                {...register("password")}
-              />
-            </div>
-
-            <div className={styles.inputGroup}>
-              <InputPasswordSeguro
-                label="Confirmar Contraseña"
-                error={errors.confirmPassword?.message}
-                disabled={isPending}
-                {...register("confirmPassword")}
-              />
-            </div>
-
-            {errors.root?.serverError && (
-              <div className={styles.serverErrorAlert}>
-                <FiXCircle /> {errors.root.serverError.message}
-              </div>
-            )}
-
-            <div className={styles.formActions}>
+          {tokenInvalidoDeOrigen && (
+            <div className={styles.expiredTokenContainer}>
+              <FiAlertCircle size={48} color="var(--red)" />
+              <h3>Enlace corrupto o ausente</h3>
+              <p>El enlace de seguridad está incompleto o mal formado.</p>
               <Button
-                type="submit"
                 variant="primary"
-                disabled={!isValid || isPending}
+                onClick={() => navigate("/registro")}
+                style={{ marginTop: "1.5rem" }}
               >
-                {isPending ? "PROCESANDO..." : "ACTIVAR CUENTA"}
+                SOLICITAR NUEVO ENLACE
               </Button>
             </div>
-          </form>
+          )}
+
+          {verificandoToken && !tokenInvalidoDeOrigen && (
+            <div className={styles.loadingStatePlaceholder}>
+              <p>Validando enlace de seguridad...</p>
+            </div>
+          )}
+
+          {mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen && (
+            <div className={styles.expiredTokenContainer}>
+              <FiAlertCircle size={48} color="var(--red)" />
+              <h3>El enlace ha expirado o es inválido</h3>
+              <p>
+                No pudimos recuperar tu información. Solicitá un nuevo enlace
+                para continuar.
+              </p>
+              <Button
+                variant="primary"
+                onClick={() => navigate("/recuperar-password")}
+                style={{ marginTop: "1.5rem" }}
+              >
+                SOLICITAR NUEVO ENLACE
+              </Button>
+            </div>
+          )}
+
+          {!verificandoToken && !tokenInvalidoDeOrigen && usuario && (
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <div className={styles.inputGroup}>
+                <InputPasswordSeguro
+                  label="Nueva Contraseña"
+                  currentValue={passwordValue}
+                  esValido={!!passwordValue && !errors.password}
+                  error={errors.password?.message}
+                  disabled={guardandoClave}
+                  {...register("password")}
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <InputPasswordSeguro
+                  label="Confirmar Contraseña"
+                  currentValue={confirmPasswordValue}
+                  esValido={!!confirmPasswordValue && !errors.confirmPassword}
+                  error={errors.confirmPassword?.message}
+                  disabled={guardandoClave}
+                  {...register("confirmPassword")}
+                />
+              </div>
+
+              {errors.root?.serverError && (
+                <div className={styles.serverErrorAlert}>
+                  <FiXCircle /> {errors.root.serverError.message}
+                </div>
+              )}
+
+              <div className={styles.formActions}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={!isValid || guardandoClave}
+                >
+                  {guardandoClave ? "PROCESANDO..." : "ACTIVAR CUENTA"}
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </section>
 

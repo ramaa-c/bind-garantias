@@ -52,6 +52,22 @@ export const useCambiarPassword = () => {
   });
 };
 
+export const useObtenerUsuarioPorEncrypt = (encryptToken) => {
+  return useQuery({
+    queryKey: ["usuarios", "detalleEncrypt", encryptToken],
+    queryFn: () => usuarioService.obtenerPorEncrypt(encryptToken),
+    enabled: !!encryptToken && encryptToken.length > 10,
+    retry: false,
+  });
+};
+
+export const useEstablecerClave = () => {
+  return useMutation({
+    mutationFn: ({ usuarioid, data }) =>
+      usuarioService.establecerClaveNueva({ usuarioid, data }),
+  });
+};
+
 export const useObtenerPorNombreOEmail = (identificador) => {
   return useQuery({
     queryKey: ["usuarios", "porNombreOEmail", identificador],
@@ -79,11 +95,5 @@ export const useObtenerUsuarioPorId = (usuarioId) => {
     queryKey: ["usuarios", "detalle", usuarioId],
     queryFn: () => usuarioService.obtenerUsuarioPorId(usuarioId),
     enabled: !!usuarioId,
-  });
-};
-
-export const useEstablecerClave = () => {
-  return useMutation({
-    mutationFn: (data) => usuarioService.establecerClave(data),
   });
 };

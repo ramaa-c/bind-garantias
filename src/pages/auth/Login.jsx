@@ -11,14 +11,6 @@ import { useChannel } from "../../context/ChannelContext";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
-// --- UTILIDAD NATIVA DE HASH (Zero-dependency) ---
-const hashPasswordSHA256 = async (password) => {
-  const msgBuffer = new TextEncoder().encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-};
-
 // --- SCHEMA ---
 const loginSchema = z.object({
   email: z
@@ -45,60 +37,30 @@ const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (formData) => {
-    try {
-      // 1. Hashear la contraseña nativamente
-      const hashedPassword = await hashPasswordSHA256(formData.password);
+  const onSubmit = (formData) => {
+    iniciarSesion(formData, {
+      onSuccess: (usuarioData) => {
+        setUser(usuarioData);
 
-      // 2. Generar Fechas ISO para C#
-      const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
+        if (
+          usuarioData.debecambiarclave === "1" ||
+          String(usuarioData.debecambiarclave).toLowerCase() === "true"
+        ) {
+          navigate("/crear-clave", { replace: true });
+          return;
+        }
 
-      // 3. Construir el Payload Estricto (Fobia al Null)
-      const payloadSkeletor = {
-        email: formData.email,
-        usuariowebid: 0,
-        fchalta: getCSharpIsoDate(),
-        fchvencimiento: getCSharpIsoDate(),
-        hashseguridad: hashedPassword,
-        estado: "",
-        debecambiarclave: "",
-        esadministrador: "",
-        denominacion: "",
-      };
-
-      // 4. Ejecutar Mutación
-      iniciarSesion(payloadSkeletor, {
-        onSuccess: (usuarioData) => {
-          setUser(usuarioData);
-
-          // Control de Flujo: Redirección obligatoria si la clave expiró o es temporal
-          if (
-            usuarioData.debecambiarclave === "1" ||
-            String(usuarioData.debecambiarclave).toLowerCase() === "true" ||
-            usuarioData.debecambiarclave === "S"
-          ) {
-            navigate("/crear-clave", { replace: true });
-            return;
-          }
-
-          navigate("/inicio", { replace: true });
-        },
-        onError: (error) => {
-          setError("password", {
-            type: "server",
-            message:
-              error?.response?.data?.message ||
-              "Credenciales inválidas o error de conexión.",
-          });
-        },
-      });
-    } catch (err) {
-      console.error("Error procesando el login:", err);
-      setError("password", {
-        type: "server",
-        message: "Error interno al procesar las credenciales.",
-      });
-    }
+        navigate("/inicio", { replace: true });
+      },
+      onError: (error) => {
+        setError("password", {
+          type: "server",
+          message:
+            error?.response?.data?.message ||
+            "Credenciales inválidas o error de conexión.",
+        });
+      },
+    });
   };
 
   return (
@@ -177,7 +139,7 @@ const Login = () => {
         <div className={styles.blobYellow}></div>
         <div className={styles.brandContent}>
           <h2 className={styles.brandTitle}>
-            Potenciando y transformando el financiamiento PyME.
+            Potenciando y transformando el <em>financiamiento PyME.</em>
           </h2>
           <p className={styles.brandSubtitle}>
             Accedé a la mejor financiación para tu empresa.
