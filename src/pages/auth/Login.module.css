@@ -64,12 +64,7 @@
   display: block;
 }
 
-.channelLogo {
-  height: 2.2rem;
-  max-width: 10rem;
-  width: auto;
-  object-fit: contain;
-}
+/* ── CARD ────────────────────────────────────────────────────────── */
 
 /* ── CARD ────────────────────────────────────────────────────────── */
 
@@ -629,7 +624,8 @@
     grid-template-columns: 42% 58%;
   }
 
-  .sideForm {
+  .sideForm,
+  .loginFormSection {
     padding: 2rem;
     justify-content: center;
     box-shadow: 1px 0 0 0 rgba(255, 255, 255, 0.05);
@@ -645,18 +641,6 @@
     top: 2.5rem;
     left: 2.5rem;
     transform: none;
-  }
-
-  .logosWrapper {
-    justify-content: flex-start;
-  }
-
-  .globalLogo img {
-    width: 7rem;
-  }
-
-  .channelLogo {
-    height: 1.8rem;
   }
 
   .cardModern {

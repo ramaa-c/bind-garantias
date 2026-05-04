@@ -129,6 +129,9 @@ const CrearClave = () => {
     });
   };
 
+  const mostrarErrorFaltaUsuario =
+    !usuario && errorObteniendoUsuario && !verificandoToken;
+
   return (
     <div className={styles.loginContainer}>
       {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
