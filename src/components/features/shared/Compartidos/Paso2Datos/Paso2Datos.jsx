@@ -24,11 +24,19 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
   const celular = useWatch({ control, name: "celular" }) || "";
   const smsVerificado = useWatch({ control, name: "smsVerificado" }) || false;
   const cuit = useWatch({ control, name: "cuit" }) || "";
+  const razonSocial =
+    useWatch({ control, name: "razonSocial" }) || "Razón Social Desconocida";
+  const ubicacionConfirmada =
+    useWatch({ control, name: "ubicacionConfirmada" }) || false;
 
-  const ubicacionOk = direccion.trim().length >= 5;
+  const ubicacionOk = ubicacionConfirmada && direccion.trim().length >= 5;
   const contactoOk = !!smsVerificado;
 
   const handleGuardarUbicacion = () => {
+    setValue("ubicacionConfirmada", true, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
     setModalUbicacionOpen(false);
   };
 
@@ -48,53 +56,66 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
       "localidad",
       "celular",
     ]);
-
-    if (ubicacionOk && contactoOk && esValidoGlobal) {
-      onContinuar();
-    }
+    if (ubicacionOk && contactoOk && esValidoGlobal) onContinuar();
   };
 
-  const getClassUbicacion = () => {
-    if (ubicacionOk) return styles.statusCheck;
-    if (intentoAvanzar && !ubicacionOk) return styles.statusError;
-    return styles.statusWarn;
-  };
-
-  const getClassContacto = () => {
-    if (contactoOk) return styles.statusCheck;
-    if (intentoAvanzar && !contactoOk) return styles.statusError;
-    return styles.statusWarn;
+  const pill = (done, error) => {
+    if (done) return styles.pillDone;
+    if (error) return styles.pillError;
+    return styles.pillPending;
   };
 
   return (
     <div className={styles.container}>
-      <div className={styles.headerSteps}>
-        <h3 className={styles.title}>Información de la Solicitud</h3>
-        <p className={styles.mutedText}>
-          Completá los datos requeridos para la validación final.
-        </p>
-      </div>
-
-      <div className={styles.summaryCard}>
-        <div className={styles.summaryInfo}>
-          <div className={styles.summaryStatus}>
-            <FiCheckCircle size={14} /> CUIT VALIDADO
-          </div>
-          <p className={styles.summaryCuit}>{cuit || "20-12345678-9"}</p>
-          <p className={styles.summaryName}>EMPRESA DE PRUEBA S.A.</p>
+      {/* HEADER ──────────────────────────────────────────────────────────────── */}
+      <div className={styles.header}>
+        <div className={styles.headerText}>
+          <h3 className={styles.title}>Información de la Solicitud</h3>
+          <p className={styles.subtitle}>
+            Completá los datos requeridos para la validación final.
+          </p>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={styles.actionBtn}
-          onClick={onVolver}
-        >
-          <FiEdit2 /> EDITAR
-        </Button>
+        <div className={styles.completionPills}>
+          <span
+            className={`${styles.pill} ${pill(ubicacionOk, intentoAvanzar && !ubicacionOk)}`}
+          >
+            {ubicacionOk ? (
+              <FiCheckCircle size={11} />
+            ) : (
+              <FiAlertCircle size={11} />
+            )}
+            Ubicación
+          </span>
+          <span
+            className={`${styles.pill} ${pill(contactoOk, intentoAvanzar && !contactoOk)}`}
+          >
+            {contactoOk ? (
+              <FiCheckCircle size={11} />
+            ) : (
+              <FiAlertCircle size={11} />
+            )}
+            Contacto
+          </span>
+        </div>
       </div>
 
-      <div className={styles.sectionGroup}>
-        {/* CARD 1: UBICACIÓN */}
+      {/* SUMMARY ─────────────────────────────────────────────────────────────── */}
+      <div className={styles.summaryCard}>
+        <div className={styles.summaryLeft}>
+          <span className={styles.summaryStatus}>
+            <FiCheckCircle size={11} /> Socio validado
+          </span>
+          <h2 className={styles.summaryName}>{razonSocial}</h2>
+          <p className={styles.summaryCuit}>CUIT: {cuit || "20-12345678-9"}</p>
+        </div>
+        <button type="button" className={styles.editLink} onClick={onVolver}>
+          <FiEdit2 size={13} /> Editar
+        </button>
+      </div>
+
+      {/* TAREAS ──────────────────────────────────────────────────────────────── */}
+      <div className={styles.taskList}>
+        {/* UBICACIÓN */}
         <div
           role="button"
           tabIndex={0}
@@ -104,50 +125,44 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
               setModalUbicacionOpen(true);
             }
           }}
-          className={`${styles.taskCard} ${ubicacionOk ? styles.cardSuccess : intentoAvanzar && !ubicacionOk ? styles.cardError : ""}`}
+          className={`${styles.taskRow} ${ubicacionOk ? styles.rowSuccess : intentoAvanzar && !ubicacionOk ? styles.rowError : ""}`}
           onClick={() => setModalUbicacionOpen(true)}
         >
-          <div className={styles.taskCardInfo}>
-            <div className={`${styles.statusIconPill} ${getClassUbicacion()}`}>
-              {ubicacionOk ? (
-                <FiCheckCircle />
-              ) : intentoAvanzar ? (
-                <FiAlertCircle />
-              ) : (
-                <FiMapPin />
-              )}
-            </div>
-            <div className={styles.taskCardText}>
-              <h4>Datos de Ubicación</h4>
-              <p>
-                {ubicacionOk && direccion
-                  ? `${direccion}, ${localidad}`
-                  : "Dirección, Provincia y Localidad"}
-              </p>
-            </div>
+          <span
+            className={`${styles.taskIcon} ${ubicacionOk ? styles.iconSuccess : intentoAvanzar && !ubicacionOk ? styles.iconError : styles.iconWarn}`}
+          >
+            {ubicacionOk ? (
+              <FiCheckCircle size={16} />
+            ) : intentoAvanzar ? (
+              <FiAlertCircle size={16} />
+            ) : (
+              <FiMapPin size={16} />
+            )}
+          </span>
+
+          <div className={styles.taskInfo}>
+            <strong className={styles.taskTitle}>Datos de Ubicación</strong>
+            <span className={styles.taskSub}>
+              {ubicacionOk && direccion
+                ? `${direccion}, ${localidad}`
+                : "Dirección, Provincia y Localidad"}
+            </span>
           </div>
 
-          {ubicacionOk ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={styles.actionBtn}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setModalUbicacionOpen(true);
-              }}
-            >
-              <FiEdit2 size={12} /> MODIFICAR
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" className={styles.taskBtn}>
-              COMPLETAR
-            </Button>
-          )}
+          <span
+            className={`${styles.taskAction} ${ubicacionOk ? styles.taskActionEdit : intentoAvanzar && !ubicacionOk ? styles.taskActionError : ""}`}
+          >
+            {ubicacionOk ? (
+              <>
+                <FiEdit2 size={12} /> Modificar
+              </>
+            ) : (
+              "Completar →"
+            )}
+          </span>
         </div>
 
-        {/* CARD 2: CONTACTO / SMS */}
+        {/* CONTACTO */}
         <div
           role="button"
           tabIndex={0}
@@ -157,55 +172,51 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
               setModalContactoOpen(true);
             }
           }}
-          className={`${styles.taskCard} ${contactoOk ? styles.cardSuccess : intentoAvanzar && !contactoOk ? styles.cardError : ""}`}
+          className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : intentoAvanzar && !contactoOk ? styles.rowError : ""}`}
           onClick={() => setModalContactoOpen(true)}
-          style={{ marginTop: "1rem" }}
         >
-          <div className={styles.taskCardInfo}>
-            <div className={`${styles.statusIconPill} ${getClassContacto()}`}>
-              {contactoOk ? (
-                <FiCheckCircle />
-              ) : intentoAvanzar ? (
-                <FiAlertCircle />
-              ) : (
-                <FiPhone />
-              )}
-            </div>
-            <div className={styles.taskCardText}>
-              <h4>Verificación de Contacto</h4>
-              <p>
-                {contactoOk ? `Cel: ${celular}` : "Validación mediante SMS"}
-              </p>
-            </div>
+          <span
+            className={`${styles.taskIcon} ${contactoOk ? styles.iconSuccess : intentoAvanzar && !contactoOk ? styles.iconError : styles.iconWarn}`}
+          >
+            {contactoOk ? (
+              <FiCheckCircle size={16} />
+            ) : intentoAvanzar ? (
+              <FiAlertCircle size={16} />
+            ) : (
+              <FiPhone size={16} />
+            )}
+          </span>
+
+          <div className={styles.taskInfo}>
+            <strong className={styles.taskTitle}>
+              Verificación de Contacto
+            </strong>
+            <span className={styles.taskSub}>
+              {contactoOk ? `Cel: ${celular}` : "Validación mediante SMS"}
+            </span>
           </div>
 
-          {contactoOk ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={styles.actionBtn}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setModalContactoOpen(true);
-              }}
-            >
-              <FiEdit2 size={12} /> MODIFICAR
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" className={styles.taskBtn}>
-              VERIFICAR
-            </Button>
-          )}
+          <span
+            className={`${styles.taskAction} ${contactoOk ? styles.taskActionEdit : intentoAvanzar && !contactoOk ? styles.taskActionError : ""}`}
+          >
+            {contactoOk ? (
+              <>
+                <FiEdit2 size={12} /> Modificar
+              </>
+            ) : (
+              "Verificar →"
+            )}
+          </span>
         </div>
       </div>
 
-      <div className={styles.actionsRight}>
+      {/* FOOTER ──────────────────────────────────────────────────────────────── */}
+      <div className={styles.footer}>
         <Button
           variant="primary"
           iconRight={<FiChevronRight />}
           onClick={handleAvanzarClick}
-          className={styles.tallButton}
+          className={styles.continueBtn}
         >
           CONTINUAR
         </Button>
@@ -216,7 +227,6 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
         onClose={() => setModalUbicacionOpen(false)}
         onGuardar={handleGuardarUbicacion}
       />
-
       <ModalContacto
         isOpen={modalContactoOpen}
         onClose={() => setModalContactoOpen(false)}

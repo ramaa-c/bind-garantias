@@ -1,0 +1,43 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.header {
+  border-bottom: 1px solid #333;
+  padding-bottom: 1rem;
+}
+
+.title {
+  color: var(--white);
+  margin: 0 0 0.5rem 0;
+}
+
+.subtitle {
+  color: #aaa;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inputContainer {
+  max-width: 400px;
+}
+
+.errorText {
+  color: #ff4444;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}

@@ -9,7 +9,7 @@ export const prestamosSchema = z
       .string()
       .trim()
       .min(3, { message: "La dirección es obligatoria" }),
-    provincia: z.string().min(3, { message: "La provincia es obligatoria" }),
+    provincia: z.string().min(1, { message: "La provincia es obligatoria" }),
     localidad: z.string().min(3, { message: "La localidad es obligatoria" }),
     celular: z
       .string()
@@ -27,9 +27,7 @@ export const prestamosSchema = z
       (val) => {
         if (val === "" || val === undefined || val === null) return undefined;
         const cleanValue =
-          typeof val === "string"
-            ? val.replace(/\./g, "").replace(",", ".")
-            : val;
+          typeof val === "string" ? val.replace(/\D/g, "") : val;
         const num = Number(cleanValue);
         return isNaN(num) ? val : num;
       },
@@ -79,7 +77,7 @@ export const prestamosSchema = z
             .string()
             .regex(/^\d{10}$/, { message: "Debe contener 10 números" }),
           direccion: z.string().min(3, { message: "Requerido" }),
-          provincia: z.string().min(3, { message: "Requerido" }),
+          provincia: z.string().min(1, { message: "Requerido" }),
           localidad: z.string().min(3, { message: "Requerido" }),
         }),
       )

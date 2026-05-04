@@ -12,12 +12,16 @@ export * from './Input/Input';
 export * from './InputCodigo/InputCodigo';
 export * from './InputFlotante/InputFlotante';
 export * from './InputMonto/InputMonto';
+export * from './InputSocioMasked/InputSocioMasked';
+export * from './SelectSocio/SelectSocio';
+export * from './InputAuth/InputAuth';
 export * from './InputPasswordSeguro/InputPasswordSeguro';
 export { default as ModalSms } from './ModalSms/ModalSms';
 export * from './Modal/Modal';
 export * from './Select/Select';
+export * from './SelectFlotante/SelectFlotante';
 export * from './SinResultados/SinResultados';
-export * from './Spinner/Spinner';
+export { default as Spinner } from './Spinner/Spinner';
 export * from './TarjetaEstado/TarjetaEstado';
 export * from './TarjetaMetrica/TarjetaMetrica';
 export * from './TarjetaSeleccionable/TarjetaSeleccionable';
@@ -26,8 +30,8 @@ export * from './SelectFecha/SelectFecha';
 export * from './BuscadorCuit/BuscadorCuit'
 export * from './TicketSimulacion/TicketSimulacion'
 export * from './TicketPrestamoFijo/TicketPrestamoFijo'
-
-
-
-
-
+export * from './SkeletonCard/SkeletonCard'
+export * from './SkeletonTable/SkeletonTable'
+export * from './Paginacion/Paginacion';
+export * from './BuscadorListado/BuscadorListado';
+export * from './FormSection/FormSection';

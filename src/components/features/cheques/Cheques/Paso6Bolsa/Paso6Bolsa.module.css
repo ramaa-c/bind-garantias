@@ -10,85 +10,15 @@
   margin-bottom: 2rem;
 }
 
-/* --- LISTA DE SOCIEDADES --- */
-.listContainer {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
+.topGrid {
+  max-width: 35rem;
 }
 
-.listItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.125rem 1.25rem;
-  background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid #333;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 0.75rem;
-}
-
-.listItemSelected {
-  border-color: var(--yellow);
-  background-color: rgba(244, 245, 0, 0.05);
-  margin-bottom: 0;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.itemLeft {
-  display: flex;
-  align-items: center;
-  gap: 0.9375rem;
-}
-
-.agentIcon {
-  color: #888;
-  font-size: 1.2rem;
-  display: flex;
-  flex-shrink: 0;
-}
-
-.listItemSelected .agentIcon {
-  color: var(--yellow);
-}
-
-.itemName {
-  color: var(--white);
-  font-size: 1rem;
-  font-weight: 500;
-  line-height: 1.2;
-}
-
-/* --- ICONOS DE ESTADO --- */
-.emptyCircle {
-  width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 50%;
-  border: 2px solid #555;
-  flex-shrink: 0;
-}
-
-.checkIcon {
-  color: var(--yellow);
-  font-size: 1.4rem;
-  flex-shrink: 0;
-}
-
-/* --- ÁREA EXPANDIDA (INPUT) --- */
 .expandedArea {
-  padding: 1.5625rem 1.25rem;
-  background-color: rgba(244, 245, 0, 0.02);
-  border: 1px solid var(--yellow);
-  border-top: 1px dashed rgba(244, 245, 0, 0.2);
-  border-bottom-left-radius: 0.5rem;
-  border-bottom-right-radius: 0.5rem;
-  margin-bottom: 0.75rem;
+  margin-top: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   animation: fadeIn 0.3s ease;
 }
 
@@ -96,14 +26,18 @@
   width: 100%;
 }
 
-/* --- SECCIÓN ALTERNATIVA --- */
+.actionWrapper {
+  display: flex;
+  justify-content: flex-start;
+}
+
 .altSection {
-  margin-top: 3rem;
+  margin-top: 3.5rem;
   padding-top: 2rem;
-  border-top: 1px dashed #333;
+  border-top: 1px solid #333;
   display: flex;
   flex-direction: column;
-  gap: 0.9375rem;
+  gap: 1rem;
 }
 
 .altText {
@@ -121,6 +55,10 @@
   width: 100%;
 }
 
+.iconRight {
+  margin-left: 0.5rem;
+}
+
 /* Escritorio */
 @media (min-width: 768px) {
   .container {
@@ -128,7 +66,7 @@
   }
 
   .inputWrapper {
-    max-width: 25rem;
+    max-width: 35rem;
   }
 
   .altButtonWrapper {
@@ -139,11 +77,6 @@
   .altButtonWrapper :global(button) {
     width: auto;
   }
-}
-
-/* --- UTILIDADES --- */
-.iconRight {
-  margin-left: 0.5rem;
 }
 
 @keyframes fadeIn {

@@ -1,20 +1,23 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FiPlus, FiSearch } from "react-icons/fi";
 import { FaMoneyBillWave } from "react-icons/fa";
-import { BotonVolver, Button, Select } from "../../components/ui";
-import { TarjetaSolicitud } from "../../components/features";
+import { BotonVolver, Button, Select, Spinner } from "../../components/ui";
+import { TarjetaSolicitud, ModalDetalleSolicitud } from "../../components/features";
 import ModalConfirmacionBorrador from "../../components/features/shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
+import { useObtenerSolicitudesEnProceso } from "../../hooks/useSolicitudes";
+import { useQuery } from "@tanstack/react-query";
+import { sociosService } from "../../services/sociosService";
 
 import styles from "./Solicitudes.module.css";
 
-// Mocks
-const mockSolicitudes = [
+const mockSolicitudesBase = [
   {
     id: "4362",
     tipo: "Pagaré USD",
     monto: "40.000",
+    moneda: "U$D",
     estado: "Aprobada",
     fecha: "18/03/2026",
   },
@@ -22,8 +25,17 @@ const mockSolicitudes = [
     id: "4361",
     tipo: "Cheque",
     monto: "150.000",
-    estado: "Pendiente",
+    moneda: "$",
+    estado: "Rechazada",
     fecha: "15/03/2026",
+  },
+  {
+    id: "4360",
+    tipo: "Línea de Crédito",
+    monto: "250.000",
+    moneda: "$",
+    estado: "Cancelada",
+    fecha: "10/02/2026",
   },
 ];
 
@@ -50,12 +62,9 @@ const hasMeaningfulData = (dataString) => {
         value === null ||
         value === undefined ||
         value === false
-      ) {
+      )
         return false;
-      }
-      if (Array.isArray(value) && value.length === 0) {
-        return false;
-      }
+      if (Array.isArray(value) && value.length === 0) return false;
       return true;
     });
   } catch {
@@ -65,6 +74,7 @@ const hasMeaningfulData = (dataString) => {
 
 export default function Solicitudes() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { control, register } = useForm({
     defaultValues: {
@@ -76,6 +86,46 @@ export default function Solicitudes() {
 
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+
+  // Integración con Backend
+  // Buscamos si hay un CUIT guardado de la última operación creada. 
+  // Si no hay, usamos el CUIT por defecto para la demo.
+  const cuitActivo = sessionStorage.getItem("last_used_cuit") || "33711316839";
+  
+  const { data: solicitudesReal, isLoading: cargandoSolicitudes } = useObtenerSolicitudesEnProceso(cuitActivo);
+
+  // Pre-cargar los datos del socio (nombre de la empresa) para que ya estén listos para las modales
+  const { data: socioResp } = useQuery({
+    queryKey: ["socio", "cuit", cuitActivo],
+    queryFn: () => sociosService.obtenerSocios({ Cuit: cuitActivo }),
+    enabled: !!cuitActivo,
+    staleTime: 1000 * 60 * 30, // 30 minutos ya que no cambia seguido
+  });
+
+  const socio = Array.isArray(socioResp) ? socioResp[0] : socioResp?.items?.[0] || socioResp?.data?.[0];
+  const nombreEmpresaActiva = socio?.denominacion;
+
+  const listaSolicitudes = useMemo(() => {
+    const reales = (solicitudesReal || []).map(s => ({
+      id: s.solicitudenprocesoid?.toString() || Math.random().toString(),
+      tipo: s.tipolimiteid === 1 ? "Cheque" : "Préstamo",
+      monto: s.importe ? new Intl.NumberFormat("es-AR").format(s.importe) : "0",
+      moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
+      estado: "Pendiente", // El endpoint SolicitudEnProceso siempre son pendientes
+      fecha: s.fechacarga ? new Date(s.fechacarga).toLocaleDateString("es-AR") : "Hoy",
+      cuit: s.cuit,
+      isReal: true
+    }));
+
+    return [...reales, ...mockSolicitudesBase];
+  }, [solicitudesReal]);
+
+  useEffect(() => {
+    if (location.state?.nuevaSolicitud) {
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleNuevaOperacion = (ruta, draftKey) => {
     const dataString = sessionStorage.getItem(`${draftKey}_data`);
@@ -102,17 +152,13 @@ export default function Solicitudes() {
       sessionStorage.removeItem(`${draftKeyPendiente}_paso`);
       sessionStorage.removeItem(`${draftKeyPendiente}_lista`);
     }
-    if (flujoPendiente) {
-      navigate(flujoPendiente);
-    }
+    if (flujoPendiente) navigate(flujoPendiente);
     setFlujoPendiente(null);
     setDraftKeyPendiente(null);
   };
 
   const handleCloseContinueDraft = () => {
-    if (flujoPendiente) {
-      navigate(flujoPendiente);
-    }
+    if (flujoPendiente) navigate(flujoPendiente);
     setFlujoPendiente(null);
     setDraftKeyPendiente(null);
   };
@@ -124,106 +170,98 @@ export default function Solicitudes() {
 
   return (
     <div className={styles.pageContainer}>
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.titleGroup}>
-            <div className={styles.iconCircle}>
-              <FaMoneyBillWave />
-            </div>
-            <div>
-              <h1 className={styles.title}>Mis Solicitudes</h1>
-              <p className={styles.subtitle}>
-                Gestioná y hacé el seguimiento de tus operaciones.
-              </p>
-            </div>
+      {/* HEADER COMPACTO */}
+      <header className={styles.compactHeader}>
+        <div className={styles.headerLeft}>
+          <div className={styles.iconCircleSmall}>
+            <FaMoneyBillWave />
           </div>
-
-          <div className={styles.creditInfo}>
-            <span className={styles.creditLabel}>
-              Límite de crédito disponible
-            </span>
-            <span className={styles.creditAmount}>U$D 40.000</span>
-            <span className={styles.creditExpiry}>Vence: 01/11/2026</span>
+          <div className={styles.titleWrapper}>
+            <h1 className={styles.title}>Mis Solicitudes</h1>
+            <p className={styles.subtitle}>
+              Gestioná tus operaciones.
+            </p>
           </div>
         </div>
+
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => handleNuevaOperacion("/alta-operacion", "draft_alta_operacion")}
+          className={styles.btnNuevaOp}
+        >
+          <FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN
+        </Button>
       </header>
 
+      {/* CUERPO PRINCIPAL */}
       <main className={styles.main}>
-        <div className={styles.content}>
-          <div className={styles.navigationRow}>
-            <BotonVolver
-              onClick={() => navigate("/inicio")}
-              texto="Volver al inicio"
-            />
+        <div className={styles.toolbar}>
+          <div className={styles.filtersWrapper}>
+            <div className={styles.searchBox}>
+              <FiSearch className={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Buscar por nombre o CUIT..."
+                className={styles.searchInput}
+                {...register("busqueda")}
+              />
+            </div>
 
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => handleNuevaOperacion("/pagare", "draft_pagare")}
-              className={styles.btnNuevaOp}
-            >
-              <FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN
-            </Button>
-          </div>
-
-          <div className={styles.toolbar}>
-            <div className={styles.filtersWrapper}>
-              <div className={styles.searchBox}>
-                <FiSearch className={styles.searchIcon} />
-                <input
-                  type="text"
-                  placeholder="Buscar por nombre o CUIT..."
-                  className={styles.searchInput}
-                  {...register("busqueda")}
+            <div className={styles.selectGroup}>
+              <div className={styles.customSelectWrapper}>
+                <Select
+                  name="estado"
+                  control={control}
+                  options={opcionesEstado}
+                  placeholder="Estado"
+                  isSearchable={false}
+                  hideErrorSpace
                 />
               </div>
 
-              <div className={styles.selectGroup}>
-                <div className={styles.customSelectWrapper}>
-                  <Select
-                    name="estado"
-                    control={control}
-                    options={opcionesEstado}
-                    placeholder="Estado"
-                    isSearchable={false}
-                    hideErrorSpace
-                  />
-                </div>
-
-                <div className={styles.customSelectWrapper}>
-                  <Select
-                    name="orden"
-                    control={control}
-                    options={opcionesOrden}
-                    isSearchable={false}
-                    hideErrorSpace
-                  />
-                </div>
+              <div className={styles.customSelectWrapper}>
+                <Select
+                  name="orden"
+                  control={control}
+                  options={opcionesOrden}
+                  placeholder="Orden"
+                  isSearchable={false}
+                  hideErrorSpace
+                />
               </div>
             </div>
           </div>
-
-          {/* LISTA DE SOLICITUDES */}
-          <div className={styles.listContainer}>
-            {mockSolicitudes.length > 0 ? (
-              mockSolicitudes.map((item) => (
-                <TarjetaSolicitud key={item.id} solicitud={item} />
-              ))
-            ) : (
-              <div className={styles.emptyState}>
-                <p>No tenés solicitudes activas en este momento.</p>
-              </div>
-            )}
-          </div>
+        </div>
+        <div className={styles.listContainer}>
+          {cargandoSolicitudes ? (
+            <div className={styles.loadingContainer}>
+              <Spinner />
+              <p>Cargando solicitudes...</p>
+            </div>
+          ) : listaSolicitudes.length > 0 ? (
+            listaSolicitudes.map((item) => (
+              <TarjetaSolicitud key={item.id} solicitud={item} onVerDetalle={setSolicitudSeleccionada} />
+            ))
+          ) : (
+            <div className={styles.emptyState}>
+              <p>No tenés solicitudes activas en este momento.</p>
+            </div>
+          )}
         </div>
       </main>
 
-      {/* Modal Interceptor */}
       <ModalConfirmacionBorrador
         isOpen={!!flujoPendiente}
         onClose={handleCloseModalOnly}
         onConfirm={handleConfirmStartNew}
         onContinueBorrador={handleCloseContinueDraft}
+      />
+      <ModalDetalleSolicitud
+        isOpen={!!solicitudSeleccionada}
+        onClose={() => setSolicitudSeleccionada(null)}
+        solicitud={solicitudSeleccionada}
+        nombreEmpresa={nombreEmpresaActiva}
       />
     </div>
   );

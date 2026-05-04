@@ -33,6 +33,7 @@
   border-bottom-color: var(--yellow);
 }
 
+
 .label {
   position: absolute;
   top: 0.5rem;
@@ -107,3 +108,49 @@
   left: 0;
   white-space: nowrap;
 }
+
+.icon {
+  position: absolute;
+  left: 0.6rem;
+  top: 0.6rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  font-size: 1.15rem;
+  z-index: 1;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.input:focus ~ .icon {
+  color: var(--yellow);
+}
+
+.input:not(:placeholder-shown) ~ .icon {
+  color: #ccc;
+}
+
+.input.isValid ~ .icon {
+  color: #4caf50;
+}
+
+.input.isValid:focus ~ .icon {
+  color: var(--yellow);
+}
+
+.group.hasIcon .input {
+  padding-left: 2.8rem;
+}
+
+
+/* --- RESET DE AUTOCOMPLETADO DEL NAVEGADOR --- */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover, 
+.input:-webkit-autofill:focus, 
+.input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+  -webkit-text-fill-color: var(--white, #ffffff) !important;
+  caret-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+

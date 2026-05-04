@@ -1,0 +1,20 @@
+.sectionTitle {
+  color: var(--white);
+  font-size: 0.9375rem;
+  margin: 0.3125rem 0 1rem 0;
+  padding-bottom: 0.3125rem;
+  border-bottom: 1px solid #333;
+}
+
+.inputRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@media (min-width: 48rem) {
+  .inputRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}

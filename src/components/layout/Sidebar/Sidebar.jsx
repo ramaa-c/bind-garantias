@@ -1,15 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiHome,
   FiFileText,
   FiBriefcase,
   FiDollarSign,
-  FiSettings,
   FiMenu,
   FiLayers,
   FiEdit,
   FiUsers,
+  FiShield,
+  FiChevronDown,
 } from "react-icons/fi";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./Sidebar.module.css";
@@ -18,11 +19,25 @@ export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [expandedSections, setExpandedSections] = useState({
+    general: true,
+    misLineas: false,
+    terceros: false,
+    administracion: false,
+  });
+
   const isActive = (path) => location.pathname === path;
 
   const handleNavigate = (path) => {
     navigate(path);
     onClose();
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
   };
 
   return (
@@ -41,76 +56,36 @@ export default function Sidebar({ isOpen, onClose }) {
 
       <nav className={styles.navMenu}>
         {/* ─── SECCIÓN: GENERAL ─── */}
-        <p className={styles.heading}>GENERAL</p>
-        <button
-          className={`${styles.link} ${isActive("/inicio") ? styles.active : ""}`}
-          onClick={() => handleNavigate("/inicio")}
+        <div
+          className={styles.sectionHeader}
+          onClick={() => toggleSection("general")}
         >
-          <FiHome className={styles.icon} /> Inicio
-        </button>
-
-        {/* ─── SECCIÓN: MIS LÍNEAS ─── */}
-        <p className={`${styles.heading} ${styles.headingSpacing}`}>
-          MIS LÍNEAS
-        </p>
-        <button
-          className={`${styles.link} ${isActive("/pagare") ? styles.active : ""}`}
-          onClick={() => handleNavigate("/pagare")}
+          <p className={styles.heading}>GENERAL</p>
+          <FiChevronDown
+            className={`${styles.chevron} ${expandedSections.general ? styles.chevronOpen : ""}`}
+          />
+        </div>
+        <div
+          className={`${styles.collapsibleContent} ${expandedSections.general ? styles.expanded : ""}`}
         >
-          <FiFileText className={styles.icon} /> Línea de Pagaré USD
-        </button>
-        <button
-          className={`${styles.link} ${isActive("/cheques") ? styles.active : ""}`}
-          onClick={() => handleNavigate("/cheques")}
-        >
-          <FiBriefcase className={styles.icon} /> Línea de Cheques
-        </button>
-        <button
-          className={`${styles.link} ${isActive("/prestamos") ? styles.active : ""}`}
-          onClick={() => handleNavigate("/prestamos")}
-        >
-          <FiDollarSign className={styles.icon} /> Línea de Préstamos
-        </button>
-
-        {/* ─── SECCIÓN: TERCEROS ─── */}
-        <p className={`${styles.heading} ${styles.headingSpacing}`}>TERCEROS</p>
-        <button
-          className={`${styles.link} ${isActive("/solicitud-cheques") ? styles.active : ""}`}
-          onClick={() => handleNavigate("/solicitud-cheques")}
-        >
-          <FiEdit className={styles.icon} /> Operar Cheques
-        </button>
-        <button
-          className={`${styles.link} ${isActive("/carga-masiva-cheques") ? styles.active : ""}`}
-          onClick={() => handleNavigate("/carga-masiva-cheques")}
-        >
-          <FiLayers className={styles.icon} /> Carga Masiva Cheques
-        </button>
-        <button
-          className={`${styles.link} ${isActive("/solicitud-pagare") ? styles.active : ""}`}
-          onClick={() => handleNavigate("/solicitud-pagare")}
-        >
-          <FiFileText className={styles.icon} /> Operar Pagaré
-        </button>
-        <button
-          className={`${styles.link} ${isActive("/prestamos-seleccionables") ? styles.active : ""}`}
-          onClick={() => handleNavigate("/prestamos-seleccionables")}
-        >
-          <FiUsers className={styles.icon} /> Préstamos Seleccionables
-        </button>
-        <button
-          className={`${styles.link} ${isActive("/prestamos-fijos") ? styles.active : ""}`}
-          onClick={() => handleNavigate("/prestamos-fijos")}
-        >
-          <FiLayers className={styles.icon} /> Préstamos Fijos
-        </button>
+          <button
+            className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
+            onClick={() => handleNavigate("/solicitudes")}
+          >
+            <FiFileText className={styles.icon} /> Solicitudes
+          </button>
+          <button
+            className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
+            onClick={() => handleNavigate("/documentacion")}
+          >
+            <FiLayers className={styles.icon} /> Documentación
+          </button>
+        </div>
       </nav>
 
-      {/* --- FOOTER DE CONFIGURACIÓN --- */}
+      {/* --- FOOTER DE VERSIÓN --- */}
       <div className={styles.footer}>
-        <button className={styles.link}>
-          <FiSettings className={styles.icon} /> Configuración
-        </button>
+        <p className={styles.versionText}>© 2026 Bind Garantías · v1.0.0</p>
       </div>
     </aside>
   );

@@ -69,19 +69,74 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   padding: 1rem 1.5rem 2rem 1.5rem;
   margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.versionText {
+  color: var(--text-muted, #666);
+  font-size: 0.75rem;
+  margin: 0;
+  letter-spacing: 0.02em;
+  text-align: center;
+  user-select: none;
 }
 
 /* --- LINKS --- */
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  padding: 0.85rem 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.sectionHeader:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(245, 244, 0, 0.2);
+}
+
+.chevron {
+  color: var(--text-muted, #666);
+  font-size: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.collapsibleContent {
+  max-height: 0;
+  overflow: hidden;
+  transition:
+    max-height 0.3s ease-out,
+    opacity 0.2s;
+  opacity: 0;
+}
+
+.expanded {
+  max-height: 500px; /* Suficiente para el contenido */
+  opacity: 1;
+  margin-top: 0.5rem;
+  overflow: visible;
+}
+
 .heading {
-  color: var(--text-muted, #777);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  margin: 0 0 0.75rem 0.5rem;
+  color: var(--white-muted, #ccc);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin: 0;
 }
 
 .headingSpacing {
-  margin-top: 1.75rem;
+  margin-top: 0.75rem;
 }
 
 .link {
@@ -124,7 +179,6 @@
   background-color: rgba(245, 244, 0, 0.05);
   border: 1px solid rgba(245, 244, 0, 0.15);
   color: var(--color-amarillo-bind, #f5f400);
-  font-weight: 600;
 }
 
 .active .icon {

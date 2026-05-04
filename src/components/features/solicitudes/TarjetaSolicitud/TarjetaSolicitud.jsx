@@ -2,11 +2,12 @@ import React from "react";
 import { FiCalendar, FiChevronRight } from "react-icons/fi";
 import styles from "./TarjetaSolicitud.module.css";
 
-export const TarjetaSolicitud = ({ solicitud }) => {
+export const TarjetaSolicitud = ({ solicitud, onVerDetalle }) => {
   const getStatusKey = (estado) => {
     const e = estado?.toLowerCase();
     if (e?.includes("aprob")) return "statusApproved";
     if (e?.includes("rechaz")) return "statusRejected";
+    if (e?.includes("cancel")) return "statusCancelled";
     return "statusWaiting";
   };
 
@@ -27,7 +28,7 @@ export const TarjetaSolicitud = ({ solicitud }) => {
 
           <div className={styles.montoRow}>
             <span className={styles.montoLabel}>Monto:</span>
-            <span className={styles.montoValue}>U$D {solicitud.monto}</span>
+            <span className={styles.montoValue}>{solicitud.moneda || "$"} {solicitud.monto}</span>
           </div>
         </div>
 
@@ -38,13 +39,12 @@ export const TarjetaSolicitud = ({ solicitud }) => {
           </div>
 
           <div className={styles.actionsWrapper}>
-
             {solicitud.acciones?.map((accion) => (
               <button key={accion} className={styles.btnAction}>
                 {accion}
               </button>
             )) || (
-                <button className={styles.btnDetalle}>
+                <button className={styles.btnDetalle} onClick={() => onVerDetalle && onVerDetalle(solicitud)}>
                   VER DETALLE <FiChevronRight />
                 </button>
               )}

@@ -7,7 +7,7 @@ import {
   FiMessageSquare,
 } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
-import { Button, InputFlotante } from "../../../../ui";
+import { Button, InputSocioMasked } from "../../../../ui";
 import styles from "./ModalContacto.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
 
@@ -64,7 +64,7 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
 
   const handleVerificarSms = (e) => {
     if (e) e.preventDefault();
-    if (codigoSms.length === 6 && !procesando) {
+    if (codigoSms.length === 4 && !procesando) {
       setProcesando(true);
       setFase("exito");
 
@@ -122,21 +122,26 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
                 validación.
               </p>
               <div className={styles.formSection}>
-                <InputFlotante
+                <InputSocioMasked
                   label="Celular (Sin 0 ni 15)"
-                  maxLength={10}
+                  mask={[
+                    { mask: "00 0000-0000" },
+                    { mask: "000 000-0000" }
+                  ]}
+                  unmask={true}
                   error={errorCel}
                   esValido={isCelValido}
                   value={celLocal}
-                  onChange={(e) =>
-                    setCelLocal(e.target.value.replace(/\D/g, ""))
-                  }
+                  onChange={(val) => setCelLocal(typeof val === 'string' ? val : val.target?.value || "")}
+                  icon={<FiSmartphone />}
                 />
               </div>
               <div className={styles.btnSave}>
                 <Button
-                  type="submit"
+                  type="button"
                   variant="primary"
+                  onClick={handleSolicitarSms}
+                  disabled={procesando || celLocal.length < 10}
                   style={{ width: "100%", minHeight: "3rem" }}
                 >
                   ENVIAR CÓDIGO SMS
@@ -169,21 +174,22 @@ export default function ModalContacto({ isOpen, onClose, onGuardar }) {
                 </span>
               </p>
               <div className={styles.formSection}>
-                <InputFlotante
+                <InputSocioMasked
                   label="Código de verificación"
+                  mask="0000"
+                  unmask={true}
                   value={codigoSms}
-                  maxLength={6}
-                  onChange={(e) =>
-                    setCodigoSms(e.target.value.replace(/\D/g, ""))
-                  }
-                  esValido={codigoSms.length === 6}
+                  esValido={codigoSms.length === 4}
+                  onChange={(val) => setCodigoSms(typeof val === 'string' ? val : val.target?.value || "")}
+                  icon={<FiMessageSquare />}
                 />
               </div>
               <div className={styles.btnSave}>
                 <Button
-                  type="submit"
+                  type="button"
                   variant="primary"
-                  disabled={codigoSms.length < 6 || procesando}
+                  onClick={handleVerificarSms}
+                  disabled={codigoSms.length < 4 || procesando}
                   style={{ width: "100%", minHeight: "3rem" }}
                 >
                   VERIFICAR IDENTIDAD

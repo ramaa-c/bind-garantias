@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
-import { useFormPersist, getPersistedFormData } from "../../hooks/useFormPersist";
+import {
+  useFormPersist,
+  getPersistedFormData,
+} from "../../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 import { chequesSchema } from "../../schemas/chequesSchema";
@@ -14,10 +17,18 @@ import {
   Paso6Bolsa,
   Paso7Exito,
   PanelDudas,
+  BotonAyudaFlotante,
   ModalConfirmacionBorrador,
 } from "../../components/features";
-import { ModalSms, BarraProgreso, BotonVolver, Scroll } from "../../components/ui";
+import { sociosService } from "../../services/sociosService";
+import {
+  ModalSms,
+  BarraProgreso,
+  BotonVolver,
+  Scroll,
+} from "../../components/ui";
 import styles from "./Cheques.module.css";
+import { useCrearSocio, useActualizarSocio } from "../../hooks/useSocios";
 
 const STORAGE_KEY = "draft_cheques";
 
@@ -32,6 +43,7 @@ export default function Cheques() {
   const [tempSocioCuit, setTempSocioCuit] = useState("");
   const [tempSocioNombre, setTempSocioNombre] = useState("");
   const [tempSocioParticipacion, setTempSocioParticipacion] = useState("");
+  const [tempSocioDataOriginal, setTempSocioDataOriginal] = useState(null);
 
   const [docExpandido, setDocExpandido] = useState("estatuto");
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
@@ -94,6 +106,8 @@ export default function Cheques() {
       celular: "",
       representantes: [],
       emailFacturacion: "",
+      monto: "",
+      fechaPago: "",
     });
     setSocios([]);
     setFaseSocio("lista");
@@ -136,42 +150,164 @@ export default function Cheques() {
   const iniciarCargaSocio = () => {
     setTempSocioCuit("");
     setTempSocioParticipacion("");
+    setTempSocioDataOriginal(null);
     setFaseSocio("ingresar_cuit");
   };
-  const validarCuitSocio = () => {
-    setTempSocioNombre("SEOANE SUAREZ MARINA");
+
+  const validarCuitSocio = async () => {
+    try {
+      const response = await sociosService.obtenerSocios({
+        Cuit: tempSocioCuit,
+        page: 1,
+        page_size: 10,
+      });
+
+      const resultados = Array.isArray(response)
+        ? response
+        : response?.items || response?.data || [];
+
+      if (resultados.length > 0) {
+        setTempSocioNombre(resultados[0].denominacion);
+        setTempSocioDataOriginal(resultados[0]);
+      } else {
+        setTempSocioNombre("SEOANE SUAREZ MARINA (Mock AFIP)");
+        setTempSocioDataOriginal(null);
+      }
+    } catch (error) {
+      console.error("Error al buscar el socio:", error);
+      setTempSocioNombre("SEOANE SUAREZ MARINA (Error Back)");
+      setTempSocioDataOriginal(null);
+    }
+
     setFaseSocio("completar_datos");
   };
+
   const guardarSocio = () => {
-    if (!tempSocioParticipacion) return;
+    const participacionNueva = Number(tempSocioParticipacion);
+    if (!participacionNueva) return;
+
+    const totalParticipacionActual = socios.reduce(
+      (acc, socio) => acc + Number(socio.participacion || 0),
+      0,
+    );
+
+    if (totalParticipacionActual + participacionNueva > 100) return false;
+
     setSocios([
       ...socios,
       {
         cuit: tempSocioCuit,
         nombre: tempSocioNombre,
         participacion: tempSocioParticipacion,
+        dataOriginal: tempSocioDataOriginal,
       },
     ]);
     setFaseSocio("lista");
+    return true;
   };
+
   const editarSocio = (index) => {
     const socioAEditar = socios[index];
     setTempSocioCuit(socioAEditar.cuit);
     setTempSocioNombre(socioAEditar.nombre);
     setTempSocioParticipacion(socioAEditar.participacion);
+    setTempSocioDataOriginal(socioAEditar.dataOriginal);
+
     setSocios(socios.filter((_, i) => i !== index));
     setFaseSocio("completar_datos");
   };
+
   const eliminarSocio = (index) => {
     const nuevos = socios.filter((_, i) => i !== index);
     setSocios(nuevos);
     if (nuevos.length === 0) setFaseSocio("ingresar_cuit");
   };
+
   const continuarAlProximoPaso = () => setPasoActual(5);
 
   // Paso 5
   const toggleDoc = (seccion) => {
     setDocExpandido((prev) => (prev === seccion ? "" : seccion));
+  };
+
+  // --- Mutaciones de Socios ---
+  const { mutateAsync: crearSocio } = useCrearSocio();
+  const { mutateAsync: actualizarSocio } = useActualizarSocio();
+
+  const handleGuardarSocioDb = async (socioIndex, datosFormulario) => {
+    const socioTarget = socios[socioIndex];
+
+    try {
+      if (socioTarget.dataOriginal) {
+        const payloadPut = {
+          ...socioTarget.dataOriginal,
+          email: datosFormulario.email || "",
+          telefono: datosFormulario.celular || "",
+          calle: datosFormulario.direccion || "",
+        };
+
+        await actualizarSocio(payloadPut);
+
+        const nuevosSocios = [...socios];
+        nuevosSocios[socioIndex].dataOriginal = payloadPut;
+        setSocios(nuevosSocios);
+      } else {
+        const payloadPost = {
+          socioid: 0,
+          entidadid: 0,
+          tiposocioid: 0,
+          cuit: socioTarget.cuit || "",
+          denominacion: socioTarget.nombre || "",
+          calle: datosFormulario.direccion || "",
+          numero: 0,
+          piso: "",
+          departamento: "",
+          ciudadid: 0,
+          telefono: datosFormulario.celular || "",
+          fax: "",
+          email: datosFormulario.email || "",
+          tipopersonaid: 0,
+          tipocarteraid: 0,
+          sectorcontableid: 0,
+          tipoactividadbcraid: 0,
+          tipoactividadsepymeid: 0,
+          marcavinculacion: "0",
+          situacionbcraid: 0,
+          fechabaja: null,
+          motivobajaid: 0,
+          socioestadoid: 0,
+          codpos: "",
+          tamanioempresaid: 0,
+          fechacierreejercicio: null,
+          legajo: 0,
+          tiporegimenivaid: 0,
+          actividadespecifica: "",
+          partido: "",
+          telefono2: "",
+          telefono3: "",
+          visitado: "",
+          scoringcomercial: "",
+          partidoid: 0,
+          fechainicioactividades: new Date().toISOString(),
+          tipoactividadglobalid: 0,
+          tipocanalcomercializacionid: 0,
+          emailfacturacion: "",
+          minapoderadosrequeridos: 0,
+          tipocondicionfianzaid: 0,
+          jsoncondicionfianza: "",
+        };
+
+        const nuevoSocioDb = await crearSocio(payloadPost);
+
+        const nuevosSocios = [...socios];
+        nuevosSocios[socioIndex].dataOriginal = nuevoSocioDb;
+        setSocios(nuevosSocios);
+      }
+      return true;
+    } catch (error) {
+      console.error("Error al guardar el socio:", error);
+      throw error;
+    }
   };
 
   const avanzarPaso6 = async () => {
@@ -254,11 +390,11 @@ export default function Cheques() {
                     return (
                       <BarraProgreso
                         hitos={[
-                          "Empresa",
-                          "Operación",
-                          "Socios",
-                          "Documentos",
-                          "Confirmación",
+                          "EMPRESA",
+                          "OPERACIÓN",
+                          "SOCIOS",
+                          "DOCUMENTOS",
+                          "CONFIRMACIÓN",
                         ]}
                         hitoActual={hitoVisual}
                       />
@@ -321,6 +457,7 @@ export default function Cheques() {
                           socios={socios}
                           onVolverASocios={() => setPasoActual(4)}
                           avanzarPaso6={avanzarPaso6}
+                          onGuardarSocioDb={handleGuardarSocioDb}
                         />
                       )}
 
@@ -338,7 +475,15 @@ export default function Cheques() {
                 </FormProvider>
               </div>
             </div>
-            {pasoActual < 7 && <PanelDudas pasoActual={pasoActual} />}
+            {pasoActual < 7 && (
+              <>
+                <PanelDudas contexto="cheques" pasoActual={pasoActual} />
+                <BotonAyudaFlotante
+                  contexto="cheques"
+                  pasoActual={pasoActual}
+                />
+              </>
+            )}
           </div>
         </div>
       </div>

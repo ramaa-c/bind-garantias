@@ -111,29 +111,44 @@ export const Select = ({
   isSearchable = false,
   error,
   hideErrorSpace = false,
+  value,
+  onChange,
 }) => {
   return (
     <div className={styles.indicatorWrapper}>
       {label && <span className={styles.indicatorLabel}>{label}</span>}
 
-      <Controller
-        name={name}
-        control={control}
-        defaultValue=""
-        render={({ field }) => (
-          <ReactSelect
-            {...field}
-            options={options}
-            styles={selectStyles(!!error)}
-            isDisabled={disabled}
-            isSearchable={isSearchable}
-            placeholder={placeholder}
-            value={options.find((c) => c.value === field.value) || null}
-            onChange={(val) => field.onChange(val ? val.value : "")}
-            aria-label={label || placeholder}
-          />
-        )}
-      />
+      {control ? (
+        <Controller
+          name={name}
+          control={control}
+          defaultValue=""
+          render={({ field }) => (
+            <ReactSelect
+              {...field}
+              options={options}
+              styles={selectStyles(!!error)}
+              isDisabled={disabled}
+              isSearchable={isSearchable}
+              placeholder={placeholder}
+              value={options.find((c) => c.value === field.value) || null}
+              onChange={(val) => field.onChange(val ? val.value : "")}
+              aria-label={label || placeholder}
+            />
+          )}
+        />
+      ) : (
+        <ReactSelect
+          options={options}
+          styles={selectStyles(!!error)}
+          isDisabled={disabled}
+          isSearchable={isSearchable}
+          placeholder={placeholder}
+          value={options.find((c) => c.value === value) || null}
+          onChange={(val) => onChange && onChange(val ? val.value : "")}
+          aria-label={label || placeholder}
+        />
+      )}
 
       {!hideErrorSpace && (
         <div className={styles.errorContainer}>

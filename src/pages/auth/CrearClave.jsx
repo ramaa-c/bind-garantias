@@ -1,125 +1,317 @@
-import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useForm, useWatch } from "react-hook-form";
+import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { getPasswordScore } from "../../utils/PasswordSeguro";
-import { FiShield } from "react-icons/fi";
-import { InputFlotante, Button, InputPasswordSeguro } from "../../components/ui";
+import { toast } from "sonner";
+import {
+  FiCheckCircle,
+  FiCircle,
+  FiXCircle,
+  FiAlertCircle,
+  FiLock,
+} from "react-icons/fi";
+import { InputAuth, Button } from "../../components/ui";
+import {
+  useObtenerUsuarioPorEncrypt,
+  useEstablecerClave,
+} from "../../hooks/useUsuario";
+import { useChannel } from "../../context/ChannelContext";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
-const getClaveSchema = (emailUsuario) => {
-  return z.object({
-    password: z.string()
+const passwordSchema = z
+  .object({
+    password: z
+      .string()
       .min(12, { message: "Mínimo 12 caracteres" })
-      .regex(/[a-z]/, { message: "Falta una minúscula" })
-      .regex(/[A-Z]/, { message: "Falta una mayúscula" })
-      .regex(/[0-9]/, { message: "Falta un número" })
-      .regex(/[!_.*@#$%^&()\-+]/, { message: "Falta un caracter especial" })
-      .refine((val) => {
-        const score = getPasswordScore(val, emailUsuario);
-        return score >= 3; 
-      }, { message: "La contraseña es muy fácil de adivinar" }),
-    
+      .regex(/[a-z]/, { message: "Incluir una minúscula" })
+      .regex(/[A-Z]/, { message: "Incluir una mayúscula" })
+      .regex(/[0-9]/, { message: "Incluir un número" })
+      .regex(/[!_.*@#$%^&()\-+]/, { message: "Incluir un caracter especial" }),
     confirmPassword: z.string(),
-  }).refine((data) => data.password === data.confirmPassword, {
+  })
+  .refine((data) => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden",
-    path: ["confirmPassword"], 
+    path: ["confirmPassword"],
   });
-};
+
+const PASSWORD_RULES = [
+  { id: "minLength", label: "12 caracteres", test: (v) => v.length >= 12 },
+  { id: "lowercase", label: "1 minúscula", test: (v) => /[a-z]/.test(v) },
+  { id: "uppercase", label: "1 mayúscula", test: (v) => /[A-Z]/.test(v) },
+  { id: "number", label: "1 número", test: (v) => /[0-9]/.test(v) },
+  {
+    id: "special",
+    label: "1 símbolo",
+    test: (v) => /[!_.*@#$%^&()\-+]/.test(v),
+  },
+];
 
 const CrearClave = () => {
-  const location = useLocation();
+  const { canal: canalRouter } = useParams();
+  const { channelInfo } = useChannel();
   const navigate = useNavigate();
-  const emailUsuario = location.state?.emailIngresado || "ejemplo@mailinator.com";
+
+  const [tokenIntegridad] = useState(() => {
+    if (typeof window === "undefined") return "";
+    const savedToken = sessionStorage.getItem("secure_recovery_token") || "";
+    sessionStorage.removeItem("secure_recovery_token");
+    return savedToken;
+  });
+
+  const [canalIntegridad] = useState(() => {
+    if (typeof window === "undefined") return canalRouter || "";
+    const savedCanal =
+      sessionStorage.getItem("secure_recovery_canal") || canalRouter;
+    sessionStorage.removeItem("secure_recovery_canal");
+    return savedCanal;
+  });
+
+  const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
   const {
-    register,
-    handleSubmit,
+    data: usuario,
+    isLoading: verificandoToken,
+    isError: tokenExpirado,
+  } = useObtenerUsuarioPorEncrypt(tokenIntegridad);
+
+  const { mutate: establecerClave, isPending: guardandoClave } =
+    useEstablecerClave();
+
+  const {
     control,
-    formState: { errors, isValid, dirtyFields },
+    handleSubmit,
+    watch,
+    formState: { isValid, errors },
+    setError,
   } = useForm({
-    resolver: zodResolver(getClaveSchema(emailUsuario)),
+    resolver: zodResolver(passwordSchema),
     mode: "onChange",
   });
 
-  const currentPassword = useWatch({ control, name: "password", defaultValue: "" });
+  const passwordValue = watch("password") || "";
+  const confirmPasswordValue = watch("confirmPassword") || "";
 
-  const isPasswordValid = !errors.password && dirtyFields.password;
+  const passedRulesCount = PASSWORD_RULES.filter((rule) =>
+    rule.test(passwordValue),
+  ).length;
 
-  const onSubmit = () => {
-    // llamada api
+  const getBarColor = (count) => {
+    if (count <= 2) return "#ff5252";
+    if (count <= 4) return "#ffb142";
+    return "#4ade80";
   };
 
+  const onSubmit = (formData) => {
+    const payload = {
+      usuarioid: usuario?.usuariowebid,
+      data: {
+        oldpassword: "",
+        newpassword: formData.password,
+      },
+    };
+
+    establecerClave(payload, {
+      onSuccess: () => {
+        toast.success("Contraseña establecida correctamente", {
+          description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
+          duration: 5000,
+        });
+        navigate("/login", { replace: true });
+      },
+      onError: (err) => {
+        const errMsg =
+          err.response?.data?.message || "Error al establecer la credencial.";
+        toast.error("Error de activación", { description: errMsg });
+        setError("root.serverError", { type: "manual", message: errMsg });
+      },
+    });
+  };
+
+  const mostrarErrorFaltaUsuario =
+    !usuario && tokenExpirado && !verificandoToken;
+
   return (
-    <div className={styles.layoutSplit}>
-      {/* --- COLUMNA IZQUIERDA --- */}
-      <section className={styles.sideForm}>
-        <div className={styles.globalLogo}>
-          <img src={logoBind} alt="Logo BIND" width="120" onClick={() => navigate("/")} style={{ cursor: "pointer" }} />
+    <div className={styles.loginContainer}>
+      {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
+      <section className={styles.loginFormSection}>
+        <div className={styles.loginHeader}>
+          <div
+            className={styles.logosWrapper}
+            style={{ justifyContent: "center", marginBottom: "2.5rem" }}
+          >
+            <img
+              src={logoBind}
+              alt="Logo BIND"
+              className={styles.logo}
+              style={{ margin: 0, height: "4rem", width: "auto" }}
+            />
+            {channelInfo.id !== "default" && (
+              <>
+                <div className={styles.logoSeparator} />
+                <img
+                  src={channelInfo.logo}
+                  alt={`Logo ${channelInfo.nombre}`}
+                  className={styles.channelLogo}
+                  style={{ height: "4rem" }}
+                />
+              </>
+            )}
+          </div>
+          <h1 className={styles.loginTitle}>Crear nueva contraseña</h1>
+          <p className={styles.loginSubtitle}>
+            Establecé las credenciales para acceder a tu cuenta.
+          </p>
         </div>
 
-        <div className={styles.cardModern}>
-          <div className={styles.headerText}>
-            <h2>Creá tu contraseña</h2>
-            <p>
-              Para el usuario:{" "}
-              <strong className={styles.boldWhiteText}>{emailUsuario}</strong>
-            </p>
-          </div>
-
-          <form
-            className={styles.formContent}
-            onSubmit={handleSubmit(onSubmit)}
-          >
-            <InputPasswordSeguro
-              label="Contraseña"
-              id="password"
-              currentValue={currentPassword}
-              email={emailUsuario}
-              esValido={isPasswordValid}
-              {...register("password")}
-            />
-
-            <div className={styles.formFieldSpacing}>
-              <InputFlotante
-                label="Confirmar contraseña"
-                type="password"
-                id="confirmPassword"
-                error={errors.confirmPassword?.message}
-                {...register("confirmPassword")}
-              />
-            </div>
-
-            <div className={`${styles.formActions} ${styles.formActionsMargin}`}>
+        <div className={styles.formWrapper}>
+          {tokenInvalidoDeOrigen && (
+            <div className={styles.expiredTokenContainer}>
+              <FiAlertCircle size={48} color="var(--red)" />
+              <h3>Enlace corrupto o ausente</h3>
+              <p>El enlace de seguridad está incompleto o mal formado.</p>
               <Button
-                type="submit"
                 variant="primary"
-                disabled={!isValid}
-                className={!isValid ? styles.btnDisabled : ""}
+                onClick={() => navigate("/registro")}
+                style={{ marginTop: "1.5rem" }}
               >
-                CREAR E INGRESAR
+                SOLICITAR NUEVO ENLACE
               </Button>
             </div>
-          </form>
+          )}
+
+          {verificandoToken && !tokenInvalidoDeOrigen && (
+            <div className={styles.loadingStatePlaceholder}>
+              <p>Validando enlace de seguridad...</p>
+            </div>
+          )}
+
+          {mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen && (
+            <div className={styles.expiredTokenContainer}>
+              <FiAlertCircle size={48} color="var(--red)" />
+              <h3>El enlace ha expirado o es inválido</h3>
+              <p>
+                No pudimos recuperar tu información. Solicitá un nuevo enlace
+                para continuar.
+              </p>
+              <Button
+                variant="primary"
+                onClick={() => navigate("/recuperar-password")}
+                style={{ marginTop: "1.5rem" }}
+              >
+                SOLICITAR NUEVO ENLACE
+              </Button>
+            </div>
+          )}
+
+          {/* Formulario principal */}
+          {!verificandoToken && !tokenInvalidoDeOrigen && usuario && (
+            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+              <div className={styles.inputGroup}>
+                <InputAuth
+                  name="password"
+                  control={control}
+                  label="Nueva Contraseña"
+                  type="password"
+                  icon={<FiLock size={20} />}
+                  esValido={!!passwordValue && passedRulesCount === 5}
+                  hideError
+                  disabled={guardandoClave}
+                />
+
+                <div className={styles.strengthSegments}>
+                  {PASSWORD_RULES.map((rule) => {
+                    const passed = passwordValue
+                      ? rule.test(passwordValue)
+                      : false;
+                    return (
+                      <div
+                        key={rule.id}
+                        className={styles.strengthSegmentWrapper}
+                      >
+                        <div
+                          className={`${styles.strengthSegment} ${
+                            passed
+                              ? styles.strengthSegmentOn
+                              : styles.strengthSegmentOff
+                          }`}
+                          style={passed ? { backgroundColor: "#4ade80" } : {}}
+                        />
+                        <span
+                          className={`${styles.segmentLabel} ${
+                            passed
+                              ? styles.segmentLabelOn
+                              : styles.segmentLabelOff
+                          }`}
+                        >
+                          {rule.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div
+                className={styles.inputGroup}
+                style={{ marginTop: "1rem", position: "relative" }}
+              >
+                <InputAuth
+                  name="confirmPassword"
+                  control={control}
+                  label="Confirmar Contraseña"
+                  type="password"
+                  icon={<FiLock size={20} />}
+                  esValido={
+                    !!confirmPasswordValue &&
+                    passwordValue === confirmPasswordValue
+                  }
+                  disabled={guardandoClave}
+                />
+
+                {confirmPasswordValue.length > 0 &&
+                  passwordValue === confirmPasswordValue && (
+                    <span className={styles.successMsgMatch}>
+                      Las contraseñas coinciden
+                    </span>
+                  )}
+              </div>
+
+              {errors.root?.serverError && (
+                <div className={styles.serverErrorAlert}>
+                  <FiXCircle /> {errors.root.serverError.message}
+                </div>
+              )}
+
+              <div className={styles.formActions} style={{ marginTop: "1rem" }}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={!isValid || guardandoClave}
+                >
+                  {guardandoClave ? "PROCESANDO..." : "ACTIVAR CUENTA"}
+                </Button>
+              </div>
+            </form>
+          )}
         </div>
       </section>
 
-      {/* --- COLUMNA DERECHA --- */}
       <section className={`${styles.sideBrand} ${styles.sideBrandCentered}`}>
-        <div className={styles.shieldIconWrapper}>
-          <FiShield size={80} color="var(--yellow)" strokeWidth={1.5} />
-        </div>
-
-        <div className={styles.brandContentCentered}>
+        <div className={styles.crearClaveBrandContent}>
+          <div className={styles.shieldIconWrapper}>
+            <FiLock
+              size={44}
+              color="var(--yellow, #f4f500)"
+              strokeWidth={1.5}
+            />
+          </div>
           <h2 className={styles.brandTitleLarge}>
-            Protegé tu cuenta.
+            Tu acceso,
+            <br />
+            <em className={styles.brandEm}>seguro.</em>
           </h2>
-          <p className={styles.brandSubtitle}>
-            Usá una contraseña fuerte y única. Nunca compartas tus credenciales
-            de acceso con terceros.
-          </p>
         </div>
       </section>
     </div>

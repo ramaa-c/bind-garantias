@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiBriefcase, FiX } from "react-icons/fi";
-import { InputFlotante, Button, BotonVolver } from "../../../../ui";
+import { FiBriefcase, FiX, FiMail, FiSmartphone, FiCreditCard, FiEdit2 } from "react-icons/fi";
+import { InputSocioMasked, Button } from "../../../../ui";
 import styles from "./ModalRepresentante.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
+import { sociosService } from "../../../../../services/sociosService";
 
 export const ModalRepresentante = ({
   isOpen,
@@ -19,6 +20,7 @@ export const ModalRepresentante = ({
   const [celular, setCelular] = useState("");
 
   const [errores, setErrores] = useState({});
+  const [validando, setValidando] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -75,7 +77,7 @@ export const ModalRepresentante = ({
     !errores.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isCelularValido = !errores.celular && celular.length === 10;
 
-  const handleValidarCuit = (e) => {
+  const handleValidarCuit = async (e) => {
     if (e) e.preventDefault();
     if (!cuit || cuit.trim() === "") {
       setErrores({ cuit: "El CUIT es obligatorio" });
@@ -86,9 +88,37 @@ export const ModalRepresentante = ({
       return;
     }
     setErrores({});
-    // MOCK
-    setNombre("GOMEZ PEREZ JUAN");
-    setFaseInterna("completar");
+    setValidando(true);
+
+    try {
+      let resp = await sociosService.obtenerSocios({ Cuit: cuit });
+      let socioDb = Array.isArray(resp) ? resp[0] : (resp?.items?.[0] || resp?.data?.[0]);
+
+      if (!socioDb) {
+        const respWeb = await sociosService.obtenerSociosWeb({ Cuit: cuit });
+        socioDb = Array.isArray(respWeb) ? respWeb[0] : (respWeb?.items?.[0] || respWeb?.data?.[0]);
+      }
+
+      if (socioDb) {
+        setNombre(socioDb.denominacion || "Representante sin nombre");
+        
+        const dbEmail = socioDb.email || socioDb.emailfacturacion || "";
+        const dbCelular = socioDb.celular || socioDb.telefono || socioDb.telefono2 || "";
+        
+        if (dbEmail) setEmail(dbEmail);
+        if (dbCelular) setCelular(dbCelular);
+
+      } else {
+        setNombre("Representante Nuevo");
+      }
+      setFaseInterna("completar");
+    } catch (err) {
+      console.error("Error validando representante:", err);
+      setNombre("Error al validar representante");
+      setFaseInterna("completar");
+    } finally {
+      setValidando(false);
+    }
   };
 
   const handleGuardarYCerrar = (e) => {
@@ -148,54 +178,64 @@ export const ModalRepresentante = ({
               {faseInterna === "ingresar" && (
                 <div className={styles.searchBox}>
                   <div className={styles.inputWrapper}>
-                    <InputFlotante
+                    <InputSocioMasked
                       name="cuit"
                       label="CUIT"
-                      maxLength={11}
+                      icon={<FiCreditCard />}
+                      mask="00-00000000-0"
                       esValido={
-                        cuit.length === 11 && !errores.cuit && validarCUIT(cuit)
+                        cuit?.length === 11 && !errores.cuit && validarCUIT(cuit)
                       }
                       error={errores.cuit}
-                      value={cuit}
-                      onChange={(e) => {
-                        const limpio = e.target.value
-                          .replace(/\D/g, "")
-                          .slice(0, 11);
+                      value={cuit || ""}
+                      disabled={validando}
+                      onChange={(val) => {
+                        const limpio = val ? String(val).replace(/\D/g, "").slice(0, 11) : "";
                         setCuit(limpio);
-                        if (errores.cuit)
+                        
+                        if (errores.cuit) {
                           setErrores({ ...errores, cuit: null });
+                        }
                       }}
                     />
                   </div>
                   <Button
-                    type="submit"
+                    type="button"
                     variant="primary"
                     size="sm"
+                    onClick={handleValidarCuit}
+                    disabled={validando}
                   >
-                    VALIDAR
+                    {validando ? "BUSCANDO..." : "VALIDAR"}
                   </Button>
                 </div>
               )}
 
               {faseInterna === "completar" && (
                 <div className={styles.completarContainer}>
-                  {!representanteInicial && (
-                    <div className={styles.topBackButtonWrapper}>
-                      <BotonVolver
-                        texto="MODIFICAR CUIT"
-                        onClick={() => {
-                          setCuit("");
-                          setErrores({});
-                          setFaseInterna("ingresar");
-                        }}
-                      />
-                    </div>
-                  )}
-
+                  
                   <div className={styles.infoPill}>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>CUIT:</span>
-                      <span className={styles.infoValue}>{cuit}</span>
+                    <div className={styles.pillHeader}>
+                      <div className={styles.infoRow} style={{ marginBottom: 0 }}>
+                        <span className={styles.infoLabel}>CUIT:</span>
+                        <span className={styles.infoValue}>{cuit}</span>
+                      </div>
+                      
+                      {!representanteInicial && (
+                        <button
+                          type="button"
+                          className={styles.editButton}
+                          onClick={() => {
+                            setCuit("");
+                            setErrores({});
+                            setFaseInterna("ingresar");
+                          }}
+                          title="Modificar CUIT"
+                          aria-label="Modificar CUIT"
+                        >
+                          <FiEdit2 size={16} />
+                        </button>
+                      )}
                     </div>
                     <div className={styles.infoRow}>
                       <span className={styles.infoLabel}>Nombre:</span>
@@ -230,34 +270,37 @@ export const ModalRepresentante = ({
                   </div>
 
                   <div className={styles.inputRow}>
-                    <InputFlotante
+                    <InputSocioMasked
                       name="modalRepEmail_unique"
                       label="Email Personal"
                       type="email"
+                      icon={<FiMail />}
                       error={errores.email}
                       esValido={isEmailValido}
                       value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
+                      onChange={(val) => {
+                        setEmail(val);
                         if (errores.email)
                           setErrores({ ...errores, email: null });
                       }}
                     />
-                    <InputFlotante
+                    <InputSocioMasked
                       name="modalRepCelular_unique"
-                      label="Celular"
-                      maxLength={10}
+                      label="Celular (Sin 0 ni 15)"
                       autoComplete="off"
+                      icon={<FiSmartphone />}
+                      mask={[
+                        { mask: "00 0000-0000" },
+                        { mask: "000 000-0000" }
+                      ]}
                       error={errores.celular}
                       esValido={isCelularValido}
                       value={celular}
-                      onChange={(e) => {
-                        const limpio = e.target.value
-                          .replace(/\D/g, "")
-                          .slice(0, 10);
-                        setCelular(limpio);
-                        if (errores.celular)
+                      onChange={(val) => {
+                        setCelular(val);
+                        if (errores.celular) {
                           setErrores({ ...errores, celular: null });
+                        }
                       }}
                     />
                   </div>
@@ -268,9 +311,10 @@ export const ModalRepresentante = ({
             {faseInterna === "completar" && (
               <div className={styles.modalFooter}>
                 <Button
-                  type="submit"
+                  type="button"
                   variant="primary"
                   size="md"
+                  onClick={handleGuardarYCerrar}
                 >
                   GUARDAR REPRESENTANTE
                 </Button>

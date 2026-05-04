@@ -11,11 +11,11 @@
 }
 
 .modalBox {
-  background-color: var(--graphite);
+  background-color: #1a1a1a;
   border: 1px solid #333;
-  border-radius: 12px;
+  border-radius: 1.25rem;
   padding: 30px;
-  width: 90%;
+  width: 92%;
   max-height: 90vh;
   overflow-y: auto;
   position: relative;
@@ -40,30 +40,32 @@
 
 .closeButton {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 16px;
+  right: 16px;
   background: transparent;
   border: none;
-  color: #888;
-  font-size: 24px;
+  color: var(--text-muted, #888);
+  font-size: 20px;
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.2s ease;
+  padding: 0.5rem;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 5px;
+  transition: all 0.2s ease;
+  z-index: 10;
 }
 
 .closeButton:hover {
-  color: var(--white);
-  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-amarillo-bind, #f5f400);
 }
 
 .title {
   color: var(--white);
   margin: 0 0 20px 0;
   font-size: 1.4rem;
-  padding-right: 30px;
+  text-align: center;
 }
 
 @keyframes fadeIn {

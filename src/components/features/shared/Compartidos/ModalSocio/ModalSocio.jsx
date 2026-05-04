@@ -1,16 +1,30 @@
-import React, { useEffect, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useFormContext, useFormState, useWatch } from "react-hook-form";
-import { FiUser, FiX } from "react-icons/fi";
-import { InputFlotante, Button, CargaArchivos } from "../../../../ui";
+import { useFormContext } from "react-hook-form";
+import {
+  FiUser,
+  FiX,
+  FiArrowRight,
+  FiMail,
+  FiSmartphone,
+  FiMapPin,
+  FiMap,
+} from "react-icons/fi";
+import {
+  InputSocioMasked,
+  Button,
+  CargaArchivos,
+  SelectSocio,
+} from "../../../../ui";
 import { useEscape } from "../../../../../hooks/useEscape";
+import { useProvincias } from "../../../../../hooks/useCatalogos";
 import styles from "./ModalSocio.module.css";
 
+/* ─── Sub-componente: Dropzone ─── */
 const DropzoneField = ({
   fileKey,
   title,
   subtitle,
-  intentoGuardarSocio,
   archivos,
   draggingKey,
   onFileUpload,
@@ -19,7 +33,7 @@ const DropzoneField = ({
   onDragLeave,
   onDrop,
 }) => {
-  const tieneError = intentoGuardarSocio && !archivos[fileKey];
+  const tieneError = false;
   return (
     <div className={styles.dropzoneWrapper}>
       <input
@@ -34,7 +48,10 @@ const DropzoneField = ({
         hasError={tieneError}
         file={
           archivos[fileKey]
-            ? { name: archivos[fileKey].name, size: archivos[fileKey].formattedSize }
+            ? {
+                name: archivos[fileKey].name,
+                size: archivos[fileKey].formattedSize,
+              }
             : null
         }
         onClick={() => document.getElementById(`file-input-${fileKey}`).click()}
@@ -47,12 +64,27 @@ const DropzoneField = ({
         onDragLeave={onDragLeave}
         onDrop={(e) => {
           e.preventDefault();
-          if (e.dataTransfer.files?.[0]) onDrop(fileKey, e.dataTransfer.files[0]);
+          if (e.dataTransfer.files?.[0])
+            onDrop(fileKey, e.dataTransfer.files[0]);
         }}
       />
     </div>
   );
 };
+
+/* ─── Hook: detección de móvil ─── */
+function useIsMobile(breakpointPx = 900) {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < breakpointPx : false,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpointPx - 1}px)`);
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, [breakpointPx]);
+  return isMobile;
+}
 
 export default function ModalSocio({
   socio,
@@ -68,75 +100,103 @@ export default function ModalSocio({
   onDragLeave,
   onDrop,
   control,
+  isGuardando,
 }) {
-  const { trigger, setValue } = useFormContext();
-  const { errors, dirtyFields } = useFormState({ control });
+  const {
+    trigger,
+    clearErrors,
+    formState: { errors },
+    watch,
+  } = useFormContext();
+  const isMobile = useIsMobile(900);
 
-  const rawWatch = useWatch({ control, name: `socios.${socioIndex}` });
-  const valoresCampos = useMemo(() => rawWatch ?? {}, [rawWatch]);
-  const isMounted = useRef(false);
+  const [step, setStep] = useState(1);
+  const [haIntentadoAvanzar, setHaIntentadoAvanzar] = useState(false);
+  const [haIntentadoFinalizar, setHaIntentadoFinalizar] = useState(false);
+
+  const { data: provinciasData, isLoading: cargandoProvincias } =
+    useProvincias();
+  const opcionesProvincias = provinciasData?.opciones || [];
 
   const isModalOpen = socioIndex !== null;
   useEscape(onCerrar, isModalOpen);
 
   useEffect(() => {
-    if (socioIndex === null) return;
-    if (!isMounted.current) {
-      isMounted.current = true;
-      return;
+    if (socioIndex === null) {
+      setStep(1);
+      setHaIntentadoAvanzar(false);
+      setHaIntentadoFinalizar(false);
     }
-    trigger([
+  }, [socioIndex]);
+
+  if (!isModalOpen || !socio) return null;
+
+  const handleOverlayMouseDown = (e) => {
+    if (e.target === e.currentTarget) onCerrar();
+  };
+
+  const handleSiguiente = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setHaIntentadoAvanzar(true);
+    const campos = [
       `socios.${socioIndex}.email`,
       `socios.${socioIndex}.celular`,
       `socios.${socioIndex}.direccion`,
       `socios.${socioIndex}.provincia`,
       `socios.${socioIndex}.localidad`,
-    ]);
-  }, [valoresCampos, socioIndex, trigger]);
+    ];
 
-  useEffect(() => {
-    if (socioIndex === null) {
-      isMounted.current = false;
-    }
-  }, [socioIndex]);
-
-  const getCampo = (campo) => {
-    if (socioIndex === null) return { error: null, esValido: false };
-
-    const hasError = errors?.socios?.[socioIndex]?.[campo];
-    const isDirty = dirtyFields?.socios?.[socioIndex]?.[campo];
-    const val = valoresCampos[campo];
-    const hasValue = val !== undefined && val.toString().trim().length > 0;
-
-    const mostrarError =
-      hasError && (isDirty || hasValue || intentoGuardarSocio);
-
-    return {
-      error: mostrarError ? hasError.message : null,
-      esValido: !hasError && hasValue,
-    };
-  };
-
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) {
-      onCerrar();
+    const ok = await trigger(campos);
+    if (ok) {
+      clearErrors([`socio-${socioIndex}-frente`, `socio-${socioIndex}-dorso`]);
+      setStep(2);
+      setHaIntentadoAvanzar(false);
+      setHaIntentadoFinalizar(false);
     }
   };
 
-  if (!isModalOpen || !socio) return null;
-
-  const setCampoValue = (campo, valor) => {
-    setValue(`socios.${socioIndex}.${campo}`, valor, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
+  const handleSubmitInterno = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isMobile && step === 1) {
+      handleSiguiente(e);
+      return;
+    }
+    setHaIntentadoFinalizar(true);
+    onGuardar();
   };
+
+  const getError = (campo) => {
+    const errorObj = errors?.socios?.[socioIndex]?.[campo];
+    if (!errorObj) return null;
+
+    const valor = watch(`socios.${socioIndex}.${campo}`);
+    const hasValue = valor !== undefined && valor.toString().trim().length > 0;
+
+    const mostrar =
+      errorObj &&
+      (hasValue ||
+        intentoGuardarSocio ||
+        haIntentadoAvanzar ||
+        haIntentadoFinalizar);
+    return mostrar ? errorObj.message : null;
+  };
+
+  const getEsValido = (campo) => {
+    const errorObj = errors?.socios?.[socioIndex]?.[campo];
+    const valor = watch(`socios.${socioIndex}.${campo}`);
+    const hasValue = valor !== undefined && valor.toString().trim().length > 0;
+
+    return !errorObj && hasValue;
+  };
+
+  const enPaso1Movil = isMobile && step === 1;
 
   return createPortal(
-    <div
-      className={styles.overlay}
-      onMouseDown={handleOverlayMouseDown}
-    >
+    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
       <div
         className={styles.modalContainer}
         onMouseDown={(e) => e.stopPropagation()}
@@ -145,112 +205,158 @@ export default function ModalSocio({
           <FiX size={20} />
         </button>
 
-        <form className={styles.body} onSubmit={(e) => {
-          e.preventDefault();
-          onGuardar();
-        }}>
+        <form className={styles.body} onSubmit={handleSubmitInterno}>
           <div className={styles.iconWrapper}>
             <FiUser size={30} />
           </div>
 
           <h2 className={styles.title}>Datos de {socio.nombre}</h2>
+
+          {isMobile && (
+            <div className={styles.stepIndicator}>
+              <span
+                className={`${styles.stepDot} ${step >= 1 ? styles.stepDotActive : ""}`}
+              />
+              <span className={styles.stepLine} />
+              <span
+                className={`${styles.stepDot} ${step >= 2 ? styles.stepDotActive : ""}`}
+              />
+            </div>
+          )}
+
           <p className={styles.description}>
-            Completá la información de contacto y cargá la documentación.
+            {isMobile
+              ? step === 1
+                ? "Paso 1 de 2 — Información de contacto"
+                : "Paso 2 de 2 — Identidad (DNI)"
+              : "Completá la información de contacto y cargá la documentación."}
           </p>
 
           <div className={styles.formSection}>
-            <h4 className={styles.sectionTitle}>1. Información de contacto</h4>
+            {/* ── PASO 1 / ESCRITORIO ── */}
+            {(!isMobile || step === 1) && (
+              <>
+                <h4 className={styles.sectionTitle}>
+                  1. Información de contacto
+                </h4>
+                <div className={styles.inputRow}>
+                  <InputSocioMasked
+                    name={`socios.${socioIndex}.email`}
+                    control={control}
+                    label="Email"
+                    icon={<FiMail />}
+                    error={getError("email")}
+                    esValido={getEsValido("email")}
+                  />
+                  <InputSocioMasked
+                    control={control}
+                    name={`socios.${socioIndex}.celular`}
+                    label="Celular (Sin 0 ni 15)"
+                    mask={[{ mask: "00 0000-0000" }, { mask: "000 000-0000" }]}
+                    error={getError("celular")}
+                    esValido={getEsValido("celular")}
+                    icon={<FiSmartphone />}
+                  />
+                </div>
 
-            <div className={styles.inputRow}>
-              <InputFlotante
-                label="Email"
-                type="email"
-                esValido={getCampo("email").esValido}
-                error={getCampo("email").error}
-                value={valoresCampos.email || ""}
-                onChange={(e) => setCampoValue("email", e.target.value)}
-              />
-              <InputFlotante
-                label="Celular"
-                maxLength={10}
-                esValido={getCampo("celular").esValido}
-                error={getCampo("celular").error}
-                value={valoresCampos.celular || ""}
-                onChange={(e) => {
-                  const limpio = e.target.value.replace(/\D/g, "").slice(0, 10);
-                  setCampoValue("celular", limpio);
-                }}
-              />
-            </div>
+                <InputSocioMasked
+                  name={`socios.${socioIndex}.direccion`}
+                  control={control}
+                  label="Dirección"
+                  icon={<FiMapPin />}
+                  error={getError("direccion")}
+                  esValido={getEsValido("direccion")}
+                />
 
-            <InputFlotante
-              label="Dirección"
-              esValido={getCampo("direccion").esValido}
-              error={getCampo("direccion").error}
-              value={valoresCampos.direccion || ""}
-              onChange={(e) => setCampoValue("direccion", e.target.value)}
-            />
+                <div className={styles.inputRow}>
+                  <SelectSocio
+                    name={`socios.${socioIndex}.provincia`}
+                    control={control}
+                    label="Provincia"
+                    icon={<FiMap />}
+                    options={opcionesProvincias}
+                    disabled={cargandoProvincias}
+                    placeholder={cargandoProvincias ? "Cargando..." : ""}
+                    error={getError("provincia")}
+                    esValido={getEsValido("provincia")}
+                  />
 
-            <div className={styles.inputRow}>
-              <InputFlotante
-                label="Provincia"
-                esValido={getCampo("provincia").esValido}
-                error={getCampo("provincia").error}
-                value={valoresCampos.provincia || ""}
-                onChange={(e) => setCampoValue("provincia", e.target.value)}
-              />
-              <InputFlotante
-                label="Localidad"
-                esValido={getCampo("localidad").esValido}
-                error={getCampo("localidad").error}
-                value={valoresCampos.localidad || ""}
-                onChange={(e) => setCampoValue("localidad", e.target.value)}
-              />
-            </div>
+                  <InputSocioMasked
+                    name={`socios.${socioIndex}.localidad`}
+                    control={control}
+                    label="Localidad"
+                    icon={<FiMap />}
+                    error={getError("localidad")}
+                    esValido={getEsValido("localidad")}
+                  />
+                </div>
+              </>
+            )}
 
-            <h4 className={styles.sectionTitle}>2. Identidad (DNI)</h4>
-
-            <div className={styles.dropzoneGrid}>
-              <DropzoneField
-                fileKey={`socio-${socioIndex}-frente`}
-                title="DNI Frente"
-                subtitle="Imagen clara y legible"
-                intentoGuardarSocio={intentoGuardarSocio}
-                archivos={archivos}
-                draggingKey={draggingKey}
-                onFileUpload={onFileUpload}
-                onFileRemove={onFileRemove}
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
-              />
-              <DropzoneField
-                fileKey={`socio-${socioIndex}-dorso`}
-                title="DNI Dorso"
-                subtitle="Imagen clara y legible"
-                intentoGuardarSocio={intentoGuardarSocio}
-                archivos={archivos}
-                draggingKey={draggingKey}
-                onFileUpload={onFileUpload}
-                onFileRemove={onFileRemove}
-                onDragOver={onDragOver}
-                onDragLeave={onDragLeave}
-                onDrop={onDrop}
-              />
-            </div>
+            {/* ── PASO 2 / ESCRITORIO ── */}
+            {(!isMobile || step === 2) && (
+              <>
+                <h4 className={styles.sectionTitle}>
+                  {isMobile ? "Identidad (DNI)" : "2. Identidad (DNI)"}
+                </h4>
+                <div className={styles.dropzoneGrid}>
+                  <DropzoneField
+                    fileKey={`socio-${socioIndex}-frente`}
+                    title="DNI Frente"
+                    subtitle="Imagen clara y legible (Opcional)"
+                    archivos={archivos}
+                    draggingKey={draggingKey}
+                    onFileUpload={onFileUpload}
+                    onFileRemove={onFileRemove}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                  />
+                  <DropzoneField
+                    fileKey={`socio-${socioIndex}-dorso`}
+                    title="DNI Dorso"
+                    subtitle="Imagen clara y legible (Opcional)"
+                    archivos={archivos}
+                    draggingKey={draggingKey}
+                    onFileUpload={onFileUpload}
+                    onFileRemove={onFileRemove}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <div className={styles.actions}>
-            <Button type="button" variant="outline" onClick={onCerrar}>
-              CANCELAR
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isGuardando}
+              onClick={isMobile && step === 2 ? () => setStep(1) : onCerrar}
+            >
+              {isMobile && step === 2 ? "VOLVER" : "CANCELAR"}
             </Button>
-            <Button type="submit" variant="primary">
-              GUARDAR DATOS
-            </Button>
+
+            {enPaso1Movil ? (
+              <Button
+                type="button"
+                variant="primary"
+                onClick={handleSiguiente}
+                iconRight={<FiArrowRight />}
+              >
+                SIGUIENTE
+              </Button>
+            ) : (
+              <Button type="submit" variant="primary" disabled={isGuardando}>
+                {isGuardando ? "GUARDANDO..." : "GUARDAR DATOS"}
+              </Button>
+            )}
           </div>
         </form>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

@@ -3,13 +3,11 @@
   width: 100%;
 }
 
-/* --- CABECERA ESTILO PASO 4 --- */
 .headerTitleRow {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   margin-bottom: 2rem;
-  /* Distancia controlada hacia el input */
 }
 
 .headerTitle {
@@ -58,17 +56,31 @@
   height: 100%;
 }
 
-/* --- FASE 2: BOTÓN VOLVER Y TARJETA --- */
-.topBackButtonWrapper {
+.cardHeader {
   display: flex;
-  justify-content: flex-start;
-  width: 100%;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 0.75rem;
-  /* ANTES: 1.5rem. Acercamos el botón a la tarjeta */
 }
 
-.topBackButtonWrapper>div {
-  justify-content: flex-start !important;
+.editButton {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--yellow, #f4f500);
+  border-radius: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 
 .summaryCard {
@@ -77,20 +89,16 @@
   border-left: 4px solid #4caf50;
   border-radius: 0.5rem;
   margin: 0 0 1.5rem 0;
-  /* ANTES: 2.5rem. Acercamos la tarjeta al botón continuar */
   display: flex;
   flex-direction: column;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  /* Sombra un poco más sutil */
 }
 
 .summaryTop {
   padding: 1rem 1.5rem;
-  /* ANTES: 1.5rem 2rem. Tarjeta mucho más compacta */
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  /* Reducimos el espacio entre los textos internos */
   text-align: left;
 }
 
@@ -101,7 +109,6 @@
   gap: 0.5rem;
   color: #4caf50;
   font-size: 0.75rem;
-  /* Letra un pelín más chica */
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 0.0625rem;
@@ -111,7 +118,6 @@
 .summaryName {
   color: var(--yellow);
   font-size: 1.15rem;
-  /* ANTES: 1.3rem. Achicamos el nombre */
   font-weight: 600;
   margin: 0;
 }
@@ -146,9 +152,7 @@
   }
 }
 
-/* ========================================================== */
 /* --- ESCRITORIO --- */
-/* ========================================================== */
 @media (min-width: 48rem) {
   .inputGroup {
     grid-template-columns: 1fr 1fr;
@@ -161,5 +165,92 @@
   .actions :global(button) {
     width: auto;
     min-width: 12.5rem;
+  }
+}
+
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(12px);
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom-left-radius: 1.5rem;
+    border-bottom-right-radius: 1.5rem;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    width: calc(100% - 7rem) !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+}
+@media (min-width: 56.25rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: relative;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    border-top: none;
+    margin: 1.5rem 0 0 0;
+  }
+}
+
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper button svg,
+  .calcBtnWrapper button .iconContainer,
+  .actionFooter button svg,
+  .actionFooter button .iconContainer,
+  .footer button svg,
+  .footer button .iconContainer,
+  .summaryActions button svg,
+  .summaryActions button .iconContainer,
+  .actionButtonsGroup button svg,
+  .actionButtonsGroup button .iconContainer,
+  .actionFooterBorder button svg,
+  .actionFooterBorder button .iconContainer,
+  .actionsRight button svg,
+  .actionsRight button .iconContainer,
+  .actions button svg,
+  .actions button .iconContainer,
+  .saveActionRowCentrado button svg,
+  .saveActionRowCentrado button .iconContainer {
+    display: none !important;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    justify-content: center !important;
   }
 }

@@ -1,7 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { FiFileText, FiX } from "react-icons/fi";
-import { Acordeon, Button, CargaArchivos } from "../../../../ui";
+import {
+  FiFileText,
+  FiX,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiClock,
+} from "react-icons/fi";
+import { Button, CargaArchivos } from "../../../../ui";
 import styles from "./ModalDocumentosEmpresa.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
 
@@ -28,10 +34,10 @@ export const ModalDocumentosEmpresa = ({
     { key: "poderes", title: "Poderes", info: "Copia de representación." },
   ];
 
+  const [activeTab, setActiveTab] = useState(docs[0].key);
+
   const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
+    if (e.target === e.currentTarget) onClose();
   };
 
   useEscape(onClose, isOpen);
@@ -39,10 +45,7 @@ export const ModalDocumentosEmpresa = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div
-      className={styles.overlay}
-      onMouseDown={handleOverlayMouseDown}
-    >
+    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
       <div
         className={styles.modalContainer}
         onMouseDown={(e) => e.stopPropagation()}
@@ -66,56 +69,81 @@ export const ModalDocumentosEmpresa = ({
             Subí los archivos requeridos para validar la entidad.
           </p>
 
-          <div className={styles.formSection}>
-            {docs.map((doc) => (
-              /* ---Wrapper --- */
-              <div key={doc.key} className={styles.accordionCard}>
-                <Acordeon
-                  title={doc.title}
-                  status={
-                    archivos[doc.key]
-                      ? "check"
-                      : intentoAvanzar
-                        ? "alert"
-                        : "warn"
-                  }
-                >
-                  <div className={styles.documentRow}>
-                    <div className={styles.docInfoBox}>
-                      <strong>Requisito:</strong> {doc.info}
+          <div className={styles.workspace}>
+            <h3 className={styles.sidebarTitle}>Requisitos</h3>
+
+            {docs.map((doc) => {
+              const currentFile = archivos[doc.key];
+              const hasError = intentoAvanzar && !currentFile;
+              const isActive = activeTab === doc.key;
+
+              return (
+                <div key={doc.key} className={styles.docItem}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab(doc.key)}
+                    className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}`}
+                  >
+                    <div className={styles.tabContent}>
+                      <span className={styles.tabTitle}>{doc.title}</span>
+                      {currentFile ? (
+                        <FiCheckCircle
+                          className={styles.iconSuccess}
+                          size={16}
+                        />
+                      ) : hasError ? (
+                        <FiAlertCircle className={styles.iconError} size={16} />
+                      ) : (
+                        <FiClock className={styles.iconPending} size={16} />
+                      )}
                     </div>
-                    <div className={styles.dropzoneWrapper}>
-                      <CargaArchivos
-                        title={doc.title}
-                        hasError={intentoAvanzar && !archivos[doc.key]}
-                        file={
-                          archivos[doc.key]
-                            ? {
-                                name: archivos[doc.key].name,
-                                size: archivos[doc.key].formattedSize,
-                              }
-                            : null
-                        }
-                        onClick={() =>
-                          document
-                            .getElementById(`file-input-${doc.key}`)
-                            .click()
-                        }
-                        onRemove={() => onFileRemove(doc.key)}
-                      />
-                      <input
-                        type="file"
-                        id={`file-input-${doc.key}`}
-                        style={{ display: "none" }}
-                        onChange={(e) =>
-                          onFileUpload(doc.key, e.target.files[0])
-                        }
-                      />
+                    {isActive && <div className={styles.activeIndicator} />}
+                  </button>
+
+                  {isActive && (
+                    <div className={styles.viewer}>
+                      <div className={styles.viewerHeader}>
+                        <h4 className={styles.viewerTitle}>{doc.title}</h4>
+                        <p className={styles.viewerInfo}>
+                          <strong>Requisito:</strong> {doc.info}
+                        </p>
+                      </div>
+
+                      <div className={styles.dropzoneContainer}>
+                        <CargaArchivos
+                          title={doc.title}
+                          hasError={hasError}
+                          file={
+                            currentFile
+                              ? {
+                                  name: currentFile.name,
+                                  size:
+                                    currentFile.formattedSize ||
+                                    currentFile.size,
+                                }
+                              : null
+                          }
+                          onClick={() =>
+                            document
+                              .getElementById(`modal-file-${doc.key}`)
+                              .click()
+                          }
+                          onRemove={() => onFileRemove(doc.key)}
+                        />
+                        <input
+                          type="file"
+                          id={`modal-file-${doc.key}`}
+                          style={{ display: "none" }}
+                          onChange={(e) =>
+                            onFileUpload(doc.key, e.target.files[0])
+                          }
+                        />
+                      </div>
                     </div>
-                  </div>
-                </Acordeon>
-              </div>
-            ))}
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div className={styles.modalFooter}>
@@ -126,6 +154,6 @@ export const ModalDocumentosEmpresa = ({
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };

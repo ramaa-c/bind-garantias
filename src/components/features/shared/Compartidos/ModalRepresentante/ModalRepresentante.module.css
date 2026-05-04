@@ -13,7 +13,7 @@
 .modalContainer {
   background-color: #1a1a1a;
   width: 92%;
-  max-width: 32rem;
+  max-width: 38rem;
   max-height: 90vh;
   overflow-y: auto;
   border-radius: 1.25rem;
@@ -132,15 +132,32 @@
   gap: 0 !important;
 }
 
-.topBackButtonWrapper {
+.pillHeader {
   display: flex;
-  justify-content: flex-start;
-  width: 100%;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 0.5rem;
 }
 
-.topBackButtonWrapper>div {
-  justify-content: flex-start !important;
+.editButton {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--yellow, #f4f500);
+  border-radius: 0.5rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.editButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 
 .infoPill {
@@ -283,7 +300,6 @@
     align-items: baseline;
     gap: 1.5rem;
     margin-top: 1rem;
-
   }
 
   .searchBox :global(button) {
@@ -392,17 +408,17 @@
   box-shadow: 0 0 8px rgba(76, 101, 230, 0.4);
 }
 
-.radioLabel input[type="radio"]:checked~.customRadio {
+.radioLabel input[type="radio"]:checked ~ .customRadio {
   border-color: var(--yellow);
   background-color: rgba(244, 245, 0, 0.05);
   box-shadow: 0 0 10px rgba(244, 245, 0, 0.2);
 }
 
-.radioLabel input[type="radio"]:checked~.customRadio::after {
+.radioLabel input[type="radio"]:checked ~ .customRadio::after {
   transform: scale(1);
 }
 
-.radioLabel input[type="radio"]:checked~.radioText {
+.radioLabel input[type="radio"]:checked ~ .radioText {
   color: var(--white);
   font-weight: 600;
 }
@@ -411,5 +427,93 @@
   .radioGroup {
     flex-direction: column;
     gap: 1rem;
+  }
+}
+
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(12px);
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+    border-bottom-left-radius: 1.5rem;
+    border-bottom-right-radius: 1.5rem;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    width: calc(100% - 7rem) !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+}
+@media (min-width: 56.25rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: relative;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    border-top: none;
+    margin: 1.5rem 0 0 0;
+  }
+}
+
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper button svg,
+  .calcBtnWrapper button .iconContainer,
+  .actionFooter button svg,
+  .actionFooter button .iconContainer,
+  .footer button svg,
+  .footer button .iconContainer,
+  .summaryActions button svg,
+  .summaryActions button .iconContainer,
+  .actionButtonsGroup button svg,
+  .actionButtonsGroup button .iconContainer,
+  .actionFooterBorder button svg,
+  .actionFooterBorder button .iconContainer,
+  .actionsRight button svg,
+  .actionsRight button .iconContainer,
+  .actions button svg,
+  .actions button .iconContainer,
+  .saveActionRowCentrado button svg,
+  .saveActionRowCentrado button .iconContainer {
+    display: none !important;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    justify-content: center !important;
   }
 }

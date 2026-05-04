@@ -19,7 +19,7 @@
     padding: 1.5rem;
     position: relative;
     max-height: 92vh;
-    overflow-y: auto;
+    overflow: visible;
     box-shadow: 0 1.25rem 2.5rem rgba(0, 0, 0, 0.5);
 }
 

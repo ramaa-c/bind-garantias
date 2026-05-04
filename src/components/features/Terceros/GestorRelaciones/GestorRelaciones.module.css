@@ -1,0 +1,29 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.stepIndicator {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.stepBuscar {
+  color: #ffc107;
+}
+
+.stepAlta {
+  color: #28a745;
+}
+
+.stepVincular {
+  color: #6f42c1;
+}
+
+.stepInactive {
+  color: inherit;
+}

@@ -13,24 +13,10 @@ import { TbFileInvoice } from "react-icons/tb";
 import { Button } from "../../components/ui";
 import ModalConfirmacionBorrador from "../../components/features/shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
 import styles from "./Inicio.module.css";
+import { useObtenerTodas } from "../../hooks/useCadenaValor";
+import Spinner from "../../components/ui/Spinner/Spinner";
 
 // Mocks
-const solicitudesRecientes = [
-  {
-    id: "4362",
-    tipo: "Pagaré USD",
-    monto: "40.000",
-    estado: "esperando",
-    texto: "Esperando Docs",
-  },
-  {
-    id: "4361",
-    tipo: "Cheque",
-    monto: "15.000",
-    estado: "aprobado",
-    texto: "Aprobado",
-  },
-];
 
 const hasMeaningfulData = (dataString) => {
   if (!dataString) return false;
@@ -59,6 +45,39 @@ export default function Inicio() {
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
 
   const [activeTab, setActiveTab] = useState("propias");
+
+  // --- PAGINACIÓN HÍBRIDA ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const visualItemsPerPage = 10; // En el inicio mostramos de a 10 para que rinda el espacio
+  const chunkFactor = 2; // Traemos 2 páginas del server (20 items) por vez
+  const serverItemsPerPage = visualItemsPerPage * chunkFactor;
+  const serverPage = Math.ceil(currentPage / chunkFactor);
+
+  const { data: lineasData = [], isLoading } = useObtenerTodas(serverPage, serverItemsPerPage);
+
+  // Normalización de data (soporta array directo o envuelto en {items: []})
+  let lineasList = [];
+  let totalServerItems = 0;
+  if (Array.isArray(lineasData)) {
+    lineasList = lineasData;
+    totalServerItems = lineasData.length;
+  } else if (lineasData?.items && Array.isArray(lineasData.items)) {
+    lineasList = lineasData.items;
+    totalServerItems = lineasData.total || lineasData.totalCount || lineasData.items.length;
+  }
+
+  const isServerPaginated = totalServerItems !== lineasList.length;
+  const absoluteTotal = isServerPaginated ? totalServerItems : lineasList.length;
+  const totalPages = Math.ceil(absoluteTotal / visualItemsPerPage);
+
+  const relativeVisualPage = isServerPaginated ? (currentPage - 1) % chunkFactor : (currentPage - 1);
+  const currentLines = lineasList.slice(
+    relativeVisualPage * visualItemsPerPage, 
+    (relativeVisualPage + 1) * visualItemsPerPage
+  );
+
+  const prevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+  const nextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
 
   const handleNuevaOperacion = (ruta, draftKey) => {
     const dataString = sessionStorage.getItem(`${draftKey}_data`);
@@ -120,35 +139,6 @@ export default function Inicio() {
               </p>
             </div>
           </header>
-
-          {/* ── KPI GRID ── */}
-          <section className={styles.kpiGrid}>
-            <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>
-                <FiTrendingUp />
-              </div>
-              <p className={styles.kpiLabel}>Disponible · Pagaré USD</p>
-              <h2 className={`${styles.kpiValue} ${styles.textYellow}`}>
-                U$D 40.000
-              </h2>
-            </div>
-
-            <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>
-                <TbFileInvoice />
-              </div>
-              <p className={styles.kpiLabel}>Límite Total Aprobado</p>
-              <h2 className={styles.kpiValue}>U$D 40.000</h2>
-            </div>
-
-            <div className={styles.kpiCard}>
-              <div className={styles.kpiIcon}>
-                <FiCalendar />
-              </div>
-              <p className={styles.kpiLabel}>Próximo Vencimiento</p>
-              <h2 className={styles.kpiValue}>01/11/2026</h2>
-            </div>
-          </section>
 
           {/* ── BOTTOM GRID ── */}
           <div className={styles.inicioBottomGrid}>
@@ -425,48 +415,68 @@ export default function Inicio() {
             {/* COLUMNA DERECHA */}
             <section className={styles.rightColumn}>
               <div className={styles.sectionHeaderRow}>
-                <h3 className={styles.sectionTitle}>Actividad Reciente</h3>
-                <Button
-                  variant="link"
-                  size="none"
-                  onClick={() => navigate("/solicitudes")}
-                >
-                  Ver todas <FiArrowRight className={styles.arrowIconSmall} />
-                </Button>
+                <h3 className={styles.sectionTitle}>Líneas Activas</h3>
               </div>
 
-              <div className={styles.actividadList}>
-                {solicitudesRecientes.map((sol) => (
-                  <div className={styles.actividadItem} key={sol.id}>
-                    <div className={styles.actividadIcon}>
-                      <FiActivity
-                        className={
-                          sol.estado === "esperando"
-                            ? styles.iconEsperando
-                            : styles.iconAprobado
-                        }
-                      />
+              <div className={styles.actividadCard}>
+                <div className={`${styles.actividadList} ${styles.scrollableList}`}>
+                  {isLoading ? (
+                    <div className={styles.loadingWrapper}>
+                       <Spinner size={60} />
+                       <p>Actualizando líneas...</p>
                     </div>
-                    <div className={styles.actividadDetails}>
-                      <p className={styles.actividadTitle}>
-                        #{sol.id} <span>· {sol.tipo}</span>
-                      </p>
-                      <p className={styles.actividadMonto}>U$D {sol.monto}</p>
-                    </div>
-                    <div
-                      className={`${styles.actividadStatus} ${
-                        sol.estado === "esperando"
-                          ? styles.statusEsperando
-                          : styles.statusAprobado
-                      }`}
-                    >
-                      {sol.texto}
-                    </div>
-                  </div>
-                ))}
+                  ) : (
+                    <>
+                      {currentLines.map((linea) => (
+                        <div 
+                          className={`${styles.actividadItem} ${styles.actividadItemClickable}`} 
+                          key={linea.cadenavalorid}
+                          onClick={() => navigate(`/cadenas-valor/${linea.cadenavalorid}`)}
+                        >
+                          <div className={styles.actividadIcon}>
+                            <FiBriefcase className={
+                              linea?.estado?.toLowerCase() === "aprobada"
+                                ? styles.iconAprobado
+                                : styles.iconEsperando
+                            } />
+                          </div>
+                          <div className={styles.actividadDetails}>
+                            <p className={styles.actividadTitle}>
+                              {linea.denominacion} <span>· {linea.descripcion}</span>
+                            </p>
+                            <p className={styles.actividadMonto}>
+                              {linea.moneda === "Dolares Estadounidenses" ? "U$D" : "$"} {linea?.montomaximo?.toLocaleString('es-AR')}
+                            </p>
+                          </div>
+                          <div
+                            className={`${styles.actividadStatus} ${
+                              linea?.estado?.toLowerCase() === "aprobada"
+                                ? styles.statusAprobado
+                                : styles.statusEsperando
+                            }`}
+                          >
+                            {linea.estado}
+                          </div>
+                        </div>
+                      ))}
 
-                {solicitudesRecientes.length === 0 && (
-                  <p className={styles.emptyText}>No hay actividad reciente.</p>
+                      {currentLines.length === 0 && (
+                        <p className={styles.emptyText}>No hay líneas activas.</p>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                {!isLoading && totalPages > 1 && (
+                  <div className={styles.miniPagination}>
+                    <button onClick={prevPage} disabled={currentPage === 1}>
+                      <FiArrowRight style={{ transform: 'rotate(180deg)' }} />
+                    </button>
+                    <span>Pág. {currentPage} de {totalPages}</span>
+                    <button onClick={nextPage} disabled={currentPage === totalPages}>
+                      <FiArrowRight />
+                    </button>
+                  </div>
                 )}
               </div>
             </section>

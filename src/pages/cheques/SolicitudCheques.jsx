@@ -9,6 +9,7 @@ import {
   Paso3Simulador,
   ModalConfirmacionBorrador,
   PanelDudas,
+  BotonAyudaFlotante,
   PasoEmisor,
   PasoBolsa,
   PasoDetalles,
@@ -45,11 +46,7 @@ export default function SolicitudCheques() {
     watch,
   });
 
-  const bolsaSeleccionada = useWatch({
-    control,
-    name: "sociedadBolsa",
-    defaultValue: "",
-  });
+
 
   // --- NAVEGACIÓN Y FUNCIONES ---
   const handleVolver = () => {
@@ -64,6 +61,8 @@ export default function SolicitudCheques() {
       sociedadBolsa: "",
       emisorCuit: "",
       tipoCheque: "fisico",
+      monto: "",
+      fechaPago: "",
     });
     setMostrarResultados(false);
     setPasoActual(1);
@@ -103,11 +102,7 @@ export default function SolicitudCheques() {
     setPasoActual(4);
   };
 
-  const avanzarSinBolsa = () => {
-    setValue("sociedadBolsa", "");
-    setValue("numeroCuentaBolsa", "");
-    setPasoActual(4);
-  };
+
 
   // Paso 4: Detalles
   const handleContinuarDetalles = async () => {
@@ -238,7 +233,12 @@ export default function SolicitudCheques() {
               </div>
             </div>
 
-            {pasoActual < 5 && <PanelDudas pasoActual={pasoActual} />}
+            {pasoActual < 5 && (
+              <>
+                <PanelDudas contexto="solicitud_cheques" pasoActual={pasoActual} />
+                <BotonAyudaFlotante contexto="solicitud_cheques" pasoActual={pasoActual} />
+              </>
+            )}
           </div>
         </div>
       </div>

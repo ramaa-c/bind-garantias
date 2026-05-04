@@ -1,0 +1,53 @@
+.skeletonTr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.skeletonTr:last-child {
+  border-bottom: none;
+}
+
+.skeletonTd {
+  padding: 1.15rem 1.5rem;
+  vertical-align: middle;
+}
+
+.skeletonBlock {
+  height: 1.2rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeletonTd:nth-child(1) .skeletonBlock {
+  width: 40%;
+}
+.skeletonTd:nth-child(2) .skeletonBlock {
+  width: 85%;
+}
+.skeletonTd:nth-child(3) .skeletonBlock {
+  width: 60%;
+}
+.skeletonTd:nth-child(4) .skeletonBlock {
+  width: 75%;
+}
+
+.skeletonTd:nth-child(5) .skeletonBlock {
+  width: 60px;
+  border-radius: 12px;
+}
+
+.skeletonTd:nth-child(6) .skeletonBlock {
+  width: 80px;
+  margin-left: auto;
+  border-radius: 20px;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}

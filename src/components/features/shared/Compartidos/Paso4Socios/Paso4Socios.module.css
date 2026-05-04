@@ -18,7 +18,7 @@
   display: flex;
   align-items: center;
   gap: 0.625rem;
-  margin: 0;
+  margin: 0 0 1rem 0;
 }
 
 .noMargin {
@@ -31,19 +31,6 @@
   margin: 0;
 }
 
-/* --- NUEVOS ESTILOS FASE 2 --- */
-.topBackButtonWrapper {
-  display: flex;
-  justify-content: flex-start;
-  width: 100%;
-  margin-bottom: 1rem;
-}
-
-.topBackButtonWrapper>div {
-  justify-content: flex-start !important;
-}
-
-/* Centrado del botón guardar en móvil */
 .saveActionRowCentrado {
   display: flex;
   justify-content: center;
@@ -56,23 +43,44 @@
   width: 100%;
 }
 
-/* --- LA TARJETA PRINCIPAL (Fase 2) --- */
 .summaryCard {
   background-color: rgba(76, 175, 80, 0.05);
   border: 1px solid rgba(76, 175, 80, 0.2);
   border-radius: 0.5rem;
-  margin: 1.5rem 0 2rem 0;
+  margin: 0.5rem 0 2rem 0;
   display: flex;
   flex-direction: column;
 }
 
-/* Info de arriba */
 .summaryTop {
-  padding: 1.25rem;
+  padding: 1.5rem 1.25rem 1.25rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
   text-align: center;
+  position: relative; /* Clave para anclar el botón editar */
+}
+
+/* --- NUEVO BOTÓN EDITAR EN LA TARJETA --- */
+.editIconBtn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.editIconBtn:hover {
+  color: var(--white);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .summaryStatus {
@@ -93,6 +101,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
+  padding: 0 1rem;
 }
 
 .summaryCuit {
@@ -102,14 +111,12 @@
   margin: 0;
 }
 
-/* La línea divisoria */
 .summaryDivider {
   width: 100%;
   height: 1px;
   border-top: 1px dashed rgba(255, 255, 255, 0.15);
 }
 
-/* El sector del input nuevo */
 .summaryBottom {
   padding: 1.25rem;
   display: flex;
@@ -118,12 +125,31 @@
   gap: 0.75rem;
 }
 
+/* --- NUEVO LABEL EN COLUMNA --- */
+.labelColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  text-align: center;
+}
+
 .percentageLabel {
   color: #ccc;
   font-size: 0.9375rem;
 }
 
-/* El input específico de porcentaje */
+.availableText {
+  font-size: 0.75rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.availableTextError {
+  color: #ff5252;
+}
+
 .customInputWrapper {
   display: flex;
   align-items: center;
@@ -163,10 +189,18 @@
   opacity: 0.8;
 }
 
+.errorContainer {
+  min-height: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+}
+
 .errorText {
   color: #ff5252;
   font-size: 0.8125rem;
-  margin-top: -0.25rem;
+  margin: 0;
 }
 
 /* --- FASE 3: LISTA DE SOCIOS --- */
@@ -182,21 +216,46 @@
   width: 100%;
 }
 
+.statsGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.25rem 0.875rem 0.25rem 0.375rem;
+  border-radius: 2rem;
+}
+
+.totalText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #888;
+}
+
+.totalTextSuccess {
+  color: #4caf50;
+}
+
 .listContainer {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-/* --- LA TARJETA DEL SOCIO --- */
 .listItem {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   padding: 1.25rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.875rem;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.listItem:hover {
+  border-color: rgba(255, 255, 255, 0.12);
   background-color: rgba(255, 255, 255, 0.03);
-  border: 1px solid #333;
-  border-radius: 0.5rem;
 }
 
 .itemLeft {
@@ -250,7 +309,6 @@
   font-size: 1.2rem;
 }
 
-/* --- ACCIONES INFERIORES --- */
 .actionFooter,
 .actionFooterBorder {
   display: flex;
@@ -267,9 +325,15 @@
   margin-top: 1.5rem;
 }
 
-/* ========================================================== */
+.warningText {
+  color: var(--yellow);
+  font-size: 0.85rem;
+  align-self: center;
+  margin-right: auto;
+  white-space: nowrap;
+}
+
 /* --- ESCRITORIO --- */
-/* ========================================================== */
 @media (min-width: 48rem) {
   .headerTitleRow {
     flex-direction: row;
@@ -282,7 +346,6 @@
     padding: 0;
   }
 
-  /* Ajustes Fase 2 para Escritorio */
   .saveActionRowCentrado {
     flex-direction: row;
     justify-content: center;
@@ -301,10 +364,15 @@
   .summaryTop {
     flex: 1;
     text-align: left;
+    padding: 1.25rem 2rem;
   }
 
   .summaryStatus {
     justify-content: flex-start;
+  }
+
+  .summaryName {
+    padding: 0;
   }
 
   .summaryDivider {
@@ -319,7 +387,6 @@
     justify-content: center;
   }
 
-  /* Ajustes Fase 3 (Lista) para Escritorio */
   .listHeader {
     flex-direction: row;
     justify-content: space-between;
@@ -360,6 +427,7 @@
   .actionFooterBorder {
     flex-direction: row;
     justify-content: flex-end;
+    align-items: center;
   }
 }
 
@@ -368,9 +436,94 @@
     opacity: 0;
     transform: translateY(0.3125rem);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* --- STICKY FOOTER MOBILE --- */
+@media (max-width: 56.24rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: sticky;
+    bottom: 0;
+    z-index: 40;
+    background: rgba(30, 30, 30, 0.85);
+    backdrop-filter: blur(12px);
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom-left-radius: 1.5rem;
+    border-bottom-right-radius: 1.5rem;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    width: calc(100% - 7rem) !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+  .calcBtnWrapper button svg,
+  .calcBtnWrapper button .iconContainer,
+  .actionFooter button svg,
+  .actionFooter button .iconContainer,
+  .footer button svg,
+  .footer button .iconContainer,
+  .summaryActions button svg,
+  .summaryActions button .iconContainer,
+  .actionButtonsGroup button svg,
+  .actionButtonsGroup button .iconContainer,
+  .actionFooterBorder button svg,
+  .actionFooterBorder button .iconContainer,
+  .actionsRight button svg,
+  .actionsRight button .iconContainer,
+  .actions button svg,
+  .actions button .iconContainer,
+  .saveActionRowCentrado button svg,
+  .saveActionRowCentrado button .iconContainer {
+    display: none !important;
+  }
+  .calcBtnWrapper button,
+  .actionFooter button,
+  .footer button,
+  .summaryActions button,
+  .actionButtonsGroup button,
+  .actionFooterBorder button,
+  .actionsRight button,
+  .actions button,
+  .saveActionRowCentrado button {
+    justify-content: center !important;
+  }
+}
+
+@media (min-width: 56.25rem) {
+  .calcBtnWrapper,
+  .actionFooter,
+  .footer,
+  .summaryActions,
+  .actionButtonsGroup,
+  .actionFooterBorder,
+  .actionsRight,
+  .actions,
+  .saveActionRowCentrado {
+    position: relative;
+    background: transparent;
+    backdrop-filter: none;
+    padding: 0;
+    border-top: none;
+    margin: 1.5rem 0 0 0;
   }
 }

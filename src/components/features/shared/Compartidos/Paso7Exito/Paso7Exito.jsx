@@ -6,14 +6,11 @@ import {
   FiEdit3,
   FiFileText,
 } from "react-icons/fi";
-import { Button, Alert, BotonVolver } from "../../../../ui"; // Importamos BotonVolver
+import { Button, Alert, BotonVolver } from "../../../../ui";
 import styles from "./Paso7Exito.module.css";
 
 export default function Paso7Exito({ onVolverInicio }) {
-  const { reset } = useFormContext();
-
   const handleFinalizar = () => {
-    reset();
     onVolverInicio();
   };
 
@@ -24,9 +21,6 @@ export default function Paso7Exito({ onVolverInicio }) {
         <div className={styles.heroContent}>
           <FiCheckCircle className={styles.heroIcon} />
           <div className={styles.heroText}>
-            <span className={styles.heroSubtitle}>
-              Solicitud N°384 por $3.000.000
-            </span>
             <h1 className={styles.heroTitle}>
               ¡Felicitaciones!
               <br />

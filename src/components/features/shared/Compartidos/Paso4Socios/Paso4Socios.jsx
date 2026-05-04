@@ -13,7 +13,6 @@ import {
   Avatar,
   BotonIcono,
   BuscadorCuit,
-  BotonVolver,
 } from "../../../../ui";
 import styles from "./Paso4Socios.module.css";
 
@@ -32,14 +31,20 @@ export default function Paso4Socios({
   eliminarSocio,
   editarSocio,
   continuarAlProximoPaso,
+  isLoading,
 }) {
   const [errorCuit, setErrorCuit] = useState("");
   const [errorParticipacion, setErrorParticipacion] = useState("");
 
   const isCuitValido = tempSocioCuit?.length === 11;
-  const isParticipacionValida =
-    tempSocioParticipacion > 0 && tempSocioParticipacion <= 100;
 
+  const totalGuardado = socios.reduce(
+    (acc, s) => acc + Number(s.participacion),
+    0,
+  );
+  const restante = 100 - totalGuardado;
+
+  // --- HANDLERS ---
   const handleValidarClick = () => {
     if (!tempSocioCuit) {
       setErrorCuit("El CUIT es obligatorio");
@@ -52,14 +57,23 @@ export default function Paso4Socios({
   };
 
   const handleGuardarClick = () => {
+    const valorNum = Number(tempSocioParticipacion);
+
     if (!tempSocioParticipacion) {
       setErrorParticipacion("Ingresá un porcentaje");
-    } else if (!isParticipacionValida) {
-      setErrorParticipacion("Debe ser mayor a 0 y hasta 100");
+    } else if (valorNum <= 0 || valorNum > 100) {
+      setErrorParticipacion("Debe ser entre 1 y 100");
+    } else if (valorNum > restante) {
+      setErrorParticipacion(`No puede superar el 100% total.`);
     } else {
       setErrorParticipacion("");
       guardarSocio();
     }
+  };
+
+  const handleVolverAEdicion = () => {
+    setErrorParticipacion("");
+    socios.length === 0 ? setFaseSocio("ingresar_cuit") : setFaseSocio("lista");
   };
 
   return (
@@ -87,6 +101,7 @@ export default function Paso4Socios({
             error={errorCuit}
             esValido={isCuitValido}
             buttonText="VALIDAR CUIT"
+            isLoading={isLoading}
           />
 
           {socios.length > 0 && (
@@ -109,23 +124,19 @@ export default function Paso4Socios({
       {/* --- FASE 2: COMPLETAR DATOS --- */}
       {faseSocio === "completar_datos" && (
         <div className={styles.section}>
-          <div className={styles.topBackButtonWrapper}>
-            <BotonVolver
-              texto="VOLVER"
-              onClick={() => {
-                setErrorParticipacion("");
-                socios.length === 0
-                  ? setFaseSocio("ingresar_cuit")
-                  : setFaseSocio("lista");
-              }}
-            />
-          </div>
-
           <h3 className={styles.headerTitle}>Completar datos del socio</h3>
 
           <div className={styles.summaryCard}>
-            {/* --- SECCIÓN SUPERIOR: DATOS DEL SOCIO --- */}
             <div className={styles.summaryTop}>
+              <button
+                type="button"
+                className={styles.editIconBtn}
+                onClick={handleVolverAEdicion}
+                title="Editar identidad"
+              >
+                <FiEdit size={18} />
+              </button>
+
               <div className={styles.summaryStatus}>
                 <FiCheckCircle size={16} />
                 <span>IDENTIDAD VALIDADA</span>
@@ -134,18 +145,33 @@ export default function Paso4Socios({
               <p className={styles.summaryCuit}>CUIT: {tempSocioCuit}</p>
             </div>
 
-            {/* --- LÍNEA DIVISORIA --- */}
             <div className={styles.summaryDivider}></div>
 
-            {/* --- SECCIÓN INFERIOR: PORCENTAJE (NUEVO DISEÑO) --- */}
             <div className={styles.summaryBottom}>
-              <label htmlFor="participacionSocioInput" className={styles.percentageLabel}>Participación del socio</label>
+              <div className={styles.labelColumn}>
+                <label
+                  htmlFor="participacionSocioInput"
+                  className={styles.percentageLabel}
+                >
+                  Participación del socio
+                </label>
+                <span
+                  className={`${styles.availableText} ${restante === 0 ? styles.availableTextError : ""
+                    }`}
+                >
+                  {restante > 0 ? `Disponible: ${restante}%` : "Cupo completo"}
+                </span>
+              </div>
 
-              <div className={`${styles.customInputWrapper} ${errorParticipacion ? styles.wrapperError : ""}`}>
+              <div
+                className={`${styles.customInputWrapper} ${errorParticipacion ? styles.wrapperError : ""
+                  }`}
+              >
                 <input
                   id="participacionSocioInput"
                   type="text"
                   className={styles.customInput}
+                  placeholder="0"
                   maxLength={3}
                   value={tempSocioParticipacion}
                   onChange={(e) => {
@@ -159,10 +185,11 @@ export default function Paso4Socios({
                 <span className={styles.percentageSymbol}>%</span>
               </div>
 
-              {/* Mensaje de error si hace falta */}
-              {errorParticipacion && (
-                <span className={styles.errorText}>{errorParticipacion}</span>
-              )}
+              <div className={styles.errorContainer}>
+                {errorParticipacion && (
+                  <span className={styles.errorText}>{errorParticipacion}</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -171,6 +198,7 @@ export default function Paso4Socios({
               type="button"
               variant="primary"
               onClick={handleGuardarClick}
+              disabled={restante === 0 && !tempSocioParticipacion}
             >
               GUARDAR SOCIO
             </Button>
@@ -182,19 +210,26 @@ export default function Paso4Socios({
       {faseSocio === "lista" && (
         <div className={styles.section}>
           <div className={styles.listHeader}>
-            <h3 className={`${styles.headerTitle} ${styles.noMargin}`}>
-              Socios declarados
-            </h3>
-            <Badge>
-              {socios.length} socio{socios.length > 1 ? "s" : ""}
-            </Badge>
+            <h3 className={styles.headerTitle}>Socios declarados</h3>
+
+            <div className={styles.statsGroup}>
+              <Badge>
+                {socios.length} socio{socios.length > 1 ? "s" : ""}
+              </Badge>
+              <span
+                className={`${styles.totalText} ${totalGuardado === 100 ? styles.totalTextSuccess : ""
+                  }`}
+              >
+                Total: {totalGuardado}% / 100%
+              </span>
+            </div>
           </div>
 
           <div className={styles.listContainer}>
             {socios.map((socio, index) => (
               <div className={styles.listItem} key={socio.cuit}>
                 <div className={styles.itemLeft}>
-                  <Avatar name={socio.nombre} />
+                  <Avatar name={socio.nombre} number={index + 1} />
                   <div className={styles.itemInfo}>
                     <p className={styles.itemName}>{socio.nombre}</p>
                     <p className={styles.itemDetails}>
@@ -224,7 +259,17 @@ export default function Paso4Socios({
           </div>
 
           <div className={styles.actionFooterBorder}>
-            <Button type="button" variant="outline" onClick={iniciarCargaSocio}>
+            {totalGuardado !== 100 && (
+              <span className={styles.warningText}>
+                Debe completar el 100% para continuar
+              </span>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={iniciarCargaSocio}
+              disabled={totalGuardado >= 100}
+            >
               <FiUserPlus className={styles.iconMarginRight} /> AGREGAR SOCIO
             </Button>
             <Button
@@ -232,6 +277,7 @@ export default function Paso4Socios({
               variant="primary"
               iconRight={<FiChevronRight />}
               onClick={continuarAlProximoPaso}
+              disabled={totalGuardado !== 100}
             >
               CONTINUAR
             </Button>

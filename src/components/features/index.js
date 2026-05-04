@@ -7,6 +7,7 @@ export { default as Paso5Documentacion } from './shared/Compartidos/Paso5Documen
 export { default as Paso7Exito } from './shared/Compartidos/Paso7Exito/Paso7Exito';
 export * from './shared/Compartidos/SocioItem/SocioItem';
 export * from './shared/Compartidos/PanelDudas/PanelDudas';
+export * from './shared/Compartidos/PanelDudas/BotonAyudaFlotante';
 export { default as ModalSocio } from './shared/Compartidos/ModalSocio/ModalSocio';
 export * from './shared/Compartidos/ModalDocumentosEmpresa/ModalDocumentosEmpresa';
 export * from './shared/Compartidos/ModalRepresentante/ModalRepresentante';
@@ -14,7 +15,8 @@ export * from './shared/Compartidos/SocioTaskCard/SocioTaskCard';
 export { default as ModalUbicacion } from "./shared/Compartidos/ModalUbicacion/ModalUbicacion";
 export { default as ModalContacto } from "./shared/Compartidos/ModalContacto/ModalContacto";
 export { default as ModalConfirmacionBorrador } from "./shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
-
+export * from "./ModalHistorialEstado/ModalHistorialEstado";
+export * from "./shared/Compartidos/DocumentosLegajo/DocumentosLegajo";
 
 // --- CHEQUES ---
 export { default as Paso6Bolsa } from './cheques/Cheques/Paso6Bolsa/Paso6Bolsa';
@@ -37,7 +39,23 @@ export { default as Paso2AgentePagare } from './pagares/Pagare/Paso2AgentePagare
 export { default as Paso3Epyme } from './pagares/Pagare/Paso3Epyme/Paso3Epyme';
 export { default as Paso4ExitoPagare } from './pagares/Pagare/Paso4ExitoPagare/Paso4ExitoPagare';
 
+// --- SOCIOS ---
+export * from './Socios/PantallaGestionSocios/PantallaGestionSocios';
+export * from './Socios/TablaSocios/TablaSocios';
+export * from './Socios/FormularioSocios/FormularioSocios';
+export * from './Socios/SeccionDatosSocios/SeccionDatosSocios';
+export * from './Socios/SeccionClasificacionSocios/SeccionClasificacionSocios';
+
+// --- TERCEROS ---
+export * from './Terceros/BuscadorTerceros/BuscadorTerceros';
+export * from './Terceros/FormularioTerceros/FormularioTerceros';
+export * from './Terceros/SeccionDatosTerceros/SeccionDatosTerceros';
+export * from './Terceros/GestorRelaciones/GestorRelaciones';
+export * from './Terceros/FormularioVincular/FormularioVincular';
+
 // --- OTROS ---
 export * from './dashboard/ListaActividades/ListaActividades';
 export * from './dashboard/TarjetaLinea/TarjetaLinea';
 export * from './solicitudes/TarjetaSolicitud/TarjetaSolicitud';
+export * from './solicitudes/ModalDetalleSolicitud/ModalDetalleSolicitud';
+

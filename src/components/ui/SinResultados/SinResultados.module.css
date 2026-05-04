@@ -3,23 +3,41 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 20px;
+  width: 100%;
+  min-height: 100%;
+  flex: 1;
+  padding: 4rem 1rem;
+  margin-top: 1rem;
+  background-color: var(--bg-primary, #1a1a1a);
+  border-radius: 0.5rem;
+  border: 1px dashed var(--border-subtle, #333);
+  color: var(--text-secondary, #888);
   text-align: center;
-  background-color: rgba(255, 255, 255, 0.02);
-  border-radius: 12px;
-  border: 1px dashed #333;
-  margin: 20px 0;
+}
+
+.compact {
+  padding: 2rem 1rem;
 }
 
 .icon {
-  font-size: 2.5rem;
-  color: #444;
-  margin-bottom: 15px;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--text-muted, #444);
+}
+
+.title {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary, #fff);
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .text {
-  color: #888;
-  font-size: 0.95rem;
-  font-style: italic;
   margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.actionButton {
+  margin-top: 1.5rem;
 }

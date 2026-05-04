@@ -6,7 +6,7 @@ import { FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../../components/ui";
-import { PanelDudas, ModalConfirmacionBorrador } from "../../components/features";
+import { PanelDudas, BotonAyudaFlotante, ModalConfirmacionBorrador } from "../../components/features";
 import styles from "./Prestamos.module.css";
 import { PrestamosPasos } from "./PrestamosPasos";
 
@@ -262,7 +262,7 @@ export default function Prestamos() {
                     if (pasoActual === 5) hitoVisual = 4;
                     return (
                       <BarraProgreso
-                        hitos={["Empresa", "Operación", "Socios", "Documentos"]}
+                        hitos={["EMPRESA", "OPERACIÓN", "SOCIOS", "DOCUMENTOS"]}
                         hitoActual={hitoVisual}
                       />
                     );
@@ -297,7 +297,12 @@ export default function Prestamos() {
                 </FormProvider>
               </div>
             </div>
-            {pasoActual < 7 && <PanelDudas pasoActual={pasoActual} />}
+            {pasoActual < 7 && (
+              <>
+                <PanelDudas contexto="prestamos" pasoActual={pasoActual} />
+                <BotonAyudaFlotante contexto="prestamos" pasoActual={pasoActual} />
+              </>
+            )}
           </div>
         </div>
       </div>
