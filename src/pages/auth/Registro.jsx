@@ -6,7 +6,8 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { Modal } from "../../components/ui/Modal/Modal";
 
-import { InputFlotante, Button } from "../../components/ui";
+import { FiMail } from "react-icons/fi";
+import { InputAuth, Button } from "../../components/ui";
 import { useCrearUsuario, useResetearPassword } from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
@@ -35,6 +36,7 @@ const Registro = () => {
     control,
     handleSubmit,
     setError,
+    formState: { errors },
   } = useForm({
     resolver: zodResolver(registroSchema),
   });
@@ -151,13 +153,13 @@ const Registro = () => {
               onSubmit={handleSubmit(onSubmit)}
               noValidate
             >
-              <InputFlotante
+              <InputAuth
+                name="email"
+                control={control}
+                label="Correo Electrónico"
                 type="email"
-                id="email"
-                label="Email *"
-                error={errors.email?.message}
+                icon={<FiMail size={20} />}
                 disabled={isFormDisabled}
-                {...register("email")}
               />
 
               <div className={styles.formActions}>
