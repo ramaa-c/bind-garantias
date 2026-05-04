@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { InputFlotante, Button } from "../../components/ui";
+import { FiMail, FiLock } from "react-icons/fi";
+import { InputAuth, Button } from "../../components/ui";
 import { useLogin } from "../../hooks/useUsuario";
 import { useAuthStore } from "../../store/useAuthStore";
 
@@ -29,10 +30,9 @@ const Login = () => {
   const { mutate: iniciarSesion, isPending } = useLogin();
 
   const {
-    register,
+    control,
     handleSubmit,
     setError,
-    formState: { errors },
   } = useForm({
     resolver: zodResolver(loginSchema),
   });
@@ -98,22 +98,22 @@ const Login = () => {
             onSubmit={handleSubmit(onSubmit)}
             noValidate
           >
-            <InputFlotante
+            <InputAuth
+              name="email"
+              control={control}
               label="Email"
               type="email"
-              id="email"
-              error={errors.email?.message}
+              icon={<FiMail size={20} />}
               disabled={isPending}
-              {...register("email")}
             />
 
-            <InputFlotante
+            <InputAuth
+              name="password"
+              control={control}
               label="Contraseña"
               type="password"
-              id="password"
-              error={errors.password?.message}
+              icon={<FiLock size={20} />}
               disabled={isPending}
-              {...register("password")}
             />
 
             <div className={styles.formActions}>

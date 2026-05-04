@@ -32,10 +32,9 @@ const Registro = () => {
   const [emailPendiente, setEmailPendiente] = useState("");
 
   const {
-    register,
+    control,
     handleSubmit,
     setError,
-    formState: { errors },
   } = useForm({
     resolver: zodResolver(registroSchema),
   });
