@@ -7,12 +7,10 @@ import { FiMail, FiLock } from "react-icons/fi";
 import { InputAuth, Button } from "../../components/ui";
 import { useLogin } from "../../hooks/useUsuario";
 import { useAuthStore } from "../../store/useAuthStore";
-
 import { useChannel } from "../../context/ChannelContext";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
-// --- SCHEMA ---
 const loginSchema = z.object({
   email: z
     .string()
@@ -29,27 +27,14 @@ const Login = () => {
   const { channelInfo } = useChannel();
   const { mutate: iniciarSesion, isPending } = useLogin();
 
-  const {
-    control,
-    handleSubmit,
-    setError,
-  } = useForm({
+  const { control, handleSubmit, setError } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
   const onSubmit = (formData) => {
     iniciarSesion(formData, {
-      onSuccess: (usuarioData) => {
-        setUser(usuarioData);
-
-        if (
-          usuarioData.debecambiarclave === "1" ||
-          String(usuarioData.debecambiarclave).toLowerCase() === "true"
-        ) {
-          navigate("/crear-clave", { replace: true });
-          return;
-        }
-
+      onSuccess: () => {
+        setUser({ email: formData.email });
         navigate("/inicio", { replace: true });
       },
       onError: (error) => {
@@ -74,7 +59,7 @@ const Login = () => {
               onClick={() => navigate("/")}
               className={styles.clickableLogo}
             />
-            {channelInfo.id !== 'default' && (
+            {channelInfo.id !== "default" && (
               <>
                 <div className={styles.logoSeparator} />
                 <img

@@ -11,18 +11,28 @@ import {
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
 import { TasasModal } from "../../features/TasasModal/TasasModal";
+import { useAuthStore } from "../../../store/useAuthStore";
 
 const Navbar = ({
-  texto,
-  textoEnlace,
-  rutaDestino,
-  usuario,
+  texto = "¿No tenés cuenta?",
+  textoEnlace = "Registrate",
+  rutaDestino = "/registro",
   onToggleSidebar,
 }) => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isTasasModalOpen, setIsTasasModalOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  const user = useAuthStore((state) => state.user);
+  const logout = useAuthStore((state) => state.logout);
+
+  const emailUsuario =
+    typeof user === "string"
+      ? user
+      : user?.email
+        ? String(user.email)
+        : "Usuario";
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -40,6 +50,7 @@ const Navbar = ({
   };
 
   const handleLogout = () => {
+    if (logout) logout();
     setIsDropdownOpen(false);
     navigate("/login");
   };
@@ -73,7 +84,7 @@ const Navbar = ({
         </div>
       </div>
 
-      {usuario ? (
+      {emailUsuario ? (
         <div className={styles.userSection} ref={dropdownRef}>
           <button
             className={styles.userButton}
@@ -84,17 +95,19 @@ const Navbar = ({
             <span className={styles.userIcon}>
               <FaRegUserCircle size={20} color={"var(--yellow, #f5f400)"} />
             </span>
-            <span className={styles.userName}>{usuario}</span>
+            <span className={styles.userName}>{emailUsuario}</span>
             <FiChevronDown
-              className={`${styles.chevron} ${isDropdownOpen ? styles.chevronOpen : ""}`}
+              className={`${styles.chevron} ${
+                isDropdownOpen ? styles.chevronOpen : ""
+              }`}
             />
           </button>
 
           {isDropdownOpen && (
             <div className={styles.dropdownMenu}>
               <div className={styles.dropdownHeader}>
-                <span className={styles.dropdownTitle}>{usuario}</span>
-                <span className={styles.dropdownSubtitle}>Administrador</span>
+                <span className={styles.dropdownTitle}>{emailUsuario}</span>
+                <span className={styles.dropdownSubtitle}>Usuario BIND</span>
               </div>
 
               <div className={styles.dropdownBody}>
@@ -130,26 +143,24 @@ const Navbar = ({
           )}
         </div>
       ) : (
-        texto &&
-        textoEnlace && (
-          <div className={styles.loginContainer}>
-            {texto}
-            <span
-              className={styles.link}
-              onClick={() => navigate(rutaDestino)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  navigate(rutaDestino);
-                }
-              }}
-            >
-              {textoEnlace}
-            </span>
-          </div>
-        )
+        <div className={styles.loginContainer}>
+          {texto}
+          <span
+            className={styles.link}
+            onClick={() => navigate(rutaDestino)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate(rutaDestino);
+              }
+            }}
+          >
+            {" "}
+            {textoEnlace}
+          </span>
+        </div>
       )}
 
       <TasasModal

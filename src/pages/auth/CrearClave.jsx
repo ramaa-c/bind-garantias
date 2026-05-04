@@ -36,13 +36,16 @@ const passwordSchema = z
     path: ["confirmPassword"],
   });
 
-// Definición de requisitos
 const PASSWORD_RULES = [
-  { id: "minLength",  label: "12 caracteres", test: (v) => v.length >= 12 },
-  { id: "lowercase",  label: "1 minúscula",   test: (v) => /[a-z]/.test(v) },
-  { id: "uppercase",  label: "1 mayúscula",   test: (v) => /[A-Z]/.test(v) },
-  { id: "number",     label: "1 número",      test: (v) => /[0-9]/.test(v) },
-  { id: "special",    label: "1 símbolo",     test: (v) => /[!_.*@#$%^&()\-+]/.test(v) },
+  { id: "minLength", label: "12 caracteres", test: (v) => v.length >= 12 },
+  { id: "lowercase", label: "1 minúscula", test: (v) => /[a-z]/.test(v) },
+  { id: "uppercase", label: "1 mayúscula", test: (v) => /[A-Z]/.test(v) },
+  { id: "number", label: "1 número", test: (v) => /[0-9]/.test(v) },
+  {
+    id: "special",
+    label: "1 símbolo",
+    test: (v) => /[!_.*@#$%^&()\-+]/.test(v),
+  },
 ];
 
 const CrearClave = () => {
@@ -65,19 +68,13 @@ const CrearClave = () => {
     return savedCanal;
   });
 
-  const {
-    data: queryUsuario,
-    isLoading: queryVerificandoToken,
-    isError: queryTokenExpirado,
-  } = useObtenerUsuarioPorEncrypt(tokenIntegridad);
+  const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
-  // --- MODO DESARROLLO VISUAL (Cambiar a false al terminar el diseño) ---
-  const DEV_MODE = true;
-  const tokenInvalidoDeOrigen = DEV_MODE ? false : (!tokenIntegridad || tokenIntegridad.length < 10);
-  const usuario = DEV_MODE ? { usuariowebid: 999 } : queryUsuario;
-  const verificandoToken = DEV_MODE ? false : queryVerificandoToken;
-  const tokenExpirado = DEV_MODE ? false : queryTokenExpirado;
-  // -----------------------------------------------------------------------
+  const {
+    data: usuario,
+    isLoading: verificandoToken,
+    isError: tokenExpirado,
+  } = useObtenerUsuarioPorEncrypt(tokenIntegridad);
 
   const { mutate: establecerClave, isPending: guardandoClave } =
     useEstablecerClave();
@@ -96,18 +93,21 @@ const CrearClave = () => {
   const passwordValue = watch("password") || "";
   const confirmPasswordValue = watch("confirmPassword") || "";
 
-  const passedRulesCount = PASSWORD_RULES.filter(rule => rule.test(passwordValue)).length;
-  
+  const passedRulesCount = PASSWORD_RULES.filter((rule) =>
+    rule.test(passwordValue),
+  ).length;
+
   const getBarColor = (count) => {
-    if (count <= 2) return "#ff5252"; // Rojo
-    if (count <= 4) return "#ffb142"; // Amarillo
-    return "#4ade80"; // Verde
+    if (count <= 2) return "#ff5252";
+    if (count <= 4) return "#ffb142";
+    return "#4ade80";
   };
 
   const onSubmit = (formData) => {
     const payload = {
       usuarioid: usuario?.usuariowebid,
       data: {
+        oldpassword: "",
         newpassword: formData.password,
       },
     };
@@ -130,19 +130,32 @@ const CrearClave = () => {
   };
 
   const mostrarErrorFaltaUsuario =
-    !usuario && errorObteniendoUsuario && !verificandoToken;
+    !usuario && tokenExpirado && !verificandoToken;
 
   return (
     <div className={styles.loginContainer}>
       {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
       <section className={styles.loginFormSection}>
         <div className={styles.loginHeader}>
-          <div className={styles.logosWrapper} style={{ justifyContent: "center", marginBottom: "2.5rem" }}>
-            <img src={logoBind} alt="Logo BIND" className={styles.logo} style={{ margin: 0, height: "4rem", width: "auto" }} />
+          <div
+            className={styles.logosWrapper}
+            style={{ justifyContent: "center", marginBottom: "2.5rem" }}
+          >
+            <img
+              src={logoBind}
+              alt="Logo BIND"
+              className={styles.logo}
+              style={{ margin: 0, height: "4rem", width: "auto" }}
+            />
             {channelInfo.id !== "default" && (
               <>
                 <div className={styles.logoSeparator} />
-                <img src={channelInfo.logo} alt={`Logo ${channelInfo.nombre}`} className={styles.channelLogo} style={{ height: "4rem" }} />
+                <img
+                  src={channelInfo.logo}
+                  alt={`Logo ${channelInfo.nombre}`}
+                  className={styles.channelLogo}
+                  style={{ height: "4rem" }}
+                />
               </>
             )}
           </div>
@@ -153,44 +166,48 @@ const CrearClave = () => {
         </div>
 
         <div className={styles.formWrapper}>
-          {/* Estado: token inválido */}
           {tokenInvalidoDeOrigen && (
             <div className={styles.expiredTokenContainer}>
               <FiAlertCircle size={48} color="var(--red)" />
               <h3>Enlace corrupto o ausente</h3>
               <p>El enlace de seguridad está incompleto o mal formado.</p>
-              <Button variant="primary" onClick={() => navigate("/registro")} style={{ marginTop: "1.5rem" }}>
+              <Button
+                variant="primary"
+                onClick={() => navigate("/registro")}
+                style={{ marginTop: "1.5rem" }}
+              >
                 SOLICITAR NUEVO ENLACE
               </Button>
             </div>
           )}
 
-          {/* Estado: validando */}
           {verificandoToken && !tokenInvalidoDeOrigen && (
             <div className={styles.loadingStatePlaceholder}>
               <p>Validando enlace de seguridad...</p>
             </div>
           )}
 
-          {/* Estado: token expirado */}
-          {tokenExpirado && !verificandoToken && !tokenInvalidoDeOrigen && (
+          {mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen && (
             <div className={styles.expiredTokenContainer}>
               <FiAlertCircle size={48} color="var(--red)" />
               <h3>El enlace ha expirado o es inválido</h3>
               <p>
-                Por seguridad, los enlaces de activación tienen una validez de 5
-                minutos.
+                No pudimos recuperar tu información. Solicitá un nuevo enlace
+                para continuar.
               </p>
-              <Button variant="primary" onClick={() => navigate("/registro")} style={{ marginTop: "1.5rem" }}>
+              <Button
+                variant="primary"
+                onClick={() => navigate("/recuperar-password")}
+                style={{ marginTop: "1.5rem" }}
+              >
                 SOLICITAR NUEVO ENLACE
               </Button>
             </div>
           )}
 
           {/* Formulario principal */}
-          {!verificandoToken && !tokenExpirado && !tokenInvalidoDeOrigen && usuario && (
+          {!verificandoToken && !tokenInvalidoDeOrigen && usuario && (
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
-              {/* Input 1: Nueva contraseña */}
               <div className={styles.inputGroup}>
                 <InputAuth
                   name="password"
@@ -203,21 +220,31 @@ const CrearClave = () => {
                   disabled={guardandoClave}
                 />
 
-                {/* ── SEGMENTOS CON LABELS ── */}
                 <div className={styles.strengthSegments}>
                   {PASSWORD_RULES.map((rule) => {
-                    const passed = passwordValue ? rule.test(passwordValue) : false;
+                    const passed = passwordValue
+                      ? rule.test(passwordValue)
+                      : false;
                     return (
-                      <div key={rule.id} className={styles.strengthSegmentWrapper}>
+                      <div
+                        key={rule.id}
+                        className={styles.strengthSegmentWrapper}
+                      >
                         <div
                           className={`${styles.strengthSegment} ${
-                            passed ? styles.strengthSegmentOn : styles.strengthSegmentOff
+                            passed
+                              ? styles.strengthSegmentOn
+                              : styles.strengthSegmentOff
                           }`}
                           style={passed ? { backgroundColor: "#4ade80" } : {}}
                         />
-                        <span className={`${styles.segmentLabel} ${
-                          passed ? styles.segmentLabelOn : styles.segmentLabelOff
-                        }`}>
+                        <span
+                          className={`${styles.segmentLabel} ${
+                            passed
+                              ? styles.segmentLabelOn
+                              : styles.segmentLabelOff
+                          }`}
+                        >
                           {rule.label}
                         </span>
                       </div>
@@ -226,34 +253,37 @@ const CrearClave = () => {
                 </div>
               </div>
 
-
-
-              {/* Input 2: Confirmar contraseña */}
-              <div className={styles.inputGroup} style={{ marginTop: "1rem", position: "relative" }}>
+              <div
+                className={styles.inputGroup}
+                style={{ marginTop: "1rem", position: "relative" }}
+              >
                 <InputAuth
                   name="confirmPassword"
                   control={control}
                   label="Confirmar Contraseña"
                   type="password"
                   icon={<FiLock size={20} />}
-                  esValido={!!confirmPasswordValue && passwordValue === confirmPasswordValue}
+                  esValido={
+                    !!confirmPasswordValue &&
+                    passwordValue === confirmPasswordValue
+                  }
                   disabled={guardandoClave}
                 />
-                
-                {/* ── FEEDBACK COINCIDENCIA ── */}
-                {confirmPasswordValue.length > 0 && passwordValue === confirmPasswordValue && (
-                  <span className={styles.successMsgMatch}>Las contraseñas coinciden</span>
-                )}
+
+                {confirmPasswordValue.length > 0 &&
+                  passwordValue === confirmPasswordValue && (
+                    <span className={styles.successMsgMatch}>
+                      Las contraseñas coinciden
+                    </span>
+                  )}
               </div>
 
-              {/* Error de servidor */}
               {errors.root?.serverError && (
                 <div className={styles.serverErrorAlert}>
                   <FiXCircle /> {errors.root.serverError.message}
                 </div>
               )}
 
-              {/* Botón */}
               <div className={styles.formActions} style={{ marginTop: "1rem" }}>
                 <Button
                   type="submit"
@@ -268,14 +298,19 @@ const CrearClave = () => {
         </div>
       </section>
 
-      {/* ── COLUMNA DERECHA: BRANDING ── */}
       <section className={`${styles.sideBrand} ${styles.sideBrandCentered}`}>
         <div className={styles.crearClaveBrandContent}>
           <div className={styles.shieldIconWrapper}>
-            <FiLock size={44} color="var(--yellow, #f4f500)" strokeWidth={1.5} />
+            <FiLock
+              size={44}
+              color="var(--yellow, #f4f500)"
+              strokeWidth={1.5}
+            />
           </div>
           <h2 className={styles.brandTitleLarge}>
-            Tu acceso,<br /><em className={styles.brandEm}>seguro.</em>
+            Tu acceso,
+            <br />
+            <em className={styles.brandEm}>seguro.</em>
           </h2>
         </div>
       </section>
