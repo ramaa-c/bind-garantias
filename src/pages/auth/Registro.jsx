@@ -4,8 +4,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
+import { FiMail } from "react-icons/fi";
 
-import { InputFlotante, Button } from "../../components/ui";
+import { InputAuth, Button } from "../../components/ui";
 import { useCrearUsuario } from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
@@ -25,10 +26,9 @@ const Registro = () => {
   const { mutateAsync: crearUsuario, isPending } = useCrearUsuario();
 
   const {
-    register,
+    control,
     handleSubmit,
     setError,
-    formState: { errors },
   } = useForm({
     resolver: zodResolver(registroSchema),
   });
@@ -59,7 +59,13 @@ const Registro = () => {
         "¡Registro exitoso! Revisá tu casilla de correo para continuar.",
       );
 
-      navigate("/login", { replace: true });
+      navigate("/confirmar-correo", {
+        replace: true,
+        state: {
+          usuarioSkeletor: payloadSkeletor,
+          canal: "email",
+        },
+      });
     } catch (error) {
       if (error?.response?.status === 409) {
         setError("email", {
@@ -101,13 +107,13 @@ const Registro = () => {
             onSubmit={handleSubmit(onSubmit)}
             noValidate
           >
-            <InputFlotante
+            <InputAuth
+              name="email"
+              control={control}
               type="email"
-              id="email"
               label="Email *"
-              error={errors.email?.message}
+              icon={<FiMail size={20} />}
               disabled={isPending}
-              {...register("email")}
             />
 
             <div className={styles.formActions}>
@@ -144,7 +150,7 @@ const Registro = () => {
       <section className={styles.sideBrand}>
         <div className={styles.brandContent}>
           <h2 className={styles.brandTitle}>
-            Potenciando y transformando el financiamiento PyME.
+            Potenciando y transformando el <em>financiamiento PyME.</em>
           </h2>
           <p className={styles.brandSubtitle}>
             Accedé a la mejor financiación para tu empresa.

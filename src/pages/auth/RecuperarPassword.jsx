@@ -24,7 +24,7 @@ const RecuperarPassword = () => {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(recuperarSchema),
-    defaultValues: { email: "" }
+    defaultValues: { email: "" },
   });
 
   const enviarCorreoMutation = useMutation({
@@ -40,11 +40,15 @@ const RecuperarPassword = () => {
           throw new Error("No encontramos una cuenta asociada a este correo.");
         }
         if (response.status >= 500) {
-          throw new Error("Ocurrió un error en el servidor. Intentá nuevamente más tarde.");
+          throw new Error(
+            "Ocurrió un error en el servidor. Intentá nuevamente más tarde.",
+          );
         }
-        throw new Error("Ocurrió un error inesperado al intentar recuperar la contraseña.");
+        throw new Error(
+          "Ocurrió un error inesperado al intentar recuperar la contraseña.",
+        );
       }
-      
+
       return response.json();
     },
   });
@@ -58,11 +62,11 @@ const RecuperarPassword = () => {
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img 
-            src={logoBind} 
-            alt="Logo BIND" 
-            onClick={() => navigate("/")} 
-            style={{ cursor: "pointer" }} 
+          <img
+            src={logoBind}
+            alt="Logo BIND"
+            onClick={() => navigate("/")}
+            style={{ cursor: "pointer" }}
           />
         </div>
 
@@ -70,7 +74,8 @@ const RecuperarPassword = () => {
           <div className={styles.headerText}>
             <h2>¿Olvidaste tu contraseña?</h2>
             <p>
-              Completá tu dirección de correo y te enviaremos un email con las instrucciones para crear una nueva.
+              Completá tu dirección de correo y te enviaremos un email con las
+              instrucciones para crear una nueva.
             </p>
           </div>
 
@@ -86,7 +91,8 @@ const RecuperarPassword = () => {
 
             {enviarCorreoMutation.isSuccess && (
               <Alert variant="success" className={styles.formFieldSpacing}>
-                ¡Listo! Te enviamos un email con las instrucciones para crear una nueva contraseña.
+                ¡Listo! Te enviamos un email con las instrucciones para crear
+                una nueva contraseña.
               </Alert>
             )}
 
@@ -99,22 +105,26 @@ const RecuperarPassword = () => {
             />
 
             <div className={styles.formActions}>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 variant="primary"
                 disabled={enviarCorreoMutation.isPending}
               >
-                {enviarCorreoMutation.isPending ? "Enviando..." : "Recuperar contraseña"}
+                {enviarCorreoMutation.isPending
+                  ? "Enviando..."
+                  : "Recuperar contraseña"}
               </Button>
-
             </div>
           </form>
 
           <div className={styles.supportContainerModern}>
             <p>
-              En caso de tener problemas o dudas con tu cuenta podés ponerte en contacto 
-              con nosotros en{" "}
-              <a href="mailto:soporte@bind.com.ar" className={styles.linkYellow}>
+              En caso de tener problemas o dudas con tu cuenta podés ponerte en
+              contacto con nosotros en{" "}
+              <a
+                href="mailto:soporte@bind.com.ar"
+                className={styles.linkYellow}
+              >
                 soporte@bind.com.ar
               </a>
             </p>
@@ -124,11 +134,9 @@ const RecuperarPassword = () => {
 
       {/* --- COLUMNA DERECHA --- */}
       <section className={styles.sideBrand}>
-        <div className={styles.blobBlue}></div>
-        <div className={styles.blobYellow}></div>
         <div className={styles.brandContent}>
           <h2 className={styles.brandTitle}>
-            Potenciando y transformando el financiamiento PyME.
+            Potenciando y transformando el <em>financiamiento PyME.</em>
           </h2>
           <p className={styles.brandSubtitle}>
             Accedé a la mejor financiación para tu empresa.

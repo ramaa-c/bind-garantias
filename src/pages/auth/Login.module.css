@@ -1,30 +1,43 @@
+/* ──────── LAYOUT RAÍZ ────────────────────────────────────────────────────────── */
+
 .layoutSplit {
   display: grid;
   grid-template-columns: 1fr;
   min-height: 100vh;
-  background-color: var(--carbon-black);
-  color: var(--white);
+  background-color: var(--carbon-black, #121212);
+  color: var(--white, #fff);
 }
+
+/* COLUMNA IZQUIERDA — FORMULARIO */
 
 .sideForm {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  padding: 1.5rem;
-  background-color: var(--carbon-black);
-  z-index: 2;
-  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
-  position: relative;
+  justify-content: center;
   min-height: 100vh;
-  background-image:
-    radial-gradient(circle at 10% 10%, rgba(245, 244, 0, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(76, 101, 230, 0.08) 0%, transparent 50%);
+  padding: 5rem 1.5rem 3rem;
+  position: relative;
+  z-index: 2;
+  background-color: var(--carbon-black, #121212);
 }
+
+.sideForm::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(244, 245, 0, 0.06) 0%, transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(76, 101, 230, 0.06) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── LOGO ────────────────────────────────────────────────────────── */
 
 .globalLogo {
   position: absolute;
-  top: 12vh;
+  top: 1.75rem;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -43,9 +56,12 @@
   background-color: rgba(255, 255, 255, 0.15);
 }
 
-.globalLogo img {
-  width: 8.5rem;
+.globalLogo img,
+.clickableLogo {
+  cursor: pointer;
+  width: 7.5rem;
   height: auto;
+  display: block;
 }
 
 .channelLogo {
@@ -55,189 +71,193 @@
   object-fit: contain;
 }
 
+/* ── CARD ────────────────────────────────────────────────────────── */
+
 .cardModern {
   width: 100%;
-  max-width: 28rem;
+  max-width: 26rem;
   display: flex;
   flex-direction: column;
-  gap: 2.2rem;
-  margin-top: 0;
-  background: rgba(30, 30, 30, 0.85);
-  backdrop-filter: blur(12px);
-  border-radius: 1.5rem;
-  padding: 2.8rem 1.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  gap: 2rem;
   position: relative;
   z-index: 10;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem;
+  box-shadow:
+    inset 3px 0 0 0 rgba(244, 245, 0, 0.35),
+    0 20px 60px rgba(0, 0, 0, 0.4);
 }
 
+/* ── HEADER TEXTO ────────────────────────────────────────────────── */
+
 .headerText {
-  margin-bottom: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
 }
 
 .headerText h2 {
   font-size: 1.5rem;
-  color: var(--white);
-  margin-bottom: 1rem;
-  font-weight: 600;
-  text-align: center;
+  font-weight: 700;
+  color: var(--white, #fff);
+  margin: 0;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  text-align: left;
 }
 
 .headerText p {
-  color: #aaa;
-  font-size: 0.95rem;
+  color: #555;
+  font-size: 0.875rem;
   margin: 0;
-  text-align: center;
-  width: 100%;
+  line-height: 1.5;
+  text-align: left;
 }
 
 .titleJumbo {
-  font-size: 1.8rem;
-  margin-bottom: 1rem;
-  color: var(--white);
-  font-weight: 600;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--white, #fff);
+  margin: 0;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
 }
 
 .textLead {
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #aaa;
+  font-size: 0.9rem;
+  color: #555;
+  line-height: 1.6;
+  margin: 0.5rem 0 0;
 }
+
+.boldWhiteText {
+  color: var(--white, #fff);
+  font-weight: 600;
+  display: block;
+  margin-top: 0.25rem;
+}
+
+/* ── FORMULARIO ──────────────────────────────────────────────────── */
 
 .formContent {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.875rem;
 }
 
 .formActions {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-}
-
-/* --- COLUMNA DERECHA --- */
-.sideBrand {
-  display: none;
-  background: linear-gradient(135deg, var(--graphite) 0%, #1a224a 100%);
-  position: relative;
-  overflow: hidden;
-}
-
-.brandContent {
-  max-width: 31.25rem;
-  text-align: left;
-  z-index: 1;
-  position: relative;
-}
-
-.blobBlue {
-  position: absolute;
-  width: 30rem;
-  height: 30rem;
-  background: #4C65E6;
-  border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.25;
-  top: -10%;
-  right: -10%;
-  z-index: 0;
-  animation: floatBlue 10s infinite alternate ease-in-out;
-}
-
-.blobYellow {
-  position: absolute;
-  width: 25rem;
-  height: 25rem;
-  background: var(--yellow);
-  border-radius: 50%;
-  filter: blur(100px);
-  opacity: 0.15;
-  bottom: -10%;
-  left: -10%;
-  z-index: 0;
-  animation: floatYellow 12s infinite alternate ease-in-out;
-}
-
-@keyframes floatBlue {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  100% {
-    transform: translate(-30px, 30px) scale(1.1);
-  }
-}
-
-@keyframes floatYellow {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-
-  100% {
-    transform: translate(30px, -30px) scale(1.1);
-  }
-}
-
-.brandTitle {
-  font-size: 2rem;
-  color: var(--white);
-  line-height: 1.2;
-  margin-bottom: 1rem;
-  font-weight: bold;
-  margin-top: 0;
-}
-
-.brandSubtitle {
-  font-size: 1rem;
-  color: #aaa;
-  line-height: 1.5;
-  margin: 0;
-}
-
-/* Utilidades */
-.supportContainerModern {
-  margin-top: 1rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #333;
-  font-size: 0.85rem;
-  color: #aaa;
-  line-height: 1.5;
-  text-align: center;
-}
-
-.supportContainerModern p {
-  margin: 0 0 0.5rem 0;
-}
-
-.linkYellow {
-  color: var(--yellow);
-  cursor: pointer;
-  font-weight: bold;
-  margin-left: 0.2rem;
-  text-decoration: none;
-}
-
-.linkYellow:hover {
-  text-decoration: underline;
-}
-
-.boldWhiteText {
-  color: var(--white);
-  font-weight: 600;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
 }
 
 .formFieldSpacing {
-  margin-top: 1rem;
+  margin-top: 0.5rem;
 }
 
 .formActionsMargin {
   margin-top: 0.5rem;
 }
 
-.btnDisabled {
+/* ── SOPORTE / FOOTER ────────────────────────────────────────────── */
+
+.supportContainerModern {
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.8125rem;
+  color: #444;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.supportContainerModern p {
+  margin: 0 0 0.25rem;
+}
+
+.supportContainerClean {
+  text-align: center;
+  margin-top: 0;
+  border-top: none;
+  padding-top: 0;
+}
+
+.linkYellow {
+  color: var(--yellow, #f4f500);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.linkYellow:hover {
+  opacity: 0.75;
+}
+
+.linkYellowReset {
+  margin-left: 0;
+}
+
+.disabledLink {
   opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* COLUMNA DERECHA — MARCA */
+
+.sideBrand {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  background: #0d0d0d;
+}
+
+.sideBrand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 2rem 2rem;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.sideBrand {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem;
+}
+
+.brandContent {
+  position: relative;
+  z-index: 1;
+  max-width: 28rem;
+}
+
+.brandTitle {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--white, #fff);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin: 0 0 1rem;
+}
+
+.brandTitle em {
+  font-style: normal;
+  color: var(--yellow, #f4f500);
+}
+
+.brandSubtitle {
+  font-size: 1rem;
+  color: #444;
+  line-height: 1.6;
+  margin: 0;
 }
 
 .sideBrandCentered {
@@ -245,65 +265,385 @@
   justify-content: center;
   align-items: center;
   text-align: center;
-}
-
-.shieldIconWrapper {
-  margin-bottom: 2rem;
+  gap: 2rem;
 }
 
 .brandContentCentered {
+  position: relative;
+  z-index: 1;
   text-align: center;
 }
 
 .brandTitleLarge {
   font-size: 2rem;
-  color: var(--white);
+  font-weight: 800;
+  color: var(--white, #fff);
+  letter-spacing: -0.03em;
+  margin: 0 0 1.5rem;
   line-height: 1.2;
+}
+
+.securityList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.securityList li {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #555;
+}
+
+.securityList li svg {
+  color: #4caf50;
+  flex-shrink: 0;
+}
+
+.iconCircleWrapper {
+  position: relative;
+  z-index: 1;
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%;
+  border: 1px solid rgba(244, 245, 0, 0.15);
+  background: rgba(244, 245, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shieldIconWrapper {
+  position: relative;
+  z-index: 1;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 50%;
+  border: 1px solid rgba(244, 245, 0, 0.15);
+  background: rgba(244, 245, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── REQUISITOS INLINE (SUBTÍTULOS) ────────────────────────────────── */
+
+.inlineRequirements {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.625rem;
+  margin-bottom: 1.25rem;
+  padding: 0 0.25rem;
+}
+
+.reqMissing {
+  font-size: 0.75rem;
+  color: #777;
+  transition: color 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.reqPassed {
+  font-size: 0.75rem;
+  color: #4ade80;
+  transition: color 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.successMsgMatch {
+  position: absolute;
+  bottom: 0;
+  left: 1rem;
+  font-size: 0.75rem;
+  color: #4ade80;
+  animation: slideIn 0.3s ease;
+  pointer-events: none;
+}
+
+.reqMissing::before,
+.reqPassed::before {
+  content: "•";
+  margin-right: 0.25rem;
+  font-size: 0.875rem;
+}
+
+.strengthSegments {
+  display: flex;
+  gap: 0.375rem;
+  margin-top: 0.625rem;
+  margin-bottom: 0.25rem;
+  padding: 0 0.125rem;
+}
+
+.strengthSegmentWrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.strengthSegment {
+  width: 100%;
+  height: 3px;
+  border-radius: 9999px;
+  transition: background-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.strengthSegmentOff {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.strengthSegmentOn {
+  box-shadow: 0 0 4px 0px rgba(255, 255, 255, 0.25);
+}
+
+.segmentLabel {
+  font-size: 0.6rem;
+  text-align: center;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: color 0.35s ease, opacity 0.35s ease;
+  letter-spacing: 0.01em;
+}
+
+.segmentLabelOff {
+  color: #444;
+  opacity: 0.8;
+}
+
+.segmentLabelOn {
+  color: #aaa;
+  opacity: 1;
+}
+
+
+
+/* ── BRANDING DERECHO CREAR CLAVE ────────────────────────────────── */
+
+.crearClaveBrandContent {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  max-width: 22rem;
+}
+
+.brandEm {
+  font-style: normal;
+  color: var(--yellow, #f4f500);
+}
+
+.crearClaveDivider {
+  width: 3rem;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(244, 245, 0, 0.4), transparent);
+  border-radius: 9999px;
+}
+
+.crearClaveFeatureList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  text-align: left;
+  width: 100%;
+}
+
+.crearClaveFeatureList li {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.875rem;
+  color: #555;
+  transition: color 0.2s;
+}
+
+.crearClaveFeatureDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(244, 245, 0, 0.5);
+  flex-shrink: 0;
+}
+
+/* CrearClave - Lista de requisitos con íconos */
+
+.loginContainer {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100vh;
+  background-color: var(--carbon-black, #121212);
+  color: var(--white, #fff);
+}
+
+.loginFormSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1.5rem 8rem;
+  position: relative;
+  z-index: 2;
+}
+
+.loginFormSection::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 15% 20%, rgba(244, 245, 0, 0.05) 0%, transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(76, 101, 230, 0.05) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.loginHeader {
+  width: 100%;
+  max-width: 26rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+.logo {
+  width: 7.5rem;
+  height: auto;
   margin-bottom: 1rem;
-  font-weight: bold;
+  cursor: pointer;
+}
+
+.loginTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--white, #fff);
+  margin: 0;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.loginSubtitle {
+  font-size: 0.875rem;
+  color: #555;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.formWrapper {
+  width: 100%;
+  max-width: 26rem;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  box-shadow: inset 3px 0 0 0 rgba(244, 245, 0, 0.35), 0 20px 60px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.loadingStatePlaceholder {
+  text-align: center;
+  padding: 2rem 0;
+  color: #444;
+  font-size: 0.875rem;
+}
+
+.expiredTokenContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.expiredTokenContainer h3 {
+  color: var(--white, #fff);
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.expiredTokenContainer p {
+  color: #555;
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.serverErrorAlert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 82, 82, 0.07);
+  border: 1px solid rgba(255, 82, 82, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: #ff5252;
 }
 
 .textLeft {
   text-align: left;
 }
 
-.supportContainerClean {
-  text-align: center;
-  margin-top: 1rem;
-  border-top: none;
-  padding-top: 0;
+.btnDisabled {
+  opacity: 0.5;
 }
 
-.linkYellowReset {
-  margin-left: 0;
-}
+/* Escritorio */
 
-.iconCircleWrapper {
-  background-color: rgba(244, 245, 0, 0.05);
-  border-radius: 50%;
-  padding: 3rem;
-  box-shadow: 0 0 50px rgba(244, 245, 0, 0.1);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-
-/* RESPONSIVE */
 @media (min-width: 56.25rem) {
-  .layoutSplit {
-    grid-template-columns: 45% 55%;
+
+  .layoutSplit,
+  .loginContainer {
+    grid-template-columns: 42% 58%;
   }
 
   .sideForm {
     padding: 2rem;
-    flex-direction: row;
+    justify-content: center;
+    box-shadow: 1px 0 0 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .loginFormSection {
+    padding: 2rem 2rem 10vh 2rem;
+    justify-content: center;
+    box-shadow: 1px 0 0 0 rgba(255, 255, 255, 0.05);
   }
 
   .globalLogo {
-    position: absolute;
-    top: 3.5rem;
-    left: 4rem;
+    top: 2.5rem;
+    left: 2.5rem;
     transform: none;
   }
 
@@ -320,49 +660,53 @@
   }
 
   .cardModern {
+    padding: 2.75rem 2.25rem;
     gap: 2rem;
-    margin-top: 0;
-    padding: 3rem 2.5rem;
   }
 
-  .headerText h2 {
-    font-size: 1.8rem;
+  .cardModern,
+  .formWrapper {
+    max-width: 28rem;
+  }
+
+  .headerText h2,
+  .loginTitle {
+    font-size: 1.75rem;
   }
 
   .titleJumbo {
-    font-size: 2.5rem;
-  }
-
-  .textLead {
-    font-size: 1.1rem;
+    font-size: 1.75rem;
   }
 
   .sideBrand {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 4rem;
+    background-image:
+      linear-gradient(to bottom, rgba(13, 13, 13, 0.75), rgba(13, 13, 13, 0.95)),
+      url("../../assets/images/img-fondo.webp");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 
   .brandTitle {
-    font-size: 3.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .brandSubtitle {
-    font-size: 1.25rem;
+    font-size: 3rem;
   }
 
   .brandTitleLarge {
     font-size: 2.5rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .supportContainerClean {
-    margin-top: 0.5rem;
   }
 
   .iconCircleWrapper {
-    padding: 4rem;
+    width: 11rem;
+    height: 11rem;
+  }
+
+  .shieldIconWrapper {
+    width: 8.5rem;
+    height: 8.5rem;
+  }
+
+  .securityList li {
+    font-size: 0.9375rem;
   }
 }
