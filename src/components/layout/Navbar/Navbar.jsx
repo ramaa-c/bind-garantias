@@ -70,7 +70,7 @@ const Navbar = ({
 
         <div
           className={styles.logoContainer}
-          onClick={() => navigate("/inicio")}
+          onClick={() => navigate("/solicitudes")}
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {

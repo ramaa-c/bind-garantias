@@ -185,10 +185,10 @@ export const AltaOperacion = () => {
 
       const payload = {
         solicitudenprocesoid: 0,
-        fechacarga: new Date().toISOString(),
-        cuit: cleanData.cuit,
+        fechacarga: new Date().toISOString().split(".")[0], // Formato sin milisegundos para .NET
+        cuit: String(cleanData.cuit).replace(/\D/g, ""), // Aseguramos que el CUIT no tenga guiones
         tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : 2,
-        cadenavalorid: 950274,
+        cadenavalorid: 950274, // Ojo: Este ID tiene que existir en la BD
         monedaid: Number(cleanData.moneda) || 1,
         importe: montoLimpio,
         estadosolicitud: 1,
@@ -198,6 +198,7 @@ export const AltaOperacion = () => {
           : 0,
       };
 
+      console.log("Enviando Solicitud Payload:", payload);
       await solicitudesService.crearSolicitudEnProceso(payload);
 
       if (cleanData.tipoProducto === "cheque") {
@@ -207,9 +208,8 @@ export const AltaOperacion = () => {
       }
     } catch (error) {
       console.error("Error al enviar la solicitud:", error);
-      alert(
-        "Hubo un error al enviar la solicitud. Por favor, intente nuevamente.",
-      );
+      const serverMsg = error?.response?.data?.message || error?.response?.data || error.message;
+      alert(`Hubo un error al enviar la solicitud: ${serverMsg}. Revisá la consola (F12) para más detalles.`);
     } finally {
       setEnviandoSolicitud(false);
     }
@@ -248,6 +248,7 @@ export const AltaOperacion = () => {
     };
 
     handleResetFlujoCompleto();
+    sessionStorage.setItem("last_used_cuit", data.cuit);
     navigate("/solicitudes", { state: { nuevaSolicitud } });
   };
 
@@ -456,7 +457,7 @@ export const AltaOperacion = () => {
       );
     if (pasoActual === 3) {
       const IS_DLR = String(moneda) === "2";
-      
+
       let opcionesProducto = [];
       let opcionesCalculo = [];
       let mostrarTipoCalculo = false;

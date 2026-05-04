@@ -7,6 +7,8 @@ import { BotonVolver, Button, Select, Spinner } from "../../components/ui";
 import { TarjetaSolicitud, ModalDetalleSolicitud } from "../../components/features";
 import ModalConfirmacionBorrador from "../../components/features/shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
 import { useObtenerSolicitudesEnProceso } from "../../hooks/useSolicitudes";
+import { useQuery } from "@tanstack/react-query";
+import { sociosService } from "../../services/sociosService";
 
 import styles from "./Solicitudes.module.css";
 
@@ -87,7 +89,22 @@ export default function Solicitudes() {
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
 
   // Integración con Backend
-  const { data: solicitudesReal, isLoading } = useObtenerSolicitudesEnProceso("33711316839"); // CUIT de prueba
+  // Buscamos si hay un CUIT guardado de la última operación creada. 
+  // Si no hay, usamos el CUIT por defecto para la demo.
+  const cuitActivo = sessionStorage.getItem("last_used_cuit") || "33711316839";
+  
+  const { data: solicitudesReal, isLoading: cargandoSolicitudes } = useObtenerSolicitudesEnProceso(cuitActivo);
+
+  // Pre-cargar los datos del socio (nombre de la empresa) para que ya estén listos para las modales
+  const { data: socioResp } = useQuery({
+    queryKey: ["socio", "cuit", cuitActivo],
+    queryFn: () => sociosService.obtenerSocios({ Cuit: cuitActivo }),
+    enabled: !!cuitActivo,
+    staleTime: 1000 * 60 * 30, // 30 minutos ya que no cambia seguido
+  });
+
+  const socio = Array.isArray(socioResp) ? socioResp[0] : socioResp?.items?.[0] || socioResp?.data?.[0];
+  const nombreEmpresaActiva = socio?.denominacion;
 
   const listaSolicitudes = useMemo(() => {
     const reales = (solicitudesReal || []).map(s => ({
@@ -96,7 +113,8 @@ export default function Solicitudes() {
       monto: s.importe ? new Intl.NumberFormat("es-AR").format(s.importe) : "0",
       moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
       estado: "Pendiente", // El endpoint SolicitudEnProceso siempre son pendientes
-      fecha: s.fechacreacion ? new Date(s.fechacreacion).toLocaleDateString() : "Hoy",
+      fecha: s.fechacarga ? new Date(s.fechacarga).toLocaleDateString("es-AR") : "Hoy",
+      cuit: s.cuit,
       isReal: true
     }));
 
@@ -216,7 +234,7 @@ export default function Solicitudes() {
           </div>
         </div>
         <div className={styles.listContainer}>
-          {isLoading ? (
+          {cargandoSolicitudes ? (
             <div className={styles.loadingContainer}>
               <Spinner />
               <p>Cargando solicitudes...</p>
@@ -243,6 +261,7 @@ export default function Solicitudes() {
         isOpen={!!solicitudSeleccionada}
         onClose={() => setSolicitudSeleccionada(null)}
         solicitud={solicitudSeleccionada}
+        nombreEmpresa={nombreEmpresaActiva}
       />
     </div>
   );

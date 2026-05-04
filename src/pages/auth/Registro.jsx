@@ -5,13 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Modal } from "../../components/ui/Modal/Modal";
-<<<<<<< HEAD
-
 import { FiMail } from "react-icons/fi";
 import { InputAuth, Button } from "../../components/ui";
-=======
-import { InputSocioMasked, Button } from "../../components/ui";
->>>>>>> 359716ab5bc1679322af4472ff49401c9b75a383
 import { useCrearUsuario, useResetearPassword } from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
@@ -160,21 +155,12 @@ const Registro = () => {
               onSubmit={handleSubmit(onSubmit)}
               noValidate
             >
-<<<<<<< HEAD
               <InputAuth
                 name="email"
                 control={control}
                 label="Correo Electrónico"
                 type="email"
                 icon={<FiMail size={20} />}
-=======
-              <InputSocioMasked
-                control={control}
-                name="email"
-                type="email"
-                label="Email "
-                error={errors.email?.message}
->>>>>>> 359716ab5bc1679322af4472ff49401c9b75a383
                 disabled={isFormDisabled}
               />
 

@@ -95,11 +95,7 @@ function App() {
           />
           <Route
             path="/inicio"
-            element={
-              <DashboardLayout>
-                <Inicio />
-              </DashboardLayout>
-            }
+            element={<Navigate to="/solicitudes" replace />}
           />
           <Route
             path="/pagare"

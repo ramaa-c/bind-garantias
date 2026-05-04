@@ -2,6 +2,8 @@ import React from "react";
 import { FiMapPin, FiMail, FiPhone, FiX } from "react-icons/fi";
 import { Modal, Button } from "../../../ui";
 import styles from "./ModalDetalleSolicitud.module.css";
+import { useQuery } from "@tanstack/react-query";
+import { sociosService } from "../../../../services/sociosService";
 
 const getInitials = (name = "") =>
   name
@@ -17,7 +19,7 @@ const estadoConfig = {
   Pendiente: { color: styles.badgeYellow, label: "Pendiente" },
 };
 
-export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud }) => {
+export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud, nombreEmpresa }) => {
   if (!solicitud) return null;
 
   const estado = estadoConfig[solicitud.estado] || {
@@ -30,6 +32,17 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud }) => {
       ? "Cheque Propio"
       : solicitud.tipo || "Operación";
 
+  // Si ya nos pasaron el nombre, no hace falta buscarlo de nuevo (aunque useQuery use caché)
+  const { data: socioResp, isLoading: cargandoSocio } = useQuery({
+    queryKey: ["socio", "cuit", solicitud.cuit],
+    queryFn: () => sociosService.obtenerSocios({ Cuit: solicitud.cuit }),
+    enabled: !!solicitud.cuit && isOpen && !nombreEmpresa,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const socio = Array.isArray(socioResp) ? socioResp[0] : socioResp?.items?.[0] || socioResp?.data?.[0];
+  const nombreFinal = nombreEmpresa || socio?.denominacion || "CAMIMPORT S.R.L.";
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" maxWidth="620px">
       <div className={styles.container}>
@@ -38,15 +51,17 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud }) => {
           <div className={styles.heroTop}>
             <div className={styles.heroMeta}>
               <span className={styles.heroBadge}>Solicitud</span>
-              <span className={styles.heroId}>ID · OB-20436209011</span>
+              <span className={styles.heroId}>ID · {solicitud.id ? `OB-${solicitud.id}` : "OB-20436209011"}</span>
             </div>
             <span className={`${styles.estadoBadge} ${estado.color}`}>
               {estado.label}
             </span>
           </div>
 
-          <h2 className={styles.heroName}>CAMIMPORT S.R.L.</h2>
-          <p className={styles.heroCuit}>CUIT 30-64086932-8</p>
+          <h2 className={styles.heroName}>
+            {cargandoSocio ? "Buscando..." : nombreFinal}
+          </h2>
+          <p className={styles.heroCuit}>CUIT {solicitud.cuit || "30-64086932-8"}</p>
 
           {/* MÉTRICAS */}
           <div className={styles.metricsRow}>
@@ -91,7 +106,7 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud }) => {
           <p className={styles.sectionLabel}>Contacto</p>
           <div className={styles.contactList}>
             {[
-              { icon: <FiMail size={13} />, text: "30640869328@yopmail.com" },
+              { icon: <FiMail size={13} />, text: `${solicitud.cuit || "30640869328"}@yopmail.com` },
               { icon: <FiPhone size={13} />, text: "1111111111" },
               {
                 icon: <FiMapPin size={13} />,
@@ -140,9 +155,7 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud }) => {
 
         {/* ── ACCIONES ────────────────────────────────────────────────────── */}
         <div className={styles.footer}>
-          <button type="button" className={styles.btnClose} onClick={onClose}>
-            Cerrar
-          </button>
+
           <Button variant="primary" className={styles.btnPrimary}>
             Ver contrato
           </Button>
