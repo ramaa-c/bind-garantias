@@ -1,5 +1,11 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  Outlet,
+} from "react-router-dom";
 import { ChannelProvider } from "./context/ChannelContext";
 import { Toaster } from "sonner";
 import Login from "./pages/auth/Login";
@@ -31,10 +37,14 @@ import "./App.css";
 
 if (typeof window !== "undefined") {
   const currentPath = window.location.pathname;
-  const match = currentPath.match(/^\/([^/]+)\/crear_clave\/(.+)$/);
+
+  const match = currentPath.match(/^\/?([^/]*)\/crear_clave\/(.+)$/);
 
   if (match) {
-    const [, canal, tokenFragment] = match;
+    let [, canal, tokenFragment] = match;
+
+    canal = canal || "default";
+
     const rawToken = `${tokenFragment}${window.location.hash || ""}`;
 
     sessionStorage.setItem("secure_recovery_token", rawToken);

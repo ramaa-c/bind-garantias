@@ -5,9 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { Modal } from "../../components/ui/Modal/Modal";
+<<<<<<< HEAD
 
 import { FiMail } from "react-icons/fi";
 import { InputAuth, Button } from "../../components/ui";
+=======
+import { InputSocioMasked, Button } from "../../components/ui";
+>>>>>>> 359716ab5bc1679322af4472ff49401c9b75a383
 import { useCrearUsuario, useResetearPassword } from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
@@ -39,6 +43,9 @@ const Registro = () => {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registroSchema),
+    defaultValues: {
+      email: "",
+    },
   });
 
   const getCSharpIsoDate = (addYears = 0) => {
@@ -153,12 +160,21 @@ const Registro = () => {
               onSubmit={handleSubmit(onSubmit)}
               noValidate
             >
+<<<<<<< HEAD
               <InputAuth
                 name="email"
                 control={control}
                 label="Correo Electrónico"
                 type="email"
                 icon={<FiMail size={20} />}
+=======
+              <InputSocioMasked
+                control={control}
+                name="email"
+                type="email"
+                label="Email "
+                error={errors.email?.message}
+>>>>>>> 359716ab5bc1679322af4472ff49401c9b75a383
                 disabled={isFormDisabled}
               />
 
@@ -215,32 +231,31 @@ const Registro = () => {
         onClose={() => !reenviando && setModalUsuarioExistente(false)}
         title="Usuario ya registrado"
       >
-        <div style={{ padding: "1rem" }}>
-          <p style={{ marginBottom: "1.5rem", color: "var(--text-secondary)" }}>
-            El correo <strong>{emailPendiente}</strong> ya se encuentra
-            registrado en nuestro sistema, pero parece que no has finalizado el
-            proceso de creación de contraseña.
+        <div className={styles.modalUsuarioExistente}>
+          <p className={styles.modalTexto}>
+            El correo{" "}
+            <span className={styles.modalEmailDestacado}>{emailPendiente}</span>{" "}
+            ya se encuentra registrado, pero el proceso de creación de
+            contraseña no fue completado.
           </p>
-          <p style={{ marginBottom: "2rem", color: "var(--text-secondary)" }}>
-            ¿Deseas continuar con el proceso y solicitar un nuevo enlace de
-            activación?
-          </p>
-          <div
-            style={{ display: "flex", gap: "1rem", justifyContent: "flex-end" }}
-          >
+          <div className={styles.modalAlerta}>
+            Te enviaremos un nuevo enlace de activación a esa dirección. Revisá
+            tu bandeja de entrada o la carpeta de SPAM.
+          </div>
+          <div className={styles.modalFooter}>
             <Button
               variant="outline"
               onClick={() => setModalUsuarioExistente(false)}
               disabled={reenviando}
             >
-              CANCELAR
+              Cancelar
             </Button>
             <Button
               variant="primary"
               onClick={handleContinuarProcesoPendiente}
               disabled={reenviando}
             >
-              {reenviando ? "ENVIANDO..." : "CONTINUAR PROCESO"}
+              {reenviando ? "Enviando..." : "Reenviar enlace"}
             </Button>
           </div>
         </div>
