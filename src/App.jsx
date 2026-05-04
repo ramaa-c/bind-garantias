@@ -28,6 +28,21 @@ import DocumentacionView from "./pages/documentacion/DocumentacionView";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
+if (typeof window !== "undefined") {
+  const currentPath = window.location.pathname;
+  const match = currentPath.match(/^\/([^/]+)\/crear_clave\/(.+)$/);
+
+  if (match) {
+    const [, canal, tokenFragment] = match;
+    const rawToken = `${tokenFragment}${window.location.hash || ""}`;
+
+    sessionStorage.setItem("secure_recovery_token", rawToken);
+    sessionStorage.setItem("secure_recovery_canal", canal);
+
+    window.history.replaceState(null, "", `/${canal}/crear_clave`);
+  }
+}
+
 function App() {
   return (
     <BrowserRouter>

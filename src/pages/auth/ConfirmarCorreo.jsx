@@ -1,8 +1,7 @@
-import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { IoIosMailUnread } from "react-icons/io";
 import { toast } from "sonner";
-import { Button } from "../../components/ui";
 import { useResetearPassword } from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
@@ -11,21 +10,31 @@ const ConfirmarCorreo = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const emailUsuario = location.state?.usuarioSkeletor?.email || location.state?.emailIngresado;
   const usuarioSkeletor = location.state?.usuarioSkeletor || null;
   const canal = location.state?.canal || "";
-  const emailUsuario =
-    usuarioSkeletor?.email || location.state?.emailIngresado || "tu correo";
 
   const { mutate: reenviarCorreo, isPending } = useResetearPassword();
+  const [cooldown, setCooldown] = useState(60);
+
+  useEffect(() => {
+    if (cooldown > 0 && emailUsuario) {
+      const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown, emailUsuario]);
+
+  if (!emailUsuario) {
+    setTimeout(() => {
+      toast.error("Sesión inválida", {
+        description: "No se encontró información del registro. Volvé a intentarlo.",
+      });
+    }, 0);
+    return <Navigate to="/registro" replace />;
+  }
 
   const handleReenviar = () => {
-    if (emailUsuario === "tu correo") {
-      toast.error("No tenemos registro de tu sesión.", {
-        description: "Por favor, registrate nuevamente.",
-      });
-      navigate("/registro");
-      return;
-    }
+    if (cooldown > 0 || isPending) return;
 
     const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
 
@@ -46,6 +55,7 @@ const ConfirmarCorreo = () => {
         toast.success("Enlace reenviado", {
           description: "Revisá tu bandeja de entrada o la carpeta de SPAM.",
         });
+        setCooldown(60);
       },
       onError: (err) => {
         toast.error("Error al reenviar", {
@@ -57,9 +67,10 @@ const ConfirmarCorreo = () => {
     });
   };
 
+  const isButtonDisabled = isPending || cooldown > 0;
+
   return (
     <div className={styles.layoutSplit}>
-      {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
           <img
@@ -80,29 +91,32 @@ const ConfirmarCorreo = () => {
             </p>
           </div>
 
-          {/* --- SOPORTE --- */}
           <div
             className={`${styles.supportContainerModern} ${styles.supportContainerClean}`}
           >
             <p style={{ marginBottom: "0.5rem" }}>
               ¿No te llegó el correo?{" "}
               <span
-                className={`${styles.linkYellow} ${isPending ? styles.disabledLink : ""}`}
+                className={`${styles.linkYellow} ${isButtonDisabled ? styles.disabledLink : ""}`}
                 role="button"
-                tabIndex={isPending ? -1 : 0}
-                onClick={!isPending ? handleReenviar : undefined}
+                tabIndex={isButtonDisabled ? -1 : 0}
+                onClick={!isButtonDisabled ? handleReenviar : undefined}
                 onKeyDown={(e) => {
-                  if (!isPending && (e.key === "Enter" || e.key === " ")) {
+                  if (!isButtonDisabled && (e.key === "Enter" || e.key === " ")) {
                     e.preventDefault();
                     handleReenviar();
                   }
                 }}
                 style={{
-                  opacity: isPending ? 0.6 : 1,
-                  cursor: isPending ? "not-allowed" : "pointer",
+                  opacity: isButtonDisabled ? 0.6 : 1,
+                  cursor: isButtonDisabled ? "not-allowed" : "pointer",
                 }}
               >
-                {isPending ? "Reenviando..." : "Reenviar enlace"}
+                {isPending
+                  ? "Reenviando..."
+                  : cooldown > 0
+                    ? `Reenviar enlace en ${cooldown}s`
+                    : "Reenviar enlace"}
               </span>
             </p>
             <p>
@@ -126,7 +140,6 @@ const ConfirmarCorreo = () => {
         </div>
       </section>
 
-      {/* --- COLUMNA DERECHA --- */}
       <section className={`${styles.sideBrand} ${styles.sideBrandCentered}`}>
         <div className={styles.iconCircleWrapper}>
           <IoIosMailUnread size={180} color="var(--yellow)" strokeWidth={1} />

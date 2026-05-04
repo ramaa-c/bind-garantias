@@ -56,7 +56,7 @@ export const useObtenerUsuarioPorEncrypt = (encryptToken) => {
   return useQuery({
     queryKey: ["usuarios", "detalleEncrypt", encryptToken],
     queryFn: () => usuarioService.obtenerPorEncrypt(encryptToken),
-    enabled: !!encryptToken,
+    enabled: !!encryptToken && encryptToken.length > 10,
     retry: false,
   });
 };
