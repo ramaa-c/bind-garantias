@@ -49,24 +49,16 @@ const PASSWORD_RULES = [
 ];
 
 const CrearClave = () => {
-  const { canal: canalRouter } = useParams();
+  const { canal, token } = useParams();
   const { channelInfo } = useChannel();
   const navigate = useNavigate();
 
-  const [tokenIntegridad] = useState(() => {
-    if (typeof window === "undefined") return "";
-    const savedToken = sessionStorage.getItem("secure_recovery_token") || "";
-    sessionStorage.removeItem("secure_recovery_token");
-    return savedToken;
-  });
+  const tokenIntegridad =
+    typeof window !== "undefined" && window.location.hash
+      ? `${token || ""}${window.location.hash}`
+      : token || "";
 
-  const [canalIntegridad] = useState(() => {
-    if (typeof window === "undefined") return canalRouter || "";
-    const savedCanal =
-      sessionStorage.getItem("secure_recovery_canal") || canalRouter;
-    sessionStorage.removeItem("secure_recovery_canal");
-    return savedCanal;
-  });
+  const canalIntegridad = canal || "default";
 
   const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
@@ -120,9 +112,8 @@ const CrearClave = () => {
         });
         navigate("/login", { replace: true });
       },
-      onError: (err) => {
-        const errMsg =
-          err.response?.data?.message || "Error al establecer la credencial.";
+      onError: () => {
+        const errMsg = "Error al establecer la credencial. Intentá más tarde.";
         toast.error("Error de activación", { description: errMsg });
         setError("root.serverError", { type: "manual", message: errMsg });
       },

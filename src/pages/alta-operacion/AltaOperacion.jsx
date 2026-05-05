@@ -208,8 +208,7 @@ export const AltaOperacion = () => {
       }
     } catch (error) {
       console.error("Error al enviar la solicitud:", error);
-      const serverMsg = error?.response?.data?.message || error?.response?.data || error.message;
-      alert(`Hubo un error al enviar la solicitud: ${serverMsg}. Revisá la consola (F12) para más detalles.`);
+      alert("Hubo un error al enviar la solicitud. Por favor, intentá nuevamente más tarde.");
     } finally {
       setEnviandoSolicitud(false);
     }

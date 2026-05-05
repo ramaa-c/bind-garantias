@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { toast } from "sonner";
 import { FiMail, FiLock } from "react-icons/fi";
 import { InputAuth, Button } from "../../components/ui";
 import { useLogin } from "../../hooks/useUsuario";
@@ -27,7 +28,7 @@ const Login = () => {
   const { channelInfo } = useChannel();
   const { mutate: iniciarSesion, isPending } = useLogin();
 
-  const { control, handleSubmit, setError } = useForm({
+  const { control, handleSubmit, setError, clearErrors } = useForm({
     resolver: zodResolver(loginSchema),
   });
 
@@ -38,12 +39,17 @@ const Login = () => {
         navigate("/solicitudes", { replace: true });
       },
       onError: (error) => {
-        setError("password", {
-          type: "server",
-          message:
-            error?.response?.data?.message ||
-            "Credenciales inválidas o error de conexión.",
-        });
+        if (error?.response?.status >= 500 || !error?.response) {
+          clearErrors("password");
+          toast.error("Error de servidor", {
+            description: "Ocurrió un error. Intentá más tarde.",
+          });
+        } else {
+          setError("password", {
+            type: "server",
+            message: "Credenciales inválidas o error de conexión.",
+          });
+        }
       },
     });
   };

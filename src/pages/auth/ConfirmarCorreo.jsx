@@ -61,11 +61,9 @@ const ConfirmarCorreo = () => {
         });
         setCooldown(60);
       },
-      onError: (err) => {
+      onError: () => {
         toast.error("Error al reenviar", {
-          description:
-            err.response?.data?.message ||
-            "Ocurrió un error. Intentá más tarde.",
+          description: "Ocurrió un error. Intentá más tarde.",
         });
       },
     });
