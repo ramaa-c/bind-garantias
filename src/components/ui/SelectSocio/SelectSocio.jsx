@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Controller } from "react-hook-form";
 import ReactSelect from "react-select";
 import styles from "./SelectSocio.module.css";
@@ -86,11 +86,13 @@ export const SelectSocio = ({
   className = "",
   ...props
 }) => {
+  const [isFocused, setIsFocused] = useState(false);
+
   return (
     <Controller
       name={name}
       control={control}
-      render={({ field: { onChange, value, ref }, fieldState }) => {
+      render={({ field: { onChange, value, ref, onBlur }, fieldState }) => {
         const hasError = !!(error || fieldState.error);
         const errorMessage = error || fieldState.error?.message;
 
@@ -99,12 +101,32 @@ export const SelectSocio = ({
 
         const hasValue = selectedOption !== null;
 
+        let statusClass = styles.statusDefault;
+        if (hasError) {
+          statusClass = styles.statusError;
+        } else if (isFocused) {
+          statusClass = styles.statusFocus;
+        } else if (esValido && hasValue) {
+          statusClass = styles.statusSuccess;
+        }
+
+        const handleFocus = () => setIsFocused(true);
+        const handleBlur = (e) => {
+          setIsFocused(false);
+          onBlur(e);
+        };
+
+        const containerClasses = [
+          styles.container,
+          statusClass,
+          hasValue || isFocused ? styles.hasValue : "",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ");
+
         return (
-          <div
-            className={`${styles.container} ${hasError ? styles.hasError : ""} ${
-              !hasError && esValido && hasValue ? styles.isValid : ""
-            } ${hasValue ? styles.hasValue : ""} ${className}`}
-          >
+          <div className={containerClasses}>
             <div className={styles.innerGroup}>
               {icon && <div className={styles.icon}>{icon}</div>}
 
@@ -113,6 +135,8 @@ export const SelectSocio = ({
                   ref={ref}
                   value={selectedOption}
                   onChange={(val) => onChange(val ? val.value : "")}
+                  onFocus={handleFocus}
+                  onBlur={handleBlur}
                   options={options}
                   styles={customStyles}
                   className={styles.selectWrapper}

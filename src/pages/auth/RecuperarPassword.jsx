@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useResetearPassword } from "../../hooks/useUsuario";
 import { InputFlotante, Button, Alert } from "../../components/ui";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
@@ -27,34 +27,27 @@ const RecuperarPassword = () => {
     defaultValues: { email: "" },
   });
 
-  const enviarCorreoMutation = useMutation({
-    mutationFn: async (data) => {
-      const response = await fetch("/api/auth/recuperar-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+  const { mutate: enviarCorreo, isPending, isError, isSuccess, error } = useResetearPassword();
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("No encontramos una cuenta asociada a este correo.");
-        }
-        if (response.status >= 500) {
-          throw new Error(
-            "Ocurrió un error en el servidor. Intentá nuevamente más tarde.",
-          );
-        }
-        throw new Error(
-          "Ocurrió un error inesperado al intentar recuperar la contraseña.",
-        );
-      }
-
-      return response.json();
-    },
-  });
+  const getCSharpIsoDate = (addYears = 0) => {
+    const date = new Date();
+    if (addYears) date.setFullYear(date.getFullYear() + addYears);
+    return date.toISOString().split(".")[0];
+  };
 
   const onSubmit = (data) => {
-    enviarCorreoMutation.mutate(data);
+    const payloadReset = {
+      email: data.email,
+      usuariowebid: 0,
+      fchalta: getCSharpIsoDate(),
+      fchvencimiento: getCSharpIsoDate(1),
+      hashseguridad: "canal1",
+      estado: "",
+      debecambiarclave: "",
+      esadministrador: "",
+      denominacion: "",
+    };
+    enviarCorreo(payloadReset);
   };
 
   return (
@@ -83,13 +76,13 @@ const RecuperarPassword = () => {
             className={styles.formContent}
             onSubmit={handleSubmit(onSubmit)}
           >
-            {enviarCorreoMutation.isError && (
+            {isError && (
               <Alert variant="error" className={styles.formFieldSpacing}>
-                {enviarCorreoMutation.error.message}
+                {error?.response?.data?.message || error?.message || "Ocurrió un error al procesar la solicitud."}
               </Alert>
             )}
 
-            {enviarCorreoMutation.isSuccess && (
+            {isSuccess && (
               <Alert variant="success" className={styles.formFieldSpacing}>
                 ¡Listo! Te enviamos un email con las instrucciones para crear
                 una nueva contraseña.
@@ -108,9 +101,9 @@ const RecuperarPassword = () => {
               <Button
                 type="submit"
                 variant="primary"
-                disabled={enviarCorreoMutation.isPending}
+                disabled={isPending}
               >
-                {enviarCorreoMutation.isPending
+                {isPending
                   ? "Enviando..."
                   : "Recuperar contraseña"}
               </Button>

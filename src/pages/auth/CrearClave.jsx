@@ -197,7 +197,18 @@ const CrearClave = () => {
               </p>
               <Button
                 variant="primary"
-                onClick={() => navigate("/recuperar-password")}
+                onClick={() => {
+                  const savedEmail =
+                    localStorage.getItem("emailIngresado") ||
+                    sessionStorage.getItem("emailIngresado");
+                  if (savedEmail) {
+                    navigate("/confirmar-correo", {
+                      state: { emailIngresado: savedEmail },
+                    });
+                  } else {
+                    navigate("/registro");
+                  }
+                }}
                 style={{ marginTop: "1.5rem" }}
               >
                 SOLICITAR NUEVO ENLACE

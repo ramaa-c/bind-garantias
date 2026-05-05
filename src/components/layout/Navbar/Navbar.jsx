@@ -25,7 +25,7 @@ const Navbar = ({
   const dropdownRef = useRef(null);
 
   const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const emailUsuario =
     typeof user === "string"
@@ -50,7 +50,7 @@ const Navbar = ({
   };
 
   const handleLogout = () => {
-    if (logout) logout();
+    if (clearAuth) clearAuth();
     setIsDropdownOpen(false);
     navigate("/login");
   };

@@ -36,14 +36,18 @@ const ConfirmarCorreo = () => {
   const handleReenviar = () => {
     if (cooldown > 0 || isPending) return;
 
-    const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
+    const getCSharpIsoDate = (addYears = 0) => {
+      const date = new Date();
+      if (addYears) date.setFullYear(date.getFullYear() + addYears);
+      return date.toISOString().split(".")[0];
+    };
 
     const payloadReset = {
       email: emailUsuario,
       usuariowebid: 0,
       fchalta: usuarioSkeletor?.fchalta || getCSharpIsoDate(),
-      fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(),
-      hashseguridad: canal,
+      fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(1),
+      hashseguridad: canal || "canal1",
       estado: "",
       debecambiarclave: "",
       esadministrador: "",

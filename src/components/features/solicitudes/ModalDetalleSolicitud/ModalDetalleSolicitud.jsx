@@ -14,12 +14,21 @@ const getInitials = (name = "") =>
     .join("");
 
 const estadoConfig = {
-  Cancelada: { color: styles.badgeRed, label: "Cancelada" },
+  Cancelada: { color: styles.badgeGrey, label: "Cancelada" },
+  Cancelado: { color: styles.badgeGrey, label: "Cancelado" },
   Aprobada: { color: styles.badgeGreen, label: "Aprobada" },
+  Aprobado: { color: styles.badgeGreen, label: "Aprobado" },
   Pendiente: { color: styles.badgeYellow, label: "Pendiente" },
+  Rechazada: { color: styles.badgeRed, label: "Rechazada" },
+  Rechazado: { color: styles.badgeRed, label: "Rechazado" },
 };
 
-export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud, nombreEmpresa }) => {
+export const ModalDetalleSolicitud = ({
+  isOpen,
+  onClose,
+  solicitud,
+  nombreEmpresa,
+}) => {
   if (!solicitud) return null;
 
   const estado = estadoConfig[solicitud.estado] || {
@@ -32,7 +41,6 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud, nombreEmpres
       ? "Cheque Propio"
       : solicitud.tipo || "Operación";
 
-  // Si ya nos pasaron el nombre, no hace falta buscarlo de nuevo (aunque useQuery use caché)
   const { data: socioResp, isLoading: cargandoSocio } = useQuery({
     queryKey: ["socio", "cuit", solicitud.cuit],
     queryFn: () => sociosService.obtenerSocios({ Cuit: solicitud.cuit }),
@@ -40,8 +48,11 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud, nombreEmpres
     staleTime: 1000 * 60 * 5,
   });
 
-  const socio = Array.isArray(socioResp) ? socioResp[0] : socioResp?.items?.[0] || socioResp?.data?.[0];
-  const nombreFinal = nombreEmpresa || socio?.denominacion || "CAMIMPORT S.R.L.";
+  const socio = Array.isArray(socioResp)
+    ? socioResp[0]
+    : socioResp?.items?.[0] || socioResp?.data?.[0];
+  const nombreFinal =
+    nombreEmpresa || socio?.denominacion || "CAMIMPORT S.R.L.";
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" maxWidth="620px">
@@ -51,7 +62,9 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud, nombreEmpres
           <div className={styles.heroTop}>
             <div className={styles.heroMeta}>
               <span className={styles.heroBadge}>Solicitud</span>
-              <span className={styles.heroId}>ID · {solicitud.id ? `OB-${solicitud.id}` : "OB-20436209011"}</span>
+              <span className={styles.heroId}>
+                ID · {solicitud.id ? `OB-${solicitud.id}` : "OB-20436209011"}
+              </span>
             </div>
             <span className={`${styles.estadoBadge} ${estado.color}`}>
               {estado.label}
@@ -61,7 +74,9 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud, nombreEmpres
           <h2 className={styles.heroName}>
             {cargandoSocio ? "Buscando..." : nombreFinal}
           </h2>
-          <p className={styles.heroCuit}>CUIT {solicitud.cuit || "30-64086932-8"}</p>
+          <p className={styles.heroCuit}>
+            CUIT {solicitud.cuit || "30-64086932-8"}
+          </p>
 
           {/* MÉTRICAS */}
           <div className={styles.metricsRow}>
@@ -106,7 +121,10 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud, nombreEmpres
           <p className={styles.sectionLabel}>Contacto</p>
           <div className={styles.contactList}>
             {[
-              { icon: <FiMail size={13} />, text: `${solicitud.cuit || "30640869328"}@yopmail.com` },
+              {
+                icon: <FiMail size={13} />,
+                text: `${solicitud.cuit || "30640869328"}@yopmail.com`,
+              },
               { icon: <FiPhone size={13} />, text: "1111111111" },
               {
                 icon: <FiMapPin size={13} />,
@@ -155,7 +173,6 @@ export const ModalDetalleSolicitud = ({ isOpen, onClose, solicitud, nombreEmpres
 
         {/* ── ACCIONES ────────────────────────────────────────────────────── */}
         <div className={styles.footer}>
-
           <Button variant="primary" className={styles.btnPrimary}>
             Ver contrato
           </Button>

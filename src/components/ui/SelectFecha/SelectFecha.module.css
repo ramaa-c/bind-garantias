@@ -11,25 +11,31 @@
   height: 3.2rem;
   display: flex;
   align-items: center;
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.6rem;
-  position: relative;
-  transition: border-color 0.3s ease;
   background-color: rgba(255, 255, 255, 0.02);
+  transition:
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+  position: relative;
+  cursor: pointer;
 }
 
+/* ÍCONO */
 .icon {
   width: 3.2rem;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #888;
-  border-right: 1.5px solid rgba(255, 255, 255, 0.1);
-  transition: color 0.3s ease;
+  color: #555;
+  border-right: 1.5px solid rgba(255, 255, 255, 0.08);
+  transition: color 0.2s ease, border-color 0.2s ease;
   flex-shrink: 0;
 }
 
+/* CAMPO */
 .fieldGroup {
   flex: 1;
   position: relative;
@@ -50,115 +56,153 @@
 }
 
 .dateText {
-  color: var(--white);
+  color: var(--white, #fff);
   font-size: 1rem;
   font-weight: 500;
   text-transform: capitalize;
+  letter-spacing: 0.01em;
 }
 
+/* LABEL */
 .label {
   position: absolute;
   top: 1.1rem;
   left: 1rem;
   font-size: 1rem;
-  color: #888;
+  color: #555;
   pointer-events: none;
-  transition: 0.3s var(--ease-out) all;
-  background-color: rgba(30, 30, 30, 0.85);
-  padding: 0 0.3rem;
-  border-radius: 4px;
+  transition:
+    top 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    font-size 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.2s ease;
+  background-color: rgba(26, 26, 26, 0.9);
+  padding: 0 0.35rem;
+  border-radius: 3px;
 }
 
-.container:focus-within .innerGroup,
-.container.hasValue:focus-within .innerGroup {
-  border-color: var(--yellow);
-}
-
-.container:focus-within .icon,
-.container.hasValue:focus-within .icon {
-  color: var(--yellow);
-}
-
-.container:focus-within .label,
 .container.hasValue .label {
   top: -0.6rem;
-  left: 0.8rem;
-  font-size: 0.75rem;
-  color: var(--yellow);
+  font-size: 0.72rem;
 }
 
-.container.hasValue:not(:focus-within) .label {
+/* ── MÁQUINA DE ESTADOS VISUALES ─────────────────────────────────────────────── */
+
+/* DEFAULT */
+.statusDefault:hover .innerGroup {
+  border-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.035);
+}
+
+.statusDefault:hover .icon {
   color: #aaa;
+  border-right-color: rgba(255, 255, 255, 0.15);
 }
 
+.statusDefault.hasValue .label {
+  color: #666;
+}
+
+/* FOCUS */
+.statusFocus .innerGroup {
+  border-color: var(--yellow, #f4f500);
+  background-color: rgba(244, 245, 0, 0.025);
+  box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.06);
+}
+
+.statusFocus .icon {
+  color: var(--yellow, #f4f500);
+  border-right-color: rgba(244, 245, 0, 0.2);
+}
+
+.statusFocus .label {
+  color: var(--yellow, #f4f500);
+}
+
+/* SUCCESS (VÁLIDO) */
+.statusSuccess .innerGroup {
+  border-color: rgba(76, 175, 80, 0.5);
+  background-color: rgba(76, 175, 80, 0.02);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.05);
+}
+
+.statusSuccess .icon {
+  color: #4caf50;
+  border-right-color: rgba(76, 175, 80, 0.2);
+}
+
+.statusSuccess .label {
+  color: #4caf50;
+}
+
+/* ERROR */
+.statusError .innerGroup {
+  border-color: rgba(255, 82, 82, 0.6);
+  background-color: rgba(255, 82, 82, 0.02);
+  box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.06);
+}
+
+.statusError:hover .innerGroup {
+  border-color: rgba(255, 82, 82, 0.8);
+}
+
+.statusError .icon {
+  color: #ff5252;
+  border-right-color: rgba(255, 82, 82, 0.25);
+}
+
+.statusError .label {
+  color: #ff5252;
+}
+
+/* DESHABILITADO */
 .container.isDisabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.container.isDisabled .triggerBtn {
-  cursor: not-allowed;
+  opacity: 0.45;
+  pointer-events: none;
 }
 
-/* ESTADO DE ERROR */
-.container.hasError .innerGroup {
-  border-color: #ff5252;
-}
-.container.hasError .icon {
-  color: #ff5252;
-}
-.container.hasError .label {
-  color: #ff5252;
-}
+.container.isDisabled .triggerBtn { cursor: not-allowed; }
 
-/* ESTADO VÁLIDO */
-.container.isValid:not(:focus-within) .innerGroup {
-  border-color: #4caf50;
-}
-.container.isValid:not(:focus-within) .icon {
-  color: #4caf50;
-}
-.container.isValid:not(:focus-within) .label {
-  color: #4caf50;
-}
-
+/* ERROR MSG */
 .errorMsg {
   position: absolute;
-  bottom: 0;
+  bottom: 0.1rem;
   left: 1rem;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #ff5252;
   white-space: nowrap;
-  animation: slideIn 0.3s ease;
+  animation: slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* POPOVER */
 .calendarPopover {
   position: absolute;
   top: calc(100% - 1rem);
   left: 0;
   z-index: 50;
-  background-color: #1e1e1e;
-  border: 1px solid #333;
-  border-radius: 0.75rem;
+  background-color: #181818;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
   padding: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-  animation: fadeIn 0.2s ease;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.65),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: popoverIn 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* --- MODIFICADORES REACT-DAY-PICKER --- */
+/* ── REACT-DAY-PICKER ────────────────────────────────────────────────────────── */
+
 :global(.rdp-root) {
-  --rdp-accent-color: var(--yellow);
+  --rdp-accent-color: var(--yellow, #f4f500);
   --rdp-accent-background-color: rgba(244, 245, 0, 0.1);
-  --rdp-today-color: var(--yellow);
-  --rdp-selected-border: 2px solid var(--yellow);
-  --rdp-day-height: 40px;
-  --rdp-day-width: 40px;
+  --rdp-today-color: var(--yellow, #f4f500);
+  --rdp-selected-border: 2px solid var(--yellow, #f4f500);
+  --rdp-day-height: 38px;
+  --rdp-day-width: 38px;
   margin: 0;
-  color: var(--white);
+  color: var(--white, #fff);
 }
 
-:global(.rdp-chevron) {
-  fill: var(--yellow) !important;
-}
+:global(.rdp-chevron) { fill: var(--yellow, #f4f500) !important; }
 
 :global(.rdp-nav_button:hover) {
   background-color: rgba(255, 255, 255, 0.05) !important;
@@ -166,59 +210,56 @@
 
 :global(.rdp-selected),
 :global(.rdp-selected .rdp-day_button) {
-  background-color: var(--yellow) !important;
+  background-color: var(--yellow, #f4f500) !important;
   color: #000 !important;
-  font-weight: bold;
+  font-weight: 700;
   border-radius: 50%;
 }
 
 :global(.rdp-day_button:hover:not([disabled]):not(.rdp-selected)) {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  color: var(--white) !important;
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  color: var(--white, #fff) !important;
 }
 
 :global(.rdp-today:not(.rdp-selected)) {
-  color: var(--yellow);
-  font-weight: bold;
+  color: var(--yellow, #f4f500);
+  font-weight: 700;
 }
 
 :global(.rdp-caption_label) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1rem;
+  font-size: 0.9375rem;
 }
 
-:global(.rdp-caption_dropdowns .rdp-caption_label) {
-  display: none;
-}
+:global(.rdp-caption_dropdowns .rdp-caption_label) { display: none; }
 
 :global(.rdp-dropdown) {
   appearance: auto;
-  background-color: rgba(255, 255, 255, 0.05);
-  color: var(--white);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.04);
+  color: var(--white, #fff);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
   padding: 0.25rem 0.5rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   outline: none;
-  transition: all 0.2s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 :global(.rdp-dropdown:hover),
 :global(.rdp-dropdown:focus) {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-color: var(--yellow);
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(244, 245, 0, 0.4);
 }
 
 :global(.rdp-dropdown option) {
-  background-color: #1e1e1e;
-  color: var(--white);
+  background-color: #181818;
+  color: var(--white, #fff);
   font-weight: 500;
-  padding: 0.5rem;
 }
 
 :global(.rdp-caption_dropdowns) {
@@ -226,16 +267,15 @@
   align-items: center;
   gap: 0.5rem;
   text-transform: capitalize;
-  font-weight: bold;
+  font-weight: 600;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes popoverIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0)  scale(1);     }
 }
