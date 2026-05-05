@@ -166,6 +166,12 @@
   border-color: rgba(244, 67, 54, 0.25);
 }
 
+.badgeGrey {
+  background: rgba(255, 255, 255, 0.06);
+  color: #999;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 /* ── SECCIONES ───────────────────────────────────────────────────────────────── */
 
 .section {

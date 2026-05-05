@@ -13,9 +13,9 @@ export const usuarioService = {
   reactivarUsuario: async (usuarioId) =>
     (await api.put(`/api/usuario/${usuarioId}/status:release`)).data,
 
-  // PUT /api/usuario/{usuario}/password:reset
-  resetearPassword: async (usuarioIdentificador) =>
-    (await api.put(`/api/usuario/${usuarioIdentificador}/password:reset`)).data,
+  // PUT /api/usuario/password:reset
+  resetearPassword: async (payloadSkeletor) =>
+    (await api.put(`/api/usuario/password:reset`, payloadSkeletor)).data,
 
   // POST /api/usuario/alta
   crearUsuario: async (nuevoUsuario) =>

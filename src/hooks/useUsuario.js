@@ -34,8 +34,7 @@ export const useReactivarUsuario = () => {
 
 export const useResetearPassword = () => {
   return useMutation({
-    mutationFn: (usuarioIdentificador) =>
-      usuarioService.resetearPassword(usuarioIdentificador),
+    mutationFn: (payload) => usuarioService.resetearPassword(payload),
   });
 };
 

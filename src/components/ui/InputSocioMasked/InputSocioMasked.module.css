@@ -1,36 +1,41 @@
+/* ── CONTENEDOR ──────────────────────────────────────────────────────────────── */
 .container {
   width: 100%;
   position: relative;
   padding-bottom: 1.25rem;
 }
 
+/* ── GRUPO INTERIOR ──────────────────────────────────────────────────────────── */
 .innerGroup {
   display: flex;
   align-items: center;
   height: 3.2rem;
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.6rem;
   background-color: rgba(255, 255, 255, 0.02);
   transition:
-    border-color 0.3s ease,
-    box-shadow 0.3s ease;
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
   position: relative;
 }
 
+/* ── ÍCONO ───────────────────────────────────────────────────────────────────── */
 .icon {
   width: 3.2rem;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: 1.5px solid rgba(255, 255, 255, 0.1);
-  color: #888;
+  border-right: 1.5px solid rgba(255, 255, 255, 0.08);
+  color: #555;
   flex-shrink: 0;
   transition:
-    color 0.3s ease,
-    border-color 0.3s ease;
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
+/* ── CAMPO ───────────────────────────────────────────────────────────────────── */
 .fieldGroup {
   flex: 1;
   height: 100%;
@@ -42,106 +47,148 @@
   height: 100%;
   padding: 0 1rem;
   font-size: 1rem;
-  color: var(--white);
+  color: var(--white, #fff);
   background: transparent;
   border: none;
   outline: none;
   font-family: inherit;
+  letter-spacing: 0.01em;
 }
 
 .input::placeholder {
   color: transparent;
 }
 
+/* ── LABEL FLOTANTE ──────────────────────────────────────────────────────────── */
 .label {
   position: absolute;
   left: 0.8rem;
   top: 50%;
   transform: translateY(-50%);
   font-size: 1rem;
-  color: #888;
+  color: #555;
   pointer-events: none;
-  transition: all 0.3s var(--ease-out);
-  padding: 0 0.4rem;
+  transition:
+    top 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    font-size 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.2s ease;
+  padding: 0 0.35rem;
   background-color: transparent;
   z-index: 2;
   white-space: nowrap;
+  border-radius: 3px;
 }
 
-.container:focus-within .label,
-.input:not(:placeholder-shown) ~ .label {
+.container.hasValue .label {
   top: 0;
-  font-size: 0.75rem;
-  color: var(--yellow);
+  font-size: 0.72rem;
   background-color: #1a1a1a;
 }
 
-.input:not(:focus):not(:placeholder-shown) ~ .label {
+/* ── MÁQUINA DE ESTADOS VISUALES ─────────────────────────────────────────────── */
+
+/* DEFAULT */
+.statusDefault:hover .innerGroup {
+  border-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.035);
+}
+
+.statusDefault:hover .icon {
   color: #aaa;
+  border-right-color: rgba(255, 255, 255, 0.15);
 }
 
-.container:focus-within .innerGroup {
-  border-color: var(--yellow);
-  box-shadow: 0 0 0 1px rgba(245, 244, 0, 0.1);
+.statusDefault.hasValue .label {
+  color: #666;
 }
 
-.container:focus-within .icon {
-  color: var(--yellow);
-  border-right-color: rgba(245, 244, 0, 0.2);
+/* FOCUS */
+.statusFocus .innerGroup {
+  border-color: var(--yellow, #f4f500);
+  background-color: rgba(244, 245, 0, 0.025);
+  box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.06);
 }
 
-.container.hasError .innerGroup {
-  border-color: #ff5252;
+.statusFocus .icon {
+  color: var(--yellow, #f4f500);
+  border-right-color: rgba(244, 245, 0, 0.2);
 }
 
-.container.hasError .label {
+.statusFocus .label {
+  color: var(--yellow, #f4f500);
+}
+
+/* SUCCESS (VÁLIDO) */
+.statusSuccess .innerGroup {
+  border-color: rgba(76, 175, 80, 0.5);
+  background-color: rgba(76, 175, 80, 0.02);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.05);
+}
+
+.statusSuccess .icon {
+  color: #4caf50;
+  border-right-color: rgba(76, 175, 80, 0.2);
+}
+
+.statusSuccess .label {
+  color: #4caf50;
+}
+
+/* ERROR */
+.statusError .innerGroup {
+  border-color: rgba(255, 82, 82, 0.6);
+  background-color: rgba(255, 82, 82, 0.02);
+  box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.06);
+}
+
+.statusError:hover .innerGroup {
+  border-color: rgba(255, 82, 82, 0.8);
+}
+
+.statusError .icon {
   color: #ff5252;
-  background-color: #1a1a1a;
+  border-right-color: rgba(255, 82, 82, 0.25);
 }
 
-.container.hasError .icon {
-  border-right-color: #ff5252;
+.statusError .label {
   color: #ff5252;
 }
 
+/* ── MENSAJE DE ERROR ────────────────────────────────────────────────────────── */
 .errorMsg {
   position: absolute;
-  bottom: 0;
+  bottom: 0.1rem;
   left: 1rem;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: #ff5252;
   white-space: nowrap;
-  animation: slideIn 0.3s ease;
+  animation: slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── DESHABILITADO ───────────────────────────────────────────────────────────── */
+.container.isDisabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+/* ── AUTOCOMPLETADO ──────────────────────────────────────────────────────────── */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus,
+.input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+  -webkit-text-fill-color: var(--white, #fff) !important;
+  caret-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateY(-5px);
+    transform: translateY(-4px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-/* ESTADO VÁLIDO (ÉXITO) */
-.container.isValid:not(:focus-within) .innerGroup {
-  border-color: #4caf50;
-}
-
-.container.isValid:not(:focus-within) .icon {
-  color: #4caf50;
-}
-
-
-/* --- RESET DE AUTOCOMPLETADO DEL NAVEGADOR --- */
-.input:-webkit-autofill,
-.input:-webkit-autofill:hover, 
-.input:-webkit-autofill:focus, 
-.input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
-  -webkit-text-fill-color: var(--white, #ffffff) !important;
-  caret-color: white !important;
-  transition: background-color 5000s ease-in-out 0s;
 }

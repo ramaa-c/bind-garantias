@@ -24,12 +24,14 @@ export const SelectFecha = ({
   const errorDisplay = errorExterno || errorContexto?.message;
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const calendarRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (calendarRef.current && !calendarRef.current.contains(event.target)) {
         setIsCalendarOpen(false);
+        setIsFocused(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -41,7 +43,7 @@ export const SelectFecha = ({
       name={name}
       control={control}
       defaultValue=""
-      render={({ field: { onChange, value, onBlur } }) => {
+      render={({ field: { onChange, value, onBlur, ref } }) => {
         let dateObj = undefined;
 
         if (value) {
@@ -58,24 +60,48 @@ export const SelectFecha = ({
         const hasError = !!errorDisplay;
         const isValid = !hasError && hasValue;
 
+        let statusClass = styles.statusDefault;
+        if (hasError) {
+          statusClass = styles.statusError;
+        } else if (isCalendarOpen || isFocused) {
+          statusClass = styles.statusFocus;
+        } else if (isValid) {
+          statusClass = styles.statusSuccess;
+        }
+
         const handleDateSelect = (date) => {
           if (!date) return;
           const dateString = format(date, "yyyy-MM-dd'T'00:00:00");
           onChange(dateString);
           setIsCalendarOpen(false);
+          setIsFocused(false);
         };
 
+        const handleTriggerClick = () => {
+          if (!disabled) {
+            setIsCalendarOpen(!isCalendarOpen);
+            setIsFocused(!isCalendarOpen);
+          }
+        };
+
+        const handleBlur = (e) => {
+          if (!isCalendarOpen) {
+            setIsFocused(false);
+            onBlur(e);
+          }
+        };
+
+        const containerClasses = [
+          styles.container,
+          statusClass,
+          hasValue || isCalendarOpen || isFocused ? styles.hasValue : "",
+          disabled ? styles.isDisabled : "",
+        ]
+          .filter(Boolean)
+          .join(" ");
+
         return (
-          <div
-            ref={calendarRef}
-            className={`
-              ${styles.container} 
-              ${hasError ? styles.hasError : ""} 
-              ${isValid ? styles.isValid : ""} 
-              ${hasValue || isCalendarOpen ? styles.hasValue : ""}
-              ${disabled ? styles.isDisabled : ""}
-            `}
-          >
+          <div ref={calendarRef} className={containerClasses}>
             <div className={styles.innerGroup}>
               <div className={styles.icon}>
                 <FiCalendar />
@@ -85,11 +111,11 @@ export const SelectFecha = ({
                 <button
                   type="button"
                   disabled={disabled}
-                  onBlur={onBlur}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={handleBlur}
                   className={styles.triggerBtn}
-                  onClick={() =>
-                    !disabled && setIsCalendarOpen(!isCalendarOpen)
-                  }
+                  onClick={handleTriggerClick}
+                  ref={ref}
                 >
                   {dateObj && (
                     <span className={styles.dateText}>
