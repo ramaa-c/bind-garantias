@@ -27,7 +27,8 @@ export const usuarioService = {
 
   // GET api/usuario/{encrypt}/:byencrypt
   obtenerPorEncrypt: async (encryptToken) =>
-    (await api.get(`api/usuario/${encryptToken}/:byencrypt`)).data,
+    (await api.get(`api/usuario/${encodeURIComponent(encryptToken)}/byencrypt`))
+      .data,
 
   // PUT api/usuario/{usuarioid}/password:new
   establecerClaveNueva: async ({ usuarioid, data }) =>
