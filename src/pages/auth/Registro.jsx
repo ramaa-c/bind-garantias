@@ -35,6 +35,7 @@ const Registro = () => {
     control,
     handleSubmit,
     setError,
+    clearErrors,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(registroSchema),
@@ -52,7 +53,6 @@ const Registro = () => {
   const onSubmit = async (data) => {
     const payloadSkeletor = {
       email: data.email,
-      usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
       hashseguridad: "canal1",
@@ -81,12 +81,17 @@ const Registro = () => {
         setEmailPendiente(data.email);
         setModalUsuarioExistente(true);
       } else {
-        setError("email", {
-          type: "server",
-          message:
-            error?.response?.data?.message ||
-            "Error de conexión. Intentá nuevamente.",
-        });
+        if (error?.response?.status >= 500 || !error?.response) {
+          clearErrors("email");
+          toast.error("Error de servidor", {
+            description: "Ocurrió un error. Intentá más tarde.",
+          });
+        } else {
+          setError("email", {
+            type: "server",
+            message: "Error de conexión. Intentá nuevamente.",
+          });
+        }
       }
     }
   };
@@ -121,9 +126,7 @@ const Registro = () => {
       });
     } catch (error) {
       toast.error("Error al solicitar el enlace", {
-        description:
-          error?.response?.data?.message ||
-          "Ocurrió un error. Intentá más tarde.",
+        description: "Ocurrió un error. Intentá más tarde.",
       });
     }
   };
@@ -176,7 +179,7 @@ const Registro = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate("/")}
                   disabled={isFormDisabled}
                 >
                   YA TENGO CUENTA

@@ -15,7 +15,7 @@ export const sociosService = {
     }
 
     try {
-      const response = await api.get("/sgrplus/Socios", { params });
+      const response = await api.get("sgrplus/Socios", { params });
       if (isCuitSearch && response.data) {
         cuitCache.set(cacheKey, JSON.parse(JSON.stringify(response.data)));
       }
@@ -38,7 +38,7 @@ export const sociosService = {
     }
 
     try {
-      const response = await api.get("/api/Socios", { params });
+      const response = await api.get("api/Socios", { params });
       if (isCuitSearch && response.data) {
         cuitWebCache.set(cacheKey, JSON.parse(JSON.stringify(response.data)));
       }
@@ -53,19 +53,19 @@ export const sociosService = {
 
   // Trae un socio por ID (SGRPlus)
   obtenerSocioPorId: async (socioId) => {
-    const response = await api.get(`/sgrplus/Socio/${socioId}`);
+    const response = await api.get(`sgrplus/Socio/${socioId}`);
     return response.data;
   },
 
   // Crea nuevo socio
   crearSocio: async (socioData) => {
-    const response = await api.post("/sgrplus/Socio", socioData);
+    const response = await api.post("sgrplus/Socio", socioData);
     return response.data;
   },
 
   // Actualiza un socio
   actualizarSocio: async (socioData) => {
-    const response = await api.put("/sgrplus/Socio", socioData);
+    const response = await api.put("sgrplus/Socio", socioData);
     return response.data;
   },
 };

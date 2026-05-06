@@ -32,27 +32,9 @@ import { PantallaGestionSocios } from "./components/features";
 import { AltaOperacion } from "./pages/alta-operacion/AltaOperacion";
 import { PantallaGestionUsuarios } from "./pages/usuarios/PantallaGestionUsuarios";
 import DocumentacionView from "./pages/documentacion/DocumentacionView";
+import NotFound from "./pages/NotFound/NotFound";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
-
-if (typeof window !== "undefined") {
-  const currentPath = window.location.pathname;
-
-  const match = currentPath.match(/^\/?([^/]*)\/crear_clave\/(.+)$/);
-
-  if (match) {
-    let [, canal, tokenFragment] = match;
-
-    canal = canal || "default";
-
-    const rawToken = `${tokenFragment}${window.location.hash || ""}`;
-
-    sessionStorage.setItem("secure_recovery_token", rawToken);
-    sessionStorage.setItem("secure_recovery_canal", canal);
-
-    window.history.replaceState(null, "", `/${canal}/crear_clave`);
-  }
-}
 
 function App() {
   return (
@@ -64,7 +46,7 @@ function App() {
           <Route path="/ingresar" element={<Login />} />
           <Route path="/registro" element={<Registro />} />
 
-          <Route path="/:canal/crear_clave/*" element={<CrearClave />} />
+          <Route path="/:canal/0/:token" element={<CrearClave />} />
 
           <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
           <Route path="/recuperar-password" element={<RecuperarPassword />} />
@@ -196,7 +178,7 @@ function App() {
             }
           />
 
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </ChannelProvider>
     </BrowserRouter>

@@ -15,6 +15,7 @@ import { InputAuth, Button } from "../../components/ui";
 import {
   useObtenerUsuarioPorEncrypt,
   useEstablecerClave,
+  useResetearPassword,
 } from "../../hooks/useUsuario";
 import { useChannel } from "../../context/ChannelContext";
 import styles from "./Login.module.css";
@@ -49,24 +50,16 @@ const PASSWORD_RULES = [
 ];
 
 const CrearClave = () => {
-  const { canal: canalRouter } = useParams();
+  const { canal, token } = useParams();
   const { channelInfo } = useChannel();
   const navigate = useNavigate();
 
-  const [tokenIntegridad] = useState(() => {
-    if (typeof window === "undefined") return "";
-    const savedToken = sessionStorage.getItem("secure_recovery_token") || "";
-    sessionStorage.removeItem("secure_recovery_token");
-    return savedToken;
-  });
+  const tokenIntegridad =
+    typeof window !== "undefined" && window.location.hash
+      ? `${token || ""}${window.location.hash}`
+      : token || "";
 
-  const [canalIntegridad] = useState(() => {
-    if (typeof window === "undefined") return canalRouter || "";
-    const savedCanal =
-      sessionStorage.getItem("secure_recovery_canal") || canalRouter;
-    sessionStorage.removeItem("secure_recovery_canal");
-    return savedCanal;
-  });
+  const canalIntegridad = canal || "default";
 
   const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
@@ -78,6 +71,52 @@ const CrearClave = () => {
 
   const { mutate: establecerClave, isPending: guardandoClave } =
     useEstablecerClave();
+
+  const { mutate: resetearPassword, isPending: solicitandoNuevo } =
+    useResetearPassword();
+
+  const handleSolicitarNuevoEnlace = () => {
+    const savedEmail =
+      localStorage.getItem("emailIngresado") ||
+      sessionStorage.getItem("emailIngresado");
+
+    if (!savedEmail) {
+      navigate("/registro");
+      return;
+    }
+
+    const getCSharpIsoDate = (addYears = 0) => {
+      const date = new Date();
+      if (addYears) date.setFullYear(date.getFullYear() + addYears);
+      return date.toISOString().split(".")[0];
+    };
+
+    const payloadReset = {
+      email: savedEmail,
+      usuariowebid: 0,
+      fchalta: getCSharpIsoDate(),
+      fchvencimiento: getCSharpIsoDate(1),
+      hashseguridad: canalIntegridad || "canal1",
+      estado: "",
+      debecambiarclave: "",
+      esadministrador: "",
+      denominacion: "",
+    };
+
+    resetearPassword(payloadReset, {
+      onSuccess: () => {
+        navigate("/confirmar-correo", {
+          state: { emailIngresado: savedEmail, canal: canalIntegridad },
+        });
+      },
+      onError: () => {
+        toast.error("Error al solicitar enlace", {
+          description: "No pudimos enviar el correo. Intentá registrarte nuevamente.",
+        });
+        navigate("/registro");
+      },
+    });
+  };
 
   const {
     control,
@@ -118,11 +157,10 @@ const CrearClave = () => {
           description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
           duration: 5000,
         });
-        navigate("/login", { replace: true });
+        navigate("/", { replace: true });
       },
-      onError: (err) => {
-        const errMsg =
-          err.response?.data?.message || "Error al establecer la credencial.";
+      onError: () => {
+        const errMsg = "Error al establecer la credencial. Intentá más tarde.";
         toast.error("Error de activación", { description: errMsg });
         setError("root.serverError", { type: "manual", message: errMsg });
       },
@@ -173,10 +211,11 @@ const CrearClave = () => {
               <p>El enlace de seguridad está incompleto o mal formado.</p>
               <Button
                 variant="primary"
-                onClick={() => navigate("/registro")}
+                onClick={handleSolicitarNuevoEnlace}
                 style={{ marginTop: "1.5rem" }}
+                disabled={solicitandoNuevo}
               >
-                SOLICITAR NUEVO ENLACE
+                {solicitandoNuevo ? "SOLICITANDO..." : "SOLICITAR NUEVO ENLACE"}
               </Button>
             </div>
           )}
@@ -197,21 +236,11 @@ const CrearClave = () => {
               </p>
               <Button
                 variant="primary"
-                onClick={() => {
-                  const savedEmail =
-                    localStorage.getItem("emailIngresado") ||
-                    sessionStorage.getItem("emailIngresado");
-                  if (savedEmail) {
-                    navigate("/confirmar-correo", {
-                      state: { emailIngresado: savedEmail },
-                    });
-                  } else {
-                    navigate("/registro");
-                  }
-                }}
+                onClick={handleSolicitarNuevoEnlace}
                 style={{ marginTop: "1.5rem" }}
+                disabled={solicitandoNuevo}
               >
-                SOLICITAR NUEVO ENLACE
+                {solicitandoNuevo ? "SOLICITANDO..." : "SOLICITAR NUEVO ENLACE"}
               </Button>
             </div>
           )}

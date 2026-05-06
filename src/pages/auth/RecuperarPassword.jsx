@@ -78,7 +78,7 @@ const RecuperarPassword = () => {
           >
             {isError && (
               <Alert variant="error" className={styles.formFieldSpacing}>
-                {error?.response?.data?.message || error?.message || "Ocurrió un error al procesar la solicitud."}
+                Ocurrió un error al procesar la solicitud. Intentá más tarde.
               </Alert>
             )}
 
