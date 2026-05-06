@@ -39,7 +39,8 @@ const Login = () => {
         navigate("/solicitudes", { replace: true });
       },
       onError: (error) => {
-        if (error?.response?.status >= 500 || !error?.response) {
+        const status = error?.response?.status;
+        if (!error?.response || status >= 500 || status === 404) {
           clearErrors("password");
           toast.error("Error de servidor", {
             description: "Ocurrió un error. Intentá más tarde.",
@@ -47,7 +48,7 @@ const Login = () => {
         } else {
           setError("password", {
             type: "server",
-            message: "Credenciales inválidas o error de conexión.",
+            message: "Usuario o contraseña incorrecto.",
           });
         }
       },

@@ -53,7 +53,6 @@ const Registro = () => {
   const onSubmit = async (data) => {
     const payloadSkeletor = {
       email: data.email,
-      usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
       hashseguridad: "canal1",
@@ -180,7 +179,7 @@ const Registro = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate("/login")}
+                  onClick={() => navigate("/")}
                   disabled={isFormDisabled}
                 >
                   YA TENGO CUENTA

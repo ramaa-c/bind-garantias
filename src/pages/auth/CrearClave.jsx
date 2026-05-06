@@ -110,7 +110,7 @@ const CrearClave = () => {
           description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
           duration: 5000,
         });
-        navigate("/login", { replace: true });
+        navigate("/", { replace: true });
       },
       onError: () => {
         const errMsg = "Error al establecer la credencial. Intentá más tarde.";

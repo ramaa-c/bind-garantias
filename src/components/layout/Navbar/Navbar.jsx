@@ -52,7 +52,7 @@ const Navbar = ({
   const handleLogout = () => {
     if (clearAuth) clearAuth();
     setIsDropdownOpen(false);
-    navigate("/login");
+    navigate("/");
   };
 
   return (
