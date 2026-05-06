@@ -15,6 +15,7 @@ import { InputAuth, Button } from "../../components/ui";
 import {
   useObtenerUsuarioPorEncrypt,
   useEstablecerClave,
+  useResetearPassword,
 } from "../../hooks/useUsuario";
 import { useChannel } from "../../context/ChannelContext";
 import styles from "./Login.module.css";
@@ -71,6 +72,52 @@ const CrearClave = () => {
   const { mutate: establecerClave, isPending: guardandoClave } =
     useEstablecerClave();
 
+  const { mutate: resetearPassword, isPending: solicitandoNuevo } =
+    useResetearPassword();
+
+  const handleSolicitarNuevoEnlace = () => {
+    const savedEmail =
+      localStorage.getItem("emailIngresado") ||
+      sessionStorage.getItem("emailIngresado");
+
+    if (!savedEmail) {
+      navigate("/registro");
+      return;
+    }
+
+    const getCSharpIsoDate = (addYears = 0) => {
+      const date = new Date();
+      if (addYears) date.setFullYear(date.getFullYear() + addYears);
+      return date.toISOString().split(".")[0];
+    };
+
+    const payloadReset = {
+      email: savedEmail,
+      usuariowebid: 0,
+      fchalta: getCSharpIsoDate(),
+      fchvencimiento: getCSharpIsoDate(1),
+      hashseguridad: canalIntegridad || "canal1",
+      estado: "",
+      debecambiarclave: "",
+      esadministrador: "",
+      denominacion: "",
+    };
+
+    resetearPassword(payloadReset, {
+      onSuccess: () => {
+        navigate("/confirmar-correo", {
+          state: { emailIngresado: savedEmail, canal: canalIntegridad },
+        });
+      },
+      onError: () => {
+        toast.error("Error al solicitar enlace", {
+          description: "No pudimos enviar el correo. Intentá registrarte nuevamente.",
+        });
+        navigate("/registro");
+      },
+    });
+  };
+
   const {
     control,
     handleSubmit,
@@ -110,7 +157,7 @@ const CrearClave = () => {
           description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
           duration: 5000,
         });
-        navigate("/login", { replace: true });
+        navigate("/", { replace: true });
       },
       onError: () => {
         const errMsg = "Error al establecer la credencial. Intentá más tarde.";
@@ -164,10 +211,11 @@ const CrearClave = () => {
               <p>El enlace de seguridad está incompleto o mal formado.</p>
               <Button
                 variant="primary"
-                onClick={() => navigate("/registro")}
+                onClick={handleSolicitarNuevoEnlace}
                 style={{ marginTop: "1.5rem" }}
+                disabled={solicitandoNuevo}
               >
-                SOLICITAR NUEVO ENLACE
+                {solicitandoNuevo ? "SOLICITANDO..." : "SOLICITAR NUEVO ENLACE"}
               </Button>
             </div>
           )}
@@ -188,21 +236,11 @@ const CrearClave = () => {
               </p>
               <Button
                 variant="primary"
-                onClick={() => {
-                  const savedEmail =
-                    localStorage.getItem("emailIngresado") ||
-                    sessionStorage.getItem("emailIngresado");
-                  if (savedEmail) {
-                    navigate("/confirmar-correo", {
-                      state: { emailIngresado: savedEmail },
-                    });
-                  } else {
-                    navigate("/registro");
-                  }
-                }}
+                onClick={handleSolicitarNuevoEnlace}
                 style={{ marginTop: "1.5rem" }}
+                disabled={solicitandoNuevo}
               >
-                SOLICITAR NUEVO ENLACE
+                {solicitandoNuevo ? "SOLICITANDO..." : "SOLICITAR NUEVO ENLACE"}
               </Button>
             </div>
           )}
