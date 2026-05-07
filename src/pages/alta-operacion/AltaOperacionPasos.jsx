@@ -3,10 +3,9 @@ import styles from './AltaOperacion.module.css';
 
 export const AltaOperacionPasos = ({ currentStep }) => {
   const steps = [
-    { num: 1, label: 'Datos Pyme' },
-    { num: 2, label: 'Datos Usuario' },
-    { num: 3, label: 'Calculadora' },
-    { num: 4, label: 'Instrumento' }
+    { num: 1, label: 'Calculadora' },
+    { num: 2, label: 'Instrumento' },
+    { num: 3, label: 'Bolsa' }
   ];
 
   return (

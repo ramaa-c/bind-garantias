@@ -10,6 +10,7 @@ export const Button = ({
   type = "button",
   disabled = false,
   iconRight,
+  isLoading,
   ...props
 }) => {
   const claseBoton = `

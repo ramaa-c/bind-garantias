@@ -5,6 +5,7 @@ import { InputSocioMasked, Button } from "../../../../ui";
 import styles from "./ModalRepresentante.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
 import { sociosService } from "../../../../../services/sociosService";
+import { useValidarCuitAfip } from "../../../../../hooks/useAfip";
 
 export const ModalRepresentante = ({
   isOpen,
@@ -21,6 +22,8 @@ export const ModalRepresentante = ({
 
   const [errores, setErrores] = useState({});
   const [validando, setValidando] = useState(false);
+
+  const { mutateAsync: validarEnAfip } = useValidarCuitAfip();
 
   useEffect(() => {
     if (isOpen) {
@@ -91,25 +94,22 @@ export const ModalRepresentante = ({
     setValidando(true);
 
     try {
-      let resp = await sociosService.obtenerSocios({ Cuit: cuit });
-      let socioDb = Array.isArray(resp) ? resp[0] : (resp?.items?.[0] || resp?.data?.[0]);
+      const respAfip = await validarEnAfip(cuit);
 
-      if (!socioDb) {
-        const respWeb = await sociosService.obtenerSociosWeb({ Cuit: cuit });
-        socioDb = Array.isArray(respWeb) ? respWeb[0] : (respWeb?.items?.[0] || respWeb?.data?.[0]);
-      }
-
-      if (socioDb) {
-        setNombre(socioDb.denominacion || "Representante sin nombre");
+      if (respAfip && respAfip.datosgenerales) {
+        const { nombre, apellido, razonsocial } = respAfip.datosgenerales;
         
-        const dbEmail = socioDb.email || socioDb.emailfacturacion || "";
-        const dbCelular = socioDb.celular || socioDb.telefono || socioDb.telefono2 || "";
+        let nombreRepresentante = "Representante Validado";
         
-        if (dbEmail) setEmail(dbEmail);
-        if (dbCelular) setCelular(dbCelular);
-
+        if (razonsocial) {
+          nombreRepresentante = razonsocial;
+        } else if (nombre || apellido) {
+          nombreRepresentante = `${nombre || ""} ${apellido || ""}`.trim();
+        }
+          
+        setNombre(nombreRepresentante);
       } else {
-        setNombre("Representante Nuevo");
+        setNombre("No inscripto en AFIP");
       }
       setFaseInterna("completar");
     } catch (err) {
