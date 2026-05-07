@@ -13,14 +13,11 @@ import {
   useFormPersist,
   getPersistedFormData,
 } from "../../hooks/useFormPersist";
-import { BarraProgreso, BotonVolver } from "../../components/ui";
+import { BarraPills, BotonVolver } from "../../components/ui";
 import {
-  Paso1Cuit,
-  Paso2Datos,
   Paso3Simulador,
   PanelDudas,
   BotonAyudaFlotante,
-  Paso4Socios,
   Paso5Documentacion,
   Paso6Bolsa,
   Paso7Exito,
@@ -29,14 +26,12 @@ import {
 import styles from "../cheques/SolicitudCheques.module.css";
 import { sociosService } from "../../services/sociosService";
 import { solicitudesService } from "../../services/solicitudesService";
+import { lineaService } from "../../services/lineaService";
 
 const STORAGE_KEY = "draft_alta_operacion";
 
 export const AltaOperacion = () => {
   const navigate = useNavigate();
-  const [validandoCuit, setValidandoCuit] = useState(false);
-  const [validandoSocioSecundario, setValidandoSocioSecundario] =
-    useState(false);
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
@@ -185,10 +180,10 @@ export const AltaOperacion = () => {
 
       const payload = {
         solicitudenprocesoid: 0,
-        fechacarga: new Date().toISOString().split(".")[0], // Formato sin milisegundos para .NET
-        cuit: String(cleanData.cuit).replace(/\D/g, ""), // Aseguramos que el CUIT no tenga guiones
+        fechacarga: new Date().toISOString().split(".")[0],
+        cuit: String(cleanData.cuit).replace(/\D/g, ""),
         tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : 2,
-        cadenavalorid: 950274, // Ojo: Este ID tiene que existir en la BD
+        cadenavalorid: 950274,
         monedaid: Number(cleanData.moneda) || 1,
         importe: montoLimpio,
         estadosolicitud: 1,
@@ -202,9 +197,9 @@ export const AltaOperacion = () => {
       await solicitudesService.crearSolicitudEnProceso(payload);
 
       if (cleanData.tipoProducto === "cheque") {
-        setPasoActual(7);
+        setPasoActual(4);
       } else {
-        setPasoActual(6);
+        setPasoActual(3);
       }
     } catch (error) {
       console.error("Error al enviar la solicitud:", error);
@@ -251,90 +246,7 @@ export const AltaOperacion = () => {
     navigate("/solicitudes", { state: { nuevaSolicitud } });
   };
 
-  const iniciarCargaSocio = () => {
-    setValue("tempSocioCuit", "");
-    setValue("tempSocioParticipacion", "");
-    setValue("tempSocioData", null);
-    setValue("faseSocio", "ingresar_cuit");
-  };
-
-  const validarCuitSocio = async () => {
-    if (!tempSocioCuit) return;
-    setValidandoSocioSecundario(true);
-
-    try {
-      let resp = await sociosService.obtenerSocios({
-        Cuit: tempSocioCuit,
-        page: 1,
-        page_size: 10,
-      });
-      let socioDb = Array.isArray(resp)
-        ? resp[0]
-        : resp?.items?.[0] || resp?.data?.[0];
-
-      if (!socioDb) {
-        const respWeb = await sociosService.obtenerSociosWeb({
-          Cuit: tempSocioCuit,
-          page: 1,
-          page_size: 10,
-        });
-        socioDb = Array.isArray(respWeb)
-          ? respWeb[0]
-          : respWeb?.items?.[0] || respWeb?.data?.[0];
-      }
-
-      if (socioDb) {
-        setValue("tempSocioNombre", socioDb.denominacion || "Sin Razón Social");
-        setValue("tempSocioData", socioDb);
-        setValue("faseSocio", "completar_datos");
-      } else {
-        setValue("tempSocioNombre", "");
-        setValue("tempSocioData", null);
-        setValue("faseSocio", "completar_datos");
-      }
-    } catch (err) {
-      console.error("Error buscando socio secundario:", err);
-      metodosFormulario.setError("tempSocioCuit", {
-        message: "Hubo un error de conexión al buscar el CUIT.",
-      });
-    } finally {
-      setValidandoSocioSecundario(false);
-    }
-  };
-
-  const guardarSocio = () => {
-    if (!tempSocioParticipacion) return;
-    append({
-      cuit: tempSocioCuit,
-      nombre: tempSocioNombre,
-      participacion: Number(tempSocioParticipacion),
-      dataOriginal: tempSocioData || {},
-      email: "",
-      celular: "",
-      direccion: "",
-      provincia: "",
-      localidad: "",
-    });
-    setValue("faseSocio", "lista");
-    setValue("tempSocioData", null);
-  };
-
-  const editarSocio = (index) => {
-    const s = socios[index];
-    setValue("tempSocioCuit", s.cuit);
-    setValue("tempSocioNombre", s.nombre);
-    setValue("tempSocioParticipacion", String(s.participacion));
-    setValue("tempSocioData", s.dataOriginal);
-    remove(index);
-    setValue("faseSocio", "completar_datos");
-  };
-
-  const eliminarSocio = (index) => {
-    remove(index);
-    if (socios.length - 1 === 0) {
-      setValue("faseSocio", "ingresar_cuit");
-    }
-  };
+  // Handlers para socios eliminados por refactorización
 
   const toggleDoc = (seccion) => {
     setValue("docExpandido", docExpandido === seccion ? "" : seccion);
@@ -368,93 +280,8 @@ export const AltaOperacion = () => {
   };
 
   // ----- RENDERIZADO DINÁMICO DE PASOS -----
-  const handleValidarCuit = async () => {
-    const isOk = await trigger("cuit");
-    if (!isOk) return;
-
-    const cuitIngresado = getValues("cuit");
-    setValidandoCuit(true);
-
-    try {
-      let resp = await sociosService.obtenerSocios({
-        Cuit: cuitIngresado,
-        page: 1,
-        page_size: 10,
-      });
-      let socioDb = Array.isArray(resp)
-        ? resp[0]
-        : resp?.items?.[0] || resp?.data?.[0];
-      let esSocioExistente = true;
-
-      if (!socioDb) {
-        const respWeb = await sociosService.obtenerSociosWeb({
-          Cuit: cuitIngresado,
-          page: 1,
-          page_size: 10,
-        });
-        socioDb = Array.isArray(respWeb)
-          ? respWeb[0]
-          : respWeb?.items?.[0] || respWeb?.data?.[0];
-        esSocioExistente = false;
-      }
-
-      if (socioDb) {
-        setValue("razonSocial", socioDb.denominacion || "Sin Razón Social", {
-          shouldValidate: true,
-        });
-        setValue("esSocioExistente", esSocioExistente);
-        if (socioDb.calle) {
-          setValue(
-            "direccion",
-            `${socioDb.calle} ${socioDb.numero || ""}`.trim(),
-            { shouldValidate: true },
-          );
-        }
-        const telefono =
-          socioDb.telefono || socioDb.celular || socioDb.telefono2 || "";
-        if (telefono) {
-          setValue("celular", telefono, { shouldValidate: true });
-        }
-        if (socioDb.email || socioDb.emailfacturacion) {
-          setValue(
-            "emailFacturacion",
-            socioDb.emailfacturacion || socioDb.email,
-            { shouldValidate: true },
-          );
-        }
-      } else {
-        setValue("razonSocial", "", { shouldValidate: true });
-        setValue("esSocioExistente", false);
-      }
-      setPasoActual(2);
-    } catch (err) {
-      console.error("Error buscando socio:", err);
-      metodosFormulario.setError("cuit", {
-        type: "manual",
-        message:
-          "Error de red al buscar el CUIT. Por favor, vuelva a intentarlo.",
-      });
-    } finally {
-      setValidandoCuit(false);
-    }
-  };
-
   const renderPasoDinamico = () => {
-    if (pasoActual === 1)
-      return (
-        <Paso1Cuit onValidar={handleValidarCuit} isLoading={validandoCuit} />
-      );
-    if (pasoActual === 2)
-      return (
-        <Paso2Datos
-          onVolver={handleVolver}
-          onContinuar={async () => {
-            if (await trigger(["direccion", "localidad", "celular"]))
-              setPasoActual(3);
-          }}
-        />
-      );
-    if (pasoActual === 3) {
+    if (pasoActual === 1) {
       const IS_DLR = String(moneda) === "2";
 
       let opcionesProducto = [];
@@ -493,9 +320,52 @@ export const AltaOperacion = () => {
           onCalcular={async () => {
             const campos = ["monto", "tipoProducto", "plazo"];
             if (mostrarTipoCalculo) campos.push("tipoCalculo");
-            if (await trigger(campos)) setMostrarResultados(true);
+            
+            const esValido = await trigger(campos);
+            
+            if (esValido) {
+              setEnviandoSolicitud(true);
+              try {
+                // TODO: Reemplazar por CUIT y SocioID reales del contexto cuando se termine el onboarding
+                const cuitFalsoContexto = "30707070707";
+                const socioIdFalsoContexto = 2974;
+
+                // 1. Validar que no haya Solicitudes en Proceso
+                const solicitudes = await solicitudesService.obtenerSolicitudesEnProceso(cuitFalsoContexto);
+                const solicitudesArray = Array.isArray(solicitudes) ? solicitudes : (solicitudes?.data || []);
+                const tieneSolicitudEnProceso = solicitudesArray.some(s => s.estadosolicitud === 1 || s.estado === "En Proceso");
+
+                if (tieneSolicitudEnProceso) {
+                  alert("Ya tenés una solicitud de línea en análisis. Debés esperar a que se apruebe o rechace antes de crear una nueva.");
+                  setEnviandoSolicitud(false);
+                  return;
+                }
+
+                // 2. Validar que no tenga ya un TipoLimite activo para este producto
+                const tipoLimiteRequeridoId = tipoProducto === "cheque" ? 1 : (tipoProducto === "prestamo" ? 2 : 3);
+                const lineas = await lineaService.obtenerLimitesPorSocio(socioIdFalsoContexto);
+                const lineasArray = Array.isArray(lineas) ? lineas : (lineas?.data || []);
+                
+                const lineaActivaMismoProducto = lineasArray.find(
+                  (l) => l.tipolimiteid === tipoLimiteRequeridoId && l.tipolimiteestadoid === 1
+                );
+
+                if (lineaActivaMismoProducto) {
+                  alert(`Ya tenés una línea de ${tipoProducto} activa por un importe de $${lineaActivaMismoProducto.importelimite}. No es posible pedir una nueva línea.`);
+                  setEnviandoSolicitud(false);
+                  return;
+                }
+
+                setMostrarResultados(true);
+              } catch (error) {
+                console.error("Error en validación previa:", error);
+                alert("Ocurrió un error de conexión al validar tus datos. Por favor intentá nuevamente.");
+              } finally {
+                setEnviandoSolicitud(false);
+              }
+            }
           }}
-          onContinuar={() => setPasoActual(4)}
+          onContinuar={() => setPasoActual(2)}
           onCancelar={() => setMostrarResultados(false)}
           opcionesMoneda={opcionesMoneda}
           opcionesProducto={opcionesProducto}
@@ -509,43 +379,18 @@ export const AltaOperacion = () => {
       );
     }
 
-    if (pasoActual === 4) {
-      return (
-        <Paso4Socios
-          isLoading={validandoSocioSecundario}
-          faseSocio={faseSocio}
-          setFaseSocio={(fase) => setValue("faseSocio", fase)}
-          tempSocioCuit={tempSocioCuit}
-          setTempSocioCuit={(cuit) => setValue("tempSocioCuit", cuit)}
-          tempSocioNombre={tempSocioNombre}
-          tempSocioParticipacion={tempSocioParticipacion}
-          setTempSocioParticipacion={(part) =>
-            setValue("tempSocioParticipacion", part)
-          }
-          socios={socios}
-          iniciarCargaSocio={iniciarCargaSocio}
-          validarCuitSocio={validarCuitSocio}
-          guardarSocio={guardarSocio}
-          editarSocio={editarSocio}
-          eliminarSocio={eliminarSocio}
-          continuarAlProximoPaso={() => {
-            setPasoActual(5);
-          }}
-        />
-      );
-    }
-    if (pasoActual === 5) {
+    if (pasoActual === 2) {
       return (
         <Paso5Documentacion
           docExpandido={docExpandido}
           toggleDoc={toggleDoc}
           socios={socios}
-          onVolverASocios={() => setPasoActual(4)}
+          onVolverASocios={() => setPasoActual(1)}
           avanzarPaso6={async () => {
             const ok = await trigger("emailFacturacion");
             const reps = getValues("representantes");
             if (ok && reps?.length > 0) {
-              if (tipoProducto === "cheque") setPasoActual(6);
+              if (tipoProducto === "cheque") setPasoActual(3);
               else handleSubmit(onSubmitFinalPrestamos)();
             }
           }}
@@ -556,7 +401,7 @@ export const AltaOperacion = () => {
     }
 
     if (tipoProducto === "cheque") {
-      if (pasoActual === 6) {
+      if (pasoActual === 3) {
         return (
           <Paso6Bolsa
             avanzarConBolsa={async () => {
@@ -572,10 +417,10 @@ export const AltaOperacion = () => {
           />
         );
       }
-      if (pasoActual === 7)
+      if (pasoActual === 4)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     } else if (tipoProducto === "prestamo" || tipoProducto === "pagare") {
-      if (pasoActual === 6)
+      if (pasoActual === 3)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     }
 
@@ -583,25 +428,24 @@ export const AltaOperacion = () => {
   };
 
   const renderBarraProgreso = () => {
-    if (pasoActual === 1) return null;
-    if (pasoActual === 7 && tipoProducto === "cheque") return null;
-    if (pasoActual === 6 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) return null;
+    if (pasoActual === 4 && tipoProducto === "cheque") return null;
+    if (pasoActual === 3 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) return null;
 
-    let hitos = ["DATOS", "SIMULADOR", "SOCIOS", "DOCUMENTOS"];
+    let hitos = ["SIMULADOR", "DOCUMENTOS"];
     let hitoActual = pasoActual - 1;
 
     if (tipoProducto === "cheque") {
-      hitos = ["DATOS", "SIMULADOR", "SOCIOS", "DOCUMENTOS", "BOLSA"];
+      hitos = ["SIMULADOR", "DOCUMENTOS", "BOLSA"];
       hitoActual = pasoActual - 1;
     }
 
-    return <BarraProgreso hitos={hitos} hitoActual={hitoActual} />;
+    return <BarraPills hitos={hitos} hitoActual={hitoActual} />;
   };
 
   const mostrarBotonVolver =
     pasoActual > 1 &&
-    !(pasoActual === 7 && tipoProducto === "cheque") &&
-    !(pasoActual === 6 && (tipoProducto === "prestamo" || tipoProducto === "pagare"));
+    !(pasoActual === 4 && tipoProducto === "cheque") &&
+    !(pasoActual === 3 && (tipoProducto === "prestamo" || tipoProducto === "pagare"));
 
   return (
     <div className={styles.pageContainer}>
@@ -632,7 +476,7 @@ export const AltaOperacion = () => {
                     <h1 className={styles.tituloBienvenida}>Nueva Operación</h1>
                     <div className={styles.titleAccent}></div>
                     <p className={styles.subtituloBienvenida}>
-                      Completá el CUIT de la empresa para iniciar la solicitud.
+                      Simulá las condiciones de tu operación.
                     </p>
                   </div>
                 )}
@@ -652,8 +496,8 @@ export const AltaOperacion = () => {
               </div>
             </div>
 
-            {!(pasoActual === 7 && tipoProducto === "cheque") &&
-              !(pasoActual === 6 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) && (
+            {!(pasoActual === 4 && tipoProducto === "cheque") &&
+              !(pasoActual === 3 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) && (
                 <>
                   <PanelDudas
                     contexto="alta_operacion"

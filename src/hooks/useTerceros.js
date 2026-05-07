@@ -121,3 +121,32 @@ export const useActualizarRelacionSocio = () => {
     },
   });
 };
+
+//------- TERCEROS RELACIONADOS (SGRPlus) ---------
+
+export const useObtenerTercerosSGRPlus = (params = {}) => {
+    return useQuery({
+        queryKey: ['tercerosSGRPlus', 'lista', params],
+        queryFn: () => tercerosService.obtenerTercerosSGRPlus(params),
+        staleTime: 1000 * 60 * 2,
+        placeholderData: keepPreviousData
+    });
+};
+
+export const useObtenerTerceroPorIdSGRPlus = (terceroId) => {
+    return useQuery({
+        queryKey: ['tercerosSGRPlus', 'detalle', terceroId],
+        queryFn: () => tercerosService.obtenerTerceroPorIdSGRPlus(terceroId),
+        enabled: !!terceroId,
+        staleTime: 1000 * 60 * 5,
+        placeholderData: keepPreviousData
+    });
+};
+
+export const useObtenerRelacionesDeSocioSGRPlus = (socioId) => {
+  return useQuery({
+    queryKey: ["socioTerceroRelacionSGRPlus", socioId],
+    queryFn: () => tercerosService.obtenerRelacionesDeSocioSGRPlus(socioId),
+    enabled: !!socioId,
+  });
+};
