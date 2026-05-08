@@ -6,7 +6,6 @@ const cuitWebCache = new Map();
 export const sociosService = {
   // Trae lista de socios (SGRPlus)
   obtenerSocios: async (params = {}) => {
-    // Si la búsqueda es primariamente por CUIT (aunque traiga página)
     const isCuitSearch = Boolean(params.Cuit);
     const cacheKey = isCuitSearch ? String(params.Cuit).trim() : null;
 
@@ -57,15 +56,33 @@ export const sociosService = {
     return response.data;
   },
 
+  // GET api/Socio/{SocioID} - Solicitud de un socio por su ID (Esquema Web)
+  obtenerSocioWebPorId: async (socioId) => {
+    const response = await api.get(`api/Socio/${socioId}`);
+    return response.data;
+  },
+
   // Crea nuevo socio
   crearSocio: async (socioData) => {
-    const response = await api.post("sgrplus/Socio", socioData);
+    const response = await api.post("api/Socio", socioData);
     return response.data;
   },
 
   // Actualiza un socio
   actualizarSocio: async (socioData) => {
-    const response = await api.put("sgrplus/Socio", socioData);
+    const response = await api.put("api/Socio", socioData);
+    return response.data;
+  },
+
+  // POST api/SocioUsuario - Carga de nueva relación entre socio y usuario
+  vincularSocioUsuario: async (socioUsuarioData) => {
+    const response = await api.post("api/SocioUsuario", socioUsuarioData);
+    return response.data;
+  },
+
+  // GET api/SocioUsuario/{UsuarioWebID} - Listado de relaciones por UsuarioWebID
+  obtenerSocioUsuarioPorUsuarioId: async (usuarioWebId) => {
+    const response = await api.get(`api/SocioUsuario/${usuarioWebId}`);
     return response.data;
   },
 };

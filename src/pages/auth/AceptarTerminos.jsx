@@ -16,7 +16,7 @@ export default function AceptarTerminos() {
   const scrollRef = useRef(null);
 
   const handleAceptarTerminos = () => {
-    if (aceptado) navigate("/solicitudes");
+    if (aceptado) navigate("/alta-datos-empresa");
   };
 
   useEffect(() => {

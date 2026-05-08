@@ -35,7 +35,7 @@ const Login = () => {
   const onSubmit = (formData) => {
     iniciarSesion(formData, {
       onSuccess: (data) => {
-        setUser({ ...data, email: formData.email });
+        setUser({ email: formData.email });
         navigate("/solicitudes", { replace: true });
       },
       onError: (error) => {
