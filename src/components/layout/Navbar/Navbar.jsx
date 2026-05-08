@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaRegUserCircle } from "react-icons/fa";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   FiMenu,
   FiChevronDown,
@@ -49,8 +50,13 @@ const Navbar = ({
     navigate(path);
   };
 
+  const queryClient = useQueryClient();
+
   const handleLogout = () => {
+    queryClient.clear();
+
     if (clearAuth) clearAuth();
+
     setIsDropdownOpen(false);
     navigate("/");
   };

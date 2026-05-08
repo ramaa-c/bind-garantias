@@ -22,7 +22,6 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
   const direccion = useWatch({ control, name: "direccion" }) || "";
   const localidad = useWatch({ control, name: "localidad" }) || "";
   const celular = useWatch({ control, name: "celular" }) || "";
-  const smsVerificado = useWatch({ control, name: "smsVerificado" }) || false;
   const cuit = useWatch({ control, name: "cuit" }) || "";
   const razonSocial =
     useWatch({ control, name: "razonSocial" }) || "Razón Social Desconocida";
@@ -30,7 +29,7 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
     useWatch({ control, name: "ubicacionConfirmada" }) || false;
 
   const ubicacionOk = ubicacionConfirmada && direccion.trim().length >= 5;
-  const contactoOk = !!smsVerificado;
+  const contactoOk = celular.trim().length >= 8;
 
   const handleGuardarUbicacion = () => {
     setValue("ubicacionConfirmada", true, {
@@ -41,10 +40,7 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
   };
 
   const handleGuardarContacto = () => {
-    setValue("smsVerificado", true, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
+    // Si ModalContacto se encarga de setear "celular", aca solo cerramos
     setModalContactoOpen(false);
   };
 
@@ -192,7 +188,7 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
               Verificación de Contacto
             </strong>
             <span className={styles.taskSub}>
-              {contactoOk ? `Cel: ${celular}` : "Validación mediante SMS"}
+              {contactoOk ? `Cel: ${celular}` : "Ingresar teléfono celular"}
             </span>
           </div>
 

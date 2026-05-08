@@ -33,6 +33,8 @@ import { AltaOperacion } from "./pages/alta-operacion/AltaOperacion";
 import { PantallaGestionUsuarios } from "./pages/usuarios/PantallaGestionUsuarios";
 import DocumentacionView from "./pages/documentacion/DocumentacionView";
 import NotFound from "./pages/NotFound/NotFound";
+import OnboardingGuard from "./components/layout/OnboardingGuard/OnboardingGuard";
+import AltaDatosEmpresa from "./pages/AltaDatosEmpresa/AltaDatosEmpresa";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
@@ -54,25 +56,31 @@ function App() {
           <Route
             path="/socios"
             element={
-              <DashboardLayout>
-                <PantallaGestionSocios />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <PantallaGestionSocios />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/usuarios"
             element={
-              <DashboardLayout>
-                <PantallaGestionUsuarios />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <PantallaGestionUsuarios />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/documentacion"
             element={
-              <DashboardLayout>
-                <DocumentacionView />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <DocumentacionView />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
@@ -82,99 +90,133 @@ function App() {
           <Route
             path="/pagare"
             element={
-              <DashboardLayout>
-                <Pagare />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <Pagare />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/solicitud-pagare"
             element={
-              <DashboardLayout>
-                <SolicitudPagare />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <SolicitudPagare />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/solicitudes"
             element={
-              <DashboardLayout>
-                <Solicitudes />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <Solicitudes />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/prestamos"
             element={
-              <DashboardLayout>
-                <Prestamos />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <Prestamos />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/prestamos-seleccionables"
             element={
-              <DashboardLayout>
-                <PrestamosSeleccionables />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <PrestamosSeleccionables />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/prestamos-fijos"
             element={
-              <DashboardLayout>
-                <PrestamosFijos />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <PrestamosFijos />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/cheques"
             element={
-              <DashboardLayout>
-                <Cheques />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <Cheques />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/solicitud-cheques"
             element={
-              <DashboardLayout>
-                <SolicitudCheques />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <SolicitudCheques />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/carga-masiva-cheques"
             element={
-              <DashboardLayout>
-                <CargaMasivaCheques />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <CargaMasivaCheques />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route path="/firma-documento" element={<FirmaDocumento />} />
           <Route path="/terminos" element={<AceptarTerminos />} />
           <Route
+            path="/alta-datos-empresa"
+            element={
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <AltaDatosEmpresa />
+                </DashboardLayout>
+              </OnboardingGuard>
+            }
+          />
+          <Route
             path="/posicion-consolidada"
             element={
-              <DashboardLayout>
-                <PosicionConsolidada />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <PosicionConsolidada />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/cadenas-valor/:id"
             element={
-              <DashboardLayout>
-                <CadenaDetalle />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <CadenaDetalle />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
           <Route
             path="/alta-operacion"
             element={
-              <DashboardLayout>
-                <AltaOperacion />
-              </DashboardLayout>
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <AltaOperacion />
+                </DashboardLayout>
+              </OnboardingGuard>
             }
           />
 
