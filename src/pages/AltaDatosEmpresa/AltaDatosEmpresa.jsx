@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { FiRotateCcw, FiUsers, FiX } from "react-icons/fi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaDatosEmpresaSchema } from "../../schemas/AltaDatosEmpresaSchema";
-import { BarraProgreso, BotonVolver, Button } from "../../components/ui";
+import { BarraProgreso, BotonVolver, Button, Modal } from "../../components/ui";
 import {
   Paso1Cuit,
   Paso2Datos,
@@ -227,14 +227,18 @@ export const AltaDatosEmpresa = () => {
               <div className={styles.seccionFormulario}>
                 {pasoActual === 1 && (
                   <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Primer Ingreso</h1>
-                    <div className={styles.titleAccent}></div>
+                    <span className={styles.bienvenidaBadge}>
+                      Alta de empresa
+                    </span>
+                    <h1 className={styles.tituloBienvenida}>
+                      Necesitamos conocer los datos de tu empresa
+                    </h1>
+                    <div className={styles.titleAccent} />
                     <p className={styles.subtituloBienvenida}>
                       Completá el CUIT de tu empresa para comenzar.
                     </p>
                   </div>
                 )}
-
                 {pasoActual > 1 && (
                   <BarraProgreso
                     hitos={["CUIT", "DATOS"]}
@@ -264,141 +268,53 @@ export const AltaDatosEmpresa = () => {
         </div>
       </div>
 
-      {socioExistenteModal.isOpen && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: "1rem",
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "var(--color-surface, #1e1e1e)",
-              padding: "2rem",
-              borderRadius: "1rem",
-              maxWidth: "28rem",
-              width: "100%",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
-              border: "1px solid var(--color-border, #333)",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1.5rem",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.75rem",
-                  color: "var(--color-primary, #646cff)",
-                }}
-              >
-                <FiUsers size={24} />
-                <h3
-                  style={{
-                    margin: 0,
-                    fontSize: "1.25rem",
-                    color: "var(--color-text, #fff)",
-                  }}
-                >
-                  Empresa Registrada
-                </h3>
-              </div>
-              <button
-                onClick={() =>
-                  setSocioExistenteModal({ isOpen: false, socioData: null })
-                }
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "var(--color-text-muted, #aaa)",
-                  cursor: "pointer",
-                }}
-              >
-                <FiX size={20} />
-              </button>
-            </div>
+      <Modal
+        isOpen={socioExistenteModal.isOpen}
+        onClose={() =>
+          setSocioExistenteModal({ isOpen: false, socioData: null })
+        }
+        maxWidth="28rem"
+      >
+        <div className={styles.modalContent}>
+          <span className={styles.modalBadge}>Empresa registrada</span>
+          <h3 className={styles.modalTitle}>
+            CUIT ya registrado en la plataforma
+          </h3>
 
-            <p
-              style={{
-                margin: 0,
-                color: "var(--color-text-secondary, #ccc)",
-                fontSize: "0.95rem",
-                lineHeight: "1.5",
-              }}
-            >
-              El CUIT ingresado ya se encuentra registrado en nuestra plataforma
-              bajo la denominación:
-            </p>
+          <p className={styles.modalText}>
+            El CUIT ingresado ya existe en nuestro sistema. Podés vincularte a
+            esta empresa para operar en su nombre.
+          </p>
 
-            <div
-              style={{
-                padding: "1rem",
-                backgroundColor: "rgba(255,255,255,0.05)",
-                borderRadius: "0.5rem",
-                borderLeft: "4px solid var(--color-primary, #646cff)",
-              }}
-            >
-              <strong
-                style={{ display: "block", color: "#fff", fontSize: "1.1rem" }}
-              >
-                {socioExistenteModal.socioData?.denominacion}
-              </strong>
-              <span style={{ color: "#aaa", fontSize: "0.85rem" }}>
-                CUIT: {socioExistenteModal.socioData?.cuit}
-              </span>
-            </div>
+          <div className={styles.modalHighlight}>
+            <strong className={styles.modalHighlightTitle}>
+              {socioExistenteModal.socioData?.denominacion}
+            </strong>
+            <span className={styles.modalHighlightSubtitle}>
+              CUIT {socioExistenteModal.socioData?.cuit}
+            </span>
+          </div>
 
-            <p
-              style={{
-                margin: 0,
-                color: "var(--color-text-secondary, #ccc)",
-                fontSize: "0.95rem",
-              }}
+          <div className={styles.modalActions}>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setSocioExistenteModal({ isOpen: false, socioData: null })
+              }
+              disabled={enviandoSolicitud}
             >
-              ¿Deseás vincular tu usuario a esta empresa para operar en su
-              nombre?
-            </p>
-
-            <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
-              <Button
-                variant="outline"
-                onClick={() =>
-                  setSocioExistenteModal({ isOpen: false, socioData: null })
-                }
-                style={{ flex: 1 }}
-                disabled={enviandoSolicitud}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleVincularSocioExistente}
-                style={{ flex: 1 }}
-                disabled={enviandoSolicitud}
-              >
-                {enviandoSolicitud ? "Vinculando..." : "Sí, vincular"}
-              </Button>
-            </div>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleVincularSocioExistente}
+              disabled={enviandoSolicitud}
+            >
+              {enviandoSolicitud ? "Vinculando..." : "Sí, vincular"}
+            </Button>
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 };
