@@ -5,7 +5,7 @@ import { sociosService } from "../../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../../hooks/useAfip";
 import styles from "./Paso1Cuit.module.css";
 
-export default function Paso1Cuit({ onValidar }) {
+export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   const { control, getValues, setValue, setError } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
   const { mutateAsync: validarAfip, isPending: isLoadingAfip } =
@@ -20,20 +20,30 @@ export default function Paso1Cuit({ onValidar }) {
 
     setIsValidatingSocio(true);
     try {
-      const resp = await sociosService.obtenerSocios({
+      const respSgr = await sociosService.obtenerSocios({
         Cuit: cuit,
         page: 1,
         page_size: 10,
       });
-      const socioDb = Array.isArray(resp)
-        ? resp[0]
-        : resp?.items?.[0] || resp?.data?.[0];
+      const socioSgrDb = Array.isArray(respSgr)
+        ? respSgr[0]
+        : respSgr?.items?.[0] || respSgr?.data?.[0];
 
-      if (socioDb) {
+      if (socioSgrDb) {
         setError("cuit", {
           type: "manual",
-          message: "Esta empresa ya se encuentra en gestión",
+          message: "Esta empresa ya se encuentra en gestión por SGR+",
         });
+        return;
+      }
+
+      const respWeb = await sociosService.obtenerSociosWeb({ Cuit: cuit });
+      const socioWebDb = Array.isArray(respWeb)
+        ? respWeb[0]
+        : respWeb?.items?.[0] || respWeb?.data?.[0];
+
+      if (socioWebDb && socioWebDb.socioid) {
+        if (onSocioExistente) onSocioExistente(socioWebDb);
         return;
       }
 
@@ -53,9 +63,7 @@ export default function Paso1Cuit({ onValidar }) {
           shouldValidate: true,
         });
 
-        if (onValidar) {
-          onValidar();
-        }
+        if (onValidar) onValidar();
       } else {
         setError("cuit", {
           type: "manual",
@@ -66,7 +74,7 @@ export default function Paso1Cuit({ onValidar }) {
       console.error("Error validando CUIT:", err);
       setError("cuit", {
         type: "manual",
-        message: "Error al validar el CUIT con AFIP",
+        message: "Error al procesar la validación del CUIT",
       });
     } finally {
       setIsValidatingSocio(false);
@@ -90,11 +98,11 @@ export default function Paso1Cuit({ onValidar }) {
         />
       </div>
 
-      <div className={styles.decorativeBanner} style={{ minHeight: "60px" }}>
+      <div className={styles.decorativeBanner} style={{ minHeight: "3.75rem" }}>
         <div className={styles.bannerIcon}>
           <svg
-            width="16"
-            height="16"
+            width="1rem"
+            height="1rem"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
