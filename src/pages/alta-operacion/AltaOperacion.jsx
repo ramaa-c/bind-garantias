@@ -31,6 +31,7 @@ import { solicitudesService } from "../../services/solicitudesService";
 import { useEmpresaActiva } from "../../hooks/useEmpresaActiva";
 import { lineaService } from "../../services/lineaService";
 import { afipService } from "../../services/afipService";
+import { tercerosService } from "../../services/tercerosService";
 
 const STORAGE_KEY = "draft_alta_operacion";
 
@@ -43,6 +44,7 @@ export const AltaOperacion = () => {
   const [errorSocioBackend, setErrorSocioBackend] = useState("");
 
   const { cuitActivo, socioIdActivo } = useEmpresaActiva();
+  const [sociosPrecargados, setSociosPrecargados] = useState(false);
 
   useEffect(() => {
     const borrador = localStorage.getItem(STORAGE_KEY);
@@ -117,6 +119,63 @@ export const AltaOperacion = () => {
   });
   const tempSocioData = useWatch({ control, name: "tempSocioData" });
   const docExpandido = useWatch({ control, name: "docExpandido" });
+
+  // --- Precarga de socios existentes desde el backend ---
+  useEffect(() => {
+    if (!socioIdActivo || sociosPrecargados) return;
+    
+    const currentSocios = getValues("socios");
+    if (currentSocios && currentSocios.length > 0) {
+      setSociosPrecargados(true);
+      return;
+    }
+
+    const precargarSocios = async () => {
+      try {
+        const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+        const relacionesArray = Array.isArray(relaciones) ? relaciones : [];
+        
+        if (relacionesArray.length === 0) {
+          setSociosPrecargados(true);
+          return;
+        }
+
+        const sociosCargados = [];
+
+        for (const rel of relacionesArray) {
+          const terceroId = rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
+          if (!terceroId) continue;
+
+          try {
+            const tercero = await tercerosService.obtenerTerceroPorId(terceroId);
+            if (tercero) {
+              sociosCargados.push({
+                cuit: tercero.cuit || tercero.Cuit || "",
+                nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || "Sin nombre",
+                participacion: String(rel.participacion || rel.Participacion || "0"),
+                dataOriginal: tercero,
+                preloadedFromDb: true,
+              });
+            }
+          } catch (err) {
+            console.warn(`No se pudo cargar tercero ${terceroId}:`, err);
+          }
+        }
+
+        if (sociosCargados.length > 0) {
+          sociosCargados.forEach((s) => append(s));
+          setValue("faseSocio", "lista");
+          console.log(`✅ ${sociosCargados.length} socio(s) precargado(s) desde la base de datos.`);
+        }
+      } catch (error) {
+        console.warn("No se pudieron precargar los socios existentes:", error);
+      } finally {
+        setSociosPrecargados(true);
+      }
+    };
+
+    precargarSocios();
+  }, [socioIdActivo, sociosPrecargados]);
 
   const handleVolver = () => {
     setPasoActual((prev) => (prev === 1 ? 1 : prev - 1));

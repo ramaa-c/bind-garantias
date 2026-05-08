@@ -56,6 +56,20 @@ export default function Sidebar({ isOpen, onClose }) {
         <img src={logoBind} alt="Logo BIND" className={styles.mobileLogo} />
       </div>
 
+      {/* --- EMPRESA ACTIVA --- */}
+      {nombreEmpresa && (
+        <div className={styles.companyCard}>
+          <div className={styles.companyIconWrap}>
+            <FiBriefcase size={16} />
+          </div>
+          <div className={styles.companyTextWrap}>
+            <span className={styles.companyLabel}>EMPRESA ACTIVA</span>
+            <p className={styles.companyName}>{nombreEmpresa}</p>
+            {cuitActivo && <p className={styles.companyCuit}>CUIT {cuitActivo}</p>}
+          </div>
+        </div>
+      )}
+
       <nav className={styles.navMenu}>
         {/* ─── SECCIÓN: GENERAL ─── */}
         <div
@@ -87,12 +101,6 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* --- FOOTER DE VERSIÓN --- */}
       <div className={styles.footer}>
-        {nombreEmpresa && (
-          <div className={styles.companyInfo}>
-            <p className={styles.companyName}>{nombreEmpresa}</p>
-            {cuitActivo && <p className={styles.companyCuit}>CUIT: {cuitActivo}</p>}
-          </div>
-        )}
         <p className={styles.versionText}>© 2026 Bind Garantías · v1.0.0</p>
       </div>
     </aside>
