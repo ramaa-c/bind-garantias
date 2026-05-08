@@ -13,7 +13,8 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  height: 180px;
+  min-height: 180px;
+  flex: 1;
   box-sizing: border-box;
 }
 

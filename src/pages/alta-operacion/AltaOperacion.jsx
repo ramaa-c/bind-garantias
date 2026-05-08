@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   useForm,
   FormProvider,
@@ -44,7 +44,7 @@ export const AltaOperacion = () => {
   const [errorSocioBackend, setErrorSocioBackend] = useState("");
 
   const { cuitActivo, socioIdActivo } = useEmpresaActiva();
-  const [sociosPrecargados, setSociosPrecargados] = useState(false);
+  const sociosPrecargadosRef = useRef(false);
 
   useEffect(() => {
     const borrador = localStorage.getItem(STORAGE_KEY);
@@ -122,38 +122,38 @@ export const AltaOperacion = () => {
 
   // --- Precarga de socios existentes desde el backend ---
   useEffect(() => {
-    if (!socioIdActivo || sociosPrecargados) return;
+    if (!socioIdActivo || sociosPrecargadosRef.current) return;
+    sociosPrecargadosRef.current = true; // Marcar inmediatamente para evitar doble ejecución
     
     const currentSocios = getValues("socios");
-    if (currentSocios && currentSocios.length > 0) {
-      setSociosPrecargados(true);
-      return;
-    }
+    if (currentSocios && currentSocios.length > 0) return;
 
     const precargarSocios = async () => {
       try {
         const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
         const relacionesArray = Array.isArray(relaciones) ? relaciones : [];
         
-        if (relacionesArray.length === 0) {
-          setSociosPrecargados(true);
-          return;
-        }
+        if (relacionesArray.length === 0) return;
 
         const sociosCargados = [];
+        const cuitsYaCargados = new Set((getValues("socios") || []).map(s => s.cuit));
 
         for (const rel of relacionesArray) {
-          const terceroId = rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
+          const terceroId = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
           if (!terceroId) continue;
 
           try {
             const tercero = await tercerosService.obtenerTerceroPorId(terceroId);
             if (tercero) {
+              const cuit = tercero.cuit || tercero.Cuit || "";
+              if (cuitsYaCargados.has(cuit)) continue; // Evitar duplicados
+              cuitsYaCargados.add(cuit);
               sociosCargados.push({
-                cuit: tercero.cuit || tercero.Cuit || "",
+                cuit,
                 nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || "Sin nombre",
-                participacion: String(rel.participacion || rel.Participacion || "0"),
+                participacion: String(rel.porcacciones || rel.participacion || rel.Participacion || "0"),
                 dataOriginal: tercero,
+                tercerorelacionadoid: terceroId,
                 preloadedFromDb: true,
               });
             }
@@ -169,13 +169,11 @@ export const AltaOperacion = () => {
         }
       } catch (error) {
         console.warn("No se pudieron precargar los socios existentes:", error);
-      } finally {
-        setSociosPrecargados(true);
       }
     };
 
     precargarSocios();
-  }, [socioIdActivo, sociosPrecargados]);
+  }, [socioIdActivo]);
 
   const handleVolver = () => {
     setPasoActual((prev) => (prev === 1 ? 1 : prev - 1));
@@ -388,16 +386,113 @@ export const AltaOperacion = () => {
   const handleGuardarSocioDb = async (socioIndex, datosFormulario) => {
     const socioTarget = socios[socioIndex];
     try {
-      const payloadPut = {
-        ...socioTarget.dataOriginal,
-        email: datosFormulario.email || "",
-        telefono: datosFormulario.celular || "",
-        calle: datosFormulario.direccion || "",
-      };
+      let terceroId = socioTarget.tercerorelacionadoid || null;
 
+      // Si el socio NO viene precargado de la DB, lo creamos
+      if (!terceroId && !socioTarget.preloadedFromDb) {
+        const dg = socioTarget.dataOriginal?.datosgenerales || {};
+        const dom = dg.domiciliofiscal || {};
+
+        const payloadTercero = {
+          tercerorelacionadoid: 0,
+          denominacion: socioTarget.nombre || "",
+          cuit: String(socioTarget.cuit).replace(/\D/g, ""),
+          bcraid: 0,
+          tipopersonaid: dg.tipopersona === "FISICA" ? 1 : dg.tipopersona === "JURIDICA" ? 2 : 0,
+          tipodocumentoid: 0,
+          numerodocumento: String(socioTarget.cuit).replace(/\D/g, ""),
+          estadocivilid: 0,
+          ciudadid: 0,
+          telefono: datosFormulario.celular || "",
+          conyuge: "",
+          actividad: "",
+          contacto: "",
+          nrocuenta: "",
+          codigomercado: "",
+          calle: datosFormulario.direccion || dom.direccion || "",
+          numero: 0,
+          piso: "",
+          departamento: "",
+          codpos: dom.codpostal || "",
+          descripcionreducida: (socioTarget.nombre || "").substring(0, 20),
+          mail: datosFormulario.email || "",
+        };
+
+        // Primero buscar si el tercero ya existe por CUIT
+        const cuitLimpio = String(socioTarget.cuit).replace(/\D/g, "");
+        try {
+          const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
+          const arr = Array.isArray(existentes) ? existentes : (existentes?.data || []);
+          if (arr.length > 0) {
+            terceroId = arr[0].tercerorelacionadoid || arr[0].TerceroRelacionadoID || arr[0].id;
+            console.log("✅ Tercero ya existente encontrado, ID:", terceroId);
+          }
+        } catch (buscarErr) {
+          console.warn("No se pudo buscar tercero existente, se intentará crear:", buscarErr);
+        }
+
+        // Si no existe, crearlo
+        if (!terceroId) {
+          console.log("📤 POST TerceroRelacionado:", payloadTercero);
+          const terceroResult = await tercerosService.crearTercero(payloadTercero);
+          terceroId = terceroResult?.tercerorelacionadoid || terceroResult?.id;
+          console.log("📥 Respuesta TerceroRelacionado:", terceroResult);
+        }
+
+        if (!terceroId) {
+          console.error("No se obtuvo ID del tercero creado.");
+          return false;
+        }
+
+        // Vincular tercero con la empresa activa
+        console.log("🔍 socioIdActivo:", socioIdActivo);
+        if (socioIdActivo) {
+          const ahora = new Date().toISOString().split(".")[0];
+          const payloadRelacion = {
+            socioid: socioIdActivo,
+            tercerosrelacionados: [
+              {
+                sociotercerorelacionid: 0,
+                socioid: socioIdActivo,
+                terceroid: terceroId,
+                tiporelacionsocioid: 0,
+                fechadesde: ahora,
+                fechahasta: ahora,
+                porcacciones: Number(socioTarget.participacion) || 0,
+                nroinscripcion: "",
+                condicionescomerciales: "",
+                cbu: "",
+                provinciaid: 0,
+                nrosubcuentacaja: "",
+                sucursalid: 0,
+                default: "0",
+                subtiporelacionsocioid: 0,
+                telefono: datosFormulario.celular || "",
+                momento: ahora,
+              }
+            ],
+          };
+
+          console.log("📤 POST SocioTerceroRelacion:", payloadRelacion);
+          try {
+            const relResult = await tercerosService.guardarRelacionesDeSocio(payloadRelacion);
+            console.log("📥 Respuesta SocioTerceroRelacion:", relResult);
+          } catch (relError) {
+            console.error("❌ Error en POST SocioTerceroRelacion:", relError);
+            console.error("Response data:", relError?.response?.data);
+          }
+        } else {
+          console.error("⚠️ No se pudo vincular el tercero: socioIdActivo es null/undefined");
+        }
+
+        console.log(`✅ Socio "${socioTarget.nombre}" persistido (terceroId: ${terceroId})`);
+      }
+
+      // Actualizar el socio en el formulario con los datos completos
       const sData = {
         ...socioTarget,
-        dataOriginal: payloadPut,
+        tercerorelacionadoid: terceroId,
+        preloadedFromDb: true, // Ya está en la DB
         email: datosFormulario.email || "",
         celular: datosFormulario.celular || "",
         direccion: datosFormulario.direccion || "",
@@ -407,7 +502,17 @@ export const AltaOperacion = () => {
       update(socioIndex, sData);
       return true;
     } catch (err) {
-      console.error("Error actualizando DB de socio", err);
+      console.error("Error persistiendo socio:", err);
+      // Aún así guardamos localmente para no perder los datos
+      const sData = {
+        ...socioTarget,
+        email: datosFormulario.email || "",
+        celular: datosFormulario.celular || "",
+        direccion: datosFormulario.direccion || "",
+        provincia: datosFormulario.provincia || "",
+        localidad: datosFormulario.localidad || "",
+      };
+      update(socioIndex, sData);
       return false;
     }
   };
@@ -544,7 +649,9 @@ export const AltaOperacion = () => {
             const reps = getValues("representantes");
             if (ok && reps?.length > 0) {
               if (tipoProducto === "cheque") setPasoActual(4);
-              else handleSubmit(onSubmitFinalPrestamos)();
+              else handleSubmit(onSubmitFinalPrestamos, (errors) => {
+                console.error("❌ Errores de validación del schema:", errors);
+              })();
             }
           }}
           onGuardarSocioDb={handleGuardarSocioDb}
@@ -559,12 +666,16 @@ export const AltaOperacion = () => {
           <Paso6Bolsa
             avanzarConBolsa={async () => {
               if (await trigger(["sociedadBolsa", "numeroCuentaBolsa"]))
-                handleSubmit(onSubmitFinalCheques)();
+                handleSubmit(onSubmitFinalCheques, (errors) => {
+                  console.error("❌ Errores de validación del schema:", errors);
+                })();
             }}
             avanzarSinBolsa={() => {
               setValue("sociedadBolsa", "");
               setValue("numeroCuentaBolsa", "");
-              handleSubmit(onSubmitFinalCheques)();
+              handleSubmit(onSubmitFinalCheques, (errors) => {
+                console.error("❌ Errores de validación del schema:", errors);
+              })();
             }}
             isSubmitting={enviandoSolicitud}
           />
