@@ -13,11 +13,13 @@ import {
   FiChevronDown,
 } from "react-icons/fi";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import styles from "./Sidebar.module.css";
 
 export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { nombreEmpresa, cuitActivo } = useEmpresaActiva();
 
   const [expandedSections, setExpandedSections] = useState({
     general: true,
@@ -85,6 +87,12 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {/* --- FOOTER DE VERSIÓN --- */}
       <div className={styles.footer}>
+        {nombreEmpresa && (
+          <div className={styles.companyInfo}>
+            <p className={styles.companyName}>{nombreEmpresa}</p>
+            {cuitActivo && <p className={styles.companyCuit}>CUIT: {cuitActivo}</p>}
+          </div>
+        )}
         <p className={styles.versionText}>© 2026 Bind Garantías · v1.0.0</p>
       </div>
     </aside>

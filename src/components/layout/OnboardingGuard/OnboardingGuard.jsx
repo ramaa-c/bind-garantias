@@ -33,7 +33,7 @@ export const OnboardingGuard = ({ children }) => {
     return <>{children}</>;
   }
 
-  if (isLoadingUser || !usuarioWebId || isPendingSocios || isFetchingSocios) {
+  if (isLoadingUser || (usuarioWebId && isPendingSocios)) {
     return (
       <div
         style={{
@@ -52,7 +52,7 @@ export const OnboardingGuard = ({ children }) => {
   const tieneEmpresas =
     Array.isArray(socioUsuarios) && socioUsuarios.length > 0;
 
-  if (isError || !tieneEmpresas) {
+  if (!usuarioWebId || isError || !tieneEmpresas) {
     return <Navigate to="/terminos" replace />;
   }
 

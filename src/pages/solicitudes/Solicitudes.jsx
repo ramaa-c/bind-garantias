@@ -9,6 +9,7 @@ import ModalConfirmacionBorrador from "../../components/features/shared/Comparti
 import { useObtenerSolicitudesEnProceso } from "../../hooks/useSolicitudes";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../services/sociosService";
+import { useEmpresaActiva } from "../../hooks/useEmpresaActiva";
 
 import styles from "./Solicitudes.module.css";
 
@@ -88,23 +89,12 @@ export default function Solicitudes() {
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
 
-  // Integración con Backend
-  // Buscamos si hay un CUIT guardado de la última operación creada. 
-  // Si no hay, usamos el CUIT por defecto para la demo.
-  const cuitActivo = sessionStorage.getItem("last_used_cuit") || "33711316839";
+  const { cuitActivo, nombreEmpresa } = useEmpresaActiva();
+  const cuitFinal = cuitActivo || "33711316839"; // Fallback demo
   
-  const { data: solicitudesReal, isLoading: cargandoSolicitudes } = useObtenerSolicitudesEnProceso(cuitActivo);
+  const { data: solicitudesReal, isLoading: cargandoSolicitudes } = useObtenerSolicitudesEnProceso(cuitFinal);
 
-  // Pre-cargar los datos del socio (nombre de la empresa) para que ya estén listos para las modales
-  const { data: socioResp } = useQuery({
-    queryKey: ["socio", "cuit", cuitActivo],
-    queryFn: () => sociosService.obtenerSocios({ Cuit: cuitActivo }),
-    enabled: !!cuitActivo,
-    staleTime: 1000 * 60 * 30, // 30 minutos ya que no cambia seguido
-  });
-
-  const socio = Array.isArray(socioResp) ? socioResp[0] : socioResp?.items?.[0] || socioResp?.data?.[0];
-  const nombreEmpresaActiva = socio?.denominacion;
+  const nombreEmpresaActiva = nombreEmpresa || "Empresa Demo S.A.";
 
   const listaSolicitudes = useMemo(() => {
     const reales = (solicitudesReal || []).map(s => ({

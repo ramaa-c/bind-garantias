@@ -28,6 +28,7 @@ import { Alert } from "../../components/ui";
 import styles from "../cheques/SolicitudCheques.module.css";
 import { sociosService } from "../../services/sociosService";
 import { solicitudesService } from "../../services/solicitudesService";
+import { useEmpresaActiva } from "../../hooks/useEmpresaActiva";
 import { lineaService } from "../../services/lineaService";
 import { afipService } from "../../services/afipService";
 
@@ -40,6 +41,8 @@ export const AltaOperacion = () => {
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
   const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
   const [errorSocioBackend, setErrorSocioBackend] = useState("");
+
+  const { cuitActivo, socioIdActivo } = useEmpresaActiva();
 
   useEffect(() => {
     const borrador = localStorage.getItem(STORAGE_KEY);
@@ -184,7 +187,7 @@ export const AltaOperacion = () => {
       const payload = {
         solicitudenprocesoid: 0,
         fechacarga: new Date().toISOString().split(".")[0],
-        cuit: String(cleanData.cuit).replace(/\D/g, ""),
+        cuit: cuitActivo ? String(cuitActivo).replace(/\D/g, "") : "33711316839",
         tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : 2,
         cadenavalorid: 950274,
         monedaid: Number(cleanData.moneda) || 1,
@@ -421,12 +424,8 @@ export const AltaOperacion = () => {
             if (esValido) {
               setEnviandoSolicitud(true);
               try {
-                // TODO: Reemplazar por CUIT y SocioID reales del contexto cuando se termine el onboarding
-                const cuitFalsoContexto = "30707070707";
-                const socioIdFalsoContexto = 2974;
-
                 // 1. Validar que no haya Solicitudes en Proceso
-                const solicitudes = await solicitudesService.obtenerSolicitudesEnProceso(cuitFalsoContexto);
+                const solicitudes = await solicitudesService.obtenerSolicitudesEnProceso(cuitActivo || "33711316839");
                 const solicitudesArray = Array.isArray(solicitudes) ? solicitudes : (solicitudes?.data || []);
                 const tieneSolicitudEnProceso = solicitudesArray.some(s => s.estadosolicitud === 1 || s.estado === "En Proceso");
 
@@ -438,7 +437,7 @@ export const AltaOperacion = () => {
 
                 // 2. Validar que no tenga ya un TipoLimite activo para este producto
                 const tipoLimiteRequeridoId = tipoProducto === "cheque" ? 1 : (tipoProducto === "prestamo" ? 2 : 3);
-                const lineas = await lineaService.obtenerLimitesPorSocio(socioIdFalsoContexto);
+                const lineas = await lineaService.obtenerLimitesPorSocio(socioIdActivo || 2974);
                 const lineasArray = Array.isArray(lineas) ? lineas : (lineas?.data || []);
                 
                 const lineaActivaMismoProducto = lineasArray.find(
@@ -491,7 +490,6 @@ export const AltaOperacion = () => {
           }}
           onGuardarSocioDb={handleGuardarSocioDb}
           isSubmitting={enviandoSolicitud}
-          socios={socios}
         />
       );
     }

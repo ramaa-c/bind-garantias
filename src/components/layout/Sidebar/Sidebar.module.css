@@ -67,11 +67,35 @@
 
 .footer {
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 1rem 1.5rem 2rem 1.5rem;
+  padding: 1.5rem;
   margin-top: auto;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.companyInfo {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.companyName {
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.companyCuit {
+  color: #888;
+  font-size: 0.75rem;
+  margin: 0.25rem 0 0 0;
 }
 
 .versionText {
