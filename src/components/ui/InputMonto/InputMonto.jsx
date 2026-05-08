@@ -48,9 +48,11 @@ export const InputMonto = ({
               <IMaskInput
                 id={inputId}
                 mask={Number}
-                scale={0}
+                scale={2}
                 thousandsSeparator="."
                 radix=","
+                padFractionalZeros={true}
+                normalizeZeros={true}
                 unmask={true}
                 value={value?.toString() || ""}
                 onAccept={(unmaskedValue) => {

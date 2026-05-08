@@ -5,6 +5,7 @@ import {
   FiUserPlus,
   FiCheckCircle,
   FiChevronRight,
+  FiUser,
 } from "react-icons/fi";
 import {
   InputFlotante,
@@ -13,6 +14,7 @@ import {
   Avatar,
   BotonIcono,
   BuscadorCuit,
+  Alert,
 } from "../../../../ui";
 import styles from "./Paso4Socios.module.css";
 
@@ -32,6 +34,8 @@ export default function Paso4Socios({
   editarSocio,
   continuarAlProximoPaso,
   isLoading,
+  errorBackend,
+  setErrorBackend,
 }) {
   const [errorCuit, setErrorCuit] = useState("");
   const [errorParticipacion, setErrorParticipacion] = useState("");
@@ -96,6 +100,7 @@ export default function Paso4Socios({
             onChange={(e) => {
               setTempSocioCuit(e.target.value);
               if (errorCuit) setErrorCuit("");
+              if (errorBackend) setErrorBackend("");
             }}
             onValidar={handleValidarClick}
             error={errorCuit}
@@ -104,8 +109,16 @@ export default function Paso4Socios({
             isLoading={isLoading}
           />
 
-          {socios.length > 0 && (
+          {errorBackend && (
             <div className={styles.mtMedium}>
+              <Alert variant="error" layout="box">
+                {errorBackend}
+              </Alert>
+            </div>
+          )}
+
+          {socios.length > 0 && (
+            <div className={styles.saveActionRowCentrado} style={{ marginTop: "1rem" }}>
               <Button
                 type="button"
                 variant="outline"
@@ -114,7 +127,7 @@ export default function Paso4Socios({
                   setFaseSocio("lista");
                 }}
               >
-                Cancelar y volver a la lista
+                CANCELAR Y VOLVER
               </Button>
             </div>
           )}
@@ -124,7 +137,9 @@ export default function Paso4Socios({
       {/* --- FASE 2: COMPLETAR DATOS --- */}
       {faseSocio === "completar_datos" && (
         <div className={styles.section}>
-          <h3 className={styles.headerTitle}>Completar datos del socio</h3>
+          <div className={styles.headerTitleRow}>
+            <h3 className={styles.headerTitle}>Completar datos del socio</h3>
+          </div>
 
           <div className={styles.summaryCard}>
             <div className={styles.summaryTop}>
@@ -229,7 +244,7 @@ export default function Paso4Socios({
             {socios.map((socio, index) => (
               <div className={styles.listItem} key={socio.cuit}>
                 <div className={styles.itemLeft}>
-                  <Avatar name={socio.nombre} number={index + 1} />
+                  <Avatar name={socio.nombre} icon={FiUser} />
                   <div className={styles.itemInfo}>
                     <p className={styles.itemName}>{socio.nombre}</p>
                     <p className={styles.itemDetails}>

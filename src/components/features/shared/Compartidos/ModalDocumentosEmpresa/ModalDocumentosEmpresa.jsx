@@ -111,6 +111,7 @@ export const ModalDocumentosEmpresa = ({
 
                       <div className={styles.dropzoneContainer}>
                         <CargaArchivos
+                          className={styles.dropzoneTaller}
                           title={doc.title}
                           hasError={hasError}
                           file={

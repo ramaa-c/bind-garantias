@@ -116,34 +116,34 @@ export default function Paso3Simulador({
   // --- CÁLCULOS SIMULADOS BASADOS EN EL MONTO INGRESADO ---
   const isMontoFactura = tipoCalculo === "monto_factura";
   const isDolarPagare = tipoProductoValue === "pagare" && monedaValue === "2";
-  const montoNumerico = Number(String(montoValue || "0").replace(/\D/g, ""));
+  const montoNumerico = Number(montoValue) || 0;
   const formatCurrency = (val) =>
     new Intl.NumberFormat("es-AR", {
       style: "currency",
       currency: "ARS",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(val);
 
   const formatDolar = (val) =>
     "USD " +
     new Intl.NumberFormat("es-AR", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(val);
 
   let netoCheque, totalCostosCheque, filasCostosCheque, datosResumenCheque, datoExtraTotal, textoAlerta;
 
   if (isDolarPagare) {
     const factor = (montoNumerico || 40000) / 40000;
-    netoCheque = Math.round(38713 * factor);
-    totalCostosCheque = Math.round(1287 * factor);
+    netoCheque = 38713 * factor;
+    totalCostosCheque = 1287 * factor;
 
-    const sgr = Math.round(811 * factor);
-    const descuento = Math.round(446 * factor);
-    const mercado = Math.round(24 * factor);
+    const sgr = 811 * factor;
+    const descuento = 446 * factor;
+    const mercado = 24 * factor;
     const bolsa = 0;
-    const iva = Math.round(5 * factor);
+    const iva = 5 * factor;
 
     filasCostosCheque = [
       { label: "Comisión SGR", value: formatDolar(sgr) },

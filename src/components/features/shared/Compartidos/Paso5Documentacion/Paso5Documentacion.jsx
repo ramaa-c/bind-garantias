@@ -21,6 +21,7 @@ import {
   ModalRepresentante,
   ModalSocio,
 } from "../../../../features";
+import { useProvincias } from "../../../../../hooks/useCatalogos";
 import styles from "./Paso5Documentacion.module.css";
 
 const DOC_ITEMS = [
@@ -73,6 +74,9 @@ export default function Paso5Documentacion({
     remove: removeRep,
   } = useFieldArray({ control, name: "representantes" });
 
+  const { data: provinciasData } = useProvincias();
+  const opcionesProvincias = provinciasData?.opciones || [];
+
   const [uiState, setUiState] = useState({
     archivos: {},
     socioActivoIndex: null,
@@ -109,6 +113,65 @@ export default function Paso5Documentacion({
 
   const emailFacturacionVal =
     useWatch({ control, name: "emailFacturacion" }) || "";
+
+  // Precarga automática al montar el componente
+  React.useEffect(() => {
+    if (!socios.length) return;
+
+    // Obtenemos las provincias para poder mapear nombres a IDs
+    // Esto es asíncrono pero usualmente ya están cargadas por el modal o el hook
+    const provincias = opcionesProvincias || [];
+
+    socios.forEach((socio, index) => {
+      const dg = socio?.dataOriginal?.datosgenerales;
+      if (dg) {
+        const dom = dg.domiciliofiscal || {};
+        const current = getValues(`socios.${index}`) || {};
+
+        const updates = {};
+
+        // 1. Email
+        if (!current.email) {
+          const email = dg.email || dg.emailfacturacion || "";
+          if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            updates.email = email;
+          }
+        }
+
+        // 2. Dirección
+        if (!current.direccion) {
+          const dir = dom.direccion || (dg.calle ? `${dg.calle} ${dg.numero || ""}`.trim() : "");
+          if (dir) updates.direccion = dir;
+        }
+
+        // 3. Localidad
+        if (!current.localidad && dom.localidad) {
+          updates.localidad = dom.localidad;
+        }
+
+        // 4. Provincia (Mapeo de nombre a ID)
+        if (!current.provincia && dom.descripcionprovincia) {
+          const provNombre = dom.descripcionprovincia.toUpperCase();
+          const match = provincias.find(p => 
+            p.label.toUpperCase() === provNombre || 
+            provNombre.includes(p.label.toUpperCase()) ||
+            p.label.toUpperCase().includes(provNombre)
+          );
+          if (match) {
+            updates.provincia = match.value;
+          } else {
+            // Si no hay match exacto, al menos guardamos el nombre si el select lo permite
+            // o lo dejamos vacío para que el usuario elija
+          }
+        }
+
+        // Aplicamos cambios si hay algo nuevo (sin disparar validación inmediata para evitar rojos)
+        Object.keys(updates).forEach(key => {
+          setValue(`socios.${index}.${key}`, updates[key]);
+        });
+      }
+    });
+  }, [socios, getValues, setValue, opcionesProvincias]);
 
   // ── handlers  ──────────────────────────────────────────────────
   const handleFileUpload = (key, file) => {
@@ -149,34 +212,30 @@ export default function Paso5Documentacion({
 
   const handleAbrirModalSocio = (index) => {
     const socioTarget = socios[index];
-    const db = socioTarget?.dataOriginal || {};
+    const dg = socioTarget?.dataOriginal?.datosgenerales || {};
+    const dom = dg.domiciliofiscal || {};
     const currentFormValues = getValues(`socios.${index}`) || {};
-    const emailHydrated =
-      currentFormValues.email || db.email || db.emailfacturacion || "";
-    const celularHydrated =
-      currentFormValues.celular ||
-      db.celular ||
-      db.telefono ||
-      db.telefono2 ||
-      "";
-    const direccionHydrated =
-      currentFormValues.direccion ||
-      (db.calle ? `${db.calle} ${db.numero || ""}`.trim() : "");
-    setValue(`socios.${index}.email`, emailHydrated, { shouldValidate: true });
-    setValue(`socios.${index}.celular`, celularHydrated, {
-      shouldValidate: true,
-    });
-    setValue(`socios.${index}.direccion`, direccionHydrated, {
-      shouldValidate: true,
-    });
+
+    const emailHydrated = currentFormValues.email || dg.email || dg.emailfacturacion || "";
+    const celularHydrated = currentFormValues.celular || dg.celular || dg.telefono || dg.telefono2 || "";
+    const direccionHydrated = currentFormValues.direccion || dom.direccion || (dg.calle ? `${dg.calle} ${dg.numero || ""}`.trim() : "");
+    const localidadHydrated = currentFormValues.localidad || dom.localidad || "";
+    const provinciaHydrated = currentFormValues.provincia || dom.descripcionprovincia || "";
+
+    setValue(`socios.${index}.email`, emailHydrated);
+    setValue(`socios.${index}.celular`, celularHydrated);
+    setValue(`socios.${index}.direccion`, direccionHydrated);
+    setValue(`socios.${index}.localidad`, localidadHydrated);
+    setValue(`socios.${index}.provincia`, provinciaHydrated);
+
     updateState({
       intentoGuardarSocio: false,
       backupSocio: {
         email: emailHydrated,
         celular: celularHydrated,
         direccion: direccionHydrated,
-        provincia: currentFormValues.provincia || "",
-        localidad: currentFormValues.localidad || "",
+        localidad: localidadHydrated,
+        provincia: provinciaHydrated,
       },
       backupArchivos: {
         frente: archivos[`socio-${index}-frente`],
@@ -340,167 +399,161 @@ export default function Paso5Documentacion({
 
       {/* GRID ────────────────────────────────────────────────────────────────── */}
       <div className={styles.grid}>
-        {/* ── COLUMNA IZQUIERDA ───────────────────────────────────────────── */}
-        <div className={styles.col}>
-          {/* DOCUMENTACIÓN */}
-          <section className={styles.section}>
-            <div className={styles.sectionHeaderRow}>
-              <span className={styles.sectionLabel}>Documentación Legal</span>
-              <button
-                type="button"
-                className={`${styles.actionLink} ${docsEmpresaListos ? styles.actionLinkEdit : intentoAvanzar ? styles.actionLinkError : ""}`}
-                onClick={() => updateState({ modalDocsOpen: true })}
-              >
-                {docsEmpresaListos ? (
-                  <>
-                    <FiEdit2 size={11} /> Modificar
-                  </>
-                ) : (
-                  <>Cargar documentos →</>
-                )}
-              </button>
-            </div>
-            <div
-              className={styles.docGrid}
+        {/* DOCUMENTACIÓN */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeaderRow}>
+            <span className={styles.sectionLabel}>Documentación Legal</span>
+            <button
+              type="button"
+              className={`${styles.actionLink} ${docsEmpresaListos ? styles.actionLinkEdit : intentoAvanzar ? styles.actionLinkError : ""}`}
               onClick={() => updateState({ modalDocsOpen: true })}
             >
-              {DOC_ITEMS.map(({ key, label }) => (
+              {docsEmpresaListos ? (
+                <>
+                  <FiEdit2 size={11} /> Modificar
+                </>
+              ) : (
+                <>Cargar documentos →</>
+              )}
+            </button>
+          </div>
+          <div
+            className={styles.docGrid}
+            onClick={() => updateState({ modalDocsOpen: true })}
+          >
+            {DOC_ITEMS.map(({ key, label }) => (
+              <div
+                key={key}
+                className={`${styles.docChip} ${
+                  archivos[key]
+                    ? styles.docChipDone
+                    : intentoAvanzar
+                      ? styles.docChipError
+                      : styles.docChipPending
+                }`}
+              >
+                {archivos[key] ? (
+                  <FiCheckCircle size={12} />
+                ) : (
+                  <FiAlertCircle size={12} />
+                )}
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* SOCIOS */}
+        <section className={`${styles.section} ${styles.borderLeft}`}>
+          <div className={styles.sectionHeaderRow}>
+            <span className={styles.sectionLabel}>Socios</span>
+            {socios.length > 0 && (
+              <span className={styles.countBadge}>
+                {socios.filter((_, i) => isSocioCompleto(i)).length}/
+                {socios.length} completos
+              </span>
+            )}
+          </div>
+          <div className={styles.compactList}>
+            {socios.map((socio, index) => (
+              <SocioTaskCard
+                key={socio?.cuit || index}
+                socio={socio}
+                index={index}
+                isCompleto={isSocioCompleto(index)}
+                intentoAvanzar={intentoAvanzar}
+                onEdit={() => handleAbrirModalSocio(index)}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* REPRESENTANTES */}
+        <section className={styles.section}>
+          <div className={styles.sectionHeaderRow}>
+            <span className={styles.sectionLabel}>
+              Representantes y Apoderados
+            </span>
+            {representantes.length > 0 && (
+              <button
+                type="button"
+                className={styles.actionLink}
+                onClick={() => handleAbrirModalRep(null)}
+              >
+                <FiPlus size={11} /> Agregar
+              </button>
+            )}
+          </div>
+
+          {representantes.length === 0 ? (
+            <button
+              type="button"
+              className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
+              onClick={() => handleAbrirModalRep(null)}
+            >
+              <FiPlus size={14} />
+              <span>Agregar representante o apoderado</span>
+            </button>
+          ) : (
+            <div className={styles.compactList}>
+              {representantes.map((rep, index) => (
                 <div
-                  key={key}
-                  className={`${styles.docChip} ${
-                    archivos[key]
-                      ? styles.docChipDone
-                      : intentoAvanzar
-                        ? styles.docChipError
-                        : styles.docChipPending
-                  }`}
+                  key={rep?.id || index}
+                  className={`${styles.compactRow} ${styles.compactRowSuccess}`}
                 >
-                  {archivos[key] ? (
-                    <FiCheckCircle size={12} />
-                  ) : (
-                    <FiAlertCircle size={12} />
-                  )}
-                  <span>{label}</span>
+                  <span
+                    className={`${styles.statusDot} ${styles.dotGreen}`}
+                  />
+                  <div className={styles.rowInfo}>
+                    <strong className={styles.rowName}>{rep.nombre}</strong>
+                    <span className={styles.rowSub}>
+                      {rep.rol} · {rep.cuit}
+                    </span>
+                  </div>
+                  <div className={styles.rowActions}>
+                    <button
+                      type="button"
+                      className={styles.iconBtn}
+                      onClick={() => handleAbrirModalRep(index)}
+                      title="Editar"
+                    >
+                      <FiEdit2 size={13} />
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                      onClick={() => removeRep(index)}
+                      title="Eliminar"
+                    >
+                      <FiTrash2 size={13} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
-          </section>
+          )}
+        </section>
 
-          {/* REPRESENTANTES */}
-          <section className={`${styles.section} ${styles.alignBottom}`}>
-            <div className={styles.sectionHeaderRow}>
-              <span className={styles.sectionLabel}>
-                Representantes y Apoderados
+        {/* EMAIL FACTURACIÓN */}
+        <section className={`${styles.section} ${styles.borderLeft}`}>
+          <div className={styles.sectionHeaderRow}>
+            <span className={styles.sectionLabel}>Email de Facturación</span>
+            {isEmailFacturacionValido && (
+              <span className={styles.validBadge}>
+                <FiCheckCircle size={11} /> Configurado
               </span>
-              {representantes.length > 0 && (
-                <button
-                  type="button"
-                  className={styles.actionLink}
-                  onClick={() => handleAbrirModalRep(null)}
-                >
-                  <FiPlus size={11} /> Agregar
-                </button>
-              )}
-            </div>
-
-            {representantes.length === 0 ? (
-              <button
-                type="button"
-                className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
-                onClick={() => handleAbrirModalRep(null)}
-              >
-                <FiPlus size={14} />
-                <span>Agregar representante o apoderado</span>
-              </button>
-            ) : (
-              <div className={styles.compactList}>
-                {representantes.map((rep, index) => (
-                  <div
-                    key={rep?.id || index}
-                    className={`${styles.compactRow} ${styles.compactRowSuccess}`}
-                  >
-                    <span
-                      className={`${styles.statusDot} ${styles.dotGreen}`}
-                    />
-                    <div className={styles.rowInfo}>
-                      <strong className={styles.rowName}>{rep.nombre}</strong>
-                      <span className={styles.rowSub}>
-                        {rep.rol} · {rep.cuit}
-                      </span>
-                    </div>
-                    <div className={styles.rowActions}>
-                      <button
-                        type="button"
-                        className={styles.iconBtn}
-                        onClick={() => handleAbrirModalRep(index)}
-                        title="Editar"
-                      >
-                        <FiEdit2 size={13} />
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
-                        onClick={() => removeRep(index)}
-                        title="Eliminar"
-                      >
-                        <FiTrash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             )}
-          </section>
-        </div>
-
-        {/* ── COLUMNA DERECHA ─────────────────────────────────────────────── */}
-        <div className={styles.col}>
-          {/* SOCIOS */}
-          <section className={styles.section}>
-            <div className={styles.sectionHeaderRow}>
-              <span className={styles.sectionLabel}>Socios</span>
-              {socios.length > 0 && (
-                <span className={styles.countBadge}>
-                  {socios.filter((_, i) => isSocioCompleto(i)).length}/
-                  {socios.length} completos
-                </span>
-              )}
-            </div>
-            <div className={styles.compactList}>
-              {socios.map((socio, index) => (
-                <SocioTaskCard
-                  key={socio?.cuit || index}
-                  socio={socio}
-                  index={index}
-                  isCompleto={isSocioCompleto(index)}
-                  intentoAvanzar={intentoAvanzar}
-                  onEdit={() => handleAbrirModalSocio(index)}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* EMAIL FACTURACIÓN */}
-          <section className={`${styles.section} ${styles.alignBottom}`}>
-            <div className={styles.sectionHeaderRow}>
-              <span className={styles.sectionLabel}>Email de Facturación</span>
-              {isEmailFacturacionValido && (
-                <span className={styles.validBadge}>
-                  <FiCheckCircle size={11} /> Configurado
-                </span>
-              )}
-            </div>
-            <InputSocioMasked
-              control={control}
-              name="emailFacturacion"
-              label="Dirección de correo electrónico"
-              icon={<FiMail />}
-              type="email"
-              error={errorEmailFacturacion}
-              esValido={isEmailFacturacionValido}
-            />
-          </section>
-        </div>
+          </div>
+          <InputSocioMasked
+            control={control}
+            name="emailFacturacion"
+            label="Dirección de correo electrónico"
+            icon={<FiMail />}
+            type="email"
+            error={errorEmailFacturacion}
+            esValido={isEmailFacturacionValido}
+          />
+        </section>
       </div>
 
       {/* FOOTER ──────────────────────────────────────────────────────────────── */}

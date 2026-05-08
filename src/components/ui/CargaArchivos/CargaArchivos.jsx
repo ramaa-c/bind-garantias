@@ -13,12 +13,14 @@ export const CargaArchivos = ({
   onDragLeave,
   onClick,
   onRemove,
-  hasError = false 
+  hasError = false,
+  className = "",
+  style = {}
 }) => {
   
   if (file) {
     return (
-      <div className={`${styles.box} ${styles.loaded}`}>
+      <div className={`${styles.box} ${styles.loaded} ${className}`} style={style}>
         <div className={styles.loadedInfo}>
           <FiFile className={styles.loadedIcon} />
           <div className={styles.textGroup}>
@@ -34,11 +36,12 @@ export const CargaArchivos = ({
     );
   }
 
-  const boxClass = `${styles.box} ${isDragging ? styles.dragging : ''} ${hasError ? styles.error : ''}`;
+  const boxClass = `${styles.box} ${isDragging ? styles.dragging : ""} ${hasError ? styles.error : ""} ${className}`;
 
   return (
     <div 
       className={boxClass}
+      style={style}
       role="button"
       tabIndex={0}
       onClick={onClick}

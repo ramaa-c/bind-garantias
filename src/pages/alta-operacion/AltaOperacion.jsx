@@ -18,15 +18,18 @@ import {
   Paso3Simulador,
   PanelDudas,
   BotonAyudaFlotante,
+  Paso4Socios,
   Paso5Documentacion,
   Paso6Bolsa,
   Paso7Exito,
   ModalConfirmacionBorrador,
 } from "../../components/features";
+import { Alert } from "../../components/ui";
 import styles from "../cheques/SolicitudCheques.module.css";
 import { sociosService } from "../../services/sociosService";
 import { solicitudesService } from "../../services/solicitudesService";
 import { lineaService } from "../../services/lineaService";
+import { afipService } from "../../services/afipService";
 
 const STORAGE_KEY = "draft_alta_operacion";
 
@@ -35,6 +38,8 @@ export const AltaOperacion = () => {
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
+  const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
+  const [errorSocioBackend, setErrorSocioBackend] = useState("");
 
   useEffect(() => {
     const borrador = localStorage.getItem(STORAGE_KEY);
@@ -174,9 +179,7 @@ export const AltaOperacion = () => {
     setEnviandoSolicitud(true);
     try {
       const cleanData = preparePayload(data);
-      const montoLimpio = Number(
-        String(cleanData.monto || "0").replace(/\D/g, ""),
-      );
+      const montoLimpio = Number(cleanData.monto) || 0;
 
       const payload = {
         solicitudenprocesoid: 0,
@@ -197,9 +200,9 @@ export const AltaOperacion = () => {
       await solicitudesService.crearSolicitudEnProceso(payload);
 
       if (cleanData.tipoProducto === "cheque") {
-        setPasoActual(4);
+        setPasoActual(5);
       } else {
-        setPasoActual(3);
+        setPasoActual(4);
       }
     } catch (error) {
       console.error("Error al enviar la solicitud:", error);
@@ -225,8 +228,11 @@ export const AltaOperacion = () => {
     else if (String(data.moneda) === "10") simbolo = "UVAS";
     else if (String(data.moneda) === "5000") simbolo = "$";
 
-    const montoLimpio = Number(String(data.monto || "0").replace(/\D/g, ""));
-    const montoFormateado = montoLimpio.toLocaleString("es-AR");
+    const montoLimpio = Number(data.monto) || 0;
+    const montoFormateado = montoLimpio.toLocaleString("es-AR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
 
     const nuevaSolicitud = {
       id: String(Math.floor(Math.random() * 9000) + 1000),
@@ -246,7 +252,72 @@ export const AltaOperacion = () => {
     navigate("/solicitudes", { state: { nuevaSolicitud } });
   };
 
-  // Handlers para socios eliminados por refactorización
+  // Handlers para socios
+  const iniciarCargaSocio = () => {
+    setValue("tempSocioCuit", "");
+    setValue("tempSocioNombre", "");
+    setValue("tempSocioParticipacion", "");
+    setValue("tempSocioData", null);
+    setValue("faseSocio", "ingresar_cuit");
+    setErrorSocioBackend("");
+  };
+
+  const validarCuitSocio = async () => {
+    setIsLoadingAFIP(true);
+    setErrorSocioBackend("");
+    try {
+      const dataAfip = await afipService.obtenerConstanciaInscripcion(tempSocioCuit);
+      
+      if (dataAfip && dataAfip.datosgenerales) {
+        const dg = dataAfip.datosgenerales;
+        const nombreSocio = dg.razonsocial || `${dg.nombre} ${dg.apellido}`.trim() || "Socio validado";
+        setValue("tempSocioNombre", nombreSocio);
+        setValue("tempSocioData", dataAfip);
+        setValue("faseSocio", "completar_datos");
+      } else {
+        setErrorSocioBackend("El CUIT ingresado no fue encontrado en los padrones de AFIP.");
+      }
+    } catch (error) {
+      console.error("Error al validar CUIT en AFIP", error);
+      setErrorSocioBackend("No se pudo validar el CUIT en este momento. Por favor, reintentá más tarde o verificá tu conexión.");
+    } finally {
+      setIsLoadingAFIP(false);
+    }
+  };
+
+  const guardarSocio = () => {
+    const nuevoSocio = {
+      cuit: tempSocioCuit,
+      nombre: tempSocioNombre,
+      participacion: tempSocioParticipacion,
+      dataOriginal: tempSocioData,
+    };
+    
+    const indexSocioEditado = socios.findIndex(s => s.cuit === tempSocioCuit);
+    if (indexSocioEditado >= 0) {
+      update(indexSocioEditado, nuevoSocio);
+    } else {
+      append(nuevoSocio);
+    }
+    
+    setValue("faseSocio", "lista");
+  };
+
+  const eliminarSocio = (index) => {
+    remove(index);
+    if (socios.length === 1) { // 1 before removal means 0 after
+      setValue("faseSocio", "ingresar_cuit");
+    }
+  };
+
+  const editarSocio = (index) => {
+    const socio = socios[index];
+    setValue("tempSocioCuit", socio.cuit);
+    setValue("tempSocioNombre", socio.nombre);
+    setValue("tempSocioParticipacion", socio.participacion);
+    setValue("tempSocioData", socio.dataOriginal);
+    setValue("faseSocio", "completar_datos");
+  };
 
   const toggleDoc = (seccion) => {
     setValue("docExpandido", docExpandido === seccion ? "" : seccion);
@@ -282,6 +353,30 @@ export const AltaOperacion = () => {
   // ----- RENDERIZADO DINÁMICO DE PASOS -----
   const renderPasoDinamico = () => {
     if (pasoActual === 1) {
+      return (
+        <Paso4Socios
+          faseSocio={faseSocio}
+          setFaseSocio={(val) => setValue("faseSocio", val)}
+          tempSocioCuit={tempSocioCuit}
+          setTempSocioCuit={(val) => setValue("tempSocioCuit", val)}
+          tempSocioNombre={tempSocioNombre}
+          tempSocioParticipacion={tempSocioParticipacion}
+          setTempSocioParticipacion={(val) => setValue("tempSocioParticipacion", val)}
+          socios={socios}
+          iniciarCargaSocio={iniciarCargaSocio}
+          validarCuitSocio={validarCuitSocio}
+          guardarSocio={guardarSocio}
+          eliminarSocio={eliminarSocio}
+          editarSocio={editarSocio}
+          continuarAlProximoPaso={() => setPasoActual(2)}
+          isLoading={isLoadingAFIP}
+          errorBackend={errorSocioBackend}
+          setErrorBackend={setErrorSocioBackend}
+        />
+      );
+    }
+
+    if (pasoActual === 2) {
       const IS_DLR = String(moneda) === "2";
 
       let opcionesProducto = [];
@@ -365,7 +460,7 @@ export const AltaOperacion = () => {
               }
             }
           }}
-          onContinuar={() => setPasoActual(2)}
+          onContinuar={() => setPasoActual(3)}
           onCancelar={() => setMostrarResultados(false)}
           opcionesMoneda={opcionesMoneda}
           opcionesProducto={opcionesProducto}
@@ -379,29 +474,30 @@ export const AltaOperacion = () => {
       );
     }
 
-    if (pasoActual === 2) {
+    if (pasoActual === 3) {
       return (
         <Paso5Documentacion
           docExpandido={docExpandido}
           toggleDoc={toggleDoc}
           socios={socios}
-          onVolverASocios={() => setPasoActual(1)}
+          onVolverASocios={() => setPasoActual(2)}
           avanzarPaso6={async () => {
             const ok = await trigger("emailFacturacion");
             const reps = getValues("representantes");
             if (ok && reps?.length > 0) {
-              if (tipoProducto === "cheque") setPasoActual(3);
+              if (tipoProducto === "cheque") setPasoActual(4);
               else handleSubmit(onSubmitFinalPrestamos)();
             }
           }}
           onGuardarSocioDb={handleGuardarSocioDb}
           isSubmitting={enviandoSolicitud}
+          socios={socios}
         />
       );
     }
 
     if (tipoProducto === "cheque") {
-      if (pasoActual === 3) {
+      if (pasoActual === 4) {
         return (
           <Paso6Bolsa
             avanzarConBolsa={async () => {
@@ -417,10 +513,10 @@ export const AltaOperacion = () => {
           />
         );
       }
-      if (pasoActual === 4)
+      if (pasoActual === 5)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     } else if (tipoProducto === "prestamo" || tipoProducto === "pagare") {
-      if (pasoActual === 3)
+      if (pasoActual === 4)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     }
 
@@ -428,24 +524,24 @@ export const AltaOperacion = () => {
   };
 
   const renderBarraProgreso = () => {
-    if (pasoActual === 4 && tipoProducto === "cheque") return null;
-    if (pasoActual === 3 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) return null;
+    if (pasoActual === 5 && tipoProducto === "cheque") return null;
+    if (pasoActual === 4 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) return null;
 
-    let hitos = ["SIMULADOR", "DOCUMENTOS"];
+    let hitos = ["SOCIOS", "MONTOS", "DOCUMENTOS"];
     let hitoActual = pasoActual - 1;
 
     if (tipoProducto === "cheque") {
-      hitos = ["SIMULADOR", "DOCUMENTOS", "BOLSA"];
+      hitos = ["SOCIOS", "MONTOS", "DOCUMENTOS", "BOLSA"];
       hitoActual = pasoActual - 1;
     }
 
-    return <BarraPills hitos={hitos} hitoActual={hitoActual} />;
+    return <BarraPills hitos={hitos} hitoActual={pasoActual} />;
   };
 
   const mostrarBotonVolver =
     pasoActual > 1 &&
-    !(pasoActual === 4 && tipoProducto === "cheque") &&
-    !(pasoActual === 3 && (tipoProducto === "prestamo" || tipoProducto === "pagare"));
+    !(pasoActual === 5 && tipoProducto === "cheque") &&
+    !(pasoActual === 4 && (tipoProducto === "prestamo" || tipoProducto === "pagare"));
 
   return (
     <div className={styles.pageContainer}>
@@ -476,7 +572,17 @@ export const AltaOperacion = () => {
                     <h1 className={styles.tituloBienvenida}>Nueva Operación</h1>
                     <div className={styles.titleAccent}></div>
                     <p className={styles.subtituloBienvenida}>
-                      Simulá las condiciones de tu operación.
+                      Declaración de socios de la empresa.
+                    </p>
+                  </div>
+                )}
+
+                {pasoActual === 2 && (
+                  <div className={styles.bienvenidaHeader}>
+                    <h1 className={styles.tituloBienvenida}>Nueva Operación</h1>
+                    <div className={styles.titleAccent}></div>
+                    <p className={styles.subtituloBienvenida}>
+                      Ingresá los montos y condiciones de tu operación.
                     </p>
                   </div>
                 )}
@@ -496,8 +602,8 @@ export const AltaOperacion = () => {
               </div>
             </div>
 
-            {!(pasoActual === 4 && tipoProducto === "cheque") &&
-              !(pasoActual === 3 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) && (
+            {!(pasoActual === 5 && tipoProducto === "cheque") &&
+              !(pasoActual === 4 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) && (
                 <>
                   <PanelDudas
                     contexto="alta_operacion"
