@@ -2,17 +2,13 @@ import { z } from "zod";
 
 export const AltaOperacionSchema = z
   .object({
-    cuit: z
-      .string()
-      .min(11, "El CUIT debe tener al menos 11 caracteres")
-      .max(11, "El CUIT no puede exceder 11 caracteres")
-      .regex(/^\d+$/, "El CUIT solo debe contener números"),
+    cuit: z.string().optional(),
     razonSocial: z.string().optional(),
     esSocioExistente: z.boolean().optional(),
     ubicacionConfirmada: z.boolean().optional(),
-    direccion: z.string().min(1, "La dirección es obligatoria"),
-    localidad: z.string().min(1, "La localidad es obligatoria"),
-    celular: z.string().min(10, "El celular debe ser válido"),
+    direccion: z.string().optional(),
+    localidad: z.string().optional(),
+    celular: z.string().optional(),
     smsVerificado: z.boolean().optional(),
     moneda: z.string({
       required_error: "Debes seleccionar una moneda",
@@ -43,11 +39,13 @@ export const AltaOperacionSchema = z
           nombre: z.string().min(1, "Nombre obligatorio"),
           participacion: z.number().or(z.string()).transform(Number),
           dataOriginal: z.any().optional(),
-          email: z.string().email("Email inválido").min(1, "El email es obligatorio"),
-          celular: z.string().min(10, "El celular debe ser válido"),
-          direccion: z.string().min(1, "La dirección es obligatoria"),
-          provincia: z.string().min(1, "La provincia es obligatoria"),
-          localidad: z.string().min(1, "La localidad es obligatoria"),
+          tercerorelacionadoid: z.number().optional().nullable(),
+          preloadedFromDb: z.boolean().optional(),
+          email: z.string().email("Email inválido").optional().or(z.literal("")),
+          celular: z.string().optional().or(z.literal("")),
+          direccion: z.string().optional().or(z.literal("")),
+          provincia: z.string().optional().or(z.literal("")),
+          localidad: z.string().optional().or(z.literal("")),
         }),
       )
       .optional(),

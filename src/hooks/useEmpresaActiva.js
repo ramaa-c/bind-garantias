@@ -30,6 +30,8 @@ export const useEmpresaActiva = () => {
   const cuitActivo = socioWeb?.cuit || socioWeb?.Cuit || null;
   const nombreEmpresa =
     socioWeb?.denominacion || socioWeb?.Denominacion || null;
+  const direccion = socioWeb?.calle || socioWeb?.Calle || "";
+  const telefono = socioWeb?.telefono || socioWeb?.Telefono || "";
 
   const isLoading = 
     isLoadingUser || 
@@ -40,6 +42,8 @@ export const useEmpresaActiva = () => {
     cuitActivo,
     socioIdActivo: socioId,
     nombreEmpresa,
+    direccion,
+    telefono,
     isLoading,
   };
 };

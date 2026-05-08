@@ -88,6 +88,7 @@ export default function Solicitudes() {
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+  const [modalPendienteOpen, setModalPendienteOpen] = useState(false);
 
   const { cuitActivo, nombreEmpresa } = useEmpresaActiva();
   const cuitFinal = cuitActivo || "33711316839"; // Fallback demo
@@ -95,6 +96,16 @@ export default function Solicitudes() {
   const { data: solicitudesReal, isLoading: cargandoSolicitudes } = useObtenerSolicitudesEnProceso(cuitFinal);
 
   const nombreEmpresaActiva = nombreEmpresa || "Empresa Demo S.A.";
+
+  // Verificar si hay solicitud en proceso para el CUIT activo
+  const tieneSolicitudPendiente = useMemo(() => {
+    if (!solicitudesReal || !Array.isArray(solicitudesReal)) return false;
+    const cuitLimpio = String(cuitActivo || "").replace(/\D/g, "");
+    return solicitudesReal.some(s => {
+      const cuitSol = String(s.cuit || "").replace(/\D/g, "");
+      return (s.estadosolicitud === 1) && (cuitLimpio === cuitSol || !cuitLimpio);
+    });
+  }, [solicitudesReal, cuitActivo]);
 
   const listaSolicitudes = useMemo(() => {
     const reales = (solicitudesReal || []).map(s => ({
@@ -118,6 +129,12 @@ export default function Solicitudes() {
   }, [location.state]);
 
   const handleNuevaOperacion = (ruta, draftKey) => {
+    // Bloquear si ya hay una solicitud en proceso
+    if (tieneSolicitudPendiente) {
+      setModalPendienteOpen(true);
+      return;
+    }
+
     const dataString = sessionStorage.getItem(`${draftKey}_data`);
     const pasoString = sessionStorage.getItem(`${draftKey}_paso`);
     const currentPaso = parseInt(pasoString, 10) || 1;
@@ -253,6 +270,57 @@ export default function Solicitudes() {
         solicitud={solicitudSeleccionada}
         nombreEmpresa={nombreEmpresaActiva}
       />
+
+      {/* Modal: solicitud en proceso */}
+      {modalPendienteOpen && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 9999,
+            background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "1rem",
+          }}
+          onClick={() => setModalPendienteOpen(false)}
+        >
+          <div
+            style={{
+              background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "1rem", padding: "2.5rem 2rem",
+              maxWidth: "26rem", width: "100%",
+              display: "flex", flexDirection: "column", alignItems: "center",
+              gap: "1.25rem", textAlign: "center",
+              boxShadow: "0 24px 48px rgba(0,0,0,0.5)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              width: "3.5rem", height: "3.5rem", borderRadius: "50%",
+              background: "rgba(255, 193, 7, 0.1)", border: "2px solid rgba(255, 193, 7, 0.25)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: "1.5rem",
+            }}>⏳</div>
+            <h3 style={{ color: "#fff", margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>
+              Solicitud en proceso
+            </h3>
+            <p style={{ color: "#888", margin: 0, fontSize: "0.875rem", lineHeight: 1.6 }}>
+              Ya tenés una solicitud de línea en análisis. Debés esperar a que se apruebe o rechace antes de crear una nueva.
+            </p>
+            <button
+              onClick={() => setModalPendienteOpen(false)}
+              style={{
+                background: "var(--yellow, #f4f500)", color: "#000",
+                border: "none", borderRadius: "0.625rem", padding: "0.75rem 2.5rem",
+                fontWeight: 700, fontSize: "0.875rem", cursor: "pointer",
+                marginTop: "0.25rem", transition: "filter 0.15s",
+              }}
+              onMouseOver={(e) => e.target.style.filter = "brightness(1.1)"}
+              onMouseOut={(e) => e.target.style.filter = "none"}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
