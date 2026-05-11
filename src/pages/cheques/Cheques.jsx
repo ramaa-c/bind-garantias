@@ -339,45 +339,44 @@ export default function Cheques() {
     handleSubmit(onSubmitFinal)();
   };
 
+  const hitoVisual = (() => {
+    if (pasoActual <= 2) return 1;
+    if (pasoActual === 3) return 2;
+    if (pasoActual === 4) return 3;
+    if (pasoActual === 5) return 4;
+    return 5;
+  })();
+
   return (
     <div className={styles.chequesPage}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              {pasoActual < 7 &&
-                (() => {
-                  let hitoVisual = 1;
-                  if (pasoActual === 3) hitoVisual = 2;
-                  if (pasoActual === 4) hitoVisual = 3;
-                  if (pasoActual === 5) hitoVisual = 4;
-                  if (pasoActual === 6) hitoVisual = 5;
-
-                  return (
-                    <BarraProgreso
-                      hitos={[
-                        "Empresa",
-                        "Operación",
-                        "Socios",
-                        "Documentos",
-                        "Confirmación",
-                      ]}
-                      hitoActual={hitoVisual}
-                      onVolver={
-                        pasoActual > 1
-                          ? () => {
-                              handleVolver();
-                              if (pasoActual === 3) setMostrarResultados(false);
-                            }
-                          : null
-                      }
-                      onVolverInicio={
-                        pasoActual === 1 ? () => navigate("/inicio") : null
-                      }
-                      onReiniciar={handleReiniciarAlta}
-                    />
-                  );
-                })()}
+              {pasoActual < 7 && (
+                <BarraProgreso
+                  hitos={[
+                    "Empresa",
+                    "Operación",
+                    "Socios",
+                    "Documentos",
+                    "Confirmación",
+                  ]}
+                  hitoActual={hitoVisual}
+                  onVolver={
+                    pasoActual > 1
+                      ? () => {
+                          handleVolver();
+                          if (pasoActual === 3) setMostrarResultados(false);
+                        }
+                      : null
+                  }
+                  onVolverInicio={
+                    pasoActual === 1 ? () => navigate("/inicio") : null
+                  }
+                  onReiniciar={handleReiniciarAlta}
+                />
+              )}
 
               <div className={styles.seccionFormulario}>
                 {pasoActual === 1 && (
