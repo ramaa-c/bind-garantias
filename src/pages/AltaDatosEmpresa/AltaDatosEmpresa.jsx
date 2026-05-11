@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -9,9 +9,8 @@ import { BarraProgreso, BotonVolver, Button, Modal } from "../../components/ui";
 import {
   Paso1Cuit,
   Paso2Datos,
-  PanelDudas,
-  BotonAyudaFlotante,
 } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../services/sociosService";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../hooks/useUsuario";
@@ -28,6 +27,14 @@ export const AltaDatosEmpresa = () => {
   const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const [socioExistenteModal, setSocioExistenteModal] = useState({
     isOpen: false,
@@ -258,15 +265,16 @@ export const AltaDatosEmpresa = () => {
                 </FormProvider>
               </div>
             </div>
-
-            <PanelDudas contexto="alta_operacion" pasoActual={pasoActual} />
-            <BotonAyudaFlotante
-              contexto="alta_operacion"
-              pasoActual={pasoActual}
-            />
           </div>
         </div>
       </div>
+
+      <HelpDrawer
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        contexto="alta_datos_empresa"
+        pasoActual={pasoActual}
+      />
 
       <Modal
         isOpen={socioExistenteModal.isOpen}

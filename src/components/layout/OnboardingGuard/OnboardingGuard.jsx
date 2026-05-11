@@ -25,13 +25,8 @@ export const OnboardingGuard = ({ children }) => {
   const {
     data: socioUsuarios,
     isPending: isPendingSocios,
-    isFetching: isFetchingSocios,
     isError,
   } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
-
-  if (isTerminosPage || isAltaDatosPage) {
-    return <>{children}</>;
-  }
 
   if (isLoadingUser || (usuarioWebId && isPendingSocios)) {
     return (
@@ -52,8 +47,14 @@ export const OnboardingGuard = ({ children }) => {
   const tieneEmpresas =
     Array.isArray(socioUsuarios) && socioUsuarios.length > 0;
 
-  if (!usuarioWebId || isError || !tieneEmpresas) {
-    return <Navigate to="/terminos" replace />;
+  if (tieneEmpresas) {
+    if (isTerminosPage || isAltaDatosPage) {
+      return <Navigate to="/inicio" replace />;
+    }
+  } else {
+    if (!isTerminosPage && !isAltaDatosPage) {
+      return <Navigate to="/terminos" replace />;
+    }
   }
 
   return <>{children}</>;

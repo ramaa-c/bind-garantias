@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { FiRotateCcw } from "react-icons/fi";
 import { BarraProgreso, BotonVolver } from "../../components/ui";
-import { PanelDudas, BotonAyudaFlotante, ModalConfirmacionBorrador } from "../../components/features";
+import { ModalConfirmacionBorrador } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import {
   Paso1CargaMasiva,
   Paso2RevisionCheques,
@@ -19,6 +20,14 @@ export default function CargaMasivaCheques() {
   const [pasoActual, setPasoActual] = useState(1);
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const [chequesParseados, setChequesParseados] = useState([]);
   const [chequesAprobados, setChequesAprobados] = useState([]);
@@ -215,12 +224,12 @@ export default function CargaMasivaCheques() {
               </div>
             </div>
 
-            {pasoActual < 4 && (
-              <>
-                <PanelDudas contexto="carga_masiva_cheques" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="carga_masiva_cheques" pasoActual={pasoActual} />
-              </>
-            )}
+            <HelpDrawer
+              isOpen={isHelpOpen}
+              onClose={() => setIsHelpOpen(false)}
+              contexto="carga_masiva_cheques"
+              pasoActual={pasoActual}
+            />
           </div>
         </div>
       </div>

@@ -30,7 +30,8 @@
 
 .contentWrapper {
   width: 100%;
-  max-width: var(--form-container-width);
+  max-width: 45rem;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
 }
@@ -51,10 +52,10 @@
 }
 
 .contenedorPrincipal {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   gap: 1.5rem;
-  align-items: start;
 }
 
 .columnaFormulario {
@@ -135,8 +136,8 @@
 
   .navegacionTop,
   .contenedorPrincipal {
-    grid-template-columns: 1fr 20rem;
-    gap: 3.125rem;
+    width: 100%;
+    gap: 1.5rem;
   }
 
   .seccionFormulario {

@@ -6,7 +6,8 @@ import { FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../../components/ui";
-import { PanelDudas, BotonAyudaFlotante, ModalConfirmacionBorrador } from "../../components/features";
+import { ModalConfirmacionBorrador } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import styles from "./Prestamos.module.css";
 import { PrestamosSeleccionablesPasos } from "./PrestamosSeleccionablesPasos";
 
@@ -61,6 +62,14 @@ export default function Prestamos() {
     tempSocioParticipacion: "",
     docExpandido: "estatuto",
   });
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen(prev => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const updateUiState = (updates) => {
     setUiState((prev) => ({ ...prev, ...updates }));
@@ -298,10 +307,12 @@ export default function Prestamos() {
               </div>
             </div>
             {pasoActual < 7 && (
-              <>
-                <PanelDudas contexto="prestamos_seleccionables" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="prestamos_seleccionables" pasoActual={pasoActual} />
-              </>
+              <HelpDrawer
+                isOpen={isHelpOpen}
+                onClose={() => setIsHelpOpen(false)}
+                contexto="prestamos_seleccionables"
+                pasoActual={pasoActual}
+              />
             )}
           </div>
         </div>

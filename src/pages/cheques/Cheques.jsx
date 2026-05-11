@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import {
   useFormPersist,
@@ -16,8 +16,6 @@ import {
   Paso5Documentacion,
   Paso6Bolsa,
   Paso7Exito,
-  PanelDudas,
-  BotonAyudaFlotante,
   ModalConfirmacionBorrador,
 } from "../../components/features";
 import { sociosService } from "../../services/sociosService";
@@ -27,6 +25,7 @@ import {
   BotonVolver,
   Scroll,
 } from "../../components/ui";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import styles from "./Cheques.module.css";
 import { useCrearSocio, useActualizarSocio } from "../../hooks/useSocios";
 
@@ -47,6 +46,13 @@ export default function Cheques() {
 
   const [docExpandido, setDocExpandido] = useState("estatuto");
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   // --- 1. ACTUALIZAMOS DEFAULT VALUES ---
   const metodosFormulario = useForm({
@@ -337,34 +343,42 @@ export default function Cheques() {
     <div className={styles.chequesPage}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
-          <div className={styles.navegacionTop}>
-            <div className={styles.botonesNavegacion}>
-              {pasoActual > 1 && pasoActual < 7 && (
-                <BotonVolver
-                  onClick={() => {
-                    handleVolver();
-                    if (pasoActual === 3) setMostrarResultados(false);
-                  }}
-                />
-              )}
-              {pasoActual === 1 && (
-                <BotonVolver
-                  onClick={() => navigate("/inicio")}
-                  texto="Volver a la lista"
-                />
-              )}
-              {pasoActual < 7 && (
-                <BotonVolver
-                  onClick={handleReiniciarAlta}
-                  icon={FiRotateCcw}
-                  texto="Reiniciar alta"
-                />
-              )}
-            </div>
-          </div>
-
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
+              {pasoActual < 7 &&
+                (() => {
+                  let hitoVisual = 1;
+                  if (pasoActual === 3) hitoVisual = 2;
+                  if (pasoActual === 4) hitoVisual = 3;
+                  if (pasoActual === 5) hitoVisual = 4;
+                  if (pasoActual === 6) hitoVisual = 5;
+
+                  return (
+                    <BarraProgreso
+                      hitos={[
+                        "Empresa",
+                        "Operación",
+                        "Socios",
+                        "Documentos",
+                        "Confirmación",
+                      ]}
+                      hitoActual={hitoVisual}
+                      onVolver={
+                        pasoActual > 1
+                          ? () => {
+                              handleVolver();
+                              if (pasoActual === 3) setMostrarResultados(false);
+                            }
+                          : null
+                      }
+                      onVolverInicio={
+                        pasoActual === 1 ? () => navigate("/inicio") : null
+                      }
+                      onReiniciar={handleReiniciarAlta}
+                    />
+                  );
+                })()}
+
               <div className={styles.seccionFormulario}>
                 {pasoActual === 1 && (
                   <div className={styles.bienvenidaHeader}>
@@ -373,8 +387,7 @@ export default function Cheques() {
                     </h1>
                     <div className={styles.titleAccent}></div>
                     <p className={styles.subtituloBienvenida}>
-                      Comenzá validando el CUIT de tu empresa para operar en el
-                      mercado de capitales.
+                      Completá el CUIT de tu empresa para comenzar a operar.
                     </p>
                   </div>
                 )}
@@ -475,15 +488,6 @@ export default function Cheques() {
                 </FormProvider>
               </div>
             </div>
-            {pasoActual < 7 && (
-              <>
-                <PanelDudas contexto="cheques" pasoActual={pasoActual} />
-                <BotonAyudaFlotante
-                  contexto="cheques"
-                  pasoActual={pasoActual}
-                />
-              </>
-            )}
           </div>
         </div>
       </div>
@@ -500,6 +504,12 @@ export default function Cheques() {
         codigoSms={codigoSms}
         setCodigoSms={setCodigoSms}
         onConfirmar={confirmarSms}
+      />
+      <HelpDrawer
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        contexto="cheques"
+        pasoActual={pasoActual}
       />
     </div>
   );

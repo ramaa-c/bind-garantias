@@ -6,7 +6,8 @@ import { FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../../components/ui";
-import { PanelDudas, BotonAyudaFlotante, ModalConfirmacionBorrador } from "../../components/features";
+import { ModalConfirmacionBorrador } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import styles from "./Prestamos.module.css";
 import { PrestamosFijosPasos } from "./PrestamosFijosPasos";
 
@@ -51,16 +52,13 @@ export default function PrestamosFijos() {
 
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
 
-  const [uiState, setUiState] = useState({
-    mostrarModal: false,
-    codigoSms: "",
-    mostrarResultados: false,
-    faseSocio: "lista",
-    tempSocioCuit: "",
-    tempSocioNombre: "",
-    tempSocioParticipacion: "",
-    docExpandido: "estatuto",
-  });
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen(prev => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const updateUiState = (updates) => {
     setUiState((prev) => ({ ...prev, ...updates }));
@@ -280,10 +278,12 @@ export default function PrestamosFijos() {
               </div>
             </div>
             {pasoActual < 7 && (
-              <>
-                <PanelDudas contexto="prestamos_fijos" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="prestamos_fijos" pasoActual={pasoActual} />
-              </>
+              <HelpDrawer
+                isOpen={isHelpOpen}
+                onClose={() => setIsHelpOpen(false)}
+                contexto="prestamos_fijos"
+                pasoActual={pasoActual}
+              />
             )}
           </div>
         </div>

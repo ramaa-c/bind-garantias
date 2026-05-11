@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useFormPersist, getPersistedFormData } from "../../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,13 +8,12 @@ import { FiRotateCcw } from "react-icons/fi";
 import {
   Paso3Simulador,
   ModalConfirmacionBorrador,
-  PanelDudas,
-  BotonAyudaFlotante,
   PasoEmisor,
   PasoBolsa,
   PasoDetalles,
   PasoExito,
 } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import { BarraProgreso, BotonVolver } from "../../components/ui";
 import styles from "./SolicitudCheques.module.css";
 
@@ -25,6 +24,14 @@ export default function SolicitudCheques() {
 
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const metodosFormulario = useForm({
     resolver: zodResolver(solicitudChequesSchema),
@@ -233,12 +240,12 @@ export default function SolicitudCheques() {
               </div>
             </div>
 
-            {pasoActual < 5 && (
-              <>
-                <PanelDudas contexto="solicitud_cheques" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="solicitud_cheques" pasoActual={pasoActual} />
-              </>
-            )}
+            <HelpDrawer
+              isOpen={isHelpOpen}
+              onClose={() => setIsHelpOpen(false)}
+              contexto="solicitud_cheques"
+              pasoActual={pasoActual}
+            />
           </div>
         </div>
       </div>

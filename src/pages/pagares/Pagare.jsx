@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useFormPersist, getPersistedFormData } from "../../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,7 +7,8 @@ import { useNavigate } from "react-router-dom";
 // TODO: Asegúrate de tener o crear el esquema para pagaré
 import { prestamosSchema } from "../../schemas/prestamosSchema"; 
 import { ModalSms, BarraProgreso, BotonVolver } from "../../components/ui";
-import { PanelDudas, BotonAyudaFlotante, ModalConfirmacionBorrador } from "../../components/features";
+import { ModalConfirmacionBorrador } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import styles from "../prestamos/Prestamos.module.css"; // Puedes reutilizar el CSS
 import { PagarePasos } from "./PagarePasos"; // Componente de pasos para Pagaré
 
@@ -62,6 +63,14 @@ export default function Pagare() {
     tempSocioParticipacion: "",
     docExpandido: "estatuto",
   });
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const updateUiState = (updates) => {
     setUiState((prev) => ({ ...prev, ...updates }));
@@ -243,12 +252,12 @@ export default function Pagare() {
                 </FormProvider>
               </div>
             </div>
-            {pasoActual < 7 && (
-              <>
-                <PanelDudas contexto="pagare" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="pagare" pasoActual={pasoActual} />
-              </>
-            )}
+            <HelpDrawer
+              isOpen={isHelpOpen}
+              onClose={() => setIsHelpOpen(false)}
+              contexto="pagare"
+              pasoActual={pasoActual}
+            />
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import {
   FiFileText,
   FiFolder,
   FiTrendingUp,
+  FiHelpCircle,
 } from "react-icons/fi";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
@@ -60,6 +61,9 @@ const Navbar = ({
     setIsDropdownOpen(false);
     navigate("/");
   };
+  const handleHelpClick = () => {
+    document.dispatchEvent(new CustomEvent("bindHelp:toggle"));
+  };
 
   return (
     <header className={styles.header}>
@@ -89,6 +93,19 @@ const Navbar = ({
           <img src={logoBind} alt="Logo BIND" className={styles.logo} />
         </div>
       </div>
+
+      <div className={styles.rightSection}>
+        {emailUsuario && (
+          <button
+            type="button"
+            className={styles.helpBtn}
+            onClick={handleHelpClick}
+            aria-label="Ayuda y dudas frecuentes"
+          >
+            <FiHelpCircle size={18} />
+            <span className={styles.helpBtnLabel}>Ayuda</span>
+          </button>
+        )}
 
       {emailUsuario ? (
         <div className={styles.userSection} ref={dropdownRef}>
@@ -168,6 +185,7 @@ const Navbar = ({
           </span>
         </div>
       )}
+      </div>
 
       <TasasModal
         isOpen={isTasasModalOpen}

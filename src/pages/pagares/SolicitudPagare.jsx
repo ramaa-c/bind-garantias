@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,10 +11,9 @@ import {
   Paso2AgentePagare,
   Paso3Epyme,
   Paso4ExitoPagare,
-  PanelDudas,
-  BotonAyudaFlotante,
   ModalConfirmacionBorrador,
 } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import styles from "./SolicitudPagare.module.css";
 
 const STORAGE_KEY = "draft_pagare";
@@ -24,6 +23,14 @@ export default function PagareUSD() {
 
   const [simulacionLista, setSimulacionLista] = useState(false);
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const metodosFormulario = useForm({
     resolver: zodResolver(pagareSchema),
@@ -162,12 +169,12 @@ export default function PagareUSD() {
               </div>
             </div>
 
-            {pasoActual < 4 && (
-              <>
-                <PanelDudas contexto="pagare" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="pagare" pasoActual={pasoActual} />
-              </>
-            )}
+            <HelpDrawer
+              isOpen={isHelpOpen}
+              onClose={() => setIsHelpOpen(false)}
+              contexto="pagare"
+              pasoActual={pasoActual}
+            />
           </div>
         </div>
       </main>

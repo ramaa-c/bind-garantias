@@ -16,14 +16,13 @@ import {
 import { BarraPills, BotonVolver } from "../../components/ui";
 import {
   Paso3Simulador,
-  PanelDudas,
-  BotonAyudaFlotante,
   Paso4Socios,
   Paso5Documentacion,
   Paso6Bolsa,
   Paso7Exito,
   ModalConfirmacionBorrador,
 } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import { Alert } from "../../components/ui";
 import styles from "../cheques/SolicitudCheques.module.css";
 import { sociosService } from "../../services/sociosService";
@@ -42,6 +41,13 @@ export const AltaOperacion = () => {
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
   const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
   const [errorSocioBackend, setErrorSocioBackend] = useState("");
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen(prev => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const { cuitActivo, socioIdActivo } = useEmpresaActiva();
   const sociosPrecargadosRef = useRef(false);
@@ -770,19 +776,6 @@ export const AltaOperacion = () => {
               </div>
             </div>
 
-            {!(pasoActual === 5 && tipoProducto === "cheque") &&
-              !(pasoActual === 4 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) && (
-                <>
-                  <PanelDudas
-                    contexto="alta_operacion"
-                    pasoActual={pasoActual}
-                  />
-                  <BotonAyudaFlotante
-                    contexto="alta_operacion"
-                    pasoActual={pasoActual}
-                  />
-                </>
-              )}
           </div>
         </div>
       </div>
@@ -791,6 +784,12 @@ export const AltaOperacion = () => {
         onClose={continuarBorrador}
         onConfirm={confirmarReinicioOperacion}
         onContinueBorrador={continuarBorrador}
+      />
+      <HelpDrawer
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        contexto="alta_operacion"
+        pasoActual={pasoActual}
       />
     </div>
   );
