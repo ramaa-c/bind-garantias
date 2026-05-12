@@ -43,6 +43,7 @@ export default function Cheques() {
   const [tempSocioNombre, setTempSocioNombre] = useState("");
   const [tempSocioParticipacion, setTempSocioParticipacion] = useState("");
   const [tempSocioDataOriginal, setTempSocioDataOriginal] = useState(null);
+  const [errorBackend, setErrorBackend] = useState("");
 
   const [docExpandido, setDocExpandido] = useState("estatuto");
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
@@ -162,31 +163,82 @@ export default function Cheques() {
 
   const validarCuitSocio = async () => {
     try {
-      const response = await sociosService.obtenerSocios({
+      const resp = await sociosService.obtenerSocios({
         Cuit: tempSocioCuit,
         page: 1,
-        page_size: 10,
+        page_size: 1,
       });
 
-      const resultados = Array.isArray(response)
-        ? response
-        : response?.items || response?.data || [];
+      const items = Array.isArray(resp)
+        ? resp
+        : resp?.items || resp?.data || [];
 
-      if (resultados.length > 0) {
-        setTempSocioNombre(resultados[0].denominacion);
-        setTempSocioDataOriginal(resultados[0]);
+      if (items.length > 0) {
+        const socioDb = items[0];
+        setTempSocioNombre(socioDb.denominacion || "Socio Encontrado");
+        setTempSocioDataOriginal(socioDb);
+        setFaseSocio("completar_datos");
       } else {
-        setTempSocioNombre("SEOANE SUAREZ MARINA (Mock AFIP)");
-        setTempSocioDataOriginal(null);
+        setErrorBackend("Socio no encontrado en la base de datos.");
       }
-    } catch (error) {
-      console.error("Error al buscar el socio:", error);
-      setTempSocioNombre("SEOANE SUAREZ MARINA (Error Back)");
-      setTempSocioDataOriginal(null);
+    } catch (err) {
+      setErrorBackend("Hubo un error al validar el socio.");
     }
-
-    setFaseSocio("completar_datos");
   };
+
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return {
+          t: "Solicitud de Línea de Cheques",
+          s: "Completá el CUIT de tu empresa para comenzar a operar.",
+        };
+      case 2:
+        return {
+          t: "Información de la Solicitud",
+          s: "Completá los datos requeridos para la validación final.",
+        };
+      case 3:
+        return {
+          t: "Configuración de la Operación",
+          s: "Seleccioná el tipo de financiación que necesitas.",
+        };
+      case 4:
+        if (faseSocio === "ingresar_cuit")
+          return {
+            t: "Añadir nuevo socio",
+            s: "Ingresá el número de CUIT/CUIL para validar su identidad.",
+          };
+        if (faseSocio === "completar_datos")
+          return {
+            t: "Completar datos del socio",
+            s: "Definí el porcentaje de participación del socio validado.",
+          };
+        return {
+          t: "Declaración de Socios",
+          s: "La suma de las participaciones debe alcanzar el 100% exacto.",
+        };
+      case 5:
+        return {
+          t: "Documentación y Representantes",
+          s: "Completá la información requerida para estructurar la línea.",
+        };
+      case 6:
+        return {
+          t: "Sociedad de Bolsa",
+          s: "¿Operás con alguna de estas sociedades de bolsa?",
+        };
+      case 7:
+        return {
+          t: "Solicitud Completada",
+          s: "Tu trámite ha sido procesado exitosamente.",
+        };
+      default:
+        return { t: "", s: "" };
+    }
+  };
+
+  const { t: tituloCabecera, s: subtituloCabecera } = obtenerTextosCabecera();
 
   const guardarSocio = () => {
     const participacionNueva = Number(tempSocioParticipacion);
@@ -236,83 +288,38 @@ export default function Cheques() {
     setDocExpandido((prev) => (prev === seccion ? "" : seccion));
   };
 
-  // --- Mutaciones de Socios ---
   const { mutateAsync: crearSocio } = useCrearSocio();
   const { mutateAsync: actualizarSocio } = useActualizarSocio();
 
   const handleGuardarSocioDb = async (socioIndex, datosFormulario) => {
     const socioTarget = socios[socioIndex];
+    if (!socioTarget || !socioTarget.dataOriginal) return false;
+
+    const payload = {
+      ...socioTarget.dataOriginal,
+      email: datosFormulario.email || "",
+      telefono: datosFormulario.celular || "",
+      calle: datosFormulario.direccion || "",
+    };
 
     try {
-      if (socioTarget.dataOriginal) {
-        const payloadPut = {
-          ...socioTarget.dataOriginal,
-          email: datosFormulario.email || "",
-          telefono: datosFormulario.celular || "",
-          calle: datosFormulario.direccion || "",
-        };
-
-        await actualizarSocio(payloadPut);
-
-        const nuevosSocios = [...socios];
-        nuevosSocios[socioIndex].dataOriginal = payloadPut;
-        setSocios(nuevosSocios);
+      let resultado;
+      if (payload.socioid) {
+        resultado = await actualizarSocio(payload);
       } else {
-        const payloadPost = {
-          socioid: 0,
-          entidadid: 0,
-          tiposocioid: 0,
-          cuit: socioTarget.cuit || "",
-          denominacion: socioTarget.nombre || "",
-          calle: datosFormulario.direccion || "",
-          numero: 0,
-          piso: "",
-          departamento: "",
-          ciudadid: 0,
-          telefono: datosFormulario.celular || "",
-          fax: "",
-          email: datosFormulario.email || "",
-          tipopersonaid: 0,
-          tipocarteraid: 0,
-          sectorcontableid: 0,
-          tipoactividadbcraid: 0,
-          tipoactividadsepymeid: 0,
-          marcavinculacion: "0",
-          situacionbcraid: 0,
-          fechabaja: null,
-          motivobajaid: 0,
-          socioestadoid: 0,
-          codpos: "",
-          tamanioempresaid: 0,
-          fechacierreejercicio: null,
-          legajo: 0,
-          tiporegimenivaid: 0,
-          actividadespecifica: "",
-          partido: "",
-          telefono2: "",
-          telefono3: "",
-          visitado: "",
-          scoringcomercial: "",
-          partidoid: 0,
-          fechainicioactividades: new Date().toISOString(),
-          tipoactividadglobalid: 0,
-          tipocanalcomercializacionid: 0,
-          emailfacturacion: "",
-          minapoderadosrequeridos: 0,
-          tipocondicionfianzaid: 0,
-          jsoncondicionfianza: "",
-        };
-
-        const nuevoSocioDb = await crearSocio(payloadPost);
-
-        const nuevosSocios = [...socios];
-        nuevosSocios[socioIndex].dataOriginal = nuevoSocioDb;
-        setSocios(nuevosSocios);
+        resultado = await crearSocio(payload);
       }
-      return true;
+
+      if (resultado && (resultado.socioid || resultado.id)) {
+        const nuevosSocios = [...socios];
+        nuevosSocios[socioIndex].dataOriginal = resultado;
+        setSocios(nuevosSocios);
+        return true;
+      }
+      return false;
     } catch (error) {
-      console.error("Error al guardar el socio:", error);
-      throw error;
+      console.error("Error al persistir socio en DB:", error);
+      return false;
     }
   };
 
@@ -378,19 +385,15 @@ export default function Cheques() {
                 />
               )}
 
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>
-                      Solicitud de Línea de Cheques
-                    </h1>
-                    <div className={styles.titleAccent}></div>
-                    <p className={styles.subtituloBienvenida}>
-                      Completá el CUIT de tu empresa para comenzar a operar.
-                    </p>
-                  </div>
-                )}
+              <div className={styles.bienvenidaHeader}>
+                <h1 className={styles.tituloBienvenida}>{tituloCabecera}</h1>
+                <div className={styles.titleAccent} />
+                <p className={styles.subtituloBienvenida}>
+                  {subtituloCabecera}
+                </p>
+              </div>
 
+              <div className={styles.seccionFormulario}>
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">
@@ -437,6 +440,8 @@ export default function Cheques() {
                           editarSocio={editarSocio}
                           eliminarSocio={eliminarSocio}
                           continuarAlProximoPaso={continuarAlProximoPaso}
+                          errorBackend={errorBackend}
+                          setErrorBackend={setErrorBackend}
                         />
                       )}
 

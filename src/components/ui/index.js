@@ -35,4 +35,3 @@ export * from './SkeletonTable/SkeletonTable'
 export * from './Paginacion/Paginacion';
 export * from './BuscadorListado/BuscadorListado';
 export * from './FormSection/FormSection';
-export * from './BarraPills/BarraPills';

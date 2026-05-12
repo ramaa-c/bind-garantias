@@ -1,4 +1,4 @@
-/* ── BASE MOBILE ─────────────────────────────────────────────────────────────── */
+/* ── BASE MOBILE (Intacto) ─────────────────────────────────────────────────────── */
 
 .stepper {
   display: flex;
@@ -57,7 +57,7 @@
   display: none;
 }
 
-/* ── TRACK ───────────────────────────────────────────────────────────────────── */
+/* ── TRACK & MOBILE INDICATOR ────────────────────────────────────────────────── */
 
 .track {
   flex: 1;
@@ -66,8 +66,6 @@
   align-items: center;
   justify-content: center;
 }
-
-/* ── INDICADOR MOBILE ────────────────────────────────────────────────────────── */
 
 .mobileIndicator {
   display: flex;
@@ -116,7 +114,7 @@
   font-weight: 500;
 }
 
-/* ── STEPPER DESKTOP ─────────────────────────────────────── */
+/* ── STEPPER BASE (Oculto en Mobile) ─────────────────────── */
 
 .steps {
   display: none;
@@ -124,10 +122,7 @@
   margin: 0;
   padding: 0;
   width: 100%;
-  align-items: flex-start;
 }
-
-/* ── NODO DE PASO ────────────────────────────────────────────────────────────── */
 
 .step {
   display: flex;
@@ -204,14 +199,9 @@
   color: rgba(255, 255, 255, 0.18);
 }
 
-/* ── LÍNEA CONECTORA ─────────────────────────────────────────────────────────── */
-
 .connector {
   flex: 1;
-  height: 1.5px;
   background: rgba(255, 255, 255, 0.07);
-  margin-top: 1rem;
-  min-width: 0.5rem;
   transition: background 0.3s ease;
 }
 
@@ -219,58 +209,101 @@
   background: var(--yellow, #f4f500);
 }
 
-/* ── DESKTOP ─────────────────────────────────────────────────────────────────── */
+/* ── TABLET (Horizontal Clásico) ─────────────────────────────────────────────── */
 
-@media (min-width: 48rem) {
+@media (min-width: 48rem) and (max-width: 63.99rem) {
   .stepper {
     margin-bottom: 1.25rem;
   }
-
   .btn {
     padding: 0.375rem 0.75rem;
     font-size: 0.78rem;
   }
-  .btnLabel {
-    display: inline;
-  }
-  .side {
-    min-width: 6.5rem;
-  }
-
-  .mobileIndicator {
-    display: none;
-  }
+  .btnLabel { display: inline; }
+  .side { min-width: 6.5rem; }
+  .mobileIndicator { display: none; }
+  
   .steps {
     display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .step {
+    flex: 1; /* Distribución pareja horizontal */
+  }
+  .connector {
+    height: 1.5px;
+    margin-top: 1rem;
+    min-width: 0.5rem;
   }
 }
 
-@media (min-width: 48rem) and (max-width: 58rem) {
-  .btnLabel {
-    display: none;
+/* ── DESKTOP (NUEVO LAYOUT SIDEBAR VERTICAL) ─────────────────────────────────── */
+
+@media (min-width: 64rem) {
+  .stepper {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2rem;
+    margin-bottom: 0;
+    width: 100%;
   }
+
   .btn {
-    padding: 0.375rem 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
   }
-  .side {
-    min-width: 2.5rem;
-  }
-}
+  .btnLabel { display: inline; }
 
-@media (min-width: 80rem) {
-  .side {
-    min-width: 8rem;
+  /* Alineamos los botones laterales al inicio de su nueva columna */
+  .side, .sideRight {
+    width: 100%;
+    justify-content: flex-start;
+    min-width: auto;
   }
-}
 
-@keyframes pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 1;
+  .mobileIndicator { display: none; }
+
+  /* Cambiamos la dirección de la lista a vertical */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0; /* El espaciado lo dicta el conector vertical */
+    width: 100%;
   }
-  50% {
-    transform: scale(1.35);
-    opacity: 0;
+
+  /* Los items ahora tienen el ícono a la izquierda y el texto a la derecha */
+  .step {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-left: -1rem; /* Offset para centrar los íconos visualmente */
+    border-radius: 1rem;
+    transition: background 0.3s ease;
+  }
+
+  /* Añadimos el fondo sutil al paso actual (como en Jerem UIX) */
+  .active.step {
+    background: rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+  .label {
+    font-size: 0.8125rem;
+    text-align: left;
+    white-space: normal;
+    letter-spacing: 0.04em;
+    padding-top: 0.15rem; /* Ajuste óptico vertical */
+  }
+
+  /* Giramos la línea conectora 90 grados exactos para que enlace los círculos */
+  .connector {
+    width: 2px;
+    min-width: 2px;
+    height: 2.5rem;
+    margin: 0.125rem 0 0.125rem calc(1rem - 1px); /* Matemática para caer en el centro del círculo de 2rem */
+    flex: none; /* Evitamos que flexbox la aplaste */
   }
 }

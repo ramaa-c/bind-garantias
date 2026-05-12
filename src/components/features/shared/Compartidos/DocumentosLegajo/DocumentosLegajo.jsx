@@ -55,20 +55,18 @@ const ESTRUCTURA_LEGAJO = [
   },
 ];
 
-
-
 export function DocumentosLegajo() {
   const { control, setValue } = useFormContext();
   const formValues = useWatch({ control });
   const [activeTab, setActiveTab] = useState(ESTRUCTURA_LEGAJO[0].key);
   const { intentoAvanzar } = formValues;
 
-  const { socioIdActivo, nombreEmpresa, cuitActivo, direccion, telefono } = useEmpresaActiva();
+  const { socioIdActivo, nombreEmpresa, cuitActivo, direccion, telefono } =
+    useEmpresaActiva();
   const [sociosEmpresa, setSociosEmpresa] = useState([]);
   const [loadingSocios, setLoadingSocios] = useState(true);
   const [expandedSocio, setExpandedSocio] = useState(null);
 
-  // Cargar socios cuando se monta
   useEffect(() => {
     if (!socioIdActivo) {
       setLoadingSocios(false);
@@ -77,26 +75,36 @@ export function DocumentosLegajo() {
     const cargar = async () => {
       setLoadingSocios(true);
       try {
-        const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
-        console.log("📥 Relaciones desde API:", relaciones);
+        const relaciones =
+          await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
         const arr = Array.isArray(relaciones) ? relaciones : [];
         const lista = [];
         for (const rel of arr) {
-          const tid = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
+          const tid =
+            rel.terceroid ||
+            rel.tercerorelacionadoid ||
+            rel.TerceroRelacionadoID;
           if (!tid) continue;
           try {
             const t = await tercerosService.obtenerTerceroPorId(tid);
-            if (t) lista.push({
-              id: tid,
-              nombre: t.denominacion || t.Denominacion || "Sin nombre",
-              cuit: t.cuit || t.Cuit || "—",
-              email: t.mail || t.Mail || "",
-              telefono: t.telefono || t.Telefono || "",
-              direccion: t.calle || t.Calle || "",
-              codpos: t.codpos || t.Codpos || "",
-              participacion: rel.porcacciones || rel.participacion || rel.Participacion || 0,
-            });
-          } catch (_) { /* skip */ }
+            if (t)
+              lista.push({
+                id: tid,
+                nombre: t.denominacion || t.Denominacion || "Sin nombre",
+                cuit: t.cuit || t.Cuit || "—",
+                email: t.mail || t.Mail || "",
+                telefono: t.telefono || t.Telefono || "",
+                direccion: t.calle || t.Calle || "",
+                codpos: t.codpos || t.Codpos || "",
+                participacion:
+                  rel.porcacciones ||
+                  rel.participacion ||
+                  rel.Participacion ||
+                  0,
+              });
+          } catch (_) {
+            /* skip */
+          }
         }
         setSociosEmpresa(lista);
       } catch (e) {
@@ -108,7 +116,10 @@ export function DocumentosLegajo() {
     cargar();
   }, [socioIdActivo]);
 
-  const totalParticipacion = sociosEmpresa.reduce((a, s) => a + Number(s.participacion || 0), 0);
+  const totalParticipacion = sociosEmpresa.reduce(
+    (a, s) => a + Number(s.participacion || 0),
+    0,
+  );
 
   const handleFileUpload = (key, file) =>
     setValue(key, file, { shouldValidate: true, shouldDirty: true });
@@ -192,28 +203,36 @@ export function DocumentosLegajo() {
                     <FiBriefcase className={styles.perfilChipIcon} size={13} />
                     <span className={styles.perfilChipLabel}>Razón Social</span>
                   </div>
-                  <span className={styles.perfilChipValue}>{nombreEmpresa || "—"}</span>
+                  <span className={styles.perfilChipValue}>
+                    {nombreEmpresa || "—"}
+                  </span>
                 </div>
                 <div className={styles.perfilChip}>
                   <div className={styles.perfilChipHeader}>
                     <FiCreditCard className={styles.perfilChipIcon} size={13} />
                     <span className={styles.perfilChipLabel}>CUIT</span>
                   </div>
-                  <span className={styles.perfilChipValue}>{cuitActivo || "—"}</span>
+                  <span className={styles.perfilChipValue}>
+                    {cuitActivo || "—"}
+                  </span>
                 </div>
                 <div className={styles.perfilChip}>
                   <div className={styles.perfilChipHeader}>
                     <FiMapPin className={styles.perfilChipIcon} size={13} />
                     <span className={styles.perfilChipLabel}>Domicilio</span>
                   </div>
-                  <span className={styles.perfilChipValue}>{direccion || "—"}</span>
+                  <span className={styles.perfilChipValue}>
+                    {direccion || "—"}
+                  </span>
                 </div>
                 <div className={styles.perfilChip}>
                   <div className={styles.perfilChipHeader}>
                     <FiPhone className={styles.perfilChipIcon} size={13} />
                     <span className={styles.perfilChipLabel}>Teléfono</span>
                   </div>
-                  <span className={styles.perfilChipValue}>{telefono || "—"}</span>
+                  <span className={styles.perfilChipValue}>
+                    {telefono || "—"}
+                  </span>
                 </div>
               </div>
             ) : isSocios ? (
@@ -228,16 +247,20 @@ export function DocumentosLegajo() {
                     <FiUsers size={20} className={styles.emptyIcon} />
                     <p className={styles.emptyTitle}>Sin socios registrados</p>
                     <span className={styles.emptyText}>
-                      Se registran automáticamente al completar tu primera operación.
+                      Se registran automáticamente al completar tu primera
+                      operación.
                     </span>
                   </div>
                 ) : (
                   <>
                     <div className={styles.sociosStats}>
                       <span className={styles.statBadge}>
-                        {sociosEmpresa.length} socio{sociosEmpresa.length > 1 ? "s" : ""}
+                        {sociosEmpresa.length} socio
+                        {sociosEmpresa.length > 1 ? "s" : ""}
                       </span>
-                      <span className={`${styles.statTotal} ${totalParticipacion === 100 ? styles.statTotalOk : ""}`}>
+                      <span
+                        className={`${styles.statTotal} ${totalParticipacion === 100 ? styles.statTotalOk : ""}`}
+                      >
                         Total: {totalParticipacion}%
                       </span>
                     </div>
@@ -247,39 +270,86 @@ export function DocumentosLegajo() {
                           <button
                             type="button"
                             className={styles.socioCardBtn}
-                            onClick={() => setExpandedSocio(expandedSocio === socio.id ? null : socio.id)}
+                            onClick={() =>
+                              setExpandedSocio(
+                                expandedSocio === socio.id ? null : socio.id,
+                              )
+                            }
                           >
-                            <div className={styles.socioAvatar}><FiUser size={16} /></div>
-                            <div className={styles.socioMainInfo}>
-                              <span className={styles.socioName}>{socio.nombre}</span>
-                              <span className={styles.socioCuit}>CUIT: {socio.cuit}</span>
+                            <div className={styles.socioAvatar}>
+                              <FiUser size={16} />
                             </div>
-                            <span className={styles.socioPct}>{socio.participacion}%</span>
-                            <FiChevronDown className={`${styles.socioChevron} ${expandedSocio === socio.id ? styles.socioChevronOpen : ""}`} />
+                            <div className={styles.socioMainInfo}>
+                              <span className={styles.socioName}>
+                                {socio.nombre}
+                              </span>
+                              <span className={styles.socioCuit}>
+                                CUIT: {socio.cuit}
+                              </span>
+                            </div>
+                            <span className={styles.socioPct}>
+                              {socio.participacion}%
+                            </span>
+                            <FiChevronDown
+                              className={`${styles.socioChevron} ${expandedSocio === socio.id ? styles.socioChevronOpen : ""}`}
+                            />
                           </button>
-                          <div className={`${styles.socioExpand} ${expandedSocio === socio.id ? styles.socioExpandOpen : ""}`}>
+                          <div
+                            className={`${styles.socioExpand} ${expandedSocio === socio.id ? styles.socioExpandOpen : ""}`}
+                          >
                             <div className={styles.socioDetailGrid}>
                               {socio.email && (
                                 <div className={styles.socioDetail}>
                                   <FiMail className={styles.socioDetailIcon} />
-                                  <div><span className={styles.socioDetailLabel}>Email</span><span className={styles.socioDetailVal}>{socio.email}</span></div>
+                                  <div>
+                                    <span className={styles.socioDetailLabel}>
+                                      Email
+                                    </span>
+                                    <span className={styles.socioDetailVal}>
+                                      {socio.email}
+                                    </span>
+                                  </div>
                                 </div>
                               )}
                               {socio.telefono && (
                                 <div className={styles.socioDetail}>
                                   <FiPhone className={styles.socioDetailIcon} />
-                                  <div><span className={styles.socioDetailLabel}>Teléfono</span><span className={styles.socioDetailVal}>{socio.telefono}</span></div>
+                                  <div>
+                                    <span className={styles.socioDetailLabel}>
+                                      Teléfono
+                                    </span>
+                                    <span className={styles.socioDetailVal}>
+                                      {socio.telefono}
+                                    </span>
+                                  </div>
                                 </div>
                               )}
                               {socio.direccion && (
                                 <div className={styles.socioDetail}>
-                                  <FiMapPin className={styles.socioDetailIcon} />
-                                  <div><span className={styles.socioDetailLabel}>Dirección</span><span className={styles.socioDetailVal}>{socio.direccion}{socio.codpos ? ` (${socio.codpos})` : ""}</span></div>
+                                  <FiMapPin
+                                    className={styles.socioDetailIcon}
+                                  />
+                                  <div>
+                                    <span className={styles.socioDetailLabel}>
+                                      Dirección
+                                    </span>
+                                    <span className={styles.socioDetailVal}>
+                                      {socio.direccion}
+                                      {socio.codpos ? ` (${socio.codpos})` : ""}
+                                    </span>
+                                  </div>
                                 </div>
                               )}
                               <div className={styles.socioDetail}>
                                 <FiPercent className={styles.socioDetailIcon} />
-                                <div><span className={styles.socioDetailLabel}>Participación</span><span className={styles.socioDetailVal}>{socio.participacion}%</span></div>
+                                <div>
+                                  <span className={styles.socioDetailLabel}>
+                                    Participación
+                                  </span>
+                                  <span className={styles.socioDetailVal}>
+                                    {socio.participacion}%
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>

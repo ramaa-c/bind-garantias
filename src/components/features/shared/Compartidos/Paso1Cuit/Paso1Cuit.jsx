@@ -18,6 +18,15 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     const cuit = getValues("cuit");
     if (!cuit) return;
 
+    // BYPASS MOCKS: Permitir cualquier CUIT
+    setValue("razonSocial", "Empresa Mock S.A.", { shouldValidate: true });
+    setValue("direccion", "Calle Falsa 123", { shouldValidate: true });
+    setValue("localidad", "CABA", { shouldValidate: true });
+    setValue("provincia", "Buenos Aires", { shouldValidate: true });
+    if (onValidar) onValidar();
+    return;
+    // FIN BYPASS
+
     setIsValidatingSocio(true);
     try {
       const respSgr = await sociosService.obtenerSocios({
@@ -81,24 +90,12 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     }
   };
 
+
   const isLoading = isValidatingSocio || isLoadingAfip;
 
   return (
     <div className={styles.pasoContainer}>
-      <div className={styles.inputWrapper}>
-        <BuscadorCuit
-          name="cuit"
-          control={control}
-          label="CUIT de la empresa"
-          onValidar={handleValidar}
-          error={errors.cuit?.message}
-          esValido={isCuitValid}
-          buttonText="VALIDAR CUIT"
-          isLoading={isLoading}
-        />
-      </div>
-
-      <div className={styles.decorativeBanner} style={{ minHeight: "3.75rem" }}>
+            <div className={styles.decorativeBanner} style={{ minHeight: "3.75rem" }}>
         <div className={styles.bannerIcon}>
           <svg
             width="1rem"
@@ -119,6 +116,18 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             Tu información es validada en tiempo real contra AFIP
           </p>
         </div>
+      </div>
+      <div className={styles.inputWrapper}>
+        <BuscadorCuit
+          name="cuit"
+          control={control}
+          label="CUIT de la empresa"
+          onValidar={handleValidar}
+          error={errors.cuit?.message}
+          esValido={isCuitValid}
+          buttonText="VALIDAR CUIT"
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );
