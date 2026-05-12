@@ -18,15 +18,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     const cuit = getValues("cuit");
     if (!cuit) return;
 
-    // BYPASS MOCKS: Permitir cualquier CUIT
-    setValue("razonSocial", "Empresa Mock S.A.", { shouldValidate: true });
-    setValue("direccion", "Calle Falsa 123", { shouldValidate: true });
-    setValue("localidad", "CABA", { shouldValidate: true });
-    setValue("provincia", "Buenos Aires", { shouldValidate: true });
-    if (onValidar) onValidar();
-    return;
-    // FIN BYPASS
-
     setIsValidatingSocio(true);
     try {
       const respSgr = await sociosService.obtenerSocios({

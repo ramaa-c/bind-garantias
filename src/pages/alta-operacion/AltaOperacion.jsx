@@ -283,8 +283,7 @@ export const AltaOperacion = () => {
       };
 
       console.log("Enviando Solicitud Payload:", payload);
-      // BYPASS MOCKS: await solicitudesService.crearSolicitudEnProceso(payload);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await solicitudesService.crearSolicitudEnProceso(payload);
 
       if (cleanData.tipoProducto === "cheque") {
         setPasoActual(5);
@@ -654,8 +653,6 @@ export const AltaOperacion = () => {
             const esValido = await trigger(campos);
 
             if (esValido) {
-              setMostrarResultados(true);
-              /* BYPASS MOCKS
               setEnviandoSolicitud(true);
               try {
                 // 1. Validar que no haya Solicitudes en Proceso
@@ -715,7 +712,6 @@ export const AltaOperacion = () => {
               } finally {
                 setEnviandoSolicitud(false);
               }
-              */
             }
           }}
           onContinuar={() => setPasoActual(3)}
