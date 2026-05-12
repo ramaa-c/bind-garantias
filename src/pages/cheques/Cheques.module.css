@@ -19,14 +19,14 @@
   background-color: var(--carbon-black, #121212);
   background-image:
     radial-gradient(
-      circle at 10% 10%,
-      rgba(245, 244, 0, 0.07) 0%,
-      transparent 50%
+      circle at 12% 15%,
+      rgba(244, 245, 0, 0.06) 0%,
+      transparent 48%
     ),
     radial-gradient(
-      circle at 90% 90%,
-      rgba(76, 101, 230, 0.07) 0%,
-      transparent 50%
+      circle at 88% 85%,
+      rgba(76, 101, 230, 0.06) 0%,
+      transparent 48%
     );
 }
 
@@ -59,12 +59,12 @@
   gap: 0;
 }
 
-/* ── CARD DEL FORMULARIO ─────────────────────────────────────────────────────── */
+/* ── CARD ────────────────────────────────────────────────────────────────────── */
 
 .seccionFormulario {
-  background: rgba(20, 20, 20, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 1.5rem;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.25rem;
   padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -72,10 +72,14 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  box-shadow:
+    inset 3px 0 0 rgba(244, 245, 0, 0.22),
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .seccionFormulario::-webkit-scrollbar {
-  width: 4px;
+  width: 3px;
 }
 .seccionFormulario::-webkit-scrollbar-track {
   background: transparent;
@@ -85,19 +89,19 @@
   border-radius: 2px;
 }
 
-/* ── BIENVENIDA (PASO 1) ─────────────────────────────────────────────────────── */
+/* ── BIENVENIDA ──────────────────────────────────────────────────────────────── */
 
 .bienvenidaHeader {
   text-align: left;
-  padding: 0 0 1.75rem 0;
+  padding: 0 0 2rem 0;
   animation: fadeIn 0.4s ease;
 }
 
 .tituloBienvenida {
   color: var(--white, #fff);
-  font-size: 1.75rem;
+  font-size: 1.625rem;
   font-weight: 700;
-  margin: 0 0 0.5rem;
+  margin: 0;
   letter-spacing: -0.03em;
   line-height: 1.15;
 }
@@ -105,18 +109,17 @@
 .subtituloBienvenida {
   color: #555;
   font-size: 0.9375rem;
-  font-weight: 400;
   margin: 0;
   line-height: 1.55;
 }
 
 .titleAccent {
-  width: 3rem;
-  height: 3px;
+  width: 2.5rem;
+  height: 2px;
   background: var(--yellow, #f4f500);
   border-radius: 999px;
-  margin: 1rem 0;
-  opacity: 0.7;
+  margin: 0.875rem 0 1rem;
+  opacity: 0.65;
 }
 
 /* ── FORM ────────────────────────────────────────────────────────────────────── */
@@ -128,7 +131,7 @@
 }
 
 :global(.animacion-paso) {
-  animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -145,12 +148,12 @@
   .formMainContainer {
     flex: 1;
     overflow: hidden;
-    padding: 1.25rem 2.5rem 1.5rem;
+    padding: 0.75rem 2.5rem 1.25rem;
   }
 
   .contentWrapper {
     height: 100%;
-    max-width: 60rem;
+    max-width: 62rem;
   }
 
   .contenedorPrincipal {
@@ -158,7 +161,7 @@
   }
 
   .seccionFormulario {
-    padding: 2.5rem 3.5rem;
+    padding: 2.5rem 3rem;
   }
 
   .tituloBienvenida {
@@ -168,10 +171,10 @@
 
 @media (min-width: 80rem) {
   .contentWrapper {
-    max-width: 68rem;
+    max-width: 72rem;
   }
   .seccionFormulario {
-    padding: 3rem 4.5rem;
+    padding: 3rem 4rem;
   }
   .tituloBienvenida {
     font-size: 2.25rem;

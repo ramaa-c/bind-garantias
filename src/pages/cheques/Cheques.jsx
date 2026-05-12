@@ -391,28 +391,6 @@ export default function Cheques() {
                   </div>
                 )}
 
-                {pasoActual >= 2 &&
-                  pasoActual < 7 &&
-                  (() => {
-                    let hitoVisual = 1;
-                    if (pasoActual === 3) hitoVisual = 2;
-                    if (pasoActual === 4) hitoVisual = 3;
-                    if (pasoActual === 5) hitoVisual = 4;
-                    if (pasoActual === 6) hitoVisual = 5;
-                    return (
-                      <BarraProgreso
-                        hitos={[
-                          "EMPRESA",
-                          "OPERACIÓN",
-                          "SOCIOS",
-                          "DOCUMENTOS",
-                          "CONFIRMACIÓN",
-                        ]}
-                        hitoActual={hitoVisual}
-                      />
-                    );
-                  })()}
-
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">
