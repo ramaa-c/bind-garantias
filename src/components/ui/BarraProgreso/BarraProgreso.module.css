@@ -1,4 +1,4 @@
-/* ── BASE MOBILE (Intacto) ─────────────────────────────────────────────────────── */
+/* ── BASE MOBILE ─────────────────────────────────────────────────────── */
 
 .stepper {
   display: flex;
@@ -42,15 +42,15 @@
 }
 
 .btn:hover {
-  color: var(--white, #fff);
-  border-color: rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-azul-bind, #4c65e6);
+  border-color: rgba(76, 101, 230, 0.25);
+  background: rgba(76, 101, 230, 0.04);
 }
 
 .btnReset:hover {
-  color: var(--yellow, #f4f500);
-  border-color: rgba(244, 245, 0, 0.25);
-  background: rgba(244, 245, 0, 0.04);
+  color: var(--color-azul-bind, #4c65e6);
+  border-color: rgba(76, 101, 230, 0.25);
+  background: rgba(76, 101, 230, 0.04);
 }
 
 .btnLabel {
@@ -114,7 +114,7 @@
   font-weight: 500;
 }
 
-/* ── STEPPER BASE (Oculto en Mobile) ─────────────────────── */
+/* ── STEPPER BASE ─────────────────────── */
 
 .steps {
   display: none;
@@ -209,7 +209,7 @@
   background: var(--yellow, #f4f500);
 }
 
-/* ── TABLET (Horizontal Clásico) ─────────────────────────────────────────────── */
+/* ── TABLET  ─────────────────────────────────────────────── */
 
 @media (min-width: 48rem) and (max-width: 63.99rem) {
   .stepper {
@@ -219,17 +219,23 @@
     padding: 0.375rem 0.75rem;
     font-size: 0.78rem;
   }
-  .btnLabel { display: inline; }
-  .side { min-width: 6.5rem; }
-  .mobileIndicator { display: none; }
-  
+  .btnLabel {
+    display: inline;
+  }
+  .side {
+    min-width: 6.5rem;
+  }
+  .mobileIndicator {
+    display: none;
+  }
+
   .steps {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
   }
   .step {
-    flex: 1; /* Distribución pareja horizontal */
+    flex: 1;
   }
   .connector {
     height: 1.5px;
@@ -238,7 +244,7 @@
   }
 }
 
-/* ── DESKTOP (NUEVO LAYOUT SIDEBAR VERTICAL) ─────────────────────────────────── */
+/* ── DESKTOP  ─────────────────────────────────── */
 
 @media (min-width: 64rem) {
   .stepper {
@@ -253,38 +259,39 @@
     padding: 0.5rem 1rem;
     font-size: 0.85rem;
   }
-  .btnLabel { display: inline; }
+  .btnLabel {
+    display: inline;
+  }
 
-  /* Alineamos los botones laterales al inicio de su nueva columna */
-  .side, .sideRight {
+  .side,
+  .sideRight {
     width: 100%;
     justify-content: flex-start;
     min-width: auto;
   }
 
-  .mobileIndicator { display: none; }
+  .mobileIndicator {
+    display: none;
+  }
 
-  /* Cambiamos la dirección de la lista a vertical */
   .steps {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0; /* El espaciado lo dicta el conector vertical */
+    gap: 0;
     width: 100%;
   }
 
-  /* Los items ahora tienen el ícono a la izquierda y el texto a la derecha */
   .step {
     flex-direction: row;
     align-items: center;
     width: 100%;
     padding: 0.75rem 1rem;
-    margin-left: -1rem; /* Offset para centrar los íconos visualmente */
+    margin-left: -1rem;
     border-radius: 1rem;
     transition: background 0.3s ease;
   }
 
-  /* Añadimos el fondo sutil al paso actual (como en Jerem UIX) */
   .active.step {
     background: rgba(255, 255, 255, 0.03);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
@@ -295,15 +302,14 @@
     text-align: left;
     white-space: normal;
     letter-spacing: 0.04em;
-    padding-top: 0.15rem; /* Ajuste óptico vertical */
+    padding-top: 0.15rem;
   }
 
-  /* Giramos la línea conectora 90 grados exactos para que enlace los círculos */
   .connector {
     width: 2px;
     min-width: 2px;
     height: 2.5rem;
-    margin: 0.125rem 0 0.125rem calc(1rem - 1px); /* Matemática para caer en el centro del círculo de 2rem */
-    flex: none; /* Evitamos que flexbox la aplaste */
+    margin: 0.125rem 0 0.125rem calc(1rem - 1px);
+    flex: none;
   }
 }

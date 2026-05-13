@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaRegUserCircle } from "react-icons/fa";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   FiMenu,
   FiChevronDown,
-  FiFileText,
   FiFolder,
   FiTrendingUp,
   FiHelpCircle,
@@ -46,145 +44,102 @@ const Navbar = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleMenuAction = (path) => {
-    setIsDropdownOpen(false);
-    navigate(path);
-  };
-
-  const queryClient = useQueryClient();
-
   const handleLogout = () => {
-    queryClient.clear();
-
-    if (clearAuth) clearAuth();
-
-    setIsDropdownOpen(false);
-    navigate("/");
+    clearAuth();
+    navigate("/ingresar");
   };
-  const handleHelpClick = () => {
-    document.dispatchEvent(new CustomEvent("bindHelp:toggle"));
+
+  const handleOpenHelp = () => {
+    const event = new CustomEvent("bindHelp:toggle");
+    document.dispatchEvent(event);
   };
 
   return (
     <header className={styles.header}>
       <div className={styles.leftSection}>
-        {onToggleSidebar && (
-          <button
-            className={styles.menuButton}
-            onClick={onToggleSidebar}
-            aria-label="Alternar menú"
-          >
-            <FiMenu size={24} color="var(--white)" />
-          </button>
-        )}
-
-        <div
-          className={styles.logoContainer}
-          onClick={() => navigate("/solicitudes")}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              navigate("/");
-            }
-          }}
+        <button
+          className={styles.menuButton}
+          onClick={onToggleSidebar}
+          aria-label="Menú"
         >
-          <img src={logoBind} alt="Logo BIND" className={styles.logo} />
+          <FiMenu size={24} color="#fff" />
+        </button>
+        <div className={styles.logoContainer} onClick={() => navigate("/")}>
+          <img src={logoBind} alt="Bind Garantías" className={styles.logo} />
         </div>
       </div>
 
       <div className={styles.rightSection}>
-        {emailUsuario && (
-          <button
-            type="button"
-            className={styles.helpBtn}
-            onClick={handleHelpClick}
-            aria-label="Ayuda y dudas frecuentes"
-          >
-            <FiHelpCircle size={18} />
-            <span className={styles.helpBtnLabel}>Ayuda</span>
-          </button>
-        )}
+        {user ? (
+          <>
+            {/* Botón de Ayuda Restaurado */}
+            <button
+              className={styles.helpButton}
+              onClick={handleOpenHelp}
+              aria-label="Abrir ayuda"
+              title="Centro de Ayuda"
+            >
+              <FiHelpCircle className={styles.helpIcon} />
+            </button>
 
-      {emailUsuario ? (
-        <div className={styles.userSection} ref={dropdownRef}>
-          <button
-            className={styles.userButton}
-            onClick={() => setIsDropdownOpen((prev) => !prev)}
-            aria-expanded={isDropdownOpen}
-            aria-haspopup="true"
-          >
-            <span className={styles.userIcon}>
-              <FaRegUserCircle size={20} color={"var(--yellow, #f5f400)"} />
-            </span>
-            <span className={styles.userName}>{emailUsuario}</span>
-            <FiChevronDown
-              className={`${styles.chevron} ${
-                isDropdownOpen ? styles.chevronOpen : ""
-              }`}
-            />
-          </button>
-
-          {isDropdownOpen && (
-            <div className={styles.dropdownMenu}>
-              <div className={styles.dropdownHeader}>
-                <span className={styles.dropdownTitle}>{emailUsuario}</span>
-                <span className={styles.dropdownSubtitle}>Usuario BIND</span>
+            <div className={styles.userMenuContainer} ref={dropdownRef}>
+              <div
+                className={styles.userTrigger}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <div className={styles.avatarWrapper}>
+                  <FaRegUserCircle className={styles.userIcon} />
+                </div>
+                <span className={styles.userName}>{emailUsuario}</span>
+                <FiChevronDown
+                  className={`${styles.chevron} ${isDropdownOpen ? styles.chevronOpen : ""}`}
+                />
               </div>
 
-              <div className={styles.dropdownBody}>
-                <button
-                  className={styles.dropdownItem}
-                  onClick={() => handleMenuAction("/solicitudes")}
-                >
-                  <FiFileText className={styles.itemIcon} /> Mis solicitudes
-                </button>
-                <button
-                  className={styles.dropdownItem}
-                  onClick={() => handleMenuAction("/documentacion")}
-                >
-                  <FiFolder className={styles.itemIcon} /> Documentación
-                </button>
-                <button
-                  className={styles.dropdownItem}
-                  onClick={() => {
-                    setIsDropdownOpen(false);
-                    setIsTasasModalOpen(true);
-                  }}
-                >
-                  <FiTrendingUp className={styles.itemIcon} /> Tasas
-                </button>
-              </div>
+              {isDropdownOpen && (
+                <div className={styles.dropdownMenu}>
+                  <div className={styles.dropdownHeader}>
+                    <p className={styles.dropdownEmail}>{emailUsuario}</p>
+                    <p className={styles.dropdownRole}>Socio activo</p>
+                  </div>
 
-              <div className={styles.dropdownFooter}>
-                <button className={styles.logoutBtn} onClick={handleLogout}>
-                  Cerrar sesión
-                </button>
-              </div>
+                  <div className={styles.dropdownBody}>
+                    <button
+                      className={styles.dropdownItem}
+                      onClick={() => navigate("/documentacion")}
+                    >
+                      <FiFolder className={styles.itemIcon} /> Documentación
+                    </button>
+                    <button
+                      className={styles.dropdownItem}
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        setIsTasasModalOpen(true);
+                      }}
+                    >
+                      <FiTrendingUp className={styles.itemIcon} /> Tasas
+                      vigentes
+                    </button>
+                  </div>
+
+                  <div className={styles.dropdownFooter}>
+                    <button className={styles.logoutBtn} onClick={handleLogout}>
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      ) : (
-        <div className={styles.loginContainer}>
-          {texto}
-          <span
-            className={styles.link}
-            onClick={() => navigate(rutaDestino)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                navigate(rutaDestino);
-              }
-            }}
-          >
-            {" "}
-            {textoEnlace}
-          </span>
-        </div>
-      )}
+          </>
+        ) : (
+          <div className={styles.loginContainer}>
+            {texto}
+            <span className={styles.link} onClick={() => navigate(rutaDestino)}>
+              {" "}
+              {textoEnlace}
+            </span>
+          </div>
+        )}
       </div>
 
       <TasasModal
