@@ -1,0 +1,410 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+}
+
+.header p {
+  color: #8b949e;
+  margin: 0.4rem 0 0 0;
+  font-size: 0.95rem;
+  max-width: 45rem;
+}
+
+.btnAdd {
+  background: var(--yellow, #f5f400);
+  color: #000000;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(245, 244, 0, 0.25);
+  align-self: flex-end;
+}
+
+@media (min-width: 768px) {
+  .btnAdd {
+    align-self: auto;
+  }
+}
+
+.btnAdd:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(245, 244, 0, 0.4);
+}
+
+/* Split layout */
+.splitLayout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .splitLayout {
+    grid-template-columns: 22rem 1fr;
+  }
+}
+
+/* Left list column */
+.adminListCol {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sectionLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  margin: 0;
+}
+
+.listContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.adminCard {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 0.625rem;
+  padding: 1rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.adminCard:hover {
+  border-color: #58a6ff;
+  background: rgba(22, 27, 34, 0.8);
+}
+
+.cardSelected {
+  border-color: var(--yellow, #f5f400);
+  background: rgba(245, 244, 0, 0.03);
+  box-shadow: 0 0 0 1px var(--yellow, #f5f400);
+}
+
+.cardHeaderInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatarBox {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2b71c8 0%, #1e3c72 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.textStack {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.adminName {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.adminEmail {
+  font-size: 0.75rem;
+  color: #8b949e;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.badgeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 0.5rem;
+}
+
+.roleTag {
+  background: rgba(88, 166, 255, 0.1);
+  color: #58a6ff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.statusDotTag {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.dotActive {
+  color: #3fb950;
+}
+
+.dotInactive {
+  color: #f85149;
+}
+
+/* Right Permisos Column */
+.permisosPanelCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.permisosInner {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 1.25rem;
+}
+
+.avatarLarge {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.75rem;
+  background: rgba(245, 244, 0, 0.1);
+  color: var(--yellow, #f5f400);
+  border: 1px solid rgba(245, 244, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.panelHead h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #ffffff;
+}
+
+.panelHead p {
+  margin: 0.2rem 0 0 0;
+  color: #8b949e;
+  font-size: 0.875rem;
+}
+
+.panelHead strong {
+  color: var(--yellow, #f5f400);
+}
+
+/* Blocks */
+.configBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.blockTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #58a6ff;
+  text-transform: uppercase;
+  letter-spacing: 0.03rem;
+}
+
+.rolSelect {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #ffffff;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.rolSelect:focus {
+  border-color: var(--yellow, #f5f400);
+}
+
+.helpNote {
+  font-size: 0.75rem;
+  color: #8b949e;
+}
+
+/* Toggles List */
+.togglesList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: #0d1117;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  border: 1px inset rgba(255, 255, 255, 0.02);
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.toggleRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.toggleLabel {
+  display: block;
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.toggleDesc {
+  display: block;
+  font-size: 0.75rem;
+  color: #8b949e;
+  margin-top: 0.15rem;
+}
+
+.btnToggleSwitch {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s;
+}
+
+.btnToggleSwitch:hover {
+  transform: scale(1.08);
+}
+
+.switchOn {
+  color: #3fb950;
+}
+
+.switchOff {
+  color: #484f58;
+}
+
+/* Footer block */
+.panelFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.lastAccessText {
+  font-size: 0.75rem;
+  color: #8b949e;
+}
+
+.btnBlockAccount {
+  background: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s;
+}
+
+.btnDanger {
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  color: #f85149;
+}
+
+.btnDanger:hover {
+  background: rgba(248, 81, 73, 0.1);
+  border-color: #f85149;
+}
+
+.btnSuccess {
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  color: #3fb950;
+}
+
+.btnSuccess:hover {
+  background: rgba(63, 185, 80, 0.1);
+  border-color: #3fb950;
+}
+
+.emptySelection {
+  padding: 4rem 2rem;
+  text-align: center;
+  color: #8b949e;
+  background: rgba(22, 27, 34, 0.3);
+  border: 1px dashed #30363d;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+}
