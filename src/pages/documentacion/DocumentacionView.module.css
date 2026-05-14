@@ -5,7 +5,7 @@
   padding: 1.25rem 1rem;
   max-width: 64rem;
   margin: 0 auto;
-  min-height: calc(100vh - 5rem);
+  min-height: 100%;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -28,7 +28,7 @@
     ),
     radial-gradient(
       circle at 100% 100%,
-      rgba(244, 245, 0, 0.06) 0%,
+      rgba(76, 101, 230, 0.15) 0%,
       transparent 40%
     );
 }

@@ -27,7 +27,7 @@
     ),
     radial-gradient(
       circle at 100% 100%,
-      rgba(244, 245, 0, 0.06) 0%,
+      rgba(76, 101, 230, 0.15) 0%,
       transparent 40%
     );
 }
@@ -130,9 +130,27 @@
     max-width: 74rem;
   }
 
+  .contenedorPrincipal {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .contenedorPrincipal::before {
+    content: "";
+    display: block;
+    flex: 0.5;
+    max-height: 12rem;
+  }
+
+  .contenedorPrincipal::after {
+    content: "";
+    display: block;
+    flex: 2;
+  }
+
   .columnaFormulario {
     display: grid;
-    margin-top: 2rem;
     grid-template-columns: 16rem 1fr;
     grid-template-rows: max-content 1fr;
     grid-template-areas:

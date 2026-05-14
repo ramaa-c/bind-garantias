@@ -4,6 +4,13 @@ const cuitCache = new Map();
 const cuitWebCache = new Map();
 
 export const sociosService = {
+  // Validación de formato CUIT
+  validarFormatoCuit: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    const response = await api.get(`api/Socio/ValidarCuit/${cuitLimpio}`);
+    return response.data;
+  },
+  
   // Trae lista de socios (SGRPlus)
   obtenerSocios: async (params = {}) => {
     const isCuitSearch = Boolean(params.Cuit);

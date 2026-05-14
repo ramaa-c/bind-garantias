@@ -3,6 +3,7 @@ import { useFormContext, useFormState } from "react-hook-form";
 import { BuscadorCuit } from "../../../../ui";
 import { sociosService } from "../../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../../hooks/useAfip";
+import { useValidarFormatoCuit } from "../../../../../hooks/useSocios";
 import styles from "./Paso1Cuit.module.css";
 
 export default function Paso1Cuit({ onValidar, onSocioExistente }) {
@@ -10,6 +11,8 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   const { errors, dirtyFields } = useFormState({ control });
   const { mutateAsync: validarAfip, isPending: isLoadingAfip } =
     useValidarCuitAfip();
+  const { mutateAsync: validarFormatoBackend, isPending: isLoadingFormato } =
+    useValidarFormatoCuit();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
 
   const isCuitValid = !errors.cuit && dirtyFields.cuit;
@@ -20,6 +23,29 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
     setIsValidatingSocio(true);
     try {
+      // VALIDACIÓN DE FORMATO
+      try {
+        const respuestaFormato = await validarFormatoBackend(cuit);
+        if (respuestaFormato === false || respuestaFormato?.isValid === false) {
+          setError("cuit", {
+            type: "manual",
+            message:
+              respuestaFormato?.message || "El formato del CUIT es inválido.",
+          });
+          return;
+        }
+      } catch (formatoError) {
+        setError("cuit", {
+          type: "manual",
+          message:
+            formatoError?.response?.data?.message ||
+            formatoError?.response?.data ||
+            "El CUIT ingresado no es válido.",
+        });
+        return;
+      }
+
+      // VALIDACIÓN CONTRA SGR+
       const respSgr = await sociosService.obtenerSocios({
         Cuit: cuit,
         page: 1,
@@ -37,6 +63,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         return;
       }
 
+      // VALIDACIÓN CONTRA ESQUEMA WEB
       const respWeb = await sociosService.obtenerSociosWeb({ Cuit: cuit });
       const socioWebDb = Array.isArray(respWeb)
         ? respWeb[0]
@@ -47,6 +74,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         return;
       }
 
+      // VALIDACIÓN CONTRA AFIP
       const afipData = await validarAfip(cuit);
 
       if (afipData && afipData.datosgenerales) {
@@ -81,12 +109,11 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     }
   };
 
-
-  const isLoading = isValidatingSocio || isLoadingAfip;
+  const isLoading = isValidatingSocio || isLoadingAfip || isLoadingFormato;
 
   return (
     <div className={styles.pasoContainer}>
-            <div className={styles.decorativeBanner} style={{ minHeight: "3.75rem" }}>
+      <div className={styles.decorativeBanner} style={{ minHeight: "3.75rem" }}>
         <div className={styles.bannerIcon}>
           <svg
             width="1rem"

@@ -9,7 +9,7 @@
   overflow: hidden;
 }
 
-/* SIDEBAR como lista en mobile */
+/* SIDEBAR */
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -165,6 +165,107 @@
   opacity: 0.75;
 }
 
+/* ── USUARIOS VINCULADOS ─────────────────────────────────────────────────────── */
+.usuariosContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  flex: 1;
+}
+
+.vincularForm {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1.25rem;
+  border-radius: 0.875rem;
+}
+
+.vincularFormTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--white, #fff);
+  margin: 0;
+}
+
+.vincularFormText {
+  font-size: 0.8125rem;
+  color: #aaa;
+  margin: 0.5rem 0 1rem 0;
+  line-height: 1.5;
+}
+
+.vincularInputWrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.vincularInputGroup {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.vincularInput {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: var(--white, #fff);
+  font-size: 0.875rem;
+  font-family: inherit;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+.vincularInput:focus {
+  outline: none;
+  background: rgba(0, 0, 0, 0.4);
+  border-color: var(--yellow, #f4f500);
+}
+
+.vincularInput:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vincularInputError {
+  border-color: rgba(255, 82, 82, 0.5) !important;
+}
+
+.vincularInputError:focus {
+  border-color: #ff5252 !important;
+  box-shadow: 0 0 0 1px rgba(255, 82, 82, 0.2);
+}
+
+.errorContainer {
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  padding-top: 0.35rem;
+  padding-left: 0.25rem;
+}
+
+.errorMessage {
+  color: #ff5252;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@media (max-width: 48rem) {
+  .vincularInputGroup {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
 /* ── PERFIL: CHIPS EN GRID ───────────────────────────────────────────────────── */
 
 .perfilGrid {
@@ -175,7 +276,11 @@
 }
 
 .perfilChip {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03) 0%,
+    rgba(255, 255, 255, 0.01) 100%
+  );
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.875rem;
   padding: 1.125rem 1.25rem;
@@ -183,7 +288,11 @@
   flex-direction: column;
   justify-content: center;
   gap: 0.5rem;
-  transition: border-color 0.25s, background 0.25s, transform 0.2s, box-shadow 0.25s;
+  transition:
+    border-color 0.25s,
+    background 0.25s,
+    transform 0.2s,
+    box-shadow 0.25s;
   flex: 1;
   position: relative;
   overflow: hidden;
@@ -196,14 +305,23 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(244, 245, 0, 0.15), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(244, 245, 0, 0.15),
+    transparent
+  );
   opacity: 0;
   transition: opacity 0.3s;
 }
 
 .perfilChip:hover {
   border-color: rgba(244, 245, 0, 0.15);
-  background: linear-gradient(135deg, rgba(244, 245, 0, 0.03) 0%, rgba(255, 255, 255, 0.02) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(244, 245, 0, 0.03) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
   transform: translateY(-1px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
@@ -288,7 +406,7 @@
   flex: 1;
 }
 
-/* ── SOCIOS LIST (dentro del viewer) ─────────────────────────────────────────── */
+/* ── SOCIOS LIST  ─────────────────────────────────────────── */
 
 .sociosContainer {
   display: flex;
@@ -419,7 +537,10 @@
   max-height: 0;
   overflow: hidden;
   opacity: 0;
-  transition: max-height 0.3s ease, opacity 0.2s ease, padding 0.3s ease;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.2s ease,
+    padding 0.3s ease;
   padding: 0 1rem;
 }
 
