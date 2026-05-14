@@ -8,6 +8,7 @@ export { default as Paso7Exito } from './shared/Compartidos/Paso7Exito/Paso7Exit
 export * from './shared/Compartidos/SocioItem/SocioItem';
 export * from './shared/Compartidos/PanelDudas/PanelDudas';
 export * from './shared/Compartidos/PanelDudas/BotonAyudaFlotante';
+export * from './shared/Compartidos/PanelDudas/ModalDudas';
 export { default as ModalSocio } from './shared/Compartidos/ModalSocio/ModalSocio';
 export * from './shared/Compartidos/ModalDocumentosEmpresa/ModalDocumentosEmpresa';
 export * from './shared/Compartidos/ModalRepresentante/ModalRepresentante';
@@ -58,4 +59,4 @@ export * from './dashboard/ListaActividades/ListaActividades';
 export * from './dashboard/TarjetaLinea/TarjetaLinea';
 export * from './solicitudes/TarjetaSolicitud/TarjetaSolicitud';
 export * from './solicitudes/ModalDetalleSolicitud/ModalDetalleSolicitud';
-
+

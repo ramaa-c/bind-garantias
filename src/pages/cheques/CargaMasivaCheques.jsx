@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { FiRotateCcw } from "react-icons/fi";
 import { BarraProgreso, BotonVolver } from "../../components/ui";
-import { PanelDudas, BotonAyudaFlotante, ModalConfirmacionBorrador } from "../../components/features";
+import { ModalConfirmacionBorrador } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import {
   Paso1CargaMasiva,
   Paso2RevisionCheques,
@@ -19,6 +20,14 @@ export default function CargaMasivaCheques() {
   const [pasoActual, setPasoActual] = useState(1);
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const [chequesParseados, setChequesParseados] = useState([]);
   const [chequesAprobados, setChequesAprobados] = useState([]);
@@ -119,6 +128,21 @@ export default function CargaMasivaCheques() {
     console.log("Descargando PDF instructivo...");
   };
 
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return { t: "Carga masiva de cheques", s: "Descargá el archivo modelo, completalo con los cheques a negociar y subilo para procesarlo." };
+      case 2:
+        return { t: "Carga masiva de cheques", s: "Revisá los cheques procesados antes de confirmar." };
+      case 3:
+        return { t: "Carga masiva de cheques", s: "Confirmá la operación final." };
+      case 4:
+        return { t: "¡Cheques procesados con éxito!", s: "Ya podés gestionarlos desde ePyME." };
+      default:
+        return { t: "Carga masiva de cheques", s: "" };
+    }
+  };
+
   return (
     <div className={styles.chequesPage}>
       <div className={styles.formMainContainer}>
@@ -151,23 +175,24 @@ export default function CargaMasivaCheques() {
 
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Carga masiva de cheques</h1>
-                    <div className={styles.titleAccent}></div>
-                    <p className={styles.subtituloBienvenida}>
-                      Descargá el archivo modelo, completalo con los cheques a negociar y subilo para procesarlo.
-                    </p>
-                  </div>
-                )}
-                {pasoActual < 4 && (
+              {pasoActual < 4 && (
+                <nav className={styles.stepperNav}>
                   <BarraProgreso
                     hitos={["Carga", "Revisión", "Confirmación"]}
                     hitoActual={pasoActual}
                   />
-                )}
+                </nav>
+              )}
 
+              <div className={styles.bienvenidaHeader}>
+                <h1 className={styles.tituloBienvenida}>{obtenerTextosCabecera().t}</h1>
+                <div className={styles.titleAccent}></div>
+                {obtenerTextosCabecera().s && (
+                  <p className={styles.subtituloBienvenida}>{obtenerTextosCabecera().s}</p>
+                )}
+              </div>
+
+              <div className={styles.seccionFormulario}>
                 <FormProvider {...metodosFormulario}>
                   <form
                     className={styles.formContent}
@@ -215,12 +240,12 @@ export default function CargaMasivaCheques() {
               </div>
             </div>
 
-            {pasoActual < 4 && (
-              <>
-                <PanelDudas contexto="carga_masiva_cheques" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="carga_masiva_cheques" pasoActual={pasoActual} />
-              </>
-            )}
+            <HelpDrawer
+              isOpen={isHelpOpen}
+              onClose={() => setIsHelpOpen(false)}
+              contexto="carga_masiva_cheques"
+              pasoActual={pasoActual}
+            />
           </div>
         </div>
       </div>

@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import { useFormPersist, getPersistedFormData } from "../../hooks/useFormPersist";
+import {
+  useFormPersist,
+  getPersistedFormData,
+} from "../../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../../components/ui";
-import { PanelDudas, BotonAyudaFlotante, ModalConfirmacionBorrador } from "../../components/features";
+import { ModalConfirmacionBorrador } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import styles from "./Prestamos.module.css";
 import { PrestamosPasos } from "./PrestamosPasos";
 
@@ -61,6 +65,14 @@ export default function Prestamos() {
     tempSocioParticipacion: "",
     docExpandido: "estatuto",
   });
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const updateUiState = (updates) => {
     setUiState((prev) => ({ ...prev, ...updates }));
@@ -205,71 +217,99 @@ export default function Prestamos() {
     }
   };
 
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return {
+          t: "Solicitud de Línea de Préstamo",
+          s: "Obtené financiación para tu empresa de forma ágil y 100% online.",
+        };
+      case 2:
+        return {
+          t: "Solicitud de Línea de Préstamo",
+          s: "Ingresá los datos de tu empresa.",
+        };
+      case 3:
+        return {
+          t: "Solicitud de Línea de Préstamo",
+          s: "Simulá los montos y condiciones de la operación.",
+        };
+      case 4:
+        return {
+          t: "Solicitud de Línea de Préstamo",
+          s: "Declaración de socios de la empresa.",
+        };
+      case 5:
+        return {
+          t: "Solicitud de Línea de Préstamo",
+          s: "Verificá la documentación respaldatoria.",
+        };
+      case 7:
+        return { t: "¡Solicitud completada!", s: "" };
+      default:
+        return {
+          t: "Solicitud de Línea de Préstamo",
+          s: "Completá los datos solicitados.",
+        };
+    }
+  };
+
+  const showHeaderYStepper = pasoActual < 7;
+  const hitoVisual = (() => {
+    if (pasoActual <= 2) return 1;
+    if (pasoActual === 3) return 2;
+    if (pasoActual === 4) return 3;
+    if (pasoActual === 5) return 4;
+    return 1;
+  })();
+
+  const handleActionVolver =
+    pasoActual > 1
+      ? () => {
+          handleVolver();
+          if (pasoActual === 3) updateUiState({ mostrarResultados: false });
+        }
+      : null;
+
   return (
     <div className={styles.prestamosPage}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
-          <div className={styles.navegacionTop}>
-            <div className={styles.botonesNavegacion}>
-              {pasoActual > 1 && pasoActual < 7 && (
-                <BotonVolver
-                  onClick={() => {
-                    handleVolver();
-                    if (pasoActual === 3)
-                      updateUiState({ mostrarResultados: false });
-                  }}
-                />
-              )}
-              {pasoActual === 1 && (
-                <BotonVolver
-                  onClick={() => navigate("/inicio")}
-                  texto="Volver a la lista"
-                />
-              )}
-              {pasoActual < 7 && (
-                <BotonVolver
-                  icon={FiRotateCcw}
-                  onClick={handleReiniciarAlta}
-                  texto="Reiniciar alta"
-                />
-              )}
-            </div>
-            <div></div>
-          </div>
-
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>
-                      Solicitud de Línea de Préstamo
-                    </h1>
-                    <div className={styles.titleAccent}></div>
+              {showHeaderYStepper && (
+                <BarraProgreso
+                  hitos={["Empresa", "Operación", "Socios", "Documentos"]}
+                  hitoActual={hitoVisual}
+                  onVolver={handleActionVolver}
+                  onVolverInicio={
+                    pasoActual === 1 ? () => navigate("/inicio") : null
+                  }
+                  onReiniciar={handleReiniciarAlta}
+                />
+              )}
+
+              {/* HEADER DINÁMICO */}
+              {showHeaderYStepper && (
+                <div className={styles.bienvenidaHeader}>
+                  <h1 className={styles.tituloBienvenida}>
+                    {obtenerTextosCabecera().t}
+                  </h1>
+                  <div className={styles.titleAccent}></div>
+                  {obtenerTextosCabecera().s && (
                     <p className={styles.subtituloBienvenida}>
-                      Obtené financiación para tu empresa de forma ágil y 100%
-                      online.
+                      {obtenerTextosCabecera().s}
                     </p>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {pasoActual >= 2 &&
-                  pasoActual < 7 &&
-                  (() => {
-                    let hitoVisual = 1;
-                    if (pasoActual === 3) hitoVisual = 2;
-                    if (pasoActual === 4) hitoVisual = 3;
-                    if (pasoActual === 5) hitoVisual = 4;
-                    return (
-                      <BarraProgreso
-                        hitos={["EMPRESA", "OPERACIÓN", "SOCIOS", "DOCUMENTOS"]}
-                        hitoActual={hitoVisual}
-                      />
-                    );
-                  })()}
-
+              <div className={styles.seccionFormulario}>
                 <FormProvider {...metodosFormulario}>
-                  <form className={styles.formContent}>
+                  <form
+                    className={styles.formContent}
+                    onSubmit={(e) => e.preventDefault()}
+                  >
                     <div key={pasoActual} className="animacion-paso">
                       <PrestamosPasos
                         pasoActual={pasoActual}
@@ -297,11 +337,14 @@ export default function Prestamos() {
                 </FormProvider>
               </div>
             </div>
+
             {pasoActual < 7 && (
-              <>
-                <PanelDudas contexto="prestamos" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="prestamos" pasoActual={pasoActual} />
-              </>
+              <HelpDrawer
+                isOpen={isHelpOpen}
+                onClose={() => setIsHelpOpen(false)}
+                contexto="prestamos"
+                pasoActual={pasoActual}
+              />
             )}
           </div>
         </div>

@@ -65,12 +65,6 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
     <div className={styles.container}>
       {/* HEADER ──────────────────────────────────────────────────────────────── */}
       <div className={styles.header}>
-        <div className={styles.headerText}>
-          <h3 className={styles.title}>Información de la Solicitud</h3>
-          <p className={styles.subtitle}>
-            Completá los datos requeridos para la validación final.
-          </p>
-        </div>
         <div className={styles.completionPills}>
           <span
             className={`${styles.pill} ${pill(ubicacionOk, intentoAvanzar && !ubicacionOk)}`}

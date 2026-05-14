@@ -19,21 +19,42 @@ export const OnboardingGuard = ({ children }) => {
   const { data: usuarioDb, isPending: isLoadingUser } =
     useObtenerPorNombreOEmail(user.email);
 
-  const usuarioWebId =
-    usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id || null;
+  const parsearUsuarioWebId = (db) => {
+    if (!db) return null;
+    if (Array.isArray(db))
+      return db[0]?.usuariowebid || db[0]?.UsuarioWebID || db[0]?.id;
+    if (db.items)
+      return (
+        db.items[0]?.usuariowebid ||
+        db.items[0]?.UsuarioWebID ||
+        db.items[0]?.id
+      );
+    if (db.data)
+      return (
+        db.data[0]?.usuariowebid || db.data[0]?.UsuarioWebID || db.data[0]?.id
+      );
+    return db.usuariowebid || db.UsuarioWebID || db.id || null;
+  };
 
-  const {
-    data: socioUsuarios,
-    isPending: isPendingSocios,
-    isFetching: isFetchingSocios,
-    isError,
-  } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
+  const usuarioWebId = parsearUsuarioWebId(usuarioDb);
 
-  if (isTerminosPage || isAltaDatosPage) {
-    return <>{children}</>;
-  }
+  const { data: socioUsuarios, isPending: isPendingSocios } =
+    useObtenerSocioUsuarioPorUsuarioId(usuarioWebId || 0);
 
-  if (isLoadingUser || (usuarioWebId && isPendingSocios)) {
+  const parsearEmpresas = (sociosData) => {
+    if (!sociosData) return [];
+    if (Array.isArray(sociosData)) return sociosData;
+    if (sociosData.items) return sociosData.items;
+    if (sociosData.data) return sociosData.data;
+    if (typeof sociosData === "object" && Object.keys(sociosData).length > 0)
+      return [sociosData];
+    return [];
+  };
+
+  const listaEmpresas = parsearEmpresas(socioUsuarios);
+  const tieneEmpresas = listaEmpresas.length > 0;
+
+  if ((isLoadingUser && !usuarioWebId) || (usuarioWebId && isPendingSocios)) {
     return (
       <div
         style={{
@@ -49,11 +70,14 @@ export const OnboardingGuard = ({ children }) => {
     );
   }
 
-  const tieneEmpresas =
-    Array.isArray(socioUsuarios) && socioUsuarios.length > 0;
-
-  if (!usuarioWebId || isError || !tieneEmpresas) {
-    return <Navigate to="/terminos" replace />;
+  if (usuarioWebId && tieneEmpresas) {
+    if (isTerminosPage || isAltaDatosPage) {
+      return <Navigate to="/inicio" replace />;
+    }
+  } else if (usuarioWebId && !tieneEmpresas) {
+    if (!isTerminosPage && !isAltaDatosPage) {
+      return <Navigate to="/terminos" replace />;
+    }
   }
 
   return <>{children}</>;

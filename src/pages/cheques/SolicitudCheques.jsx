@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useFormPersist, getPersistedFormData } from "../../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,13 +8,12 @@ import { FiRotateCcw } from "react-icons/fi";
 import {
   Paso3Simulador,
   ModalConfirmacionBorrador,
-  PanelDudas,
-  BotonAyudaFlotante,
   PasoEmisor,
   PasoBolsa,
   PasoDetalles,
   PasoExito,
 } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import { BarraProgreso, BotonVolver } from "../../components/ui";
 import styles from "./SolicitudCheques.module.css";
 
@@ -25,6 +24,14 @@ export default function SolicitudCheques() {
 
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
+
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const metodosFormulario = useForm({
     resolver: zodResolver(solicitudChequesSchema),
@@ -124,6 +131,23 @@ export default function SolicitudCheques() {
     }
   };
 
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return { t: "Ingreso de Cheques", s: "Simulá la operación para conocer los costos estimados antes de continuar." };
+      case 2:
+        return { t: "Ingreso de Cheques", s: "Verificá y confirmá los datos del emisor del cheque." };
+      case 3:
+        return { t: "Ingreso de Cheques", s: "Seleccioná la sociedad de bolsa con la que operás." };
+      case 4:
+        return { t: "Ingreso de Cheques", s: "Completá los detalles finales del cheque a ingresar." };
+      case 5:
+        return { t: "¡Operación completada!", s: "" };
+      default:
+        return { t: "Ingreso de Cheques", s: "" };
+    }
+  };
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.formMainContainer}>
@@ -158,21 +182,8 @@ export default function SolicitudCheques() {
 
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && !mostrarResultados && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>
-                      Ingreso de Cheques
-                    </h1>
-                    <div className={styles.titleAccent}></div>
-                    <p className={styles.subtituloBienvenida}>
-                      Simulá la operación para conocer los costos estimados
-                      antes de continuar.
-                    </p>
-                  </div>
-                )}
-
-                {pasoActual >= 1 && pasoActual < 5 && (
+              {pasoActual >= 1 && pasoActual < 5 && (
+                <nav className={styles.stepperNav}>
                   <BarraProgreso
                     hitos={[
                       "SIMULADOR",
@@ -182,7 +193,20 @@ export default function SolicitudCheques() {
                     ]}
                     hitoActual={pasoActual}
                   />
-                )}
+                </nav>
+              )}
+
+              {pasoActual < 5 && (
+                <div className={styles.bienvenidaHeader}>
+                  <h1 className={styles.tituloBienvenida}>{obtenerTextosCabecera().t}</h1>
+                  <div className={styles.titleAccent}></div>
+                  {obtenerTextosCabecera().s && (
+                    <p className={styles.subtituloBienvenida}>{obtenerTextosCabecera().s}</p>
+                  )}
+                </div>
+              )}
+
+              <div className={styles.seccionFormulario}>
                 {/* FORMULARIO */}
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
@@ -233,12 +257,12 @@ export default function SolicitudCheques() {
               </div>
             </div>
 
-            {pasoActual < 5 && (
-              <>
-                <PanelDudas contexto="solicitud_cheques" pasoActual={pasoActual} />
-                <BotonAyudaFlotante contexto="solicitud_cheques" pasoActual={pasoActual} />
-              </>
-            )}
+            <HelpDrawer
+              isOpen={isHelpOpen}
+              onClose={() => setIsHelpOpen(false)}
+              contexto="solicitud_cheques"
+              pasoActual={pasoActual}
+            />
           </div>
         </div>
       </div>

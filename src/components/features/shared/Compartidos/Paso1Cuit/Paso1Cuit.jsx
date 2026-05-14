@@ -81,24 +81,12 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     }
   };
 
+
   const isLoading = isValidatingSocio || isLoadingAfip;
 
   return (
     <div className={styles.pasoContainer}>
-      <div className={styles.inputWrapper}>
-        <BuscadorCuit
-          name="cuit"
-          control={control}
-          label="CUIT de la empresa"
-          onValidar={handleValidar}
-          error={errors.cuit?.message}
-          esValido={isCuitValid}
-          buttonText="VALIDAR CUIT"
-          isLoading={isLoading}
-        />
-      </div>
-
-      <div className={styles.decorativeBanner} style={{ minHeight: "3.75rem" }}>
+            <div className={styles.decorativeBanner} style={{ minHeight: "3.75rem" }}>
         <div className={styles.bannerIcon}>
           <svg
             width="1rem"
@@ -119,6 +107,18 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             Tu información es validada en tiempo real contra AFIP
           </p>
         </div>
+      </div>
+      <div className={styles.inputWrapper}>
+        <BuscadorCuit
+          name="cuit"
+          control={control}
+          label="CUIT de la empresa"
+          onValidar={handleValidar}
+          error={errors.cuit?.message}
+          esValido={isCuitValid}
+          buttonText="VALIDAR CUIT"
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

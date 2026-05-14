@@ -1,0 +1,99 @@
+/* HelpDrawer.module.css */
+
+/* 1. EL CONTENEDOR RAIZ (Recuperado) */
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 1000; /* Aseguramos que esté por encima de todo */
+  display: flex;
+  justify-content: flex-end; /* Lo empuja a la derecha */
+  pointer-events: none; /* Deja pasar clicks al fondo si es necesario */
+}
+
+/* 2. EL OVERLAY (Recuperado) */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  pointer-events: auto; /* Bloquea clicks y permite cerrar */
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* 3. EL SIDEBAR (Rediseño Fintech) */
+.drawer {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 26rem; 
+  height: 100%;
+  background: rgba(12, 12, 12, 0.7);
+  backdrop-filter: blur(40px) saturate(150%);
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 50px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  /* Animación de entrada lateral */
+  animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.75rem 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.drawerBadge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--yellow, #f4f500);
+  background: rgba(244, 245, 0, 0.08);
+  border: 1px solid rgba(244, 245, 0, 0.2);
+  border-radius: 4px;
+  padding: 0.35rem 0.75rem;
+}
+
+.drawerBody {
+  flex: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.closeBtn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  color: #fff;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.closeBtn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(90deg);
+}
+
+/* 4. ANIMACIONES */
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

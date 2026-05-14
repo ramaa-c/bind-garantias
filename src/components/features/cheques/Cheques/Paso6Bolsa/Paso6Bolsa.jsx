@@ -59,9 +59,7 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa, isSubmitt
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.title}>
-        ¿Operás con alguna de estas sociedades de bolsa?
-      </h3>
+
 
       <div className={styles.topGrid}>
         <SelectSocio

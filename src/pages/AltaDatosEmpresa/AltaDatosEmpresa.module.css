@@ -16,17 +16,17 @@
   height: 100vh;
   z-index: -1;
   pointer-events: none;
-  background-color: var(--carbon-black, #121212);
+  background-color: var(--carbon-black, #1a1a1a);
   background-image:
     radial-gradient(
-      circle at 10% 10%,
-      rgba(245, 244, 0, 0.08) 0%,
-      transparent 50%
+      circle at 0% 0%,
+      rgba(76, 101, 230, 0.15) 0%,
+      transparent 40%
     ),
     radial-gradient(
-      circle at 90% 90%,
-      rgba(76, 101, 230, 0.08) 0%,
-      transparent 50%
+      circle at 100% 100%,
+      rgba(244, 245, 0, 0.06) 0%,
+      transparent 40%
     );
 }
 
@@ -38,7 +38,8 @@
 
 .contentWrapper {
   width: 100%;
-  max-width: var(--form-container-width, 75rem);
+  max-width: 45rem;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
 }
@@ -59,10 +60,10 @@
 }
 
 .contenedorPrincipal {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
   gap: 1.5rem;
-  align-items: start;
 }
 
 .columnaFormulario {
@@ -164,8 +165,8 @@
 
   .navegacionTop,
   .contenedorPrincipal {
-    grid-template-columns: 1fr 20rem;
-    gap: 3.125rem;
+    width: 100%;
+    gap: 1.5rem;
   }
 
   .seccionFormulario {
@@ -193,6 +194,44 @@
 @media (min-width: 56.25rem) {
   .seccionFormulario {
     padding-bottom: 2.5rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .columnaFormulario {
+    display: grid;
+    grid-template-columns: 16rem 1fr;
+    grid-template-rows: max-content 1fr;
+    grid-template-areas:
+      "stepper header"
+      "stepper form";
+    gap: 2.5rem 5rem;
+    align-items: start;
+    align-content: start;
+  }
+
+  .stepperNav {
+    grid-area: stepper;
+  }
+
+  .bienvenidaHeader {
+    grid-area: header;
+    text-align: left;
+    align-items: flex-start;
+    padding-top: 0;
+  }
+
+  .seccionFormulario {
+    grid-area: form;
+    margin-top: 0;
+    height: fit-content;
+    align-self: start;
+  }
+}
+
+@media (min-width: 80rem) {
+  .columnaFormulario {
+    gap: 2.5rem 6rem;
   }
 }
 

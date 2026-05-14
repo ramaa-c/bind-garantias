@@ -85,14 +85,7 @@ export default function Paso4Socios({
       {/* --- FASE 1: INGRESAR CUIT --- */}
       {faseSocio === "ingresar_cuit" && (
         <div className={styles.section}>
-          <div className={styles.headerTitleRow}>
-            <h3 className={styles.headerTitle}>
-              <FiUserPlus /> Añadir nuevo socio
-            </h3>
-            <p className={styles.helperText}>
-              Ingresá el número de CUIT/CUIL para validar su identidad en AFIP.
-            </p>
-          </div>
+
 
           <BuscadorCuit
             label="CUIT del Socio"
@@ -137,9 +130,7 @@ export default function Paso4Socios({
       {/* --- FASE 2: COMPLETAR DATOS --- */}
       {faseSocio === "completar_datos" && (
         <div className={styles.section}>
-          <div className={styles.headerTitleRow}>
-            <h3 className={styles.headerTitle}>Completar datos del socio</h3>
-          </div>
+
 
           <div className={styles.summaryCard}>
             <div className={styles.summaryTop}>
@@ -225,7 +216,6 @@ export default function Paso4Socios({
       {faseSocio === "lista" && (
         <div className={styles.section}>
           <div className={styles.listHeader}>
-            <h3 className={styles.headerTitle}>Socios declarados</h3>
 
             <div className={styles.statsGroup}>
               <Badge>

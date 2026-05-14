@@ -291,12 +291,6 @@ export default function Paso3Simulador({
 
   return (
     <div className={styles.container}>
-      {!mostrarResultados && (
-        <h2 className={styles.headerTitle}>
-          Selecciona el tipo de financiación que necesitas
-        </h2>
-      )}
-
       <div className={styles.topGrid}>
         <SelectSocio
           name="moneda"

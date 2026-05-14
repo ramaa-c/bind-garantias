@@ -13,19 +13,18 @@ import {
   useFormPersist,
   getPersistedFormData,
 } from "../../hooks/useFormPersist";
-import { BarraPills, BotonVolver } from "../../components/ui";
+import { BarraProgreso, BotonVolver } from "../../components/ui";
 import {
   Paso3Simulador,
-  PanelDudas,
-  BotonAyudaFlotante,
   Paso4Socios,
   Paso5Documentacion,
   Paso6Bolsa,
   Paso7Exito,
   ModalConfirmacionBorrador,
 } from "../../components/features";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import { Alert } from "../../components/ui";
-import styles from "../cheques/SolicitudCheques.module.css";
+import styles from "../alta-operacion/AltaOperacion.module.css";
 import { sociosService } from "../../services/sociosService";
 import { solicitudesService } from "../../services/solicitudesService";
 import { useEmpresaActiva } from "../../hooks/useEmpresaActiva";
@@ -42,6 +41,13 @@ export const AltaOperacion = () => {
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
   const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
   const [errorSocioBackend, setErrorSocioBackend] = useState("");
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const { cuitActivo, socioIdActivo } = useEmpresaActiva();
   const sociosPrecargadosRef = useRef(false);
@@ -124,34 +130,50 @@ export const AltaOperacion = () => {
   useEffect(() => {
     if (!socioIdActivo || sociosPrecargadosRef.current) return;
     sociosPrecargadosRef.current = true; // Marcar inmediatamente para evitar doble ejecución
-    
+
     const currentSocios = getValues("socios");
     if (currentSocios && currentSocios.length > 0) return;
 
     const precargarSocios = async () => {
       try {
-        const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+        const relaciones =
+          await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
         const relacionesArray = Array.isArray(relaciones) ? relaciones : [];
-        
+
         if (relacionesArray.length === 0) return;
 
         const sociosCargados = [];
-        const cuitsYaCargados = new Set((getValues("socios") || []).map(s => s.cuit));
+        const cuitsYaCargados = new Set(
+          (getValues("socios") || []).map((s) => s.cuit),
+        );
 
         for (const rel of relacionesArray) {
-          const terceroId = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
+          const terceroId =
+            rel.terceroid ||
+            rel.tercerorelacionadoid ||
+            rel.TerceroRelacionadoID;
           if (!terceroId) continue;
 
           try {
-            const tercero = await tercerosService.obtenerTerceroPorId(terceroId);
+            const tercero =
+              await tercerosService.obtenerTerceroPorId(terceroId);
             if (tercero) {
               const cuit = tercero.cuit || tercero.Cuit || "";
               if (cuitsYaCargados.has(cuit)) continue; // Evitar duplicados
               cuitsYaCargados.add(cuit);
               sociosCargados.push({
                 cuit,
-                nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || "Sin nombre",
-                participacion: String(rel.porcacciones || rel.participacion || rel.Participacion || "0"),
+                nombre:
+                  tercero.denominacion ||
+                  tercero.Denominacion ||
+                  tercero.nombre ||
+                  "Sin nombre",
+                participacion: String(
+                  rel.porcacciones ||
+                    rel.participacion ||
+                    rel.Participacion ||
+                    "0",
+                ),
                 dataOriginal: tercero,
                 tercerorelacionadoid: terceroId,
                 preloadedFromDb: true,
@@ -165,7 +187,9 @@ export const AltaOperacion = () => {
         if (sociosCargados.length > 0) {
           sociosCargados.forEach((s) => append(s));
           setValue("faseSocio", "lista");
-          console.log(`✅ ${sociosCargados.length} socio(s) precargado(s) desde la base de datos.`);
+          console.log(
+            `✅ ${sociosCargados.length} socio(s) precargado(s) desde la base de datos.`,
+          );
         }
       } catch (error) {
         console.warn("No se pudieron precargar los socios existentes:", error);
@@ -244,7 +268,9 @@ export const AltaOperacion = () => {
       const payload = {
         solicitudenprocesoid: 0,
         fechacarga: new Date().toISOString().split(".")[0],
-        cuit: cuitActivo ? String(cuitActivo).replace(/\D/g, "") : "33711316839",
+        cuit: cuitActivo
+          ? String(cuitActivo).replace(/\D/g, "")
+          : "33711316839",
         tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : 2,
         cadenavalorid: 950274,
         monedaid: Number(cleanData.moneda) || 1,
@@ -266,7 +292,9 @@ export const AltaOperacion = () => {
       }
     } catch (error) {
       console.error("Error al enviar la solicitud:", error);
-      alert("Hubo un error al enviar la solicitud. Por favor, intentá nuevamente más tarde.");
+      alert(
+        "Hubo un error al enviar la solicitud. Por favor, intentá nuevamente más tarde.",
+      );
     } finally {
       setEnviandoSolicitud(false);
     }
@@ -296,7 +324,12 @@ export const AltaOperacion = () => {
 
     const nuevaSolicitud = {
       id: String(Math.floor(Math.random() * 9000) + 1000),
-      tipo: data.tipoProducto === "cheque" ? "Cheque" : data.tipoProducto === "pagare" ? "Pagaré" : "Préstamo",
+      tipo:
+        data.tipoProducto === "cheque"
+          ? "Cheque"
+          : data.tipoProducto === "pagare"
+            ? "Pagaré"
+            : "Préstamo",
       monto: montoFormateado,
       moneda: simbolo,
       estado: "Pendiente",
@@ -326,20 +359,28 @@ export const AltaOperacion = () => {
     setIsLoadingAFIP(true);
     setErrorSocioBackend("");
     try {
-      const dataAfip = await afipService.obtenerConstanciaInscripcion(tempSocioCuit);
-      
+      const dataAfip =
+        await afipService.obtenerConstanciaInscripcion(tempSocioCuit);
+
       if (dataAfip && dataAfip.datosgenerales) {
         const dg = dataAfip.datosgenerales;
-        const nombreSocio = dg.razonsocial || `${dg.nombre} ${dg.apellido}`.trim() || "Socio validado";
+        const nombreSocio =
+          dg.razonsocial ||
+          `${dg.nombre} ${dg.apellido}`.trim() ||
+          "Socio validado";
         setValue("tempSocioNombre", nombreSocio);
         setValue("tempSocioData", dataAfip);
         setValue("faseSocio", "completar_datos");
       } else {
-        setErrorSocioBackend("El CUIT ingresado no fue encontrado en los padrones de AFIP.");
+        setErrorSocioBackend(
+          "El CUIT ingresado no fue encontrado en los padrones de AFIP.",
+        );
       }
     } catch (error) {
       console.error("Error al validar CUIT en AFIP", error);
-      setErrorSocioBackend("No se pudo validar el CUIT en este momento. Por favor, reintentá más tarde o verificá tu conexión.");
+      setErrorSocioBackend(
+        "No se pudo validar el CUIT en este momento. Por favor, reintentá más tarde o verificá tu conexión.",
+      );
     } finally {
       setIsLoadingAFIP(false);
     }
@@ -352,20 +393,21 @@ export const AltaOperacion = () => {
       participacion: tempSocioParticipacion,
       dataOriginal: tempSocioData,
     };
-    
-    const indexSocioEditado = socios.findIndex(s => s.cuit === tempSocioCuit);
+
+    const indexSocioEditado = socios.findIndex((s) => s.cuit === tempSocioCuit);
     if (indexSocioEditado >= 0) {
       update(indexSocioEditado, nuevoSocio);
     } else {
       append(nuevoSocio);
     }
-    
+
     setValue("faseSocio", "lista");
   };
 
   const eliminarSocio = (index) => {
     remove(index);
-    if (socios.length === 1) { // 1 before removal means 0 after
+    if (socios.length === 1) {
+      // 1 before removal means 0 after
       setValue("faseSocio", "ingresar_cuit");
     }
   };
@@ -398,7 +440,12 @@ export const AltaOperacion = () => {
           denominacion: socioTarget.nombre || "",
           cuit: String(socioTarget.cuit).replace(/\D/g, ""),
           bcraid: 0,
-          tipopersonaid: dg.tipopersona === "FISICA" ? 1 : dg.tipopersona === "JURIDICA" ? 2 : 0,
+          tipopersonaid:
+            dg.tipopersona === "FISICA"
+              ? 1
+              : dg.tipopersona === "JURIDICA"
+                ? 2
+                : 0,
           tipodocumentoid: 0,
           numerodocumento: String(socioTarget.cuit).replace(/\D/g, ""),
           estadocivilid: 0,
@@ -421,20 +468,31 @@ export const AltaOperacion = () => {
         // Primero buscar si el tercero ya existe por CUIT
         const cuitLimpio = String(socioTarget.cuit).replace(/\D/g, "");
         try {
-          const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
-          const arr = Array.isArray(existentes) ? existentes : (existentes?.data || []);
+          const existentes = await tercerosService.obtenerTerceros({
+            Cuit: cuitLimpio,
+          });
+          const arr = Array.isArray(existentes)
+            ? existentes
+            : existentes?.data || [];
           if (arr.length > 0) {
-            terceroId = arr[0].tercerorelacionadoid || arr[0].TerceroRelacionadoID || arr[0].id;
+            terceroId =
+              arr[0].tercerorelacionadoid ||
+              arr[0].TerceroRelacionadoID ||
+              arr[0].id;
             console.log("✅ Tercero ya existente encontrado, ID:", terceroId);
           }
         } catch (buscarErr) {
-          console.warn("No se pudo buscar tercero existente, se intentará crear:", buscarErr);
+          console.warn(
+            "No se pudo buscar tercero existente, se intentará crear:",
+            buscarErr,
+          );
         }
 
         // Si no existe, crearlo
         if (!terceroId) {
           console.log("📤 POST TerceroRelacionado:", payloadTercero);
-          const terceroResult = await tercerosService.crearTercero(payloadTercero);
+          const terceroResult =
+            await tercerosService.crearTercero(payloadTercero);
           terceroId = terceroResult?.tercerorelacionadoid || terceroResult?.id;
           console.log("📥 Respuesta TerceroRelacionado:", terceroResult);
         }
@@ -469,23 +527,28 @@ export const AltaOperacion = () => {
                 subtiporelacionsocioid: 0,
                 telefono: datosFormulario.celular || "",
                 momento: ahora,
-              }
+              },
             ],
           };
 
           console.log("📤 POST SocioTerceroRelacion:", payloadRelacion);
           try {
-            const relResult = await tercerosService.guardarRelacionesDeSocio(payloadRelacion);
+            const relResult =
+              await tercerosService.guardarRelacionesDeSocio(payloadRelacion);
             console.log("📥 Respuesta SocioTerceroRelacion:", relResult);
           } catch (relError) {
             console.error("❌ Error en POST SocioTerceroRelacion:", relError);
             console.error("Response data:", relError?.response?.data);
           }
         } else {
-          console.error("⚠️ No se pudo vincular el tercero: socioIdActivo es null/undefined");
+          console.error(
+            "⚠️ No se pudo vincular el tercero: socioIdActivo es null/undefined",
+          );
         }
 
-        console.log(`✅ Socio "${socioTarget.nombre}" persistido (terceroId: ${terceroId})`);
+        console.log(
+          `✅ Socio "${socioTarget.nombre}" persistido (terceroId: ${terceroId})`,
+        );
       }
 
       // Actualizar el socio en el formulario con los datos completos
@@ -528,7 +591,9 @@ export const AltaOperacion = () => {
           setTempSocioCuit={(val) => setValue("tempSocioCuit", val)}
           tempSocioNombre={tempSocioNombre}
           tempSocioParticipacion={tempSocioParticipacion}
-          setTempSocioParticipacion={(val) => setValue("tempSocioParticipacion", val)}
+          setTempSocioParticipacion={(val) =>
+            setValue("tempSocioParticipacion", val)
+          }
           socios={socios}
           iniciarCargaSocio={iniciarCargaSocio}
           validarCuitSocio={validarCuitSocio}
@@ -553,14 +618,16 @@ export const AltaOperacion = () => {
       let disableTipoCalculo = false;
       let opcionesMoneda = [
         { value: "5000", label: "Pesos ($)" },
-        { value: "2", label: "Dólar (U$D)" }
+        { value: "2", label: "Dólar (U$D)" },
       ];
 
       if (IS_DLR) {
         opcionesProducto = [{ value: "pagare", label: "Pagaré" }];
         disableTipoProducto = true;
         mostrarTipoCalculo = true;
-        opcionesCalculo = [{ value: "monto_pagare", label: "por monto de pagare" }];
+        opcionesCalculo = [
+          { value: "monto_pagare", label: "por monto de pagare" },
+        ];
         disableTipoCalculo = true;
       } else {
         opcionesProducto = [
@@ -571,7 +638,7 @@ export const AltaOperacion = () => {
           mostrarTipoCalculo = true;
           opcionesCalculo = [
             { value: "monto_factura", label: "por monto de factura" },
-            { value: "monto_cheque", label: "por monto de cheque" }
+            { value: "monto_cheque", label: "por monto de cheque" },
           ];
         }
       }
@@ -582,34 +649,56 @@ export const AltaOperacion = () => {
           onCalcular={async () => {
             const campos = ["monto", "tipoProducto", "plazo"];
             if (mostrarTipoCalculo) campos.push("tipoCalculo");
-            
+
             const esValido = await trigger(campos);
-            
+
             if (esValido) {
               setEnviandoSolicitud(true);
               try {
                 // 1. Validar que no haya Solicitudes en Proceso
-                const solicitudes = await solicitudesService.obtenerSolicitudesEnProceso(cuitActivo || "33711316839");
-                const solicitudesArray = Array.isArray(solicitudes) ? solicitudes : (solicitudes?.data || []);
-                const tieneSolicitudEnProceso = solicitudesArray.some(s => s.estadosolicitud === 1 || s.estado === "En Proceso");
+                const solicitudes =
+                  await solicitudesService.obtenerSolicitudesEnProceso(
+                    cuitActivo || "33711316839",
+                  );
+                const solicitudesArray = Array.isArray(solicitudes)
+                  ? solicitudes
+                  : solicitudes?.data || [];
+                const tieneSolicitudEnProceso = solicitudesArray.some(
+                  (s) => s.estadosolicitud === 1 || s.estado === "En Proceso",
+                );
 
                 if (tieneSolicitudEnProceso) {
-                  alert("Ya tenés una solicitud de línea en análisis. Debés esperar a que se apruebe o rechace antes de crear una nueva.");
+                  alert(
+                    "Ya tenés una solicitud de línea en análisis. Debés esperar a que se apruebe o rechace antes de crear una nueva.",
+                  );
                   setEnviandoSolicitud(false);
                   return;
                 }
 
                 // 2. Validar que no tenga ya un TipoLimite activo para este producto
-                const tipoLimiteRequeridoId = tipoProducto === "cheque" ? 1 : (tipoProducto === "prestamo" ? 2 : 3);
-                const lineas = await lineaService.obtenerLimitesPorSocio(socioIdActivo || 2974);
-                const lineasArray = Array.isArray(lineas) ? lineas : (lineas?.data || []);
-                
+                const tipoLimiteRequeridoId =
+                  tipoProducto === "cheque"
+                    ? 1
+                    : tipoProducto === "prestamo"
+                      ? 2
+                      : 3;
+                const lineas = await lineaService.obtenerLimitesPorSocio(
+                  socioIdActivo || 2974,
+                );
+                const lineasArray = Array.isArray(lineas)
+                  ? lineas
+                  : lineas?.data || [];
+
                 const lineaActivaMismoProducto = lineasArray.find(
-                  (l) => l.tipolimiteid === tipoLimiteRequeridoId && l.tipolimiteestadoid === 1
+                  (l) =>
+                    l.tipolimiteid === tipoLimiteRequeridoId &&
+                    l.tipolimiteestadoid === 1,
                 );
 
                 if (lineaActivaMismoProducto) {
-                  alert(`Ya tenés una línea de ${tipoProducto} activa por un importe de $${lineaActivaMismoProducto.importelimite}. No es posible pedir una nueva línea.`);
+                  alert(
+                    `Ya tenés una línea de ${tipoProducto} activa por un importe de $${lineaActivaMismoProducto.importelimite}. No es posible pedir una nueva línea.`,
+                  );
                   setEnviandoSolicitud(false);
                   return;
                 }
@@ -617,7 +706,9 @@ export const AltaOperacion = () => {
                 setMostrarResultados(true);
               } catch (error) {
                 console.error("Error en validación previa:", error);
-                alert("Ocurrió un error de conexión al validar tus datos. Por favor intentá nuevamente.");
+                alert(
+                  "Ocurrió un error de conexión al validar tus datos. Por favor intentá nuevamente.",
+                );
               } finally {
                 setEnviandoSolicitud(false);
               }
@@ -649,9 +740,10 @@ export const AltaOperacion = () => {
             const reps = getValues("representantes");
             if (ok && reps?.length > 0) {
               if (tipoProducto === "cheque") setPasoActual(4);
-              else handleSubmit(onSubmitFinalPrestamos, (errors) => {
-                console.error("❌ Errores de validación del schema:", errors);
-              })();
+              else
+                handleSubmit(onSubmitFinalPrestamos, (errors) => {
+                  console.error("❌ Errores de validación del schema:", errors);
+                })();
             }
           }}
           onGuardarSocioDb={handleGuardarSocioDb}
@@ -693,7 +785,11 @@ export const AltaOperacion = () => {
 
   const renderBarraProgreso = () => {
     if (pasoActual === 5 && tipoProducto === "cheque") return null;
-    if (pasoActual === 4 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) return null;
+    if (
+      pasoActual === 4 &&
+      (tipoProducto === "prestamo" || tipoProducto === "pagare")
+    )
+      return null;
 
     let hitos = ["SOCIOS", "MONTOS", "DOCUMENTOS"];
     let hitoActual = pasoActual - 1;
@@ -703,60 +799,95 @@ export const AltaOperacion = () => {
       hitoActual = pasoActual - 1;
     }
 
-    return <BarraPills hitos={hitos} hitoActual={pasoActual} />;
+    return (
+      <nav className={styles.stepperNav}>
+        <BarraPills hitos={hitos} hitoActual={pasoActual} />
+      </nav>
+    );
   };
+
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return {
+          t: "Alta de Operación",
+          s: "Seleccioná el producto y las condiciones.",
+        };
+      case 2:
+        return {
+          t: "Declaración de Socios",
+          s: "Revisá y confirmá la composición societaria.",
+        };
+      case 3:
+        return {
+          t: "Documentación Requerida",
+          s: "Adjuntá los respaldos de la operación.",
+        };
+      case 4:
+        return { t: "Sociedad de Bolsa", s: "Confirmá tu cuenta comitente." };
+      case 5:
+        return {
+          t: "Operación Confirmada",
+          s: "La solicitud fue enviada con éxito.",
+        };
+      default:
+        return { t: "Alta de Operación", s: "" };
+    }
+  };
+
+  const hitosVisuales =
+    tipoProducto === "cheque"
+      ? ["Producto", "Socios", "Documentos", "Bolsa"]
+      : ["Producto", "Socios", "Documentos"];
+
+  const showHeaderYStepper =
+    !(pasoActual === 5 && tipoProducto === "cheque") &&
+    !(
+      pasoActual === 4 &&
+      (tipoProducto === "prestamo" || tipoProducto === "pagare")
+    );
 
   const mostrarBotonVolver =
     pasoActual > 1 &&
     !(pasoActual === 5 && tipoProducto === "cheque") &&
-    !(pasoActual === 4 && (tipoProducto === "prestamo" || tipoProducto === "pagare"));
+    !(
+      pasoActual === 4 &&
+      (tipoProducto === "prestamo" || tipoProducto === "pagare")
+    );
 
   return (
-    <div className={styles.pageContainer}>
+    <div className={styles.operacionPage}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
-          <div className={styles.navegacionTop}>
-            <div className={styles.botonesNavegacion}>
-              {mostrarBotonVolver && <BotonVolver onClick={handleVolver} />}
-              {pasoActual === 1 && (
-                <BotonVolver
-                  onClick={() => navigate("/solicitudes")}
-                  texto="Volver a lista"
-                />
-              )}
-              <BotonVolver
-                onClick={handleClickReiniciar}
-                icon={FiRotateCcw}
-                texto="Reiniciar operación"
-              />
-            </div>
-          </div>
-
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
+              {showHeaderYStepper && (
+                <BarraProgreso
+                  hitos={hitosVisuales}
+                  hitoActual={pasoActual}
+                  onVolver={mostrarBotonVolver ? handleVolver : null}
+                  onVolverInicio={
+                    pasoActual === 1 ? () => navigate("/solicitudes") : null
+                  }
+                  onReiniciar={handleClickReiniciar}
+                />
+              )}
+
+              {showHeaderYStepper && (
+                <div className={styles.bienvenidaHeader}>
+                  <h1 className={styles.tituloBienvenida}>
+                    {obtenerTextosCabecera().t}
+                  </h1>
+                  <div className={styles.titleAccent}></div>
+                  {obtenerTextosCabecera().s && (
+                    <p className={styles.subtituloBienvenida}>
+                      {obtenerTextosCabecera().s}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Nueva Operación</h1>
-                    <div className={styles.titleAccent}></div>
-                    <p className={styles.subtituloBienvenida}>
-                      Declaración de socios de la empresa.
-                    </p>
-                  </div>
-                )}
-
-                {pasoActual === 2 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Nueva Operación</h1>
-                    <div className={styles.titleAccent}></div>
-                    <p className={styles.subtituloBienvenida}>
-                      Ingresá los montos y condiciones de tu operación.
-                    </p>
-                  </div>
-                )}
-
-                {renderBarraProgreso()}
-
                 <FormProvider {...metodosFormulario}>
                   <form
                     className={styles.formContent}
@@ -769,28 +900,21 @@ export const AltaOperacion = () => {
                 </FormProvider>
               </div>
             </div>
-
-            {!(pasoActual === 5 && tipoProducto === "cheque") &&
-              !(pasoActual === 4 && (tipoProducto === "prestamo" || tipoProducto === "pagare")) && (
-                <>
-                  <PanelDudas
-                    contexto="alta_operacion"
-                    pasoActual={pasoActual}
-                  />
-                  <BotonAyudaFlotante
-                    contexto="alta_operacion"
-                    pasoActual={pasoActual}
-                  />
-                </>
-              )}
           </div>
         </div>
       </div>
+
       <ModalConfirmacionBorrador
         isOpen={isModalBorradorAbierto}
         onClose={continuarBorrador}
         onConfirm={confirmarReinicioOperacion}
         onContinueBorrador={continuarBorrador}
+      />
+      <HelpDrawer
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        contexto="alta_operacion"
+        pasoActual={pasoActual}
       />
     </div>
   );
