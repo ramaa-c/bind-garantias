@@ -34,7 +34,15 @@ import { PantallaGestionUsuarios } from "./pages/usuarios/PantallaGestionUsuario
 import DocumentacionView from "./pages/documentacion/DocumentacionView";
 import NotFound from "./pages/NotFound/NotFound";
 import OnboardingGuard from "./components/layout/OnboardingGuard/OnboardingGuard";
+import AdminGuard from "./components/layout/AdminGuard/AdminGuard";
 import AltaDatosEmpresa from "./pages/AltaDatosEmpresa/AltaDatosEmpresa";
+import AdminLayout from "./components/layout/AdminLayout/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminTasasMontos from "./pages/admin/AdminTasasMontos";
+import AdminRolesPermisos from "./pages/admin/AdminRolesPermisos";
+import AdminTerminos from "./pages/admin/AdminTerminos";
+import AdminBanners from "./pages/admin/AdminBanners";
+import AdminCadenasValor from "./pages/admin/AdminCadenasValor";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
@@ -217,6 +225,68 @@ function App() {
                   <AltaOperacion />
                 </DashboardLayout>
               </OnboardingGuard>
+            }
+          />
+
+          {/* Rutas de Administración */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/tasas-montos"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <AdminTasasMontos />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/roles-permisos"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <AdminRolesPermisos />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/terminos"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <AdminTerminos />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/banners"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <AdminBanners />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/cadenas-valor"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <AdminCadenasValor />
+                </AdminLayout>
+              </AdminGuard>
             }
           />
 

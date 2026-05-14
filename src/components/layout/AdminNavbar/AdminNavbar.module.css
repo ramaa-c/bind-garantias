@@ -1,0 +1,232 @@
+.navWrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background-color: #0d1117;
+  border-bottom: 1px solid #21262d;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Topmost branding bar */
+.topBrandBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.625rem 1.5rem;
+  background: #0d1117;
+}
+
+.logoBox {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.logoBox:hover {
+  opacity: 0.85;
+}
+
+.logoImg {
+  height: 2rem;
+  width: auto;
+}
+
+/* Etiqueta Admin con el nuevo branding amarillo y negro corporativo */
+.adminTag {
+  background: var(--yellow, #f5f400);
+  color: #000000;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  letter-spacing: 0.05rem;
+  box-shadow: 0 2px 4px rgba(245, 244, 0, 0.25);
+  border: 1px solid #000000;
+}
+
+.userControls {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.accountText {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  color: #e53935;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background 0.2s;
+}
+
+.logoutBtn:hover {
+  background: rgba(229, 57, 53, 0.08);
+}
+
+/* Main navigation links bar con fondo negro/carbon y acentos amarillos */
+.mainNav {
+  background: #0d1117; /* Fondo negro elegante alineado al branding */
+  border-top: 1px solid #21262d;
+  border-bottom: 1px solid #21262d;
+  padding: 0 1.5rem;
+  position: relative;
+}
+
+.navItemsContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.navButton {
+  background: none;
+  border: none;
+  color: #c9d1d9;
+  font-size: 0.925rem;
+  font-weight: 600;
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.navButton:hover,
+.dropdownActive {
+  color: #ffffff;
+  background: rgba(245, 244, 0, 0.05);
+  border-bottom: 3px solid rgba(245, 244, 0, 0.4);
+}
+
+.active {
+  background: rgba(245, 244, 0, 0.08);
+  color: var(--yellow, #f5f400);
+  border-bottom: 3px solid var(--yellow, #f5f400);
+  font-weight: 700;
+}
+
+.chevron {
+  transition: transform 0.2s ease;
+  color: #8b949e;
+}
+
+.navButton:hover .chevron,
+.dropdownActive .chevron,
+.active .chevron {
+  color: var(--yellow, #f5f400);
+}
+
+.dropdownActive .chevron {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu - modo oscuro con efecto de borde amarillo */
+.dropdownContainer {
+  position: relative;
+}
+
+.dropdownMenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #161b22;
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  padding: 0.5rem 0;
+  min-width: 17rem;
+  z-index: 200;
+  border: 1px solid #30363d;
+  animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scrollableMenu {
+  max-height: 28rem;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar para menús oscuros extensos */
+.scrollableMenu::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollableMenu::-webkit-scrollbar-track {
+  background: #0d1117;
+  border-radius: 4px;
+}
+.scrollableMenu::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 4px;
+}
+.scrollableMenu::-webkit-scrollbar-thumb:hover {
+  background: #58a6ff;
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #c9d1d9;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-left: 3px solid transparent;
+}
+
+.dropdownItem:hover {
+  background-color: #21262d;
+  color: #ffffff;
+  border-left: 3px solid var(--yellow, #f5f400);
+  padding-left: 1.5rem;
+  font-weight: 600;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1024px) {
+  .topBrandBar {
+    padding: 0.625rem 1rem;
+  }
+  .mainNav {
+    padding: 0 0.5rem;
+  }
+  .navButton {
+    padding: 0.75rem 0.625rem;
+    font-size: 0.85rem;
+  }
+}

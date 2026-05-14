@@ -1,0 +1,382 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+}
+
+.header p {
+  color: #8b949e;
+  margin: 0.4rem 0 0 0;
+  font-size: 0.95rem;
+  max-width: 45rem;
+}
+
+.btnPublish {
+  background: var(--yellow, #f5f400);
+  color: #000000;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s;
+  align-self: flex-end;
+  box-shadow: 0 4px 12px rgba(245, 244, 0, 0.2);
+}
+
+.btnPublish:hover {
+  background: #e5e400;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(245, 244, 0, 0.4);
+}
+
+@media (min-width: 768px) {
+  .btnPublish {
+    align-self: auto;
+  }
+}
+
+.btnPublish:disabled {
+  background: #161b22;
+  color: #484f58;
+  cursor: not-allowed;
+  border: 1px solid #30363d;
+}
+
+.btnPublishGlow {
+  background: #3fb950;
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(63, 185, 80, 0.4);
+}
+
+.btnPublishGlow:hover {
+  background: #2ea043;
+  transform: scale(1.03);
+}
+
+/* Workspace */
+.editorWorkspace {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .editorWorkspace {
+    grid-template-columns: 20rem 1fr;
+  }
+}
+
+/* Sidebar */
+.docSelectSidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sideTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  margin: 0;
+}
+
+.docsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.docCardBtn {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.docCardBtn:hover {
+  background: rgba(245, 244, 0, 0.03);
+  border-color: var(--yellow, #f5f400);
+}
+
+.activeDoc {
+  background: rgba(245, 244, 0, 0.08);
+  border-color: var(--yellow, #f5f400);
+  border-left: 4px solid var(--yellow, #f5f400);
+}
+
+.activeDoc:hover {
+  background: rgba(245, 244, 0, 0.1);
+  border-color: var(--yellow, #f5f400);
+}
+
+.docIcon {
+  font-size: 1.25rem;
+  color: #8b949e;
+  flex-shrink: 0;
+}
+
+.activeDoc .docIcon {
+  color: var(--yellow, #f5f400);
+}
+
+.docMeta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.docName {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.docVers {
+  font-size: 0.75rem;
+  color: #8b949e;
+  margin-top: 0.2rem;
+}
+
+.activeDoc .docVers {
+  color: #e1e4e8;
+}
+
+.infoCardNote {
+  background: rgba(210, 153, 34, 0.05);
+  border: 1px solid rgba(210, 153, 34, 0.2);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.infoCardNote h4 {
+  margin: 0 0 0.4rem 0;
+  color: var(--yellow, #f5f400);
+  font-size: 0.85rem;
+}
+
+.infoCardNote p {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #c9d1d9;
+  line-height: 1.4;
+}
+
+/* Main Panel */
+.mainEditorPanel {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.editorHead {
+  background: #0d1117;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .editorHead {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.headLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+.headLeft h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #ffffff;
+}
+
+.versionBadge {
+  background: rgba(88, 166, 255, 0.15);
+  color: #58a6ff;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.timestampInfo {
+  font-size: 0.75rem;
+  color: #8b949e;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: 0.5rem;
+}
+
+/* Mode Tabs */
+.modeTabs {
+  display: flex;
+  align-items: center;
+  background: #161b22;
+  padding: 0.25rem;
+  border-radius: 0.5rem;
+  border: 1px solid #30363d;
+}
+
+.modeBtn {
+  background: none;
+  border: none;
+  color: #8b949e;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.2s;
+}
+
+.modeBtn:hover {
+  color: #ffffff;
+}
+
+.modeActive {
+  background: #30363d;
+  color: var(--yellow, #f5f400);
+}
+
+.editorBody {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.textareaWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.richTextarea {
+  width: 100%;
+  min-height: 25rem;
+  background: #0d1117;
+  border: none;
+  color: #c9d1d9;
+  padding: 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  font-family: 'Inter', system-ui, sans-serif;
+  outline: none;
+  resize: vertical;
+}
+
+.richTextarea:focus {
+  background: #090c10;
+}
+
+.editorFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background: #0d1117;
+  border-top: 1px solid #30363d;
+  font-size: 0.75rem;
+  color: #8b949e;
+}
+
+/* Preview Mode */
+.previewPanel {
+  padding: 1.5rem;
+  background: #0d1117;
+  min-height: 25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.previewNotice {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+  color: #8b949e;
+  background: rgba(63, 185, 80, 0.05);
+  border: 1px solid rgba(63, 185, 80, 0.2);
+  padding: 0.625rem 1rem;
+  border-radius: 0.375rem;
+}
+
+.previewContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: #e1e4e8;
+  line-height: 1.6;
+}
+
+.previewHeading {
+  font-size: 1.15rem;
+  color: var(--yellow, #f5f400);
+  margin: 1rem 0 0.2rem 0;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 0.3rem;
+}
+
+.previewHeading:first-child {
+  margin-top: 0;
+}
+
+.previewParagraph {
+  margin: 0;
+  font-size: 0.925rem;
+}

@@ -60,8 +60,7 @@
   flex: 1;
 }
 
-.borderLeft {
-}
+
 
 @media (min-width: 48rem) {
   .grid {
@@ -121,12 +120,15 @@
 .actionLink:hover {
   color: var(--white, #fff);
 }
+
 .actionLinkEdit {
   color: #4caf50;
 }
+
 .actionLinkEdit:hover {
   color: #6ecf6e;
 }
+
 .actionLinkError {
   color: #ff5252;
 }
@@ -177,25 +179,22 @@
 .compactList {
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  gap: 0.4rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
 }
 
-@media (min-width: 48rem) {
-  .compactList {
-    max-height: 14rem;
-    overflow-y: auto;
-    padding-right: 0.25rem;
-  }
-  .compactList::-webkit-scrollbar {
-    width: 3px;
-  }
-  .compactList::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .compactList::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.07);
-    border-radius: 2px;
-  }
+.compactList::-webkit-scrollbar {
+  width: 0.25rem;
+}
+
+.compactList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.compactList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
 }
 
 /* FILA COMPACTA */
@@ -231,9 +230,11 @@
 .dotGreen {
   background: #4caf50;
 }
+
 .dotYellow {
   background: #ffc107;
 }
+
 .dotRed {
   background: #ff5252;
 }
@@ -362,11 +363,13 @@
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     justify-content: center;
   }
+
   .continueBtn {
     width: 100%;
     max-width: 18rem;
     justify-content: center;
   }
+
   .continueBtn svg {
     display: none;
   }
@@ -393,6 +396,7 @@
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
