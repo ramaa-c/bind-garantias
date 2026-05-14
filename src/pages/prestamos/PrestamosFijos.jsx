@@ -52,6 +52,17 @@ export default function PrestamosFijos() {
 
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
 
+  const [uiState, setUiState] = useState({
+    mostrarModal: false,
+    codigoSms: "",
+    mostrarResultados: false,
+    faseSocio: "lista",
+    tempSocioCuit: "",
+    tempSocioNombre: "",
+    tempSocioParticipacion: "",
+    docExpandido: "estatuto",
+  });
+
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
@@ -185,6 +196,25 @@ export default function PrestamosFijos() {
     }
   };
 
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return { t: "Línea de Préstamo Fijo", s: "Solicitá la habilitación de tu línea de crédito pre-aprobada." };
+      case 2:
+        return { t: "Línea de Préstamo Fijo", s: "Ingresá los datos de tu empresa." };
+      case 3:
+        return { t: "Línea de Préstamo Fijo", s: "Simulá los montos y condiciones de la operación." };
+      case 4:
+        return { t: "Línea de Préstamo Fijo", s: "Declaración de socios de la empresa." };
+      case 5:
+        return { t: "Línea de Préstamo Fijo", s: "Verificá la documentación respaldatoria." };
+      case 7:
+        return { t: "¡Solicitud completada!", s: "" };
+      default:
+        return { t: "Línea de Préstamo Fijo", s: "Completá los datos solicitados." };
+    }
+  };
+
   return (
     <div className={styles.prestamosPage}>
       <div className={styles.formMainContainer}>
@@ -219,21 +249,8 @@ export default function PrestamosFijos() {
 
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>
-                      Línea de Préstamo Fijo
-                    </h1>
-                    <div className={styles.titleAccent}></div>
-                    <p className={styles.subtituloBienvenida}>
-                      Solicitá la habilitación de tu línea de crédito
-                      pre-aprobada.
-                    </p>
-                  </div>
-                )}
-
-                {pasoActual >= 2 && pasoActual < 7 && (
+              {pasoActual >= 2 && pasoActual < 7 && (
+                <nav className={styles.stepperNav}>
                   <BarraProgreso
                     hitos={["EMPRESA", "OPERACIÓN", "SOCIOS", "DOCUMENTOS"]}
                     hitoActual={
@@ -246,8 +263,20 @@ export default function PrestamosFijos() {
                             : 1
                     }
                   />
-                )}
+                </nav>
+              )}
 
+              {pasoActual < 7 && (
+                <div className={styles.bienvenidaHeader}>
+                  <h1 className={styles.tituloBienvenida}>{obtenerTextosCabecera().t}</h1>
+                  <div className={styles.titleAccent}></div>
+                  {obtenerTextosCabecera().s && (
+                    <p className={styles.subtituloBienvenida}>{obtenerTextosCabecera().s}</p>
+                  )}
+                </div>
+              )}
+
+              <div className={styles.seccionFormulario}>
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">

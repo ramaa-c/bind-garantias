@@ -128,6 +128,21 @@ export default function CargaMasivaCheques() {
     console.log("Descargando PDF instructivo...");
   };
 
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return { t: "Carga masiva de cheques", s: "Descargá el archivo modelo, completalo con los cheques a negociar y subilo para procesarlo." };
+      case 2:
+        return { t: "Carga masiva de cheques", s: "Revisá los cheques procesados antes de confirmar." };
+      case 3:
+        return { t: "Carga masiva de cheques", s: "Confirmá la operación final." };
+      case 4:
+        return { t: "¡Cheques procesados con éxito!", s: "Ya podés gestionarlos desde ePyME." };
+      default:
+        return { t: "Carga masiva de cheques", s: "" };
+    }
+  };
+
   return (
     <div className={styles.chequesPage}>
       <div className={styles.formMainContainer}>
@@ -160,23 +175,24 @@ export default function CargaMasivaCheques() {
 
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Carga masiva de cheques</h1>
-                    <div className={styles.titleAccent}></div>
-                    <p className={styles.subtituloBienvenida}>
-                      Descargá el archivo modelo, completalo con los cheques a negociar y subilo para procesarlo.
-                    </p>
-                  </div>
-                )}
-                {pasoActual < 4 && (
+              {pasoActual < 4 && (
+                <nav className={styles.stepperNav}>
                   <BarraProgreso
                     hitos={["Carga", "Revisión", "Confirmación"]}
                     hitoActual={pasoActual}
                   />
-                )}
+                </nav>
+              )}
 
+              <div className={styles.bienvenidaHeader}>
+                <h1 className={styles.tituloBienvenida}>{obtenerTextosCabecera().t}</h1>
+                <div className={styles.titleAccent}></div>
+                {obtenerTextosCabecera().s && (
+                  <p className={styles.subtituloBienvenida}>{obtenerTextosCabecera().s}</p>
+                )}
+              </div>
+
+              <div className={styles.seccionFormulario}>
                 <FormProvider {...metodosFormulario}>
                   <form
                     className={styles.formContent}

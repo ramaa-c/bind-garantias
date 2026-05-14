@@ -214,6 +214,25 @@ export default function Prestamos() {
     }
   };
 
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return { t: "Solicitud de Línea de Préstamo", s: "Obtené financiación para tu empresa de forma ágil y 100% online." };
+      case 2:
+        return { t: "Solicitud de Línea de Préstamo", s: "Ingresá los datos de tu empresa." };
+      case 3:
+        return { t: "Solicitud de Línea de Préstamo", s: "Simulá los montos y condiciones de la operación." };
+      case 4:
+        return { t: "Solicitud de Línea de Préstamo", s: "Declaración de socios de la empresa." };
+      case 5:
+        return { t: "Solicitud de Línea de Préstamo", s: "Verificá la documentación respaldatoria." };
+      case 7:
+        return { t: "¡Solicitud completada!", s: "" };
+      default:
+        return { t: "Solicitud de Línea de Préstamo", s: "Completá los datos solicitados." };
+    }
+  };
+
   return (
     <div className={styles.prestamosPage}>
       <div className={styles.formMainContainer}>
@@ -248,35 +267,34 @@ export default function Prestamos() {
 
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>
-                      Solicitud de Línea de Préstamo
-                    </h1>
-                    <div className={styles.titleAccent}></div>
-                    <p className={styles.subtituloBienvenida}>
-                      Obtené financiación para tu empresa de forma ágil y 100%
-                      online.
-                    </p>
-                  </div>
-                )}
-
-                {pasoActual >= 2 &&
-                  pasoActual < 7 &&
-                  (() => {
-                    let hitoVisual = 1;
-                    if (pasoActual === 3) hitoVisual = 2;
-                    if (pasoActual === 4) hitoVisual = 3;
-                    if (pasoActual === 5) hitoVisual = 4;
-                    return (
+              {pasoActual >= 2 &&
+                pasoActual < 7 &&
+                (() => {
+                  let hitoVisual = 1;
+                  if (pasoActual === 3) hitoVisual = 2;
+                  if (pasoActual === 4) hitoVisual = 3;
+                  if (pasoActual === 5) hitoVisual = 4;
+                  return (
+                    <nav className={styles.stepperNav}>
                       <BarraProgreso
                         hitos={["EMPRESA", "OPERACIÓN", "SOCIOS", "DOCUMENTOS"]}
                         hitoActual={hitoVisual}
                       />
-                    );
-                  })()}
+                    </nav>
+                  );
+                })()}
 
+              {pasoActual < 7 && (
+                <div className={styles.bienvenidaHeader}>
+                  <h1 className={styles.tituloBienvenida}>{obtenerTextosCabecera().t}</h1>
+                  <div className={styles.titleAccent}></div>
+                  {obtenerTextosCabecera().s && (
+                    <p className={styles.subtituloBienvenida}>{obtenerTextosCabecera().s}</p>
+                  )}
+                </div>
+              )}
+
+              <div className={styles.seccionFormulario}>
                 <FormProvider {...metodosFormulario}>
                   <form className={styles.formContent}>
                     <div key={pasoActual} className="animacion-paso">

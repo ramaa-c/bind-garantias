@@ -184,6 +184,17 @@ export const AltaDatosEmpresa = () => {
     setPasoActual(2);
   };
 
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return { badge: "Alta de empresa", t: "Necesitamos conocer los datos de tu empresa", s: "Completá el CUIT de tu empresa para comenzar." };
+      case 2:
+        return { badge: "Alta de empresa", t: "Completá los datos de la empresa", s: "Verificá y completá la información faltante." };
+      default:
+        return { badge: "Alta de empresa", t: "Datos de la empresa", s: "" };
+    }
+  };
+
   const renderPasoDinamico = () => {
     if (pasoActual === 1) {
       return (
@@ -231,28 +242,33 @@ export const AltaDatosEmpresa = () => {
 
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <span className={styles.bienvenidaBadge}>
-                      Alta de empresa
-                    </span>
-                    <h1 className={styles.tituloBienvenida}>
-                      Necesitamos conocer los datos de tu empresa
-                    </h1>
-                    <div className={styles.titleAccent} />
-                    <p className={styles.subtituloBienvenida}>
-                      Completá el CUIT de tu empresa para comenzar.
-                    </p>
-                  </div>
-                )}
-                {pasoActual > 1 && (
+              {pasoActual > 1 && (
+                <nav className={styles.stepperNav}>
                   <BarraProgreso
                     hitos={["CUIT", "DATOS"]}
                     hitoActual={pasoActual - 1}
                   />
-                )}
+                </nav>
+              )}
 
+              <div className={styles.bienvenidaHeader}>
+                {obtenerTextosCabecera().badge && (
+                  <span className={styles.bienvenidaBadge}>
+                    {obtenerTextosCabecera().badge}
+                  </span>
+                )}
+                <h1 className={styles.tituloBienvenida}>
+                  {obtenerTextosCabecera().t}
+                </h1>
+                <div className={styles.titleAccent} />
+                {obtenerTextosCabecera().s && (
+                  <p className={styles.subtituloBienvenida}>
+                    {obtenerTextosCabecera().s}
+                  </p>
+                )}
+              </div>
+
+              <div className={styles.seccionFormulario}>
                 <FormProvider {...metodosFormulario}>
                   <form
                     className={styles.formContent}

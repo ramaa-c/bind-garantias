@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useFormPersist, getPersistedFormData } from "../../hooks/useFormPersist";
+import {
+  useFormPersist,
+  getPersistedFormData,
+} from "../../hooks/useFormPersist";
 import { pagareSchema } from "../../schemas/pagareSchema";
 import { BarraProgreso, BotonVolver } from "../../components/ui";
 import { FiRotateCcw } from "react-icons/fi";
@@ -86,61 +89,64 @@ export default function PagareUSD() {
     setIsModalReiniciarAbierto(false);
   };
 
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return {
+          t: "Simulador de Pagaré",
+          s: "Calculá las condiciones de tu operación.",
+        };
+      case 2:
+        return { t: "Agente Comercial", s: "Seleccioná la sociedad de bolsa." };
+      case 3:
+        return {
+          t: "Firma EPYME",
+          s: "Instrucciones para la firma electrónica.",
+        };
+      default:
+        return { t: "Pagaré Bursátil", s: "" };
+    }
+  };
+
+  const showHeaderYStepper = pasoActual < 4;
+
   return (
     <div className={styles.pagarePage}>
       <main className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
-          <div className={styles.navegacionTop}>
-            <div className={styles.botonesNavegacion}>
-              {pasoActual > 1 && pasoActual < 4 && (
-                <BotonVolver onClick={() => setPasoActual((prev) => prev - 1)} />
-              )}
-              {pasoActual === 1 && (
-                <BotonVolver
-                  onClick={() => navigate("/inicio")}
-                  texto="Volver a la lista"
+          <div className={styles.contenedorPrincipal}>
+            <div className={styles.columnaFormulario}>
+              {showHeaderYStepper && (
+                <BarraProgreso
+                  hitos={["SIMULADOR", "AGENTE", "FIRMA EPYME"]}
+                  hitoActual={pasoActual}
+                  onVolver={
+                    pasoActual > 1
+                      ? () => setPasoActual((prev) => prev - 1)
+                      : null
+                  }
+                  onVolverInicio={
+                    pasoActual === 1 ? () => navigate("/inicio") : null
+                  }
+                  onReiniciar={handleReiniciarAlta}
                 />
               )}
 
               {pasoActual < 4 && (
-                <BotonVolver
-                  icon={FiRotateCcw}
-                  onClick={handleReiniciarAlta}
-                  texto="Reiniciar alta"
-                />
-              )}
-            </div>
-            <div></div>
-          </div>
-
-          <div className={styles.contenedorPrincipal}>
-            <div className={styles.columnaFormulario}>
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Ingreso de Pagaré</h1>
-                    <div className={styles.titleAccent}></div>
-                    <p className={styles.subtituloBienvenida}>
-                      Ingresás el monto del pagaré y la fecha de pago
-                    </p>
-                  </div>
-                )}
-                {pasoActual > 1 && pasoActual < 4 && (
-                  <h1 className={styles.tituloVista}>
-                    {pasoActual === 2 &&
-                      "Seleccioná al agente de bolsa con quien operás"}
-                    {pasoActual === 3 &&
-                      "Generá el pagaré en Epyme y completá la operación"}
+                <div className={styles.bienvenidaHeader}>
+                  <h1 className={styles.tituloBienvenida}>
+                    {obtenerTextosCabecera().t}
                   </h1>
-                )}
+                  <div className={styles.titleAccent}></div>
+                  {obtenerTextosCabecera().s && (
+                    <p className={styles.subtituloBienvenida}>
+                      {obtenerTextosCabecera().s}
+                    </p>
+                  )}
+                </div>
+              )}
 
-                {pasoActual < 4 && (
-                  <BarraProgreso
-                    hitos={["SIMULADOR", "AGENTE", "FIRMA EPYME"]}
-                    hitoActual={pasoActual}
-                  />
-                )}
-
+              <div className={styles.seccionFormulario}>
                 <FormProvider {...metodosFormulario}>
                   <form
                     className={styles.formContent}
@@ -169,12 +175,14 @@ export default function PagareUSD() {
               </div>
             </div>
 
-            <HelpDrawer
-              isOpen={isHelpOpen}
-              onClose={() => setIsHelpOpen(false)}
-              contexto="pagare"
-              pasoActual={pasoActual}
-            />
+            {pasoActual < 4 && (
+              <HelpDrawer
+                isOpen={isHelpOpen}
+                onClose={() => setIsHelpOpen(false)}
+                contexto="pagare"
+                pasoActual={pasoActual}
+              />
+            )}
           </div>
         </div>
       </main>

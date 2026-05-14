@@ -9,86 +9,101 @@ export const BarraProgreso = ({
   onVolverInicio = null,
   onReiniciar = null,
 }) => {
+  const total = hitos.length;
+  const pct = Math.round(((hitoActual - 1) / (total - 1)) * 100);
+
   return (
-    <div className={styles.wizardContainer}>
-      <div className={styles.sideAction}>
-        {onVolver ? (
-          <button type="button" onClick={onVolver} className={styles.btnAction}>
-            <FiChevronLeft size={16} />
-            <span className={styles.btnText}>Volver</span>
-          </button>
-        ) : onVolverInicio ? (
+    <nav className={styles.stepper} aria-label="Progreso del formulario">
+      {/* ── IZQUIERDA ─────────────────────────────────────────────── */}
+      <div className={styles.side}>
+        {onVolver || onVolverInicio ? (
           <button
             type="button"
-            onClick={onVolverInicio}
-            className={styles.btnAction}
+            onClick={onVolver ?? onVolverInicio}
+            className={styles.btn}
           >
-            <FiChevronLeft size={16} />
-            <span className={styles.btnText}>Inicio</span>
+            <FiChevronLeft size={14} strokeWidth={2.5} />
+            <span className={styles.btnLabel}>
+              {onVolverInicio ? "Inicio" : "Volver"}
+            </span>
           </button>
         ) : (
-          <div className={styles.emptyAction} />
+          <div className={styles.phantom} />
         )}
       </div>
 
-      <div className={styles.stepperWrapper}>
-        {hitos.map((hito, index) => {
-          const numeroHito = index + 1;
-          const isCompleted = hitoActual > numeroHito;
-          const isCurrent = hitoActual === numeroHito;
+      {/* ── TRACK ────────────────────────────────────────────────── */}
+      <div className={styles.track}>
+        <div className={styles.mobileIndicator}>
+          <span className={styles.mobileName}>{hitos[hitoActual - 1]}</span>
+          <div className={styles.mobileBarWrap}>
+            <div
+              className={styles.mobileBarFill}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <span className={styles.mobileCount}>
+            {hitoActual}
+            <span className={styles.mobileCountTotal}>/{total}</span>
+          </span>
+        </div>
 
-          return (
-            <React.Fragment key={hito}>
-              <div
-                className={`${styles.stepNode} ${
-                  isCompleted
-                    ? styles.completed
-                    : isCurrent
-                      ? styles.current
-                      : styles.pending
-                }`}
-              >
-                {isCurrent && <div className={styles.badgeCurrent}>Actual</div>}
+        <ol className={styles.steps}>
+          {hitos.map((hito, i) => {
+            const n = i + 1;
+            const done = hitoActual > n;
+            const active = hitoActual === n;
+            const stateClass = done
+              ? styles.done
+              : active
+                ? styles.active
+                : styles.pending;
 
-                <div className={styles.circleContainer}>
-                  <div className={styles.circle}>
-                    {isCompleted ? (
-                      <FiCheck size={14} className={styles.checkIcon} />
-                    ) : (
-                      <span className={styles.number}>{numeroHito}</span>
-                    )}
+            return (
+              <React.Fragment key={hito}>
+                <li
+                  className={`${styles.step} ${stateClass}`}
+                  aria-current={active ? "step" : undefined}
+                >
+                  <div className={styles.circleWrap}>
+                    <div className={styles.circle}>
+                      {done ? (
+                        <FiCheck size={11} strokeWidth={3} />
+                      ) : (
+                        <span className={styles.num}>{n}</span>
+                      )}
+                    </div>
+                    {active && <div className={styles.ring} />}
                   </div>
-                </div>
+                  <span className={styles.label}>{hito}</span>
+                </li>
 
-                <span className={styles.label}>{hito}</span>
-              </div>
-
-              {index < hitos.length - 1 && (
-                <div
-                  className={`${styles.connector} ${
-                    isCompleted ? styles.connectorCompleted : ""
-                  }`}
-                />
-              )}
-            </React.Fragment>
-          );
-        })}
+                {i < hitos.length - 1 && (
+                  <div
+                    className={`${styles.connector} ${done ? styles.connectorDone : ""}`}
+                  />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </ol>
       </div>
 
-      <div className={styles.sideActionRight}>
+      {/* ── DERECHA ───────────────────────────────────────────────── */}
+      <div className={`${styles.side} ${styles.sideRight}`}>
         {onReiniciar ? (
           <button
             type="button"
             onClick={onReiniciar}
-            className={styles.btnAction}
+            className={`${styles.btn} ${styles.btnReset}`}
           >
-            <span className={styles.btnText}>Reiniciar</span>
-            <FiRotateCcw size={14} />
+            <span className={styles.btnLabel}>Reiniciar</span>
+            <FiRotateCcw size={12} />
           </button>
         ) : (
-          <div className={styles.emptyAction} />
+          <div className={styles.phantom} />
         )}
       </div>
-    </div>
+    </nav>
   );
 };

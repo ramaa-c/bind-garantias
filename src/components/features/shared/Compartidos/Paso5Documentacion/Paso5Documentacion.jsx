@@ -347,12 +347,6 @@ export default function Paso5Documentacion({
     <div className={styles.container}>
       {/* HEADER ─────────────────────────────────────────────────────────────── */}
       <div className={styles.header}>
-        <div className={styles.headerText}>
-          <h3 className={styles.title}>Configuración de la Solicitud</h3>
-          <p className={styles.subtitle}>
-            Completá la información requerida para estructurar la línea.
-          </p>
-        </div>
         <div className={styles.completionPills}>
           <span
             className={`${styles.pill} ${pill(docsEmpresaListos, intentoAvanzar)}`}

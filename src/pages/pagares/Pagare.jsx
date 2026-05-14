@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import { useFormPersist, getPersistedFormData } from "../../hooks/useFormPersist";
+import {
+  useFormPersist,
+  getPersistedFormData,
+} from "../../hooks/useFormPersist";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-// TODO: Asegúrate de tener o crear el esquema para pagaré
-import { prestamosSchema } from "../../schemas/prestamosSchema"; 
+import { prestamosSchema } from "../../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../../components/ui";
 import { ModalConfirmacionBorrador } from "../../components/features";
 import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
-import styles from "../prestamos/Prestamos.module.css"; // Puedes reutilizar el CSS
-import { PagarePasos } from "./PagarePasos"; // Componente de pasos para Pagaré
+import styles from "../prestamos/Prestamos.module.css";
+import { PagarePasos } from "./PagarePasos";
 
 const STORAGE_KEY = "draft_pagare";
 
@@ -23,8 +25,8 @@ export default function Pagare() {
     shouldUnregister: false,
     defaultValues: getPersistedFormData(STORAGE_KEY, {
       moneda: "Pesos",
-      tipoProducto: "pagare",          // Set por defecto
-      tipoCalculo: "por_monto_pagare", // Set por defecto
+      tipoProducto: "pagare",
+      tipoCalculo: "por_monto_pagare",
       monto: "",
       plazo: "",
       fechaPago: "",
@@ -147,19 +149,38 @@ export default function Pagare() {
 
   // Paso 4
   const iniciarCargaSocio = () => {
-    updateUiState({ tempSocioCuit: "", tempSocioParticipacion: "", faseSocio: "ingresar_cuit" });
+    updateUiState({
+      tempSocioCuit: "",
+      tempSocioParticipacion: "",
+      faseSocio: "ingresar_cuit",
+    });
   };
   const validarCuitSocio = () => {
-    updateUiState({ tempSocioNombre: "SEOANE SUAREZ MARINA", faseSocio: "completar_datos" });
+    updateUiState({
+      tempSocioNombre: "SEOANE SUAREZ MARINA",
+      faseSocio: "completar_datos",
+    });
   };
   const guardarSocio = () => {
     if (!uiState.tempSocioParticipacion) return;
-    setSocios([...socios, { cuit: uiState.tempSocioCuit, nombre: uiState.tempSocioNombre, participacion: uiState.tempSocioParticipacion }]);
+    setSocios([
+      ...socios,
+      {
+        cuit: uiState.tempSocioCuit,
+        nombre: uiState.tempSocioNombre,
+        participacion: uiState.tempSocioParticipacion,
+      },
+    ]);
     updateUiState({ faseSocio: "lista" });
   };
   const editarSocio = (index) => {
     const socio = socios[index];
-    updateUiState({ tempSocioCuit: socio.cuit, tempSocioNombre: socio.nombre, tempSocioParticipacion: socio.participacion, faseSocio: "completar_datos" });
+    updateUiState({
+      tempSocioCuit: socio.cuit,
+      tempSocioNombre: socio.nombre,
+      tempSocioParticipacion: socio.participacion,
+      faseSocio: "completar_datos",
+    });
     setSocios(socios.filter((_, i) => i !== index));
   };
   const eliminarSocio = (index) => {
@@ -171,7 +192,9 @@ export default function Pagare() {
 
   // Paso 5
   const toggleDoc = (seccion) => {
-    updateUiState({ docExpandido: uiState.docExpandido === seccion ? "" : seccion });
+    updateUiState({
+      docExpandido: uiState.docExpandido === seccion ? "" : seccion,
+    });
   };
   const avanzarAlExito = async () => {
     const okFacturacion = await trigger("emailFacturacion");
@@ -181,50 +204,94 @@ export default function Pagare() {
     }
   };
 
+  const obtenerTextosCabecera = () => {
+    switch (pasoActual) {
+      case 1:
+        return {
+          t: "Validación de Empresa",
+          s: "Ingresá el CUIT para comenzar.",
+        };
+      case 2:
+        return {
+          t: "Datos de la Operación",
+          s: "Completá la información del pagaré.",
+        };
+      case 3:
+        return {
+          t: "Declaración de Socios",
+          s: "Validá la composición societaria.",
+        };
+      case 4:
+        return {
+          t: "Declaración de Socios",
+          s: "Ajustá los porcentajes de participación.",
+        };
+      case 5:
+        return {
+          t: "Documentación Requerida",
+          s: "Adjuntá los respaldos de la operación.",
+        };
+      case 6:
+        return { t: "Confirmación", s: "Revisá los datos antes de finalizar." };
+      default:
+        return { t: "Solicitud de Pagaré", s: "" };
+    }
+  };
+
+  const showHeaderYStepper = pasoActual < 7;
+  const hitoVisual = (() => {
+    if (pasoActual <= 2) return 1;
+    if (pasoActual === 3 || pasoActual === 4) return 2;
+    if (pasoActual === 5) return 3;
+    if (pasoActual === 6) return 4;
+    return 1;
+  })();
   return (
     <div className={styles.prestamosPage}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
-          <div className={styles.navegacionTop}>
-            <div className={styles.botonesNavegacion}>
-              {pasoActual > 1 && pasoActual < 7 && (
-                <BotonVolver onClick={() => {
-                  handleVolver();
-                  if (pasoActual === 3) updateUiState({ mostrarResultados: false });
-                }} />
-              )}
-              {pasoActual === 1 && (
-                <BotonVolver onClick={() => navigate("/inicio")} texto="Volver a la lista" />
-              )}
-              {pasoActual < 7 && (
-                <BotonVolver icon={FiRotateCcw} onClick={handleReiniciarAlta} texto="Reiniciar alta" />
-              )}
-            </div>
-            <div></div>
-          </div>
-
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              <div className={styles.seccionFormulario}>
-                {pasoActual === 1 && (
-                  <div className={styles.bienvenidaHeader}>
-                    <h1 className={styles.tituloBienvenida}>Solicitud de Línea de Pagaré</h1>
-                    <div className={styles.titleAccent}></div>
+              {showHeaderYStepper && (
+                <BarraProgreso
+                  hitos={["EMPRESA", "SOCIOS", "DOCUMENTOS", "CONFIRMACIÓN"]}
+                  hitoActual={hitoVisual}
+                  onVolver={
+                    pasoActual > 1
+                      ? () => {
+                          handleVolver();
+                          if (pasoActual === 3)
+                            updateUiState({ mostrarResultados: false });
+                        }
+                      : null
+                  }
+                  onVolverInicio={
+                    pasoActual === 1 ? () => navigate("/inicio") : null
+                  }
+                  onReiniciar={handleReiniciarAlta}
+                />
+              )}
+
+              {pasoActual < 7 && (
+                <div className={styles.bienvenidaHeader}>
+                  <h1 className={styles.tituloBienvenida}>
+                    {obtenerTextosCabecera().t}
+                  </h1>
+                  <div className={styles.titleAccent}></div>
+                  {obtenerTextosCabecera().s && (
                     <p className={styles.subtituloBienvenida}>
-                      Emití y negociá pagarés bursátiles de forma ágil y 100% online.
+                      {obtenerTextosCabecera().s}
                     </p>
-                  </div>
-                )}
+                  )}
+                </div>
+              )}
 
-                {pasoActual >= 2 && pasoActual < 7 && (
-                  <BarraProgreso
-                    hitos={["EMPRESA", "OPERACIÓN", "SOCIOS", "DOCUMENTOS"]}
-                    hitoActual={pasoActual === 3 ? 2 : pasoActual === 4 ? 3 : pasoActual === 5 ? 4 : 1}
-                  />
-                )}
-
+              <div className={styles.seccionFormulario}>
                 <FormProvider {...metodosFormulario}>
-                  <form className={styles.formContent}>
+                  <form
+                    className={styles.formContent}
+                    onSubmit={(e) => e.preventDefault()}
+                  >
                     <div key={pasoActual} className="animacion-paso">
                       <PagarePasos
                         pasoActual={pasoActual}
@@ -252,12 +319,15 @@ export default function Pagare() {
                 </FormProvider>
               </div>
             </div>
-            <HelpDrawer
-              isOpen={isHelpOpen}
-              onClose={() => setIsHelpOpen(false)}
-              contexto="pagare"
-              pasoActual={pasoActual}
-            />
+
+            {pasoActual < 7 && (
+              <HelpDrawer
+                isOpen={isHelpOpen}
+                onClose={() => setIsHelpOpen(false)}
+                contexto="pagare"
+                pasoActual={pasoActual}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -1,17 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  FiHome,
-  FiFileText,
-  FiBriefcase,
-  FiDollarSign,
-  FiMenu,
-  FiLayers,
-  FiEdit,
-  FiUsers,
-  FiShield,
-  FiChevronDown,
-} from "react-icons/fi";
+import { FiFileText, FiMenu, FiLayers, FiChevronDown } from "react-icons/fi";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import styles from "./Sidebar.module.css";
@@ -44,64 +33,63 @@ export default function Sidebar({ isOpen, onClose }) {
 
   return (
     <aside className={`${styles.container} ${isOpen ? styles.open : ""}`}>
-      {/* --- HEADER MÓVIL --- */}
-      <div className={styles.mobileHeader}>
+      <div className={styles.sidebarHeader}>
+        <img src={logoBind} alt="Bind Garantías" className={styles.logo} />
         <button
           className={styles.closeButton}
           onClick={onClose}
           aria-label="Cerrar menú"
         >
-          <FiMenu size={24} color="var(--white)" />
+          <FiMenu className={styles.closeIcon} />
         </button>
-        <img src={logoBind} alt="Logo BIND" className={styles.mobileLogo} />
       </div>
 
-      {/* --- EMPRESA ACTIVA --- */}
       {nombreEmpresa && (
         <div className={styles.companyCard}>
-          <div className={styles.companyIconWrap}>
-            <FiBriefcase size={16} />
+          <div className={styles.companyAvatar}>
+            {nombreEmpresa.charAt(0).toUpperCase()}
           </div>
-          <div className={styles.companyTextWrap}>
-            <span className={styles.companyLabel}>EMPRESA ACTIVA</span>
+          <div className={styles.companyInfo}>
             <p className={styles.companyName}>{nombreEmpresa}</p>
-            {cuitActivo && <p className={styles.companyCuit}>CUIT {cuitActivo}</p>}
+            {cuitActivo && (
+              <p className={styles.companyCuit}>CUIT {cuitActivo}</p>
+            )}
           </div>
         </div>
       )}
 
-      <nav className={styles.navMenu}>
-        {/* ─── SECCIÓN: GENERAL ─── */}
-        <div
-          className={styles.sectionHeader}
-          onClick={() => toggleSection("general")}
-        >
-          <p className={styles.heading}>GENERAL</p>
-          <FiChevronDown
-            className={`${styles.chevron} ${expandedSections.general ? styles.chevronOpen : ""}`}
-          />
-        </div>
-        <div
-          className={`${styles.collapsibleContent} ${expandedSections.general ? styles.expanded : ""}`}
-        >
-          <button
-            className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/solicitudes")}
+      <div className={styles.scrollArea}>
+        <nav className={styles.navMenu}>
+          <div
+            className={styles.sectionHeader}
+            onClick={() => toggleSection("general")}
           >
-            <FiFileText className={styles.icon} /> Solicitudes
-          </button>
-          <button
-            className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
-            onClick={() => handleNavigate("/documentacion")}
+            <p className={styles.heading}>GENERAL</p>
+            <FiChevronDown
+              className={`${styles.chevron} ${expandedSections.general ? styles.chevronOpen : ""}`}
+            />
+          </div>
+          <div
+            className={`${styles.collapsibleContent} ${expandedSections.general ? styles.expanded : ""}`}
           >
-            <FiLayers className={styles.icon} /> Documentación
-          </button>
-        </div>
-      </nav>
+            <button
+              className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
+              onClick={() => handleNavigate("/solicitudes")}
+            >
+              <FiFileText className={styles.icon} /> Solicitudes
+            </button>
+            <button
+              className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
+              onClick={() => handleNavigate("/documentacion")}
+            >
+              <FiLayers className={styles.icon} /> Documentación
+            </button>
+          </div>
+        </nav>
+      </div>
 
-      {/* --- FOOTER DE VERSIÓN --- */}
       <div className={styles.footer}>
-        <p className={styles.versionText}>© 2026 Bind Garantías · v1.0.0</p>
+        <p className={styles.versionText}>Versión 1.0.0</p>
       </div>
     </aside>
   );

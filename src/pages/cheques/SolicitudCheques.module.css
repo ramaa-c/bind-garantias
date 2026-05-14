@@ -172,6 +172,43 @@
   }
 }
 
+@media (min-width: 64rem) {
+  .columnaFormulario {
+    display: grid;
+    grid-template-columns: 16rem 1fr;
+    grid-template-rows: max-content 1fr;
+    grid-template-areas:
+      "stepper header"
+      "stepper form";
+    gap: 2.5rem 5rem;
+    align-items: start;
+    align-content: start;
+  }
+
+  .stepperNav {
+    grid-area: stepper;
+  }
+
+  .bienvenidaHeader {
+    grid-area: header;
+    text-align: left;
+    padding-top: 0;
+  }
+
+  .seccionFormulario {
+    grid-area: form;
+    margin-top: 0;
+    height: fit-content;
+    align-self: start;
+  }
+}
+
+@media (min-width: 80rem) {
+  .columnaFormulario {
+    gap: 2.5rem 6rem;
+  }
+}
+
 :global(.input-wrapper),
 :global(.form-group) {
   position: relative;
