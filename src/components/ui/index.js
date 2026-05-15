@@ -16,6 +16,7 @@ export * from './InputSocioMasked/InputSocioMasked';
 export * from './SelectSocio/SelectSocio';
 export * from './InputAuth/InputAuth';
 export * from './InputPasswordSeguro/InputPasswordSeguro';
+export * from './InputSimple/InputSimple';
 export { default as ModalSms } from './ModalSms/ModalSms';
 export * from './Modal/Modal';
 export * from './Select/Select';

@@ -1,10 +1,12 @@
+/* ── BASE MOBILE ─────────────────────────────────────────────────────────────── */
+
 .pageContainer {
   position: relative;
   z-index: 1;
-  color: var(--white-muted);
+  color: var(--white-muted, #f0f0f0);
   display: flex;
   flex-direction: column;
-  font-family: var(--font-secundaria);
+  font-family: var(--font-secundaria, serif);
   min-height: 100%;
 }
 
@@ -31,69 +33,41 @@
 }
 
 .formMainContainer {
+  flex: 1;
   display: flex;
   justify-content: center;
-  padding: 1.5rem 1rem;
+  padding: 1rem;
 }
 
 .contentWrapper {
   width: 100%;
-  max-width: 45rem;
-  margin: 0 auto;
+  max-width: 52rem;
   display: flex;
   flex-direction: column;
-}
-
-.navegacionTop {
-  margin-bottom: 0.5rem;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.5rem;
-  align-items: center;
-}
-
-.botonesNavegacion {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
 }
 
 .contenedorPrincipal {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  gap: 1.5rem;
+  flex: 1;
 }
 
 .columnaFormulario {
-  width: 100%;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  gap: 0;
 }
 
-.seccionFormulario {
-  background: rgba(30, 30, 30, 0.85);
-  backdrop-filter: blur(12px);
-  padding: 1rem 1.5rem 1.5rem 1.5rem;
-  border-radius: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
-}
+/* ── TÍTULO FLOTANTE ────────────────────────────────────────────────── */
 
-.formContent {
-  margin-top: 1.5rem;
-}
-
-/* --- TEXTOS DE BIENVENIDA --- */
 .bienvenidaHeader {
-  text-align: center;
-  padding: 1.25rem 0 0.5rem;
+  padding: 1.5rem 0 1.25rem;
   animation: fadeIn 0.4s ease;
+  text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
 }
 
 .bienvenidaBadge {
@@ -109,95 +83,75 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .tituloBienvenida {
   color: var(--white, #fff);
-  font-size: 1.625rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin: 0;
   letter-spacing: -0.03em;
-  line-height: 1.2;
-  max-width: 24rem;
-  min-width: 30rem;
+  margin: 0;
+  line-height: 1.15;
 }
 
 .subtituloBienvenida {
-  color: #555;
-  font-size: 0.9375rem;
-  font-weight: 400;
+  color: var(--text-muted, #666);
+  font-size: 0.9rem;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.55;
+  margin-top: 0.5rem;
 }
 
 .titleAccent {
-  width: 2.5rem;
+  width: 2.25rem;
   height: 2px;
   background: var(--yellow, #f4f500);
   border-radius: 999px;
-  margin: 0.25rem auto 0;
+  margin: 0.75rem auto 0;
   opacity: 0.6;
 }
 
+/* ── CARD (Elevated Solid UI) ────────────────────────────────────────────────── */
+
+.seccionFormulario {
+  background: var(--carbon-black, #1a1a1a);
+  border: 1px solid var(--border, #252525);
+  border-radius: 1.125rem;
+  padding: 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    inset 3px 0 0 rgba(244, 245, 0, 0.2),
+    0 8px 40px rgba(0, 0, 0, 0.35);
+}
+
+/* ── FORM ────────────────────────────────────────────────────────────────────── */
+
+.formContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 :global(.animacion-paso) {
-  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 100%;
+  animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-0.625rem);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* --- ESCRITORIO --- */
-@media (min-width: 56.25rem) {
-  .formMainContainer {
-    padding: 1.5rem 2.5rem;
-  }
-
-  .navegacionTop,
-  .contenedorPrincipal {
-    width: 100%;
-    gap: 1.5rem;
-  }
-
-  .seccionFormulario {
-    padding: 1rem 2.5rem 2.5rem 2.5rem;
-  }
-
-  .bienvenidaHeader {
-    padding: 1.5rem 1rem 1.5rem 1rem;
-  }
-
-  .tituloBienvenida {
-    font-size: 2.4rem;
-  }
-
-  .subtituloBienvenida {
-    font-size: 1.1rem;
-  }
-}
-
-@media (max-width: 56.24rem) {
-  .seccionFormulario {
-    padding-bottom: 1rem;
-  }
-}
-@media (min-width: 56.25rem) {
-  .seccionFormulario {
-    padding-bottom: 2.5rem;
-  }
-}
+/* ── DESKTOP ───────────────────────────── */
 
 @media (min-width: 64rem) {
+  .formMainContainer {
+    padding: 2.5rem 4.5rem;
+  }
+
+  .contentWrapper {
+    max-width: 74rem;
+  }
+
   .contenedorPrincipal {
     display: flex;
     flex-direction: column;
@@ -228,31 +182,60 @@
     align-items: start;
     align-content: start;
   }
-  
-  .stepperNav {
+
+  .columnaFormulario > nav {
     grid-area: stepper;
+    position: sticky;
+    top: 2.5rem;
   }
 
   .bienvenidaHeader {
     grid-area: header;
     text-align: left;
     align-items: flex-start;
-    padding-top: 0;
+    margin: 0;
+    padding: 0;
+    margin-top: 3rem;
+  }
+
+  .titleAccent {
+    margin: 0.75rem 0 0;
   }
 
   .seccionFormulario {
     grid-area: form;
-    margin-top: 0;
+    margin-top: 0rem;
     height: fit-content;
     align-self: start;
+  }
+
+  .tituloBienvenida {
+    font-size: 2.25rem;
   }
 }
 
 @media (min-width: 80rem) {
+  .contentWrapper {
+    max-width: 84rem;
+  }
   .columnaFormulario {
-    gap: 2.5rem 6rem;
+    grid-template-columns: 16rem 1fr;
+    gap: 2.5rem 0rem;
   }
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── UTILS (Formularios y Modales) ───────────────────────────────────────────── */
 
 :global(.input-wrapper),
 :global(.form-group) {
@@ -270,8 +253,6 @@
   margin-top: 0.25rem;
   animation: fadeIn 0.3s ease;
 }
-
-/* ── MODAL EMPRESA EXISTENTE ─────────────────────────────────────────────────── */
 
 .modalContent {
   display: flex;
@@ -311,6 +292,7 @@
 }
 
 .modalHighlightSubtitle {
+  margin-left: 0.75rem;
   color: #444;
   font-size: 0.78rem;
   font-family: var(--font-mono, monospace);
@@ -318,14 +300,6 @@
 
 .modalActionsSingle {
   display: flex;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  justify-content: flex-end;
-}
-
-.modalActions {
-  display: flex;
-  gap: 0.625rem;
   padding-top: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   justify-content: flex-end;

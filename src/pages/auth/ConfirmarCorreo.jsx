@@ -24,15 +24,6 @@ const ConfirmarCorreo = () => {
     }
   }, [cooldown, emailUsuario]);
 
-  if (!emailUsuario) {
-    setTimeout(() => {
-      toast.error("Sesión inválida", {
-        description: "No se encontró información del registro. Volvé a intentarlo.",
-      });
-    }, 0);
-    return <Navigate to="/registro" replace />;
-  }
-
   const handleReenviar = () => {
     if (cooldown > 0 || isPending) return;
 
@@ -70,6 +61,15 @@ const ConfirmarCorreo = () => {
   };
 
   const isButtonDisabled = isPending || cooldown > 0;
+
+  if (!emailUsuario) {
+    setTimeout(() => {
+      toast.error("Sesión inválida", {
+        description: "No se encontró información del registro. Volvé a intentarlo.",
+      });
+    }, 0);
+    return <Navigate to="/registro" replace />;
+  }
 
   return (
     <div className={styles.layoutSplit}>

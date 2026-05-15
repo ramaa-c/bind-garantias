@@ -1,5 +1,4 @@
 /* ── CONTENEDOR ─────────────────────────────────────────────────────────────── */
-
 .group {
   position: relative;
   width: 100%;
@@ -10,7 +9,6 @@
 }
 
 /* ── INPUT WRAPPER ──────────────────────────────────────────────────────────── */
-
 .inputWrapper {
   position: relative;
   background: rgba(255, 255, 255, 0.03);
@@ -22,15 +20,31 @@
   overflow: hidden;
 }
 
-.inputWrapper:focus-within {
-  border-color: var(--dynamic-color);
-  box-shadow:
-    inset 3px 0 0 var(--dynamic-color),
-    0 0 0 3px rgba(245, 244, 0, 0.05);
+/* MÁQUINA DE ESTADOS VISUALES */
+.statusDefault:hover .inputWrapper {
+  border-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.035);
+}
+
+.statusFocus .inputWrapper {
+  border-color: var(--yellow, #f4f500);
+  background-color: rgba(244, 245, 0, 0.025);
+  box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.06);
+}
+
+.statusSuccess .inputWrapper {
+  border-color: rgba(76, 175, 80, 0.5);
+  background-color: rgba(76, 175, 80, 0.02);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.05);
+}
+
+.statusError .inputWrapper {
+  border-color: rgba(255, 82, 82, 0.6);
+  background-color: rgba(255, 82, 82, 0.02);
+  box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.06);
 }
 
 /* ── INPUT ──────────────────────────────────────────────────────────────────── */
-
 .input {
   width: 100%;
   padding: 1.375rem 5.5rem 0.625rem 1rem;
@@ -49,7 +63,6 @@
 }
 
 /* ── FLOATING LABEL ─────────────────────────────────────────────────────────── */
-
 .label {
   position: absolute;
   left: 1rem;
@@ -67,19 +80,33 @@
   font-family: var(--font-principal, inherit);
 }
 
-.input:focus ~ .label,
-.input:not(:placeholder-shown) ~ .label {
+.hasValue .label,
+.statusFocus .label {
   top: 0.55rem;
   transform: none;
   font-size: 0.68rem;
-  color: var(--dynamic-color);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   font-weight: 500;
 }
 
-/* ── ACTIONS  ──────────────────────────────────────────────────── */
+.statusDefault.hasValue .label {
+  color: var(--text-muted, #555);
+}
 
+.statusFocus .label {
+  color: var(--yellow, #f5f400);
+}
+
+.statusSuccess .label {
+  color: var(--success-green, #3ddc84);
+}
+
+.statusError .label {
+  color: #ff5252;
+}
+
+/* ── ACTIONS  ──────────────────────────────────────────────────── */
 .actions {
   position: absolute;
   right: 0.875rem;
@@ -119,26 +146,13 @@
   animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* ── STRENGTH TRACK ─────────────────────────────────────────────────────────── */
-
-.strengthTrack {
-  height: 3px;
-  background: rgba(255, 255, 255, 0.05);
-  overflow: hidden;
-}
-
-.strengthFill {
-  height: 100%;
-  border-radius: 0 9999px 9999px 0;
-  transition:
-    width 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 0.45s ease;
-}
-
-/* ── FEEDBACK TEXT ──────────────────────────────────────────────────────────── */
-
-.feedbackText {
+/* ── MENSAJE DE ERROR ────────────────────────────────────────────────────────── */
+.errorMsg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   font-size: 0.7rem;
+  color: #ff5252;
   margin: 0;
   padding-left: 0.25rem;
   display: flex;
@@ -146,15 +160,11 @@
   gap: 0.3rem;
   font-family: var(--font-secundaria, serif);
   letter-spacing: 0.01em;
-  animation: fadeSlide 0.25s ease;
+  animation: slideIn 0.25s ease;
   line-height: 1.4;
-  position: absolute;
-  bottom: 0;
-  left: 0;
 }
 
 /* ── RESET AUTOCOMPLETADO ───────────────────────────────────────────────────── */
-
 .input:-webkit-autofill,
 .input:-webkit-autofill:hover,
 .input:-webkit-autofill:focus,
@@ -166,7 +176,6 @@
 }
 
 /* ── ANIMATIONS ─────────────────────────────────────────────────────────────── */
-
 @keyframes popIn {
   from {
     transform: scale(0.5);
@@ -178,7 +187,7 @@
   }
 }
 
-@keyframes fadeSlide {
+@keyframes slideIn {
   from {
     opacity: 0;
     transform: translateY(-4px);

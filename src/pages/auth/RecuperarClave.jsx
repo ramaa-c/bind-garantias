@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useResetearPassword } from "../../hooks/useUsuario";
-import { InputFlotante, Button, Alert } from "../../components/ui";
+import { InputSimple, Button, Alert } from "../../components/ui";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
@@ -15,10 +15,11 @@ const recuperarSchema = z.object({
     .email({ message: "Formato de email inválido" }),
 });
 
-const RecuperarPassword = () => {
+const RecuperarClave = () => {
   const navigate = useNavigate();
 
   const {
+    control,
     register,
     handleSubmit,
     formState: { errors },
@@ -27,7 +28,13 @@ const RecuperarPassword = () => {
     defaultValues: { email: "" },
   });
 
-  const { mutate: enviarCorreo, isPending, isError, isSuccess, error } = useResetearPassword();
+  const {
+    mutate: enviarCorreo,
+    isPending,
+    isError,
+    isSuccess,
+    error,
+  } = useResetearPassword();
 
   const getCSharpIsoDate = (addYears = 0) => {
     const date = new Date();
@@ -47,7 +54,13 @@ const RecuperarPassword = () => {
       esadministrador: "",
       denominacion: "",
     };
-    enviarCorreo(payloadReset);
+    enviarCorreo(payloadReset, {
+      onSuccess: () => {
+        navigate("/confirmar-correo", {
+          state: { emailIngresado: data.email, canal: "canal1" },
+        });
+      },
+    });
   };
 
   return (
@@ -76,36 +89,18 @@ const RecuperarPassword = () => {
             className={styles.formContent}
             onSubmit={handleSubmit(onSubmit)}
           >
-            {isError && (
-              <Alert variant="error" className={styles.formFieldSpacing}>
-                Ocurrió un error al procesar la solicitud. Intentá más tarde.
-              </Alert>
-            )}
-
-            {isSuccess && (
-              <Alert variant="success" className={styles.formFieldSpacing}>
-                ¡Listo! Te enviamos un email con las instrucciones para crear
-                una nueva contraseña.
-              </Alert>
-            )}
-
-            <InputFlotante
+            <InputSimple
+              name="email"
+              control={control}
               label="Email"
-              type="email"
-              id="email"
-              error={errors.email?.message}
-              {...register("email")}
+              type="text"
+              disabled={isPending}
+              error={isError ? "Usuario no encontrado." : undefined}
             />
 
             <div className={styles.formActions}>
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={isPending}
-              >
-                {isPending
-                  ? "Enviando..."
-                  : "Recuperar contraseña"}
+              <Button type="submit" variant="primary" disabled={isPending}>
+                {isPending ? "Enviando..." : "Recuperar contraseña"}
               </Button>
             </div>
           </form>
@@ -140,4 +135,4 @@ const RecuperarPassword = () => {
   );
 };
 
-export default RecuperarPassword;
+export default RecuperarClave;

@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { FiMail, FiLock } from "react-icons/fi";
-import { InputAuth, Button } from "../../components/ui";
+import { InputSimple, Button } from "../../components/ui";
 import { useLogin } from "../../hooks/useUsuario";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useChannel } from "../../context/ChannelContext";
@@ -33,7 +33,11 @@ const Login = () => {
 
   const onSubmit = (formData) => {
     if (formData.email === "admin" && formData.password === "admin") {
-      setUser({ email: "admin", role: "admin", nombre: "Administrador General" });
+      setUser({
+        email: "admin",
+        role: "admin",
+        nombre: "Administrador General",
+      });
       toast.success("Sesión de Administrador iniciada", {
         description: "Accediendo a la consola de administración integral.",
       });
@@ -98,21 +102,19 @@ const Login = () => {
             onSubmit={handleSubmit(onSubmit)}
             noValidate
           >
-            <InputAuth
+            <InputSimple
               name="email"
               control={control}
               label="Email o Usuario"
               type="text"
-              icon={<FiMail size={20} />}
               disabled={isPending}
             />
 
-            <InputAuth
+            <InputSimple
               name="password"
               control={control}
               label="Contraseña"
               type="password"
-              icon={<FiLock size={20} />}
               disabled={isPending}
             />
 
@@ -129,6 +131,14 @@ const Login = () => {
               >
                 REGISTRARSE
               </Button>
+            </div>
+            <div className={styles.recoverPasswordWrapper}>
+              <span
+                className={styles.recoverPasswordLink}
+                onClick={() => navigate("/recuperar-clave")}
+              >
+                ¿Olvidaste tu contraseña? Recuperar clave
+              </span>
             </div>
           </form>
         </div>

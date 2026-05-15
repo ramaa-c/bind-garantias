@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useFormContext, useFormState } from "react-hook-form";
+import React, { useState, useEffect } from "react";
+import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { BuscadorCuit } from "../../../../ui";
 import { sociosService } from "../../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../../hooks/useAfip";
@@ -7,7 +7,8 @@ import { useValidarFormatoCuit } from "../../../../../hooks/useSocios";
 import styles from "./Paso1Cuit.module.css";
 
 export default function Paso1Cuit({ onValidar, onSocioExistente }) {
-  const { control, getValues, setValue, setError } = useFormContext();
+  const { control, getValues, setValue, setError, clearErrors } =
+    useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
   const { mutateAsync: validarAfip, isPending: isLoadingAfip } =
     useValidarCuitAfip();
@@ -15,13 +16,23 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     useValidarFormatoCuit();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
 
+  const cuitValue = useWatch({ control, name: "cuit" });
+
+  useEffect(() => {
+    if (errors.cuit?.type === "manual") {
+      clearErrors("cuit");
+    }
+  }, [cuitValue, clearErrors]);
+
   const isCuitValid = !errors.cuit && dirtyFields.cuit;
 
   const handleValidar = async () => {
     const cuit = getValues("cuit");
     if (!cuit) return;
 
+    clearErrors("cuit");
     setIsValidatingSocio(true);
+
     try {
       // VALIDACIÓN DE FORMATO
       try {
@@ -50,6 +61,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         page: 1,
         page_size: 10,
       });
+
       const socioSgrDb = Array.isArray(respSgr)
         ? respSgr[0]
         : respSgr?.items?.[0] || respSgr?.data?.[0];

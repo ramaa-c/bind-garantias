@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { FiRotateCcw } from "react-icons/fi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaDatosEmpresaSchema } from "../../schemas/AltaDatosEmpresaSchema";
-import { BarraProgreso, BotonVolver, Button, Modal } from "../../components/ui";
+import { BarraProgreso, Button, Modal } from "../../components/ui";
+import Spinner from "../../components/ui/Spinner/Spinner";
 import { Paso1Cuit, Paso2Datos } from "../../components/features";
 import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../services/sociosService";
@@ -143,10 +143,10 @@ export const AltaDatosEmpresa = () => {
     } catch (error) {
       console.error("Error en alta de empresa:", error);
       toast.error("Error al registrar la empresa.");
-    } finally {
       setEnviandoSolicitud(false);
     }
   };
+
   const handleValidarCuitSuccess = () => {
     setPasoActual(2);
   };
@@ -204,27 +204,17 @@ export const AltaDatosEmpresa = () => {
     <div className={styles.pageContainer}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
-          <div className={styles.navegacionTop}>
-            <div className={styles.botonesNavegacion}>
-              {pasoActual > 1 && <BotonVolver onClick={handleVolver} />}
-              <BotonVolver
-                onClick={handleClickReiniciar}
-                icon={FiRotateCcw}
-                texto="Reiniciar operación"
-              />
-            </div>
-          </div>
-
           <div className={styles.contenedorPrincipal}>
             <div className={styles.columnaFormulario}>
-              {pasoActual > 1 && (
-                <nav className={styles.stepperNav}>
-                  <BarraProgreso
-                    hitos={["CUIT", "DATOS"]}
-                    hitoActual={pasoActual - 1}
-                  />
-                </nav>
-              )}
+              <BarraProgreso
+                hitos={["CUIT", "DATOS"]}
+                hitoActual={pasoActual}
+                onVolver={pasoActual > 1 ? handleVolver : null}
+                onVolverInicio={
+                  pasoActual === 1 ? () => navigate("/inicio") : null
+                }
+                onReiniciar={pasoActual > 1 ? handleClickReiniciar : null}
+              />
 
               <div className={styles.bienvenidaHeader}>
                 {obtenerTextosCabecera().badge && (
@@ -306,6 +296,35 @@ export const AltaDatosEmpresa = () => {
           </div>
         </div>
       </Modal>
+
+      {/* ── PANTALLA DE CARGA ────────────────────────────────────────── */}
+      {enviandoSolicitud && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            height: "100vh",
+            backgroundColor: "var(--carbon-black, #1a1a1a)",
+            zIndex: 9999,
+          }}
+        >
+          <Spinner size={60} />
+          <p
+            style={{
+              marginTop: "1.5rem",
+              color: "var(--white)",
+              fontWeight: 600,
+              fontSize: "1.1rem",
+            }}
+          >
+            Configurando tu entorno de trabajo...
+          </p>
+        </div>
+      )}
     </div>
   );
 };

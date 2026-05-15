@@ -24,7 +24,7 @@ import Solicitudes from "./pages/solicitudes/Solicitudes";
 import SolicitudCheques from "./pages/cheques/SolicitudCheques";
 import FirmaDocumento from "./pages/pagares/FirmaDocumento";
 import AceptarTerminos from "./pages/auth/AceptarTerminos";
-import RecuperarPassword from "./pages/auth/RecuperarPassword";
+import RecuperarClave from "./pages/auth/RecuperarClave";
 import PosicionConsolidada from "./pages/posicion-consolidada/PosicionConsolidada";
 import CadenaDetalle from "./pages/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
@@ -59,7 +59,7 @@ function App() {
           <Route path="/:canal/0/:token" element={<CrearClave />} />
 
           <Route path="/confirmar-correo" element={<ConfirmarCorreo />} />
-          <Route path="/recuperar-password" element={<RecuperarPassword />} />
+          <Route path="/recuperar-clave" element={<RecuperarClave />} />
 
           <Route
             path="/socios"
