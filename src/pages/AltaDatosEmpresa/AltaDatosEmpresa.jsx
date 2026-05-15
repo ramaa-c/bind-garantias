@@ -2,14 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { FiRotateCcw, FiUsers, FiX } from "react-icons/fi";
+import { FiRotateCcw } from "react-icons/fi";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaDatosEmpresaSchema } from "../../schemas/AltaDatosEmpresaSchema";
 import { BarraProgreso, BotonVolver, Button, Modal } from "../../components/ui";
-import {
-  Paso1Cuit,
-  Paso2Datos,
-} from "../../components/features";
+import { Paso1Cuit, Paso2Datos } from "../../components/features";
 import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../services/sociosService";
 import { useAuthStore } from "../../store/useAuthStore";
@@ -60,7 +57,7 @@ export const AltaDatosEmpresa = () => {
     },
   });
 
-  const { handleSubmit, trigger, getValues, reset } = metodosFormulario;
+  const { handleSubmit, trigger, reset } = metodosFormulario;
 
   const handleVolver = () => {
     setPasoActual((prev) => (prev === 1 ? 1 : prev - 1));
@@ -69,36 +66,6 @@ export const AltaDatosEmpresa = () => {
   const handleClickReiniciar = () => {
     reset();
     setPasoActual(1);
-  };
-
-  const handleVincularSocioExistente = async () => {
-    setEnviandoSolicitud(true);
-    try {
-      if (!usuariowebidReal) {
-        throw new Error("No pudimos identificar tu usuario.");
-      }
-
-      const payloadVinculo = {
-        usuariowebid: usuariowebidReal,
-        socioid: socioExistenteModal.socioData.socioid,
-        momentocreacion: getCSharpIsoDate(),
-      };
-
-      await sociosService.vincularSocioUsuario(payloadVinculo);
-
-      await queryClient.invalidateQueries({
-        queryKey: ["socioUsuario", "listaPorUsuario", usuariowebidReal],
-      });
-
-      toast.success("Te has vinculado a la empresa correctamente");
-      setSocioExistenteModal({ isOpen: false, socioData: null });
-      navigate("/inicio", { replace: true });
-    } catch (error) {
-      console.error("Error al vincular socio existente:", error);
-      toast.error("Error al vincular tu usuario a la empresa.");
-    } finally {
-      setEnviandoSolicitud(false);
-    }
   };
 
   const onSubmitFinal = async (data) => {
@@ -187,9 +154,17 @@ export const AltaDatosEmpresa = () => {
   const obtenerTextosCabecera = () => {
     switch (pasoActual) {
       case 1:
-        return { badge: "Alta de empresa", t: "Necesitamos conocer los datos de tu empresa", s: "Completá el CUIT de tu empresa para comenzar." };
+        return {
+          badge: "Alta de empresa",
+          t: "Necesitamos conocer los datos de tu empresa",
+          s: "Completá el CUIT de tu empresa para comenzar.",
+        };
       case 2:
-        return { badge: "Alta de empresa", t: "Completá los datos de la empresa", s: "Verificá y completá la información faltante." };
+        return {
+          badge: "Alta de empresa",
+          t: "Completá los datos de la empresa",
+          s: "Verificá y completá la información faltante.",
+        };
       default:
         return { badge: "Alta de empresa", t: "Datos de la empresa", s: "" };
     }
@@ -300,14 +275,13 @@ export const AltaDatosEmpresa = () => {
         maxWidth="28rem"
       >
         <div className={styles.modalContent}>
-          <span className={styles.modalBadge}>Empresa registrada</span>
-          <h3 className={styles.modalTitle}>
-            CUIT ya registrado en la plataforma
-          </h3>
+          <span className={styles.modalBadge}>Atención</span>
+          <h3 className={styles.modalTitle}>Empresa ya registrada</h3>
 
           <p className={styles.modalText}>
-            El CUIT ingresado ya existe en nuestro sistema. Podés vincularte a
-            esta empresa para operar en su nombre.
+            El CUIT ingresado ya se encuentra registrado en la plataforma por
+            otro usuario. Para operar con esta empresa, solicitale al
+            administrador que te brinde acceso desde la sección "Documentación".
           </p>
 
           <div className={styles.modalHighlight}>
@@ -319,22 +293,15 @@ export const AltaDatosEmpresa = () => {
             </span>
           </div>
 
-          <div className={styles.modalActions}>
-            <Button
-              variant="outline"
-              onClick={() =>
-                setSocioExistenteModal({ isOpen: false, socioData: null })
-              }
-              disabled={enviandoSolicitud}
-            >
-              Cancelar
-            </Button>
+          <div className={styles.modalActionsSingle}>
             <Button
               variant="primary"
-              onClick={handleVincularSocioExistente}
-              disabled={enviandoSolicitud}
+              onClick={() => {
+                setSocioExistenteModal({ isOpen: false, socioData: null });
+                reset();
+              }}
             >
-              {enviandoSolicitud ? "Vinculando..." : "Sí, vincular"}
+              Entendido
             </Button>
           </div>
         </div>
