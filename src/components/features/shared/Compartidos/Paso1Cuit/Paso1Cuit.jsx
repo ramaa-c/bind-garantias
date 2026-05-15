@@ -45,7 +45,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         return;
       }
 
-      // VALIDACIÓN CONTRA SGR+
       const respSgr = await sociosService.obtenerSocios({
         Cuit: cuit,
         page: 1,

@@ -7,6 +7,7 @@ import {
 } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { FiRotateCcw } from "react-icons/fi";
+import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaOperacionSchema } from "../../schemas/AltaOperacionSchema";
 import {
@@ -31,6 +32,7 @@ import { useEmpresaActiva } from "../../hooks/useEmpresaActiva";
 import { lineaService } from "../../services/lineaService";
 import { afipService } from "../../services/afipService";
 import { tercerosService } from "../../services/tercerosService";
+import { catalogosService } from "../../services/catalogosService";
 
 const STORAGE_KEY = "draft_alta_operacion";
 
@@ -40,7 +42,6 @@ export const AltaOperacion = () => {
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
   const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
-  const [errorSocioBackend, setErrorSocioBackend] = useState("");
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
@@ -137,7 +138,7 @@ export const AltaOperacion = () => {
     const precargarSocios = async () => {
       try {
         const relaciones =
-          await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+          await tercerosService.obtenerRelacionesDeSocioSGRPlus(socioIdActivo);
         const relacionesArray = Array.isArray(relaciones) ? relaciones : [];
 
         if (relacionesArray.length === 0) return;
@@ -156,7 +157,7 @@ export const AltaOperacion = () => {
 
           try {
             const tercero =
-              await tercerosService.obtenerTerceroPorId(terceroId);
+              await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
             if (tercero) {
               const cuit = tercero.cuit || tercero.Cuit || "";
               if (cuitsYaCargados.has(cuit)) continue; // Evitar duplicados
@@ -283,7 +284,64 @@ export const AltaOperacion = () => {
       };
 
       console.log("Enviando Solicitud Payload:", payload);
-      await solicitudesService.crearSolicitudEnProceso(payload);
+      const resSolicitud = await solicitudesService.crearSolicitudEnProceso(payload);
+      const solicitudIdCreada = resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
+
+      // Calcular importe en pesos
+      let importeEnPesos = montoLimpio;
+      if (Number(cleanData.moneda) === 2) {
+        const hoy = new Date().toISOString().split("T")[0];
+        try {
+          const cotizacionData = await catalogosService.obtenerCotizacion({ moneda: 2, fecha: hoy, tipoCotizacion: 50 });
+          const valorCotizacion = cotizacionData?.cotizacion || 0;
+          if (valorCotizacion > 0) {
+             importeEnPesos = montoLimpio * valorCotizacion;
+          }
+        } catch (e) {
+          console.error("Error al obtener cotizacion", e);
+        }
+      }
+
+      const fchDesde = new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
+      const unAnioMas = new Date();
+      unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
+      const fchHasta = unAnioMas.toISOString().split("T")[0] + "T00:00:00.000Z";
+
+      const payloadLimite = {
+        tipolimitesocioid: 0,
+        socioid: socioIdActivo || 0,
+        tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : 2,
+        fchvigenciadesde: fchDesde,
+        fchvigenciahasta: fchHasta,
+        monedaid: Number(cleanData.moneda) || 5000,
+        importelimite: importeEnPesos,
+        importeutilizado: 0,
+        tipolimiteestadoid: 1,
+        observaciones: "",
+        terceromercadoid: 0,
+        terceropresentanteid: 0,
+        destfondosid: 0,
+        tipocomisionid: 0,
+        porcentajecomision: 0,
+        sucursalid: 0,
+        importecargado: importeEnPesos,
+        avalid: 0,
+        propuesta: "",
+        resolucion: "",
+        tipolimitesolicitudid: 0,
+        importemonex: Number(cleanData.moneda) === 2 ? montoLimpio : 0,
+        tipolibradorid: 0,
+        contratoid: 0,
+        cadenavalorid: 950274,
+        equipocomercialid: 0,
+        solicitudid: solicitudIdCreada,
+        tipolimiteriesgoid: 0,
+        terceroviaid: cleanData.sociedadBolsa ? Number(cleanData.sociedadBolsa) : 0,
+        tercerogeneradorid: 0
+      };
+
+      console.log("Enviando TipoLimiteSocio Payload:", payloadLimite);
+      await lineaService.crearLimiteSocio(payloadLimite);
 
       if (cleanData.tipoProducto === "cheque") {
         setPasoActual(5);
@@ -292,9 +350,9 @@ export const AltaOperacion = () => {
       }
     } catch (error) {
       console.error("Error al enviar la solicitud:", error);
-      alert(
-        "Hubo un error al enviar la solicitud. Por favor, intentá nuevamente más tarde.",
-      );
+      toast.error("Error al enviar", {
+        description: "Hubo un error al enviar la solicitud. Por favor, intentá nuevamente más tarde.",
+      });
     } finally {
       setEnviandoSolicitud(false);
     }
@@ -352,13 +410,20 @@ export const AltaOperacion = () => {
     setValue("tempSocioParticipacion", "");
     setValue("tempSocioData", null);
     setValue("faseSocio", "ingresar_cuit");
-    setErrorSocioBackend("");
   };
 
   const validarCuitSocio = async () => {
     setIsLoadingAFIP(true);
-    setErrorSocioBackend("");
     try {
+      // Pre-validar si el CUIT es válido y existente
+      const cuitValido = await sociosService.validarCuit(tempSocioCuit);
+      if (!cuitValido) {
+        toast.error("CUIT inválido", {
+          description: "El CUIT ingresado no es válido o no existe.",
+        });
+        return;
+      }
+
       const dataAfip =
         await afipService.obtenerConstanciaInscripcion(tempSocioCuit);
 
@@ -372,15 +437,15 @@ export const AltaOperacion = () => {
         setValue("tempSocioData", dataAfip);
         setValue("faseSocio", "completar_datos");
       } else {
-        setErrorSocioBackend(
-          "El CUIT ingresado no fue encontrado en los padrones de AFIP.",
-        );
+        toast.error("CUIT no encontrado", {
+          description: "El CUIT ingresado no fue encontrado en los padrones de AFIP.",
+        });
       }
     } catch (error) {
       console.error("Error al validar CUIT en AFIP", error);
-      setErrorSocioBackend(
-        "No se pudo validar el CUIT en este momento. Por favor, reintentá más tarde o verificá tu conexión.",
-      );
+      toast.error("Error de validación", {
+        description: "No se pudo validar el CUIT en este momento. Reintentá más tarde.",
+      });
     } finally {
       setIsLoadingAFIP(false);
     }
@@ -602,8 +667,6 @@ export const AltaOperacion = () => {
           editarSocio={editarSocio}
           continuarAlProximoPaso={() => setPasoActual(2)}
           isLoading={isLoadingAFIP}
-          errorBackend={errorSocioBackend}
-          setErrorBackend={setErrorSocioBackend}
         />
       );
     }
@@ -655,7 +718,8 @@ export const AltaOperacion = () => {
             if (esValido) {
               setEnviandoSolicitud(true);
               try {
-                // 1. Validar que no haya Solicitudes en Proceso
+                // 1. Validar que no haya Solicitudes en Proceso (Comentado para pruebas)
+                /*
                 const solicitudes =
                   await solicitudesService.obtenerSolicitudesEnProceso(
                     cuitActivo || "33711316839",
@@ -668,14 +732,16 @@ export const AltaOperacion = () => {
                 );
 
                 if (tieneSolicitudEnProceso) {
-                  alert(
-                    "Ya tenés una solicitud de línea en análisis. Debés esperar a que se apruebe o rechace antes de crear una nueva.",
-                  );
+                  toast.warning("Solicitud en curso", {
+                    description: "Ya tenés una solicitud de línea en análisis. Debés esperar a que se procese antes de crear una nueva.",
+                  });
                   setEnviandoSolicitud(false);
                   return;
                 }
+                */
 
-                // 2. Validar que no tenga ya un TipoLimite activo para este producto
+                // 2. Validar que no tenga ya un TipoLimite activo para este producto (Comentado para pruebas)
+                /*
                 const tipoLimiteRequeridoId =
                   tipoProducto === "cheque"
                     ? 1
@@ -696,19 +762,20 @@ export const AltaOperacion = () => {
                 );
 
                 if (lineaActivaMismoProducto) {
-                  alert(
-                    `Ya tenés una línea de ${tipoProducto} activa por un importe de $${lineaActivaMismoProducto.importelimite}. No es posible pedir una nueva línea.`,
-                  );
+                  toast.warning("Línea activa", {
+                    description: `Ya tenés una línea de ${tipoProducto} activa. No es posible solicitar una nueva.`,
+                  });
                   setEnviandoSolicitud(false);
                   return;
                 }
+                */
 
                 setMostrarResultados(true);
               } catch (error) {
                 console.error("Error en validación previa:", error);
-                alert(
-                  "Ocurrió un error de conexión al validar tus datos. Por favor intentá nuevamente.",
-                );
+                toast.error("Error de conexión", {
+                  description: "Ocurrió un error al validar tus datos. Por favor intentá nuevamente.",
+                });
               } finally {
                 setEnviandoSolicitud(false);
               }
@@ -748,6 +815,7 @@ export const AltaOperacion = () => {
           }}
           onGuardarSocioDb={handleGuardarSocioDb}
           isSubmitting={enviandoSolicitud}
+          socioId={socioIdActivo}
         />
       );
     }
@@ -810,13 +878,13 @@ export const AltaOperacion = () => {
     switch (pasoActual) {
       case 1:
         return {
-          t: "Alta de Operación",
-          s: "Seleccioná el producto y las condiciones.",
+          t: "Declaración de Socios",
+          s: "Revisá y confirmá la composición societaria.",
         };
       case 2:
         return {
-          t: "Declaración de Socios",
-          s: "Revisá y confirmá la composición societaria.",
+          t: "Alta de Operación",
+          s: "Seleccioná el tipo de operación y las condiciones.",
         };
       case 3:
         return {
@@ -837,8 +905,8 @@ export const AltaOperacion = () => {
 
   const hitosVisuales =
     tipoProducto === "cheque"
-      ? ["Producto", "Socios", "Documentos", "Bolsa"]
-      : ["Producto", "Socios", "Documentos"];
+      ? ["Socios", "Operación", "Documentos", "Bolsa"]
+      : ["Socios", "Operación", "Documentos"];
 
   const showHeaderYStepper =
     !(pasoActual === 5 && tipoProducto === "cheque") &&

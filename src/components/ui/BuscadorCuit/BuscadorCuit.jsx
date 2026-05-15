@@ -10,6 +10,8 @@ export const BuscadorCuit = forwardRef(({
   esValido,
   isLoading = false,
   buttonText = "VALIDAR CUIT",
+  value,
+  onChange,
   ...rest
 }, ref) => {
   return (
@@ -24,15 +26,16 @@ export const BuscadorCuit = forwardRef(({
           esValido={esValido}
           error={error}
           disabled={isLoading}
-          {...rest}
-          value={rest.value || ""}
+          value={value}
           onChange={(val) => {
+            // Aseguramos que siempre viaje el valor limpio (solo números) de 11 dígitos
             const limpio = val ? String(val).replace(/\D/g, "").slice(0, 11) : "";
             
-            if (rest.onChange) {
-              rest.onChange({ target: { value: limpio } });
+            if (onChange) {
+              onChange({ target: { value: limpio } });
             }
           }}
+          {...rest}
         />
       </div>
 
@@ -41,7 +44,7 @@ export const BuscadorCuit = forwardRef(({
           type="button"
           variant="primary"
           onClick={onValidar}
-          disabled={isLoading}
+          disabled={isLoading || !esValido}
           className={styles.actionBtn}
         >
           {isLoading ? "BUSCANDO..." : buttonText}
