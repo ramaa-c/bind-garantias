@@ -108,7 +108,7 @@ const RecuperarClave = () => {
           <div className={styles.supportContainerModern}>
             <p>
               En caso de tener problemas o dudas con tu cuenta podés ponerte en
-              contacto con nosotros en{" "}
+              contacto con nosotros en {" "}
               <a
                 href="mailto:soporte@bind.com.ar"
                 className={styles.linkYellow}
