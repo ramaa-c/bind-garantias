@@ -35,7 +35,7 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle }) => {
         <div className={styles.rightInfo}>
           <div className={styles.dateBlock}>
             <FiCalendar className={styles.calendarIcon} />
-            <span>{solicitud.fecha || "18/03/2026"}</span>
+            <span>{solicitud.fecha || "-"}</span>
           </div>
 
           <div className={styles.actionsWrapper}>

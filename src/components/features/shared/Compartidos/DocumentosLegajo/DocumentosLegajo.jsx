@@ -129,16 +129,20 @@ export function DocumentosLegajo() {
         await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
       const arr = Array.isArray(relaciones) ? relaciones : [];
       const lista = [];
+      const uniqueIds = new Set();
+      
       for (const rel of arr) {
         const tid =
           rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
-        if (!tid) continue;
+        if (!tid || uniqueIds.has(tid)) continue;
+        uniqueIds.add(tid);
+        
         try {
           const t = await tercerosService.obtenerTerceroPorId(tid);
           if (t)
             lista.push({
               id: tid,
-              nombre: t.denominacion || t.Denominacion || "Sin nombre",
+              nombre: t.razonsocial || t.denominacion || t.nombre || t.RazonSocial || t.Denominacion || t.Nombre || "Sin nombre",
               cuit: t.cuit || t.Cuit || "—",
               email: t.mail || t.Mail || "",
               telefono: t.telefono || t.Telefono || "",

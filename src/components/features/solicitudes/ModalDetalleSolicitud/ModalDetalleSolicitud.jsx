@@ -1,17 +1,16 @@
 import React from "react";
-import { FiMapPin, FiMail, FiPhone, FiX } from "react-icons/fi";
 import { Modal, Button } from "../../../ui";
 import styles from "./ModalDetalleSolicitud.module.css";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../../services/sociosService";
-
-const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("");
+import { tercerosService } from "../../../../services/tercerosService";
+import {
+  FiFileText,
+  FiDollarSign,
+  FiCalendar,
+  FiUsers,
+  FiAlertCircle,
+} from "react-icons/fi";
 
 const estadoConfig = {
   Cancelada: { color: styles.badgeGrey, label: "Cancelada" },
@@ -35,7 +34,12 @@ export const ModalDetalleSolicitud = ({
     color: styles.badgeYellow,
     label: solicitud.estado,
   };
-  const esCancelada = solicitud.estado === "Cancelada";
+  const esCancelada =
+    solicitud.estado === "Cancelada" ||
+    solicitud.estado === "Rechazada" ||
+    solicitud.estado === "Cancelado" ||
+    solicitud.estado === "Rechazado";
+
   const tipoLabel =
     solicitud.tipo === "Cheque"
       ? "Cheque Propio"
@@ -52,18 +56,88 @@ export const ModalDetalleSolicitud = ({
     ? socioResp[0]
     : socioResp?.items?.[0] || socioResp?.data?.[0];
   const nombreFinal =
-    nombreEmpresa || socio?.denominacion || "CAMIMPORT S.R.L.";
+    nombreEmpresa || socio?.denominacion || "Cargando...";
+
+  const socioIdTarget = solicitud.socioid || socio?.socioid;
+
+  const { data: accionistas = [], isLoading: cargandoAccionistas } = useQuery({
+    queryKey: ["accionistas", socioIdTarget],
+    queryFn: async () => {
+      let relaciones = [];
+      try {
+        relaciones = await tercerosService.obtenerRelacionesDeSocioSGRPlus(socioIdTarget);
+        if (!relaciones || relaciones.length === 0) {
+          relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdTarget);
+        }
+      } catch (e) {
+        relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdTarget);
+      }
+
+      if (!relaciones || relaciones.length === 0) return [];
+
+      const uniqueIds = new Set();
+      const relacionesUnicas = relaciones.filter((rel) => {
+        const rawId =
+          rel.terceroid ||
+          rel.tercerorelacionadoid ||
+          rel.TerceroRelacionadoID ||
+          rel.TerceroId;
+        if (!rawId) return false;
+        const idStr = String(rawId);
+        if (uniqueIds.has(idStr)) return false;
+        uniqueIds.add(idStr);
+        return true;
+      });
+
+      const promises = relacionesUnicas.map(async (rel) => {
+        const terceroId =
+          rel.terceroid ||
+          rel.tercerorelacionadoid ||
+          rel.TerceroRelacionadoID ||
+          rel.TerceroId;
+
+        let tercero = null;
+        try {
+          tercero = await tercerosService.obtenerTerceroPorId(terceroId);
+          if (!tercero || Object.keys(tercero).length === 0) {
+            tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+          }
+        } catch (e) {
+          tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+        }
+
+        if (tercero) {
+          return {
+            ...tercero,
+            participacion:
+              rel.porcacciones ||
+              rel.participacion ||
+              rel.Participacion ||
+              rel.porcentajeparticipacion ||
+              0,
+          };
+        }
+        return null;
+      });
+
+      const res = await Promise.all(promises);
+      return res.filter(Boolean);
+    },
+    enabled: !!socioIdTarget && isOpen,
+    staleTime: 1000 * 60 * 5,
+  });
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="" maxWidth="620px">
+    <Modal isOpen={isOpen} onClose={onClose} title="" maxWidth="600px">
       <div className={styles.container}>
-        {/* ── HEADER IDENTITARIO ──────────────────────────────────────────── */}
+
+        {/* ── HERO ─────────────────────────────────────────────────────── */}
         <div className={styles.hero}>
           <div className={styles.heroTop}>
-            <div className={styles.heroMeta}>
-              <span className={styles.heroBadge}>Solicitud</span>
-              <span className={styles.heroId}>
-                ID · {solicitud.id ? `OB-${solicitud.id}` : "OB-20436209011"}
+            <div className={styles.metaRow}>
+              <span className={styles.tagSolicitud}>Solicitud</span>
+              <span className={styles.tagId}>
+                {solicitud.id ? `OB-${solicitud.id}` : "N/A"}
               </span>
             </div>
             <span className={`${styles.estadoBadge} ${estado.color}`}>
@@ -71,110 +145,133 @@ export const ModalDetalleSolicitud = ({
             </span>
           </div>
 
-          <h2 className={styles.heroName}>
+          <h2 className={styles.empresaNombre}>
             {cargandoSocio ? "Buscando..." : nombreFinal}
           </h2>
-          <p className={styles.heroCuit}>
-            CUIT {solicitud.cuit || "30-64086932-8"}
+          <p className={styles.empresaCuit}>
+            CUIT {solicitud.cuit || "No disponible"}
           </p>
 
-          {/* MÉTRICAS */}
-          <div className={styles.metricsRow}>
-            <div className={styles.metricChip}>
-              <span className={styles.metricLabel}>Producto</span>
-              <span className={styles.metricValue}>{tipoLabel}</span>
+          <div className={styles.metrics}>
+            <div className={styles.metric}>
+              <div className={styles.metricLabel}>
+                <FiFileText size={12} />
+                Producto
+              </div>
+              <div className={styles.metricValue}>{tipoLabel}</div>
             </div>
-            <div className={styles.metricChip}>
-              <span className={styles.metricLabel}>Monto</span>
-              <span className={`${styles.metricValue} ${styles.metricMonto}`}>
-                {solicitud.moneda || "$"} {solicitud.monto}
-              </span>
+            <div className={styles.metric}>
+              <div className={styles.metricLabel}>
+                <FiDollarSign size={12} />
+                Monto
+              </div>
+              <div className={`${styles.metricValue} ${styles.metricHighlight}`}>
+                {solicitud.moneda || "$"} {solicitud.monto || "0"}
+              </div>
             </div>
-            <div className={styles.metricChip}>
-              <span className={styles.metricLabel}>Fecha</span>
-              <span className={styles.metricValue}>
-                {solicitud.fecha || "28/04/2026"}
-              </span>
+            <div className={styles.metric}>
+              <div className={styles.metricLabel}>
+                <FiCalendar size={12} />
+                Fecha
+              </div>
+              <div className={styles.metricValue}>
+                {solicitud.fecha || "-"}
+              </div>
             </div>
           </div>
 
-          {/* ALERTA CANCELADA */}
+          {/* Alerta de rechazo */}
           {esCancelada && (
             <div className={styles.alertBox}>
-              <span className={styles.alertTitle}>Motivos de rechazo</span>
+              <span className={styles.alertTitle}>
+                <FiAlertCircle size={12} />
+                Motivos de rechazo
+              </span>
               <ul className={styles.alertList}>
-                <li>
-                  Parte de la composición accionaria no cumple el rango de edad
-                  permitido
-                </li>
-                <li>
-                  Parte de la composición accionaria no cumple el rango de edad
-                  permitido
-                </li>
+                {solicitud.motivosRechazo && solicitud.motivosRechazo.length > 0 ? (
+                  solicitud.motivosRechazo.map((motivo, idx) => (
+                    <li key={idx}>{motivo}</li>
+                  ))
+                ) : (
+                  <li>El backend no especificó el motivo del rechazo.</li>
+                )}
               </ul>
             </div>
           )}
         </div>
 
-        {/* ── CONTACTO ────────────────────────────────────────────────────── */}
+        {/* ── ACCIONISTAS / FIADORES ────────────────────────────────────── */}
         <div className={styles.section}>
-          <p className={styles.sectionLabel}>Contacto</p>
-          <div className={styles.contactList}>
-            {[
-              {
-                icon: <FiMail size={13} />,
-                text: `${solicitud.cuit || "30640869328"}@yopmail.com`,
-              },
-              { icon: <FiPhone size={13} />, text: "1111111111" },
-              {
-                icon: <FiMapPin size={13} />,
-                text: "24 de Septiembre 2447, Rosario, Santa Fe",
-              },
-            ].map(({ icon, text }, i) => (
-              <div key={i} className={styles.contactRow}>
-                <span className={styles.contactIcon}>{icon}</span>
-                <span className={styles.contactText}>{text}</span>
-              </div>
-            ))}
+          <div className={styles.sectionHeader}>
+            <span className={styles.sectionTitle}>
+              <FiUsers size={12} />
+              Accionistas / Fiadores
+            </span>
+            <span className={styles.countPill}>
+              {cargandoAccionistas
+                ? "Cargando..."
+                : `${accionistas.length} persona${accionistas.length !== 1 ? "s" : ""}`}
+            </span>
           </div>
-        </div>
 
-        {/* ── ESTADO FIRMA ────────────────────────────────────────────────── */}
-        <div className={styles.section}>
-          <p className={styles.sectionLabel}>Estado de la firma</p>
-          <div className={styles.firmaRow}>
-            <span className={styles.firmaIndicator} />
-            <span className={styles.firmaText}>Sin firmar</span>
-          </div>
-        </div>
-
-        {/* ── FIADORES ────────────────────────────────────────────────────── */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeaderRow}>
-            <p className={styles.sectionLabel}>Fiadores</p>
-            <span className={styles.countBadge}>2 personas</span>
-          </div>
           <div className={styles.fiadoresGrid}>
-            {["OMAR ALBERTO DELMIRO CAMPAGNOLO", "LOPEZ PATRICIA MONICA"].map(
-              (nombre, i) => (
-                <div key={i} className={styles.fiadorCard}>
-                  <div className={styles.fiadorAvatar}>
-                    {getInitials(nombre)}
+            {cargandoAccionistas ? (
+              <p className={styles.emptyText}>
+                Buscando accionistas en el sistema...
+              </p>
+            ) : accionistas.length > 0 ? (
+              accionistas.map((accionista, i) => {
+                const nombre =
+                  accionista.razonsocial ||
+                  accionista.denominacion ||
+                  accionista.nombre ||
+                  accionista.RazonSocial ||
+                  accionista.Denominacion ||
+                  accionista.Nombre ||
+                  "Sin nombre";
+
+                const iniciales = nombre
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((w) => w[0].toUpperCase())
+                  .join("");
+
+                const participacion = Number(accionista.participacion) || 0;
+
+                return (
+                  <div key={i} className={styles.fiadorCard}>
+                    <div className={styles.fiadorAvatar}>{iniciales}</div>
+                    <div className={styles.fiadorInfo}>
+                      <p className={styles.fiadorName}>{nombre}</p>
+                      <div className={styles.fiadorPart}>
+                        <div className={styles.partBar}>
+                          <div
+                            className={styles.partFill}
+                            style={{ width: `${Math.min(participacion, 100)}%` }}
+                          />
+                        </div>
+                        <span>{participacion}%</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className={styles.fiadorInfo}>
-                    <p className={styles.fiadorName}>{nombre}</p>
-                    <p className={styles.fiadorFirma}>Sin firmar</p>
-                  </div>
-                </div>
-              ),
+                );
+              })
+            ) : (
+              <p className={styles.emptyText}>
+                No se encontraron accionistas vinculados a esta empresa.
+              </p>
             )}
           </div>
         </div>
 
-        {/* ── ACCIONES ────────────────────────────────────────────────────── */}
+        {/* ── FOOTER ───────────────────────────────────────────────────── */}
         <div className={styles.footer}>
-          <Button variant="primary" className={styles.btnPrimary}>
-            Ver contrato
+          <span className={styles.footerHint}>
+            {solicitud.fecha ? `Operación del ${solicitud.fecha}` : ""}
+          </span>
+          <Button variant="primary" className={styles.btnClose} onClick={onClose}>
+            Cerrar
           </Button>
         </div>
       </div>

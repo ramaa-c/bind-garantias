@@ -174,35 +174,45 @@ export default function Paso5Documentacion({
     const provincias = opcionesProvincias || [];
 
     socios.forEach((socio, index) => {
-      const dg = socio?.dataOriginal?.datosgenerales;
-      if (dg) {
-        const dom = dg.domiciliofiscal || {};
-        const current = getValues(`socios.${index}`) || {};
+      const original = socio?.dataOriginal || {};
+      const dg = original.datosgenerales;
+      const dom = dg ? (dg.domiciliofiscal || {}) : {};
+      const current = getValues(`socios.${index}`) || {};
 
-        const updates = {};
+      const updates = {};
 
-        // 1. Email
-        if (!current.email) {
-          const email = dg.email || dg.emailfacturacion || "";
-          if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            updates.email = email;
-          }
+      // 1. Email
+      if (!current.email) {
+        const email = (dg && (dg.email || dg.emailfacturacion)) || original.mail || original.Mail || "";
+        if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          updates.email = email;
         }
+      }
 
-        // 2. Dirección
-        if (!current.direccion) {
-          const dir = dom.direccion || (dg.calle ? `${dg.calle} ${dg.numero || ""}`.trim() : "");
-          if (dir) updates.direccion = dir;
-        }
+      // 2. Celular / Teléfono
+      if (!current.celular) {
+        const tel = original.telefono || original.Telefono || "";
+        if (tel) updates.celular = tel;
+      }
 
-        // 3. Localidad
-        if (!current.localidad && dom.localidad) {
-          updates.localidad = dom.localidad;
-        }
+      // 3. Dirección
+      if (!current.direccion) {
+        const dir = (dom.direccion) || 
+                    (dg && dg.calle ? `${dg.calle} ${dg.numero || ""}`.trim() : "") ||
+                    original.calle || original.Calle || original.direccion || original.Direccion || "";
+        if (dir) updates.direccion = dir;
+      }
 
-        // 4. Provincia (Mapeo de nombre a ID)
-        if (!current.provincia && dom.descripcionprovincia) {
-          const provNombre = dom.descripcionprovincia.toUpperCase();
+      // 4. Localidad
+      if (!current.localidad) {
+        const loc = (dom.localidad) || original.localidad || original.Localidad || "";
+        if (loc) updates.localidad = loc;
+      }
+
+      // 5. Provincia (Mapeo de nombre a ID)
+      if (!current.provincia) {
+        const provNombre = (dom.descripcionprovincia || original.provincia || original.Provincia || "").toUpperCase();
+        if (provNombre) {
           const match = provincias.find(p => 
             p.label.toUpperCase() === provNombre || 
             provNombre.includes(p.label.toUpperCase()) ||
@@ -210,13 +220,14 @@ export default function Paso5Documentacion({
           );
           if (match) {
             updates.provincia = match.value;
-          } else {
-            // Si no hay match exacto, al menos guardamos el nombre si el select lo permite
-            // o lo dejamos vacío para que el usuario elija
           }
+        } else if (original.provinciaid || original.ProvinciaId) {
+          updates.provincia = original.provinciaid || original.ProvinciaId;
         }
+      }
 
-        // Aplicamos cambios si hay algo nuevo (sin disparar validación inmediata para evitar rojos)
+      // Aplicamos cambios si hay algo nuevo
+      if (Object.keys(updates).length > 0) {
         Object.keys(updates).forEach(key => {
           setValue(`socios.${index}.${key}`, updates[key]);
         });
@@ -255,7 +266,11 @@ export default function Paso5Documentacion({
     const sLoc = getValues(`socios.${index}.localidad`);
     const errs = errors?.socios?.[index];
     const sinErrores = !errs || Object.keys(errs).length === 0;
-    return !!(sEmail && sCel && sDir && sProv && sLoc && sinErrores);
+    
+    const tieneDniFrente = !!archivos[`socio-${index}-frente`];
+    const tieneDniDorso = !!archivos[`socio-${index}-dorso`];
+
+    return !!(sEmail && sCel && sDir && sProv && sLoc && sinErrores && tieneDniFrente && tieneDniDorso);
   };
 
   const todosSociosOk =
