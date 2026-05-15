@@ -34,8 +34,6 @@ export default function Paso4Socios({
   editarSocio,
   continuarAlProximoPaso,
   isLoading,
-  errorBackend,
-  setErrorBackend,
 }) {
   const [errorCuit, setErrorCuit] = useState("");
   const [errorParticipacion, setErrorParticipacion] = useState("");
@@ -93,7 +91,6 @@ export default function Paso4Socios({
             onChange={(e) => {
               setTempSocioCuit(e.target.value);
               if (errorCuit) setErrorCuit("");
-              if (errorBackend) setErrorBackend("");
             }}
             onValidar={handleValidarClick}
             error={errorCuit}
@@ -101,14 +98,6 @@ export default function Paso4Socios({
             buttonText="VALIDAR CUIT"
             isLoading={isLoading}
           />
-
-          {errorBackend && (
-            <div className={styles.mtMedium}>
-              <Alert variant="error" layout="box">
-                {errorBackend}
-              </Alert>
-            </div>
-          )}
 
           {socios.length > 0 && (
             <div className={styles.saveActionRowCentrado} style={{ marginTop: "1rem" }}>

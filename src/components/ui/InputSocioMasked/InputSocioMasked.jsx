@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, forwardRef } from "react";
 import { Controller } from "react-hook-form";
 import { IMaskInput } from "react-imask";
 import styles from "./InputSocioMasked.module.css";
 
-export const InputSocioMasked = ({
+export const InputSocioMasked = forwardRef(({
   control,
   name,
   label,
@@ -18,10 +18,10 @@ export const InputSocioMasked = ({
   onFocus: manualOnFocus,
   onBlur: manualOnBlur,
   ...props
-}) => {
+}, ref) => {
   const [isFocused, setIsFocused] = useState(false);
 
-  const renderInput = (val, onCh, ref, fieldError) => {
+  const renderInput = (val, onCh, inputRef, fieldError) => {
     const hasError = !!(error || fieldError);
     const errorMessage = error || fieldError?.message;
     const hasValue =
@@ -73,7 +73,7 @@ export const InputSocioMasked = ({
                 onBlur={handleBlur}
                 className={styles.input}
                 placeholder=" "
-                inputRef={ref}
+                inputRef={inputRef}
                 {...props}
               />
             ) : (
@@ -86,7 +86,7 @@ export const InputSocioMasked = ({
                 onBlur={handleBlur}
                 className={styles.input}
                 placeholder=" "
-                ref={ref}
+                ref={inputRef}
                 {...props}
               />
             )}
@@ -105,14 +105,14 @@ export const InputSocioMasked = ({
         name={name}
         control={control}
         defaultValue={defaultValue}
-        render={({ field: { onChange, value, ref }, fieldState }) => {
-          return renderInput(value, onChange, ref, fieldState.error);
+        render={({ field: { onChange, value, ref: fieldRef }, fieldState }) => {
+          return renderInput(value, onChange, fieldRef || ref, fieldState.error);
         }}
       />
     );
   }
 
-  return renderInput(manualValue, manualOnChange, null, null);
-};
+  return renderInput(manualValue, manualOnChange, ref, null);
+});
 
 InputSocioMasked.displayName = "InputSocioMasked";

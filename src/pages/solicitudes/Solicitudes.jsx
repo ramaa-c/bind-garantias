@@ -6,7 +6,7 @@ import { FaMoneyBillWave } from "react-icons/fa";
 import { BotonVolver, Button, Select, Spinner } from "../../components/ui";
 import { TarjetaSolicitud, ModalDetalleSolicitud } from "../../components/features";
 import ModalConfirmacionBorrador from "../../components/features/shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
-import { useObtenerSolicitudesEnProceso } from "../../hooks/useSolicitudes";
+import { useObtenerLimitesSocio } from "../../hooks/useSolicitudes";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../services/sociosService";
 import { useEmpresaActiva } from "../../hooks/useEmpresaActiva";
@@ -90,32 +90,27 @@ export default function Solicitudes() {
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [modalPendienteOpen, setModalPendienteOpen] = useState(false);
 
-  const { cuitActivo, nombreEmpresa } = useEmpresaActiva();
-  const cuitFinal = cuitActivo || "33711316839"; // Fallback demo
+  const { cuitActivo, nombreEmpresa, socioIdActivo } = useEmpresaActiva();
+  const socioIdFinal = socioIdActivo || 2974; // Fallback demo si no hay socioIdActivo
   
-  const { data: solicitudesReal, isLoading: cargandoSolicitudes } = useObtenerSolicitudesEnProceso(cuitFinal);
+  const { data: solicitudesReal, isLoading: cargandoSolicitudes } = useObtenerLimitesSocio(socioIdFinal);
 
   const nombreEmpresaActiva = nombreEmpresa || "Empresa Demo S.A.";
 
-  // Verificar si hay solicitud en proceso para el CUIT activo
+  // Verificar si hay solicitud en proceso para el socio activo
   const tieneSolicitudPendiente = useMemo(() => {
     if (!solicitudesReal || !Array.isArray(solicitudesReal)) return false;
-    const cuitLimpio = String(cuitActivo || "").replace(/\D/g, "");
-    return solicitudesReal.some(s => {
-      const cuitSol = String(s.cuit || "").replace(/\D/g, "");
-      return (s.estadosolicitud === 1) && (cuitLimpio === cuitSol || !cuitLimpio);
-    });
-  }, [solicitudesReal, cuitActivo]);
+    return solicitudesReal.some(s => s.tipolimiteestadoid === 1);
+  }, [solicitudesReal]);
 
   const listaSolicitudes = useMemo(() => {
     const reales = (solicitudesReal || []).map(s => ({
-      id: s.solicitudenprocesoid?.toString() || Math.random().toString(),
-      tipo: s.tipolimiteid === 1 ? "Cheque" : "Préstamo",
-      monto: s.importe ? new Intl.NumberFormat("es-AR").format(s.importe) : "0",
+      id: s.tipolimitesocioid?.toString() || Math.random().toString(),
+      tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
+      monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
       moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
-      estado: "Pendiente", // El endpoint SolicitudEnProceso siempre son pendientes
-      fecha: s.fechacarga ? new Date(s.fechacarga).toLocaleDateString("es-AR") : "Hoy",
-      cuit: s.cuit,
+      estado: s.tipolimiteestadoid === 1 ? "Pendiente" : s.tipolimiteestadoid === 2 ? "Aprobada" : s.tipolimiteestadoid === 3 ? "Rechazada" : "Cancelada",
+      fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
       isReal: true
     }));
 
@@ -129,11 +124,13 @@ export default function Solicitudes() {
   }, [location.state]);
 
   const handleNuevaOperacion = (ruta, draftKey) => {
-    // Bloquear si ya hay una solicitud en proceso
+    // Bloquear si ya hay una solicitud en proceso (Comentado para pruebas)
+    /*
     if (tieneSolicitudPendiente) {
       setModalPendienteOpen(true);
       return;
     }
+    */
 
     const dataString = sessionStorage.getItem(`${draftKey}_data`);
     const pasoString = sessionStorage.getItem(`${draftKey}_paso`);

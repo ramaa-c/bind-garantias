@@ -20,6 +20,16 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
     setIsValidatingSocio(true);
     try {
+      // 0. Pre-validar si el CUIT es válido y existente
+      const cuitValido = await sociosService.validarCuit(cuit);
+      if (!cuitValido) {
+        setError("cuit", {
+          type: "manual",
+          message: "El CUIT ingresado no es válido o no existe",
+        });
+        return;
+      }
+
       const respSgr = await sociosService.obtenerSocios({
         Cuit: cuit,
         page: 1,

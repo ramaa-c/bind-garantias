@@ -15,9 +15,11 @@ import {
   FiPercent,
   FiChevronDown,
 } from "react-icons/fi";
+import { toast } from "sonner";
 import { CargaArchivos } from "../../../../ui";
 import { useEmpresaActiva } from "../../../../../hooks/useEmpresaActiva";
 import { tercerosService } from "../../../../../services/tercerosService";
+import { socioArchivoService } from "../../../../../services/socioArchivoService";
 import styles from "./DocumentosLegajo.module.css";
 
 const ESTRUCTURA_LEGAJO = [
@@ -66,6 +68,46 @@ export function DocumentosLegajo() {
   const [sociosEmpresa, setSociosEmpresa] = useState([]);
   const [loadingSocios, setLoadingSocios] = useState(true);
   const [expandedSocio, setExpandedSocio] = useState(null);
+  const [archivosBackend, setArchivosBackend] = useState([]);
+  const [uploadingKey, setUploadingKey] = useState(null);
+
+  // Cargar archivos existentes del backend
+  useEffect(() => {
+    if (!socioIdActivo) return;
+    const cargarArchivos = async () => {
+      try {
+        const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+        const arr = Array.isArray(archivosExistentes) ? archivosExistentes : [];
+        setArchivosBackend(arr);
+
+        if (arr.length > 0) {
+          // Mapeo inverso: tipodocumentoarchivoid -> clave de documento
+          const tipoToKey = {};
+          Object.entries(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach(([key, id]) => {
+            tipoToKey[id] = key;
+          });
+
+          arr.forEach((arch) => {
+            const docKey = tipoToKey[arch.tipodocumentoarchivoid];
+            if (docKey && ["certificadoPyme", "poderes", "otrosDocumentos"].includes(docKey)) {
+              // Crear pseudo-File para mostrar en la UI
+              const pseudoFile = new File([""], arch.nombrearchivo || "archivo", {
+                type: "application/octet-stream",
+              });
+              pseudoFile.formattedSize = "Cargado";
+              pseudoFile._uploaded = true;
+              pseudoFile._backendId = arch.socioarchivoid;
+              setValue(docKey, pseudoFile, { shouldValidate: false, shouldDirty: false });
+            }
+          });
+          console.log(`✅ Archivos del legajo cargados desde el backend.`);
+        }
+      } catch (err) {
+        console.warn("No se pudieron cargar archivos del legajo:", err);
+      }
+    };
+    cargarArchivos();
+  }, [socioIdActivo, setValue]);
 
   useEffect(() => {
     if (!socioIdActivo) {
@@ -121,8 +163,48 @@ export function DocumentosLegajo() {
     0,
   );
 
-  const handleFileUpload = (key, file) =>
+  const handleFileUpload = async (key, file) => {
     setValue(key, file, { shouldValidate: true, shouldDirty: true });
+
+    // Subir al backend
+    if (socioIdActivo && file instanceof File) {
+      setUploadingKey(key);
+      try {
+        const docTitle = ESTRUCTURA_LEGAJO.find((d) => d.key === key)?.title || key;
+        const resultado = await socioArchivoService.subirOActualizar(
+          socioIdActivo,
+          file,
+          key,
+          archivosBackend,
+          docTitle
+        );
+        file._uploaded = true;
+        file._backendId = resultado?.socioarchivoid || resultado?.id;
+
+        // Actualizar lista de archivos backend
+        if (resultado) {
+          setArchivosBackend((prev) => {
+            const tipoId = socioArchivoService.getTipoDocumentoId(key);
+            const filtered = prev.filter(
+              (a) => a.tipodocumentoarchivoid !== tipoId
+            );
+            return [...filtered, resultado];
+          });
+        }
+
+        toast.success("Archivo guardado", {
+          description: `${docTitle} se guardó correctamente.`,
+        });
+      } catch (err) {
+        console.error(`❌ Error subiendo ${key}:`, err);
+        toast.error("Error al guardar archivo", {
+          description: "No se pudo subir el archivo. Reintentá más tarde.",
+        });
+      } finally {
+        setUploadingKey(null);
+      }
+    }
+  };
   const handleFileRemove = (key) =>
     setValue(key, null, { shouldValidate: true, shouldDirty: true });
 

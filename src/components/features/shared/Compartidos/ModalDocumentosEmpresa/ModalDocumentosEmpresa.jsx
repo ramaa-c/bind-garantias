@@ -6,10 +6,13 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiClock,
+  FiLoader,
 } from "react-icons/fi";
 import { Button, CargaArchivos } from "../../../../ui";
 import styles from "./ModalDocumentosEmpresa.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
+import { socioArchivoService } from "../../../../../services/socioArchivoService";
+import { toast } from "sonner";
 
 export const ModalDocumentosEmpresa = ({
   isOpen,
@@ -18,6 +21,9 @@ export const ModalDocumentosEmpresa = ({
   onFileUpload,
   onFileRemove,
   intentoAvanzar,
+  socioId,
+  archivosBackend = [],
+  onArchivosBackendChange,
 }) => {
   const docs = [
     {
@@ -35,12 +41,74 @@ export const ModalDocumentosEmpresa = ({
   ];
 
   const [activeTab, setActiveTab] = useState(docs[0].key);
+  const [isSaving, setIsSaving] = useState(false);
+  const [uploadingKeys, setUploadingKeys] = useState({});
 
   const handleOverlayMouseDown = (e) => {
     if (e.target === e.currentTarget) onClose();
   };
 
   useEscape(onClose, isOpen);
+
+  const handleGuardarYCerrar = async () => {
+    if (!socioId) {
+      onClose();
+      return;
+    }
+
+    setIsSaving(true);
+    let errores = 0;
+
+    for (const doc of docs) {
+      const file = archivos[doc.key];
+      // Solo subir si hay un archivo File real (no uno ya subido)
+      if (file && file instanceof File && !file._uploaded) {
+        try {
+          setUploadingKeys((prev) => ({ ...prev, [doc.key]: true }));
+          const resultado = await socioArchivoService.subirOActualizar(
+            socioId,
+            file,
+            doc.key,
+            archivosBackend,
+            doc.title
+          );
+          // Marcar como subido para no volver a subirlo
+          file._uploaded = true;
+          file._backendId = resultado?.socioarchivoid || resultado?.id;
+
+          // Actualizar la lista de archivos del backend
+          if (onArchivosBackendChange && resultado) {
+            onArchivosBackendChange((prev) => {
+              const tipoId = socioArchivoService.getTipoDocumentoId(doc.key);
+              const filtered = prev.filter(
+                (a) => a.tipodocumentoarchivoid !== tipoId
+              );
+              return [...filtered, resultado];
+            });
+          }
+        } catch (err) {
+          console.error(`❌ Error subiendo ${doc.key}:`, err);
+          errores++;
+        } finally {
+          setUploadingKeys((prev) => ({ ...prev, [doc.key]: false }));
+        }
+      }
+    }
+
+    setIsSaving(false);
+
+    if (errores > 0) {
+      toast.error("Error al guardar", {
+        description: `No se pudieron subir ${errores} archivo(s). Reintentá más tarde.`,
+      });
+    } else {
+      toast.success("Documentos guardados", {
+        description: "Los archivos fueron guardados correctamente.",
+      });
+    }
+
+    onClose();
+  };
 
   if (!isOpen) return null;
 
@@ -76,6 +144,7 @@ export const ModalDocumentosEmpresa = ({
               const currentFile = archivos[doc.key];
               const hasError = intentoAvanzar && !currentFile;
               const isActive = activeTab === doc.key;
+              const isUploading = uploadingKeys[doc.key];
 
               return (
                 <div key={doc.key} className={styles.docItem}>
@@ -86,7 +155,13 @@ export const ModalDocumentosEmpresa = ({
                   >
                     <div className={styles.tabContent}>
                       <span className={styles.tabTitle}>{doc.title}</span>
-                      {currentFile ? (
+                      {isUploading ? (
+                        <FiLoader
+                          className={styles.iconPending}
+                          size={16}
+                          style={{ animation: "spin 1s linear infinite" }}
+                        />
+                      ) : currentFile ? (
                         <FiCheckCircle
                           className={styles.iconSuccess}
                           size={16}
@@ -148,8 +223,14 @@ export const ModalDocumentosEmpresa = ({
           </div>
 
           <div className={styles.modalFooter}>
-            <Button type="button" variant="primary" onClick={onClose}>
-              GUARDAR Y CERRAR
+            <Button
+              type="button"
+              variant="primary"
+              onClick={handleGuardarYCerrar}
+              isLoading={isSaving}
+              disabled={isSaving}
+            >
+              {isSaving ? "GUARDANDO..." : "GUARDAR Y CERRAR"}
             </Button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   useFormContext,
   useFormState,
@@ -14,6 +14,7 @@ import {
   FiTrash2,
   FiMail,
 } from "react-icons/fi";
+import { toast } from "sonner";
 import { Button, InputFlotante, InputSocioMasked } from "../../../../ui";
 import {
   SocioTaskCard,
@@ -22,6 +23,7 @@ import {
   ModalSocio,
 } from "../../../../features";
 import { useProvincias } from "../../../../../hooks/useCatalogos";
+import { socioArchivoService } from "../../../../../services/socioArchivoService";
 import styles from "./Paso5Documentacion.module.css";
 
 const DOC_ITEMS = [
@@ -63,6 +65,7 @@ export default function Paso5Documentacion({
   avanzarPaso6,
   onGuardarSocioDb,
   isSubmitting,
+  socioId,
 }) {
   const { register, control, setValue, trigger, clearErrors, getValues } =
     useFormContext();
@@ -77,6 +80,8 @@ export default function Paso5Documentacion({
   const { data: provinciasData } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
 
+  const [archivosBackend, setArchivosBackend] = useState([]);
+
   const [uiState, setUiState] = useState({
     archivos: {},
     socioActivoIndex: null,
@@ -90,6 +95,52 @@ export default function Paso5Documentacion({
     intentoGuardarSocio: false,
     isGuardando: false,
   });
+
+  // Cargar archivos existentes del backend al montar
+  useEffect(() => {
+    if (!socioId) return;
+    const cargarArchivosBackend = async () => {
+      try {
+        const archivosExistentes = await socioArchivoService.obtenerArchivos(socioId);
+        const arr = Array.isArray(archivosExistentes) ? archivosExistentes : [];
+        setArchivosBackend(arr);
+
+        if (arr.length > 0) {
+          // Mapeo inverso: tipodocumentoarchivoid -> clave de documento
+          const tipoToKey = {};
+          Object.entries(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach(([key, id]) => {
+            tipoToKey[id] = key;
+          });
+
+          const archivosRecuperados = {};
+          arr.forEach((arch) => {
+            const docKey = tipoToKey[arch.tipodocumentoarchivoid];
+            if (docKey && ["estatuto", "balance", "acta", "poderes"].includes(docKey)) {
+              // Crear un pseudo-File para mostrar en la UI
+              const pseudoFile = new File([""], arch.nombrearchivo || "archivo", {
+                type: "application/octet-stream",
+              });
+              pseudoFile.formattedSize = "Cargado";
+              pseudoFile._uploaded = true;
+              pseudoFile._backendId = arch.socioarchivoid;
+              archivosRecuperados[docKey] = pseudoFile;
+            }
+          });
+
+          if (Object.keys(archivosRecuperados).length > 0) {
+            setUiState((prev) => ({
+              ...prev,
+              archivos: { ...archivosRecuperados, ...prev.archivos },
+            }));
+            console.log(`✅ ${Object.keys(archivosRecuperados).length} archivo(s) recuperados del backend.`);
+          }
+        }
+      } catch (err) {
+        console.warn("No se pudieron cargar archivos existentes:", err);
+      }
+    };
+    cargarArchivosBackend();
+  }, [socioId]);
 
   const {
     archivos,
@@ -291,6 +342,40 @@ export default function Paso5Documentacion({
         const datosForm = getValues(`socios.${socioActivoIndex}`);
         if (onGuardarSocioDb)
           await onGuardarSocioDb(socioActivoIndex, datosForm);
+
+        // Subir archivos de DNI del socio al backend
+        if (socioId) {
+          const frenteKey = `socio-${socioActivoIndex}-frente`;
+          const dorsoKey = `socio-${socioActivoIndex}-dorso`;
+          const frenteFile = archivos[frenteKey];
+          const dorsoFile = archivos[dorsoKey];
+
+          const uploadPromises = [];
+          if (frenteFile && frenteFile instanceof File && !frenteFile._uploaded) {
+            uploadPromises.push(
+              socioArchivoService.subirOActualizar(
+                socioId, frenteFile, frenteKey, archivosBackend, `DNI Frente - ${datosForm.nombre || "Socio"}`
+              ).then((res) => {
+                frenteFile._uploaded = true;
+                return res;
+              }).catch((err) => console.error(`❌ Error subiendo DNI frente:`, err))
+            );
+          }
+          if (dorsoFile && dorsoFile instanceof File && !dorsoFile._uploaded) {
+            uploadPromises.push(
+              socioArchivoService.subirOActualizar(
+                socioId, dorsoFile, dorsoKey, archivosBackend, `DNI Dorso - ${datosForm.nombre || "Socio"}`
+              ).then((res) => {
+                dorsoFile._uploaded = true;
+                return res;
+              }).catch((err) => console.error(`❌ Error subiendo DNI dorso:`, err))
+            );
+          }
+          if (uploadPromises.length > 0) {
+            await Promise.allSettled(uploadPromises);
+          }
+        }
+
         updateState({
           intentoGuardarSocio: false,
           socioActivoIndex: null,
@@ -572,6 +657,9 @@ export default function Paso5Documentacion({
         onFileUpload={handleFileUpload}
         onFileRemove={handleFileRemove}
         intentoAvanzar={intentoAvanzar}
+        socioId={socioId}
+        archivosBackend={archivosBackend}
+        onArchivosBackendChange={setArchivosBackend}
       />
       <ModalSocio
         socio={socioActivoIndex !== null ? socios[socioActivoIndex] : null}

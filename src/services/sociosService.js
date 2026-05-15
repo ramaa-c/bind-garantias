@@ -85,4 +85,18 @@ export const sociosService = {
     const response = await api.get(`api/SocioUsuario/${usuarioWebId}`);
     return response.data;
   },
+
+  // GET api/Socio/ValidarCuit/{cuit} - Validar si un CUIT es válido y existente
+  validarCuit: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    try {
+      const response = await api.get(`api/Socio/ValidarCuit/${cuitLimpio}`);
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  },
 };
