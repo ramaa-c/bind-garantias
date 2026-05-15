@@ -9,7 +9,18 @@ export default defineConfig({
         target: "http://192.168.2.103:9988",
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/proxy-backend/, ""),
+        rewrite: (path) => {
+          let rewritten = path.replace(/^\/proxy-backend/, "");
+
+          rewritten = rewritten.replace(/\/(byencrypt|pornombre)$/, "/:$1");
+
+          rewritten = rewritten.replace(
+            /\/(status|password)-(block|release|reset|change|new)$/,
+            "/$1:$2",
+          );
+
+          return rewritten;
+        },
       },
     },
   },

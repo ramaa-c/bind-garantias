@@ -7,15 +7,15 @@ export const usuarioService = {
 
   // PUT api/usuario/{usuarioid}/status:block
   bloquearUsuario: async (usuarioId) =>
-    (await api.put(`api/usuario/${usuarioId}/status:block`)).data,
+    (await api.put(`api/usuario/${usuarioId}/status-block`)).data,
 
   // PUT api/usuario/{usuarioid}/status:release
   reactivarUsuario: async (usuarioId) =>
-    (await api.put(`api/usuario/${usuarioId}/status:release`)).data,
+    (await api.put(`api/usuario/${usuarioId}/status-release`)).data,
 
   // PUT api/usuario/password:reset
   resetearPassword: async (payloadSkeletor) =>
-    (await api.put(`api/usuario/password:reset`, payloadSkeletor)).data,
+    (await api.put(`api/usuario/password-reset`, payloadSkeletor)).data,
 
   // POST api/usuario/alta
   crearUsuario: async (nuevoUsuario) =>
@@ -23,7 +23,7 @@ export const usuarioService = {
 
   // PUT api/usuario/password:change
   cambiarPassword: async (datosCambioClave) =>
-    (await api.put("api/usuario/password:change", datosCambioClave)).data,
+    (await api.put("api/usuario/password-change", datosCambioClave)).data,
 
   // GET api/usuario/{encrypt}/:byencrypt
   obtenerPorEncrypt: async (encryptToken) =>
@@ -32,11 +32,11 @@ export const usuarioService = {
 
   // PUT api/usuario/{usuarioid}/password:new
   establecerClaveNueva: async ({ usuarioid, data }) =>
-    (await api.put(`api/usuario/${usuarioid}/password:new`, data)).data,
+    (await api.put(`api/usuario/${usuarioid}/password-new`, data)).data,
 
   // GET api/usuario/{usuario}/:pornombre
   obtenerPorNombreOEmail: async (identificador) =>
-    (await api.get(`api/usuario/${identificador}/:pornombre`)).data,
+    (await api.get(`api/usuario/${identificador}/pornombre`)).data,
 
   // GET api/usuarios
   buscarUsuarios: async (page = 1, pageSize = 10, email = "", nombre = "") => {

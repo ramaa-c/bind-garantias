@@ -12,7 +12,7 @@ import { Button } from "../../../../ui";
 import { ModalUbicacion, ModalContacto } from "../../../../features";
 import styles from "./Paso2Datos.module.css";
 
-export default function Paso2Datos({ onVolver, onContinuar }) {
+export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
   const { setValue, trigger, control } = useFormContext();
 
   const [modalUbicacionOpen, setModalUbicacionOpen] = useState(false);
@@ -40,7 +40,6 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
   };
 
   const handleGuardarContacto = () => {
-    // Si ModalContacto se encarga de setear "celular", aca solo cerramos
     setModalContactoOpen(false);
   };
 
@@ -98,7 +97,12 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
           <h2 className={styles.summaryName}>{razonSocial}</h2>
           <p className={styles.summaryCuit}>CUIT: {cuit || "20-12345678-9"}</p>
         </div>
-        <button type="button" className={styles.editLink} onClick={onVolver}>
+        <button
+          type="button"
+          className={styles.editLink}
+          onClick={onVolver}
+          disabled={isSubmitting}
+        >
           <FiEdit2 size={13} /> Editar
         </button>
       </div>
@@ -110,13 +114,17 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
+            if (!isSubmitting && (e.key === "Enter" || e.key === " ")) {
               e.preventDefault();
               setModalUbicacionOpen(true);
             }
           }}
           className={`${styles.taskRow} ${ubicacionOk ? styles.rowSuccess : intentoAvanzar && !ubicacionOk ? styles.rowError : ""}`}
-          onClick={() => setModalUbicacionOpen(true)}
+          onClick={() => !isSubmitting && setModalUbicacionOpen(true)}
+          style={{
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.7 : 1,
+          }}
         >
           <span
             className={`${styles.taskIcon} ${ubicacionOk ? styles.iconSuccess : intentoAvanzar && !ubicacionOk ? styles.iconError : styles.iconWarn}`}
@@ -157,13 +165,17 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
           role="button"
           tabIndex={0}
           onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
+            if (!isSubmitting && (e.key === "Enter" || e.key === " ")) {
               e.preventDefault();
               setModalContactoOpen(true);
             }
           }}
           className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : intentoAvanzar && !contactoOk ? styles.rowError : ""}`}
-          onClick={() => setModalContactoOpen(true)}
+          onClick={() => !isSubmitting && setModalContactoOpen(true)}
+          style={{
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.7 : 1,
+          }}
         >
           <span
             className={`${styles.taskIcon} ${contactoOk ? styles.iconSuccess : intentoAvanzar && !contactoOk ? styles.iconError : styles.iconWarn}`}
@@ -204,11 +216,12 @@ export default function Paso2Datos({ onVolver, onContinuar }) {
       <div className={styles.footer}>
         <Button
           variant="primary"
-          iconRight={<FiChevronRight />}
+          iconRight={!isSubmitting ? <FiChevronRight /> : null}
           onClick={handleAvanzarClick}
           className={styles.continueBtn}
+          disabled={isSubmitting}
         >
-          CONTINUAR
+          {isSubmitting ? "PROCESANDO..." : "CONTINUAR"}
         </Button>
       </div>
 

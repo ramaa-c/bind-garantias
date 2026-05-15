@@ -13,6 +13,7 @@ export const InputPasswordSeguro = React.forwardRef(
       esValido,
       className = "",
       id,
+      value,
       ...props
     },
     ref,
@@ -39,7 +40,6 @@ export const InputPasswordSeguro = React.forwardRef(
 
       if (faltantes.length > 0) {
         const visualScore = Math.min(scoreZxcvbn, 2);
-
         if (visualScore <= 1) {
           return {
             width: "25%",
@@ -63,42 +63,54 @@ export const InputPasswordSeguro = React.forwardRef(
         };
       }
 
-      return { width: "100%", color: "#4caf50", mensaje: "Contraseña segura." };
+      return { width: "100%", color: "var(--success-green, #3ddc84)", mensaje: "Contraseña segura." };
     };
 
     const { width, color, mensaje } = getStrength(currentValue);
+    const dynamicColor = currentValue ? color : 'var(--yellow, #f5f400)';
 
     return (
-      <div className={`${styles.group} ${className}`}>
-        <input
-          id={inputId}
-          type={showPassword ? "text" : "password"}
-          className={styles.input}
-          placeholder=" "
-          ref={ref}
-          {...props}
-        />
-        <label htmlFor={inputId} className={styles.label}>{label}</label>
+      <div className={`${styles.group} ${className}`} style={{ '--dynamic-color': dynamicColor }}>
+        <div className={styles.inputWrapper}>
+          <input
+            id={inputId}
+            type={showPassword ? "text" : "password"}
+            className={styles.input}
+            placeholder=" "
+            ref={ref}
+            value={value !== undefined ? value : ""}
+            {...props}
+          />
+          <label htmlFor={inputId} className={styles.label}>
+            {label}
+          </label>
 
-        {esValido && (
-          <span className={styles.successIcon}>
-            <FaCheck size={14} />
-          </span>
-        )}
+          <div className={styles.actions}>
+            {esValido && (
+              <span className={styles.successIcon}>
+                <FaCheck size={12} />
+              </span>
+            )}
+            <button
+              type="button"
+              className={styles.toggleBtn}
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex="-1"
+              aria-label={
+                showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
+              }
+            >
+              {showPassword ? <FiEyeOff size={17} /> : <FiEye size={17} />}
+            </button>
+          </div>
 
-        <button
-          type="button"
-          className={styles.toggleBtn}
-          onClick={() => setShowPassword(!showPassword)}
-          tabIndex="-1"
-        >
-          {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-        </button>
-
-        <div
-          className={styles.strengthBar}
-          style={{ width, backgroundColor: color }}
-        ></div>
+          <div className={styles.strengthTrack}>
+            <div
+              className={styles.strengthFill}
+              style={{ width, backgroundColor: color }}
+            />
+          </div>
+        </div>
 
         {currentValue && (
           <p className={styles.feedbackText} style={{ color }}>
