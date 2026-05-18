@@ -52,7 +52,8 @@ const Login = () => {
       },
       onError: (error) => {
         const status = error?.response?.status;
-        if (!error?.response || status >= 500 || status === 404) {
+
+        if (!error?.response || status >= 500) {
           clearErrors("password");
           toast.error("Error de servidor", {
             description: "Ocurrió un error. Intentá más tarde.",
