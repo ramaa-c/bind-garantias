@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { IoIosMailUnread } from "react-icons/io";
+import { HiOutlineMailOpen } from "react-icons/hi";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../hooks/useUsuario";
 import styles from "./Login.module.css";
@@ -143,8 +144,13 @@ const ConfirmarCorreo = () => {
       </section>
 
       <section className={`${styles.sideBrand} ${styles.sideBrandCentered}`}>
-        <div className={styles.iconCircleWrapper}>
-          <IoIosMailUnread size={180} color="var(--yellow)" strokeWidth={1} />
+        <div className={styles.confirmarCorreoBrandContent}>
+          <div className={styles.heroIconWrapper}>
+            <HiOutlineMailOpen className={styles.heroIcon} size={120} strokeWidth={1.5} />
+          </div>
+          <h2 className={styles.brandTitleLarge}>
+            Revisá tu <br /><em className={styles.brandEm}>bandeja de entrada</em>
+          </h2>
         </div>
       </section>
     </div>

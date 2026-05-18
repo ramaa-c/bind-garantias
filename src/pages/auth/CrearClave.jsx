@@ -11,6 +11,7 @@ import {
   FiAlertCircle,
   FiLock,
 } from "react-icons/fi";
+import { FaUserLock } from "react-icons/fa";
 import { Button, Spinner, InputPasswordSeguro, InputSimple } from "../../components/ui";
 import {
   useObtenerUsuarioPorEncrypt,
@@ -169,16 +170,13 @@ const CrearClave = () => {
         <div className={styles.loginContainer}>
           {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
           <section className={styles.loginFormSection}>
-            <div className={styles.loginHeader}>
-              <div
-                className={styles.logosWrapper}
-                style={{ justifyContent: "center", marginBottom: "2.5rem" }}
-              >
+            <div className={styles.globalLogo}>
+              <div className={styles.logosWrapper}>
                 <img
                   src={logoBind}
                   alt="Logo BIND"
-                  className={styles.logo}
-                  style={{ margin: 0, height: "4rem", width: "auto" }}
+                  onClick={() => navigate("/")}
+                  className={styles.clickableLogo}
                 />
                 {channelInfo.id !== "default" && (
                   <>
@@ -187,11 +185,13 @@ const CrearClave = () => {
                       src={channelInfo.logo}
                       alt={`Logo ${channelInfo.nombre}`}
                       className={styles.channelLogo}
-                      style={{ height: "4rem" }}
                     />
                   </>
                 )}
               </div>
+            </div>
+
+            <div className={styles.loginHeader}>
               <h1 className={styles.loginTitle}>Crear nueva contraseña</h1>
               <p className={styles.loginSubtitle}>
                 Establecé las credenciales para acceder a tu cuenta.
@@ -295,10 +295,10 @@ const CrearClave = () => {
 
           <section className={`${styles.sideBrand} ${styles.sideBrandCentered}`}>
             <div className={styles.crearClaveBrandContent}>
-              <div className={styles.shieldIconWrapper}>
-                <FiLock
-                  size={44}
-                  color="var(--yellow, #f4f500)"
+              <div className={styles.heroIconWrapper}>
+                <FaUserLock
+                  className={styles.heroIcon}
+                  size={80}
                   strokeWidth={1.5}
                 />
               </div>
