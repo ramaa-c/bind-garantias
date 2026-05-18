@@ -132,7 +132,6 @@ export default function Paso5Documentacion({
               ...prev,
               archivos: { ...archivosRecuperados, ...prev.archivos },
             }));
-            console.log(`✅ ${Object.keys(archivosRecuperados).length} archivo(s) recuperados del backend.`);
           }
         }
       } catch (err) {

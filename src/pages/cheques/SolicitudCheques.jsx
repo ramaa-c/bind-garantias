@@ -123,11 +123,6 @@ export default function SolicitudCheques() {
 
     if (esValido) {
       handleSubmit(onSubmitFinal)();
-    } else {
-      console.log(
-        "Errores de validación en Detalles:",
-        metodosFormulario.formState.errors,
-      );
     }
   };
 

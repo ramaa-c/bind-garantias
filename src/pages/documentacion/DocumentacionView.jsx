@@ -16,7 +16,7 @@ export default function DocumentacionView() {
 
   const onSubmit = async (data) => {
     try {
-      console.info("Ejecutando mutación con payload (PUT / POST):", data);
+      // Guardar legajo digital
     } catch (error) {
       console.error("Fallo al actualizar el legajo digital:", error);
     }

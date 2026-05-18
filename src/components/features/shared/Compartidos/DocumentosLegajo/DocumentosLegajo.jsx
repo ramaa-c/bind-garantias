@@ -109,7 +109,6 @@ export function DocumentosLegajo() {
               setValue(docKey, pseudoFile, { shouldValidate: false, shouldDirty: false });
             }
           });
-          console.log(`✅ Archivos del legajo cargados desde el backend.`);
         }
       } catch (err) {
         console.warn("No se pudieron cargar archivos del legajo:", err);
@@ -379,7 +378,7 @@ export function DocumentosLegajo() {
               <div className={styles.perfilGrid}>
                 <div className={styles.perfilChip}>
                   <div className={styles.perfilChipHeader}>
-                    <FiBriefcase className={styles.perfilChipIcon} size={13} />
+                    <FiBriefcase className={styles.perfilChipIcon} size={20} />
                     <span className={styles.perfilChipLabel}>Razón Social</span>
                   </div>
                   <span className={styles.perfilChipValue}>
@@ -388,7 +387,7 @@ export function DocumentosLegajo() {
                 </div>
                 <div className={styles.perfilChip}>
                   <div className={styles.perfilChipHeader}>
-                    <FiCreditCard className={styles.perfilChipIcon} size={13} />
+                    <FiCreditCard className={styles.perfilChipIcon} size={20} />
                     <span className={styles.perfilChipLabel}>CUIT</span>
                   </div>
                   <span className={styles.perfilChipValue}>
@@ -397,7 +396,7 @@ export function DocumentosLegajo() {
                 </div>
                 <div className={styles.perfilChip}>
                   <div className={styles.perfilChipHeader}>
-                    <FiMapPin className={styles.perfilChipIcon} size={13} />
+                    <FiMapPin className={styles.perfilChipIcon} size={20} />
                     <span className={styles.perfilChipLabel}>Domicilio</span>
                   </div>
                   <span className={styles.perfilChipValue}>
@@ -406,7 +405,7 @@ export function DocumentosLegajo() {
                 </div>
                 <div className={styles.perfilChip}>
                   <div className={styles.perfilChipHeader}>
-                    <FiPhone className={styles.perfilChipIcon} size={13} />
+                    <FiPhone className={styles.perfilChipIcon} size={20} />
                     <span className={styles.perfilChipLabel}>Teléfono</span>
                   </div>
                   <span className={styles.perfilChipValue}>
