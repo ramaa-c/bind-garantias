@@ -303,7 +303,7 @@ export default function ModalSocio({
                   <DropzoneField
                     fileKey={`socio-${socioIndex}-frente`}
                     title="DNI Frente"
-                    subtitle="Imagen clara y legible (Opcional)"
+                    subtitle="Imagen clara y legible (Obligatorio)"
                     archivos={archivos}
                     draggingKey={draggingKey}
                     onFileUpload={onFileUpload}
@@ -315,7 +315,7 @@ export default function ModalSocio({
                   <DropzoneField
                     fileKey={`socio-${socioIndex}-dorso`}
                     title="DNI Dorso"
-                    subtitle="Imagen clara y legible (Opcional)"
+                    subtitle="Imagen clara y legible (Obligatorio)"
                     archivos={archivos}
                     draggingKey={draggingKey}
                     onFileUpload={onFileUpload}

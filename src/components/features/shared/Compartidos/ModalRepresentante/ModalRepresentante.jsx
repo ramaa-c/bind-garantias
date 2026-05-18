@@ -4,7 +4,6 @@ import { FiBriefcase, FiX, FiMail, FiSmartphone, FiCreditCard, FiEdit2 } from "r
 import { InputSocioMasked, Button } from "../../../../ui";
 import styles from "./ModalRepresentante.module.css";
 import { useEscape } from "../../../../../hooks/useEscape";
-import { sociosService } from "../../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../../hooks/useAfip";
 
 export const ModalRepresentante = ({
@@ -94,14 +93,6 @@ export const ModalRepresentante = ({
     setValidando(true);
 
     try {
-      // Pre-validar si el CUIT es válido y existente
-      const cuitValido = await sociosService.validarCuit(cuit);
-      if (!cuitValido) {
-        setErrores({ cuit: "El CUIT ingresado no es válido o no existe" });
-        setValidando(false);
-        return;
-      }
-
       const respAfip = await validarEnAfip(cuit);
 
       if (respAfip && respAfip.datosgenerales) {

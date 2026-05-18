@@ -24,9 +24,8 @@ import {
   ModalConfirmacionBorrador,
 } from "../../components/features";
 import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
-import { Alert } from "../../components/ui";
+import { Alert, Spinner } from "../../components/ui";
 import styles from "../alta-operacion/AltaOperacion.module.css";
-import { sociosService } from "../../services/sociosService";
 import { solicitudesService } from "../../services/solicitudesService";
 import { useEmpresaActiva } from "../../hooks/useEmpresaActiva";
 import { lineaService } from "../../services/lineaService";
@@ -43,6 +42,8 @@ export const AltaOperacion = () => {
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
   const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [buscandoSocios, setBuscandoSocios] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -126,79 +127,96 @@ export const AltaOperacion = () => {
   });
   const tempSocioData = useWatch({ control, name: "tempSocioData" });
   const docExpandido = useWatch({ control, name: "docExpandido" });
-
-  // --- Precarga de socios existentes desde el backend ---
+  // --- Precarga de socios existentes desde el backend ---
   useEffect(() => {
     if (!socioIdActivo || sociosPrecargadosRef.current) return;
-    sociosPrecargadosRef.current = true; // Marcar inmediatamente para evitar doble ejecución
-
-    const currentSocios = getValues("socios");
-    if (currentSocios && currentSocios.length > 0) return;
 
     const precargarSocios = async () => {
-      try {
-        const relaciones =
-          await tercerosService.obtenerRelacionesDeSocioSGRPlus(socioIdActivo);
-        const relacionesArray = Array.isArray(relaciones) ? relaciones : [];
+      sociosPrecargadosRef.current = true;
+      setBuscandoSocios(true);
+      
+      const currentSocios = getValues("socios");
+      if (currentSocios && currentSocios.length > 0) {
+        setBuscandoSocios(false);
+        return;
+      }
 
+      try {
+        let relaciones = [];
+        try {
+          relaciones = await tercerosService.obtenerRelacionesDeSocioSGRPlus(socioIdActivo);
+          if (!relaciones || (Array.isArray(relaciones) && relaciones.length === 0)) {
+            relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+          }
+        } catch (sgrErr) {
+          relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+        }
+
+        const relacionesArray = Array.isArray(relaciones) ? relaciones : [];
         if (relacionesArray.length === 0) return;
 
         const sociosCargados = [];
         const cuitsYaCargados = new Set(
-          (getValues("socios") || []).map((s) => s.cuit),
+          (getValues("socios") || []).map((s) => s.cuit)
         );
 
         for (const rel of relacionesArray) {
-          const terceroId =
-            rel.terceroid ||
-            rel.tercerorelacionadoid ||
-            rel.TerceroRelacionadoID;
+          const terceroId = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
           if (!terceroId) continue;
 
           try {
-            const tercero =
-              await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+            let tercero = null;
+            try {
+              tercero = await tercerosService.obtenerTerceroPorId(terceroId);
+            } catch (apiErr) {
+              tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+            }
+
             if (tercero) {
-              const cuit = tercero.cuit || tercero.Cuit || "";
-              if (cuitsYaCargados.has(cuit)) continue; // Evitar duplicados
-              cuitsYaCargados.add(cuit);
-              sociosCargados.push({
-                cuit,
-                nombre:
-                  tercero.denominacion ||
-                  tercero.Denominacion ||
-                  tercero.nombre ||
-                  "Sin nombre",
-                participacion: String(
-                  rel.porcacciones ||
-                    rel.participacion ||
-                    rel.Participacion ||
-                    "0",
-                ),
-                dataOriginal: tercero,
-                tercerorelacionadoid: terceroId,
-                preloadedFromDb: true,
-              });
+              const cuit = tercero.cuit || tercero.Cuit || tercero.nrodocumento || tercero.documento || "";
+              
+              if (cuit && !cuitsYaCargados.has(cuit)) {
+                cuitsYaCargados.add(cuit);
+
+                // Obtener datos complementarios de AFIP para provincia/localidad
+                let afipData = null;
+                try {
+                  afipData = await afipService.obtenerConstanciaInscripcion(cuit);
+                } catch (e) {
+                  console.warn("No se pudo obtener AFIP extra para", cuit);
+                }
+
+                const terceroMergeado = {
+                  ...tercero,
+                  datosgenerales: afipData ? afipData.datosgenerales : null
+                };
+
+                sociosCargados.push({
+                  cuit,
+                  nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || tercero.Nombre || tercero.razonsocial || "Sin nombre",
+                  participacion: String(rel.porcacciones || rel.participacion || rel.Participacion || "0"),
+                  dataOriginal: terceroMergeado,
+                  tercerorelacionadoid: terceroId,
+                  preloadedFromDb: true,
+                });
+              }
             }
           } catch (err) {
-            console.warn(`No se pudo cargar tercero ${terceroId}:`, err);
           }
         }
 
         if (sociosCargados.length > 0) {
           sociosCargados.forEach((s) => append(s));
           setValue("faseSocio", "lista");
-          console.log(
-            `✅ ${sociosCargados.length} socio(s) precargado(s) desde la base de datos.`,
-          );
         }
       } catch (error) {
-        console.warn("No se pudieron precargar los socios existentes:", error);
+      } finally {
+        setBuscandoSocios(false);
       }
     };
 
     precargarSocios();
-  }, [socioIdActivo]);
+  }, [socioIdActivo, getValues, append, setValue, resetKey]);
 
   const handleVolver = () => {
     setPasoActual((prev) => (prev === 1 ? 1 : prev - 1));
@@ -230,6 +248,8 @@ export const AltaOperacion = () => {
       docExpandido: "estatuto",
       socios: [],
     });
+    sociosPrecargadosRef.current = false;
+    setResetKey((prev) => prev + 1);
     setPasoActual(1);
     setMostrarResultados(false);
   };
@@ -272,76 +292,75 @@ export const AltaOperacion = () => {
         cuit: cuitActivo
           ? String(cuitActivo).replace(/\D/g, "")
           : "33711316839",
-        tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : 2,
+        tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : cleanData.tipoProducto === "prestamo" ? 2 : 3,
         cadenavalorid: 950274,
-        monedaid: Number(cleanData.moneda) || 1,
+        monedaid: Number(cleanData.moneda) || 5000,
         importe: montoLimpio,
         estadosolicitud: 1,
         idexterno: 0,
-        terceroviaid: cleanData.sociedadBolsa
-          ? Number(cleanData.sociedadBolsa)
-          : 0,
+        terceroviaid: 4000000,
+        terceropresentanteid: cleanData.sociedadBolsa ? Number(cleanData.sociedadBolsa) : 0,
       };
 
-      console.log("Enviando Solicitud Payload:", payload);
       const resSolicitud = await solicitudesService.crearSolicitudEnProceso(payload);
       const solicitudIdCreada = resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
 
-      // Calcular importe en pesos
-      let importeEnPesos = montoLimpio;
+      let importeEnPesos = Math.round(montoLimpio);
       if (Number(cleanData.moneda) === 2) {
-        const hoy = new Date().toISOString().split("T")[0];
+        const hoy = "2026-04-08"; 
         try {
           const cotizacionData = await catalogosService.obtenerCotizacion({ moneda: 2, fecha: hoy, tipoCotizacion: 50 });
-          const valorCotizacion = cotizacionData?.cotizacion || 0;
+          
+          const valorCotizacion = Array.isArray(cotizacionData) 
+            ? (cotizacionData[0]?.cotizacion || cotizacionData[0]?.Cotizacion || 0)
+            : (cotizacionData?.cotizacion || cotizacionData?.Cotizacion || 0);
+            
           if (valorCotizacion > 0) {
-             importeEnPesos = montoLimpio * valorCotizacion;
+             importeEnPesos = Math.round(montoLimpio * valorCotizacion);
           }
         } catch (e) {
-          console.error("Error al obtener cotizacion", e);
         }
       }
 
-      const fchDesde = new Date().toISOString().split("T")[0] + "T00:00:00.000Z";
+      const fchDesde = new Date().toISOString().split(".")[0];
       const unAnioMas = new Date();
       unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
-      const fchHasta = unAnioMas.toISOString().split("T")[0] + "T00:00:00.000Z";
+      const fchHasta = unAnioMas.toISOString().split(".")[0];
 
       const payloadLimite = {
         tipolimitesocioid: 0,
         socioid: socioIdActivo || 0,
-        tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : 2,
+        tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : cleanData.tipoProducto === "prestamo" ? 2 : 3,
         fchvigenciadesde: fchDesde,
         fchvigenciahasta: fchHasta,
         monedaid: Number(cleanData.moneda) || 5000,
         importelimite: importeEnPesos,
         importeutilizado: 0,
-        tipolimiteestadoid: 1,
+        tipolimiteestadoid: 0,
         observaciones: "",
+        sucursalid: 0,
         terceromercadoid: 0,
-        terceropresentanteid: 0,
         destfondosid: 0,
         tipocomisionid: 0,
         porcentajecomision: 0,
-        sucursalid: 0,
-        importecargado: importeEnPesos,
+        importecargado: importeEnPesos, 
         avalid: 0,
         propuesta: "",
         resolucion: "",
         tipolimitesolicitudid: 0,
-        importemonex: Number(cleanData.moneda) === 2 ? montoLimpio : 0,
+        importemonex: Number(cleanData.moneda) === 2 ? Math.round(montoLimpio) : 0,
         tipolibradorid: 0,
         contratoid: 0,
-        cadenavalorid: 950274,
+        cadenavalorid: 0, 
         equipocomercialid: 0,
         solicitudid: solicitudIdCreada,
         tipolimiteriesgoid: 0,
-        terceroviaid: cleanData.sociedadBolsa ? Number(cleanData.sociedadBolsa) : 0,
+        terceroviaid: 4000000,
+        terceropresentanteid: cleanData.sociedadBolsa ? Number(cleanData.sociedadBolsa) : 0,
         tercerogeneradorid: 0
       };
 
-      console.log("Enviando TipoLimiteSocio Payload:", payloadLimite);
-      await lineaService.crearLimiteSocio(payloadLimite);
+      await lineaService.crearLimiteSocio({ coleccionlinea: [payloadLimite] });
 
       if (cleanData.tipoProducto === "cheque") {
         setPasoActual(5);
@@ -349,9 +368,8 @@ export const AltaOperacion = () => {
         setPasoActual(4);
       }
     } catch (error) {
-      console.error("Error al enviar la solicitud:", error);
       toast.error("Error al enviar", {
-        description: "Hubo un error al enviar la solicitud. Por favor, intentá nuevamente más tarde.",
+        description: "Hubo un error al enviar la solicitud. Revisá la consola para más detalles.",
       });
     } finally {
       setEnviandoSolicitud(false);
@@ -403,7 +421,6 @@ export const AltaOperacion = () => {
     navigate("/solicitudes", { state: { nuevaSolicitud } });
   };
 
-  // Handlers para socios
   const iniciarCargaSocio = () => {
     setValue("tempSocioCuit", "");
     setValue("tempSocioNombre", "");
@@ -415,15 +432,6 @@ export const AltaOperacion = () => {
   const validarCuitSocio = async () => {
     setIsLoadingAFIP(true);
     try {
-      // Pre-validar si el CUIT es válido y existente
-      const cuitValido = await sociosService.validarCuit(tempSocioCuit);
-      if (!cuitValido) {
-        toast.error("CUIT inválido", {
-          description: "El CUIT ingresado no es válido o no existe.",
-        });
-        return;
-      }
-
       const dataAfip =
         await afipService.obtenerConstanciaInscripcion(tempSocioCuit);
 
@@ -442,7 +450,6 @@ export const AltaOperacion = () => {
         });
       }
     } catch (error) {
-      console.error("Error al validar CUIT en AFIP", error);
       toast.error("Error de validación", {
         description: "No se pudo validar el CUIT en este momento. Reintentá más tarde.",
       });
@@ -452,14 +459,21 @@ export const AltaOperacion = () => {
   };
 
   const guardarSocio = () => {
+    const indexSocioEditado = socios.findIndex((s) => s.cuit === tempSocioCuit);
+    
+    let socioExistente = {};
+    if (indexSocioEditado >= 0) {
+      socioExistente = socios[indexSocioEditado];
+    }
+
     const nuevoSocio = {
+      ...socioExistente, // Preservar direccion, celular, email, etc.
       cuit: tempSocioCuit,
       nombre: tempSocioNombre,
       participacion: tempSocioParticipacion,
       dataOriginal: tempSocioData,
     };
 
-    const indexSocioEditado = socios.findIndex((s) => s.cuit === tempSocioCuit);
     if (indexSocioEditado >= 0) {
       update(indexSocioEditado, nuevoSocio);
     } else {
@@ -472,7 +486,6 @@ export const AltaOperacion = () => {
   const eliminarSocio = (index) => {
     remove(index);
     if (socios.length === 1) {
-      // 1 before removal means 0 after
       setValue("faseSocio", "ingresar_cuit");
     }
   };
@@ -495,7 +508,6 @@ export const AltaOperacion = () => {
     try {
       let terceroId = socioTarget.tercerorelacionadoid || null;
 
-      // Si el socio NO viene precargado de la DB, lo creamos
       if (!terceroId && !socioTarget.preloadedFromDb) {
         const dg = socioTarget.dataOriginal?.datosgenerales || {};
         const dom = dg.domiciliofiscal || {};
@@ -530,7 +542,6 @@ export const AltaOperacion = () => {
           mail: datosFormulario.email || "",
         };
 
-        // Primero buscar si el tercero ya existe por CUIT
         const cuitLimpio = String(socioTarget.cuit).replace(/\D/g, "");
         try {
           const existentes = await tercerosService.obtenerTerceros({
@@ -544,31 +555,20 @@ export const AltaOperacion = () => {
               arr[0].tercerorelacionadoid ||
               arr[0].TerceroRelacionadoID ||
               arr[0].id;
-            console.log("✅ Tercero ya existente encontrado, ID:", terceroId);
           }
         } catch (buscarErr) {
-          console.warn(
-            "No se pudo buscar tercero existente, se intentará crear:",
-            buscarErr,
-          );
         }
 
-        // Si no existe, crearlo
         if (!terceroId) {
-          console.log("📤 POST TerceroRelacionado:", payloadTercero);
           const terceroResult =
             await tercerosService.crearTercero(payloadTercero);
           terceroId = terceroResult?.tercerorelacionadoid || terceroResult?.id;
-          console.log("📥 Respuesta TerceroRelacionado:", terceroResult);
         }
 
         if (!terceroId) {
-          console.error("No se obtuvo ID del tercero creado.");
           return false;
         }
 
-        // Vincular tercero con la empresa activa
-        console.log("🔍 socioIdActivo:", socioIdActivo);
         if (socioIdActivo) {
           const ahora = new Date().toISOString().split(".")[0];
           const payloadRelacion = {
@@ -596,24 +596,11 @@ export const AltaOperacion = () => {
             ],
           };
 
-          console.log("📤 POST SocioTerceroRelacion:", payloadRelacion);
           try {
-            const relResult =
-              await tercerosService.guardarRelacionesDeSocio(payloadRelacion);
-            console.log("📥 Respuesta SocioTerceroRelacion:", relResult);
+            await tercerosService.guardarRelacionesDeSocio(payloadRelacion);
           } catch (relError) {
-            console.error("❌ Error en POST SocioTerceroRelacion:", relError);
-            console.error("Response data:", relError?.response?.data);
           }
-        } else {
-          console.error(
-            "⚠️ No se pudo vincular el tercero: socioIdActivo es null/undefined",
-          );
         }
-
-        console.log(
-          `✅ Socio "${socioTarget.nombre}" persistido (terceroId: ${terceroId})`,
-        );
       }
 
       // Actualizar el socio en el formulario con los datos completos
@@ -923,12 +910,23 @@ export const AltaOperacion = () => {
       (tipoProducto === "prestamo" || tipoProducto === "pagare")
     );
 
+  if (buscandoSocios) {
+    return (
+      <div className={styles.operacionPage}>
+        <div className={styles.formMainContainer} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: "1.5rem" }}>
+          <Spinner size="xl" />
+          <p style={{ color: "var(--text-muted)", fontSize: "1.1rem" }}>Buscando configuración de socios...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.operacionPage}>
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
           <div className={styles.contenedorPrincipal}>
-            <div className={styles.columnaFormulario}>
+            <div className={`${styles.columnaFormulario} ${!showHeaderYStepper ? styles.columnaCentrada : ""}`}>
               {showHeaderYStepper && (
                 <BarraProgreso
                   hitos={hitosVisuales}

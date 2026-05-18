@@ -167,6 +167,19 @@
     top: 2.5rem;
   }
 
+  .columnaCentrada {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .columnaCentrada .seccionFormulario {
+    width: 100%;
+    max-width: 50rem;
+    margin: 0 auto;
+  }
+
   .bienvenidaHeader {
     grid-area: header;
     text-align: left;
