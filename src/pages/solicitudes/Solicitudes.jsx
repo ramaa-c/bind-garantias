@@ -111,43 +111,25 @@ export default function Solicitudes() {
 
   const tieneSolicitudPendiente = useMemo(() => {
     if (!solicitudesReal || !Array.isArray(solicitudesReal)) return false;
-    return solicitudesReal.some((s) => s.tipolimiteestadoid === 1);
+    return solicitudesReal.some(s => 
+      !s.tipolimiteestadoid || s.tipolimiteestadoid === 0 || s.tipolimiteestadoid === 1
+    );
   }, [solicitudesReal]);
 
   const listaSolicitudes = useMemo(() => {
-    const reales = (solicitudesReal || []).map((s) => ({
+    const reales = (solicitudesReal || [])
+      .slice()
+      .sort((a, b) => (b.tipolimitesocioid || 0) - (a.tipolimitesocioid || 0))
+      .map(s => ({
       id: s.tipolimitesocioid?.toString() || Math.random().toString(),
-      tipo:
-        s.tipolimiteid === 1
-          ? "Cheque"
-          : s.tipolimiteid === 2
-            ? "Préstamo"
-            : "Pagaré",
-      monto: s.importelimite
-        ? new Intl.NumberFormat("es-AR").format(s.importelimite)
-        : "0",
-      moneda:
-        s.monedaid === 5000
-          ? "$"
-          : s.monedaid === 2
-            ? "U$D"
-            : s.monedaid === 10
-              ? "UVAS"
-              : s.monedaid === 500
-                ? "€"
-                : "$",
-      estado:
-        s.tipolimiteestadoid === 1
-          ? "Pendiente"
-          : s.tipolimiteestadoid === 2
-            ? "Aprobada"
-            : s.tipolimiteestadoid === 3
-              ? "Rechazada"
-              : "Cancelada",
-      fecha: s.fchvigenciadesde
-        ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR")
-        : "Hoy",
-      isReal: true,
+      tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
+      monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
+      moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
+      estado: (!s.tipolimiteestadoid || s.tipolimiteestadoid === 0 || s.tipolimiteestadoid === 1) ? "Pendiente" : s.tipolimiteestadoid === 2 ? "Aprobada" : s.tipolimiteestadoid === 3 ? "Rechazada" : "Cancelada",
+      fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
+      socioid: s.socioid || socioIdFinal,
+      cuit: cuitActivo,
+      isReal: true
     }));
 
     return [...reales, ...mockSolicitudesBase];
@@ -160,13 +142,10 @@ export default function Solicitudes() {
   }, [location.state]);
 
   const handleNuevaOperacion = (ruta, draftKey) => {
-    // Bloquear si ya hay una solicitud en proceso (Comentado para pruebas)
-    /*
     if (tieneSolicitudPendiente) {
       setModalPendienteOpen(true);
       return;
     }
-    */
 
     const dataString = sessionStorage.getItem(`${draftKey}_data`);
     const pasoString = sessionStorage.getItem(`${draftKey}_paso`);
@@ -276,7 +255,7 @@ export default function Solicitudes() {
         <div className={styles.listContainer}>
           {cargandoSolicitudes ? (
             <div className={styles.loadingContainer}>
-              <Spinner />
+              <Spinner size="xl" />
               <p>Cargando solicitudes...</p>
             </div>
           ) : listaSolicitudes.length > 0 ? (

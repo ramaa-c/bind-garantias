@@ -1,12 +1,12 @@
 import api from '../api/axios';
 
 export const lineaService = {
-    // GET /sgrplus/TipoLimiteSocioCambioEstado/{TipoLimiteSocioID}
-    obtenerCambiosEstado: async (tipoLimiteSocioId) => (await api.get(`sgrplus/TipoLimiteSocioCambioEstado/${tipoLimiteSocioId}`)).data,
+    // GET api/TipoLimiteSocioCambioEstado/{TipoLimiteSocioID}
+    obtenerCambiosEstado: async (tipoLimiteSocioId) => (await api.get(`api/TipoLimiteSocioCambioEstado/${tipoLimiteSocioId}`)).data,
 
-    // GET /sgrplus/TipoLimiteSocio/{SocioID}
-    obtenerLimitesPorSocio: async (socioId) => (await api.get(`/sgrplus/TipoLimiteSocio?socioid=${socioId}`)).data,
+    // GET api/TipoLimiteSocio?socioid={SocioID}
+    obtenerLimitesPorSocio: async (socioId) => (await api.get(`api/TipoLimiteSocio?socioid=${socioId}`)).data,
 
-    // POST /sgrplus/TipoLimiteSocio
-    crearLimiteSocio: async (limiteData) => (await api.post(`sgrplus/TipoLimiteSocio`, limiteData)).data
+    // POST api/TipoLimiteSocio
+    crearLimiteSocio: async (limiteData) => (await api.post(`api/TipoLimiteSocio`, limiteData)).data
 };
