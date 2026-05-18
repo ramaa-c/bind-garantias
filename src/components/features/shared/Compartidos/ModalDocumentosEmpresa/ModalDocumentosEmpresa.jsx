@@ -61,7 +61,6 @@ export const ModalDocumentosEmpresa = ({
 
     for (const doc of docs) {
       const file = archivos[doc.key];
-      // Solo subir si hay un archivo File real (no uno ya subido)
       if (file && file instanceof File && !file._uploaded) {
         try {
           setUploadingKeys((prev) => ({ ...prev, [doc.key]: true }));
@@ -70,18 +69,16 @@ export const ModalDocumentosEmpresa = ({
             file,
             doc.key,
             archivosBackend,
-            doc.title
+            doc.title,
           );
-          // Marcar como subido para no volver a subirlo
           file._uploaded = true;
           file._backendId = resultado?.socioarchivoid || resultado?.id;
 
-          // Actualizar la lista de archivos del backend
           if (onArchivosBackendChange && resultado) {
             onArchivosBackendChange((prev) => {
               const tipoId = socioArchivoService.getTipoDocumentoId(doc.key);
               const filtered = prev.filter(
-                (a) => a.tipodocumentoarchivoid !== tipoId
+                (a) => a.tipodocumentoarchivoid !== tipoId,
               );
               return [...filtered, resultado];
             });

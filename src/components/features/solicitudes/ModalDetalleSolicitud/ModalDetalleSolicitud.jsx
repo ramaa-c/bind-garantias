@@ -193,7 +193,7 @@ export const ModalDetalleSolicitud = ({
                     <li key={idx}>{motivo}</li>
                   ))
                 ) : (
-                  <li>El backend no especificó el motivo del rechazo.</li>
+                  <li>Cliente no bancarizado o posee deudas impagas.</li>
                 )}
               </ul>
             </div>
