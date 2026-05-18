@@ -4,8 +4,12 @@ import { useForm } from "react-hook-form";
 import { FiPlus, FiSearch } from "react-icons/fi";
 import { FaMoneyBillWave } from "react-icons/fa";
 import { BotonVolver, Button, Select, Spinner } from "../../components/ui";
-import { TarjetaSolicitud, ModalDetalleSolicitud } from "../../components/features";
+import {
+  TarjetaSolicitud,
+  ModalDetalleSolicitud,
+} from "../../components/features";
 import ModalConfirmacionBorrador from "../../components/features/shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
+import { HelpDrawer } from "../../components/layout/HelpDrawer/HelpDrawer";
 import { useObtenerLimitesSocio } from "../../hooks/useSolicitudes";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../services/sociosService";
@@ -89,15 +93,22 @@ export default function Solicitudes() {
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [modalPendienteOpen, setModalPendienteOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const { cuitActivo, nombreEmpresa, socioIdActivo } = useEmpresaActiva();
-  const socioIdFinal = socioIdActivo || 2974; // Fallback demo si no hay socioIdActivo
-  
-  const { data: solicitudesReal, isLoading: cargandoSolicitudes } = useObtenerLimitesSocio(socioIdFinal);
+  const socioIdFinal = socioIdActivo || 2974;
+
+  const { data: solicitudesReal, isLoading: cargandoSolicitudes } =
+    useObtenerLimitesSocio(socioIdFinal);
 
   const nombreEmpresaActiva = nombreEmpresa || "Empresa Demo S.A.";
 
-  // Verificar si hay solicitud en proceso para el socio activo
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
+
   const tieneSolicitudPendiente = useMemo(() => {
     if (!solicitudesReal || !Array.isArray(solicitudesReal)) return false;
     return solicitudesReal.some(s => 
@@ -186,16 +197,16 @@ export default function Solicitudes() {
           </div>
           <div className={styles.titleWrapper}>
             <h1 className={styles.title}>Mis Solicitudes</h1>
-            <p className={styles.subtitle}>
-              Gestioná tus operaciones.
-            </p>
+            <p className={styles.subtitle}>Gestioná tus operaciones.</p>
           </div>
         </div>
 
         <Button
           variant="primary"
           size="sm"
-          onClick={() => handleNuevaOperacion("/alta-operacion", "draft_alta_operacion")}
+          onClick={() =>
+            handleNuevaOperacion("/alta-operacion", "draft_alta_operacion")
+          }
           className={styles.btnNuevaOp}
         >
           <FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN
@@ -249,7 +260,11 @@ export default function Solicitudes() {
             </div>
           ) : listaSolicitudes.length > 0 ? (
             listaSolicitudes.map((item) => (
-              <TarjetaSolicitud key={item.id} solicitud={item} onVerDetalle={setSolicitudSeleccionada} />
+              <TarjetaSolicitud
+                key={item.id}
+                solicitud={item}
+                onVerDetalle={setSolicitudSeleccionada}
+              />
             ))
           ) : (
             <div className={styles.emptyState}>
@@ -265,6 +280,7 @@ export default function Solicitudes() {
         onConfirm={handleConfirmStartNew}
         onContinueBorrador={handleCloseContinueDraft}
       />
+
       <ModalDetalleSolicitud
         isOpen={!!solicitudSeleccionada}
         onClose={() => setSolicitudSeleccionada(null)}
@@ -276,52 +292,99 @@ export default function Solicitudes() {
       {modalPendienteOpen && (
         <div
           style={{
-            position: "fixed", inset: 0, zIndex: 9999,
-            background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.7)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             padding: "1rem",
           }}
           onClick={() => setModalPendienteOpen(false)}
         >
           <div
             style={{
-              background: "#1a1a1a", border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "1rem", padding: "2.5rem 2rem",
-              maxWidth: "26rem", width: "100%",
-              display: "flex", flexDirection: "column", alignItems: "center",
-              gap: "1.25rem", textAlign: "center",
+              background: "#1a1a1a",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "1rem",
+              padding: "2.5rem 2rem",
+              maxWidth: "26rem",
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "1.25rem",
+              textAlign: "center",
               boxShadow: "0 24px 48px rgba(0,0,0,0.5)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div style={{
-              width: "3.5rem", height: "3.5rem", borderRadius: "50%",
-              background: "rgba(255, 193, 7, 0.1)", border: "2px solid rgba(255, 193, 7, 0.25)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "1.5rem",
-            }}>⏳</div>
-            <h3 style={{ color: "#fff", margin: 0, fontSize: "1.15rem", fontWeight: 700 }}>
+            <div
+              style={{
+                width: "3.5rem",
+                height: "3.5rem",
+                borderRadius: "50%",
+                background: "rgba(255, 193, 7, 0.1)",
+                border: "2px solid rgba(255, 193, 7, 0.25)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1.5rem",
+              }}
+            >
+              ⏳
+            </div>
+            <h3
+              style={{
+                color: "#fff",
+                margin: 0,
+                fontSize: "1.15rem",
+                fontWeight: 700,
+              }}
+            >
               Solicitud en proceso
             </h3>
-            <p style={{ color: "#888", margin: 0, fontSize: "0.875rem", lineHeight: 1.6 }}>
-              Ya tenés una solicitud de línea en análisis. Debés esperar a que se apruebe o rechace antes de crear una nueva.
+            <p
+              style={{
+                color: "#888",
+                margin: 0,
+                fontSize: "0.875rem",
+                lineHeight: 1.6,
+              }}
+            >
+              Ya tenés una solicitud de línea en análisis. Debés esperar a que
+              se apruebe o rechace antes de crear una nueva.
             </p>
             <button
               onClick={() => setModalPendienteOpen(false)}
               style={{
-                background: "var(--yellow, #f4f500)", color: "#000",
-                border: "none", borderRadius: "0.625rem", padding: "0.75rem 2.5rem",
-                fontWeight: 700, fontSize: "0.875rem", cursor: "pointer",
-                marginTop: "0.25rem", transition: "filter 0.15s",
+                background: "var(--yellow, #f4f500)",
+                color: "#000",
+                border: "none",
+                borderRadius: "0.625rem",
+                padding: "0.75rem 2.5rem",
+                fontWeight: 700,
+                fontSize: "0.875rem",
+                cursor: "pointer",
+                marginTop: "0.25rem",
+                transition: "filter 0.15s",
               }}
-              onMouseOver={(e) => e.target.style.filter = "brightness(1.1)"}
-              onMouseOut={(e) => e.target.style.filter = "none"}
+              onMouseOver={(e) => (e.target.style.filter = "brightness(1.1)")}
+              onMouseOut={(e) => (e.target.style.filter = "none")}
             >
               Entendido
             </button>
           </div>
         </div>
       )}
+
+      <HelpDrawer
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        contexto="inicio"
+      />
     </div>
   );
 }
