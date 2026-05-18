@@ -44,6 +44,7 @@ export const AltaOperacion = () => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [buscandoSocios, setBuscandoSocios] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  const [validandoAcceso, setValidandoAcceso] = useState(true);
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -51,8 +52,46 @@ export const AltaOperacion = () => {
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
 
-  const { cuitActivo, socioIdActivo } = useEmpresaActiva();
+  const { cuitActivo, socioIdActivo, isLoading: isLoadingEmpresa } = useEmpresaActiva();
   const sociosPrecargadosRef = useRef(false);
+
+  useEffect(() => {
+    if (isLoadingEmpresa) return;
+
+    if (!cuitActivo) {
+      setValidandoAcceso(false);
+      return;
+    }
+
+    let isMounted = true;
+    const verificarAcceso = async () => {
+      try {
+        const solicitudes = await solicitudesService.obtenerSolicitudesEnProceso(cuitActivo);
+        const solicitudesArray = Array.isArray(solicitudes)
+          ? solicitudes
+          : solicitudes?.data || [];
+        const tieneSolicitudEnProceso = solicitudesArray.some(
+          (s) => s.estadosolicitud === 1 || s.estado === "En Proceso",
+        );
+
+        if (tieneSolicitudEnProceso && isMounted) {
+          toast.error("Acceso denegado", {
+            description: "Ya tenés una solicitud de línea en análisis. Debés esperar a que se procese.",
+          });
+          navigate("/solicitudes");
+        } else if (isMounted) {
+          setValidandoAcceso(false);
+        }
+      } catch (err) {
+        if (isMounted) setValidandoAcceso(false);
+      }
+    };
+
+    verificarAcceso();
+    return () => {
+      isMounted = false;
+    };
+  }, [cuitActivo, isLoadingEmpresa, navigate]);
 
   useEffect(() => {
     const borrador = localStorage.getItem(STORAGE_KEY);
@@ -127,14 +166,15 @@ export const AltaOperacion = () => {
   });
   const tempSocioData = useWatch({ control, name: "tempSocioData" });
   const docExpandido = useWatch({ control, name: "docExpandido" });
-  // --- Precarga de socios existentes desde el backend ---
+
+  // --- Precarga de socios existentes desde el backend ---
   useEffect(() => {
     if (!socioIdActivo || sociosPrecargadosRef.current) return;
 
     const precargarSocios = async () => {
       sociosPrecargadosRef.current = true;
       setBuscandoSocios(true);
-      
+
       const currentSocios = getValues("socios");
       if (currentSocios && currentSocios.length > 0) {
         setBuscandoSocios(false);
@@ -174,7 +214,7 @@ export const AltaOperacion = () => {
 
             if (tercero) {
               const cuit = tercero.cuit || tercero.Cuit || tercero.nrodocumento || tercero.documento || "";
-              
+
               if (cuit && !cuitsYaCargados.has(cuit)) {
                 cuitsYaCargados.add(cuit);
 
@@ -307,16 +347,16 @@ export const AltaOperacion = () => {
 
       let importeEnPesos = Math.round(montoLimpio);
       if (Number(cleanData.moneda) === 2) {
-        const hoy = "2026-04-08"; 
+        const hoy = "2026-04-08";
         try {
           const cotizacionData = await catalogosService.obtenerCotizacion({ moneda: 2, fecha: hoy, tipoCotizacion: 50 });
-          
-          const valorCotizacion = Array.isArray(cotizacionData) 
+
+          const valorCotizacion = Array.isArray(cotizacionData)
             ? (cotizacionData[0]?.cotizacion || cotizacionData[0]?.Cotizacion || 0)
             : (cotizacionData?.cotizacion || cotizacionData?.Cotizacion || 0);
-            
+
           if (valorCotizacion > 0) {
-             importeEnPesos = Math.round(montoLimpio * valorCotizacion);
+            importeEnPesos = Math.round(montoLimpio * valorCotizacion);
           }
         } catch (e) {
         }
@@ -343,7 +383,7 @@ export const AltaOperacion = () => {
         destfondosid: 0,
         tipocomisionid: 0,
         porcentajecomision: 0,
-        importecargado: importeEnPesos, 
+        importecargado: importeEnPesos,
         avalid: 0,
         propuesta: "",
         resolucion: "",
@@ -351,7 +391,7 @@ export const AltaOperacion = () => {
         importemonex: Number(cleanData.moneda) === 2 ? Math.round(montoLimpio) : 0,
         tipolibradorid: 0,
         contratoid: 0,
-        cadenavalorid: 0, 
+        cadenavalorid: 0,
         equipocomercialid: 0,
         solicitudid: solicitudIdCreada,
         tipolimiteriesgoid: 0,
@@ -460,7 +500,7 @@ export const AltaOperacion = () => {
 
   const guardarSocio = () => {
     const indexSocioEditado = socios.findIndex((s) => s.cuit === tempSocioCuit);
-    
+
     let socioExistente = {};
     if (indexSocioEditado >= 0) {
       socioExistente = socios[indexSocioEditado];
@@ -705,11 +745,10 @@ export const AltaOperacion = () => {
             if (esValido) {
               setEnviandoSolicitud(true);
               try {
-                // 1. Validar que no haya Solicitudes en Proceso (Comentado para pruebas)
-                /*
+                // 1. Validar que no haya Solicitudes en Proceso
                 const solicitudes =
                   await solicitudesService.obtenerSolicitudesEnProceso(
-                    cuitActivo || "33711316839",
+                    cuitActivo,
                   );
                 const solicitudesArray = Array.isArray(solicitudes)
                   ? solicitudes
@@ -725,7 +764,6 @@ export const AltaOperacion = () => {
                   setEnviandoSolicitud(false);
                   return;
                 }
-                */
 
                 // 2. Validar que no tenga ya un TipoLimite activo para este producto (Comentado para pruebas)
                 /*
@@ -909,6 +947,17 @@ export const AltaOperacion = () => {
       pasoActual === 4 &&
       (tipoProducto === "prestamo" || tipoProducto === "pagare")
     );
+
+  if (isLoadingEmpresa || validandoAcceso) {
+    return (
+      <div className={styles.operacionPage}>
+        <div className={styles.formMainContainer} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: "1.5rem" }}>
+          <Spinner size="xl" />
+          <p style={{ color: "var(--text-muted)", fontSize: "1.1rem" }}>Validando acceso al legajo...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (buscandoSocios) {
     return (
