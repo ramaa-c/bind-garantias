@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { Modal } from "../../components/ui/Modal/Modal";
 import { FiMail } from "react-icons/fi";
 import { InputSimple, Button } from "../../components/ui";
 import { useCrearUsuario, useResetearPassword } from "../../hooks/useUsuario";
+import { usuarioService } from "../../services/usuarioService";
 import styles from "./Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
@@ -30,6 +31,7 @@ const Registro = () => {
 
   const [modalUsuarioExistente, setModalUsuarioExistente] = useState(false);
   const [emailPendiente, setEmailPendiente] = useState("");
+  const [verificandoEstado, setVerificandoEstado] = useState(false);
 
   const {
     control,
@@ -43,6 +45,14 @@ const Registro = () => {
       email: "",
     },
   });
+
+  const emailValue = useWatch({ control, name: "email" });
+
+  useEffect(() => {
+    if (errors.email?.type === "server" || errors.email?.type === "manual") {
+      clearErrors("email");
+    }
+  }, [emailValue, clearErrors]);
 
   const getCSharpIsoDate = (addYears = 0) => {
     const date = new Date();
@@ -78,9 +88,35 @@ const Registro = () => {
       });
     } catch (error) {
       if (error?.response?.status === 409) {
-        setEmailPendiente(data.email);
-        setModalUsuarioExistente(true);
+        setVerificandoEstado(true);
+        try {
+          const userData = await usuarioService.obtenerPorNombreOEmail(
+            data.email,
+          );
+          const targetUser = Array.isArray(userData)
+            ? userData[0]
+            : userData?.items?.[0] || userData?.data?.[0] || userData;
+
+          if (targetUser && String(targetUser.debecambiarclave) === "1") {
+            setEmailPendiente(data.email);
+            setModalUsuarioExistente(true);
+          } else {
+            setError("email", {
+              type: "server",
+              message:
+                "Ya existe una cuenta con este correo. Intenta iniciar sesión.",
+            });
+          }
+        } catch (fetchError) {
+          setError("email", {
+            type: "server",
+            message: "Este correo ya se encuentra registrado.",
+          });
+        } finally {
+          setVerificandoEstado(false);
+        }
       } else {
+        // Manejo de errores 500 y otros problemas de red
         if (error?.response?.status >= 500 || !error?.response) {
           clearErrors("email");
           toast.error("Error de servidor", {
@@ -131,7 +167,7 @@ const Registro = () => {
     }
   };
 
-  const isFormDisabled = registrando || reenviando;
+  const isFormDisabled = registrando || reenviando || verificandoEstado;
 
   return (
     <>
@@ -172,7 +208,9 @@ const Registro = () => {
                   variant="primary"
                   disabled={isFormDisabled}
                 >
-                  {registrando ? "REGISTRANDO..." : "REGISTRARSE"}
+                  {registrando || verificandoEstado
+                    ? "PROCESANDO..."
+                    : "REGISTRARSE"}
                 </Button>
 
                 <Button
@@ -217,7 +255,7 @@ const Registro = () => {
       <Modal
         isOpen={modalUsuarioExistente}
         onClose={() => !reenviando && setModalUsuarioExistente(false)}
-        title="Usuario ya registrado"
+        title="Usuario pendiente de activación"
       >
         <div className={styles.modalUsuarioExistente}>
           <p className={styles.modalTexto}>
