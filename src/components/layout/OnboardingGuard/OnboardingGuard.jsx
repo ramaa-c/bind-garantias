@@ -12,12 +12,10 @@ export const OnboardingGuard = ({ children }) => {
   const isTerminosPage = location.pathname === "/terminos";
   const isAltaDatosPage = location.pathname === "/alta-datos-empresa";
 
-  if (!user || !user.email) {
-    return <Navigate to="/ingresar" replace />;
-  }
+  const email = user?.email || "";
 
   const { data: usuarioDb, isPending: isLoadingUser } =
-    useObtenerPorNombreOEmail(user.email);
+    useObtenerPorNombreOEmail(email);
 
   const parsearUsuarioWebId = (db) => {
     if (!db) return null;
@@ -53,6 +51,10 @@ export const OnboardingGuard = ({ children }) => {
 
   const listaEmpresas = parsearEmpresas(socioUsuarios);
   const tieneEmpresas = listaEmpresas.length > 0;
+
+  if (!user || !user.email) {
+    return <Navigate to="/ingresar" replace />;
+  }
 
   if ((isLoadingUser && !usuarioWebId) || (usuarioWebId && isPendingSocios)) {
     return (

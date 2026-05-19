@@ -96,30 +96,38 @@ export default function Paso5Documentacion({
     isGuardando: false,
   });
 
-  // Cargar archivos existentes del backend al montar
   useEffect(() => {
     if (!socioId) return;
     const cargarArchivosBackend = async () => {
       try {
-        const archivosExistentes = await socioArchivoService.obtenerArchivos(socioId);
+        const archivosExistentes =
+          await socioArchivoService.obtenerArchivos(socioId);
         const arr = Array.isArray(archivosExistentes) ? archivosExistentes : [];
         setArchivosBackend(arr);
 
         if (arr.length > 0) {
-          // Mapeo inverso: tipodocumentoarchivoid -> clave de documento
           const tipoToKey = {};
-          Object.entries(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach(([key, id]) => {
-            tipoToKey[id] = key;
-          });
+          Object.entries(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach(
+            ([key, id]) => {
+              tipoToKey[id] = key;
+            },
+          );
 
           const archivosRecuperados = {};
           arr.forEach((arch) => {
             const docKey = tipoToKey[arch.tipodocumentoarchivoid];
-            if (docKey && ["estatuto", "balance", "acta", "poderes"].includes(docKey)) {
+            if (
+              docKey &&
+              ["estatuto", "balance", "acta", "poderes"].includes(docKey)
+            ) {
               // Crear un pseudo-File para mostrar en la UI
-              const pseudoFile = new File([""], arch.nombrearchivo || "archivo", {
-                type: "application/octet-stream",
-              });
+              const pseudoFile = new File(
+                [""],
+                arch.nombrearchivo || "archivo",
+                {
+                  type: "application/octet-stream",
+                },
+              );
               pseudoFile.formattedSize = "Cargado";
               pseudoFile._uploaded = true;
               pseudoFile._backendId = arch.socioarchivoid;
@@ -164,58 +172,66 @@ export default function Paso5Documentacion({
   const emailFacturacionVal =
     useWatch({ control, name: "emailFacturacion" }) || "";
 
-  // Precarga automática al montar el componente
   React.useEffect(() => {
     if (!socios.length) return;
 
-    // Obtenemos las provincias para poder mapear nombres a IDs
-    // Esto es asíncrono pero usualmente ya están cargadas por el modal o el hook
     const provincias = opcionesProvincias || [];
 
     socios.forEach((socio, index) => {
       const original = socio?.dataOriginal || {};
       const dg = original.datosgenerales;
-      const dom = dg ? (dg.domiciliofiscal || {}) : {};
+      const dom = dg ? dg.domiciliofiscal || {} : {};
       const current = getValues(`socios.${index}`) || {};
 
       const updates = {};
 
-      // 1. Email
       if (!current.email) {
-        const email = (dg && (dg.email || dg.emailfacturacion)) || original.mail || original.Mail || "";
+        const email =
+          (dg && (dg.email || dg.emailfacturacion)) ||
+          original.mail ||
+          original.Mail ||
+          "";
         if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           updates.email = email;
         }
       }
 
-      // 2. Celular / Teléfono
       if (!current.celular) {
         const tel = original.telefono || original.Telefono || "";
         if (tel) updates.celular = tel;
       }
 
-      // 3. Dirección
       if (!current.direccion) {
-        const dir = (dom.direccion) || 
-                    (dg && dg.calle ? `${dg.calle} ${dg.numero || ""}`.trim() : "") ||
-                    original.calle || original.Calle || original.direccion || original.Direccion || "";
+        const dir =
+          dom.direccion ||
+          (dg && dg.calle ? `${dg.calle} ${dg.numero || ""}`.trim() : "") ||
+          original.calle ||
+          original.Calle ||
+          original.direccion ||
+          original.Direccion ||
+          "";
         if (dir) updates.direccion = dir;
       }
 
-      // 4. Localidad
       if (!current.localidad) {
-        const loc = (dom.localidad) || original.localidad || original.Localidad || "";
+        const loc =
+          dom.localidad || original.localidad || original.Localidad || "";
         if (loc) updates.localidad = loc;
       }
 
-      // 5. Provincia (Mapeo de nombre a ID)
       if (!current.provincia) {
-        const provNombre = (dom.descripcionprovincia || original.provincia || original.Provincia || "").toUpperCase();
+        const provNombre = (
+          dom.descripcionprovincia ||
+          original.provincia ||
+          original.Provincia ||
+          ""
+        ).toUpperCase();
         if (provNombre) {
-          const match = provincias.find(p => 
-            p.label.toUpperCase() === provNombre || 
-            provNombre.includes(p.label.toUpperCase()) ||
-            p.label.toUpperCase().includes(provNombre)
+          const match = provincias.find(
+            (p) =>
+              p.label.toUpperCase() === provNombre ||
+              provNombre.includes(p.label.toUpperCase()) ||
+              p.label.toUpperCase().includes(provNombre),
           );
           if (match) {
             updates.provincia = match.value;
@@ -225,9 +241,8 @@ export default function Paso5Documentacion({
         }
       }
 
-      // Aplicamos cambios si hay algo nuevo
       if (Object.keys(updates).length > 0) {
-        Object.keys(updates).forEach(key => {
+        Object.keys(updates).forEach((key) => {
           setValue(`socios.${index}.${key}`, updates[key]);
         });
       }
@@ -265,11 +280,20 @@ export default function Paso5Documentacion({
     const sLoc = getValues(`socios.${index}.localidad`);
     const errs = errors?.socios?.[index];
     const sinErrores = !errs || Object.keys(errs).length === 0;
-    
+
     const tieneDniFrente = !!archivos[`socio-${index}-frente`];
     const tieneDniDorso = !!archivos[`socio-${index}-dorso`];
 
-    return !!(sEmail && sCel && sDir && sProv && sLoc && sinErrores && tieneDniFrente && tieneDniDorso);
+    return !!(
+      sEmail &&
+      sCel &&
+      sDir &&
+      sProv &&
+      sLoc &&
+      sinErrores &&
+      tieneDniFrente &&
+      tieneDniDorso
+    );
   };
 
   const todosSociosOk =
@@ -281,11 +305,22 @@ export default function Paso5Documentacion({
     const dom = dg.domiciliofiscal || {};
     const currentFormValues = getValues(`socios.${index}`) || {};
 
-    const emailHydrated = currentFormValues.email || dg.email || dg.emailfacturacion || "";
-    const celularHydrated = currentFormValues.celular || dg.celular || dg.telefono || dg.telefono2 || "";
-    const direccionHydrated = currentFormValues.direccion || dom.direccion || (dg.calle ? `${dg.calle} ${dg.numero || ""}`.trim() : "");
-    const localidadHydrated = currentFormValues.localidad || dom.localidad || "";
-    const provinciaHydrated = currentFormValues.provincia || dom.descripcionprovincia || "";
+    const emailHydrated =
+      currentFormValues.email || dg.email || dg.emailfacturacion || "";
+    const celularHydrated =
+      currentFormValues.celular ||
+      dg.celular ||
+      dg.telefono ||
+      dg.telefono2 ||
+      "";
+    const direccionHydrated =
+      currentFormValues.direccion ||
+      dom.direccion ||
+      (dg.calle ? `${dg.calle} ${dg.numero || ""}`.trim() : "");
+    const localidadHydrated =
+      currentFormValues.localidad || dom.localidad || "";
+    const provinciaHydrated =
+      currentFormValues.provincia || dom.descripcionprovincia || "";
 
     setValue(`socios.${index}.email`, emailHydrated);
     setValue(`socios.${index}.celular`, celularHydrated);
@@ -357,7 +392,6 @@ export default function Paso5Documentacion({
         if (onGuardarSocioDb)
           await onGuardarSocioDb(socioActivoIndex, datosForm);
 
-        // Subir archivos de DNI del socio al backend
         if (socioId) {
           const frenteKey = `socio-${socioActivoIndex}-frente`;
           const dorsoKey = `socio-${socioActivoIndex}-dorso`;
@@ -365,24 +399,46 @@ export default function Paso5Documentacion({
           const dorsoFile = archivos[dorsoKey];
 
           const uploadPromises = [];
-          if (frenteFile && frenteFile instanceof File && !frenteFile._uploaded) {
+          if (
+            frenteFile &&
+            frenteFile instanceof File &&
+            !frenteFile._uploaded
+          ) {
             uploadPromises.push(
-              socioArchivoService.subirOActualizar(
-                socioId, frenteFile, frenteKey, archivosBackend, `DNI Frente - ${datosForm.nombre || "Socio"}`
-              ).then((res) => {
-                frenteFile._uploaded = true;
-                return res;
-              }).catch((err) => console.error(`❌ Error subiendo DNI frente:`, err))
+              socioArchivoService
+                .subirOActualizar(
+                  socioId,
+                  frenteFile,
+                  frenteKey,
+                  archivosBackend,
+                  `DNI Frente - ${datosForm.nombre || "Socio"}`,
+                )
+                .then((res) => {
+                  frenteFile._uploaded = true;
+                  return res;
+                })
+                .catch((err) =>
+                  console.error(`❌ Error subiendo DNI frente:`, err),
+                ),
             );
           }
           if (dorsoFile && dorsoFile instanceof File && !dorsoFile._uploaded) {
             uploadPromises.push(
-              socioArchivoService.subirOActualizar(
-                socioId, dorsoFile, dorsoKey, archivosBackend, `DNI Dorso - ${datosForm.nombre || "Socio"}`
-              ).then((res) => {
-                dorsoFile._uploaded = true;
-                return res;
-              }).catch((err) => console.error(`❌ Error subiendo DNI dorso:`, err))
+              socioArchivoService
+                .subirOActualizar(
+                  socioId,
+                  dorsoFile,
+                  dorsoKey,
+                  archivosBackend,
+                  `DNI Dorso - ${datosForm.nombre || "Socio"}`,
+                )
+                .then((res) => {
+                  dorsoFile._uploaded = true;
+                  return res;
+                })
+                .catch((err) =>
+                  console.error(`❌ Error subiendo DNI dorso:`, err),
+                ),
             );
           }
           if (uploadPromises.length > 0) {
@@ -594,9 +650,7 @@ export default function Paso5Documentacion({
                   key={rep?.id || index}
                   className={`${styles.compactRow} ${styles.compactRowSuccess}`}
                 >
-                  <span
-                    className={`${styles.statusDot} ${styles.dotGreen}`}
-                  />
+                  <span className={`${styles.statusDot} ${styles.dotGreen}`} />
                   <div className={styles.rowInfo}>
                     <strong className={styles.rowName}>{rep.nombre}</strong>
                     <span className={styles.rowSub}>

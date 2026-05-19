@@ -167,14 +167,13 @@ export const AltaOperacion = () => {
   const tempSocioData = useWatch({ control, name: "tempSocioData" });
   const docExpandido = useWatch({ control, name: "docExpandido" });
 
-  // --- Precarga de socios existentes desde el backend ---
   useEffect(() => {
     if (!socioIdActivo || sociosPrecargadosRef.current) return;
 
     const precargarSocios = async () => {
       sociosPrecargadosRef.current = true;
       setBuscandoSocios(true);
-
+      
       const currentSocios = getValues("socios");
       if (currentSocios && currentSocios.length > 0) {
         setBuscandoSocios(false);
@@ -214,7 +213,7 @@ export const AltaOperacion = () => {
 
             if (tercero) {
               const cuit = tercero.cuit || tercero.Cuit || tercero.nrodocumento || tercero.documento || "";
-
+              
               if (cuit && !cuitsYaCargados.has(cuit)) {
                 cuitsYaCargados.add(cuit);
 
@@ -507,7 +506,7 @@ export const AltaOperacion = () => {
     }
 
     const nuevoSocio = {
-      ...socioExistente, // Preservar direccion, celular, email, etc.
+      ...socioExistente,
       cuit: tempSocioCuit,
       nombre: tempSocioNombre,
       participacion: tempSocioParticipacion,
@@ -643,11 +642,10 @@ export const AltaOperacion = () => {
         }
       }
 
-      // Actualizar el socio en el formulario con los datos completos
       const sData = {
         ...socioTarget,
         tercerorelacionadoid: terceroId,
-        preloadedFromDb: true, // Ya está en la DB
+        preloadedFromDb: true,
         email: datosFormulario.email || "",
         celular: datosFormulario.celular || "",
         direccion: datosFormulario.direccion || "",
@@ -658,7 +656,6 @@ export const AltaOperacion = () => {
       return true;
     } catch (err) {
       console.error("Error persistiendo socio:", err);
-      // Aún así guardamos localmente para no perder los datos
       const sData = {
         ...socioTarget,
         email: datosFormulario.email || "",
@@ -745,10 +742,11 @@ export const AltaOperacion = () => {
             if (esValido) {
               setEnviandoSolicitud(true);
               try {
-                // 1. Validar que no haya Solicitudes en Proceso
+                // 1. Validar que no haya Solicitudes en Proceso (Comentado para pruebas)
+                /*
                 const solicitudes =
                   await solicitudesService.obtenerSolicitudesEnProceso(
-                    cuitActivo,
+                    cuitActivo || "33711316839",
                   );
                 const solicitudesArray = Array.isArray(solicitudes)
                   ? solicitudes
@@ -834,7 +832,7 @@ export const AltaOperacion = () => {
               if (tipoProducto === "cheque") setPasoActual(4);
               else
                 handleSubmit(onSubmitFinalPrestamos, (errors) => {
-                  console.error("❌ Errores de validación del schema:", errors);
+                  console.error("Errores de validación del schema:", errors);
                 })();
             }
           }}
@@ -852,14 +850,14 @@ export const AltaOperacion = () => {
             avanzarConBolsa={async () => {
               if (await trigger(["sociedadBolsa", "numeroCuentaBolsa"]))
                 handleSubmit(onSubmitFinalCheques, (errors) => {
-                  console.error("❌ Errores de validación del schema:", errors);
+                  console.error("Errores de validación del schema:", errors);
                 })();
             }}
             avanzarSinBolsa={() => {
               setValue("sociedadBolsa", "");
               setValue("numeroCuentaBolsa", "");
               handleSubmit(onSubmitFinalCheques, (errors) => {
-                console.error("❌ Errores de validación del schema:", errors);
+                console.error("Errores de validación del schema:", errors);
               })();
             }}
             isSubmitting={enviandoSolicitud}

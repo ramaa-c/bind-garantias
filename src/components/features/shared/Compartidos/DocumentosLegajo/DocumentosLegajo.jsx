@@ -80,33 +80,43 @@ export function DocumentosLegajo() {
   const [archivosBackend, setArchivosBackend] = useState([]);
   const [uploadingKey, setUploadingKey] = useState(null);
 
-  // Cargar archivos existentes del backend
   useEffect(() => {
     if (!socioIdActivo) return;
     const cargarArchivos = async () => {
       try {
-        const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+        const archivosExistentes =
+          await socioArchivoService.obtenerArchivos(socioIdActivo);
         const arr = Array.isArray(archivosExistentes) ? archivosExistentes : [];
         setArchivosBackend(arr);
 
         if (arr.length > 0) {
-          // Mapeo inverso: tipodocumentoarchivoid -> clave de documento
           const tipoToKey = {};
-          Object.entries(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach(([key, id]) => {
-            tipoToKey[id] = key;
-          });
+          Object.entries(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach(
+            ([key, id]) => {
+              tipoToKey[id] = key;
+            },
+          );
 
           arr.forEach((arch) => {
             const docKey = tipoToKey[arch.tipodocumentoarchivoid];
-            if (docKey && ["certificadoPyme", "poderes", "otrosDocumentos"].includes(docKey)) {
-              // Crear pseudo-File para mostrar en la UI
-              const pseudoFile = new File([""], arch.nombrearchivo || "archivo", {
-                type: "application/octet-stream",
-              });
+            if (
+              docKey &&
+              ["certificadoPyme", "poderes", "otrosDocumentos"].includes(docKey)
+            ) {
+              const pseudoFile = new File(
+                [""],
+                arch.nombrearchivo || "archivo",
+                {
+                  type: "application/octet-stream",
+                },
+              );
               pseudoFile.formattedSize = "Cargado";
               pseudoFile._uploaded = true;
               pseudoFile._backendId = arch.socioarchivoid;
-              setValue(docKey, pseudoFile, { shouldValidate: false, shouldDirty: false });
+              setValue(docKey, pseudoFile, {
+                shouldValidate: false,
+                shouldDirty: false,
+              });
             }
           });
         }
@@ -129,19 +139,26 @@ export function DocumentosLegajo() {
       const arr = Array.isArray(relaciones) ? relaciones : [];
       const lista = [];
       const uniqueIds = new Set();
-      
+
       for (const rel of arr) {
         const tid =
           rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
         if (!tid || uniqueIds.has(tid)) continue;
         uniqueIds.add(tid);
-        
+
         try {
           const t = await tercerosService.obtenerTerceroPorId(tid);
           if (t)
             lista.push({
               id: tid,
-              nombre: t.razonsocial || t.denominacion || t.nombre || t.RazonSocial || t.Denominacion || t.Nombre || "Sin nombre",
+              nombre:
+                t.razonsocial ||
+                t.denominacion ||
+                t.nombre ||
+                t.RazonSocial ||
+                t.Denominacion ||
+                t.Nombre ||
+                "Sin nombre",
               cuit: t.cuit || t.Cuit || "—",
               email: t.mail || t.Mail || "",
               telefono: t.telefono || t.Telefono || "",
@@ -150,7 +167,7 @@ export function DocumentosLegajo() {
               participacion:
                 rel.porcacciones || rel.participacion || rel.Participacion || 0,
             });
-        } catch (_) { }
+        } catch (_) {}
       }
       setSociosEmpresa(lista);
     } catch (e) {
@@ -176,27 +193,26 @@ export function DocumentosLegajo() {
   const handleFileUpload = async (key, file) => {
     setValue(key, file, { shouldValidate: true, shouldDirty: true });
 
-    // Subir al backend
     if (socioIdActivo && file instanceof File) {
       setUploadingKey(key);
       try {
-        const docTitle = ESTRUCTURA_LEGAJO.find((d) => d.key === key)?.title || key;
+        const docTitle =
+          ESTRUCTURA_LEGAJO.find((d) => d.key === key)?.title || key;
         const resultado = await socioArchivoService.subirOActualizar(
           socioIdActivo,
           file,
           key,
           archivosBackend,
-          docTitle
+          docTitle,
         );
         file._uploaded = true;
         file._backendId = resultado?.socioarchivoid || resultado?.id;
 
-        // Actualizar lista de archivos backend
         if (resultado) {
           setArchivosBackend((prev) => {
             const tipoId = socioArchivoService.getTipoDocumentoId(key);
             const filtered = prev.filter(
-              (a) => a.tipodocumentoarchivoid !== tipoId
+              (a) => a.tipodocumentoarchivoid !== tipoId,
             );
             return [...filtered, resultado];
           });
@@ -235,8 +251,6 @@ export function DocumentosLegajo() {
       return;
     }
 
-    // BLOQUE 0: BARRERA DE FRONTEND (Evita el error 500 del backend)
-    // Verificamos si el email ya existe en la lista de usuarios/socios renderizada
     const yaEstaVinculado = sociosEmpresa.some(
       (socio) => socio.email?.toLowerCase() === emailNormalizado.toLowerCase(),
     );
