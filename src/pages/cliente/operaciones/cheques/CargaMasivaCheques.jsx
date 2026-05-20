@@ -18,6 +18,12 @@ export default function CargaMasivaCheques() {
   const navigate = useNavigate();
 
   const [pasoActual, setPasoActual] = useState(1);
+  const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(1);
+
+  useEffect(() => {
+    setMaxPasoAlcanzado((m) => Math.max(m, pasoActual));
+  }, [pasoActual]);
+
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -83,6 +89,7 @@ export default function CargaMasivaCheques() {
     setChequesAprobados([]);
     metodosFormulario.reset();
     setPasoActual(1);
+    setMaxPasoAlcanzado(1);
   };
 
   const handleReiniciarAlta = () => setIsModalReiniciarAbierto(true);
@@ -180,6 +187,8 @@ export default function CargaMasivaCheques() {
                   <BarraProgreso
                     hitos={["Carga", "Revisión", "Confirmación"]}
                     hitoActual={pasoActual}
+                    maxHitoAlcanzado={maxPasoAlcanzado}
+                    onStepClick={setPasoActual}
                   />
                 </nav>
               )}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 import { BuscadorCuit } from "../../../../ui";
 import { sociosService } from "../../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../../hooks/useAfip";
@@ -85,32 +86,45 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         return;
       }
 
-      // VALIDACIÓN CONTRA AFIP
-      const afipData = await validarAfip(cuit);
+      // ── VALIDACIÓN CONTRA AFIP
+      try {
+        const afipData = await validarAfip(cuit);
 
-      if (afipData && afipData.datosgenerales) {
-        const dg = afipData.datosgenerales;
+        if (afipData && afipData.datosgenerales) {
+          const dg = afipData.datosgenerales;
 
-        const nombreCompleto =
-          dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim();
-        setValue("razonSocial", nombreCompleto, { shouldValidate: true });
+          const nombreCompleto =
+            dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim();
+          setValue("razonSocial", nombreCompleto, { shouldValidate: true });
 
-        const dom = dg.domiciliofiscal || {};
-        setValue("direccion", dom.direccion || "", { shouldValidate: true });
-        setValue("localidad", dom.localidad || "", { shouldValidate: true });
-        setValue("provincia", dom.descripcionprovincia || "", {
-          shouldValidate: true,
-        });
+          const dom = dg.domiciliofiscal || {};
+          setValue("direccion", dom.direccion || "", { shouldValidate: true });
+          setValue("localidad", dom.localidad || "", { shouldValidate: true });
+          setValue("provincia", dom.descripcionprovincia || "", {
+            shouldValidate: true,
+          });
 
-        if (onValidar) onValidar();
-      } else {
-        setError("cuit", {
-          type: "manual",
-          message: "No se encontraron datos válidos en AFIP",
+          if (onValidar) onValidar();
+        } else {
+          setError("cuit", {
+            type: "manual",
+            message: "No se encontraron datos válidos en AFIP",
+          });
+        }
+      } catch (afipError) {
+        console.error(
+          "Error devuelto por la API de AFIP o Servidor:",
+          afipError,
+        );
+
+        toast.error("Servicio de AFIP no disponible", {
+          description:
+            "El padrón de AFIP está experimentando problemas o se encuentra caído de origen. Por favor, reintentá en unos minutos.",
+          duration: 6000,
         });
       }
     } catch (err) {
-      console.error("Error validando CUIT:", err);
+      console.error("Error general en el flujo de validación de CUIT:", err);
       setError("cuit", {
         type: "manual",
         message: "Error al procesar la validación del CUIT",

@@ -53,6 +53,11 @@ export default function SolicitudCheques() {
     watch,
   });
 
+  const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(pasoActual);
+  useEffect(() => {
+    setMaxPasoAlcanzado((m) => Math.max(m, pasoActual));
+  }, [pasoActual]);
+
 
 
   // --- NAVEGACIÓN Y FUNCIONES ---
@@ -73,6 +78,7 @@ export default function SolicitudCheques() {
     });
     setMostrarResultados(false);
     setPasoActual(1);
+    setMaxPasoAlcanzado(1);
   };
 
   const handleReiniciarAlta = () => {
@@ -187,6 +193,8 @@ export default function SolicitudCheques() {
                       "DETALLES",
                     ]}
                     hitoActual={pasoActual}
+                    maxHitoAlcanzado={maxPasoAlcanzado}
+                    onStepClick={setPasoActual}
                   />
                 </nav>
               )}

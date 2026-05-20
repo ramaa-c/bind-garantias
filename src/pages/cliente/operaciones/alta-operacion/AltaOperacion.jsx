@@ -145,6 +145,11 @@ export const AltaOperacion = () => {
     watch,
   });
 
+  const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(pasoActual);
+  useEffect(() => {
+    setMaxPasoAlcanzado((m) => Math.max(m, pasoActual));
+  }, [pasoActual]);
+
   const {
     fields: socios,
     append,
@@ -290,6 +295,7 @@ export const AltaOperacion = () => {
     sociosPrecargadosRef.current = false;
     setResetKey((prev) => prev + 1);
     setPasoActual(1);
+    setMaxPasoAlcanzado(1);
     setMostrarResultados(false);
   };
 
@@ -978,6 +984,8 @@ export const AltaOperacion = () => {
                 <BarraProgreso
                   hitos={hitosVisuales}
                   hitoActual={pasoActual}
+                  maxHitoAlcanzado={maxPasoAlcanzado}
+                  onStepClick={setPasoActual}
                   onVolver={mostrarBotonVolver ? handleVolver : null}
                   onVolverInicio={
                     pasoActual === 1 ? () => navigate("/solicitudes") : null
