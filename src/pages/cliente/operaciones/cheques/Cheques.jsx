@@ -86,6 +86,30 @@ export default function Cheques() {
     watch,
   });
 
+  const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(pasoActual);
+  useEffect(() => {
+    setMaxPasoAlcanzado((m) => Math.max(m, pasoActual));
+  }, [pasoActual]);
+
+  const maxVisualAlcanzado = (() => {
+    if (maxPasoAlcanzado <= 2) return 1;
+    if (maxPasoAlcanzado === 3) return 2;
+    if (maxPasoAlcanzado === 4) return 3;
+    if (maxPasoAlcanzado === 5) return 4;
+    return 5;
+  })();
+
+  const handleStepClick = (visualStep) => {
+    switch (visualStep) {
+      case 1: setPasoActual(1); break;
+      case 2: setPasoActual(3); break;
+      case 3: setPasoActual(4); break;
+      case 4: setPasoActual(5); break;
+      case 5: setPasoActual(6); break;
+      default: break;
+    }
+  };
+
   const bolsaSeleccionada = useWatch({
     control,
     name: "sociedadBolsa",
@@ -121,6 +145,7 @@ export default function Cheques() {
     setMostrarResultados(false);
     setCodigoSms("");
     setPasoActual(1);
+    setMaxPasoAlcanzado(1);
   };
 
   const handleReiniciarAlta = () => {
@@ -370,6 +395,8 @@ export default function Cheques() {
                     "Confirmación",
                   ]}
                   hitoActual={hitoVisual}
+                  maxHitoAlcanzado={maxVisualAlcanzado}
+                  onStepClick={handleStepClick}
                   onVolver={
                     pasoActual > 1
                       ? () => {

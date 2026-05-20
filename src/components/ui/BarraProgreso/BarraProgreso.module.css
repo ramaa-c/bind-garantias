@@ -209,6 +209,26 @@
   background: var(--yellow, #f4f500);
 }
 
+.stepClickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.stepClickable:hover .circle {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(244, 245, 0, 0.25);
+  border-color: var(--yellow, #f4f500);
+}
+
+.stepClickable:hover .label {
+  color: var(--yellow, #f4f500);
+}
+
+.stepDisabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* ── TABLET  ─────────────────────────────────────────────── */
 
 @media (min-width: 48rem) and (max-width: 63.99rem) {
@@ -295,6 +315,10 @@
   .active.step {
     background: rgba(255, 255, 255, 0.03);
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  }
+
+  .stepClickable:hover {
+    background: rgba(255, 255, 255, 0.04);
   }
 
   .label {

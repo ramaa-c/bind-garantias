@@ -23,6 +23,7 @@ export const AltaDatosEmpresa = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [pasoActual, setPasoActual] = useState(1);
+  const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(1);
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -66,6 +67,7 @@ export const AltaDatosEmpresa = () => {
   const handleClickReiniciar = () => {
     reset();
     setPasoActual(1);
+    setMaxPasoAlcanzado(1);
   };
 
   const onSubmitFinal = async (data) => {
@@ -149,6 +151,7 @@ export const AltaDatosEmpresa = () => {
 
   const handleValidarCuitSuccess = () => {
     setPasoActual(2);
+    setMaxPasoAlcanzado((prev) => Math.max(prev, 2));
   };
 
   const obtenerTextosCabecera = () => {
@@ -209,6 +212,8 @@ export const AltaDatosEmpresa = () => {
               <BarraProgreso
                 hitos={["CUIT", "DATOS"]}
                 hitoActual={pasoActual}
+                maxHitoAlcanzado={maxPasoAlcanzado}
+                onStepClick={setPasoActual}
                 onVolver={pasoActual > 1 ? handleVolver : null}
                 onVolverInicio={
                   pasoActual === 1 ? () => navigate("/inicio") : null

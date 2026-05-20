@@ -5,9 +5,11 @@ import styles from "./BarraProgreso.module.css";
 export const BarraProgreso = ({
   hitos = ["Empresa", "Operación", "Socios", "Documentos", "Confirmación"],
   hitoActual = 1,
+  maxHitoAlcanzado,
   onVolver = null,
   onVolverInicio = null,
   onReiniciar = null,
+  onStepClick = null,
 }) => {
   const total = hitos.length;
   const pct = Math.round(((hitoActual - 1) / (total - 1)) * 100);
@@ -53,17 +55,48 @@ export const BarraProgreso = ({
             const n = i + 1;
             const done = hitoActual > n;
             const active = hitoActual === n;
+            const isClickable =
+              done || (maxHitoAlcanzado && n <= maxHitoAlcanzado);
+            const isDisabled = onStepClick && !isClickable && !active;
+
             const stateClass = done
               ? styles.done
               : active
                 ? styles.active
                 : styles.pending;
 
+            const interactiveClass = onStepClick
+              ? isClickable && !active
+                ? styles.stepClickable
+                : isDisabled
+                  ? styles.stepDisabled
+                  : ""
+              : "";
+
             return (
               <React.Fragment key={hito}>
                 <li
-                  className={`${styles.step} ${stateClass}`}
+                  className={`${styles.step} ${stateClass} ${interactiveClass}`.trim()}
                   aria-current={active ? "step" : undefined}
+                  role={onStepClick ? "button" : undefined}
+                  aria-disabled={isDisabled ? "true" : undefined}
+                  tabIndex={
+                    isClickable && onStepClick && !active ? 0 : undefined
+                  }
+                  onClick={() => {
+                    if (isClickable && onStepClick && !active) onStepClick(n);
+                  }}
+                  onKeyDown={(e) => {
+                    if (
+                      isClickable &&
+                      onStepClick &&
+                      !active &&
+                      (e.key === "Enter" || e.key === " ")
+                    ) {
+                      e.preventDefault();
+                      onStepClick(n);
+                    }
+                  }}
                 >
                   <div className={styles.circleWrap}>
                     <div className={styles.circle}>
