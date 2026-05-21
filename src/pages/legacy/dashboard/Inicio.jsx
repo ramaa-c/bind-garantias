@@ -11,7 +11,7 @@ import {
 } from "react-icons/fi";
 import { TbFileInvoice } from "react-icons/tb";
 import { Button } from "../../../components/ui";
-import ModalConfirmacionBorrador from "../../../components/features/shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
+import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 import styles from "./Inicio.module.css";
 import { useObtenerTodas } from "../../../hooks/useCadenaValor";
 import Spinner from "../../../components/ui/Spinner/Spinner";
@@ -484,7 +484,7 @@ export default function Inicio() {
         </div>
       </main>
 
-      <ModalConfirmacionBorrador
+      <ConfirmacionBorradorModal
         isOpen={!!flujoPendiente}
         onClose={handleCloseModalOnly}
         onConfirm={handleConfirmStartNew}

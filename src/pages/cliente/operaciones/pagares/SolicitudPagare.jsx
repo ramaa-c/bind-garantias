@@ -14,9 +14,9 @@ import {
   Paso2AgentePagare,
   Paso3Epyme,
   Paso4ExitoPagare,
-  ModalConfirmacionBorrador,
+  ConfirmacionBorradorModal,
 } from "../../../../components/features";
-import { HelpDrawer } from "../../../../components/layout/HelpDrawer/HelpDrawer";
+import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./SolicitudPagare.module.css";
 
 const STORAGE_KEY = "draft_pagare";
@@ -187,7 +187,7 @@ export default function PagareUSD() {
         </div>
       </main>
 
-      <ModalConfirmacionBorrador
+      <ConfirmacionBorradorModal
         isOpen={isModalReiniciarAbierto}
         onClose={() => setIsModalReiniciarAbierto(false)}
         onConfirm={confirmarReinicioAlta}

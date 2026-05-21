@@ -15,8 +15,8 @@ import {
   useObtenerLineas,
 } from "../../../hooks/useCadenaValor";
 import Spinner from "../../../components/ui/Spinner/Spinner";
-import ModalLibradores from "../../../components/features/ModalLibradores/ModalLibradores";
-import { ModalHistorialEstado } from "../../../components/features";
+import LibradoresModal from "../../../components/features/cheques/LibradoresModal/LibradoresModal";
+import { HistorialEstadoModal } from "../../../components/features";
 import styles from "./CadenaDetalle.module.css";
 import { Button, BotonVolver } from "../../../components/ui";
 
@@ -294,13 +294,13 @@ export default function CadenaDetalle() {
         </aside>
       </div>
 
-      <ModalLibradores
+      <LibradoresModal
         isOpen={isLibradoresModalOpen}
         onClose={() => setIsLibradoresModalOpen(false)}
         cadenaValorId={id}
       />
 
-      <ModalHistorialEstado
+      <HistorialEstadoModal
         isOpen={isHistorialModalOpen}
         onClose={() => setIsHistorialModalOpen(false)}
         lineaId={selectedLinea?.tipolimitesocioid || selectedLinea?.id}

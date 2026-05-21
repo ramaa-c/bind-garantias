@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 // Asegurate de ajustar estas rutas según tu estructura final
-import { BuscadorTerceros } from "../BuscadorTerceros/BuscadorTerceros";
-import { FormularioTerceros } from "../FormularioTerceros/FormularioTerceros";
+import { Buscador } from "../Buscador/Buscador";
+import { Formulario } from "../Formulario/Formulario";
 import { FormularioVincular } from "../FormularioVincular/FormularioVincular";
 import styles from "./GestorRelaciones.module.css";
 
@@ -47,7 +47,7 @@ export const GestorRelaciones = ({ socioId, onCompletado, onCancelar }) => {
 
       {/* RENDERIZADO CONDICIONAL DE LOS ACTORES */}
       {pasoActual === PASO_BUSCAR && (
-        <BuscadorTerceros
+        <Buscador
           onEncontrado={handleTerceroEncontrado}
           onNoEncontrado={handleTerceroNoEncontrado}
           onCancelar={onCancelar} // Si cancela acá, sale del orquestador por completo
@@ -55,7 +55,7 @@ export const GestorRelaciones = ({ socioId, onCompletado, onCancelar }) => {
       )}
 
       {pasoActual === PASO_ALTA && (
-        <FormularioTerceros
+        <Formulario
           cuitPreCargado={cuitFaltante}
           onGuardado={handleTerceroCreado}
           onCancelar={() => setPasoActual(PASO_BUSCAR)} // Si se arrepiente, vuelve a la búsqueda

@@ -14,35 +14,35 @@ import CrearClave from "./pages/cliente/auth/CrearClave";
 import ConfirmarCorreo from "./pages/cliente/auth/ConfirmarCorreo";
 import Inicio from "./pages/legacy/dashboard/Inicio";
 import Cheques from "./pages/cliente/operaciones/cheques/Cheques";
-import CargaMasivaCheques from "./pages/cliente/operaciones/cheques/CargaMasivaCheques";
+import CargaMasiva from "./pages/cliente/operaciones/cheques/CargaMasiva";
 import Prestamos from "./pages/cliente/operaciones/prestamos/Prestamos";
 import PrestamosSeleccionables from "./pages/cliente/operaciones/prestamos/PrestamosSeleccionables";
 import PrestamosFijos from "./pages/cliente/operaciones/prestamos/PrestamosFijos";
 import Pagare from "./pages/cliente/operaciones/pagares/Pagare";
 import SolicitudPagare from "./pages/cliente/operaciones/pagares/SolicitudPagare";
 import Solicitudes from "./pages/cliente/solicitudes/Solicitudes";
-import SolicitudCheques from "./pages/cliente/operaciones/cheques/SolicitudCheques";
+import Solicitud from "./pages/cliente/operaciones/cheques/Solicitud";
 import FirmaDocumento from "./pages/cliente/operaciones/pagares/FirmaDocumento";
 import AceptarTerminos from "./pages/cliente/auth/AceptarTerminos";
 import RecuperarClave from "./pages/cliente/auth/RecuperarClave";
 import PosicionConsolidada from "./pages/legacy/posicion-consolidada/PosicionConsolidada";
 import CadenaDetalle from "./pages/admin/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-import { PantallaGestionSocios } from "./components/features";
+import { Gestion as GestionSocios } from "./components/features";
 import { AltaOperacion } from "./pages/cliente/operaciones/alta-operacion/AltaOperacion";
-import { PantallaGestionUsuarios } from "./pages/cliente/usuarios/PantallaGestionUsuarios";
+import { Gestion as GestionUsuarios } from "./pages/cliente/usuarios/Gestion";
 import DocumentacionView from "./pages/cliente/operaciones/documentacion/DocumentacionView";
 import NotFound from "./pages/shared/NotFound/NotFound";
-import OnboardingGuard from "./components/layout/OnboardingGuard/OnboardingGuard";
-import AdminGuard from "./components/layout/AdminGuard/AdminGuard";
+import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
+import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
 import AltaDatosEmpresa from "./pages/cliente/onboarding/AltaDatosEmpresa/AltaDatosEmpresa";
-import AdminLayout from "./components/layout/AdminLayout/AdminLayout";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminTasasMontos from "./pages/admin/AdminTasasMontos";
-import AdminRolesPermisos from "./pages/admin/AdminRolesPermisos";
-import AdminTerminos from "./pages/admin/AdminTerminos";
-import AdminBanners from "./pages/admin/AdminBanners";
-import AdminCadenasValor from "./pages/admin/AdminCadenasValor";
+import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
+import Dashboard from "./pages/admin/Dashboard";
+import TasasMontos from "./pages/admin/TasasMontos";
+import RolesPermisos from "./pages/admin/RolesPermisos";
+import Terminos from "./pages/admin/Terminos";
+import Banners from "./pages/admin/Banners";
+import CadenasValor from "./pages/admin/CadenasValor";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
@@ -66,7 +66,7 @@ function App() {
             element={
               <OnboardingGuard>
                 <DashboardLayout>
-                  <PantallaGestionSocios />
+                  <GestionSocios />
                 </DashboardLayout>
               </OnboardingGuard>
             }
@@ -76,7 +76,7 @@ function App() {
             element={
               <OnboardingGuard>
                 <DashboardLayout>
-                  <PantallaGestionUsuarios />
+                  <GestionUsuarios />
                 </DashboardLayout>
               </OnboardingGuard>
             }
@@ -170,7 +170,7 @@ function App() {
             element={
               <OnboardingGuard>
                 <DashboardLayout>
-                  <SolicitudCheques />
+                  <Solicitud />
                 </DashboardLayout>
               </OnboardingGuard>
             }
@@ -180,7 +180,7 @@ function App() {
             element={
               <OnboardingGuard>
                 <DashboardLayout>
-                  <CargaMasivaCheques />
+                  <CargaMasiva />
                 </DashboardLayout>
               </OnboardingGuard>
             }
@@ -234,7 +234,7 @@ function App() {
             element={
               <AdminGuard>
                 <AdminLayout>
-                  <AdminDashboard />
+                  <Dashboard />
                 </AdminLayout>
               </AdminGuard>
             }
@@ -244,7 +244,7 @@ function App() {
             element={
               <AdminGuard>
                 <AdminLayout>
-                  <AdminTasasMontos />
+                  <TasasMontos />
                 </AdminLayout>
               </AdminGuard>
             }
@@ -254,7 +254,7 @@ function App() {
             element={
               <AdminGuard>
                 <AdminLayout>
-                  <AdminRolesPermisos />
+                  <RolesPermisos />
                 </AdminLayout>
               </AdminGuard>
             }
@@ -264,7 +264,7 @@ function App() {
             element={
               <AdminGuard>
                 <AdminLayout>
-                  <AdminTerminos />
+                  <Terminos />
                 </AdminLayout>
               </AdminGuard>
             }
@@ -274,7 +274,7 @@ function App() {
             element={
               <AdminGuard>
                 <AdminLayout>
-                  <AdminBanners />
+                  <Banners />
                 </AdminLayout>
               </AdminGuard>
             }
@@ -284,7 +284,7 @@ function App() {
             element={
               <AdminGuard>
                 <AdminLayout>
-                  <AdminCadenasValor />
+                  <CadenasValor />
                 </AdminLayout>
               </AdminGuard>
             }

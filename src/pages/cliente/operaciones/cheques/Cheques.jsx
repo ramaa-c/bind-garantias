@@ -16,7 +16,7 @@ import {
   Paso5Documentacion,
   Paso6Bolsa,
   Paso7Exito,
-  ModalConfirmacionBorrador,
+  ConfirmacionBorradorModal,
 } from "../../../../components/features";
 import { sociosService } from "../../../../services/sociosService";
 import {
@@ -25,7 +25,7 @@ import {
   BotonVolver,
   Scroll,
 } from "../../../../components/ui";
-import { HelpDrawer } from "../../../../components/layout/HelpDrawer/HelpDrawer";
+import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./Cheques.module.css";
 import { useCrearSocio, useActualizarSocio } from "../../../../hooks/useSocios";
 
@@ -501,7 +501,7 @@ export default function Cheques() {
         </div>
       </div>
 
-      <ModalConfirmacionBorrador
+      <ConfirmacionBorradorModal
         isOpen={isModalReiniciarAbierto}
         onClose={() => setIsModalReiniciarAbierto(false)}
         onConfirm={confirmarReinicioAlta}

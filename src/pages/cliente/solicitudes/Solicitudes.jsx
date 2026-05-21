@@ -6,10 +6,10 @@ import { FaMoneyBillWave } from "react-icons/fa";
 import { BotonVolver, Button, Select, Spinner } from "../../../components/ui";
 import {
   TarjetaSolicitud,
-  ModalDetalleSolicitud,
+  DetalleSolicitudModal,
 } from "../../../components/features";
-import ModalConfirmacionBorrador from "../../../components/features/shared/Compartidos/ModalConfirmacionBorrador/ModalConfirmacionBorrador";
-import { HelpDrawer } from "../../../components/layout/HelpDrawer/HelpDrawer";
+import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
+import { HelpDrawer } from "../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useObtenerLimitesSocio } from "../../../hooks/useSolicitudes";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../services/sociosService";
@@ -274,14 +274,14 @@ export default function Solicitudes() {
         </div>
       </main>
 
-      <ModalConfirmacionBorrador
+      <ConfirmacionBorradorModal
         isOpen={!!flujoPendiente}
         onClose={handleCloseModalOnly}
         onConfirm={handleConfirmStartNew}
         onContinueBorrador={handleCloseContinueDraft}
       />
 
-      <ModalDetalleSolicitud
+      <DetalleSolicitudModal
         isOpen={!!solicitudSeleccionada}
         onClose={() => setSolicitudSeleccionada(null)}
         solicitud={solicitudSeleccionada}
