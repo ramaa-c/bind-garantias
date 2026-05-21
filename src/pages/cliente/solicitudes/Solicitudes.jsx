@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { FiPlus, FiSearch } from "react-icons/fi";
+import { FiPlus, FiSearch, FiClock } from "react-icons/fi";
 import { FaMoneyBillWave } from "react-icons/fa";
-import { BotonVolver, Button, Select, Spinner } from "../../../components/ui";
+import { BotonVolver, Button, Select, Spinner, SkeletonTable } from "../../../components/ui";
 import {
   TarjetaSolicitud,
   DetalleSolicitudModal,
@@ -254,10 +254,7 @@ export default function Solicitudes() {
         </div>
         <div className={styles.listContainer}>
           {cargandoSolicitudes ? (
-            <div className={styles.loadingContainer}>
-              <Spinner size="xl" />
-              <p>Cargando solicitudes...</p>
-            </div>
+            <SkeletonTable rows={3} />
           ) : listaSolicitudes.length > 0 ? (
             listaSolicitudes.map((item) => (
               <TarjetaSolicitud
@@ -334,7 +331,7 @@ export default function Solicitudes() {
                 fontSize: "1.5rem",
               }}
             >
-              ⏳
+              <FiClock style={{ color: "var(--yellow, #f4f500)" }} />
             </div>
             <h3
               style={{
