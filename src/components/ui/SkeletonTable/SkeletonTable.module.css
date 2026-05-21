@@ -1,45 +1,96 @@
-.skeletonTr {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+.skeletonCard {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid #333;
+  border-left: 0.25rem solid #444;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex-shrink: 0;
 }
 
-.skeletonTr:last-child {
-  border-bottom: none;
+.cardMain {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.skeletonTd {
-  padding: 1.15rem 1.5rem;
-  vertical-align: middle;
+.leftInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.rightInfo {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  width: 100%;
 }
 
 .skeletonBlock {
-  height: 1.2rem;
   background: rgba(255, 255, 255, 0.04);
   border-radius: 4px;
   animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.skeletonTd:nth-child(1) .skeletonBlock {
-  width: 40%;
-}
-.skeletonTd:nth-child(2) .skeletonBlock {
-  width: 85%;
-}
-.skeletonTd:nth-child(3) .skeletonBlock {
-  width: 60%;
-}
-.skeletonTd:nth-child(4) .skeletonBlock {
-  width: 75%;
+.badge {
+  height: 1.2rem;
+  width: 5rem;
+  border-radius: 1.25rem;
 }
 
-.skeletonTd:nth-child(5) .skeletonBlock {
-  width: 60px;
-  border-radius: 12px;
+.title {
+  height: 1.4rem;
+  width: 14rem;
+  max-width: 100%;
 }
 
-.skeletonTd:nth-child(6) .skeletonBlock {
-  width: 80px;
-  margin-left: auto;
-  border-radius: 20px;
+.amount {
+  height: 1.5rem;
+  width: 8rem;
+  max-width: 60%;
+}
+
+.date {
+  height: 1rem;
+  width: 5rem;
+}
+
+.action {
+  height: 1rem;
+  width: 6rem;
+}
+
+@media (min-width: 768px) {
+  .skeletonCard {
+    padding: 1.25rem 1.5625rem;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .cardMain {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 1.5rem;
+  }
+
+  .rightInfo {
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    border-top: none;
+    padding-top: 0;
+    width: auto;
+    gap: 0.9375rem;
+  }
 }
 
 @keyframes pulse {

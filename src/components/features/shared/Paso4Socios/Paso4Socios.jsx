@@ -205,18 +205,23 @@ export default function Paso4Socios({
       {faseSocio === "lista" && (
         <div className={styles.section}>
           <div className={styles.listHeader}>
-
             <div className={styles.statsGroup}>
               <Badge>
                 {socios.length} socio{socios.length > 1 ? "s" : ""}
               </Badge>
               <span
-                className={`${styles.totalText} ${totalGuardado === 100 ? styles.totalTextSuccess : ""
-                  }`}
+                className={`${styles.totalText} ${
+                  totalGuardado === 100 ? styles.totalTextSuccess : ""
+                }`}
               >
                 Total: {totalGuardado}% / 100%
               </span>
             </div>
+            {totalGuardado !== 100 && (
+              <span className={styles.warningText}>
+                Debe completar el 100% para continuar
+              </span>
+            )}
           </div>
 
           <div className={styles.listContainer}>
@@ -253,11 +258,6 @@ export default function Paso4Socios({
           </div>
 
           <div className={styles.actionFooterBorder}>
-            {totalGuardado !== 100 && (
-              <span className={styles.warningText}>
-                Debe completar el 100% para continuar
-              </span>
-            )}
             <Button
               type="button"
               variant="outline"

@@ -955,9 +955,8 @@ export const AltaOperacion = () => {
   if (isLoadingEmpresa || validandoAcceso) {
     return (
       <div className={styles.operacionPage}>
-        <div className={styles.formMainContainer} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: "1.5rem" }}>
-          <Spinner size="xl" />
-          <p style={{ color: "var(--text-muted)", fontSize: "1.1rem" }}>Validando acceso al legajo...</p>
+        <div className={styles.formMainContainer} style={{ alignItems: "center", justifyContent: "center" }}>
+          <Spinner size={60} />
         </div>
       </div>
     );
@@ -966,9 +965,8 @@ export const AltaOperacion = () => {
   if (buscandoSocios) {
     return (
       <div className={styles.operacionPage}>
-        <div className={styles.formMainContainer} style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", flexDirection: "column", gap: "1.5rem" }}>
-          <Spinner size="xl" />
-          <p style={{ color: "var(--text-muted)", fontSize: "1.1rem" }}>Buscando configuración de socios...</p>
+        <div className={styles.formMainContainer} style={{ alignItems: "center", justifyContent: "center" }}>
+          <Spinner size={60} />
         </div>
       </div>
     );
