@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../../../components/ui";
-import ModalFirmaProceso from "../../../../components/features/shared/Compartidos/ModalFirmaProceso/ModalFirmaProceso";
+import FirmaProcesoModal from "../../../../components/features/shared/FirmaProcesoModal/FirmaProcesoModal";
 import logoSignatura from "../../../../assets/images/logo-signatura.svg";
 import styles from "./FirmaDocumento.module.css";
 
@@ -130,7 +130,7 @@ export default function FirmaDocumento() {
         </footer>
       </div>
 
-      <ModalFirmaProceso
+      <FirmaProcesoModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />

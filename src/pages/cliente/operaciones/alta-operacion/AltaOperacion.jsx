@@ -21,9 +21,9 @@ import {
   Paso5Documentacion,
   Paso6Bolsa,
   Paso7Exito,
-  ModalConfirmacionBorrador,
+  ConfirmacionBorradorModal,
 } from "../../../../components/features";
-import { HelpDrawer } from "../../../../components/layout/HelpDrawer/HelpDrawer";
+import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { Alert, Spinner } from "../../../../components/ui";
 import styles from "./AltaOperacion.module.css";
 import { solicitudesService } from "../../../../services/solicitudesService";
@@ -1025,7 +1025,7 @@ export const AltaOperacion = () => {
         </div>
       </div>
 
-      <ModalConfirmacionBorrador
+      <ConfirmacionBorradorModal
         isOpen={isModalBorradorAbierto}
         onClose={continuarBorrador}
         onConfirm={confirmarReinicioOperacion}

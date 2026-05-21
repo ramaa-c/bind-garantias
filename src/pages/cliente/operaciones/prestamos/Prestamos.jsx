@@ -9,8 +9,8 @@ import { FiRotateCcw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { prestamosSchema } from "../../../../schemas/prestamosSchema";
 import { ModalSms, BarraProgreso, BotonVolver } from "../../../../components/ui";
-import { ModalConfirmacionBorrador } from "../../../../components/features";
-import { HelpDrawer } from "../../../../components/layout/HelpDrawer/HelpDrawer";
+import { ConfirmacionBorradorModal } from "../../../../components/features";
+import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./Prestamos.module.css";
 import { PrestamosPasos } from "./PrestamosPasos";
 
@@ -350,7 +350,7 @@ export default function Prestamos() {
         </div>
       </div>
 
-      <ModalConfirmacionBorrador
+      <ConfirmacionBorradorModal
         isOpen={isModalReiniciarAbierto}
         onClose={() => setIsModalReiniciarAbierto(false)}
         onConfirm={confirmarReinicioAlta}

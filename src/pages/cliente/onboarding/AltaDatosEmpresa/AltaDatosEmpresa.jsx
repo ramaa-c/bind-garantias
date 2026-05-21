@@ -7,7 +7,7 @@ import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSche
 import { BarraProgreso, Button, Modal } from "../../../../components/ui";
 import Spinner from "../../../../components/ui/Spinner/Spinner";
 import { Paso1Cuit, Paso2Datos } from "../../../../components/features";
-import { HelpDrawer } from "../../../../components/layout/HelpDrawer/HelpDrawer";
+import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../../../services/sociosService";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";

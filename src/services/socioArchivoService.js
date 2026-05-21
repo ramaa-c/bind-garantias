@@ -20,7 +20,7 @@ const formatFechaArchivo = (date = new Date()) => {
 };
 
 const TIPO_DOCUMENTO_MAP = {
-  // Documentos de empresa (Paso5 / ModalDocumentosEmpresa)
+  // Documentos de empresa (Paso5 / DocumentosEmpresaModal)
   estatuto: 1,
   balance: 2,
   acta: 3,

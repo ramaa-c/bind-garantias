@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Navbar from "../Navbar/Navbar";
-import Sidebar from "../Sidebar/Sidebar";
+import Navbar from "../Client/Navbar/Navbar";
+import Sidebar from "../Client/Sidebar/Sidebar";
 import styles from "./DashboardLayout.module.css";
 
 export default function DashboardLayout({ children }) {
