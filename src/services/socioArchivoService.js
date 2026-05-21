@@ -113,11 +113,16 @@ export const socioArchivoService = {
     docKey,
     archivosExistentes = [],
     descripcion = "",
+    specificId = null,
   ) => {
     const tipoId = getTipoDocumentoId(docKey);
-    const existente = archivosExistentes.find(
-      (a) => a.tipodocumentoarchivoid === tipoId,
-    );
+    const existente = specificId
+      ? archivosExistentes.find(
+          (a) => (a.socioarchivoid || a.id) === Number(specificId),
+        )
+      : archivosExistentes.find(
+          (a) => a.tipodocumentoarchivoid === tipoId,
+        );
 
     if (existente) {
       return socioArchivoService.actualizarArchivo(

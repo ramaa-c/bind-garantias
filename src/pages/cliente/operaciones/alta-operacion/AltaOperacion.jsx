@@ -209,9 +209,25 @@ export const AltaOperacion = () => {
           (getValues("representantes") || []).map((r) => r.cuit)
         );
 
+        const now = new Date();
+
         for (const rel of relacionesArray) {
+          const fd = rel.fechadesde || rel.FechaDesde;
           const fh = rel.fechahasta || rel.FechaHasta;
-          if (fh && fh !== "") continue;
+          if (fh && fh !== "") {
+            const expirationDate = new Date(fh);
+            const startDate = fd ? new Date(fd) : null;
+            
+            // Si fechahasta coincide con fechadesde (por tiempo o día calendario), no está expirado!
+            const isSameAsStart = startDate && (
+              expirationDate.getTime() === startDate.getTime() ||
+              expirationDate.toISOString().split('T')[0] === startDate.toISOString().split('T')[0]
+            );
+            
+            if (!isSameAsStart && expirationDate < now) {
+              continue; // Expired, skip
+            }
+          }
 
           const terceroId = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
           if (!terceroId) continue;
@@ -227,8 +243,9 @@ export const AltaOperacion = () => {
             if (tercero) {
               const cuit = tercero.cuit || tercero.Cuit || tercero.nrodocumento || tercero.documento || "";
               const tiporel = rel.tiporelacionsocioid || rel.TipoRelacionSocioID || rel.tiporelacionsocioId;
+              const tiporelNum = Number(tiporel);
 
-              if (tiporel === 25) {
+              if (tiporelNum === 25) {
                 if (cuit && !cuitsAccionistasYaCargados.has(cuit)) {
                   cuitsAccionistasYaCargados.add(cuit);
 
@@ -253,19 +270,19 @@ export const AltaOperacion = () => {
                     preloadedFromDb: true,
                   });
                 }
-              } else if (tiporel === 210 || tiporel === 230) {
+              } else if (tiporelNum === 210 || tiporelNum === 230) {
                 if (cuit && !cuitsRepsYaCargados.has(cuit)) {
                   cuitsRepsYaCargados.add(cuit);
 
                   representantesCargados.push({
                     cuit,
                     nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || tercero.Nombre || tercero.razonsocial || "Sin nombre",
-                    rol: tiporel === 230 ? "Representante Legal" : "Apoderado",
+                    rol: tiporelNum === 230 ? "Representante Legal" : "Apoderado",
                     email: tercero.mail || tercero.Mail || "",
                     celular: tercero.telefono || tercero.Telefono || "",
                   });
                 }
-              } else if (tiporel === 21) {
+              } else if (tiporelNum === 21) {
                 setValue("sociedadBolsa", String(terceroId));
                 setValue("numeroCuentaBolsa", rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "");
               }
@@ -360,6 +377,10 @@ export const AltaOperacion = () => {
     try {
       const cleanData = preparePayload(data);
       const montoLimpio = Number(cleanData.monto) || 0;
+      
+      const unAnioMasRel = new Date();
+      unAnioMasRel.setFullYear(unAnioMasRel.getFullYear() + 1);
+      const unAnioMasStr = unAnioMasRel.toISOString().split(".")[0];
 
       const payload = {
         solicitudenprocesoid: 0,
@@ -374,9 +395,9 @@ export const AltaOperacion = () => {
         estadosolicitud: 1,
         idexterno: 0,
         terceroviaid: 4000000,
-        terceropresentanteid: cleanData.sociedadBolsa ? Number(cleanData.sociedadBolsa) : 0,
       };
 
+      // Guardar solicitud en proceso (POST)
       const resSolicitud = await solicitudesService.crearSolicitudEnProceso(payload);
       const solicitudIdCreada = resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
 
@@ -392,7 +413,7 @@ export const AltaOperacion = () => {
               terceroid: Number(cleanData.sociedadBolsa),
               tiporelacionsocioid: 21, // "Es su Agente de Bolsa"
               fechadesde: ahoraRel,
-              fechahasta: null,
+              fechahasta: unAnioMasStr,
               porcacciones: 0,
               nroinscripcion: "",
               condicionescomerciales: "",
@@ -410,7 +431,7 @@ export const AltaOperacion = () => {
         try {
           await tercerosService.guardarRelacionesDeSocio(payloadRelacionBolsa);
         } catch (relError) {
-          console.error("Error al guardar relación de agente de bolsa:", relError);
+          console.error("❌ [ALTA OPERACION] Error al guardar relación de agente de bolsa:", relError);
         }
       }
 
@@ -438,7 +459,7 @@ export const AltaOperacion = () => {
                   arr[0].id;
               }
             } catch (buscarErr) {
-              console.warn(`No se pudo buscar tercero con CUIT ${cuitLimpio}:`, buscarErr);
+              console.warn(`⚠️ [ALTA OPERACION] No se pudo buscar tercero con CUIT ${cuitLimpio}:`, buscarErr);
             }
 
             // 2. Si no existe, crearlo
@@ -482,7 +503,7 @@ export const AltaOperacion = () => {
                     terceroid: terceroId,
                     tiporelacionsocioid: rep.rol === "Apoderado" ? 210 : 230, // 210: Apoderado de Socio, 230: Representante Legal (Gerente Gral)
                     fechadesde: ahoraRel,
-                    fechahasta: null,
+                    fechahasta: unAnioMasStr,
                     porcacciones: 0,
                     nroinscripcion: "",
                     condicionescomerciales: "",
@@ -500,7 +521,7 @@ export const AltaOperacion = () => {
               await tercerosService.guardarRelacionesDeSocio(payloadRelacionRep);
             }
           } catch (repError) {
-            console.error(`Error al procesar representante ${rep.nombre}:`, repError);
+            console.error(`❌ [ALTA OPERACION] Error al procesar representante ${rep.nombre}:`, repError);
           }
         }
       }
@@ -771,6 +792,10 @@ export const AltaOperacion = () => {
 
         if (socioIdActivo) {
           const ahora = new Date().toISOString().split(".")[0];
+          const unAnioMasSocio = new Date();
+          unAnioMasSocio.setFullYear(unAnioMasSocio.getFullYear() + 1);
+          const unAnioMasStrSocio = unAnioMasSocio.toISOString().split(".")[0];
+          
           const payloadRelacion = {
             socioid: socioIdActivo,
             tercerosrelacionados: [
@@ -780,7 +805,7 @@ export const AltaOperacion = () => {
                 terceroid: terceroId,
                 tiporelacionsocioid: 25, // Accionista / Socio
                 fechadesde: ahora,
-                fechahasta: ahora,
+                fechahasta: unAnioMasStrSocio,
                 porcacciones: Number(socioTarget.participacion) || 0,
                 nroinscripcion: "",
                 condicionescomerciales: "",
