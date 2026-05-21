@@ -180,7 +180,8 @@ export const AltaOperacion = () => {
       setBuscandoSocios(true);
       
       const currentSocios = getValues("socios");
-      if (currentSocios && currentSocios.length > 0) {
+      const currentReps = getValues("representantes");
+      if ((currentSocios && currentSocios.length > 0) || (currentReps && currentReps.length > 0)) {
         setBuscandoSocios(false);
         return;
       }
@@ -200,11 +201,18 @@ export const AltaOperacion = () => {
         if (relacionesArray.length === 0) return;
 
         const sociosCargados = [];
-        const cuitsYaCargados = new Set(
+        const representantesCargados = [];
+        const cuitsAccionistasYaCargados = new Set(
           (getValues("socios") || []).map((s) => s.cuit)
+        );
+        const cuitsRepsYaCargados = new Set(
+          (getValues("representantes") || []).map((r) => r.cuit)
         );
 
         for (const rel of relacionesArray) {
+          const fh = rel.fechahasta || rel.FechaHasta;
+          if (fh && fh !== "") continue;
+
           const terceroId = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
           if (!terceroId) continue;
 
@@ -218,34 +226,52 @@ export const AltaOperacion = () => {
 
             if (tercero) {
               const cuit = tercero.cuit || tercero.Cuit || tercero.nrodocumento || tercero.documento || "";
-              
-              if (cuit && !cuitsYaCargados.has(cuit)) {
-                cuitsYaCargados.add(cuit);
+              const tiporel = rel.tiporelacionsocioid || rel.TipoRelacionSocioID || rel.tiporelacionsocioId;
 
-                // Obtener datos complementarios de AFIP para provincia/localidad
-                let afipData = null;
-                try {
-                  afipData = await afipService.obtenerConstanciaInscripcion(cuit);
-                } catch (e) {
-                  console.warn("No se pudo obtener AFIP extra para", cuit);
+              if (tiporel === 25) {
+                if (cuit && !cuitsAccionistasYaCargados.has(cuit)) {
+                  cuitsAccionistasYaCargados.add(cuit);
+
+                  let afipData = null;
+                  try {
+                    afipData = await afipService.obtenerConstanciaInscripcion(cuit);
+                  } catch (e) {
+                    console.warn("No se pudo obtener AFIP extra para", cuit);
+                  }
+
+                  const terceroMergeado = {
+                    ...tercero,
+                    datosgenerales: afipData ? afipData.datosgenerales : null
+                  };
+
+                  sociosCargados.push({
+                    cuit,
+                    nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || tercero.Nombre || tercero.razonsocial || "Sin nombre",
+                    participacion: String(rel.porcacciones || rel.participacion || rel.Participacion || "0"),
+                    dataOriginal: terceroMergeado,
+                    tercerorelacionadoid: terceroId,
+                    preloadedFromDb: true,
+                  });
                 }
+              } else if (tiporel === 210 || tiporel === 230) {
+                if (cuit && !cuitsRepsYaCargados.has(cuit)) {
+                  cuitsRepsYaCargados.add(cuit);
 
-                const terceroMergeado = {
-                  ...tercero,
-                  datosgenerales: afipData ? afipData.datosgenerales : null
-                };
-
-                sociosCargados.push({
-                  cuit,
-                  nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || tercero.Nombre || tercero.razonsocial || "Sin nombre",
-                  participacion: String(rel.porcacciones || rel.participacion || rel.Participacion || "0"),
-                  dataOriginal: terceroMergeado,
-                  tercerorelacionadoid: terceroId,
-                  preloadedFromDb: true,
-                });
+                  representantesCargados.push({
+                    cuit,
+                    nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || tercero.Nombre || tercero.razonsocial || "Sin nombre",
+                    rol: tiporel === 230 ? "Representante Legal" : "Apoderado",
+                    email: tercero.mail || tercero.Mail || "",
+                    celular: tercero.telefono || tercero.Telefono || "",
+                  });
+                }
+              } else if (tiporel === 21) {
+                setValue("sociedadBolsa", String(terceroId));
+                setValue("numeroCuentaBolsa", rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "");
               }
             }
           } catch (err) {
+            console.error("Error loading specific relation detail:", terceroId, err);
           }
         }
 
@@ -253,7 +279,11 @@ export const AltaOperacion = () => {
           sociosCargados.forEach((s) => append(s));
           setValue("faseSocio", "lista");
         }
+        if (representantesCargados.length > 0) {
+          setValue("representantes", representantesCargados);
+        }
       } catch (error) {
+        console.error("Error in precargarSocios flow:", error);
       } finally {
         setBuscandoSocios(false);
       }
@@ -349,6 +379,131 @@ export const AltaOperacion = () => {
 
       const resSolicitud = await solicitudesService.crearSolicitudEnProceso(payload);
       const solicitudIdCreada = resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
+
+      // Guardar la relación con la sociedad de bolsa elegida (Agente de Bolsa)
+      if (socioIdActivo && cleanData.sociedadBolsa) {
+        const ahoraRel = new Date().toISOString().split(".")[0];
+        const payloadRelacionBolsa = {
+          socioid: socioIdActivo,
+          tercerosrelacionados: [
+            {
+              sociotercerorelacionid: 0,
+              socioid: socioIdActivo,
+              terceroid: Number(cleanData.sociedadBolsa),
+              tiporelacionsocioid: 21, // "Es su Agente de Bolsa"
+              fechadesde: ahoraRel,
+              fechahasta: null,
+              porcacciones: 0,
+              nroinscripcion: "",
+              condicionescomerciales: "",
+              cbu: "",
+              provinciaid: 0,
+              nrosubcuentacaja: String(cleanData.numeroCuentaBolsa || ""),
+              sucursalid: 0,
+              default: "1",
+              subtiporelacionsocioid: 0,
+              telefono: "",
+              momento: ahoraRel,
+            },
+          ],
+        };
+        try {
+          await tercerosService.guardarRelacionesDeSocio(payloadRelacionBolsa);
+        } catch (relError) {
+          console.error("Error al guardar relación de agente de bolsa:", relError);
+        }
+      }
+
+      // Guardar la relación con los representantes / apoderados elegidos
+      if (socioIdActivo && cleanData.representantes && cleanData.representantes.length > 0) {
+        const ahoraRel = new Date().toISOString().split(".")[0];
+        for (const rep of cleanData.representantes) {
+          try {
+            const cuitLimpio = String(rep.cuit).replace(/\D/g, "");
+            if (!cuitLimpio) continue;
+
+            let terceroId = null;
+            // 1. Intentar buscar si el tercero ya existe por CUIT
+            try {
+              const existentes = await tercerosService.obtenerTerceros({
+                Cuit: cuitLimpio,
+              });
+              const arr = Array.isArray(existentes)
+                ? existentes
+                : existentes?.data || [];
+              if (arr.length > 0) {
+                terceroId =
+                  arr[0].tercerorelacionadoid ||
+                  arr[0].TerceroRelacionadoID ||
+                  arr[0].id;
+              }
+            } catch (buscarErr) {
+              console.warn(`No se pudo buscar tercero con CUIT ${cuitLimpio}:`, buscarErr);
+            }
+
+            // 2. Si no existe, crearlo
+            if (!terceroId) {
+              const payloadTercero = {
+                tercerorelacionadoid: 0,
+                denominacion: rep.nombre || "",
+                cuit: cuitLimpio,
+                bcraid: 0,
+                tipopersonaid: 1, // Persona física
+                tipodocumentoid: 0,
+                numerodocumento: cuitLimpio,
+                estadocivilid: 0,
+                ciudadid: 0,
+                telefono: rep.celular || "",
+                conyuge: "",
+                actividad: "",
+                contacto: "",
+                nrocuenta: "",
+                codigomercado: "",
+                calle: "",
+                numero: 0,
+                piso: "",
+                departamento: "",
+                codpos: "",
+                descripcionreducida: (rep.nombre || "").substring(0, 20),
+                mail: rep.email || "",
+              };
+              const terceroResult = await tercerosService.crearTercero(payloadTercero);
+              terceroId = terceroResult?.tercerorelacionadoid || terceroResult?.id;
+            }
+
+            // 3. Guardar la relación con el socio
+            if (terceroId) {
+              const payloadRelacionRep = {
+                socioid: socioIdActivo,
+                tercerosrelacionados: [
+                  {
+                    sociotercerorelacionid: 0,
+                    socioid: socioIdActivo,
+                    terceroid: terceroId,
+                    tiporelacionsocioid: rep.rol === "Apoderado" ? 210 : 230, // 210: Apoderado de Socio, 230: Representante Legal (Gerente Gral)
+                    fechadesde: ahoraRel,
+                    fechahasta: null,
+                    porcacciones: 0,
+                    nroinscripcion: "",
+                    condicionescomerciales: "",
+                    cbu: "",
+                    provinciaid: 0,
+                    nrosubcuentacaja: "",
+                    sucursalid: 0,
+                    default: "0",
+                    subtiporelacionsocioid: 0,
+                    telefono: rep.celular || "",
+                    momento: ahoraRel,
+                  },
+                ],
+              };
+              await tercerosService.guardarRelacionesDeSocio(payloadRelacionRep);
+            }
+          } catch (repError) {
+            console.error(`Error al procesar representante ${rep.nombre}:`, repError);
+          }
+        }
+      }
 
       let importeEnPesos = Math.round(montoLimpio);
       if (Number(cleanData.moneda) === 2) {
@@ -623,7 +778,7 @@ export const AltaOperacion = () => {
                 sociotercerorelacionid: 0,
                 socioid: socioIdActivo,
                 terceroid: terceroId,
-                tiporelacionsocioid: 0,
+                tiporelacionsocioid: 25, // Accionista / Socio
                 fechadesde: ahora,
                 fechahasta: ahora,
                 porcacciones: Number(socioTarget.participacion) || 0,

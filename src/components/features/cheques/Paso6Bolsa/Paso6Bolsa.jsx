@@ -3,7 +3,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { FiBriefcase, FiArrowRight } from "react-icons/fi";
 import { InputSocioMasked, Button, SelectSocio } from "../../../ui";
 import styles from "./Paso6Bolsa.module.css";
-import { useTipoTerceroRelacionado } from "../../../../hooks/useCatalogos";
+import { useObtenerTerceros } from "../../../../hooks/useTerceros";
 
 export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa, isSubmitting }) {
   const {
@@ -17,17 +17,19 @@ export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa, isSubmitt
     data: tercerosData,
     isLoading,
     isError,
-  } = useTipoTerceroRelacionado();
+  } = useObtenerTerceros({ TipoTerceroRelacionadoID: 8 });
 
   const opcionesSociedades = useMemo(() => {
-    if (!tercerosData?.raw) return [];
+    const list = Array.isArray(tercerosData)
+      ? tercerosData
+      : tercerosData?.data || [];
 
-    return tercerosData.raw
-      .filter((t) => t.descripcion.toUpperCase().includes("VENDORS"))
+    return list
       .map((t) => ({
-        value: t.tipotercerorelacionadoid.toString(),
-        label: t.descripcion.replace(/Vendors /i, "").trim(),
+        value: (t.tercerorelacionadoid || t.TerceroRelacionadoID || t.id || "").toString(),
+        label: t.denominacion || t.Denominacion || t.razonsocial || "",
       }))
+      .filter((opt) => opt.value && opt.label)
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [tercerosData]);
 
