@@ -395,7 +395,10 @@ export const AltaOperacion = () => {
         estadosolicitud: 1,
         idexterno: 0,
         terceroviaid: 4000000,
+        terceropresentanteid: cleanData.sociedadBolsa ? Number(cleanData.sociedadBolsa) : 0,
       };
+
+      console.log("🚀 [ALTA OPERACION] Payload enviado a crearSolicitudEnProceso:", JSON.stringify(payload, null, 2));
 
       // Guardar solicitud en proceso (POST)
       const resSolicitud = await solicitudesService.crearSolicitudEnProceso(payload);
