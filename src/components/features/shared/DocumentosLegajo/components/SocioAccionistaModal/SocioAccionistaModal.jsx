@@ -66,6 +66,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
   const [afipValidado, setAfipValidado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
+  const [guardando, setGuardando] = useState(false);
 
   const indexSocioEditado = socio
     ? accionistas.findIndex(
@@ -115,17 +116,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
   useEffect(() => {
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
     const nombreLimpio = normalizarTexto(nombreValue || socio?.nombre);
-
-    console.log("📂 [SocioAccionistaModal PRELOAD DNI] Estado (En Memoria):", {
-      isOpen,
-      cuitValue,
-      cuitLimpio,
-      nombreValue,
-      nombreLimpio,
-      socioNombre: socio?.nombre,
-      dniTerceros,
-      archivosBackend
-    });
 
     if (isOpen && cuitLimpio.length === 11) {
       // Buscar primero en la memoria local (dniTerceros)
@@ -320,6 +310,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
 
   const onConfirmSave = async () => {
     const data = getValues();
+    setGuardando(true);
     try {
       await onSave(
         {
@@ -336,7 +327,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
       setShowConfirm(false);
       onClose();
     } catch (error) {
-      setShowConfirm(false);
       if (error?.response?.status === 400 && error.response?.data?.errors) {
         const backendErrors = error.response.data.errors;
         Object.keys(backendErrors).forEach((key) => {
@@ -346,6 +336,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
       } else {
         toast.error("Ocurrió un error inesperado al guardar los datos.");
       }
+    } finally {
+      setGuardando(false);
+      setShowConfirm(false);
     }
   };
 
@@ -602,6 +595,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
         onConfirm={onConfirmSave}
         titulo={socio ? "Actualizar Accionista" : "Agregar Accionista"}
         mensaje={socio ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas agregar este accionista?"}
+        isLoading={guardando}
       />
     </>
   );

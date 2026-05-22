@@ -101,9 +101,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           if (!resultCda.success) {
             const errorCda = resultCda.errors.find((e) => e.isInvalidante);
             console.error("❌ [Paso1Cuit] Validación CDA fallida. Deteniendo avance de paso:", errorCda);
-            setError("cuit", {
-              type: "manual",
-              message: errorCda?.message || "La validación interna (CDA) ha fallado.",
+            toast.error("Validación interna fallida", {
+              description: errorCda?.message || "La validación interna (CDA) ha fallado.",
+              duration: 6000,
             });
             return;
           }

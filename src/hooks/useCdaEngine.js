@@ -55,14 +55,26 @@ export const useCdaEngine = () => {
         if (!cdaId) continue;
 
         // Obtener detalles del CDA para saber si es invalidante
-        let cdaDetail = null;
+        let cdaDetailRes = null;
         try {
-          cdaDetail = await cdaService.obtenerCda(cdaId);
+          cdaDetailRes = await cdaService.obtenerCda(cdaId);
         } catch (errDetail) {
           console.warn(`⚠️ [CDA ENGINE] No se pudo obtener detalles del CDA ${cdaId}:`, errDetail);
         }
 
-        const isInvalidante = cdaDetail ? String(cdaDetail.esinvalidante) === "1" : true;
+        // Si viene como Array, tomamos el primer elemento
+        const cdaDetail = Array.isArray(cdaDetailRes) ? cdaDetailRes[0] : cdaDetailRes;
+
+        const rawEsInvalidante = cdaDetail
+          ? (cdaDetail.esinvalidante !== undefined ? cdaDetail.esinvalidante : cdaDetail.esInvalidante)
+          : null;
+
+        const isInvalidante = rawEsInvalidante !== null && rawEsInvalidante !== undefined
+          ? (rawEsInvalidante === true || 
+             rawEsInvalidante === 1 || 
+             String(rawEsInvalidante).trim() === "1" || 
+             String(rawEsInvalidante).toLowerCase().trim() === "true")
+          : true; // Por defecto true si la propiedad no está definida
         const descripcion = cdaDetail?.descripcion || `Validación interna (CDA ${cdaId})`;
 
         try {

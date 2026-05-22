@@ -75,8 +75,35 @@ export const DetalleSolicitudModal = ({
 
       if (!relaciones || relaciones.length === 0) return [];
 
+      const now = new Date();
+      const relacionesFiltradas = relaciones.filter((rel) => {
+        // 1. Validar tipo de relación (25 es Accionista/Socio Accionista)
+        const tiporel = rel.tiporelacionsocioid || rel.TipoRelacionSocioID || rel.tiporelacionsocioId;
+        const tiporelNum = Number(tiporel);
+        if (tiporel && tiporelNum !== 25) return false;
+
+        // 2. Validar expiración de fecha (fechahasta)
+        const fd = rel.fechadesde || rel.FechaDesde;
+        const fh = rel.fechahasta || rel.FechaHasta;
+        if (fh && fh !== "") {
+          const expirationDate = new Date(fh);
+          const startDate = fd ? new Date(fd) : null;
+          
+          // Si fechahasta coincide con fechadesde (por tiempo o día calendario), no está expirado
+          const isSameAsStart = startDate && (
+            expirationDate.getTime() === startDate.getTime() ||
+            expirationDate.toISOString().split('T')[0] === startDate.toISOString().split('T')[0]
+          );
+          
+          if (!isSameAsStart && expirationDate < now) {
+            return false; // Expirada, omitir
+          }
+        }
+        return true;
+      });
+
       const uniqueIds = new Set();
-      const relacionesUnicas = relaciones.filter((rel) => {
+      const relacionesUnicas = relacionesFiltradas.filter((rel) => {
         const rawId =
           rel.terceroid ||
           rel.tercerorelacionadoid ||

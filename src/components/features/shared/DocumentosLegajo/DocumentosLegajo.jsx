@@ -287,45 +287,43 @@ export function DocumentosLegajo() {
     cargarSocios();
   }, [socioIdActivo]);
 
-  useEffect(() => {
+  const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
+    try {
+      const archivos =
+        await socioArchivoService.obtenerArchivos(socioIdActivo);
+      if (Array.isArray(archivos)) {
+        setArchivosBackend(archivos);
 
-    const cargarArchivosExistentes = async () => {
-      try {
-        const archivos =
-          await socioArchivoService.obtenerArchivos(socioIdActivo);
-        console.log("📂 [LEGAJO] Archivos cargados del backend:", archivos);
-        if (Array.isArray(archivos)) {
-          setArchivosBackend(archivos);
+        archivos.forEach((arch) => {
+          const tipoId = arch.tipodocumentoarchivoid;
+          let key = null;
+          if (tipoId === 5) key = "certificadoPyme";
+          else if (tipoId === 4) key = "poderes";
+          else if (tipoId === 6) key = "otrosDocumentos";
 
-          archivos.forEach((arch) => {
-            const tipoId = arch.tipodocumentoarchivoid;
-            let key = null;
-            if (tipoId === 5) key = "certificadoPyme";
-            else if (tipoId === 4) key = "poderes";
-            else if (tipoId === 6) key = "otrosDocumentos";
-
-            if (key) {
-              setValue(
-                key,
-                {
-                  name: arch.nombrearchivo,
-                  size: "Cargado",
-                  _uploaded: true,
-                  _backendId: arch.socioarchivoid,
-                  _tipodocumentoarchivoid: tipoId,
-                },
-                { shouldValidate: true },
-              );
-              setValue(`${key}_backendId`, arch.socioarchivoid);
-            }
-          });
-        }
-      } catch (err) {
-        console.error("Error cargando archivos del legajo:", err);
+          if (key) {
+            setValue(
+              key,
+              {
+                name: arch.nombrearchivo,
+                size: "Cargado",
+                _uploaded: true,
+                _backendId: arch.socioarchivoid,
+                _tipodocumentoarchivoid: tipoId,
+              },
+              { shouldValidate: true },
+            );
+            setValue(`${key}_backendId`, arch.socioarchivoid);
+          }
+        });
       }
-    };
+    } catch (err) {
+      console.error("Error cargando archivos del legajo:", err);
+    }
+  };
 
+  useEffect(() => {
     cargarArchivosExistentes();
   }, [socioIdActivo, setValue]);
 
@@ -472,11 +470,75 @@ export function DocumentosLegajo() {
       }
 
       if (files) {
-        console.log("💾 [LEGAJO - ACCIONISTA] Guardando DNI en memoria local (Visual):", {
-          cuitLimpio,
-          dniFrente: files.dniFrente?.name,
-          dniDorso: files.dniDorso?.name,
-        });
+        if (files.dniFrente instanceof File || files.dniDorso instanceof File) {
+          const uploadToastId = toast.loading("Subiendo documentos de identidad del accionista...");
+          try {
+            const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+
+            if (files.dniFrente && files.dniFrente instanceof File) {
+              const existenteFrente = archivosExistentes?.find((a) => {
+                if (a.tipodocumentoarchivoid !== 7) return false;
+                const descNorm = normalizarTexto(a.descripcion);
+                return (
+                  descNorm.includes(cuitLimpio) ||
+                  descNorm.includes(normalizarTexto(formData.nombre))
+                );
+              });
+
+              const descFrente = `DNI Frente - ${formData.nombre.toUpperCase()}`;
+              if (existenteFrente) {
+                await socioArchivoService.actualizarArchivo(
+                  existenteFrente,
+                  files.dniFrente,
+                  "socio-frente",
+                  descFrente
+                );
+              } else {
+                await socioArchivoService.subirArchivo(
+                  socioIdActivo,
+                  files.dniFrente,
+                  "socio-frente",
+                  descFrente
+                );
+              }
+            }
+
+            if (files.dniDorso && files.dniDorso instanceof File) {
+              const existenteDorso = archivosExistentes?.find((a) => {
+                if (a.tipodocumentoarchivoid !== 8) return false;
+                const descNorm = normalizarTexto(a.descripcion);
+                return (
+                  descNorm.includes(cuitLimpio) ||
+                  descNorm.includes(normalizarTexto(formData.nombre))
+                );
+              });
+
+              const descDorso = `DNI Dorso - ${formData.nombre.toUpperCase()}`;
+              if (existenteDorso) {
+                await socioArchivoService.actualizarArchivo(
+                  existenteDorso,
+                  files.dniDorso,
+                  "socio-dorso",
+                  descDorso
+                );
+              } else {
+                await socioArchivoService.subirArchivo(
+                  socioIdActivo,
+                  files.dniDorso,
+                  "socio-dorso",
+                  descDorso
+                );
+              }
+            }
+
+            toast.success("Documentos de identidad subidos correctamente.", { id: uploadToastId });
+          } catch (uploadErr) {
+            console.error("❌ [LEGAJO - ACCIONISTA] Error subiendo archivos de DNI:", uploadErr);
+            toast.error("Error al subir los documentos de identidad.", { id: uploadToastId });
+            throw uploadErr;
+          }
+        }
+
         setDniTerceros((prev) => ({
           ...prev,
           [cuitLimpio]: {
@@ -486,6 +548,7 @@ export function DocumentosLegajo() {
         }));
       }
 
+      await cargarArchivosExistentes();
       cargarSocios();
     } catch (err) {
       console.error("[LEGAJO - ACCIONISTA] Error guardando accionista:", err);
@@ -500,9 +563,6 @@ export function DocumentosLegajo() {
 
       let terceroId = null;
       try {
-        console.log(
-          `[LEGAJO - REPRESENTANTE] Buscando tercero por CUIT: ${cuitLimpio}`,
-        );
         const existentes = await tercerosService.obtenerTerceros({
           Cuit: cuitLimpio,
         });
@@ -514,13 +574,6 @@ export function DocumentosLegajo() {
             arr[0].tercerorelacionadoid ||
             arr[0].TerceroRelacionadoID ||
             arr[0].id;
-          console.log(
-            `[LEGAJO - REPRESENTANTE] Tercero existente encontrado con ID: ${terceroId}`,
-          );
-        } else {
-          console.log(
-            "[LEGAJO - REPRESENTANTE] Tercero no encontrado. Se creará uno nuevo.",
-          );
         }
       } catch (err) {
         console.warn(
