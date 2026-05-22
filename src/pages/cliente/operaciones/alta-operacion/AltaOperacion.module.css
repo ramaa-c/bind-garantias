@@ -65,6 +65,25 @@
   padding: 1.5rem 0 1.25rem;
   animation: fadeIn 0.4s ease;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.bienvenidaBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(244, 245, 0, 0.07);
+  border: 1px solid rgba(244, 245, 0, 0.18);
+  border-radius: 999px;
+  color: var(--yellow, #f4f500);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
 }
 
 .tituloBienvenida {
@@ -186,6 +205,7 @@
   .bienvenidaHeader {
     grid-area: header;
     text-align: left;
+    align-items: flex-start;
     margin: 0;
     padding: 0;
   }
