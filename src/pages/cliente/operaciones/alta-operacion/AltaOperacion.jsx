@@ -1134,28 +1134,32 @@ export const AltaOperacion = () => {
     switch (pasoActual) {
       case 1:
         return {
+          badge: "Alta de Línea",
           t: "Declaración de Socios",
           s: "Revisá y confirmá la composición societaria.",
         };
       case 2:
         return {
+          badge: "Alta de Línea",
           t: "Alta de Operación",
           s: "Seleccioná el tipo de operación y las condiciones.",
         };
       case 3:
         return {
+          badge: "Alta de Línea",
           t: "Documentación Requerida",
           s: "Adjuntá los respaldos de la operación.",
         };
       case 4:
-        return { t: "Sociedad de Bolsa", s: "Confirmá tu cuenta comitente." };
+        return { badge: "Alta de Línea", t: "Sociedad de Bolsa", s: "Confirmá tu cuenta comitente." };
       case 5:
         return {
+          badge: "Alta de Línea",
           t: "Operación Confirmada",
           s: "La solicitud fue enviada con éxito.",
         };
       default:
-        return { t: "Alta de Operación", s: "" };
+        return { badge: "Alta de Línea", t: "Alta de Operación", s: "" };
     }
   };
 
@@ -1221,6 +1225,11 @@ export const AltaOperacion = () => {
 
               {showHeaderYStepper && (
                 <div className={styles.bienvenidaHeader}>
+                  {obtenerTextosCabecera().badge && (
+                    <span className={styles.bienvenidaBadge}>
+                      {obtenerTextosCabecera().badge}
+                    </span>
+                  )}
                   <h1 className={styles.tituloBienvenida}>
                     {obtenerTextosCabecera().t}
                   </h1>
