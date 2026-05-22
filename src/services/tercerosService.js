@@ -1,5 +1,42 @@
 import api from "../api/axios";
 
+const sanitizarRelacion = (relacionData) => {
+  if (!relacionData || typeof relacionData !== "object") return relacionData;
+
+  const validKeys = [
+    "sociotercerorelacionid",
+    "socioid",
+    "terceroid",
+    "tiporelacionsocioid",
+    "fechadesde",
+    "fechahasta",
+    "porcacciones",
+    "nroinscripcion",
+    "condicionescomerciales",
+    "cbu",
+    "provinciaid",
+    "nrosubcuentacaja",
+    "sucursalid",
+    "default",
+    "subtiporelacionsocioid",
+    "telefono",
+    "momento",
+  ];
+
+  const cleanData = {};
+  for (const key of Object.keys(relacionData)) {
+    const lowerKey = key.toLowerCase();
+    if (validKeys.includes(lowerKey)) {
+      const val = relacionData[key];
+      // Keep only scalar values (number, string, boolean, null)
+      if (val === null || typeof val !== "object") {
+        cleanData[key] = val;
+      }
+    }
+  }
+  return cleanData;
+};
+
 export const tercerosService = {
   //------ TERCERO RELACIONADO --------
 
@@ -39,8 +76,39 @@ export const tercerosService = {
 
   // Actualiza una relación de socio
   actualizarRelacionDeSocio: async (relacionData) => {
-    const response = await api.put("api/SocioTerceroRelacion", relacionData);
-    return response.data;
+    const cleanData = sanitizarRelacion(relacionData);
+    const socioId =
+      cleanData.socioid ||
+      cleanData.socioId ||
+      cleanData.SocioID ||
+      relacionData.socioid ||
+      relacionData.socioId ||
+      relacionData.SocioID;
+
+    const wrappedData = {
+      socioid: socioId,
+      tercerosrelacionados: [cleanData],
+    };
+
+    console.log(
+      "📤 [tercerosService] intentando PUT a api/SocioTerceroRelacion con wrappedData:",
+      wrappedData,
+    );
+    try {
+      const response = await api.put("api/SocioTerceroRelacion", wrappedData);
+      console.log("✅ [tercerosService] PUT exitoso. Respuesta:", response.data);
+      return response.data;
+    } catch (err) {
+      console.error(
+        "❌ [tercerosService] PUT falló con Status:",
+        err.response?.status,
+      );
+      console.error(
+        "❌ [tercerosService] Detalles del error del backend:",
+        err.response?.data,
+      );
+      throw err;
+    }
   },
 
   //------- TERCEROS RELACIONADOS (SGRPlus) ---------

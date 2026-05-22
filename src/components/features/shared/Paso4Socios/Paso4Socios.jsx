@@ -269,11 +269,11 @@ export default function Paso4Socios({
             <Button
               type="button"
               variant="primary"
-              iconRight={<FiChevronRight />}
+              iconRight={!isLoading && <FiChevronRight />}
               onClick={continuarAlProximoPaso}
-              disabled={totalGuardado !== 100}
+              disabled={totalGuardado !== 100 || isLoading}
             >
-              CONTINUAR
+              {isLoading ? "VALIDANDO..." : "CONTINUAR"}
             </Button>
           </div>
         </div>

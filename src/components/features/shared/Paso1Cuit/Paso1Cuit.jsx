@@ -5,6 +5,7 @@ import { BuscadorCuit } from "../../../ui";
 import { sociosService } from "../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../hooks/useAfip";
 import { useValidarFormatoCuit } from "../../../../hooks/useSocios";
+import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import styles from "./Paso1Cuit.module.css";
 
 export default function Paso1Cuit({ onValidar, onSocioExistente }) {
@@ -15,6 +16,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     useValidarCuitAfip();
   const { mutateAsync: validarFormatoBackend, isPending: isLoadingFormato } =
     useValidarFormatoCuit();
+  const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
 
   const cuitValue = useWatch({ control, name: "cuit" });
@@ -93,6 +95,20 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         if (afipData && afipData.datosgenerales) {
           const dg = afipData.datosgenerales;
 
+          // ── VALIDACIÓN CDA (PANTALLA_INGRESO_CUIT)
+          console.log("🔍 [Paso1Cuit] Iniciando validaciones internas CDA para el CUIT:", cuit);
+          const resultCda = await ejecutarValidaciones("PANTALLA_INGRESO_CUIT", cuit);
+          if (!resultCda.success) {
+            const errorCda = resultCda.errors.find((e) => e.isInvalidante);
+            console.error("❌ [Paso1Cuit] Validación CDA fallida. Deteniendo avance de paso:", errorCda);
+            setError("cuit", {
+              type: "manual",
+              message: errorCda?.message || "La validación interna (CDA) ha fallado.",
+            });
+            return;
+          }
+          console.log("✅ [Paso1Cuit] Validaciones CDA superadas exitosamente. Permitiendo avanzar de paso.");
+
           const nombreCompleto =
             dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim();
           setValue("razonSocial", nombreCompleto, { shouldValidate: true });
@@ -134,7 +150,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     }
   };
 
-  const isLoading = isValidatingSocio || isLoadingAfip || isLoadingFormato;
+  const isLoading = isValidatingSocio || isLoadingAfip || isLoadingFormato || isLoadingCda;
 
   return (
     <div className={styles.pasoContainer}>

@@ -28,6 +28,7 @@ import { Alert, Spinner } from "../../../../components/ui";
 import styles from "./AltaOperacion.module.css";
 import { solicitudesService } from "../../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { lineaService } from "../../../../services/lineaService";
 import { afipService } from "../../../../services/afipService";
 import { tercerosService } from "../../../../services/tercerosService";
@@ -45,6 +46,46 @@ export const AltaOperacion = () => {
   const [buscandoSocios, setBuscandoSocios] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [validandoAcceso, setValidandoAcceso] = useState(true);
+
+  const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
+
+  const handleContinuarSocios = async () => {
+    const sociosList = getValues("socios") || [];
+    if (sociosList.length === 0) {
+      toast.error("Debe declarar al menos un socio.");
+      return;
+    }
+
+    console.log("🔍 [AltaOperacion] Iniciando validaciones internas CDA para cada Socio declarado...");
+
+    const cuitLimpioEmpresa = cuitActivo ? String(cuitActivo).replace(/\D/g, "") : "";
+
+    for (const socio of sociosList) {
+      const socioCuitLimpio = String(socio.cuit).replace(/\D/g, "");
+      
+      if (cuitLimpioEmpresa && socioCuitLimpio === cuitLimpioEmpresa) {
+        console.log(`⚠️ [AltaOperacion] Omitiendo validación de socio CDA para la propia empresa (CUIT: ${socioCuitLimpio})`);
+        continue;
+      }
+
+      console.log(`🔍 [AltaOperacion] Validando socio: "${socio.nombre}" (CUIT: ${socioCuitLimpio})`);
+
+      const result = await ejecutarValidaciones("PANTALLA_SOCIOS", socioCuitLimpio);
+      if (!result.success) {
+        const invalidatingError = result.errors.find((e) => e.isInvalidante);
+        console.error(`❌ [AltaOperacion] Validación CDA fallida para socio "${socio.nombre}":`, invalidatingError);
+        const errorMsg = invalidatingError?.message || `La validación del socio "${socio.nombre}" ha fallado.`;
+        toast.error(`Error en socio "${socio.nombre}"`, {
+          description: errorMsg,
+          duration: 6000,
+        });
+        return; // Interrumpe el flujo si un socio falla con una regla invalidante
+      }
+    }
+
+    console.log("✅ [AltaOperacion] Todos los socios superaron las validaciones CDA con éxito. Avanzando a la calculadora de montos.");
+    setPasoActual(2);
+  };
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -246,7 +287,10 @@ export const AltaOperacion = () => {
               const tiporelNum = Number(tiporel);
 
               if (tiporelNum === 25) {
-                if (cuit && !cuitsAccionistasYaCargados.has(cuit)) {
+                const cuitLimpioSocio = String(cuit).replace(/\D/g, "");
+                const cuitLimpioEmpresa = cuitActivo ? String(cuitActivo).replace(/\D/g, "") : "";
+                
+                if (cuit && cuitLimpioSocio !== cuitLimpioEmpresa && !cuitsAccionistasYaCargados.has(cuit)) {
                   cuitsAccionistasYaCargados.add(cuit);
 
                   let afipData = null;
@@ -878,8 +922,8 @@ export const AltaOperacion = () => {
           guardarSocio={guardarSocio}
           eliminarSocio={eliminarSocio}
           editarSocio={editarSocio}
-          continuarAlProximoPaso={() => setPasoActual(2)}
-          isLoading={isLoadingAFIP}
+          continuarAlProximoPaso={handleContinuarSocios}
+          isLoading={isLoadingAFIP || isLoadingCda}
         />
       );
     }

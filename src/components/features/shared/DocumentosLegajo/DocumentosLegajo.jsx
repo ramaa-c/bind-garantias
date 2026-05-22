@@ -137,9 +137,9 @@ export function DocumentosLegajo() {
         await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
       const arr = Array.isArray(relaciones) ? relaciones : [];
 
-      const accList = [];
-      const repList = [];
-      const bolsaList = [];
+      const accMap = {};
+      const repMap = {};
+      const bolsaMap = {};
 
       const now = new Date();
 
@@ -225,12 +225,30 @@ export function DocumentosLegajo() {
               tipopersonaid: t.tipopersonaid || 1,
             };
 
+            const identifier = item.cuit && item.cuit !== "—" ? item.cuit : item.id;
+
             if (tiporelNum === 25) {
-              accList.push(item);
+              if (!accMap[identifier]) {
+                accMap[identifier] = item;
+              }
             } else if (tiporelNum === 210 || tiporelNum === 230) {
-              repList.push(item);
+              const existing = repMap[identifier];
+              if (!existing) {
+                repMap[identifier] = item;
+              } else {
+                if (item.rolId === 230 && existing.rolId !== 230) {
+                  repMap[identifier] = item;
+                }
+              }
             } else if (tiporelNum === 21) {
-              bolsaList.push(item);
+              const existing = bolsaMap[identifier];
+              if (!existing) {
+                bolsaMap[identifier] = item;
+              } else {
+                if (item.nrosubcuentacaja && !existing.nrosubcuentacaja) {
+                  bolsaMap[identifier] = item;
+                }
+              }
             }
           }
         } catch (e) {
@@ -238,9 +256,9 @@ export function DocumentosLegajo() {
         }
       }
 
-      setAccionistas(accList);
-      setRepresentantes(repList);
-      setAgentesBolsa(bolsaList);
+      setAccionistas(Object.values(accMap));
+      setRepresentantes(Object.values(repMap));
+      setAgentesBolsa(Object.values(bolsaMap));
     } catch (e) {
       console.error("Error loading relations:", e);
     } finally {
@@ -1028,7 +1046,7 @@ export function DocumentosLegajo() {
                     </div>
 
                     {/* ALERTA BANNER DE 100% */}
-                    {totalParticipacion !== 100 ? (
+                    {totalParticipacion !== 100 && (
                       <div
                         className={`${styles.alertBanner} ${styles.alertBannerWarning}`}
                       >
@@ -1036,15 +1054,6 @@ export function DocumentosLegajo() {
                         <p className={styles.alertText}>
                           La composición accionaria actual debe sumar
                           exactamente el 100% (Actual: {totalParticipacion}%).
-                        </p>
-                      </div>
-                    ) : (
-                      <div
-                        className={`${styles.alertBanner} ${styles.alertBannerSuccess}`}
-                      >
-                        <FiCheckCircle className={styles.alertIcon} size={16} />
-                        <p className={styles.alertText}>
-                          Composición accionaria completa al 100%.
                         </p>
                       </div>
                     )}
