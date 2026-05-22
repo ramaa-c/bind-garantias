@@ -1227,19 +1227,6 @@ export function DocumentosLegajo() {
                   accionistas={accionistas}
                   dniTerceros={dniTerceros}
                 />
-
-                <ConfirmacionModal
-                  isOpen={!!deleteTarget}
-                  onClose={() => setDeleteTarget(null)}
-                  onConfirm={handleConfirmEliminar}
-                  titulo={deleteTarget?.rolId === 21 ? "Desvincular Agente" : "Eliminar del legajo"}
-                  mensaje={
-                    deleteTarget?.rolId === 21
-                      ? `¿Está seguro de que desea desvincular al Agente de Bolsa ${deleteTarget?.nombre}?`
-                      : `¿Está seguro de que desea eliminar a ${deleteTarget?.nombre} del legajo?`
-                  }
-                  isLoading={loadingDelete}
-                />
               </div>
             ) : isRepresentantes ? (
               <div className={styles.sociosContainer}>
@@ -1584,6 +1571,18 @@ export function DocumentosLegajo() {
           </section>
         );
       })}
+      <ConfirmacionModal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmEliminar}
+        titulo={deleteTarget?.rolId === 21 ? "Desvincular Agente" : "Eliminar del legajo"}
+        mensaje={
+          deleteTarget?.rolId === 21
+            ? `¿Está seguro de que desea desvincular al Agente de Bolsa ${deleteTarget?.nombre}?`
+            : `¿Está seguro de que desea eliminar a ${deleteTarget?.nombre} del legajo?`
+        }
+        isLoading={loadingDelete}
+      />
     </div>
   );
 }
