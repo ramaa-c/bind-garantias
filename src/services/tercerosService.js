@@ -1,16 +1,19 @@
-import api from '../api/axios';
+import api from "../api/axios";
 
 export const tercerosService = {
   //------ TERCERO RELACIONADO --------
 
   // Lista de terceros
-  obtenerTerceros: async (params = {}) => (await api.get("api/TerceroRelacionado", { params })).data,
+  obtenerTerceros: async (params = {}) =>
+    (await api.get("api/TerceroRelacionado", { params })).data,
 
   // Tercero puntual por ID
-  obtenerTerceroPorId: async (terceroId) => (await api.get(`api/TerceroRelacionado/${terceroId}`)).data,
+  obtenerTerceroPorId: async (terceroId) =>
+    (await api.get(`api/TerceroRelacionado/${terceroId}`)).data,
 
   // Crea nuevo tercero relacionado
-  crearTercero: async (terceroData) => (await api.post("api/TerceroRelacionado", terceroData)).data,
+  crearTercero: async (terceroData) =>
+    (await api.post("api/TerceroRelacionado", terceroData)).data,
 
   // Actualiza un tercero relacionado
   actualizarTercero: async (terceroData) => {
@@ -19,12 +22,14 @@ export const tercerosService = {
   },
 
   // Trae los tipos de relación que tiene este tercero
-  obtenerTiposHabilitados: async (terceroId) => (await api.get(`sgrplus/TerceroTipoHabilitado/${terceroId}`)).data,
+  obtenerTiposHabilitados: async (terceroId) =>
+    (await api.get(`sgrplus/TerceroTipoHabilitado/${terceroId}`)).data,
 
   //------- SOCIO - TERCERO RELACIÓN ---------
 
   // Trae todas las relaciones que tiene un socio
-  obtenerRelacionesDeSocio: async (socioId) => (await api.get(`api/SocioTerceroRelacion/${socioId}`)).data,
+  obtenerRelacionesDeSocio: async (socioId) =>
+    (await api.get(`api/SocioTerceroRelacion/${socioId}`)).data,
 
   // Guarda las relaciones de un socio
   guardarRelacionesDeSocio: async (relacionData) => {
@@ -40,9 +45,12 @@ export const tercerosService = {
 
   //------- TERCEROS RELACIONADOS (SGRPlus) ---------
 
-  obtenerTercerosSGRPlus: async (params = {}) => (await api.get("sgrplus/TerceroRelacionado", { params })).data,
+  obtenerTercerosSGRPlus: async (params = {}) =>
+    (await api.get("sgrplus/TerceroRelacionado", { params })).data,
 
-  obtenerTerceroPorIdSGRPlus: async (terceroId) => (await api.get(`sgrplus/TerceroRelacionado/${terceroId}`)).data,
+  obtenerTerceroPorIdSGRPlus: async (terceroId) =>
+    (await api.get(`sgrplus/TerceroRelacionado/${terceroId}`)).data,
 
-  obtenerRelacionesDeSocioSGRPlus: async (socioId) => (await api.get(`sgrplus/SocioTerceroRelacion/${socioId}`)).data,
+  obtenerRelacionesDeSocioSGRPlus: async (socioId) =>
+    (await api.get(`sgrplus/SocioTerceroRelacion/${socioId}`)).data,
 };

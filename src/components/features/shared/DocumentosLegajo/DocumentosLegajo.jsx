@@ -23,7 +23,14 @@ import {
   FiMap,
 } from "react-icons/fi";
 import { toast } from "sonner";
-import { CargaArchivos, Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit } from "../../../ui";
+import {
+  CargaArchivos,
+  Button,
+  Modal,
+  SelectSocio,
+  InputSocioMasked,
+  BuscadorCuit,
+} from "../../../ui";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { tercerosService } from "../../../../services/tercerosService";
 import { sociosService } from "../../../../services/sociosService";
@@ -33,6 +40,9 @@ import { afipService } from "../../../../services/afipService";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { useObtenerTerceros } from "../../../../hooks/useTerceros";
 import styles from "./DocumentosLegajo.module.css";
+import { SocioAccionistaModal } from "./components/SocioAccionistaModal/SocioAccionistaModal";
+import { RepresentanteModal } from "./components/RepresentanteModal/RepresentanteModal";
+import { BolsaModal } from "./components/BolsaModal/BolsaModal";
 
 const ESTRUCTURA_LEGAJO = [
   {
@@ -123,76 +133,98 @@ export function DocumentosLegajo() {
     if (!socioIdActivo) return;
     setLoadingSocios(true);
     try {
-      const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+      const relaciones =
+        await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
       const arr = Array.isArray(relaciones) ? relaciones : [];
-      
+
       const accList = [];
       const repList = [];
       const bolsaList = [];
-      
+
       const now = new Date();
-      
+
       for (const rel of arr) {
         const fd = rel.fechadesde || rel.FechaDesde;
         const fh = rel.fechahasta || rel.FechaHasta;
         if (fh && fh !== "") {
           const expirationDate = new Date(fh);
           const startDate = fd ? new Date(fd) : null;
-          
-          // Si fechahasta coincide con fechadesde (por tiempo o día calendario), no está expirado!
-          const isSameAsStart = startDate && (
-            expirationDate.getTime() === startDate.getTime() ||
-            expirationDate.toISOString().split('T')[0] === startDate.toISOString().split('T')[0]
-          );
-          
+
+          const isSameAsStart =
+            startDate &&
+            (expirationDate.getTime() === startDate.getTime() ||
+              expirationDate.toISOString().split("T")[0] ===
+                startDate.toISOString().split("T")[0]);
+
           if (!isSameAsStart && expirationDate < now) {
             continue;
           }
         }
-        
-        const tid = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
+
+        const tid =
+          rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
         if (!tid) continue;
-        
+
         try {
           let t = null;
           try {
             t = await tercerosService.obtenerTerceroPorId(tid);
           } catch (apiErr) {
-            console.warn(`⚠️ [LEGAJO] No se pudo obtener tercero ${tid} de la API estándar. Intentando SGRPlus...`);
+            console.warn(
+              `⚠️ [LEGAJO] No se pudo obtener tercero ${tid} de la API estándar. Intentando SGRPlus...`,
+            );
             try {
               t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
             } catch (sgrErr) {
-              console.error(`❌ [LEGAJO] Error total obteniendo tercero ${tid}:`, sgrErr);
+              console.error(
+                `❌ [LEGAJO] Error total obteniendo tercero ${tid}:`,
+                sgrErr,
+              );
             }
           }
-          
+
           if (t) {
-            const tiporel = rel.tiporelacionsocioid || rel.TipoRelacionSocioID || rel.tiporelacionsocioId;
+            const tiporel =
+              rel.tiporelacionsocioid ||
+              rel.TipoRelacionSocioID ||
+              rel.tiporelacionsocioId;
             const tiporelNum = Number(tiporel);
-            
+
             const item = {
               id: tid,
-              relacionId: rel.sociotercerorelacionid || rel.SocioTerceroRelacionID,
+              relacionId:
+                rel.sociotercerorelacionid || rel.SocioTerceroRelacionID,
               relacion: rel,
-              nombre: t.denominacion || t.Denominacion || t.razonsocial || t.RazonSocial || t.nombre || t.Nombre || "Sin nombre",
+              nombre:
+                t.denominacion ||
+                t.Denominacion ||
+                t.razonsocial ||
+                t.RazonSocial ||
+                t.nombre ||
+                t.Nombre ||
+                "Sin nombre",
               cuit: t.cuit || t.Cuit || t.numerodocumento || t.documento || "—",
               email: t.mail || t.Mail || "",
               telefono: t.telefono || t.Telefono || "",
               direccion: t.calle || t.Calle || "",
               localidad: t.contacto || t.Contacto || "",
               codpos: t.codpos || t.Codpos || "",
-              participacion: Number(rel.porcacciones || rel.participacion || rel.Participacion || 0),
+              participacion: Number(
+                rel.porcacciones || rel.participacion || rel.Participacion || 0,
+              ),
               rolId: tiporelNum,
-              nrosubcuentacaja: rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "",
+              nrosubcuentacaja:
+                rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "",
               calle: t.calle || "",
               numero: t.numero || 0,
               piso: t.piso || "",
               departamento: t.departamento || "",
               ciudadid: t.ciudadid || 0,
-              provinciaid: rel.provinciaid || rel.ProvinciaID || t.provinciaid || 0,
+              provinciaid:
+                rel.provinciaid || rel.ProvinciaID || t.provinciaid || 0,
               tipopersonaid: t.tipopersonaid || 1,
             };
-            
+
             if (tiporelNum === 25) {
               accList.push(item);
             } else if (tiporelNum === 210 || tiporelNum === 230) {
@@ -205,7 +237,7 @@ export function DocumentosLegajo() {
           console.warn("Error fetching third party detail:", tid, e);
         }
       }
-      
+
       setAccionistas(accList);
       setRepresentantes(repList);
       setAgentesBolsa(bolsaList);
@@ -229,10 +261,11 @@ export function DocumentosLegajo() {
 
     const cargarArchivosExistentes = async () => {
       try {
-        const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo);
+        const archivos =
+          await socioArchivoService.obtenerArchivos(socioIdActivo);
         if (Array.isArray(archivos)) {
           setArchivosBackend(archivos);
-          
+
           archivos.forEach((arch) => {
             const tipoId = arch.tipodocumentoarchivoid;
             let key = null;
@@ -241,20 +274,23 @@ export function DocumentosLegajo() {
             else if (tipoId === 6) key = "otrosDocumentos";
 
             if (key) {
-              setValue(key, {
-                name: arch.nombrearchivo,
-                size: "Cargado",
-                _uploaded: true,
-                _backendId: arch.socioarchivoid,
-                _tipodocumentoarchivoid: tipoId,
-              }, { shouldValidate: true });
-              // Guardamos el ID del backend específico de este archivo para saber exactamente cuál reemplazar si se limpia o cambia
+              setValue(
+                key,
+                {
+                  name: arch.nombrearchivo,
+                  size: "Cargado",
+                  _uploaded: true,
+                  _backendId: arch.socioarchivoid,
+                  _tipodocumentoarchivoid: tipoId,
+                },
+                { shouldValidate: true },
+              );
               setValue(`${key}_backendId`, arch.socioarchivoid);
             }
           });
         }
       } catch (err) {
-        console.error("❌ Error cargando archivos del legajo:", err);
+        console.error("Error cargando archivos del legajo:", err);
       }
     };
 
@@ -265,13 +301,12 @@ export function DocumentosLegajo() {
     return accionistas.reduce((a, s) => a + Number(s.participacion || 0), 0);
   }, [accionistas]);
 
-  // Handler to delete (deactivate) a relationship by setting fechahasta to now
   const handleEliminarRelacion = async (item) => {
     const isBolsa = item.rolId === 21;
-    const confirmMessage = isBolsa 
+    const confirmMessage = isBolsa
       ? `¿Está seguro de que desea desvincular al Agente de Bolsa ${item.nombre}?`
       : `¿Está seguro de que desea eliminar a ${item.nombre} del legajo?`;
-      
+
     if (!window.confirm(confirmMessage)) return;
 
     try {
@@ -282,38 +317,50 @@ export function DocumentosLegajo() {
         FechaHasta: ahora,
       };
       await tercerosService.actualizarRelacionDeSocio(payload);
-      toast.success(isBolsa ? "Agente de bolsa desvinculado exitosamente." : "Registro eliminado exitosamente del legajo.");
+      toast.success(
+        isBolsa
+          ? "Agente de bolsa desvinculado exitosamente."
+          : "Registro eliminado exitosamente del legajo.",
+      );
       cargarSocios();
     } catch (err) {
-      console.error("❌ [LEGAJO] Error al eliminar relación:", err);
+      console.error("[LEGAJO] Error al eliminar relación:", err);
       toast.error("Ocurrió un error al procesar la desvinculación.");
     }
   };
 
-  // Handler to save or update an Accionista
   const handleSaveAccionista = async (formData, files) => {
     try {
       const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
-      
-      // 1. Check if third party exists
+
       let terceroId = null;
       try {
-        const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
-        const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
+        const existentes = await tercerosService.obtenerTerceros({
+          Cuit: cuitLimpio,
+        });
+        const arr = Array.isArray(existentes)
+          ? existentes
+          : existentes?.data || [];
         if (arr.length > 0) {
-          terceroId = arr[0].tercerorelacionadoid || arr[0].TerceroRelacionadoID || arr[0].id;
+          terceroId =
+            arr[0].tercerorelacionadoid ||
+            arr[0].TerceroRelacionadoID ||
+            arr[0].id;
         }
       } catch (err) {
-        console.warn("⚠️ [LEGAJO - ACCIONISTA] Error buscando tercero existente:", err);
+        console.warn(
+          "[LEGAJO - ACCIONISTA] Error buscando tercero existente:",
+          err,
+        );
       }
 
-      // 2. Create or update the third party record
       const payloadTercero = {
         tercerorelacionadoid: terceroId || 0,
         denominacion: formData.nombre,
         cuit: cuitLimpio,
         bcraid: 0,
-        tipopersonaid: cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
+        tipopersonaid:
+          cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
         tipodocumentoid: 0,
         numerodocumento: cuitLimpio,
         estadocivilid: 0,
@@ -340,7 +387,6 @@ export function DocumentosLegajo() {
         terceroId = res.tercerorelacionadoid || res.id;
       }
 
-      // 3. Save or update the relationship
       const ahora = new Date().toISOString().split(".")[0];
       const unAnioMas = new Date();
       unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
@@ -378,115 +424,149 @@ export function DocumentosLegajo() {
               subtiporelacionsocioid: 0,
               telefono: formData.celular || "",
               momento: ahora,
-            }
-          ]
+            },
+          ],
         };
         await tercerosService.guardarRelacionesDeSocio(payloadRel);
         toast.success("Accionista agregado al legajo.");
       }
 
-      // 4. Parallel upload of DNI Frente and Dorso
       if (files) {
         const uploadPromises = [];
-        if (files.dniFrente && files.dniFrente instanceof File && !files.dniFrente._uploaded) {
+        if (
+          files.dniFrente &&
+          files.dniFrente instanceof File &&
+          !files.dniFrente._uploaded
+        ) {
           const descFrente = `DNI Frente - ${cuitLimpio}`;
           const existingFrente = archivosBackend.find(
-            (a) => a.tipodocumentoarchivoid === 7 && a.descripcion?.includes(cuitLimpio)
+            (a) =>
+              a.tipodocumentoarchivoid === 7 &&
+              a.descripcion?.includes(cuitLimpio),
           );
-          const specificId = existingFrente ? (existingFrente.socioarchivoid || existingFrente.id) : null;
-          
+          const specificId = existingFrente
+            ? existingFrente.socioarchivoid || existingFrente.id
+            : null;
+
           uploadPromises.push(
-            socioArchivoService.subirOActualizar(
-              socioIdActivo,
-              files.dniFrente,
-              "socio-frente",
-              archivosBackend,
-              descFrente,
-              specificId
-            ).then((res) => {
-              files.dniFrente._uploaded = true;
-              return res;
-            }).catch((err) => {
-              console.error("❌ Error al subir DNI Frente:", err);
-            })
+            socioArchivoService
+              .subirOActualizar(
+                socioIdActivo,
+                files.dniFrente,
+                "socio-frente",
+                archivosBackend,
+                descFrente,
+                specificId,
+              )
+              .then((res) => {
+                files.dniFrente._uploaded = true;
+                return res;
+              })
+              .catch((err) => {
+                console.error("❌ Error al subir DNI Frente:", err);
+              }),
           );
         }
 
-        if (files.dniDorso && files.dniDorso instanceof File && !files.dniDorso._uploaded) {
+        if (
+          files.dniDorso &&
+          files.dniDorso instanceof File &&
+          !files.dniDorso._uploaded
+        ) {
           const descDorso = `DNI Dorso - ${cuitLimpio}`;
           const existingDorso = archivosBackend.find(
-            (a) => a.tipodocumentoarchivoid === 8 && a.descripcion?.includes(cuitLimpio)
+            (a) =>
+              a.tipodocumentoarchivoid === 8 &&
+              a.descripcion?.includes(cuitLimpio),
           );
-          const specificId = existingDorso ? (existingDorso.socioarchivoid || existingDorso.id) : null;
-          
+          const specificId = existingDorso
+            ? existingDorso.socioarchivoid || existingDorso.id
+            : null;
+
           uploadPromises.push(
-            socioArchivoService.subirOActualizar(
-              socioIdActivo,
-              files.dniDorso,
-              "socio-dorso",
-              archivosBackend,
-              descDorso,
-              specificId
-            ).then((res) => {
-              files.dniDorso._uploaded = true;
-              return res;
-            }).catch((err) => {
-              console.error("❌ Error al subir DNI Dorso:", err);
-            })
+            socioArchivoService
+              .subirOActualizar(
+                socioIdActivo,
+                files.dniDorso,
+                "socio-dorso",
+                archivosBackend,
+                descDorso,
+                specificId,
+              )
+              .then((res) => {
+                files.dniDorso._uploaded = true;
+                return res;
+              })
+              .catch((err) => {
+                console.error("Error al subir DNI Dorso:", err);
+              }),
           );
         }
 
         if (uploadPromises.length > 0) {
           await Promise.allSettled(uploadPromises);
-          
-          // Refresh legajo file list
+
           try {
-            const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo);
+            const archivos =
+              await socioArchivoService.obtenerArchivos(socioIdActivo);
             if (Array.isArray(archivos)) {
               setArchivosBackend(archivos);
             }
           } catch (refreshErr) {
-            console.error("❌ Error al refrescar archivos:", refreshErr);
+            console.error("Error al refrescar archivos:", refreshErr);
           }
         }
       }
 
       cargarSocios();
     } catch (err) {
-      console.error("❌ [LEGAJO - ACCIONISTA] Error guardando accionista:", err);
+      console.error("[LEGAJO - ACCIONISTA] Error guardando accionista:", err);
       toast.error("Ocurrió un error al guardar el accionista.");
       throw err;
     }
   };
 
-  // Handler to save or update a Representante
   const handleSaveRepresentante = async (formData) => {
     try {
       const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
-      
-      // 1. Check if third party exists
+
       let terceroId = null;
       try {
-        console.log(`🔍 [LEGAJO - REPRESENTANTE] Buscando tercero por CUIT: ${cuitLimpio}`);
-        const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
-        const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
+        console.log(
+          `[LEGAJO - REPRESENTANTE] Buscando tercero por CUIT: ${cuitLimpio}`,
+        );
+        const existentes = await tercerosService.obtenerTerceros({
+          Cuit: cuitLimpio,
+        });
+        const arr = Array.isArray(existentes)
+          ? existentes
+          : existentes?.data || [];
         if (arr.length > 0) {
-          terceroId = arr[0].tercerorelacionadoid || arr[0].TerceroRelacionadoID || arr[0].id;
-          console.log(`ℹ️ [LEGAJO - REPRESENTANTE] Tercero existente encontrado con ID: ${terceroId}`);
+          terceroId =
+            arr[0].tercerorelacionadoid ||
+            arr[0].TerceroRelacionadoID ||
+            arr[0].id;
+          console.log(
+            `[LEGAJO - REPRESENTANTE] Tercero existente encontrado con ID: ${terceroId}`,
+          );
         } else {
-          console.log("ℹ️ [LEGAJO - REPRESENTANTE] Tercero no encontrado. Se creará uno nuevo.");
+          console.log(
+            "[LEGAJO - REPRESENTANTE] Tercero no encontrado. Se creará uno nuevo.",
+          );
         }
       } catch (err) {
-        console.warn("⚠️ [LEGAJO - REPRESENTANTE] Error buscando tercero existente:", err);
+        console.warn(
+          "[LEGAJO - REPRESENTANTE] Error buscando tercero existente:",
+          err,
+        );
       }
 
-      // 2. Create or update the third party
       const payloadTercero = {
         tercerorelacionadoid: terceroId || 0,
         denominacion: formData.nombre,
         cuit: cuitLimpio,
         bcraid: 0,
-        tipopersonaid: 1, // Representatives are always natural persons
+        tipopersonaid: 1,
         tipodocumentoid: 0,
         numerodocumento: cuitLimpio,
         estadocivilid: 0,
@@ -513,7 +593,6 @@ export function DocumentosLegajo() {
         terceroId = res.tercerorelacionadoid || res.id;
       }
 
-      // 3. Create or update relationship
       const ahora = new Date().toISOString().split(".")[0];
       const unAnioMas = new Date();
       unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
@@ -551,28 +630,30 @@ export function DocumentosLegajo() {
               subtiporelacionsocioid: 0,
               telefono: formData.telefono || "",
               momento: ahora,
-            }
-          ]
+            },
+          ],
         };
         await tercerosService.guardarRelacionesDeSocio(payloadRel);
         toast.success("Representante agregado correctamente.");
       }
       cargarSocios();
     } catch (err) {
-      console.error("❌ [LEGAJO - REPRESENTANTE] Error guardando representante:", err);
+      console.error(
+        "❌ [LEGAJO - REPRESENTANTE] Error guardando representante:",
+        err,
+      );
       toast.error("Ocurrió un error al guardar el representante.");
       throw err;
     }
   };
 
-  // Handler to save or update an Agente de Bolsa
   const handleSaveBolsa = async (formData) => {
     try {
       const ahora = new Date().toISOString().split(".")[0];
       const unAnioMas = new Date();
       unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
       const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
-      
+
       if (formData.relacionId) {
         const payloadRel = {
           ...formData.relacionOriginal,
@@ -603,15 +684,18 @@ export function DocumentosLegajo() {
               subtiporelacionsocioid: 0,
               telefono: "",
               momento: ahora,
-            }
-          ]
+            },
+          ],
         };
         await tercerosService.guardarRelacionesDeSocio(payloadRel);
         toast.success("Agente de bolsa vinculado exitosamente.");
       }
       cargarSocios();
     } catch (err) {
-      console.error("❌ [LEGAJO - AGENTE BOLSA] Error guardando agente de bolsa:", err);
+      console.error(
+        "[LEGAJO - AGENTE BOLSA] Error guardando agente de bolsa:",
+        err,
+      );
       toast.error("Ocurrió un error al guardar el agente de bolsa.");
       throw err;
     }
@@ -717,7 +801,12 @@ export function DocumentosLegajo() {
           const isUsuarios = doc.key === "usuarios";
           const currentFile = formValues[doc.key];
           const isComplete =
-            isPerfil || isAccionistas || isRepresentantes || isAgentesBolsa || isUsuarios || !!currentFile;
+            isPerfil ||
+            isAccionistas ||
+            isRepresentantes ||
+            isAgentesBolsa ||
+            isUsuarios ||
+            !!currentFile;
           const hasError =
             intentoAvanzar &&
             !isPerfil &&
@@ -884,14 +973,18 @@ export function DocumentosLegajo() {
                 {loadingSocios ? (
                   <div className={styles.emptySlot}>
                     <FiUsers size={20} className={styles.emptyIcon} />
-                    <p className={styles.emptyTitle}>Cargando composición accionaria...</p>
+                    <p className={styles.emptyTitle}>
+                      Cargando composición accionaria...
+                    </p>
                   </div>
                 ) : (
                   <div className={styles.sectionBlock}>
                     <div className={styles.sectionHeader}>
                       <div className={styles.sectionHeaderLeft}>
                         <FiUsers className={styles.sectionIcon} size={18} />
-                        <h5 className={styles.sectionTitle}>Accionistas (Composición Accionaria)</h5>
+                        <h5 className={styles.sectionTitle}>
+                          Accionistas (Composición Accionaria)
+                        </h5>
                       </div>
                       <button
                         type="button"
@@ -909,7 +1002,14 @@ export function DocumentosLegajo() {
                     <div className={styles.progressContainer}>
                       <div className={styles.progressLabelRow}>
                         <span>Total Participación</span>
-                        <span style={{ color: totalParticipacion === 100 ? "#4caf50" : "#ff9800" }}>
+                        <span
+                          style={{
+                            color:
+                              totalParticipacion === 100
+                                ? "#4caf50"
+                                : "#ff9800",
+                          }}
+                        >
                           {totalParticipacion}% / 100%
                         </span>
                       </div>
@@ -918,7 +1018,10 @@ export function DocumentosLegajo() {
                           className={styles.progressBar}
                           style={{
                             width: `${Math.min(totalParticipacion, 100)}%`,
-                            backgroundColor: totalParticipacion === 100 ? "#4caf50" : "#ff9800",
+                            backgroundColor:
+                              totalParticipacion === 100
+                                ? "#4caf50"
+                                : "#ff9800",
                           }}
                         />
                       </div>
@@ -926,14 +1029,19 @@ export function DocumentosLegajo() {
 
                     {/* ALERTA BANNER DE 100% */}
                     {totalParticipacion !== 100 ? (
-                      <div className={`${styles.alertBanner} ${styles.alertBannerWarning}`}>
+                      <div
+                        className={`${styles.alertBanner} ${styles.alertBannerWarning}`}
+                      >
                         <FiAlertCircle className={styles.alertIcon} size={16} />
                         <p className={styles.alertText}>
-                          La composición accionaria actual debe sumar exactamente el 100% (Actual: {totalParticipacion}%).
+                          La composición accionaria actual debe sumar
+                          exactamente el 100% (Actual: {totalParticipacion}%).
                         </p>
                       </div>
                     ) : (
-                      <div className={`${styles.alertBanner} ${styles.alertBannerSuccess}`}>
+                      <div
+                        className={`${styles.alertBanner} ${styles.alertBannerSuccess}`}
+                      >
                         <FiCheckCircle className={styles.alertIcon} size={16} />
                         <p className={styles.alertText}>
                           Composición accionaria completa al 100%.
@@ -942,21 +1050,36 @@ export function DocumentosLegajo() {
                     )}
 
                     {accionistas.length === 0 ? (
-                      <div className={styles.emptySlot} style={{ minHeight: "6rem", padding: "1.5rem" }}>
-                        <p className={styles.emptyTitle}>Sin accionistas registrados</p>
-                        <span className={styles.emptyText}>Haga click en "Agregar Accionista" para dar de alta.</span>
+                      <div
+                        className={styles.emptySlot}
+                        style={{ minHeight: "6rem", padding: "1.5rem" }}
+                      >
+                        <p className={styles.emptyTitle}>
+                          Sin accionistas registrados
+                        </p>
+                        <span className={styles.emptyText}>
+                          Haga click en "Agregar Accionista" para dar de alta.
+                        </span>
                       </div>
                     ) : (
                       <div className={styles.sociosList}>
                         {accionistas.map((socio) => (
                           <div key={socio.id} className={styles.socioCard}>
-                            <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "100%",
+                              }}
+                            >
                               <button
                                 type="button"
                                 className={styles.socioCardBtn}
                                 onClick={() =>
                                   setExpandedSocio(
-                                    expandedSocio === socio.id ? null : socio.id,
+                                    expandedSocio === socio.id
+                                      ? null
+                                      : socio.id,
                                   )
                                 }
                               >
@@ -964,15 +1087,24 @@ export function DocumentosLegajo() {
                                   <FiUser size={16} />
                                 </div>
                                 <div className={styles.socioMainInfo}>
-                                  <span className={styles.socioName}>{socio.nombre}</span>
-                                  <span className={styles.socioCuit}>CUIT: {socio.cuit}</span>
+                                  <span className={styles.socioName}>
+                                    {socio.nombre}
+                                  </span>
+                                  <span className={styles.socioCuit}>
+                                    CUIT: {socio.cuit}
+                                  </span>
                                 </div>
-                                <span className={styles.socioPct}>{socio.participacion}%</span>
+                                <span className={styles.socioPct}>
+                                  {socio.participacion}%
+                                </span>
                                 <FiChevronDown
                                   className={`${styles.socioChevron} ${expandedSocio === socio.id ? styles.socioChevronOpen : ""}`}
                                 />
                               </button>
-                              <div className={styles.socioHeaderActions} style={{ paddingRight: "1rem" }}>
+                              <div
+                                className={styles.socioHeaderActions}
+                                style={{ paddingRight: "1rem" }}
+                              >
                                 <button
                                   type="button"
                                   className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
@@ -995,42 +1127,69 @@ export function DocumentosLegajo() {
                               </div>
                             </div>
 
-                            <div className={`${styles.socioExpand} ${expandedSocio === socio.id ? styles.socioExpandOpen : ""}`}>
+                            <div
+                              className={`${styles.socioExpand} ${expandedSocio === socio.id ? styles.socioExpandOpen : ""}`}
+                            >
                               <div className={styles.socioDetailGrid}>
                                 {socio.email && (
                                   <div className={styles.socioDetail}>
-                                    <FiMail className={styles.socioDetailIcon} />
+                                    <FiMail
+                                      className={styles.socioDetailIcon}
+                                    />
                                     <div>
-                                      <span className={styles.socioDetailLabel}>Email</span>
-                                      <span className={styles.socioDetailVal}>{socio.email}</span>
+                                      <span className={styles.socioDetailLabel}>
+                                        Email
+                                      </span>
+                                      <span className={styles.socioDetailVal}>
+                                        {socio.email}
+                                      </span>
                                     </div>
                                   </div>
                                 )}
                                 {socio.telefono && (
                                   <div className={styles.socioDetail}>
-                                    <FiPhone className={styles.socioDetailIcon} />
+                                    <FiPhone
+                                      className={styles.socioDetailIcon}
+                                    />
                                     <div>
-                                      <span className={styles.socioDetailLabel}>Teléfono</span>
-                                      <span className={styles.socioDetailVal}>{socio.telefono}</span>
+                                      <span className={styles.socioDetailLabel}>
+                                        Teléfono
+                                      </span>
+                                      <span className={styles.socioDetailVal}>
+                                        {socio.telefono}
+                                      </span>
                                     </div>
                                   </div>
                                 )}
                                 {socio.direccion && (
                                   <div className={styles.socioDetail}>
-                                    <FiMapPin className={styles.socioDetailIcon} />
+                                    <FiMapPin
+                                      className={styles.socioDetailIcon}
+                                    />
                                     <div>
-                                      <span className={styles.socioDetailLabel}>Dirección</span>
+                                      <span className={styles.socioDetailLabel}>
+                                        Dirección
+                                      </span>
                                       <span className={styles.socioDetailVal}>
-                                        {socio.direccion} {socio.codpos ? ` (${socio.codpos})` : ""}
+                                        {socio.direccion}{" "}
+                                        {socio.codpos
+                                          ? ` (${socio.codpos})`
+                                          : ""}
                                       </span>
                                     </div>
                                   </div>
                                 )}
                                 <div className={styles.socioDetail}>
-                                  <FiPercent className={styles.socioDetailIcon} />
+                                  <FiPercent
+                                    className={styles.socioDetailIcon}
+                                  />
                                   <div>
-                                    <span className={styles.socioDetailLabel}>Participación</span>
-                                    <span className={styles.socioDetailVal}>{socio.participacion}%</span>
+                                    <span className={styles.socioDetailLabel}>
+                                      Participación
+                                    </span>
+                                    <span className={styles.socioDetailVal}>
+                                      {socio.participacion}%
+                                    </span>
                                   </div>
                                 </div>
                               </div>
@@ -1059,14 +1218,18 @@ export function DocumentosLegajo() {
                 {loadingSocios ? (
                   <div className={styles.emptySlot}>
                     <FiUsers size={20} className={styles.emptyIcon} />
-                    <p className={styles.emptyTitle}>Cargando representantes legales...</p>
+                    <p className={styles.emptyTitle}>
+                      Cargando representantes legales...
+                    </p>
                   </div>
                 ) : (
                   <div className={styles.sectionBlock}>
                     <div className={styles.sectionHeader}>
                       <div className={styles.sectionHeaderLeft}>
                         <FiUser className={styles.sectionIcon} size={18} />
-                        <h5 className={styles.sectionTitle}>Representantes Legales y Apoderados</h5>
+                        <h5 className={styles.sectionTitle}>
+                          Representantes Legales y Apoderados
+                        </h5>
                       </div>
                       <button
                         type="button"
@@ -1081,15 +1244,29 @@ export function DocumentosLegajo() {
                     </div>
 
                     {representantes.length === 0 ? (
-                      <div className={styles.emptySlot} style={{ minHeight: "6rem", padding: "1.5rem" }}>
-                        <p className={styles.emptyTitle}>Sin representantes registrados</p>
-                        <span className={styles.emptyText}>Haga click en "Agregar Representante" para dar de alta.</span>
+                      <div
+                        className={styles.emptySlot}
+                        style={{ minHeight: "6rem", padding: "1.5rem" }}
+                      >
+                        <p className={styles.emptyTitle}>
+                          Sin representantes registrados
+                        </p>
+                        <span className={styles.emptyText}>
+                          Haga click en "Agregar Representante" para dar de
+                          alta.
+                        </span>
                       </div>
                     ) : (
                       <div className={styles.sociosList}>
                         {representantes.map((rep) => (
                           <div key={rep.id} className={styles.socioCard}>
-                            <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                width: "100%",
+                              }}
+                            >
                               <button
                                 type="button"
                                 className={styles.socioCardBtn}
@@ -1103,17 +1280,28 @@ export function DocumentosLegajo() {
                                   <FiUser size={16} />
                                 </div>
                                 <div className={styles.socioMainInfo}>
-                                  <span className={styles.socioName}>{rep.nombre}</span>
-                                  <span className={styles.socioCuit}>CUIT: {rep.cuit}</span>
+                                  <span className={styles.socioName}>
+                                    {rep.nombre}
+                                  </span>
+                                  <span className={styles.socioCuit}>
+                                    CUIT: {rep.cuit}
+                                  </span>
                                 </div>
-                                <span className={`${styles.roleBadge} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}>
-                                  {rep.rolId === 230 ? "Representante Legal" : "Apoderado"}
+                                <span
+                                  className={`${styles.roleBadge} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}
+                                >
+                                  {rep.rolId === 230
+                                    ? "Representante Legal"
+                                    : "Apoderado"}
                                 </span>
                                 <FiChevronDown
                                   className={`${styles.socioChevron} ${expandedRep === rep.id ? styles.socioChevronOpen : ""}`}
                                 />
                               </button>
-                              <div className={styles.socioHeaderActions} style={{ paddingRight: "1rem" }}>
+                              <div
+                                className={styles.socioHeaderActions}
+                                style={{ paddingRight: "1rem" }}
+                              >
                                 <button
                                   type="button"
                                   className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
@@ -1136,32 +1324,50 @@ export function DocumentosLegajo() {
                               </div>
                             </div>
 
-                            <div className={`${styles.socioExpand} ${expandedRep === rep.id ? styles.socioExpandOpen : ""}`}>
+                            <div
+                              className={`${styles.socioExpand} ${expandedRep === rep.id ? styles.socioExpandOpen : ""}`}
+                            >
                               <div className={styles.socioDetailGrid}>
                                 {rep.email && (
                                   <div className={styles.socioDetail}>
-                                    <FiMail className={styles.socioDetailIcon} />
+                                    <FiMail
+                                      className={styles.socioDetailIcon}
+                                    />
                                     <div>
-                                      <span className={styles.socioDetailLabel}>Email</span>
-                                      <span className={styles.socioDetailVal}>{rep.email}</span>
+                                      <span className={styles.socioDetailLabel}>
+                                        Email
+                                      </span>
+                                      <span className={styles.socioDetailVal}>
+                                        {rep.email}
+                                      </span>
                                     </div>
                                   </div>
                                 )}
                                 {rep.telefono && (
                                   <div className={styles.socioDetail}>
-                                    <FiPhone className={styles.socioDetailIcon} />
+                                    <FiPhone
+                                      className={styles.socioDetailIcon}
+                                    />
                                     <div>
-                                      <span className={styles.socioDetailLabel}>Celular / Teléfono</span>
-                                      <span className={styles.socioDetailVal}>{rep.telefono}</span>
+                                      <span className={styles.socioDetailLabel}>
+                                        Celular / Teléfono
+                                      </span>
+                                      <span className={styles.socioDetailVal}>
+                                        {rep.telefono}
+                                      </span>
                                     </div>
                                   </div>
                                 )}
                                 <div className={styles.socioDetail}>
                                   <FiInfo className={styles.socioDetailIcon} />
                                   <div>
-                                    <span className={styles.socioDetailLabel}>Relación</span>
+                                    <span className={styles.socioDetailLabel}>
+                                      Relación
+                                    </span>
                                     <span className={styles.socioDetailVal}>
-                                      {rep.rolId === 230 ? "Representante Legal (Gerente Gral)" : "Apoderado de Socio"}
+                                      {rep.rolId === 230
+                                        ? "Representante Legal (Gerente Gral)"
+                                        : "Apoderado de Socio"}
                                     </span>
                                   </div>
                                 </div>
@@ -1190,14 +1396,18 @@ export function DocumentosLegajo() {
                 {loadingSocios ? (
                   <div className={styles.emptySlot}>
                     <FiUsers size={20} className={styles.emptyIcon} />
-                    <p className={styles.emptyTitle}>Cargando agentes de bolsa...</p>
+                    <p className={styles.emptyTitle}>
+                      Cargando agentes de bolsa...
+                    </p>
                   </div>
                 ) : (
                   <div className={styles.sectionBlock}>
                     <div className={styles.sectionHeader}>
                       <div className={styles.sectionHeaderLeft}>
                         <FiBriefcase className={styles.sectionIcon} size={18} />
-                        <h5 className={styles.sectionTitle}>Agentes de Bolsa</h5>
+                        <h5 className={styles.sectionTitle}>
+                          Agentes de Bolsa
+                        </h5>
                       </div>
                       <button
                         type="button"
@@ -1212,27 +1422,72 @@ export function DocumentosLegajo() {
                     </div>
 
                     {agentesBolsa.length === 0 ? (
-                      <div className={styles.emptySlot} style={{ minHeight: "6rem", padding: "1.5rem" }}>
-                        <p className={styles.emptyTitle}>Sin agentes de bolsa vinculados</p>
-                        <span className={styles.emptyText}>Haga click en "Vincular Agente" para asociar su cuenta.</span>
+                      <div
+                        className={styles.emptySlot}
+                        style={{ minHeight: "6rem", padding: "1.5rem" }}
+                      >
+                        <p className={styles.emptyTitle}>
+                          Sin agentes de bolsa vinculados
+                        </p>
+                        <span className={styles.emptyText}>
+                          Haga click en "Vincular Agente" para asociar su
+                          cuenta.
+                        </span>
                       </div>
                     ) : (
                       <div className={styles.sociosList}>
                         {agentesBolsa.map((bolsa) => (
-                          <div key={bolsa.id} className={styles.socioCard} style={{ padding: "0.875rem 1rem" }}>
-                            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" }}>
-                              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <div
+                            key={bolsa.id}
+                            className={styles.socioCard}
+                            style={{ padding: "0.875rem 1rem" }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                gap: "1rem",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.75rem",
+                                }}
+                              >
                                 <div className={styles.socioAvatar}>
                                   <FiBriefcase size={16} />
                                 </div>
                                 <div>
-                                  <span className={styles.socioName} style={{ display: "block" }}>{bolsa.nombre}</span>
-                                  <span className={styles.socioCuit} style={{ display: "block", marginTop: "0.15rem" }}>
-                                    Comitente: <strong style={{ color: "#fff" }}>{bolsa.nrosubcuentacaja || "—"}</strong>
+                                  <span
+                                    className={styles.socioName}
+                                    style={{ display: "block" }}
+                                  >
+                                    {bolsa.nombre}
+                                  </span>
+                                  <span
+                                    className={styles.socioCuit}
+                                    style={{
+                                      display: "block",
+                                      marginTop: "0.15rem",
+                                    }}
+                                  >
+                                    Comitente:{" "}
+                                    <strong style={{ color: "#fff" }}>
+                                      {bolsa.nrosubcuentacaja || "—"}
+                                    </strong>
                                   </span>
                                 </div>
                               </div>
-                              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "0.5rem",
+                                }}
+                              >
                                 <button
                                   type="button"
                                   className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
@@ -1302,776 +1557,5 @@ export function DocumentosLegajo() {
         );
       })}
     </div>
-  );
-}
-
-const DropzoneField = ({
-  file,
-  title,
-  subtitle,
-  onChange,
-  onRemove,
-  fileKey,
-}) => {
-  const [isDragging, setIsDragging] = useState(false);
-  return (
-    <div className={styles.dropzoneWrapper}>
-      <input
-        type="file"
-        id={`file-input-${fileKey}`}
-        style={{ display: "none" }}
-        onChange={(e) => {
-          if (e.target.files?.[0]) onChange(e.target.files[0]);
-        }}
-      />
-      <CargaArchivos
-        title={title}
-        subtitle={subtitle}
-        hasError={false}
-        file={
-          file
-            ? {
-                name: file.name,
-                size: file.size || "Cargado",
-              }
-            : null
-        }
-        onClick={() => document.getElementById(`file-input-${fileKey}`).click()}
-        onRemove={onRemove}
-        isDragging={isDragging}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setIsDragging(true);
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setIsDragging(false);
-          if (e.dataTransfer.files?.[0]) {
-            onChange(e.dataTransfer.files[0]);
-          }
-        }}
-      />
-    </div>
-  );
-};
-
-function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdActivo, archivosBackend }) {
-  const [validando, setValidando] = useState(false);
-  const [afipValidado, setAfipValidado] = useState(false);
-  const [dniFrenteFile, setDniFrenteFile] = useState(null);
-  const [dniDorsoFile, setDniDorsoFile] = useState(null);
-
-  const { control, handleSubmit, reset, setValue, watch, setError, clearErrors, formState: { errors } } = useForm({
-    defaultValues: {
-      cuit: "",
-      nombre: "",
-      participacion: "",
-      email: "",
-      celular: "",
-      direccion: "",
-      provinciaid: "",
-      localidad: "",
-    }
-  });
-
-  const cuitValue = watch("cuit");
-
-  useEffect(() => {
-    if (errors.cuit?.type === "manual") {
-      clearErrors("cuit");
-    }
-  }, [cuitValue, clearErrors, errors.cuit]);
-
-  const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
-  const opcionesProvincias = provinciasData?.opciones || [];
-
-  // Buscar archivos DNI existentes en archivosBackend basados en el CUIT
-  useEffect(() => {
-    if (isOpen && cuitValue && cuitValue.length === 11) {
-      const cuitLimpio = String(cuitValue).replace(/\D/g, "");
-      const frente = archivosBackend?.find(
-        (a) => a.tipodocumentoarchivoid === 7 && a.descripcion?.includes(cuitLimpio)
-      );
-      const dorso = archivosBackend?.find(
-        (a) => a.tipodocumentoarchivoid === 8 && a.descripcion?.includes(cuitLimpio)
-      );
-
-      if (frente) {
-        setDniFrenteFile({
-          name: frente.nombrearchivo,
-          size: "Cargado",
-          _uploaded: true,
-          _backendId: frente.socioarchivoid,
-          _tipodocumentoarchivoid: 7,
-        });
-      } else {
-        setDniFrenteFile(null);
-      }
-
-      if (dorso) {
-        setDniDorsoFile({
-          name: dorso.nombrearchivo,
-          size: "Cargado",
-          _uploaded: true,
-          _backendId: dorso.socioarchivoid,
-          _tipodocumentoarchivoid: 8,
-        });
-      } else {
-        setDniDorsoFile(null);
-      }
-    } else if (isOpen && !cuitValue) {
-      setDniFrenteFile(null);
-      setDniDorsoFile(null);
-    }
-  }, [isOpen, cuitValue, archivosBackend]);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (socio) {
-        reset({
-          cuit: socio.cuit,
-          nombre: socio.nombre,
-          participacion: socio.participacion,
-          email: socio.email,
-          celular: socio.telefono || "",
-          direccion: socio.direccion || "",
-          provinciaid: String(socio.provinciaid || ""),
-          localidad: socio.localidad || "",
-        });
-        setAfipValidado(true);
-      } else {
-        reset({
-          cuit: "",
-          nombre: "",
-          participacion: "",
-          email: "",
-          celular: "",
-          direccion: "",
-          provinciaid: "",
-          localidad: "",
-        });
-        setAfipValidado(false);
-      }
-    }
-  }, [isOpen, socio, reset]);
-
-  const handleAfipLookup = async () => {
-    const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
-    if (!cuitLimpio || cuitLimpio.length !== 11) {
-      toast.error("Por favor, ingrese un CUIT de 11 dígitos válido.");
-      return;
-    }
-    setValidando(true);
-    clearErrors("cuit");
-    try {
-      // 1. Check if CUIT is already registered in SGR
-      const respSgr = await sociosService.obtenerSocios({
-        Cuit: cuitLimpio,
-        page: 1,
-        page_size: 10,
-      });
-
-      const socioSgrDb = Array.isArray(respSgr)
-        ? respSgr[0]
-        : respSgr?.items?.[0] || respSgr?.data?.[0];
-
-      if (socioSgrDb) {
-        setError("cuit", {
-          type: "manual",
-          message: "Esta empresa ya se encuentra en gestión por SGR+",
-        });
-        toast.error("Esta empresa ya se encuentra en gestión por SGR+");
-        return;
-      }
-
-      // 2. Validate and retrieve from AFIP
-      const res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
-      if (res && res.datosgenerales) {
-        const dg = res.datosgenerales;
-        const nombreSocio = dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Socio AFIP";
-        setValue("nombre", nombreSocio, { shouldValidate: true });
-        
-        // Preload email and phone if available
-        if (dg.email || dg.emailfacturacion) {
-          setValue("email", dg.email || dg.emailfacturacion, { shouldValidate: true });
-        }
-        if (dg.telefono) {
-          setValue("celular", dg.telefono, { shouldValidate: true });
-        }
-
-        // Preload address
-        const dom = dg.domiciliofiscal || dg.domicilio;
-        if (dom) {
-          const addressVal = dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "") || "";
-          if (addressVal) setValue("direccion", addressVal, { shouldValidate: true });
-          
-          const locVal = dom.localidad || dom.localidadNombre || "";
-          if (locVal) setValue("localidad", locVal, { shouldValidate: true });
-          
-          const provNombre = (dom.descripcionprovincia || dom.provincia || "").toUpperCase();
-          if (provNombre) {
-            const match = opcionesProvincias.find(
-              (p) =>
-                p.label.toUpperCase() === provNombre ||
-                provNombre.includes(p.label.toUpperCase()) ||
-                p.label.toUpperCase().includes(provNombre)
-            );
-            if (match) {
-              setValue("provinciaid", String(match.value), { shouldValidate: true });
-            }
-          }
-        }
-
-        setAfipValidado(true);
-        toast.success("CUIT validado en AFIP exitosamente.");
-      } else {
-        setError("cuit", {
-          type: "manual",
-          message: "No se encontraron datos en AFIP para el CUIT ingresado.",
-        });
-        toast.error("El CUIT no se encuentra registrado en AFIP.");
-      }
-    } catch (err) {
-      console.error("Error validando CUIT en AFIP/SGR:", err);
-      setError("cuit", {
-        type: "manual",
-        message: "Error al validar CUIT. Ingrese los datos manualmente si AFIP está caído.",
-      });
-      toast.error("Servicio de AFIP no disponible.");
-    } finally {
-      setValidando(false);
-    }
-  };
-
-  const onSubmit = (data) => {
-    onSave(
-      {
-        ...data,
-        relacionId: socio?.relacionId,
-        relacionOriginal: socio?.relacion,
-      },
-      {
-        dniFrente: dniFrenteFile,
-        dniDorso: dniDorsoFile,
-      }
-    );
-    onClose();
-  };
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={socio ? "Editar Accionista" : "Agregar Accionista"}
-      maxWidth="700px"
-    >
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.modalForm}>
-        {!afipValidado && !socio ? (
-          <div className={styles.cuitSearchStep}>
-            <div className={styles.cuitSearchBanner}>
-              <div className={styles.cuitSearchBannerIcon}>
-                <svg width="1rem" height="1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-              </div>
-              <div className={styles.cuitSearchBannerText}>
-                <p className={styles.cuitSearchBannerTitle}>Validación segura con AFIP</p>
-                <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del accionista</p>
-              </div>
-            </div>
-            <div className={styles.cuitSearchInputWrapper}>
-              <BuscadorCuit
-                name="cuit"
-                control={control}
-                label="CUIT del accionista"
-                onValidar={handleAfipLookup}
-                error={errors.cuit?.message}
-                esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                buttonText="VALIDAR CUIT"
-                isLoading={validando}
-              />
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className={styles.summaryCard}>
-              <div className={styles.summaryTop}>
-                <span className={styles.summaryStatus}>
-                  <FiCheckCircle size={11} /> Accionista validado con AFIP
-                </span>
-                <h2 className={styles.summaryName}>{watch("nombre") || "Accionista"}</h2>
-                <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-                {!socio && (
-                  <button
-                    type="button"
-                    className={styles.editLink}
-                    onClick={() => setAfipValidado(false)}
-                    style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
-                  >
-                    <FiEdit2 size={12} /> Cambiar CUIT
-                  </button>
-                )}
-              </div>
-
-              <div className={styles.summaryDivider}></div>
-
-              <div className={styles.summaryBottom}>
-                <div className={styles.labelColumn}>
-                  <label
-                    htmlFor="participacionSocioInput"
-                    className={styles.percentageLabel}
-                  >
-                    Participación del socio
-                  </label>
-                </div>
-
-                <div
-                  className={`${styles.customInputWrapper} ${
-                    errors.participacion ? styles.wrapperError : ""
-                  }`}
-                >
-                  <Controller
-                    name="participacion"
-                    control={control}
-                    rules={{
-                      required: "Ingresá un porcentaje",
-                      min: { value: 0.01, message: "Debe ser mayor a 0%" },
-                      max: { value: 100, message: "Debe ser menor o igual a 100%" },
-                    }}
-                    render={({ field }) => (
-                      <input
-                        {...field}
-                        id="participacionSocioInput"
-                        type="text"
-                        className={styles.customInput}
-                        placeholder="0"
-                        maxLength={6}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9.]/g, "");
-                          const parts = val.split(".");
-                          if (parts.length <= 2 && Number(val || 0) <= 100) {
-                            field.onChange(val);
-                          }
-                        }}
-                      />
-                    )}
-                  />
-                  <span className={styles.percentageSymbol}>%</span>
-                </div>
-
-                <div className={styles.errorContainer}>
-                  {errors.participacion && (
-                    <span className={styles.errorText}>{errors.participacion.message}</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.modalRow2}>
-              <InputSocioMasked
-                control={control}
-                name="email"
-                label="Email"
-                icon={<FiMail />}
-                error={errors.email}
-                rules={{
-                  required: "El email es obligatorio",
-                  pattern: {
-                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                    message: "Email inválido",
-                  },
-                }}
-              />
-              <InputSocioMasked
-                control={control}
-                name="celular"
-                label="Celular (Sin 0 ni 15)"
-                mask={[{ mask: "00 0000-0000" }, { mask: "000 000-0000" }]}
-                error={errors.celular}
-                icon={<FiSmartphone />}
-                rules={{ required: "El celular es obligatorio" }}
-              />
-            </div>
-
-            <div className={styles.modalRow}>
-              <InputSocioMasked
-                control={control}
-                name="direccion"
-                label="Dirección"
-                icon={<FiMapPin />}
-                error={errors.direccion}
-                rules={{ required: "La dirección es obligatoria" }}
-              />
-            </div>
-
-            <div className={styles.modalRow2}>
-              <SelectSocio
-                control={control}
-                name="provinciaid"
-                label={cargandoProvincias ? "Cargando provincias..." : "Provincia"}
-                icon={<FiMapPin />}
-                options={opcionesProvincias}
-                error={errors.provinciaid}
-                rules={{ required: "La provincia es obligatoria" }}
-              />
-              <InputSocioMasked
-                control={control}
-                name="localidad"
-                label="Localidad"
-                icon={<FiMap />}
-                error={errors.localidad}
-                rules={{ required: "La localidad es obligatoria" }}
-              />
-            </div>
-
-            <h4 className={styles.sectionTitle} style={{ marginTop: "1.5rem" }}>
-              Identidad (DNI)
-            </h4>
-            <div className={styles.dropzoneGrid}>
-              <DropzoneField
-                file={dniFrenteFile}
-                title="DNI Frente"
-                subtitle="Imagen clara y legible (Obligatorio)"
-                fileKey="frente"
-                onChange={setDniFrenteFile}
-                onRemove={() => setDniFrenteFile(null)}
-              />
-              <DropzoneField
-                file={dniDorsoFile}
-                title="DNI Dorso"
-                subtitle="Imagen clara y legible (Obligatorio)"
-                fileKey="dorso"
-                onChange={setDniDorsoFile}
-                onRemove={() => setDniDorsoFile(null)}
-              />
-            </div>
-          </>
-        )}
-
-        <div className={styles.modalFooter}>
-          {(afipValidado || socio) && (
-            <Button type="submit" variant="primary">
-              {socio ? "Guardar Cambios" : "Agregar Accionista"}
-            </Button>
-          )}
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function RepresentanteModal({ isOpen, onClose, onSave, representante, socioIdActivo }) {
-  const [validando, setValidando] = useState(false);
-  const [afipValidado, setAfipValidado] = useState(false);
-
-  const { control, handleSubmit, reset, setValue, watch, setError, clearErrors, formState: { errors } } = useForm({
-    defaultValues: {
-      cuit: "",
-      nombre: "",
-      rol: "Representante Legal",
-      email: "",
-      telefono: "",
-    }
-  });
-
-  const cuitValue = watch("cuit");
-
-  useEffect(() => {
-    if (errors.cuit?.type === "manual") {
-      clearErrors("cuit");
-    }
-  }, [cuitValue, clearErrors, errors.cuit]);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (representante) {
-        reset({
-          cuit: representante.cuit,
-          nombre: representante.nombre,
-          rol: representante.rolId === 230 ? "Representante Legal" : "Apoderado",
-          email: representante.email,
-          telefono: representante.telefono,
-        });
-        setAfipValidado(true);
-      } else {
-        reset({
-          cuit: "",
-          nombre: "",
-          rol: "Representante Legal",
-          email: "",
-          telefono: "",
-        });
-        setAfipValidado(false);
-      }
-    }
-  }, [isOpen, representante, reset]);
-
-  const handleAfipLookup = async () => {
-    const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
-    if (!cuitLimpio || cuitLimpio.length !== 11) {
-      toast.error("Por favor, ingrese un CUIT de 11 dígitos válido.");
-      return;
-    }
-    setValidando(true);
-    clearErrors("cuit");
-    try {
-      // 1. Check if CUIT is already registered in SGR
-      const respSgr = await sociosService.obtenerSocios({
-        Cuit: cuitLimpio,
-        page: 1,
-        page_size: 10,
-      });
-
-      const socioSgrDb = Array.isArray(respSgr)
-        ? respSgr[0]
-        : respSgr?.items?.[0] || respSgr?.data?.[0];
-
-      if (socioSgrDb) {
-        setError("cuit", {
-          type: "manual",
-          message: "Esta empresa ya se encuentra en gestión por SGR+",
-        });
-        toast.error("Esta empresa ya se encuentra en gestión por SGR+");
-        return;
-      }
-
-      // 2. Validate and retrieve from AFIP
-      const res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
-      if (res && res.datosgenerales) {
-        const dg = res.datosgenerales;
-        const nombreRep = dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
-        setValue("nombre", nombreRep, { shouldValidate: true });
-        
-        // Preload email and phone if available
-        if (dg.email || dg.emailfacturacion) {
-          setValue("email", dg.email || dg.emailfacturacion, { shouldValidate: true });
-        }
-        if (dg.telefono) {
-          setValue("telefono", dg.telefono, { shouldValidate: true });
-        }
-
-        setAfipValidado(true);
-        toast.success("CUIT validado en AFIP exitosamente.");
-      } else {
-        setError("cuit", {
-          type: "manual",
-          message: "No se encontraron datos en AFIP para el CUIT ingresado.",
-        });
-        toast.error("El CUIT no se encuentra registrado en AFIP.");
-      }
-    } catch (err) {
-      console.error("Error validando representante en AFIP/SGR:", err);
-      setError("cuit", {
-        type: "manual",
-        message: "Error al validar CUIT. Ingrese los datos manualmente si AFIP está caído.",
-      });
-      toast.error("Servicio de AFIP no disponible.");
-    } finally {
-      setValidando(false);
-    }
-  };
-
-  const onSubmit = (data) => {
-    onSave({
-      ...data,
-      relacionId: representante?.relacionId,
-      relacionOriginal: representante?.relacion,
-    });
-    onClose();
-  };
-
-  const opcionesRoles = [
-    { value: "Representante Legal", label: "Representante Legal" },
-    { value: "Apoderado", label: "Apoderado" },
-  ];
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={representante ? "Editar Representante" : "Agregar Representante"}
-      maxWidth="600px"
-    >
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.modalForm}>
-        {!afipValidado && !representante ? (
-          <div className={styles.cuitSearchStep}>
-            <div className={styles.cuitSearchBanner}>
-              <div className={styles.cuitSearchBannerIcon}>
-                <svg width="1rem" height="1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-              </div>
-              <div className={styles.cuitSearchBannerText}>
-                <p className={styles.cuitSearchBannerTitle}>Validación segura con AFIP</p>
-                <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del representante</p>
-              </div>
-            </div>
-            <div className={styles.cuitSearchInputWrapper}>
-              <BuscadorCuit
-                name="cuit"
-                control={control}
-                label="CUIT del representante"
-                onValidar={handleAfipLookup}
-                error={errors.cuit?.message}
-                esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                buttonText="VALIDAR CUIT"
-                isLoading={validando}
-              />
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className={styles.summaryCard}>
-              <div className={styles.summaryLeft}>
-                <span className={styles.summaryStatus}>
-                  <FiCheckCircle size={11} /> Representante validado con AFIP
-                </span>
-                <h2 className={styles.summaryName}>{watch("nombre") || "Representante"}</h2>
-                <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-              </div>
-              {!representante && (
-                <button
-                  type="button"
-                  className={styles.editLink}
-                  onClick={() => setAfipValidado(false)}
-                >
-                  <FiEdit2 size={13} /> Cambiar CUIT
-                </button>
-              )}
-            </div>
-
-            <div className={styles.modalRow}>
-              <InputSocioMasked
-                control={control}
-                name="nombre"
-                label="Nombre Completo"
-                icon={<FiUser />}
-                error={errors.nombre}
-              />
-            </div>
-
-            <div className={styles.modalRow2}>
-              <SelectSocio
-                control={control}
-                name="rol"
-                label="Rol / Tipo Relación"
-                icon={<FiUser />}
-                options={opcionesRoles}
-                error={errors.rol}
-              />
-              <InputSocioMasked
-                control={control}
-                name="email"
-                label="Correo Electrónico"
-                icon={<FiMail />}
-                error={errors.email}
-              />
-            </div>
-
-            <div className={styles.modalRow2}>
-              <InputSocioMasked
-                control={control}
-                name="telefono"
-                label="Celular / Teléfono"
-                icon={<FiPhone />}
-                error={errors.telefono}
-              />
-            </div>
-          </>
-        )}
-
-        <div className={styles.modalFooter}>
-          {(afipValidado || representante) && (
-            <Button type="submit" variant="primary">
-              {representante ? "Guardar Cambios" : "Agregar Representante"}
-            </Button>
-          )}
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function BolsaModal({ isOpen, onClose, onSave, agenteBolsa }) {
-  const { data: agentesData, isLoading: cargandoAgentes } = useObtenerTerceros({
-    TipoTerceroRelacionadoID: 8,
-  });
-
-  const { control, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: {
-      sociedadBolsa: "",
-      numeroCuentaBolsa: "",
-    }
-  });
-
-  useEffect(() => {
-    if (isOpen) {
-      if (agenteBolsa) {
-        reset({
-          sociedadBolsa: String(agenteBolsa.id),
-          numeroCuentaBolsa: agenteBolsa.nrosubcuentacaja,
-        });
-      } else {
-        reset({
-          sociedadBolsa: "",
-          numeroCuentaBolsa: "",
-        });
-      }
-    }
-  }, [isOpen, agenteBolsa, reset]);
-
-  const onSubmit = (data) => {
-    onSave({
-      ...data,
-      relacionId: agenteBolsa?.relacionId,
-      relacionOriginal: agenteBolsa?.relacion,
-    });
-    onClose();
-  };
-
-  const rawAgentes = agentesData?.items || agentesData?.data || agentesData || [];
-  const opcionesAgentes = Array.isArray(rawAgentes)
-    ? rawAgentes.map((a) => ({
-        value: String(a.tercerorelacionadoid || a.id),
-        label: a.denominacion || a.Denominacion || a.razonsocial || a.nombre || "Sociedad de Bolsa",
-      }))
-    : [];
-
-  return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title={agenteBolsa ? "Editar Agente de Bolsa" : "Vincular Agente de Bolsa"}
-      maxWidth="500px"
-    >
-      <form onSubmit={handleSubmit(onSubmit)} className={styles.modalForm}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <SelectSocio
-            control={control}
-            name="sociedadBolsa"
-            label={cargandoAgentes ? "Cargando sociedades..." : "Sociedad de Bolsa"}
-            icon={<FiBriefcase />}
-            options={opcionesAgentes}
-            disabled={cargandoAgentes || !!agenteBolsa}
-            error={errors.sociedadBolsa}
-          />
-
-          <InputSocioMasked
-            control={control}
-            name="numeroCuentaBolsa"
-            label="Número de Cuenta Comitente"
-            icon={<FiCreditCard />}
-            error={errors.numeroCuentaBolsa}
-          />
-        </div>
-
-        <div className={styles.modalFooter}>
-          <Button type="submit" variant="primary" disabled={cargandoAgentes}>
-            {agenteBolsa ? "Guardar Cambios" : "Vincular Agente"}
-          </Button>
-        </div>
-      </form>
-    </Modal>
   );
 }
