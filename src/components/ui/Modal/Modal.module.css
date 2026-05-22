@@ -1,79 +1,156 @@
+/* ── OVERLAY ─────────────────────────────────────────────────────────────────── */
+
 .overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background-color: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  animation: fadeIn 0.2s ease-out;
+  padding: 1rem;
+  animation: overlayIn 0.2s ease-out;
 }
+
+/* ── BOX ─────────────────────────────────────────────────────────────────────── */
 
 .modalBox {
-  background-color: #1a1a1a;
-  border: 1px solid #333;
-  border-radius: 1.25rem;
-  padding: 30px;
-  width: 92%;
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.125rem;
+  width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  animation: slideUp 0.3s ease-out;
-}
-
-.modalBox::-webkit-scrollbar {
-  width: 8px;
-}
-.modalBox::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
-  border-radius: 4px;
-}
-.modalBox::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 4px;
-}
-.modalBox::-webkit-scrollbar-thumb:hover {
-  background: var(--yellow);
-}
-
-.closeButton {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: transparent;
-  border: none;
-  color: var(--text-muted, #888);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: 50%;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  z-index: 10;
+  flex-direction: column;
+  position: relative;
+  box-shadow:
+    inset 3px 0 0 rgba(245, 244, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: modalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.closeButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--color-amarillo-bind, #f5f400);
+/* ── HEADER ──────────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.375rem 1.5rem 1.125rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  background: linear-gradient(
+    180deg,
+    rgba(245, 244, 0, 0.025) 0%,
+    transparent 100%
+  );
+  flex-shrink: 0;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
 .title {
-  color: var(--white);
-  margin: 0 0 20px 0;
-  font-size: 1.4rem;
-  text-align: center;
+  color: var(--white, #fffefe);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.subtitle {
+  color: var(--text-muted, #666);
+  font-size: 0.8125rem;
+  margin: 0;
+  line-height: 1.45;
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+/* ── CLOSE BUTTON ────────────────────────────────────────────────────────────── */
+
+.closeButton {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #555;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.15s ease;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.closeButton:hover {
+  background: rgba(245, 244, 0, 0.08);
+  border-color: rgba(245, 244, 0, 0.25);
+  color: var(--color-amarillo-bind, #f5f400);
+  transform: scale(1.05);
+}
+
+.closeButton:active {
+  transform: scale(0.95);
+}
+
+/* ── BODY ────────────────────────────────────────────────────────────────────── */
+
+.body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 1.5rem;
+}
+
+/* Scrollbar refinado */
+.body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.body::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 244, 0, 0.25);
+}
+
+/* ── ANIMATIONS ──────────────────────────────────────────────────────────────── */
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
