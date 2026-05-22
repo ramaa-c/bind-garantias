@@ -30,7 +30,7 @@ const sanitizarRelacion = (relacionData) => {
       const val = relacionData[key];
       // Keep only scalar values (number, string, boolean, null)
       if (val === null || typeof val !== "object") {
-        cleanData[key] = val;
+        cleanData[lowerKey] = val;
       }
     }
   }

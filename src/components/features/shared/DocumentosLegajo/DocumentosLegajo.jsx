@@ -43,6 +43,14 @@ import styles from "./DocumentosLegajo.module.css";
 import { SocioAccionistaModal } from "./components/SocioAccionistaModal/SocioAccionistaModal";
 import { RepresentanteModal } from "./components/RepresentanteModal/RepresentanteModal";
 import { BolsaModal } from "./components/BolsaModal/BolsaModal";
+import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
+
+const normalizarTexto = (str) =>
+  String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
 
 const ESTRUCTURA_LEGAJO = [
   {
@@ -113,6 +121,7 @@ export function DocumentosLegajo() {
   const [expandedSocio, setExpandedSocio] = useState(null);
   const [expandedRep, setExpandedRep] = useState(null);
   const [archivosBackend, setArchivosBackend] = useState([]);
+  const [dniTerceros, setDniTerceros] = useState({});
   const [uploadingKey, setUploadingKey] = useState(null);
 
   // Modal open states
@@ -124,6 +133,10 @@ export function DocumentosLegajo() {
   const [editAccionista, setEditAccionista] = useState(null);
   const [editRepresentante, setEditRepresentante] = useState(null);
   const [editBolsa, setEditBolsa] = useState(null);
+
+  // Delete target states
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [loadingDelete, setLoadingDelete] = useState(false);
 
   const [emailVincular, setEmailVincular] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -281,6 +294,7 @@ export function DocumentosLegajo() {
       try {
         const archivos =
           await socioArchivoService.obtenerArchivos(socioIdActivo);
+        console.log("📂 [LEGAJO] Archivos cargados del backend:", archivos);
         if (Array.isArray(archivos)) {
           setArchivosBackend(archivos);
 
@@ -319,20 +333,25 @@ export function DocumentosLegajo() {
     return accionistas.reduce((a, s) => a + Number(s.participacion || 0), 0);
   }, [accionistas]);
 
-  const handleEliminarRelacion = async (item) => {
-    const isBolsa = item.rolId === 21;
-    const confirmMessage = isBolsa
-      ? `¿Está seguro de que desea desvincular al Agente de Bolsa ${item.nombre}?`
-      : `¿Está seguro de que desea eliminar a ${item.nombre} del legajo?`;
+  const handleEliminarRelacion = (item) => {
+    setDeleteTarget(item);
+  };
 
-    if (!window.confirm(confirmMessage)) return;
+  const handleConfirmEliminar = async () => {
+    if (!deleteTarget) return;
+    setLoadingDelete(true);
+    const item = deleteTarget;
+    const isBolsa = item.rolId === 21;
 
     try {
-      const ahora = new Date().toISOString().split(".")[0];
+      const ayer = new Date();
+      ayer.setDate(ayer.getDate() - 1);
+      const ayerStr = ayer.toISOString().split(".")[0];
+      
       const payload = {
         ...item.relacion,
-        fechahasta: ahora,
-        FechaHasta: ahora,
+        fechahasta: ayerStr,
+        FechaHasta: ayerStr,
       };
       await tercerosService.actualizarRelacionDeSocio(payload);
       toast.success(
@@ -341,9 +360,12 @@ export function DocumentosLegajo() {
           : "Registro eliminado exitosamente del legajo.",
       );
       cargarSocios();
+      setDeleteTarget(null);
     } catch (err) {
       console.error("[LEGAJO] Error al eliminar relación:", err);
       toast.error("Ocurrió un error al procesar la desvinculación.");
+    } finally {
+      setLoadingDelete(false);
     }
   };
 
@@ -450,90 +472,18 @@ export function DocumentosLegajo() {
       }
 
       if (files) {
-        const uploadPromises = [];
-        if (
-          files.dniFrente &&
-          files.dniFrente instanceof File &&
-          !files.dniFrente._uploaded
-        ) {
-          const descFrente = `DNI Frente - ${cuitLimpio}`;
-          const existingFrente = archivosBackend.find(
-            (a) =>
-              a.tipodocumentoarchivoid === 7 &&
-              a.descripcion?.includes(cuitLimpio),
-          );
-          const specificId = existingFrente
-            ? existingFrente.socioarchivoid || existingFrente.id
-            : null;
-
-          uploadPromises.push(
-            socioArchivoService
-              .subirOActualizar(
-                socioIdActivo,
-                files.dniFrente,
-                "socio-frente",
-                archivosBackend,
-                descFrente,
-                specificId,
-              )
-              .then((res) => {
-                files.dniFrente._uploaded = true;
-                return res;
-              })
-              .catch((err) => {
-                console.error("❌ Error al subir DNI Frente:", err);
-              }),
-          );
-        }
-
-        if (
-          files.dniDorso &&
-          files.dniDorso instanceof File &&
-          !files.dniDorso._uploaded
-        ) {
-          const descDorso = `DNI Dorso - ${cuitLimpio}`;
-          const existingDorso = archivosBackend.find(
-            (a) =>
-              a.tipodocumentoarchivoid === 8 &&
-              a.descripcion?.includes(cuitLimpio),
-          );
-          const specificId = existingDorso
-            ? existingDorso.socioarchivoid || existingDorso.id
-            : null;
-
-          uploadPromises.push(
-            socioArchivoService
-              .subirOActualizar(
-                socioIdActivo,
-                files.dniDorso,
-                "socio-dorso",
-                archivosBackend,
-                descDorso,
-                specificId,
-              )
-              .then((res) => {
-                files.dniDorso._uploaded = true;
-                return res;
-              })
-              .catch((err) => {
-                console.error("Error al subir DNI Dorso:", err);
-              }),
-          );
-        }
-
-        if (uploadPromises.length > 0) {
-          await Promise.allSettled(uploadPromises);
-
-          try {
-            const archivos =
-              await socioArchivoService.obtenerArchivos(socioIdActivo);
-            if (Array.isArray(archivos)) {
-              setArchivosBackend(archivos);
-            }
-          } catch (refreshErr) {
-            console.error("Error al refrescar archivos:", refreshErr);
-          }
-        }
+        console.log("💾 [LEGAJO - ACCIONISTA] Guardando DNI en memoria local (Visual):", {
+          cuitLimpio,
+          dniFrente: files.dniFrente?.name,
+          dniDorso: files.dniDorso?.name,
+        });
+        setDniTerceros((prev) => ({
+          ...prev,
+          [cuitLimpio]: {
+            dniFrente: files.dniFrente,
+            dniDorso: files.dniDorso,
+          },
+        }));
       }
 
       cargarSocios();
@@ -1011,6 +961,7 @@ export function DocumentosLegajo() {
                           setEditAccionista(null);
                           setModalAccionistaOpen(true);
                         }}
+                        disabled={totalParticipacion >= 100}
                       >
                         <FiPlus size={14} /> Agregar Accionista
                       </button>
@@ -1220,6 +1171,21 @@ export function DocumentosLegajo() {
                   socio={editAccionista}
                   socioIdActivo={socioIdActivo}
                   archivosBackend={archivosBackend}
+                  accionistas={accionistas}
+                  dniTerceros={dniTerceros}
+                />
+
+                <ConfirmacionModal
+                  isOpen={!!deleteTarget}
+                  onClose={() => setDeleteTarget(null)}
+                  onConfirm={handleConfirmEliminar}
+                  titulo={deleteTarget?.rolId === 21 ? "Desvincular Agente" : "Eliminar del legajo"}
+                  mensaje={
+                    deleteTarget?.rolId === 21
+                      ? `¿Está seguro de que desea desvincular al Agente de Bolsa ${deleteTarget?.nombre}?`
+                      : `¿Está seguro de que desea eliminar a ${deleteTarget?.nombre} del legajo?`
+                  }
+                  isLoading={loadingDelete}
                 />
               </div>
             ) : isRepresentantes ? (

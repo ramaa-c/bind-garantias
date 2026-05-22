@@ -1,4 +1,4 @@
-﻿/* ── BASE MOBILE: acordeón ───────────────────────────────────────────────────── */
+/* ── BASE MOBILE: acordeón ───────────────────────────────────────────────────── */
 
 .workspace {
   display: flex;
@@ -703,6 +703,15 @@
   color: #000;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(245, 244, 0, 0.2);
+}
+
+.addButton:disabled {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: #555 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* BARRA DE PROGRESO DE PARTICIPACIÓN */

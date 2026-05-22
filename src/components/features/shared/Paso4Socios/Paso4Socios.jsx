@@ -46,6 +46,13 @@ export default function Paso4Socios({
   );
   const restante = 100 - totalGuardado;
 
+  const indexSocioEditado = socios.findIndex((s) => s.cuit === tempSocioCuit);
+  const totalSinSocioActual = socios.reduce(
+    (acc, s, idx) => (idx === indexSocioEditado ? acc : acc + Number(s.participacion)),
+    0
+  );
+  const maximoPermitido = 100 - totalSinSocioActual;
+
   // --- HANDLERS ---
   const handleValidarClick = () => {
     if (!tempSocioCuit) {
@@ -65,8 +72,8 @@ export default function Paso4Socios({
       setErrorParticipacion("Ingresá un porcentaje");
     } else if (valorNum <= 0 || valorNum > 100) {
       setErrorParticipacion("Debe ser entre 1 y 100");
-    } else if (valorNum > restante) {
-      setErrorParticipacion(`No puede superar el 100% total.`);
+    } else if (valorNum > maximoPermitido) {
+      setErrorParticipacion(`No puede superar el ${maximoPermitido}% máximo permitido.`);
     } else {
       setErrorParticipacion("");
       guardarSocio();
@@ -174,10 +181,10 @@ export default function Paso4Socios({
                   Participación del socio
                 </label>
                 <span
-                  className={`${styles.availableText} ${restante === 0 ? styles.availableTextError : ""
+                  className={`${styles.availableText} ${maximoPermitido === 0 ? styles.availableTextError : ""
                     }`}
                 >
-                  {restante > 0 ? `Disponible: ${restante}%` : "Cupo completo"}
+                  {maximoPermitido > 0 ? `Máximo permitido: ${maximoPermitido}%` : "Cupo completo"}
                 </span>
               </div>
 
@@ -194,7 +201,7 @@ export default function Paso4Socios({
                   value={tempSocioParticipacion}
                   onChange={(e) => {
                     const valorFiltro = e.target.value.replace(/\D/g, "");
-                    if (valorFiltro === "" || Number(valorFiltro) <= 100) {
+                    if (valorFiltro === "" || Number(valorFiltro) <= maximoPermitido) {
                       setTempSocioParticipacion(valorFiltro);
                       if (errorParticipacion) setErrorParticipacion("");
                     }
@@ -242,7 +249,9 @@ export default function Paso4Socios({
             </div>
             {totalGuardado !== 100 && (
               <span className={styles.warningText}>
-                Debe completar el 100% para continuar
+                {totalGuardado < 100
+                  ? `La sumatoria debe ser exactamente 100% para continuar (actual: ${totalGuardado}%)`
+                  : `La sumatoria de las participaciones excede el 100% (actual: ${totalGuardado}%)`}
               </span>
             )}
           </div>

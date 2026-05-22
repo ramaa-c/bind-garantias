@@ -5,9 +5,17 @@ import { toast } from "sonner";
 import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, CargaArchivos } from "../../../../../ui";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
+import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { useProvincias } from "../../../../../../hooks/useCatalogos";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./SocioAccionistaModal.module.css";
+
+const normalizarTexto = (str) =>
+  String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
 
 const DropzoneField = ({ file, title, subtitle, onChange, onRemove, fileKey, hasError }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -53,11 +61,24 @@ const DropzoneField = ({ file, title, subtitle, onChange, onRemove, fileKey, has
   );
 };
 
-export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdActivo, archivosBackend }) {
+export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdActivo, archivosBackend, accionistas = [], dniTerceros = {} }) {
   const [validando, setValidando] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
+
+  const indexSocioEditado = socio
+    ? accionistas.findIndex(
+        (s) => s.cuit === socio.cuit || (socio.relacionId && s.relacionId === socio.relacionId)
+      )
+    : -1;
+
+  const totalSinSocioActual = accionistas.reduce(
+    (acc, s, idx) => (idx === indexSocioEditado ? acc : acc + Number(s.participacion || 0)),
+    0
+  );
+
+  const maximoPermitido = 100 - totalSinSocioActual;
   
   // Dropzone Error States
   const [errorDniFrente, setErrorDniFrente] = useState(false);
@@ -80,6 +101,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
   });
 
   const cuitValue = watch("cuit");
+  const nombreValue = watch("nombre");
 
   useEffect(() => {
     if (errors.cuit?.type === "manual") {
@@ -91,48 +113,87 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
   const opcionesProvincias = provinciasData?.opciones || [];
 
   useEffect(() => {
-    if (isOpen && cuitValue && cuitValue.length === 11) {
-      const cuitLimpio = String(cuitValue).replace(/\D/g, "");
-      const frente = archivosBackend?.find(
-        (a) => a.tipodocumentoarchivoid === 7 && a.descripcion?.includes(cuitLimpio)
-      );
-      const dorso = archivosBackend?.find(
-        (a) => a.tipodocumentoarchivoid === 8 && a.descripcion?.includes(cuitLimpio)
-      );
+    const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
+    const nombreLimpio = normalizarTexto(nombreValue || socio?.nombre);
 
-      if (frente) {
-        setDniFrenteFile({
-          name: frente.nombrearchivo,
-          size: "Cargado",
-          _uploaded: true,
-          _backendId: frente.socioarchivoid,
-          _tipodocumentoarchivoid: 7,
-        });
+    console.log("📂 [SocioAccionistaModal PRELOAD DNI] Estado (En Memoria):", {
+      isOpen,
+      cuitValue,
+      cuitLimpio,
+      nombreValue,
+      nombreLimpio,
+      socioNombre: socio?.nombre,
+      dniTerceros,
+      archivosBackend
+    });
+
+    if (isOpen && cuitLimpio.length === 11) {
+      // Buscar primero en la memoria local (dniTerceros)
+      const memoryFiles = dniTerceros?.[cuitLimpio];
+
+      if (memoryFiles?.dniFrente) {
+        setDniFrenteFile(memoryFiles.dniFrente);
         setErrorDniFrente(false);
       } else {
-        setDniFrenteFile(null);
+        // Fallback a archivosBackend (legajo de la empresa, por compatibilidad)
+        const frente = archivosBackend?.find((a) => {
+          if (a.tipodocumentoarchivoid !== 7) return false;
+          const descNorm = normalizarTexto(a.descripcion);
+          return (
+            descNorm.includes(cuitLimpio) ||
+            (nombreLimpio && descNorm.includes(nombreLimpio))
+          );
+        });
+
+        if (frente) {
+          setDniFrenteFile({
+            name: frente.nombrearchivo,
+            size: "Cargado",
+            _uploaded: true,
+            _backendId: frente.socioarchivoid,
+            _tipodocumentoarchivoid: 7,
+          });
+          setErrorDniFrente(false);
+        } else {
+          setDniFrenteFile(null);
+        }
       }
 
-      if (dorso) {
-        setDniDorsoFile({
-          name: dorso.nombrearchivo,
-          size: "Cargado",
-          _uploaded: true,
-          _backendId: dorso.socioarchivoid,
-          _tipodocumentoarchivoid: 8,
-        });
+      if (memoryFiles?.dniDorso) {
+        setDniDorsoFile(memoryFiles.dniDorso);
         setErrorDniDorso(false);
       } else {
-        setDniDorsoFile(null);
+        // Fallback a archivosBackend
+        const dorso = archivosBackend?.find((a) => {
+          if (a.tipodocumentoarchivoid !== 8) return false;
+          const descNorm = normalizarTexto(a.descripcion);
+          return (
+            descNorm.includes(cuitLimpio) ||
+            (nombreLimpio && descNorm.includes(nombreLimpio))
+          );
+        });
+
+        if (dorso) {
+          setDniDorsoFile({
+            name: dorso.nombrearchivo,
+            size: "Cargado",
+            _uploaded: true,
+            _backendId: dorso.socioarchivoid,
+            _tipodocumentoarchivoid: 8,
+          });
+          setErrorDniDorso(false);
+        } else {
+          setDniDorsoFile(null);
+        }
       }
-    } else if (isOpen && !cuitValue) {
+    } else if (isOpen && !cuitLimpio) {
       setDniFrenteFile(null);
       setDniDorsoFile(null);
       setErrorDniFrente(false);
       setErrorDniDorso(false);
     }
     setFilesChanged(false);
-  }, [isOpen, cuitValue, archivosBackend]);
+  }, [isOpen, cuitValue, nombreValue, archivosBackend, dniTerceros, socio]);
 
   useEffect(() => {
     if (isOpen) {
@@ -356,6 +417,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
                     >
                       Participación del socio
                     </label>
+                    <span
+                      className={`${styles.availableText} ${maximoPermitido === 0 ? styles.availableTextError : ""
+                        }`}
+                    >
+                      {maximoPermitido > 0 ? `Máximo permitido: ${maximoPermitido}%` : "Cupo completo"}
+                    </span>
                   </div>
 
                   <div
@@ -369,7 +436,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
                       rules={{
                         required: "Ingresá un porcentaje",
                         min: { value: 0.01, message: "Debe ser mayor a 0%" },
-                        max: { value: 100, message: "Debe ser menor o igual a 100%" },
+                        max: { value: maximoPermitido, message: `No puede superar el ${maximoPermitido}% máximo permitido.` },
                       }}
                       render={({ field }) => (
                         <input
@@ -382,7 +449,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
                           onChange={(e) => {
                             const val = e.target.value.replace(/[^0-9.]/g, "");
                             const parts = val.split(".");
-                            if (parts.length <= 2 && Number(val || 0) <= 100) {
+                            if (parts.length <= 2 && Number(val || 0) <= maximoPermitido) {
                               setValue("participacion", val, { shouldValidate: true, shouldDirty: true });
                             }
                           }}

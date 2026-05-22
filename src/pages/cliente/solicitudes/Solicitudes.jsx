@@ -17,32 +17,7 @@ import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 
 import styles from "./Solicitudes.module.css";
 
-const mockSolicitudesBase = [
-  {
-    id: "4362",
-    tipo: "Pagaré USD",
-    monto: "40.000",
-    moneda: "U$D",
-    estado: "Aprobada",
-    fecha: "18/03/2026",
-  },
-  {
-    id: "4361",
-    tipo: "Cheque",
-    monto: "150.000",
-    moneda: "$",
-    estado: "Rechazada",
-    fecha: "15/03/2026",
-  },
-  {
-    id: "4360",
-    tipo: "Línea de Crédito",
-    monto: "250.000",
-    moneda: "$",
-    estado: "Cancelada",
-    fecha: "10/02/2026",
-  },
-];
+
 
 const opcionesEstado = [
   { value: "todos", label: "Todos los estados" },
@@ -132,8 +107,8 @@ export default function Solicitudes() {
         isReal: true
       }));
 
-    return [...reales, ...mockSolicitudesBase];
-  }, [solicitudesReal]);
+    return reales;
+  }, [solicitudesReal, socioIdFinal, cuitActivo]);
 
   useEffect(() => {
     if (location.state?.nuevaSolicitud) {

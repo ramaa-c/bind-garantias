@@ -19,7 +19,7 @@ export function ConfirmacionModal({
         </div>
         <p className={styles.mensaje}>{mensaje}</p>
         <div className={styles.actions}>
-          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
           <Button variant="primary" onClick={onConfirm} disabled={isLoading}>

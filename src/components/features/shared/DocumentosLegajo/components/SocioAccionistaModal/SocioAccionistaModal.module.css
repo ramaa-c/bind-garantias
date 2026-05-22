@@ -38,3 +38,5 @@
 .dropzoneWrapper > * { width: 100%; box-sizing: border-box; }
 @media (min-width: 36rem) { .dropzoneGrid { display: grid; grid-template-columns: 1fr 1fr; } }
 .sectionTitle { font-size: 0.9375rem; font-weight: 700; color: #fff; margin: 0; }
+.availableText { font-size: 0.7rem; color: var(--text-dim, #666); }
+.availableTextError { color: #ff5252; }
