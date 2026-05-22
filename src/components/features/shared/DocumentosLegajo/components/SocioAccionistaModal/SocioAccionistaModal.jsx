@@ -17,7 +17,100 @@ const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-const DropzoneField = ({ file, title, subtitle, onChange, onRemove, fileKey, hasError }) => {
+const getMimeType = (filename) => {
+  const ext = String(filename || "").split('.').pop().toLowerCase();
+  switch (ext) {
+    case 'pdf': return 'application/pdf';
+    case 'jpg':
+    case 'jpeg': return 'image/jpeg';
+    case 'png': return 'image/png';
+    case 'gif': return 'image/gif';
+    case 'txt': return 'text/plain';
+    case 'doc': return 'application/msword';
+    case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    case 'xls': return 'application/vnd.ms-excel';
+    case 'xlsx': return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    default: return 'application/octet-stream';
+  }
+};
+
+const base64ToBlob = (base64, mimeType) => {
+  const byteCharacters = atob(base64);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  return new Blob([byteArray], { type: mimeType });
+};
+
+const procesarArchivo = async (fileObj, archivosBackend = [], mode = 'view') => {
+  if (!fileObj) return;
+  try {
+    if (fileObj instanceof File) {
+      const url = URL.createObjectURL(fileObj);
+      if (mode === 'download') {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileObj.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
+      } else {
+        window.open(url, '_blank');
+      }
+      return;
+    }
+
+    let fileData = fileObj;
+    if (!fileData.contenido && fileObj._backendId) {
+      const fullFile = archivosBackend.find((a) => a.socioarchivoid === fileObj._backendId);
+      if (fullFile && fullFile.contenido) {
+        fileData = fullFile;
+      }
+    }
+
+    if (!fileData.contenido) {
+      toast.error("El DNI no posee contenido válido para descargar o visualizar.");
+      return;
+    }
+
+    const toastId = toast.loading(
+      mode === 'download' 
+        ? "Preparando DNI..." 
+        : "Preparando visualización del DNI..."
+    );
+
+    const mimeType = getMimeType(fileData.nombrearchivo);
+    const blob = base64ToBlob(fileData.contenido, mimeType);
+    const url = URL.createObjectURL(blob);
+
+    toast.success(
+      mode === 'download' 
+        ? "DNI descargado correctamente." 
+        : "DNI cargado correctamente.", 
+      { id: toastId }
+    );
+
+    if (mode === 'download') {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileData.nombrearchivo;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } else {
+      window.open(url, '_blank');
+    }
+  } catch (error) {
+    console.error("Error al procesar archivo:", error);
+    toast.error("Ocurrió un error al intentar procesar el DNI.");
+  }
+};
+
+const DropzoneField = ({ file, title, subtitle, onChange, onRemove, onView, onDownload, fileKey, hasError }) => {
   const [isDragging, setIsDragging] = useState(false);
   return (
     <div className={styles.dropzoneWrapper}>
@@ -43,6 +136,8 @@ const DropzoneField = ({ file, title, subtitle, onChange, onRemove, fileKey, has
         }
         onClick={() => document.getElementById(`file-input-${fileKey}`).click()}
         onRemove={onRemove}
+        onView={onView}
+        onDownload={onDownload}
         isDragging={isDragging}
         onDragOver={(e) => {
           e.preventDefault();
@@ -565,6 +660,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
                   hasError={errorDniFrente}
                   onChange={(f) => { setDniFrenteFile(f); setFilesChanged(true); setErrorDniFrente(false); }}
                   onRemove={() => { setDniFrenteFile(null); setFilesChanged(true); }}
+                  onView={() => procesarArchivo(dniFrenteFile, archivosBackend, 'view')}
+                  onDownload={() => procesarArchivo(dniFrenteFile, archivosBackend, 'download')}
                 />
                 <DropzoneField
                   file={dniDorsoFile}
@@ -574,6 +671,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
                   hasError={errorDniDorso}
                   onChange={(f) => { setDniDorsoFile(f); setFilesChanged(true); setErrorDniDorso(false); }}
                   onRemove={() => { setDniDorsoFile(null); setFilesChanged(true); }}
+                  onView={() => procesarArchivo(dniDorsoFile, archivosBackend, 'view')}
+                  onDownload={() => procesarArchivo(dniDorsoFile, archivosBackend, 'download')}
                 />
               </div>
             </>
