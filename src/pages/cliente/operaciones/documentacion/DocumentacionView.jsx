@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm, FormProvider } from "react-hook-form";
+import { FaFileAlt, FaSave } from "react-icons/fa";
 import { DocumentosLegajo } from "../../../../components/features";
+import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { toast } from "sonner";
+import { Button } from "../../../../components/ui";
 import styles from "./DocumentacionView.module.css";
 
 const DOC_TITLES = {
@@ -14,6 +17,11 @@ const DOC_TITLES = {
 
 export default function DocumentacionView() {
   const { socioIdActivo } = useEmpresaActiva();
+  
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingData, setPendingData] = useState(null);
+  const [guardando, setGuardando] = useState(false);
+
   const methods = useForm({
     mode: "onChange",
     defaultValues: {
@@ -24,7 +32,12 @@ export default function DocumentacionView() {
     },
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = (data) => {
+    setPendingData(data);
+    setConfirmOpen(true);
+  };
+
+  const realizarGuardado = async (data) => {
     if (!socioIdActivo) {
       toast.error("No se pudo identificar la empresa activa.");
       return;
@@ -32,11 +45,14 @@ export default function DocumentacionView() {
 
     const toastId = toast.loading("Guardando legajo digital...");
     try {
-      // 1. Obtener archivos existentes del backend para ver si actualizamos o creamos
-      const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+      const archivosExistentes =
+        await socioArchivoService.obtenerArchivos(socioIdActivo);
 
-      // 2. Filtrar archivos pendientes de subida
-      const llavesDocumentos = ["certificadoPyme", "poderes", "otrosDocumentos"];
+      const llavesDocumentos = [
+        "certificadoPyme",
+        "poderes",
+        "otrosDocumentos",
+      ];
       const pendientes = [];
 
       for (const key of llavesDocumentos) {
@@ -54,7 +70,6 @@ export default function DocumentacionView() {
         return;
       }
 
-      // 3. Subir de forma secuencial cada archivo pendiente
       for (const { key, file } of pendientes) {
         const docTitle = DOC_TITLES[key] || key;
         const specificId = data[`${key}_backendId`];
@@ -64,10 +79,9 @@ export default function DocumentacionView() {
           key,
           archivosExistentes,
           docTitle,
-          specificId
+          specificId,
         );
-        
-        // Marcar en el estado local que ya fue subido
+
         if (resultado) {
           file._uploaded = true;
           file._backendId = resultado.socioarchivoid || resultado.id;
@@ -83,42 +97,70 @@ export default function DocumentacionView() {
       console.error("Fallo al actualizar el legajo digital:", error);
       toast.error("Error al guardar legajo", {
         id: toastId,
-        description: "Ocurrió un error al subir los archivos. Por favor, reintente.",
+        description:
+          "Ocurrió un error al subir los archivos. Por favor, reintente.",
       });
     }
+  };
+
+  const handleConfirmSave = async () => {
+    setConfirmOpen(false);
+    if (!pendingData) return;
+
+    setGuardando(true);
+    await realizarGuardado(pendingData);
+    setGuardando(false);
   };
 
   return (
     <section className={styles.pageContainer}>
       <header className={styles.pageHeader}>
-        <h1 className={styles.title}>Tu perfil digital</h1>
-        <p className={styles.subtitle}>
-          Gestioná y mantené actualizados los datos corporativos y documentos operativos.
-        </p>
+        <div className={styles.headerLeft}>
+          <div className={styles.iconCircleSmall}>
+            <FaFileAlt />
+          </div>
+          <div className={styles.titleWrapper}>
+            <h1 className={styles.title}>Tu perfil digital</h1>
+            <p className={styles.subtitle}>
+              Gestioná y mantené actualizados los datos corporativos y
+              documentos operativos.
+            </p>
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          variant="primary"
+          size="sm"
+          form="legajo-form"
+          className={styles.submitBtn}
+          onClick={() => methods.setValue("intentoAvanzar", true)}
+          disabled={methods.formState.isSubmitting || guardando}
+        >
+          <FaSave style={{ marginRight: "0.5rem" }} />
+          {methods.formState.isSubmitting || guardando ? "Actualizando..." : "Actualizar legajo"}
+        </Button>
       </header>
 
       <FormProvider {...methods}>
         <form
+          id="legajo-form"
           onSubmit={methods.handleSubmit(onSubmit)}
           className={styles.formLayout}
           noValidate
         >
           <DocumentosLegajo />
-
-          <div className={styles.actionsContainer}>
-            <button
-              type="submit"
-              className={styles.submitBtn}
-              onClick={() => methods.setValue("intentoAvanzar", true)}
-              disabled={methods.formState.isSubmitting}
-            >
-              {methods.formState.isSubmitting
-                ? "Guardando..."
-                : "Guardar Legajo"}
-            </button>
-          </div>
         </form>
       </FormProvider>
+
+      <ConfirmacionModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleConfirmSave}
+        titulo="Guardar legajo digital"
+        mensaje="¿Estás seguro de que deseas guardar los cambios en tu legajo digital?"
+        isLoading={guardando}
+      />
     </section>
   );
 }

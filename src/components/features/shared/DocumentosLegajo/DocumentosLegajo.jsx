@@ -53,19 +53,32 @@ const normalizarTexto = (str) =>
     .toUpperCase();
 
 const getMimeType = (filename) => {
-  const ext = String(filename || "").split('.').pop().toLowerCase();
+  const ext = String(filename || "")
+    .split(".")
+    .pop()
+    .toLowerCase();
   switch (ext) {
-    case 'pdf': return 'application/pdf';
-    case 'jpg':
-    case 'jpeg': return 'image/jpeg';
-    case 'png': return 'image/png';
-    case 'gif': return 'image/gif';
-    case 'txt': return 'text/plain';
-    case 'doc': return 'application/msword';
-    case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    case 'xls': return 'application/vnd.ms-excel';
-    case 'xlsx': return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    default: return 'application/octet-stream';
+    case "pdf":
+      return "application/pdf";
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "png":
+      return "image/png";
+    case "gif":
+      return "image/gif";
+    case "txt":
+      return "text/plain";
+    case "doc":
+      return "application/msword";
+    case "docx":
+      return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    case "xls":
+      return "application/vnd.ms-excel";
+    case "xlsx":
+      return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    default:
+      return "application/octet-stream";
   }
 };
 
@@ -79,13 +92,17 @@ const base64ToBlob = (base64, mimeType) => {
   return new Blob([byteArray], { type: mimeType });
 };
 
-const procesarArchivo = async (fileObj, archivosBackend = [], mode = 'view') => {
+const procesarArchivo = async (
+  fileObj,
+  archivosBackend = [],
+  mode = "view",
+) => {
   if (!fileObj) return;
   try {
     if (fileObj instanceof File) {
       const url = URL.createObjectURL(fileObj);
-      if (mode === 'download') {
-        const a = document.createElement('a');
+      if (mode === "download") {
+        const a = document.createElement("a");
         a.href = url;
         a.download = fileObj.name;
         document.body.appendChild(a);
@@ -93,28 +110,32 @@ const procesarArchivo = async (fileObj, archivosBackend = [], mode = 'view') => 
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 100);
       } else {
-        window.open(url, '_blank');
+        window.open(url, "_blank");
       }
       return;
     }
 
     let fileData = fileObj;
     if (!fileData.contenido && fileObj._backendId) {
-      const fullFile = archivosBackend.find((a) => a.socioarchivoid === fileObj._backendId);
+      const fullFile = archivosBackend.find(
+        (a) => a.socioarchivoid === fileObj._backendId,
+      );
       if (fullFile && fullFile.contenido) {
         fileData = fullFile;
       }
     }
 
     if (!fileData.contenido) {
-      toast.error("El archivo no posee contenido válido para descargar o visualizar.");
+      toast.error(
+        "El archivo no posee contenido válido para descargar o visualizar.",
+      );
       return;
     }
 
     const toastId = toast.loading(
-      mode === 'download' 
-        ? "Preparando archivo..." 
-        : "Preparando visualización del archivo..."
+      mode === "download"
+        ? "Preparando archivo..."
+        : "Preparando visualización del archivo...",
     );
 
     const mimeType = getMimeType(fileData.nombrearchivo);
@@ -122,14 +143,14 @@ const procesarArchivo = async (fileObj, archivosBackend = [], mode = 'view') => 
     const url = URL.createObjectURL(blob);
 
     toast.success(
-      mode === 'download' 
-        ? "Archivo descargado correctamente." 
-        : "Archivo cargado correctamente.", 
-      { id: toastId }
+      mode === "download"
+        ? "Archivo descargado correctamente."
+        : "Archivo cargado correctamente.",
+      { id: toastId },
     );
 
-    if (mode === 'download') {
-      const a = document.createElement('a');
+    if (mode === "download") {
+      const a = document.createElement("a");
       a.href = url;
       a.download = fileData.nombrearchivo;
       document.body.appendChild(a);
@@ -137,7 +158,7 @@ const procesarArchivo = async (fileObj, archivosBackend = [], mode = 'view') => 
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 100);
     } else {
-      window.open(url, '_blank');
+      window.open(url, "_blank");
     }
   } catch (error) {
     console.error("Error al procesar archivo:", error);
@@ -309,7 +330,14 @@ export function DocumentosLegajo() {
                 t.nombre ||
                 t.Nombre ||
                 "Sin nombre",
-              cuit: t.cuit || t.Cuit || t.numerodocumento || t.documento || "—",
+              cuit:
+                t.cuit ||
+                t.Cuit ||
+                t.nrodocumento ||
+                t.numerodocumento ||
+                t.NumeroDocumento ||
+                t.documento ||
+                "—",
               email: t.mail || t.Mail || "",
               telefono: t.telefono || t.Telefono || "",
               direccion: t.calle || t.Calle || "",
@@ -331,7 +359,8 @@ export function DocumentosLegajo() {
               tipopersonaid: t.tipopersonaid || 1,
             };
 
-            const identifier = item.cuit && item.cuit !== "—" ? item.cuit : item.id;
+            const identifier =
+              item.cuit && item.cuit !== "—" ? item.cuit : item.id;
 
             if (tiporelNum === 25) {
               if (!accMap[identifier]) {
@@ -383,8 +412,7 @@ export function DocumentosLegajo() {
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
     try {
-      const archivos =
-        await socioArchivoService.obtenerArchivos(socioIdActivo);
+      const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo);
       if (Array.isArray(archivos)) {
         setArchivosBackend(archivos);
 
@@ -438,7 +466,7 @@ export function DocumentosLegajo() {
       const ayer = new Date();
       ayer.setDate(ayer.getDate() - 1);
       const ayerStr = ayer.toISOString().split(".")[0];
-      
+
       const payload = {
         ...item.relacion,
         fechahasta: ayerStr,
@@ -564,9 +592,12 @@ export function DocumentosLegajo() {
 
       if (files) {
         if (files.dniFrente instanceof File || files.dniDorso instanceof File) {
-          const uploadToastId = toast.loading("Subiendo documentos de identidad del accionista...");
+          const uploadToastId = toast.loading(
+            "Subiendo documentos de identidad del accionista...",
+          );
           try {
-            const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+            const archivosExistentes =
+              await socioArchivoService.obtenerArchivos(socioIdActivo);
 
             if (files.dniFrente && files.dniFrente instanceof File) {
               const existenteFrente = archivosExistentes?.find((a) => {
@@ -584,14 +615,14 @@ export function DocumentosLegajo() {
                   existenteFrente,
                   files.dniFrente,
                   "socio-frente",
-                  descFrente
+                  descFrente,
                 );
               } else {
                 await socioArchivoService.subirArchivo(
                   socioIdActivo,
                   files.dniFrente,
                   "socio-frente",
-                  descFrente
+                  descFrente,
                 );
               }
             }
@@ -612,22 +643,29 @@ export function DocumentosLegajo() {
                   existenteDorso,
                   files.dniDorso,
                   "socio-dorso",
-                  descDorso
+                  descDorso,
                 );
               } else {
                 await socioArchivoService.subirArchivo(
                   socioIdActivo,
                   files.dniDorso,
                   "socio-dorso",
-                  descDorso
+                  descDorso,
                 );
               }
             }
 
-            toast.success("Documentos de identidad subidos correctamente.", { id: uploadToastId });
+            toast.success("Documentos de identidad subidos correctamente.", {
+              id: uploadToastId,
+            });
           } catch (uploadErr) {
-            console.error("❌ [LEGAJO - ACCIONISTA] Error subiendo archivos de DNI:", uploadErr);
-            toast.error("Error al subir los documentos de identidad.", { id: uploadToastId });
+            console.error(
+              "❌ [LEGAJO - ACCIONISTA] Error subiendo archivos de DNI:",
+              uploadErr,
+            );
+            toast.error("Error al subir los documentos de identidad.", {
+              id: uploadToastId,
+            });
             throw uploadErr;
           }
         }
@@ -1648,8 +1686,12 @@ export function DocumentosLegajo() {
                     document.getElementById(`file-input-${doc.key}`).click()
                   }
                   onRemove={() => handleFileRemove(doc.key)}
-                  onView={() => procesarArchivo(currentFile, archivosBackend, 'view')}
-                  onDownload={() => procesarArchivo(currentFile, archivosBackend, 'download')}
+                  onView={() =>
+                    procesarArchivo(currentFile, archivosBackend, "view")
+                  }
+                  onDownload={() =>
+                    procesarArchivo(currentFile, archivosBackend, "download")
+                  }
                 />
                 <input
                   type="file"
@@ -1670,7 +1712,11 @@ export function DocumentosLegajo() {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmEliminar}
-        titulo={deleteTarget?.rolId === 21 ? "Desvincular Agente" : "Eliminar del legajo"}
+        titulo={
+          deleteTarget?.rolId === 21
+            ? "Desvincular Agente"
+            : "Eliminar del legajo"
+        }
         mensaje={
           deleteTarget?.rolId === 21
             ? `¿Está seguro de que desea desvincular al Agente de Bolsa ${deleteTarget?.nombre}?`
