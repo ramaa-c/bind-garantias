@@ -130,3 +130,9 @@
 .error:hover .icon {
   color: #ff5252;
 }
+
+.actionsGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

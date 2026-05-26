@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './CargaArchivos.module.css';
-import { FiUploadCloud, FiFile, FiTrash2 } from 'react-icons/fi';
+import { FiUploadCloud, FiFile, FiTrash2, FiEye, FiDownload } from 'react-icons/fi';
 import { BotonIcono } from '../';
 
 export const CargaArchivos = ({ 
@@ -13,6 +13,8 @@ export const CargaArchivos = ({
   onDragLeave,
   onClick,
   onRemove,
+  onView,
+  onDownload,
   hasError = false,
   className = "",
   style = {}
@@ -29,9 +31,17 @@ export const CargaArchivos = ({
           </div>
         </div>
         
-        {onRemove && (
-          <BotonIcono icon={FiTrash2} variant="danger" onClick={onRemove} />
-        )}
+        <div className={styles.actionsGroup}>
+          {onView && (
+            <BotonIcono icon={FiEye} onClick={onView} title="Ver archivo" />
+          )}
+          {onDownload && (
+            <BotonIcono icon={FiDownload} onClick={onDownload} title="Descargar archivo" />
+          )}
+          {onRemove && (
+            <BotonIcono icon={FiTrash2} variant="danger" onClick={onRemove} title="Eliminar archivo" />
+          )}
+        </div>
       </div>
     );
   }

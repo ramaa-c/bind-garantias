@@ -57,11 +57,7 @@ export const socioArchivoService = {
     }
   },
 
-  /**   Obtiene un archivo específico por su ID    */
-  obtenerArchivoPorId: async (socioArchivoId) => {
-    const response = await api.get(`api/SocioArchivo/${socioArchivoId}`);
-    return response.data;
-  },
+
 
   subirArchivo: async (socioId, file, docKey, descripcion = "") => {
     const contenidoBase64 = await fileToBase64(file);

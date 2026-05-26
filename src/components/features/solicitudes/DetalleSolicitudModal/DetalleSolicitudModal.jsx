@@ -55,8 +55,7 @@ export const DetalleSolicitudModal = ({
   const socio = Array.isArray(socioResp)
     ? socioResp[0]
     : socioResp?.items?.[0] || socioResp?.data?.[0];
-  const nombreFinal =
-    nombreEmpresa || socio?.denominacion || "Cargando...";
+  const nombreFinal = nombreEmpresa || socio?.denominacion || "Cargando...";
 
   const socioIdTarget = solicitud.socioid || socio?.socioid;
 
@@ -65,12 +64,15 @@ export const DetalleSolicitudModal = ({
     queryFn: async () => {
       let relaciones = [];
       try {
-        relaciones = await tercerosService.obtenerRelacionesDeSocioSGRPlus(socioIdTarget);
+        relaciones =
+          await tercerosService.obtenerRelacionesDeSocioSGRPlus(socioIdTarget);
         if (!relaciones || relaciones.length === 0) {
-          relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdTarget);
+          relaciones =
+            await tercerosService.obtenerRelacionesDeSocio(socioIdTarget);
         }
       } catch (e) {
-        relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdTarget);
+        relaciones =
+          await tercerosService.obtenerRelacionesDeSocio(socioIdTarget);
       }
 
       if (!relaciones || relaciones.length === 0) return [];
@@ -78,7 +80,10 @@ export const DetalleSolicitudModal = ({
       const now = new Date();
       const relacionesFiltradas = relaciones.filter((rel) => {
         // 1. Validar tipo de relación (25 es Accionista/Socio Accionista)
-        const tiporel = rel.tiporelacionsocioid || rel.TipoRelacionSocioID || rel.tiporelacionsocioId;
+        const tiporel =
+          rel.tiporelacionsocioid ||
+          rel.TipoRelacionSocioID ||
+          rel.tiporelacionsocioId;
         const tiporelNum = Number(tiporel);
         if (tiporel && tiporelNum !== 25) return false;
 
@@ -88,13 +93,14 @@ export const DetalleSolicitudModal = ({
         if (fh && fh !== "") {
           const expirationDate = new Date(fh);
           const startDate = fd ? new Date(fd) : null;
-          
+
           // Si fechahasta coincide con fechadesde (por tiempo o día calendario), no está expirado
-          const isSameAsStart = startDate && (
-            expirationDate.getTime() === startDate.getTime() ||
-            expirationDate.toISOString().split('T')[0] === startDate.toISOString().split('T')[0]
-          );
-          
+          const isSameAsStart =
+            startDate &&
+            (expirationDate.getTime() === startDate.getTime() ||
+              expirationDate.toISOString().split("T")[0] ===
+                startDate.toISOString().split("T")[0]);
+
           if (!isSameAsStart && expirationDate < now) {
             return false; // Expirada, omitir
           }
@@ -127,7 +133,8 @@ export const DetalleSolicitudModal = ({
         try {
           tercero = await tercerosService.obtenerTerceroPorId(terceroId);
           if (!tercero || Object.keys(tercero).length === 0) {
-            tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+            tercero =
+              await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
           }
         } catch (e) {
           tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
@@ -157,7 +164,6 @@ export const DetalleSolicitudModal = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" maxWidth="600px">
       <div className={styles.container}>
-
         {/* ── HERO ─────────────────────────────────────────────────────── */}
         <div className={styles.hero}>
           <div className={styles.heroTop}>
@@ -192,7 +198,9 @@ export const DetalleSolicitudModal = ({
                 <FiDollarSign size={12} />
                 Monto
               </div>
-              <div className={`${styles.metricValue} ${styles.metricHighlight}`}>
+              <div
+                className={`${styles.metricValue} ${styles.metricHighlight}`}
+              >
                 {solicitud.moneda || "$"} {solicitud.monto || "0"}
               </div>
             </div>
@@ -201,9 +209,7 @@ export const DetalleSolicitudModal = ({
                 <FiCalendar size={12} />
                 Fecha
               </div>
-              <div className={styles.metricValue}>
-                {solicitud.fecha || "-"}
-              </div>
+              <div className={styles.metricValue}>{solicitud.fecha || "-"}</div>
             </div>
           </div>
 
@@ -215,7 +221,8 @@ export const DetalleSolicitudModal = ({
                 Motivos de rechazo
               </span>
               <ul className={styles.alertList}>
-                {solicitud.motivosRechazo && solicitud.motivosRechazo.length > 0 ? (
+                {solicitud.motivosRechazo &&
+                solicitud.motivosRechazo.length > 0 ? (
                   solicitud.motivosRechazo.map((motivo, idx) => (
                     <li key={idx}>{motivo}</li>
                   ))
@@ -275,7 +282,9 @@ export const DetalleSolicitudModal = ({
                         <div className={styles.partBar}>
                           <div
                             className={styles.partFill}
-                            style={{ width: `${Math.min(participacion, 100)}%` }}
+                            style={{
+                              width: `${Math.min(participacion, 100)}%`,
+                            }}
                           />
                         </div>
                         <span>{participacion}%</span>
@@ -297,7 +306,11 @@ export const DetalleSolicitudModal = ({
           <span className={styles.footerHint}>
             {solicitud.fecha ? `Operación del ${solicitud.fecha}` : ""}
           </span>
-          <Button variant="primary" className={styles.btnClose} onClick={onClose}>
+          <Button
+            variant="primary"
+            className={styles.btnClose}
+            onClick={onClose}
+          >
             Cerrar
           </Button>
         </div>

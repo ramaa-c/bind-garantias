@@ -56,34 +56,52 @@ export const AltaOperacion = () => {
       return;
     }
 
-    console.log("🔍 [AltaOperacion] Iniciando validaciones internas CDA para cada Socio declarado...");
+    console.log(
+      "🔍 [AltaOperacion] Iniciando validaciones internas CDA para cada Socio declarado...",
+    );
 
-    const cuitLimpioEmpresa = cuitActivo ? String(cuitActivo).replace(/\D/g, "") : "";
+    const cuitLimpioEmpresa = cuitActivo
+      ? String(cuitActivo).replace(/\D/g, "")
+      : "";
 
     for (const socio of sociosList) {
       const socioCuitLimpio = String(socio.cuit).replace(/\D/g, "");
-      
+
       if (cuitLimpioEmpresa && socioCuitLimpio === cuitLimpioEmpresa) {
-        console.log(`⚠️ [AltaOperacion] Omitiendo validación de socio CDA para la propia empresa (CUIT: ${socioCuitLimpio})`);
+        console.log(
+          `⚠️ [AltaOperacion] Omitiendo validación de socio CDA para la propia empresa (CUIT: ${socioCuitLimpio})`,
+        );
         continue;
       }
 
-      console.log(`🔍 [AltaOperacion] Validando socio: "${socio.nombre}" (CUIT: ${socioCuitLimpio})`);
+      console.log(
+        `🔍 [AltaOperacion] Validando socio: "${socio.nombre}" (CUIT: ${socioCuitLimpio})`,
+      );
 
-      const result = await ejecutarValidaciones("PANTALLA_SOCIOS", socioCuitLimpio);
+      const result = await ejecutarValidaciones(
+        "PANTALLA_SOCIOS",
+        socioCuitLimpio,
+      );
       if (!result.success) {
         const invalidatingError = result.errors.find((e) => e.isInvalidante);
-        console.error(`❌ [AltaOperacion] Validación CDA fallida para socio "${socio.nombre}":`, invalidatingError);
-        const errorMsg = invalidatingError?.message || `La validación del socio "${socio.nombre}" ha fallado.`;
+        console.error(
+          `❌ [AltaOperacion] Validación CDA fallida para socio "${socio.nombre}":`,
+          invalidatingError,
+        );
+        const errorMsg =
+          invalidatingError?.message ||
+          `La validación del socio "${socio.nombre}" ha fallado.`;
         toast.error(`Error en socio "${socio.nombre}"`, {
           description: errorMsg,
           duration: 6000,
         });
-        return; // Interrumpe el flujo si un socio falla con una regla invalidante
+        return;
       }
     }
 
-    console.log("✅ [AltaOperacion] Todos los socios superaron las validaciones CDA con éxito. Avanzando a la calculadora de montos.");
+    console.log(
+      "✅ [AltaOperacion] Todos los socios superaron las validaciones CDA con éxito. Avanzando a la calculadora de montos.",
+    );
     setPasoActual(2);
   };
 
@@ -93,7 +111,11 @@ export const AltaOperacion = () => {
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
 
-  const { cuitActivo, socioIdActivo, isLoading: isLoadingEmpresa } = useEmpresaActiva();
+  const {
+    cuitActivo,
+    socioIdActivo,
+    isLoading: isLoadingEmpresa,
+  } = useEmpresaActiva();
   const sociosPrecargadosRef = useRef(false);
 
   useEffect(() => {
@@ -107,7 +129,8 @@ export const AltaOperacion = () => {
     let isMounted = true;
     const verificarAcceso = async () => {
       try {
-        const solicitudes = await solicitudesService.obtenerSolicitudesEnProceso(cuitActivo);
+        const solicitudes =
+          await solicitudesService.obtenerSolicitudesEnProceso(cuitActivo);
         const solicitudesArray = Array.isArray(solicitudes)
           ? solicitudes
           : solicitudes?.data || [];
@@ -117,7 +140,8 @@ export const AltaOperacion = () => {
 
         if (tieneSolicitudEnProceso && isMounted) {
           toast.error("Acceso denegado", {
-            description: "Ya tenés una solicitud de línea en análisis. Debés esperar a que se procese.",
+            description:
+              "Ya tenés una solicitud de línea en análisis. Debés esperar a que se procese.",
           });
           navigate("/solicitudes");
         } else if (isMounted) {
@@ -219,35 +243,63 @@ export const AltaOperacion = () => {
     const precargarSocios = async () => {
       sociosPrecargadosRef.current = true;
       setBuscandoSocios(true);
-      
+
       const currentSocios = getValues("socios");
       const currentReps = getValues("representantes");
-      if ((currentSocios && currentSocios.length > 0) || (currentReps && currentReps.length > 0)) {
+      if (
+        (currentSocios && currentSocios.length > 0) ||
+        (currentReps && currentReps.length > 0)
+      ) {
         setBuscandoSocios(false);
         return;
       }
 
       try {
-        let relaciones = [];
+        let relacionesSGR = [];
+        let relacionesLocal = [];
+
         try {
-          relaciones = await tercerosService.obtenerRelacionesDeSocioSGRPlus(socioIdActivo);
-          if (!relaciones || (Array.isArray(relaciones) && relaciones.length === 0)) {
-            relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
-          }
-        } catch (sgrErr) {
-          relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+          relacionesSGR =
+            await tercerosService.obtenerRelacionesDeSocioSGRPlus(
+              socioIdActivo,
+            );
+        } catch (e) {
+          console.warn("No se pudo obtener relaciones de SGRPlus", e);
         }
 
-        const relacionesArray = Array.isArray(relaciones) ? relaciones : [];
+        try {
+          relacionesLocal =
+            await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+        } catch (e) {
+          console.warn("No se pudo obtener relaciones locales", e);
+        }
+
+        const arrSgr = Array.isArray(relacionesSGR) ? relacionesSGR : [];
+        const arrLocal = Array.isArray(relacionesLocal) ? relacionesLocal : [];
+
+        const mapaRel = new Map();
+        [...arrSgr, ...arrLocal].forEach((r) => {
+          const tid =
+            r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID;
+          const rid =
+            r.tiporelacionsocioid ||
+            r.TipoRelacionSocioID ||
+            r.tiporelacionsocioId;
+          if (tid && rid) {
+            mapaRel.set(`${tid}-${rid}`, r);
+          }
+        });
+
+        const relacionesArray = Array.from(mapaRel.values());
         if (relacionesArray.length === 0) return;
 
         const sociosCargados = [];
         const representantesCargados = [];
         const cuitsAccionistasYaCargados = new Set(
-          (getValues("socios") || []).map((s) => s.cuit)
+          (getValues("socios") || []).map((s) => s.cuit),
         );
         const cuitsRepsYaCargados = new Set(
-          (getValues("representantes") || []).map((r) => r.cuit)
+          (getValues("representantes") || []).map((r) => r.cuit),
         );
 
         const now = new Date();
@@ -258,19 +310,22 @@ export const AltaOperacion = () => {
           if (fh && fh !== "") {
             const expirationDate = new Date(fh);
             const startDate = fd ? new Date(fd) : null;
-            
-            // Si fechahasta coincide con fechadesde (por tiempo o día calendario), no está expirado!
-            const isSameAsStart = startDate && (
-              expirationDate.getTime() === startDate.getTime() ||
-              expirationDate.toISOString().split('T')[0] === startDate.toISOString().split('T')[0]
-            );
-            
+
+            const isSameAsStart =
+              startDate &&
+              (expirationDate.getTime() === startDate.getTime() ||
+                expirationDate.toISOString().split("T")[0] ===
+                  startDate.toISOString().split("T")[0]);
+
             if (!isSameAsStart && expirationDate < now) {
-              continue; // Expired, skip
+              continue;
             }
           }
 
-          const terceroId = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
+          const terceroId =
+            rel.terceroid ||
+            rel.tercerorelacionadoid ||
+            rel.TerceroRelacionadoID;
           if (!terceroId) continue;
 
           try {
@@ -278,37 +333,66 @@ export const AltaOperacion = () => {
             try {
               tercero = await tercerosService.obtenerTerceroPorId(terceroId);
             } catch (apiErr) {
-              tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+              tercero =
+                await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
             }
 
             if (tercero) {
-              const cuit = tercero.cuit || tercero.Cuit || tercero.nrodocumento || tercero.documento || "";
-              const tiporel = rel.tiporelacionsocioid || rel.TipoRelacionSocioID || rel.tiporelacionsocioId;
+              const cuit =
+                tercero.cuit ||
+                tercero.Cuit ||
+                tercero.nrodocumento ||
+                tercero.numerodocumento ||
+                tercero.NumeroDocumento ||
+                tercero.documento ||
+                "";
+              const tiporel =
+                rel.tiporelacionsocioid ||
+                rel.TipoRelacionSocioID ||
+                rel.tiporelacionsocioId;
               const tiporelNum = Number(tiporel);
 
               if (tiporelNum === 25) {
                 const cuitLimpioSocio = String(cuit).replace(/\D/g, "");
-                const cuitLimpioEmpresa = cuitActivo ? String(cuitActivo).replace(/\D/g, "") : "";
-                
-                if (cuit && cuitLimpioSocio !== cuitLimpioEmpresa && !cuitsAccionistasYaCargados.has(cuit)) {
+                const cuitLimpioEmpresa = cuitActivo
+                  ? String(cuitActivo).replace(/\D/g, "")
+                  : "";
+
+                if (
+                  cuit &&
+                  cuitLimpioSocio !== cuitLimpioEmpresa &&
+                  !cuitsAccionistasYaCargados.has(cuit)
+                ) {
                   cuitsAccionistasYaCargados.add(cuit);
 
                   let afipData = null;
                   try {
-                    afipData = await afipService.obtenerConstanciaInscripcion(cuit);
+                    afipData =
+                      await afipService.obtenerConstanciaInscripcion(cuit);
                   } catch (e) {
                     console.warn("No se pudo obtener AFIP extra para", cuit);
                   }
 
                   const terceroMergeado = {
                     ...tercero,
-                    datosgenerales: afipData ? afipData.datosgenerales : null
+                    datosgenerales: afipData ? afipData.datosgenerales : null,
                   };
 
                   sociosCargados.push({
                     cuit,
-                    nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || tercero.Nombre || tercero.razonsocial || "Sin nombre",
-                    participacion: String(rel.porcacciones || rel.participacion || rel.Participacion || "0"),
+                    nombre:
+                      tercero.denominacion ||
+                      tercero.Denominacion ||
+                      tercero.nombre ||
+                      tercero.Nombre ||
+                      tercero.razonsocial ||
+                      "Sin nombre",
+                    participacion: String(
+                      rel.porcacciones ||
+                        rel.participacion ||
+                        rel.Participacion ||
+                        "0",
+                    ),
                     dataOriginal: terceroMergeado,
                     tercerorelacionadoid: terceroId,
                     preloadedFromDb: true,
@@ -320,19 +404,33 @@ export const AltaOperacion = () => {
 
                   representantesCargados.push({
                     cuit,
-                    nombre: tercero.denominacion || tercero.Denominacion || tercero.nombre || tercero.Nombre || tercero.razonsocial || "Sin nombre",
-                    rol: tiporelNum === 230 ? "Representante Legal" : "Apoderado",
+                    nombre:
+                      tercero.denominacion ||
+                      tercero.Denominacion ||
+                      tercero.nombre ||
+                      tercero.Nombre ||
+                      tercero.razonsocial ||
+                      "Sin nombre",
+                    rol:
+                      tiporelNum === 230 ? "Representante Legal" : "Apoderado",
                     email: tercero.mail || tercero.Mail || "",
                     celular: tercero.telefono || tercero.Telefono || "",
                   });
                 }
               } else if (tiporelNum === 21) {
                 setValue("sociedadBolsa", String(terceroId));
-                setValue("numeroCuentaBolsa", rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "");
+                setValue(
+                  "numeroCuentaBolsa",
+                  rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "",
+                );
               }
             }
           } catch (err) {
-            console.error("Error loading specific relation detail:", terceroId, err);
+            console.error(
+              "Error loading specific relation detail:",
+              terceroId,
+              err,
+            );
           }
         }
 
@@ -421,7 +519,7 @@ export const AltaOperacion = () => {
     try {
       const cleanData = preparePayload(data);
       const montoLimpio = Number(cleanData.monto) || 0;
-      
+
       const unAnioMasRel = new Date();
       unAnioMasRel.setFullYear(unAnioMasRel.getFullYear() + 1);
       const unAnioMasStr = unAnioMasRel.toISOString().split(".")[0];
@@ -432,23 +530,33 @@ export const AltaOperacion = () => {
         cuit: cuitActivo
           ? String(cuitActivo).replace(/\D/g, "")
           : "33711316839",
-        tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : cleanData.tipoProducto === "prestamo" ? 2 : 3,
+        tipolimiteid:
+          cleanData.tipoProducto === "cheque"
+            ? 1
+            : cleanData.tipoProducto === "prestamo"
+              ? 2
+              : 3,
         cadenavalorid: 950274,
         monedaid: Number(cleanData.moneda) || 5000,
         importe: montoLimpio,
         estadosolicitud: 1,
         idexterno: 0,
         terceroviaid: 4000000,
-        terceropresentanteid: cleanData.sociedadBolsa ? Number(cleanData.sociedadBolsa) : 0,
+        terceropresentanteid: cleanData.sociedadBolsa
+          ? Number(cleanData.sociedadBolsa)
+          : 0,
       };
 
-      console.log("🚀 [ALTA OPERACION] Payload enviado a crearSolicitudEnProceso:", JSON.stringify(payload, null, 2));
+      console.log(
+        "[ALTA OPERACION] Payload enviado a crearSolicitudEnProceso:",
+        JSON.stringify(payload, null, 2),
+      );
 
-      // Guardar solicitud en proceso (POST)
-      const resSolicitud = await solicitudesService.crearSolicitudEnProceso(payload);
-      const solicitudIdCreada = resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
+      const resSolicitud =
+        await solicitudesService.crearSolicitudEnProceso(payload);
+      const solicitudIdCreada =
+        resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
 
-      // Guardar la relación con la sociedad de bolsa elegida (Agente de Bolsa)
       if (socioIdActivo && cleanData.sociedadBolsa) {
         const ahoraRel = new Date().toISOString().split(".")[0];
         const payloadRelacionBolsa = {
@@ -458,7 +566,7 @@ export const AltaOperacion = () => {
               sociotercerorelacionid: 0,
               socioid: socioIdActivo,
               terceroid: Number(cleanData.sociedadBolsa),
-              tiporelacionsocioid: 21, // "Es su Agente de Bolsa"
+              tiporelacionsocioid: 21,
               fechadesde: ahoraRel,
               fechahasta: unAnioMasStr,
               porcacciones: 0,
@@ -478,12 +586,18 @@ export const AltaOperacion = () => {
         try {
           await tercerosService.guardarRelacionesDeSocio(payloadRelacionBolsa);
         } catch (relError) {
-          console.error("❌ [ALTA OPERACION] Error al guardar relación de agente de bolsa:", relError);
+          console.error(
+            "❌ [ALTA OPERACION] Error al guardar relación de agente de bolsa:",
+            relError,
+          );
         }
       }
 
-      // Guardar la relación con los representantes / apoderados elegidos
-      if (socioIdActivo && cleanData.representantes && cleanData.representantes.length > 0) {
+      if (
+        socioIdActivo &&
+        cleanData.representantes &&
+        cleanData.representantes.length > 0
+      ) {
         const ahoraRel = new Date().toISOString().split(".")[0];
         for (const rep of cleanData.representantes) {
           try {
@@ -491,7 +605,6 @@ export const AltaOperacion = () => {
             if (!cuitLimpio) continue;
 
             let terceroId = null;
-            // 1. Intentar buscar si el tercero ya existe por CUIT
             try {
               const existentes = await tercerosService.obtenerTerceros({
                 Cuit: cuitLimpio,
@@ -506,17 +619,19 @@ export const AltaOperacion = () => {
                   arr[0].id;
               }
             } catch (buscarErr) {
-              console.warn(`⚠️ [ALTA OPERACION] No se pudo buscar tercero con CUIT ${cuitLimpio}:`, buscarErr);
+              console.warn(
+                `[ALTA OPERACION] No se pudo buscar tercero con CUIT ${cuitLimpio}:`,
+                buscarErr,
+              );
             }
 
-            // 2. Si no existe, crearlo
             if (!terceroId) {
               const payloadTercero = {
                 tercerorelacionadoid: 0,
                 denominacion: rep.nombre || "",
                 cuit: cuitLimpio,
                 bcraid: 0,
-                tipopersonaid: 1, // Persona física
+                tipopersonaid: 1,
                 tipodocumentoid: 0,
                 numerodocumento: cuitLimpio,
                 estadocivilid: 0,
@@ -535,11 +650,12 @@ export const AltaOperacion = () => {
                 descripcionreducida: (rep.nombre || "").substring(0, 20),
                 mail: rep.email || "",
               };
-              const terceroResult = await tercerosService.crearTercero(payloadTercero);
-              terceroId = terceroResult?.tercerorelacionadoid || terceroResult?.id;
+              const terceroResult =
+                await tercerosService.crearTercero(payloadTercero);
+              terceroId =
+                terceroResult?.tercerorelacionadoid || terceroResult?.id;
             }
 
-            // 3. Guardar la relación con el socio
             if (terceroId) {
               const payloadRelacionRep = {
                 socioid: socioIdActivo,
@@ -548,7 +664,7 @@ export const AltaOperacion = () => {
                     sociotercerorelacionid: 0,
                     socioid: socioIdActivo,
                     terceroid: terceroId,
-                    tiporelacionsocioid: rep.rol === "Apoderado" ? 210 : 230, // 210: Apoderado de Socio, 230: Representante Legal (Gerente Gral)
+                    tiporelacionsocioid: rep.rol === "Apoderado" ? 210 : 230,
                     fechadesde: ahoraRel,
                     fechahasta: unAnioMasStr,
                     porcacciones: 0,
@@ -565,10 +681,15 @@ export const AltaOperacion = () => {
                   },
                 ],
               };
-              await tercerosService.guardarRelacionesDeSocio(payloadRelacionRep);
+              await tercerosService.guardarRelacionesDeSocio(
+                payloadRelacionRep,
+              );
             }
           } catch (repError) {
-            console.error(`❌ [ALTA OPERACION] Error al procesar representante ${rep.nombre}:`, repError);
+            console.error(
+              `❌ [ALTA OPERACION] Error al procesar representante ${rep.nombre}:`,
+              repError,
+            );
           }
         }
       }
@@ -577,17 +698,22 @@ export const AltaOperacion = () => {
       if (Number(cleanData.moneda) === 2) {
         const hoy = "2026-04-08";
         try {
-          const cotizacionData = await catalogosService.obtenerCotizacion({ moneda: 2, fecha: hoy, tipoCotizacion: 50 });
+          const cotizacionData = await catalogosService.obtenerCotizacion({
+            moneda: 2,
+            fecha: hoy,
+            tipoCotizacion: 50,
+          });
 
           const valorCotizacion = Array.isArray(cotizacionData)
-            ? (cotizacionData[0]?.cotizacion || cotizacionData[0]?.Cotizacion || 0)
-            : (cotizacionData?.cotizacion || cotizacionData?.Cotizacion || 0);
+            ? cotizacionData[0]?.cotizacion ||
+              cotizacionData[0]?.Cotizacion ||
+              0
+            : cotizacionData?.cotizacion || cotizacionData?.Cotizacion || 0;
 
           if (valorCotizacion > 0) {
             importeEnPesos = Math.round(montoLimpio * valorCotizacion);
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       }
 
       const fchDesde = new Date().toISOString().split(".")[0];
@@ -598,7 +724,12 @@ export const AltaOperacion = () => {
       const payloadLimite = {
         tipolimitesocioid: 0,
         socioid: socioIdActivo || 0,
-        tipolimiteid: cleanData.tipoProducto === "cheque" ? 1 : cleanData.tipoProducto === "prestamo" ? 2 : 3,
+        tipolimiteid:
+          cleanData.tipoProducto === "cheque"
+            ? 1
+            : cleanData.tipoProducto === "prestamo"
+              ? 2
+              : 3,
         fchvigenciadesde: fchDesde,
         fchvigenciahasta: fchHasta,
         monedaid: Number(cleanData.moneda) || 5000,
@@ -616,7 +747,8 @@ export const AltaOperacion = () => {
         propuesta: "",
         resolucion: "",
         tipolimitesolicitudid: 0,
-        importemonex: Number(cleanData.moneda) === 2 ? Math.round(montoLimpio) : 0,
+        importemonex:
+          Number(cleanData.moneda) === 2 ? Math.round(montoLimpio) : 0,
         tipolibradorid: 0,
         contratoid: 0,
         cadenavalorid: 0,
@@ -624,8 +756,10 @@ export const AltaOperacion = () => {
         solicitudid: solicitudIdCreada,
         tipolimiteriesgoid: 0,
         terceroviaid: 4000000,
-        terceropresentanteid: cleanData.sociedadBolsa ? Number(cleanData.sociedadBolsa) : 0,
-        tercerogeneradorid: 0
+        terceropresentanteid: cleanData.sociedadBolsa
+          ? Number(cleanData.sociedadBolsa)
+          : 0,
+        tercerogeneradorid: 0,
       };
 
       await lineaService.crearLimiteSocio({ coleccionlinea: [payloadLimite] });
@@ -637,7 +771,8 @@ export const AltaOperacion = () => {
       }
     } catch (error) {
       toast.error("Error al enviar", {
-        description: "Hubo un error al enviar la solicitud. Revisá la consola para más detalles.",
+        description:
+          "Hubo un error al enviar la solicitud. Revisá la consola para más detalles.",
       });
     } finally {
       setEnviandoSolicitud(false);
@@ -714,12 +849,14 @@ export const AltaOperacion = () => {
         setValue("faseSocio", "completar_datos");
       } else {
         toast.error("CUIT no encontrado", {
-          description: "El CUIT ingresado no fue encontrado en los padrones de AFIP.",
+          description:
+            "El CUIT ingresado no fue encontrado en los padrones de AFIP.",
         });
       }
     } catch (error) {
       toast.error("Error de validación", {
-        description: "No se pudo validar el CUIT en este momento. Reintentá más tarde.",
+        description:
+          "No se pudo validar el CUIT en este momento. Reintentá más tarde.",
       });
     } finally {
       setIsLoadingAFIP(false);
@@ -824,8 +961,7 @@ export const AltaOperacion = () => {
               arr[0].TerceroRelacionadoID ||
               arr[0].id;
           }
-        } catch (buscarErr) {
-        }
+        } catch (buscarErr) {}
 
         if (!terceroId) {
           const terceroResult =
@@ -842,7 +978,7 @@ export const AltaOperacion = () => {
           const unAnioMasSocio = new Date();
           unAnioMasSocio.setFullYear(unAnioMasSocio.getFullYear() + 1);
           const unAnioMasStrSocio = unAnioMasSocio.toISOString().split(".")[0];
-          
+
           const payloadRelacion = {
             socioid: socioIdActivo,
             tercerosrelacionados: [
@@ -870,8 +1006,7 @@ export const AltaOperacion = () => {
 
           try {
             await tercerosService.guardarRelacionesDeSocio(payloadRelacion);
-          } catch (relError) {
-          }
+          } catch (relError) {}
         }
       }
 
@@ -973,68 +1108,7 @@ export const AltaOperacion = () => {
             const esValido = await trigger(campos);
 
             if (esValido) {
-              setEnviandoSolicitud(true);
-              try {
-                // 1. Validar que no haya Solicitudes en Proceso (Comentado para pruebas)
-                /*
-                const solicitudes =
-                  await solicitudesService.obtenerSolicitudesEnProceso(
-                    cuitActivo || "33711316839",
-                  );
-                const solicitudesArray = Array.isArray(solicitudes)
-                  ? solicitudes
-                  : solicitudes?.data || [];
-                const tieneSolicitudEnProceso = solicitudesArray.some(
-                  (s) => s.estadosolicitud === 1 || s.estado === "En Proceso",
-                );
-
-                if (tieneSolicitudEnProceso) {
-                  toast.warning("Solicitud en curso", {
-                    description: "Ya tenés una solicitud de línea en análisis. Debés esperar a que se procese antes de crear una nueva.",
-                  });
-                  setEnviandoSolicitud(false);
-                  return;
-                }
-
-                // 2. Validar que no tenga ya un TipoLimite activo para este producto (Comentado para pruebas)
-                /*
-                const tipoLimiteRequeridoId =
-                  tipoProducto === "cheque"
-                    ? 1
-                    : tipoProducto === "prestamo"
-                      ? 2
-                      : 3;
-                const lineas = await lineaService.obtenerLimitesPorSocio(
-                  socioIdActivo || 2974,
-                );
-                const lineasArray = Array.isArray(lineas)
-                  ? lineas
-                  : lineas?.data || [];
-
-                const lineaActivaMismoProducto = lineasArray.find(
-                  (l) =>
-                    l.tipolimiteid === tipoLimiteRequeridoId &&
-                    l.tipolimiteestadoid === 1,
-                );
-
-                if (lineaActivaMismoProducto) {
-                  toast.warning("Línea activa", {
-                    description: `Ya tenés una línea de ${tipoProducto} activa. No es posible solicitar una nueva.`,
-                  });
-                  setEnviandoSolicitud(false);
-                  return;
-                }
-                */
-
-                setMostrarResultados(true);
-              } catch (error) {
-                console.error("Error en validación previa:", error);
-                toast.error("Error de conexión", {
-                  description: "Ocurrió un error al validar tus datos. Por favor intentá nuevamente.",
-                });
-              } finally {
-                setEnviandoSolicitud(false);
-              }
+              setMostrarResultados(true);
             }
           }}
           onContinuar={() => setPasoActual(3)}
@@ -1151,7 +1225,11 @@ export const AltaOperacion = () => {
           s: "Adjuntá los respaldos de la operación.",
         };
       case 4:
-        return { badge: "Alta de Línea", t: "Sociedad de Bolsa", s: "Confirmá tu cuenta comitente." };
+        return {
+          badge: "Alta de Línea",
+          t: "Sociedad de Bolsa",
+          s: "Confirmá tu cuenta comitente.",
+        };
       case 5:
         return {
           badge: "Alta de Línea",
@@ -1186,7 +1264,10 @@ export const AltaOperacion = () => {
   if (isLoadingEmpresa || validandoAcceso) {
     return (
       <div className={styles.operacionPage}>
-        <div className={styles.formMainContainer} style={{ alignItems: "center", justifyContent: "center" }}>
+        <div
+          className={styles.formMainContainer}
+          style={{ alignItems: "center", justifyContent: "center" }}
+        >
           <Spinner size={60} />
         </div>
       </div>
@@ -1196,7 +1277,10 @@ export const AltaOperacion = () => {
   if (buscandoSocios) {
     return (
       <div className={styles.operacionPage}>
-        <div className={styles.formMainContainer} style={{ alignItems: "center", justifyContent: "center" }}>
+        <div
+          className={styles.formMainContainer}
+          style={{ alignItems: "center", justifyContent: "center" }}
+        >
           <Spinner size={60} />
         </div>
       </div>
@@ -1208,7 +1292,9 @@ export const AltaOperacion = () => {
       <div className={styles.formMainContainer}>
         <div className={styles.contentWrapper}>
           <div className={styles.contenedorPrincipal}>
-            <div className={`${styles.columnaFormulario} ${!showHeaderYStepper ? styles.columnaCentrada : ""}`}>
+            <div
+              className={`${styles.columnaFormulario} ${!showHeaderYStepper ? styles.columnaCentrada : ""}`}
+            >
               {showHeaderYStepper && (
                 <BarraProgreso
                   hitos={hitosVisuales}
