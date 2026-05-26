@@ -62,18 +62,38 @@ export const DetalleSolicitudModal = ({
   const { data: accionistas = [], isLoading: cargandoAccionistas } = useQuery({
     queryKey: ["accionistas", socioIdTarget],
     queryFn: async () => {
-      let relaciones = [];
+      let relacionesSGR = [];
+      let relacionesLocal = [];
       try {
-        relaciones =
-          await tercerosService.obtenerRelacionesDeSocioSGRPlus(socioIdTarget);
-        if (!relaciones || relaciones.length === 0) {
-          relaciones =
-            await tercerosService.obtenerRelacionesDeSocio(socioIdTarget);
-        }
+        relacionesSGR =
+          await tercerosService.obtenerRelacionesDeSocioSGRPlus(socioIdTarget) || [];
       } catch (e) {
-        relaciones =
-          await tercerosService.obtenerRelacionesDeSocio(socioIdTarget);
+        console.warn("No se pudo obtener relaciones de SGRPlus", e);
       }
+      try {
+        relacionesLocal =
+          await tercerosService.obtenerRelacionesDeSocio(socioIdTarget) || [];
+      } catch (e) {
+        console.warn("No se pudo obtener relaciones locales", e);
+      }
+
+      const arrSgr = Array.isArray(relacionesSGR) ? relacionesSGR : [];
+      const arrLocal = Array.isArray(relacionesLocal) ? relacionesLocal : [];
+
+      const mapaRel = new Map();
+      [...arrSgr, ...arrLocal].forEach((r) => {
+        const tid =
+          r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID || r.TerceroId;
+        const rid =
+          r.tiporelacionsocioid ||
+          r.TipoRelacionSocioID ||
+          r.tiporelacionsocioId;
+        if (tid && rid) {
+          mapaRel.set(`${tid}-${rid}`, r);
+        }
+      });
+
+      const relaciones = Array.from(mapaRel.values());
 
       if (!relaciones || relaciones.length === 0) return [];
 

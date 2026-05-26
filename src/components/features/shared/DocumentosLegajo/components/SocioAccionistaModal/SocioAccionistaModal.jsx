@@ -367,11 +367,19 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
         }
         setAfipValidado(true);
       } else {
-        setError("cuit", { type: "manual", message: "No se encontraron datos en AFIP para el CUIT ingresado." });
+        toast.warning("CUIT no encontrado en AFIP", {
+          description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
+        });
+        setValue("nombre", "");
+        setAfipValidado(true);
       }
     } catch (err) {
       console.error("Error validando CUIT en AFIP/SGR:", err);
-      setError("cuit", { type: "manual", message: "Error al validar CUIT. Ingrese los datos manualmente si AFIP está caído." });
+      toast.warning("Servicio de AFIP no disponible", {
+        description: "No se pudieron obtener datos automáticos. Podés ingresarlos manualmente.",
+      });
+      setValue("nombre", "");
+      setAfipValidado(true);
     } finally {
       setValidando(false);
     }

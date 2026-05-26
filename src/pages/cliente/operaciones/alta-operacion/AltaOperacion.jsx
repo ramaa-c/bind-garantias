@@ -848,16 +848,22 @@ export const AltaOperacion = () => {
         setValue("tempSocioData", dataAfip);
         setValue("faseSocio", "completar_datos");
       } else {
-        toast.error("CUIT no encontrado", {
+        toast.warning("CUIT no encontrado en AFIP", {
           description:
-            "El CUIT ingresado no fue encontrado en los padrones de AFIP.",
+            "No se encontraron datos automáticos. Podés ingresarlos de forma manual.",
         });
+        setValue("tempSocioNombre", "");
+        setValue("tempSocioData", null);
+        setValue("faseSocio", "completar_datos");
       }
     } catch (error) {
-      toast.error("Error de validación", {
+      toast.warning("Servicio de AFIP no disponible", {
         description:
-          "No se pudo validar el CUIT en este momento. Reintentá más tarde.",
+          "No se pudo validar el CUIT de forma automática. Podés ingresar los datos de forma manual.",
       });
+      setValue("tempSocioNombre", "");
+      setValue("tempSocioData", null);
+      setValue("faseSocio", "completar_datos");
     } finally {
       setIsLoadingAFIP(false);
     }
