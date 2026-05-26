@@ -6,9 +6,10 @@ import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit } from "../.
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
+import { tercerosService } from "../../../../../../services/tercerosService";
 import styles from "./RepresentanteModal.module.css";
 
-export function RepresentanteModal({ isOpen, onClose, onSave, representante, socioIdActivo }) {
+export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, socioIdActivo }) {
   const [validando, setValidando] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -122,14 +123,108 @@ export function RepresentanteModal({ isOpen, onClose, onSave, representante, soc
   };
 
   const onConfirmSave = async () => {
-    const data = getValues();
+    const formData = getValues();
     try {
-      await onSave({
-        ...data,
-        relacionId: representante?.relacionId,
-        relacionOriginal: representante?.relacion,
-      });
-      toast.success(representante ? "Representante actualizado exitosamente." : "Representante agregado exitosamente.");
+      const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
+
+      let terceroId = null;
+      try {
+        const existentes = await tercerosService.obtenerTerceros({
+          Cuit: cuitLimpio,
+        });
+        const arr = Array.isArray(existentes)
+          ? existentes
+          : existentes?.data || [];
+        if (arr.length > 0) {
+          terceroId =
+            arr[0].tercerorelacionadoid ||
+            arr[0].TerceroRelacionadoID ||
+            arr[0].id;
+        }
+      } catch (err) {
+        console.warn(
+          "[MODAL - REPRESENTANTE] Error buscando tercero existente:",
+          err,
+        );
+      }
+
+      const payloadTercero = {
+        tercerorelacionadoid: terceroId || 0,
+        denominacion: formData.nombre,
+        cuit: cuitLimpio,
+        bcraid: 0,
+        tipopersonaid: 1,
+        tipodocumentoid: 0,
+        numerodocumento: cuitLimpio,
+        estadocivilid: 0,
+        ciudadid: 0,
+        telefono: formData.telefono || "",
+        conyuge: "",
+        actividad: "",
+        contacto: "",
+        nrocuenta: "",
+        codigomercado: "",
+        calle: "",
+        numero: 0,
+        piso: "",
+        departamento: "",
+        codpos: "",
+        descripcionreducida: formData.nombre.substring(0, 20),
+        mail: formData.email || "",
+      };
+
+      if (terceroId) {
+        await tercerosService.actualizarTercero(payloadTercero);
+      } else {
+        const res = await tercerosService.crearTercero(payloadTercero);
+        terceroId = res.tercerorelacionadoid || res.id;
+      }
+
+      const ahora = new Date().toISOString().split(".")[0];
+      const unAnioMas = new Date();
+      unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
+      const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
+      const targetRolId = formData.rol === "Apoderado" ? 210 : 230;
+
+      if (representante?.relacionId) {
+        const payloadRel = {
+          ...representante?.relacion,
+          tiporelacionsocioid: targetRolId,
+          telefono: formData.telefono || "",
+          momento: ahora,
+        };
+        await tercerosService.actualizarRelacionDeSocio(payloadRel);
+        toast.success("Representante actualizado correctamente.");
+      } else {
+        const payloadRel = {
+          socioid: socioIdActivo,
+          tercerosrelacionados: [
+            {
+              sociotercerorelacionid: 0,
+              socioid: socioIdActivo,
+              terceroid: terceroId,
+              tiporelacionsocioid: targetRolId,
+              fechadesde: ahora,
+              fechahasta: unAnioMasStr,
+              porcacciones: 0,
+              nroinscripcion: "",
+              condicionescomerciales: "",
+              cbu: "",
+              provinciaid: 0,
+              nrosubcuentacaja: "",
+              sucursalid: 0,
+              default: "0",
+              subtiporelacionsocioid: 0,
+              telefono: formData.telefono || "",
+              momento: ahora,
+            },
+          ],
+        };
+        await tercerosService.guardarRelacionesDeSocio(payloadRel);
+        toast.success("Representante agregado correctamente.");
+      }
+
+      if (onSuccess) onSuccess();
       setShowConfirm(false);
       onClose();
     } catch (error) {

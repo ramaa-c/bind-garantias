@@ -4,7 +4,6 @@ import { FaRegUserCircle } from "react-icons/fa";
 import {
   FiMenu,
   FiChevronDown,
-  FiFolder,
   FiTrendingUp,
   FiHelpCircle,
 } from "react-icons/fi";
@@ -104,12 +103,7 @@ const Navbar = ({
                   </div>
 
                   <div className={styles.dropdownBody}>
-                    <button
-                      className={styles.dropdownItem}
-                      onClick={() => navigate("/documentacion")}
-                    >
-                      <FiFolder className={styles.itemIcon} /> Documentación
-                    </button>
+
                     <button
                       className={styles.dropdownItem}
                       onClick={() => {

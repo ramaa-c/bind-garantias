@@ -4,10 +4,11 @@ import { FiBriefcase, FiCreditCard } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button, Modal, SelectSocio, InputSocioMasked } from "../../../../../ui";
 import { useObtenerTerceros } from "../../../../../../hooks/useTerceros";
+import { tercerosService } from "../../../../../../services/tercerosService";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./BolsaModal.module.css";
 
-export function BolsaModal({ isOpen, onClose, onSave, agenteBolsa }) {
+export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdActivo }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const { data: agentesData, isLoading: cargandoAgentes } = useObtenerTerceros({
     TipoTerceroRelacionadoID: 8,
@@ -53,14 +54,51 @@ export function BolsaModal({ isOpen, onClose, onSave, agenteBolsa }) {
   };
 
   const onConfirmSave = async () => {
-    const data = getValues();
+    const formData = getValues();
     try {
-      await onSave({
-        ...data,
-        relacionId: agenteBolsa?.relacionId,
-        relacionOriginal: agenteBolsa?.relacion,
-      });
-      toast.success(agenteBolsa ? "Agente de bolsa actualizado exitosamente." : "Agente de bolsa vinculado exitosamente.");
+      const ahora = new Date().toISOString().split(".")[0];
+      const unAnioMas = new Date();
+      unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
+      const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
+
+      if (agenteBolsa?.relacionId) {
+        const payloadRel = {
+          ...agenteBolsa?.relacion,
+          nrosubcuentacaja: String(formData.numeroCuentaBolsa),
+          momento: ahora,
+        };
+        await tercerosService.actualizarRelacionDeSocio(payloadRel);
+        toast.success("Cuenta comitente actualizada correctamente.");
+      } else {
+        const payloadRel = {
+          socioid: socioIdActivo,
+          tercerosrelacionados: [
+            {
+              sociotercerorelacionid: 0,
+              socioid: socioIdActivo,
+              terceroid: Number(formData.sociedadBolsa),
+              tiporelacionsocioid: 21,
+              fechadesde: ahora,
+              fechahasta: unAnioMasStr,
+              porcacciones: 0,
+              nroinscripcion: "",
+              condicionescomerciales: "",
+              cbu: "",
+              provinciaid: 0,
+              nrosubcuentacaja: String(formData.numeroCuentaBolsa),
+              sucursalid: 0,
+              default: "1",
+              subtiporelacionsocioid: 0,
+              telefono: "",
+              momento: ahora,
+            },
+          ],
+        };
+        await tercerosService.guardarRelacionesDeSocio(payloadRel);
+        toast.success("Agente de bolsa vinculado exitosamente.");
+      }
+
+      if (onSuccess) onSuccess();
       setShowConfirm(false);
       onClose();
     } catch (error) {

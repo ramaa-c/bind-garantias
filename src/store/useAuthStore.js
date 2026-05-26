@@ -21,11 +21,31 @@ export const useAuthStore = create(
         });
       },
 
-      clearAuth: () =>
+      clearAuth: () => {
+        if (typeof window !== "undefined") {
+          try {
+            window.sessionStorage?.clear();
+          } catch (e) {
+            console.error("Error clearing sessionStorage:", e);
+          }
+
+          try {
+            if (window.localStorage) {
+              Object.keys(window.localStorage).forEach((key) => {
+                if (key.startsWith("draft_")) {
+                  window.localStorage.removeItem(key);
+                }
+              });
+            }
+          } catch (e) {
+            console.error("Error clearing localStorage drafts:", e);
+          }
+        }
         set({
           user: null,
           isAuthenticated: false,
-        }),
+        });
+      },
     }),
     {
       name: "auth-storage",

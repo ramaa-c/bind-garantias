@@ -158,19 +158,6 @@ export const AltaOperacion = () => {
     };
   }, [cuitActivo, isLoadingEmpresa, navigate]);
 
-  useEffect(() => {
-    const borrador = localStorage.getItem(STORAGE_KEY);
-    if (borrador) {
-      try {
-        const parsed = JSON.parse(borrador);
-        if (parsed.pasoActual && parsed.pasoActual > 1) {
-          setIsModalBorradorAbierto(true);
-        }
-      } catch (e) {
-        console.error("Borrador corrupto, ignorando intercepción");
-      }
-    }
-  }, []);
 
   const metodosFormulario = useForm({
     resolver: zodResolver(AltaOperacionSchema),

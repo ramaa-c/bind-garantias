@@ -156,7 +156,7 @@ const DropzoneField = ({ file, title, subtitle, onChange, onRemove, onView, onDo
   );
 };
 
-export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdActivo, archivosBackend, accionistas = [], dniTerceros = {} }) {
+export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, accionistas = [], dniTerceros = {} }) {
   const [validando, setValidando] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
@@ -412,21 +412,143 @@ export function SocioAccionistaModal({ isOpen, onClose, onSave, socio, socioIdAc
   };
 
   const onConfirmSave = async () => {
-    const data = getValues();
+    const formData = getValues();
     setGuardando(true);
     try {
-      await onSave(
-        {
-          ...data,
-          relacionId: socio?.relacionId,
-          relacionOriginal: socio?.relacion,
-        },
-        {
-          dniFrente: dniFrenteFile,
-          dniDorso: dniDorsoFile,
+      const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
+      let terceroId = null;
+      try {
+        const existentes = await tercerosService.obtenerTerceros({
+          Cuit: cuitLimpio,
+        });
+        const arr = Array.isArray(existentes)
+          ? existentes
+          : existentes?.data || [];
+        if (arr.length > 0) {
+          terceroId =
+            arr[0].tercerorelacionadoid ||
+            arr[0].TerceroRelacionadoID ||
+            arr[0].id;
         }
-      );
-      toast.success(socio ? "Accionista actualizado exitosamente." : "Accionista agregado exitosamente.");
+      } catch (err) {
+        console.warn("[MODAL - ACCIONISTA] Error buscando tercero existente:", err);
+      }
+
+      const payloadTercero = {
+        tercerorelacionadoid: terceroId || 0,
+        denominacion: formData.nombre,
+        cuit: cuitLimpio,
+        bcraid: 0,
+        tipopersonaid: cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
+        tipodocumentoid: 0,
+        numerodocumento: cuitLimpio,
+        estadocivilid: 0,
+        ciudadid: 0,
+        telefono: formData.celular || "",
+        conyuge: "",
+        actividad: "",
+        contacto: formData.localidad || "",
+        nrocuenta: "",
+        codigomercado: "",
+        calle: formData.direccion || "",
+        numero: 0,
+        piso: "",
+        departamento: "",
+        codpos: "",
+        descripcionreducida: formData.nombre.substring(0, 20),
+        mail: formData.email || "",
+      };
+
+      if (terceroId) {
+        await tercerosService.actualizarTercero(payloadTercero);
+      } else {
+        const res = await tercerosService.crearTercero(payloadTercero);
+        terceroId = res.tercerorelacionadoid || res.id;
+      }
+
+      const ahora = new Date().toISOString().split(".")[0];
+      const unAnioMas = new Date();
+      unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
+      const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
+
+      if (socio?.relacionId) {
+        const payloadRel = {
+          ...socio?.relacion,
+          porcacciones: Number(formData.participacion),
+          provinciaid: Number(formData.provinciaid) || 0,
+          telefono: formData.celular || "",
+          momento: ahora,
+        };
+        await tercerosService.actualizarRelacionDeSocio(payloadRel);
+        toast.success("Accionista actualizado correctamente.");
+      } else {
+        const payloadRel = {
+          socioid: socioIdActivo,
+          tercerosrelacionados: [
+            {
+              sociotercerorelacionid: 0,
+              socioid: socioIdActivo,
+              terceroid: terceroId,
+              tiporelacionsocioid: 25,
+              fechadesde: ahora,
+              fechahasta: unAnioMasStr,
+              porcacciones: Number(formData.participacion),
+              nroinscripcion: "",
+              condicionescomerciales: "",
+              cbu: "",
+              provinciaid: Number(formData.provinciaid) || 0,
+              nrosubcuentacaja: "",
+              sucursalid: 0,
+              default: "0",
+              subtiporelacionsocioid: 0,
+              telefono: formData.celular || "",
+              momento: ahora,
+            },
+          ],
+        };
+        await tercerosService.guardarRelacionesDeSocio(payloadRel);
+        toast.success("Accionista agregado al legajo.");
+      }
+
+      if (dniFrenteFile instanceof File || dniDorsoFile instanceof File) {
+        const uploadToastId = toast.loading("Subiendo documentos de identidad del accionista...");
+        try {
+          const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+          if (dniFrenteFile instanceof File) {
+            const existenteFrente = archivosExistentes?.find((a) => {
+              if (a.tipodocumentoarchivoid !== 7) return false;
+              const descNorm = normalizarTexto(a.descripcion);
+              return descNorm.includes(cuitLimpio) || descNorm.includes(normalizarTexto(formData.nombre));
+            });
+            const descFrente = `DNI Frente - ${formData.nombre.toUpperCase()}`;
+            if (existenteFrente) {
+              await socioArchivoService.actualizarArchivo(existenteFrente, dniFrenteFile, "socio-frente", descFrente);
+            } else {
+              await socioArchivoService.subirArchivo(socioIdActivo, dniFrenteFile, "socio-frente", descFrente);
+            }
+          }
+          if (dniDorsoFile instanceof File) {
+            const existenteDorso = archivosExistentes?.find((a) => {
+              if (a.tipodocumentoarchivoid !== 8) return false;
+              const descNorm = normalizarTexto(a.descripcion);
+              return descNorm.includes(cuitLimpio) || descNorm.includes(normalizarTexto(formData.nombre));
+            });
+            const descDorso = `DNI Dorso - ${formData.nombre.toUpperCase()}`;
+            if (existenteDorso) {
+              await socioArchivoService.actualizarArchivo(existenteDorso, dniDorsoFile, "socio-dorso", descDorso);
+            } else {
+              await socioArchivoService.subirArchivo(socioIdActivo, dniDorsoFile, "socio-dorso", descDorso);
+            }
+          }
+          toast.success("Documentos de identidad subidos correctamente.", { id: uploadToastId });
+        } catch (uploadErr) {
+          console.error("❌ [MODAL - ACCIONISTA] Error subiendo archivos de DNI:", uploadErr);
+          toast.error("Error al subir los documentos de identidad.", { id: uploadToastId });
+          throw uploadErr;
+        }
+      }
+
+      if (onSuccess) onSuccess();
       setShowConfirm(false);
       onClose();
     } catch (error) {
