@@ -37,17 +37,39 @@ const hasMeaningfulData = (dataString) => {
   try {
     const data = JSON.parse(dataString);
     if (typeof data !== "object" || data === null) return false;
-    return Object.values(data).some((value) => {
-      if (
-        value === "" ||
-        value === null ||
-        value === undefined ||
-        value === false
-      )
-        return false;
-      if (Array.isArray(value) && value.length === 0) return false;
-      return true;
+
+    // Campos de negocio reales donde el usuario ingresa información
+    const meaningfulKeys = [
+      "cuit",
+      "razonSocial",
+      "direccion",
+      "provincia",
+      "provinciaid",
+      "localidad",
+      "celular",
+      "monto",
+      "plazo",
+      "sociedadBolsa",
+      "numeroCuentaBolsa",
+      "emailFacturacion",
+    ];
+
+    // Verificar si alguno de los campos de texto/número/select de negocio tiene valor
+    const hasMeaningfulField = meaningfulKeys.some((key) => {
+      const value = data[key];
+      return value !== "" && value !== null && value !== undefined && value !== false;
     });
+
+    if (hasMeaningfulField) return true;
+
+    // Verificar si las listas de socios o representantes tienen elementos
+    const listKeys = ["representantes", "socios"];
+    const hasMeaningfulList = listKeys.some((key) => {
+      const value = data[key];
+      return Array.isArray(value) && value.length > 0;
+    });
+
+    return hasMeaningfulList;
   } catch {
     return false;
   }

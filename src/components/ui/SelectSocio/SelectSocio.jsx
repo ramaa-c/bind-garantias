@@ -73,6 +73,10 @@ const customStyles = {
     fontSize: "0.9rem",
     "&:active": { backgroundColor: "var(--yellow)", color: "#000" },
   }),
+  menuPortal: (base) => ({
+    ...base,
+    zIndex: 99999,
+  }),
 };
 
 export const SelectSocio = ({
@@ -141,6 +145,7 @@ export const SelectSocio = ({
                   styles={customStyles}
                   className={styles.selectWrapper}
                   icon={icon}
+                  menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
                   {...props}
                 />
                 <label className={styles.label}>{label}</label>
