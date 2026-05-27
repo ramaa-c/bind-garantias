@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import { FaFileAlt, FaSave } from "react-icons/fa";
+import { FaFileAlt, FaSave, FaFileUpload } from "react-icons/fa";
 import { DocumentosLegajo } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { toast } from "sonner";
 import { Button } from "../../../../components/ui";
+import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./DocumentacionView.module.css";
 
 const DOC_TITLES = {
@@ -21,6 +22,13 @@ export default function DocumentacionView() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingData, setPendingData] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setIsHelpOpen((prev) => !prev);
+    document.addEventListener("bindHelp:toggle", handler);
+    return () => document.removeEventListener("bindHelp:toggle", handler);
+  }, []);
 
   const methods = useForm({
     mode: "onChange",
@@ -117,7 +125,7 @@ export default function DocumentacionView() {
       <header className={styles.pageHeader}>
         <div className={styles.headerLeft}>
           <div className={styles.iconCircleSmall}>
-            <FaFileAlt />
+            <FaFileUpload />
           </div>
           <div className={styles.titleWrapper}>
             <h1 className={styles.title}>Tu perfil digital</h1>
@@ -135,7 +143,7 @@ export default function DocumentacionView() {
           form="legajo-form"
           className={styles.submitBtn}
           onClick={() => methods.setValue("intentoAvanzar", true)}
-          disabled={methods.formState.isSubmitting || guardando}
+          disabled={methods.formState.isSubmitting || guardando || !methods.formState.isDirty}
         >
           <FaSave style={{ marginRight: "0.5rem" }} />
           {methods.formState.isSubmitting || guardando ? "Actualizando..." : "Actualizar legajo"}
@@ -160,6 +168,12 @@ export default function DocumentacionView() {
         titulo="Guardar legajo digital"
         mensaje="¿Estás seguro de que deseas guardar los cambios en tu legajo digital?"
         isLoading={guardando}
+      />
+
+      <HelpDrawer
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        contexto="inicio"
       />
     </section>
   );

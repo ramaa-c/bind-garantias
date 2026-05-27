@@ -18,6 +18,7 @@ export { default as ContactoModal } from "./shared/ContactoModal/ContactoModal";
 export { default as ConfirmacionBorradorModal } from "./shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 export * from "./shared/HistorialEstadoModal/HistorialEstadoModal";
 export * from "./shared/DocumentosLegajo/DocumentosLegajo";
+export * from "./shared/SociosLegajo/SociosLegajo";
 
 // --- CHEQUES ---
 export { default as Paso6Bolsa } from './cheques/Paso6Bolsa/Paso6Bolsa';

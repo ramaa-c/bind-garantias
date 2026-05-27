@@ -10,7 +10,7 @@ export const Paso1CargaMasiva = ({
   onProcesarArchivo,
   isProcessing = false,
 }) => {
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     accept: {
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
         ".xlsx",
@@ -74,7 +74,10 @@ export const Paso1CargaMasiva = ({
             subtitle="o hacé click para buscar (.xlsx, .csv)"
             isDragging={isDragActive}
             file={archivoCargado}
-            onRemove={handleRemoveFile}
+            onEdit={(e) => {
+              if (e) e.stopPropagation();
+              open();
+            }}
           />
         </div>
 

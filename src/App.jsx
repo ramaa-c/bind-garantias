@@ -32,6 +32,7 @@ import { Gestion as GestionSocios } from "./components/features";
 import { AltaOperacion } from "./pages/cliente/operaciones/alta-operacion/AltaOperacion";
 import { Gestion as GestionUsuarios } from "./pages/cliente/usuarios/Gestion";
 import DocumentacionView from "./pages/cliente/operaciones/documentacion/DocumentacionView";
+import SociosView from "./pages/cliente/operaciones/socios/SociosView";
 import NotFound from "./pages/shared/NotFound/NotFound";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
@@ -63,6 +64,16 @@ function App() {
 
           <Route
             path="/socios"
+            element={
+              <OnboardingGuard>
+                <DashboardLayout>
+                  <SociosView />
+                </DashboardLayout>
+              </OnboardingGuard>
+            }
+          />
+          <Route
+            path="/gestion-socios"
             element={
               <OnboardingGuard>
                 <DashboardLayout>
