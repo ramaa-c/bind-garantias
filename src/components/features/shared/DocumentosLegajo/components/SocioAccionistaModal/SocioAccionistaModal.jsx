@@ -542,7 +542,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           }
           toast.success("Documentos de identidad subidos correctamente.", { id: uploadToastId });
         } catch (uploadErr) {
-          console.error("❌ [MODAL - ACCIONISTA] Error subiendo archivos de DNI:", uploadErr);
+          console.error("[MODAL - ACCIONISTA] Error subiendo archivos de DNI:", uploadErr);
           toast.error("Error al subir los documentos de identidad.", { id: uploadToastId });
           throw uploadErr;
         }

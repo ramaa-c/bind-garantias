@@ -100,13 +100,13 @@ export function SociosLegajo() {
             t = await tercerosService.obtenerTerceroPorId(tid);
           } catch (apiErr) {
             console.warn(
-              `⚠️ [LEGAJO] No se pudo obtener tercero ${tid} de la API estándar. Intentando SGRPlus...`,
+              `[LEGAJO] No se pudo obtener tercero ${tid} de la API estándar. Intentando SGRPlus...`,
             );
             try {
               t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
             } catch (sgrErr) {
               console.error(
-                `❌ [LEGAJO] Error total obteniendo tercero ${tid}:`,
+                `[LEGAJO] Error total obteniendo tercero ${tid}:`,
                 sgrErr,
               );
             }

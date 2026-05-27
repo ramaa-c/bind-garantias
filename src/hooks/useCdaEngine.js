@@ -28,8 +28,11 @@ export const useCdaEngine = () => {
 
     try {
       // 1. Obtener el grupo asociado a la pantalla
-      const pantallaGrupoRes = await cdaService.obtenerPantallaGrupoCda(pantalla);
-      const pantallaGrupo = Array.isArray(pantallaGrupoRes) ? pantallaGrupoRes[0] : pantallaGrupoRes;
+      const pantallaGrupoRes =
+        await cdaService.obtenerPantallaGrupoCda(pantalla);
+      const pantallaGrupo = Array.isArray(pantallaGrupoRes)
+        ? pantallaGrupoRes[0]
+        : pantallaGrupoRes;
 
       if (!pantallaGrupo || !pantallaGrupo.grupocdaid) {
         setLoading(false);
@@ -40,7 +43,9 @@ export const useCdaEngine = () => {
 
       // 2. Obtener la lista de CDAs del grupo
       const cdasDelGrupoRes = await cdaService.obtenerGrupoCda(grupoId);
-      const cdasDelGrupo = Array.isArray(cdasDelGrupoRes) ? cdasDelGrupoRes : [];
+      const cdasDelGrupo = Array.isArray(cdasDelGrupoRes)
+        ? cdasDelGrupoRes
+        : [];
 
       if (cdasDelGrupo.length === 0) {
         setLoading(false);
@@ -54,52 +59,71 @@ export const useCdaEngine = () => {
         const cdaId = rel.cdaid;
         if (!cdaId) continue;
 
-        // Obtener detalles del CDA para saber si es invalidante
         let cdaDetailRes = null;
         try {
           cdaDetailRes = await cdaService.obtenerCda(cdaId);
         } catch (errDetail) {
-          console.warn(`⚠️ [CDA ENGINE] No se pudo obtener detalles del CDA ${cdaId}:`, errDetail);
+          console.warn(
+            `[CDA ENGINE] No se pudo obtener detalles del CDA ${cdaId}:`,
+            errDetail,
+          );
         }
 
-        // Si viene como Array, tomamos el primer elemento
-        const cdaDetail = Array.isArray(cdaDetailRes) ? cdaDetailRes[0] : cdaDetailRes;
+        const cdaDetail = Array.isArray(cdaDetailRes)
+          ? cdaDetailRes[0]
+          : cdaDetailRes;
 
         const rawEsInvalidante = cdaDetail
-          ? (cdaDetail.esinvalidante !== undefined ? cdaDetail.esinvalidante : cdaDetail.esInvalidante)
+          ? cdaDetail.esinvalidante !== undefined
+            ? cdaDetail.esinvalidante
+            : cdaDetail.esInvalidante
           : null;
 
-        const isInvalidante = rawEsInvalidante !== null && rawEsInvalidante !== undefined
-          ? (rawEsInvalidante === true || 
-             rawEsInvalidante === 1 || 
-             String(rawEsInvalidante).trim() === "1" || 
-             String(rawEsInvalidante).toLowerCase().trim() === "true")
-          : true; // Por defecto true si la propiedad no está definida
-        const descripcion = cdaDetail?.descripcion || `Validación interna (CDA ${cdaId})`;
+        const isInvalidante =
+          rawEsInvalidante !== null && rawEsInvalidante !== undefined
+            ? rawEsInvalidante === true ||
+              rawEsInvalidante === 1 ||
+              String(rawEsInvalidante).trim() === "1" ||
+              String(rawEsInvalidante).toLowerCase().trim() === "true"
+            : true;
+        const descripcion =
+          cdaDetail?.descripcion || `Validación interna (CDA ${cdaId})`;
 
         try {
           const cuitLimpio = String(cuit).replace(/\D/g, "");
-          console.log(`🚀 [CDA ENGINE] Ejecutando CDA ${cdaId} para CUIT ${cuitLimpio}`);
-          
+          console.log(
+            `[CDA ENGINE] Ejecutando CDA ${cdaId} para CUIT ${cuitLimpio}`,
+          );
+
           await cdaService.ejecutarCda({
             cdaid: Number(cdaId),
             cuit: cuitLimpio,
           });
-          console.log(`✅ [CDA ENGINE] CDA ${cdaId} superado con éxito (Status: 202)`);
+          console.log(
+            `[CDA ENGINE] CDA ${cdaId} superado con éxito (Status: 202)`,
+          );
         } catch (errPost) {
           const is406 = errPost.response?.status === 406;
-          
+
           let apiMessage = errPost.response?.data;
           if (apiMessage && typeof apiMessage === "object") {
-            apiMessage = apiMessage.message || apiMessage.error || JSON.stringify(apiMessage);
+            apiMessage =
+              apiMessage.message ||
+              apiMessage.error ||
+              JSON.stringify(apiMessage);
           }
 
-          const customMessage = apiMessage || CDA_MESSAGES[cdaId] || descripcion;
+          const customMessage =
+            apiMessage || CDA_MESSAGES[cdaId] || descripcion;
 
           if (isInvalidante) {
-            console.error(`❌ [CDA ENGINE] CDA ${cdaId} falló y es invalidante (Status: ${errPost.response?.status || 500}). Mensaje: "${customMessage}"`);
+            console.error(
+              `[CDA ENGINE] CDA ${cdaId} falló y es invalidante (Status: ${errPost.response?.status || 500}). Mensaje: "${customMessage}"`,
+            );
           } else {
-            console.warn(`⚠️ [CDA ENGINE] CDA ${cdaId} falló pero NO es invalidante (Status: ${errPost.response?.status || 500}). Mensaje: "${customMessage}"`);
+            console.warn(
+              `[CDA ENGINE] CDA ${cdaId} falló pero NO es invalidante (Status: ${errPost.response?.status || 500}). Mensaje: "${customMessage}"`,
+            );
           }
 
           const errorObj = {
@@ -114,23 +138,30 @@ export const useCdaEngine = () => {
           if (isInvalidante) {
             setError(customMessage);
             setLoading(false);
-            console.log(`🛑 [CDA ENGINE] Interrumpiendo ejecución por error invalidante en CDA ${cdaId}.`);
+            console.log(
+              `[CDA ENGINE] Interrumpiendo ejecución por error invalidante en CDA ${cdaId}.`,
+            );
             return { success: false, errors: errorsList };
           }
         }
       }
 
-      const exitoGlobal = errorsList.length === 0 || !errorsList.some((e) => e.isInvalidante);
-      console.log(`🎉 [CDA ENGINE] Finalizó ejecución para pantalla "${pantalla}". Éxito global: ${exitoGlobal}`);
+      const exitoGlobal =
+        errorsList.length === 0 || !errorsList.some((e) => e.isInvalidante);
+      console.log(
+        `[CDA ENGINE] Finalizó ejecución para pantalla "${pantalla}". Éxito global: ${exitoGlobal}`,
+      );
 
       setLoading(false);
       return {
-        success: errorsList.length === 0 || !errorsList.some((e) => e.isInvalidante),
+        success:
+          errorsList.length === 0 || !errorsList.some((e) => e.isInvalidante),
         errors: errorsList,
       };
     } catch (errGlobal) {
-      console.error("❌ [CDA ENGINE] Error crítico de ejecución:", errGlobal);
-      const msgError = "Ocurrió un error inesperado al realizar las validaciones internas.";
+      console.error("[CDA ENGINE] Error crítico de ejecución:", errGlobal);
+      const msgError =
+        "Ocurrió un error inesperado al realizar las validaciones internas.";
       setError(msgError);
       setLoading(false);
       return { success: false, errors: [{ message: msgError }] };

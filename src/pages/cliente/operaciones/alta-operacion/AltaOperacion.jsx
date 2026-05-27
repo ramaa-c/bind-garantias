@@ -57,7 +57,7 @@ export const AltaOperacion = () => {
     }
 
     console.log(
-      "🔍 [AltaOperacion] Iniciando validaciones internas CDA para cada Socio declarado...",
+      "[AltaOperacion] Iniciando validaciones internas CDA para cada Socio declarado...",
     );
 
     const cuitLimpioEmpresa = cuitActivo
@@ -69,13 +69,13 @@ export const AltaOperacion = () => {
 
       if (cuitLimpioEmpresa && socioCuitLimpio === cuitLimpioEmpresa) {
         console.log(
-          `⚠️ [AltaOperacion] Omitiendo validación de socio CDA para la propia empresa (CUIT: ${socioCuitLimpio})`,
+          `[AltaOperacion] Omitiendo validación de socio CDA para la propia empresa (CUIT: ${socioCuitLimpio})`,
         );
         continue;
       }
 
       console.log(
-        `🔍 [AltaOperacion] Validando socio: "${socio.nombre}" (CUIT: ${socioCuitLimpio})`,
+        `[AltaOperacion] Validando socio: "${socio.nombre}" (CUIT: ${socioCuitLimpio})`,
       );
 
       const result = await ejecutarValidaciones(
@@ -85,7 +85,7 @@ export const AltaOperacion = () => {
       if (!result.success) {
         const invalidatingError = result.errors.find((e) => e.isInvalidante);
         console.error(
-          `❌ [AltaOperacion] Validación CDA fallida para socio "${socio.nombre}":`,
+          `[AltaOperacion] Validación CDA fallida para socio "${socio.nombre}":`,
           invalidatingError,
         );
         const errorMsg =
@@ -100,7 +100,7 @@ export const AltaOperacion = () => {
     }
 
     console.log(
-      "✅ [AltaOperacion] Todos los socios superaron las validaciones CDA con éxito. Avanzando a la calculadora de montos.",
+      "[AltaOperacion] Todos los socios superaron las validaciones CDA con éxito. Avanzando a la calculadora de montos.",
     );
     setPasoActual(2);
   };
@@ -574,7 +574,7 @@ export const AltaOperacion = () => {
           await tercerosService.guardarRelacionesDeSocio(payloadRelacionBolsa);
         } catch (relError) {
           console.error(
-            "❌ [ALTA OPERACION] Error al guardar relación de agente de bolsa:",
+            "[ALTA OPERACION] Error al guardar relación de agente de bolsa:",
             relError,
           );
         }
@@ -674,7 +674,7 @@ export const AltaOperacion = () => {
             }
           } catch (repError) {
             console.error(
-              `❌ [ALTA OPERACION] Error al procesar representante ${rep.nombre}:`,
+              `[ALTA OPERACION] Error al procesar representante ${rep.nombre}:`,
               repError,
             );
           }
