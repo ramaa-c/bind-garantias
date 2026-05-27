@@ -55,7 +55,7 @@ const DropzoneField = ({
             : null
         }
         onClick={() => document.getElementById(`file-input-${fileKey}`).click()}
-        onRemove={() => onFileRemove(fileKey)}
+        onEdit={() => document.getElementById(`file-input-${fileKey}`).click()}
         isDragging={draggingKey === fileKey}
         onDragOver={(e) => {
           e.preventDefault();

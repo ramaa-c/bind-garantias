@@ -11,6 +11,7 @@ import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
+import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 
 const Navbar = ({
   texto = "¿No tenés cuenta?",
@@ -25,6 +26,9 @@ const Navbar = ({
 
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  
+  const { nombreEmpresa } = useEmpresaActiva();
+  const isVinculado = !!nombreEmpresa;
 
   const emailUsuario =
     typeof user === "string"
@@ -99,22 +103,24 @@ const Navbar = ({
                 <div className={styles.dropdownMenu}>
                   <div className={styles.dropdownHeader}>
                     <p className={styles.dropdownEmail}>{emailUsuario}</p>
-                    <p className={styles.dropdownRole}>Socio activo</p>
+                    <p className={`${styles.dropdownRole} ${!isVinculado ? styles.roleNoVinculado : ""}`}>
+                      {isVinculado ? "Socio activo" : "No vinculado"}
+                    </p>
                   </div>
 
-                  <div className={styles.dropdownBody}>
-
-                    <button
-                      className={styles.dropdownItem}
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        setIsTasasModalOpen(true);
-                      }}
-                    >
-                      <FiTrendingUp className={styles.itemIcon} /> Tasas
-                      vigentes
-                    </button>
-                  </div>
+                  {isVinculado && (
+                    <div className={styles.dropdownBody}>
+                      <button
+                        className={styles.dropdownItem}
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          setIsTasasModalOpen(true);
+                        }}
+                      >
+                        <FiTrendingUp className={styles.itemIcon} /> Tasas vigentes
+                      </button>
+                    </div>
+                  )}
 
                   <div className={styles.dropdownFooter}>
                     <button className={styles.logoutBtn} onClick={handleLogout}>

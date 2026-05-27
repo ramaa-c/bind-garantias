@@ -109,6 +109,7 @@ export function VincularUsuarioSection({ socioIdActivo }) {
             <Button
               type="button"
               variant="primary"
+              size="sm"
               onClick={handleVincularUsuario}
               disabled={loadingVinculacion}
             >

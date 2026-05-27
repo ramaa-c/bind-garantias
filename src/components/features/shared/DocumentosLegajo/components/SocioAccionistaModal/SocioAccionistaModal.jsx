@@ -110,7 +110,7 @@ const procesarArchivo = async (fileObj, archivosBackend = [], mode = 'view') => 
   }
 };
 
-const DropzoneField = ({ file, title, subtitle, onChange, onRemove, onView, onDownload, fileKey, hasError }) => {
+const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDownload, fileKey, hasError }) => {
   const [isDragging, setIsDragging] = useState(false);
   return (
     <div className={styles.dropzoneWrapper}>
@@ -135,7 +135,7 @@ const DropzoneField = ({ file, title, subtitle, onChange, onRemove, onView, onDo
             : null
         }
         onClick={() => document.getElementById(`file-input-${fileKey}`).click()}
-        onRemove={onRemove}
+        onEdit={onEdit}
         onView={onView}
         onDownload={onDownload}
         isDragging={isDragging}
@@ -789,7 +789,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   fileKey="frente"
                   hasError={errorDniFrente}
                   onChange={(f) => { setDniFrenteFile(f); setFilesChanged(true); setErrorDniFrente(false); }}
-                  onRemove={() => { setDniFrenteFile(null); setFilesChanged(true); }}
+                  onEdit={() => document.getElementById(`file-input-frente`).click()}
                   onView={() => procesarArchivo(dniFrenteFile, archivosBackend, 'view')}
                   onDownload={() => procesarArchivo(dniFrenteFile, archivosBackend, 'download')}
                 />
@@ -800,7 +800,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   fileKey="dorso"
                   hasError={errorDniDorso}
                   onChange={(f) => { setDniDorsoFile(f); setFilesChanged(true); setErrorDniDorso(false); }}
-                  onRemove={() => { setDniDorsoFile(null); setFilesChanged(true); }}
+                  onEdit={() => document.getElementById(`file-input-dorso`).click()}
                   onView={() => procesarArchivo(dniDorsoFile, archivosBackend, 'view')}
                   onDownload={() => procesarArchivo(dniDorsoFile, archivosBackend, 'download')}
                 />

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FiPlus, FiSearch, FiClock } from "react-icons/fi";
-import { FaMoneyBillWave } from "react-icons/fa";
+import { FaFileInvoiceDollar } from "react-icons/fa";
 import { BotonVolver, Button, Select, Spinner, SkeletonTable } from "../../../components/ui";
 import {
   TarjetaSolicitud,
@@ -191,7 +191,7 @@ export default function Solicitudes() {
       <header className={styles.compactHeader}>
         <div className={styles.headerLeft}>
           <div className={styles.iconCircleSmall}>
-            <FaMoneyBillWave />
+            <FaFileInvoiceDollar />
           </div>
           <div className={styles.titleWrapper}>
             <h1 className={styles.title}>Mis Solicitudes</h1>

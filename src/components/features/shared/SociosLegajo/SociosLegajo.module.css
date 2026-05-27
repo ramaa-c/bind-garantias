@@ -9,7 +9,7 @@
   overflow: hidden;
 }
 
-/* SIDEBAR BG */
+/* SIDEBAR BG (desktop) */
 .sidebarBg {
   display: none;
 }
@@ -241,20 +241,7 @@
   box-shadow: 0 0 0 1px rgba(255, 82, 82, 0.2);
 }
 
-.errorContainer {
-  min-height: 1.125rem;
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  padding-top: 0.35rem;
-  padding-left: 0.25rem;
-}
 
-@media (min-width: 48rem) {
-  .errorContainer {
-    justify-content: flex-start !important;
-  }
-}
 
 .errorMessage {
   color: #ff5252;
@@ -1164,9 +1151,16 @@
 .errorContainer {
   min-height: 1.125rem;
   display: flex;
-  align-items: flex-start;
   justify-content: center;
   width: 100%;
+  padding-top: 0.35rem;
+  padding-left: 0.25rem;
+}
+
+@media (min-width: 48rem) {
+  .errorContainer {
+    justify-content: flex-start !important;
+  }
 }
 
 .errorText {

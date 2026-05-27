@@ -201,7 +201,11 @@ export const DocumentosEmpresaModal = ({
                               .getElementById(`modal-file-${doc.key}`)
                               .click()
                           }
-                          onRemove={() => onFileRemove(doc.key)}
+                          onEdit={() =>
+                            document
+                              .getElementById(`modal-file-${doc.key}`)
+                              .click()
+                          }
                         />
                         <input
                           type="file"

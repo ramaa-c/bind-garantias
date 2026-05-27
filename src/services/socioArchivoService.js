@@ -5,6 +5,7 @@ const fileToBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
+      // reader.result es "data:application/pdf;base64,XXXX..."
       const base64 = reader.result.split(",")[1] || reader.result;
       resolve(base64);
     };
