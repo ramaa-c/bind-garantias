@@ -96,18 +96,16 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           const dg = afipData.datosgenerales;
 
           // ── VALIDACIÓN CDA (PANTALLA_INGRESO_CUIT)
-          console.log("🔍 [Paso1Cuit] Iniciando validaciones internas CDA para el CUIT:", cuit);
           const resultCda = await ejecutarValidaciones("PANTALLA_INGRESO_CUIT", cuit);
           if (!resultCda.success) {
             const errorCda = resultCda.errors.find((e) => e.isInvalidante);
-            console.error("❌ [Paso1Cuit] Validación CDA fallida. Deteniendo avance de paso:", errorCda);
+            console.error("[Paso1Cuit] Validación CDA fallida. Deteniendo avance de paso:", errorCda);
             toast.error("Validación interna fallida", {
               description: errorCda?.message || "La validación interna (CDA) ha fallado.",
               duration: 6000,
             });
             return;
           }
-          console.log("✅ [Paso1Cuit] Validaciones CDA superadas exitosamente. Permitiendo avanzar de paso.");
 
           const nombreCompleto =
             dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim();

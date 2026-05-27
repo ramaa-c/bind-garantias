@@ -143,7 +143,6 @@ export default function FirmaProcesoModal({ isOpen, onClose }) {
                   type="button"
                   variant="outline"
                   className={styles.btnAction}
-                  onClick={() => console.log("Descargando PDF...")}
                 >
                   <FiDownload size={13} /> Descargar copia
                 </Button>

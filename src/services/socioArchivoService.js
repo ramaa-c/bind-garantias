@@ -95,7 +95,7 @@ export const socioArchivoService = {
       tipodocumentoarchivoid: getTipoDocumentoId(docKey),
     };
 
-    console.log(`📤 PUT SocioArchivo [${docKey}]:`, {
+    console.log(` PUT SocioArchivo [${docKey}]:`, {
       ...payload,
       contenido: `(base64, ${contenidoBase64.length} chars)`,
     });

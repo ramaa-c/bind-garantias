@@ -91,20 +91,20 @@ export const tercerosService = {
     };
 
     console.log(
-      "📤 [tercerosService] intentando PUT a api/SocioTerceroRelacion con wrappedData:",
+      "[tercerosService] intentando PUT a api/SocioTerceroRelacion con wrappedData:",
       wrappedData,
     );
     try {
       const response = await api.put("api/SocioTerceroRelacion", wrappedData);
-      console.log("✅ [tercerosService] PUT exitoso. Respuesta:", response.data);
+      console.log("[tercerosService] PUT exitoso. Respuesta:", response.data);
       return response.data;
     } catch (err) {
       console.error(
-        "❌ [tercerosService] PUT falló con Status:",
+        "[tercerosService] PUT falló con Status:",
         err.response?.status,
       );
       console.error(
-        "❌ [tercerosService] Detalles del error del backend:",
+        "[tercerosService] Detalles del error del backend:",
         err.response?.data,
       );
       throw err;

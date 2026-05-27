@@ -84,7 +84,7 @@ export const DocumentosEmpresaModal = ({
             });
           }
         } catch (err) {
-          console.error(`❌ Error subiendo ${doc.key}:`, err);
+          console.error(`Error subiendo ${doc.key}:`, err);
           errores++;
         } finally {
           setUploadingKeys((prev) => ({ ...prev, [doc.key]: false }));

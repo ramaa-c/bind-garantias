@@ -418,7 +418,7 @@ export default function Paso5Documentacion({
                   return res;
                 })
                 .catch((err) =>
-                  console.error(`❌ Error subiendo DNI frente:`, err),
+                  console.error(`Error subiendo DNI frente:`, err),
                 ),
             );
           }
@@ -437,7 +437,7 @@ export default function Paso5Documentacion({
                   return res;
                 })
                 .catch((err) =>
-                  console.error(`❌ Error subiendo DNI dorso:`, err),
+                  console.error(`Error subiendo DNI dorso:`, err),
                 ),
             );
           }
