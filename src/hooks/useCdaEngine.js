@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { cdaService } from "../services/cdaService";
 
 const CDA_MESSAGES = {
@@ -54,9 +54,49 @@ export const useCdaEngine = () => {
           JSON.stringify(apiMessage);
       }
 
-      const customMessage =
+      let customMessage =
         apiMessage ||
         "Ocurrió un error inesperado al realizar las validaciones internas (CDA).";
+
+      if (typeof customMessage === "string" && customMessage.includes("\n")) {
+        const lineas = customMessage
+          .split("\n")
+          .map((linea) => linea.trim())
+          .filter((linea) => linea.length > 0);
+
+        customMessage = React.createElement(
+          "div",
+          {
+            style: {
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.35rem",
+              marginTop: "0.35rem",
+              fontFamily: "inherit",
+            },
+          },
+          lineas.map((linea, index) =>
+            React.createElement(
+              "div",
+              {
+                key: index,
+                style: {
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.5rem",
+                  lineHeight: "1.3",
+                },
+              },
+              React.createElement(
+                "span",
+                { style: { color: "#ef4444", fontWeight: "bold" } },
+                "•"
+              ),
+              React.createElement("span", null, linea)
+            )
+          )
+        );
+      }
 
       const errorObj = {
         isInvalidante: true,
