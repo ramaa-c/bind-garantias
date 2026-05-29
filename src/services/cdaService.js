@@ -22,8 +22,16 @@ export const cdaService = {
     return response.data;
   },
 
-  ejecutarCda: async (data) => {
-    const response = await api.post("api/cda/execute", data);
+  ejecutarCda: async (pantallaOrObj, cuit) => {
+    let Pantalla = pantallaOrObj;
+    let Cuit = cuit;
+    if (typeof pantallaOrObj === "object" && pantallaOrObj !== null) {
+      Pantalla = pantallaOrObj.pantalla || pantallaOrObj.Pantalla;
+      Cuit = pantallaOrObj.cuit || pantallaOrObj.Cuit;
+    }
+    const response = await api.get("api/cda/execute", {
+      params: { Pantalla, Cuit },
+    });
     return response.data;
   },
 };
