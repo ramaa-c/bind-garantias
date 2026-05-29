@@ -252,6 +252,9 @@
     min-height: 5rem;
     padding: 0 2rem;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+    background: var(--carbon-black, #1a1a1a);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .menuButton {

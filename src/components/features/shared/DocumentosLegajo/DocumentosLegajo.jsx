@@ -83,8 +83,6 @@ export function DocumentosLegajo() {
   const [archivosBackend, setArchivosBackend] = useState([]);
   const [uploadingKey, setUploadingKey] = useState(null);
 
-
-
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
     try {
@@ -123,8 +121,6 @@ export function DocumentosLegajo() {
   useEffect(() => {
     cargarArchivosExistentes();
   }, [socioIdActivo, setValue]);
-
-
 
   const handleFileUpload = (key, file) => {
     if (file instanceof File) {
@@ -241,6 +237,8 @@ export function DocumentosLegajo() {
                         document.getElementById(`file-input-${doc.key}`).click()
                       }
                       onDelete={() => handleFileRemove(doc.key)}
+                      onView={() => procesarArchivo(currentFile, archivosBackend, "view")}
+                      onDownload={() => procesarArchivo(currentFile, archivosBackend, "download")}
                     />
                     <input
                       id={`file-input-${doc.key}`}
