@@ -87,22 +87,9 @@ export const procesarArchivo = async (
       return;
     }
 
-    const toastId = toast.loading(
-      mode === "download"
-        ? "Preparando archivo..."
-        : "Preparando visualización del archivo...",
-    );
-
     const mimeType = getMimeType(fileData.nombrearchivo);
     const blob = base64ToBlob(fileData.contenido, mimeType);
     const url = URL.createObjectURL(blob);
-
-    toast.success(
-      mode === "download"
-        ? "Archivo descargado correctamente."
-        : "Archivo cargado correctamente.",
-      { id: toastId },
-    );
 
     if (mode === "download") {
       const a = document.createElement("a");
