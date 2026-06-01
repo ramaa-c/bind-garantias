@@ -6,8 +6,8 @@ import styles from "./ProcesamientoModal.module.css";
 
 const CheckIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="18"
+    height="18"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -21,8 +21,8 @@ const CheckIcon = () => (
 
 const ErrorIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="18"
+    height="18"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -81,7 +81,7 @@ export const ProcesamientoModal = ({
                     aria-label={BADGE_LABELS[paso.estado]}
                   >
                     {isCompleted && <CheckIcon />}
-                    {isLoading && <Spinner size={16} center={false} />}
+                    {isLoading && <Spinner size={18} center={false} />}
                     {isError && <ErrorIcon />}
                     {isPending && <span className={styles.dotPendiente} />}
                   </div>
