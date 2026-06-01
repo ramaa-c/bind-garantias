@@ -704,6 +704,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       label="Email"
                       icon={<FiMail />}
                       error={fieldState.error?.message}
+                      tooltip="Email que se utilizará para el envío de notificaciones societarias y comunicaciones de negocio."
                     />
                   )}
                 />

@@ -63,7 +63,7 @@ function App() {
           <Route path="/recuperar-clave" element={<RecuperarClave />} />
 
           <Route
-            path="/socios"
+            path="/legajo"
             element={
               <OnboardingGuard>
                 <DashboardLayout>
@@ -72,6 +72,7 @@ function App() {
               </OnboardingGuard>
             }
           />
+          <Route path="/socios" element={<Navigate to="/legajo" replace />} />
           <Route
             path="/gestion-socios"
             element={

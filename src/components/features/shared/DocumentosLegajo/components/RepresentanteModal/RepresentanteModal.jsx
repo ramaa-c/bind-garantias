@@ -358,6 +358,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
                       label="Correo Electrónico"
                       icon={<FiMail />}
                       error={fieldState.error?.message}
+                      tooltip="Email personal del representante. Se utilizará para el envío y firma digital de contratos y documentos legales."
                     />
                   )}
                 />

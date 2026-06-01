@@ -1,6 +1,7 @@
 import React, { useState, forwardRef } from "react";
 import { Controller } from "react-hook-form";
 import { IMaskInput } from "react-imask";
+import { FiInfo } from "react-icons/fi";
 import styles from "./InputSocioMasked.module.css";
 
 export const InputSocioMasked = forwardRef(({
@@ -11,6 +12,7 @@ export const InputSocioMasked = forwardRef(({
   mask,
   error,
   esValido,
+  tooltip,
   className = "",
   defaultValue = "",
   value: manualValue,
@@ -92,6 +94,15 @@ export const InputSocioMasked = forwardRef(({
             )}
             <label className={styles.label}>{label}</label>
           </div>
+
+          {tooltip && (
+            <div className={styles.helpIconContainer}>
+              <FiInfo className={styles.helpIcon} />
+              <div className={styles.tooltipBubble}>
+                {tooltip}
+              </div>
+            </div>
+          )}
         </div>
 
         {hasError && <span className={styles.errorMsg}>{errorMessage}</span>}

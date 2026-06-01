@@ -21,7 +21,7 @@ export default function SociosView() {
             <FiUsersIcon />
           </div>
           <div className={styles.titleWrapper}>
-            <h1 className={styles.title}>Perfil de socios</h1>
+            <h1 className={styles.title}>Legajo</h1>
             <p className={styles.subtitle}>
               Gestioná la composición accionaria, representantes y
               vinculaciones.

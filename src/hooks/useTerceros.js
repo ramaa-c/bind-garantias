@@ -28,6 +28,7 @@ export const useCrearTercero = () => {
     onSuccess: () => {
       return Promise.all([
         queryClient.invalidateQueries({ queryKey: ["terceros", "lista"] }),
+        queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
       ]);
     },
     onError: (error) => {
@@ -62,6 +63,9 @@ export const useGuardarRelacionesDeSocio = () => {
         queryClient.invalidateQueries({
           queryKey: ["relacionesSocio", variables.socioid],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ["socioLegajoCompleto"],
+        }),
       ]);
     },
     onError: (error) => {
@@ -85,6 +89,7 @@ export const useActualizarTercero = () => {
       return Promise.all(
         [
           queryClient.invalidateQueries({ queryKey: ["terceros", "lista"] }),
+          queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
           variables.tercerorelacionadoid &&
             queryClient
               .invalidateQueries({
@@ -113,6 +118,9 @@ export const useActualizarRelacionSocio = () => {
       return Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["relacionesSocio", variables.socioid],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["socioLegajoCompleto"],
         }),
       ]);
     },
@@ -148,5 +156,153 @@ export const useObtenerRelacionesDeSocioSGRPlus = (socioId) => {
     queryKey: ["socioTerceroRelacionSGRPlus", socioId],
     queryFn: () => tercerosService.obtenerRelacionesDeSocioSGRPlus(socioId),
     enabled: !!socioId,
+  });
+};
+
+export const useObtenerDatosSocioLegajo = (socioId) => {
+  return useQuery({
+    queryKey: ["socioLegajoCompleto", socioId],
+    queryFn: async () => {
+      if (!socioId) return { accionistas: [], representantes: [], agentesBolsa: [] };
+      const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioId);
+      const arr = Array.isArray(relaciones) ? relaciones : [];
+
+      const accMap = {};
+      const repMap = {};
+      const bolsaMap = {};
+
+      const now = new Date();
+
+      await Promise.all(
+        arr.map(async (rel) => {
+          const fd = rel.fechadesde || rel.FechaDesde;
+          const fh = rel.fechahasta || rel.FechaHasta;
+          if (fh && fh !== "") {
+            const expirationDate = new Date(fh);
+            const startDate = fd ? new Date(fd) : null;
+
+            const isSameAsStart =
+              startDate &&
+              (expirationDate.getTime() === startDate.getTime() ||
+                expirationDate.toISOString().split("T")[0] ===
+                  startDate.toISOString().split("T")[0]);
+
+            if (!isSameAsStart && expirationDate < now) {
+              return;
+            }
+          }
+
+          const tid =
+            rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
+          if (!tid) return;
+
+          try {
+            let t = null;
+            try {
+              t = await tercerosService.obtenerTerceroPorId(tid);
+            } catch (apiErr) {
+              console.warn(
+                `[LEGAJO] No se pudo obtener tercero ${tid} de la API estándar. Intentando SGRPlus...`,
+              );
+              try {
+                t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
+              } catch (sgrErr) {
+                console.error(
+                  `[LEGAJO] Error total obteniendo tercero ${tid}:`,
+                  sgrErr,
+                );
+              }
+            }
+
+            if (t) {
+              const tiporel =
+                rel.tiporelacionsocioid ||
+                rel.TipoRelacionSocioID ||
+                rel.tiporelacionsocioId;
+              const tiporelNum = Number(tiporel);
+
+              const item = {
+                id: tid,
+                relacionId:
+                  rel.sociotercerorelacionid || rel.SocioTerceroRelacionID,
+                relacion: rel,
+                nombre:
+                  t.denominacion ||
+                  t.Denominacion ||
+                  t.razonsocial ||
+                  t.RazonSocial ||
+                  t.nombre ||
+                  t.Nombre ||
+                  "Sin nombre",
+                cuit:
+                  t.cuit ||
+                  t.Cuit ||
+                  t.nrodocumento ||
+                  t.numerodocumento ||
+                  t.NumeroDocumento ||
+                  t.documento ||
+                  "—",
+                email: t.mail || t.Mail || "",
+                telefono: t.telefono || t.Telefono || "",
+                direccion: t.calle || t.Calle || "",
+                localidad: t.contacto || t.Contacto || "",
+                codpos: t.codpos || t.Codpos || "",
+                participacion: Number(
+                  rel.porcacciones || rel.participacion || rel.Participacion || 0,
+                ),
+                rolId: tiporelNum,
+                nrosubcuentacaja:
+                  rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "",
+                calle: t.calle || "",
+                numero: t.numero || 0,
+                piso: t.piso || "",
+                departamento: t.departamento || "",
+                ciudadid: t.ciudadid || 0,
+                provinciaid:
+                  rel.provinciaid || rel.ProvinciaID || t.provinciaid || 0,
+                tipopersonaid: t.tipopersonaid || 1,
+              };
+
+              const identifier =
+                item.cuit && item.cuit !== "—" ? item.cuit : item.id;
+
+              if (tiporelNum === 25) {
+                if (!accMap[identifier]) {
+                  accMap[identifier] = item;
+                }
+              } else if (tiporelNum === 210 || tiporelNum === 230) {
+                const existing = repMap[identifier];
+                if (!existing) {
+                  repMap[identifier] = item;
+                } else {
+                  if (item.rolId === 230 && existing.rolId !== 230) {
+                    repMap[identifier] = item;
+                  }
+                }
+              } else if (tiporelNum === 21) {
+                const existing = bolsaMap[identifier];
+                if (!existing) {
+                  bolsaMap[identifier] = item;
+                } else {
+                  if (item.nrosubcuentacaja && !existing.nrosubcuentacaja) {
+                    bolsaMap[identifier] = item;
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.warn("Error fetching third party detail:", tid, e);
+          }
+        })
+      );
+
+      return {
+        accionistas: Object.values(accMap),
+        representantes: Object.values(repMap),
+        agentesBolsa: Object.values(bolsaMap),
+      };
+    },
+    enabled: !!socioId,
+    staleTime: 1000 * 60 * 10, // 10 minutes cache
   });
 };

@@ -247,6 +247,7 @@ export default function SocioModal({
                     icon={<FiMail />}
                     error={getError("email")}
                     esValido={getEsValido("email")}
+                    tooltip="Email que se utilizará para el envío de notificaciones societarias y comunicaciones de negocio."
                   />
                   <InputSocioMasked
                     control={control}

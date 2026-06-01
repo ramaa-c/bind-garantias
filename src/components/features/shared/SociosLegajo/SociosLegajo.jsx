@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useObtenerDatosSocioLegajo } from "../../../../hooks/useTerceros";
 import {
   FiExternalLink,
   FiUsers,
@@ -19,25 +21,25 @@ import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularU
 
 const ESTRUCTURA_SOCIOS = [
   {
-    category: "Socios",
+    category: "Legajo",
     key: "accionistas",
     title: "Composición accionaria",
     info: "Administración del cuadro accionario y participaciones de socios.",
   },
   {
-    category: "Socios",
+    category: "Legajo",
     key: "representantes",
     title: "Representantes legales",
     info: "Administración de representantes legales y apoderados habilitados.",
   },
   {
-    category: "Socios",
+    category: "Legajo",
     key: "agentesBolsa",
     title: "Agentes de bolsa",
     info: "Vinculación y administración de agentes de bolsa y cuentas comitentes.",
   },
   {
-    category: "Socios",
+    category: "Legajo",
     key: "usuarios",
     title: "Vincular usuarios",
     info: "Otorgá acceso a otros usuarios para operar con esta empresa.",
@@ -48,168 +50,23 @@ export function SociosLegajo() {
   const [activeTab, setActiveTab] = useState(ESTRUCTURA_SOCIOS[0].key);
   const { socioIdActivo } = useEmpresaActiva();
 
-  const [accionistas, setAccionistas] = useState([]);
-  const [representantes, setRepresentantes] = useState([]);
-  const [agentesBolsa, setAgentesBolsa] = useState([]);
-  const [loadingSocios, setLoadingSocios] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: socioLegajoData, isLoading: loadingQuery } = useObtenerDatosSocioLegajo(socioIdActivo);
+
+  const accionistas = socioLegajoData?.accionistas || [];
+  const representantes = socioLegajoData?.representantes || [];
+  const agentesBolsa = socioLegajoData?.agentesBolsa || [];
+  const loadingSocios = loadingQuery;
+
   const [archivosBackend, setArchivosBackend] = useState([]);
   const [dniTerceros, setDniTerceros] = useState({});
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
-  const cargarSocios = async () => {
-    if (!socioIdActivo) return;
-    setLoadingSocios(true);
-    try {
-      const relaciones =
-        await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
-      const arr = Array.isArray(relaciones) ? relaciones : [];
-
-      const accMap = {};
-      const repMap = {};
-      const bolsaMap = {};
-
-      const now = new Date();
-
-      for (const rel of arr) {
-        const fd = rel.fechadesde || rel.FechaDesde;
-        const fh = rel.fechahasta || rel.FechaHasta;
-        if (fh && fh !== "") {
-          const expirationDate = new Date(fh);
-          const startDate = fd ? new Date(fd) : null;
-
-          const isSameAsStart =
-            startDate &&
-            (expirationDate.getTime() === startDate.getTime() ||
-              expirationDate.toISOString().split("T")[0] ===
-                startDate.toISOString().split("T")[0]);
-
-          if (!isSameAsStart && expirationDate < now) {
-            continue;
-          }
-        }
-
-        const tid =
-          rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
-        if (!tid) continue;
-
-        try {
-          let t = null;
-          try {
-            t = await tercerosService.obtenerTerceroPorId(tid);
-          } catch (apiErr) {
-            console.warn(
-              `[LEGAJO] No se pudo obtener tercero ${tid} de la API estándar. Intentando SGRPlus...`,
-            );
-            try {
-              t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
-            } catch (sgrErr) {
-              console.error(
-                `[LEGAJO] Error total obteniendo tercero ${tid}:`,
-                sgrErr,
-              );
-            }
-          }
-
-          if (t) {
-            const tiporel =
-              rel.tiporelacionsocioid ||
-              rel.TipoRelacionSocioID ||
-              rel.tiporelacionsocioId;
-            const tiporelNum = Number(tiporel);
-
-            const item = {
-              id: tid,
-              relacionId:
-                rel.sociotercerorelacionid || rel.SocioTerceroRelacionID,
-              relacion: rel,
-              nombre:
-                t.denominacion ||
-                t.Denominacion ||
-                t.razonsocial ||
-                t.RazonSocial ||
-                t.nombre ||
-                t.Nombre ||
-                "Sin nombre",
-              cuit:
-                t.cuit ||
-                t.Cuit ||
-                t.nrodocumento ||
-                t.numerodocumento ||
-                t.NumeroDocumento ||
-                t.documento ||
-                "—",
-              email: t.mail || t.Mail || "",
-              telefono: t.telefono || t.Telefono || "",
-              direccion: t.calle || t.Calle || "",
-              localidad: t.contacto || t.Contacto || "",
-              codpos: t.codpos || t.Codpos || "",
-              participacion: Number(
-                rel.porcacciones || rel.participacion || rel.Participacion || 0,
-              ),
-              rolId: tiporelNum,
-              nrosubcuentacaja:
-                rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "",
-              calle: t.calle || "",
-              numero: t.numero || 0,
-              piso: t.piso || "",
-              departamento: t.departamento || "",
-              ciudadid: t.ciudadid || 0,
-              provinciaid:
-                rel.provinciaid || rel.ProvinciaID || t.provinciaid || 0,
-              tipopersonaid: t.tipopersonaid || 1,
-            };
-
-            const identifier =
-              item.cuit && item.cuit !== "—" ? item.cuit : item.id;
-
-            if (tiporelNum === 25) {
-              if (!accMap[identifier]) {
-                accMap[identifier] = item;
-              }
-            } else if (tiporelNum === 210 || tiporelNum === 230) {
-              const existing = repMap[identifier];
-              if (!existing) {
-                repMap[identifier] = item;
-              } else {
-                if (item.rolId === 230 && existing.rolId !== 230) {
-                  repMap[identifier] = item;
-                }
-              }
-            } else if (tiporelNum === 21) {
-              const existing = bolsaMap[identifier];
-              if (!existing) {
-                bolsaMap[identifier] = item;
-              } else {
-                if (item.nrosubcuentacaja && !existing.nrosubcuentacaja) {
-                  bolsaMap[identifier] = item;
-                }
-              }
-            }
-          }
-        } catch (e) {
-          console.warn("Error fetching third party detail:", tid, e);
-        }
-      }
-
-      setAccionistas(Object.values(accMap));
-      setRepresentantes(Object.values(repMap));
-      setAgentesBolsa(Object.values(bolsaMap));
-    } catch (e) {
-      console.error("Error loading relations:", e);
-    } finally {
-      setLoadingSocios(false);
-    }
+  const cargarSocios = () => {
+    queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto", socioIdActivo] });
   };
-
-  useEffect(() => {
-    if (!socioIdActivo) {
-      setLoadingSocios(false);
-      return;
-    }
-    cargarSocios();
-  }, [socioIdActivo]);
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;

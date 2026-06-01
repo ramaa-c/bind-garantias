@@ -699,6 +699,7 @@ export default function Paso5Documentacion({
             type="email"
             error={errorEmailFacturacion}
             esValido={isEmailFacturacionValido}
+            tooltip="Email a donde se enviarán todos los comprobantes, facturas contables y liquidaciones de la empresa."
           />
         </section>
       </div>
