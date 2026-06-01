@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSchema";
 import { BarraProgreso, Button, Modal } from "../../../../components/ui";
-import Spinner from "../../../../components/ui/Spinner/Spinner";
+import { LoadingScreen } from "../../../../components/ui";
 import { Paso1Cuit, Paso2Datos } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../../../services/sociosService";
@@ -304,31 +304,10 @@ export const AltaDatosEmpresa = () => {
 
       {/* ── PANTALLA DE CARGA ────────────────────────────────────────── */}
       {enviandoSolicitud && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            height: "100vh",
-            backgroundColor: "var(--carbon-black, #1a1a1a)",
-            zIndex: 9999,
-          }}
-        >
-          <Spinner size={60} />
-          <p
-            style={{
-              marginTop: "1.5rem",
-              color: "var(--white)",
-              fontWeight: 600,
-              fontSize: "1.1rem",
-            }}
-          >
-            Configurando tu entorno de trabajo...
-          </p>
-        </div>
+        <LoadingScreen 
+          title="Configurando tu entorno"
+          message="Registrando los datos de tu empresa en el sistema..."
+        />
       )}
     </div>
   );

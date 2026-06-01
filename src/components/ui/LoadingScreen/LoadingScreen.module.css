@@ -1,0 +1,111 @@
+/* =========================================
+   LoadingScreen — Bind Fintech Design
+   ========================================= */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--carbon-black, #1a1a1a);
+  z-index: 9999;
+  animation: fadeIn 0.35s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  animation: riseIn 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- Spinner --- */
+.spinnerWrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 2rem;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--border, #252525);
+}
+
+.ringInner {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-top-color: var(--color-amarillo-bind, #f5f400);
+  animation: spin 0.9s linear infinite;
+}
+
+.ringInner::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-top-color: var(--color-azul-bind, #4c65e6);
+  animation: spin 1.4s linear infinite reverse;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Text --- */
+.titulo {
+  color: var(--white, #fffefe);
+  font-family: var(--font-principal, 'Metropolis', system-ui, sans-serif);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.5rem;
+  text-align: center;
+  animation: fadeUp 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) 0.1s both;
+}
+
+.mensaje {
+  color: var(--text-muted, #666666);
+  font-family: var(--font-principal, 'Metropolis', system-ui, sans-serif);
+  font-size: 0.825rem;
+  font-weight: 500;
+  text-align: center;
+  max-width: 22rem;
+  margin: 0;
+  line-height: 1.55;
+  animation: fadeUp 0.5s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) 0.18s both;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
