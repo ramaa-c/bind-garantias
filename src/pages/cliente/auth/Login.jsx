@@ -6,7 +6,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { FiMail, FiLock } from "react-icons/fi";
 import { InputSimple, Button } from "../../../components/ui";
-import { useLogin } from "../../../hooks/useUsuario";
+import { useLogin, useLoginByCode } from "../../../hooks/useUsuario";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Login.module.css";
@@ -26,10 +26,36 @@ const Login = () => {
   const setUser = useAuthStore((state) => state.setUser);
   const { channelInfo } = useChannel();
   const { mutate: iniciarSesion, isPending } = useLogin();
+  const { mutate: loginByCode, isPending: solicitandoCodigo } = useLoginByCode();
 
-  const { control, handleSubmit, setError, clearErrors } = useForm({
+  const { control, handleSubmit, setError, clearErrors, watch } = useForm({
     resolver: zodResolver(loginSchema),
   });
+
+  const emailValue = watch("email");
+
+  const handleIngresarConCodigo = () => {
+    if (!emailValue) {
+      setError("email", { type: "manual", message: "Ingresá tu email para solicitar el código" });
+      return;
+    }
+
+    loginByCode(
+      { email: emailValue, password: "" },
+      {
+        onSuccess: () => {
+          navigate("/confirmar-correo", {
+            state: { emailIngresado: emailValue, isLoginByCode: true },
+          });
+        },
+        onError: () => {
+          toast.error("Error al solicitar código", {
+            description: "Ocurrió un error. Intentá más tarde.",
+          });
+        },
+      }
+    );
+  };
 
   const onSubmit = (formData) => {
     if (formData.email === "admin" && formData.password === "admin") {
@@ -108,15 +134,15 @@ const Login = () => {
               control={control}
               label="Email o Usuario"
               type="text"
-              disabled={isPending}
+              disabled={isPending || solicitandoCodigo}
             />
 
             <InputSimple
               name="password"
               control={control}
-              label="Contraseña"
+              label="Contraseña o código"
               type="password"
-              disabled={isPending}
+              disabled={isPending || solicitandoCodigo}
             />
 
             <div className={styles.formActions}>
@@ -133,12 +159,19 @@ const Login = () => {
                 REGISTRARSE
               </Button>
             </div>
-            <div className={styles.recoverPasswordWrapper}>
+            <div className={styles.recoverPasswordWrapper} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
               <span
                 className={styles.recoverPasswordLink}
                 onClick={() => navigate("/recuperar-clave")}
               >
                 ¿Olvidaste tu contraseña? Recuperar clave
+              </span>
+              <span
+                className={styles.recoverPasswordLink}
+                onClick={handleIngresarConCodigo}
+                style={{ opacity: solicitandoCodigo ? 0.6 : 1, pointerEvents: solicitandoCodigo ? "none" : "auto" }}
+              >
+                {solicitandoCodigo ? "Solicitando código..." : "Ingresar con código"}
               </span>
             </div>
           </form>

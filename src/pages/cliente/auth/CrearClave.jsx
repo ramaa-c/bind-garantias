@@ -17,6 +17,7 @@ import {
   useObtenerUsuarioPorEncrypt,
   useEstablecerClave,
   useResetearPassword,
+  useLoginByCode,
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Login.module.css";
@@ -65,6 +66,27 @@ const CrearClave = () => {
 
   const { mutate: resetearPassword, isPending: solicitandoNuevo } =
     useResetearPassword();
+
+  const { mutate: loginByCode, isPending: solicitandoCodigo } = useLoginByCode();
+
+  const handleIngresarConCodigo = () => {
+    if (!usuario?.email) return;
+    loginByCode(
+      { email: usuario.email, password: "" },
+      {
+        onSuccess: () => {
+          navigate("/confirmar-correo", {
+            state: { emailIngresado: usuario.email, canal: canalIntegridad, isLoginByCode: true },
+          });
+        },
+        onError: () => {
+          toast.error("Error al solicitar código", {
+            description: "Ocurrió un error. Intentá más tarde.",
+          });
+        },
+      }
+    );
+  };
 
   const handleSolicitarNuevoEnlace = () => {
     const savedEmail =
@@ -279,13 +301,23 @@ const CrearClave = () => {
                       )}
                   </div>
 
-                  <div className={styles.formActions} style={{ marginTop: "1rem" }}>
+                  <div className={styles.formActions} style={{ marginTop: "1rem", flexDirection: "column", gap: "1rem" }}>
                     <Button
                       type="submit"
                       variant="primary"
-                      disabled={!isValid || guardandoClave}
+                      disabled={!isValid || guardandoClave || solicitandoCodigo}
+                      style={{ width: "100%" }}
                     >
                       {guardandoClave ? "PROCESANDO..." : "GUARDAR"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleIngresarConCodigo}
+                      disabled={solicitandoCodigo || guardandoClave}
+                      style={{ width: "100%" }}
+                    >
+                      {solicitandoCodigo ? "SOLICITANDO..." : "Omitir e ingresar con código"}
                     </Button>
                   </div>
                 </form>
