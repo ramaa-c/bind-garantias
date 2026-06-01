@@ -99,7 +99,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: var(--text-dim, #444);
+  color: var(--text-dim, #8e8e93);
 }
 
 /* ACTION LINKS */
@@ -113,7 +113,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 0;
-  color: var(--text-muted, #666);
+  color: var(--text-muted, #a8a8a8);
   transition: color 0.18s;
 }
 
@@ -161,8 +161,8 @@
 }
 .docChipPending {
   background: rgba(255, 255, 255, 0.02);
-  color: var(--text-muted, #666);
-  border-color: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #8e8e93);
+  border-color: rgba(255, 255, 255, 0.08);
 }
 .docChipError {
   background: rgba(255, 82, 82, 0.04);
@@ -258,7 +258,7 @@
 }
 
 .rowSub {
-  color: var(--text-dim, #444);
+  color: var(--text-dim, #8e8e93);
   font-size: 0.7rem;
 }
 
@@ -274,7 +274,7 @@
   border-radius: 0.35rem;
   cursor: pointer;
   padding: 0.3rem;
-  color: var(--text-dim, #444);
+  color: var(--text-dim, #a0a0a0);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -300,18 +300,18 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 1.25rem;
-  border: 1.5px dashed rgba(255, 255, 255, 0.08);
+  border: 1.5px dashed rgba(255, 255, 255, 0.16);
   border-radius: 0.625rem;
   background: none;
-  color: var(--text-dim, #444);
+  color: var(--text-dim, #8e8e93);
   font-size: 0.8125rem;
   cursor: pointer;
   transition: all 0.18s;
 }
 
 .emptySlot:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  color: #666;
+  border-color: rgba(255, 255, 255, 0.35);
+  color: var(--white, #fff);
   background: rgba(255, 255, 255, 0.02);
 }
 .emptySlotError {
@@ -326,7 +326,7 @@
 /* BADGES */
 .countBadge {
   font-size: 0.68rem;
-  color: var(--text-dim, #444);
+  color: var(--text-dim, #8e8e93);
 }
 .validBadge {
   display: inline-flex;

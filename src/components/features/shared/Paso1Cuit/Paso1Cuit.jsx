@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { BuscadorCuit } from "../../../ui";
+import { BuscadorCuit, ProcesamientoModal } from "../../../ui";
 import { sociosService } from "../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../hooks/useAfip";
 import { useValidarFormatoCuit } from "../../../../hooks/useSocios";
@@ -18,6 +18,14 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     useValidarFormatoCuit();
   const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
+
+  const [procesoModal, setProcesoModal] = useState({
+    isOpen: false,
+    titulo: "",
+    pasos: [],
+    hasError: false,
+    isSystemError: false,
+  });
 
   const cuitValue = useWatch({ control, name: "cuit" });
 
@@ -36,29 +44,58 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     clearErrors("cuit");
     setIsValidatingSocio(true);
 
+    // Abrimos el ProcesamientoModal
+    setProcesoModal({
+      isOpen: true,
+      titulo: "Validando Empresa",
+      pasos: [
+        { id: "formato_sgr", etiqueta: "Verificando formato y registro SGR+", estado: "cargando", descripcion: "Comprobando que la empresa no esté ya registrada y su CUIT sea estructuralmente válido." },
+        { id: "afip", etiqueta: "Consultando padrón AFIP", estado: "pendiente", descripcion: "Obteniendo los datos de la empresa desde el padrón federal en tiempo real." },
+        { id: "cda", etiqueta: "Ejecutando validaciones internas", estado: "pendiente", descripcion: "Comprobando políticas de riesgo y negocio para el alta." },
+      ],
+      hasError: false,
+      isSystemError: false,
+    });
+
     try {
-      // VALIDACIÓN DE FORMATO
+      // 1. VALIDACIÓN DE FORMATO
       try {
         const respuestaFormato = await validarFormatoBackend(cuit);
         if (respuestaFormato === false || respuestaFormato?.isValid === false) {
+          const errorMsg = respuestaFormato?.message || "El formato del CUIT es inválido.";
           setError("cuit", {
             type: "manual",
-            message:
-              respuestaFormato?.message || "El formato del CUIT es inválido.",
+            message: errorMsg,
           });
+          setProcesoModal(prev => ({
+            ...prev,
+            hasError: true,
+            pasos: prev.pasos.map(p =>
+              p.id === "formato_sgr" ? { ...p, estado: "error", descripcion: errorMsg } : p
+            )
+          }));
           return;
         }
       } catch (formatoError) {
+        const errorMsg =
+          formatoError?.response?.data?.message ||
+          formatoError?.response?.data ||
+          "El CUIT ingresado no es válido.";
         setError("cuit", {
           type: "manual",
-          message:
-            formatoError?.response?.data?.message ||
-            formatoError?.response?.data ||
-            "El CUIT ingresado no es válido.",
+          message: errorMsg,
         });
+        setProcesoModal(prev => ({
+          ...prev,
+          hasError: true,
+          pasos: prev.pasos.map(p =>
+            p.id === "formato_sgr" ? { ...p, estado: "error", descripcion: errorMsg } : p
+          )
+        }));
         return;
       }
 
+      // 2. REGISTRO EN SGR+
       const respSgr = await sociosService.obtenerSocios({
         Cuit: cuit,
         page: 1,
@@ -70,10 +107,18 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         : respSgr?.items?.[0] || respSgr?.data?.[0];
 
       if (socioSgrDb) {
+        const errorMsg = "Esta empresa ya se encuentra en gestión por SGR+";
         setError("cuit", {
           type: "manual",
-          message: "Esta empresa ya se encuentra en gestión por SGR+",
+          message: errorMsg,
         });
+        setProcesoModal(prev => ({
+          ...prev,
+          hasError: true,
+          pasos: prev.pasos.map(p =>
+            p.id === "formato_sgr" ? { ...p, estado: "error", descripcion: errorMsg } : p
+          )
+        }));
         return;
       }
 
@@ -84,28 +129,67 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         : respWeb?.items?.[0] || respWeb?.data?.[0];
 
       if (socioWebDb && socioWebDb.socioid) {
+        setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
         if (onSocioExistente) onSocioExistente(socioWebDb);
         return;
       }
 
-      // ── VALIDACIÓN CONTRA AFIP
+      // Avanzamos el primer paso
+      setProcesoModal(prev => ({
+        ...prev,
+        pasos: prev.pasos.map(p =>
+          p.id === "formato_sgr" ? { ...p, estado: "completado" } :
+          p.id === "afip" ? { ...p, estado: "cargando" } : p
+        )
+      }));
+
+      // 3. CONSULTA AFIP
       try {
         const afipData = await validarAfip(cuit);
 
         if (afipData && afipData.datosgenerales) {
           const dg = afipData.datosgenerales;
 
+          // Marcamos AFIP como completado y CDA como cargando
+          setProcesoModal(prev => ({
+            ...prev,
+            pasos: prev.pasos.map(p =>
+              p.id === "afip" ? { ...p, estado: "completado" } :
+              p.id === "cda" ? { ...p, estado: "cargando" } : p
+            )
+          }));
+
           // ── VALIDACIÓN CDA (PANTALLA_INGRESO_CUIT)
           const resultCda = await ejecutarValidaciones("PANTALLA_INGRESO_CUIT", cuit);
           if (!resultCda.success) {
             const errorCda = resultCda.errors.find((e) => e.isInvalidante);
             console.error("[Paso1Cuit] Validación CDA fallida. Deteniendo avance de paso:", errorCda);
-            toast.error("Validación interna fallida", {
-              description: errorCda?.message || "La validación interna (CDA) ha fallado.",
-              duration: 6000,
-            });
+
+            const errorMsg = errorCda?.message || "La validación interna (CDA) ha fallado.";
+            if (!errorCda?.isSystemError) {
+              setError("cuit", {
+                type: "manual",
+                message: errorMsg,
+              });
+            }
+            setProcesoModal(prev => ({
+              ...prev,
+              hasError: true,
+              isSystemError: errorCda?.isSystemError || false,
+              pasos: prev.pasos.map(p =>
+                p.id === "cda" ? { ...p, estado: "error", descripcion: errorMsg } : p
+              )
+            }));
             return;
           }
+
+          // Todo exitoso! Marcamos CDA como completado
+          setProcesoModal(prev => ({
+            ...prev,
+            pasos: prev.pasos.map(p =>
+              p.id === "cda" ? { ...p, estado: "completado" } : p
+            )
+          }));
 
           const nombreCompleto =
             dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim();
@@ -118,12 +202,24 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             shouldValidate: true,
           });
 
-          if (onValidar) onValidar();
+          setTimeout(() => {
+            setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+            if (onValidar) onValidar();
+          }, 800);
         } else {
+          const errorMsg = "No se encontraron datos válidos en AFIP";
           setError("cuit", {
             type: "manual",
-            message: "No se encontraron datos válidos en AFIP",
+            message: errorMsg,
           });
+          setProcesoModal(prev => ({
+            ...prev,
+            hasError: true,
+            pasos: prev.pasos.map(p =>
+              p.id === "afip" ? { ...p, estado: "error", descripcion: errorMsg } :
+              p.id === "cda" ? { ...p, estado: "error", descripcion: "Proceso interrumpido." } : p
+            )
+          }));
         }
       } catch (afipError) {
         console.error(
@@ -131,18 +227,28 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           afipError,
         );
 
-        toast.error("Servicio de AFIP no disponible", {
-          description:
-            "El padrón de AFIP está experimentando problemas o se encuentra caído de origen. Por favor, reintentá en unos minutos.",
-          duration: 6000,
-        });
+        const errorMsg = "El padrón de AFIP está experimentando problemas o se encuentra caído de origen. Por favor, reintentá en unos minutos.";
+        setProcesoModal(prev => ({
+          ...prev,
+          hasError: true,
+          isSystemError: true,
+          pasos: prev.pasos.map(p =>
+            p.id === "afip" ? { ...p, estado: "error", descripcion: errorMsg } :
+            p.id === "cda" ? { ...p, estado: "error", descripcion: "Proceso interrumpido." } : p
+          )
+        }));
       }
     } catch (err) {
       console.error("Error general en el flujo de validación de CUIT:", err);
-      setError("cuit", {
-        type: "manual",
-        message: "Error al procesar la validación del CUIT",
-      });
+      const errorMsg = "Error al procesar la validación del CUIT";
+      setProcesoModal(prev => ({
+        ...prev,
+        hasError: true,
+        isSystemError: true,
+        pasos: prev.pasos.map(p =>
+          p.estado === "cargando" || p.estado === "pendiente" ? { ...p, estado: "error", descripcion: errorMsg } : p
+        )
+      }));
     } finally {
       setIsValidatingSocio(false);
     }
@@ -186,6 +292,16 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           isLoading={isLoading}
         />
       </div>
+
+      <ProcesamientoModal
+        isOpen={procesoModal.isOpen}
+        titulo={procesoModal.titulo}
+        pasos={procesoModal.pasos}
+        hasError={procesoModal.hasError}
+        isSystemError={procesoModal.isSystemError}
+        onClose={() => setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false })}
+        onRetry={handleValidar}
+      />
     </div>
   );
 }

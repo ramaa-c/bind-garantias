@@ -226,7 +226,7 @@
   }
   .columnaFormulario {
     grid-template-columns: 16rem 1fr;
-    gap: 2.5rem 0rem;
+    gap: 2rem 0rem;
   }
 }
 
