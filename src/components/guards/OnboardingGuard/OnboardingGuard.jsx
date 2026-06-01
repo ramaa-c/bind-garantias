@@ -3,7 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useObtenerSocioUsuarioPorUsuarioId } from "../../../hooks/useSocios";
 import { useObtenerPorNombreOEmail } from "../../../hooks/useUsuario";
-import Spinner from "../../ui/Spinner/Spinner";
+import { LoadingScreen } from "../../ui";
 
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
@@ -58,17 +58,10 @@ export const OnboardingGuard = ({ children }) => {
 
   if ((isLoadingUser && !usuarioWebId) || (usuarioWebId && isPendingSocios)) {
     return (
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          height: "100vh",
-          backgroundColor: "var(--color-background, #121212)",
-        }}
-      >
-        <Spinner />
-      </div>
+      <LoadingScreen
+        title="Cargando tu perfil"
+        message="Estamos obteniendo tu información y empresas vinculadas..."
+      />
     );
   }
 

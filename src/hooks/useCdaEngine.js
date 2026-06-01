@@ -47,11 +47,29 @@ export const useCdaEngine = () => {
       console.error("[CDA ENGINE] Response data:", err.response?.data);
 
       let apiMessage = err.response?.data;
+      let isSystemError = false;
+
       if (apiMessage && typeof apiMessage === "object") {
         apiMessage =
           apiMessage.message ||
           apiMessage.error ||
           JSON.stringify(apiMessage);
+      }
+      
+      if (typeof apiMessage === "string") {
+        if (
+          apiMessage.includes("Access violation") ||
+          apiMessage.includes("Exception") ||
+          apiMessage.includes("<html") ||
+          err.response?.status >= 500
+        ) {
+          isSystemError = true;
+          apiMessage = "Error de sistema. Por favor, volvé a intentarlo.";
+        }
+      }
+      
+      if (err.response?.status >= 500) {
+        isSystemError = true;
       }
 
       let customMessage =
@@ -101,6 +119,7 @@ export const useCdaEngine = () => {
       const errorObj = {
         isInvalidante: true,
         message: customMessage,
+        isSystemError: isSystemError,
       };
 
       setError(customMessage);

@@ -1,0 +1,18 @@
+import React from "react";
+import styles from "./LoadingScreen.module.css";
+
+export default function LoadingScreen({ title, message }) {
+  return (
+    <div className={styles.overlay}>
+      <div className={styles.content}>
+        <div className={styles.spinnerWrap}>
+          <div className={styles.ring} />
+          <div className={styles.ringInner} />
+        </div>
+
+        {title && <h3 className={styles.titulo}>{title}</h3>}
+        {message && <p className={styles.mensaje}>{message}</p>}
+      </div>
+    </div>
+  );
+}

@@ -24,7 +24,7 @@ import {
   ConfirmacionBorradorModal,
 } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
-import { Alert, Spinner } from "../../../../components/ui";
+import { Alert, Spinner, LoadingScreen, ProcesamientoModal } from "../../../../components/ui";
 import styles from "./AltaOperacion.module.css";
 import { solicitudesService } from "../../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -41,6 +41,7 @@ export const AltaOperacion = () => {
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
+  const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
   const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [buscandoSocios, setBuscandoSocios] = useState(false);
@@ -56,6 +57,19 @@ export const AltaOperacion = () => {
       return;
     }
 
+    // Inicializamos el modal de procesamiento con los pasos definidos
+    setProcesoModal({
+      isOpen: true,
+      titulo: "Validando Socios",
+      pasos: [
+        { id: "consistencia", etiqueta: "Verificando consistencia de datos", estado: "cargando", descripcion: "Comprobando que la información provista sea correcta." },
+        { id: "sgr", etiqueta: "Conectando con SGR+", estado: "pendiente", descripcion: "Validando situación e historial societario." },
+        { id: "finalizando", etiqueta: "Finalizando", estado: "pendiente", descripcion: "Preparando cálculo de montos." },
+      ],
+      hasError: false,
+      isSystemError: false
+    });
+
     console.log(
       "[AltaOperacion] Iniciando validaciones internas CDA para cada Socio declarado...",
     );
@@ -63,6 +77,16 @@ export const AltaOperacion = () => {
     const cuitLimpioEmpresa = cuitActivo
       ? String(cuitActivo).replace(/\D/g, "")
       : "";
+
+    // Simulamos/avanzamos el estado de carga (ejemplo demostrativo)
+    setProcesoModal(prev => ({
+      ...prev,
+      pasos: prev.pasos.map(p => 
+        p.id === "consistencia" ? { ...p, estado: "completado" }
+        : p.id === "sgr" ? { ...p, estado: "cargando" }
+        : p
+      )
+    }));
 
     for (const socio of sociosList) {
       const socioCuitLimpio = String(socio.cuit).replace(/\D/g, "");
@@ -91,18 +115,38 @@ export const AltaOperacion = () => {
         const errorMsg =
           invalidatingError?.message ||
           `La validación del socio "${socio.nombre}" ha fallado.`;
-        toast.error(`Error en socio "${socio.nombre}"`, {
-          description: errorMsg,
-          duration: 6000,
-        });
+        setProcesoModal(prev => ({
+          ...prev,
+          hasError: true,
+          isSystemError: invalidatingError?.isSystemError || false,
+          pasos: prev.pasos.map(p => 
+            p.id === "sgr" ? { ...p, estado: "error", descripcion: errorMsg }
+            : p.id === "finalizando" ? { ...p, estado: "error", descripcion: "Proceso interrumpido." }
+            : p
+          )
+        }));
         return;
       }
     }
 
+    // Finalizamos
+    setProcesoModal(prev => ({
+      ...prev,
+      pasos: prev.pasos.map(p => 
+        p.id === "sgr" ? { ...p, estado: "completado" }
+        : p.id === "finalizando" ? { ...p, estado: "cargando" }
+        : p
+      )
+    }));
+
     console.log(
       "[AltaOperacion] Todos los socios superaron las validaciones CDA con éxito. Avanzando a la calculadora de montos.",
     );
-    setPasoActual(2);
+    
+    setTimeout(() => {
+      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+      setPasoActual(2);
+    }, 800); // Delay un poco más largo para que termine la animación
   };
 
   useEffect(() => {
@@ -1256,29 +1300,23 @@ export const AltaOperacion = () => {
 
   if (isLoadingEmpresa || validandoAcceso) {
     return (
-      <div className={styles.operacionPage}>
-        <div
-          className={styles.formMainContainer}
-          style={{ alignItems: "center", justifyContent: "center" }}
-        >
-          <Spinner size={60} />
-        </div>
-      </div>
+      <LoadingScreen
+        title="Verificando acceso"
+        message="Aguardá un momento mientras validamos tu sesión..."
+      />
     );
   }
 
   if (buscandoSocios) {
     return (
-      <div className={styles.operacionPage}>
-        <div
-          className={styles.formMainContainer}
-          style={{ alignItems: "center", justifyContent: "center" }}
-        >
-          <Spinner size={60} />
-        </div>
-      </div>
+      <LoadingScreen
+        title="Buscando socios"
+        message="Obteniendo la información de la empresa..."
+      />
     );
   }
+
+  // Eliminamos variables isOverlayLoading obsoletas.
 
   return (
     <div className={styles.operacionPage}>
@@ -1349,6 +1387,15 @@ export const AltaOperacion = () => {
         onClose={() => setIsHelpOpen(false)}
         contexto="alta_operacion"
         pasoActual={pasoActual}
+      />
+      <ProcesamientoModal 
+        isOpen={procesoModal.isOpen} 
+        titulo={procesoModal.titulo} 
+        pasos={procesoModal.pasos} 
+        hasError={procesoModal.hasError}
+        isSystemError={procesoModal.isSystemError}
+        onClose={() => setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false })}
+        onRetry={handleContinuarSocios}
       />
     </div>
   );

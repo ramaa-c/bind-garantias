@@ -23,6 +23,8 @@ export * from './Select/Select';
 export * from './SelectFlotante/SelectFlotante';
 export * from './SinResultados/SinResultados';
 export { default as Spinner } from './Spinner/Spinner';
+export { default as LoadingScreen } from './LoadingScreen/LoadingScreen';
+export * from './ProcesamientoModal/ProcesamientoModal';
 export * from './TarjetaEstado/TarjetaEstado';
 export * from './TarjetaMetrica/TarjetaMetrica';
 export * from './TarjetaSeleccionable/TarjetaSeleccionable';
