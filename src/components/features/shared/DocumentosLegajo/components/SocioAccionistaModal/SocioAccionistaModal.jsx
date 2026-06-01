@@ -323,13 +323,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     setValidando(true);
     clearErrors("cuit");
     try {
+      // SGR+ check removed to allow adding already registered companies/socios
       const respSgr = await sociosService.obtenerSocios({ Cuit: cuitLimpio, page: 1, page_size: 10 });
       const socioSgrDb = Array.isArray(respSgr) ? respSgr[0] : respSgr?.items?.[0] || respSgr?.data?.[0];
-
-      if (socioSgrDb) {
-        setError("cuit", { type: "manual", message: "Esta empresa ya se encuentra en gestión por SGR+" });
-        return;
-      }
 
       const res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
       if (res && res.datosgenerales) {

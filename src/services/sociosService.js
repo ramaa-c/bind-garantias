@@ -106,4 +106,13 @@ export const sociosService = {
       throw error;
     }
   },
+
+  // GET api/lufe/autoridades/{cuit} - Obtener autoridades de LUFE y vincularlas
+  obtenerAutoridadesLufe: async (cuit, vincular = true) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    const response = await api.get(`api/lufe/autoridades/${cuitLimpio}`, {
+      params: { Vincular: vincular },
+    });
+    return response.data;
+  },
 };

@@ -131,6 +131,13 @@ export const AltaDatosEmpresa = () => {
 
         await sociosService.vincularSocioUsuario(payloadVinculo);
 
+        try {
+          console.log(`[AltaDatosEmpresa] Vinculando autoridades de LUFE para CUIT: ${data.cuit}`);
+          await sociosService.obtenerAutoridadesLufe(data.cuit, true);
+        } catch (lufeError) {
+          console.error("[AltaDatosEmpresa] Error al vincular autoridades de LUFE:", lufeError);
+        }
+
         await queryClient.invalidateQueries({
           queryKey: ["socioUsuario", "listaPorUsuario", usuariowebidReal],
         });

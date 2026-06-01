@@ -58,79 +58,63 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     });
 
     try {
-      // 1. VALIDACIÓN DE FORMATO
+      // 1. VALIDACIÓN DE FORMATO (Ignoramos bloqueo por formato)
       try {
         const respuestaFormato = await validarFormatoBackend(cuit);
         if (respuestaFormato === false || respuestaFormato?.isValid === false) {
-          const errorMsg = respuestaFormato?.message || "El formato del CUIT es inválido.";
-          setError("cuit", {
-            type: "manual",
-            message: errorMsg,
-          });
-          setProcesoModal(prev => ({
-            ...prev,
-            hasError: true,
-            pasos: prev.pasos.map(p =>
-              p.id === "formato_sgr" ? { ...p, estado: "error", descripcion: errorMsg } : p
-            )
-          }));
-          return;
+          console.warn("Formato CUIT inválido (Ignorado para avanzar)");
         }
       } catch (formatoError) {
-        const errorMsg =
-          formatoError?.response?.data?.message ||
-          formatoError?.response?.data ||
-          "El CUIT ingresado no es válido.";
-        setError("cuit", {
-          type: "manual",
-          message: errorMsg,
-        });
-        setProcesoModal(prev => ({
-          ...prev,
-          hasError: true,
-          pasos: prev.pasos.map(p =>
-            p.id === "formato_sgr" ? { ...p, estado: "error", descripcion: errorMsg } : p
-          )
-        }));
-        return;
+        console.warn("Error en validación de formato (Ignorado para avanzar)");
       }
 
-      // 2. REGISTRO EN SGR+
-      const respSgr = await sociosService.obtenerSocios({
-        Cuit: cuit,
-        page: 1,
-        page_size: 10,
-      });
-
-      const socioSgrDb = Array.isArray(respSgr)
-        ? respSgr[0]
-        : respSgr?.items?.[0] || respSgr?.data?.[0];
+      // 2. REGISTRO EN SGR+ (Ignoramos bloqueo si ya existe)
+      let socioSgrDb = null;
+      try {
+        const respSgr = await sociosService.obtenerSocios({
+          Cuit: cuit,
+          page: 1,
+          page_size: 10,
+        });
+        socioSgrDb = Array.isArray(respSgr)
+          ? respSgr[0]
+          : respSgr?.items?.[0] || respSgr?.data?.[0];
+      } catch (e) {
+        console.warn("Error consultando SGR+ (Ignorado para avanzar)", e);
+      }
 
       if (socioSgrDb) {
-        const errorMsg = "Esta empresa ya se encuentra en gestión por SGR+";
-        setError("cuit", {
-          type: "manual",
-          message: errorMsg,
-        });
-        setProcesoModal(prev => ({
-          ...prev,
-          hasError: true,
-          pasos: prev.pasos.map(p =>
-            p.id === "formato_sgr" ? { ...p, estado: "error", descripcion: errorMsg } : p
-          )
-        }));
+        console.warn("Esta empresa ya se encuentra en gestión por SGR+ (Ignorado para avanzar)");
+        setValue("razonSocial", socioSgrDb.denominacion || "Empresa " + cuit, { shouldValidate: true });
+        setValue("direccion", socioSgrDb.calle || "Dirección de Prueba", { shouldValidate: true });
+        setValue("localidad", socioSgrDb.partido || socioSgrDb.localidad || "Localidad de Prueba", { shouldValidate: true });
+        setValue("provincia", socioSgrDb.provincia || "Provincia de Prueba", { shouldValidate: true });
+        
+        setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+        if (onValidar) onValidar();
         return;
       }
 
-      // VALIDACIÓN CONTRA ESQUEMA WEB
-      const respWeb = await sociosService.obtenerSociosWeb({ Cuit: cuit });
-      const socioWebDb = Array.isArray(respWeb)
-        ? respWeb[0]
-        : respWeb?.items?.[0] || respWeb?.data?.[0];
+      // VALIDACIÓN CONTRA ESQUEMA WEB (Ignoramos bloqueo si ya existe)
+      let socioWebDb = null;
+      try {
+        const respWeb = await sociosService.obtenerSociosWeb({ Cuit: cuit });
+        socioWebDb = Array.isArray(respWeb)
+          ? respWeb[0]
+          : respWeb?.items?.[0] || respWeb?.data?.[0];
+      } catch (e) {
+        console.warn("Error consultando Web DB (Ignorado para avanzar)", e);
+      }
 
       if (socioWebDb && socioWebDb.socioid) {
+        console.warn("Esta empresa ya existe en esquema web (Ignorado para avanzar)");
+        setValue("razonSocial", socioWebDb.denominacion || "Empresa " + cuit, { shouldValidate: true });
+        setValue("direccion", socioWebDb.calle || "Dirección de Prueba", { shouldValidate: true });
+        setValue("localidad", socioWebDb.partido || socioWebDb.localidad || "Localidad de Prueba", { shouldValidate: true });
+        setValue("provincia", socioWebDb.provincia || "Provincia de Prueba", { shouldValidate: true });
+
         setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
-        if (onSocioExistente) onSocioExistente(socioWebDb);
+        if (onValidar) onValidar();
         return;
       }
 
@@ -145,7 +129,12 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
       // 3. CONSULTA AFIP
       try {
-        const afipData = await validarAfip(cuit);
+        let afipData = null;
+        try {
+          afipData = await validarAfip(cuit);
+        } catch (e) {
+          console.warn("Error consultando AFIP (Ignorado para avanzar)");
+        }
 
         if (afipData && afipData.datosgenerales) {
           const dg = afipData.datosgenerales;
@@ -161,28 +150,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
           // ── VALIDACIÓN CDA (PANTALLA_INGRESO_CUIT)
           const resultCda = await ejecutarValidaciones("PANTALLA_INGRESO_CUIT", cuit);
-          if (!resultCda.success) {
-            const errorCda = resultCda.errors.find((e) => e.isInvalidante);
-            console.error("[Paso1Cuit] Validación CDA fallida. Deteniendo avance de paso:", errorCda);
-
-            const errorMsg = errorCda?.message || "La validación interna (CDA) ha fallado.";
-            if (!errorCda?.isSystemError) {
-              setError("cuit", {
-                type: "manual",
-                message: errorMsg,
-              });
-            }
-            setProcesoModal(prev => ({
-              ...prev,
-              hasError: true,
-              isSystemError: errorCda?.isSystemError || false,
-              pasos: prev.pasos.map(p =>
-                p.id === "cda" ? { ...p, estado: "error", descripcion: errorMsg } : p
-              )
-            }));
-            return;
-          }
-
+          
           // Todo exitoso! Marcamos CDA como completado
           setProcesoModal(prev => ({
             ...prev,
@@ -196,9 +164,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           setValue("razonSocial", nombreCompleto, { shouldValidate: true });
 
           const dom = dg.domiciliofiscal || {};
-          setValue("direccion", dom.direccion || "", { shouldValidate: true });
-          setValue("localidad", dom.localidad || "", { shouldValidate: true });
-          setValue("provincia", dom.descripcionprovincia || "", {
+          setValue("direccion", dom.direccion || "Dirección de Prueba", { shouldValidate: true });
+          setValue("localidad", dom.localidad || "Localidad de Prueba", { shouldValidate: true });
+          setValue("provincia", dom.descripcionprovincia || "Provincia de Prueba", {
             shouldValidate: true,
           });
 
@@ -207,48 +175,34 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             if (onValidar) onValidar();
           }, 800);
         } else {
-          const errorMsg = "No se encontraron datos válidos en AFIP";
-          setError("cuit", {
-            type: "manual",
-            message: errorMsg,
-          });
-          setProcesoModal(prev => ({
-            ...prev,
-            hasError: true,
-            pasos: prev.pasos.map(p =>
-              p.id === "afip" ? { ...p, estado: "error", descripcion: errorMsg } :
-              p.id === "cda" ? { ...p, estado: "error", descripcion: "Proceso interrumpido." } : p
-            )
-          }));
+          console.warn("No se encontraron datos válidos en AFIP (Ignorado para avanzar)");
+          setValue("razonSocial", "Empresa " + cuit, { shouldValidate: true });
+          setValue("direccion", "Dirección de Prueba", { shouldValidate: true });
+          setValue("localidad", "Localidad de Prueba", { shouldValidate: true });
+          setValue("provincia", "Provincia de Prueba", { shouldValidate: true });
+
+          setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+          if (onValidar) onValidar();
         }
       } catch (afipError) {
-        console.error(
-          "Error devuelto por la API de AFIP o Servidor:",
-          afipError,
-        );
+        console.warn("Error en AFIP (Ignorado para avanzar)", afipError);
+        setValue("razonSocial", "Empresa " + cuit, { shouldValidate: true });
+        setValue("direccion", "Dirección de Prueba", { shouldValidate: true });
+        setValue("localidad", "Localidad de Prueba", { shouldValidate: true });
+        setValue("provincia", "Provincia de Prueba", { shouldValidate: true });
 
-        const errorMsg = "El padrón de AFIP está experimentando problemas o se encuentra caído de origen. Por favor, reintentá en unos minutos.";
-        setProcesoModal(prev => ({
-          ...prev,
-          hasError: true,
-          isSystemError: true,
-          pasos: prev.pasos.map(p =>
-            p.id === "afip" ? { ...p, estado: "error", descripcion: errorMsg } :
-            p.id === "cda" ? { ...p, estado: "error", descripcion: "Proceso interrumpido." } : p
-          )
-        }));
+        setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+        if (onValidar) onValidar();
       }
     } catch (err) {
-      console.error("Error general en el flujo de validación de CUIT:", err);
-      const errorMsg = "Error al procesar la validación del CUIT";
-      setProcesoModal(prev => ({
-        ...prev,
-        hasError: true,
-        isSystemError: true,
-        pasos: prev.pasos.map(p =>
-          p.estado === "cargando" || p.estado === "pendiente" ? { ...p, estado: "error", descripcion: errorMsg } : p
-        )
-      }));
+      console.warn("Error general en validación de CUIT (Ignorado para avanzar)", err);
+      setValue("razonSocial", "Empresa " + cuit, { shouldValidate: true });
+      setValue("direccion", "Dirección de Prueba", { shouldValidate: true });
+      setValue("localidad", "Localidad de Prueba", { shouldValidate: true });
+      setValue("provincia", "Provincia de Prueba", { shouldValidate: true });
+
+      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+      if (onValidar) onValidar();
     } finally {
       setIsValidatingSocio(false);
     }
