@@ -25,13 +25,14 @@ const TIPO_DOCUMENTO_MAP = {
   estatuto: 1,
   balance: 2,
   acta: 3,
-  poderes: 4,
+  cartasDocumento: 4,
+  poderes: 5,
   // Documentos del legajo (DocumentosLegajo)
-  certificadoPyme: 5,
-  otrosDocumentos: 6,
+  certificadoPyme: 6,
+  otrosDocumentos: 7,
   // Documentos de socios (DNI frente/dorso)
-  "socio-frente": 7,
-  "socio-dorso": 8,
+  "socio-frente": 8,
+  "socio-dorso": 9,
 };
 
 /**   Obtiene el tipodocumentoarchivoid para una clave dada.   */

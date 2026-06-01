@@ -59,6 +59,12 @@ const ESTRUCTURA_LEGAJO = [
   },
   {
     category: "Documentación",
+    key: "cartasDocumento",
+    title: "Cartas Documento",
+    info: "Cargá o visualizá las cartas documento vinculadas a la empresa.",
+  },
+  {
+    category: "Documentación",
     key: "poderes",
     title: "Poderes",
     info: "Documento que autoriza a un representante legal.",
@@ -92,12 +98,11 @@ export function DocumentosLegajo() {
 
         archivos.forEach((arch) => {
           const tipoId = arch.tipodocumentoarchivoid;
-          let key = null;
-          if (tipoId === 5) key = "certificadoPyme";
-          else if (tipoId === 4) key = "poderes";
-          else if (tipoId === 6) key = "otrosDocumentos";
+          const key = Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).find(
+            (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId
+          );
 
-          if (key) {
+          if (key && ["certificadoPyme", "poderes", "otrosDocumentos", "cartasDocumento"].includes(key)) {
             setValue(
               key,
               {

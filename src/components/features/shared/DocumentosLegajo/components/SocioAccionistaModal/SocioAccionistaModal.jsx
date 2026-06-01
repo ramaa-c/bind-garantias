@@ -222,7 +222,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       } else {
         // Fallback a archivosBackend (legajo de la empresa, por compatibilidad)
         const frente = archivosBackend?.find((a) => {
-          if (a.tipodocumentoarchivoid !== 7) return false;
+          if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"]) return false;
           const descNorm = normalizarTexto(a.descripcion);
           return (
             descNorm.includes(cuitLimpio) ||
@@ -236,7 +236,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             size: "Cargado",
             _uploaded: true,
             _backendId: frente.socioarchivoid,
-            _tipodocumentoarchivoid: 7,
+            _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"],
           });
           setErrorDniFrente(false);
         } else {
@@ -250,7 +250,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       } else {
         // Fallback a archivosBackend
         const dorso = archivosBackend?.find((a) => {
-          if (a.tipodocumentoarchivoid !== 8) return false;
+          if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"]) return false;
           const descNorm = normalizarTexto(a.descripcion);
           return (
             descNorm.includes(cuitLimpio) ||
@@ -264,7 +264,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             size: "Cargado",
             _uploaded: true,
             _backendId: dorso.socioarchivoid,
-            _tipodocumentoarchivoid: 8,
+            _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"],
           });
           setErrorDniDorso(false);
         } else {
@@ -516,7 +516,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
           if (dniFrenteFile instanceof File) {
             const existenteFrente = archivosExistentes?.find((a) => {
-              if (a.tipodocumentoarchivoid !== 7) return false;
+              if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"]) return false;
               const descNorm = normalizarTexto(a.descripcion);
               return descNorm.includes(cuitLimpio) || descNorm.includes(normalizarTexto(formData.nombre));
             });
@@ -529,7 +529,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           }
           if (dniDorsoFile instanceof File) {
             const existenteDorso = archivosExistentes?.find((a) => {
-              if (a.tipodocumentoarchivoid !== 8) return false;
+              if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"]) return false;
               const descNorm = normalizarTexto(a.descripcion);
               return descNorm.includes(cuitLimpio) || descNorm.includes(normalizarTexto(formData.nombre));
             });

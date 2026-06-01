@@ -14,6 +14,7 @@ const DOC_TITLES = {
   certificadoPyme: "Certificado de PyME",
   poderes: "Poderes",
   otrosDocumentos: "Otros documentos",
+  cartasDocumento: "Cartas Documento",
 };
 
 export default function DocumentacionView() {
@@ -36,6 +37,7 @@ export default function DocumentacionView() {
       certificadoPyme: null,
       poderes: null,
       otrosDocumentos: null,
+      cartasDocumento: null,
       intentoAvanzar: false,
     },
   });
@@ -60,6 +62,7 @@ export default function DocumentacionView() {
         "certificadoPyme",
         "poderes",
         "otrosDocumentos",
+        "cartasDocumento",
       ];
       const pendientes = [];
 
