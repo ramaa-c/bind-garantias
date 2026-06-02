@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, CargaArchivos, ProcesamientoModal } from "../../../../../ui";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useEmpresaActiva } from "../../../../../../hooks/useEmpresaActiva";
+import { useValidarFormatoCuit } from "../../../../../../hooks/useSocios";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
@@ -174,6 +175,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
+  const { mutateAsync: validarFormatoBackend } = useValidarFormatoCuit();
   const { cuitActivo } = useEmpresaActiva();
 
   const relacionId = socio?.relacionId || 
@@ -231,7 +233,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     if (errors.cuit?.type === "manual") {
       clearErrors("cuit");
     }
-  }, [cuitValue, clearErrors, errors.cuit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cuitValue, clearErrors]);
 
   const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];

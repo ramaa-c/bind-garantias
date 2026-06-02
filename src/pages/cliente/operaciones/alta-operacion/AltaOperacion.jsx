@@ -1008,7 +1008,7 @@ export const AltaOperacion = () => {
           socioIdActivo={socioIdActivo}
           archivosBackend={archivosBackend}
           cargarSociosDesdeDB={cargarSociosDesdeDB}
-          isLoading={isLoadingAFIP || isLoadingCda}
+          isLoading={isLoadingAFIP}
         />
       );
     }
