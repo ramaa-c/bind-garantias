@@ -97,48 +97,50 @@ const ConfirmarCorreo = () => {
           <div
             className={`${styles.supportContainerModern} ${styles.supportContainerClean}`}
           >
-            <p style={{ marginBottom: "0.5rem" }}>
-              ¿No te llegó el correo?{" "}
-              <span
-                className={`${styles.linkYellow} ${isButtonDisabled ? styles.disabledLink : ""}`}
-                role="button"
-                tabIndex={isButtonDisabled ? -1 : 0}
-                onClick={!isButtonDisabled ? handleReenviar : undefined}
-                onKeyDown={(e) => {
-                  if (!isButtonDisabled && (e.key === "Enter" || e.key === " ")) {
-                    e.preventDefault();
-                    handleReenviar();
-                  }
-                }}
-                style={{
-                  opacity: isButtonDisabled ? 0.6 : 1,
-                  cursor: isButtonDisabled ? "not-allowed" : "pointer",
-                }}
-              >
-                {isPending
-                  ? "Reenviando..."
-                  : cooldown > 0
-                    ? `Reenviar enlace en ${cooldown}s`
-                    : "Reenviar enlace"}
-              </span>
-            </p>
-            <p>
-              ¿El correo es incorrecto?{" "}
-              <span
-                className={`${styles.linkYellow} ${styles.linkYellowReset}`}
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate("/registro")}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    navigate("/registro");
-                  }
-                }}
-              >
-                Registrate nuevamente
-              </span>
-            </p>
+            <>
+              <p style={{ marginBottom: "0.5rem" }}>
+                ¿No te llegó el correo?{" "}
+                <span
+                  className={`${styles.linkYellow} ${isButtonDisabled ? styles.disabledLink : ""}`}
+                  role="button"
+                  tabIndex={isButtonDisabled ? -1 : 0}
+                  onClick={!isButtonDisabled ? handleReenviar : undefined}
+                  onKeyDown={(e) => {
+                    if (!isButtonDisabled && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleReenviar();
+                    }
+                  }}
+                  style={{
+                    opacity: isButtonDisabled ? 0.6 : 1,
+                    cursor: isButtonDisabled ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {isPending
+                    ? "Reenviando..."
+                    : cooldown > 0
+                      ? `Reenviar enlace en ${cooldown}s`
+                      : "Reenviar enlace"}
+                </span>
+              </p>
+              <p>
+                ¿El correo es incorrecto?{" "}
+                <span
+                  className={`${styles.linkYellow} ${styles.linkYellowReset}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate("/registro")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate("/registro");
+                    }
+                  }}
+                >
+                  Registrate nuevamente
+                </span>
+              </p>
+            </>
           </div>
         </div>
       </section>

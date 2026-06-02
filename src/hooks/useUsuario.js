@@ -12,6 +12,12 @@ export const useLogin = () => {
   });
 };
 
+export const useLoginByCode = () => {
+  return useMutation({
+    mutationFn: (credenciales) => usuarioService.loginByCode(credenciales),
+  });
+};
+
 export const useBloquearUsuario = () => {
   const queryClient = useQueryClient();
   return useMutation({

@@ -15,7 +15,7 @@ export default defineConfig({
           rewritten = rewritten.replace(/\/(byencrypt|pornombre)$/, "/:$1");
 
           rewritten = rewritten.replace(
-            /\/(status|password)-(block|release|reset|change|new)$/,
+            /\/(status|password|login)-(block|release|reset|change|new|bycode)$/,
             "/$1:$2",
           );
 

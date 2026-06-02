@@ -5,6 +5,10 @@ export const usuarioService = {
   login: async (credenciales) =>
     (await api.post("api/usuario/login", credenciales)).data,
 
+  // POST api/usuario/login:bycode
+  loginByCode: async (credenciales) =>
+    (await api.post("api/usuario/login-bycode", credenciales)).data,
+
   // PUT api/usuario/{usuarioid}/status:block
   bloquearUsuario: async (usuarioId) =>
     (await api.put(`api/usuario/${usuarioId}/status-block`)).data,

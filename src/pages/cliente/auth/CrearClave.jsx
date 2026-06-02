@@ -17,6 +17,8 @@ import {
   useObtenerUsuarioPorEncrypt,
   useEstablecerClave,
   useResetearPassword,
+  useLoginByCode,
+  useReactivarUsuario,
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Login.module.css";
@@ -65,6 +67,41 @@ const CrearClave = () => {
 
   const { mutate: resetearPassword, isPending: solicitandoNuevo } =
     useResetearPassword();
+
+  const { mutate: loginByCode, isPending: solicitandoCodigo } = useLoginByCode();
+  const { mutate: reactivarUsuario, isPending: reactivando } = useReactivarUsuario();
+
+  const handleOmitir = () => {
+    if (!usuario?.email || !usuario?.usuariowebid) return;
+
+    reactivarUsuario(usuario.usuariowebid, {
+      onSuccess: () => {
+        loginByCode(
+          { email: usuario.email, password: "" },
+          {
+            onSuccess: (data) => {
+              toast.success("Código enviado", {
+                description: "Revisá tu correo para ingresar."
+              });
+              navigate("/", {
+                state: { emailIngresado: usuario.email, generatedOtp: data.password }
+              });
+            },
+            onError: () => {
+              toast.error("Error al solicitar código", {
+                description: "Ocurrió un error. Intentá más tarde.",
+              });
+            },
+          }
+        );
+      },
+      onError: () => {
+        toast.error("Error al activar cuenta", {
+          description: "No pudimos activar tu cuenta en este momento. Intentá más tarde.",
+        });
+      }
+    });
+  };
 
   const handleSolicitarNuevoEnlace = () => {
     const savedEmail =
@@ -191,12 +228,20 @@ const CrearClave = () => {
               </div>
             </div>
 
-            <div className={styles.loginHeader}>
-              <h1 className={styles.loginTitle}>Crear nueva contraseña</h1>
-              <p className={styles.loginSubtitle}>
-                Establecé las credenciales para acceder a tu cuenta.
-              </p>
-            </div>
+
+
+            {!tokenInvalidoDeOrigen && usuario && (
+              <div className={styles.successCallout}>
+                <FiCheckCircle className={styles.calloutIcon} />
+                <div className={styles.calloutContent}>
+                  <h2 className={styles.calloutTitle}>¡Email verificado con éxito!</h2>
+                  <p>
+                    Tu cuenta ya está activa. Crear una contraseña es <strong>opcional</strong>. 
+                    Podés configurarla ahora o saltar este paso para ingresar siempre con un código a tu correo.
+                  </p>
+                </div>
+              </div>
+            )}
 
             <div className={styles.formWrapper}>
               {tokenInvalidoDeOrigen && (
@@ -279,13 +324,26 @@ const CrearClave = () => {
                       )}
                   </div>
 
-                  <div className={styles.formActions} style={{ marginTop: "1rem" }}>
+                  <div className={styles.formActions} style={{ marginTop: "1rem", flexDirection: "column", gap: "1rem" }}>
                     <Button
                       type="submit"
                       variant="primary"
-                      disabled={!isValid || guardandoClave}
+                      disabled={!isValid || guardandoClave || solicitandoCodigo || reactivando}
+                      style={{ width: "100%" }}
                     >
                       {guardandoClave ? "PROCESANDO..." : "GUARDAR"}
+                    </Button>
+                    <div className={styles.divider}>
+                      <span>o</span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleOmitir}
+                      disabled={solicitandoCodigo || guardandoClave || reactivando}
+                      style={{ width: "100%" }}
+                    >
+                      {solicitandoCodigo || reactivando ? "PROCESANDO..." : "Omitir e ingresar con código"}
                     </Button>
                   </div>
                 </form>
