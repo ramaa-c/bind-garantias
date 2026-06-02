@@ -42,12 +42,71 @@ export const useCdaEngine = () => {
       setLoading(false);
       return { success: true, errors: [] };
     } catch (err) {
-      console.warn("[CDA ENGINE] Error durante la validación del CDA (Ignorado temporariamente):", err);
-      console.warn("[CDA ENGINE] Response status:", err.response?.status);
-      console.warn("[CDA ENGINE] Response data:", err.response?.data);
+      console.error("[CDA ENGINE] Error durante la validación del CDA:", err);
+      
+      const responseData = err.response?.data;
+      console.log("[CDA ENGINE] Response data:", responseData);
+
+      // Extraer los errores crudos desde distintas estructuras de respuesta posibles
+      let rawErrors = [];
+      if (Array.isArray(responseData)) {
+        rawErrors = responseData;
+      } else if (responseData && Array.isArray(responseData.errors)) {
+        rawErrors = responseData.errors;
+      } else if (responseData && typeof responseData === "object") {
+        rawErrors = [responseData];
+      }
+
+      // Si no hay errores devueltos por el backend pero falló el request (ej. 500 o error de red)
+      if (rawErrors.length === 0 || !responseData) {
+        const isSystemError = true;
+        const isInvalidante = true;
+        const msg = err.response?.data?.message || err.message || "Error de comunicación con el servicio de validación CDA.";
+        
+        setLoading(false);
+        return {
+          success: false,
+          errors: [{
+            cdaid: 0,
+            isInvalidante,
+            message: msg,
+            isSystemError,
+          }]
+        };
+      }
+
+      // Mapear cada error al formato del asistente
+      const mappedErrors = rawErrors.map((raw) => {
+        const cdaId = Number(raw.cdaid || raw.CdaID || raw.id || 0);
+        
+        // Es bloqueante por defecto si bloqueante/isInvalidante/isBlocking es true,
+        // o si el backend no lo define, asumimos true para resguardar consistencia.
+        const isBloqueante = raw.bloqueante ?? raw.Bloqueante ?? true;
+        
+        // REQUERIMIENTO DE USUARIO: El CDA ID 10 ("socio ya existe en otra SGR / SGR Plus")
+        // ya no representa un impedimento para avanzar, por ende NO es invalidante.
+        const isInvalidante = cdaId === 10 ? false : isBloqueante;
+
+        const backendMessage = raw.descripcion || raw.Descripcion || raw.message || raw.Message;
+        const mappedMessage = CDA_MESSAGES[cdaId] || backendMessage || "Error de validación CDA desconocido.";
+
+        return {
+          cdaid: cdaId,
+          isInvalidante: isInvalidante,
+          message: mappedMessage,
+          isSystemError: raw.sistemico ?? raw.Sistemico ?? false,
+        };
+      });
 
       setLoading(false);
-      return { success: true, errors: [] };
+      
+      // Comprobar si quedó algún error que efectivamente sea bloqueante / invalidante
+      const hasBlockingErrors = mappedErrors.some((e) => e.isInvalidante);
+
+      return {
+        success: !hasBlockingErrors,
+        errors: mappedErrors,
+      };
     }
   }, []);
 

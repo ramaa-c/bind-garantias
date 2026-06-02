@@ -23,6 +23,7 @@ import {
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { formatBase64Size } from "../../../../utils/fileUtils";
+import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
 
 const DOC_ITEMS = [
@@ -219,19 +220,13 @@ export default function Paso5Documentacion({
       }
 
       if (!current.provincia) {
-        const provNombre = (
+        const provNombre =
           dom.descripcionprovincia ||
           original.provincia ||
           original.Provincia ||
-          ""
-        ).toUpperCase();
+          "";
         if (provNombre) {
-          const match = provincias.find(
-            (p) =>
-              p.label.toUpperCase() === provNombre ||
-              provNombre.includes(p.label.toUpperCase()) ||
-              p.label.toUpperCase().includes(provNombre),
-          );
+          const match = matchProvinciaAfip(provNombre, provincias);
           if (match) {
             updates.provincia = match.value;
           }

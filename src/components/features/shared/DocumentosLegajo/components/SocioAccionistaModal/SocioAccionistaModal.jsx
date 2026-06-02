@@ -8,6 +8,7 @@ import { sociosService } from "../../../../../../services/sociosService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { formatBase64Size } from "../../../../../../utils/fileUtils";
+import { matchProvinciaAfip } from "../../../../../../utils/provinciaUtils";
 import { useProvincias } from "../../../../../../hooks/useCatalogos";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./SocioAccionistaModal.module.css";
@@ -18,6 +19,7 @@ const normalizarTexto = (str) =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toUpperCase();
+
 
 const getMimeType = (filename) => {
   const ext = String(filename || "").split('.').pop().toLowerCase();
@@ -429,14 +431,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           const locVal = dom.localidad || dom.localidadNombre || "";
           if (locVal) setValue("localidad", locVal, { shouldValidate: true, shouldDirty: true });
           
-          const provNombre = (dom.descripcionprovincia || dom.provincia || "").toUpperCase();
+          const provNombre = dom.descripcionprovincia || dom.provincia || "";
           if (provNombre) {
-            const match = opcionesProvincias.find(
-              (p) =>
-                p.label.toUpperCase() === provNombre ||
-                provNombre.includes(p.label.toUpperCase()) ||
-                p.label.toUpperCase().includes(provNombre)
-            );
+            const match = matchProvinciaAfip(provNombre, opcionesProvincias);
             if (match) {
               setValue("provinciaid", String(match.value), { shouldValidate: true, shouldDirty: true });
             }
