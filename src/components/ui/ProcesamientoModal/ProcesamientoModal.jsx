@@ -106,8 +106,18 @@ export const ProcesamientoModal = ({
                       {BADGE_LABELS[paso.estado]}
                     </span>
                   </div>
-                  {paso.descripcion && (
+                  {paso.descripcion && !isError && (
                     <p className={styles.descripcionPaso}>{paso.descripcion}</p>
+                  )}
+                  {isError && paso.errores && paso.errores.length > 0 && (
+                    <ul className={styles.listaErroresPaso}>
+                      {paso.errores.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {isError && paso.error && (!paso.errores || paso.errores.length === 0) && (
+                    <p className={styles.errorPaso}>{paso.error}</p>
                   )}
                 </div>
               </li>

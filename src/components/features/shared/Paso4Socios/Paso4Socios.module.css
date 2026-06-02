@@ -444,9 +444,7 @@
 
   .warningsContainer {
     width: auto;
-    flex: 1;
     align-items: flex-end;
-    margin-left: 1rem;
   }
 
   .listItem {

@@ -109,20 +109,22 @@ export const AltaOperacion = () => {
         socioCuitLimpio,
       );
       if (!result.success) {
-        const invalidatingError = result.errors.find((e) => e.isInvalidante);
         console.error(
           `[AltaOperacion] Validación CDA fallida para socio "${socio.nombre}":`,
-          invalidatingError,
+          result.errors,
         );
-        const errorMsg =
-          invalidatingError?.message ||
-          `La validación del socio "${socio.nombre}" ha fallado.`;
+        
         setProcesoModal(prev => ({
           ...prev,
           hasError: true,
-          isSystemError: invalidatingError?.isSystemError || false,
+          isSystemError: result.errors.some((e) => e.isSystemError),
           pasos: prev.pasos.map(p => 
-            p.id === "sgr" ? { ...p, estado: "error", descripcion: errorMsg }
+            p.id === "sgr" ? { 
+                ...p, 
+                estado: "error", 
+                descripcion: `Falló la validación del socio "${socio.nombre}":`,
+                errores: result.errors.map(e => e.message)
+            }
             : p.id === "finalizando" ? { ...p, estado: "error", descripcion: "Proceso interrumpido." }
             : p
           )
@@ -1233,11 +1235,11 @@ export const AltaOperacion = () => {
     )
       return null;
 
-    let hitos = ["SOCIOS", "MONTOS", "DOCUMENTOS"];
+    let hitos = ["ACCIONISTAS", "MONTOS", "DOCUMENTOS"];
     let hitoActual = pasoActual - 1;
 
     if (tipoProducto === "cheque") {
-      hitos = ["SOCIOS", "MONTOS", "DOCUMENTOS", "BOLSA"];
+      hitos = ["ACCIONISTAS", "MONTOS", "DOCUMENTOS", "BOLSA"];
       hitoActual = pasoActual - 1;
     }
 
@@ -1253,8 +1255,8 @@ export const AltaOperacion = () => {
       case 1:
         return {
           badge: "Alta de Línea",
-          t: "Declaración de Socios",
-          s: "Revisá y confirmá la composición societaria.",
+          t: "Declaración de Accionistas",
+          s: "Revisá y confirmá la composición accionaria.",
         };
       case 2:
         return {
@@ -1287,8 +1289,8 @@ export const AltaOperacion = () => {
 
   const hitosVisuales =
     tipoProducto === "cheque"
-      ? ["Socios", "Operación", "Documentos", "Bolsa"]
-      : ["Socios", "Operación", "Documentos"];
+      ? ["Accionistas", "Operación", "Documentos", "Bolsa"]
+      : ["Accionistas", "Operación", "Documentos"];
 
   const showHeaderYStepper =
     !(pasoActual === 5 && tipoProducto === "cheque") &&
