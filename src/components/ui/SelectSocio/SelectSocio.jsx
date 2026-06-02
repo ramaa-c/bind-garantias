@@ -4,14 +4,14 @@ import ReactSelect from "react-select";
 import styles from "./SelectSocio.module.css";
 
 const customStyles = {
-  control: (base) => ({
+  control: (base, state) => ({
     ...base,
     minHeight: "100%",
     height: "100%",
     backgroundColor: "transparent",
     border: "none",
     boxShadow: "none",
-    cursor: "pointer",
+    cursor: state.isDisabled ? "not-allowed" : "pointer",
   }),
   valueContainer: (base) => ({
     ...base,
@@ -21,9 +21,9 @@ const customStyles = {
     ...base,
     color: "transparent",
   }),
-  singleValue: (base) => ({
+  singleValue: (base, state) => ({
     ...base,
-    color: "var(--white)",
+    color: state.isDisabled ? "rgba(255, 255, 255, 0.35)" : "var(--white)",
     margin: 0,
   }),
   input: (base) => ({
@@ -35,9 +35,9 @@ const customStyles = {
   indicatorSeparator: () => ({ display: "none" }),
   dropdownIndicator: (base, state) => ({
     ...base,
-    color: state.isFocused ? "var(--yellow)" : "#888",
+    color: state.isDisabled ? "rgba(255, 255, 255, 0.15)" : state.isFocused ? "var(--yellow)" : "#888",
     padding: "0 1rem 0 0",
-    "&:hover": { color: "var(--yellow)" },
+    "&:hover": { color: state.isDisabled ? "rgba(255, 255, 255, 0.15)" : "var(--yellow)" },
   }),
   menu: (base, state) => ({
     ...base,
@@ -88,6 +88,8 @@ export const SelectSocio = ({
   error,
   esValido,
   className = "",
+  disabled,
+  isLoading,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -124,6 +126,8 @@ export const SelectSocio = ({
           styles.container,
           statusClass,
           hasValue || isFocused ? styles.hasValue : "",
+          isLoading ? styles.isLoading : "",
+          disabled ? styles.isDisabled : "",
           className,
         ]
           .filter(Boolean)
@@ -132,7 +136,11 @@ export const SelectSocio = ({
         return (
           <div className={containerClasses}>
             <div className={styles.innerGroup}>
-              {icon && <div className={styles.icon}>{icon}</div>}
+              {(icon || isLoading) && (
+                <div className={styles.icon}>
+                  {isLoading ? <div className={styles.spinner} /> : icon}
+                </div>
+              )}
 
               <div className={styles.fieldGroup}>
                 <ReactSelect
@@ -146,6 +154,8 @@ export const SelectSocio = ({
                   className={styles.selectWrapper}
                   icon={icon}
                   menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                  isDisabled={disabled || isLoading}
+                  isLoading={isLoading}
                   {...props}
                 />
                 <label className={styles.label}>{label}</label>

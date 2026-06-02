@@ -144,6 +144,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
                   icon={<FiBriefcase />}
                   options={opcionesAgentes}
                   disabled={cargandoAgentes || !!agenteBolsa}
+                  isLoading={cargandoAgentes}
                   error={fieldState.error?.message}
                 />
               )}

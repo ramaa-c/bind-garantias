@@ -167,3 +167,68 @@
     transform: translateY(0);
   }
 }
+
+/* SPINNER */
+.spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--yellow, #f4f500);
+  border-radius: 50%;
+  animation: spin 0.85s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* SHIMMER EFFECT DURING LOADING */
+.container.isLoading .innerGroup {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.02) 25%,
+    rgba(255, 255, 255, 0.07) 50%,
+    rgba(255, 255, 255, 0.02) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite linear;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.container.isLoading .label {
+  top: -0.6rem;
+  font-size: 0.72rem;
+  background-color: #1e1e1e;
+}
+
+/* DISABLED STATE */
+.container.isDisabled .innerGroup {
+  border-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.01);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.container.isDisabled .icon {
+  color: #333;
+  border-right-color: rgba(255, 255, 255, 0.04);
+}
+
+.container.isDisabled .label {
+  color: #444;
+}
+
