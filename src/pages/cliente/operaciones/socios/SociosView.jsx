@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
 import { SociosLegajo } from "../../../../components/features";
 import { Button } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
-import styles from "./SociosView.module.css";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { sociosService } from "../../../../services/sociosService";
-import { afipService } from "../../../../services/afipService";
-import { tercerosService } from "../../../../services/tercerosService";
-import { useQueryClient } from "@tanstack/react-query";
+import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { toast } from "sonner";
+import styles from "./SociosView.module.css";
 
 export default function SociosView() {
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const { cuitActivo } = useEmpresaActiva();
   const queryClient = useQueryClient();
+  const { socioIdActivo, cuitActivo } = useEmpresaActiva();
+  const [sincronizando, setSincronizando] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -23,111 +22,39 @@ export default function SociosView() {
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
 
-  const handleRefreshLufe = async () => {
-    if (!cuitActivo) {
-      toast.error("No se pudo obtener el CUIT de la empresa activa.");
+  const handleRefrescarLufe = async () => {
+    if (!socioIdActivo || !cuitActivo) {
+      toast.error("No se pudo identificar la empresa activa.");
       return;
     }
 
-    setIsRefreshing(true);
-    const idToast = toast.loading("Actualizando datos desde LUFE...");
-
+    setSincronizando(true);
+    const toastId = toast.loading("Sincronizando legajo con LUFE y AFIP...");
     try {
-      let autoridades = null;
+      console.log(`[SociosView] Iniciando precarga y enriquecimiento de autoridades/accionistas para CUIT: ${cuitActivo}`);
+
+      // 1. Ejecutar la precarga LUFE + enriquecimiento síncrono AFIP + PUTs de accionistas
+      await enriquecerSociosLufeAfip(socioIdActivo, cuitActivo);
+
+      // 2. Vincular documentos de LUFE
       try {
-        autoridades = await sociosService.obtenerAutoridadesLufe(cuitActivo, true);
-      } catch (lufeError) {
-        console.error("[SociosView] Error al vincular autoridades de LUFE:", lufeError);
-      }
-
-      try {
-        const arrAut = Array.isArray(autoridades) 
-          ? autoridades 
-          : autoridades?.data || autoridades?.items || [];
-        
-        if (arrAut.length > 0) {
-          await Promise.all(
-            arrAut.map(async (auth) => {
-              const cuitSocio = auth.cuit || auth.Cuit;
-              if (!cuitSocio) return;
-              const cuitSocioLimpio = String(cuitSocio).replace(/\D/g, "");
-              if (cuitSocioLimpio.length !== 11) return;
-
-              try {
-                const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitSocioLimpio });
-                const arrExistentes = Array.isArray(existentes) ? existentes : existentes?.data || [];
-                if (arrExistentes.length === 0) return;
-
-                const terceroLocal = arrExistentes[0];
-                const terceroId = terceroLocal.tercerorelacionadoid || terceroLocal.id;
-
-                let respAfip = null;
-                try {
-                  respAfip = await afipService.obtenerConstanciaInscripcion(cuitSocioLimpio);
-                } catch (afipErr) {
-                  try {
-                    const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitSocioLimpio);
-                    if (lufeEntidad && lufeEntidad.success) {
-                      respAfip = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
-                    }
-                  } catch (lufeErr) {}
-                }
-
-                if (respAfip && respAfip.datosgenerales) {
-                  const dg = respAfip.datosgenerales;
-                  const dom = dg.domiciliofiscal || dg.domicilio || {};
-
-                  const payloadTercero = {
-                    tercerorelacionadoid: terceroId,
-                    denominacion: auth.denominacion || terceroLocal.denominacion || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante",
-                    cuit: cuitSocioLimpio,
-                    bcraid: 0,
-                    tipopersonaid: cuitSocioLimpio.startsWith("30") || cuitSocioLimpio.startsWith("33") ? 2 : 1,
-                    tipodocumentoid: 0,
-                    numerodocumento: cuitSocioLimpio,
-                    estadocivilid: 0,
-                    ciudadid: 0,
-                    telefono: dg.telefono || terceroLocal.telefono || "",
-                    conyuge: "",
-                    actividad: "",
-                    contacto: dom.localidad || dom.localidadNombre || terceroLocal.contacto || "",
-                    nrocuenta: "",
-                    codigomercado: "",
-                    calle: dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "") || terceroLocal.calle || "",
-                    numero: 0,
-                    piso: "",
-                    departamento: "",
-                    codpos: dom.codpostal || dom.codpos || terceroLocal.codpos || "",
-                    descripcionreducida: (auth.denominacion || terceroLocal.denominacion || "").substring(0, 20),
-                    mail: dg.email || dg.emailfacturacion || terceroLocal.mail || terceroLocal.email || "",
-                  };
-
-                  await tercerosService.actualizarTercero(payloadTercero);
-                }
-              } catch (singleErr) {
-                console.warn(`[SociosView] No se pudo enriquecer CUIT ${cuitSocioLimpio}:`, singleErr);
-              }
-            })
-          );
-        }
-      } catch (enriquecimientoError) {
-        console.error("[SociosView] Error al procesar enriquecimiento de autoridades:", enriquecimientoError);
-      }
-
-      try {
+        console.log(`[SociosView] Vinculando documentos de LUFE para CUIT: ${cuitActivo}`);
         await sociosService.obtenerDocumentosLufe(cuitActivo, true);
       } catch (lufeDocsError) {
         console.error("[SociosView] Error al vincular documentos de LUFE:", lufeDocsError);
       }
 
-      await queryClient.invalidateQueries();
+      // 3. Invalidar la query para refrescar la vista instantáneamente
+      await queryClient.invalidateQueries({
+        queryKey: ["socioLegajoCompleto", socioIdActivo],
+      });
 
-      toast.success("Datos de LUFE actualizados correctamente", { id: idToast });
-    } catch (error) {
-      console.error(error);
-      toast.error("Ocurrió un error al actualizar desde LUFE", { id: idToast });
+      toast.success("Legajo sincronizado correctamente desde LUFE/AFIP", { id: toastId });
+    } catch (err) {
+      console.error("[SociosView] Error al sincronizar legajo:", err);
+      toast.error("Error al sincronizar datos desde LUFE/AFIP.", { id: toastId });
     } finally {
-      setIsRefreshing(false);
+      setSincronizando(false);
     }
   };
 
@@ -152,14 +79,16 @@ export default function SociosView() {
           variant="primary"
           size="sm"
           className={styles.submitBtn}
-          onClick={handleRefreshLufe}
-          disabled={isRefreshing}
+          onClick={handleRefrescarLufe}
+          disabled={sincronizando}
         >
-          <FiRefreshCw 
-            className={isRefreshing ? styles.spinIcon : ""} 
-            style={{ marginRight: "0.5rem" }} 
+          <FiRefreshCw
+            style={{
+              marginRight: "0.5rem",
+              animation: sincronizando ? "spin 1s linear infinite" : "none"
+            }}
           />
-          {isRefreshing ? "Actualizando..." : "Refrescar datos LUFE"}
+          {sincronizando ? "Sincronizando..." : "Refrescar datos LUFE"}
         </Button>
       </header>
 

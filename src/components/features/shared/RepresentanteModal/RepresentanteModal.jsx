@@ -20,6 +20,7 @@ export function RepresentanteModal({
   onGuardar,              // Form mode: callback to update parent React Hook Form state
 }) {
   const [validando, setValidando] = useState(false);
+  const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
@@ -82,6 +83,7 @@ export function RepresentanteModal({
     }
   }, [isOpen, representante, representanteInicial, reset]);
 
+
   const handleAfipLookup = async () => {
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
     
@@ -138,16 +140,15 @@ export function RepresentanteModal({
         console.warn("[RepresentanteModal] Error buscando tercero en base de datos local:", dbErr);
       }
 
-      if (terceroEncontrado) {
+      // Si existe en la BD y tiene los datos mínimos, los usamos directamente si no estamos editando
+      const tieneDatosCompletos = terceroEncontrado && 
+        (terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail);
+
+      if (terceroEncontrado && tieneDatosCompletos && !representante && !representanteInicial) {
         const nombreRep = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Representante del Sistema";
         setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
-        
-        if (terceroEncontrado.mail || terceroEncontrado.email) {
-          setValue("email", terceroEncontrado.mail || terceroEncontrado.email, { shouldValidate: true, shouldDirty: true });
-        }
-        if (terceroEncontrado.telefono) {
-          setValue("telefono", terceroEncontrado.telefono, { shouldValidate: true, shouldDirty: true });
-        }
+        setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail || "", { shouldValidate: true, shouldDirty: true });
+        setValue("telefono", terceroEncontrado.telefono || terceroEncontrado.Telefono || "", { shouldValidate: true, shouldDirty: true });
 
         setAfipValidado(true);
         toast.success("Datos del representante recuperados del sistema.");
@@ -155,7 +156,7 @@ export function RepresentanteModal({
         return;
       }
 
-      // 2. Fallback a AFIP
+      // 2. Si no tiene datos completos o es modo edición, consultamos AFIP/LUFE
       let res = null;
       try {
         res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
@@ -173,17 +174,18 @@ export function RepresentanteModal({
 
       if (res && res.datosgenerales) {
         const dg = res.datosgenerales;
-        const nombreRep = dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
+        const nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                          dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
         setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
         
-        if (dg.email || dg.emailfacturacion) {
-          setValue("email", dg.email || dg.emailfacturacion, { shouldValidate: true, shouldDirty: true });
-        }
-        if (dg.telefono) {
-          setValue("telefono", dg.telefono, { shouldValidate: true, shouldDirty: true });
-        }
+        const emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
+        setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
+        
+        const telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
+        setValue("telefono", telVal, { shouldValidate: true, shouldDirty: true });
 
         setAfipValidado(true);
+        toast.success(representante || representanteInicial ? "Datos actualizados desde AFIP/LUFE." : "Datos del representante recuperados.");
       } else {
         setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de AFIP." });
         setAfipValidado(false);
@@ -412,11 +414,30 @@ export function RepresentanteModal({
                 <div className={styles.summaryTop}>
                   <div className={styles.summaryLeft}>
                     <span className={styles.summaryStatus}>
-                      <FiCheckCircle size={11} /> Representante validado con AFIP
+                      {enriqueciendoAuto ? (
+                        <>
+                          <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
+                          Enriqueciendo datos...
+                        </>
+                      ) : (
+                        <>
+                          <FiCheckCircle size={11} /> Representante validado con AFIP
+                        </>
+                      )}
                     </span>
                     <h2 className={styles.summaryName}>{watch("nombre") || "Representante"}</h2>
                     <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-                    {!representante && !representanteInicial && (
+                    {representante || representanteInicial ? (
+                      <button
+                        type="button"
+                        className={styles.editLink}
+                        onClick={handleAfipLookup}
+                        disabled={validando || enriqueciendoAuto}
+                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
+                      >
+                        <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar AFIP"}
+                      </button>
+                    ) : (
                       <button
                         type="button"
                         className={styles.editLink}
