@@ -32,7 +32,7 @@ export default function SociosView() {
     const toastId = toast.loading("Sincronizando legajo con LUFE y AFIP...");
     try {
       console.log(`[SociosView] Iniciando precarga y enriquecimiento de autoridades/accionistas para CUIT: ${cuitActivo}`);
-      
+
       // 1. Ejecutar la precarga LUFE + enriquecimiento síncrono AFIP + PUTs de accionistas
       await enriquecerSociosLufeAfip(socioIdActivo, cuitActivo);
 
@@ -82,11 +82,11 @@ export default function SociosView() {
           onClick={handleRefrescarLufe}
           disabled={sincronizando}
         >
-          <FiRefreshCw 
-            style={{ 
+          <FiRefreshCw
+            style={{
               marginRight: "0.5rem",
               animation: sincronizando ? "spin 1s linear infinite" : "none"
-            }} 
+            }}
           />
           {sincronizando ? "Sincronizando..." : "Refrescar datos LUFE"}
         </Button>
