@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { FiUsers as FiUsersIcon } from "react-icons/fi";
+import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
 import { SociosLegajo } from "../../../../components/features";
+import { Button } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./SociosView.module.css";
 
@@ -28,6 +29,17 @@ export default function SociosView() {
             </p>
           </div>
         </div>
+
+        <Button
+          type="button"
+          variant="primary"
+          size="sm"
+          className={styles.submitBtn}
+          onClick={() => {}}
+        >
+          <FiRefreshCw style={{ marginRight: "0.5rem" }} />
+          Refrescar datos LUFE
+        </Button>
       </header>
 
       <div className={styles.formLayout}>

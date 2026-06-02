@@ -136,7 +136,7 @@
 }
 
 .heading {
-  color: var(--text-dim, #666);
+  color: #888888;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.1em;

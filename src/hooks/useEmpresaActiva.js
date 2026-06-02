@@ -32,6 +32,7 @@ export const useEmpresaActiva = () => {
     socioWeb?.denominacion || socioWeb?.Denominacion || null;
   const direccion = socioWeb?.calle || socioWeb?.Calle || "";
   const telefono = socioWeb?.telefono || socioWeb?.Telefono || "";
+  const tipoPersonaId = socioWeb?.tipopersonaid || socioWeb?.TipoPersonaID || null;
 
   const isLoading = 
     isLoadingUser || 
@@ -44,6 +45,7 @@ export const useEmpresaActiva = () => {
     nombreEmpresa,
     direccion,
     telefono,
+    tipoPersonaId,
     isLoading,
   };
 };
