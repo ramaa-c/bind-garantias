@@ -483,7 +483,7 @@ export default function Paso5Documentacion({
       <div className={styles.footer}>
         <Button
           variant="primary"
-          iconRight={!isSubmitting && <FiChevronRight />}
+          size="md"
           onClick={handleAvanzarClick}
           className={styles.continueBtn}
           isLoading={isSubmitting}

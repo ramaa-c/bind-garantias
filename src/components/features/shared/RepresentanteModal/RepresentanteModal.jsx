@@ -4,7 +4,7 @@ import { FiBriefcase, FiX, FiMail, FiSmartphone, FiCreditCard, FiEdit2 } from "r
 import { InputSocioMasked, Button } from "../../../ui";
 import styles from "./RepresentanteModal.module.css";
 import { useEscape } from "../../../../hooks/useEscape";
-import { useValidarCuitAfip } from "../../../../hooks/useAfip";
+import { afipService } from "../../../../services/afipService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { sociosService } from "../../../../services/sociosService";
 
@@ -23,9 +23,7 @@ export const RepresentanteModal = ({
 
   const [errores, setErrores] = useState({});
   const [validando, setValidando] = useState(false);
-  const [loadingLabel, setLoadingLabel] = useState("BUSCANDO...");
 
-  const { mutateAsync: validarEnAfip } = useValidarCuitAfip();
 
   useEffect(() => {
     if (isOpen) {
@@ -58,7 +56,6 @@ export const RepresentanteModal = ({
       }
 
       setErrores({});
-      setLoadingLabel("BUSCANDO...");
     }
   }, [isOpen, representanteInicial]);
 
@@ -95,7 +92,7 @@ export const RepresentanteModal = ({
     }
     setErrores({});
     setValidando(true);
-    setLoadingLabel("CONSULTANDO AFIP...");
+
 
     const cuitLimpio = String(cuit).replace(/\D/g, "");
 
@@ -126,16 +123,17 @@ export const RepresentanteModal = ({
           setCelular(terceroEncontrado.telefono);
         }
         setFaseInterna("completar");
+        setValidando(false);
         return;
       }
 
       // 2. Si no existe localmente, fallback a AFIP
       let respAfip = null;
       try {
-        respAfip = await validarEnAfip(cuit);
+        respAfip = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
       } catch (afipErr) {
         console.warn("[RepresentanteModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
-        setLoadingLabel("AFIP CAÍDO. PROBANDO LUFE...");
+
         
         try {
           const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
@@ -264,7 +262,7 @@ export const RepresentanteModal = ({
                     onClick={handleValidarCuit}
                     isLoading={validando}
                   >
-                    {validando ? loadingLabel : "VALIDAR"}
+                    {validando ? "BUSCANDO..." : "VALIDAR"}
                   </Button>
                 </div>
               )}

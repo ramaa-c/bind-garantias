@@ -339,16 +339,16 @@
 
 /* FOOTER */
 .footer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-top: 1.5rem;
   padding-top: 1.25rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  margin-top: 2rem;
-  display: flex;
-  justify-content: flex-end;
 }
 
 .continueBtn {
-  height: 2.625rem;
-  min-width: 10rem;
+  min-width: 14rem;
 }
 
 @media (max-width: 56.24rem) {
@@ -367,11 +367,13 @@
   .continueBtn {
     width: 100%;
     max-width: 18rem;
+    margin: 0 auto;
+    display: block;
     justify-content: center;
   }
 
   .continueBtn svg {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -384,10 +386,14 @@
     justify-content: flex-end;
   }
   .footer {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: center;
     margin-top: 2.5rem;
   }
   .continueBtn {
     width: auto;
+    min-width: 14rem;
   }
 }
 

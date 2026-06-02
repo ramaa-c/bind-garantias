@@ -13,7 +13,6 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
   const [validando, setValidando] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loadingLabel, setLoadingLabel] = useState("VALIDAR CUIT");
 
   const { control, reset, setValue, watch, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -55,27 +54,25 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
         setAfipValidado(false);
       }
       setShowConfirm(false);
-      setLoadingLabel("VALIDAR CUIT");
     }
   }, [isOpen, representante, reset]);
 
   const handleAfipLookup = async () => {
+    console.log("[DEBUG] Click en VALIDAR CUIT. cuitValue actual:", cuitValue);
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
+    console.log("[DEBUG] cuitLimpio procesado:", cuitLimpio, "Largo:", cuitLimpio.length);
+    
     if (!cuitLimpio || cuitLimpio.length !== 11) {
+      console.log("[DEBUG] CUIT inválido. Cancelando flujo.");
       setError("cuit", { type: "manual", message: "Por favor, ingrese un CUIT de 11 dígitos válido." });
       return;
     }
+    
+    console.log("[DEBUG] CUIT válido. setValidando(true)");
     setValidando(true);
-    setLoadingLabel("CONSULTANDO AFIP...");
     clearErrors("cuit");
+    
     try {
-      const respSgr = await sociosService.obtenerSocios({ Cuit: cuitLimpio, page: 1, page_size: 10 });
-      const socioSgrDb = Array.isArray(respSgr) ? respSgr[0] : respSgr?.items?.[0] || respSgr?.data?.[0];
-
-      if (socioSgrDb) {
-        setError("cuit", { type: "manual", message: "Esta empresa ya se encuentra en gestión por SGR+" });
-        return;
-      }
 
       // 1. Buscar primero en la base de datos de terceros
       let terceroEncontrado = null;
@@ -102,6 +99,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
 
         setAfipValidado(true);
         toast.success("Datos del representante recuperados del sistema.");
+        setValidando(false);
         return;
       }
 
@@ -111,7 +109,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
         res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
       } catch (afipErr) {
         console.warn("[RepresentanteModal Legajo] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
-        setLoadingLabel("AFIP CAÍDO. PROBANDO LUFE...");
+
         
         try {
           const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
@@ -137,7 +135,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
 
         setAfipValidado(true);
       } else {
-        toast.warning("CUIT no encontrado en AFIP/LUFE", {
+        toast.error("CUIT no encontrado en AFIP/LUFE", {
           description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
         });
         setValue("nombre", "");
@@ -145,7 +143,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
       }
     } catch (err) {
       console.error("Error validando representante en AFIP/SGR:", err);
-      toast.warning("Servicio de AFIP/LUFE no disponible", {
+      toast.error("Servicio de AFIP/LUFE no disponible", {
         description: "No se pudieron obtener datos automáticos. Podés ingresarlos manualmente.",
       });
       setValue("nombre", "");
@@ -324,7 +322,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                  buttonText={loadingLabel}
+                  buttonText="VALIDAR CUIT"
                   isLoading={validando}
                 />
               </div>

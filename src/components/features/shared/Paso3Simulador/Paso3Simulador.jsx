@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
-import { FiDollarSign, FiBriefcase, FiSliders } from "react-icons/fi";
+import { FiDollarSign, FiBriefcase, FiSliders, FiChevronRight } from "react-icons/fi";
 import {
   Button,
   InputMonto,
@@ -355,7 +355,12 @@ export default function Paso3Simulador({
       )}
 
       <div className={styles.calcBtnWrapper}>
-        <Button variant="primary" size="lg" onClick={handleLocalCalcular}>
+        <Button
+          variant="primary"
+          size="md"
+          onClick={handleLocalCalcular}
+          className={styles.continueBtn}
+        >
           {textoAccion}
         </Button>
       </div>

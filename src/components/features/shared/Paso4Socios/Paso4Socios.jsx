@@ -190,15 +190,17 @@ export default function Paso4Socios({
             variant="outline"
             onClick={handleOpenAddSocio}
             disabled={totalGuardado >= 100 || isLoading}
+            className={styles.secundaryBtn}
           >
             <FiUserPlus className={styles.iconMarginRight} /> AGREGAR SOCIO
           </Button>
           <Button
             type="button"
             variant="primary"
-            iconRight={!isLoading && <FiChevronRight />}
+            size="md"
             onClick={handleContinuarClick}
             disabled={totalGuardado !== 100 || !todosCompletos || isLoading}
+            className={styles.continueBtn}
           >
             {isLoading ? "VALIDANDO..." : "CONTINUAR"}
           </Button>

@@ -41,15 +41,15 @@
 
 .calcBtnWrapper {
   display: flex;
-  justify-content: center;
-  margin-top: auto;
-  padding-top: 1rem;
+  flex-direction: column;
+  gap: 0.625rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.calcBtnWrapper :global(button) {
-  width: 100%;
-  max-width: 18rem;
+.continueBtn {
+  min-width: 14rem;
 }
 
 @media (max-width: 56.24rem) {
@@ -60,13 +60,19 @@
     background: rgba(26, 26, 26, 0.95);
     backdrop-filter: blur(14px);
     padding: 0.875rem 0;
-    margin-top: 1rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    justify-content: center;
   }
-  .calcBtnWrapper :global(button) {
-    width: calc(100% - 2rem);
+  .continueBtn {
+    width: 100%;
+    max-width: 18rem;
+    margin: 0 auto;
+    display: block;
+    justify-content: center;
   }
-  .calcBtnWrapper :global(button svg) {
-    display: none;
+  .continueBtn svg {
+    display: none !important;
   }
 }
 
@@ -77,11 +83,13 @@
     gap: 0 0.875rem;
   }
   .calcBtnWrapper {
+    flex-direction: row;
     justify-content: flex-end;
+    align-items: center;
   }
-  .calcBtnWrapper :global(button) {
+  .continueBtn {
     width: auto;
-    min-width: 11.5rem;
+    min-width: 14rem;
   }
 }
 

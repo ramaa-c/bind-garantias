@@ -166,7 +166,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
   const [guardando, setGuardando] = useState(false);
-  const [loadingLabel, setLoadingLabel] = useState("VALIDAR CUIT");
 
   const relacionId = socio?.relacionId || 
                      socio?.relacion?.sociotercerorelacionid || 
@@ -333,7 +332,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setErrorDniFrente(false);
       setErrorDniDorso(false);
       setShowConfirm(false);
-      setLoadingLabel("VALIDAR CUIT");
     }
   }, [isOpen, socio, reset]);
 
@@ -344,12 +342,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       return;
     }
     setValidando(true);
-    setLoadingLabel("CONSULTANDO AFIP...");
+
     clearErrors("cuit");
     try {
-      // SGR+ check removed to allow adding already registered companies/socios
-      const respSgr = await sociosService.obtenerSocios({ Cuit: cuitLimpio, page: 1, page_size: 10 });
-      const socioSgrDb = Array.isArray(respSgr) ? respSgr[0] : respSgr?.items?.[0] || respSgr?.data?.[0];
 
       // 1. Buscar primero en la base de datos de terceros
       let terceroEncontrado = null;
@@ -391,6 +386,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
         setAfipValidado(true);
         toast.success("Datos del accionista recuperados del sistema.");
+        setValidando(false);
         return;
       }
 
@@ -400,7 +396,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
       } catch (afipErr) {
         console.warn("[SocioAccionistaModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
-        setLoadingLabel("AFIP CAÍDO. PROBANDO LUFE...");
+
         
         try {
           const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
@@ -447,7 +443,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         }
         setAfipValidado(true);
       } else {
-        toast.warning("CUIT no encontrado en AFIP/LUFE", {
+        toast.error("CUIT no encontrado en AFIP/LUFE", {
           description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
         });
         setValue("nombre", "");
@@ -455,7 +451,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       }
     } catch (err) {
       console.error("Error validando CUIT en AFIP/SGR:", err);
-      toast.warning("Servicio de AFIP/LUFE no disponible", {
+      toast.error("Servicio de AFIP/LUFE no disponible", {
         description: "No se pudieron obtener datos automáticos. Podés ingresarlos manualmente.",
       });
       setValue("nombre", "");
@@ -678,7 +674,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                  buttonText={loadingLabel}
+                  buttonText="VALIDAR CUIT"
                   isLoading={validando}
                 />
               </div>

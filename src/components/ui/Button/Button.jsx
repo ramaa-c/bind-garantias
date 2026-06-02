@@ -57,9 +57,13 @@ export const Button = ({
       {...props}
     >
       {isLoading && !String(children).endsWith("...") && <span className={styles.spinner} />}
-      <span className={isLoading ? styles.loadingText : ""}>
-        {renderContent()}
-      </span>
+      {isLoading ? (
+        <span className={styles.loadingText}>
+          {renderContent()}
+        </span>
+      ) : (
+        renderContent()
+      )}
     </button>
   );
 };
