@@ -194,7 +194,14 @@ const Login = () => {
             setGeneratedOtp(data.password);
             setFase("validacion_otp");
           },
-          onError: () => toast.error("Error al solicitar código", { description: "Ocurrió un error. Intentá más tarde." })
+          onError: (error) => {
+            const errorData = error?.response?.data;
+            if (errorData?.classname === "EMVCException") {
+              setError("email", { type: "server", message: errorData.message });
+            } else {
+              toast.error("Error al solicitar código", { description: "Ocurrió un error. Intentá más tarde." });
+            }
+          }
         }
       );
       return;
