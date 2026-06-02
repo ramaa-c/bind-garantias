@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap } from "react-icons/fi";
+import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, CargaArchivos } from "../../../../../ui";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
+import { tercerosService } from "../../../../../../services/tercerosService";
 import { useProvincias } from "../../../../../../hooks/useCatalogos";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./SocioAccionistaModal.module.css";
@@ -156,25 +157,44 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
   );
 };
 
-export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, accionistas = [], dniTerceros = {} }) {
+const DEFAULT_DNI_TERCEROS = {};
+const DEFAULT_ACCIONISTAS = [];
+
+export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
   const [validando, setValidando] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState("VALIDAR CUIT");
+
+  const relacionId = socio?.relacionId || 
+                     socio?.relacion?.sociotercerorelacionid || 
+                     socio?.relacion?.SocioTerceroRelacionID || 
+                     socio?.sociotercerorelacionid || 
+                     socio?.relacion?.sociotercerorelacionId ||
+                     null;
 
   const indexSocioEditado = socio
     ? accionistas.findIndex(
-        (s) => s.cuit === socio.cuit || (socio.relacionId && s.relacionId === socio.relacionId)
+        (s) => s.cuit === socio.cuit || 
+               (relacionId && (
+                 s.relacionId === relacionId || 
+                 s.relacion?.sociotercerorelacionid === relacionId ||
+                 s.relacion?.SocioTerceroRelacionID === relacionId ||
+                 s.sociotercerorelacionid === relacionId
+               ))
       )
     : -1;
 
-  const totalSinSocioActual = accionistas.reduce(
-    (acc, s, idx) => (idx === indexSocioEditado ? acc : acc + Number(s.participacion || 0)),
-    0
+  const totalSinSocioActual = Number(
+    accionistas.reduce(
+      (acc, s, idx) => (idx === indexSocioEditado ? acc : acc + Number(s.participacion || 0)),
+      0
+    ).toFixed(2)
   );
 
-  const maximoPermitido = 100 - totalSinSocioActual;
+  const maximoPermitido = Number((100 - totalSinSocioActual).toFixed(2));
   
   // Dropzone Error States
   const [errorDniFrente, setErrorDniFrente] = useState(false);
@@ -219,7 +239,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       if (memoryFiles?.dniFrente) {
         setDniFrenteFile(memoryFiles.dniFrente);
         setErrorDniFrente(false);
-      } else {
+      } else if (!(dniFrenteFile instanceof File)) {
         // Fallback a archivosBackend (legajo de la empresa, por compatibilidad)
         const frente = archivosBackend?.find((a) => {
           if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"]) return false;
@@ -247,7 +267,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       if (memoryFiles?.dniDorso) {
         setDniDorsoFile(memoryFiles.dniDorso);
         setErrorDniDorso(false);
-      } else {
+      } else if (!(dniDorsoFile instanceof File)) {
         // Fallback a archivosBackend
         const dorso = archivosBackend?.find((a) => {
           if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"]) return false;
@@ -282,13 +302,15 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
   useEffect(() => {
     if (isOpen) {
+      setDniFrenteFile(null);
+      setDniDorsoFile(null);
       if (socio) {
         reset({
           cuit: socio.cuit,
           nombre: socio.nombre,
           participacion: socio.participacion,
           email: socio.email,
-          celular: socio.telefono || "",
+          celular: socio.celular || socio.telefono || "",
           direccion: socio.direccion || "",
           provinciaid: String(socio.provinciaid || ""),
           localidad: socio.localidad || "",
@@ -311,6 +333,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setErrorDniFrente(false);
       setErrorDniDorso(false);
       setShowConfirm(false);
+      setLoadingLabel("VALIDAR CUIT");
     }
   }, [isOpen, socio, reset]);
 
@@ -321,13 +344,74 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       return;
     }
     setValidando(true);
+    setLoadingLabel("CONSULTANDO AFIP...");
     clearErrors("cuit");
     try {
       // SGR+ check removed to allow adding already registered companies/socios
       const respSgr = await sociosService.obtenerSocios({ Cuit: cuitLimpio, page: 1, page_size: 10 });
       const socioSgrDb = Array.isArray(respSgr) ? respSgr[0] : respSgr?.items?.[0] || respSgr?.data?.[0];
 
-      const res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
+      // 1. Buscar primero en la base de datos de terceros
+      let terceroEncontrado = null;
+      try {
+        const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
+        const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
+        if (arr.length > 0) {
+          terceroEncontrado = arr[0];
+        }
+      } catch (dbErr) {
+        console.warn("[SocioAccionistaModal] Error buscando tercero en base de datos local:", dbErr);
+      }
+
+      if (terceroEncontrado) {
+        const nombreSocio = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Socio del Sistema";
+        setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
+        
+        if (terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail) {
+          setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail, { shouldValidate: true, shouldDirty: true });
+        }
+        if (terceroEncontrado.telefono || terceroEncontrado.Telefono) {
+          setValue("celular", terceroEncontrado.telefono || terceroEncontrado.Telefono, { shouldValidate: true, shouldDirty: true });
+        }
+        
+        const direccionVal = terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "";
+        if (direccionVal) {
+          setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
+        }
+        
+        const locVal = terceroEncontrado.contacto || terceroEncontrado.Contacto || terceroEncontrado.localidad || "";
+        if (locVal) {
+          setValue("localidad", locVal, { shouldValidate: true, shouldDirty: true });
+        }
+        
+        const provId = terceroEncontrado.provinciaid || terceroEncontrado.ProvinciaID || 0;
+        if (provId) {
+          setValue("provinciaid", String(provId), { shouldValidate: true, shouldDirty: true });
+        }
+
+        setAfipValidado(true);
+        toast.success("Datos del accionista recuperados del sistema.");
+        return;
+      }
+
+      // 2. Fallback a AFIP
+      let res = null;
+      try {
+        res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
+      } catch (afipErr) {
+        console.warn("[SocioAccionistaModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+        setLoadingLabel("AFIP CAÍDO. PROBANDO LUFE...");
+        
+        try {
+          const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
+          if (lufeEntidad && lufeEntidad.success) {
+            res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+          }
+        } catch (lufeErr) {
+          console.error("[SocioAccionistaModal] LUFE Entidad también falló:", lufeErr);
+        }
+      }
+
       if (res && res.datosgenerales) {
         const dg = res.datosgenerales;
         const nombreSocio = dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Socio AFIP";
@@ -363,7 +447,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         }
         setAfipValidado(true);
       } else {
-        toast.warning("CUIT no encontrado en AFIP", {
+        toast.warning("CUIT no encontrado en AFIP/LUFE", {
           description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
         });
         setValue("nombre", "");
@@ -371,7 +455,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       }
     } catch (err) {
       console.error("Error validando CUIT en AFIP/SGR:", err);
-      toast.warning("Servicio de AFIP no disponible", {
+      toast.warning("Servicio de AFIP/LUFE no disponible", {
         description: "No se pudieron obtener datos automáticos. Podés ingresarlos manualmente.",
       });
       setValue("nombre", "");
@@ -467,9 +551,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
       const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
 
-      if (socio?.relacionId) {
+      if (relacionId) {
         const payloadRel = {
-          ...socio?.relacion,
+          ...(socio?.relacion || {}),
+          sociotercerorelacionid: relacionId,
           porcacciones: Number(formData.participacion),
           provinciaid: Number(formData.provinciaid) || 0,
           telefono: formData.celular || "",
@@ -593,7 +678,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                  buttonText="VALIDAR CUIT"
+                  buttonText={loadingLabel}
                   isLoading={validando}
                 />
               </div>
@@ -606,7 +691,13 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                     <span className={styles.summaryStatus}>
                       <FiCheckCircle size={11} /> Accionista validado con AFIP
                     </span>
-                    <h2 className={styles.summaryName}>{watch("nombre") || "Accionista"}</h2>
+                    <input
+                      type="text"
+                      value={watch("nombre") || ""}
+                      onChange={(e) => setValue("nombre", e.target.value, { shouldDirty: true, shouldValidate: true })}
+                      className={styles.editableSummaryName}
+                      placeholder="Nombre o Razón Social"
+                    />
                     <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
                     {!socio && (
                       <button
@@ -664,6 +755,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                             const val = e.target.value.replace(/[^0-9.]/g, "");
                             const parts = val.split(".");
                             if (parts.length <= 2 && Number(val || 0) <= maximoPermitido) {
+                              if (parts[1] && parts[1].length > 2) return;
                               setValue("participacion", val, { shouldValidate: true, shouldDirty: true });
                             }
                           }}
@@ -680,6 +772,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   </div>
                 </div>
               </div>
+
+              <h4 className={styles.sectionTitle}>
+                Datos Personales y Contacto
+              </h4>
 
               <div className={styles.modalRow2}>
                 <Controller

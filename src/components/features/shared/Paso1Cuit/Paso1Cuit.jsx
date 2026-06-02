@@ -86,9 +86,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
       if (socioSgrDb) {
         console.warn("Esta empresa ya se encuentra en gestión por SGR+ (Ignorado para avanzar)");
         setValue("razonSocial", socioSgrDb.denominacion || "Empresa " + cuit, { shouldValidate: true });
-        setValue("direccion", socioSgrDb.calle || "Dirección de Prueba", { shouldValidate: true });
-        setValue("localidad", socioSgrDb.partido || socioSgrDb.localidad || "Localidad de Prueba", { shouldValidate: true });
-        setValue("provincia", socioSgrDb.provincia || "Provincia de Prueba", { shouldValidate: true });
+        setValue("direccion", socioSgrDb.calle || "", { shouldValidate: true });
+        setValue("localidad", socioSgrDb.partido || socioSgrDb.localidad || "", { shouldValidate: true });
+        setValue("provincia", socioSgrDb.provincia || "", { shouldValidate: true });
         
         setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
         if (onValidar) onValidar();
@@ -109,9 +109,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
       if (socioWebDb && socioWebDb.socioid) {
         console.warn("Esta empresa ya existe en esquema web (Ignorado para avanzar)");
         setValue("razonSocial", socioWebDb.denominacion || "Empresa " + cuit, { shouldValidate: true });
-        setValue("direccion", socioWebDb.calle || "Dirección de Prueba", { shouldValidate: true });
-        setValue("localidad", socioWebDb.partido || socioWebDb.localidad || "Localidad de Prueba", { shouldValidate: true });
-        setValue("provincia", socioWebDb.provincia || "Provincia de Prueba", { shouldValidate: true });
+        setValue("direccion", socioWebDb.calle || "", { shouldValidate: true });
+        setValue("localidad", socioWebDb.partido || socioWebDb.localidad || "", { shouldValidate: true });
+        setValue("provincia", socioWebDb.provincia || "", { shouldValidate: true });
 
         setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
         if (onValidar) onValidar();
@@ -123,23 +123,41 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         ...prev,
         pasos: prev.pasos.map(p =>
           p.id === "formato_sgr" ? { ...p, estado: "completado" } :
-          p.id === "afip" ? { ...p, estado: "cargando" } : p
+          p.id === "afip" ? { ...p, estado: "cargando", etiqueta: "Consultando padrón AFIP" } : p
         )
       }));
 
-      // 3. CONSULTA AFIP
+      // 3. CONSULTA AFIP con Fallback a LUFE
       try {
         let afipData = null;
         try {
           afipData = await validarAfip(cuit);
         } catch (e) {
-          console.warn("Error consultando AFIP (Ignorado para avanzar)");
+          console.warn("Error consultando AFIP, se intentará LUFE...", e);
+        }
+
+        if (!afipData || !afipData.datosgenerales) {
+          // Intentamos fallback a LUFE
+          setProcesoModal(prev => ({
+            ...prev,
+            pasos: prev.pasos.map(p =>
+              p.id === "afip" ? { ...p, etiqueta: "Probando en LUFE...", descripcion: "AFIP no disponible. Consultando entidad en LUFE en su lugar." } : p
+            )
+          }));
+          try {
+            const lufeData = await sociosService.obtenerEntidadLufe(cuit);
+            if (lufeData) {
+              afipData = sociosService.normalizarLufeAEstructuraAfip(lufeData);
+            }
+          } catch (lufeError) {
+            console.warn("Error consultando LUFE como fallback:", lufeError);
+          }
         }
 
         if (afipData && afipData.datosgenerales) {
           const dg = afipData.datosgenerales;
 
-          // Marcamos AFIP como completado y CDA como cargando
+          // Marcamos AFIP/LUFE como completado y CDA como cargando
           setProcesoModal(prev => ({
             ...prev,
             pasos: prev.pasos.map(p =>
@@ -164,9 +182,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           setValue("razonSocial", nombreCompleto, { shouldValidate: true });
 
           const dom = dg.domiciliofiscal || {};
-          setValue("direccion", dom.direccion || "Dirección de Prueba", { shouldValidate: true });
-          setValue("localidad", dom.localidad || "Localidad de Prueba", { shouldValidate: true });
-          setValue("provincia", dom.descripcionprovincia || "Provincia de Prueba", {
+          setValue("direccion", dom.direccion || "", { shouldValidate: true });
+          setValue("localidad", dom.localidad || "", { shouldValidate: true });
+          setValue("provincia", dom.descripcionprovincia || "", {
             shouldValidate: true,
           });
 
@@ -175,21 +193,21 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             if (onValidar) onValidar();
           }, 800);
         } else {
-          console.warn("No se encontraron datos válidos en AFIP (Ignorado para avanzar)");
+          console.warn("No se encontraron datos válidos en AFIP ni LUFE (Ignorado para avanzar)");
           setValue("razonSocial", "Empresa " + cuit, { shouldValidate: true });
-          setValue("direccion", "Dirección de Prueba", { shouldValidate: true });
-          setValue("localidad", "Localidad de Prueba", { shouldValidate: true });
-          setValue("provincia", "Provincia de Prueba", { shouldValidate: true });
+          setValue("direccion", "", { shouldValidate: true });
+          setValue("localidad", "", { shouldValidate: true });
+          setValue("provincia", "", { shouldValidate: true });
 
           setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
           if (onValidar) onValidar();
         }
       } catch (afipError) {
-        console.warn("Error en AFIP (Ignorado para avanzar)", afipError);
+        console.warn("Error en proceso de consulta de padrón (Ignorado para avanzar)", afipError);
         setValue("razonSocial", "Empresa " + cuit, { shouldValidate: true });
-        setValue("direccion", "Dirección de Prueba", { shouldValidate: true });
-        setValue("localidad", "Localidad de Prueba", { shouldValidate: true });
-        setValue("provincia", "Provincia de Prueba", { shouldValidate: true });
+        setValue("direccion", "", { shouldValidate: true });
+        setValue("localidad", "", { shouldValidate: true });
+        setValue("provincia", "", { shouldValidate: true });
 
         setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
         if (onValidar) onValidar();
@@ -197,9 +215,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     } catch (err) {
       console.warn("Error general en validación de CUIT (Ignorado para avanzar)", err);
       setValue("razonSocial", "Empresa " + cuit, { shouldValidate: true });
-      setValue("direccion", "Dirección de Prueba", { shouldValidate: true });
-      setValue("localidad", "Localidad de Prueba", { shouldValidate: true });
-      setValue("provincia", "Provincia de Prueba", { shouldValidate: true });
+      setValue("direccion", "", { shouldValidate: true });
+      setValue("localidad", "", { shouldValidate: true });
+      setValue("provincia", "", { shouldValidate: true });
 
       setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
       if (onValidar) onValidar();

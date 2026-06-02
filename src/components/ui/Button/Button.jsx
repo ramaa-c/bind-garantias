@@ -17,25 +17,49 @@ export const Button = ({
     ${styles[variant] || styles.primary} 
     ${styles[`size-${size}`] || ""} 
     ${iconRight ? styles.hasIconRight : ""} 
+    ${isLoading ? styles.loading : ""}
     ${className}
   `.trim();
+
+  const renderContent = () => {
+    if (isLoading && typeof children === "string" && children.endsWith("...")) {
+      const textWithoutDots = children.slice(0, -3);
+      return (
+        <>
+          {textWithoutDots}
+          <span className={styles.dots}>
+            <span className={styles.dot}>.</span>
+            <span className={styles.dot}>.</span>
+            <span className={styles.dot}>.</span>
+          </span>
+        </>
+      );
+    }
+
+    if (iconRight) {
+      return (
+        <>
+          <span className={styles.textContainer}>{children}</span>
+          <span className={styles.iconContainer}>{iconRight}</span>
+        </>
+      );
+    }
+
+    return children;
+  };
 
   return (
     <button
       type={type}
       className={claseBoton}
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || isLoading}
       {...props}
     >
-      {iconRight ? (
-        <>
-          <span className={styles.textContainer}>{children}</span>
-          <span className={styles.iconContainer}>{iconRight}</span>
-        </>
-      ) : (
-        children
-      )}
+      {isLoading && !String(children).endsWith("...") && <span className={styles.spinner} />}
+      <span className={isLoading ? styles.loadingText : ""}>
+        {renderContent()}
+      </span>
     </button>
   );
 };

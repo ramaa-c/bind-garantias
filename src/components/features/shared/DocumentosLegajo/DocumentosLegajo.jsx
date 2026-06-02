@@ -59,6 +59,12 @@ const ESTRUCTURA_LEGAJO = [
   },
   {
     category: "Documentación",
+    key: "balance",
+    title: "Último Balance",
+    info: "Cargá o visualizá el último balance de tu empresa firmado por contador público.",
+  },
+  {
+    category: "Documentación",
     key: "cartasDocumento",
     title: "Cartas Documento",
     info: "Cargá o visualizá las cartas documento vinculadas a la empresa.",
@@ -102,7 +108,7 @@ export function DocumentosLegajo() {
             (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId
           );
 
-          if (key && ["certificadoPyme", "poderes", "otrosDocumentos", "cartasDocumento"].includes(key)) {
+          if (key && ["certificadoPyme", "balance", "poderes", "otrosDocumentos", "cartasDocumento"].includes(key)) {
             setValue(
               key,
               {

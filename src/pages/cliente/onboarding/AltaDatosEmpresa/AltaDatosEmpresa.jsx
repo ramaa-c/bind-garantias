@@ -9,6 +9,8 @@ import { LoadingScreen } from "../../../../components/ui";
 import { Paso1Cuit, Paso2Datos } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../../../services/sociosService";
+import { afipService } from "../../../../services/afipService";
+import { tercerosService } from "../../../../services/tercerosService";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import styles from "./AltaDatosEmpresa.module.css";
@@ -131,11 +133,103 @@ export const AltaDatosEmpresa = () => {
 
         await sociosService.vincularSocioUsuario(payloadVinculo);
 
+        let autoridades = null;
         try {
           console.log(`[AltaDatosEmpresa] Vinculando autoridades de LUFE para CUIT: ${data.cuit}`);
-          await sociosService.obtenerAutoridadesLufe(data.cuit, true);
+          autoridades = await sociosService.obtenerAutoridadesLufe(data.cuit, true);
         } catch (lufeError) {
           console.error("[AltaDatosEmpresa] Error al vincular autoridades de LUFE:", lufeError);
+        }
+
+        // --- ENRIQUECIMIENTO EN SEGUNDO PLANO DE ACCIONISTAS ---
+        try {
+          const arrAut = Array.isArray(autoridades) 
+            ? autoridades 
+            : autoridades?.data || autoridades?.items || [];
+          
+          if (arrAut.length > 0) {
+            console.log(`[AltaDatosEmpresa] Iniciando enriquecimiento en background de ${arrAut.length} autoridades...`);
+            
+            // Procesamos asíncronamente sin bloquear la navegación
+            Promise.all(
+              arrAut.map(async (auth) => {
+                const cuitSocio = auth.cuit || auth.Cuit;
+                if (!cuitSocio) return;
+                const cuitSocioLimpio = String(cuitSocio).replace(/\D/g, "");
+                if (cuitSocioLimpio.length !== 11) return;
+
+                try {
+                  // 1. Obtener el tercero desde la base de datos (creado por Vincular=true)
+                  const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitSocioLimpio });
+                  const arrExistentes = Array.isArray(existentes) ? existentes : existentes?.data || [];
+                  if (arrExistentes.length === 0) return;
+
+                  const terceroLocal = arrExistentes[0];
+                  const terceroId = terceroLocal.tercerorelacionadoid || terceroLocal.id;
+
+                  // 2. Consultar AFIP por ese CUIT
+                  let respAfip = null;
+                  try {
+                    respAfip = await afipService.obtenerConstanciaInscripcion(cuitSocioLimpio);
+                  } catch (afipErr) {
+                    console.warn(`[AltaDatosEmpresa] AFIP no disponible para CUIT ${cuitSocioLimpio}, probando fallback a LUFE Entidad:`, afipErr);
+                    try {
+                      const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitSocioLimpio);
+                      if (lufeEntidad && lufeEntidad.success) {
+                        respAfip = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+                      }
+                    } catch (lufeErr) {
+                      console.error(`[AltaDatosEmpresa] LUFE Entidad también falló para CUIT ${cuitSocioLimpio}:`, lufeErr);
+                    }
+                  }
+
+                  if (respAfip && respAfip.datosgenerales) {
+                    const dg = respAfip.datosgenerales;
+                    const dom = dg.domiciliofiscal || dg.domicilio || {};
+
+                    const payloadTercero = {
+                      tercerorelacionadoid: terceroId,
+                      denominacion: auth.denominacion || terceroLocal.denominacion || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante",
+                      cuit: cuitSocioLimpio,
+                      bcraid: 0,
+                      tipopersonaid: cuitSocioLimpio.startsWith("30") || cuitSocioLimpio.startsWith("33") ? 2 : 1,
+                      tipodocumentoid: 0,
+                      numerodocumento: cuitSocioLimpio,
+                      estadocivilid: 0,
+                      ciudadid: 0,
+                      telefono: dg.telefono || terceroLocal.telefono || "",
+                      conyuge: "",
+                      actividad: "",
+                      contacto: dom.localidad || dom.localidadNombre || terceroLocal.contacto || "",
+                      nrocuenta: "",
+                      codigomercado: "",
+                      calle: dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "") || terceroLocal.calle || "",
+                      numero: 0,
+                      piso: "",
+                      departamento: "",
+                      codpos: dom.codpostal || dom.codpos || terceroLocal.codpos || "",
+                      descripcionreducida: (auth.denominacion || terceroLocal.denominacion || "").substring(0, 20),
+                      mail: dg.email || dg.emailfacturacion || terceroLocal.mail || terceroLocal.email || "",
+                    };
+
+                    await tercerosService.actualizarTercero(payloadTercero);
+                    console.log(`[AltaDatosEmpresa] Accionista CUIT ${cuitSocioLimpio} enriquecido correctamente.`);
+                  }
+                } catch (singleErr) {
+                  console.warn(`[AltaDatosEmpresa] No se pudo enriquecer CUIT ${cuitSocioLimpio}:`, singleErr);
+                }
+              })
+            ).catch(err => console.error("[AltaDatosEmpresa] Error general en el batch de enriquecimiento:", err));
+          }
+        } catch (enriquecimientoError) {
+          console.error("[AltaDatosEmpresa] Error al procesar enriquecimiento de autoridades:", enriquecimientoError);
+        }
+
+        try {
+          console.log(`[AltaDatosEmpresa] Vinculando documentos de LUFE para CUIT: ${data.cuit}`);
+          await sociosService.obtenerDocumentosLufe(data.cuit, true);
+        } catch (lufeDocsError) {
+          console.error("[AltaDatosEmpresa] Error al vincular documentos de LUFE:", lufeDocsError);
         }
 
         await queryClient.invalidateQueries({

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FiUsers, FiPlus, FiAlertCircle, FiUser, FiChevronDown, FiEdit2, FiTrash2, FiMail, FiPhone, FiMapPin, FiPercent } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { SocioAccionistaModal } from "../SocioAccionistaModal/SocioAccionistaModal";
+import { Spinner } from "../../../../../ui";
 
 export function AccionistasSection({
   loadingSocios,
@@ -20,9 +21,9 @@ export function AccionistasSection({
   return (
     <div className={styles.sociosContainer}>
       {loadingSocios ? (
-        <div className={styles.emptySlot}>
-          <FiUsers size={20} className={styles.emptyIcon} />
-          <p className={styles.emptyTitle}>
+        <div className={styles.emptySlot} style={{ display: "flex", flexDirection: "column", gap: "0.875rem", padding: "2rem" }}>
+          <Spinner size={36} />
+          <p className={styles.emptyTitle} style={{ margin: 0 }}>
             Cargando composición accionaria...
           </p>
         </div>

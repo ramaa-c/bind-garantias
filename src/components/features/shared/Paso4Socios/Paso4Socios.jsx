@@ -1,315 +1,237 @@
 import React, { useState } from "react";
 import {
-  FiEdit,
-  FiTrash2,
   FiUserPlus,
-  FiCheckCircle,
   FiChevronRight,
-  FiUser,
+  FiAlertCircle,
+  FiCheckCircle,
+  FiTrash2,
 } from "react-icons/fi";
 import {
-  InputFlotante,
   Button,
   Badge,
-  Avatar,
-  BotonIcono,
-  BuscadorCuit,
-  Alert,
 } from "../../../ui";
+import { SocioTaskCard } from "../SocioTaskCard/SocioTaskCard";
+import { SocioAccionistaModal } from "../DocumentosLegajo/components/SocioAccionistaModal/SocioAccionistaModal";
+import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import styles from "./Paso4Socios.module.css";
 
+const isAccionistaCompleto = (socio, archivosBackend = []) => {
+  if (!socio) return false;
+  const sEmail = socio.email || socio.mail || socio.Mail || "";
+  const sCel = socio.celular || socio.telefono || socio.Telefono || "";
+  const sDir = socio.direccion || socio.calle || "";
+  const sProv = socio.provincia || socio.provinciaid || "";
+  const sLoc = socio.localidad || "";
+
+  if (!sEmail || !sCel || !sDir || !sProv || !sLoc) return false;
+
+  const cuitLimpio = String(socio.cuit || "").replace(/\D/g, "");
+  if (!cuitLimpio) return false;
+
+  const normalizarTexto = (str) =>
+    String(str || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toUpperCase();
+
+  const nombreNorm = normalizarTexto(socio.nombre);
+
+  const tieneDniFrente = archivosBackend.some((a) => {
+    if (a.tipodocumentoarchivoid !== 8) return false;
+    const descNorm = normalizarTexto(a.descripcion);
+    return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+  });
+
+  const tieneDniDorso = archivosBackend.some((a) => {
+    if (a.tipodocumentoarchivoid !== 9) return false;
+    const descNorm = normalizarTexto(a.descripcion);
+    return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+  });
+
+  return !!(tieneDniFrente && tieneDniDorso);
+};
+
 export default function Paso4Socios({
-  faseSocio,
-  setFaseSocio,
-  tempSocioCuit,
-  setTempSocioCuit,
-  tempSocioNombre,
-  tempSocioParticipacion,
-  setTempSocioParticipacion,
-  socios,
-  iniciarCargaSocio,
-  validarCuitSocio,
-  guardarSocio,
+  socios = [],
   eliminarSocio,
-  editarSocio,
   continuarAlProximoPaso,
+  socioIdActivo,
+  archivosBackend = [],
+  cargarSociosDesdeDB,
   isLoading,
 }) {
-  const [errorCuit, setErrorCuit] = useState("");
-  const [errorParticipacion, setErrorParticipacion] = useState("");
+  const [modalAccionistaOpen, setModalAccionistaOpen] = useState(false);
+  const [editAccionista, setEditAccionista] = useState(null);
+  const [deleteTargetIndex, setDeleteTargetIndex] = useState(null);
+  const [intentoAvanzar, setIntentoAvanzar] = useState(false);
+  const [eliminandoSocio, setEliminandoSocio] = useState(false);
 
-  const isCuitValido = tempSocioCuit?.length === 11;
-
-  const totalGuardado = socios.reduce(
-    (acc, s) => acc + Number(s.participacion),
-    0,
+  const totalGuardado = Number(
+    socios.reduce(
+      (acc, s) => acc + Number(s.participacion || 0),
+      0
+    ).toFixed(2)
   );
-  const restante = 100 - totalGuardado;
 
-  const indexSocioEditado = socios.findIndex((s) => s.cuit === tempSocioCuit);
-  const totalSinSocioActual = socios.reduce(
-    (acc, s, idx) => (idx === indexSocioEditado ? acc : acc + Number(s.participacion)),
-    0
-  );
-  const maximoPermitido = 100 - totalSinSocioActual;
+  const todosCompletos = socios.length > 0 && socios.every((s) => isAccionistaCompleto(s, archivosBackend));
 
-  // --- HANDLERS ---
-  const handleValidarClick = () => {
-    if (!tempSocioCuit) {
-      setErrorCuit("El CUIT es obligatorio");
-    } else if (tempSocioCuit.length < 11) {
-      setErrorCuit("Debe contener 11 números exactos");
-    } else {
-      setErrorCuit("");
-      validarCuitSocio();
+  const handleEditSocio = (index) => {
+    setEditAccionista(socios[index]);
+    setModalAccionistaOpen(true);
+  };
+
+  const handleOpenAddSocio = () => {
+    setEditAccionista(null);
+    setModalAccionistaOpen(true);
+  };
+
+  const handleConfirmEliminar = async () => {
+    if (deleteTargetIndex === null) return;
+    setEliminandoSocio(true);
+    try {
+      await eliminarSocio(deleteTargetIndex);
+      if (cargarSociosDesdeDB) {
+        await cargarSociosDesdeDB(true);
+      }
+    } finally {
+      setEliminandoSocio(false);
+      setDeleteTargetIndex(null);
     }
   };
 
-  const handleGuardarClick = () => {
-    const valorNum = Number(tempSocioParticipacion);
-
-    if (!tempSocioParticipacion) {
-      setErrorParticipacion("Ingresá un porcentaje");
-    } else if (valorNum <= 0 || valorNum > 100) {
-      setErrorParticipacion("Debe ser entre 1 y 100");
-    } else if (valorNum > maximoPermitido) {
-      setErrorParticipacion(`No puede superar el ${maximoPermitido}% máximo permitido.`);
-    } else {
-      setErrorParticipacion("");
-      guardarSocio();
+  const handleContinuarClick = () => {
+    setIntentoAvanzar(true);
+    if (totalGuardado === 100 && todosCompletos) {
+      continuarAlProximoPaso();
     }
-  };
-
-  const handleVolverAEdicion = () => {
-    setErrorParticipacion("");
-    socios.length === 0 ? setFaseSocio("ingresar_cuit") : setFaseSocio("lista");
   };
 
   return (
     <div className={styles.container}>
-      {/* --- FASE 1: INGRESAR CUIT --- */}
-      {faseSocio === "ingresar_cuit" && (
-        <div className={styles.pasoContainer}>
-          <div className={styles.decorativeBanner} style={{ minHeight: "3.75rem" }}>
-            <div className={styles.bannerIcon}>
-              <svg
-                width="1rem"
-                height="1rem"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
-            </div>
-            <div className={styles.bannerText}>
-              <p className={styles.bannerTitle}>Proceso 100% seguro y online</p>
-              <p className={styles.bannerSub}>
-                Tu información es validada en tiempo real contra AFIP
-              </p>
-            </div>
-          </div>
-
-          <div className={styles.inputWrapper}>
-            <BuscadorCuit
-              label="CUIT del Socio"
-              value={tempSocioCuit}
-              onChange={(e) => {
-                setTempSocioCuit(e.target.value);
-                if (errorCuit) setErrorCuit("");
-              }}
-              onValidar={handleValidarClick}
-              error={errorCuit}
-              esValido={isCuitValido}
-              buttonText="VALIDAR CUIT"
-              isLoading={isLoading}
-            />
-          </div>
-
-          {socios.length > 0 && (
-            <div className={styles.saveActionRowCentrado} style={{ marginTop: "1rem" }}>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setErrorCuit("");
-                  setFaseSocio("lista");
-                }}
-              >
-                CANCELAR Y VOLVER
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* --- FASE 2: COMPLETAR DATOS --- */}
-      {faseSocio === "completar_datos" && (
-        <div className={styles.section}>
-
-
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryTop}>
-              <button
-                type="button"
-                className={styles.editIconBtn}
-                onClick={handleVolverAEdicion}
-                title="Editar identidad"
-              >
-                <FiEdit size={18} />
-              </button>
-
-              <div className={styles.summaryStatus}>
-                <FiCheckCircle size={16} />
-                <span>IDENTIDAD VALIDADA</span>
-              </div>
-              <p className={styles.summaryName}>{tempSocioNombre}</p>
-              <p className={styles.summaryCuit}>CUIT: {tempSocioCuit}</p>
-            </div>
-
-            <div className={styles.summaryDivider}></div>
-
-            <div className={styles.summaryBottom}>
-              <div className={styles.labelColumn}>
-                <label
-                  htmlFor="participacionSocioInput"
-                  className={styles.percentageLabel}
-                >
-                  Participación del socio
-                </label>
-                <span
-                  className={`${styles.availableText} ${maximoPermitido === 0 ? styles.availableTextError : ""
-                    }`}
-                >
-                  {maximoPermitido > 0 ? `Máximo permitido: ${maximoPermitido}%` : "Cupo completo"}
-                </span>
-              </div>
-
-              <div
-                className={`${styles.customInputWrapper} ${errorParticipacion ? styles.wrapperError : ""
-                  }`}
-              >
-                <input
-                  id="participacionSocioInput"
-                  type="text"
-                  className={styles.customInput}
-                  placeholder="0"
-                  maxLength={3}
-                  value={tempSocioParticipacion}
-                  onChange={(e) => {
-                    const valorFiltro = e.target.value.replace(/\D/g, "");
-                    if (valorFiltro === "" || Number(valorFiltro) <= maximoPermitido) {
-                      setTempSocioParticipacion(valorFiltro);
-                      if (errorParticipacion) setErrorParticipacion("");
-                    }
-                  }}
-                />
-                <span className={styles.percentageSymbol}>%</span>
-              </div>
-
-              <div className={styles.errorContainer}>
-                {errorParticipacion && (
-                  <span className={styles.errorText}>{errorParticipacion}</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.saveActionRowCentrado}>
-            <Button
-              type="button"
-              variant="primary"
-              onClick={handleGuardarClick}
-              disabled={restante === 0 && !tempSocioParticipacion}
-            >
-              GUARDAR SOCIO
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* --- FASE 3: LISTA DE SOCIOS --- */}
-      {faseSocio === "lista" && (
-        <div className={styles.section}>
-          <div className={styles.listHeader}>
-            <div className={styles.statsGroup}>
-              <Badge>
-                {socios.length} socio{socios.length > 1 ? "s" : ""}
-              </Badge>
-              <span
-                className={`${styles.totalText} ${
-                  totalGuardado === 100 ? styles.totalTextSuccess : ""
+      <div className={styles.section}>
+        <div className={styles.listHeader}>
+          <div className={styles.statsGroup}>
+            <Badge>
+              {socios.length} socio{socios.length > 1 ? "s" : ""}
+            </Badge>
+            <span
+              className={`${styles.totalText} ${totalGuardado === 100 ? styles.totalTextSuccess : ""
                 }`}
-              >
-                Total: {totalGuardado}% / 100%
-              </span>
-            </div>
+            >
+              Total: {totalGuardado}% / 100%
+            </span>
+          </div>
+
+          <div className={styles.warningsContainer}>
             {totalGuardado !== 100 && (
-              <span className={styles.warningText}>
+              <span className={styles.warningText} style={{ display: "flex", alignItems: "center", gap: "0.25rem", color: "#ff9800" }}>
+                <FiAlertCircle size={14} />
                 {totalGuardado < 100
                   ? `La sumatoria debe ser exactamente 100% para continuar (actual: ${totalGuardado}%)`
                   : `La sumatoria de las participaciones excede el 100% (actual: ${totalGuardado}%)`}
               </span>
             )}
-          </div>
-
-          <div className={styles.listContainer}>
-            {socios.map((socio, index) => (
-              <div className={styles.listItem} key={socio.cuit}>
-                <div className={styles.itemLeft}>
-                  <Avatar name={socio.nombre} icon={FiUser} />
-                  <div className={styles.itemInfo}>
-                    <p className={styles.itemName}>{socio.nombre}</p>
-                    <p className={styles.itemDetails}>
-                      CUIT: {socio.cuit} • Participación:{" "}
-                      <span className={styles.highlight}>
-                        {socio.participacion}%
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className={styles.itemActions}>
-                  <BotonIcono
-                    icon={FiEdit}
-                    title="Editar participación"
-                    onClick={() => editarSocio(index)}
-                  />
-                  <BotonIcono
-                    icon={FiTrash2}
-                    variant="danger"
-                    title="Eliminar socio"
-                    onClick={() => eliminarSocio(index)}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className={styles.actionFooterBorder}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={iniciarCargaSocio}
-              disabled={totalGuardado >= 100}
-            >
-              <FiUserPlus className={styles.iconMarginRight} /> AGREGAR SOCIO
-            </Button>
-            <Button
-              type="button"
-              variant="primary"
-              iconRight={!isLoading && <FiChevronRight />}
-              onClick={continuarAlProximoPaso}
-              disabled={totalGuardado !== 100 || isLoading}
-            >
-              {isLoading ? "VALIDANDO..." : "CONTINUAR"}
-            </Button>
+            {!todosCompletos && socios.length > 0 && (
+              <span className={styles.warningText} style={{ display: "flex", alignItems: "center", gap: "0.25rem", color: "#ff9800" }}>
+                <FiAlertCircle size={14} />
+                Completá los datos de contacto y cargá el DNI de todos los socios para continuar.
+              </span>
+            )}
           </div>
         </div>
-      )}
+
+        {socios.length === 0 ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "3rem 1.5rem",
+              background: "rgba(255, 255, 255, 0.02)",
+              border: "1px dashed rgba(255, 255, 255, 0.1)",
+              borderRadius: "0.75rem",
+              textAlign: "center",
+              gap: "0.5rem",
+              marginBottom: "1.25rem",
+            }}
+          >
+            <FiAlertCircle size={32} style={{ color: "rgba(255, 255, 255, 0.3)" }} />
+            <p style={{ color: "#fff", fontWeight: 600, margin: 0, fontSize: "0.9375rem" }}>
+              Sin socios registrados
+            </p>
+            <span style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.78rem" }}>
+              Haga click en "Agregar Socio" para dar de alta.
+            </span>
+          </div>
+        ) : (
+          <div className={styles.listContainer}>
+            {socios.map((socio, index) => {
+              const completo = isAccionistaCompleto(socio, archivosBackend);
+              return (
+                <SocioTaskCard
+                  key={socio.cuit || index}
+                  socio={socio}
+                  index={index}
+                  isCompleto={completo}
+                  intentoAvanzar={intentoAvanzar}
+                  onEdit={handleEditSocio}
+                  onDelete={(idx) => setDeleteTargetIndex(idx)}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        <div className={styles.actionFooterBorder}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleOpenAddSocio}
+            disabled={totalGuardado >= 100 || isLoading}
+          >
+            <FiUserPlus className={styles.iconMarginRight} /> AGREGAR SOCIO
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
+            iconRight={!isLoading && <FiChevronRight />}
+            onClick={handleContinuarClick}
+            disabled={totalGuardado !== 100 || !todosCompletos || isLoading}
+          >
+            {isLoading ? "VALIDANDO..." : "CONTINUAR"}
+          </Button>
+        </div>
+      </div>
+
+      {/* MODALS */}
+      <SocioAccionistaModal
+        isOpen={modalAccionistaOpen}
+        onClose={() => {
+          setModalAccionistaOpen(false);
+          setEditAccionista(null);
+        }}
+        onSuccess={async () => {
+          if (cargarSociosDesdeDB) {
+            await cargarSociosDesdeDB(true);
+          }
+        }}
+        socio={editAccionista}
+        socioIdActivo={socioIdActivo}
+        archivosBackend={archivosBackend}
+        accionistas={socios}
+      />
+
+      <ConfirmacionModal
+        isOpen={deleteTargetIndex !== null}
+        onClose={() => setDeleteTargetIndex(null)}
+        onConfirm={handleConfirmEliminar}
+        titulo="Eliminar del legajo"
+        mensaje={`¿Está seguro de que desea desvincular a ${deleteTargetIndex !== null ? socios[deleteTargetIndex]?.nombre : ""
+          } de la operación?`}
+        isLoading={eliminandoSocio}
+      />
     </div>
   );
 }

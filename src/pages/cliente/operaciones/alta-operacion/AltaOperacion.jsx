@@ -33,6 +33,7 @@ import { lineaService } from "../../../../services/lineaService";
 import { afipService } from "../../../../services/afipService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { catalogosService } from "../../../../services/catalogosService";
+import { socioArchivoService } from "../../../../services/socioArchivoService";
 
 const STORAGE_KEY = "draft_alta_operacion";
 
@@ -47,6 +48,7 @@ export const AltaOperacion = () => {
   const [buscandoSocios, setBuscandoSocios] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [validandoAcceso, setValidandoAcceso] = useState(true);
+  const [archivosBackend, setArchivosBackend] = useState([]);
 
   const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
 
@@ -163,6 +165,20 @@ export const AltaOperacion = () => {
   const sociosPrecargadosRef = useRef(false);
 
   useEffect(() => {
+    if (!socioIdActivo) return;
+    const cargarArchivosBackend = async () => {
+      try {
+        const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+        const arr = Array.isArray(archivosExistentes) ? archivosExistentes : [];
+        setArchivosBackend(arr);
+      } catch (err) {
+        console.warn("No se pudieron cargar archivos del backend:", err);
+      }
+    };
+    cargarArchivosBackend();
+  }, [socioIdActivo]);
+
+  useEffect(() => {
     if (isLoadingEmpresa) return;
 
     if (!cuitActivo) {
@@ -268,219 +284,279 @@ export const AltaOperacion = () => {
   const tempSocioData = useWatch({ control, name: "tempSocioData" });
   const docExpandido = useWatch({ control, name: "docExpandido" });
 
-  useEffect(() => {
-    if (!socioIdActivo || sociosPrecargadosRef.current) return;
+  const cargarSociosDesdeDB = async (force = false) => {
+    if (!socioIdActivo) return;
+    if (!force && sociosPrecargadosRef.current) return;
 
-    const precargarSocios = async () => {
-      sociosPrecargadosRef.current = true;
-      setBuscandoSocios(true);
+    sociosPrecargadosRef.current = true;
+    setBuscandoSocios(true);
 
-      const currentSocios = getValues("socios");
-      const currentReps = getValues("representantes");
-      if (
-        (currentSocios && currentSocios.length > 0) ||
-        (currentReps && currentReps.length > 0)
-      ) {
-        setBuscandoSocios(false);
-        return;
+    if (force) {
+      setValue("socios", []);
+      setValue("representantes", []);
+    }
+
+    try {
+      try {
+        const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+        setArchivosBackend(Array.isArray(archivosExistentes) ? archivosExistentes : []);
+      } catch (err) {
+        console.warn("No se pudieron recargar los archivos de DNI del backend:", err);
+      }
+
+      let relacionesSGR = [];
+      let relacionesLocal = [];
+
+      try {
+        relacionesSGR =
+          await tercerosService.obtenerRelacionesDeSocioSGRPlus(
+            socioIdActivo,
+          );
+      } catch (e) {
+        console.warn("No se pudo obtener relaciones de SGRPlus", e);
       }
 
       try {
-        let relacionesSGR = [];
-        let relacionesLocal = [];
-
-        try {
-          relacionesSGR =
-            await tercerosService.obtenerRelacionesDeSocioSGRPlus(
-              socioIdActivo,
-            );
-        } catch (e) {
-          console.warn("No se pudo obtener relaciones de SGRPlus", e);
-        }
-
-        try {
-          relacionesLocal =
-            await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
-        } catch (e) {
-          console.warn("No se pudo obtener relaciones locales", e);
-        }
-
-        const arrSgr = Array.isArray(relacionesSGR) ? relacionesSGR : [];
-        const arrLocal = Array.isArray(relacionesLocal) ? relacionesLocal : [];
-
-        const mapaRel = new Map();
-        [...arrSgr, ...arrLocal].forEach((r) => {
-          const tid =
-            r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID;
-          const rid =
-            r.tiporelacionsocioid ||
-            r.TipoRelacionSocioID ||
-            r.tiporelacionsocioId;
-          if (tid && rid) {
-            mapaRel.set(`${tid}-${rid}`, r);
-          }
-        });
-
-        const relacionesArray = Array.from(mapaRel.values());
-        if (relacionesArray.length === 0) return;
-
-        const sociosCargados = [];
-        const representantesCargados = [];
-        const cuitsAccionistasYaCargados = new Set(
-          (getValues("socios") || []).map((s) => s.cuit),
-        );
-        const cuitsRepsYaCargados = new Set(
-          (getValues("representantes") || []).map((r) => r.cuit),
-        );
-
-        const now = new Date();
-
-        for (const rel of relacionesArray) {
-          const fd = rel.fechadesde || rel.FechaDesde;
-          const fh = rel.fechahasta || rel.FechaHasta;
-          if (fh && fh !== "") {
-            const expirationDate = new Date(fh);
-            const startDate = fd ? new Date(fd) : null;
-
-            const isSameAsStart =
-              startDate &&
-              (expirationDate.getTime() === startDate.getTime() ||
-                expirationDate.toISOString().split("T")[0] ===
-                  startDate.toISOString().split("T")[0]);
-
-            if (!isSameAsStart && expirationDate < now) {
-              continue;
-            }
-          }
-
-          const terceroId =
-            rel.terceroid ||
-            rel.tercerorelacionadoid ||
-            rel.TerceroRelacionadoID;
-          if (!terceroId) continue;
-
-          try {
-            let tercero = null;
-            try {
-              tercero = await tercerosService.obtenerTerceroPorId(terceroId);
-            } catch (apiErr) {
-              tercero =
-                await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
-            }
-
-            if (tercero) {
-              const cuit =
-                tercero.cuit ||
-                tercero.Cuit ||
-                tercero.nrodocumento ||
-                tercero.numerodocumento ||
-                tercero.NumeroDocumento ||
-                tercero.documento ||
-                "";
-              const tiporel =
-                rel.tiporelacionsocioid ||
-                rel.TipoRelacionSocioID ||
-                rel.tiporelacionsocioId;
-              const tiporelNum = Number(tiporel);
-
-              if (tiporelNum === 25) {
-                const cuitLimpioSocio = String(cuit).replace(/\D/g, "");
-                const cuitLimpioEmpresa = cuitActivo
-                  ? String(cuitActivo).replace(/\D/g, "")
-                  : "";
-
-                if (
-                  cuit &&
-                  cuitLimpioSocio !== cuitLimpioEmpresa &&
-                  !cuitsAccionistasYaCargados.has(cuit)
-                ) {
-                  cuitsAccionistasYaCargados.add(cuit);
-
-                  let afipData = null;
-                  try {
-                    afipData =
-                      await afipService.obtenerConstanciaInscripcion(cuit);
-                  } catch (e) {
-                    console.warn("No se pudo obtener AFIP extra para", cuit);
-                  }
-
-                  const terceroMergeado = {
-                    ...tercero,
-                    datosgenerales: afipData ? afipData.datosgenerales : null,
-                  };
-
-                  sociosCargados.push({
-                    cuit,
-                    nombre:
-                      tercero.denominacion ||
-                      tercero.Denominacion ||
-                      tercero.nombre ||
-                      tercero.Nombre ||
-                      tercero.razonsocial ||
-                      "Sin nombre",
-                    participacion: String(
-                      rel.porcacciones ||
-                        rel.participacion ||
-                        rel.Participacion ||
-                        "0",
-                    ),
-                    dataOriginal: terceroMergeado,
-                    tercerorelacionadoid: terceroId,
-                    preloadedFromDb: true,
-                  });
-                }
-              } else if (tiporelNum === 210 || tiporelNum === 230) {
-                if (cuit && !cuitsRepsYaCargados.has(cuit)) {
-                  cuitsRepsYaCargados.add(cuit);
-
-                  representantesCargados.push({
-                    cuit,
-                    nombre:
-                      tercero.denominacion ||
-                      tercero.Denominacion ||
-                      tercero.nombre ||
-                      tercero.Nombre ||
-                      tercero.razonsocial ||
-                      "Sin nombre",
-                    rol:
-                      tiporelNum === 230 ? "Representante Legal" : "Apoderado",
-                    email: tercero.mail || tercero.Mail || "",
-                    celular: tercero.telefono || tercero.Telefono || "",
-                  });
-                }
-              } else if (tiporelNum === 21) {
-                setValue("sociedadBolsa", String(terceroId));
-                setValue(
-                  "numeroCuentaBolsa",
-                  rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "",
-                );
-              }
-            }
-          } catch (err) {
-            console.error(
-              "Error loading specific relation detail:",
-              terceroId,
-              err,
-            );
-          }
-        }
-
-        if (sociosCargados.length > 0) {
-          sociosCargados.forEach((s) => append(s));
-          setValue("faseSocio", "lista");
-        }
-        if (representantesCargados.length > 0) {
-          setValue("representantes", representantesCargados);
-        }
-      } catch (error) {
-        console.error("Error in precargarSocios flow:", error);
-      } finally {
-        setBuscandoSocios(false);
+        relacionesLocal =
+          await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+      } catch (e) {
+        console.warn("No se pudo obtener relaciones locales", e);
       }
-    };
 
-    precargarSocios();
-  }, [socioIdActivo, getValues, append, setValue, resetKey]);
+      const arrSgr = Array.isArray(relacionesSGR) ? relacionesSGR : [];
+      const arrLocal = Array.isArray(relacionesLocal) ? relacionesLocal : [];
+
+      const mapaRel = new Map();
+      [...arrSgr, ...arrLocal].forEach((r) => {
+        const tid =
+          r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID;
+        const rid =
+          r.tiporelacionsocioid ||
+          r.TipoRelacionSocioID ||
+          r.tiporelacionsocioId;
+        if (tid && rid) {
+          const key = `${tid}-${rid}`;
+          const existing = mapaRel.get(key);
+          if (existing) {
+            const existingMomento = new Date(existing.momento || existing.Momento || 0).getTime();
+            const currentMomento = new Date(r.momento || r.Momento || 0).getTime();
+            const existingId = Number(existing.sociotercerorelacionid || existing.SocioTerceroRelacionID || 0);
+            const currentId = Number(r.sociotercerorelacionid || r.SocioTerceroRelacionID || 0);
+            
+            if (currentMomento > existingMomento || (currentMomento === existingMomento && currentId > existingId)) {
+              mapaRel.set(key, r);
+            }
+          } else {
+            mapaRel.set(key, r);
+          }
+        }
+      });
+
+      const relacionesArray = Array.from(mapaRel.values());
+      if (relacionesArray.length === 0) {
+        if (force) {
+          setValue("socios", []);
+          setValue("faseSocio", "ingresar_cuit");
+        }
+        return;
+      }
+
+      const sociosCargados = [];
+      const representantesCargados = [];
+      const cuitsAccionistasYaCargados = new Set(
+        force ? [] : (getValues("socios") || []).map((s) => s.cuit),
+      );
+      const cuitsRepsYaCargados = new Set(
+        force ? [] : (getValues("representantes") || []).map((r) => r.cuit),
+      );
+
+      const now = new Date();
+
+      for (const rel of relacionesArray) {
+        const fd = rel.fechadesde || rel.FechaDesde;
+        const fh = rel.fechahasta || rel.FechaHasta;
+        if (fh && fh !== "") {
+          const expirationDate = new Date(fh);
+          const startDate = fd ? new Date(fd) : null;
+
+          const isSameAsStart =
+            startDate &&
+            (expirationDate.getTime() === startDate.getTime() ||
+              expirationDate.toISOString().split("T")[0] ===
+                startDate.toISOString().split("T")[0]);
+
+          if (!isSameAsStart && expirationDate < now) {
+            continue;
+          }
+        }
+
+        const terceroId =
+          rel.terceroid ||
+          rel.tercerorelacionadoid ||
+          rel.TerceroRelacionadoID;
+        if (!terceroId) continue;
+
+        try {
+          let tercero = null;
+          try {
+            tercero = await tercerosService.obtenerTerceroPorId(terceroId);
+          } catch (apiErr) {
+            tercero =
+              await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+          }
+
+          if (tercero) {
+            const cuit =
+              tercero.cuit ||
+              tercero.Cuit ||
+              tercero.nrodocumento ||
+              tercero.numerodocumento ||
+              tercero.NumeroDocumento ||
+              tercero.documento ||
+              "";
+            const tiporel =
+              rel.tiporelacionsocioid ||
+              rel.TipoRelacionSocioID ||
+              rel.tiporelacionsocioId;
+            const tiporelNum = Number(tiporel);
+
+            if (tiporelNum === 25) {
+              const cuitLimpioSocio = String(cuit).replace(/\D/g, "");
+              const cuitLimpioEmpresa = cuitActivo
+                ? String(cuitActivo).replace(/\D/g, "")
+                 : "";
+
+              if (
+                cuit &&
+                cuitLimpioSocio !== cuitLimpioEmpresa &&
+                (!cuitsAccionistasYaCargados.has(cuit) || force)
+              ) {
+                cuitsAccionistasYaCargados.add(cuit);
+
+                let afipData = null;
+                try {
+                  afipData =
+                    await afipService.obtenerConstanciaInscripcion(cuit);
+                } catch (e) {
+                  console.warn("No se pudo obtener AFIP extra para", cuit);
+                }
+
+                const terceroMergeado = {
+                  ...tercero,
+                  datosgenerales: afipData ? afipData.datosgenerales : null,
+                };
+
+                const email =
+                  tercero.mail ||
+                  tercero.Mail ||
+                  terceroMergeado.datosgenerales?.email ||
+                  "";
+                const celular =
+                  tercero.telefono ||
+                  tercero.Telefono ||
+                  rel.telefono ||
+                  "";
+                const direccion =
+                  tercero.calle ||
+                  tercero.Calle ||
+                  tercero.direccion ||
+                  terceroMergeado.datosgenerales?.domiciliofiscal?.direccion ||
+                  "";
+                const localidad =
+                  tercero.contacto ||
+                  terceroMergeado.datosgenerales?.domiciliofiscal?.localidad ||
+                  "";
+                const provinciaid =
+                  rel.provinciaid ||
+                  terceroMergeado.datosgenerales?.domiciliofiscal?.descripcionprovincia ||
+                  "";
+
+                sociosCargados.push({
+                  cuit,
+                  nombre:
+                    tercero.denominacion ||
+                    tercero.Denominacion ||
+                    tercero.nombre ||
+                    tercero.Nombre ||
+                    tercero.razonsocial ||
+                    "Sin nombre",
+                  participacion: String(
+                    rel.porcacciones ||
+                      rel.participacion ||
+                      rel.Participacion ||
+                      "0",
+                  ),
+                  email,
+                  celular,
+                  direccion,
+                  localidad,
+                  provinciaid: String(provinciaid),
+                  dataOriginal: terceroMergeado,
+                  tercerorelacionadoid: terceroId,
+                  preloadedFromDb: true,
+                  relacion: rel,
+                });
+              }
+            } else if (tiporelNum === 210 || tiporelNum === 230) {
+              if (cuit && (!cuitsRepsYaCargados.has(cuit) || force)) {
+                cuitsRepsYaCargados.add(cuit);
+
+                representantesCargados.push({
+                  cuit,
+                  nombre:
+                    tercero.denominacion ||
+                    tercero.Denominacion ||
+                    tercero.nombre ||
+                    tercero.Nombre ||
+                    tercero.razonsocial ||
+                    "Sin nombre",
+                  rol:
+                    tiporelNum === 230 ? "Representante Legal" : "Apoderado",
+                  email: tercero.mail || tercero.Mail || "",
+                  celular: tercero.telefono || tercero.Telefono || "",
+                });
+              }
+            } else if (tiporelNum === 21) {
+              setValue("sociedadBolsa", String(terceroId));
+              setValue(
+                "numeroCuentaBolsa",
+                rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "",
+              );
+            }
+          }
+        } catch (err) {
+          console.error(
+            "Error loading specific relation detail:",
+            terceroId,
+            err,
+          );
+        }
+      }
+
+      if (sociosCargados.length > 0) {
+        setValue("socios", sociosCargados);
+        setValue("faseSocio", "lista");
+      } else {
+        if (force) {
+          setValue("socios", []);
+          setValue("faseSocio", "ingresar_cuit");
+        }
+      }
+      if (representantesCargados.length > 0) {
+        setValue("representantes", representantesCargados);
+      }
+    } catch (error) {
+      console.error("Error in precargarSocios flow:", error);
+    } finally {
+      setBuscandoSocios(false);
+    }
+  };
+
+  useEffect(() => {
+    if (socioIdActivo) {
+      cargarSociosDesdeDB();
+    }
+  }, [socioIdActivo, resetKey]);
 
   const handleVolver = () => {
     setPasoActual((prev) => (prev === 1 ? 1 : prev - 1));
@@ -855,90 +931,31 @@ export const AltaOperacion = () => {
     navigate("/solicitudes", { state: { nuevaSolicitud } });
   };
 
-  const iniciarCargaSocio = () => {
-    setValue("tempSocioCuit", "");
-    setValue("tempSocioNombre", "");
-    setValue("tempSocioParticipacion", "");
-    setValue("tempSocioData", null);
-    setValue("faseSocio", "ingresar_cuit");
-  };
+  const eliminarSocio = async (index) => {
+    const socioTarget = socios[index];
+    if (socioTarget.preloadedFromDb || socioTarget.relacion) {
+      try {
+        const ayer = new Date();
+        ayer.setDate(ayer.getDate() - 1);
+        const ayerStr = ayer.toISOString().split(".")[0];
 
-  const validarCuitSocio = async () => {
-    setIsLoadingAFIP(true);
-    try {
-      const dataAfip =
-        await afipService.obtenerConstanciaInscripcion(tempSocioCuit);
-
-      if (dataAfip && dataAfip.datosgenerales) {
-        const dg = dataAfip.datosgenerales;
-        const nombreSocio =
-          dg.razonsocial ||
-          `${dg.nombre} ${dg.apellido}`.trim() ||
-          "Socio validado";
-        setValue("tempSocioNombre", nombreSocio);
-        setValue("tempSocioData", dataAfip);
-        setValue("faseSocio", "completar_datos");
-      } else {
-        toast.warning("CUIT no encontrado en AFIP", {
-          description:
-            "No se encontraron datos automáticos. Podés ingresarlos de forma manual.",
-        });
-        setValue("tempSocioNombre", "");
-        setValue("tempSocioData", null);
-        setValue("faseSocio", "completar_datos");
+        const payload = {
+          ...socioTarget.relacion,
+          fechahasta: ayerStr,
+          FechaHasta: ayerStr,
+        };
+        await tercerosService.actualizarRelacionDeSocio(payload);
+        toast.success("Socio desvinculado del legajo.");
+      } catch (err) {
+        console.error("Error al desvincular socio:", err);
+        toast.error("Ocurrió un error al intentar desvincular al socio.");
+        return;
       }
-    } catch (error) {
-      toast.warning("Servicio de AFIP no disponible", {
-        description:
-          "No se pudo validar el CUIT de forma automática. Podés ingresar los datos de forma manual.",
-      });
-      setValue("tempSocioNombre", "");
-      setValue("tempSocioData", null);
-      setValue("faseSocio", "completar_datos");
-    } finally {
-      setIsLoadingAFIP(false);
     }
-  };
-
-  const guardarSocio = () => {
-    const indexSocioEditado = socios.findIndex((s) => s.cuit === tempSocioCuit);
-
-    let socioExistente = {};
-    if (indexSocioEditado >= 0) {
-      socioExistente = socios[indexSocioEditado];
-    }
-
-    const nuevoSocio = {
-      ...socioExistente,
-      cuit: tempSocioCuit,
-      nombre: tempSocioNombre,
-      participacion: tempSocioParticipacion,
-      dataOriginal: tempSocioData,
-    };
-
-    if (indexSocioEditado >= 0) {
-      update(indexSocioEditado, nuevoSocio);
-    } else {
-      append(nuevoSocio);
-    }
-
-    setValue("faseSocio", "lista");
-  };
-
-  const eliminarSocio = (index) => {
     remove(index);
     if (socios.length === 1) {
       setValue("faseSocio", "ingresar_cuit");
     }
-  };
-
-  const editarSocio = (index) => {
-    const socio = socios[index];
-    setValue("tempSocioCuit", socio.cuit);
-    setValue("tempSocioNombre", socio.nombre);
-    setValue("tempSocioParticipacion", socio.participacion);
-    setValue("tempSocioData", socio.dataOriginal);
-    setValue("faseSocio", "completar_datos");
   };
 
   const toggleDoc = (seccion) => {
@@ -1079,22 +1096,12 @@ export const AltaOperacion = () => {
     if (pasoActual === 1) {
       return (
         <Paso4Socios
-          faseSocio={faseSocio}
-          setFaseSocio={(val) => setValue("faseSocio", val)}
-          tempSocioCuit={tempSocioCuit}
-          setTempSocioCuit={(val) => setValue("tempSocioCuit", val)}
-          tempSocioNombre={tempSocioNombre}
-          tempSocioParticipacion={tempSocioParticipacion}
-          setTempSocioParticipacion={(val) =>
-            setValue("tempSocioParticipacion", val)
-          }
           socios={socios}
-          iniciarCargaSocio={iniciarCargaSocio}
-          validarCuitSocio={validarCuitSocio}
-          guardarSocio={guardarSocio}
           eliminarSocio={eliminarSocio}
-          editarSocio={editarSocio}
           continuarAlProximoPaso={handleContinuarSocios}
+          socioIdActivo={socioIdActivo}
+          archivosBackend={archivosBackend}
+          cargarSociosDesdeDB={cargarSociosDesdeDB}
           isLoading={isLoadingAFIP || isLoadingCda}
         />
       );

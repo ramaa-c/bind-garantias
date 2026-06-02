@@ -12,6 +12,7 @@ import {
 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { RepresentanteModal } from "../RepresentanteModal/RepresentanteModal";
+import { Spinner } from "../../../../../ui";
 
 export function RepresentantesSection({
   loadingSocios,
@@ -27,9 +28,9 @@ export function RepresentantesSection({
   return (
     <div className={styles.sociosContainer}>
       {loadingSocios ? (
-        <div className={styles.emptySlot}>
-          <FiUsers size={20} className={styles.emptyIcon} />
-          <p className={styles.emptyTitle}>
+        <div className={styles.emptySlot} style={{ display: "flex", flexDirection: "column", gap: "0.875rem", padding: "2rem" }}>
+          <Spinner size={36} />
+          <p className={styles.emptyTitle} style={{ margin: 0 }}>
             Cargando representantes legales...
           </p>
         </div>

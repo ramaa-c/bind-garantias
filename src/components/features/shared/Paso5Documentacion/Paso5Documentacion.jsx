@@ -17,10 +17,8 @@ import {
 import { toast } from "sonner";
 import { Button, InputFlotante, InputSocioMasked } from "../../../ui";
 import {
-  SocioTaskCard,
   DocumentosEmpresaModal,
   RepresentanteModal,
-  SocioModal,
 } from "../../../features";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
@@ -272,194 +270,6 @@ export default function Paso5Documentacion({
 
   const docsEmpresaListos = DOC_ITEMS.every(({ key }) => archivos[key]);
 
-  const isSocioCompleto = (index) => {
-    const sEmail = getValues(`socios.${index}.email`);
-    const sCel = getValues(`socios.${index}.celular`);
-    const sDir = getValues(`socios.${index}.direccion`);
-    const sProv = getValues(`socios.${index}.provincia`);
-    const sLoc = getValues(`socios.${index}.localidad`);
-    const errs = errors?.socios?.[index];
-    const sinErrores = !errs || Object.keys(errs).length === 0;
-
-    const tieneDniFrente = !!archivos[`socio-${index}-frente`];
-    const tieneDniDorso = !!archivos[`socio-${index}-dorso`];
-
-    return !!(
-      sEmail &&
-      sCel &&
-      sDir &&
-      sProv &&
-      sLoc &&
-      sinErrores &&
-      tieneDniFrente &&
-      tieneDniDorso
-    );
-  };
-
-  const todosSociosOk =
-    socios.length > 0 && socios.every((_, i) => isSocioCompleto(i));
-
-  const handleAbrirSocioModal = (index) => {
-    const socioTarget = socios[index];
-    const dg = socioTarget?.dataOriginal?.datosgenerales || {};
-    const dom = dg.domiciliofiscal || {};
-    const currentFormValues = getValues(`socios.${index}`) || {};
-
-    const emailHydrated =
-      currentFormValues.email || dg.email || dg.emailfacturacion || "";
-    const celularHydrated =
-      currentFormValues.celular ||
-      dg.celular ||
-      dg.telefono ||
-      dg.telefono2 ||
-      "";
-    const direccionHydrated =
-      currentFormValues.direccion ||
-      dom.direccion ||
-      (dg.calle ? `${dg.calle} ${dg.numero || ""}`.trim() : "");
-    const localidadHydrated =
-      currentFormValues.localidad || dom.localidad || "";
-    const provinciaHydrated =
-      currentFormValues.provincia || dom.descripcionprovincia || "";
-
-    setValue(`socios.${index}.email`, emailHydrated);
-    setValue(`socios.${index}.celular`, celularHydrated);
-    setValue(`socios.${index}.direccion`, direccionHydrated);
-    setValue(`socios.${index}.localidad`, localidadHydrated);
-    setValue(`socios.${index}.provincia`, provinciaHydrated);
-
-    updateState({
-      intentoGuardarSocio: false,
-      backupSocio: {
-        email: emailHydrated,
-        celular: celularHydrated,
-        direccion: direccionHydrated,
-        localidad: localidadHydrated,
-        provincia: provinciaHydrated,
-      },
-      backupArchivos: {
-        frente: archivos[`socio-${index}-frente`],
-        dorso: archivos[`socio-${index}-dorso`],
-      },
-      socioActivoIndex: index,
-    });
-  };
-
-  const handleCerrarModalSinGuardar = () => {
-    ["email", "celular", "direccion", "provincia", "localidad"].forEach(
-      (campo) => {
-        setValue(
-          `socios.${socioActivoIndex}.${campo}`,
-          backupSocio[campo] || "",
-          {
-            shouldValidate: false,
-            shouldDirty: false,
-          },
-        );
-      },
-    );
-    updateState((prev) => {
-      const nuevos = { ...prev.archivos };
-      if (prev.backupArchivos.frente)
-        nuevos[`socio-${prev.socioActivoIndex}-frente`] =
-          prev.backupArchivos.frente;
-      else delete nuevos[`socio-${prev.socioActivoIndex}-frente`];
-      if (prev.backupArchivos.dorso)
-        nuevos[`socio-${prev.socioActivoIndex}-dorso`] =
-          prev.backupArchivos.dorso;
-      else delete nuevos[`socio-${prev.socioActivoIndex}-dorso`];
-      return {
-        archivos: nuevos,
-        intentoGuardarSocio: false,
-        socioActivoIndex: null,
-      };
-    });
-    clearErrors(`socios.${socioActivoIndex}`);
-  };
-
-  const handleGuardarSocioModal = async () => {
-    updateState({ intentoGuardarSocio: true, isGuardando: true });
-    const camposValidos = await trigger([
-      `socios.${socioActivoIndex}.email`,
-      `socios.${socioActivoIndex}.celular`,
-      `socios.${socioActivoIndex}.direccion`,
-      `socios.${socioActivoIndex}.provincia`,
-      `socios.${socioActivoIndex}.localidad`,
-    ]);
-    if (camposValidos) {
-      try {
-        const datosForm = getValues(`socios.${socioActivoIndex}`);
-        if (onGuardarSocioDb)
-          await onGuardarSocioDb(socioActivoIndex, datosForm);
-
-        if (socioId) {
-          const frenteKey = `socio-${socioActivoIndex}-frente`;
-          const dorsoKey = `socio-${socioActivoIndex}-dorso`;
-          const frenteFile = archivos[frenteKey];
-          const dorsoFile = archivos[dorsoKey];
-
-          const uploadPromises = [];
-          if (
-            frenteFile &&
-            frenteFile instanceof File &&
-            !frenteFile._uploaded
-          ) {
-            uploadPromises.push(
-              socioArchivoService
-                .subirOActualizar(
-                  socioId,
-                  frenteFile,
-                  frenteKey,
-                  archivosBackend,
-                  `DNI Frente - ${datosForm.nombre || "Socio"}`,
-                )
-                .then((res) => {
-                  frenteFile._uploaded = true;
-                  return res;
-                })
-                .catch((err) =>
-                  console.error(`Error subiendo DNI frente:`, err),
-                ),
-            );
-          }
-          if (dorsoFile && dorsoFile instanceof File && !dorsoFile._uploaded) {
-            uploadPromises.push(
-              socioArchivoService
-                .subirOActualizar(
-                  socioId,
-                  dorsoFile,
-                  dorsoKey,
-                  archivosBackend,
-                  `DNI Dorso - ${datosForm.nombre || "Socio"}`,
-                )
-                .then((res) => {
-                  dorsoFile._uploaded = true;
-                  return res;
-                })
-                .catch((err) =>
-                  console.error(`Error subiendo DNI dorso:`, err),
-                ),
-            );
-          }
-          if (uploadPromises.length > 0) {
-            await Promise.allSettled(uploadPromises);
-          }
-        }
-
-        updateState({
-          intentoGuardarSocio: false,
-          socioActivoIndex: null,
-          isGuardando: false,
-        });
-      } catch (error) {
-        console.error("Fallo al guardar socio en DB:", error);
-        updateState({ intentoGuardarSocio: false, isGuardando: false });
-      }
-    } else {
-      updateState({ intentoGuardarSocio: false, isGuardando: false });
-    }
-  };
-
   const handleAbrirModalRep = (index) =>
     updateState({ repActivoIndex: index, modalRepOpen: true });
   const handleGuardarRep = (repData) =>
@@ -469,12 +279,10 @@ export default function Paso5Documentacion({
 
   const handleAvanzarClick = async () => {
     updateState({ intentoAvanzar: true });
-    const todosSociosOkLocal = socios.every((_, i) => isSocioCompleto(i));
     const tieneRepresentantes = representantes.length > 0;
     const emailFacValido = await trigger("emailFacturacion");
     if (
       docsEmpresaListos &&
-      todosSociosOkLocal &&
       tieneRepresentantes &&
       emailFacValido &&
       emailFacturacionVal.trim() !== ""
@@ -522,16 +330,6 @@ export default function Paso5Documentacion({
               <FiAlertCircle size={11} />
             )}
             Representantes
-          </span>
-          <span
-            className={`${styles.pill} ${pill(todosSociosOk, intentoAvanzar)}`}
-          >
-            {todosSociosOk ? (
-              <FiCheckCircle size={11} />
-            ) : (
-              <FiAlertCircle size={11} />
-            )}
-            Socios
           </span>
           <span
             className={`${styles.pill} ${pill(isEmailFacturacionValido, intentoAvanzar && !isEmailFacturacionValido)}`}
@@ -592,30 +390,7 @@ export default function Paso5Documentacion({
           </div>
         </section>
 
-        {/* SOCIOS */}
-        <section className={`${styles.section} ${styles.borderLeft}`}>
-          <div className={styles.sectionHeaderRow}>
-            <span className={styles.sectionLabel}>Socios</span>
-            {socios.length > 0 && (
-              <span className={styles.countBadge}>
-                {socios.filter((_, i) => isSocioCompleto(i)).length}/
-                {socios.length} completos
-              </span>
-            )}
-          </div>
-          <div className={styles.compactList}>
-            {socios.map((socio, index) => (
-              <SocioTaskCard
-                key={socio?.cuit || index}
-                socio={socio}
-                index={index}
-                isCompleto={isSocioCompleto(index)}
-                intentoAvanzar={intentoAvanzar}
-                onEdit={() => handleAbrirSocioModal(index)}
-              />
-            ))}
-          </div>
-        </section>
+
 
         {/* REPRESENTANTES */}
         <section className={styles.section}>
@@ -682,7 +457,7 @@ export default function Paso5Documentacion({
         </section>
 
         {/* EMAIL FACTURACIÓN */}
-        <section className={`${styles.section} ${styles.borderLeft}`}>
+        <section className={styles.section}>
           <div className={styles.sectionHeaderRow}>
             <span className={styles.sectionLabel}>Email de Facturación</span>
             {isEmailFacturacionValido && (
@@ -730,22 +505,7 @@ export default function Paso5Documentacion({
         archivosBackend={archivosBackend}
         onArchivosBackendChange={setArchivosBackend}
       />
-      <SocioModal
-        socio={socioActivoIndex !== null ? socios[socioActivoIndex] : null}
-        socioIndex={socioActivoIndex}
-        archivos={archivos}
-        intentoGuardarSocio={intentoGuardarSocio}
-        onGuardar={handleGuardarSocioModal}
-        isGuardando={isGuardando}
-        onCerrar={handleCerrarModalSinGuardar}
-        onFileUpload={handleFileUpload}
-        onFileRemove={handleFileRemove}
-        draggingKey={draggingKey}
-        onDragOver={(key) => updateState({ draggingKey: key })}
-        onDragLeave={() => updateState({ draggingKey: null })}
-        onDrop={(key, file) => handleFileUpload(key, file)}
-        control={control}
-      />
+
       <RepresentanteModal
         isOpen={modalRepOpen}
         onClose={() =>

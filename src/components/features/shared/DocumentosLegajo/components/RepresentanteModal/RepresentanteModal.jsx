@@ -13,6 +13,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
   const [validando, setValidando] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState("VALIDAR CUIT");
 
   const { control, reset, setValue, watch, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -54,6 +55,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
         setAfipValidado(false);
       }
       setShowConfirm(false);
+      setLoadingLabel("VALIDAR CUIT");
     }
   }, [isOpen, representante, reset]);
 
@@ -64,6 +66,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
       return;
     }
     setValidando(true);
+    setLoadingLabel("CONSULTANDO AFIP...");
     clearErrors("cuit");
     try {
       const respSgr = await sociosService.obtenerSocios({ Cuit: cuitLimpio, page: 1, page_size: 10 });
@@ -74,7 +77,52 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
         return;
       }
 
-      const res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
+      // 1. Buscar primero en la base de datos de terceros
+      let terceroEncontrado = null;
+      try {
+        const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
+        const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
+        if (arr.length > 0) {
+          terceroEncontrado = arr[0];
+        }
+      } catch (dbErr) {
+        console.warn("[RepresentanteModal Legajo] Error buscando tercero en base de datos local:", dbErr);
+      }
+
+      if (terceroEncontrado) {
+        const nombreRep = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Representante del Sistema";
+        setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
+        
+        if (terceroEncontrado.mail || terceroEncontrado.email) {
+          setValue("email", terceroEncontrado.mail || terceroEncontrado.email, { shouldValidate: true, shouldDirty: true });
+        }
+        if (terceroEncontrado.telefono) {
+          setValue("telefono", terceroEncontrado.telefono, { shouldValidate: true, shouldDirty: true });
+        }
+
+        setAfipValidado(true);
+        toast.success("Datos del representante recuperados del sistema.");
+        return;
+      }
+
+      // 2. Fallback a AFIP
+      let res = null;
+      try {
+        res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
+      } catch (afipErr) {
+        console.warn("[RepresentanteModal Legajo] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+        setLoadingLabel("AFIP CAÍDO. PROBANDO LUFE...");
+        
+        try {
+          const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
+          if (lufeEntidad && lufeEntidad.success) {
+            res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+          }
+        } catch (lufeErr) {
+          console.error("[RepresentanteModal Legajo] LUFE Entidad también falló:", lufeErr);
+        }
+      }
+
       if (res && res.datosgenerales) {
         const dg = res.datosgenerales;
         const nombreRep = dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
@@ -89,7 +137,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
 
         setAfipValidado(true);
       } else {
-        toast.warning("CUIT no encontrado en AFIP", {
+        toast.warning("CUIT no encontrado en AFIP/LUFE", {
           description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
         });
         setValue("nombre", "");
@@ -97,7 +145,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
       }
     } catch (err) {
       console.error("Error validando representante en AFIP/SGR:", err);
-      toast.warning("Servicio de AFIP no disponible", {
+      toast.warning("Servicio de AFIP/LUFE no disponible", {
         description: "No se pudieron obtener datos automáticos. Podés ingresarlos manualmente.",
       });
       setValue("nombre", "");
@@ -276,7 +324,7 @@ export function RepresentanteModal({ isOpen, onClose, onSuccess, representante, 
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                  buttonText="VALIDAR CUIT"
+                  buttonText={loadingLabel}
                   isLoading={validando}
                 />
               </div>

@@ -12,6 +12,7 @@ import styles from "./DocumentacionView.module.css";
 
 const DOC_TITLES = {
   certificadoPyme: "Certificado de PyME",
+  balance: "Último Balance",
   poderes: "Poderes",
   otrosDocumentos: "Otros documentos",
   cartasDocumento: "Cartas Documento",
@@ -35,6 +36,7 @@ export default function DocumentacionView() {
     mode: "onChange",
     defaultValues: {
       certificadoPyme: null,
+      balance: null,
       poderes: null,
       otrosDocumentos: null,
       cartasDocumento: null,
@@ -60,6 +62,7 @@ export default function DocumentacionView() {
 
       const llavesDocumentos = [
         "certificadoPyme",
+        "balance",
         "poderes",
         "otrosDocumentos",
         "cartasDocumento",

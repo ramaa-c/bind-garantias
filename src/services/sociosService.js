@@ -115,4 +115,65 @@ export const sociosService = {
     });
     return response.data;
   },
+
+  // GET api/lufe/documentos/{cuit} - Obtener documentos de LUFE y vincularlos
+  obtenerDocumentosLufe: async (cuit, vincular = true) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    const response = await api.get(`api/lufe/documentos/${cuitLimpio}`, {
+      params: { Vincular: vincular },
+    });
+    return response.data;
+  },
+
+  // GET api/lufe/entidad/{cuit} - Obtener entidad de LUFE
+  obtenerEntidadLufe: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    const response = await api.get(`api/lufe/entidad/${cuitLimpio}`);
+    return response.data;
+  },
+
+  // Helper para normalizar la respuesta de LUFE Entidad al formato de AFIP datosgenerales
+  normalizarLufeAEstructuraAfip: (lufeData) => {
+    if (!lufeData) return null;
+
+    let email = "";
+    let telefono = "";
+    if (Array.isArray(lufeData.contactos) && lufeData.contactos.length > 0) {
+      const contactoPrincipal = lufeData.contactos[0];
+      email = contactoPrincipal.email || "";
+      telefono = contactoPrincipal.telefono || "";
+    }
+
+    let direccion = lufeData.domicilio_fiscal || "";
+    let localidad = "";
+    let provincia = "";
+
+    if (direccion.includes(",")) {
+      const partes = direccion.split(",").map(p => p.trim());
+      if (partes.length >= 3) {
+        direccion = partes[0];
+        localidad = partes[1];
+        provincia = partes[2];
+      } else if (partes.length === 2) {
+        direccion = partes[0];
+        localidad = partes[1];
+      }
+    }
+
+    return {
+      datosgenerales: {
+        razonsocial: lufeData.nombre || "",
+        nombre: lufeData.nombre || "",
+        apellido: "",
+        email: email,
+        emailfacturacion: email,
+        telefono: telefono,
+        domiciliofiscal: {
+          direccion: direccion,
+          localidad: localidad,
+          descripcionprovincia: provincia,
+        }
+      }
+    };
+  },
 };

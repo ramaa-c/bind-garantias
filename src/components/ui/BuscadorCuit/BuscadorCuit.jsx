@@ -44,7 +44,8 @@ export const BuscadorCuit = forwardRef(({
           type="button"
           variant="primary"
           onClick={onValidar}
-          disabled={isLoading || !esValido}
+          disabled={!esValido}
+          isLoading={isLoading}
           className={styles.actionBtn}
         >
           {isLoading ? "BUSCANDO..." : buttonText}

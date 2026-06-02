@@ -1,8 +1,8 @@
 import React from "react";
-import { FiCheckCircle, FiAlertCircle, FiEdit2 } from "react-icons/fi";
+import { FiCheckCircle, FiAlertCircle, FiEdit2, FiTrash2 } from "react-icons/fi";
 import styles from "./SocioTaskCard.module.css";
 
-export const SocioTaskCard = ({ socio, index, isCompleto, intentoAvanzar, onEdit }) => {
+export const SocioTaskCard = ({ socio, index, isCompleto, intentoAvanzar, onEdit, onDelete }) => {
   const dotClass = isCompleto
     ? styles.dotGreen
     : intentoAvanzar
@@ -55,6 +55,17 @@ export const SocioTaskCard = ({ socio, index, isCompleto, intentoAvanzar, onEdit
       >
         <FiEdit2 size={13} />
       </button>
+
+      {onDelete && (
+        <button
+          type="button"
+          className={styles.deleteBtn}
+          onClick={(e) => { e.stopPropagation(); onDelete(index); }}
+          title="Eliminar"
+        >
+          <FiTrash2 size={13} />
+        </button>
+      )}
     </div>
   );
 };

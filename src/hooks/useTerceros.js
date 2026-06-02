@@ -267,8 +267,18 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
                 item.cuit && item.cuit !== "—" ? item.cuit : item.id;
 
               if (tiporelNum === 25) {
-                if (!accMap[identifier]) {
+                const existing = accMap[identifier];
+                if (!existing) {
                   accMap[identifier] = item;
+                } else {
+                  const existingMomento = new Date(existing.relacion?.momento || existing.relacion?.Momento || 0).getTime();
+                  const currentMomento = new Date(rel.momento || rel.Momento || 0).getTime();
+                  const existingId = Number(existing.relacionId || 0);
+                  const currentId = Number(rel.sociotercerorelacionid || rel.SocioTerceroRelacionID || 0);
+                  
+                  if (currentMomento > existingMomento || (currentMomento === existingMomento && currentId > existingId)) {
+                    accMap[identifier] = item;
+                  }
                 }
               } else if (tiporelNum === 210 || tiporelNum === 230) {
                 const existing = repMap[identifier];

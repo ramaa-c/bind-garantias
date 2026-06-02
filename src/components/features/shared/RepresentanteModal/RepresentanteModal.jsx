@@ -5,6 +5,8 @@ import { InputSocioMasked, Button } from "../../../ui";
 import styles from "./RepresentanteModal.module.css";
 import { useEscape } from "../../../../hooks/useEscape";
 import { useValidarCuitAfip } from "../../../../hooks/useAfip";
+import { tercerosService } from "../../../../services/tercerosService";
+import { sociosService } from "../../../../services/sociosService";
 
 export const RepresentanteModal = ({
   isOpen,
@@ -21,6 +23,7 @@ export const RepresentanteModal = ({
 
   const [errores, setErrores] = useState({});
   const [validando, setValidando] = useState(false);
+  const [loadingLabel, setLoadingLabel] = useState("BUSCANDO...");
 
   const { mutateAsync: validarEnAfip } = useValidarCuitAfip();
 
@@ -55,6 +58,7 @@ export const RepresentanteModal = ({
       }
 
       setErrores({});
+      setLoadingLabel("BUSCANDO...");
     }
   }, [isOpen, representanteInicial]);
 
@@ -91,24 +95,79 @@ export const RepresentanteModal = ({
     }
     setErrores({});
     setValidando(true);
+    setLoadingLabel("CONSULTANDO AFIP...");
+
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
 
     try {
-      const respAfip = await validarEnAfip(cuit);
+      // 1. Buscar primero en la base de datos de terceros
+      let terceroEncontrado = null;
+      try {
+        const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
+        const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
+        if (arr.length > 0) {
+          terceroEncontrado = arr[0];
+        }
+      } catch (dbErr) {
+        console.warn("[RepresentanteModal] Error consultando terceros en base de datos local:", dbErr);
+      }
+
+      if (terceroEncontrado) {
+        setNombre(
+          terceroEncontrado.denominacion ||
+          terceroEncontrado.razonsocial ||
+          terceroEncontrado.nombre ||
+          "Representante del Sistema"
+        );
+        if (terceroEncontrado.mail || terceroEncontrado.email) {
+          setEmail(terceroEncontrado.mail || terceroEncontrado.email);
+        }
+        if (terceroEncontrado.telefono) {
+          setCelular(terceroEncontrado.telefono);
+        }
+        setFaseInterna("completar");
+        return;
+      }
+
+      // 2. Si no existe localmente, fallback a AFIP
+      let respAfip = null;
+      try {
+        respAfip = await validarEnAfip(cuit);
+      } catch (afipErr) {
+        console.warn("[RepresentanteModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+        setLoadingLabel("AFIP CAÍDO. PROBANDO LUFE...");
+        
+        try {
+          const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
+          if (lufeEntidad && lufeEntidad.success) {
+            respAfip = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+          }
+        } catch (lufeErr) {
+          console.error("[RepresentanteModal] LUFE Entidad también falló:", lufeErr);
+        }
+      }
 
       if (respAfip && respAfip.datosgenerales) {
-        const { nombre, apellido, razonsocial } = respAfip.datosgenerales;
+        const { nombre: nombreGenerado, razonsocial } = respAfip.datosgenerales;
         
         let nombreRepresentante = "Representante Validado";
         
         if (razonsocial) {
           nombreRepresentante = razonsocial;
-        } else if (nombre || apellido) {
-          nombreRepresentante = `${nombre || ""} ${apellido || ""}`.trim();
+        } else if (nombreGenerado) {
+          nombreRepresentante = nombreGenerado;
         }
           
         setNombre(nombreRepresentante);
+        
+        if (respAfip.datosgenerales.email) {
+          setEmail(respAfip.datosgenerales.email);
+        }
+        if (respAfip.datosgenerales.telefono) {
+          setCelular(respAfip.datosgenerales.telefono);
+        }
       } else {
-        setNombre("No inscripto en AFIP");
+        setNombre("No inscripto en AFIP/LUFE");
       }
       setFaseInterna("completar");
     } catch (err) {
@@ -203,9 +262,9 @@ export const RepresentanteModal = ({
                     variant="primary"
                     size="sm"
                     onClick={handleValidarCuit}
-                    disabled={validando}
+                    isLoading={validando}
                   >
-                    {validando ? "BUSCANDO..." : "VALIDAR"}
+                    {validando ? loadingLabel : "VALIDAR"}
                   </Button>
                 </div>
               )}

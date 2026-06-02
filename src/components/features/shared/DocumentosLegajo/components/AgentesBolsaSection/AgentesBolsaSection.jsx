@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FiUsers, FiBriefcase, FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { BolsaModal } from "../BolsaModal/BolsaModal";
+import { Spinner } from "../../../../../ui";
 
 export function AgentesBolsaSection({
   loadingSocios,
@@ -16,9 +17,9 @@ export function AgentesBolsaSection({
   return (
     <div className={styles.sociosContainer}>
       {loadingSocios ? (
-        <div className={styles.emptySlot}>
-          <FiUsers size={20} className={styles.emptyIcon} />
-          <p className={styles.emptyTitle}>
+        <div className={styles.emptySlot} style={{ display: "flex", flexDirection: "column", gap: "0.875rem", padding: "2rem" }}>
+          <Spinner size={36} />
+          <p className={styles.emptyTitle} style={{ margin: 0 }}>
             Cargando agentes de bolsa...
           </p>
         </div>
