@@ -7,7 +7,7 @@ export const usuarioService = {
 
   // POST api/usuario/login:bycode
   loginByCode: async (credenciales) =>
-    (await api.post("api/usuario/login:bycode", credenciales)).data,
+    (await api.post("api/usuario/login-bycode", credenciales)).data,
 
   // PUT api/usuario/{usuarioid}/status:block
   bloquearUsuario: async (usuarioId) =>

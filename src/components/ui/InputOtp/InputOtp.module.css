@@ -1,0 +1,121 @@
+.group {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── GRILLA DE CELDAS ── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+}
+
+/* ── CELDA WRAPPER ── */
+
+.cellWrapper {
+  position: relative;
+  aspect-ratio: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease,
+    box-shadow 0.25s ease;
+  overflow: hidden;
+}
+
+/* ── ESTADOS VISUALES (espejo de InputSimple) ── */
+
+.statusDefault:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.035);
+}
+
+.statusFilled {
+  border-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.045);
+}
+
+.statusFocus {
+  border-color: var(--color-amarillo-bind, #f5f400);
+  background-color: rgba(245, 244, 0, 0.035);
+  box-shadow: 0 0 0 3px rgba(245, 244, 0, 0.07);
+}
+
+.statusSuccess {
+  border-color: rgba(61, 220, 132, 0.5);
+  background-color: rgba(61, 220, 132, 0.03);
+  box-shadow: 0 0 0 3px rgba(61, 220, 132, 0.06);
+}
+
+.statusError {
+  border-color: rgba(255, 82, 82, 0.6);
+  background-color: rgba(255, 82, 82, 0.03);
+  box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.06);
+}
+
+/* ── INPUT OCULTO DETRÁS DEL DÍGITO ── */
+
+.cell {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  text-align: center;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--white, #fffefe);
+  font-family: var(--font-principal, "Metropolis", system-ui, sans-serif);
+  letter-spacing: -0.01em;
+  caret-color: transparent;
+  cursor: default;
+}
+
+.cell:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Igual que InputSimple: reset de autocompletado */
+.cell:-webkit-autofill,
+.cell:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 30px transparent inset !important;
+  -webkit-text-fill-color: var(--white, #ffffff) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ── MENSAJE DE ERROR ── */
+
+.errorMsg {
+  font-size: 0.7rem;
+  color: #ff5252;
+  padding-left: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--font-secundaria, serif);
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  animation: slideIn 0.25s ease;
+}
+
+/* ── ANIMACIONES ── */
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
