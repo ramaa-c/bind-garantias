@@ -7,6 +7,7 @@ import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
+import { formatBase64Size } from "../../../../../../utils/fileUtils";
 import { useProvincias } from "../../../../../../hooks/useCatalogos";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./SocioAccionistaModal.module.css";
@@ -131,7 +132,7 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
           file
             ? {
                 name: file.name,
-                size: file.size || "Cargado",
+                size: typeof file.size === "number" ? `${(file.size / 1024).toFixed(1)} KB` : file.size || "Disponible",
               }
             : null
         }
@@ -252,7 +253,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         if (frente) {
           setDniFrenteFile({
             name: frente.nombrearchivo,
-            size: "Cargado",
+            size: frente.contenido ? formatBase64Size(frente.contenido) : "Disponible",
             _uploaded: true,
             _backendId: frente.socioarchivoid,
             _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"],
@@ -280,7 +281,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         if (dorso) {
           setDniDorsoFile({
             name: dorso.nombrearchivo,
-            size: "Cargado",
+            size: dorso.contenido ? formatBase64Size(dorso.contenido) : "Disponible",
             _uploaded: true,
             _backendId: dorso.socioarchivoid,
             _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"],

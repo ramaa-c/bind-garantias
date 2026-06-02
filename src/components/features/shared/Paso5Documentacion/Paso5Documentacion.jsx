@@ -22,6 +22,7 @@ import {
 } from "../../../features";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
+import { formatBase64Size } from "../../../../utils/fileUtils";
 import styles from "./Paso5Documentacion.module.css";
 
 const DOC_ITEMS = [
@@ -126,7 +127,7 @@ export default function Paso5Documentacion({
                   type: "application/octet-stream",
                 },
               );
-              pseudoFile.formattedSize = "Cargado";
+              pseudoFile.formattedSize = arch.contenido ? formatBase64Size(arch.contenido) : "Disponible";
               pseudoFile._uploaded = true;
               pseudoFile._backendId = arch.socioarchivoid;
               archivosRecuperados[docKey] = pseudoFile;
@@ -514,6 +515,7 @@ export default function Paso5Documentacion({
         representanteInicial={
           repActivoIndex !== null ? representantes[repActivoIndex] : null
         }
+        socioIdActivo={socioId}
         onGuardar={handleGuardarRep}
       />
       <PersistenciaOculta

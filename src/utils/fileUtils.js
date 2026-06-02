@@ -107,3 +107,15 @@ export const procesarArchivo = async (
     toast.error("Ocurrió un error al intentar procesar el archivo.");
   }
 };
+
+export const formatBase64Size = (base64Str) => {
+  if (!base64Str) return "Disponible";
+  const len = base64Str.length;
+  const sizeInBytes = Math.floor((len * 3) / 4);
+  if (sizeInBytes < 1024) return `${sizeInBytes} B`;
+  const sizeInKB = sizeInBytes / 1024;
+  if (sizeInKB < 1024) return `${sizeInKB.toFixed(1)} KB`;
+  const sizeInMB = sizeInKB / 1024;
+  return `${sizeInMB.toFixed(1)} MB`;
+};
+
