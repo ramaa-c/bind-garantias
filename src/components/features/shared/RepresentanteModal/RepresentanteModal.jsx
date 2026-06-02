@@ -1,101 +1,93 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { FiBriefcase, FiX, FiMail, FiSmartphone, FiCreditCard, FiEdit2 } from "react-icons/fi";
-import { InputSocioMasked, Button } from "../../../ui";
-import styles from "./RepresentanteModal.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
+import { useForm, Controller } from "react-hook-form";
+import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser } from "react-icons/fi";
+import { toast } from "sonner";
+import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit } from "../../../ui";
 import { afipService } from "../../../../services/afipService";
-import { tercerosService } from "../../../../services/tercerosService";
 import { sociosService } from "../../../../services/sociosService";
+import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
+import { tercerosService } from "../../../../services/tercerosService";
+import styles from "./RepresentanteModal.module.css";
 
-export const RepresentanteModal = ({
+export function RepresentanteModal({
   isOpen,
   onClose,
-  representanteInicial = null,
-  onGuardar,
-}) => {
-  const [faseInterna, setFaseInterna] = useState("ingresar");
-  const [cuit, setCuit] = useState("");
-  const [nombre, setNombre] = useState("");
-  const [rol, setRol] = useState("Representante Legal");
-  const [email, setEmail] = useState("");
-  const [celular, setCelular] = useState("");
-
-  const [errores, setErrores] = useState({});
+  onSuccess,              // Legajo mode: callback after database save
+  representante,          // Legajo mode: DB representation of the representative
+  socioIdActivo,          // Both: active partner ID to link the relation
+  representanteInicial,   // Form mode: initial representative data for edit
+  onGuardar,              // Form mode: callback to update parent React Hook Form state
+}) {
   const [validando, setValidando] = useState(false);
+  const [afipValidado, setAfipValidado] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
+  const { control, reset, setValue, watch, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
+    defaultValues: {
+      cuit: "",
+      nombre: "",
+      rol: "Representante Legal",
+      email: "",
+      telefono: "",
+    }
+  });
+
+  const cuitValue = watch("cuit");
+
+  useEffect(() => {
+    if (errors.cuit?.type === "manual") {
+      clearErrors("cuit");
+    }
+  }, [cuitValue, clearErrors, errors.cuit]);
 
   useEffect(() => {
     if (isOpen) {
-      if (representanteInicial) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setCuit(representanteInicial.cuit);
-
-        setNombre(representanteInicial.nombre);
-
-        setRol(representanteInicial.rol);
-
-        setEmail(representanteInicial.email);
-
-        setCelular(representanteInicial.celular);
-
-        setFaseInterna("completar");
+      if (representante) {
+        // Legajo mode edit
+        reset({
+          cuit: representante.cuit || "",
+          nombre: representante.nombre || "",
+          rol: representante.rolId === 230 ? "Representante Legal" : "Apoderado",
+          email: representante.email || "",
+          telefono: representante.telefono || "",
+        });
+        setAfipValidado(true);
+      } else if (representanteInicial) {
+        // Form mode edit
+        reset({
+          cuit: representanteInicial.cuit || "",
+          nombre: representanteInicial.nombre || "",
+          rol: representanteInicial.rol || "Representante Legal",
+          email: representanteInicial.email || "",
+          telefono: representanteInicial.celular || representanteInicial.telefono || "",
+        });
+        setAfipValidado(true);
       } else {
-
-        setCuit("");
-
-        setNombre("");
-
-        setRol("Representante Legal");
-
-        setEmail("");
-
-        setCelular("");
-
-        setFaseInterna("ingresar");
+        // Create mode (both)
+        reset({
+          cuit: "",
+          nombre: "",
+          rol: "Representante Legal",
+          email: "",
+          telefono: "",
+        });
+        setAfipValidado(false);
       }
-
-      setErrores({});
+      setShowConfirm(false);
     }
-  }, [isOpen, representanteInicial]);
+  }, [isOpen, representante, representanteInicial, reset]);
 
-  useEscape(onClose, isOpen);
-
-  if (!isOpen) return null;
-
-  const validarCUIT = (cuitVal) => {
-    if (!cuitVal) return false;
-    const limpio = String(cuitVal).replace(/\D/g, "");
-    if (limpio.length !== 11) return false;
-    const mult = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-    const nums = limpio.split("").map(Number);
-    const suma = mult.reduce((acc, m, i) => acc + nums[i] * m, 0);
-    const mod = suma % 11;
-    const digito = mod === 0 ? 0 : mod === 1 ? 9 : 11 - mod;
-    return digito === nums[10];
-  };
-
-  // --- VALIDACIONES TIEMPO REAL ---
-  const isEmailValido =
-    !errores.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const isCelularValido = !errores.celular && celular.length === 10;
-
-  const handleValidarCuit = async (e) => {
-    if (e) e.preventDefault();
-    if (!cuit || cuit.trim() === "") {
-      setErrores({ cuit: "El CUIT es obligatorio" });
+  const handleAfipLookup = async () => {
+    const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
+    
+    if (!cuitLimpio || cuitLimpio.length !== 11) {
+      setError("cuit", { type: "manual", message: "Por favor, ingrese un CUIT de 11 dígitos válido." });
       return;
     }
-    if (!validarCUIT(cuit)) {
-      setErrores({ cuit: "CUIT inválido o incorrecto" });
-      return;
-    }
-    setErrores({});
+    
     setValidando(true);
-
-
-    const cuitLimpio = String(cuit).replace(/\D/g, "");
-
+    clearErrors("cuit");
+    
     try {
       // 1. Buscar primero en la base de datos de terceros
       let terceroEncontrado = null;
@@ -106,280 +98,400 @@ export const RepresentanteModal = ({
           terceroEncontrado = arr[0];
         }
       } catch (dbErr) {
-        console.warn("[RepresentanteModal] Error consultando terceros en base de datos local:", dbErr);
+        console.warn("[RepresentanteModal] Error buscando tercero en base de datos local:", dbErr);
       }
 
       if (terceroEncontrado) {
-        setNombre(
-          terceroEncontrado.denominacion ||
-          terceroEncontrado.razonsocial ||
-          terceroEncontrado.nombre ||
-          "Representante del Sistema"
-        );
+        const nombreRep = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Representante del Sistema";
+        setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
+        
         if (terceroEncontrado.mail || terceroEncontrado.email) {
-          setEmail(terceroEncontrado.mail || terceroEncontrado.email);
+          setValue("email", terceroEncontrado.mail || terceroEncontrado.email, { shouldValidate: true, shouldDirty: true });
         }
         if (terceroEncontrado.telefono) {
-          setCelular(terceroEncontrado.telefono);
+          setValue("telefono", terceroEncontrado.telefono, { shouldValidate: true, shouldDirty: true });
         }
-        setFaseInterna("completar");
+
+        setAfipValidado(true);
+        toast.success("Datos del representante recuperados del sistema.");
         setValidando(false);
         return;
       }
 
-      // 2. Si no existe localmente, fallback a AFIP
-      let respAfip = null;
+      // 2. Fallback a AFIP
+      let res = null;
       try {
-        respAfip = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
+        res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
       } catch (afipErr) {
         console.warn("[RepresentanteModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
-
-        
         try {
           const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
           if (lufeEntidad && lufeEntidad.success) {
-            respAfip = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+            res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
           }
         } catch (lufeErr) {
           console.error("[RepresentanteModal] LUFE Entidad también falló:", lufeErr);
         }
       }
 
-      if (respAfip && respAfip.datosgenerales) {
-        const { nombre: nombreGenerado, razonsocial } = respAfip.datosgenerales;
+      if (res && res.datosgenerales) {
+        const dg = res.datosgenerales;
+        const nombreRep = dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
+        setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
         
-        let nombreRepresentante = "Representante Validado";
-        
-        if (razonsocial) {
-          nombreRepresentante = razonsocial;
-        } else if (nombreGenerado) {
-          nombreRepresentante = nombreGenerado;
+        if (dg.email || dg.emailfacturacion) {
+          setValue("email", dg.email || dg.emailfacturacion, { shouldValidate: true, shouldDirty: true });
         }
-          
-        setNombre(nombreRepresentante);
-        
-        if (respAfip.datosgenerales.email) {
-          setEmail(respAfip.datosgenerales.email);
+        if (dg.telefono) {
+          setValue("telefono", dg.telefono, { shouldValidate: true, shouldDirty: true });
         }
-        if (respAfip.datosgenerales.telefono) {
-          setCelular(respAfip.datosgenerales.telefono);
-        }
+
+        setAfipValidado(true);
       } else {
-        setNombre("No inscripto en AFIP/LUFE");
+        toast.error("CUIT no encontrado en AFIP/LUFE", {
+          description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
+        });
+        setValue("nombre", "");
+        setAfipValidado(true);
       }
-      setFaseInterna("completar");
     } catch (err) {
-      console.error("Error validando representante:", err);
-      setNombre("Error al validar representante");
-      setFaseInterna("completar");
+      console.error("Error validando representante en AFIP/SGR:", err);
+      toast.error("Servicio de AFIP/LUFE no disponible", {
+        description: "No se pudieron obtener datos automáticos. Podés ingresarlos manualmente.",
+      });
+      setValue("nombre", "");
+      setAfipValidado(true);
     } finally {
       setValidando(false);
     }
   };
 
-  const handleGuardarYCerrar = (e) => {
-    if (e) e.preventDefault();
-    const nuevosErrores = {};
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      nuevosErrores.email = "Email inválido";
-    }
-    if (!celular || celular.replace(/\D/g, "").length !== 10) {
-      nuevosErrores.celular = "Debe tener 10 dígitos";
-    }
+  const handlePreSubmit = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-    if (Object.keys(nuevosErrores).length > 0) {
-      setErrores(nuevosErrores);
+    const isValid = await trigger();
+    if (!isValid) return;
+
+    if (!isDirty) {
+      onClose();
       return;
     }
 
-    onGuardar({ cuit, nombre, rol, email, celular });
-    onClose();
+    // Both direct DB save modes will show the confirmation modal
+    setShowConfirm(true);
   };
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) onClose();
+  const onConfirmSave = async () => {
+    const formData = getValues();
+    try {
+      const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
+
+      let terceroId = null;
+      try {
+        const existentes = await tercerosService.obtenerTerceros({
+          Cuit: cuitLimpio,
+        });
+        const arr = Array.isArray(existentes)
+          ? existentes
+          : existentes?.data || [];
+        if (arr.length > 0) {
+          terceroId =
+            arr[0].tercerorelacionadoid ||
+            arr[0].TerceroRelacionadoID ||
+            arr[0].id;
+        }
+      } catch (err) {
+        console.warn(
+          "[RepresentanteModal] Error buscando tercero existente:",
+          err,
+        );
+      }
+
+      const payloadTercero = {
+        tercerorelacionadoid: terceroId || 0,
+        denominacion: formData.nombre,
+        cuit: cuitLimpio,
+        bcraid: 0,
+        tipopersonaid: 1,
+        tipodocumentoid: 0,
+        numerodocumento: cuitLimpio,
+        estadocivilid: 0,
+        ciudadid: 0,
+        telefono: formData.telefono || "",
+        conyuge: "",
+        actividad: "",
+        contacto: "",
+        nrocuenta: "",
+        codigomercado: "",
+        calle: "",
+        numero: 0,
+        piso: "",
+        departamento: "",
+        codpos: "",
+        descripcionreducida: formData.nombre.substring(0, 20),
+        mail: formData.email || "",
+      };
+
+      if (terceroId) {
+        await tercerosService.actualizarTercero(payloadTercero);
+      } else {
+        const res = await tercerosService.crearTercero(payloadTercero);
+        terceroId = res.tercerorelacionadoid || res.id;
+      }
+
+      const ahora = new Date().toISOString().split(".")[0];
+      const unAnioMas = new Date();
+      unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
+      const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
+      const targetRolId = formData.rol === "Apoderado" ? 210 : 230;
+
+      // Direct Save to DB if socioIdActivo is present
+      if (socioIdActivo) {
+        // Check if a relationship already exists in DB for this partner and representative to avoid duplicates
+        let relacionExistente = null;
+        try {
+          const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+          const arrRel = Array.isArray(relaciones) ? relaciones : relaciones?.data || [];
+          relacionExistente = arrRel.find(
+            (r) =>
+              Number(r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID) === Number(terceroId) &&
+              [210, 230].includes(Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId))
+          );
+        } catch (relErr) {
+          console.warn("[RepresentanteModal] Error consultando relaciones del socio:", relErr);
+        }
+
+        const activeRel = representante || (representanteInicial?.preloadedFromDb ? representanteInicial : null) || relacionExistente;
+
+        if (activeRel?.relacionId || activeRel?.relacion?.sociotercerorelacionid || activeRel?.sociotercerorelacionid) {
+          const payloadRel = {
+            ...(activeRel?.relacion || activeRel),
+            tiporelacionsocioid: targetRolId,
+            telefono: formData.telefono || "",
+            momento: ahora,
+          };
+          await tercerosService.actualizarRelacionDeSocio(payloadRel);
+          toast.success("Representante actualizado correctamente.");
+        } else {
+          const payloadRel = {
+            socioid: socioIdActivo,
+            tercerosrelacionados: [
+              {
+                sociotercerorelacionid: 0,
+                socioid: socioIdActivo,
+                terceroid: terceroId,
+                tiporelacionsocioid: targetRolId,
+                fechadesde: ahora,
+                fechahasta: unAnioMasStr,
+                porcacciones: 0,
+                nroinscripcion: "",
+                condicionescomerciales: "",
+                cbu: "",
+                provinciaid: 0,
+                nrosubcuentacaja: "",
+                sucursalid: 0,
+                default: "0",
+                subtiporelacionsocioid: 0,
+                telefono: formData.telefono || "",
+                momento: ahora,
+              },
+            ],
+          };
+          await tercerosService.guardarRelacionesDeSocio(payloadRel);
+          toast.success("Representante agregado correctamente.");
+        }
+      }
+
+      // If we are in Form Mode (Wizard), propagate to react-hook-form state
+      if (onGuardar) {
+        onGuardar({
+          cuit: cuitLimpio,
+          nombre: formData.nombre,
+          rol: formData.rol,
+          email: formData.email,
+          celular: formData.telefono,
+          preloadedFromDb: true,
+        });
+      }
+
+      if (onSuccess) onSuccess();
+      setShowConfirm(false);
+      onClose();
+    } catch (error) {
+      setShowConfirm(false);
+      if (error?.response?.status === 400 && error.response?.data?.errors) {
+        const backendErrors = error.response.data.errors;
+        Object.keys(backendErrors).forEach((key) => {
+          setError(key, { type: "server", message: backendErrors[key] });
+        });
+        toast.error("Por favor, revisá los errores en el formulario.");
+      } else {
+        toast.error("Ocurrió un error inesperado al guardar los datos.");
+      }
+    }
   };
 
-  return createPortal(
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div className={styles.modalContainer} onMouseDown={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          className={styles.btnClose}
-          onClick={onClose}
-          aria-label="Cerrar"
-        >
-          <FiX size={20} />
-        </button>
+  const opcionesRoles = [
+    { value: "Representante Legal", label: "Representante Legal" },
+    { value: "Apoderado", label: "Apoderado" },
+  ];
 
-        <form className={styles.body} onSubmit={(e) => {
-          e.preventDefault();
-          if (faseInterna === "ingresar") {
-            handleValidarCuit(e);
-          } else {
-            handleGuardarYCerrar(e);
-          }
-        }}>
-          <div className={styles.iconWrapper}>
-            <FiBriefcase size={30} />
-          </div>
-
-          <h2 className={styles.title}>Gestión de Representante</h2>
-          <p className={styles.description}>
-            Designá al representante legal o apoderado para operar.
-          </p>
-
-          <div className={styles.modalLayout}>
-            <section className={styles.sectionBlock}>
-              {faseInterna === "ingresar" && (
-                <div className={styles.searchBox}>
-                  <div className={styles.inputWrapper}>
-                    <InputSocioMasked
-                      name="cuit"
-                      label="CUIT"
-                      icon={<FiCreditCard />}
-                      mask="00-00000000-0"
-                      esValido={
-                        cuit?.length === 11 && !errores.cuit && validarCUIT(cuit)
-                      }
-                      error={errores.cuit}
-                      value={cuit || ""}
-                      disabled={validando}
-                      onChange={(val) => {
-                        const limpio = val ? String(val).replace(/\D/g, "").slice(0, 11) : "";
-                        setCuit(limpio);
-                        
-                        if (errores.cuit) {
-                          setErrores({ ...errores, cuit: null });
-                        }
-                      }}
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    onClick={handleValidarCuit}
-                    isLoading={validando}
-                  >
-                    {validando ? "BUSCANDO..." : "VALIDAR"}
-                  </Button>
+  return (
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={representante || representanteInicial ? "Editar Representante" : "Agregar Representante"}
+        maxWidth="600px"
+      >
+        <form onSubmit={handlePreSubmit} className={styles.modalForm}>
+          {!afipValidado && !representante && !representanteInicial ? (
+            <div className={styles.cuitSearchStep}>
+              <div className={styles.cuitSearchBanner}>
+                <div className={styles.cuitSearchBannerIcon}>
+                  <svg width="1rem" height="1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
                 </div>
-              )}
-
-              {faseInterna === "completar" && (
-                <div className={styles.completarContainer}>
-                  
-                  <div className={styles.infoPill}>
-                    <div className={styles.pillHeader}>
-                      <div className={styles.infoRow} style={{ marginBottom: 0 }}>
-                        <span className={styles.infoLabel}>CUIT:</span>
-                        <span className={styles.infoValue}>{cuit}</span>
-                      </div>
-                      
-                      {!representanteInicial && (
-                        <button
-                          type="button"
-                          className={styles.editButton}
-                          onClick={() => {
-                            setCuit("");
-                            setErrores({});
-                            setFaseInterna("ingresar");
-                          }}
-                          title="Modificar CUIT"
-                          aria-label="Modificar CUIT"
-                        >
-                          <FiEdit2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                    <div className={styles.infoRow}>
-                      <span className={styles.infoLabel}>Nombre:</span>
-                      <span className={styles.infoValue}>{nombre}</span>
-                    </div>
-                  </div>
-
-                  <div className={styles.radioGroup}>
-                    <label className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        value="Apoderado"
-                        checked={rol === "Apoderado"}
-                        onChange={(e) => setRol(e.target.value)}
-                      />
-                      <div className={styles.customRadio}></div>
-                      <span className={styles.radioText}>Apoderado</span>
-                    </label>
-
-                    <label className={styles.radioLabel}>
-                      <input
-                        type="radio"
-                        value="Representante Legal"
-                        checked={rol === "Representante Legal"}
-                        onChange={(e) => setRol(e.target.value)}
-                      />
-                      <div className={styles.customRadio}></div>
-                      <span className={styles.radioText}>
-                        Representante Legal
-                      </span>
-                    </label>
-                  </div>
-
-                  <div className={styles.inputRow}>
-                    <InputSocioMasked
-                      name="modalRepEmail_unique"
-                      label="Email Personal"
-                      type="email"
-                      icon={<FiMail />}
-                      error={errores.email}
-                      esValido={isEmailValido}
-                      value={email}
-                      onChange={(val) => {
-                        setEmail(val);
-                        if (errores.email)
-                          setErrores({ ...errores, email: null });
-                      }}
-                    />
-                    <InputSocioMasked
-                      name="modalRepCelular_unique"
-                      label="Celular (Sin 0 ni 15)"
-                      autoComplete="off"
-                      icon={<FiSmartphone />}
-                      mask={[
-                        { mask: "00 0000-0000" },
-                        { mask: "000 000-0000" }
-                      ]}
-                      error={errores.celular}
-                      esValido={isCelularValido}
-                      value={celular}
-                      onChange={(val) => {
-                        setCelular(val);
-                        if (errores.celular) {
-                          setErrores({ ...errores, celular: null });
-                        }
-                      }}
-                    />
-                  </div>
+                <div className={styles.cuitSearchBannerText}>
+                  <p className={styles.cuitSearchBannerTitle}>Validación segura con AFIP</p>
+                  <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del representante</p>
                 </div>
-              )}
-            </section>
-
-            {faseInterna === "completar" && (
-              <div className={styles.modalFooter}>
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="md"
-                  onClick={handleGuardarYCerrar}
-                >
-                  GUARDAR REPRESENTANTE
-                </Button>
               </div>
+              <div className={styles.cuitSearchInputWrapper}>
+                <BuscadorCuit
+                  name="cuit"
+                  control={control}
+                  label="CUIT del representante"
+                  onValidar={handleAfipLookup}
+                  error={errors.cuit?.message}
+                  esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
+                  buttonText="VALIDAR CUIT"
+                  isLoading={validando}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className={styles.summaryCard}>
+                <div className={styles.summaryTop}>
+                  <div className={styles.summaryLeft}>
+                    <span className={styles.summaryStatus}>
+                      <FiCheckCircle size={11} /> Representante validado con AFIP
+                    </span>
+                    <h2 className={styles.summaryName}>{watch("nombre") || "Representante"}</h2>
+                    <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
+                    {!representante && !representanteInicial && (
+                      <button
+                        type="button"
+                        className={styles.editLink}
+                        onClick={() => setAfipValidado(false)}
+                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
+                      >
+                        <FiEdit2 size={12} /> Cambiar CUIT
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.modalRow}>
+                <Controller
+                  name="nombre"
+                  control={control}
+                  rules={{ required: "El nombre es obligatorio" }}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("nombre", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Nombre Completo"
+                      icon={<FiUser />}
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+              </div>
+
+              <div className={styles.modalRow2}>
+                <Controller
+                  name="rol"
+                  control={control}
+                  rules={{ required: "El rol es obligatorio" }}
+                  render={({ fieldState }) => (
+                    <SelectSocio
+                      control={control}
+                      name="rol"
+                      label="Rol / Tipo Relación"
+                      icon={<FiUser />}
+                      options={opcionesRoles}
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+                
+                <Controller
+                  name="email"
+                  control={control}
+                  rules={{
+                    required: "El email es obligatorio",
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: "Email inválido",
+                    },
+                  }}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("email", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Correo Electrónico"
+                      icon={<FiMail />}
+                      error={fieldState.error?.message}
+                      tooltip="Email personal del representante. Se utilizará para el envío y firma digital de contratos y documentos legales."
+                    />
+                  )}
+                />
+              </div>
+
+              <div className={styles.modalRow2}>
+                <Controller
+                  name="telefono"
+                  control={control}
+                  rules={{ required: "El teléfono es obligatorio" }}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("telefono", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Celular / Teléfono"
+                      icon={<FiPhone />}
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+              </div>
+            </>
+          )}
+
+          <div className={styles.modalFooter}>
+            {(afipValidado || representante || representanteInicial) && (
+              <Button type="submit" variant="primary">
+                {representante || representanteInicial ? "Guardar Cambios" : "Agregar Representante"}
+              </Button>
             )}
           </div>
         </form>
-      </div>
-    </div>,
-    document.body
+      </Modal>
+
+      <ConfirmacionModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={onConfirmSave}
+        titulo={representante || representanteInicial ? "Actualizar Representante" : "Agregar Representante"}
+        mensaje={representante || representanteInicial ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas agregar este representante?"}
+      />
+    </>
   );
-};
+}

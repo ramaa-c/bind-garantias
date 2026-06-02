@@ -11,7 +11,7 @@ import {
   FiInfo,
 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
-import { RepresentanteModal } from "../RepresentanteModal/RepresentanteModal";
+import { RepresentanteModal } from "../../../RepresentanteModal/RepresentanteModal";
 import { Spinner } from "../../../../../ui";
 
 export function RepresentantesSection({

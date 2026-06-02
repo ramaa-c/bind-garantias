@@ -40,7 +40,7 @@ import { afipService } from "../../../../services/afipService";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { useObtenerTerceros } from "../../../../hooks/useTerceros";
 import styles from "./DocumentosLegajo.module.css";
-import { procesarArchivo, normalizarTexto } from "../../../../utils/fileUtils";
+import { procesarArchivo, normalizarTexto, formatBase64Size } from "../../../../utils/fileUtils";
 
 const ESTRUCTURA_LEGAJO = [
   {
@@ -113,7 +113,7 @@ export function DocumentosLegajo() {
               key,
               {
                 name: arch.nombrearchivo,
-                size: "Cargado",
+                size: arch.contenido ? formatBase64Size(arch.contenido) : "Disponible",
                 _uploaded: true,
                 _backendId: arch.socioarchivoid,
                 _tipodocumentoarchivoid: tipoId,
