@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, Spinner } from "../../../ui";
+import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, ProcesamientoModal } from "../../../ui";
+import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
@@ -22,6 +23,9 @@ export function RepresentanteModal({
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+
+  const { ejecutarValidaciones } = useCdaEngine();
 
   const { control, reset, setValue, watch, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -39,7 +43,8 @@ export function RepresentanteModal({
     if (errors.cuit?.type === "manual") {
       clearErrors("cuit");
     }
-  }, [cuitValue, clearErrors, errors.cuit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cuitValue, clearErrors]);
 
   useEffect(() => {
     if (isOpen) {
@@ -90,6 +95,38 @@ export function RepresentanteModal({
     setValidando(true);
     clearErrors("cuit");
     
+    setProcesoModal({
+      isOpen: true,
+      titulo: "Validando Representante",
+      pasos: [
+        { id: "sgr", etiqueta: "Conectando con SGR+", estado: "cargando", descripcion: "Validando situación e historial societario." },
+      ],
+      hasError: false,
+      isSystemError: false
+    });
+
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio);
+    
+    if (!result.success) {
+      setProcesoModal(prev => ({
+        ...prev,
+        hasError: true,
+        isSystemError: result.errors.some((e) => e.isSystemError),
+        pasos: prev.pasos.map(p => 
+          p.id === "sgr" ? { 
+              ...p, 
+              estado: "error", 
+              descripcion: `Falló la validación del representante:`,
+              errores: result.errors.map(e => e.message)
+          } : p
+        )
+      }));
+      setValidando(false);
+      return;
+    }
+    
+    setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+
     try {
       // 1. Buscar primero en la base de datos de terceros
       let terceroEncontrado = null;
@@ -150,28 +187,16 @@ export function RepresentanteModal({
         setAfipValidado(true);
         toast.success(representante || representanteInicial ? "Datos actualizados desde AFIP/LUFE." : "Datos del representante recuperados.");
       } else {
-        if (terceroEncontrado) {
-          const nombreRep = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Representante del Sistema";
-          setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
-          setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail || "", { shouldValidate: true, shouldDirty: true });
-          setValue("telefono", terceroEncontrado.telefono || terceroEncontrado.Telefono || "", { shouldValidate: true, shouldDirty: true });
-          setAfipValidado(true);
-          toast.info("No se halló AFIP/LUFE. Se usaron los datos locales del tercero.");
-        } else {
-          toast.error("CUIT no encontrado en AFIP/LUFE", {
-            description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
-          });
-          setValue("nombre", "");
-          setAfipValidado(true);
-        }
+        setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de AFIP." });
+        setAfipValidado(false);
       }
     } catch (err) {
       console.error("Error validando representante en AFIP/SGR:", err);
       toast.error("Servicio de AFIP/LUFE no disponible", {
-        description: "No se pudieron obtener datos automáticos. Podés ingresarlos manualmente.",
+        description: "No se pudieron obtener datos automáticos.",
       });
-      setValue("nombre", "");
-      setAfipValidado(true);
+      setError("cuit", { type: "manual", message: "Servicios de AFIP/LUFE caídos. Intente más tarde." });
+      setAfipValidado(false);
     } finally {
       setValidando(false);
     }
@@ -521,6 +546,16 @@ export function RepresentanteModal({
         onConfirm={onConfirmSave}
         titulo={representante || representanteInicial ? "Actualizar Representante" : "Agregar Representante"}
         mensaje={representante || representanteInicial ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas agregar este representante?"}
+      />
+
+      <ProcesamientoModal
+        isOpen={procesoModal.isOpen}
+        onClose={() => setProcesoModal(prev => ({ ...prev, isOpen: false }))}
+        titulo={procesoModal.titulo}
+        pasos={procesoModal.pasos}
+        hasError={procesoModal.hasError}
+        isSystemError={procesoModal.isSystemError}
+        onRetry={handleAfipLookup}
       />
     </>
   );

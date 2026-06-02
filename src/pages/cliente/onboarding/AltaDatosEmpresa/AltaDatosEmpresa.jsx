@@ -61,6 +61,7 @@ export const AltaDatosEmpresa = () => {
       provincia: "",
       celular: "",
       tipopersonaid: 0,
+      mescierre: null,
     },
   });
 
@@ -104,7 +105,9 @@ export const AltaDatosEmpresa = () => {
         socioestadoid: 9,
         codpos: "",
         tamanioempresaid: 0,
-        fechacierreejercicio: getCSharpIsoDate(),
+        fechacierreejercicio: data.mescierre 
+          ? `${new Date().getFullYear()}-${String(data.mescierre).padStart(2, "0")}-${String(new Date(new Date().getFullYear(), data.mescierre, 0).getDate()).padStart(2, "0")}T00:00:00`
+          : getCSharpIsoDate(),
         legajo: 0,
         tiporegimenivaid: 0,
         actividadespecifica: "",

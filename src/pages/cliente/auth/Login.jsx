@@ -117,7 +117,7 @@ const EmailPhase = ({ control, isPending, onRegister }) => (
       disabled={isPending}
     />
     <Button type="submit" variant="primary" disabled={isPending}>
-      {isPending ? "CONTINUANDO..." : "CONTINUAR"}
+      {isPending ? "INGRESANDO..." : "INGRESAR"}
     </Button>
     <div className={styles.formActions}>
       <Button type="button" variant="outline" onClick={onRegister} disabled={isPending}>

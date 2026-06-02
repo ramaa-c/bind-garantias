@@ -5,6 +5,7 @@ import { BuscadorCuit, ProcesamientoModal } from "../../../ui";
 import { sociosService } from "../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../hooks/useAfip";
 import { useValidarFormatoCuit } from "../../../../hooks/useSocios";
+import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
@@ -19,6 +20,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   const { mutateAsync: validarFormatoBackend, isPending: isLoadingFormato } =
     useValidarFormatoCuit();
   const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
+  const { mutateAsync: validarSocioCore } = useValidarSocioCore();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
 
   const { data: provinciasData } = useProvincias();
@@ -49,43 +51,57 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     clearErrors("cuit");
     setIsValidatingSocio(true);
 
+    try {
+      const respuestaFormato = await validarFormatoBackend(cuit);
+      if (respuestaFormato === false || respuestaFormato?.isValid === false) {
+        setError("cuit", {
+          type: "manual",
+          message: "Formato CUIT inválido",
+        });
+        setIsValidatingSocio(false);
+        return;
+      }
+    } catch (formatoError) {
+      const isClientError = formatoError?.response?.status >= 400 && formatoError?.response?.status < 500;
+      setError("cuit", {
+        type: "manual",
+        message: isClientError ? "Formato CUIT inválido" : "Error de conexión al validar formato",
+      });
+      setIsValidatingSocio(false);
+      return;
+    }
+
     // Abrimos el ProcesamientoModal
     setProcesoModal({
       isOpen: true,
       titulo: "Validando Empresa",
       pasos: [
-        { id: "formato", etiqueta: "Verificando formato del CUIT", estado: "cargando", descripcion: "Comprobando que el CUIT sea estructuralmente válido." },
-        { id: "afip", etiqueta: "Consultando padrón AFIP", estado: "pendiente", descripcion: "Obteniendo los datos de la empresa desde el padrón federal en tiempo real." },
-        { id: "cda", etiqueta: "Ejecutando validaciones CDA", estado: "pendiente", descripcion: "Comprobando políticas de riesgo y negocio para el alta." },
+        {
+          id: "afip",
+          etiqueta: "Consultando padrón AFIP",
+          estado: "cargando",
+          descripcion:
+            "Obteniendo los datos de la empresa desde el padrón federal en tiempo real.",
+        },
+        {
+          id: "sgrcore",
+          etiqueta: "Validando con SGRPlus",
+          estado: "pendiente",
+          descripcion: "Verificando estado del socio en el sistema core.",
+        },
+        {
+          id: "cda",
+          etiqueta: "Ejecutando validaciones CDA",
+          estado: "pendiente",
+          descripcion:
+            "Comprobando políticas de riesgo y negocio para el alta.",
+        },
       ],
       hasError: false,
       isSystemError: false,
     });
 
     try {
-      // 1. VALIDACIÓN DE FORMATO
-      try {
-        const respuestaFormato = await validarFormatoBackend(cuit);
-        if (respuestaFormato === false || respuestaFormato?.isValid === false) {
-          setError("cuit", { type: "manual", message: "Formato CUIT inválido" });
-          setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
-          return;
-        }
-      } catch (formatoError) {
-        setError("cuit", { type: "manual", message: "Error en validación de formato" });
-        setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
-        return;
-      }
-
-      // Avanzamos el primer paso
-      setProcesoModal(prev => ({
-        ...prev,
-        pasos: prev.pasos.map(p =>
-          p.id === "formato" ? { ...p, estado: "completado" } :
-          p.id === "afip" ? { ...p, estado: "cargando", etiqueta: "Consultando padrón AFIP" } : p
-        )
-      }));
-
       // 3. CONSULTA AFIP con Fallback a LUFE
       let afipData = null;
       try {
@@ -96,11 +112,18 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
       if (!afipData || !afipData.datosgenerales) {
         // Intentamos fallback a LUFE
-        setProcesoModal(prev => ({
+        setProcesoModal((prev) => ({
           ...prev,
-          pasos: prev.pasos.map(p =>
-            p.id === "afip" ? { ...p, etiqueta: "Probando en LUFE...", descripcion: "AFIP no disponible. Consultando entidad en LUFE en su lugar." } : p
-          )
+          pasos: prev.pasos.map((p) =>
+            p.id === "afip"
+              ? {
+                  ...p,
+                  etiqueta: "Probando en LUFE...",
+                  descripcion:
+                    "AFIP no disponible. Consultando entidad en LUFE en su lugar.",
+                }
+              : p,
+          ),
         }));
         try {
           const lufeData = await sociosService.obtenerEntidadLufe(cuit);
@@ -115,41 +138,97 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
       if (afipData && afipData.datosgenerales) {
         const dg = afipData.datosgenerales;
 
-        // Marcamos AFIP/LUFE como completado y CDA como cargando
-        setProcesoModal(prev => ({
+        // Marcamos AFIP/LUFE como completado y SGRCore como cargando
+        setProcesoModal((prev) => ({
           ...prev,
-          pasos: prev.pasos.map(p =>
-            p.id === "afip" ? { ...p, estado: "completado" } :
-            p.id === "cda" ? { ...p, estado: "cargando" } : p
-          )
+          pasos: prev.pasos.map((p) =>
+            p.id === "afip"
+              ? { ...p, estado: "completado" }
+              : p.id === "sgrcore"
+                ? { ...p, estado: "cargando" }
+                : p,
+          ),
+        }));
+
+        // ── VALIDACIÓN SGRPlus Core
+        try {
+          const sociosData = await sociosService.obtenerSocios({ Cuit: cuit });
+          const sociosArr = Array.isArray(sociosData) ? sociosData : sociosData?.data || [];
+          if (sociosArr.length > 0) {
+            const socioId = sociosArr[0].socioId || sociosArr[0].socioid || sociosArr[0].SocioID || sociosArr[0].id;
+            if (socioId) {
+              const resultSgrCore = await validarSocioCore({ socioId, cadenaValorId: 0 });
+              if (resultSgrCore?.data && resultSgrCore.data.success === false) {
+                setProcesoModal((prev) => ({
+                  ...prev,
+                  hasError: true,
+                  isSystemError: false,
+                  pasos: prev.pasos.map((p) =>
+                    p.id === "sgrcore"
+                      ? {
+                          ...p,
+                          estado: "error",
+                          errores: [resultSgrCore.data.message || "El socio no cumple con los requisitos del sistema."],
+                          error: "Rechazado por SGRPlus",
+                        }
+                      : p,
+                  ),
+                }));
+                return;
+              }
+            }
+          }
+        } catch (sgrError) {
+          if (sgrError?.response?.status !== 404) {
+             console.warn("Error consultando sgrcore ValidarSocio:", sgrError);
+          }
+        }
+
+        // Avanzamos a CDA
+        setProcesoModal((prev) => ({
+          ...prev,
+          pasos: prev.pasos.map((p) =>
+            p.id === "sgrcore"
+              ? { ...p, estado: "completado" }
+              : p.id === "cda"
+                ? { ...p, estado: "cargando" }
+                : p,
+          ),
         }));
 
         // ── VALIDACIÓN CDA (PANTALLA_INGRESO_CUIT)
-        const resultCda = await ejecutarValidaciones("PANTALLA_INGRESO_CUIT", cuit);
-        
+        const resultCda = await ejecutarValidaciones(
+          "PANTALLA_INGRESO_CUIT",
+          cuit,
+        );
+
         if (!resultCda.success) {
           setProcesoModal((prev) => ({
             ...prev,
             hasError: true,
-            isSystemError: resultCda.errors.some(e => e.isSystemError),
+            isSystemError: resultCda.errors.some((e) => e.isSystemError),
             pasos: prev.pasos.map((p) =>
-              p.id === "cda" ? { 
-                ...p, 
-                estado: "error", 
-                errores: resultCda.errors.map(e => e.message),
-                error: resultCda.errors.find(e => e.isInvalidante)?.message || "Error en validación CDA" 
-              } : p
+              p.id === "cda"
+                ? {
+                    ...p,
+                    estado: "error",
+                    errores: resultCda.errors.map((e) => e.message),
+                    error:
+                      resultCda.errors.find((e) => e.isInvalidante)?.message ||
+                      "Error en validación CDA",
+                  }
+                : p,
             ),
           }));
           return;
         }
 
         // Todo exitoso! Marcamos CDA como completado
-        setProcesoModal(prev => ({
+        setProcesoModal((prev) => ({
           ...prev,
-          pasos: prev.pasos.map(p =>
-            p.id === "cda" ? { ...p, estado: "completado" } : p
-          )
+          pasos: prev.pasos.map((p) =>
+            p.id === "cda" ? { ...p, estado: "completado" } : p,
+          ),
         }));
 
         const nombreCompleto =
@@ -161,37 +240,70 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         setValue("localidad", dom.localidad || "", { shouldValidate: true });
 
         const provNombreAfip = dom.descripcionprovincia || "";
-        const provMatched = matchProvinciaAfip(provNombreAfip, opcionesProvincias);
-        setValue("provincia", provMatched ? provMatched.value : provNombreAfip, {
-          shouldValidate: true,
-        });
+        const provMatched = matchProvinciaAfip(
+          provNombreAfip,
+          opcionesProvincias,
+        );
+        setValue(
+          "provincia",
+          provMatched ? provMatched.value : provNombreAfip,
+          {
+            shouldValidate: true,
+          },
+        );
 
         let tipoPersonaId = 0;
         const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
-        if (tipoPersonaStr.includes("JURIDICA") || tipoPersonaStr.includes("JURÍDICA")) {
+        if (
+          tipoPersonaStr.includes("JURIDICA") ||
+          tipoPersonaStr.includes("JURÍDICA")
+        ) {
           tipoPersonaId = 10;
-        } else if (tipoPersonaStr.includes("FISICA") || tipoPersonaStr.includes("FÍSICA")) {
+        } else if (
+          tipoPersonaStr.includes("FISICA") ||
+          tipoPersonaStr.includes("FÍSICA")
+        ) {
           tipoPersonaId = 1;
         }
         setValue("tipopersonaid", tipoPersonaId);
 
+        let mesCierre = null;
+        if (dg.mescierre) {
+          mesCierre = parseInt(dg.mescierre, 10);
+        } else if (dg.mes_cierre) {
+          mesCierre = parseInt(dg.mes_cierre, 10);
+        }
+        setValue("mescierre", mesCierre);
+
         setTimeout(() => {
-          setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+          setProcesoModal({
+            isOpen: false,
+            titulo: "",
+            pasos: [],
+            hasError: false,
+            isSystemError: false,
+          });
           if (onValidar) onValidar();
         }, 800);
       } else {
-        setProcesoModal(prev => ({
+        setProcesoModal((prev) => ({
           ...prev,
           hasError: true,
           isSystemError: false,
           pasos: prev.pasos.map((p) =>
-            p.id === "afip" ? { ...p, estado: "error", error: "No se encontraron datos en AFIP ni LUFE." } : p
+            p.id === "afip"
+              ? {
+                  ...p,
+                  estado: "error",
+                  error: "No se encontraron datos en AFIP ni LUFE.",
+                }
+              : p,
           ),
         }));
         return;
       }
     } catch (err) {
-      setProcesoModal(prev => ({
+      setProcesoModal((prev) => ({
         ...prev,
         hasError: true,
         isSystemError: true,
@@ -201,7 +313,8 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     }
   };
 
-  const isLoading = isValidatingSocio || isLoadingAfip || isLoadingFormato || isLoadingCda;
+  const isLoading =
+    isValidatingSocio || isLoadingAfip || isLoadingFormato || isLoadingCda;
 
   return (
     <div className={styles.pasoContainer}>
@@ -246,7 +359,15 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         pasos={procesoModal.pasos}
         hasError={procesoModal.hasError}
         isSystemError={procesoModal.isSystemError}
-        onClose={() => setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false })}
+        onClose={() =>
+          setProcesoModal({
+            isOpen: false,
+            titulo: "",
+            pasos: [],
+            hasError: false,
+            isSystemError: false,
+          })
+        }
         onRetry={handleValidar}
       />
     </div>
