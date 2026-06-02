@@ -57,6 +57,7 @@ export const AltaDatosEmpresa = () => {
       localidad: "",
       provincia: "",
       celular: "",
+      tipopersonaid: 0,
     },
   });
 
@@ -88,7 +89,7 @@ export const AltaDatosEmpresa = () => {
         telefono: data.celular,
         fax: "",
         email: user?.email || "",
-        tipopersonaid: 0,
+        tipopersonaid: data.tipopersonaid || 0,
         tipocarteraid: 0,
         sectorcontableid: 0,
         tipoactividadbcraid: 0,

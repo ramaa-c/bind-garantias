@@ -47,8 +47,22 @@ const ESTRUCTURA_SOCIOS = [
 ];
 
 export function SociosLegajo() {
+  const { socioIdActivo, tipoPersonaId } = useEmpresaActiva();
+
+  const tabsDisponibles = useMemo(() => {
+    if (tipoPersonaId === 1) {
+      return ESTRUCTURA_SOCIOS.filter(t => t.key !== "accionistas");
+    }
+    return ESTRUCTURA_SOCIOS;
+  }, [tipoPersonaId]);
+
   const [activeTab, setActiveTab] = useState(ESTRUCTURA_SOCIOS[0].key);
-  const { socioIdActivo } = useEmpresaActiva();
+
+  useEffect(() => {
+    if (tipoPersonaId === 1 && activeTab === "accionistas") {
+      setActiveTab("representantes");
+    }
+  }, [tipoPersonaId, activeTab]);
 
   const queryClient = useQueryClient();
   const { data: socioLegajoData, isLoading: loadingQuery } = useObtenerDatosSocioLegajo(socioIdActivo);
@@ -128,10 +142,10 @@ export function SociosLegajo() {
   return (
     <div className={styles.workspace}>
       <div className={styles.sidebarBg} />
-      {ESTRUCTURA_SOCIOS.map((doc, index) => {
+      {tabsDisponibles.map((doc, index) => {
         const isNewCategory =
           index === 0 ||
-          doc.category !== ESTRUCTURA_SOCIOS[index - 1].category;
+          doc.category !== tabsDisponibles[index - 1].category;
         const isActive = activeTab === doc.key;
 
         const isAccionistas = doc.key === "accionistas";
