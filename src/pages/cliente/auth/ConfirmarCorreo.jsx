@@ -1,32 +1,39 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
-import { IoIosMailUnread } from "react-icons/io";
 import { HiOutlineMailOpen } from "react-icons/hi";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
+import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+
+const RESEND_SECONDS = 60;
+const pad = (n) => String(n).padStart(2, "0");
+const fmt = (t) => `${pad(Math.floor(t / 60))}:${pad(t % 60)}`;
 
 const ConfirmarCorreo = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
-  const emailUsuario = location.state?.usuarioSkeletor?.email || location.state?.emailIngresado;
+  const emailUsuario =
+    location.state?.usuarioSkeletor?.email || location.state?.emailIngresado;
   const usuarioSkeletor = location.state?.usuarioSkeletor || null;
   const canal = location.state?.canal || "";
 
   const { mutate: reenviarCorreo, isPending } = useResetearPassword();
-  const [cooldown, setCooldown] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(RESEND_SECONDS);
 
   useEffect(() => {
-    if (cooldown > 0 && emailUsuario) {
-      const timer = setTimeout(() => setCooldown((c) => c - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [cooldown, emailUsuario]);
+    if (!emailUsuario || timeLeft <= 0) return;
+    const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
+    return () => clearTimeout(id);
+  }, [timeLeft, emailUsuario]);
+
+  const canResend = timeLeft === 0 && !isPending;
 
   const handleReenviar = () => {
-    if (cooldown > 0 || isPending) return;
+    if (!canResend) return;
 
     const getCSharpIsoDate = (addYears = 0) => {
       const date = new Date();
@@ -34,39 +41,39 @@ const ConfirmarCorreo = () => {
       return date.toISOString().split(".")[0];
     };
 
-    const payloadReset = {
-      email: emailUsuario,
-      usuariowebid: 0,
-      fchalta: usuarioSkeletor?.fchalta || getCSharpIsoDate(),
-      fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(1),
-      hashseguridad: canal || "canal1",
-      estado: "",
-      debecambiarclave: "",
-      esadministrador: "",
-      denominacion: "",
-    };
-
-    reenviarCorreo(payloadReset, {
-      onSuccess: () => {
-        toast.success("Enlace reenviado", {
-          description: "Revisá tu bandeja de entrada o la carpeta de SPAM.",
-        });
-        setCooldown(60);
+    reenviarCorreo(
+      {
+        email: emailUsuario,
+        usuariowebid: 0,
+        fchalta: usuarioSkeletor?.fchalta || getCSharpIsoDate(),
+        fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(1),
+        hashseguridad: canal || "canal1",
+        estado: "",
+        debecambiarclave: "",
+        esadministrador: "",
+        denominacion: "",
       },
-      onError: () => {
-        toast.error("Error al reenviar", {
-          description: "Ocurrió un error. Intentá más tarde.",
-        });
+      {
+        onSuccess: () => {
+          toast.success("Enlace reenviado", {
+            description: "Revisá tu bandeja de entrada o la carpeta de SPAM.",
+          });
+          setTimeLeft(RESEND_SECONDS);
+        },
+        onError: () => {
+          toast.error("Error al reenviar", {
+            description: "Ocurrió un error. Intentá más tarde.",
+          });
+        },
       },
-    });
+    );
   };
-
-  const isButtonDisabled = isPending || cooldown > 0;
 
   if (!emailUsuario) {
     setTimeout(() => {
       toast.error("Sesión inválida", {
-        description: "No se encontró información del registro. Volvé a intentarlo.",
+        description:
+          "No se encontró información del registro. Volvé a intentarlo.",
       });
     }, 0);
     return <Navigate to="/registro" replace />;
@@ -74,85 +81,140 @@ const ConfirmarCorreo = () => {
 
   return (
     <div className={styles.layoutSplit}>
+      {/* ── COLUMNA FORMULARIO ── */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img
-            src={logoBind}
-            alt="Logo BIND"
-            width="120"
-            onClick={() => navigate("/")}
-            className={styles.clickableLogo}
-          />
+          <div className={styles.logosWrapper}>
+            <img
+              src={logoBind}
+              alt="Logo BIND"
+              onClick={() => navigate("/")}
+              className={styles.clickableLogo}
+            />
+            {channelInfo?.id !== "default" && (
+              <>
+                <div className={styles.logoSeparator} />
+                <img
+                  src={channelInfo.logo}
+                  alt={`Logo ${channelInfo.nombre}`}
+                  className={styles.channelLogo}
+                />
+              </>
+            )}
+          </div>
         </div>
 
-        <div className={`${styles.cardModern} ${styles.textLeft}`}>
+        <div className={styles.cardModern}>
+          {/* Header */}
           <div className={styles.headerText}>
-            <h2 className={styles.titleJumbo}>Revisá tu correo</h2>
-            <p className={styles.textLead}>
-              Te enviamos un enlace de confirmación a: <br />
-              <span className={styles.boldWhiteText}>{emailUsuario}</span>
+            <h2>Revisá tu correo</h2>
+            <p>
+              Enviamos un enlace de confirmación a esta dirección. Hacé clic en
+              el enlace para activar tu cuenta.
             </p>
           </div>
 
-          <div
-            className={`${styles.supportContainerModern} ${styles.supportContainerClean}`}
-          >
-            <>
-              <p style={{ marginBottom: "0.5rem" }}>
-                ¿No te llegó el correo?{" "}
-                <span
-                  className={`${styles.linkYellow} ${isButtonDisabled ? styles.disabledLink : ""}`}
-                  role="button"
-                  tabIndex={isButtonDisabled ? -1 : 0}
-                  onClick={!isButtonDisabled ? handleReenviar : undefined}
-                  onKeyDown={(e) => {
-                    if (!isButtonDisabled && (e.key === "Enter" || e.key === " ")) {
-                      e.preventDefault();
-                      handleReenviar();
-                    }
-                  }}
-                  style={{
-                    opacity: isButtonDisabled ? 0.6 : 1,
-                    cursor: isButtonDisabled ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {isPending
-                    ? "Reenviando..."
-                    : cooldown > 0
-                      ? `Reenviar enlace en ${cooldown}s`
-                      : "Reenviar enlace"}
-                </span>
+          {/* Email destacado */}
+          <div className={styles.emailDestacado}>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="m2 7 8.5 6a2 2 0 0 0 3 0L22 7" />
+            </svg>
+            {emailUsuario}
+          </div>
+
+          {/* Pasos guía */}
+          <div className={styles.instrucciones}>
+            <div className={styles.instruccionItem}>
+              <span className={styles.instruccionNum}>1</span>
+              <p className={styles.instruccionTxt}>
+                Abrí tu casilla de <strong>{emailUsuario}</strong>
               </p>
-              <p>
-                ¿El correo es incorrecto?{" "}
-                <span
-                  className={`${styles.linkYellow} ${styles.linkYellowReset}`}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => navigate("/registro")}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      navigate("/registro");
-                    }
-                  }}
-                >
-                  Registrate nuevamente
-                </span>
+            </div>
+            <div className={styles.instruccionItem}>
+              <span className={styles.instruccionNum}>2</span>
+              <p className={styles.instruccionTxt}>
+                Buscá un correo de <strong>BIND</strong> con el asunto{" "}
+                <strong>"Activá tu cuenta"</strong>
               </p>
-            </>
+            </div>
+            <div className={styles.instruccionItem}>
+              <span className={styles.instruccionNum}>3</span>
+              <p className={styles.instruccionTxt}>
+                Si no lo encontrás, revisá la carpeta de{" "}
+                <strong>SPAM o correo no deseado</strong>
+              </p>
+            </div>
+          </div>
+
+          {/* Fila de reenvío — mismo patrón que OtpPhase */}
+          <div className={styles.resendRow}>
+            <span className={styles.resendLabel}>¿No te llegó el correo?</span>
+            {canResend ? (
+              <button
+                type="button"
+                className={styles.resendBtn}
+                onClick={handleReenviar}
+                disabled={isPending}
+              >
+                {isPending ? "Reenviando..." : "Reenviar enlace"}
+              </button>
+            ) : (
+              <span className={styles.resendTimer}>{fmt(timeLeft)}</span>
+            )}
+          </div>
+
+          {/* Correo incorrecto */}
+          <div className={styles.supportContainerModern}>
+            <p>
+              ¿El correo es incorrecto?{" "}
+              <span
+                className={styles.linkYellow}
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/registro")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/registro");
+                  }
+                }}
+              >
+                Registrate nuevamente
+              </span>
+            </p>
           </div>
         </div>
       </section>
 
+      {/* ── COLUMNA MARCA ── */}
       <section className={`${styles.sideBrand} ${styles.sideBrandCentered}`}>
         <div className={styles.confirmarCorreoBrandContent}>
           <div className={styles.heroIconWrapper}>
-            <HiOutlineMailOpen className={styles.heroIcon} size={120} strokeWidth={1.5} />
+            <HiOutlineMailOpen
+              className={styles.heroIcon}
+              size={96}
+              strokeWidth={1.2}
+            />
           </div>
           <h2 className={styles.brandTitleLarge}>
-            Revisá tu <br /><em className={styles.brandEm}>bandeja de entrada</em>
+            Revisá tu
+            <br />
+            <em className={styles.brandEm}>bandeja de entrada</em>
           </h2>
+          <p className={styles.brandSubtitle}>
+            El enlace expira en 5 minutos.
+          </p>
         </div>
       </section>
     </div>
