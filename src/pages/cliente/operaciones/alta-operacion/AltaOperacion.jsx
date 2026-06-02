@@ -24,11 +24,10 @@ import {
   ConfirmacionBorradorModal,
 } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
-import { Alert, Spinner, LoadingScreen, ProcesamientoModal } from "../../../../components/ui";
+import { Alert, Spinner, LoadingScreen } from "../../../../components/ui";
 import styles from "./AltaOperacion.module.css";
 import { solicitudesService } from "../../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { lineaService } from "../../../../services/lineaService";
 import { afipService } from "../../../../services/afipService";
 import { tercerosService } from "../../../../services/tercerosService";
@@ -42,7 +41,6 @@ export const AltaOperacion = () => {
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
-  const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
   const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [buscandoSocios, setBuscandoSocios] = useState(false);
@@ -50,107 +48,13 @@ export const AltaOperacion = () => {
   const [validandoAcceso, setValidandoAcceso] = useState(true);
   const [archivosBackend, setArchivosBackend] = useState([]);
 
-  const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
-
   const handleContinuarSocios = async () => {
     const sociosList = getValues("socios") || [];
     if (sociosList.length === 0) {
       toast.error("Debe declarar al menos un socio.");
       return;
     }
-
-    // Inicializamos el modal de procesamiento con los pasos definidos
-    setProcesoModal({
-      isOpen: true,
-      titulo: "Validando Socios",
-      pasos: [
-        { id: "consistencia", etiqueta: "Verificando consistencia de datos", estado: "cargando", descripcion: "Comprobando que la información provista sea correcta." },
-        { id: "sgr", etiqueta: "Conectando con SGR+", estado: "pendiente", descripcion: "Validando situación e historial societario." },
-        { id: "finalizando", etiqueta: "Finalizando", estado: "pendiente", descripcion: "Preparando cálculo de montos." },
-      ],
-      hasError: false,
-      isSystemError: false
-    });
-
-    console.log(
-      "[AltaOperacion] Iniciando validaciones internas CDA para cada Socio declarado...",
-    );
-
-    const cuitLimpioEmpresa = cuitActivo
-      ? String(cuitActivo).replace(/\D/g, "")
-      : "";
-
-    // Simulamos/avanzamos el estado de carga (ejemplo demostrativo)
-    setProcesoModal(prev => ({
-      ...prev,
-      pasos: prev.pasos.map(p => 
-        p.id === "consistencia" ? { ...p, estado: "completado" }
-        : p.id === "sgr" ? { ...p, estado: "cargando" }
-        : p
-      )
-    }));
-
-    for (const socio of sociosList) {
-      const socioCuitLimpio = String(socio.cuit).replace(/\D/g, "");
-
-      if (cuitLimpioEmpresa && socioCuitLimpio === cuitLimpioEmpresa) {
-        console.log(
-          `[AltaOperacion] Omitiendo validación de socio CDA para la propia empresa (CUIT: ${socioCuitLimpio})`,
-        );
-        continue;
-      }
-
-      console.log(
-        `[AltaOperacion] Validando socio: "${socio.nombre}" (CUIT: ${socioCuitLimpio})`,
-      );
-
-      const result = await ejecutarValidaciones(
-        "PANTALLA_SOCIOS",
-        socioCuitLimpio,
-      );
-      if (!result.success) {
-        console.error(
-          `[AltaOperacion] Validación CDA fallida para socio "${socio.nombre}":`,
-          result.errors,
-        );
-        
-        setProcesoModal(prev => ({
-          ...prev,
-          hasError: true,
-          isSystemError: result.errors.some((e) => e.isSystemError),
-          pasos: prev.pasos.map(p => 
-            p.id === "sgr" ? { 
-                ...p, 
-                estado: "error", 
-                descripcion: `Falló la validación del socio "${socio.nombre}":`,
-                errores: result.errors.map(e => e.message)
-            }
-            : p.id === "finalizando" ? { ...p, estado: "error", descripcion: "Proceso interrumpido." }
-            : p
-          )
-        }));
-        return;
-      }
-    }
-
-    // Finalizamos
-    setProcesoModal(prev => ({
-      ...prev,
-      pasos: prev.pasos.map(p => 
-        p.id === "sgr" ? { ...p, estado: "completado" }
-        : p.id === "finalizando" ? { ...p, estado: "cargando" }
-        : p
-      )
-    }));
-
-    console.log(
-      "[AltaOperacion] Todos los socios superaron las validaciones CDA con éxito. Avanzando a la calculadora de montos.",
-    );
-    
-    setTimeout(() => {
-      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
-      setPasoActual(2);
-    }, 800); // Delay un poco más largo para que termine la animación
+    setPasoActual(2);
   };
 
   useEffect(() => {
@@ -1396,15 +1300,6 @@ export const AltaOperacion = () => {
         onClose={() => setIsHelpOpen(false)}
         contexto="alta_operacion"
         pasoActual={pasoActual}
-      />
-      <ProcesamientoModal 
-        isOpen={procesoModal.isOpen} 
-        titulo={procesoModal.titulo} 
-        pasos={procesoModal.pasos} 
-        hasError={procesoModal.hasError}
-        isSystemError={procesoModal.isSystemError}
-        onClose={() => setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false })}
-        onRetry={handleContinuarSocios}
       />
     </div>
   );

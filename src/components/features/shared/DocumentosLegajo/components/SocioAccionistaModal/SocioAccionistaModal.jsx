@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, CargaArchivos } from "../../../../../ui";
+import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, CargaArchivos, ProcesamientoModal } from "../../../../../ui";
+import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
+import { useEmpresaActiva } from "../../../../../../hooks/useEmpresaActiva";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
@@ -169,6 +171,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
   const [guardando, setGuardando] = useState(false);
+  const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+
+  const { ejecutarValidaciones } = useCdaEngine();
+  const { cuitActivo } = useEmpresaActiva();
 
   const relacionId = socio?.relacionId || 
                      socio?.relacion?.sociotercerorelacionid || 
@@ -347,6 +353,43 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     setValidando(true);
 
     clearErrors("cuit");
+
+    const cuitLimpioEmpresa = cuitActivo ? String(cuitActivo).replace(/\D/g, "") : "";
+
+    if (cuitLimpioEmpresa && cuitLimpio !== cuitLimpioEmpresa) {
+      setProcesoModal({
+        isOpen: true,
+        titulo: "Validando Socio",
+        pasos: [
+          { id: "sgr", etiqueta: "Conectando con SGR+", estado: "cargando", descripcion: "Validando situación e historial societario." },
+        ],
+        hasError: false,
+        isSystemError: false
+      });
+
+      const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio);
+      
+      if (!result.success) {
+        setProcesoModal(prev => ({
+          ...prev,
+          hasError: true,
+          isSystemError: result.errors.some((e) => e.isSystemError),
+          pasos: prev.pasos.map(p => 
+            p.id === "sgr" ? { 
+                ...p, 
+                estado: "error", 
+                descripcion: `Falló la validación del socio:`,
+                errores: result.errors.map(e => e.message)
+            } : p
+          )
+        }));
+        setValidando(false);
+        return;
+      }
+      
+      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+    }
+
     try {
 
       // 1. Buscar primero en la base de datos de terceros
@@ -488,6 +531,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const onConfirmSave = async () => {
     const formData = getValues();
     setGuardando(true);
+    const mainToastId = toast.loading("Guardando datos del accionista...");
     try {
       const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
       let terceroId = null;
@@ -555,7 +599,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           momento: ahora,
         };
         await tercerosService.actualizarRelacionDeSocio(payloadRel);
-        toast.success("Accionista actualizado correctamente.");
       } else {
         const payloadRel = {
           socioid: socioIdActivo,
@@ -582,11 +625,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           ],
         };
         await tercerosService.guardarRelacionesDeSocio(payloadRel);
-        toast.success("Accionista agregado al legajo.");
       }
 
       if (dniFrenteFile instanceof File || dniDorsoFile instanceof File) {
-        const uploadToastId = toast.loading("Subiendo documentos de identidad del accionista...");
+        toast.loading("Subiendo documentos de identidad del accionista...", { id: mainToastId });
         try {
           const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
           if (dniFrenteFile instanceof File) {
@@ -615,13 +657,13 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               await socioArchivoService.subirArchivo(socioIdActivo, dniDorsoFile, "socio-dorso", descDorso);
             }
           }
-          toast.success("Documentos de identidad subidos correctamente.", { id: uploadToastId });
         } catch (uploadErr) {
           console.error("[MODAL - ACCIONISTA] Error subiendo archivos de DNI:", uploadErr);
-          toast.error("Error al subir los documentos de identidad.", { id: uploadToastId });
           throw uploadErr;
         }
       }
+
+      toast.success(relacionId ? "Accionista actualizado correctamente." : "Accionista guardado correctamente.", { id: mainToastId });
 
       if (onSuccess) onSuccess();
       setShowConfirm(false);
@@ -632,9 +674,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         Object.keys(backendErrors).forEach((key) => {
           setError(key, { type: "server", message: backendErrors[key] });
         });
-        toast.error("Por favor, revisá los errores en el formulario.");
+        toast.error("Por favor, revisá los errores en el formulario.", { id: mainToastId });
       } else {
-        toast.error("Ocurrió un error inesperado al guardar los datos.");
+        toast.error("Ocurrió un error inesperado al guardar los datos.", { id: mainToastId });
       }
     } finally {
       setGuardando(false);
@@ -912,6 +954,15 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         titulo={socio ? "Actualizar Accionista" : "Agregar Accionista"}
         mensaje={socio ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas agregar este accionista?"}
         isLoading={guardando}
+      />
+      <ProcesamientoModal 
+        isOpen={procesoModal.isOpen} 
+        titulo={procesoModal.titulo} 
+        pasos={procesoModal.pasos} 
+        hasError={procesoModal.hasError}
+        isSystemError={procesoModal.isSystemError}
+        onClose={() => setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false })}
+        onRetry={handleAfipLookup}
       />
     </>
   );
