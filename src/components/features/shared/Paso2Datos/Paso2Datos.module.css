@@ -95,7 +95,7 @@
 }
 
 .summaryCuit {
-  color: var(--text-dim, #444);
+  color: #888888;
   font-size: 0.75rem;
   margin: 0;
 }

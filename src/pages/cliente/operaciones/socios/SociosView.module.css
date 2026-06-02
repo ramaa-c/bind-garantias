@@ -107,6 +107,15 @@
 
 .pageContainer > * { animation: fadeIn 0.3s ease backwards; }
 
+.spinIcon {
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* ── DESKTOP ─────────────────────────────────────────────────────────────────── */
 
 @media (min-width: 48rem) {

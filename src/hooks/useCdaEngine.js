@@ -32,7 +32,6 @@ export const useCdaEngine = () => {
         `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}" y CUIT ${cuitLimpio}`
       );
 
-      // Invocar al nuevo endpoint GET api/cda/execute
       await cdaService.ejecutarCda(pantalla, cuitLimpio);
 
       console.log(
@@ -47,21 +46,36 @@ export const useCdaEngine = () => {
       const responseData = err.response?.data;
       console.log("[CDA ENGINE] Response data:", responseData);
 
+      // Detectar errores graves de infraestructura/base de datos
+      const isInfraError = 
+        err.response?.status >= 500 || 
+        (typeof responseData === "string" && /FireDAC|Exception|Cannot acquire item|Connection/i.test(responseData));
+
       // Extraer los errores crudos desde distintas estructuras de respuesta posibles
       let rawErrors = [];
-      if (Array.isArray(responseData)) {
-        rawErrors = responseData;
-      } else if (responseData && Array.isArray(responseData.errors)) {
-        rawErrors = responseData.errors;
-      } else if (responseData && typeof responseData === "object") {
-        rawErrors = [responseData];
+      if (!isInfraError) {
+        if (typeof responseData === "string") {
+          // El backend mandó un string plano, quizás separado por saltos de línea
+          const msgs = responseData.split(/\r?\n/).filter(line => line.trim().length > 0);
+          rawErrors = msgs.map(msg => ({ descripcion: msg.trim(), bloqueante: true, cdaid: 0 }));
+        } else if (Array.isArray(responseData)) {
+          rawErrors = responseData;
+        } else if (responseData && Array.isArray(responseData.errors)) {
+          rawErrors = responseData.errors;
+        } else if (responseData && typeof responseData === "object") {
+          rawErrors = [responseData];
+        }
       }
 
-      // Si no hay errores devueltos por el backend pero falló el request (ej. 500 o error de red)
-      if (rawErrors.length === 0 || !responseData) {
+      // Si no hay errores devueltos por el backend, o falló el request (ej. 500 o error de red o infraestructura)
+      if (rawErrors.length === 0 || !responseData || isInfraError) {
         const isSystemError = true;
         const isInvalidante = true;
-        const msg = err.response?.data?.message || err.message || "Error de comunicación con el servicio de validación CDA.";
+        
+        let msg = err.response?.data?.message || err.message || "Error de comunicación con el servicio de validación CDA.";
+        if (isInfraError) {
+          msg = "El servicio de validaciones no se encuentra disponible momentáneamente. Por favor, intente nuevamente.";
+        }
         
         setLoading(false);
         return {
@@ -88,7 +102,7 @@ export const useCdaEngine = () => {
         const isInvalidante = cdaId === 10 ? false : isBloqueante;
 
         const backendMessage = raw.descripcion || raw.Descripcion || raw.message || raw.Message;
-        const mappedMessage = CDA_MESSAGES[cdaId] || backendMessage || "Error de validación CDA desconocido.";
+        const mappedMessage = backendMessage || CDA_MESSAGES[cdaId] || "Error de validación CDA desconocido.";
 
         return {
           cdaid: cdaId,
