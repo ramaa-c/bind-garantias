@@ -47,14 +47,30 @@ export const base64ToBlob = (base64, mimeType) => {
   return new Blob([byteArray], { type: mimeType });
 };
 
+export const detectMimeTypeFromBase64 = (base64Str) => {
+  if (!base64Str || typeof base64Str !== "string") return null;
+  const clean = base64Str.substring(0, 30);
+  if (clean.startsWith("JVBERi")) {
+    return "application/pdf";
+  }
+  if (clean.startsWith("iVBORw0KGgo")) {
+    return "image/png";
+  }
+  if (clean.startsWith("/9j/")) {
+    return "image/jpeg";
+  }
+  return null;
+};
+
 export const procesarArchivo = async (
   fileObj,
   archivosBackend = [],
   mode = "view",
+  fileLabel = "archivo",
 ) => {
   if (!fileObj) return;
   try {
-    if (fileObj instanceof File) {
+    if (fileObj instanceof File && !fileObj._uploaded && !fileObj._backendId) {
       const url = URL.createObjectURL(fileObj);
       if (mode === "download") {
         const a = document.createElement("a");
@@ -82,19 +98,48 @@ export const procesarArchivo = async (
 
     if (!fileData.contenido) {
       toast.error(
-        "El archivo no posee contenido válido para descargar o visualizar.",
+        `El ${fileLabel} no posee contenido válido para descargar o visualizar.`,
       );
       return;
     }
 
-    const mimeType = getMimeType(fileData.nombrearchivo);
+    const toastId = toast.loading(
+      mode === "download"
+        ? `Preparando descarga de ${fileLabel}...`
+        : `Preparando visualización de ${fileLabel}...`,
+    );
+
+    let mimeType = getMimeType(fileData.nombrearchivo);
+    if (mimeType === "application/octet-stream" && fileData.contenido) {
+      const detected = detectMimeTypeFromBase64(fileData.contenido);
+      if (detected) {
+        mimeType = detected;
+      }
+    }
+
+    let fileName = fileData.nombrearchivo || "archivo";
+    if (mimeType === "application/pdf" && !String(fileName).toLowerCase().endsWith(".pdf")) {
+      fileName += ".pdf";
+    } else if (mimeType === "image/png" && !String(fileName).toLowerCase().endsWith(".png")) {
+      fileName += ".png";
+    } else if (mimeType === "image/jpeg" && !String(fileName).toLowerCase().endsWith(".jpg") && !String(fileName).toLowerCase().endsWith(".jpeg")) {
+      fileName += ".jpg";
+    }
+
     const blob = base64ToBlob(fileData.contenido, mimeType);
     const url = URL.createObjectURL(blob);
+
+    toast.success(
+      mode === "download"
+        ? `${fileLabel.charAt(0).toUpperCase() + fileLabel.slice(1)} descargado correctamente.`
+        : `${fileLabel.charAt(0).toUpperCase() + fileLabel.slice(1)} listo.`,
+      { id: toastId },
+    );
 
     if (mode === "download") {
       const a = document.createElement("a");
       a.href = url;
-      a.download = fileData.nombrearchivo;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -104,7 +149,7 @@ export const procesarArchivo = async (
     }
   } catch (error) {
     console.error("Error al procesar archivo:", error);
-    toast.error("Ocurrió un error al intentar procesar el archivo.");
+    toast.error(`Ocurrió un error al intentar procesar el ${fileLabel}.`);
   }
 };
 

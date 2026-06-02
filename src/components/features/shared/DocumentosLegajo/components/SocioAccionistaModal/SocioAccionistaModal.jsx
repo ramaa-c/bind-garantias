@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, CargaArchivos } from "../../../../../ui";
+import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, CargaArchivos, Spinner } from "../../../../../ui";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
-import { formatBase64Size } from "../../../../../../utils/fileUtils";
+import { formatBase64Size, procesarArchivo } from "../../../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../../../utils/provinciaUtils";
 import { useProvincias } from "../../../../../../hooks/useCatalogos";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
@@ -19,100 +19,6 @@ const normalizarTexto = (str) =>
     .replace(/[\u0300-\u036f]/g, "")
     .trim()
     .toUpperCase();
-
-
-const getMimeType = (filename) => {
-  const ext = String(filename || "").split('.').pop().toLowerCase();
-  switch (ext) {
-    case 'pdf': return 'application/pdf';
-    case 'jpg':
-    case 'jpeg': return 'image/jpeg';
-    case 'png': return 'image/png';
-    case 'gif': return 'image/gif';
-    case 'txt': return 'text/plain';
-    case 'doc': return 'application/msword';
-    case 'docx': return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-    case 'xls': return 'application/vnd.ms-excel';
-    case 'xlsx': return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    default: return 'application/octet-stream';
-  }
-};
-
-const base64ToBlob = (base64, mimeType) => {
-  const byteCharacters = atob(base64);
-  const byteNumbers = new Array(byteCharacters.length);
-  for (let i = 0; i < byteCharacters.length; i++) {
-    byteNumbers[i] = byteCharacters.charCodeAt(i);
-  }
-  const byteArray = new Uint8Array(byteNumbers);
-  return new Blob([byteArray], { type: mimeType });
-};
-
-const procesarArchivo = async (fileObj, archivosBackend = [], mode = 'view') => {
-  if (!fileObj) return;
-  try {
-    if (fileObj instanceof File) {
-      const url = URL.createObjectURL(fileObj);
-      if (mode === 'download') {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileObj.name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(url), 100);
-      } else {
-        window.open(url, '_blank');
-      }
-      return;
-    }
-
-    let fileData = fileObj;
-    if (!fileData.contenido && fileObj._backendId) {
-      const fullFile = archivosBackend.find((a) => a.socioarchivoid === fileObj._backendId);
-      if (fullFile && fullFile.contenido) {
-        fileData = fullFile;
-      }
-    }
-
-    if (!fileData.contenido) {
-      toast.error("El DNI no posee contenido válido para descargar o visualizar.");
-      return;
-    }
-
-    const toastId = toast.loading(
-      mode === 'download' 
-        ? "Preparando DNI..." 
-        : "Preparando visualización del DNI..."
-    );
-
-    const mimeType = getMimeType(fileData.nombrearchivo);
-    const blob = base64ToBlob(fileData.contenido, mimeType);
-    const url = URL.createObjectURL(blob);
-
-    toast.success(
-      mode === 'download' 
-        ? "DNI descargado correctamente." 
-        : "DNI cargado correctamente.", 
-      { id: toastId }
-    );
-
-    if (mode === 'download') {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileData.nombrearchivo;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 100);
-    } else {
-      window.open(url, '_blank');
-    }
-  } catch (error) {
-    console.error("Error al procesar archivo:", error);
-    toast.error("Ocurrió un error al intentar procesar el DNI.");
-  }
-};
 
 const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDownload, fileKey, hasError }) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -165,6 +71,7 @@ const DEFAULT_ACCIONISTAS = [];
 
 export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
   const [validando, setValidando] = useState(false);
+  const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
@@ -338,6 +245,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     }
   }, [isOpen, socio, reset]);
 
+
   const handleAfipLookup = async () => {
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
     if (!cuitLimpio || cuitLimpio.length !== 11) {
@@ -348,7 +256,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
     clearErrors("cuit");
     try {
-
       // 1. Buscar primero en la base de datos de terceros
       let terceroEncontrado = null;
       try {
@@ -361,26 +268,18 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         console.warn("[SocioAccionistaModal] Error buscando tercero en base de datos local:", dbErr);
       }
 
-      if (terceroEncontrado) {
+      // Si existe en la BD y tiene los datos mínimos de contacto, los usamos directamente si no estamos en modo edición
+      const tieneDatosCompletos = terceroEncontrado && 
+        (terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail) &&
+        (terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion);
+
+      if (terceroEncontrado && tieneDatosCompletos && !socio) {
         const nombreSocio = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Socio del Sistema";
         setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
-        
-        if (terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail) {
-          setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail, { shouldValidate: true, shouldDirty: true });
-        }
-        if (terceroEncontrado.telefono || terceroEncontrado.Telefono) {
-          setValue("celular", terceroEncontrado.telefono || terceroEncontrado.Telefono, { shouldValidate: true, shouldDirty: true });
-        }
-        
-        const direccionVal = terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "";
-        if (direccionVal) {
-          setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
-        }
-        
-        const locVal = terceroEncontrado.contacto || terceroEncontrado.Contacto || terceroEncontrado.localidad || "";
-        if (locVal) {
-          setValue("localidad", locVal, { shouldValidate: true, shouldDirty: true });
-        }
+        setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail || "", { shouldValidate: true, shouldDirty: true });
+        setValue("celular", terceroEncontrado.telefono || terceroEncontrado.Telefono || "", { shouldValidate: true, shouldDirty: true });
+        setValue("direccion", terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "", { shouldValidate: true, shouldDirty: true });
+        setValue("localidad", terceroEncontrado.contacto || terceroEncontrado.Contacto || terceroEncontrado.localidad || "", { shouldValidate: true, shouldDirty: true });
         
         const provId = terceroEncontrado.provinciaid || terceroEncontrado.ProvinciaID || 0;
         if (provId) {
@@ -393,14 +292,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         return;
       }
 
-      // 2. Fallback a AFIP
+      // 2. Si no tiene datos completos o es modo edición, consultamos AFIP/LUFE
       let res = null;
       try {
         res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
       } catch (afipErr) {
         console.warn("[SocioAccionistaModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
-
-        
         try {
           const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
           if (lufeEntidad && lufeEntidad.success) {
@@ -413,39 +310,62 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
       if (res && res.datosgenerales) {
         const dg = res.datosgenerales;
-        const nombreSocio = dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Socio AFIP";
+        const nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                            dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Socio AFIP";
         setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
         
-        if (dg.email || dg.emailfacturacion) {
-          setValue("email", dg.email || dg.emailfacturacion, { shouldValidate: true, shouldDirty: true });
-        }
-        if (dg.telefono) {
-          setValue("celular", dg.telefono, { shouldValidate: true, shouldDirty: true });
-        }
+        const emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
+        setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
+        
+        const celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
+        setValue("celular", celularVal, { shouldValidate: true, shouldDirty: true });
 
         const dom = dg.domiciliofiscal || dg.domicilio;
-        if (dom) {
-          const addressVal = dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "") || "";
-          if (addressVal) setValue("direccion", addressVal, { shouldValidate: true, shouldDirty: true });
-          
-          const locVal = dom.localidad || dom.localidadNombre || "";
-          if (locVal) setValue("localidad", locVal, { shouldValidate: true, shouldDirty: true });
-          
+        const direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) || 
+                             (dom ? (dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "")) : "") || "";
+        setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
+        
+        const localidadVal = (terceroEncontrado?.contacto || terceroEncontrado?.Contacto || terceroEncontrado?.localidad) ||
+                             (dom ? (dom.localidad || dom.localidadNombre) : "") || "";
+        setValue("localidad", localidadVal, { shouldValidate: true, shouldDirty: true });
+        
+        let provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
+        if (!provIdVal && dom) {
           const provNombre = dom.descripcionprovincia || dom.provincia || "";
           if (provNombre) {
             const match = matchProvinciaAfip(provNombre, opcionesProvincias);
             if (match) {
-              setValue("provinciaid", String(match.value), { shouldValidate: true, shouldDirty: true });
+              provIdVal = match.value;
             }
           }
         }
+        if (provIdVal) {
+          setValue("provinciaid", String(provIdVal), { shouldValidate: true, shouldDirty: true });
+        }
+        
         setAfipValidado(true);
+        toast.success(socio ? "Datos actualizados desde AFIP/LUFE." : "Datos del accionista recuperados.");
       } else {
-        toast.error("CUIT no encontrado en AFIP/LUFE", {
-          description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
-        });
-        setValue("nombre", "");
-        setAfipValidado(true);
+        if (terceroEncontrado) {
+          const nombreSocio = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Socio del Sistema";
+          setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
+          setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail || "", { shouldValidate: true, shouldDirty: true });
+          setValue("celular", terceroEncontrado.telefono || terceroEncontrado.Telefono || "", { shouldValidate: true, shouldDirty: true });
+          setValue("direccion", terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "", { shouldValidate: true, shouldDirty: true });
+          setValue("localidad", terceroEncontrado.contacto || terceroEncontrado.Contacto || terceroEncontrado.localidad || "", { shouldValidate: true, shouldDirty: true });
+          const provId = terceroEncontrado.provinciaid || terceroEncontrado.ProvinciaID || 0;
+          if (provId) {
+            setValue("provinciaid", String(provId), { shouldValidate: true, shouldDirty: true });
+          }
+          setAfipValidado(true);
+          toast.info("No se halló AFIP/LUFE. Se usaron los datos locales del tercero.");
+        } else {
+          toast.error("CUIT no encontrado en AFIP/LUFE", {
+            description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
+          });
+          setValue("nombre", "");
+          setAfipValidado(true);
+        }
       }
     } catch (err) {
       console.error("Error validando CUIT en AFIP/SGR:", err);
@@ -683,7 +603,16 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 <div className={styles.summaryTop}>
                   <div className={styles.summaryLeft}>
                     <span className={styles.summaryStatus}>
-                      <FiCheckCircle size={11} /> Accionista validado con AFIP
+                      {enriqueciendoAuto ? (
+                        <>
+                          <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
+                          Enriqueciendo datos...
+                        </>
+                      ) : (
+                        <>
+                          <FiCheckCircle size={11} /> Accionista validado con AFIP
+                        </>
+                      )}
                     </span>
                     <input
                       type="text"
@@ -693,7 +622,17 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       placeholder="Nombre o Razón Social"
                     />
                     <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-                    {!socio && (
+                    {socio ? (
+                      <button
+                        type="button"
+                        className={styles.editLink}
+                        onClick={handleAfipLookup}
+                        disabled={validando || enriqueciendoAuto}
+                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
+                      >
+                        <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar AFIP"}
+                      </button>
+                    ) : (
                       <button
                         type="button"
                         className={styles.editLink}
@@ -877,8 +816,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   hasError={errorDniFrente}
                   onChange={(f) => { setDniFrenteFile(f); setFilesChanged(true); setErrorDniFrente(false); }}
                   onEdit={() => document.getElementById(`file-input-frente`).click()}
-                  onView={() => procesarArchivo(dniFrenteFile, archivosBackend, 'view')}
-                  onDownload={() => procesarArchivo(dniFrenteFile, archivosBackend, 'download')}
+                  onView={() => procesarArchivo(dniFrenteFile, archivosBackend, 'view', 'DNI')}
+                  onDownload={() => procesarArchivo(dniFrenteFile, archivosBackend, 'download', 'DNI')}
                 />
                 <DropzoneField
                   file={dniDorsoFile}
@@ -888,8 +827,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   hasError={errorDniDorso}
                   onChange={(f) => { setDniDorsoFile(f); setFilesChanged(true); setErrorDniDorso(false); }}
                   onEdit={() => document.getElementById(`file-input-dorso`).click()}
-                  onView={() => procesarArchivo(dniDorsoFile, archivosBackend, 'view')}
-                  onDownload={() => procesarArchivo(dniDorsoFile, archivosBackend, 'download')}
+                  onView={() => procesarArchivo(dniDorsoFile, archivosBackend, 'view', 'DNI')}
+                  onDownload={() => procesarArchivo(dniDorsoFile, archivosBackend, 'download', 'DNI')}
                 />
               </div>
             </>

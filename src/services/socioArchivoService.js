@@ -43,25 +43,41 @@ const getTipoDocumentoId = (key) => {
   return 0;
 };
 
+const archivosCache = {};
+
 export const socioArchivoService = {
+  /**   Limpia el caché de archivos de un socio   */
+  clearCache: (socioId) => {
+    if (socioId) {
+      delete archivosCache[socioId];
+    } else {
+      Object.keys(archivosCache).forEach((k) => delete archivosCache[k]);
+    }
+  },
+
   /**   Obtiene todos los archivos de un socio   */
-  obtenerArchivos: async (socioId) => {
+  obtenerArchivos: async (socioId, forceRefresh = false) => {
+    if (!socioId) return [];
+    if (!forceRefresh && archivosCache[socioId]) {
+      return archivosCache[socioId];
+    }
     try {
       const response = await api.get("api/SocioArchivo", {
         params: { socioid: socioId },
       });
+      archivosCache[socioId] = response.data;
       return response.data;
     } catch (error) {
       if (error.response && error.response.status === 404) {
+        archivosCache[socioId] = [];
         return [];
       }
       throw error;
     }
   },
 
-
-
   subirArchivo: async (socioId, file, docKey, descripcion = "") => {
+    socioArchivoService.clearCache(socioId);
     const contenidoBase64 = await fileToBase64(file);
 
     const payload = {
@@ -85,6 +101,10 @@ export const socioArchivoService = {
     docKey,
     descripcion = "",
   ) => {
+    if (archivoExistente) {
+      const socioId = archivoExistente.socioid || archivoExistente.SocioID;
+      socioArchivoService.clearCache(socioId);
+    }
     const contenidoBase64 = await fileToBase64(file);
 
     const payload = {

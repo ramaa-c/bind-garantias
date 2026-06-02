@@ -200,12 +200,14 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
             let t = null;
             try {
               t = await tercerosService.obtenerTerceroPorId(tid);
+              console.log(`[useObtenerDatosSocioLegajo] Tercero ID ${tid} recuperado de BD local:`, JSON.stringify(t, null, 2));
             } catch (apiErr) {
               console.warn(
                 `[LEGAJO] No se pudo obtener tercero ${tid} de la API estándar. Intentando SGRPlus...`,
               );
               try {
                 t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
+                console.log(`[useObtenerDatosSocioLegajo] Tercero ID ${tid} recuperado de SGRPlus:`, JSON.stringify(t, null, 2));
               } catch (sgrErr) {
                 console.error(
                   `[LEGAJO] Error total obteniendo tercero ${tid}:`,
@@ -267,6 +269,7 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
                 item.cuit && item.cuit !== "—" ? item.cuit : item.id;
 
               if (tiporelNum === 25) {
+                if (item.participacion === 0) return; // Omitir suplentes / accionistas con 0%
                 const existing = accMap[identifier];
                 if (!existing) {
                   accMap[identifier] = item;
