@@ -89,6 +89,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         setValue("direccion", socioSgrDb.calle || "", { shouldValidate: true });
         setValue("localidad", socioSgrDb.partido || socioSgrDb.localidad || "", { shouldValidate: true });
         setValue("provincia", socioSgrDb.provincia || "", { shouldValidate: true });
+        setValue("tipopersonaid", socioSgrDb.tipopersonaid || 0);
         
         setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
         if (onValidar) onValidar();
@@ -112,6 +113,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         setValue("direccion", socioWebDb.calle || "", { shouldValidate: true });
         setValue("localidad", socioWebDb.partido || socioWebDb.localidad || "", { shouldValidate: true });
         setValue("provincia", socioWebDb.provincia || "", { shouldValidate: true });
+        setValue("tipopersonaid", socioWebDb.tipopersonaid || 0);
 
         setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
         if (onValidar) onValidar();
@@ -188,6 +190,15 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             shouldValidate: true,
           });
 
+          let tipoPersonaId = 0;
+          const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
+          if (tipoPersonaStr.includes("JURIDICA") || tipoPersonaStr.includes("JURÍDICA")) {
+            tipoPersonaId = 10;
+          } else if (tipoPersonaStr.includes("FISICA") || tipoPersonaStr.includes("FÍSICA")) {
+            tipoPersonaId = 1;
+          }
+          setValue("tipopersonaid", tipoPersonaId);
+
           setTimeout(() => {
             setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
             if (onValidar) onValidar();
@@ -198,6 +209,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           setValue("direccion", "", { shouldValidate: true });
           setValue("localidad", "", { shouldValidate: true });
           setValue("provincia", "", { shouldValidate: true });
+          setValue("tipopersonaid", 0);
 
           setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
           if (onValidar) onValidar();
@@ -208,6 +220,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         setValue("direccion", "", { shouldValidate: true });
         setValue("localidad", "", { shouldValidate: true });
         setValue("provincia", "", { shouldValidate: true });
+        setValue("tipopersonaid", 0);
 
         setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
         if (onValidar) onValidar();
@@ -218,6 +231,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
       setValue("direccion", "", { shouldValidate: true });
       setValue("localidad", "", { shouldValidate: true });
       setValue("provincia", "", { shouldValidate: true });
+      setValue("tipopersonaid", 0);
 
       setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
       if (onValidar) onValidar();

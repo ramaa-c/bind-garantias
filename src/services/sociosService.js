@@ -168,6 +168,7 @@ export const sociosService = {
         email: email,
         emailfacturacion: email,
         telefono: telefono,
+        tipopersona: lufeData.personeria || "",
         domiciliofiscal: {
           direccion: direccion,
           localidad: localidad,
