@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
-import { HiOutlineMailOpen } from "react-icons/hi";
+import { HiOutlineMailOpen, HiClock } from "react-icons/hi";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/ChannelContext";
@@ -20,6 +20,7 @@ const ConfirmarCorreo = () => {
     location.state?.usuarioSkeletor?.email || location.state?.emailIngresado;
   const usuarioSkeletor = location.state?.usuarioSkeletor || null;
   const canal = location.state?.canal || "";
+  const origen = location.state?.origen || "registro";
 
   const { mutate: reenviarCorreo, isPending } = useResetearPassword();
   const [timeLeft, setTimeLeft] = useState(RESEND_SECONDS);
@@ -109,8 +110,8 @@ const ConfirmarCorreo = () => {
           <div className={styles.headerText}>
             <h2>Revisá tu correo</h2>
             <p>
-              Enviamos un enlace de confirmación a esta dirección. Hacé clic en
-              el enlace para activar tu cuenta.
+              Enviamos un enlace a esta dirección. Hacé clic en el enlace para
+              continuar con el proceso.
             </p>
           </div>
 
@@ -144,8 +145,7 @@ const ConfirmarCorreo = () => {
             <div className={styles.instruccionItem}>
               <span className={styles.instruccionNum}>2</span>
               <p className={styles.instruccionTxt}>
-                Buscá un correo de <strong>BIND</strong> con el asunto{" "}
-                <strong>"Activá tu cuenta"</strong>
+                Buscá un correo de <strong>BIND</strong> con las instrucciones.
               </p>
             </div>
             <div className={styles.instruccionItem}>
@@ -182,15 +182,15 @@ const ConfirmarCorreo = () => {
                 className={styles.linkYellow}
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate("/registro")}
+                onClick={() => navigate(origen === "recuperar" ? "/recuperar-clave" : "/registro")}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    navigate("/registro");
+                    navigate(origen === "recuperar" ? "/recuperar-clave" : "/registro");
                   }
                 }}
               >
-                Registrate nuevamente
+                Volver al paso anterior
               </span>
             </p>
           </div>
@@ -207,14 +207,14 @@ const ConfirmarCorreo = () => {
               strokeWidth={1.2}
             />
           </div>
-          <h2 className={styles.brandTitleLarge}>
-            Revisá tu
-            <br />
-            <em className={styles.brandEm}>bandeja de entrada</em>
+          <h2 className={styles.brandTitleLarge} style={{ maxWidth: "100%" }}>
+            Revisá tu <em className={styles.brandEm}>bandeja de entrada</em>
           </h2>
-          <p className={styles.brandSubtitle}>
-            El enlace expira en 5 minutos.
-          </p>
+          <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", background: "rgba(245, 244, 0, 0.08)", border: "1px solid rgba(245, 244, 0, 0.15)", borderRadius: "0.75rem", display: "inline-block" }}>
+            <p className={styles.brandSubtitle} style={{ color: "var(--white, #fff)", fontWeight: "600", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
+              <HiClock size={18} style={{ color: "var(--color-amarillo-bind, #f5f400)" }} /> El enlace expira en 5 minutos.
+            </p>
+          </div>
         </div>
       </section>
     </div>

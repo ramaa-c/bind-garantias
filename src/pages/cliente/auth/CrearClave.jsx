@@ -46,6 +46,8 @@ const CrearClave = () => {
   const { canal, token } = useParams();
   const { channelInfo } = useChannel();
   const navigate = useNavigate();
+  const [emailManual, setEmailManual] = useState("");
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const tokenIntegridad =
     typeof window !== "undefined" && window.location.hash
@@ -87,29 +89,31 @@ const CrearClave = () => {
                 state: { emailIngresado: usuario.email, generatedOtp: data.password }
               });
             },
-            onError: () => {
-              toast.error("Error al solicitar código", {
-                description: "Ocurrió un error. Intentá más tarde.",
+            onError: (error) => {
+              const isServerError = error?.response?.status >= 500;
+              toast.error(isServerError ? "Error de servidor" : "Error al solicitar código", {
+                description: isServerError
+                  ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
+                  : "Ocurrió un error. Intentá más tarde.",
               });
             },
           }
         );
       },
-      onError: () => {
-        toast.error("Error al activar cuenta", {
-          description: "No pudimos activar tu cuenta en este momento. Intentá más tarde.",
+      onError: (error) => {
+        const isServerError = error?.response?.status >= 500;
+        toast.error(isServerError ? "Error de servidor" : "Error al activar cuenta", {
+          description: isServerError
+            ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
+            : "No pudimos activar tu cuenta en este momento. Intentá más tarde.",
         });
       }
     });
   };
 
   const handleSolicitarNuevoEnlace = () => {
-    const savedEmail =
-      localStorage.getItem("emailIngresado") ||
-      sessionStorage.getItem("emailIngresado");
-
-    if (!savedEmail) {
-      navigate("/registro");
+    if (!emailManual) {
+      toast.error("Ingresá tu correo para continuar");
       return;
     }
 
@@ -120,7 +124,7 @@ const CrearClave = () => {
     };
 
     const payloadReset = {
-      email: savedEmail,
+      email: emailManual,
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
@@ -134,15 +138,19 @@ const CrearClave = () => {
     resetearPassword(payloadReset, {
       onSuccess: () => {
         navigate("/confirmar-correo", {
-          state: { emailIngresado: savedEmail, canal: canalIntegridad },
+          state: { emailIngresado: emailManual, canal: canalIntegridad, origen: "recuperar" },
         });
       },
-      onError: () => {
-        toast.error("Error al solicitar enlace", {
-          description:
-            "No pudimos enviar el correo. Intentá registrarte nuevamente.",
+      onError: (error) => {
+        const isServerError = error?.response?.status >= 500;
+        toast.error(isServerError ? "Error de servidor" : "Error al solicitar enlace", {
+          description: isServerError
+            ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
+            : "No pudimos enviar el correo. Intentá registrarte nuevamente.",
         });
-        navigate("/registro");
+        if (!isServerError) {
+          navigate("/registro");
+        }
       },
     });
   };
@@ -178,9 +186,14 @@ const CrearClave = () => {
         });
         navigate("/", { replace: true });
       },
-      onError: () => {
-        const errMsg = "Error al establecer la credencial. Intentá más tarde.";
-        toast.error("Error de activación", { description: errMsg });
+      onError: (error) => {
+        const isServerError = error?.response?.status >= 500;
+        const errMsg = isServerError
+          ? "El servidor está experimentando problemas. Por favor, intentá nuevamente más tarde."
+          : "Error al establecer la credencial. Intentá más tarde.";
+        toast.error(isServerError ? "Error de servidor" : "Error de activación", { 
+          description: errMsg 
+        });
         setError("root.serverError", { type: "manual", message: errMsg });
       },
     });
@@ -249,11 +262,26 @@ const CrearClave = () => {
                   <FiAlertCircle size={48} color="var(--red)" />
                   <h3>Enlace corrupto o ausente</h3>
                   <p>El enlace de seguridad está incompleto o mal formado.</p>
+                  
+                  <div style={{ marginTop: "1.5rem", width: "100%", textAlign: "left" }}>
+                    <InputSimple
+                      name="emailManual"
+                      label="Ingresá tu correo electrónico"
+                      value={emailManual}
+                      onChange={setEmailManual}
+                      type="email"
+                      disabled={solicitandoNuevo}
+                      esValido={emailManual.length > 0 && isValidEmail(emailManual)}
+                      error={emailManual.length > 0 && !isValidEmail(emailManual) ? { message: "Formato de correo inválido" } : null}
+                    />
+                  </div>
+
                   <Button
                     variant="primary"
                     onClick={handleSolicitarNuevoEnlace}
-                    style={{ marginTop: "1.5rem" }}
-                    disabled={solicitandoNuevo}
+                    style={{ marginTop: "1.5rem", width: "100%" }}
+                    isLoading={solicitandoNuevo}
+                    disabled={!isValidEmail(emailManual)}
                   >
                     {solicitandoNuevo ? "SOLICITANDO..." : "SOLICITAR NUEVO ENLACE"}
                   </Button>
@@ -265,14 +293,28 @@ const CrearClave = () => {
                   <FiAlertCircle size={48} color="var(--red)" />
                   <h3>El enlace ha expirado o es inválido</h3>
                   <p>
-                    No pudimos recuperar tu información. Solicitá un nuevo enlace
-                    para continuar.
+                    Por seguridad, los enlaces tienen un tiempo de validez limitado. Solicitá uno nuevo para continuar.
                   </p>
+                  
+                  <div style={{ marginTop: "1.5rem", width: "100%", textAlign: "left" }}>
+                    <InputSimple
+                      name="emailManual"
+                      label="Ingresá tu correo electrónico"
+                      value={emailManual}
+                      onChange={setEmailManual}
+                      type="email"
+                      disabled={solicitandoNuevo}
+                      esValido={emailManual.length > 0 && isValidEmail(emailManual)}
+                      error={emailManual.length > 0 && !isValidEmail(emailManual) ? { message: "Formato de correo inválido" } : null}
+                    />
+                  </div>
+
                   <Button
                     variant="primary"
                     onClick={handleSolicitarNuevoEnlace}
-                    style={{ marginTop: "1.5rem" }}
-                    disabled={solicitandoNuevo}
+                    style={{ marginTop: "1.5rem", width: "100%" }}
+                    isLoading={solicitandoNuevo}
+                    disabled={!isValidEmail(emailManual)}
                   >
                     {solicitandoNuevo ? "SOLICITANDO..." : "SOLICITAR NUEVO ENLACE"}
                   </Button>

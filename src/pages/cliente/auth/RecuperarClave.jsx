@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
 import { InputSimple, Button, Alert } from "../../../components/ui";
 import styles from "./Login.module.css";
@@ -29,11 +30,9 @@ const RecuperarClave = () => {
   });
 
   const {
-    mutate: enviarCorreo,
+    mutateAsync: enviarCorreoAsync,
     isPending,
     isError,
-    isSuccess,
-    error,
   } = useResetearPassword();
 
   const getCSharpIsoDate = (addYears = 0) => {
@@ -42,7 +41,7 @@ const RecuperarClave = () => {
     return date.toISOString().split(".")[0];
   };
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     const payloadReset = {
       email: data.email,
       usuariowebid: 0,
@@ -54,13 +53,18 @@ const RecuperarClave = () => {
       esadministrador: "",
       denominacion: "",
     };
-    enviarCorreo(payloadReset, {
-      onSuccess: () => {
-        navigate("/confirmar-correo", {
-          state: { emailIngresado: data.email, canal: "canal1" },
-        });
-      },
-    });
+
+    try {
+      await enviarCorreoAsync(payloadReset);
+      navigate("/confirmar-correo", {
+        replace: true,
+        state: { emailIngresado: data.email, canal: "canal1", origen: "recuperar" },
+      });
+    } catch (error) {
+      toast.error("Error al solicitar el enlace", {
+        description: "Verificá tu correo o intentá más tarde.",
+      });
+    }
   };
 
   return (
@@ -99,7 +103,7 @@ const RecuperarClave = () => {
             />
 
             <div className={styles.formActions}>
-              <Button type="submit" variant="primary" disabled={isPending}>
+              <Button type="submit" variant="primary" isLoading={isPending}>
                 {isPending ? "Enviando..." : "Recuperar contraseña"}
               </Button>
             </div>
