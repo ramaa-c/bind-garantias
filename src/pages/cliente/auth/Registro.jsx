@@ -75,15 +75,12 @@ const Registro = () => {
     try {
       await crearUsuario(payloadSkeletor);
 
-      toast.success(
-        "¡Registro exitoso! Revisá tu casilla de correo para continuar.",
-      );
-
       navigate("/confirmar-correo", {
         replace: true,
         state: {
           usuarioSkeletor: payloadSkeletor,
           canal: "canal1",
+          origen: "registro",
         },
       });
     } catch (error) {
@@ -150,15 +147,13 @@ const Registro = () => {
       await reenviarCorreo(payloadReset);
 
       setModalUsuarioExistente(false);
-      toast.success("Enlace enviado", {
-        description: "Revisá tu bandeja de entrada o la carpeta de SPAM.",
-      });
 
       navigate("/confirmar-correo", {
         replace: true,
         state: {
           emailIngresado: emailPendiente,
           canal: "canal1",
+          origen: "registro",
         },
       });
     } catch (error) {
