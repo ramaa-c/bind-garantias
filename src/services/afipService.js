@@ -8,6 +8,10 @@ export const afipService = {
 
       const response = await api.get(
         `api/afip/constanciainscripcion/${cuitLimpio}`,
+        {
+          timeout: 5000,
+          noRetry: true,
+        }
       );
       return response.data;
     } catch (error) {

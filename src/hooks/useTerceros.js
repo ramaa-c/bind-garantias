@@ -200,19 +200,11 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
             let t = null;
             try {
               t = await tercerosService.obtenerTerceroPorId(tid);
-              console.log(`[useObtenerDatosSocioLegajo] Tercero ID ${tid} recuperado de BD local:`, JSON.stringify(t, null, 2));
             } catch (apiErr) {
-              console.warn(
-                `[LEGAJO] No se pudo obtener tercero ${tid} de la API estándar. Intentando SGRPlus...`,
-              );
               try {
                 t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
-                console.log(`[useObtenerDatosSocioLegajo] Tercero ID ${tid} recuperado de SGRPlus:`, JSON.stringify(t, null, 2));
               } catch (sgrErr) {
-                console.error(
-                  `[LEGAJO] Error total obteniendo tercero ${tid}:`,
-                  sgrErr,
-                );
+                // Ignore error
               }
             }
 

@@ -112,6 +112,8 @@ export const sociosService = {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
     const response = await api.get(`api/lufe/autoridades/${cuitLimpio}`, {
       params: { Vincular: vincular },
+      timeout: 8000,
+      noRetry: true,
     });
     return response.data;
   },
@@ -121,6 +123,8 @@ export const sociosService = {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
     const response = await api.get(`api/lufe/documentos/${cuitLimpio}`, {
       params: { Vincular: vincular },
+      timeout: 25000,
+      noRetry: true,
     });
     return response.data;
   },
@@ -128,7 +132,10 @@ export const sociosService = {
   // GET api/lufe/entidad/{cuit} - Obtener entidad de LUFE
   obtenerEntidadLufe: async (cuit) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
-    const response = await api.get(`api/lufe/entidad/${cuitLimpio}`);
+    const response = await api.get(`api/lufe/entidad/${cuitLimpio}`, {
+      timeout: 8000,
+      noRetry: true,
+    });
     return response.data;
   },
 

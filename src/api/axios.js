@@ -26,7 +26,7 @@ api.interceptors.response.use(
     const isServerError = error.response && error.response.status >= 500;
     const isSafeToRetry = isNetworkError || isServerError;
 
-    if (isSafeToRetry && config.__retryCount < MAX_RETRIES) {
+    if (isSafeToRetry && !config.noRetry && config.__retryCount < MAX_RETRIES) {
       config.__retryCount += 1;
 
       const delay = RETRY_DELAY_MS * config.__retryCount;

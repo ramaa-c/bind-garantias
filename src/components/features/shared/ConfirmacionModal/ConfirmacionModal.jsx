@@ -22,7 +22,7 @@ export function ConfirmacionModal({
           <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={onConfirm} disabled={isLoading}>
+          <Button variant="primary" onClick={onConfirm} disabled={isLoading} isLoading={isLoading}>
             Confirmar
           </Button>
         </div>

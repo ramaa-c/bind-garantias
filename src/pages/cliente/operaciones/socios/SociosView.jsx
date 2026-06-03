@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
 import { SociosLegajo } from "../../../../components/features";
+import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { Button } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -10,10 +11,38 @@ import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { toast } from "sonner";
 import styles from "./SociosView.module.css";
 
+const obtenerMensajeAmigable = (err, defaultMsg) => {
+  if (err?.code === "ECONNABORTED" || err?.message?.toLowerCase().includes("timeout")) {
+    return "El servicio externo está demorando en responder. Por favor, intentá nuevamente en unos momentos.";
+  }
+  if (err?.message?.toLowerCase().includes("network error") || !err?.response) {
+    return "No se pudo conectar con el servidor. Verificá tu conexión a internet o reintentá más tarde.";
+  }
+  const status = err.response?.status;
+  if (status >= 500) {
+    return "Hubo un inconveniente en el sistema al procesar los datos. Por favor, reintentá más tarde.";
+  }
+  if (status === 404) {
+    return "No se encontraron los datos correspondientes en el padrón.";
+  }
+  if (status === 403 || status === 401) {
+    return "No tenés permisos para realizar esta consulta.";
+  }
+  if (status === 400) {
+    const backendMessage = err.response?.data?.message || err.response?.data || err.response?.data?.title;
+    if (typeof backendMessage === "string" && backendMessage.length < 150) {
+      return backendMessage;
+    }
+    return "Los datos de la empresa no pudieron ser validados. Revisá el CUIT y reintentá.";
+  }
+  return defaultMsg;
+};
+
 export default function SociosView() {
   const queryClient = useQueryClient();
   const { socioIdActivo, cuitActivo } = useEmpresaActiva();
   const [sincronizando, setSincronizando] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
@@ -29,19 +58,17 @@ export default function SociosView() {
     }
 
     setSincronizando(true);
+    setShowConfirmModal(false);
     const toastId = toast.loading("Sincronizando legajo con LUFE y AFIP...");
     try {
-      console.log(`[SociosView] Iniciando precarga y enriquecimiento de autoridades/accionistas para CUIT: ${cuitActivo}`);
-
       // 1. Ejecutar la precarga LUFE + enriquecimiento síncrono AFIP + PUTs de accionistas
-      await enriquecerSociosLufeAfip(socioIdActivo, cuitActivo);
+      const resEnriquecimiento = await enriquecerSociosLufeAfip(socioIdActivo, cuitActivo);
 
       // 2. Vincular documentos de LUFE
       try {
-        console.log(`[SociosView] Vinculando documentos de LUFE para CUIT: ${cuitActivo}`);
         await sociosService.obtenerDocumentosLufe(cuitActivo, true);
       } catch (lufeDocsError) {
-        console.error("[SociosView] Error al vincular documentos de LUFE:", lufeDocsError);
+        // Silently handle error
       }
 
       // 3. Invalidar la query para refrescar la vista instantáneamente
@@ -49,12 +76,20 @@ export default function SociosView() {
         queryKey: ["socioLegajoCompleto", socioIdActivo],
       });
 
-      toast.success("Legajo sincronizado correctamente desde LUFE/AFIP", { id: toastId });
+      if (resEnriquecimiento?.afipFailed) {
+        toast.warning(
+          "Legajo sincronizado, pero no se pudieron obtener todos los datos de AFIP (se utilizaron datos de LUFE o locales como fallback).",
+          { id: toastId, duration: 6000 }
+        );
+      } else {
+        toast.success("Legajo sincronizado correctamente desde LUFE/AFIP", { id: toastId });
+      }
     } catch (err) {
-      console.error("[SociosView] Error al sincronizar legajo:", err);
-      toast.error("Error al sincronizar datos desde LUFE/AFIP.", { id: toastId });
+      const errorMsg = obtenerMensajeAmigable(err, "Error al sincronizar datos desde LUFE/AFIP.");
+      toast.error(errorMsg, { id: toastId });
     } finally {
       setSincronizando(false);
+      setShowConfirmModal(false);
     }
   };
 
@@ -79,7 +114,7 @@ export default function SociosView() {
           variant="primary"
           size="sm"
           className={styles.submitBtn}
-          onClick={handleRefrescarLufe}
+          onClick={() => setShowConfirmModal(true)}
           disabled={sincronizando}
         >
           <FiRefreshCw
@@ -100,6 +135,14 @@ export default function SociosView() {
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
         contexto="inicio"
+      />
+
+      <ConfirmacionModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleRefrescarLufe}
+        titulo="Refrescar datos LUFE"
+        mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y AFIP? Esta acción actualizará la composición accionaria y los representantes."
       />
     </section>
   );

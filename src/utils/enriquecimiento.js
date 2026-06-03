@@ -17,14 +17,14 @@ const getCSharpIsoDate = () => {
  * @param {string} cuit - The CUIT of the main socio (company)
  */
 export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
-  console.log(`[enriquecerSociosLufeAfip] Iniciando precarga LUFE para CUIT: ${cuit}`);
-  
+  let afipFailed = false;
+  let fallbackSuccess = false;
+
   // 1. Obtener autoridades de LUFE y vincularlas inicialmente (POSTs internos de la API)
   try {
-    const resLufe = await sociosService.obtenerAutoridadesLufe(cuit, true);
-    console.log("[enriquecerSociosLufeAfip] Respuesta de LUFE autoridades:", resLufe);
+    await sociosService.obtenerAutoridadesLufe(cuit, true);
   } catch (lufeErr) {
-    console.error("[enriquecerSociosLufeAfip] Error al llamar a obtenerAutoridadesLufe:", lufeErr);
+    // Silently handle error
   }
 
   // 2. Obtener todas las relaciones del socio creadas en la base de datos
@@ -32,7 +32,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
   try {
     relacionesSocio = await tercerosService.obtenerRelacionesDeSocio(socioId);
   } catch (err) {
-    console.warn("[enriquecerSociosLufeAfip] No se pudieron obtener las relaciones del socio:", err);
+    // Silently handle error
   }
   const arrRelaciones = Array.isArray(relacionesSocio) ? relacionesSocio : [];
 
@@ -43,11 +43,8 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
   });
 
   if (relacionAccionistas.length === 0) {
-    console.log("[enriquecerSociosLufeAfip] No se encontraron relaciones de accionistas (tipo 25) para enriquecer.");
-    return;
+    return { afipFailed, fallbackSuccess };
   }
-
-  console.log(`[enriquecerSociosLufeAfip] Encontrados ${relacionAccionistas.length} accionistas en la base de datos. Iniciando enriquecimiento AFIP...`);
 
   // 3. Cargar catálogo de provincias para normalizar provincia de AFIP
   let opcionesProvincias = [];
@@ -60,7 +57,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
         label: item.descripcion,
       }));
   } catch (err) {
-    console.warn("[enriquecerSociosLufeAfip] No se pudieron cargar las provincias para el mapeo:", err);
+    // Silently handle error
   }
 
   // 4. Enriquecer de forma paralela cada accionista
@@ -72,41 +69,28 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
       try {
         // A. Obtener el tercero desde la base de datos
         const terceroLocal = await tercerosService.obtenerTerceroPorId(terceroId);
-        if (!terceroLocal) {
-          console.warn(`[enriquecerSociosLufeAfip] No se pudo obtener el detalle del tercero ${terceroId}`);
-          return;
-        }
+        if (!terceroLocal) return;
 
         const cuitSocio = terceroLocal.cuit || terceroLocal.Cuit || terceroLocal.numerodocumento || terceroLocal.nrodocumento;
-        if (!cuitSocio) {
-          console.warn(`[enriquecerSociosLufeAfip] El tercero ${terceroId} no tiene CUIT cargado.`);
-          return;
-        }
+        if (!cuitSocio) return;
 
         const cuitSocioLimpio = String(cuitSocio).replace(/\D/g, "");
-        if (cuitSocioLimpio.length !== 11) {
-          console.warn(`[enriquecerSociosLufeAfip] CUIT inválido (${cuitSocioLimpio}) para tercero ${terceroId}.`);
-          return;
-        }
-
-        console.log(`[enriquecerSociosLufeAfip] Procesando accionista: ${terceroLocal.denominacion || "S/D"} CUIT: ${cuitSocioLimpio}`);
+        if (cuitSocioLimpio.length !== 11) return;
 
         // B. Consultar AFIP para obtener datos completos
         let respAfip = null;
         try {
-          console.log(`[enriquecerSociosLufeAfip] Consultando AFIP para CUIT: ${cuitSocioLimpio}`);
           respAfip = await afipService.obtenerConstanciaInscripcion(cuitSocioLimpio);
-          console.log(`[enriquecerSociosLufeAfip] Respuesta AFIP para CUIT ${cuitSocioLimpio}:`, JSON.stringify(respAfip, null, 2));
         } catch (afipErr) {
-          console.warn(`[enriquecerSociosLufeAfip] AFIP no disponible para CUIT ${cuitSocioLimpio}, probando fallback LUFE Entidad:`, afipErr);
+          afipFailed = true;
           try {
             const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitSocioLimpio);
             if (lufeEntidad && lufeEntidad.success) {
               respAfip = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
-              console.log(`[enriquecerSociosLufeAfip] Fallback LUFE Entidad exitoso para CUIT ${cuitSocioLimpio}:`, JSON.stringify(respAfip, null, 2));
+              fallbackSuccess = true;
             }
           } catch (lufeErr) {
-            console.error(`[enriquecerSociosLufeAfip] LUFE Entidad falló para CUIT ${cuitSocioLimpio}:`, lufeErr);
+            // Both failed
           }
         }
 
@@ -144,7 +128,6 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
             mail: emailVal,
           };
 
-          console.log(`[enriquecerSociosLufeAfip] Enviando PUT Tercero para CUIT ${cuitSocioLimpio}`);
           await tercerosService.actualizarTercero(payloadTercero);
 
           // E. PUT de enriquecimiento de la relación (porcentaje y provincia)
@@ -169,11 +152,12 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
             momento: ahoraStr,
           };
           await tercerosService.actualizarRelacionDeSocio(payloadRel);
-          console.log(`[enriquecerSociosLufeAfip] Accionista CUIT ${cuitSocioLimpio} enriquecido correctamente.`);
         }
       } catch (singleErr) {
-        console.warn(`[enriquecerSociosLufeAfip] No se pudo enriquecer accionista ID ${terceroId}:`, singleErr);
+        // Silently catch
       }
     })
   );
+
+  return { afipFailed, fallbackSuccess };
 };

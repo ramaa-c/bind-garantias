@@ -103,9 +103,14 @@ export default function DocumentacionView() {
         }
       }
 
+      const desc =
+        pendientes.length === 1
+          ? "Se subió 1 documento correctamente."
+          : `Se subieron ${pendientes.length} documentos correctamente.`;
+
       toast.success("Legajo guardado exitosamente", {
         id: toastId,
-        description: `Se subieron ${pendientes.length} documento(s) correctamente.`,
+        description: desc,
       });
     } catch (error) {
       console.error("Fallo al actualizar el legajo digital:", error);

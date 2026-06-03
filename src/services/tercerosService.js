@@ -50,10 +50,8 @@ export const tercerosService = {
 
   // Crea nuevo tercero relacionado
   crearTercero: async (terceroData) => {
-    console.log("[tercerosService] POST api/TerceroRelacionado payload:", JSON.stringify(terceroData, null, 2));
     try {
       const response = await api.post("api/TerceroRelacionado", terceroData);
-      console.log("[tercerosService] POST api/TerceroRelacionado response:", JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (err) {
       console.error("[tercerosService] POST api/TerceroRelacionado FAILED:", err.response?.status, err.response?.data || err.message);
@@ -63,10 +61,8 @@ export const tercerosService = {
 
   // Actualiza un tercero relacionado
   actualizarTercero: async (terceroData) => {
-    console.log("[tercerosService] PUT api/TerceroRelacionado payload:", JSON.stringify(terceroData, null, 2));
     try {
       const response = await api.put("api/TerceroRelacionado", terceroData);
-      console.log("[tercerosService] PUT api/TerceroRelacionado response:", JSON.stringify(response.data, null, 2));
       return response.data;
     } catch (err) {
       console.error("[tercerosService] PUT api/TerceroRelacionado FAILED:", err.response?.status, err.response?.data || err.message);
@@ -106,13 +102,8 @@ export const tercerosService = {
       tercerosrelacionados: [cleanData],
     };
 
-    console.log(
-      "[tercerosService] intentando PUT a api/SocioTerceroRelacion con wrappedData:",
-      wrappedData,
-    );
     try {
       const response = await api.put("api/SocioTerceroRelacion", wrappedData);
-      console.log("[tercerosService] PUT exitoso. Respuesta:", response.data);
       return response.data;
     } catch (err) {
       console.error(
