@@ -6,15 +6,6 @@ import {
 } from "@tanstack/react-query";
 import { sociosService } from "../services/sociosService";
 
-export const useValidarFormatoCuit = () => {
-  return useMutation({
-    mutationFn: sociosService.validarFormatoCuit,
-    onError: (error) => {
-      console.error("Error al validar formato de CUIT:", error);
-    },
-  });
-};
-
 export const useObtenerSocios = (params = {}) => {
   return useQuery({
     queryKey: ["socios", "lista", params],

@@ -150,7 +150,7 @@ export default function Solicitudes() {
 
     setIsVerifyingLineas(true);
     try {
-      const response = await validarUtilizacionCore(socioIdFinal);
+      const response = await validarUtilizacionCore(cuitActivo);
       if (response?.status === 406) {
         setModalPendienteOpen(true);
         setIsVerifyingLineas(false);

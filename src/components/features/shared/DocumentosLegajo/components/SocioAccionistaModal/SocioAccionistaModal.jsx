@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, CargaArchivos, ProcesamientoModal } from "../../../../../ui";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useEmpresaActiva } from "../../../../../../hooks/useEmpresaActiva";
-import { useValidarFormatoCuit } from "../../../../../../hooks/useSocios";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
@@ -82,7 +81,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
-  const { mutateAsync: validarFormatoBackend } = useValidarFormatoCuit();
   const { cuitActivo } = useEmpresaActiva();
 
   const relacionId = socio?.relacionId || 

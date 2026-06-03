@@ -4,7 +4,6 @@ import { toast } from "sonner";
 import { BuscadorCuit, ProcesamientoModal } from "../../../ui";
 import { sociosService } from "../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../hooks/useAfip";
-import { useValidarFormatoCuit } from "../../../../hooks/useSocios";
 import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useProvincias } from "../../../../hooks/useCatalogos";
@@ -17,8 +16,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   const { errors, dirtyFields } = useFormState({ control });
   const { mutateAsync: validarAfip, isPending: isLoadingAfip } =
     useValidarCuitAfip();
-  const { mutateAsync: validarFormatoBackend, isPending: isLoadingFormato } =
-    useValidarFormatoCuit();
   const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
   const { mutateAsync: validarSocioCore } = useValidarSocioCore();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
@@ -50,26 +47,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
     clearErrors("cuit");
     setIsValidatingSocio(true);
-
-    try {
-      const respuestaFormato = await validarFormatoBackend(cuit);
-      if (respuestaFormato === false || respuestaFormato?.isValid === false) {
-        setError("cuit", {
-          type: "manual",
-          message: "Formato CUIT inválido",
-        });
-        setIsValidatingSocio(false);
-        return;
-      }
-    } catch (formatoError) {
-      const isClientError = formatoError?.response?.status >= 400 && formatoError?.response?.status < 500;
-      setError("cuit", {
-        type: "manual",
-        message: isClientError ? "Formato CUIT inválido" : "Error de conexión al validar formato",
-      });
-      setIsValidatingSocio(false);
-      return;
-    }
 
     // Abrimos el ProcesamientoModal
     setProcesoModal({
@@ -152,31 +129,24 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
         // ── VALIDACIÓN SGRPlus Core
         try {
-          const sociosData = await sociosService.obtenerSocios({ Cuit: cuit });
-          const sociosArr = Array.isArray(sociosData) ? sociosData : sociosData?.data || [];
-          if (sociosArr.length > 0) {
-            const socioId = sociosArr[0].socioId || sociosArr[0].socioid || sociosArr[0].SocioID || sociosArr[0].id;
-            if (socioId) {
-              const resultSgrCore = await validarSocioCore({ socioId, cadenaValorId: 0 });
-              if (resultSgrCore?.data && resultSgrCore.data.success === false) {
-                setProcesoModal((prev) => ({
-                  ...prev,
-                  hasError: true,
-                  isSystemError: false,
-                  pasos: prev.pasos.map((p) =>
-                    p.id === "sgrcore"
-                      ? {
-                          ...p,
-                          estado: "error",
-                          errores: [resultSgrCore.data.message || "El socio no cumple con los requisitos del sistema."],
-                          error: "Rechazado por SGRPlus",
-                        }
-                      : p,
-                  ),
-                }));
-                return;
-              }
-            }
+          const resultSgrCore = await validarSocioCore({ cuit, cadenaValorId: 0 });
+          if (resultSgrCore?.data && resultSgrCore.data.success === false) {
+            setProcesoModal((prev) => ({
+              ...prev,
+              hasError: true,
+              isSystemError: false,
+              pasos: prev.pasos.map((p) =>
+                p.id === "sgrcore"
+                  ? {
+                      ...p,
+                      estado: "error",
+                      errores: [resultSgrCore.data.message || "El socio no cumple con los requisitos del sistema."],
+                      error: "Rechazado por SGRPlus",
+                    }
+                  : p,
+              ),
+            }));
+            return;
           }
         } catch (sgrError) {
           if (sgrError?.response?.status !== 404) {
@@ -314,7 +284,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   };
 
   const isLoading =
-    isValidatingSocio || isLoadingAfip || isLoadingFormato || isLoadingCda;
+    isValidatingSocio || isLoadingAfip || isLoadingCda;
 
   return (
     <div className={styles.pasoContainer}>
