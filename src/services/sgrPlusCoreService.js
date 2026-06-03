@@ -1,9 +1,9 @@
 import api from "../api/axios";
 
 export const sgrPlusCoreService = {
-  validarUtilizacion: async (socioId) => {
+  validarUtilizacion: async (cuit) => {
     try {
-      const response = await api.get(`SGRPlusCore/ValidarUtilizacion/${socioId}`);
+      const response = await api.get(`SGRPlusCore/ValidarUtilizacion/${cuit}`);
       return { status: response.status, data: response.data };
     } catch (error) {
       if (error.response) {
@@ -13,9 +13,9 @@ export const sgrPlusCoreService = {
     }
   },
 
-  validarSocio: async (socioId, cadenaValorId) => {
+  validarSocio: async (cuit, cadenaValorId) => {
     try {
-      const response = await api.get(`SGRPlusCore/ValidarSocio/${socioId}/${cadenaValorId}`);
+      const response = await api.get(`SGRPlusCore/ValidarSocio/${cuit}/${cadenaValorId}`);
       return { status: response.status, data: response.data };
     } catch (error) {
       if (error.response) {

@@ -3,12 +3,12 @@ import { sgrPlusCoreService } from "../services/sgrPlusCoreService";
 
 export const useValidarUtilizacionCore = () => {
   return useMutation({
-    mutationFn: (socioId) => sgrPlusCoreService.validarUtilizacion(socioId),
+    mutationFn: (cuit) => sgrPlusCoreService.validarUtilizacion(cuit),
   });
 };
 
 export const useValidarSocioCore = () => {
   return useMutation({
-    mutationFn: ({ socioId, cadenaValorId }) => sgrPlusCoreService.validarSocio(socioId, cadenaValorId),
+    mutationFn: ({ cuit, cadenaValorId }) => sgrPlusCoreService.validarSocio(cuit, cadenaValorId),
   });
 };

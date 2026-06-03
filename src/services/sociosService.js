@@ -4,13 +4,6 @@ const cuitCache = new Map();
 const cuitWebCache = new Map();
 
 export const sociosService = {
-  // Validación de formato CUIT
-  validarFormatoCuit: async (cuit) => {
-    const cuitLimpio = String(cuit).replace(/\D/g, "");
-    const response = await api.get(`api/Socio/ValidarCuit/${cuitLimpio}`);
-    return response.data;
-  },
-  
   // Trae lista de socios (SGRPlus)
   obtenerSocios: async (params = {}) => {
     const isCuitSearch = Boolean(params.Cuit);
@@ -93,20 +86,6 @@ export const sociosService = {
     return response.data;
   },
 
-  // GET api/Socio/ValidarCuit/{cuit} - Validar si un CUIT es válido y existente
-  validarCuit: async (cuit) => {
-    const cuitLimpio = String(cuit).replace(/\D/g, "");
-    try {
-      const response = await api.get(`api/Socio/ValidarCuit/${cuitLimpio}`);
-      return response.data;
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        return null;
-      }
-      throw error;
-    }
-  },
-
   // GET api/lufe/autoridades/{cuit} - Obtener autoridades de LUFE y vincularlas
   obtenerAutoridadesLufe: async (cuit, vincular = true) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
@@ -156,7 +135,7 @@ export const sociosService = {
     let provincia = "";
 
     if (direccion.includes(",")) {
-      const partes = direccion.split(",").map(p => p.trim());
+      const partes = direccion.split(",").map((p) => p.trim());
       if (partes.length >= 3) {
         direccion = partes[0];
         localidad = partes[1];
@@ -181,8 +160,8 @@ export const sociosService = {
           direccion: direccion,
           localidad: localidad,
           descripcionprovincia: provincia,
-        }
-      }
+        },
+      },
     };
   },
 };

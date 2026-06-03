@@ -193,7 +193,14 @@ const CredentialsPhase = ({
     >
       <span>
         ¿Olvidaste tu contraseña?{" "}
-        <span className={styles.inlineLink} onClick={onRecoverPassword}>
+        <span
+          className={styles.inlineLink}
+          onClick={!isPending ? onRecoverPassword : undefined}
+          style={{
+            cursor: isPending ? "not-allowed" : "pointer",
+            opacity: isPending ? 0.6 : undefined,
+          }}
+        >
           Recuperar clave
         </span>
       </span>
