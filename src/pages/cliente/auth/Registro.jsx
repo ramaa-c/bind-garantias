@@ -123,9 +123,10 @@ const Registro = () => {
             description: "Ocurrió un error. Intentá más tarde.",
           });
         } else {
+          const message = error?.response?.data?.message || "Error al registrar cuenta. Verificá los datos.";
           setError("email", {
             type: "server",
-            message: "Error de conexión. Intentá nuevamente.",
+            message: message,
           });
         }
       }
@@ -161,9 +162,18 @@ const Registro = () => {
         },
       });
     } catch (error) {
-      toast.error("Error al solicitar el enlace", {
-        description: "Ocurrió un error. Intentá más tarde.",
-      });
+      const status = error?.response?.status;
+      if (!error?.response || status >= 500) {
+        toast.error("Error de servidor", {
+          description: "Ocurrió un error. Intentá más tarde.",
+        });
+      } else {
+        setModalUsuarioExistente(false);
+        setError("email", {
+          type: "server",
+          message: error?.response?.data?.message || "Error al reenviar enlace. Verificá los datos.",
+        });
+      }
     }
   };
 
@@ -206,21 +216,28 @@ const Registro = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  disabled={isFormDisabled}
+                  isLoading={isFormDisabled}
+                  style={{ width: "100%" }}
                 >
                   {registrando || verificandoEstado
                     ? "PROCESANDO..."
                     : "REGISTRARSE"}
                 </Button>
+              </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => navigate("/")}
-                  disabled={isFormDisabled}
+              {/* Navegación secundaria como enlace (Estándar UX) */}
+              <div style={{ marginTop: "1.5rem", textAlign: "center", fontSize: "0.875rem", color: "var(--gray-text, #a0a0a0)" }}>
+                ¿Ya tenés una cuenta?{" "}
+                <span 
+                  className={styles.inlineLink}
+                  onClick={!isFormDisabled ? () => navigate("/") : undefined} 
+                  style={{ 
+                    cursor: isFormDisabled ? "not-allowed" : "pointer", 
+                    opacity: isFormDisabled ? 0.6 : undefined
+                  }}
                 >
-                  YA TENGO CUENTA
-                </Button>
+                  Iniciar sesión
+                </span>
               </div>
             </form>
 

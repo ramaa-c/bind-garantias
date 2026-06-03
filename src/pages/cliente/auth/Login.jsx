@@ -12,45 +12,65 @@ import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 
 const emailSchema = z.object({
-  email: z.string().min(1, "El email o usuario es obligatorio").toLowerCase().trim(),
+  email: z
+    .string()
+    .min(1, "El email o usuario es obligatorio")
+    .toLowerCase()
+    .trim(),
 });
 
 const otpSchema = z.object({
-  email: z.string().min(1, "El email o usuario es obligatorio").toLowerCase().trim(),
-  otp: z.string().length(6, "El código debe tener exactamente 6 dígitos").regex(/^\d+$/, "Solo se permiten números"),
+  email: z
+    .string()
+    .min(1, "El email o usuario es obligatorio")
+    .toLowerCase()
+    .trim(),
+  otp: z
+    .string()
+    .length(6, "El código debe tener exactamente 6 dígitos")
+    .regex(/^\d+$/, "Solo se permiten números"),
 });
 
 const passwordSchema = z.object({
-  email: z.string().min(1, "El email o usuario es obligatorio").toLowerCase().trim(),
+  email: z
+    .string()
+    .min(1, "El email o usuario es obligatorio")
+    .toLowerCase()
+    .trim(),
   password: z.string().min(1, "La contraseña es obligatoria"),
 });
 
-export const OtpPhase = ({ control, onResend, isPending, onFallback }) => {
+export const OtpPhase = ({
+  control,
+  onResend,
+  isPending,
+  onFallback,
+}) => {
   const RESEND_SECONDS = 60;
   const [timeLeft, setTimeLeft] = useState(RESEND_SECONDS);
   const canResend = timeLeft === 0;
- 
+
   const {
     field: { value, onChange },
     fieldState: { error },
   } = useController({ name: "otp", control });
 
   const displayError = error?.type === "server" ? error : null;
- 
+
   useEffect(() => {
     if (timeLeft <= 0) return;
     const id = setInterval(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearInterval(id);
   }, [timeLeft]);
- 
+
   const handleResend = () => {
     setTimeLeft(RESEND_SECONDS);
     onResend();
   };
- 
+
   const mm = String(Math.floor(timeLeft / 60)).padStart(2, "0");
   const ss = String(timeLeft % 60).padStart(2, "0");
- 
+
   return (
     <div className={styles.phaseContainer}>
       {/* Componente OTP */}
@@ -61,7 +81,7 @@ export const OtpPhase = ({ control, onResend, isPending, onFallback }) => {
         esValido={!error && value?.length === 6}
         disabled={isPending}
       />
- 
+
       {/* Fila de reenvío */}
       <div className={styles.resendRow}>
         <span className={styles.resendLabel}>¿No llegó el código?</span>
@@ -80,20 +100,21 @@ export const OtpPhase = ({ control, onResend, isPending, onFallback }) => {
           </span>
         )}
       </div>
- 
+
       {/* Acción principal */}
       <Button
         type="submit"
         variant="primary"
-        disabled={isPending || value?.length !== 6}
+        disabled={value?.length !== 6}
+        isLoading={isPending}
       >
         {isPending ? "VERIFICANDO..." : "INGRESAR"}
       </Button>
- 
+
       <div className={styles.divider}>
         <span>o</span>
       </div>
- 
+
       <Button
         type="button"
         variant="ghost"
@@ -107,7 +128,7 @@ export const OtpPhase = ({ control, onResend, isPending, onFallback }) => {
   );
 };
 
-const EmailPhase = ({ control, isPending, onRegister }) => (
+const EmailForCodePhase = ({ control, isPending, onFallback }) => (
   <div className={styles.phaseContainer}>
     <InputSimple
       name="email"
@@ -116,19 +137,39 @@ const EmailPhase = ({ control, isPending, onRegister }) => (
       type="text"
       disabled={isPending}
     />
-    <Button type="submit" variant="primary" disabled={isPending}>
-      {isPending ? "INGRESANDO..." : "INGRESAR"}
+    <Button type="submit" variant="primary" isLoading={isPending}>
+      {isPending ? "ENVIANDO CÓDIGO..." : "ENVIAR CÓDIGO"}
     </Button>
-    <div className={styles.formActions}>
-      <Button type="button" variant="outline" onClick={onRegister} disabled={isPending}>
-        REGISTRARSE
-      </Button>
+    <div className={styles.divider}>
+      <span>o</span>
     </div>
+    <Button
+      type="button"
+      variant="ghost"
+      onClick={onFallback}
+      disabled={isPending}
+      className={styles.ghostBtn}
+    >
+      Ingresar con contraseña
+    </Button>
   </div>
 );
 
-const PasswordPhase = ({ control, isPending, onRecoverPassword }) => (
+const CredentialsPhase = ({
+  control,
+  isPending,
+  onRegister,
+  onRecoverPassword,
+  onLoginWithCode,
+}) => (
   <div className={styles.phaseContainer}>
+    <InputSimple
+      name="email"
+      control={control}
+      label="Email"
+      type="text"
+      disabled={isPending}
+    />
     <InputSimple
       name="password"
       control={control}
@@ -136,42 +177,114 @@ const PasswordPhase = ({ control, isPending, onRecoverPassword }) => (
       type="password"
       disabled={isPending}
     />
-    <Button type="submit" variant="primary" disabled={isPending}>
+    <Button type="submit" variant="primary" isLoading={isPending}>
       {isPending ? "INGRESANDO..." : "INGRESAR"}
     </Button>
-    <div className={styles.recoverPasswordWrapper} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
-      <span className={styles.recoverPasswordLink} onClick={onRecoverPassword}>
-        ¿Olvidaste tu contraseña? Recuperar clave
+    <div
+      className={styles.recoverPasswordWrapper}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: "0.5rem",
+        fontSize: "0.875rem",
+        color: "var(--gray-text, #a0a0a0)",
+      }}
+    >
+      <span>
+        ¿Olvidaste tu contraseña?{" "}
+        <span className={styles.inlineLink} onClick={onRecoverPassword}>
+          Recuperar clave
+        </span>
+      </span>
+    </div>
+
+    <div className={styles.divider}>
+      <span>o</span>
+    </div>
+
+    <Button
+      type="button"
+      variant="outline"
+      onClick={onLoginWithCode}
+      disabled={isPending}
+      style={{ width: "100%" }}
+    >
+      Ingresar con código
+    </Button>
+
+    <div
+      style={{
+        marginTop: "1.5rem",
+        textAlign: "center",
+        fontSize: "0.875rem",
+        color: "var(--gray-text, #a0a0a0)",
+      }}
+    >
+      ¿No tenés una cuenta?{" "}
+      <span
+        className={styles.inlineLink}
+        onClick={!isPending ? onRegister : undefined}
+        style={{
+          cursor: isPending ? "not-allowed" : "pointer",
+          opacity: isPending ? 0.6 : undefined,
+        }}
+      >
+        Registrate
       </span>
     </div>
   </div>
 );
 
 const Login = () => {
-  const [fase, setFase] = useState("ingreso_email");
+  const [fase, setFase] = useState("ingreso_credenciales");
   const [generatedOtp, setGeneratedOtp] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const setUser = useAuthStore((state) => state.setUser);
   const { channelInfo } = useChannel();
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
-  const { mutate: loginByCode, isPending: solicitandoCodigo } = useLoginByCode();
+  const { mutate: loginByCode, isPending: solicitandoCodigo } =
+    useLoginByCode();
 
   const isPending = isLoginPending || solicitandoCodigo;
 
-  const currentSchema = 
-    fase === "ingreso_email" ? emailSchema : 
-    fase === "validacion_otp" ? otpSchema : 
-    passwordSchema;
+  const currentSchema =
+    fase === "ingreso_credenciales"
+      ? passwordSchema
+      : fase === "solicitar_codigo"
+        ? emailSchema
+        : otpSchema;
 
-  const { control, handleSubmit, setError, clearErrors, getValues, trigger, setValue } = useForm({
+  const {
+    control,
+    handleSubmit,
+    setError,
+    clearErrors,
+    getValues,
+    trigger,
+    setValue,
+  } = useForm({
     resolver: zodResolver(currentSchema),
     defaultValues: { email: "", otp: "", password: "" },
-    mode: "onChange"
+    mode: "onChange",
   });
 
-  // Interceptor de redirecciones invisibles (Ej: desde CrearClave)
   useEffect(() => {
+    const pendingEmail = sessionStorage.getItem("pendingOtpEmail");
+    const expiresAt = sessionStorage.getItem("otpExpiresAt");
+
+    if (pendingEmail && expiresAt) {
+      if (Date.now() < parseInt(expiresAt, 10)) {
+        setValue("email", pendingEmail);
+        setFase("validacion_otp");
+      } else {
+        sessionStorage.removeItem("pendingOtpEmail");
+        sessionStorage.removeItem("otpExpiresAt");
+      }
+    }
+
+    // B) Redirección desde CrearClave
     if (location.state?.emailIngresado) {
       setValue("email", location.state.emailIngresado);
       if (location.state?.generatedOtp) {
@@ -183,7 +296,7 @@ const Login = () => {
   }, [location.state, setValue]);
 
   const onSubmit = async (formData) => {
-    if (fase === "ingreso_email") {
+    if (fase === "solicitar_codigo") {
       const isValid = await trigger("email");
       if (!isValid) return;
 
@@ -192,17 +305,26 @@ const Login = () => {
         {
           onSuccess: (data) => {
             setGeneratedOtp(data.password);
+            sessionStorage.setItem("pendingOtpEmail", formData.email);
+            sessionStorage.setItem("otpExpiresAt", Date.now() + 60000);
             setFase("validacion_otp");
+            toast.success("Código enviado a tu email");
           },
           onError: (error) => {
+            const status = error?.response?.status;
             const errorData = error?.response?.data;
-            if (errorData?.classname === "EMVCException") {
-              setError("email", { type: "server", message: errorData.message });
+            if (!error?.response || status >= 500) {
+              toast.error("Error de servidor", {
+                description: "Ocurrió un error. Intentá más tarde.",
+              });
             } else {
-              toast.error("Error al solicitar código", { description: "Ocurrió un error. Intentá más tarde." });
+              const message =
+                errorData?.message ||
+                "Error al solicitar código. Verificá los datos.";
+              setError("email", { type: "server", message });
             }
-          }
-        }
+          },
+        },
       );
       return;
     }
@@ -217,9 +339,13 @@ const Login = () => {
       return;
     }
 
-    if (fase === "ingreso_clave") {
+    if (fase === "ingreso_credenciales") {
       if (formData.email === "admin" && formData.password === "admin") {
-        setUser({ email: "admin", role: "admin", nombre: "Administrador General" });
+        setUser({
+          email: "admin",
+          role: "admin",
+          nombre: "Administrador General",
+        });
         toast.success("Sesión de Administrador iniciada");
         navigate("/admin/dashboard", { replace: true });
         return;
@@ -236,12 +362,17 @@ const Login = () => {
             const status = error?.response?.status;
             if (!error?.response || status >= 500) {
               clearErrors("password");
-              toast.error("Error de servidor", { description: "Ocurrió un error. Intentá más tarde." });
+              toast.error("Error de servidor", {
+                description: "Ocurrió un error. Intentá más tarde.",
+              });
             } else {
-              setError("password", { type: "server", message: "Usuario o contraseña incorrecto." });
+              setError("password", {
+                type: "server",
+                message: "Usuario o contraseña incorrecto.",
+              });
             }
-          }
-        }
+          },
+        },
       );
     }
   };
@@ -252,10 +383,25 @@ const Login = () => {
       {
         onSuccess: (data) => {
           setGeneratedOtp(data.password);
+          sessionStorage.setItem("pendingOtpEmail", getValues("email"));
+          sessionStorage.setItem("otpExpiresAt", Date.now() + 60000);
           toast.success("Código reenviado");
         },
-        onError: () => toast.error("Error al reenviar", { description: "Intentá más tarde." })
-      }
+        onError: (error) => {
+          const status = error?.response?.status;
+          const errorData = error?.response?.data;
+          if (!error?.response || status >= 500) {
+            toast.error("Error de servidor", {
+              description: "Ocurrió un error. Intentá más tarde.",
+            });
+          } else {
+            const message =
+              errorData?.message ||
+              "Error al reenviar código. Verificá los datos.";
+            setError("otp", { type: "server", message });
+          }
+        },
+      },
     );
   };
 
@@ -264,11 +410,20 @@ const Login = () => {
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
           <div className={styles.logosWrapper}>
-            <img src={logoBind} alt="Logo BIND" onClick={() => navigate("/")} className={styles.clickableLogo} />
+            <img
+              src={logoBind}
+              alt="Logo BIND"
+              onClick={() => navigate("/")}
+              className={styles.clickableLogo}
+            />
             {channelInfo.id !== "default" && (
               <>
                 <div className={styles.logoSeparator} />
-                <img src={channelInfo.logo} alt={`Logo ${channelInfo.nombre}`} className={styles.channelLogo} />
+                <img
+                  src={channelInfo.logo}
+                  alt={`Logo ${channelInfo.nombre}`}
+                  className={styles.channelLogo}
+                />
               </>
             )}
           </div>
@@ -278,29 +433,72 @@ const Login = () => {
           <div className={styles.headerText}>
             <h2>¡Hola! Bienvenido</h2>
             <p>
-              {fase === "ingreso_email" && "Ingresá tu email para comenzar."}
-              {fase === "validacion_otp" && "Ingresá el código de 6 dígitos enviado a tu email."}
-              {fase === "ingreso_clave" && "Ingresá tu contraseña."}
+              {fase === "ingreso_credenciales" &&
+                "Ingresá tus datos para comenzar."}
+              {fase === "solicitar_codigo" &&
+                "Ingresá tu email para recibir un código de acceso."}
+              {fase === "validacion_otp" && (
+                <>
+                  Ingresá el código de 6 dígitos que enviamos a{" "}
+                  <strong style={{ color: "var(--white, #fffefe)" }}>
+                    {getValues("email") || sessionStorage.getItem("pendingOtpEmail")}
+                  </strong>
+                  .{" "}
+                  <span
+                    onClick={() => {
+                      sessionStorage.removeItem("pendingOtpEmail");
+                      sessionStorage.removeItem("otpExpiresAt");
+                      clearErrors();
+                      setFase("solicitar_codigo");
+                    }}
+                    className={styles.inlineLink}
+                    style={{ fontSize: "0.85rem", marginLeft: "0.25rem" }}
+                  >
+                    ¿Cambiar correo?
+                  </span>
+                </>
+              )}
             </p>
           </div>
 
-          <form className={styles.formContent} onSubmit={handleSubmit(onSubmit)} noValidate>
-            {fase === "ingreso_email" && (
-              <EmailPhase control={control} isPending={isPending} onRegister={() => navigate("/registro")} />
+          <form
+            className={styles.formContent}
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+          >
+            {fase === "ingreso_credenciales" && (
+              <CredentialsPhase
+                control={control}
+                isPending={isPending}
+                onRegister={() => navigate("/registro")}
+                onRecoverPassword={() => navigate("/recuperar-clave")}
+                onLoginWithCode={() => {
+                  clearErrors();
+                  setFase("solicitar_codigo");
+                }}
+              />
+            )}
+            {fase === "solicitar_codigo" && (
+              <EmailForCodePhase
+                control={control}
+                isPending={isPending}
+                onFallback={() => {
+                  clearErrors();
+                  setFase("ingreso_credenciales");
+                }}
+              />
             )}
             {fase === "validacion_otp" && (
               <OtpPhase
                 control={control}
                 isPending={isPending}
                 onResend={handleResendCode}
-                onFallback={() => setFase("ingreso_clave")}
-              />
-            )}
-            {fase === "ingreso_clave" && (
-              <PasswordPhase
-                control={control}
-                isPending={isPending}
-                onRecoverPassword={() => navigate("/recuperar-clave")}
+                onFallback={() => {
+                  sessionStorage.removeItem("pendingOtpEmail");
+                  sessionStorage.removeItem("otpExpiresAt");
+                  clearErrors();
+                  setFase("ingreso_credenciales");
+                }}
               />
             )}
           </form>
@@ -314,7 +512,9 @@ const Login = () => {
           <h2 className={styles.brandTitle}>
             Potenciando y transformando el <em>financiamiento PyME.</em>
           </h2>
-          <p className={styles.brandSubtitle}>Accedé a la mejor financiación para tu empresa.</p>
+          <p className={styles.brandSubtitle}>
+            Accedé a la mejor financiación para tu empresa.
+          </p>
         </div>
       </section>
     </div>
