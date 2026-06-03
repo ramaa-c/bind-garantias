@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import styles from "./Button.module.css";
 
 export const Button = ({
@@ -13,6 +13,8 @@ export const Button = ({
   isLoading,
   ...props
 }) => {
+  const btnRef = useRef(null);
+
   const claseBoton = `
     ${styles[variant] || styles.primary} 
     ${styles[`size-${size}`] || ""} 
@@ -20,6 +22,26 @@ export const Button = ({
     ${isLoading ? styles.loading : ""}
     ${className}
   `.trim();
+
+  const handleClick = (e) => {
+    if (disabled || isLoading) return;
+
+    const btn = btnRef.current;
+    if (!btn) return;
+
+    const ripple = document.createElement("span");
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 2;
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+
+    ripple.className = styles.ripple;
+    ripple.style.cssText = `width:${size}px;height:${size}px;left:${x}px;top:${y}px`;
+    btn.appendChild(ripple);
+    ripple.addEventListener("animationend", () => ripple.remove());
+
+    onClick?.(e);
+  };
 
   const renderContent = () => {
     if (isLoading && typeof children === "string" && children.endsWith("...")) {
@@ -50,17 +72,20 @@ export const Button = ({
 
   return (
     <button
+      ref={btnRef}
       type={type}
       className={claseBoton}
-      onClick={onClick}
+      onClick={handleClick}
       disabled={disabled || isLoading}
       {...props}
     >
-      {isLoading && !String(children).endsWith("...") && <span className={styles.spinner} />}
-      {isLoading ? (
-        <span className={styles.loadingText}>
-          {renderContent()}
+      {isLoading && !String(children).endsWith("...") && (
+        <span className={styles.spinnerWrap}>
+          <span className={styles.spinner} />
         </span>
+      )}
+      {isLoading ? (
+        <span className={styles.loadingText}>{renderContent()}</span>
       ) : (
         renderContent()
       )}
