@@ -77,7 +77,7 @@ const ConfirmarCorreo = () => {
           "No se encontró información del registro. Volvé a intentarlo.",
       });
     }, 0);
-    return <Navigate to="/registro" replace />;
+    return <Navigate to={`/${channelInfo.id}/registro`} replace />;
   }
 
   return (
@@ -89,7 +89,7 @@ const ConfirmarCorreo = () => {
             <img
               src={logoBind}
               alt="Logo BIND"
-              onClick={() => navigate("/")}
+              onClick={() => navigate(`/${channelInfo.id}/login`)}
               className={styles.clickableLogo}
             />
             {channelInfo?.id !== "default" && (
@@ -182,11 +182,11 @@ const ConfirmarCorreo = () => {
                 className={styles.linkYellow}
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate(origen === "recuperar" ? "/recuperar-clave" : "/registro")}
+                onClick={() => navigate(`/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    navigate(origen === "recuperar" ? "/recuperar-clave" : "/registro");
+                    navigate(`/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`);
                   }
                 }}
               >

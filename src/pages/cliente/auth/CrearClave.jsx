@@ -85,7 +85,7 @@ const CrearClave = () => {
               toast.success("Código enviado", {
                 description: "Revisá tu correo para ingresar."
               });
-              navigate("/", {
+              navigate(`/${channelInfo.id}/login`, {
                 state: { emailIngresado: usuario.email, generatedOtp: data.password }
               });
             },
@@ -137,7 +137,7 @@ const CrearClave = () => {
 
     resetearPassword(payloadReset, {
       onSuccess: () => {
-        navigate("/confirmar-correo", {
+        navigate(`/${channelInfo.id}/confirmar-correo`, {
           state: { emailIngresado: emailManual, canal: canalIntegridad, origen: "recuperar" },
         });
       },
@@ -149,7 +149,7 @@ const CrearClave = () => {
             : "No pudimos enviar el correo. Intentá registrarte nuevamente.",
         });
         if (!isServerError) {
-          navigate("/registro");
+          navigate(`/${channelInfo.id}/registro`);
         }
       },
     });
@@ -184,7 +184,7 @@ const CrearClave = () => {
           description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
           duration: 5000,
         });
-        navigate("/", { replace: true });
+        navigate(`/${channelInfo.id}/login`, { replace: true });
       },
       onError: (error) => {
         const isServerError = error?.response?.status >= 500;
@@ -225,7 +225,7 @@ const CrearClave = () => {
                 <img
                   src={logoBind}
                   alt="Logo BIND"
-                  onClick={() => navigate("/")}
+                  onClick={() => navigate(`/${channelInfo.id}/login`)}
                   className={styles.clickableLogo}
                 />
                 {channelInfo.id !== "default" && (

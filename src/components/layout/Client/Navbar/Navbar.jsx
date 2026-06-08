@@ -12,6 +12,7 @@ import styles from "./Navbar.module.css";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useChannel } from "../../../../context/ChannelContext";
 
 const Navbar = ({
   texto = "¿No tenés cuenta?",
@@ -26,6 +27,7 @@ const Navbar = ({
 
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const { channelInfo } = useChannel();
   
   const { nombreEmpresa } = useEmpresaActiva();
   const isVinculado = !!nombreEmpresa;
@@ -49,7 +51,7 @@ const Navbar = ({
 
   const handleLogout = () => {
     clearAuth();
-    navigate("/ingresar");
+    navigate(`/${channelInfo.id}/login`);
   };
 
   const handleOpenHelp = () => {
@@ -67,8 +69,18 @@ const Navbar = ({
         >
           <FiMenu size={24} color="#fff" />
         </button>
-        <div className={styles.logoContainer} onClick={() => navigate("/")}>
+        <div className={styles.logoContainer} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)}>
           <img src={logoBind} alt="Bind Garantías" className={styles.logo} />
+          {channelInfo.id !== "default" && (
+            <>
+              <div className={styles.logoSeparator} />
+              <img
+                src={channelInfo.logo}
+                alt={channelInfo.nombre}
+                className={styles.channelLogo}
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -134,7 +146,7 @@ const Navbar = ({
         ) : (
           <div className={styles.loginContainer}>
             {texto}
-            <span className={styles.link} onClick={() => navigate(rutaDestino)}>
+            <span className={styles.link} onClick={() => navigate(`/${channelInfo.id}${rutaDestino.startsWith('/') ? rutaDestino : '/' + rutaDestino}`)}>
               {" "}
               {textoEnlace}
             </span>

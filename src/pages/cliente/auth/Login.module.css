@@ -80,7 +80,9 @@
 
 .channelLogo {
   width: auto;
-  height: 2rem;
+  max-width: 12rem;
+  height: 2.5rem;
+  object-fit: contain;
 }
 
 /* ── CARD PRINCIPAL ── */

@@ -5,6 +5,7 @@ import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
+import { useChannel } from "../../../../context/ChannelContext";
 import styles from "./Sidebar.module.css";
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -16,6 +17,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const emailUsuario = typeof user === "string" ? user : user?.email ? String(user.email) : "Usuario";
+  const { channelInfo } = useChannel();
 
   const [isTasasModalOpen, setIsTasasModalOpen] = useState(false);
 
@@ -29,13 +31,13 @@ export default function Sidebar({ isOpen, onClose }) {
   const isActive = (path) => location.pathname === path;
 
   const handleNavigate = (path) => {
-    navigate(path);
+    navigate(`/${channelInfo.id}${path.startsWith('/') ? path : '/' + path}`);
     onClose();
   };
 
   const handleLogout = () => {
     clearAuth();
-    navigate("/ingresar");
+    navigate(`/${channelInfo.id}/login`);
   };
 
   const toggleSection = (section) => {
@@ -48,7 +50,15 @@ export default function Sidebar({ isOpen, onClose }) {
   return (
     <aside className={`${styles.container} ${isOpen ? styles.open : ""}`}>
       <div className={styles.sidebarHeader}>
-        <img src={logoBind} alt="Bind Garantías" className={styles.logo} />
+        <div className={styles.logosWrapper}>
+          <img src={logoBind} alt="Bind Garantías" className={styles.logo} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)} style={{ cursor: "pointer" }} />
+          {channelInfo.id !== "default" && (
+            <>
+              <div className={styles.logoSeparator} />
+              <img src={channelInfo.logo} alt={channelInfo.nombre} className={styles.channelLogo} />
+            </>
+          )}
+        </div>
         <button
           className={styles.closeButton}
           onClick={onClose}
