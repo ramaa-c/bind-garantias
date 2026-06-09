@@ -752,7 +752,7 @@ export const AltaOperacion = () => {
         tipolimiteestadoid: 9,
         observaciones: "",
         sucursalid: 0,
-        terceromercadoid: 0,
+        terceromercadoid: 400004,
         destfondosid: 320,
         tipocomisionid: 0,
         porcentajecomision: 0,
@@ -763,7 +763,7 @@ export const AltaOperacion = () => {
         tipolimitesolicitudid: 1,
         importemonex:
           Number(cleanData.moneda) === 2 ? Math.round(montoLimpio) : 0,
-        tipolibradorid: null,
+        tipolibradorid: 2,
         contratoid: null,
         cadenavalorid: Number(cadenaSlug) || 0,
         equipocomercialid: null,

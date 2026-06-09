@@ -7,6 +7,7 @@ import {
   FiUser,
   FiPercent,
   FiBriefcase,
+  FiChevronDown,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -99,6 +100,16 @@ export function SociosLegajo() {
     cargarArchivosExistentes();
   }, [socioIdActivo]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768 && !activeTab) {
+        setActiveTab(tabsDisponibles[0]?.key);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [activeTab, tabsDisponibles]);
+
   const totalParticipacion = useMemo(() => {
     return accionistas.reduce((a, s) => a + Number(s.participacion || 0), 0);
   }, [accionistas]);
@@ -160,33 +171,53 @@ export function SociosLegajo() {
             )}
             <button
               type="button"
-              onClick={() => setActiveTab(doc.key)}
+              onClick={() => {
+                if (window.innerWidth <= 768) {
+                  setActiveTab((prev) => (prev === doc.key ? null : doc.key));
+                } else {
+                  setActiveTab(doc.key);
+                }
+              }}
               className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}`}
             >
               {isActive && <span className={styles.activeBar} />}
               <span className={styles.tabTitle}>{doc.title}</span>
+              <FiChevronDown
+                className={styles.mobileChevron}
+                style={{
+                  transform: isActive ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.3s ease",
+                  color: isActive ? "#fff" : "#aaa",
+                  fontSize: "1.1rem"
+                }}
+              />
             </button>
 
             {isActive && (
               <section className={styles.viewer}>
                 <header className={styles.viewerHeader}>
-                  <div className={styles.viewerMeta}>
-                    <span className={styles.viewerBadge}>{doc.category}</span>
+                  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", flex: "1 1 200px" }}>
+                      <div className={styles.viewerMeta}>
+                        <span className={styles.viewerBadge}>{doc.category}</span>
+                      </div>
+                      <h4 className={styles.viewerTitle}>{doc.title}</h4>
+                      <p className={styles.viewerInfo}>
+                        {doc.info}
+                        {doc.url && (
+                          <a
+                            href={doc.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.helperLink}
+                          >
+                            {doc.linkText} <FiExternalLink size={11} />
+                          </a>
+                        )}
+                      </p>
+                    </div>
+                    <div id="socios-header-action-portal" className={styles.headerActionPortal} />
                   </div>
-                  <h4 className={styles.viewerTitle}>{doc.title}</h4>
-                  <p className={styles.viewerInfo}>
-                    {doc.info}
-                    {doc.url && (
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.helperLink}
-                      >
-                        {doc.linkText} <FiExternalLink size={11} />
-                      </a>
-                    )}
-                  </p>
                 </header>
 
                 {isUsuarios ? (

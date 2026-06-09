@@ -7,6 +7,8 @@ import {
   SeccionClasificacion,
 } from "../../../features";
 import { useCrearSocio, useActualizarSocio } from "../../../../hooks/useSocios";
+import { useParams } from "react-router-dom";
+import { useObtenerPorCadenaValorIdWeb } from "../../../../hooks/useCadenaValor";
 import styles from "./Formulario.module.css";
 
 export const Formulario = ({
@@ -15,6 +17,9 @@ export const Formulario = ({
   onCancelar,
 }) => {
   const esEdicion = !!socioExistente;
+  const { cadenaSlug } = useParams();
+  const cadenaValorId = Number(cadenaSlug) || 0;
+  const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
 
   const metodos = useForm({
     values: {
@@ -55,11 +60,11 @@ export const Formulario = ({
       fax: "",
       email: "",
       tipopersonaid: 0,
-      tipocarteraid: 0,
-      sectorcontableid: 0,
+      tipocarteraid: 2,
+      sectorcontableid: 700,
       tipoactividadbcraid: 0,
       tipoactividadsepymeid: 0,
-      marcavinculacion: "0",
+      marcavinculacion: "",
       situacionbcraid: 1,
       fechabaja: null,
       motivobajaid: 0,
@@ -100,6 +105,7 @@ export const Formulario = ({
       tamanioempresaid: Number(formData.tamanioempresaid) || 0,
       tipoactividadbcraid: Number(formData.tipoactividadbcraid) || 0,
       tipoactividadsepymeid: Number(formData.tipoactividadsepymeid) || 0,
+      tipocanalcomercializacionid: cadenaData?.tipocanalcomercializacionid || basePayload.tipocanalcomercializacionid || 0,
     };
 
     const operacion = esEdicion

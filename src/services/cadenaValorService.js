@@ -79,4 +79,20 @@ export const cadenaValorService = {
   // GET /CadenaValor/Utilizado/{CadenaValorID}
   obtenerUtilizado: async (cadenaValorId) =>
     (await api.get(`CadenaValor/Utilizado/${cadenaValorId}`)).data,
+
+  // GET /api/cadenavalor (Web)
+  obtenerPorCadenaValorIdWeb: async (cadenaValorId) =>
+    (await api.get("api/cadenavalor", { params: { CadenaValorID: cadenaValorId } })).data,
+
+  // GET /api/cadenavalor/cdas/{CadenaID}
+  obtenerCdasPorCadenaId: async (cadenaId) =>
+    (await api.get(`api/cadenavalor/cdas/${cadenaId}`)).data,
+
+  // POST /api/cadenavalor
+  crearCadenaValor: async (cadenaValorData) =>
+    (await api.post("api/cadenavalor", cadenaValorData)).data,
+
+  // PUT /api/cadenavalor
+  actualizarCadenaValor: async (cadenaValorData) =>
+    (await api.put("api/cadenavalor", cadenaValorData)).data,
 };

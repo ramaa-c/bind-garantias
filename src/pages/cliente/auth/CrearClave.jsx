@@ -243,20 +243,21 @@ const CrearClave = () => {
 
 
 
-            {!tokenInvalidoDeOrigen && usuario && (
-              <div className={styles.successCallout}>
-                <FiCheckCircle className={styles.calloutIcon} />
-                <div className={styles.calloutContent}>
-                  <h2 className={styles.calloutTitle}>¡Email verificado con éxito!</h2>
-                  <p>
-                    Tu cuenta ya está activa. Crear una contraseña es <strong>opcional</strong>. 
-                    Podés configurarla ahora o saltar este paso para ingresar siempre con un código a tu correo.
-                  </p>
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem", marginTop: "3.5rem" }}>
+              {!tokenInvalidoDeOrigen && usuario && (
+                <div className={styles.successCallout} style={{ marginBottom: 0 }}>
+                  <FiCheckCircle className={styles.calloutIcon} />
+                  <div className={styles.calloutContent}>
+                    <h2 className={styles.calloutTitle}>¡Email verificado con éxito!</h2>
+                    <p>
+                      Tu cuenta ya está activa. Crear una contraseña es <strong>opcional</strong>. 
+                      Podés configurarla ahora o saltar este paso para ingresar siempre con un código a tu correo.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div className={styles.formWrapper}>
+              <div className={styles.formWrapper}>
               {tokenInvalidoDeOrigen && (
                 <div className={styles.expiredTokenContainer}>
                   <FiAlertCircle size={48} color="var(--red)" />
@@ -390,6 +391,7 @@ const CrearClave = () => {
                   </div>
                 </form>
               )}
+            </div>
             </div>
           </section>
 

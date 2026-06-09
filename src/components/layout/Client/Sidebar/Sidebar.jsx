@@ -28,7 +28,7 @@ export default function Sidebar({ isOpen, onClose }) {
     administracion: false,
   });
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => location.pathname.startsWith(`/${channelInfo.id}${path}`);
 
   const handleNavigate = (path) => {
     navigate(`/${channelInfo.id}${path.startsWith('/') ? path : '/' + path}`);

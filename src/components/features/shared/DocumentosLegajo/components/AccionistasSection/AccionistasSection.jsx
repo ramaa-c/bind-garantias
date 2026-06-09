@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiUsers, FiPlus, FiAlertCircle, FiUser, FiChevronDown, FiEdit2, FiTrash2, FiMail, FiPhone, FiMapPin, FiPercent } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { SocioAccionistaModal } from "../SocioAccionistaModal/SocioAccionistaModal";
@@ -17,6 +18,11 @@ export function AccionistasSection({
   const [modalAccionistaOpen, setModalAccionistaOpen] = useState(false);
   const [editAccionista, setEditAccionista] = useState(null);
   const [expandedSocio, setExpandedSocio] = useState(null);
+  const [portalTarget, setPortalTarget] = useState(null);
+
+  useEffect(() => {
+    setPortalTarget(document.getElementById("socios-header-action-portal"));
+  }, []);
 
   return (
     <div className={styles.sociosContainer}>
@@ -29,13 +35,7 @@ export function AccionistasSection({
         </div>
       ) : (
         <div className={styles.sectionBlock}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionHeaderLeft}>
-              <FiUsers className={styles.sectionIcon} size={18} />
-              <h5 className={styles.sectionTitle}>
-                Accionistas (Composición Accionaria)
-              </h5>
-            </div>
+          {portalTarget && createPortal(
             <button
               type="button"
               className={styles.addButton}
@@ -46,8 +46,9 @@ export function AccionistasSection({
               disabled={totalParticipacion >= 100}
             >
               <FiPlus size={14} /> Agregar Accionista
-            </button>
-          </div>
+            </button>,
+            portalTarget
+          )}
 
           <div className={styles.progressContainer}>
             <div className={styles.progressLabelRow}>
@@ -72,17 +73,7 @@ export function AccionistasSection({
             </div>
           </div>
 
-          {totalParticipacion !== 100 && (
-            <div
-              className={`${styles.alertBanner} ${styles.alertBannerWarning}`}
-            >
-              <FiAlertCircle className={styles.alertIcon} size={16} />
-              <p className={styles.alertText}>
-                La composición accionaria actual debe sumar exactamente el 100%
-                (Actual: {totalParticipacion}%).
-              </p>
-            </div>
-          )}
+
 
           {accionistas.length === 0 ? (
             <div

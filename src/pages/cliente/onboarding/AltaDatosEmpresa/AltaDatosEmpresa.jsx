@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSchema";
 import { BarraProgreso, Button, Modal } from "../../../../components/ui";
@@ -16,6 +16,7 @@ import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
+import { useObtenerPorCadenaValorIdWeb } from "../../../../hooks/useCadenaValor";
 import styles from "./AltaDatosEmpresa.module.css";
 import { toast } from "sonner";
 
@@ -27,6 +28,10 @@ const getCSharpIsoDate = () => {
 export const AltaDatosEmpresa = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { cadenaSlug } = useParams();
+  const cadenaValorId = Number(cadenaSlug) || 0;
+  const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
+
   const [pasoActual, setPasoActual] = useState(1);
   const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(1);
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
@@ -62,6 +67,7 @@ export const AltaDatosEmpresa = () => {
       celular: "",
       tipopersonaid: 0,
       mescierre: null,
+      fechainicioactividades: null,
     },
   });
 
@@ -94,12 +100,12 @@ export const AltaDatosEmpresa = () => {
         fax: "",
         email: user?.email || "",
         tipopersonaid: data.tipopersonaid || 0,
-        tipocarteraid: 0,
-        sectorcontableid: 0,
+        tipocarteraid: 2,
+        sectorcontableid: 700,
         tipoactividadbcraid: 0,
         tipoactividadsepymeid: 0,
-        marcavinculacion: "0",
-        situacionbcraid: 0,
+        marcavinculacion: "",
+        situacionbcraid: 1,
         fechabaja: getCSharpIsoDate(),
         motivobajaid: 0,
         socioestadoid: 9,
@@ -117,9 +123,9 @@ export const AltaDatosEmpresa = () => {
         visitado: "0",
         scoringcomercial: "0",
         partidoid: 0,
-        fechainicioactividades: getCSharpIsoDate(),
+        fechainicioactividades: data.fechainicioactividades || getCSharpIsoDate(),
         tipoactividadglobalid: 0,
-        tipocanalcomercializacionid: 0,
+        tipocanalcomercializacionid: cadenaData?.tipocanalcomercializacionid || 0,
         emailfacturacion: user?.email || "",
         minapoderadosrequeridos: 0,
         tipocondicionfianzaid: 0,

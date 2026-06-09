@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { FiUsers, FiBriefcase, FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { BolsaModal } from "../BolsaModal/BolsaModal";
@@ -13,6 +14,11 @@ export function AgentesBolsaSection({
 }) {
   const [modalBolsaOpen, setModalBolsaOpen] = useState(false);
   const [editBolsa, setEditBolsa] = useState(null);
+  const [portalTarget, setPortalTarget] = useState(null);
+
+  useEffect(() => {
+    setPortalTarget(document.getElementById("socios-header-action-portal"));
+  }, []);
 
   return (
     <div className={styles.sociosContainer}>
@@ -25,13 +31,7 @@ export function AgentesBolsaSection({
         </div>
       ) : (
         <div className={styles.sectionBlock}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionHeaderLeft}>
-              <FiBriefcase className={styles.sectionIcon} size={18} />
-              <h5 className={styles.sectionTitle}>
-                Agentes de Bolsa
-              </h5>
-            </div>
+          {portalTarget && createPortal(
             <button
               type="button"
               className={styles.addButton}
@@ -41,8 +41,9 @@ export function AgentesBolsaSection({
               }}
             >
               <FiPlus size={14} /> Vincular Agente de Bolsa
-            </button>
-          </div>
+            </button>,
+            portalTarget
+          )}
 
           {agentesBolsa.length === 0 ? (
             <div
@@ -68,34 +69,21 @@ export function AgentesBolsaSection({
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "space-between",
-                      gap: "1rem",
+                      width: "100%",
                     }}
                   >
                     <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.75rem",
-                      }}
+                      className={styles.socioCardBtn}
+                      style={{ cursor: "default" }}
                     >
                       <div className={styles.socioAvatar}>
                         <FiBriefcase size={16} />
                       </div>
-                      <div>
-                        <span
-                          className={styles.socioName}
-                          style={{ display: "block" }}
-                        >
+                      <div className={styles.socioMainInfo}>
+                        <span className={styles.socioName}>
                           {bolsa.nombre}
                         </span>
-                        <span
-                          className={styles.socioCuit}
-                          style={{
-                            display: "block",
-                            marginTop: "0.15rem",
-                          }}
-                        >
+                        <span className={styles.socioCuit} style={{ marginTop: "0.15rem" }}>
                           Comitente:{" "}
                           <strong style={{ color: "#fff" }}>
                             {bolsa.nrosubcuentacaja || "—"}
@@ -104,11 +92,8 @@ export function AgentesBolsaSection({
                       </div>
                     </div>
                     <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "0.5rem",
-                      }}
+                      className={styles.socioHeaderActions}
+                      style={{ paddingRight: "1rem" }}
                     >
                       <button
                         type="button"

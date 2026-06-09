@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useState } from "react";
 import logoBind from "../assets/images/bind-g-logo.svg";
 import johnDeereLogo from "../assets/images/canales/john-deere.png";
-import bnaLogo from "../assets/images/canales/bna-logo.png";
-import acaLogo from "../assets/images/canales/aca-logo.png";
 
 const ChannelContext = createContext();
 
@@ -26,20 +24,6 @@ export const CANALES_MOCK = {
     nombre: "BIND Garantías",
     logo: logoBind,
     colorPrincipal: "var(--color-azul-bind)",
-    colorSecundario: "var(--color-amarillo-bind)",
-  },
-  bna: {
-    id: "bna",
-    nombre: "Banco Nación",
-    logo: bnaLogo,
-    colorPrincipal: "#0056b3",
-    colorSecundario: "var(--color-amarillo-bind)",
-  },
-  aca: {
-    id: "aca",
-    nombre: "ACA",
-    logo: acaLogo,
-    colorPrincipal: "#28a745",
     colorSecundario: "var(--color-amarillo-bind)",
   },
 };

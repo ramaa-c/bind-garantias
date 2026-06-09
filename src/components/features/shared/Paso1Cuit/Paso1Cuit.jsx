@@ -245,6 +245,32 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         }
         setValue("mescierre", mesCierre);
 
+        // ── EXTRAER FECHA DE INICIO DE ACTIVIDADES (AFIP)
+        let fechaInicioActividades = null;
+        if (
+          afipData.datosregimengeneral?.impuesto &&
+          Array.isArray(afipData.datosregimengeneral.impuesto)
+        ) {
+          const impuestos = afipData.datosregimengeneral.impuesto;
+          let minPeriodo = null;
+          for (const imp of impuestos) {
+            if (imp.periodo) {
+              if (minPeriodo === null || imp.periodo < minPeriodo) {
+                minPeriodo = imp.periodo;
+              }
+            }
+          }
+          if (minPeriodo) {
+            const minPeriodoStr = minPeriodo.toString();
+            if (minPeriodoStr.length === 6) {
+              const year = minPeriodoStr.substring(0, 4);
+              const month = minPeriodoStr.substring(4, 6);
+              fechaInicioActividades = `${year}-${month}-01T00:00:00`;
+            }
+          }
+        }
+        setValue("fechainicioactividades", fechaInicioActividades);
+
         setTimeout(() => {
           setProcesoModal({
             isOpen: false,

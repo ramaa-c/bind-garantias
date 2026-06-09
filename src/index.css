@@ -80,3 +80,9 @@ html, body, #root {
   background-color: var(--color-gris-bind);
   color: var(--white);
 }
+
+/* Ocultar el ojo nativo del navegador en inputs de contraseña (Edge/IE) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
