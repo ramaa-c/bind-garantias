@@ -1,4 +1,4 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { cadenaValorService } from '../services/cadenaValorService';
 
 export const useObtenerTodas = (page = 1, pageSize = 10) => {
@@ -84,5 +84,33 @@ export const useObtenerUtilizado = (cadenaValorId) => {
         queryKey: ['cadenaValor', 'utilizado', cadenaValorId],
         queryFn: () => cadenaValorService.obtenerUtilizado(cadenaValorId),
         enabled: !!cadenaValorId
+    });
+};
+
+export const useObtenerPorCadenaValorIdWeb = (cadenaValorId) => {
+    return useQuery({
+        queryKey: ['cadenaValor', 'web', cadenaValorId],
+        queryFn: () => cadenaValorService.obtenerPorCadenaValorIdWeb(cadenaValorId),
+        enabled: !!cadenaValorId
+    });
+};
+
+export const useObtenerCdasPorCadenaId = (cadenaId) => {
+    return useQuery({
+        queryKey: ['cadenaValor', 'cdas', cadenaId],
+        queryFn: () => cadenaValorService.obtenerCdasPorCadenaId(cadenaId),
+        enabled: !!cadenaId
+    });
+};
+
+export const useCrearCadenaValor = () => {
+    return useMutation({
+        mutationFn: cadenaValorService.crearCadenaValor
+    });
+};
+
+export const useActualizarCadenaValor = () => {
+    return useMutation({
+        mutationFn: cadenaValorService.actualizarCadenaValor
     });
 };

@@ -6,6 +6,7 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
 import { InputSimple, Button, Alert } from "../../../components/ui";
+import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 
@@ -18,6 +19,7 @@ const recuperarSchema = z.object({
 
 const RecuperarClave = () => {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
   const {
     control,
@@ -56,7 +58,7 @@ const RecuperarClave = () => {
 
     try {
       await enviarCorreoAsync(payloadReset);
-      navigate("/confirmar-correo", {
+      navigate(`/${channelInfo.id}/confirmar-correo`, {
         replace: true,
         state: { emailIngresado: data.email, canal: "canal1", origen: "recuperar" },
       });
@@ -72,12 +74,24 @@ const RecuperarClave = () => {
       {/* --- COLUMNA IZQUIERDA --- */}
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
-          <img
-            src={logoBind}
-            alt="Logo BIND"
-            onClick={() => navigate("/")}
-            style={{ cursor: "pointer" }}
-          />
+          <div className={styles.logosWrapper}>
+            <img
+              src={logoBind}
+              alt="Logo BIND"
+              onClick={() => navigate(`/${channelInfo.id}/login`)}
+              className={styles.clickableLogo}
+            />
+            {channelInfo.id !== "default" && (
+              <>
+                <div className={styles.logoSeparator} />
+                <img
+                  src={channelInfo.logo}
+                  alt={`Logo ${channelInfo.nombre}`}
+                  className={styles.channelLogo}
+                />
+              </>
+            )}
+          </div>
         </div>
 
         <div className={styles.cardModern}>

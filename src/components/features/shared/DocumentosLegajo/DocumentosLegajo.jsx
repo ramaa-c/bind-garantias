@@ -133,6 +133,16 @@ export function DocumentosLegajo() {
     cargarArchivosExistentes();
   }, [socioIdActivo, setValue]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth > 768 && !activeTab) {
+        setActiveTab(ESTRUCTURA_LEGAJO[0].key);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [activeTab]);
+
   const handleFileUpload = (key, file) => {
     if (file instanceof File) {
       file._uploaded = false;
@@ -160,13 +170,28 @@ export function DocumentosLegajo() {
             )}
             <button
               type="button"
-              onClick={() => setActiveTab(doc.key)}
+              onClick={() => {
+                if (window.innerWidth <= 768) {
+                  setActiveTab((prev) => (prev === doc.key ? null : doc.key));
+                } else {
+                  setActiveTab(doc.key);
+                }
+              }}
               className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}`}
             >
               {isActive && <span className={styles.activeBar} />}
               <span className={styles.tabTitle}>{doc.title}</span>
               <span
                 className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
+              />
+              <FiChevronDown
+                className={styles.mobileChevron}
+                style={{
+                  transform: isActive ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.3s ease",
+                  color: isActive ? "#fff" : "#aaa",
+                  fontSize: "1.1rem"
+                }}
               />
             </button>
 

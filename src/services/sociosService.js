@@ -162,6 +162,13 @@ export const sociosService = {
           descripcionprovincia: provincia,
         },
       },
+      datosregimengeneral: {
+        impuesto: Array.isArray(lufeData.impuestos)
+          ? lufeData.impuestos.map((imp) => ({
+              periodo: imp.periodo_vigencia,
+            }))
+          : [],
+      },
     };
   },
 };

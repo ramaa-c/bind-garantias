@@ -9,6 +9,7 @@ import { FiMail } from "react-icons/fi";
 import { InputSimple, Button } from "../../../components/ui";
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
+import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 
@@ -28,6 +29,7 @@ const Registro = () => {
     useCrearUsuario();
   const { mutateAsync: reenviarCorreo, isPending: reenviando } =
     useResetearPassword();
+  const { channelInfo } = useChannel();
 
   const [modalUsuarioExistente, setModalUsuarioExistente] = useState(false);
   const [emailPendiente, setEmailPendiente] = useState("");
@@ -75,7 +77,7 @@ const Registro = () => {
     try {
       await crearUsuario(payloadSkeletor);
 
-      navigate("/confirmar-correo", {
+      navigate(`/${channelInfo.id}/confirmar-correo`, {
         replace: true,
         state: {
           usuarioSkeletor: payloadSkeletor,
@@ -148,7 +150,7 @@ const Registro = () => {
 
       setModalUsuarioExistente(false);
 
-      navigate("/confirmar-correo", {
+      navigate(`/${channelInfo.id}/confirmar-correo`, {
         replace: true,
         state: {
           emailIngresado: emailPendiente,
@@ -179,13 +181,24 @@ const Registro = () => {
       <div className={styles.layoutSplit}>
         <section className={styles.sideForm}>
           <div className={styles.globalLogo}>
-            <img
-              src={logoBind}
-              alt="Logo BIND"
-              width="120"
-              className={styles.clickableLogo}
-              onClick={() => navigate("/")}
-            />
+            <div className={styles.logosWrapper}>
+              <img
+                src={logoBind}
+                alt="Logo BIND"
+                onClick={() => navigate(`/${channelInfo.id}/login`)}
+                className={styles.clickableLogo}
+              />
+              {channelInfo.id !== "default" && (
+                <>
+                  <div className={styles.logoSeparator} />
+                  <img
+                    src={channelInfo.logo}
+                    alt={`Logo ${channelInfo.nombre}`}
+                    className={styles.channelLogo}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
           <div className={styles.cardModern}>
@@ -225,7 +238,7 @@ const Registro = () => {
                 ¿Ya tenés una cuenta?{" "}
                 <span 
                   className={styles.inlineLink}
-                  onClick={!isFormDisabled ? () => navigate("/") : undefined} 
+                  onClick={!isFormDisabled ? () => navigate(`/${channelInfo.id}/login`) : undefined} 
                   style={{ 
                     cursor: isFormDisabled ? "not-allowed" : "pointer", 
                     opacity: isFormDisabled ? 0.6 : undefined

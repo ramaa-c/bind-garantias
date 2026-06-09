@@ -5,7 +5,7 @@ import {
   useWatch,
   useFieldArray,
 } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { FiRotateCcw } from "react-icons/fi";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,6 +38,7 @@ const STORAGE_KEY = "draft_alta_operacion";
 
 export const AltaOperacion = () => {
   const navigate = useNavigate();
+  const { cadenaSlug } = useParams();
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
@@ -549,7 +550,7 @@ export const AltaOperacion = () => {
             : cleanData.tipoProducto === "prestamo"
               ? 2
               : 3,
-        cadenavalorid: 950274,
+        cadenavalorid: Number(cadenaSlug) || 0,
         monedaid: Number(cleanData.moneda) || 5000,
         importe: montoLimpio,
         estadosolicitud: 1,
@@ -748,30 +749,28 @@ export const AltaOperacion = () => {
         monedaid: Number(cleanData.moneda) || 5000,
         importelimite: importeEnPesos,
         importeutilizado: 0,
-        tipolimiteestadoid: 0,
+        tipolimiteestadoid: 9,
         observaciones: "",
         sucursalid: 0,
-        terceromercadoid: 0,
-        destfondosid: 0,
+        terceromercadoid: 400004,
+        destfondosid: 320,
         tipocomisionid: 0,
         porcentajecomision: 0,
         importecargado: importeEnPesos,
         avalid: 0,
         propuesta: "",
         resolucion: "",
-        tipolimitesolicitudid: 0,
+        tipolimitesolicitudid: 1,
         importemonex:
           Number(cleanData.moneda) === 2 ? Math.round(montoLimpio) : 0,
-        tipolibradorid: 0,
-        contratoid: 0,
-        cadenavalorid: 0,
-        equipocomercialid: 0,
+        tipolibradorid: 2,
+        contratoid: null,
+        cadenavalorid: Number(cadenaSlug) || 0,
+        equipocomercialid: null,
         solicitudid: solicitudIdCreada,
         tipolimiteriesgoid: 0,
         terceroviaid: 4000000,
-        terceropresentanteid: cleanData.sociedadBolsa
-          ? Number(cleanData.sociedadBolsa)
-          : 0,
+        terceropresentanteid: null,
         tercerogeneradorid: 0,
       };
 

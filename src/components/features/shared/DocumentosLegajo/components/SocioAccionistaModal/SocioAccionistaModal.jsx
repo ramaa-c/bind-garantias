@@ -30,6 +30,7 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
         type="file"
         id={`file-input-${fileKey}`}
         style={{ display: "none" }}
+        accept="image/*,application/pdf"
         onChange={(e) => {
           if (e.target.files?.[0]) onChange(e.target.files[0]);
         }}

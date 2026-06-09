@@ -339,7 +339,7 @@ const Login = () => {
     if (fase === "validacion_otp") {
       if (formData.otp === generatedOtp) {
         setUser({ email: formData.email, role: "user" });
-        navigate("/solicitudes", { replace: true });
+        navigate(`/${channelInfo.id}/solicitudes`, { replace: true });
       } else {
         setError("otp", { type: "server", message: "Código incorrecto" });
       }
@@ -363,7 +363,7 @@ const Login = () => {
         {
           onSuccess: () => {
             setUser({ email: formData.email, role: "user" });
-            navigate("/solicitudes", { replace: true });
+            navigate(`/${channelInfo.id}/solicitudes`, { replace: true });
           },
           onError: (error) => {
             const status = error?.response?.status;
@@ -420,7 +420,7 @@ const Login = () => {
             <img
               src={logoBind}
               alt="Logo BIND"
-              onClick={() => navigate("/")}
+              onClick={() => navigate(`/${channelInfo.id}/login`)}
               className={styles.clickableLogo}
             />
             {channelInfo.id !== "default" && (
@@ -477,8 +477,8 @@ const Login = () => {
               <CredentialsPhase
                 control={control}
                 isPending={isPending}
-                onRegister={() => navigate("/registro")}
-                onRecoverPassword={() => navigate("/recuperar-clave")}
+                onRegister={() => navigate(`/${channelInfo.id}/registro`)}
+                onRecoverPassword={() => navigate(`/${channelInfo.id}/recuperar-clave`)}
                 onLoginWithCode={() => {
                   clearErrors();
                   setFase("solicitar_codigo");

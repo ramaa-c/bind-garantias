@@ -4,10 +4,12 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import { useObtenerSocioUsuarioPorUsuarioId } from "../../../hooks/useSocios";
 import { useObtenerPorNombreOEmail } from "../../../hooks/useUsuario";
 import { LoadingScreen } from "../../ui";
+import { useChannel } from "../../../context/ChannelContext";
 
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
+  const { channelInfo } = useChannel();
 
   const isTerminosPage = location.pathname === "/terminos";
   const isAltaDatosPage = location.pathname === "/alta-datos-empresa";
@@ -53,7 +55,7 @@ export const OnboardingGuard = ({ children }) => {
   const tieneEmpresas = listaEmpresas.length > 0;
 
   if (!user || !user.email) {
-    return <Navigate to="/ingresar" replace />;
+    return <Navigate to={`/${channelInfo.id}/login`} replace />;
   }
 
   if ((isLoadingUser && !usuarioWebId) || (usuarioWebId && isPendingSocios)) {
@@ -67,11 +69,11 @@ export const OnboardingGuard = ({ children }) => {
 
   if (usuarioWebId && tieneEmpresas) {
     if (isTerminosPage || isAltaDatosPage) {
-      return <Navigate to="/inicio" replace />;
+      return <Navigate to={`/${channelInfo.id}/inicio`} replace />;
     }
   } else if (usuarioWebId && !tieneEmpresas) {
     if (!isTerminosPage && !isAltaDatosPage) {
-      return <Navigate to="/terminos" replace />;
+      return <Navigate to={`/${channelInfo.id}/terminos`} replace />;
     }
   }
 

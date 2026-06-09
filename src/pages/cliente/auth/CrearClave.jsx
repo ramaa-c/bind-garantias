@@ -85,7 +85,7 @@ const CrearClave = () => {
               toast.success("Código enviado", {
                 description: "Revisá tu correo para ingresar."
               });
-              navigate("/", {
+              navigate(`/${channelInfo.id}/login`, {
                 state: { emailIngresado: usuario.email, generatedOtp: data.password }
               });
             },
@@ -137,7 +137,7 @@ const CrearClave = () => {
 
     resetearPassword(payloadReset, {
       onSuccess: () => {
-        navigate("/confirmar-correo", {
+        navigate(`/${channelInfo.id}/confirmar-correo`, {
           state: { emailIngresado: emailManual, canal: canalIntegridad, origen: "recuperar" },
         });
       },
@@ -149,7 +149,7 @@ const CrearClave = () => {
             : "No pudimos enviar el correo. Intentá registrarte nuevamente.",
         });
         if (!isServerError) {
-          navigate("/registro");
+          navigate(`/${channelInfo.id}/registro`);
         }
       },
     });
@@ -184,7 +184,7 @@ const CrearClave = () => {
           description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
           duration: 5000,
         });
-        navigate("/", { replace: true });
+        navigate(`/${channelInfo.id}/login`, { replace: true });
       },
       onError: (error) => {
         const isServerError = error?.response?.status >= 500;
@@ -225,7 +225,7 @@ const CrearClave = () => {
                 <img
                   src={logoBind}
                   alt="Logo BIND"
-                  onClick={() => navigate("/")}
+                  onClick={() => navigate(`/${channelInfo.id}/login`)}
                   className={styles.clickableLogo}
                 />
                 {channelInfo.id !== "default" && (
@@ -243,20 +243,21 @@ const CrearClave = () => {
 
 
 
-            {!tokenInvalidoDeOrigen && usuario && (
-              <div className={styles.successCallout}>
-                <FiCheckCircle className={styles.calloutIcon} />
-                <div className={styles.calloutContent}>
-                  <h2 className={styles.calloutTitle}>¡Email verificado con éxito!</h2>
-                  <p>
-                    Tu cuenta ya está activa. Crear una contraseña es <strong>opcional</strong>. 
-                    Podés configurarla ahora o saltar este paso para ingresar siempre con un código a tu correo.
-                  </p>
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem", marginTop: "3.5rem" }}>
+              {!tokenInvalidoDeOrigen && usuario && (
+                <div className={styles.successCallout} style={{ marginBottom: 0 }}>
+                  <FiCheckCircle className={styles.calloutIcon} />
+                  <div className={styles.calloutContent}>
+                    <h2 className={styles.calloutTitle}>¡Email verificado con éxito!</h2>
+                    <p>
+                      Tu cuenta ya está activa. Crear una contraseña es <strong>opcional</strong>. 
+                      Podés configurarla ahora o saltar este paso para ingresar siempre con un código a tu correo.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            <div className={styles.formWrapper}>
+              <div className={styles.formWrapper}>
               {tokenInvalidoDeOrigen && (
                 <div className={styles.expiredTokenContainer}>
                   <FiAlertCircle size={48} color="var(--red)" />
@@ -390,6 +391,7 @@ const CrearClave = () => {
                   </div>
                 </form>
               )}
+            </div>
             </div>
           </section>
 

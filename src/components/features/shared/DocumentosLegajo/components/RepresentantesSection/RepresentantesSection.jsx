@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   FiUsers,
   FiUser,
@@ -24,6 +25,11 @@ export function RepresentantesSection({
   const [modalRepresentanteOpen, setModalRepresentanteOpen] = useState(false);
   const [editRepresentante, setEditRepresentante] = useState(null);
   const [expandedRep, setExpandedRep] = useState(null);
+  const [portalTarget, setPortalTarget] = useState(null);
+
+  useEffect(() => {
+    setPortalTarget(document.getElementById("socios-header-action-portal"));
+  }, []);
 
   return (
     <div className={styles.sociosContainer}>
@@ -36,13 +42,7 @@ export function RepresentantesSection({
         </div>
       ) : (
         <div className={styles.sectionBlock}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionHeaderLeft}>
-              <FiUser className={styles.sectionIcon} size={18} />
-              <h5 className={styles.sectionTitle}>
-                Representantes Legales y Apoderados
-              </h5>
-            </div>
+          {portalTarget && createPortal(
             <button
               type="button"
               className={styles.addButton}
@@ -52,8 +52,9 @@ export function RepresentantesSection({
               }}
             >
               <FiPlus size={14} /> Agregar Representante
-            </button>
-          </div>
+            </button>,
+            portalTarget
+          )}
 
           {representantes.length === 0 ? (
             <div

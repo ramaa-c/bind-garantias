@@ -47,7 +47,21 @@
 }
 
 .logo {
-  height: 2.25rem;
+  height: 3rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.logoSeparator {
+  width: 1px;
+  height: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 0 1rem;
+}
+
+.channelLogo {
+  height: 1.75rem;
+  max-width: 8rem;
   width: auto;
   object-fit: contain;
 }

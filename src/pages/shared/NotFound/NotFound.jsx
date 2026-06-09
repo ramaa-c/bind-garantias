@@ -4,9 +4,25 @@ import { FiHome } from "react-icons/fi";
 import { Button } from "../../../components/ui";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./NotFound.module.css";
+import { useAuthStore } from "../../../store/useAuthStore";
+import { useChannel } from "../../../context/ChannelContext";
 
 const NotFound = () => {
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const { channelInfo } = useChannel();
+
+  const handleGoHome = () => {
+    if (user) {
+      if (user.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+      } else {
+        navigate(`/${channelInfo.id}/solicitudes`, { replace: true });
+      }
+    } else {
+      navigate("/", { replace: true });
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -22,7 +38,7 @@ const NotFound = () => {
           <Button
             type="button"
             variant="primary"
-            onClick={() => navigate("/", { replace: true })}
+            onClick={handleGoHome}
             icon={<FiHome size={20} />}
           >
             VOLVER AL INICIO

@@ -40,6 +40,7 @@ const DropzoneField = ({
         type="file"
         id={`file-input-${fileKey}`}
         style={{ display: "none" }}
+        accept="image/*,application/pdf"
         onChange={(e) => onFileUpload(fileKey, e.target.files[0])}
       />
       <CargaArchivos

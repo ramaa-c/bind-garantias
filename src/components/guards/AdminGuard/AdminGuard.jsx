@@ -9,7 +9,7 @@ export const AdminGuard = ({ children }) => {
   const isAdmin = user?.role === "admin" || user?.email === "admin";
 
   if (!isAdmin) {
-    return <Navigate to="/ingresar" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Renderizamos directamente los componentes de administración sin disparar llamadas API innecesarias
