@@ -47,6 +47,7 @@ export const AltaDatosEmpresa = () => {
   const [socioExistenteModal, setSocioExistenteModal] = useState({
     isOpen: false,
     socioData: null,
+    reason: null,
   });
 
   const user = useAuthStore((state) => state.user);
@@ -111,7 +112,7 @@ export const AltaDatosEmpresa = () => {
         socioestadoid: 9,
         codpos: "",
         tamanioempresaid: 0,
-        fechacierreejercicio: data.mescierre 
+        fechacierreejercicio: data.mescierre
           ? `${new Date().getFullYear()}-${String(data.mescierre).padStart(2, "0")}-${String(new Date(new Date().getFullYear(), data.mescierre, 0).getDate()).padStart(2, "0")}T00:00:00`
           : getCSharpIsoDate(),
         legajo: 0,
@@ -123,9 +124,11 @@ export const AltaDatosEmpresa = () => {
         visitado: "0",
         scoringcomercial: "0",
         partidoid: 0,
-        fechainicioactividades: data.fechainicioactividades || getCSharpIsoDate(),
+        fechainicioactividades:
+          data.fechainicioactividades || getCSharpIsoDate(),
         tipoactividadglobalid: 0,
-        tipocanalcomercializacionid: cadenaData?.tipocanalcomercializacionid || 0,
+        tipocanalcomercializacionid:
+          cadenaData?.tipocanalcomercializacionid || 0,
         emailfacturacion: user?.email || "",
         minapoderadosrequeridos: 0,
         tipocondicionfianzaid: 0,
@@ -150,14 +153,22 @@ export const AltaDatosEmpresa = () => {
         try {
           await enriquecerSociosLufeAfip(socioId, data.cuit);
         } catch (enriquecimientoError) {
-          console.error("[AltaDatosEmpresa] Error al procesar enriquecimiento de autoridades:", enriquecimientoError);
+          console.error(
+            "[AltaDatosEmpresa] Error al procesar enriquecimiento de autoridades:",
+            enriquecimientoError,
+          );
         }
 
         try {
-          console.log(`[AltaDatosEmpresa] Vinculando documentos de LUFE para CUIT: ${data.cuit}`);
+          console.log(
+            `[AltaDatosEmpresa] Vinculando documentos de LUFE para CUIT: ${data.cuit}`,
+          );
           await sociosService.obtenerDocumentosLufe(data.cuit, true);
         } catch (lufeDocsError) {
-          console.error("[AltaDatosEmpresa] Error al vincular documentos de LUFE:", lufeDocsError);
+          console.error(
+            "[AltaDatosEmpresa] Error al vincular documentos de LUFE:",
+            lufeDocsError,
+          );
         }
 
         await queryClient.invalidateQueries({
@@ -210,8 +221,8 @@ export const AltaDatosEmpresa = () => {
             const isOk = await trigger("cuit");
             if (isOk) handleValidarCuitSuccess();
           }}
-          onSocioExistente={(socioData) =>
-            setSocioExistenteModal({ isOpen: true, socioData })
+          onSocioExistente={(socioData, reason) =>
+            setSocioExistenteModal({ isOpen: true, socioData, reason })
           }
         />
       );
@@ -294,7 +305,11 @@ export const AltaDatosEmpresa = () => {
       <Modal
         isOpen={socioExistenteModal.isOpen}
         onClose={() =>
-          setSocioExistenteModal({ isOpen: false, socioData: null })
+          setSocioExistenteModal({
+            isOpen: false,
+            socioData: null,
+            reason: null,
+          })
         }
         maxWidth="28rem"
       >
@@ -303,9 +318,22 @@ export const AltaDatosEmpresa = () => {
           <h3 className={styles.modalTitle}>Empresa ya registrada</h3>
 
           <p className={styles.modalText}>
-            El CUIT ingresado ya se encuentra registrado en la plataforma por
-            otro usuario. Para operar con esta empresa, solicitale al
-            administrador que te brinde acceso desde la sección "Documentación".
+            {socioExistenteModal.reason === "email_mismatch" ? (
+              <>
+                El correo electrónico con el que estás intentando registrarte no
+                coincide con el registrado en SGRPlus para esta empresa. Por
+                favor, contactá a{" "}
+                <a
+                  href="mailto:soporte@bind.com.ar"
+                  className={styles.linkText || ""}
+                >
+                  soporte@bind.com.ar
+                </a>{" "}
+                para más información.
+              </>
+            ) : (
+              'El CUIT ingresado ya se encuentra registrado en la plataforma por otro usuario. Para operar con esta empresa, solicitale al administrador que te brinde acceso desde la sección "Documentación".'
+            )}
           </p>
 
           <div className={styles.modalHighlight}>
@@ -321,7 +349,11 @@ export const AltaDatosEmpresa = () => {
             <Button
               variant="primary"
               onClick={() => {
-                setSocioExistenteModal({ isOpen: false, socioData: null });
+                setSocioExistenteModal({
+                  isOpen: false,
+                  socioData: null,
+                  reason: null,
+                });
                 reset();
               }}
             >
@@ -333,7 +365,7 @@ export const AltaDatosEmpresa = () => {
 
       {/* ── PANTALLA DE CARGA ────────────────────────────────────────── */}
       {enviandoSolicitud && (
-        <LoadingScreen 
+        <LoadingScreen
           title="Configurando tu entorno"
           message="Registrando los datos de tu empresa en el sistema..."
         />
