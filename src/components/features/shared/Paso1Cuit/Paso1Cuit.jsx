@@ -8,6 +8,7 @@ import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
+import { useAuthStore } from "../../../../store/useAuthStore";
 import styles from "./Paso1Cuit.module.css";
 
 export default function Paso1Cuit({ onValidar, onSocioExistente }) {
@@ -19,6 +20,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
   const { mutateAsync: validarSocioCore } = useValidarSocioCore();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
+  const user = useAuthStore((state) => state.user);
 
   const { data: provinciasData } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
@@ -200,6 +202,33 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             p.id === "cda" ? { ...p, estado: "completado" } : p,
           ),
         }));
+
+        // ── NUEVA VALIDACIÓN: Correo coincidente en SGRPlus
+        try {
+          const sociosEncontrados = await sociosService.obtenerSocios({ Cuit: cuit });
+          if (sociosEncontrados && sociosEncontrados.length > 0) {
+            const socioExistente = sociosEncontrados[0];
+            const socioEmailStr = socioExistente.email ? socioExistente.email.trim() : "";
+            const currentUserEmail = user?.email ? user.email.trim() : "";
+            
+            if (socioEmailStr && currentUserEmail && socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()) {
+              setProcesoModal({
+                isOpen: false,
+                titulo: "",
+                pasos: [],
+                hasError: false,
+                isSystemError: false,
+              });
+              
+              if (onSocioExistente) {
+                onSocioExistente(socioExistente, "email_mismatch");
+              }
+              return;
+            }
+          }
+        } catch (errorSocios) {
+          console.warn("Error consultando socios para validación de email:", errorSocios);
+        }
 
         const nombreCompleto =
           dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim();
