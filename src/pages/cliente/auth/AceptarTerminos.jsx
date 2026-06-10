@@ -1,12 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui";
-import { TERMINOS_Y_CONDICIONES } from "../../../constants/terminosCondiciones";
+import {
+  RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
+  parseTerminos,
+} from "../../../constants/terminosCondiciones";
 import styles from "./AceptarTerminos.module.css";
-
-const TABLA_CONTENIDO = TERMINOS_Y_CONDICIONES.filter(
-  (s) => s.titulo && !s.esTabla,
-).map((s) => ({ id: s.id, titulo: s.titulo }));
 
 export default function AceptarTerminos() {
   const navigate = useNavigate();
@@ -14,6 +13,23 @@ export default function AceptarTerminos() {
   const [seccionActiva, setSeccionActiva] = useState(null);
   const [progreso, setProgreso] = useState(0);
   const scrollRef = useRef(null);
+
+  // Cargar términos dinámicamente
+  const [terminos, setTerminos] = useState([]);
+
+  useEffect(() => {
+    const rawContent =
+      localStorage.getItem("terminos_y_condiciones_content") ||
+      RAW_TERMINOS_Y_CONDICIONES_DEFAULT;
+    const parsed = parseTerminos(rawContent);
+    setTerminos(parsed);
+  }, []);
+
+  const tablaContenido = useMemo(() => {
+    return terminos
+      .filter((s) => s.titulo && !s.esTabla)
+      .map((s) => ({ id: s.id, titulo: s.titulo }));
+  }, [terminos]);
 
   const handleAceptarTerminos = () => {
     if (aceptado) navigate("/alta-datos-empresa");
@@ -82,7 +98,7 @@ export default function AceptarTerminos() {
           <aside className={styles.toc}>
             <p className={styles.tocTitle}>Contenido</p>
             <nav>
-              {TABLA_CONTENIDO.map((item) => (
+              {tablaContenido.map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -97,7 +113,7 @@ export default function AceptarTerminos() {
 
           {/* CONTENIDO LEGAL */}
           <main className={styles.content} ref={scrollRef}>
-            {TERMINOS_Y_CONDICIONES.map((seccion) => (
+            {terminos.map((seccion) => (
               <div
                 key={seccion.id}
                 data-section-id={seccion.id}
@@ -110,28 +126,12 @@ export default function AceptarTerminos() {
                 {seccion.esTabla ? (
                   <table className={styles.tabla}>
                     <tbody>
-                      <tr>
-                        <td className={styles.tablaTerm}>Usuario</td>
-                        <td>
-                          Cliente que accede a la Plataforma, y que interactúa
-                          con ella con total acceso a las funcionalidades que
-                          esta provee. El mismo podrá darse de alta como
-                          cliente, solicitar una línea de aval crediticio, así
-                          como requerir pedidos de emisión de avales, todo ello
-                          sujeto a las políticas vigentes y la aprobación de
-                          Garantías Bind SGR (de ahora en adelante "BIND SGR").
-                        </td>
-                      </tr>
-                      <tr>
-                        <td className={styles.tablaTerm}>Usuario Autorizado</td>
-                        <td>
-                          Es un usuario, que se encuentra habilitado para
-                          acceder a la Plataforma y que podrá utilizar recursos
-                          específicos dentro de dicho sistema. Puntualmente
-                          podrá dar de alta al Cliente para que el mismo pueda
-                          ser calificado.
-                        </td>
-                      </tr>
+                      {(seccion.tableRows || []).map((row, rIdx) => (
+                        <tr key={rIdx}>
+                          <td className={styles.tablaTerm}>{row.term}</td>
+                          <td>{row.definition}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 ) : (

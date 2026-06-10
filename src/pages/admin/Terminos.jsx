@@ -1,43 +1,32 @@
 import React, { useState } from "react";
 import { FiSave, FiEye, FiEdit3, FiFileText, FiClock, FiCheckCircle } from "react-icons/fi";
 import { toast } from "sonner";
+import {
+  RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
+  parseTerminos,
+} from "../../constants/terminosCondiciones";
 import styles from "./Terminos.module.css";
 
 const documentosIniciales = {
   terminos: {
     titulo: "Términos y Condiciones Generales",
-    version: "v2.4",
-    ultimaModificacion: "18/03/2026",
-    contenido: `## 1. Alcance y Aceptación
-El presente documento regula el acceso y utilización del portal BIND Garantías y la emisión de garantías digitales, cheques avalados y pagarés bursátiles.
-
-## 2. Obligaciones del Usuario (Socio)
-El socio se compromete a mantener actualizada toda la documentación contable y fiscal en el legajo digital corporativo.
-
-## 3. Modificaciones de Tasas
-BIND Garantías se reserva el derecho de ajustar los topes y las tasas aplicables con previo aviso a través de notificaciones en el dashboard de la cuenta.`,
-  },
-  criterios: {
-    titulo: "Criterios de Aceptación Crediticia",
-    version: "v1.1",
-    ultimaModificacion: "02/02/2026",
-    contenido: `## 1. Parámetros de Riesgo
-Todas las solicitudes superiores a $50.000.000 requieren la validación de un Oficial de Crédito Senior y aprobación unánime de la mesa de control.
-
-## 2. Antigüedad Mínima
-Se requiere un mínimo de 12 meses de actividad demostrable ante AFIP para el alta de nuevas líneas de financiamiento.`,
-  },
-  disclaimers: {
-    titulo: "Disclaimers y Políticas de Privacidad",
-    version: "v3.0",
-    ultimaModificacion: "10/01/2026",
-    contenido: `## Tratamiento de Datos Personales
-Los datos ingresados se resguardan bajo estrictas normas de confidencialidad y en cumplimiento con la Ley de Protección de Datos Personales N° 25.326.`,
+    version: "v1.0",
+    ultimaModificacion: "10/06/2026",
+    contenido: "", // Se inicializará desde localStorage o default
   },
 };
 
 export default function Terminos() {
-  const [docs, setDocs] = useState(documentosIniciales);
+  const [docs, setDocs] = useState(() => {
+    const termContent = localStorage.getItem("terminos_y_condiciones_content") || RAW_TERMINOS_Y_CONDICIONES_DEFAULT;
+    return {
+      ...documentosIniciales,
+      terminos: {
+        ...documentosIniciales.terminos,
+        contenido: termContent,
+      },
+    };
+  });
   const [docActivo, setDocActivo] = useState("terminos");
   const [modoVista, setModoVista] = useState("editar"); // editar | vista
 
@@ -60,15 +49,27 @@ export default function Terminos() {
   };
 
   const handleGuardarCambios = () => {
-    setDocs((prev) => ({
-      ...prev,
-      [docActivo]: {
-        ...prev[docActivo],
-        contenido: textoEditable,
-        ultimaModificacion: "Recién",
-        version: "v" + (parseFloat(prev[docActivo].version.replace("v", "")) + 0.1).toFixed(1),
-      },
-    }));
+    const nextVersion = "v" + (parseFloat(docs[docActivo].version.replace("v", "")) + 0.1).toFixed(1);
+    const today = new Date().toLocaleDateString("es-AR");
+
+    setDocs((prev) => {
+      const updatedDocs = {
+        ...prev,
+        [docActivo]: {
+          ...prev[docActivo],
+          contenido: textoEditable,
+          ultimaModificacion: today,
+          version: nextVersion,
+        },
+      };
+
+      if (docActivo === "terminos") {
+        localStorage.setItem("terminos_y_condiciones_content", textoEditable);
+      }
+
+      return updatedDocs;
+    });
+
     setHasUnsaved(false);
     toast.success("Documento legal actualizado", {
       description: `Los nuevos "${docs[docActivo].titulo}" requieren nueva aceptación por los usuarios tras el próximo inicio de sesión.`,
@@ -174,16 +175,33 @@ export default function Terminos() {
               </div>
             ) : (
               <div className={styles.previewPanel}>
-                <div className={styles.previewNotice}>
-                  <FiCheckCircle color="#3fb950" /> Así visualizará el cliente el documento legal en su pantalla de aceptación:
-                </div>
                 <div className={styles.previewContent}>
-                  {textoEditable.split("\n\n").map((parrafo, idx) => {
-                    if (parrafo.startsWith("## ")) {
-                      return <h3 key={idx} className={styles.previewHeading}>{parrafo.replace("## ", "")}</h3>;
-                    }
-                    return <p key={idx} className={styles.previewParagraph}>{parrafo}</p>;
-                  })}
+                  {parseTerminos(textoEditable).map((seccion, sIdx) => (
+                    <div key={seccion.id || sIdx} className={styles.previewSeccion}>
+                      {seccion.titulo && (
+                        <h3 className={styles.previewHeading}>{seccion.titulo}</h3>
+                      )}
+
+                      {seccion.esTabla ? (
+                        <table className={styles.tablaPreview}>
+                          <tbody>
+                            {(seccion.tableRows || []).map((row, rIdx) => (
+                              <tr key={rIdx}>
+                                <td className={styles.tablaTermPreview}>{row.term}</td>
+                                <td className={styles.tablaDefPreview}>{row.definition}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : (
+                        (seccion.parrafos || []).map((parrafo, pIdx) => (
+                          <p key={pIdx} className={styles.previewParagraph}>
+                            {parrafo}
+                          </p>
+                        ))
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

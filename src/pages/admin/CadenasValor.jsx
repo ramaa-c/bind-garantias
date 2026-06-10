@@ -28,18 +28,6 @@ import {
 } from "../../hooks/useCatalogos";
 import { InputSimple, Select, Button, Spinner } from "../../components/ui";
 
-// Comprehensive List of All Possible CDAs
-const TODOS_LOS_CDAS = [
-  { cdaid: 1, nombre: "Actividades Excluidas", descripcion: "Evalúa si la actividad del CUIT está en la lista de excluidas de la SGR." },
-  { cdaid: 2, nombre: "Valida socio protector", descripcion: "Valida al socio que no sea socio protector de otra SGR." },
-  { cdaid: 3, nombre: "Evaluar deudas", descripcion: "Evalúa si la persona posee deudas financieras en el sistema." },
-  { cdaid: 4, nombre: "Score Nosis", descripcion: "Evalúa si la persona supera el score mínimo de Nosis." },
-  { cdaid: 5, nombre: "CUIT Activo", descripcion: "Valida si el CUIT se encuentra activo ante la AFIP." },
-  { cdaid: 6, nombre: "Certificado PyME", descripcion: "Validar que el certificado PyME se encuentre vigente." },
-  { cdaid: 7, nombre: "Lavado de Activos / PLAFT", descripcion: "Validación en listas de Personas Expuestas Políticamente y antecedentes." },
-  { cdaid: 8, nombre: "Deuda impositiva (AFIP)", descripcion: "Valida que el socio no registre deudas impositivas de seguridad social." }
-];
-
 // Interactive CDA Simulation Panel Component
 function CdaPanel({ activeItem }) {
   const { data: cdas, isLoading: isLoadingCdas } = useObtenerCdasPorCadenaId(
@@ -47,19 +35,16 @@ function CdaPanel({ activeItem }) {
   );
 
   const [localCdasStatus, setLocalCdasStatus] = useState({});
+  const [customRechazoMsgs, setCustomRechazoMsgs] = useState({});
+  const [editingCda, setEditingCda] = useState(null);
+  const [tempRechazoMsg, setTempRechazoMsg] = useState("");
 
   const cdasList = Array.isArray(cdas) ? cdas : cdas?.items || cdas?.data || [];
 
   React.useEffect(() => {
     const status = {};
-    TODOS_LOS_CDAS.forEach(cda => {
-      // Check if this CDA is active for the current chain
-      const isActive = cdasList.some(activeCda =>
-        String(activeCda.cdaid) === String(cda.cdaid) ||
-        activeCda.descripcion?.toLowerCase().includes(cda.nombre.toLowerCase()) ||
-        activeCda.nombre?.toLowerCase().includes(cda.nombre.toLowerCase())
-      );
-      status[cda.cdaid] = isActive;
+    cdasList.forEach(cda => {
+      status[cda.cdaid] = true;
     });
     setLocalCdasStatus(status);
   }, [cdas]);
@@ -67,8 +52,8 @@ function CdaPanel({ activeItem }) {
   const handleToggleCda = (cdaId) => {
     setLocalCdasStatus(prev => {
       const nextStatus = !prev[cdaId];
-      const targetCdaName = TODOS_LOS_CDAS.find(c => c.cdaid === cdaId)?.nombre;
-      toast.success(`CDA "${targetCdaName}" ${nextStatus ? 'habilitado' : 'deshabilitado'} (Simulado)`);
+      const targetCdaDesc = cdasList.find(c => c.cdaid === cdaId)?.descripcion || `CDA ID ${cdaId}`;
+      toast.success(`CDA "${targetCdaDesc}" ${nextStatus ? 'habilitado' : 'deshabilitado'} (Simulado)`);
       return {
         ...prev,
         [cdaId]: nextStatus
@@ -92,53 +77,150 @@ function CdaPanel({ activeItem }) {
       <div className={styles.cdasSection}>
         <div className={styles.cdasTitle}>Configuración de CDAs</div>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" }}>
-          {TODOS_LOS_CDAS.map((cda) => {
-            const isChecked = !!localCdasStatus[cda.cdaid];
-            return (
-              <div
-                key={cda.cdaid}
-                className={styles.cdaItem}
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  padding: "0.875rem",
-                  background: "rgba(255, 255, 255, 0.02)",
-                  border: "1px solid #30363d",
-                  borderRadius: "0.5rem",
-                  gap: "1rem"
-                }}
-              >
-                <input
-                  type="checkbox"
-                  id={`cda-check-${cda.cdaid}`}
-                  checked={isChecked}
-                  onChange={() => handleToggleCda(cda.cdaid)}
+          {cdasList.length === 0 ? (
+            <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
+              No hay CDAs vinculados a esta cadena de valor.
+            </div>
+          ) : (
+            cdasList.map((cda) => {
+              const isChecked = localCdasStatus[cda.cdaid] !== false;
+              const mensajeRechazoActual = customRechazoMsgs[cda.cdaid] !== undefined
+                ? customRechazoMsgs[cda.cdaid]
+                : cda.mensajerechazo;
+
+              return (
+                <div
+                  key={cda.cdaid}
+                  className={styles.cdaItem}
                   style={{
-                    width: "1.2rem",
-                    height: "1.2rem",
-                    accentColor: "var(--yellow, #f5f400)",
-                    cursor: "pointer",
-                    marginTop: "0.2rem"
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "0.875rem",
+                    background: "rgba(255, 255, 255, 0.02)",
+                    border: "1px solid #30363d",
+                    borderRadius: "0.5rem",
+                    gap: "1rem"
                   }}
-                />
-                <label
-                  htmlFor={`cda-check-${cda.cdaid}`}
-                  style={{ cursor: "pointer", display: "flex", flexDirection: "column", gap: "0.15rem", flex: 1 }}
                 >
-                  <strong style={{ color: "#ffffff", fontSize: "0.875rem" }}>{cda.nombre}</strong>
-                  <span style={{ color: "#8b949e", fontSize: "0.75rem" }}>{cda.descripcion}</span>
-                </label>
-                <span className={styles.cdaStatusBadge} style={{
-                  background: isChecked ? "rgba(56, 161, 105, 0.15)" : "rgba(234, 74, 90, 0.15)",
-                  color: isChecked ? "#38a169" : "#ea4a5a"
-                }}>
-                  {isChecked ? "Activo" : "Inactivo"}
-                </span>
-              </div>
-            );
-          })}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <input
+                      type="checkbox"
+                      id={`cda-check-${cda.cdaid}`}
+                      checked={isChecked}
+                      onChange={() => handleToggleCda(cda.cdaid)}
+                      style={{
+                        width: "1.2rem",
+                        height: "1.2rem",
+                        accentColor: "#38a169",
+                        cursor: "pointer"
+                      }}
+                    />
+                  </div>
+                  <label
+                    htmlFor={`cda-check-${cda.cdaid}`}
+                    style={{ cursor: "pointer", display: "flex", flexDirection: "column", gap: "0.4rem", flex: 1 }}
+                  >
+                    <strong style={{ color: "#ffffff", fontSize: "0.875rem" }}>{cda.descripcion}</strong>
+                    {mensajeRechazoActual && (
+                      <span style={{ color: "#8b949e", fontSize: "0.75rem", marginTop: "0.25rem", display: "block" }}>
+                        Mensaje rechazo: {mensajeRechazoActual}
+                      </span>
+                    )}
+                  </label>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      title="Editar mensaje de rechazo"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setEditingCda(cda);
+                        setTempRechazoMsg(mensajeRechazoActual || "");
+                      }}
+                      style={{
+                        background: "rgba(255, 255, 255, 0.04)",
+                        border: "1px solid #30363d",
+                        padding: "0.45rem",
+                        color: "var(--yellow, #f5f400)",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: "0.375rem",
+                        transition: "all 0.2s"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                        e.currentTarget.style.borderColor = "var(--yellow, #f5f400)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "rgba(255, 255, 255, 0.04)";
+                        e.currentTarget.style.borderColor = "#30363d";
+                      }}
+                    >
+                      <FiEdit size={12} />
+                    </button>
+                    <span className={styles.cdaStatusBadge} style={{
+                      background: isChecked ? "rgba(56, 161, 105, 0.15)" : "rgba(234, 74, 90, 0.15)",
+                      color: isChecked ? "#38a169" : "#ea4a5a",
+                      margin: 0
+                    }}>
+                      {isChecked ? "Activo" : "Inactivo"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
+
+      {editingCda && createPortal(
+        <div className={styles.modalBackdrop} style={{ zIndex: 10000 }} onClick={() => setEditingCda(null)}>
+          <div className={styles.modalBox} style={{ maxWidth: "500px" }} onClick={e => e.stopPropagation()}>
+            <div className={styles.modalHead}>
+              <h3>EDITAR MENSAJE DE RECHAZO</h3>
+              <button className={styles.closeModal} onClick={() => setEditingCda(null)}>
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <p style={{ fontSize: "0.875rem", color: "#8b949e", marginBottom: "1.25rem" }}>
+                Modifique el mensaje que se mostrará cuando se rechace la validación de este CDA:
+              </p>
+              <div style={{ marginBottom: "1rem" }}>
+                <strong style={{ color: "#ffffff", display: "block", marginBottom: "0.5rem", fontSize: "0.9rem" }}>
+                  {editingCda.descripcion}
+                </strong>
+              </div>
+              <InputSimple
+                label="Mensaje de Rechazo"
+                value={tempRechazoMsg}
+                onChange={val => setTempRechazoMsg(val)}
+              />
+            </div>
+            <div className={styles.modalFooter} style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", borderTop: "1px solid #30363d", padding: "1.25rem 1.5rem 0.5rem" }}>
+              <Button variant="outline" onClick={() => setEditingCda(null)}>
+                CANCELAR
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setCustomRechazoMsgs(prev => ({
+                    ...prev,
+                    [editingCda.cdaid]: tempRechazoMsg
+                  }));
+                  setEditingCda(null);
+                  toast.success("Mensaje de rechazo actualizado (Simulado)");
+                }}
+              >
+                GUARDAR
+              </Button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
@@ -255,15 +337,6 @@ export default function CadenasValor() {
         tipocanalcomercializacionid: item.tipocanalcomercializacionid || "",
         equipocomercialid: item.equipocomercialid || ""
       });
-    } else if (type === "logo") {
-      setFormState({
-        cadenavalorid: item.cadenavalorid,
-        denominacion: item.denominacion,
-        referencia: item.referencia || "",
-        logo: item.logo || "",
-        tipocanalcomercializacionid: item.tipocanalcomercializacionid || "",
-        equipocomercialid: item.equipocomercialid || ""
-      });
     }
     setIsModalOpen(true);
   };
@@ -334,7 +407,7 @@ export default function CadenasValor() {
           toast.error("Ocurrió un error al activar la cadena de valor");
         }
       });
-    } else if (modalType === "edit" || modalType === "logo") {
+    } else if (modalType === "edit") {
       actualizarMutation.mutate(payload, {
         onSuccess: () => {
           toast.success("Cadena de valor modificada exitosamente");
@@ -445,13 +518,6 @@ export default function CadenasValor() {
                         <FiEdit />
                       </button>
                       <button
-                        className={`${styles.iconBtnAction} ${styles.btnImage}`}
-                        title="Actualizar Logo"
-                        onClick={() => handleActionClick(item, "logo")}
-                      >
-                        <FiImage />
-                      </button>
-                      <button
                         className={`${styles.iconBtnAction} ${styles.btnList}`}
                         title="Configurar CDAs"
                         onClick={() => handleActionClick(item, "cdas")}
@@ -499,7 +565,6 @@ export default function CadenasValor() {
                 <h3>
                   {modalType === "activar" && "ACTIVAR CADENA DE VALOR"}
                   {modalType === "edit" && `MODIFICAR CADENA: ${formState.denominacion}`}
-                  {modalType === "logo" && `MODIFICAR LOGO DE: ${formState.denominacion}`}
                   {modalType === "cdas" && `CDAs HABILITADOS PARA: ${activeItem?.denominacion}`}
                   {modalType === "users" && `USUARIOS RELACIONADOS CON: ${activeItem?.denominacion}`}
                 </h3>
@@ -627,39 +692,6 @@ export default function CadenasValor() {
                   </>
                 )}
 
-                {/* LOGO ONLY EDIT MODE */}
-                {modalType === "logo" && (
-                  <div>
-                    <p style={{ fontSize: "0.875rem", color: "#8b949e", marginBottom: "1rem", textAlign: "center" }}>
-                      Modifique el logo para la cadena de valor activa <strong>{formState.denominacion}</strong>.
-                    </p>
-                    {formState.logo ? (
-                      <div className={styles.modalLogoPreviewWrap}>
-                        <img
-                          src={getLogoSrc(formState.logo)}
-                          alt="Preview Logo"
-                          style={{ maxHeight: "150px", maxWidth: "300px", objectFit: "contain", background: "rgba(255,255,255,0.02)", border: "1px solid #30363d", padding: "1rem", borderRadius: "0.5rem" }}
-                        />
-                        <button
-                          type="button"
-                          className={styles.btnRemoveLogo}
-                          onClick={() => setFormState({ ...formState, logo: "" })}
-                        >
-                          Quitar Imagen
-                        </button>
-                      </div>
-                    ) : (
-                      <div className={styles.uploadZone} onClick={triggerFileSelect}>
-                        <FiUploadCloud className={styles.uploadIcon} />
-                        <div>Arrastrá o hacé click aquí para cargar una imagen</div>
-                        <span style={{ fontSize: "11px", color: "#8b949e", display: "block", marginTop: "0.25rem" }}>
-                          Recomendado: Fondo transparente, proporción similar a 815 x 269 px. Max 500kb.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* CDAs INTERACTIVE TOGGLE PANEL */}
                 {modalType === "cdas" && (
                   <CdaPanel activeItem={activeItem} />
@@ -722,7 +754,7 @@ export default function CadenasValor() {
                   </Button>
                 )}
 
-                {(modalType === "edit" || modalType === "logo") && (
+                {modalType === "edit" && (
                   <>
                     <Button
                       variant="outline"

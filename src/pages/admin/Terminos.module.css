@@ -92,6 +92,8 @@
 @media (min-width: 1024px) {
   .editorWorkspace {
     grid-template-columns: 20rem 1fr;
+    height: calc(100vh - 260px);
+    min-height: 28rem;
   }
 }
 
@@ -297,17 +299,19 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
 }
 
 .textareaWrapper {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-height: 0;
 }
 
 .richTextarea {
   width: 100%;
-  min-height: 25rem;
+  flex: 1;
   background: #0d1117;
   border: none;
   color: #c9d1d9;
@@ -316,7 +320,8 @@
   line-height: 1.6;
   font-family: 'Inter', system-ui, sans-serif;
   outline: none;
-  resize: vertical;
+  resize: none;
+  overflow-y: auto;
 }
 
 .richTextarea:focus {
@@ -338,10 +343,12 @@
 .previewPanel {
   padding: 1.5rem;
   background: #0d1117;
-  min-height: 25rem;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .previewNotice {
@@ -379,4 +386,48 @@
 .previewParagraph {
   margin: 0;
   font-size: 0.925rem;
+}
+
+.previewSeccion {
+  margin-bottom: 1.5rem;
+}
+
+.tablaPreview {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0 1rem;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tablaPreview tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tablaPreview tr:last-child {
+  border-bottom: none;
+}
+
+.tablaPreview td {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  color: #c9d1d9;
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+.tablaPreview tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.tablaTermPreview {
+  width: 25%;
+  color: var(--yellow, #f5f400);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.tablaDefPreview {
+  color: #c9d1d9;
 }
