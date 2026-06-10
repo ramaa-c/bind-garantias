@@ -9,7 +9,7 @@ const TenantLayout = () => {
   const cadenaValorId = Number(cadenaSlug);
 
   const { data: cadenaData, isLoading } = useObtenerPorCadenaValorIdWeb(
-    cadenaValorId || 0
+    cadenaValorId || 0,
   );
 
   useEffect(() => {
@@ -19,16 +19,33 @@ const TenantLayout = () => {
     }
     // Si la data viene dinámica desde el backend
     else if (cadenaData && !cadenaData.error) {
+      const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
+
+      if (!cadenaObj) {
+        setChannelInfo(CANALES_MOCK.default);
+        return;
+      }
+
+      let formatLogo = CANALES_MOCK.default.logo;
+      if (cadenaObj.logo) {
+        if (
+          cadenaObj.logo.startsWith("data:") ||
+          cadenaObj.logo.startsWith("http")
+        ) {
+          formatLogo = cadenaObj.logo;
+        } else {
+          formatLogo = `data:image/png;base64,${cadenaObj.logo}`;
+        }
+      }
+
       setChannelInfo({
         id: cadenaSlug,
-        nombre: cadenaData.denominacion || "Cadena de Valor",
-        logo: cadenaData.logo || CANALES_MOCK.default.logo,
+        nombre: cadenaObj.denominacion || "Cadena de Valor",
+        logo: formatLogo,
         colorPrincipal: "var(--color-azul-bind)",
         colorSecundario: "var(--color-amarillo-bind)",
       });
-    }
-    // Fallback si no está cargando y no se encontró
-    else if (!isLoading) {
+    } else if (!isLoading) {
       setChannelInfo(CANALES_MOCK.default);
     }
   }, [cadenaSlug, cadenaData, isLoading, setChannelInfo]);
@@ -37,7 +54,6 @@ const TenantLayout = () => {
     return <Navigate to="/default/login" replace />;
   }
 
-  // Evitar renderizar hijos mientras definimos el theme dinámico
   if (isLoading && !CANALES_MOCK[cadenaSlug]) {
     return null;
   }

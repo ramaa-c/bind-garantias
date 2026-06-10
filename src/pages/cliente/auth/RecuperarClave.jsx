@@ -44,12 +44,14 @@ const RecuperarClave = () => {
   };
 
   const onSubmit = async (data) => {
+    const canalId = (channelInfo.id && channelInfo.id !== "default" && channelInfo.id !== "bind") ? channelInfo.id : "canal1";
+
     const payloadReset = {
       email: data.email,
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: "canal1",
+      hashseguridad: canalId,
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
@@ -60,7 +62,7 @@ const RecuperarClave = () => {
       await enviarCorreoAsync(payloadReset);
       navigate(`/${channelInfo.id}/confirmar-correo`, {
         replace: true,
-        state: { emailIngresado: data.email, canal: "canal1", origen: "recuperar" },
+        state: { emailIngresado: data.email, canal: canalId, origen: "recuperar" },
       });
     } catch (error) {
       toast.error("Error al solicitar el enlace", {

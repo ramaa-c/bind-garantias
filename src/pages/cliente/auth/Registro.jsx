@@ -63,11 +63,13 @@ const Registro = () => {
   };
 
   const onSubmit = async (data) => {
+    const canalId = (channelInfo.id && channelInfo.id !== "default" && channelInfo.id !== "bind") ? channelInfo.id : "canal1";
+
     const payloadSkeletor = {
       email: data.email,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: "canal1",
+      hashseguridad: canalId,
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
@@ -81,7 +83,7 @@ const Registro = () => {
         replace: true,
         state: {
           usuarioSkeletor: payloadSkeletor,
-          canal: "canal1",
+          canal: canalId,
           origen: "registro",
         },
       });
@@ -133,12 +135,14 @@ const Registro = () => {
   };
 
   const handleContinuarProcesoPendiente = async () => {
+    const canalId = (channelInfo.id && channelInfo.id !== "default" && channelInfo.id !== "bind") ? channelInfo.id : "canal1";
+
     const payloadReset = {
       email: emailPendiente,
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: "canal1",
+      hashseguridad: canalId,
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
@@ -154,7 +158,7 @@ const Registro = () => {
         replace: true,
         state: {
           emailIngresado: emailPendiente,
-          canal: "canal1",
+          canal: canalId,
           origen: "registro",
         },
       });
