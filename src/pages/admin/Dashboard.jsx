@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFilter } from "react-icons/fi";
 import { toast } from "sonner";
+import { Button } from "../../components/ui/Button/Button";
+import { Badge } from "../../components/ui/Badge/Badge";
+import { Modal } from "../../components/ui/Modal/Modal";
+import { SinResultados } from "../../components/ui/SinResultados/SinResultados";
+import { TarjetaMetrica } from "../../components/ui/TarjetaMetrica/TarjetaMetrica";
 import styles from "./Dashboard.module.css";
 
 const solicitudesIniciales = [
@@ -126,32 +131,38 @@ export default function Dashboard() {
       </div>
 
       <div className={styles.kpiGrid}>
-        <div className={styles.kpiCard}>
-          <span className={styles.kpiLabel}>Líneas Totales</span>
-          <span className={styles.kpiValue}>{solicitudes.length}</span>
-          <div className={styles.kpiFooter}>En cartera activa</div>
-        </div>
-        <div className={styles.kpiCard}>
-          <span className={styles.kpiLabel}>Volumen Gestionado (Aprox)</span>
-          <span className={styles.kpiValue}>
-            $ {(totalMonto / 1000000).toFixed(1)}M
-          </span>
-          <div className={styles.kpiFooter}>Pesos consolidados</div>
-        </div>
-        <div className={styles.kpiCard}>
-          <span className={styles.kpiLabel}>Pendientes de Validación</span>
-          <span className={styles.kpiValueWarning}>
-            {solicitudes.filter((s) => s.estado.includes("Pendiente")).length}
-          </span>
-          <div className={styles.kpiFooter}>Requieren acción inmediata</div>
-        </div>
-        <div className={styles.kpiCard}>
-          <span className={styles.kpiLabel}>Aprobadas</span>
-          <span className={styles.kpiValueSuccess}>
-            {solicitudes.filter((s) => s.estado === "Aprobada").length}
-          </span>
-          <div className={styles.kpiFooter}>Listas para operar</div>
-        </div>
+        <TarjetaMetrica
+          className={styles.kpiCard}
+          labelClassName={styles.kpiLabel}
+          valueClassName={styles.kpiValue}
+          label="Líneas Totales"
+          value={solicitudes.length}
+          footer={<div className={styles.kpiFooter}>En cartera activa</div>}
+        />
+        <TarjetaMetrica
+          className={styles.kpiCard}
+          labelClassName={styles.kpiLabel}
+          valueClassName={styles.kpiValue}
+          label="Volumen Gestionado (Aprox)"
+          value={`$ ${(totalMonto / 1000000).toFixed(1)}M`}
+          footer={<div className={styles.kpiFooter}>Pesos consolidados</div>}
+        />
+        <TarjetaMetrica
+          className={styles.kpiCard}
+          labelClassName={styles.kpiLabel}
+          valueClassName={styles.kpiValueWarning}
+          label="Pendientes de Validación"
+          value={solicitudes.filter((s) => s.estado.includes("Pendiente")).length}
+          footer={<div className={styles.kpiFooter}>Requieren acción inmediata</div>}
+        />
+        <TarjetaMetrica
+          className={styles.kpiCard}
+          labelClassName={styles.kpiLabel}
+          valueClassName={styles.kpiValueSuccess}
+          label="Aprobadas"
+          value={solicitudes.filter((s) => s.estado === "Aprobada").length}
+          footer={<div className={styles.kpiFooter}>Listas para operar</div>}
+        />
       </div>
 
       {/* Controls & Filter toolbar */}
@@ -196,9 +207,10 @@ export default function Dashboard() {
       {/* Main Operations List mimicking user screenshot */}
       <div className={styles.listWrapper}>
         {filtradas.length === 0 ? (
-          <div className={styles.emptyState}>
-            <p>No se encontraron solicitudes que coincidan con los criterios de búsqueda.</p>
-          </div>
+          <SinResultados
+            className={styles.emptyState}
+            message="No se encontraron solicitudes que coincidan con los criterios de búsqueda."
+          />
         ) : (
           filtradas.map((item) => {
             const isAprobada = item.estado === "Aprobada";
@@ -223,9 +235,9 @@ export default function Dashboard() {
                       <span className={styles.tipoText}>{item.tipo}</span>
                       <div className={styles.tagsWrap}>
                         {item.tags?.map((t) => (
-                          <span key={t} className={styles.tagBadge}>
+                          <Badge key={t} className={styles.tagBadge}>
                             {t}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     </div>
@@ -250,7 +262,7 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <span className={styles.detailLabel}>Estado:</span>{" "}
-                        <span
+                        <Badge
                           className={`${styles.statusPill} ${
                             isAprobada
                               ? styles.pillApproved
@@ -260,7 +272,7 @@ export default function Dashboard() {
                           }`}
                         >
                           {item.estado}
-                        </span>
+                        </Badge>
                       </div>
                       <div className={styles.fullSpan}>
                         <span className={styles.detailLabel}>Acción pendiente:</span>{" "}
@@ -281,38 +293,46 @@ export default function Dashboard() {
                     <div className={styles.buttonsWrap}>
                       {isPendiente && (
                         <div className={styles.quickDecisions}>
-                          <button
+                          <Button
                             onClick={() => handleAceptar(item.id)}
-                            className={styles.btnAccept}
+                            variant="success"
+                            size="xs"
+                            className={styles.btnAcceptCustom}
                             title="Aprobar Solicitud"
                           >
                             <FiCheck /> ACEPTAR
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => handleRechazar(item.id)}
-                            className={styles.btnReject}
+                            variant="danger"
+                            size="xs"
+                            className={styles.btnRejectCustom}
                             title="Rechazar Solicitud"
                           >
                             <FiX /> RECHAZAR
-                          </button>
+                          </Button>
                         </div>
                       )}
 
-                      <button
+                      <Button
                         onClick={() => {
                           toast.info(`Continuando flujo de gestión N°${item.id}`);
                         }}
-                        className={styles.btnContinue}
+                        variant="primary"
+                        size="sm"
+                        className={styles.btnContinueCustom}
                       >
                         CONTINUAR <FiArrowRight />
-                      </button>
+                      </Button>
 
-                      <button
+                      <Button
                         onClick={() => setSolicitudDetalle(item)}
-                        className={styles.btnDetail}
+                        variant="outline"
+                        size="sm"
+                        className={styles.btnDetailCustom}
                       >
                         <FiEye /> VER DETALLE
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </div>
@@ -323,16 +343,15 @@ export default function Dashboard() {
       </div>
 
       {/* Mock Detail Modal */}
-      {solicitudDetalle && (
-        <div className={styles.modalBackdrop} onClick={() => setSolicitudDetalle(null)}>
-          <div className={styles.modalBox} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHead}>
-              <h3>Detalle Avanzado • Solicitud N°{solicitudDetalle.id}</h3>
-              <button className={styles.closeModal} onClick={() => setSolicitudDetalle(null)}>
-                <FiX size={20} />
-              </button>
-            </div>
-            <div className={styles.modalBody}>
+      <Modal
+        isOpen={!!solicitudDetalle}
+        onClose={() => setSolicitudDetalle(null)}
+        title={solicitudDetalle ? `Detalle Avanzado • Solicitud N°${solicitudDetalle.id}` : ""}
+        maxWidth="40rem"
+      >
+        {solicitudDetalle && (
+          <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div className={styles.modalSection}>
                 <h4>Datos del Solicitante</h4>
                 <p><strong>Razón Social:</strong> {solicitudDetalle.cliente}</p>
@@ -355,17 +374,18 @@ export default function Dashboard() {
                 <p>Canal de Origen: BIND Garantías Portal Web</p>
               </div>
             </div>
-            <div className={styles.modalFoot}>
-              <button
-                className={styles.btnOutline}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', marginTop: '1rem', borderTop: '1px solid #30363d' }}>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setSolicitudDetalle(null)}
               >
                 Cerrar Ventana
-              </button>
+              </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
