@@ -12,7 +12,12 @@ import {
   FiLock,
 } from "react-icons/fi";
 import { FaUserLock } from "react-icons/fa";
-import { Button, Spinner, InputPasswordSeguro, InputSimple } from "../../../components/ui";
+import {
+  Button,
+  Spinner,
+  InputPasswordSeguro,
+  InputSimple,
+} from "../../../components/ui";
 import {
   useObtenerUsuarioPorEncrypt,
   useEstablecerClave,
@@ -39,8 +44,6 @@ const passwordSchema = z
     message: "Las contraseñas no coinciden",
     path: ["confirmPassword"],
   });
-
-
 
 const CrearClave = () => {
   const { canal, token } = useParams();
@@ -70,8 +73,10 @@ const CrearClave = () => {
   const { mutate: resetearPassword, isPending: solicitandoNuevo } =
     useResetearPassword();
 
-  const { mutate: loginByCode, isPending: solicitandoCodigo } = useLoginByCode();
-  const { mutate: reactivarUsuario, isPending: reactivando } = useReactivarUsuario();
+  const { mutate: loginByCode, isPending: solicitandoCodigo } =
+    useLoginByCode();
+  const { mutate: reactivarUsuario, isPending: reactivando } =
+    useReactivarUsuario();
 
   const handleOmitir = () => {
     if (!usuario?.email || !usuario?.usuariowebid) return;
@@ -83,31 +88,42 @@ const CrearClave = () => {
           {
             onSuccess: (data) => {
               toast.success("Código enviado", {
-                description: "Revisá tu correo para ingresar."
+                description: "Revisá tu correo para ingresar.",
               });
               navigate(`/${channelInfo.id}/login`, {
-                state: { emailIngresado: usuario.email, generatedOtp: data.password }
+                state: {
+                  emailIngresado: usuario.email,
+                  generatedOtp: data.password,
+                },
               });
             },
             onError: (error) => {
               const isServerError = error?.response?.status >= 500;
-              toast.error(isServerError ? "Error de servidor" : "Error al solicitar código", {
-                description: isServerError
-                  ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-                  : "Ocurrió un error. Intentá más tarde.",
-              });
+              toast.error(
+                isServerError
+                  ? "Error de servidor"
+                  : "Error al solicitar código",
+                {
+                  description: isServerError
+                    ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
+                    : "Ocurrió un error. Intentá más tarde.",
+                },
+              );
             },
-          }
+          },
         );
       },
       onError: (error) => {
         const isServerError = error?.response?.status >= 500;
-        toast.error(isServerError ? "Error de servidor" : "Error al activar cuenta", {
-          description: isServerError
-            ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-            : "No pudimos activar tu cuenta en este momento. Intentá más tarde.",
-        });
-      }
+        toast.error(
+          isServerError ? "Error de servidor" : "Error al activar cuenta",
+          {
+            description: isServerError
+              ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
+              : "No pudimos activar tu cuenta en este momento. Intentá más tarde.",
+          },
+        );
+      },
     });
   };
 
@@ -123,12 +139,19 @@ const CrearClave = () => {
       return date.toISOString().split(".")[0];
     };
 
+    const canalId =
+      channelInfo.id &&
+      channelInfo.id !== "default" &&
+      channelInfo.id !== "bind"
+        ? channelInfo.id
+        : "canal1";
+
     const payloadReset = {
       email: emailManual,
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: canalIntegridad || "canal1",
+      hashseguridad: canalId,
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
@@ -138,16 +161,23 @@ const CrearClave = () => {
     resetearPassword(payloadReset, {
       onSuccess: () => {
         navigate(`/${channelInfo.id}/confirmar-correo`, {
-          state: { emailIngresado: emailManual, canal: canalIntegridad, origen: "recuperar" },
+          state: {
+            emailIngresado: emailManual,
+            canal: canalId,
+            origen: "recuperar",
+          },
         });
       },
       onError: (error) => {
         const isServerError = error?.response?.status >= 500;
-        toast.error(isServerError ? "Error de servidor" : "Error al solicitar enlace", {
-          description: isServerError
-            ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-            : "No pudimos enviar el correo. Intentá registrarte nuevamente.",
-        });
+        toast.error(
+          isServerError ? "Error de servidor" : "Error al solicitar enlace",
+          {
+            description: isServerError
+              ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
+              : "No pudimos enviar el correo. Intentá registrarte nuevamente.",
+          },
+        );
         if (!isServerError) {
           navigate(`/${channelInfo.id}/registro`);
         }
@@ -191,9 +221,12 @@ const CrearClave = () => {
         const errMsg = isServerError
           ? "El servidor está experimentando problemas. Por favor, intentá nuevamente más tarde."
           : "Error al establecer la credencial. Intentá más tarde.";
-        toast.error(isServerError ? "Error de servidor" : "Error de activación", { 
-          description: errMsg 
-        });
+        toast.error(
+          isServerError ? "Error de servidor" : "Error de activación",
+          {
+            description: errMsg,
+          },
+        );
         setError("root.serverError", { type: "manual", message: errMsg });
       },
     });
@@ -241,161 +274,241 @@ const CrearClave = () => {
               </div>
             </div>
 
-
-
-            <div style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: "1.25rem", marginTop: "3.5rem" }}>
+            <div
+              style={{
+                width: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "1.25rem",
+                marginTop: "3.5rem",
+              }}
+            >
               {!tokenInvalidoDeOrigen && usuario && (
-                <div className={styles.successCallout} style={{ marginBottom: 0 }}>
+                <div
+                  className={styles.successCallout}
+                  style={{ marginBottom: 0 }}
+                >
                   <FiCheckCircle className={styles.calloutIcon} />
                   <div className={styles.calloutContent}>
-                    <h2 className={styles.calloutTitle}>¡Email verificado con éxito!</h2>
-                    <p>
-                      Tu cuenta ya está activa. Crear una contraseña es <strong>opcional</strong>. 
-                      Podés configurarla ahora o saltar este paso para ingresar siempre con un código a tu correo.
-                    </p>
+                    {usuario.estado === 1 ? (
+                      <>
+                        <h2 className={styles.calloutTitle}>
+                          Creación de nueva contraseña
+                        </h2>
+                        <p>
+                          Ingresá tu nueva contraseña para acceder a la plataforma.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h2 className={styles.calloutTitle}>
+                          ¡Email verificado con éxito!
+                        </h2>
+                        <p>
+                          Tu cuenta ya está activa. Crear una contraseña es{" "}
+                          <strong>opcional</strong>. Podés configurarla ahora o
+                          saltar este paso para ingresar siempre con un código a tu
+                          correo.
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
 
               <div className={styles.formWrapper}>
-              {tokenInvalidoDeOrigen && (
-                <div className={styles.expiredTokenContainer}>
-                  <FiAlertCircle size={48} color="var(--red)" />
-                  <h3>Enlace corrupto o ausente</h3>
-                  <p>El enlace de seguridad está incompleto o mal formado.</p>
-                  
-                  <div style={{ marginTop: "1.5rem", width: "100%", textAlign: "left" }}>
-                    <InputSimple
-                      name="emailManual"
-                      label="Ingresá tu correo electrónico"
-                      value={emailManual}
-                      onChange={setEmailManual}
-                      type="email"
-                      disabled={solicitandoNuevo}
-                      esValido={emailManual.length > 0 && isValidEmail(emailManual)}
-                      error={emailManual.length > 0 && !isValidEmail(emailManual) ? { message: "Formato de correo inválido" } : null}
-                    />
-                  </div>
+                {tokenInvalidoDeOrigen && (
+                  <div className={styles.expiredTokenContainer}>
+                    <FiAlertCircle size={48} color="var(--red)" />
+                    <h3>Enlace corrupto o ausente</h3>
+                    <p>El enlace de seguridad está incompleto o mal formado.</p>
 
-                  <Button
-                    variant="primary"
-                    onClick={handleSolicitarNuevoEnlace}
-                    style={{ marginTop: "1.5rem", width: "100%" }}
-                    isLoading={solicitandoNuevo}
-                    disabled={!isValidEmail(emailManual)}
-                  >
-                    {solicitandoNuevo ? "SOLICITANDO..." : "SOLICITAR NUEVO ENLACE"}
-                  </Button>
-                </div>
-              )}
-
-              {mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen && (
-                <div className={styles.expiredTokenContainer}>
-                  <FiAlertCircle size={48} color="var(--red)" />
-                  <h3>El enlace ha expirado o es inválido</h3>
-                  <p>
-                    Por seguridad, los enlaces tienen un tiempo de validez limitado. Solicitá uno nuevo para continuar.
-                  </p>
-                  
-                  <div style={{ marginTop: "1.5rem", width: "100%", textAlign: "left" }}>
-                    <InputSimple
-                      name="emailManual"
-                      label="Ingresá tu correo electrónico"
-                      value={emailManual}
-                      onChange={setEmailManual}
-                      type="email"
-                      disabled={solicitandoNuevo}
-                      esValido={emailManual.length > 0 && isValidEmail(emailManual)}
-                      error={emailManual.length > 0 && !isValidEmail(emailManual) ? { message: "Formato de correo inválido" } : null}
-                    />
-                  </div>
-
-                  <Button
-                    variant="primary"
-                    onClick={handleSolicitarNuevoEnlace}
-                    style={{ marginTop: "1.5rem", width: "100%" }}
-                    isLoading={solicitandoNuevo}
-                    disabled={!isValidEmail(emailManual)}
-                  >
-                    {solicitandoNuevo ? "SOLICITANDO..." : "SOLICITAR NUEVO ENLACE"}
-                  </Button>
-                </div>
-              )}
-
-              {/* Formulario principal */}
-              {!tokenInvalidoDeOrigen && usuario && (
-                <form onSubmit={handleSubmit(onSubmit)} noValidate>
-                  <div className={styles.inputGroup}>
-                    <Controller
-                      name="password"
-                      control={control}
-                      render={({ field }) => (
-                        <InputPasswordSeguro
-                          {...field}
-                          label="Nueva Contraseña"
-                          currentValue={passwordValue}
-                          email={usuario?.email || ""}
-                          esValido={!errors.password && !!passwordValue}
-                          disabled={guardandoClave}
-                        />
-                      )}
-                    />
-                  </div>
-
-                  <div
-                    className={styles.inputGroup}
-                    style={{ marginTop: "1.5rem", position: "relative" }}
-                  >
-                    <InputSimple
-                      name="confirmPassword"
-                      control={control}
-                      label="Confirmar Contraseña"
-                      type="password"
-                      esValido={
-                        !!confirmPasswordValue &&
-                        passwordValue === confirmPasswordValue
-                      }
-                      error={errors.confirmPassword}
-                      disabled={guardandoClave}
-                    />
-
-                    {confirmPasswordValue.length > 0 &&
-                      passwordValue === confirmPasswordValue && (
-                        <span className={styles.successMsgMatch}>
-                          Las contraseñas coinciden
-                        </span>
-                      )}
-                  </div>
-
-                  <div className={styles.formActions} style={{ marginTop: "1rem", flexDirection: "column", gap: "1rem" }}>
-                    <Button
-                      type="submit"
-                      variant="primary"
-                      disabled={!isValid || guardandoClave || solicitandoCodigo || reactivando}
-                      style={{ width: "100%" }}
+                    <div
+                      style={{
+                        marginTop: "1.5rem",
+                        width: "100%",
+                        textAlign: "left",
+                      }}
                     >
-                      {guardandoClave ? "PROCESANDO..." : "GUARDAR"}
-                    </Button>
-                    <div className={styles.divider}>
-                      <span>o</span>
+                      <InputSimple
+                        name="emailManual"
+                        label="Ingresá tu correo electrónico"
+                        value={emailManual}
+                        onChange={setEmailManual}
+                        type="email"
+                        disabled={solicitandoNuevo}
+                        esValido={
+                          emailManual.length > 0 && isValidEmail(emailManual)
+                        }
+                        error={
+                          emailManual.length > 0 && !isValidEmail(emailManual)
+                            ? { message: "Formato de correo inválido" }
+                            : null
+                        }
+                      />
                     </div>
+
                     <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleOmitir}
-                      disabled={solicitandoCodigo || guardandoClave || reactivando}
-                      style={{ width: "100%" }}
+                      variant="primary"
+                      onClick={handleSolicitarNuevoEnlace}
+                      style={{ marginTop: "1.5rem", width: "100%" }}
+                      isLoading={solicitandoNuevo}
+                      disabled={!isValidEmail(emailManual)}
                     >
-                      {solicitandoCodigo || reactivando ? "PROCESANDO..." : "Omitir e ingresar con código"}
+                      {solicitandoNuevo
+                        ? "SOLICITANDO..."
+                        : "SOLICITAR NUEVO ENLACE"}
                     </Button>
                   </div>
-                </form>
-              )}
-            </div>
+                )}
+
+                {mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen && (
+                  <div className={styles.expiredTokenContainer}>
+                    <FiAlertCircle size={48} color="var(--red)" />
+                    <h3>El enlace ha expirado o es inválido</h3>
+                    <p>
+                      Por seguridad, los enlaces tienen un tiempo de validez
+                      limitado. Solicitá uno nuevo para continuar.
+                    </p>
+
+                    <div
+                      style={{
+                        marginTop: "1.5rem",
+                        width: "100%",
+                        textAlign: "left",
+                      }}
+                    >
+                      <InputSimple
+                        name="emailManual"
+                        label="Ingresá tu correo electrónico"
+                        value={emailManual}
+                        onChange={setEmailManual}
+                        type="email"
+                        disabled={solicitandoNuevo}
+                        esValido={
+                          emailManual.length > 0 && isValidEmail(emailManual)
+                        }
+                        error={
+                          emailManual.length > 0 && !isValidEmail(emailManual)
+                            ? { message: "Formato de correo inválido" }
+                            : null
+                        }
+                      />
+                    </div>
+
+                    <Button
+                      variant="primary"
+                      onClick={handleSolicitarNuevoEnlace}
+                      style={{ marginTop: "1.5rem", width: "100%" }}
+                      isLoading={solicitandoNuevo}
+                      disabled={!isValidEmail(emailManual)}
+                    >
+                      {solicitandoNuevo
+                        ? "SOLICITANDO..."
+                        : "SOLICITAR NUEVO ENLACE"}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Formulario principal */}
+                {!tokenInvalidoDeOrigen && usuario && (
+                  <form onSubmit={handleSubmit(onSubmit)} noValidate>
+                    <div className={styles.inputGroup}>
+                      <Controller
+                        name="password"
+                        control={control}
+                        render={({ field }) => (
+                          <InputPasswordSeguro
+                            {...field}
+                            label="Nueva Contraseña"
+                            currentValue={passwordValue}
+                            email={usuario?.email || ""}
+                            esValido={!errors.password && !!passwordValue}
+                            disabled={guardandoClave}
+                          />
+                        )}
+                      />
+                    </div>
+
+                    <div
+                      className={styles.inputGroup}
+                      style={{ marginTop: "1.5rem", position: "relative" }}
+                    >
+                      <InputSimple
+                        name="confirmPassword"
+                        control={control}
+                        label="Confirmar Contraseña"
+                        type="password"
+                        esValido={
+                          !!confirmPasswordValue &&
+                          passwordValue === confirmPasswordValue
+                        }
+                        error={errors.confirmPassword}
+                        disabled={guardandoClave}
+                      />
+
+                      {confirmPasswordValue.length > 0 &&
+                        passwordValue === confirmPasswordValue && (
+                          <span className={styles.successMsgMatch}>
+                            Las contraseñas coinciden
+                          </span>
+                        )}
+                    </div>
+
+                    <div
+                      className={styles.formActions}
+                      style={{
+                        marginTop: "1rem",
+                        flexDirection: "column",
+                        gap: "1rem",
+                      }}
+                    >
+                      <Button
+                        type="submit"
+                        variant="primary"
+                        disabled={
+                          !isValid ||
+                          guardandoClave ||
+                          solicitandoCodigo ||
+                          reactivando
+                        }
+                        style={{ width: "100%" }}
+                      >
+                        {guardandoClave ? "PROCESANDO..." : "GUARDAR"}
+                      </Button>
+                      {usuario.estado !== 1 && (
+                        <>
+                          <div className={styles.divider}>
+                            <span>o</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleOmitir}
+                            disabled={
+                              solicitandoCodigo ||
+                              guardandoClave ||
+                              reactivando
+                            }
+                            style={{ width: "100%" }}
+                          >
+                            {solicitandoCodigo || reactivando
+                              ? "PROCESANDO..."
+                              : "Omitir e ingresar con código"}
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </form>
+                )}
+              </div>
             </div>
           </section>
 
-          <section className={`${styles.sideBrand} ${styles.sideBrandCentered}`}>
+          <section
+            className={`${styles.sideBrand} ${styles.sideBrandCentered}`}
+          >
             <div className={styles.crearClaveBrandContent}>
               <div className={styles.heroIconWrapper}>
                 <FaUserLock

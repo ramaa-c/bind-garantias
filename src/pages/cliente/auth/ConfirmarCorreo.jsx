@@ -42,13 +42,20 @@ const ConfirmarCorreo = () => {
       return date.toISOString().split(".")[0];
     };
 
+    const canalId =
+      channelInfo.id &&
+      channelInfo.id !== "default" &&
+      channelInfo.id !== "bind"
+        ? channelInfo.id
+        : "canal1";
+
     reenviarCorreo(
       {
         email: emailUsuario,
         usuariowebid: 0,
         fchalta: usuarioSkeletor?.fchalta || getCSharpIsoDate(),
         fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(1),
-        hashseguridad: canal || "canal1",
+        hashseguridad: canalId,
         estado: "",
         debecambiarclave: "",
         esadministrador: "",
@@ -157,7 +164,7 @@ const ConfirmarCorreo = () => {
             </div>
           </div>
 
-          {/* Fila de reenvío — mismo patrón que OtpPhase */}
+          {/* Fila de reenvío */}
           <div className={styles.resendRow}>
             <span className={styles.resendLabel}>¿No te llegó el correo?</span>
             {canResend ? (
@@ -182,11 +189,17 @@ const ConfirmarCorreo = () => {
                 className={styles.linkYellow}
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate(`/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`)}
+                onClick={() =>
+                  navigate(
+                    `/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                  )
+                }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    navigate(`/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`);
+                    navigate(
+                      `/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                    );
                   }
                 }}
               >
@@ -210,9 +223,33 @@ const ConfirmarCorreo = () => {
           <h2 className={styles.brandTitleLarge} style={{ maxWidth: "100%" }}>
             Revisá tu <em className={styles.brandEm}>bandeja de entrada</em>
           </h2>
-          <div style={{ marginTop: "1rem", padding: "0.75rem 1rem", background: "rgba(245, 244, 0, 0.08)", border: "1px solid rgba(245, 244, 0, 0.15)", borderRadius: "0.75rem", display: "inline-block" }}>
-            <p className={styles.brandSubtitle} style={{ color: "var(--white, #fff)", fontWeight: "600", fontSize: "0.95rem", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem" }}>
-              <HiClock size={18} style={{ color: "var(--color-amarillo-bind, #f5f400)" }} /> El enlace expira en 5 minutos.
+          <div
+            style={{
+              marginTop: "1rem",
+              padding: "0.75rem 1rem",
+              background: "rgba(245, 244, 0, 0.08)",
+              border: "1px solid rgba(245, 244, 0, 0.15)",
+              borderRadius: "0.75rem",
+              display: "inline-block",
+            }}
+          >
+            <p
+              className={styles.brandSubtitle}
+              style={{
+                color: "var(--white, #fff)",
+                fontWeight: "600",
+                fontSize: "0.95rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "0.4rem",
+              }}
+            >
+              <HiClock
+                size={18}
+                style={{ color: "var(--color-amarillo-bind, #f5f400)" }}
+              />{" "}
+              El enlace expira en 5 minutos.
             </p>
           </div>
         </div>
