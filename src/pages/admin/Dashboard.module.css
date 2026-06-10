@@ -45,7 +45,9 @@
   flex-direction: column;
   backdrop-filter: blur(8px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s, border-color 0.2s;
+  transition:
+    transform 0.2s,
+    border-color 0.2s;
 }
 
 .kpiCard:hover {
@@ -387,7 +389,6 @@
   width: 100%;
 }
 
-
 .quickDecisions {
   display: flex;
   gap: 0.4rem;
@@ -407,7 +408,6 @@
   width: 100%;
 }
 
-
 .modalSection h4 {
   margin: 0 0 0.5rem 0;
   color: #58a6ff;
@@ -422,3 +422,16 @@
   color: #c9d1d9;
 }
 
+.modalBodyCustom {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modalFootCustom {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  margin-top: 1rem;
+  border-top: 1px solid #30363d;
+}

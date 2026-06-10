@@ -94,9 +94,13 @@ export default function Dashboard() {
     setSolicitudes((prev) =>
       prev.map((s) =>
         s.id === id
-          ? { ...s, estado: "Aprobada", accionPendiente: "Aprobada por Administrador" }
-          : s
-      )
+          ? {
+              ...s,
+              estado: "Aprobada",
+              accionPendiente: "Aprobada por Administrador",
+            }
+          : s,
+      ),
     );
     toast.success(`Solicitud N°${id} Aprobada exitosamente`, {
       description: "Los fondos o cupos han sido habilitados para el cliente.",
@@ -107,9 +111,13 @@ export default function Dashboard() {
     setSolicitudes((prev) =>
       prev.map((s) =>
         s.id === id
-          ? { ...s, estado: "Rechazada", accionPendiente: "Rechazada por Administrador" }
-          : s
-      )
+          ? {
+              ...s,
+              estado: "Rechazada",
+              accionPendiente: "Rechazada por Administrador",
+            }
+          : s,
+      ),
     );
     toast.error(`Solicitud N°${id} Rechazada`, {
       description: "Se ha notificado al cliente el rechazo de la operación.",
@@ -125,7 +133,10 @@ export default function Dashboard() {
         s.usuario.toLowerCase().includes(busqueda.toLowerCase());
 
       if (filtroEstado === "todos") return matchTexto;
-      return matchTexto && s.estado.toLowerCase().includes(filtroEstado.toLowerCase());
+      return (
+        matchTexto &&
+        s.estado.toLowerCase().includes(filtroEstado.toLowerCase())
+      );
     })
     .sort((a, b) => {
       if (orden === "desc") return b.id.localeCompare(a.id);
@@ -143,7 +154,10 @@ export default function Dashboard() {
       <div className={styles.headerTitle}>
         <div>
           <h1>Panel General de Control</h1>
-          <p>Supervisión global de todas las líneas y solicitudes activas en el sistema.</p>
+          <p>
+            Supervisión global de todas las líneas y solicitudes activas en el
+            sistema.
+          </p>
         </div>
       </div>
 
@@ -241,8 +255,8 @@ export default function Dashboard() {
                   isAprobada
                     ? styles.rowApproved
                     : isRechazada
-                    ? styles.rowRejected
-                    : styles.rowPending
+                      ? styles.rowRejected
+                      : styles.rowPending
                 }`}
               >
                 <div className={styles.rowMain}>
@@ -275,7 +289,9 @@ export default function Dashboard() {
                       </div>
                       <div>
                         <span className={styles.detailLabel}>Usuario:</span>{" "}
-                        <span className={styles.detailText}>{item.usuario}</span>
+                        <span className={styles.detailText}>
+                          {item.usuario}
+                        </span>
                       </div>
                       <div>
                         <span className={styles.detailLabel}>Estado:</span>{" "}
@@ -284,15 +300,17 @@ export default function Dashboard() {
                             isAprobada
                               ? styles.pillApproved
                               : isRechazada
-                              ? styles.pillRejected
-                              : styles.pillPending
+                                ? styles.pillRejected
+                                : styles.pillPending
                           }`}
                         >
                           {item.estado}
                         </Badge>
                       </div>
                       <div className={styles.fullSpan}>
-                        <span className={styles.detailLabel}>Acción pendiente:</span>{" "}
+                        <span className={styles.detailLabel}>
+                          Acción pendiente:
+                        </span>{" "}
                         <span className={styles.actionHighlight}>
                           {item.accionPendiente}
                         </span>
@@ -333,7 +351,9 @@ export default function Dashboard() {
 
                       <Button
                         onClick={() => {
-                          toast.info(`Continuando flujo de gestión N°${item.id}`);
+                          toast.info(
+                            `Continuando flujo de gestión N°${item.id}`,
+                          );
                         }}
                         variant="primary"
                         size="sm"
@@ -363,25 +383,45 @@ export default function Dashboard() {
       <Modal
         isOpen={!!solicitudDetalle}
         onClose={() => setSolicitudDetalle(null)}
-        title={solicitudDetalle ? `Detalle Avanzado • Solicitud N°${solicitudDetalle.id}` : ""}
+        title={
+          solicitudDetalle
+            ? `Detalle Avanzado • Solicitud N°${solicitudDetalle.id}`
+            : ""
+        }
         maxWidth="40rem"
       >
         {solicitudDetalle && (
           <>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div className={styles.modalBodyCustom}>
               <div className={styles.modalSection}>
                 <h4>Datos del Solicitante</h4>
-                <p><strong>Razón Social:</strong> {solicitudDetalle.cliente}</p>
-                <p><strong>CUIT/Identificador:</strong> {solicitudDetalle.cuit}</p>
-                <p><strong>Email Operador:</strong> {solicitudDetalle.usuario}</p>
+                <p>
+                  <strong>Razón Social:</strong> {solicitudDetalle.cliente}
+                </p>
+                <p>
+                  <strong>CUIT/Identificador:</strong> {solicitudDetalle.cuit}
+                </p>
+                <p>
+                  <strong>Email Operador:</strong> {solicitudDetalle.usuario}
+                </p>
               </div>
 
               <div className={styles.modalSection}>
                 <h4>Información de la Línea / Producto</h4>
-                <p><strong>Tipo de Operación:</strong> {solicitudDetalle.tipo}</p>
-                <p><strong>Monto Solicitado:</strong> {solicitudDetalle.moneda || "$"} {solicitudDetalle.monto}</p>
-                <p><strong>Estado Actual:</strong> {solicitudDetalle.estado}</p>
-                <p><strong>Último hito de control:</strong> {solicitudDetalle.accionPendiente}</p>
+                <p>
+                  <strong>Tipo de Operación:</strong> {solicitudDetalle.tipo}
+                </p>
+                <p>
+                  <strong>Monto Solicitado:</strong>{" "}
+                  {solicitudDetalle.moneda || "$"} {solicitudDetalle.monto}
+                </p>
+                <p>
+                  <strong>Estado Actual:</strong> {solicitudDetalle.estado}
+                </p>
+                <p>
+                  <strong>Último hito de control:</strong>{" "}
+                  {solicitudDetalle.accionPendiente}
+                </p>
               </div>
 
               <div className={styles.modalSection}>
@@ -391,7 +431,7 @@ export default function Dashboard() {
                 <p>Canal de Origen: BIND Garantías Portal Web</p>
               </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '1.5rem', marginTop: '1rem', borderTop: '1px solid #30363d' }}>
+            <div className={styles.modalFootCustom}>
               <Button
                 variant="outline"
                 size="sm"
