@@ -1,12 +1,6 @@
 import React, { useState } from "react";
-import {
-  FiSearch,
-  FiCheck,
-  FiX,
-  FiEye,
-  FiArrowRight,
-  FiFilter,
-} from "react-icons/fi";
+import { useParams } from "react-router-dom";
+import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFilter } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/Button/Button";
 import { Badge } from "../../components/ui/Badge/Badge";
@@ -28,6 +22,7 @@ const solicitudesIniciales = [
     creado: "14/07/2025 20:08",
     actualizado: "14/07/2025 20:31",
     tags: ["TyC aceptados", "Legajo validado"],
+    cadenaSlug: "canal1",
   },
   {
     id: "16546",
@@ -41,6 +36,7 @@ const solicitudesIniciales = [
     creado: "05/06/2025 11:31",
     actualizado: "05/06/2025 11:41",
     tags: ["TyC aceptados", "Legajo validado"],
+    cadenaSlug: "canal1",
   },
   {
     id: "16540",
@@ -54,6 +50,7 @@ const solicitudesIniciales = [
     creado: "14/05/2025 12:08",
     actualizado: "15/05/2025 18:21",
     tags: ["Garantía Digital"],
+    cadenaSlug: "default",
   },
   {
     id: "16538",
@@ -68,10 +65,12 @@ const solicitudesIniciales = [
     creado: "10/05/2025 09:15",
     actualizado: "11/05/2025 14:00",
     tags: ["Requiere revisión"],
+    cadenaSlug: "default",
   },
 ];
 
 export default function Dashboard() {
+  const { cadenaSlug } = useParams();
   const [solicitudes, setSolicitudes] = useState(solicitudesIniciales);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
@@ -79,6 +78,17 @@ export default function Dashboard() {
 
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
+
+  // Filtrar solicitudes correspondientes al canal activo
+  const solicitudesCanal = solicitudes.filter((s) => {
+    if (!cadenaSlug || cadenaSlug === "default" || cadenaSlug === "bind") {
+      return s.cadenaSlug === "default" || s.cadenaSlug === "bind";
+    }
+    if (cadenaSlug === "canal1" || cadenaSlug === "1") {
+      return s.cadenaSlug === "canal1";
+    }
+    return s.cadenaSlug === cadenaSlug;
+  });
 
   const handleAceptar = (id) => {
     setSolicitudes((prev) =>
@@ -114,7 +124,7 @@ export default function Dashboard() {
     });
   };
 
-  const filtradas = solicitudes
+  const filtradas = solicitudesCanal
     .filter((s) => {
       const matchTexto =
         s.cliente.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -133,7 +143,7 @@ export default function Dashboard() {
       return a.id.localeCompare(b.id);
     });
 
-  const totalMonto = solicitudes.reduce((acc, curr) => {
+  const totalMonto = solicitudesCanal.reduce((acc, curr) => {
     const val = parseFloat(curr.monto.replace(/\./g, "")) || 0;
     return acc + (curr.moneda === "U$D" ? val * 1200 : val);
   }, 0);
@@ -157,7 +167,7 @@ export default function Dashboard() {
           labelClassName={styles.kpiLabel}
           valueClassName={styles.kpiValue}
           label="Líneas Totales"
-          value={solicitudes.length}
+          value={solicitudesCanal.length}
           footer={<div className={styles.kpiFooter}>En cartera activa</div>}
         />
         <TarjetaMetrica
@@ -173,19 +183,15 @@ export default function Dashboard() {
           labelClassName={styles.kpiLabel}
           valueClassName={styles.kpiValueWarning}
           label="Pendientes de Validación"
-          value={
-            solicitudes.filter((s) => s.estado.includes("Pendiente")).length
-          }
-          footer={
-            <div className={styles.kpiFooter}>Requieren acción inmediata</div>
-          }
+          value={solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length}
+          footer={<div className={styles.kpiFooter}>Requieren acción inmediata</div>}
         />
         <TarjetaMetrica
           className={styles.kpiCard}
           labelClassName={styles.kpiLabel}
           valueClassName={styles.kpiValueSuccess}
           label="Aprobadas"
-          value={solicitudes.filter((s) => s.estado === "Aprobada").length}
+          value={solicitudesCanal.filter((s) => s.estado === "Aprobada").length}
           footer={<div className={styles.kpiFooter}>Listas para operar</div>}
         />
       </div>

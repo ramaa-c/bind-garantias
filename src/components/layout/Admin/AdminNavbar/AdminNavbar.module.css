@@ -1,13 +1,19 @@
 .navWrapper {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  background-color: #0d1117;
-  border-bottom: 1px solid #21262d;
+  margin: 1.25rem auto 0 auto;
+  width: calc(100% - 2.5rem);
+  max-width: 95rem;
+  background: rgba(22, 27, 34, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.25rem;
   position: sticky;
-  top: 0;
+  top: 1.25rem;
   z-index: 100;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
 }
 
 /* Topmost branding bar */
@@ -15,8 +21,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.625rem 1.5rem;
-  background: #0d1117;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
 }
 
 .logoBox {
@@ -36,6 +42,20 @@
   width: auto;
 }
 
+.logoSeparator {
+  width: 1px;
+  height: 1.25rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 0 0.5rem;
+}
+
+.channelLogo {
+  height: 1.5rem;
+  max-width: 6rem;
+  width: auto;
+  object-fit: contain;
+}
+
 /* Etiqueta Admin con el nuevo branding amarillo y negro corporativo */
 .adminTag {
   background: var(--yellow, #f5f400);
@@ -49,45 +69,154 @@
   border: 1px solid #000000;
 }
 
-.userControls {
+.userMenuContainer {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 1.25rem;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
-.accountText {
+.userTrigger {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #ffffff;
-}
-
-.logoutBtn {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  background: none;
-  border: none;
-  color: #e53935;
-  font-size: 0.875rem;
-  font-weight: 700;
+  gap: 0.75rem;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  transition: background 0.2s;
+  padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+  border-radius: 2rem;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.logoutBtn:hover {
-  background: rgba(229, 57, 53, 0.08);
+.userTrigger:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.avatarWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(245, 244, 0, 0.15);
+  color: var(--yellow, #f5f400);
+  border: 1px solid rgba(245, 244, 0, 0.3);
+}
+
+.userIcon {
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+}
+
+.userName {
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.userChevron {
+  color: #8b949e;
+  font-size: 0.9rem;
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.userChevronOpen {
+  transform: rotate(180deg);
+}
+
+.userDropdownMenu {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  width: 16rem;
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  z-index: 300;
+  animation: userDropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.userDropdownHeader {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: flex-start;
+}
+
+.userDropdownEmail {
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  text-align: left;
+}
+
+.userDropdownRole {
+  color: var(--yellow, #f5f400);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0;
+  letter-spacing: 0.05em;
+  text-align: left;
+}
+
+.userDropdownFooter {
+  padding: 0.5rem;
+}
+
+.userLogoutBtn {
+  width: 100%;
+  background-color: rgba(248, 81, 73, 0.08);
+  color: #f85149;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.userLogoutBtn:hover {
+  background-color: rgba(248, 81, 73, 0.15);
+}
+
+@keyframes userDropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Main navigation links bar con fondo negro/carbon y acentos amarillos */
 .mainNav {
-  background: #0d1117; /* Fondo negro elegante alineado al branding */
-  border-top: 1px solid #21262d;
-  border-bottom: 1px solid #21262d;
+  background: transparent;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   padding: 0 1.5rem;
   position: relative;
 }
@@ -154,12 +283,12 @@
   top: 100%;
   left: 0;
   background: #161b22;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   padding: 0.5rem 0;
   min-width: 17rem;
   z-index: 200;
-  border: 1px solid #30363d;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -186,24 +315,26 @@
 
 .dropdownItem {
   display: block;
-  width: 100%;
+  width: calc(100% - 1rem);
+  margin: 0.125rem 0.5rem;
   text-align: left;
   background: none;
   border: none;
-  padding: 0.625rem 1.25rem;
+  padding: 0.625rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: #c9d1d9;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
   border-left: 3px solid transparent;
+  border-radius: 0.375rem;
 }
 
 .dropdownItem:hover {
-  background-color: #21262d;
+  background-color: rgba(245, 244, 0, 0.06);
   color: #ffffff;
   border-left: 3px solid var(--yellow, #f5f400);
-  padding-left: 1.5rem;
+  padding-left: 1.25rem;
   font-weight: 600;
 }
 
@@ -228,5 +359,14 @@
   .navButton {
     padding: 0.75rem 0.625rem;
     font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .navWrapper {
+    margin: 0.75rem auto 0;
+    width: calc(100% - 1.5rem);
+    top: 0.75rem;
+    border-radius: 0.75rem;
   }
 }

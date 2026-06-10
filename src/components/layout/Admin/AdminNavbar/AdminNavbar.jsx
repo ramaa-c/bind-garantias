@@ -1,23 +1,32 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { FiChevronDown, FiLogOut, FiUser } from "react-icons/fi";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { FiChevronDown, FiLogOut } from "react-icons/fi";
+import { FaRegUserCircle } from "react-icons/fa";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./AdminNavbar.module.css";
 import { useAuthStore } from "../../../../store/useAuthStore";
+import { useChannel } from "../../../../context/ChannelContext";
 
 export default function AdminNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { cadenaSlug } = useParams();
+  const { channelInfo } = useChannel();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const user = useAuthStore((state) => state.user);
 
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navRef = useRef(null);
+  const profileRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (navRef.current && !navRef.current.contains(event.target)) {
         setActiveDropdown(null);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -26,18 +35,19 @@ export default function AdminNavbar() {
 
   const handleLogout = () => {
     if (clearAuth) clearAuth();
-    navigate("/");
+    navigate(`/${cadenaSlug || "default"}/login`);
   };
 
-  const isActive = (path) => location.pathname.startsWith(path);
+  const isActive = (path) => location.pathname.startsWith(`/${cadenaSlug || "default"}${path}`);
 
   const toggleDropdown = (name) => {
     setActiveDropdown((prev) => (prev === name ? null : name));
   };
 
   const handleNavigate = (path) => {
+    if (!path) return;
     setActiveDropdown(null);
-    navigate(path);
+    navigate(`/${cadenaSlug || "default"}${path}`);
   };
 
   const adminMenu = [
@@ -71,17 +81,54 @@ export default function AdminNavbar() {
     <div className={styles.navWrapper}>
       {/* Topmost branding bar */}
       <div className={styles.topBrandBar}>
-        <div className={styles.logoBox} onClick={() => navigate("/admin/dashboard")}>
+        <div className={styles.logoBox} onClick={() => navigate(`/${cadenaSlug || "default"}/admin/dashboard`)}>
           <img src={logoBind} alt="BIND Logo" className={styles.logoImg} />
+          {channelInfo && channelInfo.id !== "default" && (
+            <>
+              <div className={styles.logoSeparator} />
+              <img
+                src={channelInfo.logo}
+                alt={channelInfo.nombre}
+                className={styles.channelLogo}
+              />
+            </>
+          )}
           <span className={styles.adminTag}>ADMIN</span>
         </div>
-        <div className={styles.userControls}>
-          <span className={styles.accountText}>
-            <FiUser /> {user?.nombre || "Administrador"}
-          </span>
-          <button className={styles.logoutBtn} onClick={handleLogout}>
-            Salir <FiLogOut />
-          </button>
+        <div className={styles.userMenuContainer} ref={profileRef}>
+          <div
+            className={styles.userTrigger}
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+          >
+            <div className={styles.avatarWrapper}>
+              <FaRegUserCircle className={styles.userIcon} />
+            </div>
+            <span className={styles.userName}>
+              {user?.nombre || "Administrador"}
+            </span>
+            <FiChevronDown
+              className={`${styles.userChevron} ${isProfileOpen ? styles.userChevronOpen : ""}`}
+            />
+          </div>
+
+          {isProfileOpen && (
+            <div className={styles.userDropdownMenu}>
+              <div className={styles.userDropdownHeader}>
+                <p className={styles.userDropdownEmail}>
+                  {user?.email || "admin"}
+                </p>
+                <p className={styles.userDropdownRole}>
+                  Administrador General
+                </p>
+              </div>
+
+              <div className={styles.userDropdownFooter}>
+                <button className={styles.userLogoutBtn} onClick={handleLogout}>
+                  Cerrar sesión <FiLogOut />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -136,7 +183,7 @@ export default function AdminNavbar() {
                 </button>
                 <button
                   className={styles.dropdownItem}
-                  onClick={() => handleNavigate("/admin/dashboard")}
+                  onClick={() => handleNavigate(null)}
                 >
                   Precalificaciones
                 </button>
@@ -165,16 +212,14 @@ export default function AdminNavbar() {
             {activeDropdown === "administracion" && (
               <div className={`${styles.dropdownMenu} ${styles.scrollableMenu}`}>
                 {adminMenu.map((item) => {
-                  let destPath = "/admin/dashboard";
+                  let destPath = null;
                   if (item === "Roles" || item === "Administradores") {
                     destPath = "/admin/roles-permisos";
                   } else if (item === "Banners") {
                     destPath = "/admin/banners";
                   } else if (item === "Cadenas de Valor") {
                     destPath = "/admin/cadenas-valor";
-                  } else if (item === "Disclaimers" || item === "Propiedades de la aplicación") {
-                    destPath = "/admin/terminos";
-                  } else if (item.includes("Líneas") || item.includes("Crédito")) {
+                  } else if (item.includes("Líneas") || item.includes("Crédito") || item === "Líneas") {
                     destPath = "/admin/tasas-montos";
                   }
 
@@ -206,13 +251,13 @@ export default function AdminNavbar() {
               <div className={styles.dropdownMenu}>
                 <button
                   className={styles.dropdownItem}
-                  onClick={() => handleNavigate("/admin/dashboard")}
+                  onClick={() => handleNavigate(null)}
                 >
                   Mesa de Ayuda
                 </button>
                 <button
                   className={styles.dropdownItem}
-                  onClick={() => handleNavigate("/admin/dashboard")}
+                  onClick={() => handleNavigate(null)}
                 >
                   Contactar Soporte Técnico
                 </button>
@@ -242,13 +287,13 @@ export default function AdminNavbar() {
               <div className={styles.dropdownMenu}>
                 <button
                   className={styles.dropdownItem}
-                  onClick={() => handleNavigate("/admin/terminos")}
+                  onClick={() => handleNavigate(null)}
                 >
                   Manual de Usuario
                 </button>
                 <button
                   className={styles.dropdownItem}
-                  onClick={() => handleNavigate("/admin/dashboard")}
+                  onClick={() => handleNavigate(null)}
                 >
                   Acerca de Bind Garantías
                 </button>

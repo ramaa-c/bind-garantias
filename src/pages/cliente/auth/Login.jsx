@@ -354,7 +354,7 @@ const Login = () => {
           nombre: "Administrador General",
         });
         toast.success("Sesión de Administrador iniciada");
-        navigate("/admin/dashboard", { replace: true });
+        navigate(`/${channelInfo.id}/admin/dashboard`, { replace: true });
         return;
       }
 
