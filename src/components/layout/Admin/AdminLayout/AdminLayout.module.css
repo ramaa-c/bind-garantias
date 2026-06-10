@@ -1,12 +1,12 @@
 .adminRoot {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100dvh;
   background-color: #0d1117; /* Sleek rich dark mode */
   color: #f0f6fc;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   position: relative;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 /* Radiant glowing gradients background elements */
@@ -41,6 +41,7 @@
   padding: 2rem 4.5rem;
   position: relative;
   z-index: 1;
+  overflow-y: auto;
 }
 
 .containerInner {
