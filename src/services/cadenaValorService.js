@@ -95,4 +95,8 @@ export const cadenaValorService = {
   // PUT /api/cadenavalor
   actualizarCadenaValor: async (cadenaValorData) =>
     (await api.put("api/cadenavalor", cadenaValorData)).data,
+
+  // GET /api/cadenavalor (Web) - Obtener todas las activas
+  obtenerTodasWeb: async () =>
+    (await api.get("api/cadenavalor")).data,
 };

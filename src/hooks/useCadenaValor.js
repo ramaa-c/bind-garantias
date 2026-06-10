@@ -114,3 +114,10 @@ export const useActualizarCadenaValor = () => {
         mutationFn: cadenaValorService.actualizarCadenaValor
     });
 };
+
+export const useObtenerTodasWeb = () => {
+    return useQuery({
+        queryKey: ['cadenaValor', 'web', 'todas_list'],
+        queryFn: () => cadenaValorService.obtenerTodasWeb(),
+    });
+};

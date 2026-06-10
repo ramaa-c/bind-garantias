@@ -222,3 +222,11 @@ export const useTipoCartera = () =>
     staleTime: STALE_TIME,
     select: (data) => mapAndSort(data, "tipocarteraid"),
   });
+
+export const useEquipoComercial = () =>
+  useQuery({
+    queryKey: ["catalogos", "equipoComercial"],
+    queryFn: catalogosService.obtenerEquipoComercial,
+    staleTime: STALE_TIME,
+    select: (data) => mapAndSort(data, "equipocomercialid"),
+  });

@@ -57,7 +57,7 @@ export const catalogosService = {
 
   // Trae las vías o canales por donde se captan las operaciones
   obtenerTipoCanalComercializacion: async () =>
-    (await api.get("catalogos/TipoTipoCanalComercializacion")).data,
+    (await api.get("catalogos/TipoCanalComercializacion")).data,
 
   // Trae los agrupadores de actividades a nivel global
   obtenerTipoActividadGlobal: async () =>
@@ -100,4 +100,8 @@ export const catalogosService = {
   // Trae los tipos de cartera para segmentar a los socios comercialmente
   obtenerTipoCartera: async () =>
     (await api.get("catalogos/TipoCartera")).data,
+
+  // Trae los equipos comerciales
+  obtenerEquipoComercial: async () =>
+    (await api.get("catalogos/EquipoComercial")).data,
 };

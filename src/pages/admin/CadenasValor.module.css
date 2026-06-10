@@ -141,18 +141,58 @@
 
 .actionCell {
   text-align: right;
-  position: relative;
 }
 
-.btnActionToggle {
-  background: none;
-  border: none;
-  color: #8b949e;
+.actionsCellGrid {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.iconBtnAction {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #c9d1d9;
   cursor: pointer;
   padding: 0.5rem;
-  border-radius: 0.25rem;
+  border-radius: 0.375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.2s;
+  font-size: 1rem;
 }
+
+.iconBtnAction:hover {
+  transform: translateY(-1px);
+  color: #ffffff;
+}
+
+.btnEdit:hover {
+  background: rgba(88, 166, 255, 0.15);
+  border-color: #58a6ff;
+  color: #58a6ff;
+}
+
+.btnImage:hover {
+  background: rgba(63, 185, 80, 0.15);
+  border-color: #3fb950;
+  color: #3fb950;
+}
+
+.btnList:hover {
+  background: rgba(240, 136, 62, 0.15);
+  border-color: #f0883e;
+  color: #f0883e;
+}
+
+.btnUser:hover {
+  background: rgba(188, 140, 255, 0.15);
+  border-color: #bc8cff;
+  color: #bc8cff;
+}
+
 
 .btnActionToggle:hover, .btnActionToggle.active {
   color: var(--yellow, #f5f400);
@@ -493,3 +533,75 @@
 .btnNuevoBlue:hover {
   background: #3182ce;
 }
+
+.chainSearchList {
+  max-height: 250px;
+  overflow-y: auto;
+  border: 1px solid #30363d;
+  border-radius: 0.5rem;
+  background: #0d1117;
+  margin-top: 0.5rem;
+}
+
+.chainSearchItem {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #30363d;
+  color: #c9d1d9;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chainSearchItem:last-child {
+  border-bottom: none;
+}
+
+.chainSearchItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.cdaStatusBadge {
+  background: rgba(56, 161, 105, 0.15);
+  color: #38a169;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.logoThumbnail {
+  width: 50px;
+  height: 25px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 0.25rem;
+  padding: 2px;
+}
+
+.modalLogoPreviewWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.btnRemoveLogo {
+  margin-top: 0.5rem;
+  background: #ea4a5a;
+  color: #ffffff;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnRemoveLogo:hover {
+  background: #cf3544;
+}
+
