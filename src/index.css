@@ -63,6 +63,7 @@
   --text-dim: #444444;
   --white-muted: #f0f0f0;
   --success-green: #3ddc84;
+  --error-red: #ef4444;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
