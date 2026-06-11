@@ -13,11 +13,13 @@ import { ConfirmacionBorradorModal } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./Prestamos.module.css";
 import { PrestamosPasos } from "./PrestamosPasos";
+import { useChannel } from "../../../../context/ChannelContext";
 
 const STORAGE_KEY = "draft_prestamos";
 
 export default function Prestamos() {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
   const metodosFormulario = useForm({
     resolver: zodResolver(prestamosSchema),
@@ -283,7 +285,7 @@ export default function Prestamos() {
                   hitoActual={hitoVisual}
                   onVolver={handleActionVolver}
                   onVolverInicio={
-                    pasoActual === 1 ? () => navigate("/inicio") : null
+                    pasoActual === 1 ? () => navigate(`/${channelInfo?.id || "default"}/inicio`) : null
                   }
                   onReiniciar={handleReiniciarAlta}
                 />

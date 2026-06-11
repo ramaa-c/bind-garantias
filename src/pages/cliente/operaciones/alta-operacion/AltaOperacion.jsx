@@ -33,11 +33,13 @@ import { afipService } from "../../../../services/afipService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { catalogosService } from "../../../../services/catalogosService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
+import { useChannel } from "../../../../context/ChannelContext";
 
 const STORAGE_KEY = "draft_alta_operacion";
 
 export const AltaOperacion = () => {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
   const { cadenaSlug } = useParams();
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
@@ -110,7 +112,7 @@ export const AltaOperacion = () => {
             description:
               "Ya tenés una solicitud de línea en análisis. Debés esperar a que se procese.",
           });
-          navigate("/solicitudes");
+          navigate(`/${channelInfo?.id || "default"}/solicitudes`);
         } else if (isMounted) {
           setValidandoAcceso(false);
         }
@@ -833,7 +835,7 @@ export const AltaOperacion = () => {
 
     handleResetFlujoCompleto();
     sessionStorage.setItem("last_used_cuit", data.cuit);
-    navigate("/solicitudes", { state: { nuevaSolicitud } });
+    navigate(`/${channelInfo?.id || "default"}/solicitudes`, { state: { nuevaSolicitud } });
   };
 
   const eliminarSocio = async (index) => {
@@ -1246,7 +1248,7 @@ export const AltaOperacion = () => {
                   onStepClick={setPasoActual}
                   onVolver={mostrarBotonVolver ? handleVolver : null}
                   onVolverInicio={
-                    pasoActual === 1 ? () => navigate("/solicitudes") : null
+                    pasoActual === 1 ? () => navigate(`/${channelInfo?.id || "default"}/solicitudes`) : null
                   }
                   onReiniciar={handleClickReiniciar}
                 />

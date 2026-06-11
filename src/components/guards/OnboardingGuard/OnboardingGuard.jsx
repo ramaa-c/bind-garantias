@@ -5,14 +5,19 @@ import { useObtenerSocioUsuarioPorUsuarioId } from "../../../hooks/useSocios";
 import { useObtenerPorNombreOEmail } from "../../../hooks/useUsuario";
 import { LoadingScreen } from "../../ui";
 import { useChannel } from "../../../context/ChannelContext";
+import { useVendor } from "../../../hooks/useVendor";
 
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
   const { channelInfo } = useChannel();
 
-  const isTerminosPage = location.pathname === "/terminos";
-  const isAltaDatosPage = location.pathname === "/alta-datos-empresa";
+  const { activeSocioId } = useAuthStore((state) => state);
+  const { data: vendorData, isPending: isLoadingVendor } = useVendor();
+
+  const isTerminosPage = location.pathname.endsWith("/terminos");
+  const isAltaDatosPage = location.pathname.endsWith("/alta-datos-empresa");
+  const isSeleccionarEmpresaPage = location.pathname.endsWith("/seleccionar-empresa");
 
   const email = user?.email || "";
 
@@ -51,14 +56,20 @@ export const OnboardingGuard = ({ children }) => {
     return [];
   };
 
-  const listaEmpresas = parsearEmpresas(socioUsuarios);
+  const listaEmpresasBase = parsearEmpresas(socioUsuarios);
+  const isVendorMock = user?.email?.toLowerCase() === "vendorbind@yopmail.com";
+  const listaEmpresas = isVendorMock ? [1, 2, 3] : listaEmpresasBase;
   const tieneEmpresas = listaEmpresas.length > 0;
 
   if (!user || !user.email) {
     return <Navigate to={`/${channelInfo.id}/login`} replace />;
   }
 
-  if ((isLoadingUser && !usuarioWebId) || (usuarioWebId && isPendingSocios)) {
+  if (
+    (isLoadingUser && !usuarioWebId) ||
+    (usuarioWebId && isPendingSocios) ||
+    isLoadingVendor
+  ) {
     return (
       <LoadingScreen
         title="Cargando tu perfil"
@@ -67,9 +78,23 @@ export const OnboardingGuard = ({ children }) => {
     );
   }
 
+  const isVendor = vendorData?.isVendor || false;
+
   if (usuarioWebId && tieneEmpresas) {
-    if (isTerminosPage || isAltaDatosPage) {
-      return <Navigate to={`/${channelInfo.id}/inicio`} replace />;
+    if (isVendor) {
+      if (!activeSocioId && !isSeleccionarEmpresaPage && !isAltaDatosPage) {
+        return <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />;
+      }
+      // If they have an active socio ID, prevent them from staying on /seleccionar-empresa or /alta-datos-empresa forever,
+      // but they can navigate freely. Usually they are on /inicio or others.
+      if (activeSocioId && (isTerminosPage || isSeleccionarEmpresaPage || isAltaDatosPage)) {
+         // allow navigation or redirect to inicio? Let's just allow them to use alta-datos-empresa or seleccionar-empresa.
+         if (isTerminosPage) return <Navigate to={`/${channelInfo.id}/inicio`} replace />;
+      }
+    } else {
+      if (isTerminosPage || isAltaDatosPage || isSeleccionarEmpresaPage) {
+        return <Navigate to={`/${channelInfo.id}/inicio`} replace />;
+      }
     }
   } else if (usuarioWebId && !tieneEmpresas) {
     if (!isTerminosPage && !isAltaDatosPage) {

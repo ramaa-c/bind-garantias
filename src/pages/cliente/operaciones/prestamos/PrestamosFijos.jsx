@@ -10,11 +10,13 @@ import { ConfirmacionBorradorModal } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./Prestamos.module.css";
 import { PrestamosFijosPasos } from "./PrestamosFijosPasos";
+import { useChannel } from "../../../../context/ChannelContext";
 
 const STORAGE_KEY = "draft_prestamos_fijos";
 
 export default function PrestamosFijos() {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
   const metodosFormulario = useForm({
     resolver: zodResolver(prestamosSchema),
@@ -232,7 +234,7 @@ export default function PrestamosFijos() {
               )}
               {pasoActual === 1 && (
                 <BotonVolver
-                  onClick={() => navigate("/inicio")}
+                  onClick={() => navigate(`/${channelInfo?.id || "default"}/inicio`)}
                   texto="Volver a la lista"
                 />
               )}
