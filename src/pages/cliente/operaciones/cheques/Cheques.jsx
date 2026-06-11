@@ -28,11 +28,13 @@ import {
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./Cheques.module.css";
 import { useCrearSocio, useActualizarSocio } from "../../../../hooks/useSocios";
+import { useChannel } from "../../../../context/ChannelContext";
 
 const STORAGE_KEY = "draft_cheques";
 
 export default function Cheques() {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
   const [mostrarModal, setMostrarModal] = useState(false);
   const [codigoSms, setCodigoSms] = useState("");
@@ -406,7 +408,7 @@ export default function Cheques() {
                       : null
                   }
                   onVolverInicio={
-                    pasoActual === 1 ? () => navigate("/inicio") : null
+                    pasoActual === 1 ? () => navigate(`/${channelInfo?.id || "default"}/inicio`) : null
                   }
                   onReiniciar={handleReiniciarAlta}
                 />

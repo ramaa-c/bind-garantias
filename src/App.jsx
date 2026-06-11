@@ -37,6 +37,7 @@ import NotFound from "./pages/shared/NotFound/NotFound";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
 import AltaDatosEmpresa from "./pages/cliente/onboarding/AltaDatosEmpresa/AltaDatosEmpresa";
+import SeleccionarEmpresa from "./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import TasasMontos from "./pages/admin/TasasMontos";
@@ -210,6 +211,16 @@ function App() {
                 <OnboardingGuard>
                   <DashboardLayout>
                     <AltaDatosEmpresa />
+                  </DashboardLayout>
+                </OnboardingGuard>
+              }
+            />
+            <Route
+              path="seleccionar-empresa"
+              element={
+                <OnboardingGuard>
+                  <DashboardLayout>
+                    <SeleccionarEmpresa />
                   </DashboardLayout>
                 </OnboardingGuard>
               }

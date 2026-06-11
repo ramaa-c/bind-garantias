@@ -7,6 +7,7 @@ import {
 
 export const useEmpresaActiva = () => {
   const user = useAuthStore((state) => state.user);
+  const activeSocioId = useAuthStore((state) => state.activeSocioId);
 
   const { data: usuarioDb, isPending: isLoadingUser } =
     useObtenerPorNombreOEmail(user?.email);
@@ -19,10 +20,11 @@ export const useEmpresaActiva = () => {
     isPending: isPendingSocios,
   } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
 
-  const socioId =
-    Array.isArray(socioUsuarios) && socioUsuarios.length > 0
-      ? socioUsuarios[0].socioid || socioUsuarios[0].SocioID
-      : null;
+  let socioId = activeSocioId;
+  
+  if (!socioId && Array.isArray(socioUsuarios) && socioUsuarios.length > 0) {
+    socioId = socioUsuarios[0].socioid || socioUsuarios[0].SocioID;
+  }
 
   const { data: socioWeb, isPending: isPendingSocioWeb } =
     useSocioWebPorId(socioId);

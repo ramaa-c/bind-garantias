@@ -16,11 +16,13 @@ import {
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { BarraProgreso, BotonVolver } from "../../../../components/ui";
 import styles from "./Solicitud.module.css";
+import { useChannel } from "../../../../context/ChannelContext";
 
 const STORAGE_KEY = "draft_solicitud_cheques";
 
 export default function Solicitud() {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
@@ -166,7 +168,7 @@ export default function Solicitud() {
 
               {pasoActual === 1 && (
                 <BotonVolver
-                  onClick={() => navigate("/inicio")}
+                  onClick={() => navigate(`/${channelInfo?.id || "default"}/inicio`)}
                   texto="Volver al inicio"
                 />
               )}

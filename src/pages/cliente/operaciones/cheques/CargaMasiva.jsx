@@ -11,11 +11,13 @@ import {
   Paso3Confirmacion,
   Paso4ExitoEpyme,
 } from "../../../../components/features";
+import { useChannel } from "../../../../context/ChannelContext";
 
 import styles from "./CargaMasiva.module.css";
 
 export default function CargaMasiva() {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
   const [pasoActual, setPasoActual] = useState(1);
   const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(1);
@@ -161,7 +163,7 @@ export default function CargaMasiva() {
                 <BotonVolver onClick={handleVolver} />
               ) : (
                 <BotonVolver
-                  onClick={() => navigate("/inicio")}
+                  onClick={() => navigate(`/${channelInfo?.id || "default"}/inicio`)}
                   texto="Volver a la lista"
                 />
               )}

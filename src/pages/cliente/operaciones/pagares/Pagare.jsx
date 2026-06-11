@@ -13,11 +13,13 @@ import { ConfirmacionBorradorModal } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "../prestamos/Prestamos.module.css";
 import { PagarePasos } from "./PagarePasos";
+import { useChannel } from "../../../../context/ChannelContext";
 
 const STORAGE_KEY = "draft_pagare";
 
 export default function Pagare() {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
   const metodosFormulario = useForm({
     resolver: zodResolver(prestamosSchema),
@@ -266,7 +268,7 @@ export default function Pagare() {
                       : null
                   }
                   onVolverInicio={
-                    pasoActual === 1 ? () => navigate("/inicio") : null
+                    pasoActual === 1 ? () => navigate(`/${channelInfo?.id || "default"}/inicio`) : null
                   }
                   onReiniciar={handleReiniciarAlta}
                 />

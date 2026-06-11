@@ -15,6 +15,7 @@ import ConfirmacionBorradorModal from "../../../components/features/shared/Confi
 import styles from "./Inicio.module.css";
 import { useObtenerTodas } from "../../../hooks/useCadenaValor";
 import Spinner from "../../../components/ui/Spinner/Spinner";
+import { useChannel } from "../../../context/ChannelContext";
 
 // Mocks
 
@@ -63,6 +64,7 @@ const hasMeaningfulData = (dataString) => {
 
 export default function Inicio() {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
 
@@ -116,7 +118,7 @@ export default function Inicio() {
       sessionStorage.removeItem(`${draftKey}_data`);
       sessionStorage.removeItem(`${draftKey}_paso`);
       sessionStorage.removeItem(`${draftKey}_lista`);
-      navigate(ruta);
+      navigate(`/${channelInfo?.id || "default"}${ruta}`);
     }
   };
 
@@ -127,7 +129,7 @@ export default function Inicio() {
       sessionStorage.removeItem(`${draftKeyPendiente}_lista`);
     }
     if (flujoPendiente) {
-      navigate(flujoPendiente);
+      navigate(`/${channelInfo?.id || "default"}${flujoPendiente}`);
     }
     setFlujoPendiente(null);
     setDraftKeyPendiente(null);
@@ -135,7 +137,7 @@ export default function Inicio() {
 
   const handleCloseContinueDraft = () => {
     if (flujoPendiente) {
-      navigate(flujoPendiente);
+      navigate(`/${channelInfo?.id || "default"}${flujoPendiente}`);
     }
     setFlujoPendiente(null);
     setDraftKeyPendiente(null);
@@ -214,7 +216,7 @@ export default function Inicio() {
                         <Button
                           variant="outline"
                           size="xs"
-                          onClick={() => navigate("/solicitudes")}
+                          onClick={() => navigate(`/${channelInfo?.id || "default"}/solicitudes`)}
                         >
                           Solicitudes
                         </Button>
@@ -249,7 +251,7 @@ export default function Inicio() {
                         <Button
                           variant="outline"
                           size="xs"
-                          onClick={() => navigate("/solicitudes")}
+                          onClick={() => navigate(`/${channelInfo?.id || "default"}/solicitudes`)}
                         >
                           Solicitudes
                         </Button>
@@ -287,7 +289,7 @@ export default function Inicio() {
                         <Button
                           variant="outline"
                           size="xs"
-                          onClick={() => navigate("/solicitudes")}
+                          onClick={() => navigate(`/${channelInfo?.id || "default"}/solicitudes`)}
                         >
                           Solicitudes
                         </Button>
@@ -328,7 +330,7 @@ export default function Inicio() {
                         <Button
                           variant="primary"
                           size="xs"
-                          onClick={() => navigate("/carga-masiva-cheques")}
+                          onClick={() => navigate(`/${channelInfo?.id || "default"}/carga-masiva-cheques`)}
                         >
                           Carga Masiva
                           <FiArrowRight />
@@ -336,7 +338,7 @@ export default function Inicio() {
                         <Button
                           variant="outline"
                           size="xs"
-                          onClick={() => navigate("/solicitudes")}
+                          onClick={() => navigate(`/${channelInfo?.id || "default"}/solicitudes`)}
                         >
                           Solicitudes
                         </Button>
@@ -373,7 +375,7 @@ export default function Inicio() {
                         <Button
                           variant="outline"
                           size="xs"
-                          onClick={() => navigate("/solicitudes")}
+                          onClick={() => navigate(`/${channelInfo?.id || "default"}/solicitudes`)}
                         >
                           Solicitudes
                         </Button>
@@ -423,7 +425,7 @@ export default function Inicio() {
                         <Button
                           variant="outline"
                           size="xs"
-                          onClick={() => navigate("/solicitudes")}
+                          onClick={() => navigate(`/${channelInfo?.id || "default"}/solicitudes`)}
                         >
                           Solicitudes
                         </Button>
@@ -453,7 +455,7 @@ export default function Inicio() {
                         <div 
                           className={`${styles.actividadItem} ${styles.actividadItemClickable}`} 
                           key={linea.cadenavalorid}
-                          onClick={() => navigate(`/cadenas-valor/${linea.cadenavalorid}`)}
+                          onClick={() => navigate(`/${channelInfo?.id || "default"}/cadenas-valor/${linea.cadenavalorid}`)}
                         >
                           <div className={styles.actividadIcon}>
                             <FiBriefcase className={
