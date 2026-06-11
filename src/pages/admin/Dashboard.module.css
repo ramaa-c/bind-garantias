@@ -37,59 +37,97 @@
 }
 
 .kpiCard {
-  background: rgba(22, 27, 34, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(135deg, rgba(22, 27, 34, 0.8) 0%, rgba(13, 17, 23, 0.5) 100%);
+  border: 1px solid rgba(43, 113, 200, 0.12);
   border-radius: 0.75rem;
-  padding: 1.25rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   backdrop-filter: blur(8px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  transition:
-    transform 0.2s,
-    border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kpiCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(43, 113, 200, 0.25) 0%, transparent 100%);
 }
 
 .kpiCard:hover {
   transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(43, 113, 200, 0.35);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 16px rgba(43, 113, 200, 0.08);
+}
+
+/* Targeting the SVG icon inside TarjetaMetrica */
+.kpiCard svg {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  font-size: 1.25rem;
+  color: rgba(43, 113, 200, 0.6);
+  background: rgba(43, 113, 200, 0.08);
+  border: 1px solid rgba(43, 113, 200, 0.15);
+  padding: 0.5rem;
+  box-sizing: content-box;
+  border-radius: 50%;
+  transition: all 0.25s ease;
+  margin-bottom: 0;
+}
+
+.kpiCard:hover svg {
+  color: var(--yellow, #f5f400);
+  background: rgba(245, 244, 0, 0.08);
+  border-color: rgba(245, 244, 0, 0.25);
+  transform: scale(1.08) rotate(5deg);
 }
 
 .kpiLabel {
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
   color: #8b949e;
   text-transform: uppercase;
-  letter-spacing: 0.05rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
 }
 
 .kpiValue {
-  font-size: 1.75rem;
+  font-size: 1.875rem;
   font-weight: 800;
   color: #ffffff;
-  margin: 0.4rem 0;
+  margin: 0.25rem 0 0.5rem 0;
+  letter-spacing: -0.015em;
 }
 
 .kpiValueWarning {
-  font-size: 1.75rem;
+  font-size: 1.875rem;
   font-weight: 800;
   color: var(--yellow, #f5f400);
-  margin: 0.4rem 0;
+  margin: 0.25rem 0 0.5rem 0;
+  letter-spacing: -0.015em;
 }
 
 .kpiValueSuccess {
-  font-size: 1.75rem;
+  font-size: 1.875rem;
   font-weight: 800;
   color: #3fb950;
-  margin: 0.4rem 0;
+  margin: 0.25rem 0 0.5rem 0;
+  letter-spacing: -0.015em;
 }
 
 .kpiFooter {
   font-size: 0.75rem;
   color: #586069;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  padding-top: 0.4rem;
-  margin-top: auto;
+  border-top: 1px solid rgba(43, 113, 200, 0.08);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 /* Toolbar Controls */
@@ -196,30 +234,45 @@
 
 /* Row Item styling mirroring screenshot */
 .itemRow {
-  background: #161b22;
-  border: 1px solid #30363d;
+  background: linear-gradient(135deg, rgba(22, 27, 34, 0.8) 0%, rgba(13, 17, 23, 0.5) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .itemRow:hover {
-  border-color: #444c56;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  border-color: rgba(43, 113, 200, 0.22);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 16px rgba(43, 113, 200, 0.05);
   transform: translateY(-2px);
 }
 
 /* Dynamic side borders mimicking standard user interface */
 .rowApproved {
-  border-left: 5px solid #3fb950;
+  border-left: 4px solid #3fb950;
+  background: linear-gradient(135deg, rgba(63, 185, 80, 0.02) 0%, rgba(13, 17, 23, 0.5) 100%);
 }
+.rowApproved:hover {
+  border-color: rgba(63, 185, 80, 0.4);
+}
+
 .rowRejected {
-  border-left: 5px solid #f85149;
+  border-left: 4px solid #f85149;
+  background: linear-gradient(135deg, rgba(248, 81, 73, 0.02) 0%, rgba(13, 17, 23, 0.5) 100%);
 }
+.rowRejected:hover {
+  border-color: rgba(248, 81, 73, 0.4);
+}
+
 .rowPending {
-  border-left: 5px solid var(--yellow, #f5f400);
+  border-left: 4px solid var(--yellow, #f5f400);
+  background: linear-gradient(135deg, rgba(245, 244, 0, 0.015) 0%, rgba(13, 17, 23, 0.5) 100%);
+}
+.rowPending:hover {
+  border-color: rgba(245, 244, 0, 0.4);
 }
 
 .rowMain {
@@ -252,8 +305,8 @@
 
 .tipoText {
   color: #8b949e;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05rem;
 }
@@ -265,17 +318,18 @@
 }
 
 .tagBadge {
-  background: rgba(56, 139, 253, 0.1);
-  color: #58a6ff;
-  border: 1px solid rgba(56, 139, 253, 0.2);
+  background: rgba(43, 113, 200, 0.1);
+  color: #5a9fd4;
+  border: 1px solid rgba(43, 113, 200, 0.2);
   padding: 0.15rem 0.5rem;
   border-radius: 1rem;
   font-size: 0.6875rem;
   font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .solicitudHeading {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
@@ -291,11 +345,11 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   gap: 0.625rem 1rem;
-  font-size: 0.875rem;
-  background: rgba(13, 17, 23, 0.6);
+  font-size: 0.8125rem;
+  background: rgba(0, 0, 0, 0.25);
   padding: 0.875rem 1rem;
   border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(43, 113, 200, 0.08);
 }
 
 .fullSpan {
@@ -327,28 +381,28 @@
 /* Status Pills */
 .statusPill {
   display: inline-block;
-  padding: 0.15rem 0.625rem;
-  border-radius: 1rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .pillApproved {
-  background: rgba(63, 185, 80, 0.15);
+  background: rgba(63, 185, 80, 0.08);
   color: #3fb950;
-  border: 1px solid rgba(63, 185, 80, 0.3);
+  border: 1px solid rgba(63, 185, 80, 0.2);
 }
 
 .pillRejected {
-  background: rgba(248, 81, 73, 0.15);
+  background: rgba(248, 81, 73, 0.08);
   color: #f85149;
-  border: 1px solid rgba(248, 81, 73, 0.3);
+  border: 1px solid rgba(248, 81, 73, 0.2);
 }
 
 .pillPending {
-  background: rgba(210, 153, 34, 0.15);
-  color: #d29922;
-  border: 1px solid rgba(210, 153, 34, 0.3);
+  background: rgba(245, 244, 0, 0.06);
+  color: var(--yellow, #f5f400);
+  border: 1px solid rgba(245, 244, 0, 0.15);
 }
 
 /* Right Column Actions */

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFilter, FiFileText } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFilter, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/Button/Button";
 import { Badge } from "../../components/ui/Badge/Badge";
@@ -145,7 +145,7 @@ export default function Dashboard() {
 
   const totalMonto = solicitudesCanal.reduce((acc, curr) => {
     const val = parseFloat(curr.monto.replace(/\./g, "")) || 0;
-    return acc + (curr.moneda === "U$D" ? val * 1200 : val);
+    return acc + (curr.moneda === "U$D" ? val * 1500 : val);
   }, 0);
 
   return (
@@ -166,6 +166,7 @@ export default function Dashboard() {
           className={styles.kpiCard}
           labelClassName={styles.kpiLabel}
           valueClassName={styles.kpiValue}
+          icon={FiBriefcase}
           label="Líneas Totales"
           value={solicitudesCanal.length}
           footer={<div className={styles.kpiFooter}>En cartera activa</div>}
@@ -174,14 +175,16 @@ export default function Dashboard() {
           className={styles.kpiCard}
           labelClassName={styles.kpiLabel}
           valueClassName={styles.kpiValue}
+          icon={FiTrendingUp}
           label="Volumen Gestionado (Aprox)"
           value={`$ ${(totalMonto / 1000000).toFixed(1)}M`}
-          footer={<div className={styles.kpiFooter}>Pesos consolidados</div>}
+          footer={<div className={styles.kpiFooter}>Pesos consolidados (1 USD = $1500)</div>}
         />
         <TarjetaMetrica
           className={styles.kpiCard}
           labelClassName={styles.kpiLabel}
           valueClassName={styles.kpiValueWarning}
+          icon={FiClock}
           label="Pendientes de Validación"
           value={solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length}
           footer={<div className={styles.kpiFooter}>Requieren acción inmediata</div>}
@@ -190,6 +193,7 @@ export default function Dashboard() {
           className={styles.kpiCard}
           labelClassName={styles.kpiLabel}
           valueClassName={styles.kpiValueSuccess}
+          icon={FiCheckCircle}
           label="Aprobadas"
           value={solicitudesCanal.filter((s) => s.estado === "Aprobada").length}
           footer={<div className={styles.kpiFooter}>Listas para operar</div>}
