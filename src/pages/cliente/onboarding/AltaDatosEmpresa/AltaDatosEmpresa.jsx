@@ -17,6 +17,8 @@ import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useObtenerPorCadenaValorIdWeb } from "../../../../hooks/useCadenaValor";
+import { useVendor } from "../../../../hooks/useVendor";
+import { useChannel } from "../../../../context/ChannelContext";
 import styles from "./AltaDatosEmpresa.module.css";
 import { toast } from "sonner";
 
@@ -28,6 +30,7 @@ const getCSharpIsoDate = () => {
 export const AltaDatosEmpresa = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
   const { cadenaSlug } = useParams();
   const cadenaValorId = Number(cadenaSlug) || 0;
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
@@ -55,6 +58,8 @@ export const AltaDatosEmpresa = () => {
   const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email);
   const usuariowebidReal =
     usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id;
+
+  const { data: vendorData } = useVendor();
 
   const metodosFormulario = useForm({
     resolver: zodResolver(AltaDatosEmpresaSchema),
@@ -176,7 +181,12 @@ export const AltaDatosEmpresa = () => {
         });
 
         toast.success("Empresa creada y vinculada correctamente");
-        navigate("/inicio", { replace: true });
+        
+        if (vendorData?.isVendor) {
+          navigate(`/${channelInfo?.id || "default"}/seleccionar-empresa`, { replace: true });
+        } else {
+          navigate(`/${channelInfo?.id || "default"}/inicio`, { replace: true });
+        }
       } else {
         throw new Error(
           "No pudimos identificar tu usuario para vincular la empresa.",
@@ -219,7 +229,19 @@ export const AltaDatosEmpresa = () => {
         <Paso1Cuit
           onValidar={async () => {
             const isOk = await trigger("cuit");
-            if (isOk) handleValidarCuitSuccess();
+            if (isOk) {
+              const cuitValue = metodosFormulario.getValues("cuit").replace(/\D/g, "");
+              const vendorCuitLimpio = vendorData?.vendorCuit ? vendorData.vendorCuit.replace(/\D/g, "") : null;
+              
+              if (vendorData?.isVendor && cuitValue === vendorCuitLimpio) {
+                metodosFormulario.setError("cuit", {
+                  type: "manual",
+                  message: "Un vendor no puede gestionar su propia empresa.",
+                });
+                return;
+              }
+              handleValidarCuitSuccess();
+            }
           }}
           onSocioExistente={(socioData, reason) =>
             setSocioExistenteModal({ isOpen: true, socioData, reason })
@@ -256,7 +278,7 @@ export const AltaDatosEmpresa = () => {
                 onStepClick={setPasoActual}
                 onVolver={pasoActual > 1 ? handleVolver : null}
                 onVolverInicio={
-                  pasoActual === 1 ? () => navigate("/inicio") : null
+                  pasoActual === 1 ? () => navigate(`/${channelInfo?.id || "default"}/inicio`) : null
                 }
                 onReiniciar={pasoActual > 1 ? handleClickReiniciar : null}
               />

@@ -5,6 +5,7 @@ import {
   RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
   parseTerminos,
 } from "../../../constants/terminosCondiciones";
+import { useChannel } from "../../../context/ChannelContext";
 import styles from "./AceptarTerminos.module.css";
 
 export default function AceptarTerminos() {
@@ -31,8 +32,10 @@ export default function AceptarTerminos() {
       .map((s) => ({ id: s.id, titulo: s.titulo }));
   }, [terminos]);
 
+  const { channelInfo } = useChannel();
+
   const handleAceptarTerminos = () => {
-    if (aceptado) navigate("/alta-datos-empresa");
+    if (aceptado) navigate(`/${channelInfo.id}/alta-datos-empresa`);
   };
 
   useEffect(() => {

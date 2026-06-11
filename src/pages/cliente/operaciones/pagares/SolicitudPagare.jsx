@@ -18,11 +18,13 @@ import {
 } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./SolicitudPagare.module.css";
+import { useChannel } from "../../../../context/ChannelContext";
 
 const STORAGE_KEY = "draft_pagare";
 
 export default function PagareUSD() {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
   const [simulacionLista, setSimulacionLista] = useState(false);
   const [isModalReiniciarAbierto, setIsModalReiniciarAbierto] = useState(false);
@@ -69,7 +71,7 @@ export default function PagareUSD() {
 
   const handleVolverLista = () => {
     clearStorage();
-    navigate("/solicitudes");
+    navigate(`/${channelInfo?.id || "default"}/solicitudes`);
   };
 
   const handleReiniciarAlta = () => {
@@ -126,7 +128,7 @@ export default function PagareUSD() {
                       : null
                   }
                   onVolverInicio={
-                    pasoActual === 1 ? () => navigate("/inicio") : null
+                    pasoActual === 1 ? () => navigate(`/${channelInfo?.id || "default"}/inicio`) : null
                   }
                   onReiniciar={handleReiniciarAlta}
                 />

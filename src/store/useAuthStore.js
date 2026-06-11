@@ -6,10 +6,13 @@ export const useAuthStore = create(
     (set) => ({
       user: null,
       isAuthenticated: false,
+      activeSocioId: null,
+
+      setActiveSocioId: (socioId) => set({ activeSocioId: socioId }),
 
       setUser: (userData) => {
         if (!userData) {
-          set({ user: null, isAuthenticated: false });
+          set({ user: null, isAuthenticated: false, activeSocioId: null });
           return;
         }
 
@@ -44,6 +47,7 @@ export const useAuthStore = create(
         set({
           user: null,
           isAuthenticated: false,
+          activeSocioId: null,
         });
       },
     }),

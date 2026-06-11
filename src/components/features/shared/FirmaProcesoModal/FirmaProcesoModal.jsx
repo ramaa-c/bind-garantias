@@ -6,6 +6,7 @@ import { Button } from "../../../ui";
 import { useEscape } from "../../../../hooks/useEscape";
 import styles from "./FirmaProcesoModal.module.css";
 import logoAfip from "../../../../assets/images/afip.svg";
+import { useChannel } from "../../../../context/ChannelContext";
 
 const PASOS = [
   { label: "Identidad", icon: <FiUser size={15} /> },
@@ -15,6 +16,7 @@ const PASOS = [
 
 export default function FirmaProcesoModal({ isOpen, onClose }) {
   const navigate = useNavigate();
+  const { channelInfo } = useChannel();
   const [paso, setPaso] = useState(1);
 
   useEscape(onClose, isOpen);
@@ -23,7 +25,7 @@ export default function FirmaProcesoModal({ isOpen, onClose }) {
   const handleFinalizar = () => {
     setPaso(1);
     onClose();
-    navigate("/inicio");
+    navigate(`/${channelInfo?.id || "default"}/inicio`);
   };
 
   return createPortal(
