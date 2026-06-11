@@ -474,3 +474,62 @@
 .danger .ripple {
   background: rgba(255, 255, 255, 0.2);
 }
+
+/* ── BLUE ──────────────────────────────────────────────── */
+.blue {
+  composes: base;
+  background-color: var(--color-azul-bind);
+  color: #ffffff;
+  border: 2px solid var(--color-azul-bind);
+  box-shadow:
+    0 1px 2px rgba(76, 101, 230, 0.15),
+    0 0 0 0px rgba(76, 101, 230, 0.5);
+}
+
+.blue:not(:disabled):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow:
+    0 8px 24px rgba(76, 101, 230, 0.35),
+    0 2px 8px rgba(76, 101, 230, 0.2),
+    0 0 0 0px rgba(76, 101, 230, 0.5);
+}
+
+.blue:not(:disabled):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(76, 101, 230, 0.45);
+}
+
+.blue .ripple {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ── OUTLINE BLUE ──────────────────────────────────────── */
+.outlineBlue {
+  composes: base;
+  background-color: transparent;
+  color: var(--color-azul-bind);
+  border: 1.5px solid var(--color-azul-bind);
+  box-shadow: inset 0 0 0 0px rgba(76, 101, 230, 0.15);
+}
+
+.outlineBlue:not(:disabled):hover {
+  background-color: rgba(76, 101, 230, 0.08);
+  border-color: var(--color-azul-bind);
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 18px rgba(76, 101, 230, 0.2),
+    inset 0 0 0 0px rgba(76, 101, 230, 0.15);
+}
+
+.outlineBlue:not(:disabled):focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(76, 101, 230, 0.3);
+}
+
+.outlineBlue .ripple {
+  background: rgba(76, 101, 230, 0.15);
+}
+

@@ -12,17 +12,21 @@ export const Modal = ({
   children,
   maxWidth = "600px",
   className = "",
+  variant = "default",
 }) => {
   useEscape(onClose, isOpen);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
     } else {
       document.body.style.overflow = "unset";
+      document.documentElement.style.overflow = "unset";
     }
     return () => {
       document.body.style.overflow = "unset";
+      document.documentElement.style.overflow = "unset";
     };
   }, [isOpen]);
 
@@ -31,7 +35,7 @@ export const Modal = ({
   return createPortal(
     <div className={styles.overlay} onMouseDown={onClose}>
       <div
-        className={`${styles.modalBox} ${className}`}
+        className={`${styles.modalBox} ${variant === "blue" ? styles.blueVariant : ""} ${className}`}
         style={{ maxWidth }}
         onMouseDown={(e) => e.stopPropagation()}
         role="dialog"

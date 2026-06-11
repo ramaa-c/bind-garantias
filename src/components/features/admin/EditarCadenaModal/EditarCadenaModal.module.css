@@ -1,0 +1,110 @@
+.modalBody {
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(43, 113, 200, 0.12);
+  padding-bottom: 0.35rem;
+  margin: 0 0 0.125rem 0;
+}
+
+.inputsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+}
+
+.logoSection {
+  margin-top: 0.125rem;
+}
+
+.modalLogoPreviewWrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(43, 113, 200, 0.12);
+  border-radius: 0.75rem;
+}
+
+.btnRemoveLogo {
+  background: rgba(234, 74, 90, 0.12);
+  color: #ea4a5a;
+  border: 1px solid rgba(234, 74, 90, 0.25);
+  padding: 0.45rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnRemoveLogo:hover {
+  background: #ea4a5a;
+  color: #ffffff;
+}
+
+.uploadZone {
+  border: 2px dashed rgba(43, 113, 200, 0.35);
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
+  color: #5a9fd4;
+  background: rgba(43, 113, 200, 0.03);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.uploadZone:hover {
+  background: rgba(43, 113, 200, 0.08);
+  border-color: rgba(43, 113, 200, 0.8);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.uploadIcon {
+  font-size: 1.75rem;
+  color: rgba(43, 113, 200, 0.7);
+  transition: color 0.2s;
+}
+
+.uploadZone:hover .uploadIcon {
+  color: var(--yellow, #f5f400);
+}
+
+.modalFoot {
+  margin: 1rem -1.5rem -1.5rem -1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(43, 113, 200, 0.12);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+}
