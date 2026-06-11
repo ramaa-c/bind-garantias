@@ -1,4 +1,5 @@
 // --- COMPARTIDOS ---
+export * from "./admin/CdaPanel/CdaPanel";
 export { default as Paso1Cuit } from './shared/Paso1Cuit/Paso1Cuit';
 export { default as Paso2Datos } from './shared/Paso2Datos/Paso2Datos';
 export { default as Paso3Simulador } from './shared/Paso3Simulador/Paso3Simulador';
@@ -60,4 +61,10 @@ export * from './dashboard/ListaActividades/ListaActividades';
 export * from './dashboard/TarjetaLinea/TarjetaLinea';
 export * from './solicitudes/TarjetaSolicitud/TarjetaSolicitud';
 export * from './solicitudes/DetalleSolicitudModal/DetalleSolicitudModal';
+
+// --- ADMIN ---
+export * from "./admin/ActivarCadenaModal/ActivarCadenaModal";
+export * from "./admin/EditarCadenaModal/EditarCadenaModal";
+export * from "./admin/CdaConfigModal/CdaConfigModal";
+export * from "./admin/UsuariosRelacionadosModal/UsuariosRelacionadosModal";
 

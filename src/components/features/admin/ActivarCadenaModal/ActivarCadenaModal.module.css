@@ -1,0 +1,273 @@
+.modalBody {
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.searchWrap {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(43, 113, 200, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  gap: 0.5rem;
+  flex: 1;
+  transition: all 0.2s;
+}
+
+.searchWrap:focus-within {
+  border-color: rgba(43, 113, 200, 0.6);
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(43, 113, 200, 0.15);
+}
+
+.searchWrap input {
+  background: none;
+  border: none;
+  color: #ffffff;
+  width: 100%;
+  outline: none;
+  font-size: 0.875rem;
+}
+
+.iconSearch {
+  color: #8b949e;
+}
+
+.chainSearchList {
+  max-height: 420px;
+  overflow-y: auto;
+  border: 1px solid rgba(43, 113, 200, 0.12);
+  border-radius: 0.75rem;
+  background: rgba(43, 113, 200, 0.02);
+  margin-top: 0.5rem;
+}
+
+/* Scrollbar refinado para la lista */
+.chainSearchList::-webkit-scrollbar {
+  width: 5px;
+}
+
+.chainSearchList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chainSearchList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.chainSearchList::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 244, 0, 0.25);
+}
+
+.chainSearchItem {
+  padding: 0.875rem 1.125rem;
+  border-bottom: 1px solid rgba(43, 113, 200, 0.08);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chainSearchItem:last-child {
+  border-bottom: none;
+}
+
+.chainSearchItem:hover {
+  background: rgba(43, 113, 200, 0.06);
+  color: #ffffff;
+}
+
+.itemLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.itemAvatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(245, 244, 0, 0.06);
+  border: 1px solid rgba(245, 244, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--yellow, #f5f400);
+  flex-shrink: 0;
+  transition: all 0.22s ease;
+}
+
+.chainSearchItem:hover .itemAvatar {
+  background: rgba(245, 244, 0, 0.15);
+  border-color: rgba(245, 244, 0, 0.35);
+  color: #ffffff;
+}
+
+.itemDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.itemName {
+  font-size: 0.875rem;
+  color: #ffffff;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itemCuit {
+  font-size: 0.75rem;
+  color: #8b949e;
+}
+
+.itemRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.itemIdBadge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8b949e;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.chainSearchItem:hover .itemIdBadge {
+  background: rgba(43, 113, 200, 0.15);
+  border-color: rgba(43, 113, 200, 0.25);
+  color: #5a9fd4;
+}
+
+.itemChevron {
+  color: #8b949e;
+  font-size: 1.125rem;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.chainSearchItem:hover .itemChevron {
+  color: var(--yellow, #f5f400);
+  transform: translateX(3px);
+}
+
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(43, 113, 200, 0.12);
+  padding-bottom: 0.35rem;
+  margin: 0 0 0.125rem 0;
+}
+
+.inputsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+}
+
+.logoSection {
+  margin-top: 0.125rem;
+}
+
+.modalLogoPreviewWrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(43, 113, 200, 0.12);
+  border-radius: 0.75rem;
+}
+
+.btnRemoveLogo {
+  background: rgba(234, 74, 90, 0.12);
+  color: #ea4a5a;
+  border: 1px solid rgba(234, 74, 90, 0.25);
+  padding: 0.45rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnRemoveLogo:hover {
+  background: #ea4a5a;
+  color: #ffffff;
+}
+
+.uploadZone {
+  border: 2px dashed rgba(43, 113, 200, 0.35);
+  border-radius: 0.75rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
+  color: #5a9fd4;
+  background: rgba(43, 113, 200, 0.03);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.uploadZone:hover {
+  background: rgba(43, 113, 200, 0.08);
+  border-color: rgba(43, 113, 200, 0.8);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.uploadIcon {
+  font-size: 1.75rem;
+  color: rgba(43, 113, 200, 0.7);
+  transition: color 0.2s;
+}
+
+.uploadZone:hover .uploadIcon {
+  color: var(--yellow, #f5f400);
+}
+
+.modalFoot {
+  margin: 1rem -1.5rem -1.5rem -1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(43, 113, 200, 0.12);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+}

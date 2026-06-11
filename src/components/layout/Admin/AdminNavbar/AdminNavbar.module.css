@@ -1,7 +1,7 @@
 .navWrapper {
   display: flex;
   flex-direction: column;
-  margin: 1.25rem auto 0 auto;
+  margin: 0;
   width: calc(100% - 2.5rem);
   max-width: 95rem;
   background: rgba(22, 27, 34, 0.85);
@@ -9,8 +9,10 @@
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 1.25rem;
-  position: sticky;
+  position: absolute;
   top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 100;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
   transition: all 0.3s ease;
@@ -364,9 +366,11 @@
 
 @media (max-width: 768px) {
   .navWrapper {
-    margin: 0.75rem auto 0;
+    margin: 0;
     width: calc(100% - 1.5rem);
     top: 0.75rem;
     border-radius: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
   }
 }

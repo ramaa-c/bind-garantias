@@ -34,8 +34,9 @@ export const HistorialEstadoModal = ({ isOpen, onClose, lineaId, lineaNombre }) 
         <Modal 
             isOpen={isOpen} 
             onClose={onClose} 
-            titulo={`Historial de Estados: ${lineaNombre || "Línea de Crédito"}`}
-            ancho="600px"
+            title={`Historial de Estados: ${lineaNombre || "Línea de Crédito"}`}
+            maxWidth="600px"
+            variant="blue"
         >
             <div className={styles.container}>
                 {isLoading ? (

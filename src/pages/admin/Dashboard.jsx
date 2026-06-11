@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFilter } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFilter, FiFileText } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/Button/Button";
 import { Badge } from "../../components/ui/Badge/Badge";
@@ -383,61 +383,96 @@ export default function Dashboard() {
       <Modal
         isOpen={!!solicitudDetalle}
         onClose={() => setSolicitudDetalle(null)}
-        title={
-          solicitudDetalle
-            ? `Detalle Avanzado • Solicitud N°${solicitudDetalle.id}`
-            : ""
-        }
+        title="DETALLE DE SOLICITUD"
         maxWidth="40rem"
+        variant="blue"
       >
         {solicitudDetalle && (
           <>
             <div className={styles.modalBodyCustom}>
-              <div className={styles.modalSection}>
-                <h4>Datos del Solicitante</h4>
-                <p>
-                  <strong>Razón Social:</strong> {solicitudDetalle.cliente}
-                </p>
-                <p>
-                  <strong>CUIT/Identificador:</strong> {solicitudDetalle.cuit}
-                </p>
-                <p>
-                  <strong>Email Operador:</strong> {solicitudDetalle.usuario}
-                </p>
+              {/* Solicitud Hero Card */}
+              <div className={styles.solicitudHeroCard}>
+                <div className={styles.solicitudAvatar}>
+                  <FiFileText size={20} />
+                </div>
+                <div className={styles.solicitudHeaderDetails}>
+                  <div className={styles.solicitudMeta}>
+                    <span className={styles.solicitudNumber}>SOLICITUD N°{solicitudDetalle.id}</span>
+                    <span className={`${styles.solicitudStatusBadge} ${
+                      solicitudDetalle.estado === "Aprobada" ? styles.badgeAproved :
+                      solicitudDetalle.estado === "Rechazada" ? styles.badgeRejected : styles.badgePending
+                    }`}>
+                      {solicitudDetalle.estado}
+                    </span>
+                  </div>
+                  <h3 className={styles.solicitudProduct}>{solicitudDetalle.tipo}</h3>
+                </div>
+                <div className={styles.solicitudAmount}>
+                  <span className={styles.amountLabel}>Monto Solicitado</span>
+                  <strong className={styles.amountValue}>
+                    {solicitudDetalle.moneda || "$"} {solicitudDetalle.monto}
+                  </strong>
+                </div>
               </div>
 
-              <div className={styles.modalSection}>
-                <h4>Información de la Línea / Producto</h4>
-                <p>
-                  <strong>Tipo de Operación:</strong> {solicitudDetalle.tipo}
-                </p>
-                <p>
-                  <strong>Monto Solicitado:</strong>{" "}
-                  {solicitudDetalle.moneda || "$"} {solicitudDetalle.monto}
-                </p>
-                <p>
-                  <strong>Estado Actual:</strong> {solicitudDetalle.estado}
-                </p>
-                <p>
-                  <strong>Último hito de control:</strong>{" "}
-                  {solicitudDetalle.accionPendiente}
-                </p>
+              {/* Grid with 2 columns */}
+              <div className={styles.detailsGridSplit}>
+                <div className={styles.detailsBlock}>
+                  <h4 className={styles.detailsBlockTitle}>Datos del Solicitante</h4>
+                  <div className={styles.detailFields}>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>Razón Social</span>
+                      <span className={styles.fieldValue}>{solicitudDetalle.cliente}</span>
+                    </div>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>CUIT / Identificador</span>
+                      <span className={styles.fieldValue}>{solicitudDetalle.cuit}</span>
+                    </div>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>Email Operador</span>
+                      <span className={styles.fieldValue}>{solicitudDetalle.usuario}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.detailsBlock}>
+                  <h4 className={styles.detailsBlockTitle}>Detalle de la Operación</h4>
+                  <div className={styles.detailFields}>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>Línea / Producto</span>
+                      <span className={styles.fieldValue}>{solicitudDetalle.tipo}</span>
+                    </div>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>Último Hito de Control</span>
+                      <span className={styles.fieldValueHighlight}>{solicitudDetalle.accionPendiente}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className={styles.modalSection}>
-                <h4>Trazabilidad e Historial</h4>
-                <p>Carga Inicial: {solicitudDetalle.creado}</p>
-                <p>Última Modificación: {solicitudDetalle.actualizado}</p>
-                <p>Canal de Origen: BIND Garantías Portal Web</p>
+              {/* Bottom metadata banner */}
+              <div className={styles.trazabilidadBanner}>
+                <div className={styles.trazabilidadItem}>
+                  <span className={styles.trazabilidadLabel}>Carga Inicial:</span>
+                  <span className={styles.trazabilidadValue}>{solicitudDetalle.creado}</span>
+                </div>
+                <div className={styles.trazabilidadItem}>
+                  <span className={styles.trazabilidadLabel}>Última Modificación:</span>
+                  <span className={styles.trazabilidadValue}>{solicitudDetalle.actualizado}</span>
+                </div>
+                <div className={styles.trazabilidadItem}>
+                  <span className={styles.trazabilidadLabel}>Canal Origen:</span>
+                  <span className={styles.trazabilidadValue}>BIND Garantías Portal Web</span>
+                </div>
               </div>
             </div>
             <div className={styles.modalFootCustom}>
               <Button
-                variant="outline"
+                variant="outlineBlue"
                 size="sm"
                 onClick={() => setSolicitudDetalle(null)}
               >
-                Cerrar Ventana
+                Cerrar
               </Button>
             </div>
           </>

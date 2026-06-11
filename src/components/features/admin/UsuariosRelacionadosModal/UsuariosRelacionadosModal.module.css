@@ -1,0 +1,63 @@
+.usersTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  margin-top: 0.75rem;
+  background: rgba(43, 113, 200, 0.02);
+  border: 1px solid rgba(43, 113, 200, 0.1);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.usersTable th, .usersTable td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba(43, 113, 200, 0.08);
+}
+
+.usersTable tr:last-child td {
+  border-bottom: none;
+}
+
+.usersTable th {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  background: rgba(43, 113, 200, 0.05);
+  letter-spacing: 0.05em;
+}
+
+.usersTable td {
+  font-size: 0.825rem;
+  color: #ffffff;
+}
+
+.btnNuevoBlue {
+  background: rgba(43, 113, 200, 0.12);
+  color: #5a9fd4;
+  border: 1px solid rgba(43, 113, 200, 0.3);
+  padding: 0.45rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+}
+
+.btnNuevoBlue:hover {
+  background: rgba(43, 113, 200, 0.22);
+  border-color: rgba(43, 113, 200, 0.65);
+  color: #ffffff;
+}
+
+.cdaStatusBadge {
+  background: rgba(56, 161, 105, 0.08);
+  color: #38a169;
+  border: 1px solid rgba(56, 161, 105, 0.2);
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}

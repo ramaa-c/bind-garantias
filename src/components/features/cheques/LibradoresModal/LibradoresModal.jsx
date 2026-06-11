@@ -12,7 +12,7 @@ import {
   useObtenerLibradorPorCuit,
 } from "../../../../hooks/useCadenaValor";
 import Spinner from "../../../ui/Spinner/Spinner";
-import { Button } from "../../../ui";
+import { Button, Modal } from "../../../ui";
 import styles from "./LibradoresModal.module.css";
 
 export default function LibradoresModal({ isOpen, onClose, cadenaValorId }) {
@@ -105,23 +105,15 @@ export default function LibradoresModal({ isOpen, onClose, cadenaValorId }) {
     : totalServerItems || libradoresList.length;
   const totalPages = searchTrigger ? 1 : Math.ceil(absoluteTotal / 8);
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
-
   return (
-    <div className={styles.modalOverlay} onClick={handleOverlayClick}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h2>Libradores Autorizados</h2>
-          <button className={styles.closeBtn} onClick={onClose}>
-            <FiX />
-          </button>
-        </div>
-
-        <div className={styles.searchBar}>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Libradores Autorizados"
+      maxWidth="600px"
+      variant="blue"
+    >
+      <div className={styles.searchBar} style={{ padding: "0 0 1.5rem 0" }}>
           <div className={styles.inputWrapper}>
             <input
               type="text"
@@ -138,7 +130,7 @@ export default function LibradoresModal({ isOpen, onClose, cadenaValorId }) {
             <FiSearch className={styles.glassIcon} />
           </div>
           <Button
-            variant="primary"
+            variant="blue"
             size="sm"
             onClick={handleSearch}
             disabled={!searchInput.trim()}
@@ -147,7 +139,7 @@ export default function LibradoresModal({ isOpen, onClose, cadenaValorId }) {
           </Button>
         </div>
 
-        <div className={styles.listContainer}>
+        <div className={styles.listContainer} style={{ padding: 0 }}>
           {isLoading ? (
             <div className={styles.loadingWrapper}>
               <Spinner center={false} size={60} />
@@ -160,7 +152,7 @@ export default function LibradoresModal({ isOpen, onClose, cadenaValorId }) {
                 con el servidor.
               </span>
               <Button
-                variant="outline"
+                variant="outlineBlue"
                 size="sm"
                 onClick={clearSearch}
                 style={{ marginTop: "1rem" }}
@@ -176,7 +168,7 @@ export default function LibradoresModal({ isOpen, onClose, cadenaValorId }) {
                 Este CUIT está habilitado para operar en esta Cadena de Valor.
               </span>
               <Button
-                variant="outline"
+                variant="outlineBlue"
                 size="sm"
                 onClick={clearSearch}
                 style={{ marginTop: "1rem" }}
@@ -225,7 +217,13 @@ export default function LibradoresModal({ isOpen, onClose, cadenaValorId }) {
 
         {/* CONTROLES DE PAGINACIÓN */}
         {!isLoading && totalPages > 1 && (
-          <div className={styles.paginationFooter}>
+          <div
+            className={styles.paginationFooter}
+            style={{
+              margin: "1.5rem -1.5rem -1.5rem -1.5rem",
+              padding: "1rem 1.5rem",
+            }}
+          >
             <button
               className={styles.pageBtn}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -245,7 +243,6 @@ export default function LibradoresModal({ isOpen, onClose, cadenaValorId }) {
             </button>
           </div>
         )}
-      </div>
-    </div>
+    </Modal>
   );
 }
