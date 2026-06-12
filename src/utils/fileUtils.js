@@ -118,11 +118,21 @@ export const procesarArchivo = async (
     }
 
     let fileName = fileData.nombrearchivo || "archivo";
-    if (mimeType === "application/pdf" && !String(fileName).toLowerCase().endsWith(".pdf")) {
+    if (
+      mimeType === "application/pdf" &&
+      !String(fileName).toLowerCase().endsWith(".pdf")
+    ) {
       fileName += ".pdf";
-    } else if (mimeType === "image/png" && !String(fileName).toLowerCase().endsWith(".png")) {
+    } else if (
+      mimeType === "image/png" &&
+      !String(fileName).toLowerCase().endsWith(".png")
+    ) {
       fileName += ".png";
-    } else if (mimeType === "image/jpeg" && !String(fileName).toLowerCase().endsWith(".jpg") && !String(fileName).toLowerCase().endsWith(".jpeg")) {
+    } else if (
+      mimeType === "image/jpeg" &&
+      !String(fileName).toLowerCase().endsWith(".jpg") &&
+      !String(fileName).toLowerCase().endsWith(".jpeg")
+    ) {
       fileName += ".jpg";
     }
 
@@ -163,4 +173,3 @@ export const formatBase64Size = (base64Str) => {
   const sizeInMB = sizeInKB / 1024;
   return `${sizeInMB.toFixed(1)} MB`;
 };
-

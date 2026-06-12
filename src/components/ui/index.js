@@ -7,20 +7,20 @@ export * from './BotonVolver/BotonVolver';
 export * from './BotonIcono/BotonIcono';
 export * from './Button/Button';
 export * from './CargaArchivos/CargaArchivos';
-export * from './ContenedorPaso/ContenedorPaso';
+
 export * from './Input/Input';
-export * from './InputCodigo/InputCodigo';
+
 export * from './InputFlotante/InputFlotante';
 export * from './InputMonto/InputMonto';
 export * from './InputSocioMasked/InputSocioMasked';
 export * from './SelectSocio/SelectSocio';
-export * from './InputAuth/InputAuth';
+
 export * from './InputPasswordSeguro/InputPasswordSeguro';
 export * from './InputSimple/InputSimple';
-export { default as ModalSms } from './ModalSms/ModalSms';
+
 export * from './Modal/Modal';
 export * from './Select/Select';
-export * from './SelectFlotante/SelectFlotante';
+
 export * from './SinResultados/SinResultados';
 export { default as Spinner } from './Spinner/Spinner';
 export { default as LoadingScreen } from './LoadingScreen/LoadingScreen';
@@ -33,7 +33,7 @@ export * from './SelectFecha/SelectFecha';
 export * from './BuscadorCuit/BuscadorCuit'
 export * from './TicketSimulacion/TicketSimulacion'
 export * from './TicketPrestamoFijo/TicketPrestamoFijo'
-export * from './SkeletonCard/SkeletonCard'
+
 export * from './SkeletonTable/SkeletonTable'
 export * from './Paginacion/Paginacion';
 export * from './BuscadorListado/BuscadorListado';

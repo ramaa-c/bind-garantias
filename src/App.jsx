@@ -12,23 +12,12 @@ import Login from "./pages/cliente/auth/Login";
 import Registro from "./pages/cliente/auth/Registro";
 import CrearClave from "./pages/cliente/auth/CrearClave";
 import ConfirmarCorreo from "./pages/cliente/auth/ConfirmarCorreo";
-import Inicio from "./pages/legacy/dashboard/Inicio";
-import Cheques from "./pages/cliente/operaciones/cheques/Cheques";
-import CargaMasiva from "./pages/cliente/operaciones/cheques/CargaMasiva";
-import Prestamos from "./pages/cliente/operaciones/prestamos/Prestamos";
-import PrestamosSeleccionables from "./pages/cliente/operaciones/prestamos/PrestamosSeleccionables";
-import PrestamosFijos from "./pages/cliente/operaciones/prestamos/PrestamosFijos";
-import Pagare from "./pages/cliente/operaciones/pagares/Pagare";
-import SolicitudPagare from "./pages/cliente/operaciones/pagares/SolicitudPagare";
 import Solicitudes from "./pages/cliente/solicitudes/Solicitudes";
-import Solicitud from "./pages/cliente/operaciones/cheques/Solicitud";
-import FirmaDocumento from "./pages/cliente/operaciones/pagares/FirmaDocumento";
 import AceptarTerminos from "./pages/cliente/auth/AceptarTerminos";
 import RecuperarClave from "./pages/cliente/auth/RecuperarClave";
 import PosicionConsolidada from "./pages/legacy/posicion-consolidada/PosicionConsolidada";
 import CadenaDetalle from "./pages/admin/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-import { Gestion as GestionSocios } from "./components/features";
 import { AltaOperacion } from "./pages/cliente/operaciones/alta-operacion/AltaOperacion";
 import { Gestion as GestionUsuarios } from "./pages/cliente/usuarios/Gestion";
 import DocumentacionView from "./pages/cliente/operaciones/documentacion/DocumentacionView";
@@ -79,16 +68,7 @@ function App() {
               }
             />
             <Route path="socios" element={<Navigate to="legajo" replace />} />
-            <Route
-              path="gestion-socios"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <GestionSocios />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
+
             <Route
               path="usuarios"
               element={
@@ -113,28 +93,7 @@ function App() {
               path="inicio"
               element={<Navigate to="solicitudes" replace />}
             />
-{/*
-            <Route
-              path="pagare"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <Pagare />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="solicitud-pagare"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <SolicitudPagare />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            */}
+
             <Route
               path="solicitudes"
               element={
@@ -145,69 +104,7 @@ function App() {
                 </OnboardingGuard>
               }
             />
-{/*
-            <Route
-              path="prestamos"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <Prestamos />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="prestamos-seleccionables"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <PrestamosSeleccionables />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="prestamos-fijos"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <PrestamosFijos />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="cheques"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <Cheques />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="solicitud-cheques"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <Solicitud />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="carga-masiva-cheques"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <CargaMasiva />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route path="firma-documento" element={<FirmaDocumento />} />
-            */}
+
             <Route path="terminos" element={<AceptarTerminos />} />
             <Route
               path="alta-datos-empresa"
