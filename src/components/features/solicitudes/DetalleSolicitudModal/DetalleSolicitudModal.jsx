@@ -152,12 +152,18 @@ export const DetalleSolicitudModal = ({
         let tercero = null;
         try {
           tercero = await tercerosService.obtenerTerceroPorId(terceroId);
-          if (!tercero || Object.keys(tercero).length === 0) {
-            tercero =
-              await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+          if (!tercero || !tercero.denominacion || !tercero.cuit) {
+            const terceroSGR = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+            if (terceroSGR && (terceroSGR.denominacion || terceroSGR.cuit)) {
+              tercero = terceroSGR;
+            }
           }
         } catch (e) {
-          tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+          try {
+            tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+          } catch (sgrErr) {
+            console.warn("No se pudo obtener tercero de SGRPlus", sgrErr);
+          }
         }
 
         if (tercero) {
@@ -175,7 +181,29 @@ export const DetalleSolicitudModal = ({
       });
 
       const res = await Promise.all(promises);
-      return res.filter(Boolean);
+      const validRes = res.filter(Boolean);
+
+      const mapaCuit = new Map();
+      validRes.forEach(t => {
+        const cuitVal = t.cuit || t.Cuit || t.nrodocumento || t.numerodocumento || t.documento || "";
+        const cuitLimpio = String(cuitVal).replace(/\D/g, "");
+        if (cuitLimpio) {
+          if (mapaCuit.has(cuitLimpio)) {
+            const existente = mapaCuit.get(cuitLimpio);
+            const extDenom = existente.denominacion || existente.Denominacion || "";
+            const newDenom = t.denominacion || t.Denominacion || "";
+            if (!extDenom && newDenom) {
+              mapaCuit.set(cuitLimpio, t);
+            }
+          } else {
+            mapaCuit.set(cuitLimpio, t);
+          }
+        } else {
+          mapaCuit.set(`no-cuit-${t.tercerorelacionadoid || Math.random()}`, t);
+        }
+      });
+
+      return Array.from(mapaCuit.values());
     },
     enabled: !!socioIdTarget && isOpen,
     staleTime: 1000 * 60 * 5,

@@ -309,9 +309,18 @@ export const AltaOperacion = () => {
           let tercero = null;
           try {
             tercero = await tercerosService.obtenerTerceroPorId(terceroId);
+            if (!tercero || !tercero.denominacion || !tercero.cuit) {
+              const terceroSGR = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+              if (terceroSGR && (terceroSGR.denominacion || terceroSGR.cuit)) {
+                tercero = terceroSGR;
+              }
+            }
           } catch (apiErr) {
-            tercero =
-              await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+            try {
+              tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+            } catch (sgrErr) {
+              console.warn("No se pudo obtener tercero de SGRPlus", sgrErr);
+            }
           }
 
           if (tercero) {
