@@ -11,10 +11,10 @@ export const getPasswordScore = (password, email = "") => {
 
   const emailPrefix = email.split("@")[0].toLowerCase();
   const userInputs = email ? [email, emailPrefix] : [];
-  
+
   const result = zxcvbn(password, userInputs);
-  
+
   strengthCache[password] = result.score;
-  
+
   return result.score;
 };

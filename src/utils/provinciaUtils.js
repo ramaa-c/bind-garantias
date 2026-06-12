@@ -23,30 +23,38 @@ const AFIP_PROVINCIA_ALIASES = {
   "CIUDAD AUTONOMA DE BUENOS AIRES": ["CABA", "CAPITAL FEDERAL"],
   "CAPITAL FEDERAL": ["CABA", "CAPITAL FEDERAL"],
   "BUENOS AIRES": ["BUENOS AIRES"],
-  "CORDOBA": ["CORDOBA"],
+  CORDOBA: ["CORDOBA"],
   "SANTA FE": ["SANTA FE", "STA FE", "STA. FE"],
   "PROVINCIA DE SANTA FE": ["SANTA FE", "STA FE", "STA. FE"],
-  "MENDOZA": ["MENDOZA"],
-  "TUCUMAN": ["TUCUMAN"],
-  "SALTA": ["SALTA"],
+  MENDOZA: ["MENDOZA"],
+  TUCUMAN: ["TUCUMAN"],
+  SALTA: ["SALTA"],
   "ENTRE RIOS": ["ENTRE RIOS"],
-  "MISIONES": ["MISIONES"],
-  "CHACO": ["CHACO"],
-  "CORRIENTES": ["CORRIENTES"],
-  "SANTIAGO DEL ESTERO": ["SANTIAGO DEL ESTERO", "SGO DEL ESTERO", "SGO. DEL ESTERO", "SDE"],
+  MISIONES: ["MISIONES"],
+  CHACO: ["CHACO"],
+  CORRIENTES: ["CORRIENTES"],
+  "SANTIAGO DEL ESTERO": [
+    "SANTIAGO DEL ESTERO",
+    "SGO DEL ESTERO",
+    "SGO. DEL ESTERO",
+    "SDE",
+  ],
   "SAN JUAN": ["SAN JUAN"],
-  "JUJUY": ["JUJUY"],
+  JUJUY: ["JUJUY"],
   "RIO NEGRO": ["RIO NEGRO"],
-  "NEUQUEN": ["NEUQUEN"],
-  "FORMOSA": ["FORMOSA"],
-  "CHUBUT": ["CHUBUT"],
+  NEUQUEN: ["NEUQUEN"],
+  FORMOSA: ["FORMOSA"],
+  CHUBUT: ["CHUBUT"],
   "SAN LUIS": ["SAN LUIS"],
-  "CATAMARCA": ["CATAMARCA"],
+  CATAMARCA: ["CATAMARCA"],
   "LA RIOJA": ["LA RIOJA"],
   "LA PAMPA": ["LA PAMPA"],
   "SANTA CRUZ": ["SANTA CRUZ", "STA CRUZ", "STA. CRUZ"],
   "TIERRA DEL FUEGO": ["TIERRA DEL FUEGO", "TDF"],
-  "TIERRA DEL FUEGO ANTARTIDA E ISLAS DEL ATLANTICO SUR": ["TIERRA DEL FUEGO", "TDF"],
+  "TIERRA DEL FUEGO ANTARTIDA E ISLAS DEL ATLANTICO SUR": [
+    "TIERRA DEL FUEGO",
+    "TDF",
+  ],
 };
 
 /**
@@ -66,28 +74,25 @@ export const matchProvinciaAfip = (afipProvNombre, opcionesProvincias) => {
   if (!afipProvNombre || !opcionesProvincias?.length) return null;
   const normAfip = normalizarTexto(afipProvNombre);
 
-  // 1. Alias exacto
   const aliasTargets = AFIP_PROVINCIA_ALIASES[normAfip];
   if (aliasTargets) {
     const targets = Array.isArray(aliasTargets) ? aliasTargets : [aliasTargets];
     const match = opcionesProvincias.find((p) =>
-      targets.some(target => normalizarTexto(p.label).includes(target))
+      targets.some((target) => normalizarTexto(p.label).includes(target)),
     );
     if (match) return match;
   }
 
-  // 2. Coincidencia exacta
   const exactMatch = opcionesProvincias.find(
-    (p) => normalizarTexto(p.label) === normAfip
+    (p) => normalizarTexto(p.label) === normAfip,
   );
   if (exactMatch) return exactMatch;
 
-  // 3. Substring (fallback)
   return (
     opcionesProvincias.find(
       (p) =>
         normalizarTexto(p.label).includes(normAfip) ||
-        normAfip.includes(normalizarTexto(p.label))
+        normAfip.includes(normalizarTexto(p.label)),
     ) || null
   );
 };

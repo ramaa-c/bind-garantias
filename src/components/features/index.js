@@ -8,7 +8,7 @@ export { default as Paso5Documentacion } from './shared/Paso5Documentacion/Paso5
 export { default as Paso7Exito } from './shared/Paso7Exito/Paso7Exito';
 export * from './shared/SocioItem/SocioItem';
 export * from './shared/PanelDudas/PanelDudas';
-export * from './shared/PanelDudas/BotonAyudaFlotante';
+
 export * from './shared/PanelDudas/ModalDudas';
 export { default as SocioModal } from './shared/SocioModal/SocioModal';
 export * from './shared/DocumentosEmpresaModal/DocumentosEmpresaModal';
@@ -21,44 +21,11 @@ export * from "./shared/HistorialEstadoModal/HistorialEstadoModal";
 export * from "./shared/DocumentosLegajo/DocumentosLegajo";
 export * from "./shared/SociosLegajo/SociosLegajo";
 
-// --- CHEQUES ---
-export { default as Paso6Bolsa } from './cheques/Paso6Bolsa/Paso6Bolsa';
 
-// --- SOLICITUD CHEQUES (INGRESO DE CHEQUES) ---
-export { default as PasoEmisor } from './cheques/Solicitud/PasoEmisor/PasoEmisor';
-export { default as PasoBolsa } from './cheques/Solicitud/PasoBolsa/PasoBolsa';
-export { default as PasoDetalles } from './cheques/Solicitud/PasoDetalles/PasoDetalles';
-export { default as PasoExito } from './cheques/Solicitud/PasoExito/PasoExito';
 
-// --- CARGA MASIVA CHEQUES ---
-export * from './cheques/CargaMasiva/Paso1CargaMasiva/Paso1CargaMasiva';
-export * from './cheques/CargaMasiva/Paso2RevisionCheques/Paso2RevisionCheques';
-export * from './cheques/CargaMasiva/Paso3Confirmacion/Paso3Confirmacion';
-export * from './cheques/CargaMasiva/Paso4ExitoEpyme/Paso4ExitoEpyme';
 
-// --- PAGARE ---
-export { default as Paso1SimuladorPagare } from './pagares/Paso1SimuladorPagare/Paso1SimuladorPagare';
-export { default as Paso2AgentePagare } from './pagares/Paso2AgentePagare/Paso2AgentePagare';
-export { default as Paso3Epyme } from './pagares/Paso3Epyme/Paso3Epyme';
-export { default as Paso4ExitoPagare } from './pagares/Paso4ExitoPagare/Paso4ExitoPagare';
 
-// --- SOCIOS ---
-export * from './socios/Gestion/Gestion';
-export * from './socios/Tabla/Tabla';
-export { Formulario as FormularioSocios } from './socios/Formulario/Formulario';
-export { SeccionDatos as SeccionDatosSocios } from './socios/SeccionDatos/SeccionDatos';
-export * from './socios/SeccionClasificacion/SeccionClasificacion';
 
-// --- TERCEROS ---
-export * from './terceros/Buscador/Buscador';
-export { Formulario as FormularioTerceros } from './terceros/Formulario/Formulario';
-export { SeccionDatos as SeccionDatosTerceros } from './terceros/SeccionDatos/SeccionDatos';
-export * from './terceros/GestorRelaciones/GestorRelaciones';
-export * from './terceros/FormularioVincular/FormularioVincular';
-
-// --- OTROS ---
-export * from './dashboard/ListaActividades/ListaActividades';
-export * from './dashboard/TarjetaLinea/TarjetaLinea';
 export * from './solicitudes/TarjetaSolicitud/TarjetaSolicitud';
 export * from './solicitudes/DetalleSolicitudModal/DetalleSolicitudModal';
 
