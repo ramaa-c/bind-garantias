@@ -126,6 +126,27 @@ export const tercerosService = {
   obtenerTerceroPorIdSGRPlus: async (terceroId) =>
     (await api.get(`sgrplus/TerceroRelacionado/${terceroId}`)).data,
 
-  obtenerRelacionesDeSocioSGRPlus: async (socioId) =>
-    (await api.get(`sgrplus/SocioTerceroRelacion/${socioId}`)).data,
+  obtenerRelacionesDeSocioSGRPlus: async (socioId) => {
+    if (socioId && Number(socioId) < 100000) {
+      try {
+        const responseWeb = await api.get(`api/Socio/${socioId}`);
+        const socioWeb = responseWeb.data;
+        const cuit = socioWeb?.cuit || socioWeb?.Cuit;
+        if (cuit) {
+          const responseSgr = await api.get("sgrplus/Socios", { params: { Cuit: cuit } });
+          const sgrSocios = responseSgr.data;
+          const arr = Array.isArray(sgrSocios) ? sgrSocios : sgrSocios?.items || [];
+          if (arr.length > 0) {
+            const sgrSocioId = arr[0].socioid || arr[0].SocioID;
+            const responseRel = await api.get(`sgrplus/SocioTerceroRelacion/${sgrSocioId}`);
+            return responseRel.data;
+          }
+        }
+      } catch (err) {
+        console.warn("[tercerosService] Error resolviendo SGRPlus ID desde Web ID:", err.message);
+      }
+    }
+    const response = await api.get(`sgrplus/SocioTerceroRelacion/${socioId}`);
+    return response.data;
+  },
 };

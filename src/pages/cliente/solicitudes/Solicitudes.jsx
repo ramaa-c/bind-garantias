@@ -11,7 +11,7 @@ import {
 import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 import InformativoModal from "../../../components/features/shared/InformativoModal/InformativoModal";
 import { HelpDrawer } from "../../../components/layout/Client/HelpDrawer/HelpDrawer";
-import { useObtenerLimitesSocio } from "../../../hooks/useSolicitudes";
+import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../../hooks/useSolicitudes";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../services/sociosService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
@@ -97,10 +97,14 @@ export default function Solicitudes() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const { cuitActivo, nombreEmpresa, socioIdActivo } = useEmpresaActiva();
-  const socioIdFinal = socioIdActivo || 2974;
+  const socioIdFinal = socioIdActivo || 0;
 
   const { data: solicitudesReal, isLoading: cargandoSolicitudes } =
     useObtenerLimitesSocio(socioIdFinal);
+  const { data: solicitudesEnProceso, isLoading: cargandoProceso } =
+    useObtenerSolicitudesEnProceso(cuitActivo);
+
+  const isLoadingData = cargandoSolicitudes || cargandoProceso;
   const { mutateAsync: validarUtilizacionCore } = useValidarUtilizacionCore();
   const [isVerifyingLineas, setIsVerifyingLineas] = useState(false);
 
@@ -113,16 +117,15 @@ export default function Solicitudes() {
   }, []);
 
   const tieneSolicitudPendiente = useMemo(() => {
-    if (!solicitudesReal || !Array.isArray(solicitudesReal)) return false;
-    return solicitudesReal.some(s =>
+    const hasRealPendiente = Array.isArray(solicitudesReal) && solicitudesReal.some(s =>
       !s.tipolimiteestadoid || s.tipolimiteestadoid === 0 || s.tipolimiteestadoid === 1
     );
-  }, [solicitudesReal]);
+    const hasProcesoPendiente = Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
+    return hasRealPendiente || hasProcesoPendiente;
+  }, [solicitudesReal, solicitudesEnProceso]);
 
   const listaSolicitudes = useMemo(() => {
     const reales = (solicitudesReal || [])
-      .slice()
-      .sort((a, b) => (b.tipolimitesocioid || 0) - (a.tipolimitesocioid || 0))
       .map(s => ({
         id: s.tipolimitesocioid?.toString() || Math.random().toString(),
         tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
@@ -132,11 +135,27 @@ export default function Solicitudes() {
         fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
         socioid: s.socioid || socioIdFinal,
         cuit: cuitActivo,
-        isReal: true
+        isReal: true,
+        solicitudid: s.solicitudid,
       }));
 
-    return reales;
-  }, [solicitudesReal, socioIdFinal, cuitActivo]);
+    const pendientes = (solicitudesEnProceso || [])
+      .filter(sp => !reales.some(r => Number(r.solicitudid) === sp.solicitudenprocesoid))
+      .map(sp => ({
+        id: `sp-${sp.solicitudenprocesoid}`,
+        tipo: sp.tipolimiteid === 1 ? "Cheque" : sp.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
+        monto: sp.importe ? new Intl.NumberFormat("es-AR").format(sp.importe) : "0",
+        moneda: sp.monedaid === 5000 ? "$" : sp.monedaid === 2 ? "U$D" : sp.monedaid === 10 ? "UVAS" : sp.monedaid === 500 ? "€" : "$",
+        estado: "Pendiente",
+        fecha: sp.fechacarga ? new Date(sp.fechacarga).toLocaleDateString("es-AR") : "Hoy",
+        socioid: socioIdFinal,
+        cuit: cuitActivo,
+        isReal: true,
+        solicitudid: sp.solicitudenprocesoid,
+      }));
+
+    return [...reales, ...pendientes].sort((a, b) => (Number(b.solicitudid) || 0) - (Number(a.solicitudid) || 0));
+  }, [solicitudesReal, solicitudesEnProceso, socioIdFinal, cuitActivo]);
 
   useEffect(() => {
     if (location.state?.nuevaSolicitud) {
@@ -275,7 +294,7 @@ export default function Solicitudes() {
           </div>
         </div>
         <div className={styles.listContainer}>
-          {cargandoSolicitudes ? (
+          {isLoadingData ? (
             <SkeletonTable rows={3} />
           ) : listaSolicitudes.length > 0 ? (
             listaSolicitudes.map((item) => (

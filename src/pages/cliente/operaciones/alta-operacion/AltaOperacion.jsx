@@ -534,6 +534,34 @@ export const AltaOperacion = () => {
     setEnviandoSolicitud(true);
     try {
       const cleanData = preparePayload(data);
+      const cuitLimpio = cuitActivo
+        ? String(cuitActivo).replace(/\D/g, "")
+        : "33711316839";
+
+      let finalSocioId = socioIdActivo;
+
+      // Si no tenemos el ID de socio activo en el contexto, intentamos resolverlo por CUIT desde el backend
+      if (!finalSocioId && cuitLimpio) {
+        try {
+          const sociosLista = await sociosService.obtenerSociosWeb({ Cuit: cuitLimpio });
+          const arr = Array.isArray(sociosLista) ? sociosLista : sociosLista?.data || [];
+          if (arr.length > 0) {
+            finalSocioId = arr[0].socioid || arr[0].SocioID;
+          }
+        } catch (e) {
+          console.warn("[ALTA OPERACION] Error al obtener socioid por CUIT:", e);
+        }
+      }
+
+      // Si no se encuentra el ID real del socio, bloqueamos el envío de la solicitud
+      if (!finalSocioId) {
+        toast.error("Error al enviar", {
+          description: "No se pudo determinar el ID real del socio. La solicitud no se puede procesar.",
+        });
+        setEnviandoSolicitud(false);
+        return;
+      }
+
       const montoLimpio = Number(cleanData.monto) || 0;
 
       const unAnioMasRel = new Date();
@@ -543,9 +571,7 @@ export const AltaOperacion = () => {
       const payload = {
         solicitudenprocesoid: 0,
         fechacarga: new Date().toISOString().split(".")[0],
-        cuit: cuitActivo
-          ? String(cuitActivo).replace(/\D/g, "")
-          : "33711316839",
+        cuit: cuitLimpio,
         tipolimiteid:
           cleanData.tipoProducto === "cheque"
             ? 1
@@ -573,14 +599,14 @@ export const AltaOperacion = () => {
       const solicitudIdCreada =
         resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
 
-      if (socioIdActivo && cleanData.sociedadBolsa) {
+      if (finalSocioId && cleanData.sociedadBolsa) {
         const ahoraRel = new Date().toISOString().split(".")[0];
         const payloadRelacionBolsa = {
-          socioid: socioIdActivo,
+          socioid: finalSocioId,
           tercerosrelacionados: [
             {
               sociotercerorelacionid: 0,
-              socioid: socioIdActivo,
+              socioid: finalSocioId,
               terceroid: Number(cleanData.sociedadBolsa),
               tiporelacionsocioid: 21,
               fechadesde: ahoraRel,
@@ -610,7 +636,7 @@ export const AltaOperacion = () => {
       }
 
       if (
-        socioIdActivo &&
+        finalSocioId &&
         cleanData.representantes &&
         cleanData.representantes.length > 0
       ) {
@@ -674,11 +700,11 @@ export const AltaOperacion = () => {
 
             if (terceroId) {
               const payloadRelacionRep = {
-                socioid: socioIdActivo,
+                socioid: finalSocioId,
                 tercerosrelacionados: [
                   {
                     sociotercerorelacionid: 0,
-                    socioid: socioIdActivo,
+                    socioid: finalSocioId,
                     terceroid: terceroId,
                     tiporelacionsocioid: rep.rol === "Apoderado" ? 210 : 230,
                     fechadesde: ahoraRel,
@@ -739,7 +765,7 @@ export const AltaOperacion = () => {
 
       const payloadLimite = {
         tipolimitesocioid: 0,
-        socioid: socioIdActivo || 0,
+        socioid: finalSocioId,
         tipolimiteid:
           cleanData.tipoProducto === "cheque"
             ? 1
@@ -784,6 +810,7 @@ export const AltaOperacion = () => {
         setPasoActual(4);
       }
     } catch (error) {
+      console.error("[ALTA OPERACION] Error en enviarSolicitud:", error);
       toast.error("Error al enviar", {
         description:
           "Hubo un error al enviar la solicitud. Revisá la consola para más detalles.",
