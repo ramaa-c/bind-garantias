@@ -113,6 +113,7 @@ function App() {
               path="inicio"
               element={<Navigate to="solicitudes" replace />}
             />
+{/*
             <Route
               path="pagare"
               element={
@@ -133,6 +134,7 @@ function App() {
                 </OnboardingGuard>
               }
             />
+            */}
             <Route
               path="solicitudes"
               element={
@@ -143,6 +145,7 @@ function App() {
                 </OnboardingGuard>
               }
             />
+{/*
             <Route
               path="prestamos"
               element={
@@ -204,6 +207,7 @@ function App() {
               }
             />
             <Route path="firma-documento" element={<FirmaDocumento />} />
+            */}
             <Route path="terminos" element={<AceptarTerminos />} />
             <Route
               path="alta-datos-empresa"
@@ -225,6 +229,7 @@ function App() {
                 </OnboardingGuard>
               }
             />
+{/*
             <Route
               path="posicion-consolidada"
               element={
@@ -235,6 +240,7 @@ function App() {
                 </OnboardingGuard>
               }
             />
+            */}
             <Route
               path="cadenas-valor/:id"
               element={
