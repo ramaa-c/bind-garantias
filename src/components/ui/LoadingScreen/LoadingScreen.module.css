@@ -13,6 +13,10 @@
   animation: fadeIn 0.35s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
 }
 
+.absolute {
+  position: absolute;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
