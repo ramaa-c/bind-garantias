@@ -34,8 +34,8 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
         denominacion: activeItem.denominacion,
         referencia: activeItem.referencia || "",
         logo: activeItem.logo || "",
-        tipocanalcomercializacionid: activeItem.tipocanalcomercializacionid || "",
-        equipocomercialid: activeItem.equipocomercialid || ""
+        tipocanalcomercializacionid: activeItem.tipocanalcomercializacionid != null ? activeItem.tipocanalcomercializacionid.toString() : "",
+        equipocomercialid: activeItem.equipocomercialid != null ? activeItem.equipocomercialid.toString() : ""
       });
     }
   }, [activeItem, isOpen]);

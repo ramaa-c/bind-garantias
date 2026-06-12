@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { useParams } from "react-router-dom";
-import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFilter, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/Button/Button";
 import { Badge } from "../../components/ui/Badge/Badge";
 import { Modal } from "../../components/ui/Modal/Modal";
 import { SinResultados } from "../../components/ui/SinResultados/SinResultados";
 import { TarjetaMetrica } from "../../components/ui/TarjetaMetrica/TarjetaMetrica";
+import { Select } from "../../components/ui/Select/Select";
 import styles from "./Dashboard.module.css";
 
 const solicitudesIniciales = [
@@ -67,6 +68,18 @@ const solicitudesIniciales = [
     tags: ["Requiere revisión"],
     cadenaSlug: "default",
   },
+];
+
+const opcionesEstado = [
+  { value: "todos", label: "Todos los estados" },
+  { value: "pendiente", label: "Pendiente" },
+  { value: "aprobada", label: "Aprobada" },
+  { value: "rechazada", label: "Rechazada" },
+];
+
+const opcionesOrden = [
+  { value: "desc", label: "Más Recientes (N° Desc)" },
+  { value: "asc", label: "Más Antiguas (N° Asc)" },
 ];
 
 export default function Dashboard() {
@@ -214,28 +227,29 @@ export default function Dashboard() {
         </div>
 
         <div className={styles.filtersGroup}>
-          <div className={styles.selectBox}>
-            <FiFilter className={styles.iconSelect} />
-            <select
+          <div className={styles.customSelectWrapper}>
+            <Select
               value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-              className={styles.customSelect}
-            >
-              <option value="todos">Todos los estados</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="aprobada">Aprobada</option>
-              <option value="rechazada">Rechazada</option>
-            </select>
+              onChange={setFiltroEstado}
+              options={opcionesEstado}
+              placeholder="Estado"
+              isSearchable={false}
+              hideErrorSpace
+              size="sm"
+            />
           </div>
 
-          <select
-            value={orden}
-            onChange={(e) => setOrden(e.target.value)}
-            className={styles.customSelect}
-          >
-            <option value="desc">Más Recientes (N° Desc)</option>
-            <option value="asc">Más Antiguas (N° Asc)</option>
-          </select>
+          <div className={styles.customSelectWrapper}>
+            <Select
+              value={orden}
+              onChange={setOrden}
+              options={opcionesOrden}
+              placeholder="Orden"
+              isSearchable={false}
+              hideErrorSpace
+              size="sm"
+            />
+          </div>
         </div>
       </div>
 

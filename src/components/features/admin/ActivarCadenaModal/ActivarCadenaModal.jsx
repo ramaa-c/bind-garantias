@@ -50,8 +50,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       denominacion: chain.denominacion,
       referencia: chain.referencia || "",
       logo: chain.logo || "",
-      tipocanalcomercializacionid: chain.tipocanalcomercializacionid || "",
-      equipocomercialid: chain.equipocomercialid || ""
+      tipocanalcomercializacionid: chain.tipocanalcomercializacionid != null ? chain.tipocanalcomercializacionid.toString() : "",
+      equipocomercialid: chain.equipocomercialid != null ? chain.equipocomercialid.toString() : ""
     });
     setStep("form");
   };

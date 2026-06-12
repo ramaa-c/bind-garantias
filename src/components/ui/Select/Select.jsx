@@ -3,11 +3,11 @@ import { Controller } from "react-hook-form";
 import ReactSelect from "react-select";
 import styles from "./Select.module.css";
 
-const selectStyles = (hasError) => ({
+const selectStyles = (hasError, size) => ({
   control: (base, state) => ({
     ...base,
-    height: "3.25rem",
-    minHeight: "3.25rem",
+    height: size === "sm" ? "2.5rem" : "3.25rem",
+    minHeight: size === "sm" ? "2.5rem" : "3.25rem",
     backgroundColor: state.isDisabled
       ? "rgba(255, 255, 255, 0.01)"
       : hasError
@@ -40,7 +40,7 @@ const selectStyles = (hasError) => ({
   placeholder: (base) => ({
     ...base,
     color: "#666",
-    fontSize: "0.95rem",
+    fontSize: size === "sm" ? "0.875rem" : "0.95rem",
     fontWeight: "400",
   }),
 
@@ -68,7 +68,7 @@ const selectStyles = (hasError) => ({
         : "var(--white)",
     cursor: "pointer",
     fontWeight: state.isSelected ? "bold" : "500",
-    padding: "0.75rem 1rem",
+    padding: size === "sm" ? "0.5rem 1rem" : "0.75rem 1rem",
     transition: "all 0.1s ease",
     "&:active": {
       backgroundColor: "var(--yellow)",
@@ -80,6 +80,7 @@ const selectStyles = (hasError) => ({
     ...base,
     color: "var(--white)",
     fontWeight: "500",
+    fontSize: size === "sm" ? "0.875rem" : "0.95rem",
   }),
 
   indicatorSeparator: () => ({
@@ -90,6 +91,7 @@ const selectStyles = (hasError) => ({
     ...base,
     color: state.isFocused ? "var(--yellow)" : "#888",
     transition: "color 0.2s ease",
+    padding: size === "sm" ? "4px 8px" : "8px",
     "&:hover": {
       color: "var(--yellow)",
     },
@@ -113,6 +115,7 @@ export const Select = ({
   hideErrorSpace = false,
   value,
   onChange,
+  size = "md",
 }) => {
   return (
     <div className={styles.indicatorWrapper}>
@@ -127,7 +130,7 @@ export const Select = ({
             <ReactSelect
               {...field}
               options={options}
-              styles={selectStyles(!!error)}
+              styles={selectStyles(!!error, size)}
               isDisabled={disabled}
               isSearchable={isSearchable}
               placeholder={placeholder}
@@ -140,7 +143,7 @@ export const Select = ({
       ) : (
         <ReactSelect
           options={options}
-          styles={selectStyles(!!error)}
+          styles={selectStyles(!!error, size)}
           isDisabled={disabled}
           isSearchable={isSearchable}
           placeholder={placeholder}
