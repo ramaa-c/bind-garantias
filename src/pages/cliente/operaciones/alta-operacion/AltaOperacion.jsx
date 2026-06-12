@@ -1217,6 +1217,7 @@ export const AltaOperacion = () => {
       <LoadingScreen
         title="Verificando acceso"
         message="Aguardá un momento mientras validamos tu sesión..."
+        absolute={true}
       />
     );
   }
@@ -1226,6 +1227,7 @@ export const AltaOperacion = () => {
       <LoadingScreen
         title="Buscando socios"
         message="Obteniendo la información de la empresa..."
+        absolute={true}
       />
     );
   }

@@ -16,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../services/sociosService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useValidarUtilizacionCore } from "../../../hooks/useSgrPlusCore";
+import { useChannel } from "../../../context/ChannelContext";
 
 import styles from "./Solicitudes.module.css";
 
@@ -79,6 +80,7 @@ const hasMeaningfulData = (dataString) => {
 export default function Solicitudes() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { channelInfo } = useChannel();
 
   const { control, register } = useForm({
     defaultValues: {
@@ -224,7 +226,7 @@ export default function Solicitudes() {
           variant="primary"
           size="sm"
           onClick={() =>
-            handleNuevaOperacion("/alta-operacion", "draft_alta_operacion")
+            handleNuevaOperacion(`/${channelInfo?.id || "default"}/alta-operacion`, "draft_alta_operacion")
           }
           className={styles.btnNuevaOp}
           disabled={isVerifyingLineas}
