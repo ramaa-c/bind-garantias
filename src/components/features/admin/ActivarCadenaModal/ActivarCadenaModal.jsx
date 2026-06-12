@@ -3,7 +3,11 @@ import { FiSearch, FiArrowLeft, FiUploadCloud, FiChevronRight } from "react-icon
 import { toast } from "sonner";
 import { useObtenerTodas, useCrearCadenaValor } from "../../../../hooks/useCadenaValor";
 import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../hooks/useCatalogos";
-import { Modal, Button, InputSimple, Select, Spinner } from "../../../ui";
+import { Modal } from "../../../ui/Modal/Modal";
+import { Button } from "../../../ui/Button/Button";
+import { InputSimple } from "../../../ui/InputSimple/InputSimple";
+import { Select } from "../../../ui/Select/Select";
+import { Spinner } from "../../../ui/Spinner/Spinner";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import styles from "./ActivarCadenaModal.module.css";
 

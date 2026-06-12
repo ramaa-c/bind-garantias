@@ -139,4 +139,4 @@ export const BarraProgreso = ({
       </div>
     </nav>
   );
-};
+};

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiX } from "react-icons/fi";
-import { PanelDudas, ModalDudas } from "../../../features";
+import { PanelDudas } from "../../../features/shared/PanelDudas/PanelDudas";
+import { ModalDudas } from "../../../features/shared/PanelDudas/ModalDudas";
 import styles from "./HelpDrawer.module.css";
 
 export function HelpDrawer({ isOpen, onClose, contexto, pasoActual }) {

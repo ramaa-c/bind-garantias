@@ -15,7 +15,7 @@ const mapAndSort = (data, idField, descField = "descripcion") => {
 
 const STALE_TIME = 1000 * 60 * 60 * 24;
 
-export const useTipoActividadSEPYME = () =>
+const useTipoActividadSEPYME = () =>
   useQuery({
     queryKey: ["catalogos", "tipoActividadSEPYME"],
     queryFn: catalogosService.obtenerTipoActividadSEPYME,
@@ -23,7 +23,7 @@ export const useTipoActividadSEPYME = () =>
     select: (data) => mapAndSort(data, "tipoactividadsepymeid"),
   });
 
-export const useTipoActividadBCRA = () =>
+const useTipoActividadBCRA = () =>
   useQuery({
     queryKey: ["catalogos", "tipoActividadBCRA"],
     queryFn: catalogosService.obtenerTipoActividadBCRA,
@@ -31,7 +31,7 @@ export const useTipoActividadBCRA = () =>
     select: (data) => mapAndSort(data, "tipoactividadbcraid"),
   });
 
-export const useSituacionBCRA = () =>
+const useSituacionBCRA = () =>
   useQuery({
     queryKey: ["catalogos", "situacionBCRA"],
     queryFn: catalogosService.obtenerSituacionBCRA,
@@ -39,7 +39,7 @@ export const useSituacionBCRA = () =>
     select: (data) => mapAndSort(data, "situacionbcraid"),
   });
 
-export const useEstadoSocio = () =>
+const useEstadoSocio = () =>
   useQuery({
     queryKey: ["catalogos", "estadoSocio"],
     queryFn: catalogosService.obtenerEstadoSocio,
@@ -47,7 +47,7 @@ export const useEstadoSocio = () =>
     select: (data) => mapAndSort(data, "estadosocioid"),
   });
 
-export const useTamanioEmpresa = () =>
+const useTamanioEmpresa = () =>
   useQuery({
     queryKey: ["catalogos", "tamanioEmpresa"],
     queryFn: catalogosService.obtenerTamanioEmpresa,
@@ -55,7 +55,7 @@ export const useTamanioEmpresa = () =>
     select: (data) => mapAndSort(data, "tamanioempresaid"),
   });
 
-export const useTipoComision = () =>
+const useTipoComision = () =>
   useQuery({
     queryKey: ["catalogos", "tipoComision"],
     queryFn: catalogosService.obtenerTipoComision,
@@ -63,7 +63,7 @@ export const useTipoComision = () =>
     select: (data) => mapAndSort(data, "tipocomisionid"),
   });
 
-export const useTipoCotizacion = () =>
+const useTipoCotizacion = () =>
   useQuery({
     queryKey: ["catalogos", "tipoCotizacion"],
     queryFn: catalogosService.obtenerTipoCotizacion,
@@ -71,7 +71,7 @@ export const useTipoCotizacion = () =>
     select: (data) => mapAndSort(data, "tipocotizmonid"),
   });
 
-export const useCotizacion = (moneda, fecha, tipoCotizacion) =>
+const useCotizacion = (moneda, fecha, tipoCotizacion) =>
   useQuery({
     queryKey: ["catalogos", "cotizacion", moneda, fecha, tipoCotizacion],
     queryFn: () =>
@@ -80,7 +80,7 @@ export const useCotizacion = (moneda, fecha, tipoCotizacion) =>
     staleTime: 1000 * 60 * 5, // 5 minutos de caché
   });
 
-export const useTipoReferencia = () =>
+const useTipoReferencia = () =>
   useQuery({
     queryKey: ["catalogos", "tipoReferencia"],
     queryFn: catalogosService.obtenerTipoReferencia,
@@ -88,7 +88,7 @@ export const useTipoReferencia = () =>
     select: (data) => mapAndSort(data, "tiporeferenciaid"),
   });
 
-export const useTipoTerceroRelacionado = () =>
+const useTipoTerceroRelacionado = () =>
   useQuery({
     queryKey: ["catalogos", "tipoTerceroRelacionado"],
     queryFn: catalogosService.obtenerTipoTerceroRelacionado,
@@ -96,7 +96,7 @@ export const useTipoTerceroRelacionado = () =>
     select: (data) => mapAndSort(data, "tipotercerorelacionadoid"),
   });
 
-export const useTipoRelacionSocio = () =>
+const useTipoRelacionSocio = () =>
   useQuery({
     queryKey: ["catalogos", "tipoRelacionSocio"],
     queryFn: catalogosService.obtenerTipoRelacionSocio,
@@ -128,7 +128,7 @@ export const useTipoCanalComercializacion = () =>
     select: (data) => mapAndSort(data, "tipocanalcomercializacionid"),
   });
 
-export const useTipoActividadGlobal = () =>
+const useTipoActividadGlobal = () =>
   useQuery({
     queryKey: ["catalogos", "tipoActividadGlobal"],
     queryFn: catalogosService.obtenerTipoActividadGlobal,
@@ -136,7 +136,7 @@ export const useTipoActividadGlobal = () =>
     select: (data) => mapAndSort(data, "tipoactividadglobalid"),
   });
 
-export const useTipoRegimenIva = () =>
+const useTipoRegimenIva = () =>
   useQuery({
     queryKey: ["catalogos", "tipoRegimenIva"],
     queryFn: catalogosService.obtenerTipoRegimenIva,
@@ -144,7 +144,7 @@ export const useTipoRegimenIva = () =>
     select: (data) => mapAndSort(data, "tiporegimenivaid"),
   });
 
-export const useTipoCondicionFianza = () =>
+const useTipoCondicionFianza = () =>
   useQuery({
     queryKey: ["catalogos", "tipoCondicionFianza"],
     queryFn: catalogosService.obtenerTipoCondicionFianza,
@@ -152,7 +152,7 @@ export const useTipoCondicionFianza = () =>
     select: (data) => mapAndSort(data, "tipocondicionfianzaid"),
   });
 
-export const useTipoLimiteEstado = () =>
+const useTipoLimiteEstado = () =>
   useQuery({
     queryKey: ["catalogos", "tipoLimiteEstado"],
     queryFn: catalogosService.obtenerTipoLimiteEstado,
@@ -160,7 +160,7 @@ export const useTipoLimiteEstado = () =>
     select: (data) => mapAndSort(data, "tipolimiteestadoid"),
   });
 
-export const useTipoLimiteRiesgo = () =>
+const useTipoLimiteRiesgo = () =>
   useQuery({
     queryKey: ["catalogos", "tipoLimiteRiesgo"],
     queryFn: catalogosService.obtenerTipoLimiteRiesgo,
@@ -179,7 +179,7 @@ export const useTiposProducto = () =>
     },
   });
 
-export const useTipoSocio = () =>
+const useTipoSocio = () =>
   useQuery({
     queryKey: ["catalogos", "tipoSocio"],
     queryFn: catalogosService.obtenerTipoSocio,
@@ -199,7 +199,7 @@ export const useProvincias = () =>
     select: (data) => mapAndSort(data, "provinciaid"),
   });
 
-export const useTipoPersona = () =>
+const useTipoPersona = () =>
   useQuery({
     queryKey: ["catalogos", "tipoPersona"],
     queryFn: catalogosService.obtenerTipoPersona,
@@ -207,7 +207,7 @@ export const useTipoPersona = () =>
     select: (data) => mapAndSort(data, "tipopersonaid"),
   });
 
-export const useSectorContable = () =>
+const useSectorContable = () =>
   useQuery({
     queryKey: ["catalogos", "sectorContable"],
     queryFn: catalogosService.obtenerSectorContable,
@@ -215,7 +215,7 @@ export const useSectorContable = () =>
     select: (data) => mapAndSort(data, "sectorcontableid"),
   });
 
-export const useTipoCartera = () =>
+const useTipoCartera = () =>
   useQuery({
     queryKey: ["catalogos", "tipoCartera"],
     queryFn: catalogosService.obtenerTipoCartera,

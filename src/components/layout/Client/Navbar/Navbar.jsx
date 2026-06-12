@@ -62,14 +62,14 @@ const Navbar = ({
   return (
     <header className={styles.header}>
       <div className={styles.leftSection}>
-        <button
+        <button type="button"
           className={styles.menuButton}
           onClick={onToggleSidebar}
           aria-label="Menú"
         >
           <FiMenu size={24} color="#fff" />
         </button>
-        <div className={styles.logoContainer} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)}>
+        <div className={styles.logoContainer} role="button" tabIndex={0} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)}>
           <img src={logoBind} alt="Bind Garantías" className={styles.logo} />
           {channelInfo.id !== "default" && (
             <>
@@ -88,7 +88,7 @@ const Navbar = ({
         {user ? (
           <>
             {/* Botón de Ayuda Restaurado */}
-            <button
+            <button type="button"
               className={styles.helpButton}
               onClick={handleOpenHelp}
               aria-label="Abrir ayuda"
@@ -122,7 +122,7 @@ const Navbar = ({
 
                   {isVinculado && (
                     <div className={styles.dropdownBody}>
-                      <button
+                      <button type="button"
                         className={styles.dropdownItem}
                         onClick={() => {
                           setIsDropdownOpen(false);
@@ -135,7 +135,7 @@ const Navbar = ({
                   )}
 
                   <div className={styles.dropdownFooter}>
-                    <button className={styles.logoutBtn} onClick={handleLogout}>
+                    <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
                       Cerrar sesión
                     </button>
                   </div>
@@ -146,7 +146,7 @@ const Navbar = ({
         ) : (
           <div className={styles.loginContainer}>
             {texto}
-            <span className={styles.link} onClick={() => navigate(`/${channelInfo.id}${rutaDestino.startsWith('/') ? rutaDestino : '/' + rutaDestino}`)}>
+            <span className={styles.link} role="button" tabIndex={0} onClick={() => navigate(`/${channelInfo.id}${rutaDestino.startsWith('/') ? rutaDestino : '/' + rutaDestino}`)}>
               {" "}
               {textoEnlace}
             </span>

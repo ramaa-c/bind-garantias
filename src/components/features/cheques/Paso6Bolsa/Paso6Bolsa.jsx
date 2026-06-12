@@ -1,7 +1,9 @@
 import React, { useMemo, useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { FiBriefcase, FiArrowRight } from "react-icons/fi";
-import { InputSocioMasked, Button, SelectSocio } from "../../../ui";
+import { InputSocioMasked } from "../../../ui/InputSocioMasked/InputSocioMasked";
+import { Button } from "../../../ui/Button/Button";
+import { SelectSocio } from "../../../ui/SelectSocio/SelectSocio";
 import styles from "./Paso6Bolsa.module.css";
 import { useObtenerTerceros } from "../../../../hooks/useTerceros";
 

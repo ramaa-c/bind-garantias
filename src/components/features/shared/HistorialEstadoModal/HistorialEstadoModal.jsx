@@ -1,7 +1,7 @@
 import React from "react";
 import { FiClock, FiCheckCircle, FiXCircle, FiAlertCircle, FiInfo, FiChevronRight } from "react-icons/fi";
 import { useObtenerCambiosEstadoLinea } from "../../../../hooks/useLinea";
-import { Modal } from "../../../ui";
+import { Modal } from "../../../ui/Modal/Modal";
 import Spinner from "../../../ui/Spinner/Spinner";
 import styles from "./HistorialEstadoModal.module.css";
 
@@ -53,7 +53,7 @@ export const HistorialEstadoModal = ({ isOpen, onClose, lineaId, lineaNombre }) 
                 ) : (
                     <div className={styles.timeline}>
                         {listaHistorial.map((item, index) => (
-                            <div key={index} className={styles.timelineItem}>
+                            <div key={item.id || item.fecha || item.estado} className={styles.timelineItem}>
                                 <div className={styles.timelineIcon}>
                                     {getStatusIcon(item.estadonew || item.estado)}
                                     {index !== listaHistorial.length - 1 && <div className={styles.line}></div>}
@@ -83,4 +83,4 @@ export const HistorialEstadoModal = ({ isOpen, onClose, lineaId, lineaNombre }) 
             </div>
         </Modal>
     );
-};
+};

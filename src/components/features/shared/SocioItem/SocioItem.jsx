@@ -1,4 +1,5 @@
-import { Avatar, BotonIcono} from '../../../ui';
+import { Avatar } from "../../../ui/Avatar/Avatar";
+import { BotonIcono } from "../../../ui/BotonIcono/BotonIcono";
 import { FiTrash2 } from 'react-icons/fi';
 import styles from './SocioItem.module.css';
 

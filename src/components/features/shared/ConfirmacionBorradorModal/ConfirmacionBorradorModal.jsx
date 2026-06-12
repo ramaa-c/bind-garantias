@@ -1,7 +1,7 @@
 import React, { useRef } from "react";
 import { createPortal } from "react-dom";
 import { FiAlertCircle, FiX } from "react-icons/fi";
-import { Button } from "../../../ui";
+import { Button } from "../../../ui/Button/Button";
 import { useEscape } from "../../../../hooks/useEscape";
 import styles from "./ConfirmacionBorradorModal.module.css";
 

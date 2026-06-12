@@ -13,7 +13,7 @@ import {
 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { RepresentanteModal } from "../../../RepresentanteModal/RepresentanteModal";
-import { Spinner } from "../../../../../ui";
+import { Spinner } from "../../../../../ui/Spinner/Spinner";
 
 export function RepresentantesSection({
   loadingSocios,

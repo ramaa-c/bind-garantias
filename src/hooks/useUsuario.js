@@ -50,7 +50,7 @@ export const useCrearUsuario = () => {
   });
 };
 
-export const useCambiarPassword = () => {
+const useCambiarPassword = () => {
   return useMutation({
     mutationFn: (datosCambioClave) =>
       usuarioService.cambiarPassword(datosCambioClave),
@@ -95,7 +95,7 @@ export const useBuscarUsuarios = (
   });
 };
 
-export const useObtenerUsuarioPorId = (usuarioId) => {
+const useObtenerUsuarioPorId = (usuarioId) => {
   return useQuery({
     queryKey: ["usuarios", "detalle", usuarioId],
     queryFn: () => usuarioService.obtenerUsuarioPorId(usuarioId),

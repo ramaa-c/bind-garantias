@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import { BuscadorCuit, ProcesamientoModal } from "../../../ui";
+import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
+import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { sociosService } from "../../../../services/sociosService";
 import { useValidarCuitAfip } from "../../../../hooks/useAfip";
 import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";

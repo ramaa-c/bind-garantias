@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../../../components/ui";
+import { Button } from "../../../components/ui/Button/Button";
 import {
   RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
   parseTerminos,
@@ -139,6 +139,7 @@ export default function AceptarTerminos() {
                   </table>
                 ) : (
                   seccion.parrafos.map((parrafo, i) => (
+                     // eslint-disable-next-line react/no-array-index-key
                     <p key={`${seccion.id}-p-${i}`} className={styles.parrafo}>
                       {parrafo}
                     </p>

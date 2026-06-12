@@ -6,7 +6,9 @@ import {
   FiEdit3,
   FiFileText,
 } from "react-icons/fi";
-import { Button, Alert, BotonVolver } from "../../../ui";
+import { Button } from "../../../ui/Button/Button";
+import { Alert } from "../../../ui/Alert/Alert";
+import { BotonVolver } from "../../../ui/BotonVolver/BotonVolver";
 import styles from "./Paso7Exito.module.css";
 
 export default function Paso7Exito({ onVolverInicio }) {

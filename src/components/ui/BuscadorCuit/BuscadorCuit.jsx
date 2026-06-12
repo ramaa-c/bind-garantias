@@ -1,6 +1,7 @@
 import React, { forwardRef } from "react";
 import { FiCreditCard } from "react-icons/fi";
-import { InputSocioMasked, Button } from "../../ui";
+import { InputSocioMasked } from "../../ui/InputSocioMasked/InputSocioMasked";
+import { Button } from "../../ui/Button/Button";
 import styles from "./BuscadorCuit.module.css";
 
 export const BuscadorCuit = forwardRef(({

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { FiX, FiUser, FiCheck, FiPenTool, FiDownload } from "react-icons/fi";
-import { Button } from "../../../ui";
+import { Button } from "../../../ui/Button/Button";
 import { useEscape } from "../../../../hooks/useEscape";
 import styles from "./FirmaProcesoModal.module.css";
 import logoAfip from "../../../../assets/images/afip.svg";

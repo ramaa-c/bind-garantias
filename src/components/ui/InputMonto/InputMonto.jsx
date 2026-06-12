@@ -83,4 +83,4 @@ export const InputMonto = ({
   );
 };
 
-InputMonto.displayName = "InputMonto";
+InputMonto.displayName = "InputMonto";

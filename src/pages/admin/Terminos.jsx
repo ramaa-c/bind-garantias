@@ -89,7 +89,7 @@ export default function Terminos() {
             Disclaimers. Al publicar, el sistema puede solicitar la re-aceptación de los socios.
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={handleGuardarCambios}
           className={`${styles.btnPublish} ${hasUnsaved ? styles.btnPublishGlow : ""}`}
           disabled={!hasUnsaved}
@@ -107,7 +107,7 @@ export default function Terminos() {
               const d = docs[k];
               const isSelected = k === docActivo;
               return (
-                <button
+                <button type="button"
                   key={k}
                   onClick={() => handleSelectDoc(k)}
                   className={`${styles.docCardBtn} ${isSelected ? styles.activeDoc : ""}`}
@@ -144,13 +144,13 @@ export default function Terminos() {
 
             {/* Selector de Tabs Editor / Preview */}
             <div className={styles.modeTabs}>
-              <button
+              <button type="button"
                 className={`${styles.modeBtn} ${modoVista === "editar" ? styles.modeActive : ""}`}
                 onClick={() => setModoVista("editar")}
               >
                 <FiEdit3 /> Modo Editor
               </button>
-              <button
+              <button type="button"
                 className={`${styles.modeBtn} ${modoVista === "vista" ? styles.modeActive : ""}`}
                 onClick={() => setModoVista("vista")}
               >

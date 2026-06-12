@@ -132,7 +132,7 @@ export default function RolesPermisos() {
             modificar tasas, validar CUITs y gestionar solicitudes.
           </p>
         </div>
-        <button
+        <button type="button"
           onClick={() => {
             toast.info("Apertura de formulario para invitar nuevo administrador");
           }}

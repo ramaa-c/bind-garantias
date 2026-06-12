@@ -1,6 +1,7 @@
 import React from "react";
 import { toast } from "sonner";
-import { Modal, Button } from "../../../ui";
+import { Modal } from "../../../ui/Modal/Modal";
+import { Button } from "../../../ui/Button/Button";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import styles from "./UsuariosRelacionadosModal.module.css";
 
@@ -25,7 +26,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
           <p style={{ fontSize: "0.8125rem", color: "#8b949e", margin: 0, lineHeight: "1.4" }}>
             Usuarios autorizados a interactuar con esta cadena de valor en la plataforma web.
           </p>
-          <button
+          <button type="button"
             className={styles.btnNuevoBlue}
             style={{ marginBottom: 0, flexShrink: 0 }}
             onClick={() => toast.info("Funcionalidad próximamente disponible")}

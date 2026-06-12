@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FiHome } from "react-icons/fi";
-import { Button } from "../../../components/ui";
+import { Button } from "../../../components/ui/Button/Button";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./NotFound.module.css";
 import { useAuthStore } from "../../../store/useAuthStore";

@@ -17,4 +17,4 @@ export const getPasswordScore = (password, email = "") => {
   strengthCache[password] = result.score;
 
   return result.score;
-};
+};

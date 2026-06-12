@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, Button } from "../../../ui";
+import { Modal } from "../../../ui/Modal/Modal";
+import { Button } from "../../../ui/Button/Button";
 import { CdaPanel } from "../CdaPanel/CdaPanel";
 
 export const CdaConfigModal = ({ isOpen, onClose, activeItem }) => {

@@ -3,7 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useObtenerSocioUsuarioPorUsuarioId } from "../../../hooks/useSocios";
 import { useObtenerPorNombreOEmail } from "../../../hooks/useUsuario";
-import { LoadingScreen } from "../../ui";
+import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 import { useChannel } from "../../../context/ChannelContext";
 import { useVendor } from "../../../hooks/useVendor";
 

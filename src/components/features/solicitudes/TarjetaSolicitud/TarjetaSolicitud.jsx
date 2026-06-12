@@ -40,11 +40,11 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle }) => {
 
           <div className={styles.actionsWrapper}>
             {solicitud.acciones?.map((accion) => (
-              <button key={accion} className={styles.btnAction}>
+              <button type="button" key={accion} className={styles.btnAction}>
                 {accion}
               </button>
             )) || (
-                <button className={styles.btnDetalle} onClick={() => onVerDetalle && onVerDetalle(solicitud)}>
+                <button type="button" className={styles.btnDetalle} onClick={() => onVerDetalle && onVerDetalle(solicitud)}>
                   VER DETALLE <FiChevronRight />
                 </button>
               )}

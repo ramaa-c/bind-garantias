@@ -10,7 +10,7 @@ export const useObtenerTodas = (page = 1, pageSize = 10) => {
     });
 };
 
-export const useObtenerTodasPorPlataforma = (cursaPlataforma, page = 1, pageSize = 10) => {
+const useObtenerTodasPorPlataforma = (cursaPlataforma, page = 1, pageSize = 10) => {
     return useQuery({
         queryKey: ['cadenaValor', 'plataforma', cursaPlataforma, page, pageSize],
         queryFn: () => cadenaValorService.obtenerTodasPorPlataforma(cursaPlataforma, page, pageSize),
@@ -26,7 +26,7 @@ export const useObtenerPorId = (cadenaValorId) => {
     });
 };
 
-export const useObtenerLibradores = (cadenaValorId, page = 1, pageSize = 10) => {
+const useObtenerLibradores = (cadenaValorId, page = 1, pageSize = 10) => {
     return useQuery({
         queryKey: ['cadenaValor', 'libradores', cadenaValorId, page, pageSize],
         queryFn: () => cadenaValorService.obtenerLibradores(cadenaValorId, page, pageSize),
@@ -36,7 +36,7 @@ export const useObtenerLibradores = (cadenaValorId, page = 1, pageSize = 10) => 
     });
 };
 
-export const useObtenerLibradorPorCuit = (cadenaValorId, cuitLibrador) => {
+const useObtenerLibradorPorCuit = (cadenaValorId, cuitLibrador) => {
     return useQuery({
         queryKey: ['cadenaValor', 'libradorCuit', cadenaValorId, cuitLibrador],
         queryFn: () => cadenaValorService.obtenerLibradorPorCuit(cadenaValorId, cuitLibrador),
@@ -54,7 +54,7 @@ export const useObtenerLineas = (cadenaValorId, page = 1, pageSize = 10) => {
     });
 };
 
-export const useVerificarAutorizacionEmail = (cadenaValorId, email) => {
+const useVerificarAutorizacionEmail = (cadenaValorId, email) => {
     return useQuery({
         queryKey: ['cadenaValor', 'autorizacion', cadenaValorId, email],
         queryFn: () => cadenaValorService.verificarAutorizacionEmail(cadenaValorId, email),
@@ -63,7 +63,7 @@ export const useVerificarAutorizacionEmail = (cadenaValorId, email) => {
     });
 };
 
-export const useObtenerCadenasPorEmail = (email) => {
+const useObtenerCadenasPorEmail = (email) => {
     return useQuery({
         queryKey: ['cadenaValor', 'porEmail', email],
         queryFn: () => cadenaValorService.obtenerCadenasPorEmail(email),
@@ -71,7 +71,7 @@ export const useObtenerCadenasPorEmail = (email) => {
     });
 };
 
-export const useObtenerRelaciones = (cadenaValorId) => {
+const useObtenerRelaciones = (cadenaValorId) => {
     return useQuery({
         queryKey: ['cadenaValor', 'relaciones', cadenaValorId],
         queryFn: () => cadenaValorService.obtenerRelaciones(cadenaValorId),

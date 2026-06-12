@@ -4,7 +4,9 @@ import { useForm, useController } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { InputSimple, Button, InputOTP } from "../../../components/ui";
+import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
+import { Button } from "../../../components/ui/Button/Button";
+import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
 import { useLogin, useLoginByCode } from "../../../hooks/useUsuario";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useChannel } from "../../../context/ChannelContext";
@@ -300,7 +302,7 @@ const Login = () => {
       setFase("validacion_otp");
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, setValue]);
+  }, [location, setValue]);
 
   const onSubmit = async (formData) => {
     if (fase === "solicitar_codigo") {
@@ -527,4 +529,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login;

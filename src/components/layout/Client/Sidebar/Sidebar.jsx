@@ -51,7 +51,7 @@ export default function Sidebar({ isOpen, onClose }) {
     <aside className={`${styles.container} ${isOpen ? styles.open : ""}`}>
       <div className={styles.sidebarHeader}>
         <div className={styles.logosWrapper}>
-          <img src={logoBind} alt="Bind Garantías" className={styles.logo} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)} style={{ cursor: "pointer" }} />
+          <img src={logoBind} alt="Bind Garantías" className={styles.logo} role="button" tabIndex={0} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)} style={{ cursor: "pointer" }} />
           {channelInfo.id !== "default" && (
             <>
               <div className={styles.logoSeparator} />
@@ -59,7 +59,7 @@ export default function Sidebar({ isOpen, onClose }) {
             </>
           )}
         </div>
-        <button
+        <button type="button"
           className={styles.closeButton}
           onClick={onClose}
           aria-label="Cerrar menú"
@@ -96,25 +96,25 @@ export default function Sidebar({ isOpen, onClose }) {
               <div
                 className={`${styles.collapsibleContent} ${expandedSections.general ? styles.expanded : ""}`}
               >
-                <button
+                <button type="button"
                   className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
                   onClick={() => handleNavigate("/solicitudes")}
                 >
                   <FiFileText className={styles.icon} /> Solicitudes
                 </button>
-                <button
+                <button type="button"
                   className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
                   onClick={() => handleNavigate("/documentacion")}
                 >
                   <FiArchive className={styles.icon} /> Documentación
                 </button>
-                <button
+                <button type="button"
                   className={`${styles.link} ${isActive("/legajo") ? styles.active : ""}`}
                   onClick={() => handleNavigate("/legajo")}
                 >
                   <FiUsers className={styles.icon} /> Legajo
                 </button>
-                <button
+                <button type="button"
                   className={`${styles.link} ${styles.mobileOnlyLink}`}
                   onClick={() => setIsTasasModalOpen(true)}
                 >
@@ -139,7 +139,7 @@ export default function Sidebar({ isOpen, onClose }) {
               </p>
             </div>
           </div>
-          <button className={styles.logoutLargeBtn} onClick={handleLogout}>
+          <button type="button" className={styles.logoutLargeBtn} onClick={handleLogout}>
             Cerrar sesión
           </button>
         </div>

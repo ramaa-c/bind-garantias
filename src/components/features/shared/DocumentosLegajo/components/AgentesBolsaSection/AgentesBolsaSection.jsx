@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { FiUsers, FiBriefcase, FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { BolsaModal } from "../BolsaModal/BolsaModal";
-import { Spinner } from "../../../../../ui";
+import { Spinner } from "../../../../../ui/Spinner/Spinner";
 
 export function AgentesBolsaSection({
   loadingSocios,

@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../../../components/ui";
+import { Modal } from "../../../../components/ui/Modal/Modal";
 import styles from "./TasasModal.module.css";
 
 const TASAS_DATA = [
@@ -37,7 +37,7 @@ export const TasasModal = ({ isOpen, onClose }) => {
             </thead>
             <tbody>
               {TASAS_DATA.map((row, index) => (
-                <tr key={index}>
+                <tr key={row.plazo}>
                   <td>{row.plazo}</td>
                   <td>{row.tasa}</td>
                 </tr>

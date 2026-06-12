@@ -81,7 +81,7 @@ export default function AdminNavbar() {
     <div className={styles.navWrapper}>
       {/* Topmost branding bar */}
       <div className={styles.topBrandBar}>
-        <div className={styles.logoBox} onClick={() => navigate(`/${cadenaSlug || "default"}/admin/dashboard`)}>
+        <div className={styles.logoBox} role="button" tabIndex={0} onClick={() => navigate(`/${cadenaSlug || "default"}/admin/dashboard`)}>
           <img src={logoBind} alt="BIND Logo" className={styles.logoImg} />
           {channelInfo && channelInfo.id !== "default" && (
             <>
@@ -123,7 +123,7 @@ export default function AdminNavbar() {
               </div>
 
               <div className={styles.userDropdownFooter}>
-                <button className={styles.userLogoutBtn} onClick={handleLogout}>
+                <button type="button" className={styles.userLogoutBtn} onClick={handleLogout}>
                   Cerrar sesión <FiLogOut />
                 </button>
               </div>
@@ -136,7 +136,7 @@ export default function AdminNavbar() {
       <nav className={styles.mainNav} ref={navRef}>
         <div className={styles.navItemsContainer}>
           {/* Mis Pendientes */}
-          <button
+          <button type="button"
             className={`${styles.navButton} ${
               isActive("/admin/dashboard") ? styles.active : ""
             }`}
@@ -147,7 +147,7 @@ export default function AdminNavbar() {
 
           {/* Bind Garantías Dropdown */}
           <div className={styles.dropdownContainer}>
-            <button
+            <button type="button"
               className={`${styles.navButton} ${
                 activeDropdown === "garantias" ? styles.dropdownActive : ""
               }`}
@@ -157,31 +157,31 @@ export default function AdminNavbar() {
             </button>
             {activeDropdown === "garantias" && (
               <div className={styles.dropdownMenu}>
-                <button
+                <button type="button"
                   className={styles.dropdownItem}
                   onClick={() => handleNavigate("/admin/tasas-montos?tab=lineas")}
                 >
                   Líneas
                 </button>
-                <button
+                <button type="button"
                   className={styles.dropdownItem}
                   onClick={() => handleNavigate("/admin/tasas-montos?tab=cheques")}
                 >
                   Cheques
                 </button>
-                <button
+                <button type="button"
                   className={styles.dropdownItem}
                   onClick={() => handleNavigate("/admin/tasas-montos?tab=pagares")}
                 >
                   Pagarés
                 </button>
-                <button
+                <button type="button"
                   className={styles.dropdownItem}
                   onClick={() => handleNavigate("/admin/tasas-montos?tab=prestamos")}
                 >
                   Préstamos
                 </button>
-                <button
+                <button type="button"
                   className={styles.dropdownItem}
                   onClick={() => handleNavigate(null)}
                 >
@@ -192,7 +192,7 @@ export default function AdminNavbar() {
           </div>
 
           {/* Criterios de Aceptación */}
-          <button
+          <button type="button"
             className={styles.navButton}
             onClick={() => handleNavigate("/admin/terminos")}
           >
@@ -201,7 +201,7 @@ export default function AdminNavbar() {
 
           {/* Administración Dropdown */}
           <div className={styles.dropdownContainer}>
-            <button
+            <button type="button"
               className={`${styles.navButton} ${
                 activeDropdown === "administracion" ? styles.dropdownActive : ""
               }`}
@@ -224,7 +224,7 @@ export default function AdminNavbar() {
                   }
 
                   return (
-                    <button
+                    <button type="button"
                       key={item}
                       className={styles.dropdownItem}
                       onClick={() => handleNavigate(destPath)}
@@ -239,7 +239,7 @@ export default function AdminNavbar() {
 
           {/* Soporte */}
           <div className={styles.dropdownContainer}>
-            <button
+            <button type="button"
               className={`${styles.navButton} ${
                 activeDropdown === "soporte" ? styles.dropdownActive : ""
               }`}
@@ -249,13 +249,13 @@ export default function AdminNavbar() {
             </button>
             {activeDropdown === "soporte" && (
               <div className={styles.dropdownMenu}>
-                <button
+                <button type="button"
                   className={styles.dropdownItem}
                   onClick={() => handleNavigate(null)}
                 >
                   Mesa de Ayuda
                 </button>
-                <button
+                <button type="button"
                   className={styles.dropdownItem}
                   onClick={() => handleNavigate(null)}
                 >
@@ -266,7 +266,7 @@ export default function AdminNavbar() {
           </div>
 
           {/* Herramientas */}
-          <button
+          <button type="button"
             className={styles.navButton}
             onClick={() => handleNavigate("/admin/tasas-montos")}
           >
@@ -275,7 +275,7 @@ export default function AdminNavbar() {
 
           {/* Ayuda */}
           <div className={styles.dropdownContainer}>
-            <button
+            <button type="button"
               className={`${styles.navButton} ${
                 activeDropdown === "ayuda" ? styles.dropdownActive : ""
               }`}
@@ -285,13 +285,13 @@ export default function AdminNavbar() {
             </button>
             {activeDropdown === "ayuda" && (
               <div className={styles.dropdownMenu}>
-                <button
+                <button type="button"
                   className={styles.dropdownItem}
                   onClick={() => handleNavigate(null)}
                 >
                   Manual de Usuario
                 </button>
-                <button
+                <button type="button"
                   className={styles.dropdownItem}
                   onClick={() => handleNavigate(null)}
                 >

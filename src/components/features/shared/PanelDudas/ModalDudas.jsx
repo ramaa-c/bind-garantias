@@ -14,8 +14,8 @@ export const ModalDudas = ({ isOpen, onClose, contexto, pasoActual }) => {
       
       <div className={`${styles.bottomSheet} ${isOpen ? styles.bottomSheetOpen : ""}`}>
         <div className={styles.header}>
-          <div className={styles.dragHandle} onClick={onClose}></div>
-          <button className={styles.closeButton} onClick={onClose}>
+          <div className={styles.dragHandle} role="button" tabIndex={0} onClick={onClose}></div>
+          <button type="button" className={styles.closeButton} onClick={onClose}>
             <FiX size={24} />
           </button>
         </div>

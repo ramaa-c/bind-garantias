@@ -1,5 +1,6 @@
 import React from "react";
-import { Button, Alert } from "../../ui";
+import { Button } from "../../ui/Button/Button";
+import { Alert } from "../../ui/Alert/Alert";
 import styles from "./TicketSimulacion.module.css";
 
 const EMPTY_ARRAY = [];

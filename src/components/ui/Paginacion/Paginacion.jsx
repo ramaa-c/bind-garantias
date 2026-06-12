@@ -41,7 +41,7 @@ export const Paginacion = ({
     }
 
     return pages.map((p) => (
-      <button
+      <button type="button"
         key={p}
         onClick={() => handlePageClick(p)}
         className={`${styles.pageButton} ${p === page ? styles.pageButtonActive : ""}`}
@@ -60,7 +60,7 @@ export const Paginacion = ({
   return (
     <div className={styles.container}>
       <div className={styles.pagination}>
-        <button
+        <button type="button"
           className={styles.pageButton}
           onClick={handlePrevious}
           disabled={page === 1 || isLoading}
@@ -68,7 +68,7 @@ export const Paginacion = ({
           <FiChevronLeft className={styles.icon} />
         </button>
         {renderPageNumbers()}
-        <button
+        <button type="button"
           className={styles.pageButton}
           onClick={handleNext}
           disabled={isNextDisabled}

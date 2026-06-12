@@ -11,7 +11,7 @@ export const useObtenerCambiosEstadoLinea = (lineaId) => {
     });
 };
 
-export const useObtenerLimitesPorSocio = (socioId) => {
+const useObtenerLimitesPorSocio = (socioId) => {
     return useQuery({
         queryKey: ['linea', 'limitesPorSocio', socioId],
         queryFn: () => lineaService.obtenerLimitesPorSocio(socioId),

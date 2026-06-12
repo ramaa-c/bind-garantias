@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, ProcesamientoModal, Spinner } from "../../../ui";
+import { Button } from "../../../ui/Button/Button";
+import { Modal } from "../../../ui/Modal/Modal";
+import { SelectSocio } from "../../../ui/SelectSocio/SelectSocio";
+import { InputSocioMasked } from "../../../ui/InputSocioMasked/InputSocioMasked";
+import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
+import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
+import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";
@@ -23,11 +29,20 @@ export function RepresentanteModal({
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [prevProps, setPrevProps] = useState({ isOpen, representante, representanteInicial });
+  if (isOpen !== prevProps.isOpen || representante !== prevProps.representante || representanteInicial !== prevProps.representanteInicial) {
+    setPrevProps({ isOpen, representante, representanteInicial });
+    if (isOpen) {
+      setAfipValidado(!!(representante || representanteInicial));
+      setShowConfirm(false);
+    }
+  }
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
 
-  const { control, reset, setValue, watch, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
+  const { control, reset, setValue, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
     defaultValues: {
       cuit: "",
       nombre: "",
@@ -37,7 +52,8 @@ export function RepresentanteModal({
     }
   });
 
-  const cuitValue = watch("cuit");
+  const cuitValue = useWatch({ control, name: "cuit" });
+  const nombreValue = useWatch({ control, name: "nombre" });
 
   useEffect(() => {
     if (errors.cuit?.type === "manual") {
@@ -57,7 +73,7 @@ export function RepresentanteModal({
           email: representante.email || "",
           telefono: representante.telefono || "",
         });
-        setAfipValidado(true);
+
       } else if (representanteInicial) {
         // Form mode edit
         reset({
@@ -67,7 +83,7 @@ export function RepresentanteModal({
           email: representanteInicial.email || "",
           telefono: representanteInicial.celular || representanteInicial.telefono || "",
         });
-        setAfipValidado(true);
+
       } else {
         // Create mode (both)
         reset({
@@ -77,9 +93,7 @@ export function RepresentanteModal({
           email: "",
           telefono: "",
         });
-        setAfipValidado(false);
       }
-      setShowConfirm(false);
     }
   }, [isOpen, representante, representanteInicial, reset]);
 
@@ -425,7 +439,7 @@ export function RepresentanteModal({
                         </>
                       )}
                     </span>
-                    <h2 className={styles.summaryName}>{watch("nombre") || "Representante"}</h2>
+                    <h2 className={styles.summaryName}>{nombreValue || "Representante"}</h2>
                     <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
                     {representante || representanteInicial ? (
                       <button

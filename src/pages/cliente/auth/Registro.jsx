@@ -6,7 +6,8 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { Modal } from "../../../components/ui/Modal/Modal";
 import { FiMail } from "react-icons/fi";
-import { InputSimple, Button } from "../../../components/ui";
+import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
+import { Button } from "../../../components/ui/Button/Button";
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
 import { useChannel } from "../../../context/ChannelContext";
@@ -319,4 +320,4 @@ const Registro = () => {
   );
 };
 
-export default Registro;
+export default Registro;
