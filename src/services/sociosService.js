@@ -14,7 +14,7 @@ export const sociosService = {
     }
 
     try {
-      const response = await api.get("sgrplus/Socios", { params });
+      const response = await api.get("api/Socios", { params });
       if (isCuitSearch && response.data) {
         cuitCache.set(cacheKey, JSON.parse(JSON.stringify(response.data)));
       }
@@ -50,9 +50,9 @@ export const sociosService = {
     }
   },
 
-  // Trae un socio por ID (SGRPlus)
+  // Trae un socio por ID (Esquema Web)
   obtenerSocioPorId: async (socioId) => {
-    const response = await api.get(`sgrplus/Socio/${socioId}`);
+    const response = await api.get(`api/Socio/${socioId}`);
     return response.data;
   },
 

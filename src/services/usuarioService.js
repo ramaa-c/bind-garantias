@@ -38,9 +38,27 @@ export const usuarioService = {
   establecerClaveNueva: async ({ usuarioid, data }) =>
     (await api.put(`api/usuario/${usuarioid}/password-new`, data)).data,
 
-  // GET api/usuario/{usuario}/:pornombre
-  obtenerPorNombreOEmail: async (identificador) =>
-    (await api.get(`api/usuario/${identificador}/pornombre`)).data,
+  obtenerPorNombreOEmail: async (identificador) => {
+    try {
+      const response = await api.get(`api/usuario/${identificador}/pornombre`);
+      return response.data;
+    } catch (error) {
+      if (identificador && identificador.includes("@")) {
+        try {
+          const resSearch = await api.get("api/usuarios", {
+            params: { page: 1, page_size: 1, Email: identificador }
+          });
+          const list = resSearch.data?.list || [];
+          if (list.length > 0 && list[0]) {
+            return list[0];
+          }
+        } catch (searchErr) {
+          console.warn("[usuarioService] Fallback by email search failed:", searchErr.message);
+        }
+      }
+      throw error;
+    }
+  },
 
   // GET api/usuarios
   buscarUsuarios: async (page = 1, pageSize = 10, email = "", nombre = "") => {
