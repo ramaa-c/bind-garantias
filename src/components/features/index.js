@@ -12,6 +12,7 @@ export * from './shared/PanelDudas/PanelDudas';
 export * from './shared/PanelDudas/ModalDudas';
 export { default as SocioModal } from './shared/SocioModal/SocioModal';
 export * from './shared/DocumentosEmpresaModal/DocumentosEmpresaModal';
+export { default as Paso6Bolsa } from './cheques/Paso6Bolsa/Paso6Bolsa';
 export * from './shared/RepresentanteModal/RepresentanteModal';
 export * from './shared/SocioTaskCard/SocioTaskCard';
 export { default as UbicacionModal } from "./shared/UbicacionModal/UbicacionModal";

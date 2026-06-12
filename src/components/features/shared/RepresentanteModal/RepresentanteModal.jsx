@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, ProcesamientoModal } from "../../../ui";
+import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, ProcesamientoModal, Spinner } from "../../../ui";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";

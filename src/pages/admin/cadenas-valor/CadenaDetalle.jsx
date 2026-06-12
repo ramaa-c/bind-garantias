@@ -15,7 +15,7 @@ import {
   useObtenerLineas,
 } from "../../../hooks/useCadenaValor";
 import Spinner from "../../../components/ui/Spinner/Spinner";
-import LibradoresModal from "../../../components/features/cheques/LibradoresModal/LibradoresModal";
+
 import { HistorialEstadoModal } from "../../../components/features";
 import styles from "./CadenaDetalle.module.css";
 import { Button, BotonVolver } from "../../../components/ui";
@@ -24,7 +24,7 @@ export default function CadenaDetalle() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [isLibradoresModalOpen, setIsLibradoresModalOpen] = useState(false);
+
   const [isHistorialModalOpen, setIsHistorialModalOpen] = useState(false);
   const [selectedLinea, setSelectedLinea] = useState(null);
 
@@ -281,24 +281,11 @@ export default function CadenaDetalle() {
                 <strong>#{cadenaData.cadenavalorid || id}</strong>
               </li>
             </ul>
-            <div className={styles.actionContainer}>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => setIsLibradoresModalOpen(true)}
-              >
-                Ver Libradores
-              </Button>
-            </div>
+
           </div>
         </aside>
       </div>
 
-      <LibradoresModal
-        isOpen={isLibradoresModalOpen}
-        onClose={() => setIsLibradoresModalOpen(false)}
-        cadenaValorId={id}
-      />
 
       <HistorialEstadoModal
         isOpen={isHistorialModalOpen}

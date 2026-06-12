@@ -71,8 +71,12 @@ export const DocumentosEmpresaModal = ({
             archivosBackend,
             doc.title,
           );
-          file._uploaded = true;
-          file._backendId = resultado?.socioarchivoid || resultado?.id;
+          const newFile = new File([file], file.name, { type: file.type });
+          newFile._uploaded = true;
+          newFile._backendId = resultado?.socioarchivoid || resultado?.id;
+          if (onFileUpload) {
+            onFileUpload(doc.key, newFile);
+          }
 
           if (onArchivosBackendChange && resultado) {
             onArchivosBackendChange((prev) => {
