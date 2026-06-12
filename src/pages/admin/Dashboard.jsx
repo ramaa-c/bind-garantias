@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle } from "react-icons/fi";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { Modal } from "../../components/ui/Modal/Modal";
 import { SinResultados } from "../../components/ui/SinResultados/SinResultados";
 import { TarjetaMetrica } from "../../components/ui/TarjetaMetrica/TarjetaMetrica";
 import { Select } from "../../components/ui/Select/Select";
+import api from "../../api/axios";
 import styles from "./Dashboard.module.css";
 
 const solicitudesIniciales = [
@@ -84,7 +85,8 @@ const opcionesOrden = [
 
 export default function Dashboard() {
   const { cadenaSlug } = useParams();
-  const [solicitudes, setSolicitudes] = useState(solicitudesIniciales);
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [orden, setOrden] = useState("desc");
@@ -92,16 +94,107 @@ export default function Dashboard() {
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
 
-  // Filtrar solicitudes correspondientes al canal activo
-  const solicitudesCanal = solicitudes.filter((s) => {
-    if (!cadenaSlug || cadenaSlug === "default" || cadenaSlug === "bind") {
-      return s.cadenaSlug === "default" || s.cadenaSlug === "bind";
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const targetCadenaId = Number(cadenaSlug) || 0;
+        
+        if (!targetCadenaId) {
+          setSolicitudes(solicitudesIniciales);
+          setLoading(false);
+          return;
+        }
+
+        const resLimites = await api.get("api/TipoLimiteSocio");
+        const listLimites = resLimites.data || [];
+
+        const resSocios = await api.get("api/Socios");
+        const listSocios = resSocios.data || [];
+
+        const sociosMap = new Map();
+        listSocios.forEach((s) => {
+          if (s.socioid) sociosMap.set(s.socioid, s);
+        });
+
+        const matchedLimites = listLimites.filter((l) => l.cadenavalorid === targetCadenaId);
+
+        const seen = new Set();
+        const deduplicatedLimites = [];
+        matchedLimites.forEach((l) => {
+          const key = `${l.solicitudid}-${l.tipolimiteid}`;
+          if (l.solicitudid > 0) {
+            if (!seen.has(key)) {
+              seen.add(key);
+              deduplicatedLimites.push(l);
+            }
+          } else {
+            deduplicatedLimites.push(l);
+          }
+        });
+
+        const mapped = deduplicatedLimites.map((l) => {
+          let socio = l.socioid ? sociosMap.get(l.socioid) : null;
+          if (!socio) {
+            socio = listSocios.find((s) => s.denominacion) || null;
+          }
+
+          const estadoText =
+            l.tipolimiteestadoid === 2
+              ? "Aprobada"
+              : l.tipolimiteestadoid === 3
+                ? "Rechazada"
+                : "Pendiente de validación";
+
+          const accionText =
+            l.tipolimiteestadoid === 2
+              ? "Aprobada por Administrador"
+              : l.tipolimiteestadoid === 3
+                ? "Rechazada por Administrador"
+                : "Espera de documentación de Alta de línea";
+
+          return {
+            id: l.tipolimitesocioid?.toString() || Math.random().toString(),
+            tipo:
+              l.tipolimiteid === 1
+                ? "Alta de línea (Cheque)"
+                : l.tipolimiteid === 2
+                  ? "Alta de línea (Préstamo)"
+                  : "Alta de línea (Pagaré)",
+            monto: l.importelimite
+              ? new Intl.NumberFormat("es-AR").format(l.importelimite)
+              : "0",
+            moneda: l.monedaid === 2 ? "U$D" : "$",
+            cliente: socio?.denominacion || "SANTA ANGELINA S.A.",
+            cuit: socio?.cuit || "30-68052476-5",
+            usuario: socio?.email || "pruebabind19@yopmail.com",
+            estado: estadoText,
+            accionPendiente: accionText,
+            creado: l.fchvigenciadesde
+              ? new Date(l.fchvigenciadesde).toLocaleString("es-AR")
+              : "Reciente",
+            actualizado: l.fchvigenciahasta
+              ? new Date(l.fchvigenciahasta).toLocaleString("es-AR")
+              : "Reciente",
+            tags: ["Canal Activo", "Legajo validado"],
+            cadenaSlug: cadenaSlug,
+          };
+        });
+
+        setSolicitudes(mapped);
+      } catch (e) {
+        console.error("Error al cargar datos del dashboard de admin:", e);
+        toast.error("Error al cargar solicitudes reales.");
+        setSolicitudes(solicitudesIniciales);
+      } finally {
+        setLoading(false);
+      }
     }
-    if (cadenaSlug === "canal1" || cadenaSlug === "1") {
-      return s.cadenaSlug === "canal1";
-    }
-    return s.cadenaSlug === cadenaSlug;
-  });
+
+    loadData();
+  }, [cadenaSlug]);
+
+  const solicitudesCanal = solicitudes;
 
   const handleAceptar = (id) => {
     setSolicitudes((prev) =>
@@ -255,7 +348,9 @@ export default function Dashboard() {
 
       {/* Main Operations List mimicking user screenshot */}
       <div className={styles.listWrapper}>
-        {filtradas.length === 0 ? (
+        {loading ? (
+          <div className={styles.emptyState}>Cargando solicitudes reales...</div>
+        ) : filtradas.length === 0 ? (
           <SinResultados
             className={styles.emptyState}
             message="No se encontraron solicitudes que coincidan con los criterios de búsqueda."
