@@ -28,27 +28,29 @@ export const DetalleSolicitudModal = ({
   solicitud,
   nombreEmpresa,
 }) => {
-  if (!solicitud) return null;
+  const cuit = solicitud?.cuit || "";
+  const estadoValue = solicitud?.estado || "";
+  const tipoValue = solicitud?.tipo || "";
 
-  const estado = estadoConfig[solicitud.estado] || {
+  const estado = estadoConfig[estadoValue] || {
     color: styles.badgeYellow,
-    label: solicitud.estado,
+    label: estadoValue,
   };
   const esCancelada =
-    solicitud.estado === "Cancelada" ||
-    solicitud.estado === "Rechazada" ||
-    solicitud.estado === "Cancelado" ||
-    solicitud.estado === "Rechazado";
+    estadoValue === "Cancelada" ||
+    estadoValue === "Rechazada" ||
+    estadoValue === "Cancelado" ||
+    estadoValue === "Rechazado";
 
   const tipoLabel =
-    solicitud.tipo === "Cheque"
+    tipoValue === "Cheque"
       ? "Cheque Propio"
-      : solicitud.tipo || "Operación";
+      : tipoValue || "Operación";
 
   const { data: socioResp, isLoading: cargandoSocio } = useQuery({
-    queryKey: ["socio", "cuit", solicitud.cuit],
-    queryFn: () => sociosService.obtenerSocios({ Cuit: solicitud.cuit }),
-    enabled: !!solicitud.cuit && isOpen && !nombreEmpresa,
+    queryKey: ["socio", "cuit", cuit],
+    queryFn: () => sociosService.obtenerSocios({ Cuit: cuit }),
+    enabled: !!cuit && isOpen && !nombreEmpresa,
     staleTime: 1000 * 60 * 5,
   });
 
@@ -57,7 +59,7 @@ export const DetalleSolicitudModal = ({
     : socioResp?.items?.[0] || socioResp?.data?.[0];
   const nombreFinal = nombreEmpresa || socio?.denominacion || "Cargando...";
 
-  const socioIdTarget = solicitud.socioid || socio?.socioid;
+  const socioIdTarget = solicitud?.socioid || socio?.socioid;
 
   const { data: accionistas = [], isLoading: cargandoAccionistas } = useQuery({
     queryKey: ["accionistas", socioIdTarget],
@@ -208,6 +210,8 @@ export const DetalleSolicitudModal = ({
     enabled: !!socioIdTarget && isOpen,
     staleTime: 1000 * 60 * 5,
   });
+
+  if (!solicitud) return null;
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" maxWidth="600px">

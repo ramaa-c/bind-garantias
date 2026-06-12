@@ -37,6 +37,8 @@ import { useChannel } from "../../../../context/ChannelContext";
 
 const STORAGE_KEY = "draft_alta_operacion";
 
+const generarIdAleatorio = () => String(Math.floor(Math.random() * 9000) + 1000);
+
 export const AltaOperacion = () => {
   const navigate = useNavigate();
   const { channelInfo } = useChannel();
@@ -852,7 +854,7 @@ export const AltaOperacion = () => {
     });
 
     const nuevaSolicitud = {
-      id: String(Math.floor(Math.random() * 9000) + 1000),
+      id: generarIdAleatorio(),
       tipo:
         data.tipoProducto === "cheque"
           ? "Cheque"
