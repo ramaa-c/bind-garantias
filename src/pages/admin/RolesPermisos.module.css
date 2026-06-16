@@ -111,7 +111,7 @@
 }
 
 .adminCard:hover {
-  border-color: #58a6ff;
+  border-color: var(--color-azul-bind-400);
   background: rgba(22, 27, 34, 0.8);
 }
 
@@ -131,7 +131,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2b71c8 0%, #1e3c72 100%);
+  background: linear-gradient(135deg, var(--color-azul-bind-600) 0%, var(--color-azul-bind-800) 100%);
   color: #ffffff;
   font-weight: 800;
   font-size: 1rem;
@@ -173,8 +173,8 @@
 }
 
 .roleTag {
-  background: rgba(88, 166, 255, 0.1);
-  color: #58a6ff;
+  background: rgba(107, 130, 255, 0.1);
+  color: var(--color-azul-bind-400);
   padding: 0.15rem 0.5rem;
   border-radius: 0.25rem;
   font-size: 0.6875rem;
@@ -261,7 +261,7 @@
 .blockTitle {
   font-size: 0.875rem;
   font-weight: 700;
-  color: #58a6ff;
+  color: var(--color-azul-bind-400);
   text-transform: uppercase;
   letter-spacing: 0.03rem;
 }

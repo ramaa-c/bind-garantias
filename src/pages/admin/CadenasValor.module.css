@@ -170,9 +170,9 @@
 }
 
 .btnEdit:hover {
-  background: rgba(88, 166, 255, 0.15);
-  border-color: #58a6ff;
-  color: #58a6ff;
+  background: rgba(107, 130, 255, 0.15);
+  border-color: var(--color-azul-bind-400);
+  color: var(--color-azul-bind-400);
 }
 
 .btnImage:hover {
@@ -234,7 +234,7 @@
   color: #ffffff;
 }
 
-.iconEdit { color: #58a6ff; }
+.iconEdit { color: var(--color-azul-bind-400); }
 .iconImage { color: #3fb950; }
 .iconList { color: #f0883e; }
 .iconUser { color: #bc8cff; }
@@ -462,7 +462,7 @@
 .cdasTitle {
   font-size: 1rem;
   color: #ffffff;
-  border-bottom: 1px solid #58a6ff;
+  border-bottom: 1px solid var(--color-azul-bind-400);
   padding-bottom: 0.5rem;
   margin-bottom: 0.5rem;
 }
@@ -480,7 +480,7 @@
 .cdaActions {
   display: flex;
   gap: 0.75rem;
-  color: #58a6ff;
+  color: var(--color-azul-bind-400);
 }
 
 .cdaActions button {
@@ -521,7 +521,7 @@
 }
 
 .btnNuevoBlue {
-  background: #58a6ff;
+  background: var(--color-azul-bind-400);
   color: #ffffff;
   border: none;
   padding: 0.5rem 1rem;
@@ -534,7 +534,7 @@
 }
 
 .btnNuevoBlue:hover {
-  background: #3182ce;
+  background: var(--color-azul-bind-500);
 }
 
 .chainSearchList {
