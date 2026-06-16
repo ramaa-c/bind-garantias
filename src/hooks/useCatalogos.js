@@ -230,3 +230,11 @@ export const useEquipoComercial = () =>
     staleTime: STALE_TIME,
     select: (data) => mapAndSort(data, "equipocomercialid"),
   });
+
+export const useObligaciones = () =>
+  useQuery({
+    queryKey: ["catalogos", "obligaciones"],
+    queryFn: catalogosService.obtenerObligaciones,
+    staleTime: STALE_TIME,
+    select: (data) => mapAndSort(data, "obligacionid"),
+  });
