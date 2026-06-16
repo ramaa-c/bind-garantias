@@ -136,3 +136,13 @@ export const useActualizarUsuarioCadenaValor = () => {
     },
   });
 };
+
+export const useActualizarUsuario = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (usuario) => usuarioService.actualizarUsuario(usuario),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+    },
+  });
+};
