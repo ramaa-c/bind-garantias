@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Modal, Button, InputSimple, Spinner } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
@@ -29,6 +29,41 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
 
   const relationsList = relationsData || [];
 
+  const [userEmails, setUserEmails] = useState({});
+
+  useEffect(() => {
+    if (!relationsList || relationsList.length === 0) return;
+
+    const fetchEmails = async () => {
+      const newEmails = { ...userEmails };
+      let changed = false;
+
+      await Promise.all(
+        relationsList.map(async (relation) => {
+          const uid = relation.usuariowebid;
+          if (uid && !newEmails[uid]) {
+            try {
+              const uData = await usuarioService.obtenerUsuarioPorId(uid);
+              const email = uData?.email || uData?.username || `ID: #${uid}`;
+              newEmails[uid] = email;
+              changed = true;
+            } catch (err) {
+              console.error(`Error fetching user details for ID ${uid}:`, err);
+              newEmails[uid] = `ID: #${uid}`;
+              changed = true;
+            }
+          }
+        })
+      );
+
+      if (changed) {
+        setUserEmails(newEmails);
+      }
+    };
+
+    fetchEmails();
+  }, [relationsList]);
+
   const getCSharpIsoDate = (addYears = 0) => {
     const date = new Date();
     if (addYears) date.setFullYear(date.getFullYear() + addYears);
@@ -55,25 +90,60 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
     };
 
     try {
-      const createdUser = await createUserMutation.mutateAsync(payloadNuevoUsuario);
-      
-      // Attempt to retrieve generated user id from creation response first
-      let userId = createdUser?.usuarioid || createdUser?.id || createdUser?.data?.usuarioid || createdUser?.data?.id;
+      let userId = null;
+      let targetUser = null;
 
-      if (!userId) {
-        // Fallback: Query the database to find the user by email
+      // 1. Check if user already exists
+      try {
         const userData = await usuarioService.obtenerPorNombreOEmail(trimmedEmail);
-        const targetUser = Array.isArray(userData)
+        targetUser = Array.isArray(userData)
           ? userData[0]
-          : userData?.items?.[0] || userData?.data?.[0] || userData;
-        userId = targetUser?.usuarioid || targetUser?.id;
+          : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
+        userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
+      } catch (e) {
+        // User not found, we will create them below
       }
 
       if (!userId) {
-        throw new Error("No se pudo obtener el ID del usuario recién creado.");
+        // 2. Call create endpoint only if user doesn't exist
+        try {
+          const createdUser = await createUserMutation.mutateAsync(payloadNuevoUsuario);
+          userId = createdUser?.usuariowebid || createdUser?.usuarioid || createdUser?.id || createdUser?.data?.usuariowebid || createdUser?.data?.usuarioid || createdUser?.data?.id || createdUser?.UsuarioWebID;
+        } catch (createErr) {
+          const errMsg = createErr.response?.data?.message || createErr.response?.data || createErr.message || "";
+          const isAlreadyExists =
+            createErr.response?.status === 409 ||
+            createErr.response?.status === 400 ||
+            errMsg.toLowerCase().includes("existe") ||
+            errMsg.toLowerCase().includes("vinculado");
+
+          if (isAlreadyExists) {
+            // User already exists, retrieve ID to proceed with linking
+            const userData = await usuarioService.obtenerPorNombreOEmail(trimmedEmail);
+            targetUser = Array.isArray(userData)
+              ? userData[0]
+              : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
+            userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
+          } else {
+            throw createErr;
+          }
+        }
+        
+        if (!userId) {
+          // Fallback query
+          const userData = await usuarioService.obtenerPorNombreOEmail(trimmedEmail);
+          targetUser = Array.isArray(userData)
+            ? userData[0]
+            : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
+          userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
+        }
       }
 
-      // Link user to value chain
+      if (!userId) {
+        throw new Error("No se pudo obtener el ID del usuario.");
+      }
+
+      // 3. Link user to value chain
       const payloadLink = {
         usuariocadenavalorid: 0,
         cadenavalorid: Number(activeItem.cadenavalorid),
@@ -81,18 +151,29 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
         activa: "1"
       };
 
-      await linkMutation.mutateAsync(payloadLink);
+      try {
+        await linkMutation.mutateAsync(payloadLink);
+        toast.success("Usuario vinculado exitosamente");
+      } catch (linkErr) {
+        const linkErrMsg = linkErr.response?.data?.message || linkErr.response?.data || linkErr.message || "";
+        const isAlreadyLinked =
+          linkErr.response?.status === 409 ||
+          linkErr.response?.status === 400 ||
+          linkErrMsg.toLowerCase().includes("vinculado") ||
+          linkErrMsg.toLowerCase().includes("existe");
 
-      toast.success("Usuario creado y vinculado exitosamente");
+        if (isAlreadyLinked) {
+          toast.info("El usuario ya se encuentra vinculado a esta cadena de valor.");
+        } else {
+          throw linkErr;
+        }
+      }
+
       setSearchEmail("");
       setShowForm(false);
     } catch (err) {
       console.error("Error creating and linking user:", err);
-      if (err.response?.status === 409) {
-        toast.error("El usuario ya existe en la plataforma.");
-      } else {
-        toast.error(err.response?.data?.message || "Ocurrió un error al crear y vincular el usuario.");
-      }
+      toast.error(err.response?.data?.message || err.message || "Ocurrió un error al vincular el usuario.");
     } finally {
       setIsCreatingUser(false);
     }
@@ -142,7 +223,10 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
           <button type="button"
             className={styles.btnNuevoBlue}
             style={{ marginBottom: 0, flexShrink: 0 }}
-            onClick={() => toast.info("Funcionalidad próximamente disponible")}
+            onClick={() => {
+              setShowForm((prev) => !prev);
+              setSearchEmail("");
+            }}
           >
             {showForm ? <><FiX style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> CANCELAR</> : <><FiPlus style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> NUEVO</>}
           </button>
@@ -205,7 +289,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
                   <tr key={relation.usuariocadenavalorid}>
                     <td>
                       <span className={styles.userMailText}>
-                        {relation.email || relation.username || `Usuario ID: #${relation.usuariowebid}`}
+                        {userEmails[relation.usuariowebid] || relation.email || relation.username || `Cargando email (ID: #${relation.usuariowebid})`}
                       </span>
                     </td>
                     <td>

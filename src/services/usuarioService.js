@@ -48,7 +48,10 @@ export const usuarioService = {
           const resSearch = await api.get("api/usuarios", {
             params: { page: 1, page_size: 1, Email: identificador },
           });
-          const list = resSearch.data?.list || [];
+          const listData = resSearch.data;
+          const list = Array.isArray(listData)
+            ? listData
+            : (listData?.items || listData?.data || listData?.resultados || listData?.list || []);
           if (list.length > 0 && list[0]) {
             return list[0];
           }
@@ -75,16 +78,19 @@ export const usuarioService = {
   obtenerUsuarioPorId: async (usuarioId) =>
     (await api.get(`api/usuario/${usuarioId}`)).data,
 
-  // GET api/usuario/CadenaValor
-  obtenerUsuariosRelacionados: async (params) =>
-    (await api.get("api/usuario/CadenaValor", { params })).data,
+  // GET api/UsuarioCadenaValor
+  obtenerUsuariosRelacionados: async (params) => {
+    return (await api.get("api/UsuarioCadenaValor", { params })).data;
+  },
 
-  // POST api/usuario/CadenaValor
-  crearUsuarioCadenaValor: async (payload) =>
-    (await api.post("api/usuario/CadenaValor", payload)).data,
+  // POST api/UsuarioCadenaValor
+  crearUsuarioCadenaValor: async (payload) => {
+    return (await api.post("api/UsuarioCadenaValor", payload)).data;
+  },
 
-  // PUT api/usuario/CadenaValor
-  actualizarUsuarioCadenaValor: async (payload) =>
-    (await api.put("api/usuario/CadenaValor", payload)).data,
+  // PUT api/UsuarioCadenaValor
+  actualizarUsuarioCadenaValor: async (payload) => {
+    return (await api.put("api/UsuarioCadenaValor", payload)).data;
+  },
 };
 

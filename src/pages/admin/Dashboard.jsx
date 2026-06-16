@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/Button/Button";
 import { Badge } from "../../components/ui/Badge/Badge";
@@ -8,6 +8,8 @@ import { Modal } from "../../components/ui/Modal/Modal";
 import { SinResultados } from "../../components/ui/SinResultados/SinResultados";
 import { TarjetaMetrica } from "../../components/ui/TarjetaMetrica/TarjetaMetrica";
 import { Select } from "../../components/ui/Select/Select";
+import { useAdminRestrictions } from "../../hooks/useAdminRestrictions";
+import { CriteriosAceptacionModal } from "../../components/features";
 import api from "../../api/axios";
 import styles from "./Dashboard.module.css";
 
@@ -93,6 +95,8 @@ export default function Dashboard() {
 
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
+  const [solicitudCda, setSolicitudCda] = useState(null);
+  const { isRestricted } = useAdminRestrictions();
 
   useEffect(() => {
     async function loadData() {
@@ -439,50 +443,73 @@ export default function Dashboard() {
                     </div>
 
                     <div className={styles.buttonsWrap}>
-                      {isPendiente && (
-                        <div className={styles.quickDecisions}>
+                      {isRestricted ? (
+                        <>
                           <Button
-                            onClick={() => handleAceptar(item.id)}
-                            variant="success"
-                            size="xs"
-                            className={styles.btnAcceptCustom}
-                            title="Aprobar Solicitud"
+                            onClick={() => setSolicitudCda(item)}
+                            variant="outlineBlue"
+                            size="sm"
+                            className={styles.btnCdaCustom}
                           >
-                            <FiCheck /> ACEPTAR
+                            <FiList /> CRITERIOS
                           </Button>
                           <Button
-                            onClick={() => handleRechazar(item.id)}
-                            variant="danger"
-                            size="xs"
-                            className={styles.btnRejectCustom}
-                            title="Rechazar Solicitud"
+                            onClick={() => setSolicitudDetalle(item)}
+                            variant="outline"
+                            size="sm"
+                            className={styles.btnDetailCustom}
                           >
-                            <FiX /> RECHAZAR
+                            <FiEye /> VER DETALLE
                           </Button>
-                        </div>
+                        </>
+                      ) : (
+                        <>
+                          {isPendiente && (
+                            <div className={styles.quickDecisions}>
+                              <Button
+                                onClick={() => handleAceptar(item.id)}
+                                variant="success"
+                                size="xs"
+                                className={styles.btnAcceptCustom}
+                                title="Aprobar Solicitud"
+                              >
+                                <FiCheck /> ACEPTAR
+                              </Button>
+                              <Button
+                                onClick={() => handleRechazar(item.id)}
+                                variant="danger"
+                                size="xs"
+                                className={styles.btnRejectCustom}
+                                title="Rechazar Solicitud"
+                              >
+                                <FiX /> RECHAZAR
+                              </Button>
+                            </div>
+                          )}
+
+                          <Button
+                            onClick={() => {
+                              toast.info(
+                                `Continuando flujo de gestión N°${item.id}`,
+                              );
+                            }}
+                            variant="primary"
+                            size="sm"
+                            className={styles.btnContinueCustom}
+                          >
+                            CONTINUAR <FiArrowRight />
+                          </Button>
+
+                          <Button
+                            onClick={() => setSolicitudDetalle(item)}
+                            variant="outline"
+                            size="sm"
+                            className={styles.btnDetailCustom}
+                          >
+                            <FiEye /> VER DETALLE
+                          </Button>
+                        </>
                       )}
-
-                      <Button
-                        onClick={() => {
-                          toast.info(
-                            `Continuando flujo de gestión N°${item.id}`,
-                          );
-                        }}
-                        variant="primary"
-                        size="sm"
-                        className={styles.btnContinueCustom}
-                      >
-                        CONTINUAR <FiArrowRight />
-                      </Button>
-
-                      <Button
-                        onClick={() => setSolicitudDetalle(item)}
-                        variant="outline"
-                        size="sm"
-                        className={styles.btnDetailCustom}
-                      >
-                        <FiEye /> VER DETALLE
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -591,6 +618,12 @@ export default function Dashboard() {
           </>
         )}
       </Modal>
+
+      <CriteriosAceptacionModal
+        isOpen={!!solicitudCda}
+        onClose={() => setSolicitudCda(null)}
+        solicitud={solicitudCda}
+      />
     </div>
   );
 }

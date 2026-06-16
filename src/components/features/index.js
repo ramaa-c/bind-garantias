@@ -35,4 +35,5 @@ export * from "./admin/ActivarCadenaModal/ActivarCadenaModal";
 export * from "./admin/EditarCadenaModal/EditarCadenaModal";
 export * from "./admin/CdaConfigModal/CdaConfigModal";
 export * from "./admin/UsuariosRelacionadosModal/UsuariosRelacionadosModal";
+export * from "./admin/CriteriosAceptacionModal/CriteriosAceptacionModal";
 

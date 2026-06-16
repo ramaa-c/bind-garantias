@@ -149,51 +149,15 @@ export default function AdminNavbar() {
 
           {!isRestricted && (
             <>
-              {/* Bind Garantías Dropdown */}
-              <div className={styles.dropdownContainer}>
-            <button type="button"
-              className={`${styles.navButton} ${
-                activeDropdown === "garantias" ? styles.dropdownActive : ""
-              }`}
-              onClick={() => toggleDropdown("garantias")}
-            >
-              Bind Garantías <FiChevronDown className={styles.chevron} />
-            </button>
-            {activeDropdown === "garantias" && (
-              <div className={styles.dropdownMenu}>
-                <button type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigate("/admin/tasas-montos?tab=lineas")}
-                >
-                  Líneas
-                </button>
-                <button type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigate("/admin/tasas-montos?tab=cheques")}
-                >
-                  Cheques
-                </button>
-                <button type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigate("/admin/tasas-montos?tab=pagares")}
-                >
-                  Pagarés
-                </button>
-                <button type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigate("/admin/tasas-montos?tab=prestamos")}
-                >
-                  Préstamos
-                </button>
-                <button type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigate(null)}
-                >
-                  Precalificaciones
-                </button>
-              </div>
-            )}
-          </div>
+              {/* Tasas */}
+          <button type="button"
+            className={`${styles.navButton} ${
+              isActive("/admin/tasas-montos") ? styles.active : ""
+            }`}
+            onClick={() => handleNavigate("/admin/tasas-montos")}
+          >
+            Tasas
+          </button>
 
           {/* Criterios de Aceptación */}
           <button type="button"
@@ -269,13 +233,7 @@ export default function AdminNavbar() {
             )}
           </div>
 
-          {/* Herramientas */}
-          <button type="button"
-            className={styles.navButton}
-            onClick={() => handleNavigate("/admin/tasas-montos")}
-          >
-            Herramientas
-          </button>
+
 
           {/* Ayuda */}
           <div className={styles.dropdownContainer}>
