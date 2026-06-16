@@ -101,7 +101,7 @@
 }
 
 .inputCustom:focus, .selectCustom:focus {
-  border-color: #58a6ff;
+  border-color: var(--color-azul-bind-400);
 }
 
 .selectCustom option {
@@ -221,7 +221,7 @@
 }
 
 .bannerCard:hover {
-  border-color: #58a6ff;
+  border-color: var(--color-azul-bind-400);
   transform: translateY(-2px);
 }
 
@@ -273,8 +273,8 @@
 }
 
 .posSide {
-  color: #58a6ff;
-  border-color: rgba(88, 166, 255, 0.3);
+  color: var(--color-azul-bind-400);
+  border-color: rgba(107, 130, 255, 0.3);
 }
 
 .stateBadge {
@@ -325,7 +325,7 @@
 }
 
 .cardMeta strong {
-  color: #58a6ff;
+  color: var(--color-azul-bind-400);
 }
 
 .bannerActions {

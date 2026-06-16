@@ -46,6 +46,21 @@
   --color-amarillo-bind: #F5F400;
   --color-gris-bind: #2E2E2E;
   --color-azul-bind: #4C65E6;
+  
+  /* Tonos complementarios de azul bind */
+  --color-azul-bind-50: #eff2ff;
+  --color-azul-bind-100: #dbe2ff;
+  --color-azul-bind-200: #b8c6ff;
+  --color-azul-bind-300: #8a9fff;
+  --color-azul-bind-400: #6b82ff;
+  --color-azul-bind-500: #4C65E6;
+  --color-azul-bind-600: #3b4ed1;
+  --color-azul-bind-700: #2f3dae;
+  --color-azul-bind-800: #28348c;
+  --color-azul-bind-900: #242f70;
+  --color-azul-bind-bg: rgba(76, 101, 230, 0.1);
+  --color-azul-bind-bg-hover: rgba(76, 101, 230, 0.2);
+
   --white: #FFFEFE;
 
   /* Complementarios */

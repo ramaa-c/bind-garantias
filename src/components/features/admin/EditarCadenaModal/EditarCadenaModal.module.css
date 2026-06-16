@@ -18,7 +18,7 @@
   color: #8b949e;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-bottom: 1px solid rgba(43, 113, 200, 0.12);
+  border-bottom: 1px solid rgba(59, 78, 209, 0.12);
   padding-bottom: 0.35rem;
   margin: 0 0 0.125rem 0;
 }
@@ -46,7 +46,7 @@
   gap: 1rem;
   padding: 0.75rem 1.25rem;
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(43, 113, 200, 0.12);
+  border: 1px solid rgba(59, 78, 209, 0.12);
   border-radius: 0.75rem;
 }
 
@@ -68,12 +68,12 @@
 }
 
 .uploadZone {
-  border: 2px dashed rgba(43, 113, 200, 0.35);
+  border: 2px dashed rgba(59, 78, 209, 0.35);
   border-radius: 0.75rem;
   padding: 1rem 1.5rem;
   text-align: center;
-  color: #5a9fd4;
-  background: rgba(43, 113, 200, 0.03);
+  color: var(--color-azul-bind-400);
+  background: rgba(59, 78, 209, 0.03);
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
@@ -83,15 +83,15 @@
 }
 
 .uploadZone:hover {
-  background: rgba(43, 113, 200, 0.08);
-  border-color: rgba(43, 113, 200, 0.8);
+  background: rgba(59, 78, 209, 0.08);
+  border-color: rgba(59, 78, 209, 0.8);
   color: #ffffff;
   transform: translateY(-1px);
 }
 
 .uploadIcon {
   font-size: 1.75rem;
-  color: rgba(43, 113, 200, 0.7);
+  color: rgba(59, 78, 209, 0.7);
   transition: color 0.2s;
 }
 
@@ -102,7 +102,7 @@
 .modalFoot {
   margin: 1rem -1.5rem -1.5rem -1.5rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(43, 113, 200, 0.12);
+  border-top: 1px solid rgba(59, 78, 209, 0.12);
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;

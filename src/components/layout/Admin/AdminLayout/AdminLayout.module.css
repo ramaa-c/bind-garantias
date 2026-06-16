@@ -2,21 +2,28 @@
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  background-color: #0d1117; /* Sleek rich dark mode */
+  background-color: #0d1117;
   color: #f0f6fc;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
   position: relative;
   overflow: hidden;
 }
 
-/* Radiant glowing gradients background elements */
 .blobTop {
   position: absolute;
   top: -10vw;
   left: -10vw;
   width: 40vw;
   height: 40vw;
-  background: radial-gradient(circle, rgba(43, 113, 200, 0.15) 0%, rgba(13, 17, 23, 0) 70%);
+  background: radial-gradient(
+    circle,
+    rgba(43, 113, 200, 0.15) 0%,
+    rgba(13, 17, 23, 0) 70%
+  );
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
@@ -28,7 +35,11 @@
   right: -10vw;
   width: 45vw;
   height: 45vw;
-  background: radial-gradient(circle, rgba(245, 244, 0, 0.08) 0%, rgba(13, 17, 23, 0) 70%);
+  background: radial-gradient(
+    circle,
+    rgba(43, 113, 200, 0.15) 0%,
+    rgba(13, 17, 23, 0) 70%
+  );
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
