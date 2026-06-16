@@ -79,6 +79,27 @@ export const OnboardingGuard = ({ children }) => {
   }
 
   const isVendor = vendorData?.isVendor || false;
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+
+  React.useEffect(() => {
+    if (isVendor && !isLoadingVendor && user && !isVendorMock) {
+      const isAllowed = vendorData?.cadenas?.some(
+        (c) => c.cadenavalorid.toString() === channelInfo.id.toString()
+      );
+      
+      if (!isAllowed && channelInfo.id !== "default") {
+        import("sonner").then(({ toast }) => {
+          toast.error("No tienes autorización para operar en esta cadena de valor.");
+        });
+        clearAuth();
+      } else if (!isAllowed && channelInfo.id === "default" && vendorData?.cadenas?.length > 0) {
+        import("sonner").then(({ toast }) => {
+          toast.error("Debes ingresar a través del portal específico de tu cadena de valor.");
+        });
+        clearAuth();
+      }
+    }
+  }, [isVendor, isLoadingVendor, vendorData, channelInfo.id, user, isVendorMock, clearAuth]);
 
   if (usuarioWebId && tieneEmpresas) {
     if (isVendor) {

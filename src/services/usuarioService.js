@@ -46,14 +46,17 @@ export const usuarioService = {
       if (identificador && identificador.includes("@")) {
         try {
           const resSearch = await api.get("api/usuarios", {
-            params: { page: 1, page_size: 1, Email: identificador }
+            params: { page: 1, page_size: 1, Email: identificador },
           });
           const list = resSearch.data?.list || [];
           if (list.length > 0 && list[0]) {
             return list[0];
           }
         } catch (searchErr) {
-          console.warn("[usuarioService] Fallback by email search failed:", searchErr.message);
+          console.warn(
+            "[usuarioService] Fallback by email search failed:",
+            searchErr.message,
+          );
         }
       }
       throw error;
@@ -71,4 +74,16 @@ export const usuarioService = {
   // GET api/usuario/{usuarioid}
   obtenerUsuarioPorId: async (usuarioId) =>
     (await api.get(`api/usuario/${usuarioId}`)).data,
+
+  // GET api/usuario/CadenaValor
+  obtenerUsuariosRelacionados: async (params) =>
+    (await api.get("api/usuario/CadenaValor", { params })).data,
+
+  // POST api/usuario/CadenaValor
+  crearUsuarioCadenaValor: async (payload) =>
+    (await api.post("api/usuario/CadenaValor", payload)).data,
+
+  // PUT api/usuario/CadenaValor
+  actualizarUsuarioCadenaValor: async (payload) =>
+    (await api.put("api/usuario/CadenaValor", payload)).data,
 };

@@ -6,6 +6,7 @@ import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./AdminNavbar.module.css";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useChannel } from "../../../../context/ChannelContext";
+import { useAdminRestrictions } from "../../../../hooks/useAdminRestrictions";
 
 export default function AdminNavbar() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function AdminNavbar() {
   const { channelInfo } = useChannel();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const user = useAuthStore((state) => state.user);
+  const { isRestricted } = useAdminRestrictions();
 
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -93,7 +95,7 @@ export default function AdminNavbar() {
               />
             </>
           )}
-          <span className={styles.adminTag}>ADMIN</span>
+          {!isRestricted && <span className={styles.adminTag}>ADMIN</span>}
         </div>
         <div className={styles.userMenuContainer} ref={profileRef}>
           <div
@@ -145,8 +147,10 @@ export default function AdminNavbar() {
             Mis Pendientes
           </button>
 
-          {/* Bind Garantías Dropdown */}
-          <div className={styles.dropdownContainer}>
+          {!isRestricted && (
+            <>
+              {/* Bind Garantías Dropdown */}
+              <div className={styles.dropdownContainer}>
             <button type="button"
               className={`${styles.navButton} ${
                 activeDropdown === "garantias" ? styles.dropdownActive : ""
@@ -300,6 +304,8 @@ export default function AdminNavbar() {
               </div>
             )}
           </div>
+            </>
+          )}
         </div>
       </nav>
     </div>
