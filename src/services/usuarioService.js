@@ -87,3 +87,4 @@ export const usuarioService = {
   actualizarUsuarioCadenaValor: async (payload) =>
     (await api.put("api/usuario/CadenaValor", payload)).data,
 };
+
