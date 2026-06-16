@@ -34,6 +34,7 @@ import RolesPermisos from "./pages/admin/RolesPermisos";
 import Terminos from "./pages/admin/Terminos";
 import Banners from "./pages/admin/Banners";
 import CadenasValor from "./pages/admin/CadenasValor";
+import LineasProductos from "./pages/admin/LineasProductos";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
@@ -220,6 +221,16 @@ function App() {
                 </AdminGuard>
               }
             />
+            <Route
+              path="admin/lineas-productos"
+              element={
+                <AdminGuard>
+                  <AdminLayout>
+                    <LineasProductos />
+                  </AdminLayout>
+                </AdminGuard>
+              }
+            />
           </Route>
 
           {/* Redirecciones de compatibilidad para rutas legacy de admin */}
@@ -230,6 +241,7 @@ function App() {
           <Route path="/admin/terminos" element={<Navigate to="/default/admin/terminos" replace />} />
           <Route path="/admin/banners" element={<Navigate to="/default/admin/banners" replace />} />
           <Route path="/admin/cadenas-valor" element={<Navigate to="/default/admin/cadenas-valor" replace />} />
+          <Route path="/admin/lineas-productos" element={<Navigate to="/default/admin/lineas-productos" replace />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

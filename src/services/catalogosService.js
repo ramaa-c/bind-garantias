@@ -104,4 +104,8 @@ export const catalogosService = {
   // Trae los equipos comerciales
   obtenerEquipoComercial: async () =>
     (await api.get("catalogos/EquipoComercial")).data,
+
+  // Trae los tipos de obligación (Productos)
+  obtenerObligaciones: async () =>
+    (await api.get("catalogos/Obligacion")).data,
 };
