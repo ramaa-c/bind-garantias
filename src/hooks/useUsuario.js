@@ -102,3 +102,36 @@ export const useObtenerUsuarioPorId = (usuarioId) => {
     enabled: !!usuarioId,
   });
 };
+
+export const useObtenerUsuariosRelacionados = (cadenavalorid) => {
+  return useQuery({
+    queryKey: ["usuarios", "relacionados", cadenavalorid],
+    queryFn: () => usuarioService.obtenerUsuariosRelacionados({ cadenavalorid }),
+    enabled: !!cadenavalorid,
+  });
+};
+
+export const useCrearUsuarioCadenaValor = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload) => usuarioService.crearUsuarioCadenaValor(payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["usuarios", "relacionados", variables.cadenavalorid],
+      });
+    },
+  });
+};
+
+export const useActualizarUsuarioCadenaValor = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload) => usuarioService.actualizarUsuarioCadenaValor(payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["usuarios", "relacionados", variables.cadenavalorid],
+      });
+    },
+  });
+};
+

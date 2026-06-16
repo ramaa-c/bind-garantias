@@ -71,4 +71,17 @@ export const usuarioService = {
   // GET api/usuario/{usuarioid}
   obtenerUsuarioPorId: async (usuarioId) =>
     (await api.get(`api/usuario/${usuarioId}`)).data,
+
+  // GET api/usuario/CadenaValor
+  obtenerUsuariosRelacionados: async (params) =>
+    (await api.get("api/usuario/CadenaValor", { params })).data,
+
+  // POST api/usuario/CadenaValor
+  crearUsuarioCadenaValor: async (payload) =>
+    (await api.post("api/usuario/CadenaValor", payload)).data,
+
+  // PUT api/usuario/CadenaValor
+  actualizarUsuarioCadenaValor: async (payload) =>
+    (await api.put("api/usuario/CadenaValor", payload)).data,
 };
+
