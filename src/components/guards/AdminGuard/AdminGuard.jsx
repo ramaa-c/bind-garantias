@@ -4,6 +4,10 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 import { useChannel } from "../../../context/ChannelContext";
+import {
+  useObtenerPorNombreOEmail,
+  useObtenerCadenasPorUsuario,
+} from "../../../hooks/useUsuario";
 
 export const AdminGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
@@ -11,22 +15,59 @@ export const AdminGuard = ({ children }) => {
   const { channelInfo } = useChannel();
   const channelSlug = channelInfo?.id || "default";
 
-  // Verificamos si el usuario actual tiene rol de administrador o ingresó con las credenciales admin
-  const isAdmin = user?.role === "admin" || user?.email === "admin";
+  const { data: usuarioDb, isPending: isUserLoading } =
+    useObtenerPorNombreOEmail(user?.email || "");
+
+  const parsearUsuarioWebId = (db) => {
+    if (!db) return null;
+    if (Array.isArray(db))
+      return db[0]?.usuariowebid || db[0]?.UsuarioWebID || db[0]?.id;
+    if (db.items)
+      return (
+        db.items[0]?.usuariowebid ||
+        db.items[0]?.UsuarioWebID ||
+        db.items[0]?.id
+      );
+    if (db.data)
+      return (
+        db.data[0]?.usuariowebid || db.data[0]?.UsuarioWebID || db.data[0]?.id
+      );
+    return db.usuariowebid || db.UsuarioWebID || db.id || null;
+  };
+
+  const usuarioWebId = parsearUsuarioWebId(usuarioDb);
+
+  const { data: cadenasData, isPending: isCadenasLoading } =
+    useObtenerCadenasPorUsuario(usuarioWebId);
+
+  const hasCadenas = Array.isArray(cadenasData)
+    ? cadenasData.length > 0
+    : cadenasData?.items?.length > 0 || cadenasData?.data?.length > 0;
+  const isAdminCadena = hasCadenas;
 
   const { isRestricted, isPending } = useAdminRestrictions();
 
-  if (!isAdmin) {
-    return <Navigate to="/" replace />;
-  }
+  const isBasicAdmin =
+    user?.role === "admin" ||
+    user?.email === "admin" ||
+    user?.email === "admin_restricto";
 
-  if (isPending) {
+  const isLoading =
+    isPending || isUserLoading || (usuarioWebId && isCadenasLoading);
+
+  if (isLoading) {
     return (
       <LoadingScreen
         title="Cargando acceso"
         message="Verificando permisos de administración..."
       />
     );
+  }
+
+  const isAdmin = isBasicAdmin || isAdminCadena;
+
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   const isDashboardPage = location.pathname.endsWith("/admin/dashboard");

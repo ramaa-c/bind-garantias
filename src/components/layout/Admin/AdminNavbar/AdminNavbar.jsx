@@ -106,7 +106,7 @@ export default function AdminNavbar() {
               <FaRegUserCircle className={styles.userIcon} />
             </div>
             <span className={styles.userName}>
-              {user?.nombre || "Administrador"}
+              {user?.nombre || user?.email || "Administrador"}
             </span>
             <FiChevronDown
               className={`${styles.userChevron} ${isProfileOpen ? styles.userChevronOpen : ""}`}

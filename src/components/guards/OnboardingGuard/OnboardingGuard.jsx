@@ -2,7 +2,10 @@ import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useObtenerSocioUsuarioPorUsuarioId } from "../../../hooks/useSocios";
-import { useObtenerPorNombreOEmail } from "../../../hooks/useUsuario";
+import {
+  useObtenerPorNombreOEmail,
+  useObtenerCadenasPorUsuario,
+} from "../../../hooks/useUsuario";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 import { useChannel } from "../../../context/ChannelContext";
 import { useVendor } from "../../../hooks/useVendor";
@@ -17,7 +20,9 @@ export const OnboardingGuard = ({ children }) => {
 
   const isTerminosPage = location.pathname.endsWith("/terminos");
   const isAltaDatosPage = location.pathname.endsWith("/alta-datos-empresa");
-  const isSeleccionarEmpresaPage = location.pathname.endsWith("/seleccionar-empresa");
+  const isSeleccionarEmpresaPage = location.pathname.endsWith(
+    "/seleccionar-empresa",
+  );
 
   const email = user?.email || "";
 
@@ -46,6 +51,13 @@ export const OnboardingGuard = ({ children }) => {
   const { data: socioUsuarios, isPending: isPendingSocios } =
     useObtenerSocioUsuarioPorUsuarioId(usuarioWebId || 0);
 
+  const { data: cadenasData, isPending: isCadenasLoading } =
+    useObtenerCadenasPorUsuario(usuarioWebId);
+  const hasCadenas = Array.isArray(cadenasData)
+    ? cadenasData.length > 0
+    : cadenasData?.items?.length > 0 || cadenasData?.data?.length > 0;
+  const isAdminCadena = hasCadenas;
+
   const parsearEmpresas = (sociosData) => {
     if (!sociosData) return [];
     if (Array.isArray(sociosData)) return sociosData;
@@ -61,6 +73,45 @@ export const OnboardingGuard = ({ children }) => {
   const listaEmpresas = isVendorMock ? [1, 2, 3] : listaEmpresasBase;
   const tieneEmpresas = listaEmpresas.length > 0;
 
+  const isVendor = vendorData?.isVendor || false;
+  const clearAuth = useAuthStore((state) => state.clearAuth);
+
+  React.useEffect(() => {
+    if (isVendor && !isLoadingVendor && user && !isVendorMock) {
+      const isAllowed = vendorData?.cadenas?.some(
+        (c) => c.cadenavalorid.toString() === channelInfo.id.toString(),
+      );
+
+      if (!isAllowed && channelInfo.id !== "default") {
+        import("sonner").then(({ toast }) => {
+          toast.error(
+            "No tienes autorización para operar en esta cadena de valor.",
+          );
+        });
+        clearAuth();
+      } else if (
+        !isAllowed &&
+        channelInfo.id === "default" &&
+        vendorData?.cadenas?.length > 0
+      ) {
+        import("sonner").then(({ toast }) => {
+          toast.error(
+            "Debes ingresar a través del portal específico de tu cadena de valor.",
+          );
+        });
+        clearAuth();
+      }
+    }
+  }, [
+    isVendor,
+    isLoadingVendor,
+    vendorData,
+    channelInfo.id,
+    user,
+    isVendorMock,
+    clearAuth,
+  ]);
+
   if (!user || !user.email) {
     return <Navigate to={`/${channelInfo.id}/login`} replace />;
   }
@@ -68,6 +119,7 @@ export const OnboardingGuard = ({ children }) => {
   if (
     (isLoadingUser && !usuarioWebId) ||
     (usuarioWebId && isPendingSocios) ||
+    (usuarioWebId && isCadenasLoading) ||
     isLoadingVendor
   ) {
     return (
@@ -78,39 +130,24 @@ export const OnboardingGuard = ({ children }) => {
     );
   }
 
-  const isVendor = vendorData?.isVendor || false;
-  const clearAuth = useAuthStore((state) => state.clearAuth);
-
-  React.useEffect(() => {
-    if (isVendor && !isLoadingVendor && user && !isVendorMock) {
-      const isAllowed = vendorData?.cadenas?.some(
-        (c) => c.cadenavalorid.toString() === channelInfo.id.toString()
-      );
-      
-      if (!isAllowed && channelInfo.id !== "default") {
-        import("sonner").then(({ toast }) => {
-          toast.error("No tienes autorización para operar en esta cadena de valor.");
-        });
-        clearAuth();
-      } else if (!isAllowed && channelInfo.id === "default" && vendorData?.cadenas?.length > 0) {
-        import("sonner").then(({ toast }) => {
-          toast.error("Debes ingresar a través del portal específico de tu cadena de valor.");
-        });
-        clearAuth();
-      }
-    }
-  }, [isVendor, isLoadingVendor, vendorData, channelInfo.id, user, isVendorMock, clearAuth]);
+  if (isAdminCadena) {
+    return <Navigate to={`/${channelInfo.id}/admin/dashboard`} replace />;
+  }
 
   if (usuarioWebId && tieneEmpresas) {
     if (isVendor) {
       if (!activeSocioId && !isSeleccionarEmpresaPage && !isAltaDatosPage) {
-        return <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />;
+        return (
+          <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />
+        );
       }
-      // If they have an active socio ID, prevent them from staying on /seleccionar-empresa or /alta-datos-empresa forever,
-      // but they can navigate freely. Usually they are on /inicio or others.
-      if (activeSocioId && (isTerminosPage || isSeleccionarEmpresaPage || isAltaDatosPage)) {
-         // allow navigation or redirect to inicio? Let's just allow them to use alta-datos-empresa or seleccionar-empresa.
-         if (isTerminosPage) return <Navigate to={`/${channelInfo.id}/inicio`} replace />;
+
+      if (
+        activeSocioId &&
+        (isTerminosPage || isSeleccionarEmpresaPage || isAltaDatosPage)
+      ) {
+        if (isTerminosPage)
+          return <Navigate to={`/${channelInfo.id}/inicio`} replace />;
       }
     } else {
       if (isTerminosPage || isAltaDatosPage || isSeleccionarEmpresaPage) {

@@ -112,6 +112,14 @@ export const useObtenerUsuariosRelacionados = (cadenavalorid) => {
   });
 };
 
+export const useObtenerCadenasPorUsuario = (usuarioid) => {
+  return useQuery({
+    queryKey: ["usuarios", "cadenas_admin", usuarioid],
+    queryFn: () => usuarioService.obtenerUsuariosRelacionados({ usuarioid }),
+    enabled: !!usuarioid,
+  });
+};
+
 export const useCrearUsuarioCadenaValor = () => {
   const queryClient = useQueryClient();
   return useMutation({
