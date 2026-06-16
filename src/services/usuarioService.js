@@ -11,11 +11,11 @@ export const usuarioService = {
 
   // PUT api/usuario/{usuarioid}/status:block
   bloquearUsuario: async (usuarioId) =>
-    (await api.put(`api/usuario/${usuarioId}/status-block`)).data,
+    (await api.put(`api/usuario/${usuarioId}/status-block`, {})).data,
 
   // PUT api/usuario/{usuarioid}/status:release
   reactivarUsuario: async (usuarioId) =>
-    (await api.put(`api/usuario/${usuarioId}/status-release`)).data,
+    (await api.put(`api/usuario/${usuarioId}/status-release`, {})).data,
 
   // PUT api/usuario/password:reset
   resetearPassword: async (payloadSkeletor) =>
