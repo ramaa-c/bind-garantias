@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { sociosService } from "../services/sociosService";
 
-export const useObtenerSocios = (params = {}) => {
+const useObtenerSocios = (params = {}) => {
   return useQuery({
     queryKey: ["socios", "lista", params],
     queryFn: () => sociosService.obtenerSocios(params),
@@ -15,7 +15,7 @@ export const useObtenerSocios = (params = {}) => {
   });
 };
 
-export const useSocios = useObtenerSocios;
+const useSocios = useObtenerSocios;
 
 export const useSocioPorId = (socioId) => {
   return useQuery({
@@ -27,7 +27,7 @@ export const useSocioPorId = (socioId) => {
   });
 };
 
-export const useCrearSocio = () => {
+const useCrearSocio = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -43,7 +43,7 @@ export const useCrearSocio = () => {
   });
 };
 
-export const useActualizarSocio = () => {
+const useActualizarSocio = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -85,7 +85,7 @@ export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
   });
 };
 
-export const useVincularSocioUsuario = () => {
+const useVincularSocioUsuario = () => {
   const queryClient = useQueryClient();
 
   return useMutation({

@@ -46,14 +46,17 @@ export const usuarioService = {
       if (identificador && identificador.includes("@")) {
         try {
           const resSearch = await api.get("api/usuarios", {
-            params: { page: 1, page_size: 1, Email: identificador }
+            params: { page: 1, page_size: 1, Email: identificador },
           });
           const list = resSearch.data?.list || [];
           if (list.length > 0 && list[0]) {
             return list[0];
           }
         } catch (searchErr) {
-          console.warn("[usuarioService] Fallback by email search failed:", searchErr.message);
+          console.warn(
+            "[usuarioService] Fallback by email search failed:",
+            searchErr.message,
+          );
         }
       }
       throw error;

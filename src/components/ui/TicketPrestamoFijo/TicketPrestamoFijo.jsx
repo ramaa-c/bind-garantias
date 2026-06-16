@@ -21,7 +21,7 @@ export const TicketPrestamoFijo = ({
           <table className={styles.infoTable}>
             <tbody>
               {datosTabla.map((fila, index) => (
-                <tr key={index}>
+                <tr key={fila.id || fila.conceptos?.[0]?.label || "fila-" + index}>
                   <td className={styles.tdLabelPlazo}>
                     {index === 0 && (
                       <span className={styles.columnHeader}>Plazos</span>
@@ -31,7 +31,7 @@ export const TicketPrestamoFijo = ({
 
                   <td className={styles.tdDataGroups}>
                     {fila.conceptos.map((concepto, i) => (
-                      <div className={styles.dataRow} key={i}>
+                      <div className={styles.dataRow} key={concepto.label}>
                         <span className={styles.dataLabel}>
                           {concepto.label}
                         </span>

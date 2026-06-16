@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./LoadingScreen.module.css";
 
-export default function LoadingScreen({ title, message, absolute = false }) {
+export function LoadingScreen({ title, message, absolute = false }) {
   return (
     <div className={`${styles.overlay} ${absolute ? styles.absolute : ''}`}>
       <div className={styles.content}>
@@ -16,3 +16,5 @@ export default function LoadingScreen({ title, message, absolute = false }) {
     </div>
   );
 }
+
+export default LoadingScreen;

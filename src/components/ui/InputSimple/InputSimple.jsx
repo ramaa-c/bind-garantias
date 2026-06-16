@@ -120,4 +120,4 @@ export const InputSimple = forwardRef(({
   return renderInput(manualValue, manualOnChange, ref, null);
 });
 
-InputSimple.displayName = "InputSimple";
+InputSimple.displayName = "InputSimple";

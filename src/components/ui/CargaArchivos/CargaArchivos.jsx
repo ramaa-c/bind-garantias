@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './CargaArchivos.module.css';
 import { FiUploadCloud, FiFile, FiTrash2, FiEye, FiDownload, FiEdit2 } from 'react-icons/fi';
-import { BotonIcono } from '../';
+import { BotonIcono } from "..//BotonIcono/BotonIcono";
 
 export const CargaArchivos = ({ 
   title = "Arrastrá tu archivo acá", 

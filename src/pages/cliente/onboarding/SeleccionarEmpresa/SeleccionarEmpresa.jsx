@@ -4,7 +4,7 @@ import { FiPlus, FiArrowRight } from "react-icons/fi";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useObtenerSocioUsuarioPorUsuarioId } from "../../../../hooks/useSocios";
-import { LoadingScreen } from "../../../../components/ui";
+import { LoadingScreen } from "../../../../components/ui/LoadingScreen/LoadingScreen";
 import styles from "./SeleccionarEmpresa.module.css";
 import { useChannel } from "../../../../context/ChannelContext";
 

@@ -1,4 +1,4 @@
-export const TERMINOS_Y_CONDICIONES = [
+const TERMINOS_Y_CONDICIONES = [
   {
     id: "intro_texto",
     titulo: null,

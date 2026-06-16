@@ -1,5 +1,5 @@
 import React from "react";
-import { Acordeon } from "../../../ui";
+import { Acordeon } from "../../../ui/Acordeon/Acordeon";
 import styles from "./ContenidoDudas.module.css";
 
 export const ContenidoDudas = ({ contexto = "cheques", pasoActual = 1 }) => {

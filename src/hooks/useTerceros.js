@@ -10,7 +10,7 @@ export const useObtenerTerceros = (params = {}) => {
     });
 };
 
-export const useObtenerTerceroPorId = (terceroId) => {
+const useObtenerTerceroPorId = (terceroId) => {
     return useQuery({
         queryKey: ['terceros', 'detalle', terceroId],
         queryFn: () => tercerosService.obtenerTerceroPorId(terceroId),
@@ -20,7 +20,7 @@ export const useObtenerTerceroPorId = (terceroId) => {
     });
 };
 
-export const useCrearTercero = () => {
+const useCrearTercero = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -37,7 +37,7 @@ export const useCrearTercero = () => {
   });
 };
 
-export const useObtenerTiposHabilitados = (terceroId) => {
+const useObtenerTiposHabilitados = (terceroId) => {
   return useQuery({
     queryKey: ["terceros", "tiposHabilitados", terceroId],
     queryFn: () => tercerosService.obtenerTiposHabilitados(terceroId),
@@ -45,7 +45,7 @@ export const useObtenerTiposHabilitados = (terceroId) => {
   });
 };
 
-export const useObtenerRelacionesDeSocio = (socioId) => {
+const useObtenerRelacionesDeSocio = (socioId) => {
   return useQuery({
     queryKey: ["socioTerceroRelacion", socioId],
     queryFn: () => tercerosService.obtenerRelacionesDeSocio(socioId),
@@ -53,7 +53,7 @@ export const useObtenerRelacionesDeSocio = (socioId) => {
   });
 };
 
-export const useGuardarRelacionesDeSocio = () => {
+const useGuardarRelacionesDeSocio = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -74,13 +74,13 @@ export const useGuardarRelacionesDeSocio = () => {
   });
 };
 
-export const useBuscarTerceroPorCuit = () => {
+const useBuscarTerceroPorCuit = () => {
   return useMutation({
     mutationFn: (cuit) => tercerosService.obtenerTerceros({ Cuit: cuit }),
   });
 };
 
-export const useActualizarTercero = () => {
+const useActualizarTercero = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -109,7 +109,7 @@ export const useActualizarTercero = () => {
   });
 };
 
-export const useActualizarRelacionSocio = () => {
+const useActualizarRelacionSocio = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -132,7 +132,7 @@ export const useActualizarRelacionSocio = () => {
 
 //------- TERCEROS RELACIONADOS (SGRPlus) ---------
 
-export const useObtenerTercerosSGRPlus = (params = {}) => {
+const useObtenerTercerosSGRPlus = (params = {}) => {
     return useQuery({
         queryKey: ['tercerosSGRPlus', 'lista', params],
         queryFn: () => tercerosService.obtenerTercerosSGRPlus(params),
@@ -141,7 +141,7 @@ export const useObtenerTercerosSGRPlus = (params = {}) => {
     });
 };
 
-export const useObtenerTerceroPorIdSGRPlus = (terceroId) => {
+const useObtenerTerceroPorIdSGRPlus = (terceroId) => {
     return useQuery({
         queryKey: ['tercerosSGRPlus', 'detalle', terceroId],
         queryFn: () => tercerosService.obtenerTerceroPorIdSGRPlus(terceroId),
@@ -151,7 +151,7 @@ export const useObtenerTerceroPorIdSGRPlus = (terceroId) => {
     });
 };
 
-export const useObtenerRelacionesDeSocioSGRPlus = (socioId) => {
+const useObtenerRelacionesDeSocioSGRPlus = (socioId) => {
   return useQuery({
     queryKey: ["socioTerceroRelacionSGRPlus", socioId],
     queryFn: () => tercerosService.obtenerRelacionesDeSocioSGRPlus(socioId),

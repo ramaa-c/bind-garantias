@@ -7,7 +7,7 @@ export const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-export const getMimeType = (filename) => {
+const getMimeType = (filename) => {
   const ext = String(filename || "")
     .split(".")
     .pop()
@@ -37,7 +37,7 @@ export const getMimeType = (filename) => {
   }
 };
 
-export const base64ToBlob = (base64, mimeType) => {
+const base64ToBlob = (base64, mimeType) => {
   const byteCharacters = atob(base64);
   const byteNumbers = new Array(byteCharacters.length);
   for (let i = 0; i < byteCharacters.length; i++) {
@@ -47,7 +47,7 @@ export const base64ToBlob = (base64, mimeType) => {
   return new Blob([byteArray], { type: mimeType });
 };
 
-export const detectMimeTypeFromBase64 = (base64Str) => {
+const detectMimeTypeFromBase64 = (base64Str) => {
   if (!base64Str || typeof base64Str !== "string") return null;
   const clean = base64Str.substring(0, 30);
   if (clean.startsWith("JVBERi")) {

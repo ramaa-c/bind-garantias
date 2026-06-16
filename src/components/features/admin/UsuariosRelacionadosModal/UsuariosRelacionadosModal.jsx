@@ -139,12 +139,10 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
           <p className={styles.introText}>
             Usuarios autorizados a interactuar con esta cadena de valor en la plataforma web.
           </p>
-          <button
-            className={showForm ? styles.btnCancel : styles.btnNuevoBlue}
-            onClick={() => {
-              setShowForm(!showForm);
-              setSearchEmail("");
-            }}
+          <button type="button"
+            className={styles.btnNuevoBlue}
+            style={{ marginBottom: 0, flexShrink: 0 }}
+            onClick={() => toast.info("Funcionalidad próximamente disponible")}
           >
             {showForm ? <><FiX style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> CANCELAR</> : <><FiPlus style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> NUEVO</>}
           </button>

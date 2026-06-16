@@ -34,12 +34,12 @@ export const TarjetaEstado = ({
 
         <div className={styles.actions}>
           {onPrimaryAction && (
-            <button className={styles.btnPrimary} onClick={onPrimaryAction}>
+            <button type="button" className={styles.btnPrimary} onClick={onPrimaryAction}>
               {primaryLabel}
             </button>
           )}
           {onSecondaryAction && (
-            <button className={styles.btnSecondary} onClick={onSecondaryAction}>
+            <button type="button" className={styles.btnSecondary} onClick={onSecondaryAction}>
               {secondaryLabel}
             </button>
           )}

@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { FiBriefcase, FiCreditCard } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, Modal, SelectSocio, InputSocioMasked } from "../../../../../ui";
+import { Button } from "../../../../../ui/Button/Button";
+import { Modal } from "../../../../../ui/Modal/Modal";
+import { SelectSocio } from "../../../../../ui/SelectSocio/SelectSocio";
+import { InputSocioMasked } from "../../../../../ui/InputSocioMasked/InputSocioMasked";
 import { useObtenerTerceros } from "../../../../../../hooks/useTerceros";
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
@@ -10,6 +13,12 @@ import styles from "./BolsaModal.module.css";
 
 export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdActivo }) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) setShowConfirm(false);
+  }
   const { data: agentesData, isLoading: cargandoAgentes } = useObtenerTerceros({
     TipoTerceroRelacionadoID: 8,
   });
@@ -34,7 +43,6 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
           numeroCuentaBolsa: "",
         });
       }
-      setShowConfirm(false);
     }
   }, [isOpen, agenteBolsa, reset]);
 

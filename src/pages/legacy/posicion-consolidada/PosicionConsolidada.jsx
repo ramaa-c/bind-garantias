@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { FiSearch, FiCalendar, FiFilter } from 'react-icons/fi';
 import styles from './PosicionConsolidada.module.css';
-import { Button } from '../../../components/ui';
+import { Button } from "../../../components/ui/Button/Button";
 import { useObtenerContragarantiaSocio, useObtenerLimiteSocio } from '../../../hooks/usePosicionConsolidada';
 import Spinner from '../../../components/ui/Spinner/Spinner';
 
@@ -127,7 +127,7 @@ export default function PosicionConsolidada() {
                   </tr>
                 ) : contragarantias.length > 0 ? (
                   contragarantias.map((c, i) => (
-                    <tr key={i}>
+                    <tr key={c.id || c.descripcion || "contra-" + i}>
                       <td>{c.descripcion}</td>
                       <td className={styles.textRight}>{c.fechavencimiento ? new Date(c.fechavencimiento).toLocaleDateString() : ''}</td>
                       <td className={styles.textRight}>{formatMonto(c.importe)}</td>
@@ -179,7 +179,7 @@ export default function PosicionConsolidada() {
                   </tr>
                 ) : limites.length > 0 ? (
                   limites.map((c, i) => (
-                    <tr key={i}>
+                    <tr key={c.id || c.descripcion || "limite-" + i}>
                       <td>{c.descripcion}</td>
                       <td>{c.estadodescripcion}</td>
                       <td className={styles.textRight}>{c.fechavigenciahasta ? new Date(c.fechavigenciahasta).toLocaleDateString() : ''}</td>
@@ -235,7 +235,7 @@ export default function PosicionConsolidada() {
               </thead>
               <tbody>
                 {productos.length > 0 ? productos.map((p, i) => (
-                  <tr key={i}>
+                  <tr key={p.id || p.tipo || "prod-" + i}>
                     <td>{p.tipo}</td>
                     <td>{p.moneda}</td>
                     <td className={styles.textRight}>{formatMonto(p.importe)}</td>
@@ -275,7 +275,7 @@ export default function PosicionConsolidada() {
               </thead>
               <tbody>
                 {cuotas.length > 0 ? cuotas.map((c, i) => (
-                  <tr key={i}>
+                  <tr key={c.id || c.cuota || "cuota-" + i}>
                     <td>{c.cuota}</td>
                     <td>{c.venc}</td>
                     <td className={styles.textRight}>{formatMonto(c.cap)}</td>
@@ -309,7 +309,7 @@ export default function PosicionConsolidada() {
               </thead>
               <tbody>
                 {certificados.length > 0 ? certificados.map((c, i) => (
-                  <tr key={i} className={i === 0 ? styles.tableRowActive : ''}>
+                  <tr key={c.id || c.cert || "cert-" + i} className={i === 0 ? styles.tableRowActive : ''}>
                     <td>{c.cert}</td>
                     <td>{c.sub}</td>
                     <td className={styles.truncate} title={c.entidad}>{c.entidad}</td>

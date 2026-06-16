@@ -1,8 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, Modal, SelectSocio, InputSocioMasked, BuscadorCuit, CargaArchivos, ProcesamientoModal, Spinner } from "../../../../../ui";
+import { Button } from "../../../../../ui/Button/Button";
+import { Modal } from "../../../../../ui/Modal/Modal";
+import { SelectSocio } from "../../../../../ui/SelectSocio/SelectSocio";
+import { InputSocioMasked } from "../../../../../ui/InputSocioMasked/InputSocioMasked";
+import { BuscadorCuit } from "../../../../../ui/BuscadorCuit/BuscadorCuit";
+import { CargaArchivos } from "../../../../../ui/CargaArchivos/CargaArchivos";
+import { ProcesamientoModal } from "../../../../../ui/ProcesamientoModal/ProcesamientoModal";
+import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useEmpresaActiva } from "../../../../../../hooks/useEmpresaActiva";
 import { afipService } from "../../../../../../services/afipService";
@@ -119,7 +126,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [filesChanged, setFilesChanged] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const { control, reset, setValue, watch, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
+  const { control, reset, setValue, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
     defaultValues: {
       cuit: "",
       nombre: "",
@@ -132,8 +139,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     }
   });
 
-  const cuitValue = watch("cuit");
-  const nombreValue = watch("nombre");
+  const cuitValue = useWatch({ control, name: "cuit" });
+  const nombreValue = useWatch({ control, name: "nombre" });
 
   useEffect(() => {
     if (errors.cuit?.type === "manual") {
@@ -145,26 +152,47 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
 
-  useEffect(() => {
+  const [prevDeps, setPrevDeps] = useState({ isOpen, cuitValue, nombreValue, archivosBackend, dniTerceros, socio });
+
+  if (
+    isOpen !== prevDeps.isOpen ||
+    cuitValue !== prevDeps.cuitValue ||
+    nombreValue !== prevDeps.nombreValue ||
+    archivosBackend !== prevDeps.archivosBackend ||
+    dniTerceros !== prevDeps.dniTerceros ||
+    socio !== prevDeps.socio
+  ) {
+    const wasOpen = prevDeps.isOpen;
+    setPrevDeps({ isOpen, cuitValue, nombreValue, archivosBackend, dniTerceros, socio });
+
+    if (isOpen && !wasOpen) {
+      setDniFrenteFile(null);
+      setDniDorsoFile(null);
+      setFilesChanged(false);
+      setErrorDniFrente(false);
+      setErrorDniDorso(false);
+      setShowConfirm(false);
+      if (socio) {
+        setAfipValidado(true);
+      } else {
+        setAfipValidado(false);
+      }
+    }
+
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
     const nombreLimpio = normalizarTexto(nombreValue || socio?.nombre);
 
     if (isOpen && cuitLimpio.length === 11) {
-      // Buscar primero en la memoria local (dniTerceros)
       const memoryFiles = dniTerceros?.[cuitLimpio];
 
       if (memoryFiles?.dniFrente) {
         setDniFrenteFile(memoryFiles.dniFrente);
         setErrorDniFrente(false);
       } else if (!(dniFrenteFile instanceof File)) {
-        // Fallback a archivosBackend (legajo de la empresa, por compatibilidad)
         const frente = archivosBackend?.find((a) => {
           if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"]) return false;
           const descNorm = normalizarTexto(a.descripcion);
-          return (
-            descNorm.includes(cuitLimpio) ||
-            (nombreLimpio && descNorm.includes(nombreLimpio))
-          );
+          return descNorm.includes(cuitLimpio) || (nombreLimpio && descNorm.includes(nombreLimpio));
         });
 
         if (frente) {
@@ -185,14 +213,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         setDniDorsoFile(memoryFiles.dniDorso);
         setErrorDniDorso(false);
       } else if (!(dniDorsoFile instanceof File)) {
-        // Fallback a archivosBackend
         const dorso = archivosBackend?.find((a) => {
           if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"]) return false;
           const descNorm = normalizarTexto(a.descripcion);
-          return (
-            descNorm.includes(cuitLimpio) ||
-            (nombreLimpio && descNorm.includes(nombreLimpio))
-          );
+          return descNorm.includes(cuitLimpio) || (nombreLimpio && descNorm.includes(nombreLimpio));
         });
 
         if (dorso) {
@@ -215,12 +239,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setErrorDniDorso(false);
     }
     setFilesChanged(false);
-  }, [isOpen, cuitValue, nombreValue, archivosBackend, dniTerceros, socio]);
+  }
 
   useEffect(() => {
     if (isOpen) {
-      setDniFrenteFile(null);
-      setDniDorsoFile(null);
       if (socio) {
         reset({
           cuit: socio.cuit,
@@ -232,7 +254,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           provinciaid: String(socio.provinciaid || ""),
           localidad: socio.localidad || "",
         });
-        setAfipValidado(true);
       } else {
         reset({
           cuit: "",
@@ -244,12 +265,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           provinciaid: "",
           localidad: "",
         });
-        setAfipValidado(false);
       }
-      setFilesChanged(false);
-      setErrorDniFrente(false);
-      setErrorDniDorso(false);
-      setShowConfirm(false);
     }
   }, [isOpen, socio, reset]);
 
@@ -660,7 +676,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                     </span>
                     <input
                       type="text"
-                      value={watch("nombre") || ""}
+                      value={nombreValue || ""}
                       onChange={(e) => setValue("nombre", e.target.value, { shouldDirty: true, shouldValidate: true })}
                       className={styles.editableSummaryName}
                       placeholder="Nombre o Razón Social"

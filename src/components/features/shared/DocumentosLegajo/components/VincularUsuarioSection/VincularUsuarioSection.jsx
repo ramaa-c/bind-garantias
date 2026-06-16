@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FiAlertCircle } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button } from "../../../../../ui";
+import { Button } from "../../../../../ui/Button/Button";
 import { usuarioService } from "../../../../../../services/usuarioService";
 import { sociosService } from "../../../../../../services/sociosService";
 import styles from "../../DocumentosLegajo.module.css";
@@ -62,6 +62,7 @@ export function VincularUsuarioSection({ socioIdActivo }) {
 
       toast.success("Usuario vinculado exitosamente a la empresa.");
       setEmailVincular("");
+      setLoadingVinculacion(false);
     } catch (err) {
       console.error("Error al hacer POST de vinculación:", err);
 
@@ -72,7 +73,6 @@ export function VincularUsuarioSection({ socioIdActivo }) {
           "Ocurrió un error en el servidor al intentar vincular el usuario.",
         );
       }
-    } finally {
       setLoadingVinculacion(false);
     }
   };

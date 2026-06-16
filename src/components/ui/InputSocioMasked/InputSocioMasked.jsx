@@ -126,4 +126,4 @@ export const InputSocioMasked = forwardRef(({
   return renderInput(manualValue, manualOnChange, ref, null);
 });
 
-InputSocioMasked.displayName = "InputSocioMasked";
+InputSocioMasked.displayName = "InputSocioMasked";

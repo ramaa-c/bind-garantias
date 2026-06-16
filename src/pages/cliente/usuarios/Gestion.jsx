@@ -14,7 +14,8 @@ import {
   useReactivarUsuario,
   useResetearPassword,
 } from "../../../hooks/useUsuario";
-import { BuscadorListado, Paginacion } from "../../../components/ui";
+import { BuscadorListado } from "../../../components/ui/BuscadorListado/BuscadorListado";
+import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import Spinner from "../../../components/ui/Spinner/Spinner";
 import styles from "./Gestion.module.css";
 
@@ -172,7 +173,7 @@ export const Gestion = () => {
                     <td className={styles.td}>
                       <div className={styles.actions}>
                         {isBlocked ? (
-                          <button
+                          <button type="button"
                             className={styles.actionButton}
                             title="Reactivar Usuario"
                             onClick={() => handleReactivar(u.usuarioid || u.id)}
@@ -181,7 +182,7 @@ export const Gestion = () => {
                             <FiUnlock />
                           </button>
                         ) : (
-                          <button
+                          <button type="button"
                             className={`${styles.actionButton} ${styles.actionDanger}`}
                             title="Bloquear Usuario"
                             onClick={() => handleBloquear(u.usuarioid || u.id)}
@@ -190,7 +191,7 @@ export const Gestion = () => {
                             <FiLock />
                           </button>
                         )}
-                        <button
+                        <button type="button"
                           className={styles.actionButton}
                           title="Reinicio de Contraseña"
                           onClick={() =>

@@ -5,7 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
-import { InputSimple, Button, Alert } from "../../../components/ui";
+import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
+import { Button } from "../../../components/ui/Button/Button";
+import { Alert } from "../../../components/ui/Alert/Alert";
 import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
@@ -155,4 +157,4 @@ const RecuperarClave = () => {
   );
 };
 
-export default RecuperarClave;
+export default RecuperarClave;

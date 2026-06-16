@@ -7,7 +7,8 @@ import {
   FiMessageSquare,
 } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
-import { Button, InputSocioMasked } from "../../../ui";
+import { Button } from "../../../ui/Button/Button";
+import { InputSocioMasked } from "../../../ui/InputSocioMasked/InputSocioMasked";
 import styles from "./ContactoModal.module.css";
 import { useEscape } from "../../../../hooks/useEscape";
 

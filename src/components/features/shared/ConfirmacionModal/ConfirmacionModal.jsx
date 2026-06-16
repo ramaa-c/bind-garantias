@@ -1,6 +1,7 @@
 import React from "react";
 import { FiAlertCircle } from "react-icons/fi";
-import { Modal, Button } from "../../../ui";
+import { Modal } from "../../../ui/Modal/Modal";
+import { Button } from "../../../ui/Button/Button";
 import styles from "./ConfirmacionModal.module.css";
 
 export function ConfirmacionModal({

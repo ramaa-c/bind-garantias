@@ -139,4 +139,4 @@ export const InputPasswordSeguro = React.forwardRef(
   },
 );
 
-InputPasswordSeguro.displayName = "InputPasswordSeguro";
+InputPasswordSeguro.displayName = "InputPasswordSeguro";

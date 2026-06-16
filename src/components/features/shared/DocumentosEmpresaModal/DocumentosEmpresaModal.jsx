@@ -8,7 +8,8 @@ import {
   FiClock,
   FiLoader,
 } from "react-icons/fi";
-import { Button, CargaArchivos } from "../../../ui";
+import { Button } from "../../../ui/Button/Button";
+import { CargaArchivos } from "../../../ui/CargaArchivos/CargaArchivos";
 import styles from "./DocumentosEmpresaModal.module.css";
 import { useEscape } from "../../../../hooks/useEscape";
 import { socioArchivoService } from "../../../../services/socioArchivoService";

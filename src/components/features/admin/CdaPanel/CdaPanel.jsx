@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { FiEdit, FiCheck } from "react-icons/fi";
 import { toast } from "sonner";
 import { useObtenerCdasPorCadenaId } from "../../../../hooks/useCadenaValor";
-import { InputSimple, Button, Spinner, Modal } from "../../../ui";
+import { InputSimple } from "../../../ui/InputSimple/InputSimple";
+import { Button } from "../../../ui/Button/Button";
+import { Spinner } from "../../../ui/Spinner/Spinner";
+import { Modal } from "../../../ui/Modal/Modal";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import styles from "./CdaPanel.module.css";
 
@@ -163,4 +166,4 @@ export const CdaPanel = ({ activeItem }) => {
       </Modal>
     </div>
   );
-};
+};

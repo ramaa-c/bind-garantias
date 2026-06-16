@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function Spinner({
+export function Spinner({
   size = 48,
   center = false,
   color = "#f5f400"
@@ -90,3 +90,4 @@ const styles = {
     alignItems: "center"
   }
 };
+export default Spinner;

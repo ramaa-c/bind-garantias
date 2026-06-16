@@ -13,7 +13,7 @@
     "@fontsource/metropolis": "^5.2.5",
     "@hookform/resolvers": "^5.2.2",
     "@tanstack/react-query": "^5.90.21",
-    "axios": "^1.15.0",
+    "axios": "^1.17.0",
     "date-fns": "^4.1.0",
     "radix-ui": "^1.4.3",
     "react": "^19.2.0",

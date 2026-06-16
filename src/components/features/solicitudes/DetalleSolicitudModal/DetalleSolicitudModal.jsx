@@ -1,5 +1,6 @@
 import React from "react";
-import { Modal, Button } from "../../../ui";
+import { Modal } from "../../../ui/Modal/Modal";
+import { Button } from "../../../ui/Button/Button";
 import styles from "./DetalleSolicitudModal.module.css";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../../services/sociosService";
@@ -276,7 +277,7 @@ export const DetalleSolicitudModal = ({
                 {solicitud.motivosRechazo &&
                 solicitud.motivosRechazo.length > 0 ? (
                   solicitud.motivosRechazo.map((motivo, idx) => (
-                    <li key={idx}>{motivo}</li>
+                    <li key={motivo}>{motivo}</li>
                   ))
                 ) : (
                   <li>Cliente no bancarizado o posee deudas impagas.</li>
@@ -326,7 +327,7 @@ export const DetalleSolicitudModal = ({
                 const participacion = Number(accionista.participacion) || 0;
 
                 return (
-                  <div key={i} className={styles.fiadorCard}>
+                  <div key={fiador.cuit || fiador.nombre || "fiador-" + i} className={styles.fiadorCard}>
                     <div className={styles.fiadorAvatar}>{iniciales}</div>
                     <div className={styles.fiadorInfo}>
                       <p className={styles.fiadorName}>{nombre}</p>

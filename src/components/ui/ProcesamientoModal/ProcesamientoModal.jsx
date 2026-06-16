@@ -112,7 +112,7 @@ export const ProcesamientoModal = ({
                   {isError && paso.errores && paso.errores.length > 0 && (
                     <ul className={styles.listaErroresPaso}>
                       {paso.errores.map((err, i) => (
-                        <li key={i}>{err}</li>
+                        <li key={err}>{err}</li>
                       ))}
                     </ul>
                   )}

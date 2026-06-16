@@ -13,6 +13,14 @@ const Control = ({ children, ...props }) => (
 
 export const BuscadorListado = ({ valor, onChangeText, onLimpiar }) => {
   const [inputValue, setInputValue] = useState(valor || "");
+  const [prevValor, setPrevValor] = useState(valor);
+
+  if (valor !== prevValor) {
+    setPrevValor(valor);
+    if (valor === "") {
+      setInputValue("");
+    }
+  }
   const [debouncedValue] = useDebounce(inputValue, 500);
 
   useEffect(() => {
@@ -22,11 +30,7 @@ export const BuscadorListado = ({ valor, onChangeText, onLimpiar }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedValue]);
 
-  useEffect(() => {
-    if (valor === "" && inputValue !== "") {
-      setInputValue("");
-    }
-  }, [valor]);
+
 
   const handleInputChange = (newVal, { action }) => {
     if (action === "input-change") {

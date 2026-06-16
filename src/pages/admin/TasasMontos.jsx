@@ -242,14 +242,14 @@ export default function TasasMontos() {
           </p>
         </div>
         <div className={styles.actionsTop}>
-          <button
+          <button type="button"
             onClick={handleRestablecer}
             className={styles.btnReset}
             title="Deshacer cambios locales y volver a configuración de fábrica"
           >
             <FiRefreshCw /> Restablecer
           </button>
-          <button
+          <button type="button"
             onClick={handleGuardar}
             className={`${styles.btnSave} ${hasChanges ? styles.btnSaveGlow : ""}`}
             disabled={!hasChanges}
@@ -261,25 +261,25 @@ export default function TasasMontos() {
 
       {/* Product Tabs */}
       <div className={styles.tabsWrapper}>
-        <button
+        <button type="button"
           className={`${styles.tabBtn} ${activeTab === "lineas" ? styles.tabActive : ""}`}
           onClick={() => handleTabChange("lineas")}
         >
           Líneas de Crédito
         </button>
-        <button
+        <button type="button"
           className={`${styles.tabBtn} ${activeTab === "cheques" ? styles.tabActive : ""}`}
           onClick={() => handleTabChange("cheques")}
         >
           Cheques Avalados
         </button>
-        <button
+        <button type="button"
           className={`${styles.tabBtn} ${activeTab === "pagares" ? styles.tabActive : ""}`}
           onClick={() => handleTabChange("pagares")}
         >
           Pagarés Bursátiles
         </button>
-        <button
+        <button type="button"
           className={`${styles.tabBtn} ${activeTab === "prestamos" ? styles.tabActive : ""}`}
           onClick={() => handleTabChange("prestamos")}
         >
@@ -363,4 +363,4 @@ export default function TasasMontos() {
       </div>
     </div>
   );
-}
+}
