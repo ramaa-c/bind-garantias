@@ -141,7 +141,7 @@ export const OnboardingGuard = ({ children }) => {
   }
 
   if (isAdminCadena) {
-    return <Navigate to={`/${channelInfo.id}/admin/dashboard`} replace />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   if (usuarioWebId && tieneEmpresas) {

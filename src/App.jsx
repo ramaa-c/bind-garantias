@@ -160,88 +160,115 @@ function App() {
               }
             />
 
-            {/* Rutas de Administración */}
+            {/* Redirecciones de admin a rutas globales */}
+            <Route
+              path="admin"
+              element={<Navigate to="/admin/dashboard" replace />}
+            />
             <Route
               path="admin/dashboard"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <Dashboard />
-                  </AdminLayout>
-                </AdminGuard>
-              }
+              element={<Navigate to="/admin/dashboard" replace />}
             />
             <Route
               path="admin/tasas-montos"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <TasasMontos />
-                  </AdminLayout>
-                </AdminGuard>
-              }
+              element={<Navigate to="/admin/tasas-montos" replace />}
             />
             <Route
               path="admin/roles-permisos"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <RolesPermisos />
-                  </AdminLayout>
-                </AdminGuard>
-              }
+              element={<Navigate to="/admin/roles-permisos" replace />}
             />
             <Route
               path="admin/terminos"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <Terminos />
-                  </AdminLayout>
-                </AdminGuard>
-              }
+              element={<Navigate to="/admin/terminos" replace />}
             />
             <Route
               path="admin/banners"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <Banners />
-                  </AdminLayout>
-                </AdminGuard>
-              }
+              element={<Navigate to="/admin/banners" replace />}
             />
             <Route
               path="admin/cadenas-valor"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <CadenasValor />
-                  </AdminLayout>
-                </AdminGuard>
-              }
+              element={<Navigate to="/admin/cadenas-valor" replace />}
             />
             <Route
               path="admin/lineas-productos"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <LineasProductos />
-                  </AdminLayout>
-                </AdminGuard>
-              }
+              element={<Navigate to="/admin/lineas-productos" replace />}
             />
           </Route>
 
+          {/* Rutas de Administración Globales */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <Dashboard />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/tasas-montos"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <TasasMontos />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/roles-permisos"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <RolesPermisos />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/terminos"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <Terminos />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/banners"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <Banners />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/cadenas-valor"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <CadenasValor />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/lineas-productos"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <LineasProductos />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+
           {/* Redirecciones de compatibilidad para rutas legacy de admin */}
-          <Route path="/admin" element={<Navigate to="/default/admin/dashboard" replace />} />
-          <Route path="/admin/dashboard" element={<Navigate to="/default/admin/dashboard" replace />} />
-          <Route path="/admin/tasas-montos" element={<Navigate to="/default/admin/tasas-montos" replace />} />
-          <Route path="/admin/roles-permisos" element={<Navigate to="/default/admin/roles-permisos" replace />} />
-          <Route path="/admin/terminos" element={<Navigate to="/default/admin/terminos" replace />} />
-          <Route path="/admin/banners" element={<Navigate to="/default/admin/banners" replace />} />
-          <Route path="/admin/cadenas-valor" element={<Navigate to="/default/admin/cadenas-valor" replace />} />
-          <Route path="/admin/lineas-productos" element={<Navigate to="/default/admin/lineas-productos" replace />} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

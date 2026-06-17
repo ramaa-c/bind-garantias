@@ -355,7 +355,7 @@ const Login = () => {
           role: "admin",
           nombre: "Administrador General",
         });
-        navigate(`/${channelInfo.id}/admin/dashboard`, { replace: true });
+        navigate("/admin/dashboard", { replace: true });
         return;
       }
 
@@ -366,7 +366,7 @@ const Login = () => {
             role: "admin",
             nombre: "Admin Restringido",
           });
-          navigate(`/${channelInfo.id}/admin/dashboard`, { replace: true });
+          navigate("/admin/dashboard", { replace: true });
           return;
         }
       }

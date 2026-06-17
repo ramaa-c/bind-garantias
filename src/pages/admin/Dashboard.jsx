@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList, FiGlobe, FiGrid, FiChevronRight } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../components/ui/Button/Button";
 import { Badge } from "../../components/ui/Badge/Badge";
@@ -9,6 +9,7 @@ import { SinResultados } from "../../components/ui/SinResultados/SinResultados";
 import { TarjetaMetrica } from "../../components/ui/TarjetaMetrica/TarjetaMetrica";
 import { Select } from "../../components/ui/Select/Select";
 import { useAdminRestrictions } from "../../hooks/useAdminRestrictions";
+import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
 import { CriteriosAceptacionModal } from "../../components/features";
 import api from "../../api/axios";
 import styles from "./Dashboard.module.css";
@@ -86,39 +87,63 @@ const opcionesOrden = [
 ];
 
 export default function Dashboard() {
-  const { cadenaSlug } = useParams();
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [orden, setOrden] = useState("desc");
+  const [selectedCadenaId, setSelectedCadenaId] = useState("all");
 
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
   const [solicitudCda, setSolicitudCda] = useState(null);
-  const { isRestricted } = useAdminRestrictions();
+  const [isChainModalOpen, setIsChainModalOpen] = useState(false);
+  const [chainSearchQuery, setChainSearchQuery] = useState("");
+  const { isRestricted, cadenas } = useAdminRestrictions();
+  const { data: activeCadenas } = useObtenerTodasWeb();
+
+  const selectedChain = (activeCadenas || []).find(
+    (c) => String(c.cadenavalorid || c.CadenaValorID) === String(selectedCadenaId)
+  );
+
+  // Normalize restricted cadenas
+  const restrictedIds = new Set(
+    (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid)
+  );
+
+  const visibleCadenas = isRestricted
+    ? (activeCadenas || []).filter((c) => {
+        const id = c.cadenavalorid || c.CadenaValorID;
+        return restrictedIds.has(id);
+      })
+    : (activeCadenas || []);
+
+  const selectOptions = [
+    { value: "all", label: "Todas las cadenas de valor" },
+    ...visibleCadenas.map((c) => ({
+      value: String(c.cadenavalorid || c.CadenaValorID),
+      label: c.denominacion || `ID: ${c.cadenavalorid || c.CadenaValorID}`,
+    })),
+  ];
+
+  const cadenasKey = (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid).join(",");
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      console.log("[DASHBOARD] loadData started. cadenaSlug:", cadenaSlug);
       try {
-        const targetCadenaId = Number(cadenaSlug) || 0;
-        console.log("[DASHBOARD] targetCadenaId:", targetCadenaId);
+        const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
         
         const params = {};
         if (targetCadenaId > 0) {
           params.CadenaValorID = targetCadenaId;
         }
 
-        console.log("[DASHBOARD] Querying api/TipoLimiteSocio with params:", params);
         const resLimites = await api.get("api/TipoLimiteSocio", { params });
         const listLimites = resLimites.data || [];
-        console.log("[DASHBOARD] Retrieved limits count:", listLimites.length, listLimites);
 
         const resSocios = await api.get("api/Socios");
         const listSocios = resSocios.data || [];
-        console.log("[DASHBOARD] Retrieved socios count:", listSocios.length);
 
         const sociosMap = new Map();
         listSocios.forEach((s) => {
@@ -126,10 +151,16 @@ export default function Dashboard() {
           if (socioId) sociosMap.set(socioId, s);
         });
 
-        const matchedLimites = targetCadenaId
-          ? listLimites.filter((l) => (l.cadenavalorid || l.CadenaValorID) === targetCadenaId)
-          : listLimites;
-        console.log("[DASHBOARD] Matched limits count:", matchedLimites.length, matchedLimites);
+        const matchedLimites = listLimites.filter((l) => {
+          const lCadenaId = l.cadenavalorid || l.CadenaValorID;
+          if (isRestricted && !restrictedIds.has(lCadenaId)) {
+            return false;
+          }
+          if (targetCadenaId > 0 && lCadenaId !== targetCadenaId) {
+            return false;
+          }
+          return true;
+        });
 
         const mapped = matchedLimites.map((l) => {
           const socioId = l.socioid || l.SocioID;
@@ -186,7 +217,7 @@ export default function Dashboard() {
               ? new Date(fchVigenciaHasta).toLocaleString("es-AR")
               : "Reciente",
             tags: ["Canal Activo", "Legajo validado"],
-            cadenaSlug: cadenaSlug,
+            cadenaSlug: "default",
           };
         });
 
@@ -201,7 +232,7 @@ export default function Dashboard() {
     }
 
     loadData();
-  }, [cadenaSlug]);
+  }, [selectedCadenaId, isRestricted, cadenasKey]);
 
   const solicitudesCanal = solicitudes;
 
@@ -276,43 +307,123 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className={styles.kpiGrid}>
-        <TarjetaMetrica
-          className={styles.kpiCard}
-          labelClassName={styles.kpiLabel}
-          valueClassName={styles.kpiValue}
-          icon={FiBriefcase}
-          label="Líneas Totales"
-          value={solicitudesCanal.length}
-          footer={<div className={styles.kpiFooter}>En cartera activa</div>}
-        />
-        <TarjetaMetrica
-          className={styles.kpiCard}
-          labelClassName={styles.kpiLabel}
-          valueClassName={styles.kpiValue}
-          icon={FiTrendingUp}
-          label="Volumen Gestionado (Aprox)"
-          value={`$ ${(totalMonto / 1000000).toFixed(1)}M`}
-          footer={<div className={styles.kpiFooter}>Pesos consolidados (1 USD = $1500)</div>}
-        />
-        <TarjetaMetrica
-          className={styles.kpiCard}
-          labelClassName={styles.kpiLabel}
-          valueClassName={styles.kpiValueWarning}
-          icon={FiClock}
-          label="Pendientes de Validación"
-          value={solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length}
-          footer={<div className={styles.kpiFooter}>Requieren acción inmediata</div>}
-        />
-        <TarjetaMetrica
-          className={styles.kpiCard}
-          labelClassName={styles.kpiLabel}
-          valueClassName={styles.kpiValueSuccess}
-          icon={FiCheckCircle}
-          label="Aprobadas"
-          value={solicitudesCanal.filter((s) => s.estado === "Aprobada").length}
-          footer={<div className={styles.kpiFooter}>Listas para operar</div>}
-        />
+      <div className={styles.topSectionSplit}>
+        {/* Left Column: Selected Chain Card */}
+        <div className={styles.selectedChainCardContainer}>
+          {selectedCadenaId === "all" ? (
+            <div className={`${styles.chainSelectorCard} ${styles.globalConsolidatedCard}`}>
+              <div className={styles.chainCardHeader}>
+                <div className={styles.globalIconWrapper}>
+                  <FiGlobe size={24} />
+                </div>
+                <div>
+                  <h2 className={styles.chainCardTitle}>Consolidado General</h2>
+                  <p className={styles.chainCardSubtitle}>Todas las Cadenas de Valor</p>
+                </div>
+              </div>
+              <p className={styles.chainCardDescription}>
+                Supervisando solicitudes de todas las cadenas comerciales activas en el portal.
+              </p>
+              <Button
+                onClick={() => {
+                  setChainSearchQuery("");
+                  setIsChainModalOpen(true);
+                }}
+                variant="primary"
+                size="sm"
+                className={styles.changeChainBtn}
+              >
+                Seleccionar Cadena <FiChevronRight />
+              </Button>
+            </div>
+          ) : (
+            <div className={styles.chainSelectorCard}>
+              <div className={styles.chainCardHeader}>
+                {selectedChain?.logo ? (
+                  <div className={styles.selectedChainLogoWrapper}>
+                    <img
+                      src={
+                        selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
+                          ? selectedChain.logo
+                          : `data:image/png;base64,${selectedChain.logo}`
+                      }
+                      alt={selectedChain.denominacion}
+                      className={styles.selectedChainLogo}
+                    />
+                  </div>
+                ) : (
+                  <div className={styles.globalIconWrapper}>
+                    <FiGrid size={24} />
+                  </div>
+                )}
+                <div>
+                  <h2 className={styles.chainCardTitle}>{selectedChain?.denominacion || "Cargando..."}</h2>
+                  <p className={styles.chainCardSubtitle}>Referencia: {selectedChain?.referencia || "Sin Ref"}</p>
+                </div>
+              </div>
+              <p className={styles.chainCardDescription}>
+                Visualizando solicitudes de la cadena comercial seleccionada. ID: #{selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}.
+              </p>
+              <div className={styles.btnRow}>
+                <Button
+                  onClick={() => {
+                    setChainSearchQuery("");
+                    setIsChainModalOpen(true);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className={styles.changeChainBtn}
+                >
+                  Cambiar Cadena <FiChevronRight />
+                </Button>
+                <Button
+                  onClick={() => setSelectedCadenaId("all")}
+                  variant="ghost"
+                  size="sm"
+                  className={styles.viewAllBtn}
+                >
+                  Ver Todas
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Compact Metrics Grid (2x2) */}
+        <div className={styles.compactMetricsGrid}>
+          <TarjetaMetrica
+            className={styles.kpiCardCompact}
+            labelClassName={styles.kpiLabelCompact}
+            valueClassName={styles.kpiValueCompact}
+            icon={FiBriefcase}
+            label="Líneas"
+            value={solicitudesCanal.length}
+          />
+          <TarjetaMetrica
+            className={styles.kpiCardCompact}
+            labelClassName={styles.kpiLabelCompact}
+            valueClassName={styles.kpiValueCompact}
+            icon={FiTrendingUp}
+            label="Volumen"
+            value={`$ ${(totalMonto / 1000000).toFixed(1)}M`}
+          />
+          <TarjetaMetrica
+            className={styles.kpiCardCompact}
+            labelClassName={styles.kpiLabelCompact}
+            valueClassName={styles.kpiValueWarningCompact}
+            icon={FiClock}
+            label="Pendientes"
+            value={solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length}
+          />
+          <TarjetaMetrica
+            className={styles.kpiCardCompact}
+            labelClassName={styles.kpiLabelCompact}
+            valueClassName={styles.kpiValueSuccessCompact}
+            icon={FiCheckCircle}
+            label="Aprobadas"
+            value={solicitudesCanal.filter((s) => s.estado === "Aprobada").length}
+          />
+        </div>
       </div>
 
       {/* Controls & Filter toolbar */}
@@ -629,6 +740,94 @@ export default function Dashboard() {
         onClose={() => setSolicitudCda(null)}
         solicitud={solicitudCda}
       />
+
+      {/* Value Chain Selection Modal */}
+      <Modal
+        isOpen={isChainModalOpen}
+        onClose={() => setIsChainModalOpen(false)}
+        title="SELECCIONAR CADENA DE VALOR"
+        maxWidth="50rem"
+        variant="blue"
+      >
+        <div className={styles.modalChainContent}>
+          <div className={styles.modalSearchWrap}>
+            <FiSearch className={styles.iconSearchModal} />
+            <input
+              type="text"
+              placeholder="Buscar cadena por denominación o referencia..."
+              value={chainSearchQuery}
+              onChange={(e) => setChainSearchQuery(e.target.value)}
+              className={styles.modalSearchInput}
+            />
+          </div>
+
+          <div className={styles.chainGridModal}>
+            {/* Option: All Chains */}
+            <div
+              className={`${styles.chainCardModal} ${selectedCadenaId === "all" ? styles.chainCardActive : ""}`}
+              onClick={() => {
+                setSelectedCadenaId("all");
+                setIsChainModalOpen(false);
+              }}
+            >
+              <div className={styles.chainCardLogo}>
+                <FiGlobe size={28} />
+              </div>
+              <div className={styles.chainCardModalInfo}>
+                <h3>Todas las cadenas</h3>
+                <p>Consolidado General de solicitudes</p>
+              </div>
+            </div>
+
+            {/* Filter and map visible chains */}
+            {visibleCadenas
+              .filter((c) => {
+                const denom = (c.denominacion || "").toLowerCase();
+                const ref = (c.referencia || "").toLowerCase();
+                const q = chainSearchQuery.toLowerCase();
+                return denom.includes(q) || ref.includes(q);
+              })
+              .map((c) => {
+                const id = String(c.cadenavalorid || c.CadenaValorID);
+                const isSelected = String(selectedCadenaId) === id;
+                return (
+                  <div
+                    key={id}
+                    className={`${styles.chainCardModal} ${isSelected ? styles.chainCardActive : ""}`}
+                    onClick={() => {
+                      setSelectedCadenaId(id);
+                      setIsChainModalOpen(false);
+                    }}
+                  >
+                    <div className={styles.chainCardLogo}>
+                      {c.logo ? (
+                        <img
+                          src={
+                            c.logo.startsWith("data:") || c.logo.startsWith("http")
+                              ? c.logo
+                              : `data:image/png;base64,${c.logo}`
+                          }
+                          alt={c.denominacion}
+                        />
+                      ) : (
+                        <FiGrid size={28} />
+                      )}
+                    </div>
+                    <div className={styles.chainCardModalInfo}>
+                      <h3>{c.denominacion}</h3>
+                      <p>{c.referencia || `ID: #${id}`}</p>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+        <div className={styles.modalFootCustom}>
+          <Button variant="outlineBlue" size="sm" onClick={() => setIsChainModalOpen(false)}>
+            Cancelar
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

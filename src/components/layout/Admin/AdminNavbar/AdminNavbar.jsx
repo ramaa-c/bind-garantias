@@ -37,10 +37,10 @@ export default function AdminNavbar() {
 
   const handleLogout = () => {
     if (clearAuth) clearAuth();
-    navigate(`/${cadenaSlug || "default"}/login`);
+    navigate("/default/login");
   };
 
-  const isActive = (path) => location.pathname.startsWith(`/${cadenaSlug || "default"}${path}`);
+  const isActive = (path) => location.pathname === path;
 
   const toggleDropdown = (name) => {
     setActiveDropdown((prev) => (prev === name ? null : name));
@@ -49,7 +49,7 @@ export default function AdminNavbar() {
   const handleNavigate = (path) => {
     if (!path) return;
     setActiveDropdown(null);
-    navigate(`/${cadenaSlug || "default"}${path}`);
+    navigate(path);
   };
 
   const adminMenu = [
@@ -83,7 +83,7 @@ export default function AdminNavbar() {
     <div className={styles.navWrapper}>
       {/* Topmost branding bar */}
       <div className={styles.topBrandBar}>
-        <div className={styles.logoBox} role="button" tabIndex={0} onClick={() => navigate(`/${cadenaSlug || "default"}/admin/dashboard`)}>
+        <div className={styles.logoBox} role="button" tabIndex={0} onClick={() => navigate("/admin/dashboard")}>
           <img src={logoBind} alt="BIND Logo" className={styles.logoImg} />
           {channelInfo && channelInfo.id !== "default" && (
             <>
