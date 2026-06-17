@@ -75,6 +75,16 @@ export const OnboardingGuard = ({ children }) => {
 
   const isVendor = vendorData?.isVendor || false;
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
+
+  React.useEffect(() => {
+    if (tieneEmpresas && !activeSocioId && !isVendor) {
+      const firstSocioId = listaEmpresas[0]?.socioid || listaEmpresas[0]?.SocioID;
+      if (firstSocioId) {
+        setActiveSocioId(firstSocioId);
+      }
+    }
+  }, [tieneEmpresas, activeSocioId, isVendor, listaEmpresas, setActiveSocioId]);
 
   React.useEffect(() => {
     if (isVendor && !isLoadingVendor && user && !isVendorMock) {
