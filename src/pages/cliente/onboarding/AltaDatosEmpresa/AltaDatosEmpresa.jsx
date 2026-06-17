@@ -54,6 +54,7 @@ export const AltaDatosEmpresa = () => {
   });
 
   const user = useAuthStore((state) => state.user);
+  const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
 
   const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email);
   const usuariowebidReal =
@@ -185,6 +186,7 @@ export const AltaDatosEmpresa = () => {
         if (vendorData?.isVendor) {
           navigate(`/${channelInfo?.id || "default"}/seleccionar-empresa`, { replace: true });
         } else {
+          setActiveSocioId(socioId);
           navigate(`/${channelInfo?.id || "default"}/inicio`, { replace: true });
         }
       } else {

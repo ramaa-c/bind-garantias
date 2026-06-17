@@ -551,19 +551,6 @@ export const AltaOperacion = () => {
 
       let finalSocioId = socioIdActivo;
 
-      // Si no tenemos el ID de socio activo en el contexto, intentamos resolverlo por CUIT desde el backend
-      if (!finalSocioId && cuitLimpio) {
-        try {
-          const sociosLista = await sociosService.obtenerSociosWeb({ Cuit: cuitLimpio });
-          const arr = Array.isArray(sociosLista) ? sociosLista : sociosLista?.data || [];
-          if (arr.length > 0) {
-            finalSocioId = arr[0].socioid || arr[0].SocioID;
-          }
-        } catch (e) {
-          console.warn("[ALTA OPERACION] Error al obtener socioid por CUIT:", e);
-        }
-      }
-
       // Si no se encuentra el ID real del socio, bloqueamos el envío de la solicitud
       if (!finalSocioId) {
         toast.error("Error al enviar", {

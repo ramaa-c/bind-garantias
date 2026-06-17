@@ -204,7 +204,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           ),
         }));
 
-        // ── NUEVA VALIDACIÓN: Correo coincidente en SGRPlus
+        // ── NUEVA VALIDACIÓN: Existencia en base de datos
         try {
           const sociosEncontrados = await sociosService.obtenerSocios({ Cuit: cuit });
           if (sociosEncontrados && sociosEncontrados.length > 0) {
@@ -212,20 +212,24 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             const socioEmailStr = socioExistente.email ? socioExistente.email.trim() : "";
             const currentUserEmail = user?.email ? user.email.trim() : "";
             
+            setProcesoModal({
+              isOpen: false,
+              titulo: "",
+              pasos: [],
+              hasError: false,
+              isSystemError: false,
+            });
+            
             if (socioEmailStr && currentUserEmail && socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()) {
-              setProcesoModal({
-                isOpen: false,
-                titulo: "",
-                pasos: [],
-                hasError: false,
-                isSystemError: false,
-              });
-              
               if (onSocioExistente) {
                 onSocioExistente(socioExistente, "email_mismatch");
               }
-              return;
+            } else {
+              if (onSocioExistente) {
+                onSocioExistente(socioExistente, "ya_existe");
+              }
             }
+            return;
           }
         } catch (errorSocios) {
           console.warn("Error consultando socios para validación de email:", errorSocios);
