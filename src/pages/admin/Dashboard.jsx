@@ -101,84 +101,109 @@ export default function Dashboard() {
   useEffect(() => {
     async function loadData() {
       setLoading(true);
+      console.log("[DASHBOARD] loadData started. cadenaSlug:", cadenaSlug);
       try {
         const targetCadenaId = Number(cadenaSlug) || 0;
+        console.log("[DASHBOARD] targetCadenaId:", targetCadenaId);
         
-        if (!targetCadenaId) {
-          setSolicitudes(solicitudesIniciales);
-          setLoading(false);
-          return;
+        const params = {};
+        if (targetCadenaId > 0) {
+          params.CadenaValorID = targetCadenaId;
         }
 
-        const resLimites = await api.get("api/TipoLimiteSocio");
+        console.log("[DASHBOARD] Querying api/TipoLimiteSocio with params:", params);
+        const resLimites = await api.get("api/TipoLimiteSocio", { params });
         const listLimites = resLimites.data || [];
+        console.log("[DASHBOARD] Retrieved limits count:", listLimites.length, listLimites);
 
         const resSocios = await api.get("api/Socios");
         const listSocios = resSocios.data || [];
+        console.log("[DASHBOARD] Retrieved socios count:", listSocios.length);
 
         const sociosMap = new Map();
         listSocios.forEach((s) => {
-          if (s.socioid) sociosMap.set(s.socioid, s);
+          const socioId = s.socioid || s.SocioID;
+          if (socioId) sociosMap.set(socioId, s);
         });
 
-        const matchedLimites = listLimites.filter((l) => l.cadenavalorid === targetCadenaId);
+        const matchedLimites = targetCadenaId
+          ? listLimites.filter((l) => (l.cadenavalorid || l.CadenaValorID) === targetCadenaId)
+          : listLimites;
+        console.log("[DASHBOARD] Matched limits count:", matchedLimites.length, matchedLimites);
 
-        const seen = new Set();
-        const deduplicatedLimites = [];
+        const seen = new Map();
         matchedLimites.forEach((l) => {
-          const key = `${l.solicitudid}-${l.tipolimiteid}`;
-          if (l.solicitudid > 0) {
-            if (!seen.has(key)) {
-              seen.add(key);
-              deduplicatedLimites.push(l);
+          const solicitudId = l.solicitudid || l.SolicitudID || 0;
+          const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID || 0;
+          const socioId = l.socioid || l.SocioID || 0;
+          const key = `${solicitudId}-${tipoLimiteId}`;
+
+          if (solicitudId > 0) {
+            const existing = seen.get(key);
+            if (!existing || (socioId > 0 && (existing.socioid || existing.SocioID || 0) === 0)) {
+              seen.set(key, l);
             }
           } else {
-            deduplicatedLimites.push(l);
+            seen.set(Math.random().toString(), l);
           }
         });
 
+        const deduplicatedLimites = Array.from(seen.values());
+        console.log("[DASHBOARD] Deduplicated limits count:", deduplicatedLimites.length, deduplicatedLimites);
+
         const mapped = deduplicatedLimites.map((l) => {
-          let socio = l.socioid ? sociosMap.get(l.socioid) : null;
+          const socioId = l.socioid || l.SocioID;
+          let socio = socioId ? sociosMap.get(socioId) : null;
           if (!socio) {
             socio = listSocios.find((s) => s.denominacion) || null;
           }
 
+          const tipoLimiteEstadoId = l.tipolimiteestadoid || l.TipoLimiteEstadoID || 0;
           const estadoText =
-            l.tipolimiteestadoid === 2
+            tipoLimiteEstadoId === 2
               ? "Aprobada"
-              : l.tipolimiteestadoid === 3
+              : tipoLimiteEstadoId === 3
                 ? "Rechazada"
                 : "Pendiente de validación";
 
           const accionText =
-            l.tipolimiteestadoid === 2
+            tipoLimiteEstadoId === 2
               ? "Aprobada por Administrador"
-              : l.tipolimiteestadoid === 3
+              : tipoLimiteEstadoId === 3
                 ? "Rechazada por Administrador"
                 : "Espera de documentación de Alta de línea";
 
+          const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
+          const tipoText =
+            tipoLimiteId === 1
+              ? "Alta de línea (Cheque)"
+              : tipoLimiteId === 2
+                ? "Alta de línea (Préstamo)"
+                : "Alta de línea (Pagaré)";
+
+          const importeLimite = l.importelimite || l.ImporteLimite;
+          const monedaId = l.monedaid || l.MonedaID;
+          const fchVigenciaDesde = l.fchvigenciadesde || l.FchVigenciaDesde;
+          const fchVigenciaHasta = l.fchvigenciahasta || l.FchVigenciaHasta;
+          const tipoLimiteSocioId = l.tipolimitesocioid || l.TipoLimiteSocioID;
+
           return {
-            id: l.tipolimitesocioid?.toString() || Math.random().toString(),
-            tipo:
-              l.tipolimiteid === 1
-                ? "Alta de línea (Cheque)"
-                : l.tipolimiteid === 2
-                  ? "Alta de línea (Préstamo)"
-                  : "Alta de línea (Pagaré)",
-            monto: l.importelimite
-              ? new Intl.NumberFormat("es-AR").format(l.importelimite)
+            id: tipoLimiteSocioId?.toString() || Math.random().toString(),
+            tipo: tipoText,
+            monto: importeLimite
+              ? new Intl.NumberFormat("es-AR").format(importeLimite)
               : "0",
-            moneda: l.monedaid === 2 ? "U$D" : "$",
+            moneda: monedaId === 2 ? "U$D" : "$",
             cliente: socio?.denominacion || "SANTA ANGELINA S.A.",
             cuit: socio?.cuit || "30-68052476-5",
             usuario: socio?.email || "pruebabind19@yopmail.com",
             estado: estadoText,
             accionPendiente: accionText,
-            creado: l.fchvigenciadesde
-              ? new Date(l.fchvigenciadesde).toLocaleString("es-AR")
+            creado: fchVigenciaDesde
+              ? new Date(fchVigenciaDesde).toLocaleString("es-AR")
               : "Reciente",
-            actualizado: l.fchvigenciahasta
-              ? new Date(l.fchvigenciahasta).toLocaleString("es-AR")
+            actualizado: fchVigenciaHasta
+              ? new Date(fchVigenciaHasta).toLocaleString("es-AR")
               : "Reciente",
             tags: ["Canal Activo", "Legajo validado"],
             cadenaSlug: cadenaSlug,
