@@ -102,3 +102,39 @@ input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
   display: none;
 }
+
+/* =========================================================
+   GLOBAL SCROLLBAR STYLES (FINTECH MODERN)
+   ========================================================= */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+
+*:hover {
+  scrollbar-color: rgba(76, 101, 230, 0.4) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: transparent; /* Invisible por defecto */
+  border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(76, 101, 230, 0.4); /* Azul Bind translúcido al hacer hover */
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(76, 101, 230, 0.8); /* Azul Bind sólido al hacer hover en la scrollbar */
+}

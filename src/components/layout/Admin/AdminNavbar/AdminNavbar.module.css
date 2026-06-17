@@ -60,15 +60,15 @@
 
 /* Etiqueta Admin con el nuevo branding amarillo y negro corporativo */
 .adminTag {
-  background: var(--yellow, #f5f400);
-  color: #000000;
+  background: var(--color-azul-bind, #4c65e6);
+  color: #ffffff;
   font-size: 0.6875rem;
   font-weight: 800;
   padding: 0.2rem 0.5rem;
   border-radius: 0.25rem;
   letter-spacing: 0.05rem;
-  box-shadow: 0 2px 4px rgba(245, 244, 0, 0.25);
-  border: 1px solid #000000;
+  box-shadow: 0 2px 4px rgba(76, 101, 230, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .userMenuContainer {
@@ -102,9 +102,9 @@
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: rgba(245, 244, 0, 0.15);
-  color: var(--yellow, #f5f400);
-  border: 1px solid rgba(245, 244, 0, 0.3);
+  background: rgba(76, 101, 230, 0.15);
+  color: var(--color-azul-bind, #4c65e6);
+  border: 1px solid rgba(76, 101, 230, 0.3);
 }
 
 .userIcon {
@@ -168,7 +168,7 @@
 }
 
 .userDropdownRole {
-  color: var(--yellow, #f5f400);
+  color: var(--color-azul-bind, #4c65e6);
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -249,14 +249,14 @@
 .navButton:hover,
 .dropdownActive {
   color: #ffffff;
-  background: rgba(245, 244, 0, 0.05);
-  border-bottom: 3px solid rgba(245, 244, 0, 0.4);
+  background: rgba(76, 101, 230, 0.05);
+  border-bottom: 3px solid rgba(76, 101, 230, 0.4);
 }
 
 .active {
-  background: rgba(245, 244, 0, 0.08);
-  color: var(--yellow, #f5f400);
-  border-bottom: 3px solid var(--yellow, #f5f400);
+  background: rgba(76, 101, 230, 0.08);
+  color: var(--color-azul-bind, #4c65e6);
+  border-bottom: 3px solid var(--color-azul-bind, #4c65e6);
   font-weight: 700;
 }
 
@@ -268,7 +268,7 @@
 .navButton:hover .chevron,
 .dropdownActive .chevron,
 .active .chevron {
-  color: var(--yellow, #f5f400);
+  color: var(--color-azul-bind, #4c65e6);
 }
 
 .dropdownActive .chevron {
@@ -333,9 +333,9 @@
 }
 
 .dropdownItem:hover {
-  background-color: rgba(245, 244, 0, 0.06);
+  background-color: rgba(76, 101, 230, 0.06);
   color: #ffffff;
-  border-left: 3px solid var(--yellow, #f5f400);
+  border-left: 3px solid var(--color-azul-bind, #4c65e6);
   padding-left: 1.25rem;
   font-weight: 600;
 }

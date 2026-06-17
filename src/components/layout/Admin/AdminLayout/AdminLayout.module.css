@@ -2,7 +2,10 @@
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  background-color: #0d1117;
+  background-color: #070a11;
+  background-image: 
+    radial-gradient(ellipse at 50% -20%, rgba(76, 101, 230, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse at 0% 100%, rgba(76, 101, 230, 0.05) 0%, transparent 50%);
   color: #f0f6fc;
   font-family:
     "Inter",
@@ -15,34 +18,36 @@
 
 .blobTop {
   position: absolute;
-  top: -10vw;
-  left: -10vw;
-  width: 40vw;
-  height: 40vw;
+  top: -15vw;
+  left: -5vw;
+  width: 50vw;
+  height: 50vw;
   background: radial-gradient(
     circle,
-    rgba(43, 113, 200, 0.15) 0%,
-    rgba(13, 17, 23, 0) 70%
+    rgba(76, 101, 230, 0.15) 0%,
+    rgba(76, 101, 230, 0) 65%
   );
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
+  filter: blur(50px);
 }
 
 .blobRight {
   position: absolute;
-  top: 20vw;
-  right: -10vw;
-  width: 45vw;
-  height: 45vw;
+  top: 30vw;
+  right: -15vw;
+  width: 55vw;
+  height: 55vw;
   background: radial-gradient(
     circle,
-    rgba(43, 113, 200, 0.15) 0%,
-    rgba(13, 17, 23, 0) 70%
+    rgba(62, 207, 142, 0.06) 0%,
+    rgba(62, 207, 142, 0) 65%
   );
   border-radius: 50%;
   pointer-events: none;
   z-index: 0;
+  filter: blur(60px);
 }
 
 .adminContent {

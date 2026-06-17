@@ -8,6 +8,7 @@ import { Modal } from "../../components/ui/Modal/Modal";
 import { SinResultados } from "../../components/ui/SinResultados/SinResultados";
 import { TarjetaMetrica } from "../../components/ui/TarjetaMetrica/TarjetaMetrica";
 import { Select } from "../../components/ui/Select/Select";
+import { SkeletonTable } from "../../components/ui";
 import { useAdminRestrictions } from "../../hooks/useAdminRestrictions";
 import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
 import { CriteriosAceptacionModal } from "../../components/features";
@@ -310,7 +311,24 @@ export default function Dashboard() {
       <div className={styles.topSectionSplit}>
         {/* Left Column: Selected Chain Card */}
         <div className={styles.selectedChainCardContainer}>
-          {selectedCadenaId === "all" ? (
+          {loading ? (
+            <div className={styles.chainSelectorCard}>
+              <div className={styles.chainCardHeader}>
+                <div className={styles.skeletonBlock} style={{ width: '48px', height: '48px', borderRadius: '0.625rem', flexShrink: 0 }}></div>
+                <div style={{ flex: 1 }}>
+                  <div className={styles.skeletonBlock} style={{ height: '1.1875rem', width: '60%', marginBottom: '0.15rem', borderRadius: '4px' }}></div>
+                  <div className={styles.skeletonBlock} style={{ height: '0.8rem', width: '40%', borderRadius: '4px', marginTop: '0.2rem' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className={styles.skeletonBlock} style={{ height: '0.8375rem', width: '90%', borderRadius: '4px', marginBottom: '0.4rem' }}></div>
+                <div className={styles.skeletonBlock} style={{ height: '0.8375rem', width: '70%', borderRadius: '4px' }}></div>
+              </div>
+              <div className={styles.btnRow}>
+                <div className={styles.skeletonBlock} style={{ height: '32px', width: '120px', borderRadius: '6px' }}></div>
+              </div>
+            </div>
+          ) : selectedCadenaId === "all" ? (
             <div className={`${styles.chainSelectorCard} ${styles.globalConsolidatedCard}`}>
               <div className={styles.chainCardHeader}>
                 <div className={styles.globalIconWrapper}>
@@ -329,7 +347,7 @@ export default function Dashboard() {
                   setChainSearchQuery("");
                   setIsChainModalOpen(true);
                 }}
-                variant="primary"
+                variant="blue"
                 size="sm"
                 className={styles.changeChainBtn}
               >
@@ -370,7 +388,7 @@ export default function Dashboard() {
                     setChainSearchQuery("");
                     setIsChainModalOpen(true);
                   }}
-                  variant="outline"
+                  variant="outlineBlue"
                   size="sm"
                   className={styles.changeChainBtn}
                 >
@@ -398,6 +416,7 @@ export default function Dashboard() {
             icon={FiBriefcase}
             label="Líneas"
             value={solicitudesCanal.length}
+            isLoading={loading}
           />
           <TarjetaMetrica
             className={styles.kpiCardCompact}
@@ -406,6 +425,7 @@ export default function Dashboard() {
             icon={FiTrendingUp}
             label="Volumen"
             value={`$ ${(totalMonto / 1000000).toFixed(1)}M`}
+            isLoading={loading}
           />
           <TarjetaMetrica
             className={styles.kpiCardCompact}
@@ -414,6 +434,7 @@ export default function Dashboard() {
             icon={FiClock}
             label="Pendientes"
             value={solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length}
+            isLoading={loading}
           />
           <TarjetaMetrica
             className={styles.kpiCardCompact}
@@ -422,6 +443,7 @@ export default function Dashboard() {
             icon={FiCheckCircle}
             label="Aprobadas"
             value={solicitudesCanal.filter((s) => s.estado === "Aprobada").length}
+            isLoading={loading}
           />
         </div>
       </div>
@@ -469,7 +491,7 @@ export default function Dashboard() {
       {/* Main Operations List mimicking user screenshot */}
       <div className={styles.listWrapper}>
         {loading ? (
-          <div className={styles.emptyState}>Cargando solicitudes reales...</div>
+          <SkeletonTable rows={4} />
         ) : filtradas.length === 0 ? (
           <SinResultados
             className={styles.emptyState}
@@ -498,11 +520,23 @@ export default function Dashboard() {
                     <div className={styles.rowHeaderInfo}>
                       <span className={styles.tipoText}>{item.tipo}</span>
                       <div className={styles.tagsWrap}>
-                        {item.tags?.map((t) => (
-                          <Badge key={t} className={styles.tagBadge}>
-                            {t}
-                          </Badge>
-                        ))}
+                        {item.tags?.map((t) => {
+                          const lowerT = t.toLowerCase();
+                          let tagStyle = styles.tagBadge;
+                          if (lowerT.includes("activo") || lowerT.includes("validado") || lowerT.includes("aceptados")) {
+                            tagStyle = `${styles.tagBadge} ${styles.tagSuccess}`;
+                          } else if (lowerT.includes("pendiente") || lowerT.includes("revisión")) {
+                            tagStyle = `${styles.tagBadge} ${styles.tagWarning}`;
+                          } else if (lowerT.includes("nuevo")) {
+                            tagStyle = `${styles.tagBadge} ${styles.tagInfo}`;
+                          }
+                          
+                          return (
+                            <Badge key={t} className={tagStyle}>
+                              {t}
+                            </Badge>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -571,7 +605,7 @@ export default function Dashboard() {
                           </Button>
                           <Button
                             onClick={() => setSolicitudDetalle(item)}
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             className={styles.btnDetailCustom}
                           >
@@ -609,7 +643,7 @@ export default function Dashboard() {
                                 `Continuando flujo de gestión N°${item.id}`,
                               );
                             }}
-                            variant="primary"
+                            variant="outlineBlue"
                             size="sm"
                             className={styles.btnContinueCustom}
                           >
@@ -618,7 +652,7 @@ export default function Dashboard() {
 
                           <Button
                             onClick={() => setSolicitudDetalle(item)}
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             className={styles.btnDetailCustom}
                           >
