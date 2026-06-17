@@ -131,27 +131,7 @@ export default function Dashboard() {
           : listLimites;
         console.log("[DASHBOARD] Matched limits count:", matchedLimites.length, matchedLimites);
 
-        const seen = new Map();
-        matchedLimites.forEach((l) => {
-          const solicitudId = l.solicitudid || l.SolicitudID || 0;
-          const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID || 0;
-          const socioId = l.socioid || l.SocioID || 0;
-          const key = `${solicitudId}-${tipoLimiteId}`;
-
-          if (solicitudId > 0) {
-            const existing = seen.get(key);
-            if (!existing || (socioId > 0 && (existing.socioid || existing.SocioID || 0) === 0)) {
-              seen.set(key, l);
-            }
-          } else {
-            seen.set(Math.random().toString(), l);
-          }
-        });
-
-        const deduplicatedLimites = Array.from(seen.values());
-        console.log("[DASHBOARD] Deduplicated limits count:", deduplicatedLimites.length, deduplicatedLimites);
-
-        const mapped = deduplicatedLimites.map((l) => {
+        const mapped = matchedLimites.map((l) => {
           const socioId = l.socioid || l.SocioID;
           let socio = socioId ? sociosMap.get(socioId) : null;
           if (!socio) {
