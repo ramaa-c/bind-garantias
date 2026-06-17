@@ -32,3 +32,39 @@
   font-weight: bold;
   margin: 0;
 }
+
+/* Skeleton Loading */
+.skeletonWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+}
+
+.skeletonBlock {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.skeletonIcon {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  height: 1.8rem;
+  width: 1.8rem;
+  border-radius: 50%;
+}
+
+.skeletonValue {
+  height: 1.6rem;
+  width: 60%;
+  margin-top: 0.5rem;
+  border-radius: 6px;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}

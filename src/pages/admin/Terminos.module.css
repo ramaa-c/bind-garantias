@@ -36,8 +36,8 @@
 }
 
 .btnPublish {
-  background: var(--yellow, #f5f400);
-  color: #000000;
+  background: var(--color-azul-bind, #4c65e6);
+  color: #ffffff;
   border: none;
   padding: 0.75rem 1.25rem;
   border-radius: 0.5rem;
@@ -49,13 +49,13 @@
   gap: 0.4rem;
   transition: all 0.2s;
   align-self: flex-end;
-  box-shadow: 0 4px 12px rgba(245, 244, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(76, 101, 230, 0.2);
 }
 
 .btnPublish:hover {
-  background: #e5e400;
+  background: var(--color-azul-bind-600, #3b4ed1);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(245, 244, 0, 0.4);
+  box-shadow: 0 6px 16px rgba(76, 101, 230, 0.4);
 }
 
 @media (min-width: 768px) {
@@ -65,10 +65,10 @@
 }
 
 .btnPublish:disabled {
-  background: #161b22;
+  background: rgba(255, 255, 255, 0.02);
   color: #484f58;
   cursor: not-allowed;
-  border: 1px solid #30363d;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .btnPublishGlow {
@@ -120,8 +120,8 @@
 }
 
 .docCardBtn {
-  background: #161b22;
-  border: 1px solid #30363d;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.5rem;
   padding: 1rem;
   display: flex;
@@ -133,19 +133,19 @@
 }
 
 .docCardBtn:hover {
-  background: rgba(245, 244, 0, 0.03);
-  border-color: var(--yellow, #f5f400);
+  background: rgba(76, 101, 230, 0.03);
+  border-color: var(--color-azul-bind, #4c65e6);
 }
 
 .activeDoc {
-  background: rgba(245, 244, 0, 0.08);
-  border-color: var(--yellow, #f5f400);
-  border-left: 4px solid var(--yellow, #f5f400);
+  background: rgba(76, 101, 230, 0.08);
+  border-color: var(--color-azul-bind, #4c65e6);
+  border-left: 4px solid var(--color-azul-bind, #4c65e6);
 }
 
 .activeDoc:hover {
-  background: rgba(245, 244, 0, 0.1);
-  border-color: var(--yellow, #f5f400);
+  background: rgba(76, 101, 230, 0.1);
+  border-color: var(--color-azul-bind, #4c65e6);
 }
 
 .docIcon {
@@ -155,7 +155,7 @@
 }
 
 .activeDoc .docIcon {
-  color: var(--yellow, #f5f400);
+  color: var(--color-azul-bind, #4c65e6);
 }
 
 .docMeta {
@@ -181,8 +181,8 @@
 }
 
 .infoCardNote {
-  background: rgba(210, 153, 34, 0.05);
-  border: 1px solid rgba(210, 153, 34, 0.2);
+  background: rgba(76, 101, 230, 0.05);
+  border: 1px solid rgba(76, 101, 230, 0.2);
   border-radius: 0.5rem;
   padding: 1rem;
   margin-top: 0.5rem;
@@ -190,7 +190,7 @@
 
 .infoCardNote h4 {
   margin: 0 0 0.4rem 0;
-  color: var(--yellow, #f5f400);
+  color: var(--color-azul-bind, #4c65e6);
   font-size: 0.85rem;
 }
 
@@ -203,13 +203,15 @@
 
 /* Main Panel */
 .mainEditorPanel {
-  background: #161b22;
-  border: 1px solid #30363d;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.75rem;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .editorHead {
@@ -265,10 +267,10 @@
 .modeTabs {
   display: flex;
   align-items: center;
-  background: #161b22;
+  background: rgba(255, 255, 255, 0.02);
   padding: 0.25rem;
   border-radius: 0.5rem;
-  border: 1px solid #30363d;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .modeBtn {
@@ -292,7 +294,7 @@
 
 .modeActive {
   background: #30363d;
-  color: var(--yellow, #f5f400);
+  color: var(--color-azul-bind, #4c65e6);
 }
 
 .editorBody {
@@ -373,7 +375,7 @@
 
 .previewHeading {
   font-size: 1.15rem;
-  color: var(--yellow, #f5f400);
+  color: var(--color-azul-bind, #4c65e6);
   margin: 1rem 0 0.2rem 0;
   border-bottom: 1px solid #30363d;
   padding-bottom: 0.3rem;
@@ -423,7 +425,7 @@
 
 .tablaTermPreview {
   width: 25%;
-  color: var(--yellow, #f5f400);
+  color: var(--color-azul-bind, #4c65e6);
   font-weight: 600;
   font-size: 0.85rem;
 }

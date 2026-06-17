@@ -161,7 +161,9 @@ export default function AdminNavbar() {
 
           {/* Criterios de Aceptación */}
           <button type="button"
-            className={styles.navButton}
+            className={`${styles.navButton} ${
+              isActive("/admin/terminos") ? styles.active : ""
+            }`}
             onClick={() => handleNavigate("/admin/terminos")}
           >
             Criterios de Aceptación

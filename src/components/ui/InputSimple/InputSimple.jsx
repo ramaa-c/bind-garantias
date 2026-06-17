@@ -17,6 +17,7 @@ export const InputSimple = forwardRef(({
   onChange: manualOnChange,
   onFocus: manualOnFocus,
   onBlur: manualOnBlur,
+  variant,
   ...props
 }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -32,6 +33,8 @@ export const InputSimple = forwardRef(({
     const errorMessage = error?.message || (typeof error === 'string' ? error : null) || fieldError?.message;
     const hasValue = val !== undefined && val !== null && String(val).length > 0;
 
+    const isAdmin = variant === "admin" || (variant !== "client" && typeof window !== "undefined" && window.location.pathname.includes("/admin"));
+
     let statusClass = styles.statusDefault;
     if (hasError) {
       statusClass = styles.statusError;
@@ -45,6 +48,7 @@ export const InputSimple = forwardRef(({
       styles.group,
       statusClass,
       hasValue || isFocused ? styles.hasValue : "",
+      isAdmin ? styles.adminVariant : "",
       className,
     ].filter(Boolean).join(" ");
 
