@@ -350,9 +350,12 @@
   transition: border-color 0.2s;
 }
 
-.formGroup input:focus,
-.formGroup select:focus {
+.formGroup input:focus {
   border-color: var(--yellow, #f5f400);
+}
+
+.formGroup select:focus {
+  border-color: var(--color-azul-bind, #4c65e6);
 }
 
 .checkboxGroup {

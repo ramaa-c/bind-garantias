@@ -121,3 +121,9 @@ export const useObtenerTodasWeb = () => {
         queryFn: () => cadenaValorService.obtenerTodasWeb(),
     });
 };
+
+export const useVincularCdas = () => {
+    return useMutation({
+        mutationFn: (vinculacionData) => cadenaValorService.vincularCdas(vinculacionData),
+    });
+};

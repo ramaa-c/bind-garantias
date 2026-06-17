@@ -99,4 +99,8 @@ export const cadenaValorService = {
   // GET /api/cadenavalor (Web) - Obtener todas las activas
   obtenerTodasWeb: async () =>
     (await api.get("api/cadenavalor")).data,
+
+  // POST /api/cadenavalor/cdas
+  vincularCdas: async (vinculacionData) =>
+    (await api.post("api/cadenavalor/cdas", vinculacionData)).data,
 };

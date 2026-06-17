@@ -280,7 +280,7 @@
 }
 
 .rolSelect:focus {
-  border-color: var(--yellow, #f5f400);
+  border-color: var(--color-azul-bind, #4c65e6);
 }
 
 .helpNote {

@@ -33,3 +33,17 @@ export const useEjecutarCda = () => {
     mutationFn: (data) => cdaService.ejecutarCda(data),
   });
 };
+
+export const useCrearCda = () => {
+  return useMutation({
+    mutationFn: (cdaData) => cdaService.crearCda(cdaData),
+  });
+};
+
+export const useObtenerTodosCdas = (options = {}) => {
+  return useQuery({
+    queryKey: ["cda", "todos_list"],
+    queryFn: () => cdaService.obtenerTodosCdas(),
+    ...options,
+  });
+};

@@ -67,28 +67,56 @@
   box-shadow: none;
 }
 
-/* Selector Card */
+/* Selector and Header Section Layout */
+.selectorSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .selectorSection {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
 .selectorCard {
   background: #161b22;
   border: 1px solid #30363d;
   border-radius: 0.75rem;
-  padding: 1.5rem;
+  padding: 0.875rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  justify-content: center;
+  flex: 1;
+}
+
+@media (min-width: 768px) {
+  .selectorCard {
+    max-width: 350px;
+    flex: 0 0 350px;
+  }
 }
 
 .selectGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-width: 500px;
+  gap: 0.25rem;
 }
 
 .selectLabel {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #c9d1d9;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #8b949e;
+  margin-bottom: 0.35rem;
+  display: block;
+}
+
+.chainHeaderCardWrapper {
+  flex: 1;
 }
 
 .selectBox {
@@ -105,7 +133,7 @@
 }
 
 .selectBox:focus {
-  border-color: var(--yellow, #f5f400);
+  border-color: var(--color-azul-bind, #4c65e6);
 }
 
 /* Empty message */
@@ -407,8 +435,12 @@
   width: 100%;
 }
 
-.formInput:focus, .formSelect:focus {
+.formInput:focus {
   border-color: var(--yellow, #f5f400);
+}
+
+.formSelect:focus {
+  border-color: var(--color-azul-bind, #4c65e6);
 }
 
 .checkboxLabel {

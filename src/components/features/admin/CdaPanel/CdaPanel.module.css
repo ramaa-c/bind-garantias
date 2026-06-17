@@ -171,3 +171,160 @@
   padding: 1.25rem 1.5rem 0.5rem;
   margin: 1.25rem -1.5rem -1.5rem -1.5rem;
 }
+
+/* Sección de Nuevo CDA */
+.newCdaSection {
+  margin-bottom: 1.5rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
+  padding-bottom: 1.5rem;
+}
+
+.btnAddCda {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: rgba(59, 78, 209, 0.08);
+  border: 1px dashed rgba(59, 78, 209, 0.3);
+  border-radius: 0.5rem;
+  color: var(--color-azul-bind-300, #4c65e6);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btnAddCda:hover {
+  background: rgba(59, 78, 209, 0.15);
+  border-color: rgba(59, 78, 209, 0.6);
+  color: #ffffff;
+}
+
+.newCdaForm {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(59, 78, 209, 0.15);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.formHeader h4 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.btnCancelForm {
+  background: none;
+  border: none;
+  color: var(--text-muted, #a3a3a3);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.btnCancelForm:hover {
+  color: var(--error-red, #ef4444);
+}
+
+.validationError {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--error-red, #ef4444);
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.375rem;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 480px) {
+  .formGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .formGrid > .formField:first-child,
+  .formGrid > .formField:last-child {
+    grid-column: span 2;
+  }
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.formField label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted, #a3a3a3);
+  text-align: left;
+}
+
+.formField input {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  color: #ffffff;
+  font-size: 0.825rem;
+  transition: all 0.2s;
+}
+
+.formField input:focus {
+  outline: none;
+  border-color: rgba(59, 78, 209, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 2px rgba(59, 78, 209, 0.15);
+}
+
+.formField input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cdasActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
