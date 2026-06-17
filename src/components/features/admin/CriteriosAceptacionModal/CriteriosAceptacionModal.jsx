@@ -20,7 +20,6 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
 
   // Estado para la animación de recarga individual por fila
   const [reloadingRows, setReloadingRows] = useState({});
-
   // 1. Obtener socio por CUIT si no tenemos socioid directo
   const { data: socioResp } = useQuery({
     queryKey: ["socio", "cuit", cuit],

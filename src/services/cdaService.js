@@ -34,4 +34,14 @@ export const cdaService = {
     });
     return response.data;
   },
+
+  crearCda: async (cdaData) => {
+    const response = await api.post("api/cda/Cda", cdaData);
+    return response.data;
+  },
+
+  obtenerTodosCdas: async () => {
+    const response = await api.get("api/cda/Cda");
+    return response.data;
+  },
 };

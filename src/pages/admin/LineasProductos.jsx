@@ -15,6 +15,7 @@ import {
 } from "../../hooks/useLinea";
 
 import { Select, Modal, Button, Spinner, InputSimple } from "../../components/ui";
+import { CadenaHeaderCard } from "../../components/features/admin/CadenaHeaderCard/CadenaHeaderCard";
 import styles from "./LineasProductos.module.css";
 
 // --- CHILD COMPONENT: LINE CARD ---
@@ -417,18 +418,34 @@ export default function LineasProductos() {
         </div>
       </div>
 
-      {/* Selector de Cadena */}
-      <div className={styles.selectorCard}>
-        <div className={styles.selectGroup}>
-          <label className={styles.selectLabel}>Seleccionar Cadena de Valor</label>
-          <Select
-            options={chainsSelectOptions}
-            value={selectedCadenaId}
-            onChange={(val) => setSelectedCadenaId(val)}
-            placeholder="Seleccione una cadena..."
-            isSearchable
-          />
+      {/* Zona de Selección y Cabecera de Cadena */}
+      <div className={styles.selectorSection}>
+        <div className={styles.selectorCard}>
+          <div className={styles.selectGroup}>
+            <label className={styles.selectLabel}>Seleccionar Cadena de Valor</label>
+            <Select
+              options={chainsSelectOptions}
+              value={selectedCadenaId}
+              onChange={(val) => setSelectedCadenaId(val)}
+              placeholder="Seleccione una cadena..."
+              isSearchable
+              size="sm"
+              hideErrorSpace={true}
+            />
+          </div>
         </div>
+
+        {selectedCadena && (
+          <div className={styles.chainHeaderCardWrapper}>
+            <CadenaHeaderCard
+              denominacion={selectedCadena.denominacion}
+              logo={selectedCadena.logo}
+              referencia={selectedCadena.referencia}
+              cadenavalorid={selectedCadena.cadenavalorid}
+              cuittercero={selectedCadena.cuittercero}
+            />
+          </div>
+        )}
       </div>
 
       {/* Grid de Líneas */}
