@@ -85,16 +85,6 @@ export default function AdminNavbar() {
       <div className={styles.topBrandBar}>
         <div className={styles.logoBox} role="button" tabIndex={0} onClick={() => navigate("/admin/dashboard")}>
           <img src={logoBind} alt="BIND Logo" className={styles.logoImg} />
-          {channelInfo && channelInfo.id !== "default" && (
-            <>
-              <div className={styles.logoSeparator} />
-              <img
-                src={channelInfo.logo}
-                alt={channelInfo.nombre}
-                className={styles.channelLogo}
-              />
-            </>
-          )}
           {!isRestricted && <span className={styles.adminTag}>ADMIN</span>}
         </div>
         <div className={styles.userMenuContainer} ref={profileRef}>

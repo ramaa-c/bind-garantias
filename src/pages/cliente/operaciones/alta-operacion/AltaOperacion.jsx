@@ -44,7 +44,16 @@ export const AltaOperacion = () => {
   const navigate = useNavigate();
   const { channelInfo } = useChannel();
   const { cadenaSlug } = useParams();
-  const { requisitos } = useRequisitos(Number(cadenaSlug) || 1);
+
+  const {
+    cuitActivo,
+    socioIdActivo,
+    tipoPersonaId,
+    nombreEmpresa,
+    isLoading: isLoadingEmpresa,
+  } = useEmpresaActiva();
+
+  const { requisitos } = useRequisitos(Number(cadenaSlug) || 1, tipoPersonaId ?? null, nombreEmpresa);
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
 
   useEffect(() => {
@@ -76,11 +85,6 @@ export const AltaOperacion = () => {
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
 
-  const {
-    cuitActivo,
-    socioIdActivo,
-    isLoading: isLoadingEmpresa,
-  } = useEmpresaActiva();
   const sociosPrecargadosRef = useRef(false);
 
   useEffect(() => {

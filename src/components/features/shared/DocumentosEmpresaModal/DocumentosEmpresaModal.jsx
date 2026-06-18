@@ -34,15 +34,70 @@ export const DocumentosEmpresaModal = ({
       info: "Normas constitutivas de la entidad legal.",
     },
     {
+      key: "eecc",
+      title: "Estados Contables (EECC)",
+      info: "Estados contables auditados de los últimos ejercicios.",
+    },
+    {
       key: "balance",
-      title: "Último Balance",
+      title: "Balance de Sumas y Saldos",
       info: "Último balance de la empresa firmado por contador público.",
     },
-    { key: "acta", title: "Acta de Autoridades / DDJJ IVA", info: "Designación de autoridades vigente o declaración jurada equivalente." },
-    { key: "cartasDocumento", title: "Cartas Documento", info: "Cartas documento operativas relacionadas." },
-    { key: "poderes", title: "Poderes", info: "Copia de representación legal para firmantes." },
-    { key: "certificadoPyme", title: "Certificado PyME", info: "Certificado oficial emitido por el Ministerio de Producción / AFIP." },
-    { key: "otrosDocumentos", title: "Otros Documentos", info: "Cualquier otra documentación de respaldo del legajo." },
+    {
+      key: "ddjjIva",
+      title: "Declaración Jurada de IVA",
+      info: "Declaración jurada de IVA y su constancia de presentación.",
+    },
+    {
+      key: "poderes",
+      title: "Poderes",
+      info: "Copia de representación legal para firmantes.",
+    },
+    {
+      key: "certificadoPyme",
+      title: "Certificado PyME",
+      info: "Certificado oficial emitido por el Ministerio de Producción / AFIP.",
+    },
+    {
+      key: "actaDesignacion",
+      title: "Acta de Designación de Autoridades",
+      info: "Designación de autoridades vigente o declaración jurada equivalente.",
+    },
+    {
+      key: "actaSocios",
+      title: "Acta de Reunión de Socios",
+      info: "Acta de última reunión de socios o asamblea.",
+    },
+    {
+      key: "f1272",
+      title: "Formulario F1272",
+      info: "Formulario de declaración de PyME ante la AFIP.",
+    },
+    {
+      key: "ddjjGanancias",
+      title: "DDJJ de Ganancias",
+      info: "Declaración jurada de Ganancias presentada ante AFIP.",
+    },
+    {
+      key: "manifestacionBienes",
+      title: "Manifestación de Bienes",
+      info: "Manifestación de bienes o DDJJ de Bienes Personales.",
+    },
+    {
+      key: "constanciaMonotributo",
+      title: "Constancia de Monotributo",
+      info: "Constancia de opción al Monotributo de AFIP.",
+    },
+    {
+      key: "cartasDocumento",
+      title: "Cartas Documento",
+      info: "Cartas documento operativas relacionadas.",
+    },
+    {
+      key: "otrosDocumentos",
+      title: "Otros Documentos",
+      info: "Cualquier otra documentación de respaldo del legajo.",
+    },
   ];
 
   const docs = allDocs.filter(({ key }) => {

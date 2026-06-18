@@ -4,16 +4,23 @@ import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
-import { FiSave, FiX, FiSliders, FiHelpCircle, FiRotateCcw } from "react-icons/fi";
+import { FiSave, FiHelpCircle, FiRotateCcw, FiUser, FiBriefcase } from "react-icons/fi";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./RequisitosConfigModal.module.css";
 
 const DOCUMENT_METADATA = [
   { key: "estatuto", title: "Estatuto Social", desc: "Normas constitutivas de la entidad legal." },
-  { key: "balance", title: "Último Balance", desc: "Último balance de la empresa firmado por contador público." },
-  { key: "acta", title: "Acta de Autoridades / DDJJ IVA", desc: "Designación de autoridades vigente o declaración jurada equivalente." },
+  { key: "eecc", title: "Estados Contables (EECC)", desc: "Estados contables auditados de los últimos ejercicios." },
+  { key: "balance", title: "Balance de Sumas y Saldos", desc: "Estado de sumas y saldos firmado por contador público." },
+  { key: "ddjjIva", title: "Declaración Jurada de IVA", desc: "Últimas declaraciones juradas de IVA presentadas." },
   { key: "poderes", title: "Poderes", desc: "Copia de representación legal para firmantes." },
   { key: "certificadoPyme", title: "Certificado PyME", desc: "Certificado oficial emitido por el Ministerio de Producción / AFIP." },
+  { key: "actaDesignacion", title: "Acta de Designación de Autoridades", desc: "Acta de designación de autoridades vigente." },
+  { key: "actaSocios", title: "Acta de Reunión de Socios", desc: "Acta de última reunión de socios o asamblea de la sociedad." },
+  { key: "f1272", title: "Formulario F1272", desc: "Formulario de declaración de PyME ante la AFIP." },
+  { key: "ddjjGanancias", title: "DDJJ de Ganancias", desc: "Última declaración jurada de Ganancias presentada (Física)." },
+  { key: "manifestacionBienes", title: "Manifestación de Bienes", desc: "Manifestación de bienes o DDJJ de Bienes Personales (Física)." },
+  { key: "constanciaMonotributo", title: "Constancia de Monotributo", desc: "Constancia de opción al Monotributo de AFIP (Física)." },
   { key: "cartasDocumento", title: "Cartas Documento", desc: "Cartas documento operativas relacionadas." },
   { key: "otrosDocumentos", title: "Otros Documentos", desc: "Cualquier otra documentación de respaldo del legajo." }
 ];
@@ -25,13 +32,30 @@ const RELATION_METADATA = [
   { key: "usuarios", title: "Vincular Usuarios", desc: "Autorización y otorgamiento de accesos a otros usuarios en la plataforma." }
 ];
 
+const TABS = [
+  { id: "fisica", label: "Física", icon: FiUser },
+  { id: "sa", label: "S.A.", icon: FiBriefcase },
+  { id: "srl", label: "S.R.L.", icon: FiBriefcase },
+  { id: "sh", label: "S.H.", icon: FiBriefcase },
+  { id: "otras", label: "Otras", icon: FiBriefcase },
+];
+
 export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   const cadenaId = activeItem?.cadenavalorid;
-  const { requisitos, updateRequisitos } = useRequisitos(cadenaId);
+  const { requisitos, updateRequisitos, isUpdating, refetch } = useRequisitos(cadenaId);
 
-  // Estado local para poder editar y guardar al hacer clic en "Guardar"
+  // Solapa activa actual
+  const [activeTab, setActiveTab] = useState("sa");
+  // Estado local de configuraciones agrupadas
   const [localConfig, setLocalConfig] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Refetch fresh data when modal opens
+  useEffect(() => {
+    if (isOpen && cadenaId) {
+      refetch();
+    }
+  }, [isOpen, cadenaId, refetch]);
 
   useEffect(() => {
     if (requisitos) {
@@ -44,9 +68,12 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
       if (!prev) return prev;
       return {
         ...prev,
-        [type]: {
-          ...prev[type],
-          [key]: value
+        [activeTab]: {
+          ...prev[activeTab],
+          [type]: {
+            ...prev[activeTab][type],
+            [key]: value
+          }
         }
       };
     });
@@ -55,7 +82,8 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   const handleReset = () => {
     if (requisitos) {
       setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
-      toast.success("Configuración restablecida a la última guardada");
+      const activeLabel = TABS.find(t => t.id === activeTab)?.label || "Solapa";
+      toast.success(`Configuración de ${activeLabel} restablecida a la última guardada`);
     }
   };
 
@@ -65,15 +93,18 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   };
 
   const confirmSave = () => {
-    try {
-      updateRequisitos(localConfig);
-      toast.success("Configuración de requisitos guardada correctamente");
-      setConfirmOpen(false);
-      onClose();
-    } catch (error) {
-      console.error(error);
-      toast.error("Ocurrió un error al guardar los requisitos");
-    }
+    updateRequisitos(localConfig, {
+      onSuccess: () => {
+        toast.success("Configuración de requisitos guardada correctamente");
+        setConfirmOpen(false);
+        onClose();
+      },
+      onError: (error) => {
+        console.error(error);
+        toast.error("Ocurrió un error al guardar los requisitos");
+        setConfirmOpen(false);
+      }
+    });
   };
 
   if (!isOpen || !localConfig) return null;
@@ -83,19 +114,37 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
       isOpen={isOpen}
       onClose={onClose}
       title="PARAMETRIZACIÓN DE REQUISITOS"
-      maxWidth="700px"
+      maxWidth="750px"
       variant="blue"
       headerActions={
         <button
           type="button"
           className={styles.helpButton}
-          onClick={() => toast.info("Configurá la visibilidad y obligatoriedad de la documentación y relaciones para los usuarios de esta cadena.")}
+          onClick={() => toast.info("Configurá de forma independiente los requisitos para Persona Física y los diferentes tipos societarios de Persona Jurídica.")}
           title="Ayuda"
         >
           <FiHelpCircle size={20} />
         </button>
       }
     >
+      {/* Solapas de selección de perfil */}
+      <div className={styles.tabContainer}>
+        {TABS.map((tab) => {
+          const IconComponent = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              className={`${styles.tabBtn} ${activeTab === tab.id ? styles.tabActive : ""}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <IconComponent style={{ marginRight: "0.4rem" }} />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div className={styles.modalBody}>
         <CadenaHeaderCard
           denominacion={activeItem?.denominacion}
@@ -106,7 +155,8 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
         />
 
         <p className={styles.introText}>
-          Configurá cómo se solicitarán los requisitos para el alta de operaciones y legajos en la zona de usuarios:
+          Configurá cómo se solicitarán los requisitos para el alta de operaciones y legajos en la zona de usuarios para{" "}
+          <strong>{TABS.find(t => t.id === activeTab)?.label}</strong>:
         </p>
 
         {/* SECTION 1: DOCUMENTACION */}
@@ -114,7 +164,10 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
           <h3 className={styles.sectionTitle}>Documentación Requerida</h3>
           <div className={styles.list}>
             {DOCUMENT_METADATA.map(({ key, title, desc }) => {
-              const val = localConfig.documentos[key] !== undefined ? localConfig.documentos[key] : 2;
+              const val = localConfig[activeTab]?.documentos?.[key] !== undefined
+                ? localConfig[activeTab].documentos[key]
+                : 0;
+
               return (
                 <div key={key} className={styles.row}>
                   <div className={styles.info}>
@@ -158,7 +211,10 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
           <h3 className={styles.sectionTitle}>Relaciones y Secciones</h3>
           <div className={styles.list}>
             {RELATION_METADATA.map(({ key, title, desc }) => {
-              const val = localConfig.relaciones[key] !== undefined ? localConfig.relaciones[key] : 2;
+              const val = localConfig[activeTab]?.relaciones?.[key] !== undefined
+                ? localConfig[activeTab].relaciones[key]
+                : 0;
+
               return (
                 <div key={key} className={styles.row}>
                   <div className={styles.info}>
@@ -199,11 +255,11 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
       </div>
 
       <div className={styles.modalFooter}>
-        <Button variant="outlineBlue" size="sm" onClick={handleReset}>
+        <Button variant="outlineBlue" size="sm" onClick={handleReset} disabled={isUpdating}>
           <FiRotateCcw style={{ marginRight: "0.5rem" }} />
           REESTABLECER
         </Button>
-        <Button variant="blue" size="sm" onClick={handleSave} className={styles.saveBtn}>
+        <Button variant="blue" size="sm" onClick={handleSave} className={styles.saveBtn} isLoading={isUpdating} disabled={isUpdating}>
           <FiSave style={{ marginRight: "0.5rem" }} />
           GUARDAR CONFIGURACIÓN
         </Button>
@@ -214,18 +270,14 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmSave}
         titulo="Guardar Configuración"
-        mensaje="¿Estás seguro de que deseas guardar la nueva parametrización de requisitos para esta cadena de valor?"
+        mensaje="¿Estás seguro de que deseas guardar la nueva parametrización de requisitos (para todos los tipos de personas/sociedades) en esta cadena de valor?"
         variant="blue"
         confirmText="GUARDAR"
         cancelText="CANCELAR"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
+        isLoading={isUpdating}
       />
     </Modal>
   );
 };
-
-
-
-
-

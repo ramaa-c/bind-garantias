@@ -10,6 +10,14 @@ import { Select } from "../../../ui/Select/Select";
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
+import {
+  requisitosService,
+  DEFAULT_PHYSICAL_CONFIG,
+  DEFAULT_SA_CONFIG,
+  DEFAULT_SRL_CONFIG,
+  DEFAULT_SH_CONFIG,
+  DEFAULT_OTRAS_CONFIG,
+} from "../../../../services/requisitosService";
 import styles from "./ActivarCadenaModal.module.css";
 
 export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) => {
@@ -113,7 +121,21 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     };
 
     crearMutation.mutate(payload, {
-      onSuccess: () => {
+      onSuccess: async () => {
+        // Inicializar requisitos por defecto para esta nueva cadena
+        try {
+          const defaultConfigs = {
+            fisica: DEFAULT_PHYSICAL_CONFIG,
+            sa: DEFAULT_SA_CONFIG,
+            srl: DEFAULT_SRL_CONFIG,
+            sh: DEFAULT_SH_CONFIG,
+            otras: DEFAULT_OTRAS_CONFIG,
+          };
+          await requisitosService.guardarRequisitos(payload.cadenavalorid, defaultConfigs);
+        } catch (reqErr) {
+          console.error("Error al inicializar requisitos por defecto para nueva cadena:", reqErr);
+        }
+
         toast.success("Cadena de valor activada exitosamente para la web");
         setConfirmOpen(false);
         onSuccess();

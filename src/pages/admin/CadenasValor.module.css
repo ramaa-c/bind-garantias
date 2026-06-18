@@ -61,6 +61,32 @@
   box-shadow: 0 6px 16px rgba(245, 244, 0, 0.4);
 }
 
+.btnSecundario {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s;
+}
+
+.btnSecundario:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.btnSecundario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .filtersCard {
   background: #161b22;
   border: 1px solid #30363d;

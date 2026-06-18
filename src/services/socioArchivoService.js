@@ -33,6 +33,14 @@ const TIPO_DOCUMENTO_MAP = {
   // Documentos de socios (DNI frente/dorso)
   "socio-frente": 8,
   "socio-dorso": 9,
+  // Nuevos documentos del legajo (adicionados según requerimiento y Excel)
+  eecc: 10,
+  actaDesignacion: 11,
+  actaSocios: 12,
+  f1272: 13,
+  ddjjGanancias: 14,
+  manifestacionBienes: 15,
+  constanciaMonotributo: 16,
 };
 
 /**   Obtiene el tipodocumentoarchivoid para una clave dada.   */

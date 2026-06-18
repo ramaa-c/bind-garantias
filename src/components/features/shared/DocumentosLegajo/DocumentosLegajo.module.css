@@ -596,28 +596,48 @@
 @media (min-width: 48rem) {
   .workspace {
     display: grid;
-    grid-template-columns: 14rem 1fr;
-    min-height: 26rem;
+    grid-template-columns: 15rem 1fr;
+    height: 540px; /* Fixed height to enable scrollable sidebar */
+    overflow: hidden;
     position: relative;
   }
 
-  .sidebarBg {
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 14rem;
-    border-right: 0.5px solid rgba(255, 255, 255, 0.06);
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
     background: rgba(0, 0, 0, 0.12);
-    z-index: 0;
-    pointer-events: none;
+    border-right: 0.5px solid rgba(255, 255, 255, 0.06);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   }
 
-  .categoryLabel, .tabBtn {
-    grid-column: 1;
-    position: relative;
-    z-index: 1;
+  .sidebar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+
+  .viewerContainer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  }
+
+  .viewerContainer::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .viewerContainer::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
   }
 
   .categoryLabel {
@@ -628,6 +648,7 @@
 
   .tabBtn {
     background: transparent;
+    border-bottom: 0.5px solid rgba(255, 255, 255, 0.03);
   }
 
   .tabBtn:hover {
@@ -647,9 +668,7 @@
     border-left: none;
     padding: 1.75rem 2rem;
     background: transparent;
-    overflow-y: auto;
-    grid-column: 2;
-    grid-row: 1 / span 50;
+    flex: 1;
   }
 
   .perfilGrid {
@@ -661,6 +680,15 @@
   .socioDetailGrid {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+.workspaceMobile {
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+  overflow: hidden;
 }
 
 /* ── NUEVAS SECCIONES Y CONTROLES ── */

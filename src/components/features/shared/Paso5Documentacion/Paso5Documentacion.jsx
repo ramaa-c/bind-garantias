@@ -24,17 +24,25 @@ import {
 } from "../../../features";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
+import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { formatBase64Size } from "../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
 
 const DOC_ITEMS = [
-  { key: "estatuto", label: "Estatuto" },
-  { key: "balance", label: "Balance" },
-  { key: "acta", label: "Acta / DDJJ IVA" },
-  { key: "cartasDocumento", label: "Cartas Documento" },
+  { key: "estatuto", label: "Estatuto Social" },
+  { key: "eecc", label: "Estados Contables (EECC)" },
+  { key: "balance", label: "Balance de Sumas y Saldos" },
+  { key: "ddjjIva", label: "Declaración Jurada de IVA" },
   { key: "poderes", label: "Poderes" },
   { key: "certificadoPyme", label: "Certificado PyME" },
+  { key: "actaDesignacion", label: "Acta de Designación de Autoridades" },
+  { key: "actaSocios", label: "Acta de Reunión de Socios" },
+  { key: "f1272", label: "Formulario F1272" },
+  { key: "ddjjGanancias", label: "DDJJ de Ganancias" },
+  { key: "manifestacionBienes", label: "Manifestación de Bienes" },
+  { key: "constanciaMonotributo", label: "Constancia de Monotributo" },
+  { key: "cartasDocumento", label: "Cartas Documento" },
   { key: "otrosDocumentos", label: "Otros Documentos" },
 ];
 
@@ -74,7 +82,9 @@ export default function Paso5Documentacion({
 }) {
   const { cadenaSlug } = useParams();
   const cadenaId = Number(cadenaSlug) || 1;
-  const { requisitos } = useRequisitos(cadenaId);
+
+  const { tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
+  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   const docItemsFiltered = DOC_ITEMS.filter(({ key }) => {
     const configVal = requisitos?.documentos?.[key];
@@ -131,7 +141,7 @@ export default function Paso5Documentacion({
             const docKey = tipoToKey[arch.tipodocumentoarchivoid];
             if (
               docKey &&
-              ["estatuto", "balance", "acta", "poderes", "cartasDocumento", "certificadoPyme", "otrosDocumentos"].includes(docKey)
+              Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).includes(docKey)
             ) {
               // Crear un pseudo-File para mostrar en la UI
               const pseudoFile = new File(

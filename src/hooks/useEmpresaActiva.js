@@ -34,7 +34,16 @@ export const useEmpresaActiva = () => {
     socioWeb?.denominacion || socioWeb?.Denominacion || null;
   const direccion = socioWeb?.calle || socioWeb?.Calle || "";
   const telefono = socioWeb?.telefono || socioWeb?.Telefono || "";
-  const tipoPersonaId = socioWeb?.tipopersonaid || socioWeb?.TipoPersonaID || null;
+  let tipoPersonaId = socioWeb?.tipopersonaid || socioWeb?.TipoPersonaID || null;
+  if (!tipoPersonaId && cuitActivo) {
+    const cleanCuit = String(cuitActivo).replace(/\D/g, "");
+    const prefix = cleanCuit.substring(0, 2);
+    if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
+      tipoPersonaId = 1;
+    } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
+      tipoPersonaId = 10;
+    }
+  }
 
   const isLoading = 
     isLoadingUser || 

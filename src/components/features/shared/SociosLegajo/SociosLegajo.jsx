@@ -50,11 +50,11 @@ const ESTRUCTURA_SOCIOS = [
 ];
 
 export function SociosLegajo() {
-  const { socioIdActivo, tipoPersonaId } = useEmpresaActiva();
+  const { socioIdActivo, tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
 
   const { cadenaSlug } = useParams();
   const cadenaId = Number(cadenaSlug) || 1;
-  const { requisitos } = useRequisitos(cadenaId);
+  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   const tabsDisponibles = useMemo(() => {
     let baseTabs = ESTRUCTURA_SOCIOS;
