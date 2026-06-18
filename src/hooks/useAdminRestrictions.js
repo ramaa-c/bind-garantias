@@ -24,9 +24,8 @@ export const useAdminRestrictions = () => {
   const user = useAuthStore((state) => state.user);
   const email = user?.email || "";
 
-  const isMockRestricto = email === "admin_restricto" || email === "admin restricto";
   const isMockAdmin = email === "admin";
-  const isMock = isMockRestricto || isMockAdmin;
+  const isMock = isMockAdmin;
 
   const emailToFetch = isMock ? "" : email;
   const { data: usuarioDb, isPending: isLoadingUser } = useObtenerPorNombreOEmail(emailToFetch);
@@ -35,12 +34,9 @@ export const useAdminRestrictions = () => {
   const { data: adminCadenas, isPending: isLoadingCadenas } = useQuery({
     queryKey: ["admin", "cadenas", usuarioWebId || "mock"],
     queryFn: () => {
-      if (isMockRestricto) {
-        return [{ id: 1, nombre: "Cadena Mock Admin" }];
-      }
       return usuarioService.obtenerUsuariosRelacionados({ usuariowebid: usuarioWebId });
     },
-    enabled: !!usuarioWebId || isMockRestricto,
+    enabled: !!usuarioWebId,
   });
 
   const parsearCadenas = (data) => {
@@ -57,9 +53,9 @@ export const useAdminRestrictions = () => {
   
   if (isMock) {
     return {
-      isRestricted: isMockRestricto,
+      isRestricted: false,
       isPending: false,
-      cadenas: isMockRestricto ? [{ id: 1, nombre: "Cadena Mock Admin" }] : []
+      cadenas: []
     };
   }
 

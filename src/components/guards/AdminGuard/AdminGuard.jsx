@@ -49,8 +49,7 @@ export const AdminGuard = ({ children }) => {
 
   const isBasicAdmin =
     user?.role === "admin" ||
-    user?.email === "admin" ||
-    user?.email === "admin_restricto";
+    user?.email === "admin";
 
   const isLoading =
     isPending || isUserLoading || (usuarioWebId && isCadenasLoading);

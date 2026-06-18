@@ -107,5 +107,5 @@ export const catalogosService = {
 
   // Trae los tipos de obligación (Productos)
   obtenerObligaciones: async () =>
-    (await api.get("catalogos/Obligacion")).data,
+    (await api.get("catalogos/TipoObligacion")).data,
 };

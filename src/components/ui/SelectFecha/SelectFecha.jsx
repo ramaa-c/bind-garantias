@@ -13,14 +13,18 @@ export const SelectFecha = ({
   disabled = false,
   minDate,
   error: errorExterno,
+  value: manualValue,
+  onChange: manualOnChange,
 }) => {
-  const { control } = useFormContext();
+  const formContext = useFormContext();
+  const control = formContext?.control;
   const effectiveMinDate = minDate || new Date();
-  const { errors } = useFormState({ control, name });
+  
+  const { errors } = control ? useFormState({ control, name }) : { errors: {} };
 
-  const errorContexto = name
-    .split(".")
-    .reduce((obj, key) => obj?.[key], errors);
+  const errorContexto = control && name
+    ? name.split(".").reduce((obj, key) => obj?.[key], errors)
+    : null;
   const errorDisplay = errorExterno || errorContexto?.message;
 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -38,12 +42,7 @@ export const SelectFecha = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  return (
-    <Controller
-      name={name}
-      control={control}
-      defaultValue=""
-      render={({ field: { onChange, value, onBlur, ref } }) => {
+  const renderCalendar = (value, onChange, onBlur, ref) => {
         let dateObj = undefined;
 
         if (value) {
@@ -65,8 +64,6 @@ export const SelectFecha = ({
           statusClass = styles.statusError;
         } else if (isCalendarOpen || isFocused) {
           statusClass = styles.statusFocus;
-        } else if (isValid) {
-          statusClass = styles.statusSuccess;
         }
 
         const handleDateSelect = (date) => {
@@ -148,7 +145,18 @@ export const SelectFecha = ({
             )}
           </div>
         );
-      }}
-    />
-  );
+  };
+
+  if (control && name) {
+    return (
+      <Controller
+        name={name}
+        control={control}
+        defaultValue=""
+        render={({ field: { onChange, value, onBlur, ref } }) => renderCalendar(value, onChange, onBlur, ref)}
+      />
+    );
+  }
+
+  return renderCalendar(manualValue, manualOnChange, () => {}, null);
 };

@@ -7,7 +7,7 @@ import { Badge } from "../../components/ui/Badge/Badge";
 import { Modal } from "../../components/ui/Modal/Modal";
 import { SinResultados } from "../../components/ui/SinResultados/SinResultados";
 import { TarjetaMetrica } from "../../components/ui/TarjetaMetrica/TarjetaMetrica";
-import { Select } from "../../components/ui/Select/Select";
+import { SelectSimple } from "../../components/ui";
 import { SkeletonTable } from "../../components/ui";
 import { useAdminRestrictions } from "../../hooks/useAdminRestrictions";
 import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
@@ -463,7 +463,8 @@ export default function Dashboard() {
 
         <div className={styles.filtersGroup}>
           <div className={styles.customSelectWrapper}>
-            <Select
+            <SelectSimple
+              label="Estado"
               value={filtroEstado}
               onChange={setFiltroEstado}
               options={opcionesEstado}
@@ -475,7 +476,8 @@ export default function Dashboard() {
           </div>
 
           <div className={styles.customSelectWrapper}>
-            <Select
+            <SelectSimple
+              label="Orden"
               value={orden}
               onChange={setOrden}
               options={opcionesOrden}

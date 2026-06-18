@@ -1,0 +1,138 @@
+import React, { useState, useRef, useEffect } from "react";
+import { FiChevronDown, FiSearch, FiTag } from "react-icons/fi";
+import styles from "./CadenaSelectCard.module.css";
+import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
+
+export const CadenaSelectCard = ({
+  options = [],
+  value,
+  onChange,
+  placeholder = "Seleccionar Cadena de Valor...",
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedChain = options.find((c) => String(c.cadenavalorid) === String(value));
+
+  const filteredOptions = options.filter((c) =>
+    (c.denominacion || "").toLowerCase().includes(search.toLowerCase()) ||
+    (c.cuittercero || "").includes(search)
+  );
+
+  const handleSelect = (id) => {
+    onChange(id);
+    setIsOpen(false);
+    setSearch("");
+  };
+
+  const getLogoSrc = (logoData) => {
+    if (!logoData) return "";
+    if (logoData.startsWith("data:") || logoData.startsWith("http")) return logoData;
+    return `data:image/png;base64,${logoData}`;
+  };
+
+  const getInitials = (name) => {
+    if (!name) return "CV";
+    return name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join("");
+  };
+
+  return (
+    <div className={styles.container} ref={dropdownRef}>
+      {/* Trigger Area */}
+      <div 
+        className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""} ${!selectedChain ? styles.triggerEmpty : ""}`}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        {selectedChain ? (
+          <div className={styles.cardWrapper}>
+            <CadenaHeaderCard
+              denominacion={selectedChain.denominacion}
+              logo={selectedChain.logo}
+              referencia={selectedChain.referencia}
+              cadenavalorid={selectedChain.cadenavalorid}
+              cuittercero={selectedChain.cuittercero}
+            />
+          </div>
+        ) : (
+          <div className={styles.emptyContent}>
+            <div className={styles.avatarPlaceholderHollow}>?</div>
+            <span className={styles.emptyText}>{placeholder}</span>
+          </div>
+        )}
+        <div className={styles.chevronWrapper}>
+          <FiChevronDown className={`${styles.chevron} ${isOpen ? styles.chevronUp : ""}`} />
+        </div>
+      </div>
+
+      {/* Dropdown Menu */}
+      {isOpen && (
+        <div className={styles.dropdown}>
+          <div className={styles.searchBox}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Buscar por nombre o CUIT..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              autoFocus
+            />
+          </div>
+          
+          <div className={styles.optionsList}>
+            {filteredOptions.length === 0 ? (
+              <div className={styles.noResults}>No se encontraron resultados</div>
+            ) : (
+              filteredOptions.map((c) => {
+                const logoSrc = getLogoSrc(c.logo);
+                const isSelected = String(c.cadenavalorid) === String(value);
+
+                return (
+                  <div
+                    key={c.cadenavalorid}
+                    className={`${styles.optionItem} ${isSelected ? styles.optionSelected : ""}`}
+                    onClick={() => handleSelect(c.cadenavalorid)}
+                  >
+                    <div className={styles.optionLogoBox}>
+                      {logoSrc ? (
+                        <img src={logoSrc} alt={c.denominacion} className={styles.optionLogo} />
+                      ) : (
+                        <div className={styles.optionAvatar}>
+                          {getInitials(c.denominacion)}
+                        </div>
+                      )}
+                    </div>
+                    <div className={styles.optionInfo}>
+                      <span className={styles.optionName}>{c.denominacion || "Cadena sin nombre"}</span>
+                      <div className={styles.optionMeta}>
+                        <span className={styles.optionId}>ID: {c.cadenavalorid}</span>
+                        {c.cuittercero && <span>• CUIT: {c.cuittercero}</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

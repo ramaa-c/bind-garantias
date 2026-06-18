@@ -113,6 +113,11 @@
   padding: 1.5rem;
 }
 
+.modalBox.allowOverflow,
+.body.allowOverflow {
+  overflow: visible !important;
+}
+
 /* Scrollbar refinado */
 .body::-webkit-scrollbar {
   width: 5px;

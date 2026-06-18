@@ -30,6 +30,8 @@ export * from './TarjetaMetrica/TarjetaMetrica';
 export * from './TarjetaSeleccionable/TarjetaSeleccionable';
 export * from './CustomScroll/Scroll';
 export * from './SelectFecha/SelectFecha';
+export * from './SelectFechaSimple/SelectFechaSimple';
+export * from './SelectSimple/SelectSimple';
 export * from './BuscadorCuit/BuscadorCuit'
 export * from './TicketSimulacion/TicketSimulacion'
 export * from './TicketPrestamoFijo/TicketPrestamoFijo'

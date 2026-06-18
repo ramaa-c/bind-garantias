@@ -9,6 +9,7 @@ import {
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 import { useChannel } from "../../../context/ChannelContext";
 import { useVendor } from "../../../hooks/useVendor";
+import { useVerificarHabilitacionSolicitudes } from "../../../hooks/useVerificarHabilitacionSolicitudes";
 
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
@@ -20,9 +21,12 @@ export const OnboardingGuard = ({ children }) => {
 
   const isTerminosPage = location.pathname.endsWith("/terminos");
   const isAltaDatosPage = location.pathname.endsWith("/alta-datos-empresa");
-  const isSeleccionarEmpresaPage = location.pathname.endsWith(
-    "/seleccionar-empresa",
-  );
+  const isSeleccionarEmpresaPage = location.pathname.endsWith("/seleccionar-empresa");
+  const isSolicitudesPage = location.pathname.endsWith("/solicitudes");
+  const isInicioPage = location.pathname.endsWith("/inicio");
+
+  const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
+  const { isVerifying } = useVerificarHabilitacionSolicitudes();
 
   const email = user?.email || "";
 
@@ -130,7 +134,8 @@ export const OnboardingGuard = ({ children }) => {
     (isLoadingUser && !usuarioWebId) ||
     (usuarioWebId && isPendingSocios) ||
     (usuarioWebId && isCadenasLoading) ||
-    isLoadingVendor
+    isLoadingVendor ||
+    isVerifying
   ) {
     return (
       <LoadingScreen
@@ -154,15 +159,24 @@ export const OnboardingGuard = ({ children }) => {
 
       if (
         activeSocioId &&
-        (isTerminosPage || isSeleccionarEmpresaPage || isAltaDatosPage)
+        (isTerminosPage || isSeleccionarEmpresaPage || isAltaDatosPage || isInicioPage)
       ) {
-        if (isTerminosPage)
-          return <Navigate to={`/${channelInfo.id}/inicio`} replace />;
+        if (!isSolicitudesEnabled) {
+          return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+        }
+        return <Navigate to={`/${channelInfo.id}/solicitudes`} replace />;
       }
     } else {
-      if (isTerminosPage || isAltaDatosPage || isSeleccionarEmpresaPage) {
-        return <Navigate to={`/${channelInfo.id}/inicio`} replace />;
+      if (isTerminosPage || isAltaDatosPage || isSeleccionarEmpresaPage || isInicioPage) {
+        if (!isSolicitudesEnabled) {
+          return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+        }
+        return <Navigate to={`/${channelInfo.id}/solicitudes`} replace />;
       }
+    }
+
+    if (!isSolicitudesEnabled && isSolicitudesPage) {
+      return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
     }
   } else if (usuarioWebId && !tieneEmpresas) {
     if (!isTerminosPage && !isAltaDatosPage) {

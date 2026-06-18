@@ -15,7 +15,6 @@ import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../..
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../services/sociosService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
-import { useValidarUtilizacionCore } from "../../../hooks/useSgrPlusCore";
 import { useChannel } from "../../../context/ChannelContext";
 
 import styles from "./Solicitudes.module.css";
@@ -105,8 +104,6 @@ export default function Solicitudes() {
     useObtenerSolicitudesEnProceso(cuitActivo);
 
   const isLoadingData = cargandoSolicitudes || cargandoProceso;
-  const { mutateAsync: validarUtilizacionCore } = useValidarUtilizacionCore();
-  const [isVerifyingLineas, setIsVerifyingLineas] = useState(false);
 
   const nombreEmpresaActiva = nombreEmpresa || "Empresa Demo S.A.";
 
@@ -169,24 +166,6 @@ export default function Solicitudes() {
       return;
     }
 
-    setIsVerifyingLineas(true);
-    try {
-      const response = await validarUtilizacionCore(cuitActivo);
-      if (response?.status === 406) {
-        setModalPendienteOpen(true);
-        setIsVerifyingLineas(false);
-        return;
-      }
-    } catch (error) {
-      if (error?.response?.status === 406) {
-        setModalPendienteOpen(true);
-        setIsVerifyingLineas(false);
-        return;
-      }
-      // If 404 or other errors, we let it pass.
-    }
-    setIsVerifyingLineas(false);
-
     const dataString = sessionStorage.getItem(`${draftKey}_data`);
     const pasoString = sessionStorage.getItem(`${draftKey}_paso`);
     const currentPaso = parseInt(pasoString, 10) || 1;
@@ -248,9 +227,8 @@ export default function Solicitudes() {
             handleNuevaOperacion(`/${channelInfo?.id || "default"}/alta-operacion`, "draft_alta_operacion")
           }
           className={styles.btnNuevaOp}
-          disabled={isVerifyingLineas}
         >
-          {isVerifyingLineas ? "VERIFICANDO..." : <><FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN</>}
+          <><FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN</>
         </Button>
       </header>
 

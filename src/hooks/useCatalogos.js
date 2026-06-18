@@ -174,7 +174,12 @@ export const useTiposProducto = () =>
     queryFn: catalogosService.obtenerTiposProducto,
     staleTime: STALE_TIME,
     select: (data) => {
-      const dataActiva = data.filter((prod) => prod.activo === "1");
+      const arrayReal = Array.isArray(data) ? data : data?.list || [];
+      const arrayLimpio = arrayReal.filter((item) => item !== null);
+      const dataActiva = arrayLimpio.filter((prod) => 
+        (String(prod.activo) === "1" || String(prod.activa) === "1") && 
+        String(prod.escadenavalor) === "1"
+      );
       return mapAndSort(dataActiva, "tipolimiteid");
     },
   });
@@ -236,5 +241,9 @@ export const useObligaciones = () =>
     queryKey: ["catalogos", "obligaciones"],
     queryFn: catalogosService.obtenerObligaciones,
     staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "obligacionid"),
+    select: (data) => {
+      const arrayReal = Array.isArray(data) ? data : data?.list || [];
+      const arrayLimpio = arrayReal.filter((item) => item !== null);
+      return mapAndSort(arrayLimpio, "tipoobligacionid");
+    },
   });

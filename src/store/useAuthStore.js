@@ -7,8 +7,10 @@ export const useAuthStore = create(
       user: null,
       isAuthenticated: false,
       activeSocioId: null,
+      isSolicitudesEnabled: true,
 
       setActiveSocioId: (socioId) => set({ activeSocioId: socioId }),
+      setSolicitudesEnabled: (enabled) => set({ isSolicitudesEnabled: enabled }),
 
       setUser: (userData) => {
         if (!userData) {
@@ -48,6 +50,7 @@ export const useAuthStore = create(
           user: null,
           isAuthenticated: false,
           activeSocioId: null,
+          isSolicitudesEnabled: true,
         });
       },
     }),

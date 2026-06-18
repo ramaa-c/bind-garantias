@@ -13,6 +13,7 @@ export const Modal = ({
   maxWidth = "600px",
   className = "",
   variant = "default",
+  allowOverflow = false,
 }) => {
   useEscape(onClose, isOpen);
 
@@ -35,7 +36,7 @@ export const Modal = ({
   return createPortal(
     <div className={styles.overlay} onMouseDown={onClose}>
       <div
-        className={`${styles.modalBox} ${variant === "blue" ? styles.blueVariant : ""} ${className}`}
+        className={`${styles.modalBox} ${variant === "blue" ? styles.blueVariant : ""} ${allowOverflow ? styles.allowOverflow : ""} ${className}`}
         style={{ maxWidth }}
         onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
@@ -63,7 +64,7 @@ export const Modal = ({
         </div>
 
         {/* ── BODY ── */}
-        <div className={styles.body}>{children}</div>
+        <div className={`${styles.body} ${allowOverflow ? styles.allowOverflow : ""}`}>{children}</div>
       </div>
     </div>,
     document.body,
