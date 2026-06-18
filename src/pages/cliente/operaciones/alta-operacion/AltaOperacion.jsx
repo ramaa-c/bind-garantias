@@ -34,6 +34,7 @@ import { tercerosService } from "../../../../services/tercerosService";
 import { catalogosService } from "../../../../services/catalogosService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { useChannel } from "../../../../context/ChannelContext";
+import { useRequisitos } from "../../../../hooks/useRequisitos";
 
 const STORAGE_KEY = "draft_alta_operacion";
 
@@ -43,7 +44,14 @@ export const AltaOperacion = () => {
   const navigate = useNavigate();
   const { channelInfo } = useChannel();
   const { cadenaSlug } = useParams();
+  const { requisitos } = useRequisitos(Number(cadenaSlug) || 1);
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
+
+  useEffect(() => {
+    if (requisitos?.relaciones?.accionistas === 0 && pasoActual === 1) {
+      setPasoActual(2);
+    }
+  }, [requisitos, pasoActual, setPasoActual]);
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
   const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
@@ -1111,12 +1119,28 @@ export const AltaOperacion = () => {
           avanzarPaso6={async () => {
             const ok = await trigger("emailFacturacion");
             const reps = getValues("representantes");
-            if (ok && reps?.length > 0) {
-              if (tipoProducto === "cheque") setPasoActual(4);
-              else
+            
+            const isRepRequired = requisitos?.relaciones?.representantes === 1;
+            const tieneRepresentantes = reps?.length > 0;
+            const canAdvanceReps = !isRepRequired || tieneRepresentantes || requisitos?.relaciones?.representantes === 0;
+
+            if (!canAdvanceReps && isRepRequired) {
+              toast.error("Debe declarar al menos un representante legal o apoderado.");
+              return;
+            }
+
+            if (ok && canAdvanceReps) {
+              if (tipoProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
+                setPasoActual(4);
+              } else if (tipoProducto === "cheque") {
+                handleSubmit(onSubmitFinalCheques, (errors) => {
+                  console.error("Errores de validación del schema:", errors);
+                })();
+              } else {
                 handleSubmit(onSubmitFinalPrestamos, (errors) => {
                   console.error("Errores de validación del schema:", errors);
                 })();
+              }
             }
           }}
           onGuardarSocioDb={handleGuardarSocioDb}
@@ -1217,10 +1241,53 @@ export const AltaOperacion = () => {
     }
   };
 
-  const hitosVisuales =
-    tipoProducto === "cheque"
-      ? ["Accionistas", "Operación", "Documentos", "Bolsa"]
-      : ["Accionistas", "Operación", "Documentos"];
+  const stepToHitoMap = useMemo(() => {
+    const map = [];
+    if (requisitos?.relaciones?.accionistas !== 0) map.push(1);
+    map.push(2);
+    map.push(3);
+    if (tipoProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
+      map.push(4);
+    }
+    return map;
+  }, [requisitos, tipoProducto]);
+
+  const hitoActualMapped = useMemo(() => {
+    const idx = stepToHitoMap.indexOf(pasoActual);
+    return idx !== -1 ? idx + 1 : 1;
+  }, [stepToHitoMap, pasoActual]);
+
+  const maxHitoAlcanzadoMapped = useMemo(() => {
+    const idx = stepToHitoMap.indexOf(maxPasoAlcanzado);
+    return idx !== -1 ? idx + 1 : 1;
+  }, [stepToHitoMap, maxPasoAlcanzado]);
+
+  const handleStepClickMapped = (hitoNum) => {
+    const targetStep = stepToHitoMap[hitoNum - 1];
+    if (targetStep) {
+      setPasoActual(targetStep);
+    }
+  };
+
+  const handleVolverMapped = () => {
+    const currentIdx = stepToHitoMap.indexOf(pasoActual);
+    if (currentIdx > 0) {
+      setPasoActual(stepToHitoMap[currentIdx - 1]);
+    }
+  };
+
+  const hitosVisuales = useMemo(() => {
+    const list = [];
+    if (requisitos?.relaciones?.accionistas !== 0) {
+      list.push("Accionistas");
+    }
+    list.push("Operación");
+    list.push("Documentos");
+    if (tipoProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
+      list.push("Bolsa");
+    }
+    return list;
+  }, [requisitos, tipoProducto]);
 
   const showHeaderYStepper =
     !(pasoActual === 5 && tipoProducto === "cheque") &&
@@ -1270,12 +1337,14 @@ export const AltaOperacion = () => {
               {showHeaderYStepper && (
                 <BarraProgreso
                   hitos={hitosVisuales}
-                  hitoActual={pasoActual}
-                  maxHitoAlcanzado={maxPasoAlcanzado}
-                  onStepClick={setPasoActual}
-                  onVolver={mostrarBotonVolver ? handleVolver : null}
+                  hitoActual={hitoActualMapped}
+                  maxHitoAlcanzado={maxHitoAlcanzadoMapped}
+                  onStepClick={handleStepClickMapped}
+                  onVolver={mostrarBotonVolver ? handleVolverMapped : null}
                   onVolverInicio={
-                    pasoActual === 1 ? () => navigate(`/${channelInfo?.id || "default"}/solicitudes`) : null
+                    pasoActual === 1 || (requisitos?.relaciones?.accionistas === 0 && pasoActual === 2)
+                      ? () => navigate(`/${channelInfo?.id || "default"}/solicitudes`)
+                      : null
                   }
                   onReiniciar={handleClickReiniciar}
                 />

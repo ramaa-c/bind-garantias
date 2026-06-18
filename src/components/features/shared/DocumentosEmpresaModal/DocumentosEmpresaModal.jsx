@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   FiFileText,
@@ -25,23 +25,39 @@ export const DocumentosEmpresaModal = ({
   socioId,
   archivosBackend = [],
   onArchivosBackendChange,
+  requisitos,
 }) => {
-  const docs = [
+  const allDocs = [
     {
       key: "estatuto",
       title: "Estatuto Social",
-      info: "Normas de la entidad.",
+      info: "Normas constitutivas de la entidad legal.",
     },
     {
       key: "balance",
       title: "Último Balance",
-      info: "Certificado por contador.",
+      info: "Último balance de la empresa firmado por contador público.",
     },
-    { key: "acta", title: "Acta de Autoridades", info: "Designación vigente." },
-    { key: "poderes", title: "Poderes", info: "Copia de representación." },
+    { key: "acta", title: "Acta de Autoridades / DDJJ IVA", info: "Designación de autoridades vigente o declaración jurada equivalente." },
+    { key: "cartasDocumento", title: "Cartas Documento", info: "Cartas documento operativas relacionadas." },
+    { key: "poderes", title: "Poderes", info: "Copia de representación legal para firmantes." },
+    { key: "certificadoPyme", title: "Certificado PyME", info: "Certificado oficial emitido por el Ministerio de Producción / AFIP." },
+    { key: "otrosDocumentos", title: "Otros Documentos", info: "Cualquier otra documentación de respaldo del legajo." },
   ];
 
-  const [activeTab, setActiveTab] = useState(docs[0].key);
+  const docs = allDocs.filter(({ key }) => {
+    const configVal = requisitos?.documentos?.[key];
+    return configVal !== 0; // 0 = no mostrar
+  });
+
+  const [activeTab, setActiveTab] = useState(null);
+
+  useEffect(() => {
+    if (docs.length > 0 && (!activeTab || !docs.some(d => d.key === activeTab))) {
+      setActiveTab(docs[0].key);
+    }
+  }, [docs, activeTab]);
+
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingKeys, setUploadingKeys] = useState({});
 

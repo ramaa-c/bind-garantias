@@ -37,3 +37,8 @@
   width: 100%;
   margin-top: 1rem;
 }
+
+.iconContainer.blue {
+  background-color: rgba(43, 113, 200, 0.15) !important;
+  color: #2b71c8 !important;
+}

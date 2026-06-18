@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { useFormContext, useWatch, useForm, Controller } from "react-hook-form";
+import { useRequisitos } from "../../../../hooks/useRequisitos";
 import {
   FiCheckCircle,
   FiClock,
@@ -51,17 +53,21 @@ const ESTRUCTURA_LEGAJO = [
   },
   {
     category: "Documentación",
-    key: "certificadoPyme",
-    title: "Certificado de PyME",
-    info: "Acredita tu condición ante la AFIP y organismos. Si no lo tenés, podés ",
-    linkText: "obtenerlo aquí.",
-    url: "https://pyme.produccion.gob.ar/certificado/",
+    key: "estatuto",
+    title: "Estatuto Social",
+    info: "Normas constitutivas de la entidad legal.",
   },
   {
     category: "Documentación",
     key: "balance",
     title: "Último Balance",
     info: "Cargá o visualizá el último balance de tu empresa firmado por contador público.",
+  },
+  {
+    category: "Documentación",
+    key: "acta",
+    title: "Acta de Autoridades / DDJJ IVA",
+    info: "Designación de autoridades vigente o declaración jurada equivalente.",
   },
   {
     category: "Documentación",
@@ -77,6 +83,14 @@ const ESTRUCTURA_LEGAJO = [
   },
   {
     category: "Documentación",
+    key: "certificadoPyme",
+    title: "Certificado de PyME",
+    info: "Acredita tu condición ante la AFIP y organismos. Si no lo tenés, podés ",
+    linkText: "obtenerlo aquí.",
+    url: "https://pyme.produccion.gob.ar/certificado/",
+  },
+  {
+    category: "Documentación",
     key: "otrosDocumentos",
     title: "Otros documentos",
     info: "Adjuntá cualquier otro documento que consideres necesario.",
@@ -86,8 +100,27 @@ const ESTRUCTURA_LEGAJO = [
 export function DocumentosLegajo() {
   const { control, setValue } = useFormContext();
   const formValues = useWatch({ control });
-  const [activeTab, setActiveTab] = useState(ESTRUCTURA_LEGAJO[0].key);
   const { intentoAvanzar } = formValues;
+
+  const { cadenaSlug } = useParams();
+  const cadenaId = Number(cadenaSlug) || 1;
+  const { requisitos } = useRequisitos(cadenaId);
+
+  const estructuraFiltrada = useMemo(() => {
+    return ESTRUCTURA_LEGAJO.filter(doc => {
+      if (doc.key === "perfil") return true;
+      const configVal = requisitos?.documentos?.[doc.key];
+      return configVal !== 0; // 0 = no mostrar
+    });
+  }, [requisitos]);
+
+  const [activeTab, setActiveTab] = useState(null);
+
+  useEffect(() => {
+    if (estructuraFiltrada.length > 0 && (!activeTab || !estructuraFiltrada.some(t => t.key === activeTab))) {
+      setActiveTab(estructuraFiltrada[0].key);
+    }
+  }, [estructuraFiltrada, activeTab]);
 
   const { socioIdActivo, nombreEmpresa, cuitActivo, direccion, telefono } =
     useEmpresaActiva();
@@ -108,7 +141,7 @@ export function DocumentosLegajo() {
             (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId
           );
 
-          if (key && ["certificadoPyme", "balance", "poderes", "otrosDocumentos", "cartasDocumento"].includes(key)) {
+          if (key && ["estatuto", "balance", "acta", "cartasDocumento", "poderes", "certificadoPyme", "otrosDocumentos"].includes(key)) {
             setValue(
               key,
               {
@@ -135,13 +168,13 @@ export function DocumentosLegajo() {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 768 && !activeTab) {
-        setActiveTab(ESTRUCTURA_LEGAJO[0].key);
+      if (window.innerWidth > 768 && !activeTab && estructuraFiltrada.length > 0) {
+        setActiveTab(estructuraFiltrada[0].key);
       }
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [activeTab]);
+  }, [activeTab, estructuraFiltrada]);
 
   const handleFileUpload = (key, file) => {
     if (file instanceof File) {
@@ -154,13 +187,14 @@ export function DocumentosLegajo() {
   return (
     <div className={styles.workspace}>
       <div className={styles.sidebarBg} />
-      {ESTRUCTURA_LEGAJO.map((doc, index) => {
+      {estructuraFiltrada.map((doc, index) => {
         const isNewCategory =
-          index === 0 || doc.category !== ESTRUCTURA_LEGAJO[index - 1].category;
+          index === 0 || doc.category !== estructuraFiltrada[index - 1].category;
         const isPerfil = doc.key === "perfil";
         const currentFile = formValues[doc.key];
         const isComplete = isPerfil || !!currentFile;
-        const hasError = intentoAvanzar && !isPerfil && !currentFile;
+        const isRequired = requisitos?.documentos?.[doc.key] === 1;
+        const hasError = intentoAvanzar && !isPerfil && isRequired && !currentFile;
         const isActive = activeTab === doc.key;
 
         return (

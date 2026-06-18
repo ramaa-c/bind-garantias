@@ -16,6 +16,7 @@ import {
 
 import { Select, Modal, Button, Spinner, InputSimple } from "../../components/ui";
 import { CadenaHeaderCard } from "../../components/features/admin/CadenaHeaderCard/CadenaHeaderCard";
+import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./LineasProductos.module.css";
 
 // --- CHILD COMPONENT: LINE CARD ---
@@ -30,6 +31,9 @@ const LineaCard = ({
   const { data: productosAsociados, isLoading: isLoadingProds } = useObtenerProductosPorLimite(linea.tipolimiteid);
   const { data: allObligaciones } = useObligaciones();
   const desasociarMutation = useDesasociarProductoLimite(linea.tipolimiteid);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedProd, setSelectedProd] = useState(null);
 
   const moneda = currencies.find((c) => String(c.value) === String(linea.monedaid));
   const monedaNombre = moneda ? moneda.label : `Moneda #${linea.monedaid}`;
@@ -48,17 +52,26 @@ const LineaCard = ({
 
   const prodsList = Array.isArray(productosAsociados) ? productosAsociados : [];
 
-  const handleDesasociar = (p, prodName) => {
-    if (window.confirm(`¿Seguro que deseas remover "${prodName}" de esta línea?`)) {
-      desasociarMutation.mutate(p.tipoobligaciontipolimiteid, {
-        onSuccess: () => {
-          toast.success(`Producto "${prodName}" desasociado con éxito`);
-        },
-        onError: (err) => {
-          toast.error("Error al desasociar producto: " + err.message);
-        },
-      });
-    }
+  const handleDesasociarClick = (p, prodName) => {
+    setSelectedProd({ p, prodName });
+    setConfirmOpen(true);
+  };
+
+  const confirmDesasociar = () => {
+    if (!selectedProd) return;
+    const { p, prodName } = selectedProd;
+    desasociarMutation.mutate(p.tipoobligaciontipolimiteid, {
+      onSuccess: () => {
+        toast.success(`Producto "${prodName}" desasociado con éxito`);
+        setConfirmOpen(false);
+        setSelectedProd(null);
+      },
+      onError: (err) => {
+        toast.error("Error al desasociar producto: " + err.message);
+        setConfirmOpen(false);
+        setSelectedProd(null);
+      },
+    });
   };
 
   return (
@@ -122,7 +135,7 @@ const LineaCard = ({
                       type="button"
                       className={styles.btnRemoveProd}
                       title="Desasociar producto"
-                      onClick={() => handleDesasociar(p, prodName)}
+                      onClick={() => handleDesasociarClick(p, prodName)}
                     >
                       <FiX size={12} />
                     </button>
@@ -152,6 +165,23 @@ const LineaCard = ({
           <FiTrash2 />
         </button>
       </div>
+
+      <ConfirmacionModal
+        isOpen={confirmOpen}
+        onClose={() => {
+          setConfirmOpen(false);
+          setSelectedProd(null);
+        }}
+        onConfirm={confirmDesasociar}
+        titulo="Desasociar Producto"
+        mensaje={`¿Estás seguro de que deseas deshabilitar "${selectedProd?.prodName}" para esta línea de crédito?`}
+        variant="blue"
+        confirmText="REMOVER"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={desasociarMutation.isPending}
+      />
     </div>
   );
 };
@@ -271,6 +301,12 @@ export default function LineasProductos() {
     linea: null,
   });
 
+  // Confirmation States
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [lineaToDelete, setLineaToDelete] = useState(null);
+  const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+  const [savePayload, setSavePayload] = useState(null);
+
   // Queries
   const { data: cadenas, isLoading: isLoadingCadenas } = useObtenerTodasWeb();
   const { data: lineas, isLoading: isLoadingLineas } = useObtenerLimitesCadenaValor(selectedCadenaId);
@@ -328,17 +364,24 @@ export default function LineasProductos() {
   };
 
   const handleDeleteLinea = (linea) => {
-    const desc = linea.descripcion || `Línea #${linea.tipolimitecadenavalorid}`;
-    if (window.confirm(`¿Seguro que deseas eliminar la línea "${desc}" de esta cadena?`)) {
-      eliminarMutation.mutate(linea.tipolimitecadenavalorid, {
-        onSuccess: () => {
-          toast.success("Línea eliminada correctamente");
-        },
-        onError: (err) => {
-          toast.error("Error al eliminar la línea: " + err.message);
-        },
-      });
-    }
+    setLineaToDelete(linea);
+    setConfirmDeleteOpen(true);
+  };
+
+  const confirmDeleteLinea = () => {
+    if (!lineaToDelete) return;
+    eliminarMutation.mutate(lineaToDelete.tipolimitecadenavalorid, {
+      onSuccess: () => {
+        toast.success("Línea de crédito eliminada correctamente");
+        setConfirmDeleteOpen(false);
+        setLineaToDelete(null);
+      },
+      onError: (err) => {
+        toast.error("Error al eliminar la línea: " + err.message);
+        setConfirmDeleteOpen(false);
+        setLineaToDelete(null);
+      },
+    });
   };
 
   const handleSubmitForm = (e) => {
@@ -361,24 +404,39 @@ export default function LineasProductos() {
       activa: formData.activa ? "S" : "N",
     };
 
+    setSavePayload(payload);
+    setConfirmSaveOpen(true);
+  };
+
+  const confirmSaveLinea = () => {
+    if (!savePayload) return;
+
     if (activeLinea) {
-      actualizarMutation.mutate(payload, {
+      actualizarMutation.mutate(savePayload, {
         onSuccess: () => {
           toast.success("Línea de crédito modificada correctamente");
           setIsLineaModalOpen(false);
+          setConfirmSaveOpen(false);
+          setSavePayload(null);
         },
         onError: (err) => {
           toast.error("Error al guardar cambios: " + err.message);
+          setConfirmSaveOpen(false);
+          setSavePayload(null);
         },
       });
     } else {
-      crearMutation.mutate(payload, {
+      crearMutation.mutate(savePayload, {
         onSuccess: () => {
           toast.success("Línea de crédito creada correctamente");
           setIsLineaModalOpen(false);
+          setConfirmSaveOpen(false);
+          setSavePayload(null);
         },
         onError: (err) => {
           toast.error("Error al crear la línea de crédito: " + err.message);
+          setConfirmSaveOpen(false);
+          setSavePayload(null);
         },
       });
     }
@@ -569,6 +627,40 @@ export default function LineasProductos() {
           linea={asociarModal.linea}
         />
       )}
+
+      <ConfirmacionModal
+        isOpen={confirmDeleteOpen}
+        onClose={() => {
+          setConfirmDeleteOpen(false);
+          setLineaToDelete(null);
+        }}
+        onConfirm={confirmDeleteLinea}
+        titulo="Eliminar Línea de Crédito"
+        mensaje={`¿Estás seguro de que deseas eliminar la línea de crédito "${lineaToDelete?.descripcion || 'seleccionada'}"? Esta acción no se puede deshacer.`}
+        variant="blue"
+        confirmText="ELIMINAR"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={eliminarMutation.isPending}
+      />
+
+      <ConfirmacionModal
+        isOpen={confirmSaveOpen}
+        onClose={() => {
+          setConfirmSaveOpen(false);
+          setSavePayload(null);
+        }}
+        onConfirm={confirmSaveLinea}
+        titulo={activeLinea ? "Guardar Cambios" : "Crear Línea de Crédito"}
+        mensaje={`¿Estás seguro de que deseas ${activeLinea ? 'modificar' : 'crear'} esta línea de crédito?`}
+        variant="blue"
+        confirmText="CONFIRMAR"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={activeLinea ? actualizarMutation.isPending : crearMutation.isPending}
+      />
     </div>
   );
 }

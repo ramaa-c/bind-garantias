@@ -9,6 +9,7 @@ import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { Select } from "../../../ui/Select/Select";
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
+import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./ActivarCadenaModal.module.css";
 
 export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) => {
@@ -34,6 +35,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const todasList = Array.isArray(todasCadenasData)
     ? todasCadenasData
@@ -96,6 +99,10 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       return;
     }
 
+    setConfirmOpen(true);
+  };
+
+  const confirmSave = () => {
     const payload = {
       cadenavalorid: Number(formState.cadenavalorid),
       denominacion: formState.denominacion,
@@ -108,6 +115,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     crearMutation.mutate(payload, {
       onSuccess: () => {
         toast.success("Cadena de valor activada exitosamente para la web");
+        setConfirmOpen(false);
         onSuccess();
         onClose();
         // Reset state
@@ -117,6 +125,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       onError: (err) => {
         console.error("Error al crear cadena:", err);
         toast.error("Ocurrió un error al activar la cadena de valor");
+        setConfirmOpen(false);
       }
     });
   };
@@ -340,6 +349,20 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
           </Button>
         )}
       </div>
+
+      <ConfirmacionModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmSave}
+        titulo="Confirmar Activación"
+        mensaje="¿Estás seguro de que deseas activar esta cadena de valor en la plataforma web?"
+        variant="blue"
+        confirmText="ACTIVAR"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={crearMutation.isPending}
+      />
     </Modal>
   );
 };

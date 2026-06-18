@@ -4,7 +4,8 @@ import {
   FiPlus,
   FiEdit,
   FiList,
-  FiUser
+  FiUser,
+  FiSliders
 } from "react-icons/fi";
 import styles from "./CadenasValor.module.css";
 import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
@@ -17,7 +18,8 @@ import {
   ActivarCadenaModal,
   EditarCadenaModal,
   CdaConfigModal,
-  UsuariosRelacionadosModal
+  UsuariosRelacionadosModal,
+  RequisitosConfigModal
 } from "../../components/features";
 
 export default function CadenasValor() {
@@ -170,6 +172,13 @@ export default function CadenasValor() {
                       >
                         <FiUser />
                       </button>
+                      <button
+                        className={`${styles.iconBtnAction} ${styles.btnRequisitos}`}
+                        title="Configurar Requisitos"
+                        onClick={() => handleActionClick(item, "requisitos")}
+                      >
+                        <FiSliders />
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -209,6 +218,12 @@ export default function CadenasValor() {
 
       <UsuariosRelacionadosModal
         isOpen={isModalOpen && modalType === "users"}
+        onClose={() => setIsModalOpen(false)}
+        activeItem={activeItem}
+      />
+
+      <RequisitosConfigModal
+        isOpen={isModalOpen && modalType === "requisitos"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}
       />

@@ -126,10 +126,37 @@ export const OnboardingGuard = ({ children }) => {
     return <Navigate to={`/${channelInfo.id}/login`} replace />;
   }
 
+  const isBasicAdmin =
+    user?.role === "admin" ||
+    user?.email === "admin" ||
+    user?.email === "admin_restricto" ||
+    user?.email === "admin restricto";
+
+  if (isBasicAdmin) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // 1. Primero esperamos a resolver el perfil de usuario y la verificación de si es admin de cadena
   if (
     (isLoadingUser && !usuarioWebId) ||
+    (usuarioWebId && isCadenasLoading)
+  ) {
+    return (
+      <LoadingScreen
+        title="Cargando tu perfil"
+        message="Estamos obteniendo tu información..."
+      />
+    );
+  }
+
+  // 2. Si ya sabemos que es admin de cadena, redirigimos inmediatamente a la zona admin
+  if (isAdminCadena) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // 3. Si no es admin de cadena, esperamos a que carguen los datos de socios y vendor para el flujo cliente/vendor
+  if (
     (usuarioWebId && isPendingSocios) ||
-    (usuarioWebId && isCadenasLoading) ||
     isLoadingVendor
   ) {
     return (
@@ -138,10 +165,6 @@ export const OnboardingGuard = ({ children }) => {
         message="Estamos obteniendo tu información y empresas vinculadas..."
       />
     );
-  }
-
-  if (isAdminCadena) {
-    return <Navigate to="/admin/dashboard" replace />;
   }
 
   if (usuarioWebId && tieneEmpresas) {

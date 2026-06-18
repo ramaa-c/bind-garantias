@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
+import { useRequisitos } from "../../../../hooks/useRequisitos";
 import {
   useFormContext,
   useFormState,
@@ -29,8 +31,11 @@ import styles from "./Paso5Documentacion.module.css";
 const DOC_ITEMS = [
   { key: "estatuto", label: "Estatuto" },
   { key: "balance", label: "Balance" },
-  { key: "acta", label: "Acta" },
+  { key: "acta", label: "Acta / DDJJ IVA" },
+  { key: "cartasDocumento", label: "Cartas Documento" },
   { key: "poderes", label: "Poderes" },
+  { key: "certificadoPyme", label: "Certificado PyME" },
+  { key: "otrosDocumentos", label: "Otros Documentos" },
 ];
 
 const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
@@ -67,6 +72,14 @@ export default function Paso5Documentacion({
   isSubmitting,
   socioId,
 }) {
+  const { cadenaSlug } = useParams();
+  const cadenaId = Number(cadenaSlug) || 1;
+  const { requisitos } = useRequisitos(cadenaId);
+
+  const docItemsFiltered = DOC_ITEMS.filter(({ key }) => {
+    const configVal = requisitos?.documentos?.[key];
+    return configVal !== 0; // 0 = no mostrar
+  });
   const { register, control, setValue, trigger, clearErrors, getValues } =
     useFormContext();
   const { errors } = useFormState({ control });
@@ -118,7 +131,7 @@ export default function Paso5Documentacion({
             const docKey = tipoToKey[arch.tipodocumentoarchivoid];
             if (
               docKey &&
-              ["estatuto", "balance", "acta", "poderes"].includes(docKey)
+              ["estatuto", "balance", "acta", "poderes", "cartasDocumento", "certificadoPyme", "otrosDocumentos"].includes(docKey)
             ) {
               // Crear un pseudo-File para mostrar en la UI
               const pseudoFile = new File(
@@ -264,7 +277,13 @@ export default function Paso5Documentacion({
     });
   };
 
-  const docsEmpresaListos = DOC_ITEMS.every(({ key }) => archivos[key]);
+  const docsEmpresaListos = docItemsFiltered.every(({ key }) => {
+    const configVal = requisitos?.documentos?.[key];
+    if (configVal === 1) {
+      return !!archivos[key];
+    }
+    return true; // Si es opcional (2) o no visible, no bloquea el avance
+  });
 
   const handleAbrirModalRep = (index) =>
     updateState({ repActivoIndex: index, modalRepOpen: true });
@@ -275,15 +294,20 @@ export default function Paso5Documentacion({
 
   const handleAvanzarClick = async () => {
     updateState({ intentoAvanzar: true });
+    const isRepRequired = requisitos?.relaciones?.representantes === 1;
     const tieneRepresentantes = representantes.length > 0;
+    const canAdvanceReps = !isRepRequired || tieneRepresentantes || requisitos?.relaciones?.representantes === 0;
+
     const emailFacValido = await trigger("emailFacturacion");
     if (
       docsEmpresaListos &&
-      tieneRepresentantes &&
+      canAdvanceReps &&
       emailFacValido &&
       emailFacturacionVal.trim() !== ""
     ) {
       if (avanzarPaso6) avanzarPaso6();
+    } else if (!canAdvanceReps && isRepRequired) {
+      toast.error("Debe declarar al menos un representante o apoderado.");
     }
   };
 
@@ -317,16 +341,18 @@ export default function Paso5Documentacion({
             )}
             Documentos
           </span>
-          <span
-            className={`${styles.pill} ${pill(representantes.length > 0, intentoAvanzar)}`}
-          >
-            {representantes.length > 0 ? (
-              <FiCheckCircle size={11} />
-            ) : (
-              <FiAlertCircle size={11} />
-            )}
-            Representantes
-          </span>
+          {requisitos?.relaciones?.representantes !== 0 && (
+            <span
+              className={`${styles.pill} ${pill(representantes.length > 0, intentoAvanzar)}`}
+            >
+              {representantes.length > 0 ? (
+                <FiCheckCircle size={11} />
+              ) : (
+                <FiAlertCircle size={11} />
+              )}
+              Representantes
+            </span>
+          )}
           <span
             className={`${styles.pill} ${pill(isEmailFacturacionValido, intentoAvanzar && !isEmailFacturacionValido)}`}
           >
@@ -364,93 +390,98 @@ export default function Paso5Documentacion({
             className={styles.docGrid}
             onClick={() => updateState({ modalDocsOpen: true })}
           >
-            {DOC_ITEMS.map(({ key, label }) => (
-              <div
-                key={key}
-                className={`${styles.docChip} ${
-                  archivos[key]
-                    ? styles.docChipDone
-                    : intentoAvanzar
-                      ? styles.docChipError
-                      : styles.docChipPending
-                }`}
-              >
-                {archivos[key] ? (
-                  <FiCheckCircle size={12} />
-                ) : (
-                  <FiAlertCircle size={12} />
-                )}
-                <span>{label}</span>
-              </div>
-            ))}
+            {docItemsFiltered.map(({ key, label }) => {
+              const isRequired = requisitos?.documentos?.[key] === 1;
+              return (
+                <div
+                  key={key}
+                  className={`${styles.docChip} ${
+                    archivos[key]
+                      ? styles.docChipDone
+                      : (isRequired && intentoAvanzar)
+                        ? styles.docChipError
+                        : styles.docChipPending
+                  }`}
+                >
+                  {archivos[key] ? (
+                    <FiCheckCircle size={12} />
+                  ) : (
+                    <FiAlertCircle size={12} />
+                  )}
+                  <span>{label}</span>
+                </div>
+              );
+            })}
           </div>
         </section>
 
 
 
         {/* REPRESENTANTES */}
-        <section className={styles.section}>
-          <div className={styles.sectionHeaderRow}>
-            <span className={styles.sectionLabel}>
-              Representantes y Apoderados
-            </span>
-            {representantes.length > 0 && (
+        {requisitos?.relaciones?.representantes !== 0 && (
+          <section className={styles.section}>
+            <div className={styles.sectionHeaderRow}>
+              <span className={styles.sectionLabel}>
+                Representantes y Apoderados
+              </span>
+              {representantes.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.actionLink}
+                  onClick={() => handleAbrirModalRep(null)}
+                >
+                  <FiPlus size={11} /> Agregar
+                </button>
+              )}
+            </div>
+
+            {representantes.length === 0 ? (
               <button
                 type="button"
-                className={styles.actionLink}
+                className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
                 onClick={() => handleAbrirModalRep(null)}
               >
-                <FiPlus size={11} /> Agregar
+                <FiPlus size={14} />
+                <span>Agregar representante o apoderado</span>
               </button>
+            ) : (
+              <div className={styles.compactList}>
+                {representantes.map((rep, index) => (
+                  <div
+                    key={rep?.id || index}
+                    className={`${styles.compactRow} ${styles.compactRowSuccess}`}
+                  >
+                    <span className={`${styles.statusDot} ${styles.dotGreen}`} />
+                    <div className={styles.rowInfo}>
+                      <strong className={styles.rowName}>{rep.nombre}</strong>
+                      <span className={styles.rowSub}>
+                        {rep.rol} · {rep.cuit}
+                      </span>
+                    </div>
+                    <div className={styles.rowActions}>
+                      <button
+                        type="button"
+                        className={styles.iconBtn}
+                        onClick={() => handleAbrirModalRep(index)}
+                        title="Editar"
+                      >
+                        <FiEdit2 size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                        onClick={() => removeRep(index)}
+                        title="Eliminar"
+                      >
+                        <FiTrash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-          </div>
-
-          {representantes.length === 0 ? (
-            <button
-              type="button"
-              className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
-              onClick={() => handleAbrirModalRep(null)}
-            >
-              <FiPlus size={14} />
-              <span>Agregar representante o apoderado</span>
-            </button>
-          ) : (
-            <div className={styles.compactList}>
-              {representantes.map((rep, index) => (
-                <div
-                  key={rep?.id || index}
-                  className={`${styles.compactRow} ${styles.compactRowSuccess}`}
-                >
-                  <span className={`${styles.statusDot} ${styles.dotGreen}`} />
-                  <div className={styles.rowInfo}>
-                    <strong className={styles.rowName}>{rep.nombre}</strong>
-                    <span className={styles.rowSub}>
-                      {rep.rol} · {rep.cuit}
-                    </span>
-                  </div>
-                  <div className={styles.rowActions}>
-                    <button
-                      type="button"
-                      className={styles.iconBtn}
-                      onClick={() => handleAbrirModalRep(index)}
-                      title="Editar"
-                    >
-                      <FiEdit2 size={13} />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
-                      onClick={() => removeRep(index)}
-                      title="Eliminar"
-                    >
-                      <FiTrash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* EMAIL FACTURACIÓN */}
         <section className={styles.section}>
@@ -500,6 +531,7 @@ export default function Paso5Documentacion({
         socioId={socioId}
         archivosBackend={archivosBackend}
         onArchivosBackendChange={setArchivosBackend}
+        requisitos={requisitos}
       />
 
       <RepresentanteModal

@@ -5,6 +5,7 @@ import {
   RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
   parseTerminos,
 } from "../../constants/terminosCondiciones";
+import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./Terminos.module.css";
 
 const documentosIniciales = {
@@ -32,6 +33,7 @@ export default function Terminos() {
 
   const [textoEditable, setTextoEditable] = useState(docs.terminos.contenido);
   const [hasUnsaved, setHasUnsaved] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleSelectDoc = (key) => {
     if (hasUnsaved) {
@@ -49,6 +51,10 @@ export default function Terminos() {
   };
 
   const handleGuardarCambios = () => {
+    setConfirmOpen(true);
+  };
+
+  const confirmSave = () => {
     const nextVersion = "v" + (parseFloat(docs[docActivo].version.replace("v", "")) + 0.1).toFixed(1);
     const today = new Date().toLocaleDateString("es-AR");
 
@@ -71,6 +77,7 @@ export default function Terminos() {
     });
 
     setHasUnsaved(false);
+    setConfirmOpen(false);
     toast.success("Documento legal actualizado", {
       description: `Los nuevos "${docs[docActivo].titulo}" requieren nueva aceptación por los usuarios tras el próximo inicio de sesión.`,
     });
@@ -208,6 +215,19 @@ export default function Terminos() {
           </div>
         </div>
       </div>
+
+      <ConfirmacionModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmSave}
+        titulo="Publicar Nueva Versión"
+        mensaje={`¿Estás seguro de que deseas publicar una nueva versión de "${docs[docActivo].titulo}"? Esto requerirá que todos los usuarios vuelvan a aceptar los términos y condiciones al iniciar sesión.`}
+        variant="blue"
+        confirmText="PUBLICAR"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+      />
     </div>
   );
 }

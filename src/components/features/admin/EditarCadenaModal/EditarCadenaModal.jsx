@@ -5,6 +5,7 @@ import { useActualizarCadenaValor } from "../../../../hooks/useCadenaValor";
 import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../hooks/useCatalogos";
 import { Modal, Button, InputSimple, Select } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
+import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./EditarCadenaModal.module.css";
 
 export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) => {
@@ -26,6 +27,8 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (activeItem && isOpen) {
@@ -76,6 +79,10 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       return;
     }
 
+    setConfirmOpen(true);
+  };
+
+  const confirmSave = () => {
     const payload = {
       cadenavalorid: Number(formState.cadenavalorid),
       denominacion: formState.denominacion,
@@ -88,12 +95,14 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     actualizarMutation.mutate(payload, {
       onSuccess: () => {
         toast.success("Cadena de valor modificada exitosamente");
+        setConfirmOpen(false);
         onSuccess();
         onClose();
       },
       onError: (err) => {
         console.error("Error al actualizar cadena:", err);
         toast.error("Ocurrió un error al modificar la cadena de valor");
+        setConfirmOpen(false);
       }
     });
   };
@@ -231,6 +240,20 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
           GUARDAR
         </Button>
       </div>
+
+      <ConfirmacionModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmSave}
+        titulo="Confirmar Modificación"
+        mensaje="¿Estás seguro de que deseas guardar los cambios realizados en esta cadena de valor?"
+        variant="blue"
+        confirmText="GUARDAR"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={actualizarMutation.isPending}
+      />
     </Modal>
   );
 };

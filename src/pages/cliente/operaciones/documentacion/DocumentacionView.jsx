@@ -11,11 +11,13 @@ import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/Help
 import styles from "./DocumentacionView.module.css";
 
 const DOC_TITLES = {
-  certificadoPyme: "Certificado de PyME",
+  estatuto: "Estatuto Social",
   balance: "Último Balance",
-  poderes: "Poderes",
-  otrosDocumentos: "Otros documentos",
+  acta: "Acta de Autoridades / DDJJ IVA",
   cartasDocumento: "Cartas Documento",
+  poderes: "Poderes",
+  certificadoPyme: "Certificado de PyME",
+  otrosDocumentos: "Otros documentos",
 };
 
 export default function DocumentacionView() {
@@ -35,11 +37,13 @@ export default function DocumentacionView() {
   const methods = useForm({
     mode: "onChange",
     defaultValues: {
-      certificadoPyme: null,
+      estatuto: null,
       balance: null,
-      poderes: null,
-      otrosDocumentos: null,
+      acta: null,
       cartasDocumento: null,
+      poderes: null,
+      certificadoPyme: null,
+      otrosDocumentos: null,
       intentoAvanzar: false,
     },
   });
@@ -61,11 +65,13 @@ export default function DocumentacionView() {
         await socioArchivoService.obtenerArchivos(socioIdActivo);
 
       const llavesDocumentos = [
-        "certificadoPyme",
+        "estatuto",
         "balance",
-        "poderes",
-        "otrosDocumentos",
+        "acta",
         "cartasDocumento",
+        "poderes",
+        "certificadoPyme",
+        "otrosDocumentos",
       ];
       const pendientes = [];
 

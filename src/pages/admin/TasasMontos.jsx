@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FiSave, FiRefreshCw, FiPercent, FiDollarSign, FiInfo } from "react-icons/fi";
 import { toast } from "sonner";
+import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./TasasMontos.module.css";
 
 const STORAGE_KEY = "tasas_y_montos_config";
@@ -195,6 +196,7 @@ export default function TasasMontos() {
   const [activeTab, setActiveTab] = useState(tabQuery);
   const [parametros, setParametros] = useState(getInitialParametros);
   const [hasChanges, setHasChanges] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -213,11 +215,16 @@ export default function TasasMontos() {
   };
 
   const handleGuardar = () => {
+    setConfirmOpen(true);
+  };
+
+  const confirmSave = () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(parametros));
     toast.success("Parámetros actualizados correctamente", {
       description: `Las nuevas tasas y límites para "${activeTab.toUpperCase()}" ya están vigentes en toda la plataforma.`,
     });
     setHasChanges(false);
+    setConfirmOpen(false);
   };
 
   const handleRestablecer = () => {
@@ -361,6 +368,19 @@ export default function TasasMontos() {
           );
         })}
       </div>
+
+      <ConfirmacionModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmSave}
+        titulo="Guardar Tasas y Límites"
+        mensaje={`¿Estás seguro de que deseas actualizar las tasas y límites operativos para ${activeTab === 'lineas' ? 'Líneas de Crédito' : activeTab === 'cheques' ? 'Cheques Avalados' : activeTab === 'pagares' ? 'Pagarés Bursátiles' : 'Préstamos'}? Estos cambios impactarán en tiempo real.`}
+        variant="blue"
+        confirmText="GUARDAR"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+      />
     </div>
   );
 }

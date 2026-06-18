@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useObtenerDatosSocioLegajo } from "../../../../hooks/useTerceros";
 import {
   FiExternalLink,
@@ -50,20 +52,29 @@ const ESTRUCTURA_SOCIOS = [
 export function SociosLegajo() {
   const { socioIdActivo, tipoPersonaId } = useEmpresaActiva();
 
-  const tabsDisponibles = useMemo(() => {
-    if (tipoPersonaId === 1) {
-      return ESTRUCTURA_SOCIOS.filter(t => t.key !== "accionistas");
-    }
-    return ESTRUCTURA_SOCIOS;
-  }, [tipoPersonaId]);
+  const { cadenaSlug } = useParams();
+  const cadenaId = Number(cadenaSlug) || 1;
+  const { requisitos } = useRequisitos(cadenaId);
 
-  const [activeTab, setActiveTab] = useState(ESTRUCTURA_SOCIOS[0].key);
+  const tabsDisponibles = useMemo(() => {
+    let baseTabs = ESTRUCTURA_SOCIOS;
+    if (tipoPersonaId === 1) {
+      baseTabs = ESTRUCTURA_SOCIOS.filter(t => t.key !== "accionistas");
+    }
+    // Filtrar según los requisitos configurados
+    return baseTabs.filter(t => {
+      const configVal = requisitos?.relaciones?.[t.key];
+      return configVal !== 0; // 0 = no mostrar
+    });
+  }, [tipoPersonaId, requisitos]);
+
+  const [activeTab, setActiveTab] = useState(null);
 
   useEffect(() => {
-    if (tipoPersonaId === 1 && activeTab === "accionistas") {
-      setActiveTab("representantes");
+    if (tabsDisponibles.length > 0 && (!activeTab || !tabsDisponibles.some(t => t.key === activeTab))) {
+      setActiveTab(tabsDisponibles[0].key);
     }
-  }, [tipoPersonaId, activeTab]);
+  }, [tabsDisponibles, activeTab]);
 
   const queryClient = useQueryClient();
   const { data: socioLegajoData, isLoading: loadingQuery } = useObtenerDatosSocioLegajo(socioIdActivo);
@@ -102,7 +113,7 @@ export function SociosLegajo() {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 768 && !activeTab) {
+      if (window.innerWidth > 768 && !activeTab && tabsDisponibles.length > 0) {
         setActiveTab(tabsDisponibles[0]?.key);
       }
     };

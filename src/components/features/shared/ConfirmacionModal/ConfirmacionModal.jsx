@@ -11,20 +11,25 @@ export function ConfirmacionModal({
   titulo = "Confirmar acción",
   mensaje = "¿Estás seguro de que deseas continuar?",
   isLoading = false,
+  variant = "default",
+  confirmText = "Confirmar",
+  cancelText = "Cancelar",
+  confirmVariant = "primary",
+  cancelVariant = "outline",
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={titulo} maxWidth="400px">
+    <Modal isOpen={isOpen} onClose={onClose} title={titulo} maxWidth="400px" variant={variant}>
       <div className={styles.container}>
-        <div className={styles.iconContainer}>
+        <div className={`${styles.iconContainer} ${styles[variant] || ""} ${variant === "blue" ? styles.blue : ""}`}>
           <FiAlertCircle className={styles.icon} />
         </div>
         <p className={styles.mensaje}>{mensaje}</p>
         <div className={styles.actions}>
-          <Button variant="outline" onClick={onClose} disabled={isLoading}>
-            Cancelar
+          <Button variant={cancelVariant} onClick={onClose} disabled={isLoading}>
+            {cancelText}
           </Button>
-          <Button variant="primary" onClick={onConfirm} disabled={isLoading} isLoading={isLoading}>
-            Confirmar
+          <Button variant={confirmVariant} onClick={onConfirm} disabled={isLoading} isLoading={isLoading}>
+            {confirmText}
           </Button>
         </div>
       </div>

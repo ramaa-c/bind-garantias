@@ -193,6 +193,13 @@
   color: #bc8cff;
 }
 
+.btnRequisitos:hover {
+  background: rgba(56, 161, 105, 0.15);
+  border-color: #38a169;
+  color: #38a169;
+}
+
+
 
 .btnActionToggle:hover, .btnActionToggle.active {
   color: var(--yellow, #f5f400);

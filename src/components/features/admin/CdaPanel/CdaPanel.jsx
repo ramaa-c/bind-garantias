@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiEdit, FiCheck, FiPlus, FiX } from "react-icons/fi";
+import { FiEdit, FiCheck, FiPlus, FiX, FiRotateCcw, FiSave } from "react-icons/fi";
 import { toast } from "sonner";
 import { useObtenerCdasPorCadenaId, useVincularCdas } from "../../../../hooks/useCadenaValor";
-import { useCrearCda, useObtenerTodosCdas } from "../../../../hooks/useCda";
+import { useObtenerTodosCdas, useCrearCda } from "../../../../hooks/useCda";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { Button } from "../../../ui/Button/Button";
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { Modal } from "../../../ui/Modal/Modal";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
+import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CdaPanel.module.css";
 
-export const CdaPanel = ({ activeItem }) => {
+export const CdaPanel = ({ activeItem, onClose }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
@@ -36,6 +37,7 @@ export const CdaPanel = ({ activeItem }) => {
   const [expresionlog, setExpresionlog] = useState("");
   const [mensajerechazo, setMensajerechazo] = useState("");
   const [validationError, setValidationError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const allCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
   const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
@@ -72,12 +74,24 @@ export const CdaPanel = ({ activeItem }) => {
     activeCdaIds.some(id => !initialActiveCdaIds.includes(id)) ||
     initialActiveCdaIds.some(id => !activeCdaIds.includes(id));
 
-  const handleSaveVinculacion = async () => {
-    const confirmSave = window.confirm(
-      "¿Estás seguro de que deseas actualizar la vinculación de CDAs para esta cadena de valor?"
-    );
-    if (!confirmSave) return;
+  const handleSaveVinculacion = () => {
+    setConfirmOpen(true);
+  };
 
+  const handleReset = () => {
+    const status = {};
+    allCdasList.forEach(c => {
+      status[c.cdaid] = false;
+    });
+    linkedCdasList.forEach(c => {
+      status[c.cdaid] = true;
+    });
+    setLocalCdasStatus(status);
+    setCustomRechazoMsgs({});
+    toast.success("CDAs restablecidos a la configuración guardada");
+  };
+
+  const confirmSaveVinculacion = async () => {
     try {
       await vincularCda({
         cadenavalorid: cadenaId,
@@ -86,9 +100,12 @@ export const CdaPanel = ({ activeItem }) => {
 
       await queryClient.invalidateQueries({ queryKey: ['cadenaValor', 'cdas', cadenaId] });
       toast.success("Vinculación de CDAs actualizada correctamente");
+      setConfirmOpen(false);
+      if (onClose) onClose();
     } catch (err) {
       console.error(err);
       toast.error("Ocurrió un error al vincular los CDAs");
+      setConfirmOpen(false);
     }
   };
 
@@ -164,8 +181,9 @@ export const CdaPanel = ({ activeItem }) => {
   }
 
   return (
-    <div>
-      <CadenaHeaderCard
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      <div className={styles.modalBody}>
+        <CadenaHeaderCard
         denominacion={activeItem?.denominacion}
         logo={activeItem?.logo}
         referencia={activeItem?.referencia}
@@ -335,19 +353,30 @@ export const CdaPanel = ({ activeItem }) => {
             })
           )}
         </div>
-        {hasChanges && (
-          <div className={styles.cdasActions}>
-            <Button
-              type="button"
-              variant="blue"
-              size="sm"
-              onClick={handleSaveVinculacion}
-              isLoading={isVinculandoCda}
-            >
-              Vincular Selección
-            </Button>
-          </div>
-        )}
+      </div>
+    </div>
+
+    <div className={styles.mainFooter}>
+        <Button
+          type="button"
+          variant="outlineBlue"
+          size="sm"
+          onClick={handleReset}
+        >
+          <FiRotateCcw style={{ marginRight: "0.5rem" }} />
+          REESTABLECER
+        </Button>
+        <Button
+          type="button"
+          variant="blue"
+          size="sm"
+          onClick={handleSaveVinculacion}
+          disabled={!hasChanges && Object.keys(customRechazoMsgs).length === 0}
+          isLoading={isVinculandoCda}
+        >
+          <FiSave style={{ marginRight: "0.5rem" }} />
+          VINCULAR SELECCIÓN
+        </Button>
       </div>
 
       <Modal
@@ -393,6 +422,20 @@ export const CdaPanel = ({ activeItem }) => {
           </>
         )}
       </Modal>
+
+      <ConfirmacionModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmSaveVinculacion}
+        titulo="Confirmar Vinculación de CDAs"
+        mensaje="¿Estás seguro de que deseas guardar la vinculación de criterios de aceptación para esta cadena de valor?"
+        variant="blue"
+        confirmText="VINCULAR"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={isVinculandoCda}
+      />
     </div>
   );
 };
