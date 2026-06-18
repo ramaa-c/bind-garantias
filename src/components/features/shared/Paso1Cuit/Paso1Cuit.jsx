@@ -10,9 +10,12 @@ import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import { useAuthStore } from "../../../../store/useAuthStore";
+import { useParams } from "react-router-dom";
 import styles from "./Paso1Cuit.module.css";
 
 export default function Paso1Cuit({ onValidar, onSocioExistente }) {
+  const { cadenaSlug } = useParams();
+  const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const { control, getValues, setValue, setError, clearErrors } =
     useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
@@ -132,7 +135,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
         // ── VALIDACIÓN SGRPlus Core
         try {
-          const resultSgrCore = await validarSocioCore({ cuit, cadenaValorId: 0 });
+          const resultSgrCore = await validarSocioCore({ cuit, cadenaValorId: cadenaValorIdParam });
           if (resultSgrCore?.data && resultSgrCore.data.success === false) {
             setProcesoModal((prev) => ({
               ...prev,

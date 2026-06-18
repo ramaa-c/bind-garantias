@@ -22,9 +22,7 @@ export const lineaService = {
     actualizarLimiteCadenaValor: async (limiteData) => 
         (await api.put('api/TipoLimiteCadenaValor', limiteData)).data,
 
-    // DELETE api/TipoLimiteCadenaValor/{id}
-    eliminarLimiteCadenaValor: async (id) => 
-        (await api.delete(`api/TipoLimiteCadenaValor/${id}`)).data,
+
 
     // GET api/TipoObligacionTipoLimite?tipolimiteid={id}
     obtenerProductosPorLimite: async (tipolimiteid) => 
@@ -33,6 +31,10 @@ export const lineaService = {
     // POST api/TipoObligacionTipoLimite
     asociarProductoLimite: async (asocData) => 
         (await api.post('api/TipoObligacionTipoLimite', asocData)).data,
+
+    // PUT api/TipoObligacionTipoLimite
+    actualizarProductoLimite: async (asocData) => 
+        (await api.put('api/TipoObligacionTipoLimite', asocData)).data,
 
     // DELETE api/TipoObligacionTipoLimite/{id}
     desasociarProductoLimite: async (id) => 

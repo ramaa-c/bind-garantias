@@ -1,0 +1,240 @@
+.container {
+  position: relative;
+  width: 100%;
+}
+
+.trigger {
+  width: 100%;
+  background: rgba(33, 38, 45, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.2s ease;
+  overflow: hidden;
+}
+
+.trigger:hover {
+  background: rgba(33, 38, 45, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.triggerOpen {
+  border-color: var(--color-azul-bind, #4c65e6);
+  box-shadow: 0 0 0 1px var(--color-azul-bind, #4c65e6);
+}
+
+.triggerEmpty {
+  border-style: dashed;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1.5rem;
+}
+
+.cardWrapper {
+  flex: 1;
+  pointer-events: none; /* Let the trigger handle clicks */
+}
+
+/* Force the inner card to look seamless inside the trigger */
+.cardWrapper > div {
+  border: none !important;
+  background: transparent !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+.emptyContent {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 1;
+}
+
+.avatarPlaceholderHollow {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.emptyText {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.chevronWrapper {
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chevron {
+  color: #8b949e;
+  font-size: 1.5rem;
+  transition: transform 0.3s ease;
+}
+
+.chevronUp {
+  transform: rotate(180deg);
+  color: #ffffff;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  width: 100%;
+  background: #161b22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.searchBox {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.searchIcon {
+  color: #8b949e;
+  font-size: 1.2rem;
+}
+
+.searchInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.optionsList {
+  max-height: 350px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.optionsList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.optionsList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.optionsList::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.optionsList::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.noResults {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.9rem;
+}
+
+.optionItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.optionItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.optionSelected {
+  background: rgba(76, 101, 230, 0.1);
+  border: 1px solid rgba(76, 101, 230, 0.2);
+}
+
+.optionSelected:hover {
+  background: rgba(76, 101, 230, 0.15);
+}
+
+.optionLogoBox {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.optionLogo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.optionAvatar {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #4c65e6 0%, #2f40a0 100%);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.optionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.optionName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.optionMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #8b949e;
+}

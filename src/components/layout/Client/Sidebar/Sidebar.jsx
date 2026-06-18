@@ -16,6 +16,7 @@ export default function Sidebar({ isOpen, onClose }) {
   
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
   const emailUsuario = typeof user === "string" ? user : user?.email ? String(user.email) : "Usuario";
   const { channelInfo } = useChannel();
 
@@ -51,7 +52,7 @@ export default function Sidebar({ isOpen, onClose }) {
     <aside className={`${styles.container} ${isOpen ? styles.open : ""}`}>
       <div className={styles.sidebarHeader}>
         <div className={styles.logosWrapper}>
-          <img src={logoBind} alt="Bind Garantías" className={styles.logo} role="button" tabIndex={0} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)} style={{ cursor: "pointer" }} />
+          <img src={logoBind} alt="Bind Garantías" className={styles.logo} role="button" tabIndex={0} onClick={() => isSolicitudesEnabled ? navigate(`/${channelInfo.id}/solicitudes`) : navigate(`/${channelInfo.id}/legajo`)} style={{ cursor: "pointer" }} />
           {channelInfo.id !== "default" && (
             <>
               <div className={styles.logoSeparator} />
@@ -96,12 +97,14 @@ export default function Sidebar({ isOpen, onClose }) {
               <div
                 className={`${styles.collapsibleContent} ${expandedSections.general ? styles.expanded : ""}`}
               >
-                <button type="button"
-                  className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
-                  onClick={() => handleNavigate("/solicitudes")}
-                >
-                  <FiFileText className={styles.icon} /> Solicitudes
-                </button>
+                {isSolicitudesEnabled && (
+                  <button type="button"
+                    className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
+                    onClick={() => handleNavigate("/solicitudes")}
+                  >
+                    <FiFileText className={styles.icon} /> Solicitudes
+                  </button>
+                )}
                 <button type="button"
                   className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
                   onClick={() => handleNavigate("/documentacion")}

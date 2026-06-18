@@ -34,7 +34,8 @@ import RolesPermisos from "./pages/admin/RolesPermisos";
 import Terminos from "./pages/admin/Terminos";
 import Banners from "./pages/admin/Banners";
 import CadenasValor from "./pages/admin/CadenasValor";
-import LineasProductos from "./pages/admin/LineasProductos";
+import LineasCadena from "./pages/admin/LineasCadena";
+import LineasProducto from "./pages/admin/LineasProducto";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
@@ -261,7 +262,17 @@ function App() {
             element={
               <AdminGuard>
                 <AdminLayout>
-                  <LineasProductos />
+                  <LineasProducto />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/lineas-cadenas"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <LineasCadena />
                 </AdminLayout>
               </AdminGuard>
             }

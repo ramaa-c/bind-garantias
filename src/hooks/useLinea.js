@@ -21,7 +21,7 @@ export const useObtenerLimitesPorSocio = (socioId) => {
 
 export const useObtenerLimitesCadenaValor = (cadenavalorid) => {
     return useQuery({
-        queryKey: ['linea', 'limitesCadenaValor', cadenavalorid],
+        queryKey: ['linea', 'limitesCadenaValor', String(cadenavalorid)],
         queryFn: () => lineaService.obtenerLimitesCadenaValor(cadenavalorid),
         enabled: !!cadenavalorid,
     });
@@ -32,7 +32,7 @@ export const useCrearLimiteCadenaValor = () => {
     return useMutation({
         mutationFn: lineaService.crearLimiteCadenaValor,
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'limitesCadenaValor', variables.cadenavalorid] });
+            queryClient.invalidateQueries({ queryKey: ['linea', 'limitesCadenaValor', String(variables.cadenavalorid)] });
         }
     });
 };
@@ -42,20 +42,12 @@ export const useActualizarLimiteCadenaValor = () => {
     return useMutation({
         mutationFn: lineaService.actualizarLimiteCadenaValor,
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'limitesCadenaValor', variables.cadenavalorid] });
+            queryClient.invalidateQueries({ queryKey: ['linea', 'limitesCadenaValor', String(variables.cadenavalorid)] });
         }
     });
 };
 
-export const useEliminarLimiteCadenaValor = (cadenavalorid) => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: lineaService.eliminarLimiteCadenaValor,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'limitesCadenaValor', cadenavalorid] });
-        }
-    });
-};
+
 
 export const useObtenerProductosPorLimite = (tipolimiteid) => {
     return useQuery({
@@ -69,6 +61,16 @@ export const useAsociarProductoLimite = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: lineaService.asociarProductoLimite,
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', variables.tipolimiteid] });
+        }
+    });
+};
+
+export const useActualizarProductoLimite = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: lineaService.actualizarProductoLimite,
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', variables.tipolimiteid] });
         }

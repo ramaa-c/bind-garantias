@@ -47,14 +47,11 @@ export const AdminGuard = ({ children }) => {
 
   const { isRestricted, isPending } = useAdminRestrictions();
 
-  const isBasicAdmin =
-    user?.role === "admin" ||
-    user?.email === "admin" ||
-    user?.email === "admin_restricto" ||
-    user?.email === "admin restricto";
+  const isBasicAdmin = user?.role === "admin" || user?.email === "admin";
 
   const isLoading =
-    !isBasicAdmin && (isPending || isUserLoading || (usuarioWebId && isCadenasLoading));
+    !isBasicAdmin &&
+    (isPending || isUserLoading || (usuarioWebId && isCadenasLoading));
 
   if (isLoading) {
     return (

@@ -55,6 +55,7 @@ export default function AdminNavbar() {
   const adminMenu = [
     "Cadenas de Valor",
     "Líneas",
+    "Productos de Líneas",
     "Cotización de divisas",
     "Destinatarios",
     "Disclaimers",
@@ -180,6 +181,8 @@ export default function AdminNavbar() {
                   } else if (item === "Cadenas de Valor") {
                     destPath = "/admin/cadenas-valor";
                   } else if (item === "Líneas") {
+                    destPath = "/admin/lineas-cadenas";
+                  } else if (item === "Productos de Líneas") {
                     destPath = "/admin/lineas-productos";
                   } else if (item.includes("Líneas") || item.includes("Crédito")) {
                     destPath = "/admin/tasas-montos";

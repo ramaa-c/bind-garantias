@@ -1,5 +1,6 @@
 import React, { useState, forwardRef } from "react";
 import { Controller } from "react-hook-form";
+import { IMaskInput } from "react-imask";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { FaCheck } from "react-icons/fa";
 import styles from "./InputSimple.module.css";
@@ -18,6 +19,7 @@ export const InputSimple = forwardRef(({
   onFocus: manualOnFocus,
   onBlur: manualOnBlur,
   variant,
+  mask,
   ...props
 }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -65,20 +67,37 @@ export const InputSimple = forwardRef(({
     return (
       <div className={containerClasses}>
         <div className={styles.inputWrapper}>
-          <input
-            id={inputId}
-            type={currentType}
-            className={styles.input}
-            placeholder=" "
-            value={val || ""}
-            onChange={(e) => {
-              if (onCh) onCh(e.target.value);
-            }}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            ref={inputRef}
-            {...props}
-          />
+          {mask ? (
+            <IMaskInput
+              id={inputId}
+              mask={mask}
+              className={styles.input}
+              placeholder=" "
+              value={val ? String(val) : ""}
+              onAccept={(value, maskRef) => {
+                if (onCh) onCh(value);
+              }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              inputRef={inputRef}
+              {...props}
+            />
+          ) : (
+            <input
+              id={inputId}
+              type={currentType}
+              className={styles.input}
+              placeholder=" "
+              value={val || ""}
+              onChange={(e) => {
+                if (onCh) onCh(e.target.value);
+              }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              ref={inputRef}
+              {...props}
+            />
+          )}
           <label htmlFor={inputId} className={styles.label}>
             {label}
           </label>
