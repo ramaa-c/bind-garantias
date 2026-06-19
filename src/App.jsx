@@ -37,6 +37,7 @@ import CadenasValor from "./pages/admin/CadenasValor";
 import LineasCadena from "./pages/admin/LineasCadena";
 import LineasProducto from "./pages/admin/LineasProducto";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
+import RootRedirect from "./components/layout/RootRedirect/RootRedirect";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
 
@@ -46,7 +47,7 @@ function App() {
       <ChannelProvider>
         <Toaster position="top-right" richColors closeButton theme="dark" />
         <Routes>
-          <Route path="/" element={<Navigate to="/default/login" replace />} />
+          <Route path="/" element={<RootRedirect />} />
 
           <Route path="/:cadenaSlug" element={<TenantLayout />}>
             <Route index element={<Navigate to="login" replace />} />

@@ -32,7 +32,7 @@ export const AltaDatosEmpresa = () => {
   const navigate = useNavigate();
   const { channelInfo } = useChannel();
   const { cadenaSlug } = useParams();
-  const cadenaValorId = Number(cadenaSlug) || 0;
+  const cadenaValorId = Number(cadenaSlug);
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
 
   const [pasoActual, setPasoActual] = useState(1);
@@ -184,10 +184,10 @@ export const AltaDatosEmpresa = () => {
         toast.success("Empresa creada y vinculada correctamente");
         
         if (vendorData?.isVendor) {
-          navigate(`/${channelInfo?.id || "default"}/seleccionar-empresa`, { replace: true });
+          navigate(`/${channelInfo?.id}/seleccionar-empresa`, { replace: true });
         } else {
           setActiveSocioId(socioId);
-          navigate(`/${channelInfo?.id || "default"}/inicio`, { replace: true });
+          navigate(`/${channelInfo?.id}/inicio`, { replace: true });
         }
       } else {
         throw new Error(
@@ -280,7 +280,7 @@ export const AltaDatosEmpresa = () => {
                 onStepClick={setPasoActual}
                 onVolver={pasoActual > 1 ? handleVolver : null}
                 onVolverInicio={
-                  pasoActual === 1 ? () => navigate(`/${channelInfo?.id || "default"}/inicio`) : null
+                  pasoActual === 1 ? () => navigate(`/${channelInfo?.id}/inicio`) : null
                 }
                 onReiniciar={pasoActual > 1 ? handleClickReiniciar : null}
               />

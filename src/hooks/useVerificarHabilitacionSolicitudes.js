@@ -43,10 +43,10 @@ export const useVerificarHabilitacionSolicitudes = () => {
           
           let apta = false;
           if (limitesCadena) {
-            // El usuario indicó que devuelve un solo objeto, no un array
-            if (limitesCadena.aptanuevalinea === "1" || limitesCadena.aptanuevalinea === "S") {
-              apta = true;
-            }
+            const limitesArray = Array.isArray(limitesCadena) ? limitesCadena : [limitesCadena];
+            apta = limitesArray.some(
+              (limite) => String(limite.aptanuevalinea) === "1" && String(limite.activa) === "1"
+            );
           }
           
           if (!apta) {

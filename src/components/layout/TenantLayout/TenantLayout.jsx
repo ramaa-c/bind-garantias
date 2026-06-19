@@ -1,60 +1,62 @@
 import React, { useEffect } from "react";
-import { useParams, Outlet, Navigate } from "react-router-dom";
-import { useChannel, CANALES_MOCK } from "../../../context/ChannelContext";
-import { useObtenerPorCadenaValorIdWeb } from "../../../hooks/useCadenaValor";
+import { useParams, Outlet, Navigate, useNavigate } from "react-router-dom";
+import { useChannel } from "../../../context/ChannelContext";
+import { useObtenerPorCadenaValorIdWeb, useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
 
 const TenantLayout = () => {
   const { cadenaSlug } = useParams();
   const { setChannelInfo } = useChannel();
+  const navigate = useNavigate();
+
   const cadenaValorId = Number(cadenaSlug);
+  const isValidId = !Number.isNaN(cadenaValorId) && cadenaValorId > 0;
 
   const { data: cadenaData, isLoading } = useObtenerPorCadenaValorIdWeb(
-    cadenaValorId || 0,
+    isValidId ? cadenaValorId : 0,
   );
+  const { data: todasCadenas, isLoading: isLoadingTodas } = useObtenerTodasWeb();
 
   useEffect(() => {
-    // Si el slug está hardcodeado (ej. "canal1", "bind", "default")
-    if (cadenaSlug && CANALES_MOCK[cadenaSlug]) {
-      setChannelInfo(CANALES_MOCK[cadenaSlug]);
-    }
-    // Si la data viene dinámica desde el backend
-    else if (cadenaData && !cadenaData.error) {
-      const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
+    if (isLoading || isLoadingTodas) return;
 
-      if (!cadenaObj) {
-        setChannelInfo(CANALES_MOCK.default);
-        return;
+    if (!isValidId || !cadenaData || cadenaData.error || (Array.isArray(cadenaData) && cadenaData.length === 0)) {
+      if (import.meta.env.DEV && todasCadenas && todasCadenas.length > 0) {
+        const firstId = todasCadenas[0].cadenavalorid;
+        navigate(`/${firstId}/login`, { replace: true });
+      } else {
+        navigate("/not-found", { replace: true });
       }
-
-      let formatLogo = CANALES_MOCK.default.logo;
-      if (cadenaObj.logo) {
-        if (
-          cadenaObj.logo.startsWith("data:") ||
-          cadenaObj.logo.startsWith("http")
-        ) {
-          formatLogo = cadenaObj.logo;
-        } else {
-          formatLogo = `data:image/png;base64,${cadenaObj.logo}`;
-        }
-      }
-
-      setChannelInfo({
-        id: cadenaSlug,
-        nombre: cadenaObj.denominacion || "Cadena de Valor",
-        logo: formatLogo,
-        colorPrincipal: "var(--color-azul-bind)",
-        colorSecundario: "var(--color-amarillo-bind)",
-      });
-    } else if (!isLoading) {
-      setChannelInfo(CANALES_MOCK.default);
+      return;
     }
-  }, [cadenaSlug, cadenaData, isLoading, setChannelInfo]);
+
+    const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
+
+    let formatLogo = null;
+    if (cadenaObj.logo) {
+      if (
+        cadenaObj.logo.startsWith("data:") ||
+        cadenaObj.logo.startsWith("http")
+      ) {
+        formatLogo = cadenaObj.logo;
+      } else {
+        formatLogo = `data:image/png;base64,${cadenaObj.logo}`;
+      }
+    }
+
+    setChannelInfo({
+      id: String(cadenaObj.cadenavalorid),
+      nombre: cadenaObj.denominacion || "Cadena de Valor",
+      logo: formatLogo,
+      colorPrincipal: "var(--color-azul-bind)",
+      colorSecundario: "var(--color-amarillo-bind)",
+    });
+  }, [cadenaSlug, cadenaData, isLoading, isLoadingTodas, todasCadenas, setChannelInfo, navigate, isValidId]);
 
   if (!cadenaSlug) {
-    return <Navigate to="/default/login" replace />;
+    return <Navigate to="/not-found" replace />;
   }
 
-  if (isLoading && !CANALES_MOCK[cadenaSlug]) {
+  if (isLoading || isLoadingTodas) {
     return null;
   }
 

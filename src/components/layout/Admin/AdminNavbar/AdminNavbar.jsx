@@ -37,7 +37,7 @@ export default function AdminNavbar() {
 
   const handleLogout = () => {
     if (clearAuth) clearAuth();
-    navigate("/default/login");
+    navigate("/");
   };
 
   const isActive = (path) => location.pathname === path;

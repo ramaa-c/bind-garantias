@@ -53,7 +53,7 @@ export const AltaOperacion = () => {
     isLoading: isLoadingEmpresa,
   } = useEmpresaActiva();
 
-  const { requisitos } = useRequisitos(Number(cadenaSlug) || 1, tipoPersonaId ?? null, nombreEmpresa);
+  const { requisitos } = useRequisitos(Number(cadenaSlug), tipoPersonaId ?? null, nombreEmpresa);
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
 
   useEffect(() => {
@@ -126,7 +126,7 @@ export const AltaOperacion = () => {
             description:
               "Ya tenés una solicitud de línea en análisis. Debés esperar a que se procese.",
           });
-          navigate(`/${channelInfo?.id || "default"}/solicitudes`);
+          navigate(`/${channelInfo?.id}/solicitudes`);
         } else if (isMounted) {
           setValidandoAcceso(false);
         }
@@ -588,7 +588,7 @@ export const AltaOperacion = () => {
             : cleanData.tipoProducto === "prestamo"
               ? 2
               : 3,
-        cadenavalorid: Number(cadenaSlug) || 0,
+        cadenavalorid: Number(cadenaSlug),
         monedaid: Number(cleanData.moneda) || 5000,
         importe: montoLimpio,
         estadosolicitud: 1,
@@ -872,7 +872,7 @@ export const AltaOperacion = () => {
 
     handleResetFlujoCompleto();
     sessionStorage.setItem("last_used_cuit", data.cuit);
-    navigate(`/${channelInfo?.id || "default"}/solicitudes`, { state: { nuevaSolicitud } });
+    navigate(`/${channelInfo?.id}/solicitudes`, { state: { nuevaSolicitud } });
   };
 
   const eliminarSocio = async (index) => {
@@ -1347,7 +1347,7 @@ export const AltaOperacion = () => {
                   onVolver={mostrarBotonVolver ? handleVolverMapped : null}
                   onVolverInicio={
                     pasoActual === 1 || (requisitos?.relaciones?.accionistas === 0 && pasoActual === 2)
-                      ? () => navigate(`/${channelInfo?.id || "default"}/solicitudes`)
+                      ? () => navigate(`/${channelInfo?.id}/solicitudes`)
                       : null
                   }
                   onReiniciar={handleClickReiniciar}
