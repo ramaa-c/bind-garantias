@@ -6,7 +6,7 @@ import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../ho
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
-import { Select } from "../../../ui/Select/Select";
+import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
@@ -274,7 +274,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
               <h4 className={styles.sectionTitle}>Configuración Comercial</h4>
               <div className={styles.row}>
                 <div style={{ flex: 1 }}>
-                  <Select
+                  <SelectSimple
                     label="Canal Comercialización *"
                     placeholder="Seleccione canal comercial..."
                     options={canalesOpciones}
@@ -283,7 +283,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                   />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <Select
+                  <SelectSimple
                     label="Equipo Comercial *"
                     placeholder="Seleccione equipo comercial..."
                     options={equiposOpciones}
