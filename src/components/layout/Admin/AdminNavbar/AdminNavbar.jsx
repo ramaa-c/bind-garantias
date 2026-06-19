@@ -56,28 +56,6 @@ export default function AdminNavbar() {
     "Cadenas de Valor",
     "Líneas",
     "Productos de Líneas",
-    "Cotización de divisas",
-    "Destinatarios",
-    "Disclaimers",
-    "Administrar Email",
-    "Líneas de Crédito",
-    "Propiedades de la aplicación",
-    "Preguntas frecuentes",
-    "Noticias",
-    "Canal comercial",
-    "Campañas",
-    "Roles",
-    "Sociedades de bolsa",
-    "Administradores",
-    "Precalificación",
-    "Validaciones de CUITs de administrador",
-    "NPS",
-    "Banners",
-    "Representantes",
-    "Conceptos",
-    "Conceptos Genéricos",
-    "SgrPlus Codes",
-    "Administrar Usuarios públicos",
   ];
 
   return (
@@ -174,11 +152,7 @@ export default function AdminNavbar() {
               <div className={`${styles.dropdownMenu} ${styles.scrollableMenu}`}>
                 {adminMenu.map((item) => {
                   let destPath = null;
-                  if (item === "Roles" || item === "Administradores") {
-                    destPath = "/admin/roles-permisos";
-                  } else if (item === "Banners") {
-                    destPath = "/admin/banners";
-                  } else if (item === "Cadenas de Valor") {
+                  if (item === "Cadenas de Valor") {
                     destPath = "/admin/cadenas-valor";
                   } else if (item === "Líneas") {
                     destPath = "/admin/lineas-cadenas";
@@ -202,63 +176,7 @@ export default function AdminNavbar() {
             )}
           </div>
 
-          {/* Soporte */}
-          <div className={styles.dropdownContainer}>
-            <button type="button"
-              className={`${styles.navButton} ${
-                activeDropdown === "soporte" ? styles.dropdownActive : ""
-              }`}
-              onClick={() => toggleDropdown("soporte")}
-            >
-              Soporte <FiChevronDown className={styles.chevron} />
-            </button>
-            {activeDropdown === "soporte" && (
-              <div className={styles.dropdownMenu}>
-                <button type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigate(null)}
-                >
-                  Mesa de Ayuda
-                </button>
-                <button type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigate(null)}
-                >
-                  Contactar Soporte Técnico
-                </button>
-              </div>
-            )}
-          </div>
-
-
-
-          {/* Ayuda */}
-          <div className={styles.dropdownContainer}>
-            <button type="button"
-              className={`${styles.navButton} ${
-                activeDropdown === "ayuda" ? styles.dropdownActive : ""
-              }`}
-              onClick={() => toggleDropdown("ayuda")}
-            >
-              Ayuda <FiChevronDown className={styles.chevron} />
-            </button>
-            {activeDropdown === "ayuda" && (
-              <div className={styles.dropdownMenu}>
-                <button type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigate(null)}
-                >
-                  Manual de Usuario
-                </button>
-                <button type="button"
-                  className={styles.dropdownItem}
-                  onClick={() => handleNavigate(null)}
-                >
-                  Acerca de Bind Garantías
-                </button>
-              </div>
-            )}
-          </div>
+            {/* Ocultados Ayuda y Soporte por el momento */}
             </>
           )}
         </div>

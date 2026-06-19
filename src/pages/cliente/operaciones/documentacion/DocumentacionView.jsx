@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { FaFileAlt, FaSave, FaFileUpload } from "react-icons/fa";
-import { DocumentosLegajo, LegajoUniversalBar } from "../../../../components/features";
+import {
+  DocumentosLegajo,
+  LegajoUniversalBar,
+} from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { toast } from "sonner";
@@ -31,7 +35,7 @@ const DOC_TITLES = {
 export default function DocumentacionView() {
   const { socioIdActivo } = useEmpresaActiva();
   const queryClient = useQueryClient();
-  
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingData, setPendingData] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -63,6 +67,39 @@ export default function DocumentacionView() {
       intentoAvanzar: false,
     },
   });
+
+  const { setUnsavedChanges } = useNavigationStore();
+  const formValues = useWatch({ control: methods.control });
+
+  useEffect(() => {
+    const llavesDocumentos = [
+      "estatuto",
+      "balance",
+      "ddjjIva",
+      "cartasDocumento",
+      "poderes",
+      "certificadoPyme",
+      "otrosDocumentos",
+      "eecc",
+      "actaDesignacion",
+      "actaSocios",
+      "f1272",
+      "ddjjGanancias",
+      "manifestacionBienes",
+      "constanciaMonotributo",
+    ];
+    let hasPendingFiles = false;
+    for (const key of llavesDocumentos) {
+      const file = formValues[key];
+      if (file && !file._uploaded) {
+        hasPendingFiles = true;
+        break;
+      }
+    }
+    setUnsavedChanges(hasPendingFiles);
+
+    return () => setUnsavedChanges(false);
+  }, [formValues, setUnsavedChanges]);
 
   const onSubmit = (data) => {
     setPendingData(data);
@@ -142,8 +179,13 @@ export default function DocumentacionView() {
         description: desc,
       });
 
-      queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] });
-      queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto", socioIdActivo] });
+      queryClient.invalidateQueries({
+        queryKey: ["socioArchivos", socioIdActivo],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["socioLegajoCompleto", socioIdActivo],
+      });
+      setUnsavedChanges(false);
     } catch (error) {
       console.error("Fallo al actualizar el legajo digital:", error);
       toast.error("Error al guardar legajo", {
@@ -186,10 +228,16 @@ export default function DocumentacionView() {
           form="legajo-form"
           className={styles.submitBtn}
           onClick={() => methods.setValue("intentoAvanzar", true)}
-          disabled={methods.formState.isSubmitting || guardando || !methods.formState.isDirty}
+          disabled={
+            methods.formState.isSubmitting ||
+            guardando ||
+            !methods.formState.isDirty
+          }
         >
           <FaSave style={{ marginRight: "0.5rem" }} />
-          {methods.formState.isSubmitting || guardando ? "Actualizando..." : "Actualizar legajo"}
+          {methods.formState.isSubmitting || guardando
+            ? "Actualizando..."
+            : "Actualizar legajo"}
         </Button>
       </header>
 

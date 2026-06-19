@@ -4,7 +4,9 @@ import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, F
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useAuthStore } from "../../../../store/useAuthStore";
+import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
+import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/ChannelContext";
 import styles from "./Sidebar.module.css";
 
@@ -29,11 +31,32 @@ export default function Sidebar({ isOpen, onClose }) {
     administracion: false,
   });
 
+  const { hasUnsavedChanges, setUnsavedChanges } = useNavigationStore();
+  const [pendingPath, setPendingPath] = useState(null);
+
   const isActive = (path) => location.pathname.startsWith(`/${channelInfo.id}${path}`);
 
   const handleNavigate = (path) => {
-    navigate(`/${channelInfo.id}${path.startsWith('/') ? path : '/' + path}`);
+    const fullPath = `/${channelInfo.id}${path.startsWith('/') ? path : '/' + path}`;
+    if (hasUnsavedChanges && location.pathname !== fullPath) {
+      setPendingPath(fullPath);
+      return;
+    }
+    navigate(fullPath);
     onClose();
+  };
+
+  const confirmNavigation = () => {
+    setUnsavedChanges(false);
+    if (pendingPath) {
+      navigate(pendingPath);
+      setPendingPath(null);
+      onClose();
+    }
+  };
+
+  const cancelNavigation = () => {
+    setPendingPath(null);
   };
 
   const handleLogout = () => {
@@ -152,6 +175,17 @@ export default function Sidebar({ isOpen, onClose }) {
       <TasasModal
         isOpen={isTasasModalOpen}
         onClose={() => setIsTasasModalOpen(false)}
+      />
+
+      <ConfirmacionModal
+        isOpen={!!pendingPath}
+        onClose={cancelNavigation}
+        onConfirm={confirmNavigation}
+        titulo="Cambios sin guardar"
+        mensaje="Tienes archivos cargados o información que no has actualizado en el legajo. Si sales de esta pantalla se perderán. ¿Deseas descartar los cambios y salir?"
+        confirmText="Descartar y salir"
+        cancelText="Conservar cambios"
+        maxWidth="550px"
       />
     </aside>
   );

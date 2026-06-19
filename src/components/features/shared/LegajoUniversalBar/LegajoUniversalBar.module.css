@@ -26,17 +26,16 @@
 
 .barHeader {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
 }
 
 .statusInfo {
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex: 1 1 300px;
+  flex: 1 1 auto;
 }
 
 .statusIcon {
@@ -129,12 +128,14 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  width: 100%;
 }
 
 .toggleBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.8);
@@ -144,6 +145,7 @@
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
+  flex: 1;
 }
 
 .toggleBtn:hover {
@@ -157,16 +159,18 @@
   font-weight: 600 !important;
   letter-spacing: 0.02em;
   transition: all 0.3s ease;
+  flex: 1;
+  display: flex;
+  justify-content: center;
 }
 
 .sendBtnActive {
-  background: var(--color-azul-bind, #4c65e6) !important;
-  box-shadow: 0 0 15px rgba(76, 101, 230, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background: var(--yellow) !important;
+  color: var(--carbon-black) !important;
+  border: 1px solid var(--yellow) !important;
 }
 
 .sendBtnActive:hover {
-  box-shadow: 0 0 25px rgba(76, 101, 230, 0.6) !important;
   transform: translateY(-1px);
 }
 
@@ -248,29 +252,27 @@
   }
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
+/* Responsive adjustments: Mobile First -> Desktop */
+@media (min-width: 768px) {
   .barHeader {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
   }
 
   .statusInfo {
-    flex: 1 1 auto;
-  }
-
-  .progressBarWrapper {
-    width: 100%;
-    flex: 1 1 auto;
+    flex: 1 1 300px;
   }
 
   .actions {
-    justify-content: flex-end;
-    width: 100%;
+    justify-content: flex-start;
+    width: auto;
+    flex-shrink: 0;
   }
 
   .toggleBtn, .sendBtn {
-    flex: 1;
+    flex: initial;
+    justify-content: flex-start;
   }
 }

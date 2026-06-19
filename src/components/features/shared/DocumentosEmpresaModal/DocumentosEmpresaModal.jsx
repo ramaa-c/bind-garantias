@@ -108,7 +108,10 @@ export const DocumentosEmpresaModal = ({
   const [activeTab, setActiveTab] = useState(null);
 
   useEffect(() => {
-    if (docs.length > 0 && (!activeTab || !docs.some(d => d.key === activeTab))) {
+    if (
+      docs.length > 0 &&
+      (!activeTab || !docs.some((d) => d.key === activeTab))
+    ) {
       setActiveTab(docs[0].key);
     }
   }, [docs, activeTab]);
@@ -282,6 +285,11 @@ export const DocumentosEmpresaModal = ({
                               .getElementById(`modal-file-${doc.key}`)
                               .click()
                           }
+                          onDrop={(e) => {
+                            if (e.dataTransfer.files?.[0]) {
+                              onFileUpload(doc.key, e.dataTransfer.files[0]);
+                            }
+                          }}
                         />
                         <input
                           type="file"
