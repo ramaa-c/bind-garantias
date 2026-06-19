@@ -22,15 +22,7 @@ import {
   RequisitosConfigModal
 } from "../../components/features";
 import { toast } from "sonner";
-import api from "../../api/axios";
-import {
-  requisitosService,
-  DEFAULT_PHYSICAL_CONFIG,
-  DEFAULT_SA_CONFIG,
-  DEFAULT_SRL_CONFIG,
-  DEFAULT_SH_CONFIG,
-  DEFAULT_OTRAS_CONFIG,
-} from "../../services/requisitosService";
+
 
 export default function CadenasValor() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -39,43 +31,7 @@ export default function CadenasValor() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState(null); // "activar", "edit", "cdas", "users"
   const [activeItem, setActiveItem] = useState(null);
-  const [inicializando, setInicializando] = useState(false);
 
-  const handleInicializarFaltantes = async () => {
-    setInicializando(true);
-    let count = 0;
-    try {
-      const defaultConfigs = {
-        fisica: DEFAULT_PHYSICAL_CONFIG,
-        sa: DEFAULT_SA_CONFIG,
-        srl: DEFAULT_SRL_CONFIG,
-        sh: DEFAULT_SH_CONFIG,
-        otras: DEFAULT_OTRAS_CONFIG,
-      };
-
-      for (const chain of activeList) {
-        const res = await api.get("api/CadenaValorParametrizacion", {
-          params: { cadenavalorid: chain.cadenavalorid },
-        });
-        const data = res.data || [];
-        if (data.length === 0) {
-          await requisitosService.guardarRequisitos(chain.cadenavalorid, defaultConfigs);
-          count++;
-        }
-      }
-
-      if (count > 0) {
-        toast.success(`Se inicializaron correctamente los parámetros por defecto para ${count} cadena(s)`);
-      } else {
-        toast.info("Todas las cadenas activas ya cuentan con parámetros registrados");
-      }
-    } catch (err) {
-      console.error("Error al inicializar parámetros:", err);
-      toast.error("Ocurrió un error al inicializar los parámetros de las cadenas");
-    } finally {
-      setInicializando(false);
-    }
-  };
 
   // Queries
   const {
@@ -138,13 +94,7 @@ export default function CadenasValor() {
           <p>Gestioná y modificá las cadenas de valor activas en la plataforma web</p>
         </div>
         <div className={styles.actionsTop}>
-          <button
-            className={styles.btnSecundario}
-            onClick={handleInicializarFaltantes}
-            disabled={inicializando}
-          >
-            <FiSliders /> {inicializando ? "INICIALIZANDO..." : "INICIALIZAR PARÁMETROS"}
-          </button>
+
           <button className={styles.btnNuevo} onClick={handleOpenActivarModal}>
             <FiPlus /> ACTIVAR CADENA
           </button>

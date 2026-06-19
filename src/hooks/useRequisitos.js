@@ -9,6 +9,14 @@ import {
   getFallbackConfig,
 } from "../services/requisitosService";
 
+const DEFAULT_REQUISITOS_FALLBACK = {
+  fisica: DEFAULT_PHYSICAL_CONFIG,
+  sa: DEFAULT_SA_CONFIG,
+  srl: DEFAULT_SRL_CONFIG,
+  sh: DEFAULT_SH_CONFIG,
+  otras: DEFAULT_OTRAS_CONFIG,
+};
+
 /**
  * Hook para interactuar con la parametrización de requisitos por cadena de valor de forma asíncrona.
  * @param {number|string} cadenaId ID de la cadena de valor
@@ -40,13 +48,7 @@ export const useRequisitos = (cadenaId, tipoPersonaId = undefined, sociedad = nu
   // Determinar el valor por defecto/fallback seguro según el modo
   const fallback = isClientMode
     ? getFallbackConfig(tipoPersonaId, sociedad)
-    : {
-        fisica: DEFAULT_PHYSICAL_CONFIG,
-        sa: DEFAULT_SA_CONFIG,
-        srl: DEFAULT_SRL_CONFIG,
-        sh: DEFAULT_SH_CONFIG,
-        otras: DEFAULT_OTRAS_CONFIG,
-      };
+    : DEFAULT_REQUISITOS_FALLBACK;
 
   const requisitos = query.data || fallback;
 

@@ -12,7 +12,9 @@
   overflow: hidden;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  height: 100%;
+  height: auto;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .headerCard::before {

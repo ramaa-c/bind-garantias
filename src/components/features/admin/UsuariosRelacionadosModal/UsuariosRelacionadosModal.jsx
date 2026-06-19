@@ -13,6 +13,8 @@ import { useChannel } from "../../../../context/ChannelContext";
 import styles from "./UsuariosRelacionadosModal.module.css";
 import { FiPlus, FiX, FiUserPlus } from "react-icons/fi";
 
+const EMPTY_ARRAY = [];
+
 export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
   const { channelInfo } = useChannel();
   const [showForm, setShowForm] = useState(false);
@@ -27,7 +29,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
   const updateMutation = useActualizarUsuarioCadenaValor();
   const createUserMutation = useCrearUsuario();
 
-  const relationsList = relationsData || [];
+  const relationsList = relationsData || EMPTY_ARRAY;
 
   const [userEmails, setUserEmails] = useState({});
 
