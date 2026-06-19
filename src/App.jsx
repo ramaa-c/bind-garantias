@@ -32,7 +32,6 @@ import Dashboard from "./pages/admin/Dashboard";
 import TasasMontos from "./pages/admin/TasasMontos";
 import RolesPermisos from "./pages/admin/RolesPermisos";
 import Terminos from "./pages/admin/Terminos";
-import Banners from "./pages/admin/Banners";
 import CadenasValor from "./pages/admin/CadenasValor";
 import LineasCadena from "./pages/admin/LineasCadena";
 import LineasProducto from "./pages/admin/LineasProducto";
@@ -184,10 +183,6 @@ function App() {
               element={<Navigate to="/admin/terminos" replace />}
             />
             <Route
-              path="admin/banners"
-              element={<Navigate to="/admin/banners" replace />}
-            />
-            <Route
               path="admin/cadenas-valor"
               element={<Navigate to="/admin/cadenas-valor" replace />}
             />
@@ -239,16 +234,6 @@ function App() {
             }
           />
           <Route
-            path="/admin/banners"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <Banners />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
             path="/admin/cadenas-valor"
             element={
               <AdminGuard>
@@ -281,6 +266,7 @@ function App() {
 
           {/* Redirecciones de compatibilidad para rutas legacy de admin */}
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -39,6 +39,7 @@
   color: #888;
   margin-bottom: 10px;
   transition: color 0.3s;
+  pointer-events: none;
 }
 
 .box:hover .icon {
@@ -54,17 +55,19 @@
   font-weight: 500;
   font-size: 1.1rem;
   margin-bottom: 5px;
+  pointer-events: none;
 }
 
 .subtext {
   color: #888;
   font-size: 0.85rem;
+  pointer-events: none;
 }
 
 /* --- ESTADO: ARCHIVO CARGADO --- */
 .loaded {
-  border: 2px solid rgba(76, 175, 80, 0.3);
-  background-color: rgba(76, 175, 80, 0.05);
+  border: 2px solid rgba(61, 220, 132, 0.3);
+  background-color: rgba(61, 220, 132, 0.05);
   flex-direction: row;
   justify-content: space-between;
   padding: 25px 20px;
@@ -72,8 +75,8 @@
 
 .loaded:hover {
   transform: none;
-  border-color: #4caf50;
-  background-color: rgba(76, 175, 80, 0.08);
+  border-color: var(--success-green, #3ddc84);
+  background-color: rgba(61, 220, 132, 0.08);
 }
 
 .loadedInfo {
@@ -87,7 +90,7 @@
 
 .loadedIcon {
   font-size: 2rem;
-  color: #4caf50;
+  color: var(--success-green, #3ddc84);
   flex-shrink: 0;
 }
 

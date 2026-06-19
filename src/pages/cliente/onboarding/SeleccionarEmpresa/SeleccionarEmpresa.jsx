@@ -5,6 +5,11 @@ import { useAuthStore } from "../../../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useObtenerSocioUsuarioPorUsuarioId } from "../../../../hooks/useSocios";
 import { LoadingScreen } from "../../../../components/ui/LoadingScreen/LoadingScreen";
+import { useQueryClient } from "@tanstack/react-query";
+import { tercerosService } from "../../../../services/tercerosService";
+import { socioArchivoService } from "../../../../services/socioArchivoService";
+import { requisitosService } from "../../../../services/requisitosService";
+import { sociosService } from "../../../../services/sociosService";
 import styles from "./SeleccionarEmpresa.module.css";
 import { useChannel } from "../../../../context/ChannelContext";
 
@@ -44,8 +49,8 @@ const EmpresaCard = ({ socio, socioId, index, onSelect }) => {
 
   const handleClick = useCallback(() => {
     setPressed(true);
-    setTimeout(() => onSelect(socioId), 160);
-  }, [socioId, onSelect]);
+    setTimeout(() => onSelect(socio, socioId), 160);
+  }, [socio, socioId, onSelect]);
 
   return (
     <div
@@ -88,6 +93,8 @@ export const SeleccionarEmpresa = () => {
   const { channelInfo } = useChannel();
   const user = useAuthStore((state) => state.user);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
+  const queryClient = useQueryClient();
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const { data: usuarioDb, isPending: isLoadingUser } =
     useObtenerPorNombreOEmail(user?.email);
@@ -152,11 +159,40 @@ export const SeleccionarEmpresa = () => {
 
   /* — handlers — */
   const handleSelectEmpresa = useCallback(
-    (socioId) => {
+    async (socio, socioId) => {
+      setIsNavigating(true);
       setActiveSocioId(socioId);
+
+      const tipoPersonaId = socio.tipopersonaid || socio.TipoPersonaID;
+      const nombreEmpresa = socio.denominacion || socio.Denominacion;
+      const cadenaId = Number(channelInfo.id) || 1;
+
+      try {
+        await Promise.all([
+          queryClient.prefetchQuery({
+            queryKey: ["socioLegajoCompleto", socioId],
+            queryFn: () => tercerosService.obtenerDatosSocioLegajo(socioId),
+          }),
+          queryClient.prefetchQuery({
+            queryKey: ["socioArchivos", socioId],
+            queryFn: () => socioArchivoService.obtenerArchivos(socioId),
+          }),
+          queryClient.prefetchQuery({
+            queryKey: ["sociosWeb", "detalle", socioId],
+            queryFn: () => sociosService.obtenerSocioWebPorId(socioId),
+          }),
+          queryClient.prefetchQuery({
+            queryKey: ["requisitos", cadenaId, tipoPersonaId, nombreEmpresa],
+            queryFn: () => requisitosService.obtenerRequisitosPorCadenaId(cadenaId, tipoPersonaId, nombreEmpresa, true)
+          })
+        ]);
+      } catch (e) {
+        console.error("Prefetch error", e);
+      }
+
       navigate(`/${channelInfo.id}/inicio`, { replace: true });
     },
-    [setActiveSocioId, navigate, channelInfo.id],
+    [setActiveSocioId, navigate, channelInfo.id, queryClient],
   );
 
   const handleAltaEmpresa = () => {
@@ -164,11 +200,11 @@ export const SeleccionarEmpresa = () => {
   };
 
   /* — loading state — */
-  if (isLoadingUser || isPendingSocios) {
+  if (isLoadingUser || isPendingSocios || isNavigating) {
     return (
       <LoadingScreen
-        title="Cargando empresas"
-        message="Estamos obteniendo las empresas vinculadas..."
+        title={isNavigating ? "Preparando entorno" : "Cargando empresas"}
+        message={isNavigating ? "Sincronizando información del legajo..." : "Estamos obteniendo las empresas vinculadas..."}
       />
     );
   }

@@ -11,6 +11,8 @@ import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/Help
 import { sociosService } from "../../../../services/sociosService";
 import { afipService } from "../../../../services/afipService";
 import { tercerosService } from "../../../../services/tercerosService";
+import { socioArchivoService } from "../../../../services/socioArchivoService";
+import { requisitosService } from "../../../../services/requisitosService";
 import { catalogosService } from "../../../../services/catalogosService";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
@@ -55,6 +57,7 @@ export const AltaDatosEmpresa = () => {
 
   const user = useAuthStore((state) => state.user);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email);
   const usuariowebidReal =
@@ -177,6 +180,21 @@ export const AltaDatosEmpresa = () => {
           );
         }
 
+        await Promise.all([
+          queryClient.prefetchQuery({
+            queryKey: ["socioArchivos", socioId],
+            queryFn: () => socioArchivoService.obtenerArchivos(socioId),
+          }),
+          queryClient.prefetchQuery({
+            queryKey: ["sociosWeb", "detalle", socioId],
+            queryFn: () => sociosService.obtenerSocioWebPorId(socioId),
+          }),
+          queryClient.prefetchQuery({
+            queryKey: ["requisitos", cadenaValorId, data.tipopersonaid, data.razonSocial],
+            queryFn: () => requisitosService.obtenerRequisitosPorCadenaId(cadenaValorId, data.tipopersonaid, data.razonSocial, true)
+          })
+        ]);
+
         await queryClient.invalidateQueries({
           queryKey: ["socioUsuario", "listaPorUsuario", usuariowebidReal],
         });
@@ -266,6 +284,15 @@ export const AltaDatosEmpresa = () => {
     }
     return null;
   };
+
+  if (isNavigating) {
+    return (
+      <LoadingScreen
+        title="Preparando entorno"
+        message="Sincronizando información del legajo..."
+      />
+    );
+  }
 
   return (
     <div className={styles.pageContainer}>

@@ -139,12 +139,8 @@ export const procesarArchivo = async (
     const blob = base64ToBlob(fileData.contenido, mimeType);
     const url = URL.createObjectURL(blob);
 
-    toast.success(
-      mode === "download"
-        ? `${fileLabel.charAt(0).toUpperCase() + fileLabel.slice(1)} descargado correctamente.`
-        : `${fileLabel.charAt(0).toUpperCase() + fileLabel.slice(1)} listo.`,
-      { id: toastId },
-    );
+    toast.dismiss(toastId);
+
 
     if (mode === "download") {
       const a = document.createElement("a");

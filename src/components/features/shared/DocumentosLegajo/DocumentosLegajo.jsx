@@ -42,7 +42,11 @@ import { afipService } from "../../../../services/afipService";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { useObtenerTerceros } from "../../../../hooks/useTerceros";
 import styles from "./DocumentosLegajo.module.css";
-import { procesarArchivo, normalizarTexto, formatBase64Size } from "../../../../utils/fileUtils";
+import {
+  procesarArchivo,
+  normalizarTexto,
+  formatBase64Size,
+} from "../../../../utils/fileUtils";
 
 const ESTRUCTURA_LEGAJO = [
   {
@@ -144,15 +148,21 @@ export function DocumentosLegajo() {
   const formValues = useWatch({ control });
   const { intentoAvanzar } = formValues;
 
-  const { socioIdActivo, nombreEmpresa, cuitActivo, direccion, telefono, tipoPersonaId } =
-    useEmpresaActiva();
+  const {
+    socioIdActivo,
+    nombreEmpresa,
+    cuitActivo,
+    direccion,
+    telefono,
+    tipoPersonaId,
+  } = useEmpresaActiva();
 
   const { cadenaSlug } = useParams();
   const cadenaId = Number(cadenaSlug) || 1;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   const estructuraFiltrada = useMemo(() => {
-    return ESTRUCTURA_LEGAJO.filter(doc => {
+    return ESTRUCTURA_LEGAJO.filter((doc) => {
       if (doc.key === "perfil") return true;
       const configVal = requisitos?.documentos?.[doc.key];
       return configVal !== 0; // 0 = no mostrar
@@ -171,11 +181,17 @@ export function DocumentosLegajo() {
   }, []);
 
   const activeDoc = useMemo(() => {
-    return estructuraFiltrada.find(doc => doc.key === activeTab) || estructuraFiltrada[0];
+    return (
+      estructuraFiltrada.find((doc) => doc.key === activeTab) ||
+      estructuraFiltrada[0]
+    );
   }, [estructuraFiltrada, activeTab]);
 
   useEffect(() => {
-    if (estructuraFiltrada.length > 0 && (!activeTab || !estructuraFiltrada.some(t => t.key === activeTab))) {
+    if (
+      estructuraFiltrada.length > 0 &&
+      (!activeTab || !estructuraFiltrada.some((t) => t.key === activeTab))
+    ) {
       setActiveTab(estructuraFiltrada[0].key);
     }
   }, [estructuraFiltrada, activeTab]);
@@ -193,15 +209,20 @@ export function DocumentosLegajo() {
         archivos.forEach((arch) => {
           const tipoId = arch.tipodocumentoarchivoid;
           const key = Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).find(
-            (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId
+            (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId,
           );
 
-          if (key && Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).includes(key)) {
+          if (
+            key &&
+            Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).includes(key)
+          ) {
             setValue(
               key,
               {
                 name: arch.nombrearchivo,
-                size: arch.contenido ? formatBase64Size(arch.contenido) : "Disponible",
+                size: arch.contenido
+                  ? formatBase64Size(arch.contenido)
+                  : "Disponible",
                 _uploaded: true,
                 _backendId: arch.socioarchivoid,
                 _tipodocumentoarchivoid: tipoId,
@@ -223,7 +244,11 @@ export function DocumentosLegajo() {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 768 && !activeTab && estructuraFiltrada.length > 0) {
+      if (
+        window.innerWidth > 768 &&
+        !activeTab &&
+        estructuraFiltrada.length > 0
+      ) {
         setActiveTab(estructuraFiltrada[0].key);
       }
     };
@@ -293,18 +318,14 @@ export function DocumentosLegajo() {
                 <FiMapPin className={styles.perfilChipIcon} size={20} />
                 <span className={styles.perfilChipLabel}>Domicilio</span>
               </div>
-              <span className={styles.perfilChipValue}>
-                {direccion || "—"}
-              </span>
+              <span className={styles.perfilChipValue}>{direccion || "—"}</span>
             </div>
             <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
                 <FiPhone className={styles.perfilChipIcon} size={20} />
                 <span className={styles.perfilChipLabel}>Teléfono</span>
               </div>
-              <span className={styles.perfilChipValue}>
-                {telefono || "—"}
-              </span>
+              <span className={styles.perfilChipValue}>{telefono || "—"}</span>
             </div>
           </div>
         ) : (
@@ -323,9 +344,18 @@ export function DocumentosLegajo() {
               onEdit={() =>
                 document.getElementById(`file-input-${doc.key}`).click()
               }
+              onDrop={(e) => {
+                if (e.dataTransfer.files?.[0]) {
+                  handleFileUpload(doc.key, e.dataTransfer.files[0]);
+                }
+              }}
               onDelete={() => handleFileRemove(doc.key)}
-              onView={() => procesarArchivo(currentFile, archivosBackend, "view")}
-              onDownload={() => procesarArchivo(currentFile, archivosBackend, "download")}
+              onView={() =>
+                procesarArchivo(currentFile, archivosBackend, "view")
+              }
+              onDownload={() =>
+                procesarArchivo(currentFile, archivosBackend, "download")
+              }
             />
             <input
               id={`file-input-${doc.key}`}
@@ -350,12 +380,14 @@ export function DocumentosLegajo() {
         <div className={styles.sidebar}>
           {estructuraFiltrada.map((doc, index) => {
             const isNewCategory =
-              index === 0 || doc.category !== estructuraFiltrada[index - 1].category;
+              index === 0 ||
+              doc.category !== estructuraFiltrada[index - 1].category;
             const isPerfil = doc.key === "perfil";
             const currentFile = formValues[doc.key];
             const isComplete = isPerfil || !!currentFile;
             const isRequired = requisitos?.documentos?.[doc.key] === 1;
-            const hasError = intentoAvanzar && !isPerfil && isRequired && !currentFile;
+            const hasError =
+              intentoAvanzar && !isPerfil && isRequired && !currentFile;
             const isActive = activeTab === doc.key;
 
             return (
@@ -371,13 +403,20 @@ export function DocumentosLegajo() {
                   {isActive && <span className={styles.activeBar} />}
                   <div className={styles.tabTitleGroup}>
                     <span className={styles.tabTitle}>{doc.title}</span>
-                    {!isPerfil && (
-                      isRequired ? (
-                        <span className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}>Obligatorio</span>
+                    {!isPerfil &&
+                      (isRequired ? (
+                        <span
+                          className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}
+                        >
+                          Obligatorio
+                        </span>
                       ) : (
-                        <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
-                      )
-                    )}
+                        <span
+                          className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}
+                        >
+                          Opcional
+                        </span>
+                      ))}
                   </div>
                   <span
                     className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
@@ -387,9 +426,7 @@ export function DocumentosLegajo() {
             );
           })}
         </div>
-        <div className={styles.viewerContainer}>
-          {renderViewer(activeDoc)}
-        </div>
+        <div className={styles.viewerContainer}>{renderViewer(activeDoc)}</div>
       </div>
     );
   }
@@ -399,12 +436,14 @@ export function DocumentosLegajo() {
     <div className={styles.workspaceMobile}>
       {estructuraFiltrada.map((doc, index) => {
         const isNewCategory =
-          index === 0 || doc.category !== estructuraFiltrada[index - 1].category;
+          index === 0 ||
+          doc.category !== estructuraFiltrada[index - 1].category;
         const isPerfil = doc.key === "perfil";
         const currentFile = formValues[doc.key];
         const isComplete = isPerfil || !!currentFile;
         const isRequired = requisitos?.documentos?.[doc.key] === 1;
-        const hasError = intentoAvanzar && !isPerfil && isRequired && !currentFile;
+        const hasError =
+          intentoAvanzar && !isPerfil && isRequired && !currentFile;
         const isActive = activeTab === doc.key;
 
         return (
@@ -422,13 +461,20 @@ export function DocumentosLegajo() {
               {isActive && <span className={styles.activeBar} />}
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
-                {!isPerfil && (
-                  isRequired ? (
-                    <span className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}>Obligatorio</span>
+                {!isPerfil &&
+                  (isRequired ? (
+                    <span
+                      className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}
+                    >
+                      Obligatorio
+                    </span>
                   ) : (
-                    <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
-                  )
-                )}
+                    <span
+                      className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}
+                    >
+                      Opcional
+                    </span>
+                  ))}
               </div>
               <span
                 className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
@@ -439,7 +485,7 @@ export function DocumentosLegajo() {
                   transform: isActive ? "rotate(180deg)" : "rotate(0deg)",
                   transition: "transform 0.3s ease",
                   color: isActive ? "#fff" : "#aaa",
-                  fontSize: "1.1rem"
+                  fontSize: "1.1rem",
                 }}
               />
             </button>

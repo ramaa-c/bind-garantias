@@ -23,11 +23,14 @@ export const CadenaSelectCard = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const selectedChain = options.find((c) => String(c.cadenavalorid) === String(value));
+  const selectedChain = options.find(
+    (c) => String(c.cadenavalorid) === String(value),
+  );
 
-  const filteredOptions = options.filter((c) =>
-    (c.denominacion || "").toLowerCase().includes(search.toLowerCase()) ||
-    (c.cuittercero || "").includes(search)
+  const filteredOptions = options.filter(
+    (c) =>
+      (c.denominacion || "").toLowerCase().includes(search.toLowerCase()) ||
+      (c.cuittercero || "").includes(search),
   );
 
   const handleSelect = (id) => {
@@ -38,7 +41,8 @@ export const CadenaSelectCard = ({
 
   const getLogoSrc = (logoData) => {
     if (!logoData) return "";
-    if (logoData.startsWith("data:") || logoData.startsWith("http")) return logoData;
+    if (logoData.startsWith("data:") || logoData.startsWith("http"))
+      return logoData;
     return `data:image/png;base64,${logoData}`;
   };
 
@@ -52,10 +56,45 @@ export const CadenaSelectCard = ({
       .join("");
   };
 
+  const colorMap = React.useMemo(() => {
+    const colors = [
+      "#4c65e6",
+      "#e64c65",
+      "#10b981",
+      "#f59e0b",
+      "#8b5cf6",
+      "#ec4899",
+      "#06b6d4",
+      "#84cc16",
+      "#f43f5e",
+      "#14b8a6",
+      "#a855f7",
+      "#eab308",
+      "#3b82f6",
+      "#ef4444",
+      "#22c55e",
+      "#f97316",
+    ];
+    const map = new Map();
+    let idx = 0;
+    options.forEach((opt) => {
+      const name = opt.denominacion || "Unknown";
+      if (!map.has(name)) {
+        map.set(name, colors[idx % colors.length]);
+        idx++;
+      }
+    });
+    return map;
+  }, [options]);
+
+  const getAvatarColor = (name) => {
+    return colorMap.get(name || "Unknown") || "#4c65e6";
+  };
+
   return (
     <div className={styles.container} ref={dropdownRef}>
       {/* Trigger Area */}
-      <div 
+      <div
         className={`${styles.trigger} ${isOpen ? styles.triggerOpen : ""} ${!selectedChain ? styles.triggerEmpty : ""}`}
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -67,6 +106,7 @@ export const CadenaSelectCard = ({
               referencia={selectedChain.referencia}
               cadenavalorid={selectedChain.cadenavalorid}
               cuittercero={selectedChain.cuittercero}
+              avatarColor={getAvatarColor(selectedChain.denominacion)}
             />
           </div>
         ) : (
@@ -76,7 +116,9 @@ export const CadenaSelectCard = ({
           </div>
         )}
         <div className={styles.chevronWrapper}>
-          <FiChevronDown className={`${styles.chevron} ${isOpen ? styles.chevronUp : ""}`} />
+          <FiChevronDown
+            className={`${styles.chevron} ${isOpen ? styles.chevronUp : ""}`}
+          />
         </div>
       </div>
 
@@ -95,10 +137,12 @@ export const CadenaSelectCard = ({
               autoFocus
             />
           </div>
-          
+
           <div className={styles.optionsList}>
             {filteredOptions.length === 0 ? (
-              <div className={styles.noResults}>No se encontraron resultados</div>
+              <div className={styles.noResults}>
+                No se encontraron resultados
+              </div>
             ) : (
               filteredOptions.map((c) => {
                 const logoSrc = getLogoSrc(c.logo);
@@ -112,17 +156,30 @@ export const CadenaSelectCard = ({
                   >
                     <div className={styles.optionLogoBox}>
                       {logoSrc ? (
-                        <img src={logoSrc} alt={c.denominacion} className={styles.optionLogo} />
+                        <img
+                          src={logoSrc}
+                          alt={c.denominacion}
+                          className={styles.optionLogo}
+                        />
                       ) : (
-                        <div className={styles.optionAvatar}>
+                        <div
+                          className={styles.optionAvatar}
+                          style={{
+                            backgroundColor: getAvatarColor(c.denominacion),
+                          }}
+                        >
                           {getInitials(c.denominacion)}
                         </div>
                       )}
                     </div>
                     <div className={styles.optionInfo}>
-                      <span className={styles.optionName}>{c.denominacion || "Cadena sin nombre"}</span>
+                      <span className={styles.optionName}>
+                        {c.denominacion || "Cadena sin nombre"}
+                      </span>
                       <div className={styles.optionMeta}>
-                        <span className={styles.optionId}>ID: {c.cadenavalorid}</span>
+                        <span className={styles.optionId}>
+                          ID: {c.cadenavalorid}
+                        </span>
                         {c.cuittercero && <span>• CUIT: {c.cuittercero}</span>}
                       </div>
                     </div>

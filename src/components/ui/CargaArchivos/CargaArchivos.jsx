@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './CargaArchivos.module.css';
 import { FiUploadCloud, FiFile, FiTrash2, FiEye, FiDownload, FiEdit2 } from 'react-icons/fi';
 import { BotonIcono } from "..//BotonIcono/BotonIcono";
@@ -46,7 +46,10 @@ export const CargaArchivos = ({
     );
   }
 
-  const boxClass = `${styles.box} ${isDragging ? styles.dragging : ""} ${hasError ? styles.error : ""} ${className}`;
+  const [internalIsDragging, setInternalIsDragging] = useState(false);
+  const activeIsDragging = isDragging !== undefined ? isDragging : internalIsDragging;
+
+  const boxClass = `${styles.box} ${activeIsDragging ? styles.dragging : ""} ${hasError ? styles.error : ""} ${className}`;
 
   return (
     <div 
@@ -55,9 +58,29 @@ export const CargaArchivos = ({
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onDrop={onDrop}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setInternalIsDragging(false);
+        if (onDrop) onDrop(e);
+      }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!internalIsDragging) setInternalIsDragging(true);
+        if (onDragOver) onDragOver(e);
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!internalIsDragging) setInternalIsDragging(true);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setInternalIsDragging(false);
+        if (onDragLeave) onDragLeave(e);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
