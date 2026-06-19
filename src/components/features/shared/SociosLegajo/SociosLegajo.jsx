@@ -193,7 +193,14 @@ export function SociosLegajo() {
               className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}`}
             >
               {isActive && <span className={styles.activeBar} />}
-              <span className={styles.tabTitle}>{doc.title}</span>
+              <div className={styles.tabTitleGroup}>
+                <span className={styles.tabTitle}>{doc.title}</span>
+                {requisitos?.relaciones?.[doc.key] === 1 ? (
+                  <span className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}>Obligatorio</span>
+                ) : (
+                  <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
+                )}
+              </div>
               <FiChevronDown
                 className={styles.mobileChevron}
                 style={{

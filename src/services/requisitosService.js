@@ -126,16 +126,26 @@ export const TIPO_RELACION_MAP = {
   usuarios: 999,
 };
 
+// Helper para normalizar las claves de la respuesta de la API a minúsculas
+const normalizeKeys = (obj) => {
+  if (!obj || typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(normalizeKeys);
+
+  const result = {};
+  for (const [key, value] of Object.entries(obj)) {
+    result[key.toLowerCase()] = value;
+  }
+  return result;
+};
+
 export const requisitosService = {
   obtenerRequisitosPorCadenaId: async (cadenaId, tipoPersonaId = null, sociedad = null, isClientMode = false) => {
     if (!cadenaId) return null;
     try {
-      const params = { cadenavalorid: cadenaId };
-      if (tipoPersonaId !== null) params.TipoPersonaID = tipoPersonaId;
-      if (sociedad !== null) params.Sociedad = sociedad;
-
-      const response = await api.get("api/CadenaValorParametrizacion", { params });
-      const data = response.data || [];
+      const response = await api.get("api/CadenaValorParametrizacion", {
+        params: { cadenavalorid: cadenaId }
+      });
+      const data = normalizeKeys(response.data || []);
 
       // Ordenar registros para que los menos específicos (legacy/globales con tipopersonaid = 0 o sin sociedad)
       // se procesen primero, y los más específicos (con sociedad o tipoPersonaId específico) se procesen al final
@@ -156,7 +166,9 @@ export const requisitosService = {
 
       // MODO CLIENTE: Si se especificó el tipo de persona o estamos en modo cliente, devolvemos un objeto de configuración plano
       if (isClientMode || tipoPersonaId !== null) {
-        const resolvedTipoPersonaId = tipoPersonaId !== null ? Number(tipoPersonaId) : (getSocTypeFromDenominacion(sociedad) !== "otras" || sociedad ? 10 : 1);
+        const resolvedTipoPersonaId = (tipoPersonaId !== null && tipoPersonaId !== undefined)
+          ? Number(tipoPersonaId)
+          : (getSocTypeFromDenominacion(sociedad) !== "otras" ? 10 : 1);
         const socType = resolvedTipoPersonaId === 1 ? "" : getSocTypeFromDenominacion(sociedad);
 
         const fallback = getFallbackConfig(resolvedTipoPersonaId, sociedad);
@@ -171,7 +183,7 @@ export const requisitosService = {
 
         sortedData.forEach((item) => {
           const reqVal = Number(item.requerimiento);
-          const itemPersonaId = Number(item.tipopersonaid);
+          const itemPersonaId = Number(item.tipopersonaid || 0);
           const itemSocType = normalizeSociedad(item.tiposociedad);
 
           // Verificar si el registro coincide con el tipo de persona y tipo de sociedad del cliente (o es un registro legacy global)
@@ -183,16 +195,18 @@ export const requisitosService = {
           }
 
           if (matches) {
-            if (item.tipodocumentoarchivoid > 0) {
+            const docIdVal = Number(item.tipodocumentoarchivoid || 0);
+            const relIdVal = Number(item.tiporelacionsocioid || 0);
+            if (docIdVal > 0) {
               const docKey = Object.keys(TIPO_DOCUMENTO_MAP).find(
-                (k) => TIPO_DOCUMENTO_MAP[k] === item.tipodocumentoarchivoid
+                (k) => TIPO_DOCUMENTO_MAP[k] === docIdVal
               );
               if (docKey) {
                 config.documentos[docKey] = reqVal;
               }
-            } else if (item.tiporelacionsocioid > 0) {
+            } else if (relIdVal > 0) {
               const relKey = Object.keys(TIPO_RELACION_MAP).find(
-                (k) => TIPO_RELACION_MAP[k] === item.tiporelacionsocioid
+                (k) => TIPO_RELACION_MAP[k] === relIdVal
               );
               if (relKey) {
                 config.relaciones[relKey] = reqVal;
@@ -236,16 +250,18 @@ export const requisitosService = {
         }
 
         targetTabs.forEach((tab) => {
-          if (item.tipodocumentoarchivoid > 0) {
+          const docIdVal = Number(item.tipodocumentoarchivoid || 0);
+          const relIdVal = Number(item.tiporelacionsocioid || 0);
+          if (docIdVal > 0) {
             const docKey = Object.keys(TIPO_DOCUMENTO_MAP).find(
-              (k) => TIPO_DOCUMENTO_MAP[k] === item.tipodocumentoarchivoid
+              (k) => TIPO_DOCUMENTO_MAP[k] === docIdVal
             );
             if (docKey) {
               config[tab].documentos[docKey] = reqVal;
             }
-          } else if (item.tiporelacionsocioid > 0) {
+          } else if (relIdVal > 0) {
             const relKey = Object.keys(TIPO_RELACION_MAP).find(
-              (k) => TIPO_RELACION_MAP[k] === item.tiporelacionsocioid
+              (k) => TIPO_RELACION_MAP[k] === relIdVal
             );
             if (relKey) {
               config[tab].relaciones[relKey] = reqVal;
@@ -279,7 +295,7 @@ export const requisitosService = {
       const response = await api.get("api/CadenaValorParametrizacion", {
         params: { cadenavalorid: cadenaId },
       });
-      existentes = response.data || [];
+      existentes = normalizeKeys(response.data || []);
     } catch (err) {
       console.warn("No se pudieron consultar parametrizaciones previas, se asumirá creación:", err);
     }

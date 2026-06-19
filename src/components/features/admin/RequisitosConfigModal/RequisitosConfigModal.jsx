@@ -33,11 +33,11 @@ const RELATION_METADATA = [
 ];
 
 const TABS = [
-  { id: "fisica", label: "Física", icon: FiUser },
   { id: "sa", label: "S.A.", icon: FiBriefcase },
   { id: "srl", label: "S.R.L.", icon: FiBriefcase },
   { id: "sh", label: "S.H.", icon: FiBriefcase },
   { id: "otras", label: "Otras", icon: FiBriefcase },
+  { id: "fisica", label: "Física", icon: FiUser },
 ];
 
 export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
@@ -211,6 +211,8 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
           <h3 className={styles.sectionTitle}>Relaciones y Secciones</h3>
           <div className={styles.list}>
             {RELATION_METADATA.map(({ key, title, desc }) => {
+              if (activeTab === "fisica" && key === "accionistas") return null;
+
               const val = localConfig[activeTab]?.relaciones?.[key] !== undefined
                 ? localConfig[activeTab].relaciones[key]
                 : 0;
