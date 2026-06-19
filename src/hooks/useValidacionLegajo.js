@@ -63,7 +63,11 @@ export const useValidacionLegajo = () => {
   }
 
   const errores = [];
+  const erroresDocumentos = [];
+  const erroresLegajo = [];
   let totalRequisitos = 0;
+  let totalDocumentosObligatorios = 0;
+  let totalLegajoObligatorios = 0;
   let requisitosCompletados = 0;
 
   // 1. Validar documentos obligatorios (valor === 1)
@@ -71,6 +75,7 @@ export const useValidacionLegajo = () => {
     Object.entries(requisitos.documentos).forEach(([key, val]) => {
       if (val === 1) {
         totalRequisitos++;
+        totalDocumentosObligatorios++;
         const tipoId = socioArchivoService.TIPO_DOCUMENTO_MAP[key];
         const tieneDoc = archivosBackend.some(
           (a) => a.tipodocumentoarchivoid === tipoId
@@ -80,7 +85,9 @@ export const useValidacionLegajo = () => {
           requisitosCompletados++;
         } else {
           const docTitle = DOCUMENT_TITLES[key] || key;
-          errores.push(`Falta subir el documento obligatorio: ${docTitle}.`);
+          const msg = `Falta subir el documento obligatorio: ${docTitle}.`;
+          errores.push(msg);
+          erroresDocumentos.push(msg);
         }
       }
     });
@@ -95,6 +102,7 @@ export const useValidacionLegajo = () => {
     // Accionistas
     if (requisitos.relaciones.accionistas === 1) {
       totalRequisitos++;
+      totalLegajoObligatorios++;
       let accionistasValidos = true;
       const erroresAccionistas = [];
 
@@ -171,12 +179,14 @@ export const useValidacionLegajo = () => {
         requisitosCompletados++;
       } else {
         errores.push(...erroresAccionistas);
+        erroresLegajo.push(...erroresAccionistas);
       }
     }
 
     // Representantes
     if (requisitos.relaciones.representantes === 1) {
       totalRequisitos++;
+      totalLegajoObligatorios++;
       let representantesValidos = true;
       const erroresRepresentantes = [];
 
@@ -201,12 +211,14 @@ export const useValidacionLegajo = () => {
         requisitosCompletados++;
       } else {
         errores.push(...erroresRepresentantes);
+        erroresLegajo.push(...erroresRepresentantes);
       }
     }
 
     // Agentes de Bolsa
     if (requisitos.relaciones.agentesBolsa === 1) {
       totalRequisitos++;
+      totalLegajoObligatorios++;
       let agentesBolsaValidos = true;
       const erroresAgentes = [];
 
@@ -228,6 +240,7 @@ export const useValidacionLegajo = () => {
         requisitosCompletados++;
       } else {
         errores.push(...erroresAgentes);
+        erroresLegajo.push(...erroresAgentes);
       }
     }
   }
@@ -238,8 +251,12 @@ export const useValidacionLegajo = () => {
     isValid,
     errores,
     totalRequisitos,
+    totalDocumentosObligatorios,
+    totalLegajoObligatorios,
     requisitosCompletados,
     isLoading: false,
+    faltanDocumentos: erroresDocumentos.length > 0,
+    faltanLegajo: erroresLegajo.length > 0,
   };
 };
 

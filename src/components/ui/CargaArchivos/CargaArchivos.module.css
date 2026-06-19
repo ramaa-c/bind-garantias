@@ -1,26 +1,30 @@
 .box {
-  background-color: rgba(255, 255, 255, 0.02);
-  border: 2px dashed #444;
-  border-radius: 12px;
-  padding: 40px 20px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 1rem;
+  padding: 25px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
   width: 100%;
-  min-height: 180px;
+  min-height: 160px;
   flex: 1;
   box-sizing: border-box;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .box:hover {
-  border-color: var(--yellow);
-  background-color: rgba(244, 245, 0, 0.02);
+  border-color: var(--color-azul-bind, #4c65e6);
+  background: rgba(76, 101, 230, 0.03);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
 }
 
 .dragging {
@@ -63,7 +67,7 @@
   background-color: rgba(76, 175, 80, 0.05);
   flex-direction: row;
   justify-content: space-between;
-  padding: 30px 20px;
+  padding: 25px 20px;
 }
 
 .loaded:hover {

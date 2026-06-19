@@ -193,7 +193,7 @@ export default function DocumentacionView() {
         </Button>
       </header>
 
-      <LegajoUniversalBar />
+      <LegajoUniversalBar context="documentacion" />
 
       <FormProvider {...methods}>
         <form
