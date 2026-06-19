@@ -92,6 +92,7 @@ export function SociosLegajo() {
 
   const cargarSocios = () => {
     queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto", socioIdActivo] });
+    queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] });
     cargarArchivosExistentes();
   };
 

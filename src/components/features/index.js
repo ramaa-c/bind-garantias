@@ -40,5 +40,6 @@ export * from "./admin/CdaConfigModal/CdaConfigModal";
 export * from "./admin/UsuariosRelacionadosModal/UsuariosRelacionadosModal";
 export * from "./admin/CriteriosAceptacionModal/CriteriosAceptacionModal";
 export * from "./admin/RequisitosConfigModal/RequisitosConfigModal";
+export * from "./shared/LegajoUniversalBar/LegajoUniversalBar";
 
 

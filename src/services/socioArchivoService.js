@@ -24,7 +24,7 @@ const TIPO_DOCUMENTO_MAP = {
   // Documentos de empresa (Paso5 / DocumentosEmpresaModal)
   estatuto: 1,
   balance: 2,
-  acta: 3,
+  ddjjIva: 3,
   cartasDocumento: 4,
   poderes: 5,
   // Documentos del legajo (DocumentosLegajo)

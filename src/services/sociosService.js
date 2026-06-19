@@ -171,4 +171,17 @@ export const sociosService = {
       },
     };
   },
+
+  // Envía todos los datos consolidados del legajo al esquema SGR+
+  enviarASgrPlus: async (socioId) => {
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        resolve({
+          success: true,
+          message: "Legajo enviado a SGR+ exitosamente.",
+          timestamp: new Date().toISOString()
+        });
+      }, 1500);
+    });
+  },
 };

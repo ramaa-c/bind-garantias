@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
-import { SociosLegajo } from "../../../../components/features";
+import { SociosLegajo, LegajoUniversalBar } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { Button } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
@@ -126,6 +126,8 @@ export default function SociosView() {
           {sincronizando ? "Sincronizando..." : "Refrescar datos LUFE"}
         </Button>
       </header>
+
+      <LegajoUniversalBar />
 
       <div className={styles.formLayout}>
         <SociosLegajo />

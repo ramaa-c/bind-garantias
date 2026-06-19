@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { FaFileAlt, FaSave, FaFileUpload } from "react-icons/fa";
-import { DocumentosLegajo } from "../../../../components/features";
+import { DocumentosLegajo, LegajoUniversalBar } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
@@ -13,15 +14,23 @@ import styles from "./DocumentacionView.module.css";
 const DOC_TITLES = {
   estatuto: "Estatuto Social",
   balance: "Último Balance",
-  acta: "Acta de Autoridades / DDJJ IVA",
+  ddjjIva: "Declaración Jurada de IVA",
   cartasDocumento: "Cartas Documento",
   poderes: "Poderes",
   certificadoPyme: "Certificado de PyME",
   otrosDocumentos: "Otros documentos",
+  eecc: "Estados Contables (EECC)",
+  actaDesignacion: "Acta de Designación de Autoridades",
+  actaSocios: "Acta de Reunión de Socios",
+  f1272: "Formulario F1272",
+  ddjjGanancias: "DDJJ de Ganancias",
+  manifestacionBienes: "Manifestación de Bienes",
+  constanciaMonotributo: "Constancia de Monotributo",
 };
 
 export default function DocumentacionView() {
   const { socioIdActivo } = useEmpresaActiva();
+  const queryClient = useQueryClient();
   
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingData, setPendingData] = useState(null);
@@ -39,11 +48,18 @@ export default function DocumentacionView() {
     defaultValues: {
       estatuto: null,
       balance: null,
-      acta: null,
+      ddjjIva: null,
       cartasDocumento: null,
       poderes: null,
       certificadoPyme: null,
       otrosDocumentos: null,
+      eecc: null,
+      actaDesignacion: null,
+      actaSocios: null,
+      f1272: null,
+      ddjjGanancias: null,
+      manifestacionBienes: null,
+      constanciaMonotributo: null,
       intentoAvanzar: false,
     },
   });
@@ -67,11 +83,18 @@ export default function DocumentacionView() {
       const llavesDocumentos = [
         "estatuto",
         "balance",
-        "acta",
+        "ddjjIva",
         "cartasDocumento",
         "poderes",
         "certificadoPyme",
         "otrosDocumentos",
+        "eecc",
+        "actaDesignacion",
+        "actaSocios",
+        "f1272",
+        "ddjjGanancias",
+        "manifestacionBienes",
+        "constanciaMonotributo",
       ];
       const pendientes = [];
 
@@ -118,6 +141,9 @@ export default function DocumentacionView() {
         id: toastId,
         description: desc,
       });
+
+      queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] });
+      queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto", socioIdActivo] });
     } catch (error) {
       console.error("Fallo al actualizar el legajo digital:", error);
       toast.error("Error al guardar legajo", {
@@ -166,6 +192,8 @@ export default function DocumentacionView() {
           {methods.formState.isSubmitting || guardando ? "Actualizando..." : "Actualizar legajo"}
         </Button>
       </header>
+
+      <LegajoUniversalBar />
 
       <FormProvider {...methods}>
         <form

@@ -369,7 +369,10 @@ export function DocumentosLegajo() {
                   className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}`}
                 >
                   {isActive && <span className={styles.activeBar} />}
-                  <span className={styles.tabTitle}>{doc.title}</span>
+                  <span className={styles.tabTitle}>
+                    {doc.title}
+                    {!isPerfil && isRequired && <span style={{ color: "var(--error-red, #ef4444)", marginLeft: "0.25rem" }}>*</span>}
+                  </span>
                   <span
                     className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
                   />
@@ -411,7 +414,10 @@ export function DocumentosLegajo() {
               className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}`}
             >
               {isActive && <span className={styles.activeBar} />}
-              <span className={styles.tabTitle}>{doc.title}</span>
+              <span className={styles.tabTitle}>
+                {doc.title}
+                {!isPerfil && isRequired && <span style={{ color: "var(--error-red, #ef4444)", marginLeft: "0.25rem" }}>*</span>}
+              </span>
               <span
                 className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
               />

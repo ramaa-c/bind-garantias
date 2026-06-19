@@ -445,11 +445,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     e.stopPropagation();
     
     let hasDropzoneErrors = false;
-    if (!dniFrenteFile && !socio) {
+    if (!dniFrenteFile) {
       setErrorDniFrente(true);
       hasDropzoneErrors = true;
     }
-    if (!dniDorsoFile && !socio) {
+    if (!dniDorsoFile) {
       setErrorDniDorso(true);
       hasDropzoneErrors = true;
     }
