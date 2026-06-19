@@ -7,8 +7,11 @@ import {
   FiChevronUp,
   FiSend,
   FiInfo,
+  FiArrowRight,
 } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useChannel } from "../../../../context/ChannelContext";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { sociosService } from "../../../../services/sociosService";
@@ -16,25 +19,40 @@ import { Button } from "../../../ui/Button/Button";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import styles from "./LegajoUniversalBar.module.css";
 
-export function LegajoUniversalBar() {
+export function LegajoUniversalBar({ context }) {
   const { socioIdActivo } = useEmpresaActiva();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const { channelInfo } = useChannel();
 
   const {
     isValid,
     errores,
     totalRequisitos,
+    totalDocumentosObligatorios,
+    totalLegajoObligatorios,
     requisitosCompletados,
     isLoading,
+    faltanDocumentos,
+    faltanLegajo
   } = useValidacionLegajo();
 
-  const [expanded, setExpanded] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [enviando, setEnviando] = useState(false);
 
-  if (isLoading || totalRequisitos === 0) {
+  const hasMandatoryInContext = 
+    (context === "documentacion" && totalDocumentosObligatorios > 0) ||
+    (context === "legajo" && totalLegajoObligatorios > 0) ||
+    !context;
+
+  if (isLoading || totalRequisitos === 0 || !hasMandatoryInContext) {
     return null;
   }
+
+  const isContextInvalid =
+    (context === "documentacion" && faltanDocumentos) ||
+    (context === "legajo" && faltanLegajo) ||
+    (!context && !isValid);
 
   const porcentaje = Math.round((requisitosCompletados / totalRequisitos) * 100);
 
@@ -74,15 +92,26 @@ export function LegajoUniversalBar() {
   };
 
   return (
-    <div className={`${styles.container} ${isValid ? styles.containerValid : styles.containerInvalid}`}>
+    <div className={`${styles.container} ${isValid ? styles.containerValid : (isContextInvalid ? styles.containerInvalid : "")}`}>
       <div className={styles.barHeader}>
-        <div className={styles.statusInfo} onClick={() => errores.length > 0 && setExpanded(!expanded)} style={{ cursor: errores.length > 0 ? "pointer" : "default" }}>
-          <div className={`${styles.statusIcon} ${isValid ? styles.iconGreen : styles.iconAmber}`}>
-            {isValid ? (
-              <FiCheckCircle size={22} className={styles.pulseAnimation} />
-            ) : (
-              <FiAlertTriangle size={22} />
-            )}
+        <div className={styles.statusInfo}>
+          <div className={styles.circularProgressWrapper}>
+            <svg viewBox="0 0 36 36" className={styles.circularChart}>
+              <path
+                className={styles.circleBg}
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path
+                className={`${styles.circleFill} ${isValid ? styles.fillGreenStroke : styles.fillAmberStroke}`}
+                strokeDasharray={`${porcentaje}, 100`}
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <text x="18" y="21.5" className={styles.percentage}>{porcentaje}%</text>
+            </svg>
           </div>
           <div className={styles.textGroup}>
             <div className={styles.statusTitle}>
@@ -91,71 +120,45 @@ export function LegajoUniversalBar() {
             <div className={styles.statusSubtitle}>
               {isValid
                 ? "Todos los requisitos parametrizados han sido completados correctamente."
-                : `Completados ${requisitosCompletados} de ${totalRequisitos} requisitos (${porcentaje}%).`}
+                : `Completados ${requisitosCompletados} de ${totalRequisitos} requisitos.`}
             </div>
           </div>
         </div>
 
-        <div className={styles.progressBarWrapper}>
-          <div className={styles.progressBarBg}>
-            <div
-              className={`${styles.progressBarFill} ${isValid ? styles.fillGreen : styles.fillAmber}`}
-              style={{ width: `${porcentaje}%` }}
-            />
-          </div>
-          <span className={styles.progressText}>{porcentaje}%</span>
-        </div>
-
         <div className={styles.actions}>
-          {!isValid && errores.length > 0 && (
-            <button
+          {!context && !isValid ? (
+            <Button
               type="button"
-              className={styles.toggleBtn}
-              onClick={() => setExpanded(!expanded)}
-              aria-label="Ver detalles"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const basePath = `/${channelInfo?.id || "default"}`;
+                if (faltanLegajo) {
+                  navigate(`${basePath}/legajo`);
+                } else if (faltanDocumentos) {
+                  navigate(`${basePath}/documentacion`);
+                }
+              }}
+              className={styles.sendBtn}
             >
-              {expanded ? (
-                <>
-                  Ocultar pendientes <FiChevronUp style={{ marginLeft: "0.25rem" }} />
-                </>
-              ) : (
-                <>
-                  Ver pendientes <FiChevronDown style={{ marginLeft: "0.25rem" }} />
-                </>
-              )}
-            </button>
+              Ir
+              <FiArrowRight style={{ marginLeft: "0.5rem" }} />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => setShowConfirm(true)}
+              disabled={!isValid || enviando}
+              className={`${styles.sendBtn} ${isValid ? styles.sendBtnActive : styles.sendBtnInactive}`}
+            >
+              <FiSend style={{ marginRight: "0.5rem" }} />
+              {enviando ? "Enviando..." : "Enviar a SGR+"}
+            </Button>
           )}
-
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={() => setShowConfirm(true)}
-            disabled={!isValid || enviando}
-            className={styles.sendBtn}
-          >
-            <FiSend style={{ marginRight: "0.5rem" }} />
-            {enviando ? "Enviando..." : "Enviar a SGR+"}
-          </Button>
         </div>
       </div>
-
-      {expanded && !isValid && errores.length > 0 && (
-        <div className={styles.detailsPanel}>
-          <div className={styles.detailsTitle}>
-            <FiInfo size={14} style={{ marginRight: "0.4rem" }} />
-            Requisitos obligatorios pendientes para el envío a SGR+:
-          </div>
-          <ul className={styles.errorList}>
-            {errores.map((err, idx) => (
-              <li key={idx} className={styles.errorItem}>
-                <span className={styles.bulletRed} />
-                {err}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       <ConfirmacionModal
         isOpen={showConfirm}

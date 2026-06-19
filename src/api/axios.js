@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "sonner";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -34,6 +35,18 @@ api.interceptors.response.use(
       await new Promise((resolve) => setTimeout(resolve, delay));
 
       return api(config);
+    }
+
+    // Si ya no se reintenta y hubo un error de red o servidor en métodos de escritura
+    if (isServerError || isNetworkError) {
+      const method = config.method?.toUpperCase();
+      if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+        toast.error(
+          isNetworkError
+            ? "Error de red. Verifica tu conexión e intenta nuevamente."
+            : "Error interno en el servidor. No se pudieron guardar los cambios."
+        );
+      }
     }
 
     return Promise.reject(error);

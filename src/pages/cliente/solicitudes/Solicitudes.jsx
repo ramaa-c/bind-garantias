@@ -7,10 +7,13 @@ import { BotonVolver, Button, Select, Spinner, SkeletonTable } from "../../../co
 import {
   TarjetaSolicitud,
   DetalleSolicitudModal,
+  LegajoUniversalBar,
+  BloqueoLegajoModal
 } from "../../../components/features";
 import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 import InformativoModal from "../../../components/features/shared/InformativoModal/InformativoModal";
 import { HelpDrawer } from "../../../components/layout/Client/HelpDrawer/HelpDrawer";
+import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../../hooks/useSolicitudes";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../services/sociosService";
@@ -93,7 +96,10 @@ export default function Solicitudes() {
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [modalPendienteOpen, setModalPendienteOpen] = useState(false);
+  const [modalBloqueoLegajoOpen, setModalBloqueoLegajoOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  const { isValid, faltanDocumentos, faltanLegajo } = useValidacionLegajo();
 
   const { cuitActivo, nombreEmpresa, socioIdActivo } = useEmpresaActiva();
   const socioIdFinal = socioIdActivo || 0;
@@ -161,6 +167,11 @@ export default function Solicitudes() {
   }, [location.state]);
 
   const handleNuevaOperacion = async (ruta, draftKey) => {
+    if (!isValid) {
+      setModalBloqueoLegajoOpen(true);
+      return;
+    }
+
     if (tieneSolicitudPendiente) {
       setModalPendienteOpen(true);
       return;
@@ -234,6 +245,8 @@ export default function Solicitudes() {
 
       {/* CUERPO PRINCIPAL */}
       <main className={styles.main}>
+        <LegajoUniversalBar />
+        
         <div className={styles.toolbar}>
           <div className={styles.filtersWrapper}>
             <div className={styles.searchBox}>
@@ -295,6 +308,15 @@ export default function Solicitudes() {
         onClose={handleCloseModalOnly}
         onConfirm={handleConfirmStartNew}
         onContinueBorrador={handleCloseContinueDraft}
+      />
+
+      <BloqueoLegajoModal
+        isOpen={modalBloqueoLegajoOpen}
+        onClose={() => setModalBloqueoLegajoOpen(false)}
+        faltanDocumentos={faltanDocumentos}
+        faltanLegajo={faltanLegajo}
+        onGoToSocios={() => navigate(`/${channelInfo?.id || "default"}/legajo`)}
+        onGoToDocumentacion={() => navigate(`/${channelInfo?.id || "default"}/documentacion`)}
       />
 
       <DetalleSolicitudModal

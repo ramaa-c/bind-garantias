@@ -106,6 +106,7 @@ const LineaCard = ({
   limitTypes,
   onEdit,
   onToggleStatus,
+  isToggling,
 }) => {
   const moneda = currencies.find(
     (c) => String(c.value) === String(linea.monedaid),
@@ -180,13 +181,17 @@ const LineaCard = ({
         </div>
       </div>
 
-      <div className={styles.cardTogglesBottom}>
+      <div
+        className={styles.cardTogglesBottom}
+        style={isToggling ? { opacity: 0.6, pointerEvents: "none" } : {}}
+      >
         <label className={styles.cardToggleLabel}>
           <input
             type="checkbox"
             className={styles.cardToggleCheckbox}
             checked={String(linea.activa) === "1"}
             onChange={(e) => onToggleStatus(linea, "activa", e.target.checked)}
+            disabled={isToggling}
           />
           Línea Activa
         </label>
@@ -198,9 +203,15 @@ const LineaCard = ({
             onChange={(e) =>
               onToggleStatus(linea, "aptanuevalinea", e.target.checked)
             }
+            disabled={isToggling}
           />
           Apta Nuevas Operaciones
         </label>
+        {isToggling && (
+          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
+            <Spinner size={18} color="#ffffff" />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -211,6 +222,7 @@ export default function LineasCadena() {
   const [selectedCadenaId, setSelectedCadenaId] = useState("");
   const [isLineaModalOpen, setIsLineaModalOpen] = useState(false);
   const [activeLinea, setActiveLinea] = useState(null);
+  const [togglingLineas, setTogglingLineas] = useState(new Set());
 
   const [formData, setFormData] = useState({
     tipolimiteid: "",
@@ -255,16 +267,35 @@ export default function LineasCadena() {
   };
 
   const handleToggleStatus = (linea, field, isChecked) => {
+    setTogglingLineas((prev) => {
+      const next = new Set(prev);
+      next.add(linea.tipolimitecadenavalorid);
+      return next;
+    });
+    
     const payload = {
       ...linea,
       [field]: isChecked ? "1" : "0",
     };
+
+    // Regla de negocio: Si se desactiva/activa la línea, el estado de 'apta' debe coincidir
+    if (field === "activa") {
+      payload.aptanuevalinea = isChecked ? "1" : "0";
+    }
+    
     actualizarMutation.mutate(payload, {
       onSuccess: () => {
         toast.success(`Estado actualizado correctamente`);
       },
       onError: (err) => {
         toast.error("Error al actualizar estado: " + err.message);
+      },
+      onSettled: () => {
+        setTogglingLineas((prev) => {
+          const next = new Set(prev);
+          next.delete(linea.tipolimitecadenavalorid);
+          return next;
+        });
       },
     });
   };
@@ -430,6 +461,7 @@ export default function LineasCadena() {
               limitTypes={limitTypesOptions}
               onEdit={handleOpenEditModal}
               onToggleStatus={handleToggleStatus}
+              isToggling={togglingLineas.has(linea.tipolimitecadenavalorid)}
             />
           ))}
         </div>

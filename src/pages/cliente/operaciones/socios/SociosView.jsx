@@ -127,7 +127,7 @@ export default function SociosView() {
         </Button>
       </header>
 
-      <LegajoUniversalBar />
+      <LegajoUniversalBar context="legajo" />
 
       <div className={styles.formLayout}>
         <SociosLegajo />

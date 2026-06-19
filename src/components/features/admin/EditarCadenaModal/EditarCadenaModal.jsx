@@ -3,7 +3,7 @@ import { FiUploadCloud } from "react-icons/fi";
 import { toast } from "sonner";
 import { useActualizarCadenaValor } from "../../../../hooks/useCadenaValor";
 import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../hooks/useCatalogos";
-import { Modal, Button, InputSimple, Select } from "../../../ui";
+import { Modal, Button, InputSimple, SelectSimple } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./EditarCadenaModal.module.css";
@@ -164,7 +164,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
           <h4 className={styles.sectionTitle}>Configuración Comercial</h4>
           <div className={styles.row}>
             <div style={{ flex: 1 }}>
-              <Select
+              <SelectSimple
                 label="Canal Comercialización *"
                 placeholder="Seleccione canal comercial..."
                 options={canalesOpciones}
@@ -173,7 +173,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
               />
             </div>
             <div style={{ flex: 1 }}>
-              <Select
+              <SelectSimple
                 label="Equipo Comercial *"
                 placeholder="Seleccione equipo comercial..."
                 options={equiposOpciones}

@@ -270,7 +270,7 @@ export function DocumentosLegajo() {
 
         {isPerfil ? (
           <div className={styles.perfilGrid}>
-            <div className={styles.perfilChip}>
+            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
                 <FiBriefcase className={styles.perfilChipIcon} size={20} />
                 <span className={styles.perfilChipLabel}>Razón Social</span>
@@ -279,7 +279,7 @@ export function DocumentosLegajo() {
                 {nombreEmpresa || "—"}
               </span>
             </div>
-            <div className={styles.perfilChip}>
+            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
                 <FiCreditCard className={styles.perfilChipIcon} size={20} />
                 <span className={styles.perfilChipLabel}>CUIT</span>
@@ -288,7 +288,7 @@ export function DocumentosLegajo() {
                 {cuitActivo || "—"}
               </span>
             </div>
-            <div className={styles.perfilChip}>
+            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
                 <FiMapPin className={styles.perfilChipIcon} size={20} />
                 <span className={styles.perfilChipLabel}>Domicilio</span>
@@ -297,7 +297,7 @@ export function DocumentosLegajo() {
                 {direccion || "—"}
               </span>
             </div>
-            <div className={styles.perfilChip}>
+            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
                 <FiPhone className={styles.perfilChipIcon} size={20} />
                 <span className={styles.perfilChipLabel}>Teléfono</span>
@@ -369,10 +369,16 @@ export function DocumentosLegajo() {
                   className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}`}
                 >
                   {isActive && <span className={styles.activeBar} />}
-                  <span className={styles.tabTitle}>
-                    {doc.title}
-                    {!isPerfil && isRequired && <span style={{ color: "var(--error-red, #ef4444)", marginLeft: "0.25rem" }}>*</span>}
-                  </span>
+                  <div className={styles.tabTitleGroup}>
+                    <span className={styles.tabTitle}>{doc.title}</span>
+                    {!isPerfil && (
+                      isRequired ? (
+                        <span className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}>Obligatorio</span>
+                      ) : (
+                        <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
+                      )
+                    )}
+                  </div>
                   <span
                     className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
                   />
@@ -414,10 +420,16 @@ export function DocumentosLegajo() {
               className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}`}
             >
               {isActive && <span className={styles.activeBar} />}
-              <span className={styles.tabTitle}>
-                {doc.title}
-                {!isPerfil && isRequired && <span style={{ color: "var(--error-red, #ef4444)", marginLeft: "0.25rem" }}>*</span>}
-              </span>
+              <div className={styles.tabTitleGroup}>
+                <span className={styles.tabTitle}>{doc.title}</span>
+                {!isPerfil && (
+                  isRequired ? (
+                    <span className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}>Obligatorio</span>
+                  ) : (
+                    <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
+                  )
+                )}
+              </div>
               <span
                 className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
               />

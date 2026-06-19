@@ -41,5 +41,6 @@ export * from "./admin/UsuariosRelacionadosModal/UsuariosRelacionadosModal";
 export * from "./admin/CriteriosAceptacionModal/CriteriosAceptacionModal";
 export * from "./admin/RequisitosConfigModal/RequisitosConfigModal";
 export * from "./shared/LegajoUniversalBar/LegajoUniversalBar";
+export * from "./shared/BloqueoLegajoModal/BloqueoLegajoModal";
 
 

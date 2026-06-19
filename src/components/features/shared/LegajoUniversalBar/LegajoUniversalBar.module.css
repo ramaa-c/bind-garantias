@@ -77,46 +77,51 @@
   color: var(--text-muted, #a3a3a3);
 }
 
-/* Progress bar container */
-.progressBarWrapper {
+/* Circular Progress Chart */
+.circularProgressWrapper {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  min-width: 180px;
-  flex: 0 1 240px;
+  justify-content: center;
+  width: 55px;
+  height: 55px;
+  margin-right: 1rem;
 }
 
-.progressBarBg {
-  flex: 1;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 10px;
-  overflow: hidden;
-  position: relative;
+.circularChart {
+  display: block;
+  width: 100%;
+  max-height: 250px;
 }
 
-.progressBarFill {
-  height: 100%;
-  border-radius: 10px;
-  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+.circleBg {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 3.5;
 }
 
-.fillGreen {
-  background: linear-gradient(90deg, #3ddc84 0%, #2bb868 100%);
-  box-shadow: 0 0 8px rgba(61, 220, 132, 0.4);
+.circleFill {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.fillAmber {
-  background: linear-gradient(90deg, #ffd000 0%, #e0a300 100%);
-  box-shadow: 0 0 6px rgba(255, 208, 0, 0.2);
+.fillGreenStroke {
+  stroke: var(--success-green, #3ddc84);
+  filter: drop-shadow(0 0 3px rgba(61, 220, 132, 0.4));
 }
 
-.progressText {
-  font-size: 0.85rem;
+.fillAmberStroke {
+  stroke: #ffd000;
+  filter: drop-shadow(0 0 3px rgba(255, 208, 0, 0.3));
+}
+
+.percentage {
+  fill: #ffffff;
+  font-family: inherit;
+  font-size: 0.55rem;
   font-weight: 700;
-  min-width: 32px;
-  text-align: right;
-  color: #ffffff;
+  text-anchor: middle;
 }
 
 /* Actions and buttons */
@@ -151,6 +156,22 @@
   min-width: 130px;
   font-weight: 600 !important;
   letter-spacing: 0.02em;
+  transition: all 0.3s ease;
+}
+
+.sendBtnActive {
+  background: var(--color-azul-bind, #4c65e6) !important;
+  box-shadow: 0 0 15px rgba(76, 101, 230, 0.4) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.sendBtnActive:hover {
+  box-shadow: 0 0 25px rgba(76, 101, 230, 0.6) !important;
+  transform: translateY(-1px);
+}
+
+.sendBtnInactive {
+  opacity: 0.5;
 }
 
 /* Details panel dropdown */

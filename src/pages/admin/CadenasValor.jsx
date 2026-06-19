@@ -5,39 +5,37 @@ import {
   FiEdit,
   FiList,
   FiUser,
-  FiSliders
+  FiSliders,
 } from "react-icons/fi";
 import styles from "./CadenasValor.module.css";
 import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
 import {
   useTipoCanalComercializacion,
-  useEquipoComercial
+  useEquipoComercial,
 } from "../../hooks/useCatalogos";
-import { Spinner } from "../../components/ui";
+import { Spinner, Button } from "../../components/ui";
 import {
   ActivarCadenaModal,
   EditarCadenaModal,
   CdaConfigModal,
   UsuariosRelacionadosModal,
-  RequisitosConfigModal
+  RequisitosConfigModal,
 } from "../../components/features";
 import { toast } from "sonner";
-
 
 export default function CadenasValor() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState(null); // "activar", "edit", "cdas", "users"
+  const [modalType, setModalType] = useState(null);
   const [activeItem, setActiveItem] = useState(null);
-
 
   // Queries
   const {
     data: activeCadenas,
     isLoading: isLoadingActive,
-    refetch: refetchActive
+    refetch: refetchActive,
   } = useObtenerTodasWeb();
 
   const { data: canalesData } = useTipoCanalComercializacion();
@@ -52,7 +50,7 @@ export default function CadenasValor() {
   // Helper to map catalog label
   const getCatalogLabel = (catalogOptions, value) => {
     if (value === undefined || value === null || value === "") return "-";
-    const option = catalogOptions.find(opt => opt.value === String(value));
+    const option = catalogOptions.find((opt) => opt.value === String(value));
     return option ? option.label : `ID: ${value}`;
   };
 
@@ -76,9 +74,10 @@ export default function CadenasValor() {
   };
 
   // Filters
-  const filteredCadenas = activeList.filter(c =>
-    c.denominacion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.referencia?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCadenas = activeList.filter(
+    (c) =>
+      c.denominacion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.referencia?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (isLoadingActive) {
@@ -91,13 +90,15 @@ export default function CadenasValor() {
       <div className={styles.header}>
         <div className={styles.titleBox}>
           <h1>Administración Cadenas de Valor</h1>
-          <p>Gestioná y modificá las cadenas de valor activas en la plataforma web</p>
+          <p>
+            Gestioná y modificá las cadenas de valor activas en la plataforma
+            web
+          </p>
         </div>
         <div className={styles.actionsTop}>
-
-          <button className={styles.btnNuevo} onClick={handleOpenActivarModal}>
+          <Button variant="primary" onClick={handleOpenActivarModal}>
             <FiPlus /> ACTIVAR CADENA
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -129,7 +130,7 @@ export default function CadenasValor() {
               </tr>
             </thead>
             <tbody>
-              {filteredCadenas.map(item => (
+              {filteredCadenas.map((item) => (
                 <tr key={item.cadenavalorid}>
                   <td>
                     {item.logo ? (
@@ -139,57 +140,90 @@ export default function CadenasValor() {
                         className={styles.logoThumbnail}
                       />
                     ) : (
-                      <div className={styles.logoThumbnail} style={{ display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#8b949e" }}>
+                      <div
+                        className={styles.logoThumbnail}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "10px",
+                          color: "#8b949e",
+                        }}
+                      >
                         Sin Logo
                       </div>
                     )}
                   </td>
                   <td>
                     <strong>{item.denominacion}</strong>
-                    <span style={{ display: "block", fontSize: "11px", color: "#8b949e" }}>
+                    <span
+                      style={{
+                        display: "block",
+                        fontSize: "11px",
+                        color: "#8b949e",
+                      }}
+                    >
                       ID: #{item.cadenavalorid}
                     </span>
                   </td>
                   <td>{item.referencia || "-"}</td>
-                  <td>{getCatalogLabel(canalesOpciones, item.tipocanalcomercializacionid)}</td>
-                  <td>{getCatalogLabel(equiposOpciones, item.equipocomercialid)}</td>
+                  <td>
+                    {getCatalogLabel(
+                      canalesOpciones,
+                      item.tipocanalcomercializacionid,
+                    )}
+                  </td>
+                  <td>
+                    {getCatalogLabel(equiposOpciones, item.equipocomercialid)}
+                  </td>
                   <td className={styles.actionCell}>
                     <div className={styles.actionsCellGrid}>
-                      <button
+                      <Button
+                        variant="ghost"
                         className={`${styles.iconBtnAction} ${styles.btnEdit}`}
                         title="Editar Datos"
                         onClick={() => handleActionClick(item, "edit")}
                       >
                         <FiEdit />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
                         className={`${styles.iconBtnAction} ${styles.btnList}`}
                         title="Configurar CDAs"
                         onClick={() => handleActionClick(item, "cdas")}
                       >
                         <FiList />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
                         className={`${styles.iconBtnAction} ${styles.btnUser}`}
                         title="Usuarios Relacionados"
                         onClick={() => handleActionClick(item, "users")}
                       >
                         <FiUser />
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
                         className={`${styles.iconBtnAction} ${styles.btnRequisitos}`}
                         title="Configurar Requisitos"
                         onClick={() => handleActionClick(item, "requisitos")}
                       >
                         <FiSliders />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>
               ))}
               {filteredCadenas.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: "center", padding: "2rem", color: "#8b949e" }}>
+                  <td
+                    colSpan={6}
+                    style={{
+                      textAlign: "center",
+                      padding: "2rem",
+                      color: "#8b949e",
+                    }}
+                  >
                     No se encontraron cadenas de valor activas en la web.
                   </td>
                 </tr>
