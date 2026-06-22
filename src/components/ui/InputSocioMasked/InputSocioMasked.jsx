@@ -80,7 +80,7 @@ export const InputSocioMasked = forwardRef(({
               />
             ) : (
               <input
-                value={val || ""}
+                value={val !== undefined && val !== null ? val : ""}
                 onChange={(e) => {
                   if (onCh) onCh(e.target.value);
                 }}

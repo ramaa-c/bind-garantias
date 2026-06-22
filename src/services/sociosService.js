@@ -147,8 +147,10 @@ export const sociosService = {
     let localidad = "";
     let provincia = "";
 
-    if (direccion.includes(",")) {
-      const partes = direccion.split(",").map((p) => p.trim());
+    // Separador puede ser "-" o ","
+    const separator = direccion.includes(" - ") ? " - " : direccion.includes(",") ? "," : null;
+    if (separator) {
+      const partes = direccion.split(separator).map((p) => p.trim());
       if (partes.length >= 3) {
         direccion = partes[0];
         localidad = partes[1];

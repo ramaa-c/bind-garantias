@@ -15,6 +15,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     trigger,
     watch,
     setValue,
+    clearErrors,
     formState: { errors },
   } = useFormContext();
 
@@ -36,6 +37,26 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     usePartidos(currentProvincia);
   const opcionesLocalidades = partidosData?.opciones || [];
 
+  const currentCiudad = watch("ciudad");
+  const currentCiudadId = watch("ciudadid");
+  const currentLocalidad = watch("localidad");
+  const currentLocalidadId = watch("localidadid");
+
+
+
+  React.useEffect(() => {
+    if (!cargandoPartidos && opcionesLocalidades.length > 0 && currentLocalidad && (!currentLocalidadId || currentLocalidadId === 0)) {
+      const normalizarTexto = (str) => String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
+      const normAfip = normalizarTexto(currentLocalidad);
+      const exactMatch = opcionesLocalidades.find((l) => normalizarTexto(l.label) === normAfip);
+      const partialMatch = exactMatch || opcionesLocalidades.find((l) => normalizarTexto(l.label).includes(normAfip) || normAfip.includes(normalizarTexto(l.label)));
+      if (partialMatch) {
+        setValue("localidadid", Number(partialMatch.value), { shouldValidate: true, shouldDirty: true });
+        setValue("localidad", partialMatch.label, { shouldValidate: true, shouldDirty: true });
+      }
+    }
+  }, [cargandoPartidos, opcionesLocalidades, currentLocalidad, currentLocalidadId, setValue]);
+
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
     if (isOpen) {
@@ -48,6 +69,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
   if (!isOpen) return null;
 
   const getError = (campo) => {
+    if (campo === "numero" && watch("sinNumero")) return null;
     const err = errors?.[campo];
     const val = watch(campo);
     const hasValue =
@@ -56,6 +78,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
   };
 
   const getEsValido = (campo) => {
+    if (campo === "numero" && watch("sinNumero")) return true;
     const err = errors?.[campo];
     const val = watch(campo);
     const hasValue =
@@ -160,15 +183,35 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
               esValido={getEsValido("calle")}
             />
 
-            <div className={styles.inputRow}>
-              <InputSocioMasked
-                name="numero"
-                control={control}
-                label="Número"
-                type="number"
-                error={getError("numero")}
-                esValido={getEsValido("numero")}
-              />
+            <div className={styles.inputRow3}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <InputSocioMasked
+                  name="numero"
+                  control={control}
+                  label="Número de calle"
+                  type="number"
+                  error={getError("numero")}
+                  esValido={getEsValido("numero")}
+                  disabled={watch("sinNumero")}
+                />
+                <label className={styles.checkboxLabel}>
+                  <input
+                    type="checkbox"
+                    className={styles.customCheckbox}
+                    checked={watch("sinNumero")}
+                    onChange={(e) => {
+                      setValue("sinNumero", e.target.checked, { shouldValidate: true, shouldDirty: true });
+                      if (e.target.checked) {
+                        setValue("numero", "", { shouldValidate: true, shouldDirty: true });
+                        clearErrors("numero");
+                      } else {
+                        trigger("numero");
+                      }
+                    }}
+                  />
+                  Sin número
+                </label>
+              </div>
 
               <InputSocioMasked
                 name="piso"
@@ -177,9 +220,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
                 error={getError("piso")}
                 esValido={getEsValido("piso")}
               />
-            </div>
 
-            <div className={styles.inputRow}>
               <InputSocioMasked
                 name="departamento"
                 control={control}
@@ -187,7 +228,9 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
                 error={getError("departamento")}
                 esValido={getEsValido("departamento")}
               />
+            </div>
 
+            <div className={styles.inputRow}>
               <SelectSocio
                 name="provincia"
                 control={control}
@@ -197,19 +240,6 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
                 disabled={cargandoProvincias}
                 error={getError("provincia")}
                 esValido={getEsValido("provincia")}
-              />
-            </div>
-
-            <div className={styles.inputRow}>
-              <SelectSocio
-                name="ciudadid"
-                control={control}
-                label={cargandoCiudades ? "Cargando..." : "Ciudad"}
-                icon={<FiMap />}
-                options={opcionesCiudades}
-                isLoading={cargandoCiudades}
-                error={getError("ciudadid")}
-                esValido={getEsValido("ciudadid")}
               />
 
               <SelectSocio
@@ -223,6 +253,17 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
                 esValido={getEsValido("localidadid")}
               />
             </div>
+
+            <SelectSocio
+              name="ciudadid"
+              control={control}
+              label={cargandoCiudades ? "Cargando..." : "Ciudad"}
+              icon={<FiMap />}
+              options={opcionesCiudades}
+              isLoading={cargandoCiudades}
+              error={getError("ciudadid")}
+              esValido={getEsValido("ciudadid")}
+            />
           </div>
 
           <div className={styles.btnSave}>

@@ -2,10 +2,39 @@
  * Utilidades para parsear direcciones de AFIP / LUFE.
  * Extrae la calle, número, piso y departamento/oficina/manzana.
  */
+export const decodeHtmlEntities = (text) => {
+  if (!text) return "";
+  const entities = {
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&ntilde;": "ñ",
+    "&Ntilde;": "Ñ",
+    "&aacute;": "á",
+    "&eacute;": "é",
+    "&iacute;": "í",
+    "&oacute;": "ó",
+    "&uacute;": "ú",
+    "&Aacute;": "Á",
+    "&Eacute;": "É",
+    "&Iacute;": "Í",
+    "&Oacute;": "Ó",
+    "&Uacute;": "Ú",
+  };
+  return text.replace(/&[a-zA-Z]+;|&#\d+;|&#x[0-9a-fA-F]+;/g, (match) => {
+    if (entities[match]) return entities[match];
+    if (match.startsWith("&#x")) return String.fromCharCode(parseInt(match.slice(3, -1), 16));
+    if (match.startsWith("&#")) return String.fromCharCode(parseInt(match.slice(2, -1), 10));
+    return match;
+  });
+};
+
 export const parseAddress = (fullAddress) => {
   if (!fullAddress) return { calle: "", numero: 0, piso: "", departamento: "" };
 
-  let calle = fullAddress.trim();
+  let calle = decodeHtmlEntities(fullAddress).trim();
   let numero = 0;
   let piso = "";
   let departamento = "";

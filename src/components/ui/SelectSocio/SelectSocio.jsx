@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Controller } from "react-hook-form";
 import ReactSelect from "react-select";
+import CreatableSelect from "react-select/creatable";
 import styles from "./SelectSocio.module.css";
 
 const customStyles = {
@@ -90,6 +91,7 @@ export const SelectSocio = ({
   className = "",
   disabled,
   isLoading,
+  isCreatable = false,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -102,8 +104,12 @@ export const SelectSocio = ({
         const hasError = !!(error || fieldState.error);
         const errorMessage = error || fieldState.error?.message;
 
-        const selectedOption =
+        let selectedOption =
           options.find((c) => String(c.value) === String(value)) || null;
+
+        if (!selectedOption && isCreatable && value) {
+          selectedOption = { label: value, value: value };
+        }
 
         const hasValue = selectedOption !== null;
 
@@ -133,6 +139,8 @@ export const SelectSocio = ({
           .filter(Boolean)
           .join(" ");
 
+        const SelectComponent = isCreatable ? CreatableSelect : ReactSelect;
+
         return (
           <div className={containerClasses}>
             <div className={styles.innerGroup}>
@@ -143,7 +151,7 @@ export const SelectSocio = ({
               )}
 
               <div className={styles.fieldGroup}>
-                <ReactSelect
+                <SelectComponent
                   ref={ref}
                   value={selectedOption}
                   onChange={(val) => onChange(val ? val.value : "")}
@@ -156,6 +164,7 @@ export const SelectSocio = ({
                   menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
                   isDisabled={disabled || isLoading}
                   isLoading={isLoading}
+                  formatCreateLabel={(inputValue) => `Crear "${inputValue}"`}
                   {...props}
                 />
                 <label className={styles.label}>{label}</label>
