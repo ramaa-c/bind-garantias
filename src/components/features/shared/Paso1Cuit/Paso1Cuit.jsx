@@ -135,7 +135,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
         // ── VALIDACIÓN SGRPlus Core
         try {
-          const resultSgrCore = await validarSocioCore({ cuit, cadenaValorId: cadenaValorIdParam });
+          const resultSgrCore = await validarSocioCore({
+            cuit,
+            cadenaValorId: cadenaValorIdParam,
+          });
           if (resultSgrCore?.data && resultSgrCore.data.success === false) {
             setProcesoModal((prev) => ({
               ...prev,
@@ -146,7 +149,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
                   ? {
                       ...p,
                       estado: "error",
-                      errores: [resultSgrCore.data.message || "El socio no cumple con los requisitos del sistema."],
+                      errores: [
+                        resultSgrCore.data.message ||
+                          "El socio no cumple con los requisitos del sistema.",
+                      ],
                       error: "Rechazado por SGRPlus",
                     }
                   : p,
@@ -156,7 +162,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           }
         } catch (sgrError) {
           if (sgrError?.response?.status !== 404) {
-             console.warn("Error consultando sgrcore ValidarSocio:", sgrError);
+            console.warn("Error consultando sgrcore ValidarSocio:", sgrError);
           }
         }
 
@@ -209,12 +215,16 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
         // ── NUEVA VALIDACIÓN: Existencia en base de datos
         try {
-          const sociosEncontrados = await sociosService.obtenerSocios({ Cuit: cuit });
+          const sociosEncontrados = await sociosService.obtenerSocios({
+            Cuit: cuit,
+          });
           if (sociosEncontrados && sociosEncontrados.length > 0) {
             const socioExistente = sociosEncontrados[0];
-            const socioEmailStr = socioExistente.email ? socioExistente.email.trim() : "";
+            const socioEmailStr = socioExistente.email
+              ? socioExistente.email.trim()
+              : "";
             const currentUserEmail = user?.email ? user.email.trim() : "";
-            
+
             setProcesoModal({
               isOpen: false,
               titulo: "",
@@ -222,8 +232,12 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
               hasError: false,
               isSystemError: false,
             });
-            
-            if (socioEmailStr && currentUserEmail && socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()) {
+
+            if (
+              socioEmailStr &&
+              currentUserEmail &&
+              socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
+            ) {
               if (onSocioExistente) {
                 onSocioExistente(socioExistente, "email_mismatch");
               }
@@ -235,7 +249,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             return;
           }
         } catch (errorSocios) {
-          console.warn("Error consultando socios para validación de email:", errorSocios);
+          console.warn(
+            "Error consultando socios para validación de email:",
+            errorSocios,
+          );
         }
 
         const nombreCompleto =
@@ -284,26 +301,31 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
         // ── EXTRAER FECHA DE INICIO DE ACTIVIDADES (AFIP)
         let fechaInicioActividades = null;
-        if (
-          afipData.datosregimengeneral?.impuesto &&
-          Array.isArray(afipData.datosregimengeneral.impuesto)
-        ) {
-          const impuestos = afipData.datosregimengeneral.impuesto;
-          let minPeriodo = null;
-          for (const imp of impuestos) {
-            if (imp.periodo) {
-              if (minPeriodo === null || imp.periodo < minPeriodo) {
-                minPeriodo = imp.periodo;
-              }
+        const actividades = [];
+
+        if (Array.isArray(afipData.datosregimengeneral?.actividad)) {
+          actividades.push(...afipData.datosregimengeneral.actividad);
+        }
+        if (Array.isArray(afipData.datosmonotributo?.actividad)) {
+          actividades.push(...afipData.datosmonotributo.actividad);
+        }
+
+        let minPeriodo = null;
+        for (const act of actividades) {
+          if (act.periodo) {
+            if (minPeriodo === null || act.periodo < minPeriodo) {
+              minPeriodo = act.periodo;
             }
           }
-          if (minPeriodo) {
-            const minPeriodoStr = minPeriodo.toString();
-            if (minPeriodoStr.length === 6) {
-              const year = minPeriodoStr.substring(0, 4);
-              const month = minPeriodoStr.substring(4, 6);
-              fechaInicioActividades = `${year}-${month}-01T00:00:00`;
-            }
+        }
+
+        if (minPeriodo) {
+          const minPeriodoStr = minPeriodo.toString();
+          if (minPeriodoStr.length === 6) {
+            const year = parseInt(minPeriodoStr.substring(0, 4), 10);
+            const month = parseInt(minPeriodoStr.substring(4, 6), 10);
+            const lastDay = new Date(year, month, 0).getDate();
+            fechaInicioActividades = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}T00:00:00`;
           }
         }
         setValue("fechainicioactividades", fechaInicioActividades);
@@ -346,8 +368,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     }
   };
 
-  const isLoading =
-    isValidatingSocio || isLoadingAfip || isLoadingCda;
+  const isLoading = isValidatingSocio || isLoadingAfip || isLoadingCda;
 
   return (
     <div className={styles.pasoContainer}>
