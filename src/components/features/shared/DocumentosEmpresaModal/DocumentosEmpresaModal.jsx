@@ -272,6 +272,7 @@ export const DocumentosEmpresaModal = ({
                                   size:
                                     currentFile.formattedSize ||
                                     currentFile.size,
+                                  vialufe: currentFile.vialufe || "0",
                                 }
                               : null
                           }

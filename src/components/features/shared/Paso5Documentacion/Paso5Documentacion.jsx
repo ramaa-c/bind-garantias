@@ -154,6 +154,7 @@ export default function Paso5Documentacion({
               pseudoFile.formattedSize = arch.contenido ? formatBase64Size(arch.contenido) : "Disponible";
               pseudoFile._uploaded = true;
               pseudoFile._backendId = arch.socioarchivoid;
+              pseudoFile.vialufe = arch.vialufe || arch.Vialufe || "0";
               archivosRecuperados[docKey] = pseudoFile;
             }
           });

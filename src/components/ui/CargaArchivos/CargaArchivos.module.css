@@ -143,3 +143,29 @@
   align-items: center;
   gap: 8px;
 }
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.lufeBadge {
+  background: rgba(76, 101, 230, 0.15);
+  border: 1px solid rgba(76, 101, 230, 0.3);
+  color: #a3b2f7;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+.lufeBadgeIcon {
+  font-size: 0.78rem;
+  color: #a3b2f7;
+}

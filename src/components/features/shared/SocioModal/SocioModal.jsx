@@ -52,6 +52,7 @@ const DropzoneField = ({
             ? {
                 name: archivos[fileKey].name,
                 size: archivos[fileKey].formattedSize,
+                vialufe: archivos[fileKey].vialufe || "0",
               }
             : null
         }

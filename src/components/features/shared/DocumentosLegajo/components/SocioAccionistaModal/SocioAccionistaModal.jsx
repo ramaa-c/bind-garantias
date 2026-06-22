@@ -18,7 +18,8 @@ import { socioArchivoService } from "../../../../../../services/socioArchivoServ
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { formatBase64Size, procesarArchivo } from "../../../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../../../utils/provinciaUtils";
-import { useProvincias } from "../../../../../../hooks/useCatalogos";
+import { useProvincias, useCiudades, usePartidos } from "../../../../../../hooks/useCatalogos";
+import { parseAddress } from "../../../../../../utils/direccionParser";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./SocioAccionistaModal.module.css";
 
@@ -51,6 +52,7 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
             ? {
                 name: file.name,
                 size: typeof file.size === "number" ? `${(file.size / 1024).toFixed(1)} KB` : file.size || "Disponible",
+                vialufe: file.vialufe || "0",
               }
             : null
         }
@@ -134,13 +136,31 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       email: "",
       celular: "",
       direccion: "",
-      provinciaid: "",
+      calle: "",
+      numero: 0,
+      piso: "",
+      departamento: "",
       localidad: "",
+      localidadid: 0,
+      ciudad: "",
+      ciudadid: 0,
+      provinciaid: "",
+      codpos: "",
     }
   });
 
   const cuitValue = useWatch({ control, name: "cuit" });
   const nombreValue = useWatch({ control, name: "nombre" });
+
+  const currentProvincia = useWatch({ control, name: "provinciaid" });
+
+  const { data: ciudadesData, isLoading: cargandoCiudades } =
+    useCiudades(currentProvincia);
+  const opcionesCiudades = ciudadesData?.opciones || [];
+
+  const { data: partidosData, isLoading: cargandoPartidos } =
+    usePartidos(currentProvincia);
+  const opcionesLocalidades = partidosData?.opciones || [];
 
   useEffect(() => {
     if (errors.cuit?.type === "manual") {
@@ -202,6 +222,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             _uploaded: true,
             _backendId: frente.socioarchivoid,
             _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"],
+            vialufe: frente.vialufe || frente.Vialufe || "0",
           });
           setErrorDniFrente(false);
         } else {
@@ -226,6 +247,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             _uploaded: true,
             _backendId: dorso.socioarchivoid,
             _tipodocumentoarchivoid: socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"],
+            vialufe: dorso.vialufe || dorso.Vialufe || "0",
           });
           setErrorDniDorso(false);
         } else {
@@ -244,6 +266,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   useEffect(() => {
     if (isOpen) {
       if (socio) {
+        const parsedDir = parseAddress(socio.direccion || socio.calle || "");
         reset({
           cuit: socio.cuit,
           nombre: socio.nombre,
@@ -251,8 +274,16 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           email: socio.email,
           celular: socio.celular || socio.telefono || "",
           direccion: socio.direccion || "",
-          provinciaid: String(socio.provinciaid || ""),
+          calle: socio.calle || parsedDir.calle || "",
+          numero: Number(socio.numero) || parsedDir.numero || 0,
+          piso: socio.piso || parsedDir.piso || "",
+          departamento: socio.departamento || parsedDir.departamento || "",
           localidad: socio.localidad || "",
+          localidadid: Number(socio.localidadid || socio.partidoid) || 0,
+          ciudad: socio.ciudad || "",
+          ciudadid: Number(socio.ciudadid) || 0,
+          provinciaid: String(socio.provinciaid || ""),
+          codpos: socio.codpos || "",
         });
       } else {
         reset({
@@ -262,8 +293,16 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           email: "",
           celular: "",
           direccion: "",
-          provinciaid: "",
+          calle: "",
+          numero: 0,
+          piso: "",
+          departamento: "",
           localidad: "",
+          localidadid: 0,
+          ciudad: "",
+          ciudadid: 0,
+          provinciaid: "",
+          codpos: "",
         });
       }
     }
@@ -340,8 +379,19 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail || "", { shouldValidate: true, shouldDirty: true });
         setValue("celular", terceroEncontrado.telefono || terceroEncontrado.Telefono || "", { shouldValidate: true, shouldDirty: true });
         setValue("direccion", terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "", { shouldValidate: true, shouldDirty: true });
-        setValue("localidad", terceroEncontrado.contacto || terceroEncontrado.Contacto || terceroEncontrado.localidad || "", { shouldValidate: true, shouldDirty: true });
         
+        const parsedDir = parseAddress(terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "");
+        setValue("calle", terceroEncontrado.calle || parsedDir.calle || "", { shouldValidate: true, shouldDirty: true });
+        setValue("numero", Number(terceroEncontrado.numero) || parsedDir.numero || 0, { shouldValidate: true, shouldDirty: true });
+        setValue("piso", terceroEncontrado.piso || parsedDir.piso || "", { shouldValidate: true, shouldDirty: true });
+        setValue("departamento", terceroEncontrado.departamento || parsedDir.departamento || "", { shouldValidate: true, shouldDirty: true });
+
+        setValue("localidad", terceroEncontrado.contacto || terceroEncontrado.Contacto || terceroEncontrado.localidad || "", { shouldValidate: true, shouldDirty: true });
+        setValue("localidadid", Number(terceroEncontrado.localidadid || terceroEncontrado.partidoid) || 0, { shouldValidate: true, shouldDirty: true });
+        setValue("ciudad", terceroEncontrado.ciudad || terceroEncontrado.contacto || "", { shouldValidate: true, shouldDirty: true });
+        setValue("ciudadid", Number(terceroEncontrado.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
+        setValue("codpos", terceroEncontrado.codpos || "", { shouldValidate: true, shouldDirty: true });
+
         const provId = terceroEncontrado.provinciaid || terceroEncontrado.ProvinciaID || 0;
         if (provId) {
           setValue("provinciaid", String(provId), { shouldValidate: true, shouldDirty: true });
@@ -386,10 +436,21 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                              (dom ? (dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "")) : "") || "";
         setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
         
+        const parsedDir = parseAddress(direccionVal);
+        setValue("calle", parsedDir.calle, { shouldValidate: true, shouldDirty: true });
+        setValue("numero", parsedDir.numero, { shouldValidate: true, shouldDirty: true });
+        setValue("piso", parsedDir.piso, { shouldValidate: true, shouldDirty: true });
+        setValue("departamento", parsedDir.departamento, { shouldValidate: true, shouldDirty: true });
+
         const localidadVal = (terceroEncontrado?.contacto || terceroEncontrado?.Contacto || terceroEncontrado?.localidad) ||
                              (dom ? (dom.localidad || dom.localidadNombre) : "") || "";
         setValue("localidad", localidadVal, { shouldValidate: true, shouldDirty: true });
-        
+        setValue("localidadid", Number(terceroEncontrado?.localidadid || terceroEncontrado?.partidoid) || 0, { shouldValidate: true, shouldDirty: true });
+
+        setValue("ciudad", dom?.localidad || localidadVal || "", { shouldValidate: true, shouldDirty: true });
+        setValue("ciudadid", Number(terceroEncontrado?.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
+        setValue("codpos", dom?.codpostal || terceroEncontrado?.codpos || "", { shouldValidate: true, shouldDirty: true });
+
         let provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
         if (!provIdVal && dom) {
           const provNombre = dom.descripcionprovincia || dom.provincia || "";
@@ -413,7 +474,19 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail || "", { shouldValidate: true, shouldDirty: true });
           setValue("celular", terceroEncontrado.telefono || terceroEncontrado.Telefono || "", { shouldValidate: true, shouldDirty: true });
           setValue("direccion", terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "", { shouldValidate: true, shouldDirty: true });
+          
+          const parsedDir = parseAddress(terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "");
+          setValue("calle", terceroEncontrado.calle || parsedDir.calle || "", { shouldValidate: true, shouldDirty: true });
+          setValue("numero", Number(terceroEncontrado.numero) || parsedDir.numero || 0, { shouldValidate: true, shouldDirty: true });
+          setValue("piso", terceroEncontrado.piso || parsedDir.piso || "", { shouldValidate: true, shouldDirty: true });
+          setValue("departamento", terceroEncontrado.departamento || parsedDir.departamento || "", { shouldValidate: true, shouldDirty: true });
+
           setValue("localidad", terceroEncontrado.contacto || terceroEncontrado.Contacto || terceroEncontrado.localidad || "", { shouldValidate: true, shouldDirty: true });
+          setValue("localidadid", Number(terceroEncontrado.localidadid || terceroEncontrado.partidoid) || 0, { shouldValidate: true, shouldDirty: true });
+          setValue("ciudad", terceroEncontrado.ciudad || terceroEncontrado.contacto || "", { shouldValidate: true, shouldDirty: true });
+          setValue("ciudadid", Number(terceroEncontrado.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
+          setValue("codpos", terceroEncontrado.codpos || "", { shouldValidate: true, shouldDirty: true });
+
           const provId = terceroEncontrado.provinciaid || terceroEncontrado.ProvinciaID || 0;
           if (provId) {
             setValue("provinciaid", String(provId), { shouldValidate: true, shouldDirty: true });
@@ -444,6 +517,40 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     e.preventDefault();
     e.stopPropagation();
     
+    // Reconstruct full direccion
+    const calleVal = getValues("calle") || "";
+    const numeroVal = getValues("numero") || "";
+    const pisoVal = getValues("piso") || "";
+    const deptoVal = getValues("departamento") || "";
+    
+    let fullDir = calleVal;
+    if (numeroVal && Number(numeroVal) > 0) fullDir += ` ${numeroVal}`;
+    if (pisoVal) fullDir += ` Piso:${pisoVal}`;
+    if (deptoVal) fullDir += ` Dpto:${deptoVal}`;
+    
+    setValue("direccion", fullDir, { shouldDirty: true });
+
+    // Keep ciudad and localidad text in sync with selected IDs
+    const ciudadidVal = getValues("ciudadid");
+    if (ciudadidVal) {
+      const selectedCiudad = opcionesCiudades.find(
+        (c) => String(c.value) === String(ciudadidVal)
+      );
+      if (selectedCiudad) {
+        setValue("ciudad", selectedCiudad.label, { shouldDirty: true });
+      }
+    }
+
+    const localidadidVal = getValues("localidadid");
+    if (localidadidVal) {
+      const selectedLocalidad = opcionesLocalidades.find(
+        (l) => String(l.value) === String(localidadidVal)
+      );
+      if (selectedLocalidad) {
+        setValue("localidad", selectedLocalidad.label, { shouldDirty: true });
+      }
+    }
+
     let hasDropzoneErrors = false;
     if (!dniFrenteFile) {
       setErrorDniFrente(true);
@@ -499,18 +606,18 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         tipodocumentoid: 0,
         numerodocumento: cuitLimpio,
         estadocivilid: 0,
-        ciudadid: 0,
+        ciudadid: Number(formData.ciudadid) || 0,
         telefono: formData.celular || "",
         conyuge: "",
         actividad: "",
         contacto: formData.localidad || "",
         nrocuenta: "",
         codigomercado: "",
-        calle: formData.direccion || "",
-        numero: 0,
-        piso: "",
-        departamento: "",
-        codpos: "",
+        calle: formData.calle || formData.direccion || "",
+        numero: Number(formData.numero) || 0,
+        piso: formData.piso || "",
+        departamento: formData.departamento || "",
+        codpos: formData.codpos || "",
         descripcionreducida: formData.nombre.substring(0, 20),
         mail: formData.email || "",
       };
@@ -532,10 +639,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           ...(socio?.relacion || {}),
           sociotercerorelacionid: relacionId,
           porcacciones: Number(formData.participacion),
-          provinciaid: Number(formData.provinciaid) || 0,
           telefono: formData.celular || "",
           momento: ahora,
         };
+        delete payloadRel.provinciaid;
+        delete payloadRel.ProvinciaID;
         await tercerosService.actualizarRelacionDeSocio(payloadRel);
       } else {
         const payloadRel = {
@@ -552,7 +660,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               nroinscripcion: "",
               condicionescomerciales: "",
               cbu: "",
-              provinciaid: Number(formData.provinciaid) || 0,
               nrosubcuentacaja: "",
               sucursalid: 0,
               default: "0",
@@ -814,15 +921,15 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
               <div className={styles.modalRow}>
                 <Controller
-                  name="direccion"
+                  name="calle"
                   control={control}
-                  rules={{ required: "La dirección es obligatoria" }}
+                  rules={{ required: "La calle es obligatoria" }}
                   render={({ field, fieldState }) => (
                     <InputSocioMasked
                       value={field.value}
-                      onChange={(val) => setValue("direccion", val, { shouldDirty: true, shouldValidate: true })}
+                      onChange={(val) => setValue("calle", val, { shouldDirty: true, shouldValidate: true })}
                       onBlur={field.onBlur}
-                      label="Dirección"
+                      label="Calle / Avenida"
                       icon={<FiMapPin />}
                       error={fieldState.error?.message}
                     />
@@ -831,6 +938,52 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               </div>
 
               <div className={styles.modalRow2}>
+                <Controller
+                  name="numero"
+                  control={control}
+                  rules={{ required: "El número es obligatorio" }}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("numero", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Número"
+                      type="number"
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="piso"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("piso", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Piso"
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+              </div>
+
+              <div className={styles.modalRow2}>
+                <Controller
+                  name="departamento"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("departamento", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Depto / Oficina"
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+
                 <Controller
                   name="provinciaid"
                   control={control}
@@ -846,18 +999,36 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                     />
                   )}
                 />
-                
+              </div>
+
+              <div className={styles.modalRow2}>
                 <Controller
-                  name="localidad"
+                  name="ciudadid"
                   control={control}
-                  rules={{ required: "La localidad es obligatoria" }}
-                  render={({ field, fieldState }) => (
-                    <InputSocioMasked
-                      value={field.value}
-                      onChange={(val) => setValue("localidad", val, { shouldDirty: true, shouldValidate: true })}
-                      onBlur={field.onBlur}
-                      label="Localidad"
+                  render={({ fieldState }) => (
+                    <SelectSocio
+                      control={control}
+                      name="ciudadid"
+                      label={cargandoCiudades ? "Cargando..." : "Ciudad"}
                       icon={<FiMap />}
+                      options={opcionesCiudades}
+                      isLoading={cargandoCiudades}
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="localidadid"
+                  control={control}
+                  render={({ fieldState }) => (
+                    <SelectSocio
+                      control={control}
+                      name="localidadid"
+                      label={cargandoPartidos ? "Cargando..." : "Localidad"}
+                      icon={<FiMap />}
+                      options={opcionesLocalidades}
+                      isLoading={cargandoPartidos}
                       error={fieldState.error?.message}
                     />
                   )}

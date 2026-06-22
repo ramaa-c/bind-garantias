@@ -226,6 +226,7 @@ export function DocumentosLegajo() {
                 _uploaded: true,
                 _backendId: arch.socioarchivoid,
                 _tipodocumentoarchivoid: tipoId,
+                vialufe: arch.vialufe || arch.Vialufe || "0",
               },
               { shouldValidate: true },
             );
@@ -335,7 +336,11 @@ export function DocumentosLegajo() {
               hasError={hasError}
               file={
                 currentFile
-                  ? { name: currentFile.name, size: currentFile.size }
+                  ? {
+                      name: currentFile.name,
+                      size: currentFile.size,
+                      vialufe: currentFile.vialufe || "0",
+                    }
                   : null
               }
               onClick={() =>

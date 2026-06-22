@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from './CargaArchivos.module.css';
-import { FiUploadCloud, FiFile, FiTrash2, FiEye, FiDownload, FiEdit2 } from 'react-icons/fi';
+import { FiUploadCloud, FiFile, FiTrash2, FiEye, FiDownload, FiEdit2, FiShield } from 'react-icons/fi';
 import { BotonIcono } from "..//BotonIcono/BotonIcono";
 
 export const CargaArchivos = ({ 
@@ -27,7 +27,14 @@ export const CargaArchivos = ({
           <FiFile className={styles.loadedIcon} />
           <div className={styles.textGroup}>
             <span className={styles.filename}>{file.name}</span>
-            {file.size && <span className={styles.filesize}>{file.size}</span>}
+            <div className={styles.metaRow}>
+              {file.size && <span className={styles.filesize}>{file.size}</span>}
+              {String(file.vialufe) === "1" && (
+                <span className={styles.lufeBadge}>
+                  <FiShield className={styles.lufeBadgeIcon} /> Obtenido vía LUFE
+                </span>
+              )}
+            </div>
           </div>
         </div>
         

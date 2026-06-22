@@ -9,6 +9,7 @@ import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
+import { parseAddress } from "../../../../utils/direccionParser";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useParams } from "react-router-dom";
 import styles from "./Paso1Cuit.module.css";
@@ -289,14 +290,25 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         setValue("razonSocial", nombreCompleto, { shouldValidate: true });
 
         const dom = dg.domiciliofiscal || {};
-        setValue("direccion", dom.direccion || "", { shouldValidate: true });
+        const fullDireccion = dom.direccion || "";
+        setValue("direccion", fullDireccion, { shouldValidate: true });
+
+        const parsedDir = parseAddress(fullDireccion);
+        setValue("calle", parsedDir.calle, { shouldValidate: true });
+        setValue("numero", parsedDir.numero, { shouldValidate: true });
+        setValue("piso", parsedDir.piso, { shouldValidate: true });
+        setValue("departamento", parsedDir.departamento, { shouldValidate: true });
+
         setValue("localidad", dom.localidad || "", { shouldValidate: true });
+        setValue("localidadid", 0);
 
         const provNombreAfip = dom.descripcionprovincia || "";
         const provMatched = matchProvinciaAfip(
           provNombreAfip,
           opcionesProvincias,
         );
+        const matchedProvId = provMatched ? Number(provMatched.value) : 0;
+        setValue("provinciaid", matchedProvId, { shouldValidate: true });
         setValue(
           "provincia",
           provMatched ? provMatched.value : provNombreAfip,
@@ -304,6 +316,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             shouldValidate: true,
           },
         );
+
+        setValue("ciudad", dom.localidad || "", { shouldValidate: true });
+        setValue("ciudadid", 0);
 
         let tipoPersonaId = 0;
         const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
@@ -368,6 +383,25 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           }
         }
         setValue("fechainicioactividades", fechaInicioActividades);
+
+        // ── DETERMINAR TIPO REGIMEN IVA
+        let tipoRegimenIvaId = 0;
+        const hasRealData = (obj) => {
+          if (!obj) return false;
+          return Object.values(obj).some((val) => {
+            if (val === null || val === undefined) return false;
+            if (Array.isArray(val)) return val.length > 0;
+            if (typeof val === "object") return Object.keys(val).length > 0;
+            return val !== "";
+          });
+        };
+
+        if (hasRealData(afipData.datosmonotributo)) {
+          tipoRegimenIvaId = 2;
+        } else if (hasRealData(afipData.datosregimengeneral)) {
+          tipoRegimenIvaId = 1;
+        }
+        setValue("tiporegimenivaid", tipoRegimenIvaId);
 
         setTimeout(() => {
           setProcesoModal({

@@ -75,6 +75,8 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
           nrosubcuentacaja: String(formData.numeroCuentaBolsa),
           momento: ahora,
         };
+        delete payloadRel.provinciaid;
+        delete payloadRel.ProvinciaID;
         await tercerosService.actualizarRelacionDeSocio(payloadRel);
         toast.success("Cuenta comitente actualizada correctamente.");
       } else {
@@ -92,7 +94,6 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
               nroinscripcion: "",
               condicionescomerciales: "",
               cbu: "",
-              provinciaid: 0,
               nrosubcuentacaja: String(formData.numeroCuentaBolsa),
               sucursalid: 0,
               default: "1",
