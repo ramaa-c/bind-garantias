@@ -9,7 +9,7 @@ import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
-import { parseAddress } from "../../../../utils/direccionParser";
+import { parseAddress, decodeHtmlEntities } from "../../../../utils/direccionParser";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useParams } from "react-router-dom";
 import styles from "./Paso1Cuit.module.css";
@@ -285,29 +285,35 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           );
         }
 
-        const nombreCompleto =
-          dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim();
+        const nombreCompleto = decodeHtmlEntities(
+          dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim()
+        );
         setValue("razonSocial", nombreCompleto, { shouldValidate: true });
 
         const dom = dg.domiciliofiscal || {};
-        const fullDireccion = dom.direccion || "";
+        const fullDireccion = decodeHtmlEntities(dom.direccion || "");
         setValue("direccion", fullDireccion, { shouldValidate: true });
 
         const parsedDir = parseAddress(fullDireccion);
         setValue("calle", parsedDir.calle, { shouldValidate: true });
+        setValue("sinNumero", parsedDir.numero === 0, { shouldValidate: true });
         setValue("numero", parsedDir.numero, { shouldValidate: true });
+        if (parsedDir.numero === 0) {
+          clearErrors("numero");
+        }
         setValue("piso", parsedDir.piso, { shouldValidate: true });
         setValue("departamento", parsedDir.departamento, { shouldValidate: true });
 
-        setValue("localidad", dom.localidad || "", { shouldValidate: true });
-        setValue("localidadid", 0);
+        const localidadStr = decodeHtmlEntities(dom.localidad || "");
+        setValue("localidad", localidadStr, { shouldValidate: true });
+        setValue("localidadid", null);
 
-        const provNombreAfip = dom.descripcionprovincia || "";
+        const provNombreAfip = decodeHtmlEntities(dom.descripcionprovincia || "");
         const provMatched = matchProvinciaAfip(
           provNombreAfip,
           opcionesProvincias,
         );
-        const matchedProvId = provMatched ? Number(provMatched.value) : 0;
+        const matchedProvId = provMatched ? Number(provMatched.value) : null;
         setValue("provinciaid", matchedProvId, { shouldValidate: true });
         setValue(
           "provincia",
@@ -318,7 +324,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         );
 
         setValue("ciudad", dom.localidad || "", { shouldValidate: true });
-        setValue("ciudadid", 0);
+        setValue("ciudadid", null);
 
         let tipoPersonaId = 0;
         const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();

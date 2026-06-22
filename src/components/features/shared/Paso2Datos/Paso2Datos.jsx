@@ -19,12 +19,17 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
   const [modalContactoOpen, setContactoModalOpen] = useState(false);
   const [intentoAvanzar, setIntentoAvanzar] = useState(false);
 
+  const calle = useWatch({ control, name: "calle" });
+  const numero = useWatch({ control, name: "numero" });
+  const sinNumero = useWatch({ control, name: "sinNumero" });
+  const provincia = useWatch({ control, name: "provincia" });
+  const localidad = useWatch({ control, name: "localidad" });
   const direccion = useWatch({ control, name: "direccion" }) || "";
-  const localidad = useWatch({ control, name: "localidad" }) || "";
   const celular = useWatch({ control, name: "celular" }) || "";
   const cuit = useWatch({ control, name: "cuit" }) || "";
   const razonSocial =
     useWatch({ control, name: "razonSocial" }) || "Razón Social Desconocida";
+
   const ubicacionConfirmada =
     useWatch({ control, name: "ubicacionConfirmada" }) || false;
 

@@ -74,6 +74,7 @@ export const AltaDatosEmpresa = () => {
       razonSocial: "",
       direccion: "",
       calle: "",
+      sinNumero: false,
       numero: 0,
       piso: "",
       departamento: "",
@@ -116,11 +117,11 @@ export const AltaDatosEmpresa = () => {
         numero: Number(data.numero) || 0,
         piso: data.piso || "",
         departamento: data.departamento || "",
-        ciudadid: Number(data.ciudadid) || 0,
+        ciudadid: data.ciudadid ? Number(data.ciudadid) : null,
         telefono: data.celular,
         fax: "",
-        email: user?.email || "",
-        tipopersonaid: data.tipopersonaid || 0,
+        email: user?.email,
+        tipopersonaid: data.tipopersonaid,
         tipocarteraid: 2,
         sectorcontableid: 700,
         tipoactividadbcraid: 0,
@@ -136,19 +137,22 @@ export const AltaDatosEmpresa = () => {
           ? `${new Date().getFullYear()}-${String(data.mescierre).padStart(2, "0")}-${String(new Date(new Date().getFullYear(), data.mescierre, 0).getDate()).padStart(2, "0")}T00:00:00`
           : getCSharpIsoDate(),
         legajo: 0,
-        tiporegimenivaid: data.tiporegimenivaid || 0,
+        tiporegimenivaid: data.tiporegimenivaid,
         actividadespecifica: "",
-        partido: data.localidad || "",
+        partido: data.localidad,
         telefono2: "",
         telefono3: "",
         visitado: "0",
         scoringcomercial: "0",
-        partidoid: Number(data.localidadid) || 0,
+        partidoid: data.localidadid ? Number(data.localidadid) : null,
+        provinciaid: data.provinciaid ? Number(data.provinciaid) : null,
         fechainicioactividades:
           data.fechainicioactividades || getCSharpIsoDate(),
         tipoactividadglobalid: 0,
         tipocanalcomercializacionid:
-          cadenaObj?.tipocanalcomercializacionid || cadenaObj?.TipoCanalComercializacionID || 0,
+          cadenaObj?.tipocanalcomercializacionid ||
+          cadenaObj?.TipoCanalComercializacionID ||
+          0,
         emailfacturacion: user?.email || "",
         minapoderadosrequeridos: 0,
         tipocondicionfianzaid: 0,
@@ -201,9 +205,20 @@ export const AltaDatosEmpresa = () => {
             queryFn: () => sociosService.obtenerSocioWebPorId(socioId),
           }),
           queryClient.prefetchQuery({
-            queryKey: ["requisitos", cadenaValorId, data.tipopersonaid, data.razonSocial],
-            queryFn: () => requisitosService.obtenerRequisitosPorCadenaId(cadenaValorId, data.tipopersonaid, data.razonSocial, true)
-          })
+            queryKey: [
+              "requisitos",
+              cadenaValorId,
+              data.tipopersonaid,
+              data.razonSocial,
+            ],
+            queryFn: () =>
+              requisitosService.obtenerRequisitosPorCadenaId(
+                cadenaValorId,
+                data.tipopersonaid,
+                data.razonSocial,
+                true,
+              ),
+          }),
         ]);
 
         await queryClient.invalidateQueries({
@@ -211,9 +226,11 @@ export const AltaDatosEmpresa = () => {
         });
 
         toast.success("Empresa creada y vinculada correctamente");
-        
+
         if (vendorData?.isVendor) {
-          navigate(`/${channelInfo?.id}/seleccionar-empresa`, { replace: true });
+          navigate(`/${channelInfo?.id}/seleccionar-empresa`, {
+            replace: true,
+          });
         } else {
           setActiveSocioId(socioId);
           navigate(`/${channelInfo?.id}/inicio`, { replace: true });
@@ -261,9 +278,13 @@ export const AltaDatosEmpresa = () => {
           onValidar={async () => {
             const isOk = await trigger("cuit");
             if (isOk) {
-              const cuitValue = metodosFormulario.getValues("cuit").replace(/\D/g, "");
-              const vendorCuitLimpio = vendorData?.vendorCuit ? vendorData.vendorCuit.replace(/\D/g, "") : null;
-              
+              const cuitValue = metodosFormulario
+                .getValues("cuit")
+                .replace(/\D/g, "");
+              const vendorCuitLimpio = vendorData?.vendorCuit
+                ? vendorData.vendorCuit.replace(/\D/g, "")
+                : null;
+
               if (vendorData?.isVendor && cuitValue === vendorCuitLimpio) {
                 metodosFormulario.setError("cuit", {
                   type: "manual",
@@ -318,7 +339,15 @@ export const AltaDatosEmpresa = () => {
                 onStepClick={setPasoActual}
                 onVolver={pasoActual > 1 ? handleVolver : null}
                 onVolverInicio={
-                  pasoActual === 1 ? () => navigate(`/${channelInfo?.id}/inicio`) : null
+                  pasoActual === 1
+                    ? () => {
+                        if (vendorData?.isVendor) {
+                          navigate(`/${cadenaSlug}/seleccionar-empresa`);
+                        } else {
+                          navigate(`/${cadenaSlug}/inicio`);
+                        }
+                      }
+                    : null
                 }
                 onReiniciar={pasoActual > 1 ? handleClickReiniciar : null}
               />
