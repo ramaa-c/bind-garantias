@@ -89,6 +89,14 @@ export const catalogosService = {
   // Trae el listado completo de provincias
   obtenerProvincias: async () => (await api.get("catalogos/Provincia")).data,
 
+  // Trae las ciudades filtradas por provincia
+  obtenerCiudades: async (provinciaId) =>
+    (await api.get("catalogos/Ciudad", { params: { provinciaId } })).data,
+
+  // Trae los partidos filtrados por provincia
+  obtenerPartidos: async (provinciaId) =>
+    (await api.get("catalogos/Partido", { params: { provinciaId } })).data,
+
   // Trae las clasificaciones de persona (Física, Jurídica, etc.)
   obtenerTipoPersona: async () =>
     (await api.get("catalogos/TipoPersona")).data,

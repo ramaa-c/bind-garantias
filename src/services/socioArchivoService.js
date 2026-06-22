@@ -84,7 +84,7 @@ export const socioArchivoService = {
     }
   },
 
-  subirArchivo: async (socioId, file, docKey, descripcion = "") => {
+  subirArchivo: async (socioId, file, docKey, descripcion = "", vialufe = "0") => {
     socioArchivoService.clearCache(socioId);
     const contenidoBase64 = await fileToBase64(file);
 
@@ -97,6 +97,7 @@ export const socioArchivoService = {
       nombrearchivo: file.name,
       tipodocumentoarchivoid: getTipoDocumentoId(docKey),
       azureid: 0,
+      vialufe: String(vialufe),
     };
 
     const response = await api.post("api/SocioArchivo", payload);
@@ -108,6 +109,7 @@ export const socioArchivoService = {
     file,
     docKey,
     descripcion = "",
+    vialufe = "0"
   ) => {
     if (archivoExistente) {
       const socioId = archivoExistente.socioid || archivoExistente.SocioID;
@@ -122,6 +124,7 @@ export const socioArchivoService = {
       contenido: contenidoBase64,
       nombrearchivo: file.name,
       tipodocumentoarchivoid: getTipoDocumentoId(docKey),
+      vialufe: String(vialufe),
     };
 
     console.log(` PUT SocioArchivo [${docKey}]:`, {
@@ -140,6 +143,7 @@ export const socioArchivoService = {
     archivosExistentes = [],
     descripcion = "",
     specificId = null,
+    vialufe = "0"
   ) => {
     const tipoId = getTipoDocumentoId(docKey);
     const existente = specificId
@@ -156,6 +160,7 @@ export const socioArchivoService = {
         file,
         docKey,
         descripcion,
+        vialufe
       );
     } else {
       return socioArchivoService.subirArchivo(
@@ -163,6 +168,7 @@ export const socioArchivoService = {
         file,
         docKey,
         descripcion,
+        vialufe
       );
     }
   },

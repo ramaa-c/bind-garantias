@@ -7,16 +7,34 @@ import { InputSocioMasked } from "../../../ui/InputSocioMasked/InputSocioMasked"
 import { SelectSocio } from "../../../ui/SelectSocio/SelectSocio";
 import styles from "./UbicacionModal.module.css";
 import { useEscape } from "../../../../hooks/useEscape";
-import { useProvincias } from "../../../../hooks/useCatalogos";
+import { useProvincias, useCiudades, usePartidos } from "../../../../hooks/useCatalogos";
 
 export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
-  const { control, trigger, watch, formState: { errors } } = useFormContext();
+  const {
+    control,
+    trigger,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext();
 
   const [intentoGuardar, setIntentoGuardar] = useState(false);
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
+  const { data: provinciasData, isLoading: cargandoProvincias } =
+    useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
+
+  const currentProvincia = watch("provincia");
+
+  // Fetch cities and localities based on selected province
+  const { data: ciudadesData, isLoading: cargandoCiudades } =
+    useCiudades(currentProvincia);
+  const opcionesCiudades = ciudadesData?.opciones || [];
+
+  const { data: partidosData, isLoading: cargandoPartidos } =
+    usePartidos(currentProvincia);
+  const opcionesLocalidades = partidosData?.opciones || [];
 
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
@@ -32,14 +50,16 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
   const getError = (campo) => {
     const err = errors?.[campo];
     const val = watch(campo);
-    const hasValue = val !== undefined && val.toString().trim().length > 0;
+    const hasValue =
+      val !== undefined && val !== null && val.toString().trim().length > 0;
     return err && (hasValue || intentoGuardar) ? err.message : null;
   };
 
   const getEsValido = (campo) => {
     const err = errors?.[campo];
     const val = watch(campo);
-    const hasValue = val !== undefined && val.toString().trim().length > 0;
+    const hasValue =
+      val !== undefined && val !== null && val.toString().trim().length > 0;
     return !err && hasValue;
   };
 
@@ -47,8 +67,61 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     e.preventDefault();
     setIntentoGuardar(true);
 
-    const okZod = await trigger(["direccion", "provincia", "localidad"]);
+    const okZod = await trigger([
+      "calle",
+      "numero",
+      "provincia",
+      "ciudadid",
+      "localidadid",
+    ]);
+
     if (okZod) {
+      const calleVal = watch("calle") || "";
+      const numeroVal = watch("numero") || "";
+      const pisoVal = watch("piso") || "";
+      const deptoVal = watch("departamento") || "";
+
+      // Reconstruct full direccion for backward compatibility
+      let fullDir = calleVal;
+      if (numeroVal && Number(numeroVal) > 0) fullDir += ` ${numeroVal}`;
+      if (pisoVal) fullDir += ` Piso:${pisoVal}`;
+      if (deptoVal) fullDir += ` Dpto:${deptoVal}`;
+
+      setValue("direccion", fullDir, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+
+      // Keep provinciaid in sync with selected provincia ID
+      const provVal = watch("provincia");
+      if (provVal) {
+        setValue("provinciaid", Number(provVal) || 0, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+      }
+
+      // Keep ciudad and localidad text in sync with selected IDs
+      const ciudadidVal = watch("ciudadid");
+      if (ciudadidVal) {
+        const selectedCiudad = opcionesCiudades.find(
+          (c) => String(c.value) === String(ciudadidVal)
+        );
+        if (selectedCiudad) {
+          setValue("ciudad", selectedCiudad.label, { shouldDirty: true });
+        }
+      }
+
+      const localidadidVal = watch("localidadid");
+      if (localidadidVal) {
+        const selectedLocalidad = opcionesLocalidades.find(
+          (l) => String(l.value) === String(localidadidVal)
+        );
+        if (selectedLocalidad) {
+          setValue("localidad", selectedLocalidad.label, { shouldDirty: true });
+        }
+      }
+
       onGuardar();
     }
   };
@@ -59,7 +132,10 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
 
   return createPortal(
     <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div className={styles.modalContainer} onMouseDown={(e) => e.stopPropagation()}>
+      <div
+        className={styles.modalContainer}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <button type="button" className={styles.btnClose} onClick={onClose}>
           <FiX size={20} />
         </button>
@@ -70,19 +146,48 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
           </div>
 
           <h2 className={styles.title}>Datos de Ubicación</h2>
-          <p className={styles.description}>Ingresá el domicilio fiscal de la empresa.</p>
+          <p className={styles.description}>
+            Ingresá el domicilio fiscal de la empresa.
+          </p>
 
           <div className={styles.formSection}>
             <InputSocioMasked
-              name="direccion"
+              name="calle"
               control={control}
-              label="Dirección"
+              label="Calle / Avenida"
               icon={<FiMapPin />}
-              error={getError("direccion")}
-              esValido={getEsValido("direccion")}
+              error={getError("calle")}
+              esValido={getEsValido("calle")}
             />
-            
+
             <div className={styles.inputRow}>
+              <InputSocioMasked
+                name="numero"
+                control={control}
+                label="Número"
+                type="number"
+                error={getError("numero")}
+                esValido={getEsValido("numero")}
+              />
+
+              <InputSocioMasked
+                name="piso"
+                control={control}
+                label="Piso"
+                error={getError("piso")}
+                esValido={getEsValido("piso")}
+              />
+            </div>
+
+            <div className={styles.inputRow}>
+              <InputSocioMasked
+                name="departamento"
+                control={control}
+                label="Depto / Oficina"
+                error={getError("departamento")}
+                esValido={getEsValido("departamento")}
+              />
+
               <SelectSocio
                 name="provincia"
                 control={control}
@@ -93,26 +198,45 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
                 error={getError("provincia")}
                 esValido={getEsValido("provincia")}
               />
+            </div>
 
-              <InputSocioMasked
-                name="localidad"
+            <div className={styles.inputRow}>
+              <SelectSocio
+                name="ciudadid"
                 control={control}
-                label="Localidad"
+                label={cargandoCiudades ? "Cargando..." : "Ciudad"}
                 icon={<FiMap />}
-                error={getError("localidad")}
-                esValido={getEsValido("localidad")}
+                options={opcionesCiudades}
+                isLoading={cargandoCiudades}
+                error={getError("ciudadid")}
+                esValido={getEsValido("ciudadid")}
+              />
+
+              <SelectSocio
+                name="localidadid"
+                control={control}
+                label={cargandoPartidos ? "Cargando..." : "Localidad"}
+                icon={<FiMap />}
+                options={opcionesLocalidades}
+                isLoading={cargandoPartidos}
+                error={getError("localidadid")}
+                esValido={getEsValido("localidadid")}
               />
             </div>
           </div>
 
           <div className={styles.btnSave}>
-            <Button type="submit" variant="primary" style={{ width: "100%", minHeight: "3rem" }}>
+            <Button
+              type="submit"
+              variant="primary"
+              style={{ width: "100%", minHeight: "3rem" }}
+            >
               GUARDAR DATOS
             </Button>
           </div>
         </form>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

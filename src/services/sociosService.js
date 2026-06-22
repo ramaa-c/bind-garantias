@@ -174,14 +174,13 @@ export const sociosService = {
 
   // Envía todos los datos consolidados del legajo al esquema SGR+
   enviarASgrPlus: async (socioId) => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        resolve({
-          success: true,
-          message: "Legajo enviado a SGR+ exitosamente.",
-          timestamp: new Date().toISOString()
-        });
-      }, 1500);
+    const response = await api.post("api/Socio/Migrar", {
+      socioid: Number(socioId),
     });
+    return {
+      success: true,
+      message: response.data?.message || "Legajo enviado a SGR+ exitosamente.",
+      ...response.data,
+    };
   },
 };

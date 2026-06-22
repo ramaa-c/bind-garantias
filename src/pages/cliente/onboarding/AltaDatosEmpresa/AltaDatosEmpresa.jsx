@@ -36,6 +36,7 @@ export const AltaDatosEmpresa = () => {
   const { cadenaSlug } = useParams();
   const cadenaValorId = Number(cadenaSlug);
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
+  const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
 
   const [pasoActual, setPasoActual] = useState(1);
   const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(1);
@@ -72,12 +73,22 @@ export const AltaDatosEmpresa = () => {
       cuit: "",
       razonSocial: "",
       direccion: "",
+      calle: "",
+      numero: 0,
+      piso: "",
+      departamento: "",
       localidad: "",
+      localidadid: 0,
+      ciudad: "",
+      ciudadid: 0,
       provincia: "",
+      provinciaid: 0,
+      codpos: "",
       celular: "",
       tipopersonaid: 0,
       mescierre: null,
       fechainicioactividades: null,
+      tiporegimenivaid: 0,
     },
   });
 
@@ -101,11 +112,11 @@ export const AltaDatosEmpresa = () => {
         tiposocioid: 9,
         cuit: data.cuit,
         denominacion: data.razonSocial,
-        calle: data.direccion,
-        numero: 0,
-        piso: "",
-        departamento: "",
-        ciudadid: 0,
+        calle: data.calle || data.direccion,
+        numero: Number(data.numero) || 0,
+        piso: data.piso || "",
+        departamento: data.departamento || "",
+        ciudadid: Number(data.ciudadid) || 0,
         telefono: data.celular,
         fax: "",
         email: user?.email || "",
@@ -119,25 +130,25 @@ export const AltaDatosEmpresa = () => {
         fechabaja: getCSharpIsoDate(),
         motivobajaid: 0,
         socioestadoid: 9,
-        codpos: "",
+        codpos: data.codpos || "",
         tamanioempresaid: 0,
         fechacierreejercicio: data.mescierre
           ? `${new Date().getFullYear()}-${String(data.mescierre).padStart(2, "0")}-${String(new Date(new Date().getFullYear(), data.mescierre, 0).getDate()).padStart(2, "0")}T00:00:00`
           : getCSharpIsoDate(),
         legajo: 0,
-        tiporegimenivaid: 0,
+        tiporegimenivaid: data.tiporegimenivaid || 0,
         actividadespecifica: "",
         partido: data.localidad || "",
         telefono2: "",
         telefono3: "",
         visitado: "0",
         scoringcomercial: "0",
-        partidoid: 0,
+        partidoid: Number(data.localidadid) || 0,
         fechainicioactividades:
           data.fechainicioactividades || getCSharpIsoDate(),
         tipoactividadglobalid: 0,
         tipocanalcomercializacionid:
-          cadenaData?.tipocanalcomercializacionid || 0,
+          cadenaObj?.tipocanalcomercializacionid || cadenaObj?.TipoCanalComercializacionID || 0,
         emailfacturacion: user?.email || "",
         minapoderadosrequeridos: 0,
         tipocondicionfianzaid: 0,

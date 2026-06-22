@@ -204,6 +204,22 @@ export const useProvincias = () =>
     select: (data) => mapAndSort(data, "provinciaid"),
   });
 
+export const useCiudades = (provinciaId) =>
+  useQuery({
+    queryKey: ["catalogos", "ciudades", provinciaId],
+    queryFn: () => catalogosService.obtenerCiudades(provinciaId),
+    enabled: !!provinciaId,
+    select: (data) => mapAndSort(data, "ciudadid"),
+  });
+
+export const usePartidos = (provinciaId) =>
+  useQuery({
+    queryKey: ["catalogos", "partidos", provinciaId],
+    queryFn: () => catalogosService.obtenerPartidos(provinciaId),
+    enabled: !!provinciaId,
+    select: (data) => mapAndSort(data, "partidoid"),
+  });
+
 const useTipoPersona = () =>
   useQuery({
     queryKey: ["catalogos", "tipoPersona"],

@@ -321,6 +321,8 @@ export function RepresentanteModal({
             telefono: formData.telefono || "",
             momento: ahora,
           };
+          delete payloadRel.provinciaid;
+          delete payloadRel.ProvinciaID;
           await tercerosService.actualizarRelacionDeSocio(payloadRel);
           toast.success("Representante actualizado correctamente.");
         } else {
@@ -338,7 +340,6 @@ export function RepresentanteModal({
                 nroinscripcion: "",
                 condicionescomerciales: "",
                 cbu: "",
-                provinciaid: 0,
                 nrosubcuentacaja: "",
                 sucursalid: 0,
                 default: "0",

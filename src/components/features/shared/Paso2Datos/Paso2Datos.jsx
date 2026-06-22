@@ -46,6 +46,8 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
   const handleAvanzarClick = async () => {
     setIntentoAvanzar(true);
     const esValidoGlobal = await trigger([
+      "calle",
+      "numero",
       "direccion",
       "provincia",
       "localidad",
