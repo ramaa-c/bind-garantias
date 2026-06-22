@@ -285,9 +285,19 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           tipoPersonaId = 10;
         } else if (
           tipoPersonaStr.includes("FISICA") ||
-          tipoPersonaStr.includes("FÍSICA")
+          tipoPersonaStr.includes("FÍSICA") ||
+          tipoPersonaStr.includes("HUMANA")
         ) {
           tipoPersonaId = 1;
+        } else {
+          // Fallback basado en prefijo de CUIT
+          const cleanCuit = String(cuit).replace(/\D/g, "");
+          const prefix = cleanCuit.substring(0, 2);
+          if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
+            tipoPersonaId = 1;
+          } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
+            tipoPersonaId = 10;
+          }
         }
         setValue("tipopersonaid", tipoPersonaId);
 

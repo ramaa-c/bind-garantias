@@ -921,11 +921,11 @@ export const AltaOperacion = () => {
           cuit: String(socioTarget.cuit).replace(/\D/g, ""),
           bcraid: 0,
           tipopersonaid:
-            dg.tipopersona === "FISICA"
+            (dg.tipopersona === "FISICA" || dg.tipopersona === "HUMANA")
               ? 1
               : dg.tipopersona === "JURIDICA"
                 ? 2
-                : 0,
+                : (String(socioTarget.cuit).replace(/\D/g, "").startsWith("3") ? 2 : 1),
           tipodocumentoid: 0,
           numerodocumento: String(socioTarget.cuit).replace(/\D/g, ""),
           estadocivilid: 0,
