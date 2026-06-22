@@ -210,8 +210,14 @@ export const OnboardingGuard = ({ children }) => {
       return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
     }
   } else if (usuarioWebId && !tieneEmpresas) {
-    if (!isTerminosPage && !isAltaDatosPage) {
-      return <Navigate to={`/${channelInfo.id}/terminos`} replace />;
+    if (isVendor) {
+      if (!isSeleccionarEmpresaPage && !isAltaDatosPage) {
+        return <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />;
+      }
+    } else {
+      if (!isTerminosPage && !isAltaDatosPage) {
+        return <Navigate to={`/${channelInfo.id}/terminos`} replace />;
+      }
     }
   }
 

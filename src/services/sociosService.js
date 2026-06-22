@@ -27,6 +27,19 @@ export const sociosService = {
     }
   },
 
+  // Trae lista de socios (SGRPlus Core)
+  obtenerSociosSgrplus: async (params = {}) => {
+    try {
+      const response = await api.get("sgrplus/Socios", { params });
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        return [];
+      }
+      throw error;
+    }
+  },
+
   // Trae lista de socios (Esquema Web / Legacy)
   obtenerSociosWeb: async (params = {}) => {
     const isCuitSearch = Boolean(params.Cuit);
@@ -166,6 +179,12 @@ export const sociosService = {
         impuesto: Array.isArray(lufeData.impuestos)
           ? lufeData.impuestos.map((imp) => ({
               periodo: imp.periodo_vigencia,
+            }))
+          : [],
+        actividad: Array.isArray(lufeData.actividades)
+          ? lufeData.actividades.map((act) => ({
+              periodo: act.periodo_vigencia,
+              idactividad: act.codigo,
             }))
           : [],
       },

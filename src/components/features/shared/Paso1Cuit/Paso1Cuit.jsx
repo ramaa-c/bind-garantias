@@ -13,6 +13,8 @@ import { useAuthStore } from "../../../../store/useAuthStore";
 import { useParams } from "react-router-dom";
 import styles from "./Paso1Cuit.module.css";
 
+import { useVendor } from "../../../../hooks/useVendor";
+
 export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   const { cadenaSlug } = useParams();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
@@ -25,6 +27,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   const { mutateAsync: validarSocioCore } = useValidarSocioCore();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
   const user = useAuthStore((state) => state.user);
+  
+  const { data: vendorData } = useVendor();
+  const isVendor = vendorData?.isVendor || false;
 
   const { data: provinciasData } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
@@ -213,17 +218,15 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           ),
         }));
 
-        // ── NUEVA VALIDACIÓN: Existencia en base de datos
+        // ── NUEVA VALIDACIÓN: Existencia en base de datos (Web y SGRPlus)
         try {
-          const sociosEncontrados = await sociosService.obtenerSocios({
+          // 1. Verificamos si ya existe en la plataforma web
+          const sociosWebEncontrados = await sociosService.obtenerSocios({
             Cuit: cuit,
           });
-          if (sociosEncontrados && sociosEncontrados.length > 0) {
-            const socioExistente = sociosEncontrados[0];
-            const socioEmailStr = socioExistente.email
-              ? socioExistente.email.trim()
-              : "";
-            const currentUserEmail = user?.email ? user.email.trim() : "";
+          
+          if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
+            const socioWebExistente = sociosWebEncontrados[0];
 
             setProcesoModal({
               isOpen: false,
@@ -233,24 +236,50 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
               isSystemError: false,
             });
 
-            if (
-              socioEmailStr &&
-              currentUserEmail &&
-              socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
-            ) {
-              if (onSocioExistente) {
-                onSocioExistente(socioExistente, "email_mismatch");
-              }
-            } else {
-              if (onSocioExistente) {
-                onSocioExistente(socioExistente, "ya_existe");
+            if (onSocioExistente) {
+              onSocioExistente(socioWebExistente, "ya_existe");
+            }
+            return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
+          }
+
+          // 2. Si no está en la web, verificamos si existe históricamente en SGRPlus Core
+          const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus({
+            Cuit: cuit,
+          });
+
+          if (sociosSgrEncontrados && sociosSgrEncontrados.length > 0) {
+            if (!isVendor) {
+              const socioSgrExistente = sociosSgrEncontrados[0];
+              const socioEmailStr = socioSgrExistente.email
+                ? socioSgrExistente.email.trim()
+                : "";
+              const currentUserEmail = user?.email ? user.email.trim() : "";
+
+              if (
+                socioEmailStr &&
+                currentUserEmail &&
+                socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
+              ) {
+                setProcesoModal({
+                  isOpen: false,
+                  titulo: "",
+                  pasos: [],
+                  hasError: false,
+                  isSystemError: false,
+                });
+
+                if (onSocioExistente) {
+                  onSocioExistente(socioSgrExistente, "email_mismatch");
+                }
+                return; // Bloquea al usuario normal porque el email de SGRPlus no coincide
               }
             }
-            return;
+            // Si es vendor, o si es un usuario normal y el email SÍ coincide, 
+            // no hacemos return. Dejamos que el flujo continúe.
           }
         } catch (errorSocios) {
           console.warn(
-            "Error consultando socios para validación de email:",
+            "Error consultando socios para validación de existencia:",
             errorSocios,
           );
         }

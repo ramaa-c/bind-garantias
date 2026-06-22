@@ -4,6 +4,7 @@ import {
   useObtenerSocioUsuarioPorUsuarioId,
   useSocioWebPorId,
 } from "./useSocios";
+import { useVendor } from "./useVendor";
 
 export const useEmpresaActiva = () => {
   const user = useAuthStore((state) => state.user);
@@ -20,9 +21,12 @@ export const useEmpresaActiva = () => {
     isPending: isPendingSocios,
   } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
 
+  const { data: vendorData } = useVendor();
+  const isVendor = vendorData?.isVendor || false;
+
   let socioId = activeSocioId;
   
-  if (!socioId && Array.isArray(socioUsuarios) && socioUsuarios.length > 0) {
+  if (!socioId && !isVendor && Array.isArray(socioUsuarios) && socioUsuarios.length > 0) {
     socioId = socioUsuarios[0].socioid || socioUsuarios[0].SocioID;
   }
 
