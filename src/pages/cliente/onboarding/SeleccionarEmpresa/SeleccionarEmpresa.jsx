@@ -1,9 +1,9 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiPlus, FiArrowRight } from "react-icons/fi";
+import { FiPlus, FiArrowRight, FiArchive } from "react-icons/fi";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
-import { useObtenerSocioUsuarioPorUsuarioId } from "../../../../hooks/useSocios";
+import { useObtenerSocioUsuarioPorUsuarioId, useSocioWebPorId } from "../../../../hooks/useSocios";
 import { LoadingScreen } from "../../../../components/ui/LoadingScreen/LoadingScreen";
 import { useQueryClient } from "@tanstack/react-query";
 import { tercerosService } from "../../../../services/tercerosService";
@@ -39,18 +39,24 @@ const getAvatarVariant = (nombre = "") => {
 
 /* ─── sub-componente: EmpresaCard ──────────────────────────── */
 
-const EmpresaCard = ({ socio, socioId, index, onSelect }) => {
+const EmpresaCard = ({ socioInitial, socioId, index, onSelect }) => {
   const [pressed, setPressed] = useState(false);
 
-  const nombre = socio.denominacion || socio.Denominacion || "";
-  const cuit = socio.cuit || socio.Cuit || "";
+  const { data: fetchedSocio } = useSocioWebPorId(socioInitial ? null : socioId);
+  const socio = socioInitial || fetchedSocio;
+
+  const nombre = socio?.denominacion || socio?.Denominacion || "";
+  const cuit = socio?.cuit || socio?.Cuit || "";
   const initials = getInitials(nombre);
   const variant = getAvatarVariant(nombre);
 
   const handleClick = useCallback(() => {
+    if (!socio) return;
     setPressed(true);
     setTimeout(() => onSelect(socio, socioId), 160);
   }, [socio, socioId, onSelect]);
+
+  if (!socio) return null;
 
   return (
     <div
@@ -190,7 +196,12 @@ export const SeleccionarEmpresa = () => {
         console.error("Prefetch error", e);
       }
 
-      navigate(`/${channelInfo.id}/inicio`, { replace: true });
+      const isSolicitudesEnabled = useAuthStore.getState().isSolicitudesEnabled;
+      if (!isSolicitudesEnabled) {
+        navigate(`/${channelInfo.id}/legajo`, { replace: true });
+      } else {
+        navigate(`/${channelInfo.id}/solicitudes`, { replace: true });
+      }
     },
     [setActiveSocioId, navigate, channelInfo.id, queryClient],
   );
@@ -229,21 +240,30 @@ export const SeleccionarEmpresa = () => {
 
             {/* lista */}
             <div className={styles.empresasList}>
-              {listaEmpresas.map((socioUsuario, index) => {
-                const socio = socioUsuario.socio || socioUsuario.Socio;
-                const socioId = socioUsuario.socioid || socioUsuario.SocioID;
-                if (!socio) return null;
+              {listaEmpresas.length > 0 ? (
+                listaEmpresas.map((socioUsuario, index) => {
+                  const socio = socioUsuario.socio || socioUsuario.Socio;
+                  const socioId = socioUsuario.socioid || socioUsuario.SocioID;
 
-                return (
-                  <EmpresaCard
-                    key={socioId}
-                    socio={socio}
-                    socioId={socioId}
-                    index={index}
-                    onSelect={handleSelectEmpresa}
-                  />
-                );
-              })}
+                  return (
+                    <EmpresaCard
+                      key={socioId}
+                      socioInitial={socio}
+                      socioId={socioId}
+                      index={index}
+                      onSelect={handleSelectEmpresa}
+                    />
+                  );
+                })
+              ) : (
+                <div className={styles.emptyStateContainer}>
+                  <div className={styles.emptyStateIconWrapper}>
+                    <FiArchive className={styles.emptyStateIcon} aria-hidden="true" />
+                  </div>
+                  <h3 className={styles.emptyStateTitle}>Aún no tenés empresas vinculadas</h3>
+                  <p className={styles.emptyStateDesc}>Para comenzar a operar, vinculá tu primera empresa usando el botón de abajo.</p>
+                </div>
+              )}
             </div>
 
             {/* cta secundario */}

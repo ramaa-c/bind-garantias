@@ -110,6 +110,52 @@
   gap: 10px;
 }
 
+/* ── empty state ─────────────────────────────────────────── */
+
+.emptyStateContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  animation: phaseIn 0.4s ease both;
+}
+
+.emptyStateIconWrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.emptyStateIcon {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.emptyStateTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--white, #fff);
+  margin: 0 0 8px;
+}
+
+.emptyStateDesc {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
 /* ── card ────────────────────────────────────────────────── */
 
 .empresaCard {
