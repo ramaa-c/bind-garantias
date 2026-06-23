@@ -156,13 +156,13 @@
 }
 
 .actionCell {
-  text-align: right;
+  text-align: center;
 }
 
 .actionsCellGrid {
   display: flex;
   gap: 0.5rem;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
 }
 
@@ -624,4 +624,144 @@
 .btnRemoveLogo:hover {
   background: #cf3544;
 }
+
+.inactiveRow {
+  background: rgba(234, 74, 90, 0.035) !important;
+  transition: all 0.25s ease;
+}
+
+.inactiveRow:hover {
+  background: rgba(234, 74, 90, 0.07) !important;
+}
+
+.inactiveRow td {
+  opacity: 0.22 !important;
+  filter: grayscale(100%);
+  background: transparent !important;
+  transition: all 0.25s ease;
+}
+
+.inactiveRow td.switchCell {
+  opacity: 1 !important;
+  filter: none !important;
+  background: transparent !important;
+}
+
+.inactiveRow td:first-child {
+  position: relative;
+}
+
+.inactiveRow td:first-child::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #ea4a5a;
+}
+
+.inactiveRow:hover td {
+  opacity: 0.7 !important;
+  filter: grayscale(30%);
+  background: transparent !important;
+}
+
+.inactiveRow:hover td.switchCell {
+  opacity: 1 !important;
+  filter: none !important;
+  background: transparent !important;
+}
+
+/* Switch toggle */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+
+.switchCell {
+  position: relative;
+}
+
+.switch input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
+}
+
+.slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: .3s;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  transition: .3s;
+  border-radius: 50%;
+}
+
+.switch input:checked + .slider {
+  background-color: rgba(76, 101, 230, 0.2);
+  border-color: rgba(76, 101, 230, 0.4);
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(20px);
+  background-color: var(--color-azul-bind, #4c65e6);
+}
+
+/* Migration alert styling */
+.migrationAlert {
+  margin-bottom: 1.5rem;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: rgba(240, 136, 62, 0.06) !important;
+  border: 1px solid rgba(240, 136, 62, 0.15) !important;
+}
+
+.migrationAlertContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.migrationAlertContent span {
+  color: #c9d1d9;
+  font-size: 0.875rem;
+}
+
+.switchLoaderWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 20px;
+}
+
 

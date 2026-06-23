@@ -111,13 +111,28 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
   };
 
   const confirmSave = () => {
+    const parseMonto = (obj) => {
+      if (!obj) return 0;
+      const key = Object.keys(obj).find(
+        (k) =>
+          k.toLowerCase() === "montomaximocv" ||
+          k.toLowerCase() === "montomaximo" ||
+          k.toLowerCase() === "tope" ||
+          k.toLowerCase() === "monto_maximo"
+      );
+      return parseFloat(obj[key] || 0);
+    };
+
     const payload = {
       cadenavalorid: Number(formState.cadenavalorid),
       denominacion: formState.denominacion,
       referencia: formState.referencia,
       logo: formState.logo,
       tipocanalcomercializacionid: Number(formState.tipocanalcomercializacionid),
-      equipocomercialid: Number(formState.equipocomercialid)
+      equipocomercialid: Number(formState.equipocomercialid),
+      montomaximo: parseMonto(selectedChain),
+      porcentajemaximo: 100,
+      activa: "1"
     };
 
     crearMutation.mutate(payload, {

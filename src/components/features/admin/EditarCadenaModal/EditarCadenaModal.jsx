@@ -15,7 +15,10 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     referencia: "",
     logo: "",
     tipocanalcomercializacionid: "",
-    equipocomercialid: ""
+    equipocomercialid: "",
+    montomaximo: "",
+    porcentajemaximo: "",
+    activa: "1"
   });
 
   const fileInputRef = useRef(null);
@@ -38,7 +41,10 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
         referencia: activeItem.referencia || "",
         logo: activeItem.logo || "",
         tipocanalcomercializacionid: activeItem.tipocanalcomercializacionid != null ? activeItem.tipocanalcomercializacionid.toString() : "",
-        equipocomercialid: activeItem.equipocomercialid != null ? activeItem.equipocomercialid.toString() : ""
+        equipocomercialid: activeItem.equipocomercialid != null ? activeItem.equipocomercialid.toString() : "",
+        montomaximo: activeItem.montomaximo != null ? activeItem.montomaximo.toString() : "100",
+        porcentajemaximo: activeItem.porcentajemaximo != null ? activeItem.porcentajemaximo.toString() : "100",
+        activa: activeItem.activa || "1"
       });
     }
   }, [activeItem, isOpen]);
@@ -78,6 +84,14 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       toast.error("El logo de la cadena de valor es requerido");
       return;
     }
+    if (formState.montomaximo === "" || isNaN(Number(formState.montomaximo)) || Number(formState.montomaximo) < 0) {
+      toast.error("Ingrese un monto máximo válido");
+      return;
+    }
+    if (formState.porcentajemaximo === "" || isNaN(Number(formState.porcentajemaximo)) || Number(formState.porcentajemaximo) < 0 || Number(formState.porcentajemaximo) > 100) {
+      toast.error("Ingrese un porcentaje máximo válido (0 a 100)");
+      return;
+    }
 
     setConfirmOpen(true);
   };
@@ -89,7 +103,10 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       referencia: formState.referencia,
       logo: formState.logo,
       tipocanalcomercializacionid: Number(formState.tipocanalcomercializacionid),
-      equipocomercialid: Number(formState.equipocomercialid)
+      equipocomercialid: Number(formState.equipocomercialid),
+      montomaximo: Number(formState.montomaximo),
+      porcentajemaximo: Number(formState.porcentajemaximo),
+      activa: formState.activa
     };
 
     actualizarMutation.mutate(payload, {
@@ -138,6 +155,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                   label="ID de Cadena"
                   value={formState.cadenavalorid}
                   disabled
+                  className={styles.compactInput}
                 />
               </div>
               <div style={{ flex: 2 }}>
@@ -145,6 +163,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                   label="Denominación"
                   value={formState.denominacion}
                   disabled
+                  className={styles.compactInput}
                 />
               </div>
             </div>
@@ -154,6 +173,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                   label="Referencia"
                   value={formState.referencia}
                   onChange={val => setFormState({ ...formState, referencia: val })}
+                  className={styles.compactInput}
                 />
               </div>
             </div>
@@ -170,6 +190,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 options={canalesOpciones}
                 value={formState.tipocanalcomercializacionid}
                 onChange={val => setFormState({ ...formState, tipocanalcomercializacionid: val })}
+                className={styles.compactInput}
               />
             </div>
             <div style={{ flex: 1 }}>
@@ -179,6 +200,31 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 options={equiposOpciones}
                 value={formState.equipocomercialid}
                 onChange={val => setFormState({ ...formState, equipocomercialid: val })}
+                className={styles.compactInput}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.sectionGroup}>
+          <h4 className={styles.sectionTitle}>Límites Financieros</h4>
+          <div className={styles.row}>
+            <div style={{ flex: 1 }}>
+              <InputSimple
+                label="Monto Máximo *"
+                type="number"
+                value={formState.montomaximo}
+                onChange={val => setFormState({ ...formState, montomaximo: val })}
+                className={`${styles.compactInput} ${styles.hideSpinners}`}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <InputSimple
+                label="Porcentaje Máximo (%) *"
+                type="number"
+                value={formState.porcentajemaximo}
+                onChange={val => setFormState({ ...formState, porcentajemaximo: val })}
+                className={`${styles.compactInput} ${styles.hideSpinners}`}
               />
             </div>
           </div>
