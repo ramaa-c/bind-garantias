@@ -51,7 +51,7 @@ export const useActualizarLimiteCadenaValor = () => {
 
 export const useObtenerProductosPorLimite = (tipolimiteid) => {
     return useQuery({
-        queryKey: ['linea', 'productosPorLimite', tipolimiteid],
+        queryKey: ['linea', 'productosPorLimite', String(tipolimiteid)],
         queryFn: () => lineaService.obtenerProductosPorLimite(tipolimiteid),
         enabled: tipolimiteid !== undefined && tipolimiteid !== null,
     });
@@ -62,7 +62,7 @@ export const useAsociarProductoLimite = () => {
     return useMutation({
         mutationFn: lineaService.asociarProductoLimite,
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', variables.tipolimiteid] });
+            queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', String(variables.tipolimiteid)] });
         }
     });
 };
@@ -72,7 +72,7 @@ export const useActualizarProductoLimite = () => {
     return useMutation({
         mutationFn: lineaService.actualizarProductoLimite,
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', variables.tipolimiteid] });
+            queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', String(variables.tipolimiteid)] });
         }
     });
 };
@@ -82,7 +82,7 @@ export const useDesasociarProductoLimite = (tipolimiteid) => {
     return useMutation({
         mutationFn: lineaService.desasociarProductoLimite,
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', tipolimiteid] });
+            queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', String(tipolimiteid)] });
         }
     });
 };

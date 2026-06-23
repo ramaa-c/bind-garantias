@@ -37,7 +37,7 @@ export default function AdminNavbar() {
 
   const handleLogout = () => {
     if (clearAuth) clearAuth();
-    navigate("/");
+    navigate("/login");
   };
 
   const isActive = (path) => location.pathname === path;
@@ -62,7 +62,7 @@ export default function AdminNavbar() {
     <div className={styles.navWrapper}>
       {/* Topmost branding bar */}
       <div className={styles.topBrandBar}>
-        <div className={styles.logoBox} role="button" tabIndex={0} onClick={() => navigate("/admin/dashboard")}>
+        <div className={styles.logoBox} role="button" tabIndex={0} onClick={() => navigate("/admin")}>
           <img src={logoBind} alt="BIND Logo" className={styles.logoImg} />
           {!isRestricted && <span className={styles.adminTag}>ADMIN</span>}
         </div>
@@ -109,9 +109,9 @@ export default function AdminNavbar() {
           {/* Mis Pendientes */}
           <button type="button"
             className={`${styles.navButton} ${
-              isActive("/admin/dashboard") ? styles.active : ""
+              isActive("/admin") ? styles.active : ""
             }`}
-            onClick={() => handleNavigate("/admin/dashboard")}
+            onClick={() => handleNavigate("/admin")}
           >
             Mis Pendientes
           </button>

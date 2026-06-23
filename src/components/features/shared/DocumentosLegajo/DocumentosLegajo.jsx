@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { useFormContext, useWatch, useForm, Controller } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import {
   FiCheckCircle,
@@ -147,6 +148,7 @@ export function DocumentosLegajo() {
   const { control, setValue } = useFormContext();
   const formValues = useWatch({ control });
   const { intentoAvanzar } = formValues;
+  const queryClient = useQueryClient();
 
   const {
     socioIdActivo,
@@ -257,10 +259,48 @@ export function DocumentosLegajo() {
     return () => window.removeEventListener("resize", handleResize);
   }, [activeTab, estructuraFiltrada]);
 
-  const handleFileUpload = (key, file) => {
+  const handleFileUpload = async (key, file, docTitle) => {
     if (file instanceof File) {
       file._uploaded = false;
       setValue(key, file, { shouldValidate: true, shouldDirty: true });
+
+      if (!socioIdActivo) {
+        toast.error("No se pudo identificar la empresa activa.");
+        return;
+      }
+
+      const toastId = toast.loading(`Subiendo ${docTitle}...`);
+      try {
+        const specificId = formValues[`${key}_backendId`];
+        const resultado = await socioArchivoService.subirOActualizar(
+          socioIdActivo,
+          file,
+          key,
+          archivosBackend,
+          docTitle,
+          specificId
+        );
+
+        if (resultado) {
+          file._uploaded = true;
+          file._backendId = resultado.socioarchivoid || resultado.id;
+          setValue(key, file);
+          setValue(`${key}_backendId`, file._backendId);
+          await cargarArchivosExistentes();
+          
+          queryClient.invalidateQueries({
+            queryKey: ["socioArchivos", socioIdActivo],
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["socioLegajoCompleto", socioIdActivo],
+          });
+
+          toast.success("Documento subido exitosamente", { id: toastId });
+        }
+      } catch (error) {
+        console.error("Fallo al subir el archivo:", error);
+        toast.error("Error al subir el documento. Por favor, reintente.", { id: toastId });
+      }
     }
   };
   const handleFileRemove = (key) =>
@@ -351,7 +391,7 @@ export function DocumentosLegajo() {
               }
               onDrop={(e) => {
                 if (e.dataTransfer.files?.[0]) {
-                  handleFileUpload(doc.key, e.dataTransfer.files[0]);
+                  handleFileUpload(doc.key, e.dataTransfer.files[0], doc.title);
                 }
               }}
               onDelete={() => handleFileRemove(doc.key)}
@@ -368,7 +408,7 @@ export function DocumentosLegajo() {
               style={{ display: "none" }}
               onChange={(e) => {
                 if (e.target.files?.[0]) {
-                  handleFileUpload(doc.key, e.target.files[0]);
+                  handleFileUpload(doc.key, e.target.files[0], doc.title);
                 }
               }}
               accept="application/pdf"

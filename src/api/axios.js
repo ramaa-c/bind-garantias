@@ -37,15 +37,11 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    // Si ya no se reintenta y hubo un error de red o servidor en métodos de escritura
-    if (isServerError || isNetworkError) {
+    // Si ya no se reintenta y hubo un error de red en métodos de escritura
+    if (isNetworkError) {
       const method = config.method?.toUpperCase();
       if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
-        toast.error(
-          isNetworkError
-            ? "Error de red. Verifica tu conexión e intenta nuevamente."
-            : "Error interno en el servidor. No se pudieron guardar los cambios."
-        );
+        toast.error("Error de red. Verifica tu conexión e intenta nuevamente.");
       }
     }
 

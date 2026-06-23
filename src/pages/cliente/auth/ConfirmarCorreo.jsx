@@ -96,7 +96,7 @@ const ConfirmarCorreo = () => {
             <img
               src={logoBind}
               alt="Logo BIND"
-              onClick={() => navigate(`/${channelInfo.id}/login`)}
+              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
               className={styles.clickableLogo}
             />
             {channelInfo?.id !== "default" && (

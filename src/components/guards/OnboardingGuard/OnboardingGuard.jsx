@@ -142,7 +142,7 @@ export const OnboardingGuard = ({ children }) => {
     user?.email === "admin restricto";
 
   if (isBasicAdmin) {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   if ((isLoadingUser && !usuarioWebId) || (usuarioWebId && isCadenasLoading)) {
@@ -155,7 +155,7 @@ export const OnboardingGuard = ({ children }) => {
   }
 
   if (isAdminCadena) {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   if (

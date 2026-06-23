@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { FiPlus, FiEdit, FiTrash2, FiX } from "react-icons/fi";
+import { FiPlus, FiEdit, FiTrash2, FiX, FiList } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
-import { useMonedas, useTiposProducto } from "../../hooks/useCatalogos";
+import { useMonedas, useTiposProducto, useObligaciones } from "../../hooks/useCatalogos";
 import {
   useObtenerLimitesCadenaValor,
   useCrearLimiteCadenaValor,
   useActualizarLimiteCadenaValor,
+  useObtenerProductosPorLimite,
 } from "../../hooks/useLinea";
 import {
   SelectSimple,
@@ -99,14 +100,93 @@ const LineaSkeletonCard = () => {
   );
 };
 
+// --- CHILD COMPONENT: PRODUCTOS VINCULADOS MODAL ---
+const ProductosVinculadosModal = ({ isOpen, onClose, tipolimiteid }) => {
+  const { data: vinculaciones, isLoading } = useObtenerProductosPorLimite(tipolimiteid);
+  const { data: obligaciones, isLoading: isObligacionesLoading } = useObligaciones();
+
+  const listVinculados = vinculaciones || [];
+  const opciones = obligaciones?.opciones || [];
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Productos Vinculados"
+      variant="blue"
+      maxWidth="500px"
+    >
+      {isLoading || isObligacionesLoading ? (
+        <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
+          <Spinner size={30} />
+        </div>
+      ) : listVinculados.length === 0 ? (
+        <div style={{ padding: "1rem", textAlign: "center", color: "var(--text-secondary)" }}>
+          No hay productos vinculados a esta línea.
+        </div>
+      ) : (
+        <ul
+          style={{
+            listStyle: "none",
+            padding: 0,
+            margin: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: "0.5rem",
+          }}
+        >
+          {listVinculados.map((v) => {
+            const obl = opciones.find(
+              (o) => String(o.value) === String(v.tipoobligacionid)
+            );
+            const productoBase = obl ? obl.label : `Producto #${v.tipoobligacionid}`;
+            const descripcionCustom = v.descripcion || productoBase;
+            
+            return (
+              <li
+                key={v.tipoobligaciontipolimiteid || v.tipoobligacionid || Math.random()}
+                style={{
+                  padding: "0.75rem",
+                  background: "var(--surface-darker, #121212)",
+                  borderRadius: "0.5rem",
+                  border: "1px solid var(--border-dark, #2a2a2a)",
+                  color: "var(--text-primary)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.25rem",
+                }}
+              >
+                <div style={{ fontSize: "0.95rem", fontWeight: "600", color: "var(--blue-light, #a5b4fc)" }}>
+                  {descripcionCustom}
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                  Base: {productoBase}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "flex-end" }}>
+        <Button type="button" variant="outlineBlue" onClick={onClose}>
+          CERRAR
+        </Button>
+      </div>
+    </Modal>
+  );
+};
+
+
 // --- CHILD COMPONENT: LINE CARD ---
 const LineaCard = ({
   linea,
   currencies,
   limitTypes,
   onEdit,
+  onViewProducts,
   onToggleStatus,
   isToggling,
+  isCadenaInactiva,
 }) => {
   const moneda = currencies.find(
     (c) => String(c.value) === String(linea.monedaid),
@@ -137,7 +217,10 @@ const LineaCard = ({
   const simboloMoneda = monedaMock ? monedaMock.simbolo : "$";
 
   return (
-    <div className={styles.lineaCard}>
+    <div 
+      className={styles.lineaCard}
+      style={isCadenaInactiva ? { opacity: 0.6, filter: "grayscale(100%)" } : {}}
+    >
       <div className={styles.cardHeader}>
         <div className={styles.headerTitleWrapper}>
           <h3 className={`${styles.cardTitle} ${styles.cardTitleBlue}`}>
@@ -149,8 +232,20 @@ const LineaCard = ({
           <button
             type="button"
             className={`${styles.iconBtnAction} ${styles.btnEdit}`}
-            title="Editar Línea"
-            onClick={() => onEdit(linea)}
+            style={isCadenaInactiva ? { opacity: 0.5, cursor: "not-allowed", marginRight: "0.5rem" } : { marginRight: "0.5rem" }}
+            title={isCadenaInactiva ? "Cadena inactiva" : "Ver Productos Vinculados"}
+            onClick={() => !isCadenaInactiva && onViewProducts(linea)}
+            disabled={isCadenaInactiva}
+          >
+            <FiList />
+          </button>
+          <button
+            type="button"
+            className={`${styles.iconBtnAction} ${styles.btnEdit}`}
+            style={isCadenaInactiva ? { opacity: 0.5, cursor: "not-allowed" } : {}}
+            title={isCadenaInactiva ? "Cadena inactiva" : "Editar Línea"}
+            onClick={() => !isCadenaInactiva && onEdit(linea)}
+            disabled={isCadenaInactiva}
           >
             <FiEdit />
           </button>
@@ -183,7 +278,7 @@ const LineaCard = ({
 
       <div
         className={styles.cardTogglesBottom}
-        style={isToggling ? { opacity: 0.6, pointerEvents: "none" } : {}}
+        style={isToggling || isCadenaInactiva ? { opacity: 0.6, pointerEvents: "none" } : {}}
       >
         <label className={styles.cardToggleLabel}>
           <input
@@ -191,7 +286,7 @@ const LineaCard = ({
             className={styles.cardToggleCheckbox}
             checked={String(linea.activa) === "1"}
             onChange={(e) => onToggleStatus(linea, "activa", e.target.checked)}
-            disabled={isToggling}
+            disabled={isToggling || isCadenaInactiva}
           />
           Línea Activa
         </label>
@@ -203,12 +298,18 @@ const LineaCard = ({
             onChange={(e) =>
               onToggleStatus(linea, "aptanuevalinea", e.target.checked)
             }
-            disabled={isToggling}
+            disabled={isToggling || isCadenaInactiva}
           />
-          Apta Nuevas Operaciones
+          Apta Nueva Línea
         </label>
         {isToggling && (
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
+          <div
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
             <Spinner size={18} color="#ffffff" />
           </div>
         )}
@@ -222,6 +323,7 @@ export default function LineasCadena() {
   const [selectedCadenaId, setSelectedCadenaId] = useState("");
   const [isLineaModalOpen, setIsLineaModalOpen] = useState(false);
   const [activeLinea, setActiveLinea] = useState(null);
+  const [activeLineaProductosId, setActiveLineaProductosId] = useState(null);
   const [togglingLineas, setTogglingLineas] = useState(new Set());
 
   const [formData, setFormData] = useState({
@@ -272,7 +374,7 @@ export default function LineasCadena() {
       next.add(linea.tipolimitecadenavalorid);
       return next;
     });
-    
+
     const payload = {
       ...linea,
       [field]: isChecked ? "1" : "0",
@@ -282,7 +384,7 @@ export default function LineasCadena() {
     if (field === "activa") {
       payload.aptanuevalinea = isChecked ? "1" : "0";
     }
-    
+
     actualizarMutation.mutate(payload, {
       onSuccess: () => {
         toast.success(`Estado actualizado correctamente`);
@@ -401,6 +503,12 @@ export default function LineasCadena() {
     (c) => String(c.cadenavalorid) === selectedCadenaId,
   );
 
+  const isCadenaInactiva = selectedCadena && (
+    String(selectedCadena.activa) === "0" || 
+    selectedCadena.activa === false || 
+    String(selectedCadena.activa).toLowerCase() === "false"
+  );
+
   const chainsSelectOptions = listCadenas.map((c) => ({
     value: String(c.cadenavalorid),
     label: `${c.denominacion} (CUIT: ${c.cuittercero || "-"})`,
@@ -417,7 +525,8 @@ export default function LineasCadena() {
           <Button
             variant="primary"
             onClick={handleOpenCreateModal}
-            disabled={!selectedCadenaId}
+            disabled={!selectedCadenaId || isCadenaInactiva}
+            title={isCadenaInactiva ? "No podés operar nuevas líneas en una cadena inactiva" : "Nueva Línea"}
           >
             <FiPlus /> NUEVA LÍNEA
           </Button>
@@ -460,8 +569,10 @@ export default function LineasCadena() {
               currencies={currenciesOptions}
               limitTypes={limitTypesOptions}
               onEdit={handleOpenEditModal}
+              onViewProducts={(l) => setActiveLineaProductosId(l.tipolimiteid)}
               onToggleStatus={handleToggleStatus}
               isToggling={togglingLineas.has(linea.tipolimitecadenavalorid)}
+              isCadenaInactiva={isCadenaInactiva}
             />
           ))}
         </div>
@@ -589,6 +700,15 @@ export default function LineasCadena() {
           </form>
         </div>
       </Modal>
+
+      {/* Modal de Productos Vinculados */}
+      {activeLineaProductosId && (
+        <ProductosVinculadosModal
+          isOpen={!!activeLineaProductosId}
+          onClose={() => setActiveLineaProductosId(null)}
+          tipolimiteid={activeLineaProductosId}
+        />
+      )}
     </div>
   );
 }

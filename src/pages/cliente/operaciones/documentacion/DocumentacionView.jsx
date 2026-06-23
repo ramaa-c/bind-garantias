@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
-import { FaFileAlt, FaSave, FaFileUpload } from "react-icons/fa";
+import { FaFileAlt, FaFileUpload } from "react-icons/fa";
 import {
   DocumentosLegajo,
   LegajoUniversalBar,
 } from "../../../../components/features";
-import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
-import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { socioArchivoService } from "../../../../services/socioArchivoService";
-import { toast } from "sonner";
-import { Button } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import styles from "./DocumentacionView.module.css";
 
@@ -33,12 +27,6 @@ const DOC_TITLES = {
 };
 
 export default function DocumentacionView() {
-  const { socioIdActivo } = useEmpresaActiva();
-  const queryClient = useQueryClient();
-
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingData, setPendingData] = useState(null);
-  const [guardando, setGuardando] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   useEffect(() => {
@@ -72,138 +60,8 @@ export default function DocumentacionView() {
   const formValues = useWatch({ control: methods.control });
 
   useEffect(() => {
-    const llavesDocumentos = [
-      "estatuto",
-      "balance",
-      "ddjjIva",
-      "cartasDocumento",
-      "poderes",
-      "certificadoPyme",
-      "otrosDocumentos",
-      "eecc",
-      "actaDesignacion",
-      "actaSocios",
-      "f1272",
-      "ddjjGanancias",
-      "manifestacionBienes",
-      "constanciaMonotributo",
-    ];
-    let hasPendingFiles = false;
-    for (const key of llavesDocumentos) {
-      const file = formValues[key];
-      if (file && !file._uploaded) {
-        hasPendingFiles = true;
-        break;
-      }
-    }
-    setUnsavedChanges(hasPendingFiles);
-
     return () => setUnsavedChanges(false);
-  }, [formValues, setUnsavedChanges]);
-
-  const onSubmit = (data) => {
-    setPendingData(data);
-    setConfirmOpen(true);
-  };
-
-  const realizarGuardado = async (data) => {
-    if (!socioIdActivo) {
-      toast.error("No se pudo identificar la empresa activa.");
-      return;
-    }
-
-    const toastId = toast.loading("Guardando legajo digital...");
-    try {
-      const archivosExistentes =
-        await socioArchivoService.obtenerArchivos(socioIdActivo);
-
-      const llavesDocumentos = [
-        "estatuto",
-        "balance",
-        "ddjjIva",
-        "cartasDocumento",
-        "poderes",
-        "certificadoPyme",
-        "otrosDocumentos",
-        "eecc",
-        "actaDesignacion",
-        "actaSocios",
-        "f1272",
-        "ddjjGanancias",
-        "manifestacionBienes",
-        "constanciaMonotributo",
-      ];
-      const pendientes = [];
-
-      for (const key of llavesDocumentos) {
-        const file = data[key];
-        if (file && !file._uploaded) {
-          pendientes.push({ key, file });
-        }
-      }
-
-      if (pendientes.length === 0) {
-        toast.success("Legajo guardado", {
-          id: toastId,
-          description: "Los cambios se guardaron correctamente.",
-        });
-        return;
-      }
-
-      for (const { key, file } of pendientes) {
-        const docTitle = DOC_TITLES[key] || key;
-        const specificId = data[`${key}_backendId`];
-        const resultado = await socioArchivoService.subirOActualizar(
-          socioIdActivo,
-          file,
-          key,
-          archivosExistentes,
-          docTitle,
-          specificId,
-        );
-
-        if (resultado) {
-          file._uploaded = true;
-          file._backendId = resultado.socioarchivoid || resultado.id;
-          methods.setValue(key, file);
-        }
-      }
-
-      const desc =
-        pendientes.length === 1
-          ? "Se subió 1 documento correctamente."
-          : `Se subieron ${pendientes.length} documentos correctamente.`;
-
-      toast.success("Legajo guardado exitosamente", {
-        id: toastId,
-        description: desc,
-      });
-
-      queryClient.invalidateQueries({
-        queryKey: ["socioArchivos", socioIdActivo],
-      });
-      queryClient.invalidateQueries({
-        queryKey: ["socioLegajoCompleto", socioIdActivo],
-      });
-      setUnsavedChanges(false);
-    } catch (error) {
-      console.error("Fallo al actualizar el legajo digital:", error);
-      toast.error("Error al guardar legajo", {
-        id: toastId,
-        description:
-          "Ocurrió un error al subir los archivos. Por favor, reintente.",
-      });
-    }
-  };
-
-  const handleConfirmSave = async () => {
-    setConfirmOpen(false);
-    if (!pendingData) return;
-
-    setGuardando(true);
-    await realizarGuardado(pendingData);
-    setGuardando(false);
-  };
+  }, [setUnsavedChanges]);
 
   return (
     <section className={styles.pageContainer}>
@@ -220,25 +78,6 @@ export default function DocumentacionView() {
             </p>
           </div>
         </div>
-
-        <Button
-          type="submit"
-          variant="primary"
-          size="sm"
-          form="legajo-form"
-          className={styles.submitBtn}
-          onClick={() => methods.setValue("intentoAvanzar", true)}
-          disabled={
-            methods.formState.isSubmitting ||
-            guardando ||
-            !methods.formState.isDirty
-          }
-        >
-          <FaSave style={{ marginRight: "0.5rem" }} />
-          {methods.formState.isSubmitting || guardando
-            ? "Actualizando..."
-            : "Actualizar legajo"}
-        </Button>
       </header>
 
       <LegajoUniversalBar context="documentacion" />
@@ -246,22 +85,13 @@ export default function DocumentacionView() {
       <FormProvider {...methods}>
         <form
           id="legajo-form"
-          onSubmit={methods.handleSubmit(onSubmit)}
           className={styles.formLayout}
           noValidate
+          onSubmit={(e) => e.preventDefault()}
         >
           <DocumentosLegajo />
         </form>
       </FormProvider>
-
-      <ConfirmacionModal
-        isOpen={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        onConfirm={handleConfirmSave}
-        titulo="Guardar legajo digital"
-        mensaje="¿Estás seguro de que deseas guardar los cambios en tu legajo digital?"
-        isLoading={guardando}
-      />
 
       <HelpDrawer
         isOpen={isHelpOpen}

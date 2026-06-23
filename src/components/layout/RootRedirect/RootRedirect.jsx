@@ -8,7 +8,7 @@ const RootRedirect = () => {
 
   useEffect(() => {
     if (!isLoading) {
-      if (import.meta.env.DEV && cadenasData && cadenasData.length > 0) {
+      if (cadenasData && cadenasData.length > 0) {
         const firstCadenaId = cadenasData[0].cadenavalorid;
         navigate(`/${firstCadenaId}/login`, { replace: true });
       } else {

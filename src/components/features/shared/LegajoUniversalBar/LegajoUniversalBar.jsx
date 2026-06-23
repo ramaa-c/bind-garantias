@@ -81,9 +81,14 @@ export function LegajoUniversalBar({ context }) {
       }
     } catch (err) {
       console.error("Error al enviar legajo a SGR+:", err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        "Ocurrió un error inesperado al enviar los datos a SGR+.";
+        
       toast.error("Error al enviar el legajo", {
         id: toastId,
-        description: "Ocurrió un error inesperado al enviar los datos a SGR+.",
+        description: errorMessage,
       });
     } finally {
       setEnviando(false);
