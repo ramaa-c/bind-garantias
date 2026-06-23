@@ -15,7 +15,7 @@ const NotFound = () => {
   const handleGoHome = () => {
     if (user) {
       if (user.role === "admin") {
-        navigate("/admin/dashboard", { replace: true });
+        navigate("/admin", { replace: true });
       } else {
         navigate(`/${channelInfo.id}/solicitudes`, { replace: true });
       }

@@ -20,16 +20,19 @@ const TenantLayout = () => {
     if (isLoading || isLoadingTodas) return;
 
     if (!isValidId || !cadenaData || cadenaData.error || (Array.isArray(cadenaData) && cadenaData.length === 0)) {
-      if (import.meta.env.DEV && todasCadenas && todasCadenas.length > 0) {
-        const firstId = todasCadenas[0].cadenavalorid;
-        navigate(`/${firstId}/login`, { replace: true });
-      } else {
-        navigate("/not-found", { replace: true });
-      }
+      navigate("/not-found", { replace: true });
       return;
     }
 
     const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
+
+    if (String(cadenaObj.activa) === "0") {
+      navigate("/cadena-inactiva", { 
+        replace: true, 
+        state: { denominacion: cadenaObj.denominacion } 
+      });
+      return;
+    }
 
     let formatLogo = null;
     if (cadenaObj.logo) {

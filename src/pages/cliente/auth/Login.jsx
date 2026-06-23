@@ -349,16 +349,6 @@ const Login = () => {
     }
 
     if (fase === "ingreso_credenciales") {
-      if (formData.email === "admin" && formData.password === "admin") {
-        setUser({
-          email: "admin",
-          role: "admin",
-          nombre: "Administrador General",
-        });
-        navigate("/admin/dashboard", { replace: true });
-        return;
-      }
-
       iniciarSesion(
         { email: formData.email, password: formData.password },
         {
@@ -421,7 +411,7 @@ const Login = () => {
             <img
               src={logoBind}
               alt="Logo BIND"
-              onClick={() => navigate(`/${channelInfo.id}/login`)}
+              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
               className={styles.clickableLogo}
             />
             {channelInfo.id !== "default" && (

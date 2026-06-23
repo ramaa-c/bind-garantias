@@ -68,10 +68,10 @@ export const AdminGuard = ({ children }) => {
     return <Navigate to="/" replace />;
   }
 
-  const isDashboardPage = location.pathname === "/admin/dashboard";
+  const isDashboardPage = location.pathname === "/admin";
 
   if (isRestricted && !isDashboardPage) {
-    return <Navigate to="/admin/dashboard" replace />;
+    return <Navigate to="/admin" replace />;
   }
 
   return <>{children}</>;

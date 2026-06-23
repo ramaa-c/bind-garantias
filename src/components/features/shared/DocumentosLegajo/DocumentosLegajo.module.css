@@ -25,6 +25,7 @@
   margin: 0;
   background: rgba(0, 0, 0, 0.15);
   border-bottom: 0.5px solid rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
 }
 
 .tabBtn {
@@ -42,6 +43,7 @@
   text-align: left;
   transition: background 0.15s;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .tabBtn:hover {
@@ -639,8 +641,9 @@
 @media (min-width: 48rem) {
   .workspace {
     display: grid;
-    grid-template-columns: 15rem 1fr;
-    height: 420px; /* Reduced height to make form layout more compact */
+    grid-template-columns: 14rem 1fr;
+    flex: 1;
+    min-height: 400px;
     overflow: hidden;
     position: relative;
   }

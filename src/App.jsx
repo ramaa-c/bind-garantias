@@ -9,6 +9,7 @@ import {
 import { ChannelProvider } from "./context/ChannelContext";
 import { Toaster } from "sonner";
 import Login from "./pages/cliente/auth/Login";
+import LoginAdmin from "./pages/admin/LoginAdmin";
 import Registro from "./pages/cliente/auth/Registro";
 import CrearClave from "./pages/cliente/auth/CrearClave";
 import ConfirmarCorreo from "./pages/cliente/auth/ConfirmarCorreo";
@@ -23,6 +24,7 @@ import { Gestion as GestionUsuarios } from "./pages/cliente/usuarios/Gestion";
 import DocumentacionView from "./pages/cliente/operaciones/documentacion/DocumentacionView";
 import SociosView from "./pages/cliente/operaciones/socios/SociosView";
 import NotFound from "./pages/shared/NotFound/NotFound";
+import CadenaInactiva from "./pages/shared/CadenaInactiva/CadenaInactiva";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
 import AltaDatosEmpresa from "./pages/cliente/onboarding/AltaDatosEmpresa/AltaDatosEmpresa";
@@ -47,6 +49,9 @@ function App() {
         <Toaster position="top-right" richColors closeButton theme="dark" />
         <Routes>
           <Route path="/" element={<RootRedirect />} />
+          <Route path="/login" element={<LoginAdmin />} />
+          <Route path="/not-found" element={<NotFound />} />
+          <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
 
           <Route path="/:cadenaSlug" element={<TenantLayout />}>
             <Route index element={<Navigate to="login" replace />} />
@@ -164,11 +169,11 @@ function App() {
             {/* Redirecciones de admin a rutas globales */}
             <Route
               path="admin"
-              element={<Navigate to="/admin/dashboard" replace />}
+              element={<Navigate to="/admin" replace />}
             />
             <Route
               path="admin/dashboard"
-              element={<Navigate to="/admin/dashboard" replace />}
+              element={<Navigate to="/admin" replace />}
             />
             <Route
               path="admin/tasas-montos"
@@ -194,7 +199,7 @@ function App() {
 
           {/* Rutas de Administración Globales */}
           <Route
-            path="/admin/dashboard"
+            path="/admin"
             element={
               <AdminGuard>
                 <AdminLayout>
@@ -265,8 +270,7 @@ function App() {
           />
 
           {/* Redirecciones de compatibilidad para rutas legacy de admin */}
-          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="/admin/*" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

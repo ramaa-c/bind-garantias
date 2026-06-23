@@ -7,7 +7,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  min-height: 5rem;
+  min-height: 4rem;
   position: sticky;
   top: 0;
   z-index: 40;
@@ -261,10 +261,10 @@
 /* ── ESCRITORIO ── */
 @media (min-width: 64rem) {
   .header {
-    margin: 1.25rem 1.25rem 0 0;
+    margin: 0.75rem 1.25rem 0 0;
     border-radius: 1.25rem;
     border: 1px solid rgba(255, 255, 255, 0.06);
-    min-height: 5rem;
+    min-height: 4rem;
     padding: 0 2rem;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
     background: var(--carbon-black, #1a1a1a);
