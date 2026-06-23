@@ -733,29 +733,6 @@
   background-color: var(--color-azul-bind, #4c65e6);
 }
 
-/* Migration alert styling */
-.migrationAlert {
-  margin-bottom: 1.5rem;
-  border-radius: 0.75rem;
-  padding: 1rem 1.25rem;
-  background: rgba(240, 136, 62, 0.06) !important;
-  border: 1px solid rgba(240, 136, 62, 0.15) !important;
-}
-
-.migrationAlertContent {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  width: 100%;
-}
-
-.migrationAlertContent span {
-  color: #c9d1d9;
-  font-size: 0.875rem;
-}
-
 .switchLoaderWrap {
   display: inline-flex;
   align-items: center;

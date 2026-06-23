@@ -53,104 +53,6 @@ export default function CadenasValor() {
 
   const activeList = activeCadenas || [];
 
-  const [isMigrating, setIsMigrating] = useState(false);
-  const [coreCadenasDetails, setCoreCadenasDetails] = useState({});
-
-  // Fetch core chain details individually for all active chains to bypass pagination limits
-  useEffect(() => {
-    if (activeList.length > 0) {
-      activeList.forEach(async (c) => {
-        if (!coreCadenasDetails[c.cadenavalorid]) {
-          try {
-            const detail = await cadenaValorService.obtenerPorId(c.cadenavalorid);
-            setCoreCadenasDetails(prev => ({
-              ...prev,
-              [c.cadenavalorid]: detail
-            }));
-          } catch (err) {
-            console.error(`Error loading core chain detail for ${c.cadenavalorid}:`, err);
-          }
-        }
-      });
-    }
-  }, [activeList]);
-
-  const parseMonto = (obj) => {
-    if (!obj) return 0;
-    const key = Object.keys(obj).find(
-      (k) =>
-        k.toLowerCase() === "montomaximocv" ||
-        k.toLowerCase() === "montomaximo" ||
-        k.toLowerCase() === "tope" ||
-        k.toLowerCase() === "monto_maximo"
-    );
-    return parseFloat(obj[key] || 0);
-  };
-
-  // Filter chains that lack status, have incorrect/zero montomaximo, or porcentajemaximo !== 100
-  const chainsToMigrate = activeList.filter((c) => {
-    const coreChain = coreCadenasDetails[c.cadenavalorid];
-    // If not loaded yet, assume it might need migration if current web values are nulo/0
-    if (!coreChain) {
-      return (
-        c.activa === undefined ||
-        c.activa === null ||
-        c.activa === "" ||
-        Number(c.montomaximo) === 0 ||
-        Number(c.porcentajemaximo) !== 100
-      );
-    }
-    const coreMontoMaximo = parseMonto(coreChain);
-
-    return (
-      c.activa === undefined ||
-      c.activa === null ||
-      c.activa === "" ||
-      Number(c.montomaximo) !== coreMontoMaximo ||
-      Number(c.porcentajemaximo) !== 100
-    );
-  });
-
-  const handleMigrarCadenas = async () => {
-    if (chainsToMigrate.length === 0) return;
-    setIsMigrating(true);
-    const toastId = toast.loading(`Actualizando ${chainsToMigrate.length} cadenas de valor...`);
-    try {
-      await Promise.all(
-        chainsToMigrate.map(async (c) => {
-          let coreMontoMaximo = 100;
-          try {
-            const coreChain = coreCadenasDetails[c.cadenavalorid] 
-              || await cadenaValorService.obtenerPorId(c.cadenavalorid);
-            coreMontoMaximo = parseMonto(coreChain);
-          } catch (err) {
-            console.error(`Error al obtener cadena central ${c.cadenavalorid}:`, err);
-          }
-
-          const payload = {
-            cadenavalorid: Number(c.cadenavalorid),
-            denominacion: c.denominacion,
-            referencia: c.referencia || "",
-            logo: c.logo || "",
-            tipocanalcomercializacionid: Number(c.tipocanalcomercializacionid),
-            equipocomercialid: Number(c.equipocomercialid),
-            montomaximo: coreMontoMaximo,
-            porcentajemaximo: 100,
-            activa: c.activa || "1",
-          };
-          return cadenaValorService.actualizarCadenaValor(payload);
-        })
-      );
-      toast.success("Migración finalizada con éxito", { id: toastId });
-      refetchActive();
-    } catch (error) {
-      console.error("Error al migrar cadenas:", error);
-      toast.error("Ocurrió un error al migrar algunas cadenas de valor", { id: toastId });
-    } finally {
-      setIsMigrating(false);
-    }
-  };
-
   const handleToggleActiva = async (item) => {
     const currentActive = String(item.activa || "1");
     const nuevoEstado = currentActive === "0" ? "1" : "0";
@@ -167,12 +69,24 @@ export default function CadenasValor() {
     });
 
     let coreMontoMaximo = 100;
-    try {
-      const coreChain = coreCadenasDetails[item.cadenavalorid]
-        || await cadenaValorService.obtenerPorId(item.cadenavalorid);
-      coreMontoMaximo = parseMonto(coreChain);
-    } catch (err) {
-      console.error(`Error al obtener cadena central ${item.cadenavalorid}:`, err);
+    if (item.montomaximo == null) {
+      try {
+        const coreChain = await cadenaValorService.obtenerPorId(item.cadenavalorid);
+        const parseMonto = (obj) => {
+          if (!obj) return 0;
+          const key = Object.keys(obj).find(
+            (k) =>
+              k.toLowerCase() === "montomaximocv" ||
+              k.toLowerCase() === "montomaximo" ||
+              k.toLowerCase() === "tope" ||
+              k.toLowerCase() === "monto_maximo"
+          );
+          return parseFloat(obj[key] || 0);
+        };
+        coreMontoMaximo = parseMonto(coreChain);
+      } catch (err) {
+        console.error(`Error al obtener cadena central ${item.cadenavalorid}:`, err);
+      }
     }
 
     const payload = {
@@ -279,25 +193,6 @@ export default function CadenasValor() {
           </Button>
         </div>
       </div>
-
-      {/* Migration Alert */}
-      {chainsToMigrate.length > 0 && (
-        <Alert variant="warning" className={styles.migrationAlert}>
-          <div className={styles.migrationAlertContent}>
-            <span>
-              Se detectaron <strong>{chainsToMigrate.length}</strong> cadenas con datos históricos incompletos (sin estado, monto máximo o porcentaje).
-            </span>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleMigrarCadenas}
-              isLoading={isMigrating}
-            >
-              Actualizar datos
-            </Button>
-          </div>
-        </Alert>
-      )}
 
       {/* Filter Card */}
       <div className={styles.filtersCard}>
