@@ -98,7 +98,7 @@ function App() {
             />
             <Route
               path="inicio"
-              element={<Navigate to="solicitudes" replace />}
+              element={<Navigate to="legajo" replace />}
             />
 
             <Route

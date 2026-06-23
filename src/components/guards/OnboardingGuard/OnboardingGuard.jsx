@@ -187,10 +187,7 @@ export const OnboardingGuard = ({ children }) => {
           isAltaDatosPage ||
           isInicioPage)
       ) {
-        if (!isSolicitudesEnabled) {
-          return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
-        }
-        return <Navigate to={`/${channelInfo.id}/solicitudes`} replace />;
+        return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
       }
     } else {
       if (
@@ -199,10 +196,7 @@ export const OnboardingGuard = ({ children }) => {
         isSeleccionarEmpresaPage ||
         isInicioPage
       ) {
-        if (!isSolicitudesEnabled) {
-          return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
-        }
-        return <Navigate to={`/${channelInfo.id}/solicitudes`} replace />;
+        return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
       }
     }
 

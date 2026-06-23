@@ -341,16 +341,16 @@
 
   .channelLogo {
     display: block;
-    height: 2.2rem;
-    max-width: 8rem;
+    height: 2.0rem;
+    max-width: 8.5rem;
     width: auto;
     object-fit: contain;
   }
 
   .logo {
     display: block;
-    height: 2.75rem;
-    max-width: 6.5rem;
+    height: 2.2rem;
+    max-width: 5.5rem;
     object-fit: contain;
     margin: 0;
   }

@@ -17,7 +17,7 @@ const NotFound = () => {
       if (user.role === "admin") {
         navigate("/admin", { replace: true });
       } else {
-        navigate(`/${channelInfo.id}/solicitudes`, { replace: true });
+        navigate(`/${channelInfo.id}/legajo`, { replace: true });
       }
     } else {
       navigate("/", { replace: true });

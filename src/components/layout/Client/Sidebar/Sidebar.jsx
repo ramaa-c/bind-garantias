@@ -129,16 +129,16 @@ export default function Sidebar({ isOpen, onClose }) {
                   </button>
                 )}
                 <button type="button"
-                  className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
-                  onClick={() => handleNavigate("/documentacion")}
-                >
-                  <FiArchive className={styles.icon} /> Documentación
-                </button>
-                <button type="button"
                   className={`${styles.link} ${isActive("/legajo") ? styles.active : ""}`}
                   onClick={() => handleNavigate("/legajo")}
                 >
                   <FiUsers className={styles.icon} /> Legajo
+                </button>
+                <button type="button"
+                  className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
+                  onClick={() => handleNavigate("/documentacion")}
+                >
+                  <FiArchive className={styles.icon} /> Documentación
                 </button>
                 <button type="button"
                   className={`${styles.link} ${styles.mobileOnlyLink}`}

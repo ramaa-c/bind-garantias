@@ -196,12 +196,7 @@ export const SeleccionarEmpresa = () => {
         console.error("Prefetch error", e);
       }
 
-      const isSolicitudesEnabled = useAuthStore.getState().isSolicitudesEnabled;
-      if (!isSolicitudesEnabled) {
-        navigate(`/${channelInfo.id}/legajo`, { replace: true });
-      } else {
-        navigate(`/${channelInfo.id}/solicitudes`, { replace: true });
-      }
+      navigate(`/${channelInfo.id}/legajo`, { replace: true });
     },
     [setActiveSocioId, navigate, channelInfo.id, queryClient],
   );

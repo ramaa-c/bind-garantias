@@ -341,7 +341,7 @@ const Login = () => {
     if (fase === "validacion_otp") {
       if (formData.otp === generatedOtp) {
         setUser({ email: formData.email, role: "user" });
-        navigate(`/${channelInfo.id}/solicitudes`, { replace: true });
+        navigate(`/${channelInfo.id}/legajo`, { replace: true });
       } else {
         setError("otp", { type: "server", message: "Código incorrecto" });
       }
@@ -354,7 +354,7 @@ const Login = () => {
         {
           onSuccess: () => {
             setUser({ email: formData.email, role: "user" });
-            navigate(`/${channelInfo.id}/solicitudes`, { replace: true });
+            navigate(`/${channelInfo.id}/legajo`, { replace: true });
           },
           onError: (error) => {
             const status = error?.response?.status;

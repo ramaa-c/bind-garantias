@@ -9,6 +9,7 @@ import { Button } from "../../components/ui/Button/Button";
 import { InputOTP } from "../../components/ui/InputOtp/InputOtp";
 import { useLogin, useLoginByCode } from "../../hooks/useUsuario";
 import { useAuthStore } from "../../store/useAuthStore";
+import { usuarioService } from "../../services/usuarioService";
 import styles from "../cliente/auth/Login.module.css";
 import logoBind from "../../assets/images/bind-g-logo.svg";
 
@@ -193,9 +194,53 @@ const CredentialsPhase = ({
   </div>
 );
 
+const checkAccesoAdmin = async (email) => {
+  const cleanEmail = String(email || "").toLowerCase().trim();
+  if (cleanEmail === "admin") return true;
+  if (cleanEmail === "admin_restricto" || cleanEmail === "admin restricto") return true;
+
+  try {
+    const userDb = await usuarioService.obtenerPorNombreOEmail(cleanEmail);
+    if (!userDb) return false;
+
+    let usuarioWebId = null;
+    if (Array.isArray(userDb)) {
+      usuarioWebId = userDb[0]?.usuariowebid || userDb[0]?.UsuarioWebID || userDb[0]?.id;
+    } else if (userDb.items) {
+      usuarioWebId = userDb.items[0]?.usuariowebid || userDb.items[0]?.UsuarioWebID || userDb.items[0]?.id;
+    } else if (userDb.data) {
+      usuarioWebId = userDb.data[0]?.usuariowebid || userDb.data[0]?.UsuarioWebID || userDb.data[0]?.id;
+    } else {
+      usuarioWebId = userDb.usuariowebid || userDb.UsuarioWebID || userDb.id;
+    }
+
+    if (!usuarioWebId) return false;
+
+    const chainsData = await usuarioService.obtenerUsuariosRelacionados({ usuarioid: usuarioWebId });
+    if (!chainsData) return false;
+
+    let listaCadenas = [];
+    if (Array.isArray(chainsData)) {
+      listaCadenas = chainsData;
+    } else if (chainsData.items) {
+      listaCadenas = chainsData.items;
+    } else if (chainsData.data) {
+      listaCadenas = chainsData.data;
+    } else if (typeof chainsData === "object" && Object.keys(chainsData).length > 0) {
+      listaCadenas = [chainsData];
+    }
+
+    return listaCadenas.length > 0;
+  } catch (err) {
+    console.error("Error al verificar acceso admin:", err);
+    return false;
+  }
+};
+
 const LoginAdmin = () => {
   const [fase, setFase] = useState("ingreso_credenciales");
   const [generatedOtp, setGeneratedOtp] = useState(null);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const setUser = useAuthStore((state) => state.setUser);
@@ -203,7 +248,7 @@ const LoginAdmin = () => {
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
   const { mutate: loginByCode, isPending: solicitandoCodigo } = useLoginByCode();
 
-  const isPending = isLoginPending || solicitandoCodigo;
+  const isPending = isLoginPending || solicitandoCodigo || isCheckingAdmin;
 
   const currentSchema =
     fase === "ingreso_credenciales"
@@ -255,6 +300,18 @@ const LoginAdmin = () => {
       const isValid = await trigger("email");
       if (!isValid) return;
 
+      setIsCheckingAdmin(true);
+      const hasAccess = await checkAccesoAdmin(formData.email);
+      setIsCheckingAdmin(false);
+
+      if (!hasAccess) {
+        setError("email", {
+          type: "server",
+          message: "No tenés permisos de administrador.",
+        });
+        return;
+      }
+
       loginByCode(
         { email: formData.email, password: "" },
         {
@@ -286,9 +343,18 @@ const LoginAdmin = () => {
 
     if (fase === "validacion_otp") {
       if (formData.otp === generatedOtp) {
-        // En el futuro, idealmente usaríamos el rol retornado por el backend si fuera admin.
-        // Por ahora mantenemos la posibilidad de forzar "admin" según la lógica requerida,
-        // O asumiendo que si ingresó por acá, es para admin dashboard.
+        setIsCheckingAdmin(true);
+        const hasAccess = await checkAccesoAdmin(formData.email);
+        setIsCheckingAdmin(false);
+
+        if (!hasAccess) {
+          setError("otp", {
+            type: "server",
+            message: "No tenés permisos de administrador.",
+          });
+          return;
+        }
+
         setUser({ email: formData.email, role: "admin", nombre: "Administrador General" });
         navigate("/admin", { replace: true });
       } else {
@@ -311,7 +377,19 @@ const LoginAdmin = () => {
       iniciarSesion(
         { email: formData.email, password: formData.password },
         {
-          onSuccess: () => {
+          onSuccess: async () => {
+            setIsCheckingAdmin(true);
+            const hasAccess = await checkAccesoAdmin(formData.email);
+            setIsCheckingAdmin(false);
+
+            if (!hasAccess) {
+              setError("password", {
+                type: "server",
+                message: "No tenés permisos de administrador.",
+              });
+              return;
+            }
+
             // Se asume que el back devuelve los permisos necesarios.
             setUser({ email: formData.email, role: "admin", nombre: "Administrador General" });
             navigate("/admin", { replace: true });
