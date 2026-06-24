@@ -392,21 +392,19 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         setValue("fechainicioactividades", fechaInicioActividades);
 
         // ── DETERMINAR TIPO REGIMEN IVA
-        let tipoRegimenIvaId = 0;
-        const hasRealData = (obj) => {
-          if (!obj) return false;
-          return Object.values(obj).some((val) => {
+        let tipoRegimenIvaId = 1;
+        const monotributo = afipData.datosmonotributo;
+        if (monotributo) {
+          const tieneDatosMonotributo = Object.values(monotributo).some((val) => {
             if (val === null || val === undefined) return false;
             if (Array.isArray(val)) return val.length > 0;
             if (typeof val === "object") return Object.keys(val).length > 0;
             return val !== "";
           });
-        };
 
-        if (hasRealData(afipData.datosmonotributo)) {
-          tipoRegimenIvaId = 2;
-        } else if (hasRealData(afipData.datosregimengeneral)) {
-          tipoRegimenIvaId = 1;
+          if (tieneDatosMonotributo) {
+            tipoRegimenIvaId = 2;
+          }
         }
         setValue("tiporegimenivaid", tipoRegimenIvaId);
 
