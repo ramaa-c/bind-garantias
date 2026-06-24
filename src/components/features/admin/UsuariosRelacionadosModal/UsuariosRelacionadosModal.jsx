@@ -40,23 +40,21 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       const newEmails = { ...userEmails };
       let changed = false;
 
-      await Promise.all(
-        relationsList.map(async (relation) => {
-          const uid = relation.usuariowebid;
-          if (uid && !newEmails[uid]) {
-            try {
-              const uData = await usuarioService.obtenerUsuarioPorId(uid);
-              const email = uData?.email || uData?.username || `ID: #${uid}`;
-              newEmails[uid] = email;
-              changed = true;
-            } catch (err) {
-              console.error(`Error fetching user details for ID ${uid}:`, err);
-              newEmails[uid] = `ID: #${uid}`;
-              changed = true;
-            }
+      for (const relation of relationsList) {
+        const uid = relation.usuariowebid;
+        if (uid && !newEmails[uid]) {
+          try {
+            const uData = await usuarioService.obtenerUsuarioPorId(uid);
+            const email = uData?.email || uData?.username || `ID: #${uid}`;
+            newEmails[uid] = email;
+            changed = true;
+          } catch (err) {
+            console.error(`Error fetching user details for ID ${uid}:`, err);
+            newEmails[uid] = `ID: #${uid}`;
+            changed = true;
           }
-        })
-      );
+        }
+      }
 
       if (changed) {
         setUserEmails(newEmails);

@@ -93,7 +93,22 @@ export const AltaDatosEmpresa = () => {
     },
   });
 
-  const { handleSubmit, trigger, reset } = metodosFormulario;
+  const { handleSubmit, trigger, reset, getValues, register } = metodosFormulario;
+
+  useEffect(() => {
+    // Registro de todos los campos "ocultos" que se nutren en segundo plano mediante setValue
+    // para que React Hook Form garantice su paso por Zod y se mantengan en el data de onSubmit.
+    register("tipopersonaid");
+    register("mescierre");
+    register("fechainicioactividades");
+    register("tiporegimenivaid");
+    register("codpos");
+    register("provinciaid");
+    register("localidad");
+    register("ciudad");
+    register("direccion");
+    register("razonSocial");
+  }, [register]);
 
   const handleVolver = () => {
     setPasoActual((prev) => (prev === 1 ? 1 : prev - 1));
