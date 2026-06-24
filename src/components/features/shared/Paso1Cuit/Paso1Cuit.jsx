@@ -293,6 +293,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         const dom = dg.domiciliofiscal || {};
         const fullDireccion = decodeHtmlEntities(dom.direccion || "");
         setValue("direccion", fullDireccion, { shouldValidate: true });
+        setValue("codpos", dom.codpostal || "", { shouldValidate: true });
 
         const parsedDir = parseAddress(fullDireccion);
         setValue("calle", parsedDir.calle, { shouldValidate: true });

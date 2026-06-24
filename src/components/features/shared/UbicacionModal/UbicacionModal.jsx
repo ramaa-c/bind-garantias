@@ -254,16 +254,26 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
               />
             </div>
 
-            <SelectSocio
-              name="ciudadid"
-              control={control}
-              label={cargandoCiudades ? "Cargando..." : "Ciudad"}
-              icon={<FiMap />}
-              options={opcionesCiudades}
-              isLoading={cargandoCiudades}
-              error={getError("ciudadid")}
-              esValido={getEsValido("ciudadid")}
-            />
+            <div className={styles.inputRow}>
+              <SelectSocio
+                name="ciudadid"
+                control={control}
+                label={cargandoCiudades ? "Cargando..." : "Ciudad"}
+                icon={<FiMap />}
+                options={opcionesCiudades}
+                isLoading={cargandoCiudades}
+                error={getError("ciudadid")}
+                esValido={getEsValido("ciudadid")}
+              />
+
+              <InputSocioMasked
+                name="codpos"
+                control={control}
+                label="Código Postal"
+                error={getError("codpos")}
+                esValido={getEsValido("codpos")}
+              />
+            </div>
           </div>
 
           <div className={styles.btnSave}>

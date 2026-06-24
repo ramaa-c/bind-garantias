@@ -16,17 +16,20 @@ export const useEmpresaActiva = () => {
   const usuarioWebId =
     usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id || null;
 
-  const {
-    data: socioUsuarios,
-    isPending: isPendingSocios,
-  } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
+  const { data: socioUsuarios, isPending: isPendingSocios } =
+    useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
 
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
 
   let socioId = activeSocioId;
-  
-  if (!socioId && !isVendor && Array.isArray(socioUsuarios) && socioUsuarios.length > 0) {
+
+  if (
+    !socioId &&
+    !isVendor &&
+    Array.isArray(socioUsuarios) &&
+    socioUsuarios.length > 0
+  ) {
     socioId = socioUsuarios[0].socioid || socioUsuarios[0].SocioID;
   }
 
@@ -38,20 +41,27 @@ export const useEmpresaActiva = () => {
     socioWeb?.denominacion || socioWeb?.Denominacion || null;
   const direccion = socioWeb?.calle || socioWeb?.Calle || "";
   const telefono = socioWeb?.telefono || socioWeb?.Telefono || "";
-  let tipoPersonaId = socioWeb?.tipopersonaid || socioWeb?.TipoPersonaID || null;
+  let tipoPersonaId =
+    socioWeb?.tipopersonaid || socioWeb?.TipoPersonaID || null;
   if (!tipoPersonaId && cuitActivo) {
     const cleanCuit = String(cuitActivo).replace(/\D/g, "");
     const prefix = cleanCuit.substring(0, 2);
-    if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
+    if (
+      ["20", "23", "24", "27", "25", "26"].includes(prefix) ||
+      cleanCuit.startsWith("2")
+    ) {
       tipoPersonaId = 1;
-    } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
+    } else if (
+      ["30", "33", "34"].includes(prefix) ||
+      cleanCuit.startsWith("3")
+    ) {
       tipoPersonaId = 10;
     }
   }
 
-  const isLoading = 
-    isLoadingUser || 
-    (usuarioWebId && isPendingSocios) || 
+  const isLoading =
+    isLoadingUser ||
+    (usuarioWebId && isPendingSocios) ||
     (socioId && isPendingSocioWeb);
 
   return {

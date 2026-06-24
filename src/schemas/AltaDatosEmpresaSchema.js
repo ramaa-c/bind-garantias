@@ -20,6 +20,11 @@ export const AltaDatosEmpresaSchema = z.object({
   provincia: z.string().min(1, "La provincia es requerida").optional(),
   provinciaid: z.coerce.number().optional(),
   celular: z.string().min(8, "El número de contacto es inválido"),
+  tipopersonaid: z.coerce.number().optional(),
+  mescierre: z.coerce.number().nullable().optional(),
+  fechainicioactividades: z.string().nullable().optional(),
+  tiporegimenivaid: z.coerce.number().optional(),
+  codpos: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (!data.sinNumero && (!data.numero || data.numero < 1)) {
     ctx.addIssue({
