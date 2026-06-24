@@ -146,12 +146,18 @@ export const sociosService = {
     let direccion = lufeData.domicilio_fiscal || "";
     let localidad = "";
     let provincia = "";
+    let codpostal = "";
 
     // Separador puede ser "-" o ","
     const separator = direccion.includes(" - ") ? " - " : direccion.includes(",") ? "," : null;
     if (separator) {
       const partes = direccion.split(separator).map((p) => p.trim());
-      if (partes.length >= 3) {
+      if (partes.length >= 4) {
+        direccion = partes[0];
+        localidad = partes[1];
+        provincia = partes[2];
+        codpostal = partes[3];
+      } else if (partes.length === 3) {
         direccion = partes[0];
         localidad = partes[1];
         provincia = partes[2];
@@ -175,6 +181,7 @@ export const sociosService = {
           direccion: direccion,
           localidad: localidad,
           descripcionprovincia: provincia,
+          codpostal: codpostal,
         },
       },
       datosregimengeneral: {
