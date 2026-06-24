@@ -276,3 +276,47 @@
     justify-content: flex-start;
   }
 }
+
+.syncStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #a3a3a3;
+}
+
+.syncStatusSuccess {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(61, 220, 132, 0.08);
+  border: 1px solid rgba(61, 220, 132, 0.2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3ddc84;
+}
+
+.syncIconSuccess {
+  color: #3ddc84;
+  font-size: 1.1rem;
+}
+
+.syncSpinner {
+  animation: spinnerRotate 0.8s linear infinite;
+}
+
+@keyframes spinnerRotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

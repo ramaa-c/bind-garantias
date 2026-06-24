@@ -145,14 +145,13 @@ export const DetalleSolicitudModal = ({
         return true;
       });
 
-      const promises = relacionesUnicas.map(async (rel) => {
+      const res = [];
+      for (const rel of relacionesUnicas) {
         const terceroId =
           rel.terceroid ||
           rel.tercerorelacionadoid ||
           rel.TerceroRelacionadoID ||
-      const res = [];
-      for (const rel of relacionAccionistas) {
-        const terceroId = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID || rel.TerceroId;
+          rel.TerceroId;
         if (!terceroId) continue;
 
         let tercero = cacheRef.current[terceroId];
@@ -330,7 +329,7 @@ export const DetalleSolicitudModal = ({
                 const participacion = Number(accionista.participacion) || 0;
 
                 return (
-                  <div key={fiador.cuit || fiador.nombre || "fiador-" + i} className={styles.fiadorCard}>
+                  <div key={accionista.cuit || accionista.nombre || "accionista-" + i} className={styles.fiadorCard}>
                     <div className={styles.fiadorAvatar}>{iniciales}</div>
                     <div className={styles.fiadorInfo}>
                       <p className={styles.fiadorName}>{nombre}</p>

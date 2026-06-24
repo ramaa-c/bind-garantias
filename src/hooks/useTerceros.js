@@ -200,44 +200,103 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
             t = await tercerosService.obtenerTerceroPorId(tid);
           } catch (apiErr) {
             try {
-                const existing = accMap[identifier];
-                if (!existing) {
+              t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
+            } catch (sgrErr) {
+              // Ignore error
+            }
+          }
+
+          if (t) {
+            const tiporel =
+              rel.tiporelacionsocioid ||
+              rel.TipoRelacionSocioID ||
+              rel.tiporelacionsocioId;
+            const tiporelNum = Number(tiporel);
+
+            const item = {
+              id: tid,
+              relacionId:
+                rel.sociotercerorelacionid || rel.SocioTerceroRelacionID,
+              relacion: rel,
+              nombre:
+                t.denominacion ||
+                t.Denominacion ||
+                t.razonsocial ||
+                t.RazonSocial ||
+                t.nombre ||
+                t.Nombre ||
+                "Sin nombre",
+              cuit:
+                t.cuit ||
+                t.Cuit ||
+                t.nrodocumento ||
+                t.numerodocumento ||
+                t.NumeroDocumento ||
+                t.documento ||
+                "—",
+              email: t.mail || t.Mail || "",
+              telefono: t.telefono || t.Telefono || "",
+              direccion: t.calle || t.Calle || "",
+              localidad: t.contacto || t.Contacto || "",
+              codpos: t.codpos || t.Codpos || "",
+              participacion: Number(
+                rel.porcacciones || rel.participacion || rel.Participacion || 0,
+              ),
+              rolId: tiporelNum,
+              nrosubcuentacaja:
+                rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "",
+              calle: t.calle || "",
+              numero: t.numero || 0,
+              piso: t.piso || "",
+              departamento: t.departamento || "",
+              ciudadid: t.ciudadid || 0,
+              provinciaid:
+                rel.provinciaid || rel.ProvinciaID || t.provinciaid || 0,
+              tipopersonaid: t.tipopersonaid || 1,
+            };
+
+            const identifier =
+              item.cuit && item.cuit !== "—" ? item.cuit : item.id;
+
+            if (tiporelNum === 25) {
+              if (item.participacion === 0) continue; // Omitir suplentes / accionistas con 0%
+              const existing = accMap[identifier];
+              if (!existing) {
+                accMap[identifier] = item;
+              } else {
+                const existingMomento = new Date(existing.relacion?.momento || existing.relacion?.Momento || 0).getTime();
+                const currentMomento = new Date(rel.momento || rel.Momento || 0).getTime();
+                const existingId = Number(existing.relacionId || 0);
+                const currentId = Number(rel.sociotercerorelacionid || rel.SocioTerceroRelacionID || 0);
+                
+                if (currentMomento > existingMomento || (currentMomento === existingMomento && currentId > existingId)) {
                   accMap[identifier] = item;
-                } else {
-                  const existingMomento = new Date(existing.relacion?.momento || existing.relacion?.Momento || 0).getTime();
-                  const currentMomento = new Date(rel.momento || rel.Momento || 0).getTime();
-                  const existingId = Number(existing.relacionId || 0);
-                  const currentId = Number(rel.sociotercerorelacionid || rel.SocioTerceroRelacionID || 0);
-                  
-                  if (currentMomento > existingMomento || (currentMomento === existingMomento && currentId > existingId)) {
-                    accMap[identifier] = item;
-                  }
                 }
-              } else if (tiporelNum === 210 || tiporelNum === 230) {
-                const existing = repMap[identifier];
-                if (!existing) {
+              }
+            } else if (tiporelNum === 210 || tiporelNum === 230) {
+              const existing = repMap[identifier];
+              if (!existing) {
+                repMap[identifier] = item;
+              } else {
+                if (item.rolId === 230 && existing.rolId !== 230) {
                   repMap[identifier] = item;
-                } else {
-                  if (item.rolId === 230 && existing.rolId !== 230) {
-                    repMap[identifier] = item;
-                  }
                 }
-              } else if (tiporelNum === 21) {
-                const existing = bolsaMap[identifier];
-                if (!existing) {
+              }
+            } else if (tiporelNum === 21) {
+              const existing = bolsaMap[identifier];
+              if (!existing) {
+                bolsaMap[identifier] = item;
+              } else {
+                if (item.nrosubcuentacaja && !existing.nrosubcuentacaja) {
                   bolsaMap[identifier] = item;
-                } else {
-                  if (item.nrosubcuentacaja && !existing.nrosubcuentacaja) {
-                    bolsaMap[identifier] = item;
-                  }
                 }
               }
             }
-          } catch (e) {
-            console.warn("Error fetching third party detail:", tid, e);
           }
-        })
-      );
+        } catch (e) {
+          console.warn("Error fetching third party detail:", tid, e);
+        }
+      }
 
       return {
         accionistas: Object.values(accMap),
