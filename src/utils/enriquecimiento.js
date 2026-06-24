@@ -57,132 +57,122 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
     // Silently handle error
   }
 
-  await Promise.all(
-    relacionAccionistas.map(async (rel) => {
-      const terceroId =
-        rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
-      if (!terceroId) return;
+  for (const rel of relacionAccionistas) {
+    const terceroId =
+      rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
+    if (!terceroId) continue;
 
+    try {
+      const terceroLocal = await tercerosService.obtenerTerceroPorId(terceroId);
+      if (!terceroLocal) continue;
+
+      const cuitSocio =
+        terceroLocal.cuit ||
+        terceroLocal.Cuit ||
+        terceroLocal.numerodocumento ||
+        terceroLocal.nrodocumento;
+      if (!cuitSocio) continue;
+
+      const cuitSocioLimpio = String(cuitSocio).replace(/\D/g, "");
+      if (cuitSocioLimpio.length !== 11) continue;
+
+      let respAfip = null;
       try {
-        const terceroLocal =
-          await tercerosService.obtenerTerceroPorId(terceroId);
-        if (!terceroLocal) return;
-
-        const cuitSocio =
-          terceroLocal.cuit ||
-          terceroLocal.Cuit ||
-          terceroLocal.numerodocumento ||
-          terceroLocal.nrodocumento;
-        if (!cuitSocio) return;
-
-        const cuitSocioLimpio = String(cuitSocio).replace(/\D/g, "");
-        if (cuitSocioLimpio.length !== 11) return;
-
-        let respAfip = null;
+        respAfip = await afipService.obtenerConstanciaInscripcion(cuitSocioLimpio);
+      } catch (afipErr) {
+        afipFailed = true;
         try {
-          respAfip =
-            await afipService.obtenerConstanciaInscripcion(cuitSocioLimpio);
-        } catch (afipErr) {
-          afipFailed = true;
-          try {
-            const lufeEntidad =
-              await sociosService.obtenerEntidadLufe(cuitSocioLimpio);
-            if (lufeEntidad && lufeEntidad.success) {
-              respAfip =
-                sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
-              fallbackSuccess = true;
-            }
-          } catch (lufeErr) {
-            // Both failed
+          const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitSocioLimpio);
+          if (lufeEntidad && lufeEntidad.success) {
+            respAfip = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+            fallbackSuccess = true;
           }
+        } catch (lufeErr) {
+          // Both failed
         }
-
-        if (respAfip && respAfip.datosgenerales) {
-          const dg = respAfip.datosgenerales;
-          const dom = dg.domiciliofiscal || dg.domicilio || {};
-
-          const emailVal =
-            dg.email ||
-            dg.emailfacturacion ||
-            terceroLocal.mail ||
-            terceroLocal.email ||
-            "";
-          const celularVal = dg.telefono || terceroLocal.telefono || "";
-          const direccionVal =
-            dom.direccion ||
-            (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "") ||
-            terceroLocal.calle ||
-            "";
-          const localidadVal =
-            dom.localidad || dom.localidadNombre || terceroLocal.contacto || "";
-
-          const payloadTercero = {
-            tercerorelacionadoid: terceroId,
-            denominacion:
-              terceroLocal.denominacion ||
-              `${dg.nombre || ""} ${dg.apellido || ""}`.trim() ||
-              "Accionista",
-            cuit: cuitSocioLimpio,
-            bcraid: 0,
-            tipopersonaid:
-              cuitSocioLimpio.startsWith("30") ||
-              cuitSocioLimpio.startsWith("33")
-                ? 2
-                : 1,
-            tipodocumentoid: 0,
-            numerodocumento: cuitSocioLimpio,
-            estadocivilid: 0,
-            ciudadid: 0,
-            telefono: celularVal,
-            conyuge: "",
-            actividad: "",
-            contacto: localidadVal,
-            nrocuenta: "",
-            codigomercado: "",
-            calle: direccionVal,
-            numero: 0,
-            piso: "",
-            departamento: "",
-            codpos: dom.codpostal || dom.codpos || terceroLocal.codpos || "",
-            descripcionreducida: (terceroLocal.denominacion || "").substring(
-              0,
-              20,
-            ),
-            mail: emailVal,
-          };
-
-          await tercerosService.actualizarTercero(payloadTercero);
-
-          let provIdVal = rel.provinciaid || 0;
-          if (!provIdVal && dom) {
-            const provNombre = dom.descripcionprovincia || dom.provincia || "";
-            if (provNombre) {
-              const match = matchProvinciaAfip(provNombre, opcionesProvincias);
-              if (match) {
-                provIdVal = match.value;
-              }
-            }
-          }
-
-          const ahoraStr = getCSharpIsoDate();
-          const payloadRel = {
-            ...rel,
-            sociotercerorelacionid:
-              rel.sociotercerorelacionid || rel.SocioTerceroRelacionID || 0,
-            porcacciones: Number(
-              rel.porcacciones || rel.participacion || rel.Participacion || 0,
-            ),
-            provinciaid: Number(provIdVal) || 0,
-            telefono: celularVal,
-            momento: ahoraStr,
-          };
-          await tercerosService.actualizarRelacionDeSocio(payloadRel);
-        }
-      } catch (singleErr) {
-        // Silently catch
       }
-    }),
-  );
+
+      if (respAfip && respAfip.datosgenerales) {
+        const dg = respAfip.datosgenerales;
+        const dom = dg.domiciliofiscal || dg.domicilio || {};
+
+        const emailVal =
+          dg.email ||
+          dg.emailfacturacion ||
+          terceroLocal.mail ||
+          terceroLocal.email ||
+          "";
+        const celularVal = dg.telefono || terceroLocal.telefono || "";
+        const direccionVal =
+          dom.direccion ||
+          (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "") ||
+          terceroLocal.calle ||
+          "";
+        const localidadVal =
+          dom.localidad || dom.localidadNombre || terceroLocal.contacto || "";
+
+        const payloadTercero = {
+          tercerorelacionadoid: terceroId,
+          denominacion:
+            terceroLocal.denominacion ||
+            `${dg.nombre || ""} ${dg.apellido || ""}`.trim() ||
+            "Accionista",
+          cuit: cuitSocioLimpio,
+          bcraid: 0,
+          tipopersonaid:
+            cuitSocioLimpio.startsWith("30") || cuitSocioLimpio.startsWith("33")
+              ? 2
+              : 1,
+          tipodocumentoid: 0,
+          numerodocumento: cuitSocioLimpio,
+          estadocivilid: 0,
+          ciudadid: 0,
+          telefono: celularVal,
+          conyuge: "",
+          actividad: "",
+          contacto: localidadVal,
+          nrocuenta: "",
+          codigomercado: "",
+          calle: direccionVal,
+          numero: 0,
+          piso: "",
+          departamento: "",
+          codpos: dom.codpostal || dom.codpos || terceroLocal.codpos || "",
+          descripcionreducida: (terceroLocal.denominacion || "").substring(0, 20),
+          mail: emailVal,
+        };
+
+        await tercerosService.actualizarTercero(payloadTercero);
+
+        let provIdVal = rel.provinciaid || 0;
+        if (!provIdVal && dom) {
+          const provNombre = dom.descripcionprovincia || dom.provincia || "";
+          if (provNombre) {
+            const match = matchProvinciaAfip(provNombre, opcionesProvincias);
+            if (match) {
+              provIdVal = match.value;
+            }
+          }
+        }
+
+        const ahoraStr = getCSharpIsoDate();
+        const payloadRel = {
+          ...rel,
+          sociotercerorelacionid:
+            rel.sociotercerorelacionid || rel.SocioTerceroRelacionID || 0,
+          porcacciones: Number(
+            rel.porcacciones || rel.participacion || rel.Participacion || 0,
+          ),
+          provinciaid: Number(provIdVal) || 0,
+          telefono: celularVal,
+          momento: ahoraStr,
+        };
+        await tercerosService.actualizarRelacionDeSocio(payloadRel);
+      }
+    } catch (singleErr) {
+      // Silently catch
+    }
+  }
 
   return { afipFailed, fallbackSuccess };
 };

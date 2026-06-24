@@ -150,27 +150,32 @@ export const DetalleSolicitudModal = ({
           rel.terceroid ||
           rel.tercerorelacionadoid ||
           rel.TerceroRelacionadoID ||
-          rel.TerceroId;
+      const res = [];
+      for (const rel of relacionAccionistas) {
+        const terceroId = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID || rel.TerceroId;
+        if (!terceroId) continue;
 
-        let tercero = null;
-        try {
-          tercero = await tercerosService.obtenerTerceroPorId(terceroId);
-          if (!tercero || !tercero.denominacion || !tercero.cuit) {
-            const terceroSGR = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
-            if (terceroSGR && (terceroSGR.denominacion || terceroSGR.cuit)) {
-              tercero = terceroSGR;
-            }
-          }
-        } catch (e) {
+        let tercero = cacheRef.current[terceroId];
+        if (!tercero) {
           try {
-            tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
-          } catch (sgrErr) {
-            console.warn("No se pudo obtener tercero de SGRPlus", sgrErr);
+            tercero = await tercerosService.obtenerTerceroPorId(terceroId);
+            if (!tercero || !tercero.denominacion || !tercero.cuit) {
+              const terceroSGR = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
+              if (terceroSGR && (terceroSGR.denominacion || terceroSGR.cuit)) {
+                tercero = terceroSGR;
+              }
+            }
+            if (tercero) {
+              cacheRef.current[terceroId] = tercero;
+            }
+          } catch (err) {
+            console.warn(`Error al obtener tercero ${terceroId}:`, err);
+            continue;
           }
         }
 
         if (tercero) {
-          return {
+          res.push({
             ...tercero,
             participacion:
               rel.porcacciones ||
@@ -178,12 +183,10 @@ export const DetalleSolicitudModal = ({
               rel.Participacion ||
               rel.porcentajeparticipacion ||
               0,
-          };
+          });
         }
-        return null;
-      });
+      }
 
-      const res = await Promise.all(promises);
       const validRes = res.filter(Boolean);
 
       const mapaCuit = new Map();

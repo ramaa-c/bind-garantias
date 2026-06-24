@@ -404,15 +404,22 @@ export const requisitosService = {
         };
 
         if (existente) {
-          promises.push(api.put("api/CadenaValorParametrizacion", payload));
+          promises.push({ method: 'put', url: 'api/CadenaValorParametrizacion', payload });
         } else {
-          promises.push(api.post("api/CadenaValorParametrizacion", payload));
+          promises.push({ method: 'post', url: 'api/CadenaValorParametrizacion', payload });
         }
       });
     });
 
-    // Guardar concurrentemente
-    await Promise.all(promises);
+    // Guardar secuencialmente para no saturar el pool (FireDAC)
+    for (const req of promises) {
+      if (req.method === 'put') {
+        await api.put(req.url, req.payload);
+      } else {
+        await api.post(req.url, req.payload);
+      }
+    }
+    
     return configuracionCompleta;
   },
 };

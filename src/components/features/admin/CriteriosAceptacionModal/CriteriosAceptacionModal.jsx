@@ -91,7 +91,8 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
         return true;
       });
 
-      const promises = relacionesUnicas.map(async (rel) => {
+      const res = [];
+      for (const rel of relacionesUnicas) {
         const terceroId = rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID || rel.TerceroId;
         let tercero = null;
         try {
@@ -110,15 +111,13 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
           }
         }
         if (tercero) {
-          return {
+          res.push({
             ...tercero,
             participacion: rel.porcacciones || rel.participacion || rel.Participacion || 0,
-          };
+          });
         }
-        return null;
-      });
+      }
 
-      const res = await Promise.all(promises);
       const validRes = res.filter(Boolean);
 
       const mapaCuit = new Map();
