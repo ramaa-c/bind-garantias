@@ -753,6 +753,7 @@
   .workspace {
     display: grid;
     grid-template-columns: 14rem 1fr;
+    grid-template-rows: minmax(0, 1fr);
     flex: 1;
     min-height: 400px;
     overflow: hidden;

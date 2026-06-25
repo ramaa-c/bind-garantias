@@ -149,6 +149,37 @@ export function LegajoUniversalBar({ context }) {
 
   const porcentaje = Math.round((requisitosCompletados / totalRequisitos) * 100);
 
+  const getMissingActionMessage = () => {
+    if (isValid) return "Todos los requisitos han sido completados correctamente.";
+
+    if (context === "documentacion" && !faltanDocumentos && faltanLegajo) {
+      return "¡Documentos listos! Te falta completar información en la pestaña Legajo.";
+    }
+    if (context === "legajo" && !faltanLegajo && faltanDocumentos) {
+      return "¡Datos de legajo listos! Te falta subir documentos obligatorios en Documentación.";
+    }
+    if (faltanDocumentos && faltanLegajo) {
+      return "Te falta subir documentos obligatorios y completar datos de personas en el legajo.";
+    }
+    
+    if (faltanLegajo && !faltanDocumentos) {
+      const textErrores = errores.join(" ").toLowerCase();
+      const faltanAcc = textErrores.includes("accionista") || textErrores.includes("participación");
+      const faltanRep = textErrores.includes("representante");
+      
+      if (faltanAcc && faltanRep) return "Te falta completar datos de accionistas y representantes legales.";
+      if (faltanAcc) return "Te falta completar datos o documentos de los accionistas obligatorios.";
+      if (faltanRep) return "Te falta completar datos de los representantes legales.";
+      return "Te falta completar algunos datos requeridos del legajo.";
+    }
+
+    if (faltanDocumentos && !faltanLegajo) {
+      return "Te falta subir algunos documentos comerciales/impositivos obligatorios.";
+    }
+
+    return `Completados ${requisitosCompletados} de ${totalRequisitos} requisitos.`;
+  };
+
   return (
     <div className={`${styles.container} ${isValid ? styles.containerValid : (isContextInvalid ? styles.containerInvalid : "")}`}>
       <div className={styles.barHeader}>
@@ -176,9 +207,7 @@ export function LegajoUniversalBar({ context }) {
               {isValid ? "Legajo completo y verificado" : "Legajo incompleto para SGR+"}
             </div>
             <div className={styles.statusSubtitle}>
-              {isValid
-                ? "Todos los requisitos parametrizados han sido completados correctamente."
-                : `Completados ${requisitosCompletados} de ${totalRequisitos} requisitos.`}
+              {getMissingActionMessage()}
             </div>
           </div>
         </div>

@@ -31,7 +31,7 @@ import AltaDatosEmpresa from "./pages/cliente/onboarding/AltaDatosEmpresa/AltaDa
 import SeleccionarEmpresa from "./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
-import TasasMontos from "./pages/admin/TasasMontos";
+
 import RolesPermisos from "./pages/admin/RolesPermisos";
 import Terminos from "./pages/admin/Terminos";
 import CadenasValor from "./pages/admin/CadenasValor";
@@ -175,10 +175,7 @@ function App() {
               path="admin/dashboard"
               element={<Navigate to="/admin" replace />}
             />
-            <Route
-              path="admin/tasas-montos"
-              element={<Navigate to="/admin/tasas-montos" replace />}
-            />
+
             <Route
               path="admin/roles-permisos"
               element={<Navigate to="/admin/roles-permisos" replace />}
@@ -208,16 +205,7 @@ function App() {
               </AdminGuard>
             }
           />
-          <Route
-            path="/admin/tasas-montos"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <TasasMontos />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
+
           <Route
             path="/admin/roles-permisos"
             element={

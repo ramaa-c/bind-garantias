@@ -10,12 +10,14 @@ import styles from "./SelectFecha.module.css";
 export const SelectFecha = ({
   name,
   label = "Fecha",
+  placeholder,
   disabled = false,
   minDate,
   error: errorExterno,
   value: manualValue,
   onChange: manualOnChange,
   variant,
+  placement = "bottom",
 }) => {
   const formContext = useFormContext();
   const control = formContext?.control;
@@ -119,13 +121,19 @@ export const SelectFecha = ({
                   onClick={handleTriggerClick}
                   ref={ref}
                 >
-                  {dateObj && (
+                  {dateObj ? (
                     <span className={styles.dateText}>
                       {format(dateObj, "dd 'de' MMMM, yyyy", { locale: es })}
                     </span>
+                  ) : (
+                    placeholder && (
+                      <span className={styles.placeholderText}>
+                        {placeholder}
+                      </span>
+                    )
                   )}
                 </button>
-                {!isCompact && <label className={styles.label}>{label}</label>}
+                {label && <label className={styles.label}>{label}</label>}
               </div>
             </div>
 
@@ -134,7 +142,7 @@ export const SelectFecha = ({
             )}
 
             {isCalendarOpen && (
-              <div className={styles.calendarPopover}>
+              <div className={`${styles.calendarPopover} ${placement === "top" ? styles.placementTop : ""}`}>
                 <DayPicker
                   mode="single"
                   selected={dateObj}
@@ -164,4 +172,4 @@ export const SelectFecha = ({
   }
 
   return renderCalendar(manualValue, manualOnChange, () => {}, null);
-};
+};
