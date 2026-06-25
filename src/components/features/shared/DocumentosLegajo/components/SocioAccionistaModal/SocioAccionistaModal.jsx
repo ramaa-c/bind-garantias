@@ -370,7 +370,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         setValue("direccion", terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "", { shouldValidate: true, shouldDirty: true });
         
         const parsedDir = parseAddress(terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "");
-        setValue("calle", terceroEncontrado.calle || parsedDir.calle || "", { shouldValidate: true, shouldDirty: true });
+        setValue("calle", parsedDir.calle || terceroEncontrado.calle || "", { shouldValidate: true, shouldDirty: true });
         setValue("numero", Number(terceroEncontrado.numero) || parsedDir.numero || 0, { shouldValidate: true, shouldDirty: true });
         setValue("piso", terceroEncontrado.piso || parsedDir.piso || "", { shouldValidate: true, shouldDirty: true });
         setValue("departamento", terceroEncontrado.departamento || parsedDir.departamento || "", { shouldValidate: true, shouldDirty: true });
@@ -457,7 +457,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           setValue("direccion", terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "", { shouldValidate: true, shouldDirty: true });
           
           const parsedDir = parseAddress(terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "");
-          setValue("calle", terceroEncontrado.calle || parsedDir.calle || "", { shouldValidate: true, shouldDirty: true });
+          setValue("calle", parsedDir.calle || terceroEncontrado.calle || "", { shouldValidate: true, shouldDirty: true });
           setValue("numero", Number(terceroEncontrado.numero) || parsedDir.numero || 0, { shouldValidate: true, shouldDirty: true });
           setValue("piso", terceroEncontrado.piso || parsedDir.piso || "", { shouldValidate: true, shouldDirty: true });
           setValue("departamento", terceroEncontrado.departamento || "", { shouldValidate: true, shouldDirty: true });
