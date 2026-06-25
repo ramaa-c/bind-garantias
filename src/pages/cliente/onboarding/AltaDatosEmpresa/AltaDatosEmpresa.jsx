@@ -121,6 +121,7 @@ export const AltaDatosEmpresa = () => {
   };
 
   const onSubmitFinal = async (data) => {
+    if (enviandoSolicitud) return;
     setEnviandoSolicitud(true);
     try {
       const payloadSocio = {
@@ -140,11 +141,11 @@ export const AltaDatosEmpresa = () => {
         tipocarteraid: 2,
         sectorcontableid: 700,
         tipoactividadbcraid: 0,
-        tipoactividadsepymeid: 0,
+        tipoactividadsepymeid: null,
         marcavinculacion: "",
         situacionbcraid: 1,
-        fechabaja: getCSharpIsoDate(),
-        motivobajaid: 0,
+        fechabaja: null,
+        motivobajaid: null,
         socioestadoid: 9,
         codpos: data.codpos || "",
         tamanioempresaid: 0,
@@ -174,7 +175,9 @@ export const AltaDatosEmpresa = () => {
         jsoncondicionfianza: "",
       };
 
+      console.log("[AltaDatosEmpresa] POST a /Socio con payload:", payloadSocio);
       const socioResult = await sociosService.crearSocio(payloadSocio);
+      console.log("[AltaDatosEmpresa] Respuesta de /Socio:", socioResult);
       const socioId = socioResult?.socioid || socioResult?.id;
 
       if (!socioId) throw new Error("No se obtuvo el ID del socio.");

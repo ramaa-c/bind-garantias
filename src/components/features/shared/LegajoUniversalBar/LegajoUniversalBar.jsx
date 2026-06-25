@@ -59,15 +59,18 @@ export function LegajoUniversalBar({ context }) {
   }, [socioIdActivo, archivosBackend, socioLegajoData, isLoading]);
 
   const localStorageKey = `lastMigratedFingerprint_${socioIdActivo}`;
+  const [migratedFingerprint, setMigratedFingerprint] = useState(() => localStorage.getItem(localStorageKey) || "");
+
   const isAlreadyMigrated = useMemo(() => {
     if (!fingerprint) return false;
-    return localStorage.getItem(localStorageKey) === fingerprint;
-  }, [fingerprint, localStorageKey]);
+    return migratedFingerprint === fingerprint;
+  }, [fingerprint, migratedFingerprint]);
 
   useEffect(() => {
     if (!socioIdActivo || !isValid || !fingerprint || isMigrating || isLoading || totalRequisitos === 0) return;
 
     const lastMigrated = localStorage.getItem(localStorageKey);
+    const lockKey = `migrando_sgr_${socioIdActivo}`;
 
     if (lastMigrated === fingerprint) {
       console.log(`[LegajoUniversalBar] El legajo del socio ${socioIdActivo} ya está migrado con la misma huella.`);
@@ -79,8 +82,14 @@ export function LegajoUniversalBar({ context }) {
       return;
     }
 
+    if (sessionStorage.getItem(lockKey) === "true") {
+      console.log(`[LegajoUniversalBar] Migración en progreso en otra pestaña o instancia. Abortando duplicado.`);
+      return;
+    }
+
     const autoMigrar = async () => {
       setIsMigrating(true);
+      sessionStorage.setItem(lockKey, "true");
       setLastAttemptedFingerprint(fingerprint);
       console.log(`[LegajoUniversalBar] Iniciando migración automática a SGR+ para el socio ${socioIdActivo}...`);
       console.log(`[LegajoUniversalBar] Huella actual:`, fingerprint);
@@ -94,6 +103,7 @@ export function LegajoUniversalBar({ context }) {
             description: "Los cambios se guardaron y migraron con éxito.",
           });
           localStorage.setItem(localStorageKey, fingerprint);
+          setMigratedFingerprint(fingerprint);
           console.log(`[LegajoUniversalBar] Migración exitosa. Guardada huella:`, fingerprint);
           queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] });
           queryClient.invalidateQueries({ queryKey: ["socioArchivos"] });
@@ -112,6 +122,7 @@ export function LegajoUniversalBar({ context }) {
         });
       } finally {
         setIsMigrating(false);
+        sessionStorage.removeItem(lockKey);
       }
     };
 

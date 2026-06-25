@@ -249,10 +249,12 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
               numero: t.numero || 0,
               piso: t.piso || "",
               departamento: t.departamento || "",
-              ciudadid: t.ciudadid || 0,
+              ciudadid: t.ciudadid || t.CiudadID || t.CiudadId || 0,
+              localidadid: t.localidadid || t.LocalidadID || t.LocalidadId || t.partidoid || t.PartidoID || t.PartidoId || 0,
+              partidoid: t.partidoid || t.PartidoID || t.PartidoId || t.localidadid || t.LocalidadID || t.LocalidadId || 0,
               provinciaid:
-                rel.provinciaid || rel.ProvinciaID || t.provinciaid || 0,
-              tipopersonaid: t.tipopersonaid || 1,
+                rel.provinciaid || rel.ProvinciaID || t.provinciaid || t.ProvinciaID || t.ProvinciaId || 0,
+              tipopersonaid: t.tipopersonaid || t.TipoPersonaID || t.TipoPersonaId || 1,
             };
 
             const identifier =
