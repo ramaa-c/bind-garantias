@@ -118,15 +118,6 @@ export default function AdminNavbar() {
 
           {!isRestricted && (
             <>
-              {/* Tasas */}
-          <button type="button"
-            className={`${styles.navButton} ${
-              isActive("/admin/tasas-montos") ? styles.active : ""
-            }`}
-            onClick={() => handleNavigate("/admin/tasas-montos")}
-          >
-            Tasas
-          </button>
 
           {/* Criterios de Aceptación */}
           <button type="button"
@@ -158,10 +149,7 @@ export default function AdminNavbar() {
                     destPath = "/admin/lineas-cadenas";
                   } else if (item === "Productos de Líneas") {
                     destPath = "/admin/lineas-productos";
-                  } else if (item.includes("Líneas") || item.includes("Crédito")) {
-                    destPath = "/admin/tasas-montos";
                   }
-
                   return (
                     <button type="button"
                       key={item}

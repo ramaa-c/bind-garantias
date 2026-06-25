@@ -911,7 +911,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 <Controller
                   name="numero"
                   control={control}
-                  rules={{ required: "Requerido" }}
                   render={({ field, fieldState }) => (
                     <InputSocioMasked
                       value={field.value}
