@@ -495,8 +495,119 @@
 .socioCard {
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.625rem;
-  overflow: hidden;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.socioCardWarning {
+  border-color: rgba(245, 244, 0, 0.4) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(245, 244, 0, 0.05) 0%,
+    transparent 100%
+  ) !important;
+}
+
+.socioCardSuccess {
+  border-color: rgba(61, 220, 132, 0.4) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(61, 220, 132, 0.03) 0%,
+    transparent 100%
+  ) !important;
+}
+
+.socioWarningWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.25rem;
+  margin-right: 0.5rem;
+}
+
+.socioWarningIcon {
+  color: var(--color-amarillo-bind, #f5f400);
+  font-size: 1.15rem;
+  cursor: help;
+  transition: transform 0.2s, filter 0.2s;
+  filter: drop-shadow(0 0 4px rgba(245, 244, 0, 0.4));
+}
+
+.socioWarningIcon:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 8px rgba(245, 244, 0, 0.6));
+}
+
+.socioWarningTooltip {
+  position: absolute;
+  bottom: 150%;
+  left: 0;
+  transform: translateY(10px);
+  background: #1a1a1a;
+  border: 1px solid rgba(245, 244, 0, 0.3);
+  padding: 0.85rem 1rem;
+  border-radius: 0.5rem;
+  width: max-content;
+  max-width: 220px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: left;
+}
+
+.socioWarningTooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 10px; /* Alineado con el ícono */
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(245, 244, 0, 0.3) transparent transparent transparent;
+}
+
+.socioWarningWrapper:hover .socioWarningTooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.socioWarningTooltip strong {
+  font-size: 0.75rem;
+  color: var(--color-amarillo-bind, #f5f400);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.socioWarningTooltip ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.socioWarningTooltip li {
+  font-size: 0.75rem;
+  color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  line-height: 1.2;
+}
+
+.socioWarningTooltip li::before {
+  content: "•";
+  color: var(--color-amarillo-bind, #f5f400);
+  font-size: 1rem;
+  line-height: 0.5;
 }
 
 .socioCard:hover {
@@ -1018,7 +1129,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
   .modalRow3 {
-    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 

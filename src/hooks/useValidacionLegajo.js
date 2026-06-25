@@ -128,9 +128,8 @@ export const useValidacionLegajo = () => {
           const sCel = socio.celular || socio.telefono || socio.Telefono || "";
           const sDir = socio.direccion || socio.calle || "";
           const sProv = socio.provincia || socio.provinciaid || "";
-          const sLoc = socio.localidad || "";
 
-          if (!sEmail || !sCel || !sDir || !sProv || !sLoc) {
+          if (!sEmail || !sCel || !sDir || !sProv) {
             accionistasValidos = false;
             erroresAccionistas.push(
               `El accionista ${socio.nombre} tiene datos de contacto o domicilio incompletos.`

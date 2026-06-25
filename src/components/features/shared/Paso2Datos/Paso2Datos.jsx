@@ -48,17 +48,27 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
     setContactoModalOpen(false);
   };
 
+  const [isValidando, setIsValidando] = useState(false);
+
   const handleAvanzarClick = async () => {
     setIntentoAvanzar(true);
-    const esValidoGlobal = await trigger([
-      "calle",
-      "numero",
-      "direccion",
-      "provincia",
-      "localidad",
-      "celular",
-    ]);
-    if (ubicacionOk && contactoOk && esValidoGlobal) onContinuar();
+    if (isValidando) return;
+    setIsValidando(true);
+    try {
+      const esValidoGlobal = await trigger([
+        "calle",
+        "numero",
+        "direccion",
+        "provincia",
+        "localidad",
+        "celular",
+      ]);
+      if (ubicacionOk && contactoOk && esValidoGlobal) {
+        await onContinuar();
+      }
+    } finally {
+      setIsValidando(false);
+    }
   };
 
   const pill = (done, error) => {

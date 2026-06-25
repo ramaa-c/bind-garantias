@@ -410,6 +410,7 @@ export function DocumentosLegajo() {
                 if (e.target.files?.[0]) {
                   handleFileUpload(doc.key, e.target.files[0], doc.title);
                 }
+                e.target.value = null;
               }}
               accept="application/pdf"
             />

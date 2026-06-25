@@ -7,7 +7,7 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  min-height: 4rem;
+  min-height: 4.5rem;
   position: sticky;
   top: 0;
   z-index: 40;
@@ -71,8 +71,8 @@
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 50%;
-  width: 2.375rem;
-  height: 2.375rem;
+  width: 2.75rem;
+  height: 2.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -89,7 +89,7 @@
 }
 
 .helpIcon {
-  font-size: 1.15rem;
+  font-size: 1.3rem;
 }
 
 .userMenuContainer {
@@ -114,8 +114,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.375rem;
-  height: 2.375rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   background: rgba(76, 101, 230, 0.18);
   color: #798df2;
@@ -123,13 +123,13 @@
 }
 
 .userIcon {
-  font-size: 1.1rem;
+  font-size: 1.25rem;
 }
 
 .userName {
   display: none;
   color: var(--white);
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   font-weight: 500;
 }
 
@@ -264,8 +264,8 @@
     margin: 0.75rem 1.25rem 0 0;
     border-radius: 1.25rem;
     border: 1px solid rgba(255, 255, 255, 0.06);
-    min-height: 4rem;
-    padding: 0 2rem;
+    min-height: 5rem;
+    padding: 0 2.5rem;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
     background: var(--carbon-black, #1a1a1a);
     backdrop-filter: none;

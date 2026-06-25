@@ -5,6 +5,13 @@ import styles from "../../DocumentosLegajo.module.css";
 import { SocioAccionistaModal } from "../SocioAccionistaModal/SocioAccionistaModal";
 import { Spinner } from "../../../../../ui";
 
+const normalizarTexto = (str) =>
+  String(str || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
+
 export function AccionistasSection({
   loadingSocios,
   totalParticipacion,
@@ -87,8 +94,39 @@ export function AccionistasSection({
             </div>
           ) : (
             <div className={styles.sociosList}>
-              {accionistas.map((socio) => (
-                <div key={socio.id} className={styles.socioCard}>
+              {accionistas.map((socio) => {
+                const faltantes = [];
+                const sEmail = socio.email || socio.mail || socio.Mail || "";
+                const sCel = socio.celular || socio.telefono || socio.Telefono || "";
+                const sDir = socio.direccion || socio.calle || "";
+                const sProv = socio.provincia || socio.provinciaid || "";
+
+                if (!sEmail) faltantes.push("Email");
+                if (!sCel) faltantes.push("Teléfono");
+                if (!sDir || !sProv) faltantes.push("Domicilio completo");
+
+                const cuitLimpio = String(socio.cuit || "").replace(/\D/g, "");
+                if (!cuitLimpio) {
+                  faltantes.push("CUIT válido");
+                } else {
+                  const nombreNorm = normalizarTexto(socio.nombre);
+                  const tieneDniFrente = (archivosBackend || []).some((a) => {
+                    if (a.tipodocumentoarchivoid !== 8) return false;
+                    const descNorm = normalizarTexto(a.descripcion);
+                    return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+                  });
+                  const tieneDniDorso = (archivosBackend || []).some((a) => {
+                    if (a.tipodocumentoarchivoid !== 9) return false;
+                    const descNorm = normalizarTexto(a.descripcion);
+                    return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+                  });
+
+                  if (!tieneDniFrente) faltantes.push("Foto DNI Frente");
+                  if (!tieneDniDorso) faltantes.push("Foto DNI Dorso");
+                }
+
+                return (
+                <div key={socio.id} className={`${styles.socioCard} ${faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
                   <div
                     style={{
                       display: "flex",
@@ -105,6 +143,19 @@ export function AccionistasSection({
                         )
                       }
                     >
+                      {faltantes.length > 0 && (
+                        <div className={styles.socioWarningWrapper}>
+                          <FiAlertCircle className={styles.socioWarningIcon} />
+                          <div className={styles.socioWarningTooltip}>
+                            <strong>Faltan datos obligatorios:</strong>
+                            <ul>
+                              {faltantes.map((f, i) => (
+                                <li key={i}>{f}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
                       <div className={styles.socioAvatar}>
                         <FiUser size={16} />
                       </div>
@@ -205,7 +256,7 @@ export function AccionistasSection({
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>

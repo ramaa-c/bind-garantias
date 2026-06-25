@@ -296,9 +296,12 @@ export const DocumentosEmpresaModal = ({
                           type="file"
                           id={`modal-file-${doc.key}`}
                           style={{ display: "none" }}
-                          onChange={(e) =>
-                            onFileUpload(doc.key, e.target.files[0])
-                          }
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              onFileUpload(doc.key, e.target.files[0]);
+                            }
+                            e.target.value = null; // Resetea para permitir subir el mismo archivo si se elimina
+                          }}
                         />
                       </div>
                     </div>

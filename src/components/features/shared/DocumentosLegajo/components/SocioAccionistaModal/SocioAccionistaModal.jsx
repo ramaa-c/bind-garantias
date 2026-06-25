@@ -41,6 +41,7 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
         accept="image/*,application/pdf"
         onChange={(e) => {
           if (e.target.files?.[0]) onChange(e.target.files[0]);
+          e.target.value = null;
         }}
       />
       <CargaArchivos
@@ -140,8 +141,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       numero: 0,
       piso: "",
       departamento: "",
-      localidad: "",
-      localidadid: 0,
       ciudad: "",
       ciudadid: 0,
       provinciaid: "",
@@ -157,10 +156,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const { data: ciudadesData, isLoading: cargandoCiudades } =
     useCiudades(currentProvincia);
   const opcionesCiudades = ciudadesData?.opciones || [];
-
-  const { data: partidosData, isLoading: cargandoPartidos } =
-    usePartidos(currentProvincia);
-  const opcionesLocalidades = partidosData?.opciones || [];
 
   useEffect(() => {
     if (errors.cuit?.type === "manual") {
@@ -278,8 +273,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           numero: Number(socio.numero) || parsedDir.numero || 0,
           piso: socio.piso || parsedDir.piso || "",
           departamento: socio.departamento || parsedDir.departamento || "",
-          localidad: socio.localidad || "",
-          localidadid: Number(socio.localidadid || socio.partidoid) || 0,
           ciudad: socio.ciudad || "",
           ciudadid: Number(socio.ciudadid) || 0,
           provinciaid: String(socio.provinciaid || ""),
@@ -297,8 +290,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           numero: 0,
           piso: "",
           departamento: "",
-          localidad: "",
-          localidadid: 0,
           ciudad: "",
           ciudadid: 0,
           provinciaid: "",
@@ -356,7 +347,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     }
 
     try {
-      // 1. Buscar primero en la base de datos de terceros
       let terceroEncontrado = null;
       try {
         const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
@@ -368,7 +358,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         console.warn("[SocioAccionistaModal] Error buscando tercero en base de datos local:", dbErr);
       }
 
-      // Si existe en la BD y tiene los datos mínimos de contacto, los usamos directamente si no estamos en modo edición
       const tieneDatosCompletos = terceroEncontrado && 
         (terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail) &&
         (terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion);
@@ -386,9 +375,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         setValue("piso", terceroEncontrado.piso || parsedDir.piso || "", { shouldValidate: true, shouldDirty: true });
         setValue("departamento", terceroEncontrado.departamento || parsedDir.departamento || "", { shouldValidate: true, shouldDirty: true });
 
-        setValue("localidad", terceroEncontrado.contacto || terceroEncontrado.Contacto || terceroEncontrado.localidad || "", { shouldValidate: true, shouldDirty: true });
-        setValue("localidadid", Number(terceroEncontrado.localidadid || terceroEncontrado.partidoid) || 0, { shouldValidate: true, shouldDirty: true });
-        setValue("ciudad", terceroEncontrado.ciudad || terceroEncontrado.contacto || "", { shouldValidate: true, shouldDirty: true });
+        setValue("ciudad", terceroEncontrado.ciudad || "", { shouldValidate: true, shouldDirty: true });
         setValue("ciudadid", Number(terceroEncontrado.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
         setValue("codpos", terceroEncontrado.codpos || "", { shouldValidate: true, shouldDirty: true });
 
@@ -403,7 +390,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         return;
       }
 
-      // 2. Si no tiene datos completos o es modo edición, consultamos AFIP/LUFE
       let res = null;
       try {
         res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
@@ -440,14 +426,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         setValue("calle", parsedDir.calle, { shouldValidate: true, shouldDirty: true });
         setValue("numero", parsedDir.numero, { shouldValidate: true, shouldDirty: true });
         setValue("piso", parsedDir.piso, { shouldValidate: true, shouldDirty: true });
-        setValue("departamento", parsedDir.departamento, { shouldValidate: true, shouldDirty: true });
+        setValue("departamento", dom?.departamento || terceroEncontrado?.departamento || "", { shouldValidate: true, shouldDirty: true });
 
-        const localidadVal = (terceroEncontrado?.contacto || terceroEncontrado?.Contacto || terceroEncontrado?.localidad) ||
-                             (dom ? (dom.localidad || dom.localidadNombre) : "") || "";
-        setValue("localidad", localidadVal, { shouldValidate: true, shouldDirty: true });
-        setValue("localidadid", Number(terceroEncontrado?.localidadid || terceroEncontrado?.partidoid) || 0, { shouldValidate: true, shouldDirty: true });
-
-        setValue("ciudad", dom?.localidad || localidadVal || "", { shouldValidate: true, shouldDirty: true });
+        setValue("ciudad", dom?.localidad || "", { shouldValidate: true, shouldDirty: true });
         setValue("ciudadid", Number(terceroEncontrado?.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
         setValue("codpos", dom?.codpostal || terceroEncontrado?.codpos || "", { shouldValidate: true, shouldDirty: true });
 
@@ -479,11 +460,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           setValue("calle", terceroEncontrado.calle || parsedDir.calle || "", { shouldValidate: true, shouldDirty: true });
           setValue("numero", Number(terceroEncontrado.numero) || parsedDir.numero || 0, { shouldValidate: true, shouldDirty: true });
           setValue("piso", terceroEncontrado.piso || parsedDir.piso || "", { shouldValidate: true, shouldDirty: true });
-          setValue("departamento", terceroEncontrado.departamento || parsedDir.departamento || "", { shouldValidate: true, shouldDirty: true });
+          setValue("departamento", terceroEncontrado.departamento || "", { shouldValidate: true, shouldDirty: true });
 
-          setValue("localidad", terceroEncontrado.contacto || terceroEncontrado.Contacto || terceroEncontrado.localidad || "", { shouldValidate: true, shouldDirty: true });
-          setValue("localidadid", Number(terceroEncontrado.localidadid || terceroEncontrado.partidoid) || 0, { shouldValidate: true, shouldDirty: true });
-          setValue("ciudad", terceroEncontrado.ciudad || terceroEncontrado.contacto || "", { shouldValidate: true, shouldDirty: true });
+          setValue("ciudad", terceroEncontrado.ciudad || "", { shouldValidate: true, shouldDirty: true });
           setValue("ciudadid", Number(terceroEncontrado.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
           setValue("codpos", terceroEncontrado.codpos || "", { shouldValidate: true, shouldDirty: true });
 
@@ -517,7 +496,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     e.preventDefault();
     e.stopPropagation();
     
-    // Reconstruct full direccion
     const calleVal = getValues("calle") || "";
     const numeroVal = getValues("numero") || "";
     const pisoVal = getValues("piso") || "";
@@ -530,7 +508,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     
     setValue("direccion", fullDir, { shouldDirty: true });
 
-    // Keep ciudad and localidad text in sync with selected IDs
     const ciudadidVal = getValues("ciudadid");
     if (ciudadidVal) {
       const selectedCiudad = opcionesCiudades.find(
@@ -538,16 +515,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       );
       if (selectedCiudad) {
         setValue("ciudad", selectedCiudad.label, { shouldDirty: true });
-      }
-    }
-
-    const localidadidVal = getValues("localidadid");
-    if (localidadidVal) {
-      const selectedLocalidad = opcionesLocalidades.find(
-        (l) => String(l.value) === String(localidadidVal)
-      );
-      if (selectedLocalidad) {
-        setValue("localidad", selectedLocalidad.label, { shouldDirty: true });
       }
     }
 
@@ -607,10 +574,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         numerodocumento: cuitLimpio,
         estadocivilid: 0,
         ciudadid: Number(formData.ciudadid) || 0,
+        provinciaid: Number(formData.provinciaid) || 0,
         telefono: formData.celular || "",
         conyuge: "",
         actividad: "",
-        contacto: formData.localidad || "",
+        contacto: "",
         nrocuenta: "",
         codigomercado: "",
         calle: formData.calle || formData.direccion || "",
@@ -640,10 +608,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           sociotercerorelacionid: relacionId,
           porcacciones: Number(formData.participacion),
           telefono: formData.celular || "",
+          provinciaid: Number(formData.provinciaid) || 0,
+          ciudadid: Number(formData.ciudadid) || 0,
           momento: ahora,
         };
-        delete payloadRel.provinciaid;
-        delete payloadRel.ProvinciaID;
         await tercerosService.actualizarRelacionDeSocio(payloadRel);
       } else {
         const payloadRel = {
@@ -666,6 +634,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               subtiporelacionsocioid: 0,
               telefono: formData.celular || "",
               momento: ahora,
+              provinciaid: Number(formData.provinciaid) || 0,
+              ciudadid: Number(formData.ciudadid) || 0,
             },
           ],
         };
@@ -735,7 +705,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         isOpen={isOpen}
         onClose={onClose}
         title={socio ? "Editar Accionista" : "Agregar Accionista"}
-        maxWidth="700px"
+        maxWidth="800px"
       >
         <form onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !socio ? (
@@ -937,11 +907,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 />
               </div>
 
-              <div className={styles.modalRow2}>
+              <div className={styles.modalRow3}>
                 <Controller
                   name="numero"
                   control={control}
-                  rules={{ required: "El número es obligatorio" }}
+                  rules={{ required: "Requerido" }}
                   render={({ field, fieldState }) => (
                     <InputSocioMasked
                       value={field.value}
@@ -967,9 +937,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                     />
                   )}
                 />
-              </div>
 
-              <div className={styles.modalRow2}>
                 <Controller
                   name="departamento"
                   control={control}
@@ -978,16 +946,18 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       value={field.value}
                       onChange={(val) => setValue("departamento", val, { shouldDirty: true, shouldValidate: true })}
                       onBlur={field.onBlur}
-                      label="Depto / Oficina"
+                      label="Depto / Of."
                       error={fieldState.error?.message}
                     />
                   )}
                 />
+              </div>
 
+              <div className={styles.modalRow2}>
                 <Controller
                   name="provinciaid"
                   control={control}
-                  rules={{ required: "La provincia es obligatoria" }}
+                  rules={{ required: "Requerido" }}
                   render={({ fieldState }) => (
                     <SelectSocio
                       control={control}
@@ -999,9 +969,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                     />
                   )}
                 />
-              </div>
 
-              <div className={styles.modalRow2}>
                 <Controller
                   name="ciudadid"
                   control={control}
@@ -1013,22 +981,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       icon={<FiMap />}
                       options={opcionesCiudades}
                       isLoading={cargandoCiudades}
-                      error={fieldState.error?.message}
-                    />
-                  )}
-                />
-
-                <Controller
-                  name="localidadid"
-                  control={control}
-                  render={({ fieldState }) => (
-                    <SelectSocio
-                      control={control}
-                      name="localidadid"
-                      label={cargandoPartidos ? "Cargando..." : "Localidad"}
-                      icon={<FiMap />}
-                      options={opcionesLocalidades}
-                      isLoading={cargandoPartidos}
                       error={fieldState.error?.message}
                     />
                   )}
