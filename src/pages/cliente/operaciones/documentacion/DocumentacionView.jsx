@@ -1,12 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { FaFileAlt, FaFileUpload } from "react-icons/fa";
+import { useQuery } from "@tanstack/react-query";
+import { FiDownload } from "react-icons/fi";
+import { toast } from "sonner";
 import {
   DocumentosLegajo,
   LegajoUniversalBar,
 } from "../../../../components/features";
+import { ESTRUCTURA_LEGAJO } from "../../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
+import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { socioArchivoService } from "../../../../services/socioArchivoService";
+import { descargarLegajoCompletoZip } from "../../../../utils/fileUtils";
+import { Button } from "../../../../components/ui";
 import styles from "./DocumentacionView.module.css";
 
 const DOC_TITLES = {
@@ -34,6 +42,30 @@ export default function DocumentacionView() {
     document.addEventListener("bindHelp:toggle", handler);
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
+
+  const { socioIdActivo, nombreEmpresa } = useEmpresaActiva();
+
+  const { data: archivosBackend = [] } = useQuery({
+    queryKey: ["socioArchivos", socioIdActivo],
+    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo),
+    enabled: !!socioIdActivo,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const handleDownloadAllZip = () => {
+    if (archivosBackend.length === 0) {
+      toast.error("No hay archivos cargados para descargar.");
+      return;
+    }
+    const cleanRazonSocial = (nombreEmpresa || "Empresa").replace(/\s+/g, "_");
+    const zipName = `Legajo_Completo_${cleanRazonSocial}.zip`;
+    descargarLegajoCompletoZip(
+      archivosBackend,
+      ESTRUCTURA_LEGAJO,
+      socioArchivoService.TIPO_DOCUMENTO_MAP,
+      zipName
+    );
+  };
 
   const methods = useForm({
     mode: "onChange",
@@ -78,6 +110,19 @@ export default function DocumentacionView() {
             </p>
           </div>
         </div>
+
+        {archivosBackend.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadAllZip}
+            title="Descargar legajo de documentos completo en un archivo ZIP"
+          >
+            <FiDownload style={{ marginRight: "0.5rem" }} />
+            Descargar Legajo Completo
+          </Button>
+        )}
       </header>
 
       <LegajoUniversalBar context="documentacion" />

@@ -173,6 +173,12 @@ export const socioArchivoService = {
     }
   },
 
+  eliminarArchivo: async (socioId, socioArchivoId) => {
+    socioArchivoService.clearCache(socioId);
+    const response = await api.delete(`api/SocioArchivo/${socioArchivoId}`);
+    return response.data;
+  },
+
   fileToBase64,
   formatFechaArchivo,
   getTipoDocumentoId,

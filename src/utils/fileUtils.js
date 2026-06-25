@@ -169,3 +169,118 @@ export const formatBase64Size = (base64Str) => {
   const sizeInMB = sizeInKB / 1024;
   return `${sizeInMB.toFixed(1)} MB`;
 };
+
+// Generación de archivos ZIP utilizando JSZip
+const resolveUniqueName = (name, existingNames) => {
+  if (!existingNames.has(name)) {
+    existingNames.add(name);
+    return name;
+  }
+  const extIndex = name.lastIndexOf(".");
+  const base = extIndex !== -1 ? name.substring(0, extIndex) : name;
+  const ext = extIndex !== -1 ? name.substring(extIndex) : "";
+  let counter = 1;
+  let newName = `${base} (${counter})${ext}`;
+  while (existingNames.has(newName)) {
+    counter++;
+    newName = `${base} (${counter})${ext}`;
+  }
+  existingNames.add(newName);
+  return newName;
+};
+
+export const descargarArchivosEnZip = async (archivos, zipFileName = "documentos.zip") => {
+  if (!archivos || archivos.length === 0) {
+    toast.error("No hay archivos para descargar.");
+    return;
+  }
+
+  const toastId = toast.loading("Generando archivo ZIP...");
+  try {
+    const { default: JSZip } = await import("jszip");
+    const zip = new JSZip();
+    const existingNames = new Set();
+
+    archivos.forEach((file) => {
+      if (file.contenido) {
+        const uniqueName = resolveUniqueName(file.nombrearchivo || "archivo.pdf", existingNames);
+        zip.file(uniqueName, file.contenido, { base64: true });
+      }
+    });
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = zipFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+
+    toast.success("ZIP descargado correctamente", { id: toastId });
+  } catch (error) {
+    console.error("Error al generar ZIP:", error);
+    toast.error("Error al generar el archivo ZIP. Por favor reintente.", { id: toastId });
+  }
+};
+
+export const descargarLegajoCompletoZip = async (
+  archivos,
+  estructura,
+  tipoDocumentoMap,
+  zipFileName = "legajo_completo.zip"
+) => {
+  if (!archivos || archivos.length === 0) {
+    toast.error("No hay archivos cargados para descargar.");
+    return;
+  }
+
+  const toastId = toast.loading("Generando legajo completo ZIP...");
+  try {
+    const { default: JSZip } = await import("jszip");
+    const zip = new JSZip();
+    const folderNamesMap = {};
+
+    archivos.forEach((file) => {
+      if (!file.contenido) return;
+
+      // Find the document title matching this archive's type
+      const docConfig = estructura.find(
+        (doc) => tipoDocumentoMap[doc.key] === file.tipodocumentoarchivoid
+      );
+
+      const folderName = docConfig ? docConfig.title : "Otros Documentos";
+      const cleanFolderName = folderName.replace(/[\\/:*?"<>|]/g, "_");
+
+      if (!folderNamesMap[cleanFolderName]) {
+        folderNamesMap[cleanFolderName] = new Set();
+      }
+
+      const uniqueName = resolveUniqueName(
+        file.nombrearchivo || "archivo.pdf",
+        folderNamesMap[cleanFolderName]
+      );
+
+      zip.file(`${cleanFolderName}/${uniqueName}`, file.contenido, { base64: true });
+    });
+
+    const blob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = zipFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
+
+    toast.success("Legajo completo descargado correctamente", { id: toastId });
+  } catch (error) {
+    console.error("Error al generar legajo completo ZIP:", error);
+    toast.error("Error al generar el legajo completo ZIP. Por favor reintente.", { id: toastId });
+  }
+};
+
