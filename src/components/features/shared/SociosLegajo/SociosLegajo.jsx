@@ -123,7 +123,8 @@ export function SociosLegajo() {
   }, [activeTab, tabsDisponibles]);
 
   const totalParticipacion = useMemo(() => {
-    return accionistas.reduce((a, s) => a + Number(s.participacion || 0), 0);
+    const sum = accionistas.reduce((a, s) => a + Number(s.participacion || 0), 0);
+    return Number(sum.toFixed(2));
   }, [accionistas]);
 
   const handleEliminarRelacion = (item) => {
