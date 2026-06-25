@@ -688,13 +688,20 @@ export function DocumentosLegajo() {
             {activeFile && (
               <div className={styles.metaFormContainer}>
                 <div className={styles.metaFormFields}>
-                  <SelectFecha
-                    label="Fecha (Opcional)"
-                    value={metaFecha}
-                    onChange={(val) => setMetaFecha(val)}
-                    variant="compact"
-                    minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
-                  />
+                  <div className={styles.metaFieldGroup}>
+                    <label className={styles.metaLabel}>
+                      Fecha (Opcional)
+                    </label>
+                    <SelectFecha
+                      label=""
+                      placeholder="Seleccionar fecha"
+                      value={metaFecha}
+                      onChange={(val) => setMetaFecha(val)}
+                      variant="compact"
+                      placement="top"
+                      minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+                    />
+                  </div>
                   <div className={styles.metaFieldGroup}>
                     <label htmlFor="meta-ref" className={styles.metaLabel}>
                       Referencia (Opcional)
