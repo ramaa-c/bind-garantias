@@ -44,7 +44,11 @@ export function LegajoUniversalBar({ context }) {
   const fingerprint = useMemo(() => {
     if (!socioIdActivo || isLoading) return "";
     const archivosKey = (archivosBackend || [])
-      .map((a) => `${a.socioarchivoid || a.id}-${a.nombrearchivo || a.nombre || a.descripcion || ""}`)
+      .map((a) => {
+        const refDate = a.fchreferencia || a.FchReferencia || "";
+        const refText = a.referencia || a.Referencia || "";
+        return `${a.socioarchivoid || a.id}-${a.nombrearchivo || a.nombre || a.descripcion || ""}-${refDate}-${refText}`;
+      })
       .join("|");
     const accionistasKey = (socioLegajoData?.accionistas || [])
       .map((a) => `${a.terceroid || a.id}-${a.participacion || 0}-${a.email || ""}-${a.celular || ""}-${a.direccion || ""}`)

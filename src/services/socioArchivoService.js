@@ -84,7 +84,15 @@ export const socioArchivoService = {
     }
   },
 
-  subirArchivo: async (socioId, file, docKey, descripcion = "", vialufe = "0") => {
+  subirArchivo: async (
+    socioId, 
+    file, 
+    docKey, 
+    descripcion = "", 
+    vialufe = "0",
+    fchreferencia = null,
+    referencia = ""
+  ) => {
     socioArchivoService.clearCache(socioId);
     const contenidoBase64 = await fileToBase64(file);
 
@@ -98,6 +106,8 @@ export const socioArchivoService = {
       tipodocumentoarchivoid: getTipoDocumentoId(docKey),
       azureid: 0,
       vialufe: String(vialufe),
+      fchreferencia: fchreferencia || null,
+      referencia: referencia || "",
     };
 
     const response = await api.post("api/SocioArchivo", payload);
@@ -109,22 +119,28 @@ export const socioArchivoService = {
     file,
     docKey,
     descripcion = "",
-    vialufe = "0"
+    vialufe = "0",
+    fchreferencia = null,
+    referencia = ""
   ) => {
     if (archivoExistente) {
       const socioId = archivoExistente.socioid || archivoExistente.SocioID;
       socioArchivoService.clearCache(socioId);
     }
-    const contenidoBase64 = await fileToBase64(file);
+    const contenidoBase64 = file 
+      ? await fileToBase64(file) 
+      : (archivoExistente.contenido || "");
 
     const payload = {
       ...archivoExistente,
       fcharchivo: formatFechaArchivo(),
-      descripcion: descripcion || docKey || file.name,
+      descripcion: descripcion || docKey || (file ? file.name : archivoExistente.nombrearchivo),
       contenido: contenidoBase64,
-      nombrearchivo: file.name,
+      nombrearchivo: file ? file.name : archivoExistente.nombrearchivo,
       tipodocumentoarchivoid: getTipoDocumentoId(docKey),
       vialufe: String(vialufe),
+      fchreferencia: fchreferencia !== undefined ? fchreferencia : (archivoExistente.fchreferencia || null),
+      referencia: referencia !== undefined ? referencia : (archivoExistente.referencia || ""),
     };
 
     console.log(` PUT SocioArchivo [${docKey}]:`, {

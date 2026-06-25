@@ -15,6 +15,7 @@ export const SelectFecha = ({
   error: errorExterno,
   value: manualValue,
   onChange: manualOnChange,
+  variant,
 }) => {
   const formContext = useFormContext();
   const control = formContext?.control;
@@ -93,6 +94,7 @@ export const SelectFecha = ({
           statusClass,
           hasValue || isCalendarOpen || isFocused ? styles.hasValue : "",
           disabled ? styles.isDisabled : "",
+          variant === "compact" ? styles.isCompact : "",
         ]
           .filter(Boolean)
           .join(" ");

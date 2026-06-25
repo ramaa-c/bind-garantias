@@ -36,6 +36,7 @@ import {
   SelectSocio,
   InputSocioMasked,
   BuscadorCuit,
+  SelectFecha,
 } from "../../../ui";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { tercerosService } from "../../../../services/tercerosService";
@@ -224,6 +225,9 @@ export function DocumentosLegajo() {
 
   const [archivosBackend, setArchivosBackend] = useState([]);
   const [activeSubTabs, setActiveSubTabs] = useState({});
+  const [metaFecha, setMetaFecha] = useState("");
+  const [metaRef, setMetaRef] = useState("");
+  const [isSavingMeta, setIsSavingMeta] = useState(false);
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
@@ -314,6 +318,59 @@ export function DocumentosLegajo() {
     }));
   };
 
+  // Archivo activo para la subpestaña seleccionada
+  const activeFile = useMemo(() => {
+    return currentSubTab !== "nuevo" ? categoryFiles[currentSubTab] : null;
+  }, [categoryFiles, currentSubTab]);
+
+  // Sincronizar los campos de metadatos cuando cambia el archivo seleccionado
+  useEffect(() => {
+    if (activeFile) {
+      const rawDate = activeFile.fchreferencia || "";
+      const dateVal = rawDate ? rawDate.split("T")[0] : "";
+      setMetaFecha(dateVal);
+      setMetaRef(activeFile.referencia || "");
+    } else {
+      setMetaFecha("");
+      setMetaRef("");
+    }
+  }, [activeFile]);
+
+  const handleSaveMetadata = async () => {
+    if (!activeFile) return;
+    setIsSavingMeta(true);
+    const toastId = toast.loading("Guardando metadatos del archivo...");
+    try {
+      const fchreferencia = metaFecha ? `${metaFecha.split("T")[0]}T00:00:00` : null;
+
+      await socioArchivoService.actualizarArchivo(
+        activeFile,
+        null,
+        activeDoc.key,
+        activeFile.descripcion,
+        activeFile.vialufe || "0",
+        fchreferencia,
+        metaRef
+      );
+
+      await cargarArchivosExistentes();
+
+      queryClient.invalidateQueries({
+        queryKey: ["socioArchivos", socioIdActivo],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["socioLegajoCompleto", socioIdActivo],
+      });
+
+      toast.success("Metadatos guardados correctamente", { id: toastId });
+    } catch (error) {
+      console.error("Error al guardar metadatos:", error);
+      toast.error("Error al guardar los metadatos del archivo.", { id: toastId });
+    } finally {
+      setIsSavingMeta(false);
+    }
+  };
+
   const handleFileUpload = async (key, file, docTitle, specificId = null) => {
     if (file instanceof File) {
       setValue(key, file, { shouldValidate: true, shouldDirty: true });
@@ -335,7 +392,10 @@ export function DocumentosLegajo() {
               existente,
               file,
               key,
-              docTitle
+              docTitle,
+              existente.vialufe || "0",
+              existente.fchreferencia,
+              existente.referencia
             );
           } else {
             throw new Error("No se encontró el archivo a actualizar.");
@@ -445,7 +505,6 @@ export function DocumentosLegajo() {
     const isRequired = requisitos?.documentos?.[doc.key] === 1;
     const showSubTabs = !isPerfil && files.length > 0;
     
-    const activeFile = currentSubTab !== "nuevo" ? files[currentSubTab] : null;
     const fileProp = activeFile ? {
       name: activeFile.nombrearchivo,
       size: activeFile.contenido ? formatBase64Size(activeFile.contenido) : "Disponible",
@@ -624,6 +683,42 @@ export function DocumentosLegajo() {
                 accept="application/pdf"
               />
             </div>
+
+            {/* Formulario de Metadatos Adicionales (Diseño compacto horizontal) */}
+            {activeFile && (
+              <div className={styles.metaFormContainer}>
+                <div className={styles.metaFormFields}>
+                  <SelectFecha
+                    label="Fecha (Opcional)"
+                    value={metaFecha}
+                    onChange={(val) => setMetaFecha(val)}
+                    variant="compact"
+                    minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+                  />
+                  <div className={styles.metaFieldGroup}>
+                    <label htmlFor="meta-ref" className={styles.metaLabel}>
+                      Referencia (Opcional)
+                    </label>
+                    <input
+                      id="meta-ref"
+                      type="text"
+                      placeholder="Ej. Año 2025 o Versión final"
+                      value={metaRef}
+                      onChange={(e) => setMetaRef(e.target.value)}
+                      className={styles.metaInput}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSaveMetadata}
+                    disabled={isSavingMeta}
+                    className={styles.saveMetaBtn}
+                  >
+                    {isSavingMeta ? "..." : "Guardar"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>

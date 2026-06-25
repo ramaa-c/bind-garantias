@@ -1710,3 +1710,134 @@
   border: 1px solid rgba(76, 175, 80, 0.2) !important;
 }
 
+/* ── FORMULARIO DE METADATOS ADICIONALES (COMPACTO) ─────────────────────── */
+
+.metaFormContainer {
+  margin-top: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fadeIn 0.2s ease-out;
+  transition: border-color 0.2s ease;
+}
+
+.metaFormContainer:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.metaFormFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+@media (min-width: 36rem) {
+  .metaFormFields {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr auto;
+    align-items: flex-end;
+    gap: 0.75rem;
+  }
+}
+
+.metaFieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metaLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #777;
+  letter-spacing: 0.01em;
+}
+
+.metaInput {
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.625rem;
+  color: var(--white, #fff);
+  font-size: 0.75rem;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  height: 1.875rem;
+  box-sizing: border-box;
+}
+
+.metaInput::placeholder {
+  color: #444;
+}
+
+.metaInput:focus {
+  outline: none;
+  background: rgba(0, 0, 0, 0.3);
+  border-color: var(--color-azul-bind, #4C65E6);
+  box-shadow: 0 0 0 2px rgba(76, 101, 230, 0.15);
+}
+
+/* Forzar estilo oscuro en date picker nativo del navegador */
+.metaInput[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.8);
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.metaInput[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.metaFormActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 1rem;
+}
+
+.saveMetaBtn {
+  background: var(--color-azul-bind, #4C65E6);
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 10px rgba(76, 101, 230, 0.2);
+}
+
+.saveMetaBtn:hover:not(:disabled) {
+  background: #3B53C7;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(76, 101, 230, 0.3);
+}
+
+.saveMetaBtn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.saveMetaBtn:disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: #666;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
