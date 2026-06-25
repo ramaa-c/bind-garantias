@@ -99,8 +99,11 @@ export const SelectFecha = ({
           .filter(Boolean)
           .join(" ");
 
+        const isCompact = variant === "compact";
+
         return (
           <div ref={calendarRef} className={containerClasses}>
+            {isCompact && <label className={styles.labelCompact}>{label}</label>}
             <div className={styles.innerGroup}>
               <div className={styles.icon}>
                 <FiCalendar />
@@ -122,7 +125,7 @@ export const SelectFecha = ({
                     </span>
                   )}
                 </button>
-                <label className={styles.label}>{label}</label>
+                {!isCompact && <label className={styles.label}>{label}</label>}
               </div>
             </div>
 

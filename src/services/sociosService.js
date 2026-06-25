@@ -1,4 +1,5 @@
 import api from "../api/axios";
+import { socioArchivoService } from "./socioArchivoService";
 
 const cuitCache = new Map();
 const cuitWebCache = new Map();
@@ -118,6 +119,56 @@ export const sociosService = {
       timeout: 25000,
       noRetry: true,
     });
+
+    const data = response.data;
+    if (vincular) {
+      try {
+        const docs = Array.isArray(data) 
+          ? data 
+          : (data?.documentos && Array.isArray(data.documentos)) 
+            ? data.documentos 
+            : (data?.data && Array.isArray(data.data))
+              ? data.data
+              : [];
+              
+        for (const doc of docs) {
+          const isAlreadyLufe = String(doc.vialufe || doc.Vialufe || "0") === "1";
+          if (!isAlreadyLufe) {
+            const tipoId = doc.tipodocumentoarchivoid || doc.Tipodocumentoarchivoid || doc.TipoDocumentoArchivoID || doc.tipoDocumentoArchivoId;
+            const docKey = Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).find(
+              (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId
+            ) || "otrosDocumentos";
+            
+            const normalizedDoc = {
+              socioarchivoid: doc.socioarchivoid || doc.Socioarchivoid || doc.SocioArchivoID || doc.id || doc.Id || 0,
+              socioid: doc.socioid || doc.Socioid || doc.SocioID || doc.socioId || 0,
+              fcharchivo: doc.fcharchivo || doc.Fcharchivo || doc.FchArchivo || "",
+              descripcion: doc.descripcion || doc.Descripcion || "",
+              contenido: doc.contenido || doc.Contenido || "",
+              nombrearchivo: doc.nombrearchivo || doc.Nombrearchivo || doc.NombreArchivo || "",
+              tipodocumentoarchivoid: tipoId,
+              azureid: doc.azureid || doc.Azureid || doc.AzureID || 0,
+              vialufe: "1",
+              fchreferencia: doc.fchreferencia || doc.Fchreferencia || doc.FchReferencia || null,
+              referencia: doc.referencia || doc.Referencia || "",
+            };
+
+            await socioArchivoService.actualizarArchivo(
+              normalizedDoc,
+              null,
+              docKey,
+              normalizedDoc.descripcion || normalizedDoc.nombrearchivo || docKey,
+              "1",
+              normalizedDoc.fchreferencia,
+              normalizedDoc.referencia
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Error al forzar el flag vialufe=1 para documentos LUFE:", err);
+      }
+    }
+
     return response.data;
   },
 
