@@ -1,8 +1,9 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import styles from "./LoadingScreen.module.css";
 
 export function LoadingScreen({ title, message, absolute = false }) {
-  return (
+  const content = (
     <div className={`${styles.overlay} ${absolute ? styles.absolute : ''}`}>
       <div className={styles.content}>
         <div className={styles.spinnerWrap}>
@@ -15,6 +16,12 @@ export function LoadingScreen({ title, message, absolute = false }) {
       </div>
     </div>
   );
+
+  if (absolute) {
+    return content;
+  }
+
+  return createPortal(content, document.body);
 }
 
 export default LoadingScreen;
