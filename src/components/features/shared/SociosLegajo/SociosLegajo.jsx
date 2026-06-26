@@ -71,8 +71,13 @@ export function SociosLegajo() {
   const [activeTab, setActiveTab] = useState(null);
 
   useEffect(() => {
-    if (tabsDisponibles.length > 0 && (!activeTab || !tabsDisponibles.some(t => t.key === activeTab))) {
-      setActiveTab(tabsDisponibles[0].key);
+    if (tabsDisponibles.length > 0) {
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile && !activeTab) {
+        setActiveTab(tabsDisponibles[0].key);
+      } else if (activeTab && !tabsDisponibles.some(t => t.key === activeTab)) {
+        setActiveTab(isMobile ? null : tabsDisponibles[0].key);
+      }
     }
   }, [tabsDisponibles, activeTab]);
 

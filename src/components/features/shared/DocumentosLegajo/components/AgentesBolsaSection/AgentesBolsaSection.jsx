@@ -65,13 +65,7 @@ export function AgentesBolsaSection({
                   className={styles.socioCard}
                   style={{ padding: "0.875rem 1rem" }}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
+                  <div className={styles.socioCardHeaderRow}>
                     <div
                       className={styles.socioCardBtn}
                       style={{ cursor: "default" }}

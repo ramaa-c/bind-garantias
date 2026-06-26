@@ -448,7 +448,6 @@ export function RepresentanteModal({
                         className={styles.editLink}
                         onClick={handleAfipLookup}
                         disabled={validando || enriqueciendoAuto}
-                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
                       >
                         <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar AFIP"}
                       </button>
@@ -457,7 +456,6 @@ export function RepresentanteModal({
                         type="button"
                         className={styles.editLink}
                         onClick={() => setAfipValidado(false)}
-                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
                       >
                         <FiEdit2 size={12} /> Cambiar CUIT
                       </button>

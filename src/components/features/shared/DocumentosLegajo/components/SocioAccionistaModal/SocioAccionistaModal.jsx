@@ -737,20 +737,41 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           ) : (
             <>
               <div className={styles.summaryCard}>
-                <div className={styles.summaryTop}>
-                  <div className={styles.summaryLeft}>
-                    <span className={styles.summaryStatus}>
-                      {enriqueciendoAuto ? (
-                        <>
-                          <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
-                          Enriqueciendo datos...
-                        </>
-                      ) : (
-                        <>
-                          <FiCheckCircle size={11} /> Accionista validado con AFIP
-                        </>
-                      )}
-                    </span>
+                <div className={styles.summaryHeader}>
+                  <span className={styles.summaryStatus}>
+                    {enriqueciendoAuto ? (
+                      <>
+                        <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
+                        Enriqueciendo datos...
+                      </>
+                    ) : (
+                      <>
+                        <FiCheckCircle size={12} /> Validado AFIP
+                      </>
+                    )}
+                  </span>
+                  {socio ? (
+                    <button
+                      type="button"
+                      className={styles.editLink}
+                      onClick={handleAfipLookup}
+                      disabled={validando || enriqueciendoAuto}
+                    >
+                      <FiEdit2 size={11} /> {validando ? "Buscando..." : "Consultar"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.editLink}
+                      onClick={() => setAfipValidado(false)}
+                    >
+                      <FiEdit2 size={11} /> Cambiar CUIT
+                    </button>
+                  )}
+                </div>
+
+                <div className={styles.summaryBody}>
+                  <div className={styles.summaryInfo}>
                     <input
                       type="text"
                       value={nombreValue || ""}
@@ -759,85 +780,52 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       placeholder="Nombre o Razón Social"
                     />
                     <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-                    {socio ? (
-                      <button
-                        type="button"
-                        className={styles.editLink}
-                        onClick={handleAfipLookup}
-                        disabled={validando || enriqueciendoAuto}
-                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
-                      >
-                        <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar AFIP"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className={styles.editLink}
-                        onClick={() => setAfipValidado(false)}
-                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
-                      >
-                        <FiEdit2 size={12} /> Cambiar CUIT
-                      </button>
-                    )}
                   </div>
                 </div>
 
-                <div className={styles.summaryDivider}></div>
-
-                <div className={styles.summaryBottom}>
-                  <div className={styles.labelColumn}>
-                    <label
-                      htmlFor="participacionSocioInput"
-                      className={styles.percentageLabel}
-                    >
-                      Participación del socio
-                    </label>
-                    <span
-                      className={`${styles.availableText} ${maximoPermitido === 0 ? styles.availableTextError : ""
-                        }`}
-                    >
+                <div className={styles.summaryFooter}>
+                  <div className={styles.pctInfo}>
+                    <span className={styles.pctLabel}>Participación accionaria</span>
+                    <span className={`${styles.availableText} ${maximoPermitido === 0 ? styles.availableTextError : ""}`}>
                       {maximoPermitido > 0 ? `Máximo permitido: ${maximoPermitido}%` : "Cupo completo"}
                     </span>
                   </div>
 
-                  <div
-                    className={`${styles.customInputWrapper} ${
-                      errors.participacion ? styles.wrapperError : ""
-                    }`}
-                  >
-                    <Controller
-                      name="participacion"
-                      control={control}
-                      rules={{
-                        required: "Ingresá un porcentaje",
-                        min: { value: 0.01, message: "Debe ser mayor a 0%" },
-                        max: { value: maximoPermitido, message: `No puede superar el ${maximoPermitido}% máximo permitido.` },
-                      }}
-                      render={({ field }) => (
-                        <input
-                          {...field}
-                          id="participacionSocioInput"
-                          type="text"
-                          className={styles.customInput}
-                          placeholder="0"
-                          maxLength={6}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9.]/g, "");
-                            const parts = val.split(".");
-                            if (parts.length <= 2 && Number(val || 0) <= maximoPermitido) {
-                              if (parts[1] && parts[1].length > 2) return;
-                              setValue("participacion", val, { shouldValidate: true, shouldDirty: true });
-                            }
-                          }}
-                        />
-                      )}
-                    />
-                    <span className={styles.percentageSymbol}>%</span>
-                  </div>
-
-                  <div className={styles.errorContainer}>
+                  <div className={styles.pctInputContainer}>
+                    <div className={`${styles.customInputWrapper} ${errors.participacion ? styles.wrapperError : ""}`}>
+                      <Controller
+                        name="participacion"
+                        control={control}
+                        rules={{
+                          required: "Requerido",
+                          min: { value: 0.01, message: "Mayor a 0" },
+                          max: { value: maximoPermitido, message: `Máx ${maximoPermitido}%` },
+                        }}
+                        render={({ field }) => (
+                          <input
+                            {...field}
+                            id="participacionSocioInput"
+                            type="text"
+                            className={styles.customInput}
+                            placeholder="0"
+                            maxLength={6}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9.]/g, "");
+                              const parts = val.split(".");
+                              if (parts.length <= 2 && Number(val || 0) <= maximoPermitido) {
+                                if (parts[1] && parts[1].length > 2) return;
+                                setValue("participacion", val, { shouldValidate: true, shouldDirty: true });
+                              }
+                            }}
+                          />
+                        )}
+                      />
+                      <span className={styles.percentageSymbol}>%</span>
+                    </div>
                     {errors.participacion && (
-                      <span className={styles.errorText}>{errors.participacion.message}</span>
+                      <span className={styles.errorText}>
+                        <FiAlertCircle size={11} /> {errors.participacion.message}
+                      </span>
                     )}
                   </div>
                 </div>

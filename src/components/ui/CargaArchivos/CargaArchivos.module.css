@@ -24,7 +24,6 @@
   border-color: var(--color-azul-bind, #4c65e6);
   background: rgba(76, 101, 230, 0.03);
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-  transform: translateY(-2px);
 }
 
 .dragging {

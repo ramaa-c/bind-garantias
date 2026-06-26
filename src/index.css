@@ -112,8 +112,18 @@ input[type="password"]::-ms-clear {
   transition: scrollbar-color 0.3s ease;
 }
 
+:root {
+  --scrollbar-thumb: rgba(245, 244, 0, 0.4);
+  --scrollbar-thumb-hover: rgba(245, 244, 0, 0.8);
+}
+
+.admin-theme {
+  --scrollbar-thumb: rgba(76, 101, 230, 0.4);
+  --scrollbar-thumb-hover: rgba(76, 101, 230, 0.8);
+}
+
 *:hover {
-  scrollbar-color: rgba(76, 101, 230, 0.4) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -132,9 +142,9 @@ input[type="password"]::-ms-clear {
 }
 
 *:hover::-webkit-scrollbar-thumb {
-  background: rgba(76, 101, 230, 0.4); /* Azul Bind translúcido al hacer hover */
+  background: var(--scrollbar-thumb);
 }
 
 *:hover::-webkit-scrollbar-thumb:hover {
-  background: rgba(76, 101, 230, 0.8); /* Azul Bind sólido al hacer hover en la scrollbar */
+  background: var(--scrollbar-thumb-hover);
 }

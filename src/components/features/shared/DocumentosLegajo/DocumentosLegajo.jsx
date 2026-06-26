@@ -215,13 +215,14 @@ export function DocumentosLegajo() {
   }, [estructuraFiltrada, activeTab]);
 
   useEffect(() => {
-    if (
-      estructuraFiltrada.length > 0 &&
-      (!activeTab || !estructuraFiltrada.some((t) => t.key === activeTab))
-    ) {
-      setActiveTab(estructuraFiltrada[0].key);
+    if (estructuraFiltrada.length > 0) {
+      if (!isMobile && !activeTab) {
+        setActiveTab(estructuraFiltrada[0].key);
+      } else if (activeTab && !estructuraFiltrada.some((t) => t.key === activeTab)) {
+        setActiveTab(isMobile ? null : estructuraFiltrada[0].key);
+      }
     }
-  }, [estructuraFiltrada, activeTab]);
+  }, [estructuraFiltrada, activeTab, isMobile]);
 
   const [archivosBackend, setArchivosBackend] = useState([]);
   const [activeSubTabs, setActiveSubTabs] = useState({});
