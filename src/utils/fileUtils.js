@@ -102,16 +102,13 @@ export const asegurarExtension = (filename, contenidoBase64) => {
     }
   }
 
-  // 2. Obtener extensión esperada
   const extCorrecta = obtenerExtensionPorMime(mimeType);
   if (!extCorrecta) return name;
 
-  // 3. Si el nombre ya termina con la extensión correcta, listo
   if (name.toLowerCase().endsWith(extCorrecta)) {
     return name;
   }
 
-  // Caso especial: si es .jpeg y termina en .jpg (o viceversa) está bien
   if (extCorrecta === ".jpg" && name.toLowerCase().endsWith(".jpeg")) {
     return name;
   }
@@ -119,11 +116,9 @@ export const asegurarExtension = (filename, contenidoBase64) => {
     return name;
   }
 
-  // Si tiene otra extensión diferente al final, se la removemos antes de agregar la correcta.
   const extIndex = name.lastIndexOf(".");
   if (extIndex !== -1) {
     const extActual = name.substring(extIndex).toLowerCase();
-    // Lista de extensiones comunes que queremos reemplazar si son incorrectas
     const extensionesReemplazables = [
       ".bin",
       ".octet-stream",
