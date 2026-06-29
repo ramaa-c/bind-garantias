@@ -93,6 +93,7 @@
   flex-direction: column;
   gap: 0.25rem;
   cursor: pointer;
+  min-width: 0; /* Evita que el contenedor desborde con textos muy largos */
 }
 
 .cdaTitleText {
@@ -111,14 +112,17 @@
   color: #8b949e;
   font-size: 0.75rem;
   display: block;
+  word-break: break-word;
 }
 
 /* --- Actions & Badges --- */
 .actionsWrapper {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column; /* Stack verticalmente */
+  align-items: center; /* Centrados entre sí */
+  gap: 0.5rem;
   flex-shrink: 0;
+  min-width: 80px; /* Asegura espacio para la etiqueta Activo/Inactivo */
 }
 
 .btnActionEdit {
@@ -160,6 +164,33 @@
   background: rgba(234, 74, 90, 0.08);
   color: #ea4a5a;
   border: 1px solid rgba(234, 74, 90, 0.2);
+}
+
+.inlineExpressionInput {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
+  border: 1px solid rgba(88, 166, 255, 0.25);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  min-width: 200px; /* Incrementado para dar más espacio inicial */
+  flex: 1; /* Se estira para ocupar todo el espacio disponible */
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.inlineExpressionInput:focus {
+  border-color: #58a6ff;
+  background: rgba(88, 166, 255, 0.18);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.25);
+}
+
+.inlineExpressionInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 /* --- Modal Footer inside CdaPanel editing Modal --- */
@@ -348,4 +379,207 @@
   gap: 0.75rem;
   background-color: rgba(0, 0, 0, 0.2);
 }
+
+/* Badges y Fórmulas */
+.defaultBadge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: rgba(59, 78, 209, 0.15);
+  color: #4c65e6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  border: 1px solid rgba(59, 78, 209, 0.3);
+  letter-spacing: 0.05em;
+  display: inline-block;
+}
+
+.formulaWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.375rem;
+  margin-bottom: 0.375rem;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.375rem 0.625rem;
+  border-radius: 6px;
+  flex-wrap: wrap; /* Permite que los elementos se acomoden sin desbordar */
+  max-width: 100%;
+  align-self: stretch; /* Se estira al ancho completo del contenido */
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.formulaLabel {
+  font-size: 0.7rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.formulaPart {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  word-break: break-all; /* Expresiones muy largas sin espacios se cortan */
+  max-width: 100%;
+}
+
+.formulaOperator {
+  font-family: monospace;
+  font-size: 0.85rem;
+  font-weight: bold;
+  color: #ff7b72;
+}
+
+.inlineSymbolSelect {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #ff7b72;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.8rem;
+  font-family: monospace;
+  font-weight: bold;
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.inlineSymbolSelect:focus {
+  border-color: #38a169;
+  background: rgba(56, 161, 105, 0.1);
+  box-shadow: 0 0 0 2px rgba(56, 161, 105, 0.2);
+}
+
+.inlineSymbolSelect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.inlineSymbolSelect option {
+  background: #161b22;
+  color: #ffffff;
+}
+
+.inlineValueInput {
+  width: 80px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: #ffffff;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.8rem;
+  font-family: monospace;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.inlineValueInput:focus {
+  outline: none;
+  border-color: #38a169;
+  background: rgba(56, 161, 105, 0.1);
+  box-shadow: 0 0 0 2px rgba(56, 161, 105, 0.2);
+}
+
+.inlineValueInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Formulario de Creación */
+.selectInput {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  color: #ffffff;
+  font-size: 0.825rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.selectInput:focus {
+  outline: none;
+  border-color: rgba(59, 78, 209, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.selectInput option {
+  background: #161b22;
+  color: #ffffff;
+}
+
+.formFieldCheck {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #c9d1d9;
+  user-select: none;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b4ed1;
+  cursor: pointer;
+}
+
+/* Edición en Línea del Mensaje de Rechazo */
+.inlineRechazoWrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  align-self: stretch; /* Se estira para ocupar todo el ancho disponible */
+}
+
+.inlineRechazoLabel {
+  font-size: 0.7rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.inlineRechazoInput {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: #c9d1d9;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.775rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.inlineRechazoInput:focus {
+  border-color: #38a169;
+  background: rgba(56, 161, 105, 0.05);
+}
+
+.inlineRechazoInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(255, 255, 255, 0.03);
+}
+
+
 

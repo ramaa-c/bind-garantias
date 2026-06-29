@@ -154,7 +154,13 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
   ];
 
   const cdasEmpresa = listCdas.length > 0
-    ? listCdas.map((c, i) => ({ cdaid: c.cdaid || i + 1, descripcion: c.descripcion || c.Descripcion }))
+    ? listCdas.map((c, i) => ({
+        cdaid: c.cdaid || i + 1,
+        descripcion: c.descripcion || c.Descripcion || "",
+        expresion: c.expresion || c.Expresion || "",
+        simbolocomparacion: c.simbolocomparacion || c.SimboloComparacion || "",
+        valorcomparacion: c.valorcomparacion || c.ValorComparacion || ""
+      }))
     : defaultEmpresaCdas;
 
   // CDAs para los accionistas (según fotos, evalúan edad y si son socios de otra SGR)
@@ -261,7 +267,14 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
                         ) : (
                           <span className={styles.iconDanger}><FiX /></span>
                         )}
-                        <span className={styles.cdaTitleText}>{cda.descripcion}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                          <span className={styles.cdaTitleText}>{cda.descripcion}</span>
+                          {cda.expresion && cda.simbolocomparacion && cda.valorcomparacion && (
+                            <span className={styles.ruleBadge}>
+                              {cda.expresion} {cda.simbolocomparacion} {cda.valorcomparacion}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <FiChevronDown
                         className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ""}`}
