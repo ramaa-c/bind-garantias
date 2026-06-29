@@ -127,13 +127,7 @@ export function AccionistasSection({
 
                 return (
                 <div key={socio.id} className={`${styles.socioCard} ${faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
+                  <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
                       className={styles.socioCardBtn}

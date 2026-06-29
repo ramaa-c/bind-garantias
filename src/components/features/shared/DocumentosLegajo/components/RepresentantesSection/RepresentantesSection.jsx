@@ -72,13 +72,7 @@ export function RepresentantesSection({
             <div className={styles.sociosList}>
               {representantes.map((rep) => (
                 <div key={rep.id} className={styles.socioCard}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
+                  <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
                       className={styles.socioCardBtn}
@@ -94,9 +88,16 @@ export function RepresentantesSection({
                         <span className={styles.socioCuit}>
                           CUIT: {rep.cuit}
                         </span>
+                        <span
+                          className={`${styles.roleBadge} ${styles.roleBadgeMobile} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}
+                        >
+                          {rep.rolId === 230
+                            ? "Representante Legal"
+                            : "Apoderado"}
+                        </span>
                       </div>
                       <span
-                        className={`${styles.roleBadge} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}
+                        className={`${styles.roleBadge} ${styles.roleBadgeDesktop} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}
                       >
                         {rep.rolId === 230
                           ? "Representante Legal"

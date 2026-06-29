@@ -7,7 +7,7 @@ export const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-const getMimeType = (filename) => {
+const getMimeType = (filename) => {s
   const ext = String(filename || "")
     .split(".")
     .pop()
@@ -102,16 +102,13 @@ export const asegurarExtension = (filename, contenidoBase64) => {
     }
   }
 
-  // 2. Obtener extensión esperada
   const extCorrecta = obtenerExtensionPorMime(mimeType);
   if (!extCorrecta) return name;
 
-  // 3. Si el nombre ya termina con la extensión correcta, listo
   if (name.toLowerCase().endsWith(extCorrecta)) {
     return name;
   }
 
-  // Caso especial: si es .jpeg y termina en .jpg (o viceversa) está bien
   if (extCorrecta === ".jpg" && name.toLowerCase().endsWith(".jpeg")) {
     return name;
   }
@@ -119,13 +116,26 @@ export const asegurarExtension = (filename, contenidoBase64) => {
     return name;
   }
 
-  // Si tiene otra extensión diferente al final, se la removemos antes de agregar la correcta.
   const extIndex = name.lastIndexOf(".");
   if (extIndex !== -1) {
     const extActual = name.substring(extIndex).toLowerCase();
-    // Lista de extensiones comunes que queremos reemplazar si son incorrectas
     const extensionesReemplazables = [
-      ".bin", ".octet-stream", ".tmp", ".download", ".unknown", ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".txt", ".doc", ".docx", ".xls", ".xlsx", ".zip"
+      ".bin",
+      ".octet-stream",
+      ".tmp",
+      ".download",
+      ".unknown",
+      ".pdf",
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".txt",
+      ".doc",
+      ".docx",
+      ".xls",
+      ".xlsx",
+      ".zip",
     ];
     if (extensionesReemplazables.includes(extActual) || extActual.length <= 5) {
       name = name.substring(0, extIndex);
@@ -190,13 +200,15 @@ export const procesarArchivo = async (
       }
     }
 
-    const fileName = asegurarExtension(fileData.nombrearchivo, fileData.contenido);
+    const fileName = asegurarExtension(
+      fileData.nombrearchivo,
+      fileData.contenido,
+    );
 
     const blob = base64ToBlob(fileData.contenido, mimeType);
     const url = URL.createObjectURL(blob);
 
     toast.dismiss(toastId);
-
 
     if (mode === "download") {
       const a = document.createElement("a");
@@ -245,7 +257,10 @@ const resolveUniqueName = (name, existingNames) => {
   return newName;
 };
 
-export const descargarArchivosEnZip = async (archivos, zipFileName = "documentos.zip") => {
+export const descargarArchivosEnZip = async (
+  archivos,
+  zipFileName = "documentos.zip",
+) => {
   if (!archivos || archivos.length === 0) {
     toast.error("No hay archivos para descargar.");
     return;
@@ -279,7 +294,9 @@ export const descargarArchivosEnZip = async (archivos, zipFileName = "documentos
     toast.success("ZIP descargado correctamente", { id: toastId });
   } catch (error) {
     console.error("Error al generar ZIP:", error);
-    toast.error("Error al generar el archivo ZIP. Por favor reintente.", { id: toastId });
+    toast.error("Error al generar el archivo ZIP. Por favor reintente.", {
+      id: toastId,
+    });
   }
 };
 
@@ -287,7 +304,7 @@ export const descargarLegajoCompletoZip = async (
   archivos,
   estructura,
   tipoDocumentoMap,
-  zipFileName = "legajo_completo.zip"
+  zipFileName = "legajo_completo.zip",
 ) => {
   if (!archivos || archivos.length === 0) {
     toast.error("No hay archivos cargados para descargar.");
@@ -305,7 +322,7 @@ export const descargarLegajoCompletoZip = async (
 
       // Find the document title matching this archive's type
       const docConfig = estructura.find(
-        (doc) => tipoDocumentoMap[doc.key] === file.tipodocumentoarchivoid
+        (doc) => tipoDocumentoMap[doc.key] === file.tipodocumentoarchivoid,
       );
 
       const folderName = docConfig ? docConfig.title : "Otros Documentos";
@@ -318,10 +335,12 @@ export const descargarLegajoCompletoZip = async (
       const cleanName = asegurarExtension(file.nombrearchivo, file.contenido);
       const uniqueName = resolveUniqueName(
         cleanName,
-        folderNamesMap[cleanFolderName]
+        folderNamesMap[cleanFolderName],
       );
 
-      zip.file(`${cleanFolderName}/${uniqueName}`, file.contenido, { base64: true });
+      zip.file(`${cleanFolderName}/${uniqueName}`, file.contenido, {
+        base64: true,
+      });
     });
 
     const blob = await zip.generateAsync({ type: "blob" });
@@ -338,7 +357,9 @@ export const descargarLegajoCompletoZip = async (
     toast.success("Legajo completo descargado correctamente", { id: toastId });
   } catch (error) {
     console.error("Error al generar legajo completo ZIP:", error);
-    toast.error("Error al generar el legajo completo ZIP. Por favor reintente.", { id: toastId });
+    toast.error(
+      "Error al generar el legajo completo ZIP. Por favor reintente.",
+      { id: toastId },
+    );
   }
 };
-

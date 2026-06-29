@@ -4,7 +4,7 @@ import styles from "./AdminLayout.module.css";
 
 export default function AdminLayout({ children }) {
   return (
-    <div className={styles.adminRoot}>
+    <div className={`${styles.adminRoot} admin-theme`}>
       <AdminNavbar />
       {/* Decorative gradient glowing spots for wow factor */}
       <div className={styles.blobTop}></div>
