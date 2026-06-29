@@ -35,6 +35,8 @@ import Dashboard from "./pages/admin/Dashboard";
 import RolesPermisos from "./pages/admin/RolesPermisos";
 import Terminos from "./pages/admin/Terminos";
 import CadenasValor from "./pages/admin/CadenasValor";
+import CadenasCda from "./pages/admin/CadenasCda";
+import CdasGlobales from "./pages/admin/CdasGlobales";
 import LineasCadena from "./pages/admin/LineasCadena";
 import LineasProducto from "./pages/admin/LineasProducto";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
@@ -232,6 +234,27 @@ function App() {
               <AdminGuard>
                 <AdminLayout>
                   <CadenasValor />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/cadenas-cda"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <CadenasCda />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+
+          <Route
+            path="/admin/cdas"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <CdasGlobales />
                 </AdminLayout>
               </AdminGuard>
             }

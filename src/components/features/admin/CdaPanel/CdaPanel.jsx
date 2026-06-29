@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FiEdit, FiCheck, FiPlus, FiX, FiRotateCcw, FiSave } from "react-icons/fi";
 import { toast } from "sonner";
 import { useObtenerCdasPorCadenaId, useVincularCdas } from "../../../../hooks/useCadenaValor";
-import { useObtenerTodosCdas, useCrearCda } from "../../../../hooks/useCda";
+import { useObtenerTodosCdas } from "../../../../hooks/useCda";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { Button } from "../../../ui/Button/Button";
 import { Spinner } from "../../../ui/Spinner/Spinner";
@@ -12,7 +12,7 @@ import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CdaPanel.module.css";
 
-export const CdaPanel = ({ activeItem, onClose }) => {
+export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader = false }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
@@ -22,22 +22,11 @@ export const CdaPanel = ({ activeItem, onClose }) => {
   // 2. Obtener los CDAs vinculados a esta cadena de valor
   const { data: linkedCdas, isLoading: isLoadingLinked } = useObtenerCdasPorCadenaId(cadenaId);
 
-  const { mutateAsync: crearCda, isPending: isCreandoCda } = useCrearCda();
   const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdas();
 
   // cdaid -> { checked: boolean, valorcomparacion: string, simbolocomparacion: string, expresion: string, mensajerechazo: string }
   const [cdaConfigs, setCdaConfigs] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
-
-  // Estados del formulario para agregar CDA
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [descripcion, setDescripcion] = useState("");
-  const [expresion, setExpresion] = useState("");
-  const [simbolocomparacion, setSimbolocomparacion] = useState(">");
-  const [valorcomparacion, setValorcomparacion] = useState("");
-  const [mensajerechazo, setMensajerechazo] = useState("");
-  const [vinculadefaultcv, setVinculadefaultcv] = useState(false);
-  const [validationError, setValidationError] = useState("");
 
   const allCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
   const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
@@ -197,86 +186,7 @@ export const CdaPanel = ({ activeItem, onClose }) => {
     }
   };
 
-  const handleCreateAndLinkCda = async (e) => {
-    e.preventDefault();
-    if (!descripcion.trim() || !expresion.trim() || !valorcomparacion.trim() || !mensajerechazo.trim()) {
-      setValidationError("Todos los campos son obligatorios");
-      return;
-    }
-    setValidationError("");
 
-    try {
-      // 1. Crear CDA en el catálogo general
-      const newCda = await crearCda({
-        cdaid: 0,
-        descripcion: descripcion.trim(),
-        expresion: expresion.trim(),
-        simbolocomparacion: simbolocomparacion,
-        valorcomparacion: valorcomparacion.trim(),
-        vinculadefaultcv: vinculadefaultcv ? "S" : "N",
-        expresionlog: `${expresion.trim()} ${simbolocomparacion} ${valorcomparacion.trim()}`,
-        mensajerechazo: mensajerechazo.trim()
-      });
-
-      let rawId = newCda?.cdaid || newCda?.cdaId || newCda?.CdaId || newCda?.CdaID || newCda?.cdaID || newCda?.Id || newCda?.id || newCda;
-      if (rawId && typeof rawId === 'object') {
-        const keys = Object.keys(rawId);
-        const idKey = keys.find(k => k.toLowerCase() === 'cdaid' || k.toLowerCase() === 'id');
-        if (idKey) {
-          rawId = rawId[idKey];
-        }
-      }
-      const newCdaId = Number(rawId);
-
-      if (!newCdaId || isNaN(newCdaId)) {
-        console.error("Respuesta de la creación de CDA:", newCda);
-        throw new Error(`ID no encontrado en la respuesta: ${JSON.stringify(newCda)}`);
-      }
-
-      // 2. Vincular el nuevo CDA manteniendo los que ya estaban activos en este panel
-      const activeCdaList = Object.entries(cdaConfigs)
-        .filter(([_, config]) => config.checked)
-        .map(([id, config]) => ({
-          cdaid: Number(id),
-          valorcomparacion: config.valorcomparacion,
-          simbolocomparacion: config.simbolocomparacion,
-          expresion: config.expresion,
-          mensajerechazo: config.mensajerechazo
-        }));
-
-      await vincularCda({
-        cadenavalorid: cadenaId,
-        listacda: [
-          ...activeCdaList,
-          {
-            cdaid: newCdaId,
-            valorcomparacion: valorcomparacion.trim(),
-            simbolocomparacion: simbolocomparacion,
-            expresion: expresion.trim(),
-            mensajerechazo: mensajerechazo.trim()
-          }
-        ]
-      });
-
-      // 3. Invalidar queries para recargar listas
-      await queryClient.invalidateQueries({ queryKey: ['cda', 'todos_list'] });
-      await queryClient.invalidateQueries({ queryKey: ['cadenaValor', 'cdas', cadenaId] });
-
-      toast.success("Criterio de Aceptación creado y vinculado exitosamente");
-      
-      // Limpiar formulario
-      setDescripcion("");
-      setExpresion("");
-      setSimbolocomparacion(">");
-      setValorcomparacion("");
-      setMensajerechazo("");
-      setVinculadefaultcv(false);
-      setIsFormOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Ocurrió un error al guardar el Criterio de Aceptación: " + (err?.response?.data?.message || err.message));
-    }
-  };
 
   const isLoading = isLoadingTodos || isLoadingLinked;
 
@@ -291,148 +201,22 @@ export const CdaPanel = ({ activeItem, onClose }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div className={styles.modalBody}>
-        <CadenaHeaderCard
-          denominacion={activeItem?.denominacion}
-          logo={activeItem?.logo}
-          referencia={activeItem?.referencia}
-          cadenavalorid={activeItem?.cadenavalorid}
-          cuittercero={activeItem?.cuittercero}
-        />
-        <p style={{ fontSize: "0.825rem", color: "#8b949e", marginBottom: "1.25rem", lineHeight: "1.4" }}>
-          Seleccioná los CDAs que se deben ejecutar durante la validación de esta cadena de valor y personalizá sus valores límites y mensajes de rechazo.
-        </p>
+        {!hideHeader && (
+          <>
+            <CadenaHeaderCard
+              denominacion={activeItem?.denominacion}
+              logo={activeItem?.logo}
+              referencia={activeItem?.referencia}
+              cadenavalorid={activeItem?.cadenavalorid}
+              cuittercero={activeItem?.cuittercero}
+            />
+            <p style={{ fontSize: "0.825rem", color: "#8b949e", marginBottom: "1.25rem", lineHeight: "1.4" }}>
+              Seleccioná los CDAs que se deben ejecutar durante la validación de esta cadena de valor y personalizá sus valores límites y mensajes de rechazo.
+            </p>
+          </>
+        )}
 
-        {/* SECCION NUEVO CDA */}
-        <div className={styles.newCdaSection}>
-          {!isFormOpen ? (
-            <button
-              type="button"
-              className={styles.btnAddCda}
-              onClick={() => setIsFormOpen(true)}
-            >
-              <FiPlus size={16} />
-              <span>Agregar Criterio de Aceptación (CDA)</span>
-            </button>
-          ) : (
-            <form onSubmit={handleCreateAndLinkCda} className={styles.newCdaForm}>
-              <div className={styles.formHeader}>
-                <h4>Nuevo Criterio de Aceptación (CDA)</h4>
-                <button
-                  type="button"
-                  className={styles.btnCancelForm}
-                  onClick={() => {
-                    setIsFormOpen(false);
-                    setValidationError("");
-                  }}
-                >
-                  <FiX size={16} />
-                </button>
-              </div>
 
-              {validationError && (
-                <div className={styles.validationError}>
-                  {validationError}
-                </div>
-              )}
-
-              <div className={styles.formGrid}>
-                <div className={styles.formField} style={{ gridColumn: "span 2" }}>
-                  <label htmlFor="cda-desc">Descripción</label>
-                  <input
-                    id="cda-desc"
-                    type="text"
-                    value={descripcion}
-                    onChange={(e) => setDescripcion(e.target.value)}
-                    placeholder="Ej. Evaluar si la persona supera el score..."
-                    required
-                    disabled={isCreandoCda || isVinculandoCda}
-                  />
-                </div>
-
-                <div className={styles.formField}>
-                  <label htmlFor="cda-expr">Expresión (Ej. campo o variable)</label>
-                  <input
-                    id="cda-expr"
-                    type="text"
-                    value={expresion}
-                    onChange={(e) => setExpresion(e.target.value)}
-                    placeholder="Ej. score"
-                    required
-                    disabled={isCreandoCda || isVinculandoCda}
-                  />
-                </div>
-
-                <div className={styles.formField}>
-                  <label htmlFor="cda-simbolo">Operador de Comparación</label>
-                  <select
-                    id="cda-simbolo"
-                    value={simbolocomparacion}
-                    onChange={(e) => setSimbolocomparacion(e.target.value)}
-                    required
-                    disabled={isCreandoCda || isVinculandoCda}
-                    className={styles.selectInput}
-                  >
-                    <option value="=">=</option>
-                    <option value=">">&gt;</option>
-                    <option value="<">&lt;</option>
-                    <option value=">=">&gt;=</option>
-                    <option value="<=">&lt;=</option>
-                    <option value="<>">&lt;&gt;</option>
-                  </select>
-                </div>
-
-                <div className={styles.formField}>
-                  <label htmlFor="cda-valor">Valor de Comparación</label>
-                  <input
-                    id="cda-valor"
-                    type="text"
-                    value={valorcomparacion}
-                    onChange={(e) => setValorcomparacion(e.target.value)}
-                    placeholder="Ej. 500"
-                    required
-                    disabled={isCreandoCda || isVinculandoCda}
-                  />
-                </div>
-
-                <div className={styles.formField}>
-                  <label htmlFor="cda-rechazo">Mensaje de Rechazo</label>
-                  <input
-                    id="cda-rechazo"
-                    type="text"
-                    value={mensajerechazo}
-                    onChange={(e) => setMensajerechazo(e.target.value)}
-                    placeholder="Ej. El cliente supera el score permitido"
-                    required
-                    disabled={isCreandoCda || isVinculandoCda}
-                  />
-                </div>
-
-                <div className={styles.formFieldCheck} style={{ gridColumn: "span 2" }}>
-                  <label className={styles.checkboxLabel}>
-                    <input
-                      type="checkbox"
-                      checked={vinculadefaultcv}
-                      onChange={(e) => setVinculadefaultcv(e.target.checked)}
-                      disabled={isCreandoCda || isVinculandoCda}
-                    />
-                    <span>¿Vincular por defecto para nuevas Cadenas de Valor?</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className={styles.formActions}>
-                <Button
-                  type="submit"
-                  variant="blue"
-                  size="sm"
-                  isLoading={isCreandoCda || isVinculandoCda}
-                >
-                  Guardar y Vincular
-                </Button>
-              </div>
-            </form>
-          )}
-        </div>
 
         <div className={styles.cdasSection}>
           <div className={styles.cdasTitle}>Configuración de CDAs</div>
@@ -442,125 +226,129 @@ export const CdaPanel = ({ activeItem, onClose }) => {
                 No hay CDAs creados en el sistema.
               </div>
             ) : (
-              allCdasList.map((cda) => {
-                const config = cdaConfigs[cda.cdaid] || { checked: false, valorcomparacion: cda.valorcomparacion || "", simbolocomparacion: cda.simbolocomparacion || "=", expresion: cda.expresion || "", mensajerechazo: cda.mensajerechazo || "" };
-                const isChecked = config.checked;
-                const valComparacion = config.valorcomparacion;
-                const simboloComparacion = config.simbolocomparacion;
-                const exprComparacion = config.expresion;
-                const mensajeRechazo = config.mensajerechazo;
+              allCdasList
+                .filter(cda => !isReadOnly || (cdaConfigs[cda.cdaid]?.checked))
+                .map((cda) => {
+                  const config = cdaConfigs[cda.cdaid] || { checked: false, valorcomparacion: cda.valorcomparacion || "", simbolocomparacion: cda.simbolocomparacion || "=", expresion: cda.expresion || "", mensajerechazo: cda.mensajerechazo || "" };
+                  const isChecked = config.checked;
+                  const valComparacion = config.valorcomparacion;
+                  const simboloComparacion = config.simbolocomparacion;
+                  const exprComparacion = config.expresion;
+                  const mensajeRechazo = config.mensajerechazo;
 
-                const isDefault = cda.vinculadefaultcv === "S";
+                  const isDefault = cda.vinculadefaultcv === "S";
 
-                return (
-                  <div
-                    key={cda.cdaid}
-                    className={`${styles.cdaCard} ${isChecked ? styles.cdaCardChecked : ""}`}
-                  >
-                    <div className={styles.checkboxWrapper} onClick={() => handleToggleCda(cda.cdaid)}>
-                      <div className={`${styles.customCheckbox} ${isChecked ? styles.checked : ""}`}>
-                        {isChecked && <FiCheck size={14} className={styles.checkmarkIcon} />}
-                      </div>
-                    </div>
+                  return (
                     <div
-                      className={styles.cdaContent}
+                      key={cda.cdaid}
+                      className={`${styles.cdaCard} ${isChecked ? styles.cdaCardChecked : ""}`}
                     >
-                      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                        <strong className={styles.cdaTitleText}>{cda.descripcion}</strong>
-                        {isDefault && (
-                          <span className={styles.defaultBadge}>Por Defecto</span>
-                        )}
+                      <div className={styles.checkboxWrapper} onClick={() => { if(!isReadOnly) handleToggleCda(cda.cdaid) }}>
+                        <div className={`${styles.customCheckbox} ${isChecked ? styles.checked : ""}`}>
+                          {isChecked && <FiCheck size={14} className={styles.checkmarkIcon} />}
+                        </div>
                       </div>
+                      <div
+                        className={styles.cdaContent}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                          <strong className={styles.cdaTitleText}>{cda.descripcion}</strong>
+                          {isDefault && (
+                            <span className={styles.defaultBadge}>Por Defecto</span>
+                          )}
+                        </div>
 
-                      {/* Formula Visual con Inputs en Línea */}
-                      <div className={styles.formulaWrapper}>
-                        <span className={styles.formulaLabel}>Regla:</span>
-                        
-                        <input
-                          type="text"
-                          value={exprComparacion}
-                          onChange={(e) => handleExpressionChange(cda.cdaid, e.target.value)}
-                          className={styles.inlineExpressionInput}
-                          placeholder="Expresión"
-                          disabled={!isChecked}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        
-                        <select
-                          value={simboloComparacion}
-                          onChange={(e) => handleSymbolChange(cda.cdaid, e.target.value)}
-                          className={styles.inlineSymbolSelect}
-                          disabled={!isChecked}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <option value="=">=</option>
-                          <option value=">">&gt;</option>
-                          <option value="<">&lt;</option>
-                          <option value=">=">&gt;=</option>
-                          <option value="<=">&lt;=</option>
-                          <option value="<>">&lt;&gt;</option>
-                        </select>
+                        {/* Formula Visual con Inputs en Línea */}
+                        <div className={styles.formulaWrapper}>
+                          <span className={styles.formulaLabel}>Regla:</span>
+                          
+                          <input
+                            type="text"
+                            value={exprComparacion}
+                            onChange={(e) => handleExpressionChange(cda.cdaid, e.target.value)}
+                            className={styles.inlineExpressionInput}
+                            placeholder="Expresión"
+                            disabled={true}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          
+                          <select
+                            value={simboloComparacion}
+                            onChange={(e) => handleSymbolChange(cda.cdaid, e.target.value)}
+                            className={styles.inlineSymbolSelect}
+                            disabled={true}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="=">=</option>
+                            <option value=">">&gt;</option>
+                            <option value="<">&lt;</option>
+                            <option value=">=">&gt;=</option>
+                            <option value="<=">&lt;=</option>
+                            <option value="<>">&lt;&gt;</option>
+                          </select>
 
-                        <input
-                          type="text"
-                          value={valComparacion}
-                          onChange={(e) => handleValueChange(cda.cdaid, e.target.value)}
-                          className={styles.inlineValueInput}
-                          placeholder="Valor"
-                          disabled={!isChecked}
-                          onClick={(e) => e.stopPropagation()}
-                        />
+                          <input
+                            type="text"
+                            value={valComparacion}
+                            onChange={(e) => handleValueChange(cda.cdaid, e.target.value)}
+                            className={styles.inlineValueInput}
+                            placeholder="Valor"
+                            disabled={!isChecked || isReadOnly}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+
+                        {/* Edición en Línea del Mensaje de Rechazo */}
+                        <div className={styles.inlineRechazoWrapper}>
+                          <span className={styles.inlineRechazoLabel}>Mensaje Rechazo:</span>
+                          <input
+                            type="text"
+                            value={mensajeRechazo}
+                            onChange={(e) => handleRechazoChange(cda.cdaid, e.target.value)}
+                            className={styles.inlineRechazoInput}
+                            placeholder="Mensaje de rechazo que verá el analista..."
+                            disabled={!isChecked || isReadOnly}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
                       </div>
-
-                      {/* Edición en Línea del Mensaje de Rechazo */}
-                      <div className={styles.inlineRechazoWrapper}>
-                        <span className={styles.inlineRechazoLabel}>Mensaje Rechazo:</span>
-                        <input
-                          type="text"
-                          value={mensajeRechazo}
-                          onChange={(e) => handleRechazoChange(cda.cdaid, e.target.value)}
-                          className={styles.inlineRechazoInput}
-                          placeholder="Mensaje de rechazo que verá el analista..."
-                          disabled={!isChecked}
-                          onClick={(e) => e.stopPropagation()}
-                        />
+                      <div className={styles.actionsWrapper}>
+                        <span className={`${styles.cdaStatusBadge} ${isChecked ? styles.badgeActive : styles.badgeInactive}`}>
+                          {isChecked ? "Activo" : "Inactivo"}
+                        </span>
                       </div>
                     </div>
-                    <div className={styles.actionsWrapper}>
-                      <span className={`${styles.cdaStatusBadge} ${isChecked ? styles.badgeActive : styles.badgeInactive}`}>
-                        {isChecked ? "Activo" : "Inactivo"}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })
+                  );
+                })
             )}
           </div>
         </div>
       </div>
 
-      <div className={styles.mainFooter}>
-        <Button
-          type="button"
-          variant="outlineBlue"
-          size="sm"
-          onClick={handleReset}
-        >
-          <FiRotateCcw style={{ marginRight: "0.5rem" }} />
-          REESTABLECER
-        </Button>
-        <Button
-          type="button"
-          variant="blue"
-          size="sm"
-          onClick={handleSaveVinculacion}
-          disabled={!hasChanges()}
-          isLoading={isVinculandoCda}
-        >
-          <FiSave style={{ marginRight: "0.5rem" }} />
-          VINCULAR SELECCIÓN
-        </Button>
-      </div>
+      {!isReadOnly && (
+        <div className={styles.mainFooter}>
+          <Button
+            type="button"
+            variant="outlineBlue"
+            size="sm"
+            onClick={handleReset}
+          >
+            <FiRotateCcw style={{ marginRight: "0.5rem" }} />
+            REESTABLECER
+          </Button>
+          <Button
+            type="button"
+            variant="blue"
+            size="sm"
+            onClick={handleSaveVinculacion}
+            disabled={!hasChanges()}
+            isLoading={isVinculandoCda}
+          >
+            <FiSave style={{ marginRight: "0.5rem" }} />
+            VINCULAR SELECCIÓN
+          </Button>
+        </div>
+      )}
 
       <ConfirmacionModal
         isOpen={confirmOpen}
