@@ -62,6 +62,79 @@ const detectMimeTypeFromBase64 = (base64Str) => {
   return null;
 };
 
+const obtenerExtensionPorMime = (mimeType) => {
+  switch (mimeType) {
+    case "application/pdf":
+      return ".pdf";
+    case "image/jpeg":
+      return ".jpg";
+    case "image/png":
+      return ".png";
+    case "image/gif":
+      return ".gif";
+    case "text/plain":
+      return ".txt";
+    case "application/msword":
+      return ".doc";
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return ".docx";
+    case "application/vnd.ms-excel":
+      return ".xls";
+    case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+      return ".xlsx";
+    case "application/zip":
+    case "application/x-zip-compressed":
+      return ".zip";
+    default:
+      return "";
+  }
+};
+
+export const asegurarExtension = (filename, contenidoBase64) => {
+  let name = String(filename || "archivo").trim();
+
+  // 1. Detectar MIME
+  let mimeType = getMimeType(name);
+  if (mimeType === "application/octet-stream" && contenidoBase64) {
+    const detected = detectMimeTypeFromBase64(contenidoBase64);
+    if (detected) {
+      mimeType = detected;
+    }
+  }
+
+  // 2. Obtener extensión esperada
+  const extCorrecta = obtenerExtensionPorMime(mimeType);
+  if (!extCorrecta) return name;
+
+  // 3. Si el nombre ya termina con la extensión correcta, listo
+  if (name.toLowerCase().endsWith(extCorrecta)) {
+    return name;
+  }
+
+  // Caso especial: si es .jpeg y termina en .jpg (o viceversa) está bien
+  if (extCorrecta === ".jpg" && name.toLowerCase().endsWith(".jpeg")) {
+    return name;
+  }
+  if (extCorrecta === ".jpeg" && name.toLowerCase().endsWith(".jpg")) {
+    return name;
+  }
+
+  // Si tiene otra extensión diferente al final, se la removemos antes de agregar la correcta.
+  const extIndex = name.lastIndexOf(".");
+  if (extIndex !== -1) {
+    const extActual = name.substring(extIndex).toLowerCase();
+    // Lista de extensiones comunes que queremos reemplazar si son incorrectas
+    const extensionesReemplazables = [
+      ".bin", ".octet-stream", ".tmp", ".download", ".unknown", ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".txt", ".doc", ".docx", ".xls", ".xlsx", ".zip"
+    ];
+    if (extensionesReemplazables.includes(extActual) || extActual.length <= 5) {
+      name = name.substring(0, extIndex);
+    }
+  }
+
+  return name + extCorrecta;
+};
+
 export const procesarArchivo = async (
   fileObj,
   archivosBackend = [],
@@ -117,24 +190,7 @@ export const procesarArchivo = async (
       }
     }
 
-    let fileName = fileData.nombrearchivo || "archivo";
-    if (
-      mimeType === "application/pdf" &&
-      !String(fileName).toLowerCase().endsWith(".pdf")
-    ) {
-      fileName += ".pdf";
-    } else if (
-      mimeType === "image/png" &&
-      !String(fileName).toLowerCase().endsWith(".png")
-    ) {
-      fileName += ".png";
-    } else if (
-      mimeType === "image/jpeg" &&
-      !String(fileName).toLowerCase().endsWith(".jpg") &&
-      !String(fileName).toLowerCase().endsWith(".jpeg")
-    ) {
-      fileName += ".jpg";
-    }
+    const fileName = asegurarExtension(fileData.nombrearchivo, fileData.contenido);
 
     const blob = base64ToBlob(fileData.contenido, mimeType);
     const url = URL.createObjectURL(blob);
@@ -203,7 +259,8 @@ export const descargarArchivosEnZip = async (archivos, zipFileName = "documentos
 
     archivos.forEach((file) => {
       if (file.contenido) {
-        const uniqueName = resolveUniqueName(file.nombrearchivo || "archivo.pdf", existingNames);
+        const cleanName = asegurarExtension(file.nombrearchivo, file.contenido);
+        const uniqueName = resolveUniqueName(cleanName, existingNames);
         zip.file(uniqueName, file.contenido, { base64: true });
       }
     });
@@ -258,8 +315,9 @@ export const descargarLegajoCompletoZip = async (
         folderNamesMap[cleanFolderName] = new Set();
       }
 
+      const cleanName = asegurarExtension(file.nombrearchivo, file.contenido);
       const uniqueName = resolveUniqueName(
-        file.nombrearchivo || "archivo.pdf",
+        cleanName,
         folderNamesMap[cleanFolderName]
       );
 

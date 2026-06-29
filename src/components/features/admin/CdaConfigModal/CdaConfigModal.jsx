@@ -9,7 +9,7 @@ export const CdaConfigModal = ({ isOpen, onClose, activeItem }) => {
       isOpen={isOpen}
       onClose={onClose}
       title="CONFIGURACIÓN DE CDAs"
-      maxWidth="650px"
+      maxWidth="850px"
       variant="blue"
     >
       <CdaPanel activeItem={activeItem} onClose={onClose} />
