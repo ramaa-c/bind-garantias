@@ -54,6 +54,8 @@ export default function AdminNavbar() {
 
   const adminMenu = [
     "Cadenas de Valor",
+    "CDAs Globales",
+    "CDAs por Cadena",
     "Líneas",
     "Productos de Líneas",
   ];
@@ -145,6 +147,10 @@ export default function AdminNavbar() {
                   let destPath = null;
                   if (item === "Cadenas de Valor") {
                     destPath = "/admin/cadenas-valor";
+                  } else if (item === "CDAs Globales") {
+                    destPath = "/admin/cdas";
+                  } else if (item === "CDAs por Cadena") {
+                    destPath = "/admin/cadenas-cda";
                   } else if (item === "Líneas") {
                     destPath = "/admin/lineas-cadenas";
                   } else if (item === "Productos de Líneas") {

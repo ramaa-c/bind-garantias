@@ -377,6 +377,7 @@ export default function CadenasValor() {
         isOpen={isModalOpen && modalType === "cdas"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}
+        isReadOnly={true}
       />
 
       <UsuariosRelacionadosModal
