@@ -23,15 +23,21 @@ export const cdaService = {
     return response.data;
   },
 
-  ejecutarCda: async (pantallaOrObj, cuit) => {
+  ejecutarCda: async (pantallaOrObj, cuit, cadenaValorId) => {
     let Pantalla = pantallaOrObj;
     let Cuit = cuit;
+    let CadenaValorID = cadenaValorId;
     if (typeof pantallaOrObj === "object" && pantallaOrObj !== null) {
       Pantalla = pantallaOrObj.pantalla || pantallaOrObj.Pantalla;
       Cuit = pantallaOrObj.cuit || pantallaOrObj.Cuit;
+      CadenaValorID = pantallaOrObj.cadenaValorId || pantallaOrObj.CadenaValorID || pantallaOrObj.cadenavalorid || cadenaValorId;
+    }
+    const params = { Pantalla, Cuit };
+    if (CadenaValorID !== undefined && CadenaValorID !== null && String(CadenaValorID).trim() !== "" && !isNaN(Number(CadenaValorID))) {
+      params.CadenaValorID = Number(CadenaValorID);
     }
     const response = await api.get("api/cda/execute", {
-      params: { Pantalla, Cuit },
+      params,
     });
     return response.data;
   },
