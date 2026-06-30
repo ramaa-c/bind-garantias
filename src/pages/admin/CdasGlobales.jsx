@@ -178,7 +178,8 @@ export default function CdasGlobales() {
 
       <div className={styles.mainLayout}>
         {/* COLUMNA IZQUIERDA: Selector e Interfaz JSON */}
-        <div className={styles.leftCol}>
+        <div className={styles.leftColWrapper}>
+          <div className={styles.leftCol}>
           <div>
             <SelectSimple
               label="Seleccionar Integración"
@@ -207,6 +208,7 @@ export default function CdasGlobales() {
               </div>
             )}
           </div>
+        </div>
         </div>
 
         {/* COLUMNA DERECHA: Formulario de Creación */}

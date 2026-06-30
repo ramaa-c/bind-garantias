@@ -1,3 +1,4 @@
+import { socioArchivoAdapter } from "../adapters/socioArchivoAdapter";
 import api from "../api/axios";
 
 /**   Convierte un File del navegador a string base64   */
@@ -110,7 +111,7 @@ export const socioArchivoService = {
       referencia: referencia || "",
     };
 
-    const response = await api.post("api/SocioArchivo", payload);
+    const response = await api.post("api/SocioArchivo", socioArchivoAdapter.adaptarPayload1(payload));
     return response.data;
   },
 
@@ -148,7 +149,7 @@ export const socioArchivoService = {
       contenido: `(base64, ${contenidoBase64.length} chars)`,
     });
 
-    const response = await api.put("api/SocioArchivo", payload);
+    const response = await api.put("api/SocioArchivo", socioArchivoAdapter.adaptarPayload2(payload));
     return response.data;
   },
 

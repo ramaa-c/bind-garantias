@@ -7,7 +7,7 @@ export const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-const getMimeType = (filename) => {s
+const getMimeType = (filename) => {
   const ext = String(filename || "")
     .split(".")
     .pop()
