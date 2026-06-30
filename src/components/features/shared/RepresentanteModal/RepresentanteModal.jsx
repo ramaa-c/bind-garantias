@@ -14,6 +14,7 @@ import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { tercerosService } from "../../../../services/tercerosService";
+import { useParams } from "react-router-dom";
 import styles from "./RepresentanteModal.module.css";
 
 export function RepresentanteModal({
@@ -25,6 +26,8 @@ export function RepresentanteModal({
   representanteInicial,   // Form mode: initial representative data for edit
   onGuardar,              // Form mode: callback to update parent React Hook Form state
 }) {
+  const { cadenaSlug } = useParams();
+  const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
@@ -119,7 +122,7 @@ export function RepresentanteModal({
       isSystemError: false
     });
 
-    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio);
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam);
     
     if (!result.success) {
       setProcesoModal(prev => ({

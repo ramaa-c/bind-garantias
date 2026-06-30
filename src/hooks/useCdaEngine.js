@@ -22,17 +22,17 @@ export const useCdaEngine = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const ejecutarValidaciones = useCallback(async (pantalla, cuit) => {
+  const ejecutarValidaciones = useCallback(async (pantalla, cuit, cadenaValorId = null) => {
     setLoading(true);
     setError(null);
 
     try {
       const cuitLimpio = String(cuit).replace(/\D/g, "");
       console.log(
-        `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}" y CUIT ${cuitLimpio}`,
+        `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}", CUIT ${cuitLimpio} y CadenaValorID ${cadenaValorId}`,
       );
 
-      await cdaService.ejecutarCda(pantalla, cuitLimpio);
+      await cdaService.ejecutarCda(pantalla, cuitLimpio, cadenaValorId);
 
       console.log(
         `[CDA ENGINE] Validaciones de CDAs para pantalla "${pantalla}" superadas con éxito (Status: 202)`,
