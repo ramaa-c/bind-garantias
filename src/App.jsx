@@ -55,6 +55,8 @@ function App() {
           <Route path="/not-found" element={<NotFound />} />
           <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
 
+          <Route path="/0/:token" element={<CrearClave />} />
+
           <Route path="/:cadenaSlug" element={<TenantLayout />}>
             <Route index element={<Navigate to="login" replace />} />
             <Route path="login" element={<Login />} />
