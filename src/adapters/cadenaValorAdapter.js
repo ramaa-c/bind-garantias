@@ -29,14 +29,17 @@ export const cadenaValorAdapter = {
   },
   adaptarPayload3: (data) => {
     if (!data) return data;
-    const rawList = data?.listaCda ?? data?.ListaCda ?? data?.listacda ?? [];
-    const mappedList = rawList.map((item) => ({
-      CdaID: item?.cdaID ?? item?.CdaID ?? item?.cdaid ?? item?.CdaId,
-      ValorComparacion: item?.valorComparacion ?? item?.ValorComparacion ?? item?.valorcomparacion,
+    const cadenaValorID = data?.cadenavalorid ?? data?.cadenaValorID ?? data?.CadenaValorID;
+    const listaCdaRaw = data?.listacda ?? data?.listaCda ?? data?.ListaCda ?? [];
+
+    const listaCda = listaCdaRaw.map(item => ({
+      CdaID: item?.cdaid ?? item?.CdaID ?? item?.CdaId,
+      ValorComparacion: item?.valorcomparacion ?? item?.ValorComparacion ?? ""
     }));
+
     return {
-      CadenaValorID: data?.cadenaValorID ?? data?.CadenaValorID ?? data?.cadenavalorid,
-      ListaCda: mappedList,
+      CadenaValorID: cadenaValorID,
+      ListaCda: listaCda,
     };
   },
 };

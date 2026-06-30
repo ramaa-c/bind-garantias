@@ -70,8 +70,9 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
         onDrop={(e) => {
           e.preventDefault();
           setIsDragging(false);
-          if (e.dataTransfer.files?.[0]) {
-            onChange(e.dataTransfer.files[0]);
+          const droppedFile = e.dataTransfer.files?.[0];
+          if (droppedFile) {
+            onChange(droppedFile);
           }
         }}
       />
@@ -83,6 +84,8 @@ const DEFAULT_DNI_TERCEROS = {};
 const DEFAULT_ACCIONISTAS = [];
 
 export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
+  const { cadenaSlug } = useParams();
+  const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
@@ -323,7 +326,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         isSystemError: false
       });
 
-      const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio);
+      const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam);
       
       if (!result.success) {
         setProcesoModal(prev => ({

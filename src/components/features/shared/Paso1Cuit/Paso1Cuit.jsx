@@ -188,6 +188,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         const resultCda = await ejecutarValidaciones(
           "PANTALLA_INGRESO_CUIT",
           cuit,
+          cadenaValorIdParam
         );
 
         if (!resultCda.success) {
