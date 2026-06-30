@@ -1,3 +1,4 @@
+import { requisitosAdapter } from "../adapters/requisitosAdapter";
 import api from "../api/axios";
 
 // Configuración por defecto para Persona Física (Individual)
@@ -357,9 +358,9 @@ export const requisitosService = {
         };
 
         if (existente) {
-          promises.push(api.put("api/CadenaValorParametrizacion", payload));
+          promises.push(api.put("api/CadenaValorParametrizacion", requisitosAdapter.adaptarPayload1(payload)));
         } else {
-          promises.push(api.post("api/CadenaValorParametrizacion", payload));
+          promises.push(api.post("api/CadenaValorParametrizacion", requisitosAdapter.adaptarPayload2(payload)));
         }
       });
 
@@ -414,9 +415,9 @@ export const requisitosService = {
     // Guardar secuencialmente para no saturar el pool (FireDAC)
     for (const req of promises) {
       if (req.method === 'put') {
-        await api.put(req.url, req.payload);
+        await api.put(req.url, requisitosAdapter.adaptarPayload3(req.payload));
       } else {
-        await api.post(req.url, req.payload);
+        await api.post(req.url, requisitosAdapter.adaptarPayload4(req.payload));
       }
     }
     

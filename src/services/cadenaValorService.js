@@ -1,3 +1,4 @@
+import { cadenaValorAdapter } from "../adapters/cadenaValorAdapter";
 import api from "../api/axios";
 
 export const cadenaValorService = {
@@ -90,11 +91,11 @@ export const cadenaValorService = {
 
   // POST /api/cadenavalor
   crearCadenaValor: async (cadenaValorData) =>
-    (await api.post("api/cadenavalor", cadenaValorData)).data,
+    (await api.post("api/cadenavalor", cadenaValorAdapter.adaptarPayload1(cadenaValorData))).data,
 
   // PUT /api/cadenavalor
   actualizarCadenaValor: async (cadenaValorData) =>
-    (await api.put("api/cadenavalor", cadenaValorData)).data,
+    (await api.put("api/cadenavalor", cadenaValorAdapter.adaptarPayload2(cadenaValorData))).data,
 
   // GET /api/cadenavalor (Web) - Obtener todas las activas
   obtenerTodasWeb: async () =>
@@ -102,5 +103,5 @@ export const cadenaValorService = {
 
   // POST /api/cadenavalor/cdas
   vincularCdas: async (vinculacionData) =>
-    (await api.post("api/cadenavalor/cdas", vinculacionData)).data,
+    (await api.post("api/cadenavalor/cdas", cadenaValorAdapter.adaptarPayload3(vinculacionData))).data,
 };

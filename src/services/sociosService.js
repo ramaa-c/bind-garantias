@@ -1,4 +1,5 @@
 import api from "../api/axios";
+import { sociosAdapter } from "../adapters/sociosAdapter";
 import { socioArchivoService } from "./socioArchivoService";
 
 const cuitCache = new Map();
@@ -78,19 +79,19 @@ export const sociosService = {
 
   // Crea nuevo socio
   crearSocio: async (socioData) => {
-    const response = await api.post("api/Socio", socioData);
+    const response = await api.post("api/Socio", sociosAdapter.adaptarPayload1(socioData));
     return response.data;
   },
 
   // Actualiza un socio
   actualizarSocio: async (socioData) => {
-    const response = await api.put("api/Socio", socioData);
+    const response = await api.put("api/Socio", sociosAdapter.adaptarPayload2(socioData));
     return response.data;
   },
 
   // POST api/SocioUsuario - Carga de nueva relación entre socio y usuario
   vincularSocioUsuario: async (socioUsuarioData) => {
-    const response = await api.post("api/SocioUsuario", socioUsuarioData);
+    const response = await api.post("api/SocioUsuario", sociosAdapter.adaptarPayload3(socioUsuarioData));
     return response.data;
   },
 
@@ -253,9 +254,9 @@ export const sociosService = {
 
   // Envía todos los datos consolidados del legajo al esquema SGR+
   enviarASgrPlus: async (socioId) => {
-    const response = await api.post("api/Socio/Migrar", {
+    const response = await api.post("api/Socio/Migrar", sociosAdapter.adaptarPayload4({
       socioid: Number(socioId),
-    });
+    }));
     return {
       success: true,
       message: response.data?.message || "Legajo enviado a SGR+ exitosamente.",

@@ -1,3 +1,4 @@
+import { cdaAdapter } from "../adapters/cdaAdapter";
 import api from "../api/axios";
 
 export const cdaService = {
@@ -36,7 +37,7 @@ export const cdaService = {
   },
 
   crearCda: async (cdaData) => {
-    const response = await api.post("api/cda/Cda", cdaData);
+    const response = await api.post("api/cda/Cda", cdaAdapter.adaptarPayload1(cdaData));
     return response.data;
   },
 

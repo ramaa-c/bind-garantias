@@ -12,8 +12,35 @@ const api = axios.create({
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1000;
 
+const transformKeysToLowercase = (obj) => {
+  if (obj === null || typeof obj !== "object") {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => transformKeysToLowercase(item));
+  }
+
+  // Handle FormData, Blob, File, etc.
+  if (obj instanceof FormData || obj instanceof Blob || obj instanceof File) {
+    return obj;
+  }
+
+  const camelObj = {};
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const lowerKey = key.toLowerCase();
+      camelObj[lowerKey] = transformKeysToLowercase(obj[key]);
+    }
+  }
+  return camelObj;
+};
+
 api.interceptors.response.use(
   (response) => {
+    if (response.data) {
+      response.data = transformKeysToLowercase(response.data);
+    }
     return response;
   },
   async (error) => {
