@@ -1,17 +1,147 @@
 export const INTEGRACIONES_MOCKS = {
   ARCA: {
-    "cuit": 20123456789,
-    "estadoCuit": "ACTIVO",
-    "impuestos": {
-      "ganancias": "Inscripto",
-      "iva": "Responsable Inscripto",
-      "bienesPersonales": "Inscripto"
+    "datosgenerales": {
+      "apellido": "string",
+      "caracterizacion": [
+        {
+          "descripcioncaracterizacion": "string",
+          "idcaracterizacion": 0,
+          "periodo": 0
+        }
+      ],
+      "dependencia": {
+        "codpostal": "string",
+        "descripciondependencia": "string",
+        "descripcionprovincia": "string",
+        "direccion": "string",
+        "iddependencia": 0,
+        "idprovincia": 0,
+        "localidad": "string"
+      },
+      "domiciliofiscal": {
+        "codpostal": "string",
+        "datoadicional": "string",
+        "descripcionprovincia": "string",
+        "direccion": "string",
+        "idprovincia": 0,
+        "localidad": "string",
+        "tipodatoadicional": "string",
+        "tipodomicilio": "string"
+      },
+      "essucesion": "string",
+      "estadoclave": "string",
+      "fechacontratosocial": "string",
+      "fechafallecimiento": "string",
+      "idpersona": 0,
+      "mescierre": 0,
+      "nombre": "string",
+      "razonsocial": "string",
+      "tipoclave": "string",
+      "tipopersona": "string"
     },
-    "deudaExigible": 0.00,
-    "categoriaMonotributo": null,
-    "actividadPrincipal": "Servicios de informática y programación",
-    "fechaInicioActividades": "2015-05-12T00:00:00Z",
-    "riesgoFiscal": "BAJO"
+    "datosmonotributo": {
+      "actividad": [
+        {
+          "descripcionactividad": "string",
+          "idactividad": 0,
+          "nomenclador": 0,
+          "orden": 0,
+          "periodo": 0
+        }
+      ],
+      "actividadmonotributista": {
+        "descripcionactividad": "string",
+        "idactividad": 0,
+        "nomenclador": 0,
+        "orden": 0,
+        "periodo": 0
+      },
+      "categoriamonotributo": {
+        "descripcioncategoria": "string",
+        "idcategoria": 0,
+        "idimpuesto": 0,
+        "periodo": 0
+      },
+      "componentedesociedad": [
+        {
+          "apellidopersonaasociada": "string",
+          "ffrelacion": "string",
+          "ffvencimiento": "string",
+          "idpersonaasociada": 0,
+          "nombrepersonaasociada": "string",
+          "razonsocialpersonaasociada": "string",
+          "tipocomponente": "string"
+        }
+      ],
+      "impuesto": [
+        {
+          "descripcionimpuesto": "string",
+          "estadoimpuesto": "string",
+          "idimpuesto": 0,
+          "motivo": "string",
+          "periodo": 0
+        }
+      ]
+    },
+    "datosregimengeneral": {
+      "actividad": [
+        {
+          "descripcionactividad": "string",
+          "idactividad": 0,
+          "nomenclador": 0,
+          "orden": 0,
+          "periodo": 0
+        }
+      ],
+      "categoriaautonomo": {
+        "descripcioncategoria": "string",
+        "idcategoria": 0,
+        "idimpuesto": 0,
+        "periodo": 0
+      },
+      "impuesto": [
+        {
+          "descripcionimpuesto": "string",
+          "estadoimpuesto": "string",
+          "idimpuesto": 0,
+          "motivo": "string",
+          "periodo": 0
+        }
+      ],
+      "regimen": [
+        {
+          "descripcionregimen": "string",
+          "idimpuesto": 0,
+          "idregimen": 0,
+          "periodo": 0,
+          "tiporegimen": "string"
+        }
+      ]
+    },
+    "errorconstancia": {
+      "apellido": "string",
+      "error": [
+        "string"
+      ],
+      "idpersona": 0,
+      "nombre": "string"
+    },
+    "errormonotributo": {
+      "error": [
+        "string"
+      ],
+      "mensaje": "string"
+    },
+    "errorregimengeneral": {
+      "error": [
+        "string"
+      ],
+      "mensaje": "string"
+    },
+    "metadata": {
+      "fechahora": "string",
+      "servidor": "string"
+    }
   },
   CASFOG: {
     "solicitudId": 98765,
@@ -26,23 +156,77 @@ export const INTEGRACIONES_MOCKS = {
     }
   },
   LUFE: {
-    "legajoUnico": "LUFE-2023-456789",
-    "estadoLegajo": "VIGENTE",
-    "datosEmpresa": {
-      "razonSocial": "Empresa Ficticia S.A.",
-      "fechaConstitucion": "2010-02-15",
-      "capitalSocial": 5000000
-    },
-    "socios": [
-      { "nombre": "Juan Perez", "participacion": 50 },
-      { "nombre": "Maria Gomez", "participacion": 50 }
+    "success": true,
+    "cuit": 0,
+    "nombre": "string",
+    "actividad_principal": 0,
+    "forma_juridica": "string",
+    "fecha_contrato_social": "string",
+    "personeria": "string",
+    "impuestos": [
+      {
+        "codigo_caracterizacion": 0,
+        "estado": "string",
+        "origen": "string",
+        "identificacion_estado_vigente": "string",
+        "periodo_vigencia": 0,
+        "fecha_actualizacion": "string"
+      }
     ],
-    "balanceUltimoAnio": {
-      "activo": 12000000,
-      "pasivo": 3000000,
-      "patrimonioNeto": 9000000,
-      "ventasNetas": 25000000
-    }
+    "actividades": [
+      {
+        "codigo": 0,
+        "estado": "string",
+        "origen": "string",
+        "vigente": "string",
+        "periodo_vigencia": 0,
+        "fecha_actualizacion": "string"
+      }
+    ],
+    "certificado_pyme": {
+      "categoria": "string",
+      "desde": "string",
+      "fecha_emision": "string",
+      "hasta": "string",
+      "nro_registro": 0,
+      "sector": "string",
+      "transaccion": 0
+    },
+    "contactos": [
+      {
+        "nombre": "string",
+        "tipo": "string",
+        "telefono": "string",
+        "email": "string"
+      }
+    ],
+    "fecha_modificacion": "string",
+    "ultimas_modificaciones": {
+      "indicadores": "string",
+      "documentos": "string",
+      "autoridades": "string"
+    },
+    "mes_cierre": 0,
+    "domicilio_fiscal": "string",
+    "regimenes": [
+      {
+        "descripcionregimen": "string",
+        "estado": "string",
+        "idimpuesto": 0,
+        "idregimen": 0,
+        "periodo": 0,
+        "tiporegimen": "string"
+      }
+    ],
+    "empleo": [
+      {
+        "periodo": 0,
+        "fecha_present": "string",
+        "numero_rectif": 0,
+        "empleo": 0,
+        "masa_salarial_bruta": 0
+      }
+    ]
   },
   NOSIS: {
     "score": 750,

@@ -8,6 +8,15 @@ import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
 import styles from "./CdasGlobales.module.css";
 
+// Prefijos para cada integración según el formato esperado por el backend
+const INTEGRACION_PREFIXES = {
+  ARCA: "afip.",
+  CASFOG: "casfog.",
+  LUFE: "lufe.",
+  NOSIS: "nosis.",
+  SGRPLUS: "sgrplus."
+};
+
 // Componente recursivo para renderizar el JSON de forma interactiva
 const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
   if (data === null) {
@@ -47,12 +56,24 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
         {keys.map((key, index) => {
           const currentPath = parentKey ? (isArray ? `${parentKey}[${key}]` : `${parentKey}.${key}`) : key;
           const isLast = index === keys.length - 1;
+          const isValArray = Array.isArray(data[key]);
           
           return (
             <div key={key}>
               {!isArray && (
                 <>
-                  <span className={styles.jsonKey}>"{key}"</span>
+                  <span
+                    className={`${styles.jsonKey} ${styles.jsonFieldHover}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Si el valor es un array, sugerimos la propiedad .Count
+                      const path = isValArray ? `${currentPath}.Count` : currentPath;
+                      onSelectField(path);
+                    }}
+                    title={`Seleccionar campo: ${isValArray ? `${currentPath}.Count` : currentPath}`}
+                  >
+                    "{key}"
+                  </span>
                   <span>: </span>
                 </>
               )}
@@ -90,13 +111,13 @@ export default function CdasGlobales() {
   };
 
   const handleSelectField = (fieldPath) => {
-    setExpresion(fieldPath);
-    // Optionally trigger a highlight or small toast
+    const prefix = INTEGRACION_PREFIXES[integracion] || "";
+    setExpresion(`${prefix}${fieldPath}`);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!descripcion.trim() || !expresion.trim() || !valorcomparacion.trim() || !mensajerechazo.trim()) {
+    if (!descripcion.trim() || !expresion.trim() || !mensajerechazo.trim()) {
       setValidationError("Por favor completá todos los campos obligatorios.");
       return;
     }
@@ -107,15 +128,24 @@ export default function CdasGlobales() {
     
     setValidationError("");
 
+    // Saneamos el valor de comparación para evitar almacenar comillas literales \"\" en la DB
+    let valorSaneado = valorcomparacion.trim();
+    if (valorSaneado === '""' || valorSaneado === "''") {
+      valorSaneado = "";
+    }
+
+    // Para el log de evaluación, si está vacío le ponemos comillas para mantener validez sintáctica
+    const valorParaLog = valorSaneado === "" ? '""' : valorSaneado;
+
     try {
       await crearCda({
         cdaid: 0,
         descripcion: descripcion.trim(),
         expresion: expresion.trim(),
         simbolocomparacion: simbolocomparacion,
-        valorcomparacion: valorcomparacion.trim(),
-        vinculadefaultcv: vinculadefaultcv ? "S" : "N",
-        expresionlog: `${expresion.trim()} ${simbolocomparacion} ${valorcomparacion.trim()}`,
+        valorcomparacion: valorSaneado,
+        vinculadefaultcv: vinculadefaultcv ? "1" : "0",
+        expresionlog: `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`,
         mensajerechazo: mensajerechazo.trim()
       });
 
@@ -203,7 +233,6 @@ export default function CdasGlobales() {
               value={expresion}
               onChange={setExpresion}
               disabled={isCreando}
-              readOnly
               variant="admin"
             />
 
@@ -234,6 +263,9 @@ export default function CdasGlobales() {
                   disabled={isCreando}
                   variant="admin"
                 />
+                <p className={styles.helperText}>
+                  Dejá vacío o escribí <code>""</code> para evaluar un texto vacío.
+                </p>
               </div>
             </div>
 

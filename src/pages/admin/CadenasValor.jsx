@@ -18,7 +18,6 @@ import { Spinner, Button, Alert } from "../../components/ui";
 import {
   ActivarCadenaModal,
   EditarCadenaModal,
-  CdaConfigModal,
   UsuariosRelacionadosModal,
   RequisitosConfigModal,
 } from "../../components/features";
@@ -309,15 +308,6 @@ export default function CadenasValor() {
                         </Button>
                         <Button
                           variant="ghost"
-                          className={`${styles.iconBtnAction} ${styles.btnList}`}
-                          title="Configurar CDAs"
-                          onClick={() => handleActionClick(item, "cdas")}
-                          disabled={isInactive}
-                        >
-                          <FiList />
-                        </Button>
-                        <Button
-                          variant="ghost"
                           className={`${styles.iconBtnAction} ${styles.btnUser}`}
                           title="Usuarios Relacionados"
                           onClick={() => handleActionClick(item, "users")}
@@ -371,13 +361,6 @@ export default function CadenasValor() {
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}
         onSuccess={refetchActive}
-      />
-
-      <CdaConfigModal
-        isOpen={isModalOpen && modalType === "cdas"}
-        onClose={() => setIsModalOpen(false)}
-        activeItem={activeItem}
-        isReadOnly={true}
       />
 
       <UsuariosRelacionadosModal

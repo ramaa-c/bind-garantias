@@ -23,33 +23,50 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
   const { data: linkedCdas, isLoading: isLoadingLinked } = useObtenerCdasPorCadenaId(cadenaId);
 
   const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdas();
+  const allCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
+  const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+
+  const getCdaId = (c) => {
+    if (!c) return undefined;
+    return c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
+  };
+
+  const getCdaProperty = (c, propName) => {
+    if (!c) return "";
+    if (propName === "vinculadefaultcv") {
+      return c.vinculadefaultcv !== undefined ? c.vinculadefaultcv : (c.VinculaDefaultCV !== undefined ? c.VinculaDefaultCV : "");
+    }
+    const pascalPropName = propName.charAt(0).toUpperCase() + propName.slice(1);
+    return c[propName] !== undefined ? c[propName] : (c[pascalPropName] !== undefined ? c[pascalPropName] : "");
+  };
 
   // cdaid -> { checked: boolean, valorcomparacion: string, simbolocomparacion: string, expresion: string, mensajerechazo: string }
   const [cdaConfigs, setCdaConfigs] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const allCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
-  const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
-
   // Inicializar estado local a partir de los datos cargados
   useEffect(() => {
     const configs = {};
     allCdasList.forEach(c => {
-      configs[c.cdaid] = {
+      const id = getCdaId(c);
+      if (id === undefined) return;
+      configs[id] = {
         checked: false,
-        valorcomparacion: c.valorcomparacion || "",
-        simbolocomparacion: c.simbolocomparacion || "=",
-        expresion: c.expresion || "",
-        mensajerechazo: c.mensajerechazo || ""
+        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
+        simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
+        expresion: getCdaProperty(c, "expresion") || "",
+        mensajerechazo: getCdaProperty(c, "mensajerechazo") || ""
       };
     });
     linkedCdasList.forEach(c => {
-      configs[c.cdaid] = {
+      const id = getCdaId(c);
+      if (id === undefined) return;
+      configs[id] = {
         checked: true,
-        valorcomparacion: c.valorcomparacion || "",
-        simbolocomparacion: c.simbolocomparacion || "=",
-        expresion: c.expresion || "",
-        mensajerechazo: c.mensajerechazo || ""
+        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
+        simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
+        expresion: getCdaProperty(c, "expresion") || "",
+        mensajerechazo: getCdaProperty(c, "mensajerechazo") || ""
       };
     });
     setCdaConfigs(configs);
@@ -110,7 +127,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
     const currentActiveIds = Object.keys(cdaConfigs)
       .filter(id => cdaConfigs[id]?.checked)
       .map(Number);
-    const initialActiveIds = linkedCdasList.map(c => c.cdaid);
+    const initialActiveIds = linkedCdasList.map(c => getCdaId(c)).filter(id => id !== undefined);
 
     // 1. Ver si cambió la selección de activos/inactivos
     if (currentActiveIds.length !== initialActiveIds.length) return true;
@@ -118,12 +135,14 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
 
     // 2. Ver si cambió el valor, el símbolo, la expresión o el mensaje de rechazo en alguno de los activos
     for (const cda of linkedCdasList) {
-      const currentConfig = cdaConfigs[cda.cdaid];
+      const id = getCdaId(cda);
+      if (id === undefined) continue;
+      const currentConfig = cdaConfigs[id];
       if (!currentConfig) continue;
-      if (currentConfig.valorcomparacion !== (cda.valorcomparacion || "")) return true;
-      if (currentConfig.simbolocomparacion !== (cda.simbolocomparacion || "=")) return true;
-      if (currentConfig.expresion !== (cda.expresion || "")) return true;
-      if (currentConfig.mensajerechazo !== (cda.mensajerechazo || "")) return true;
+      if (String(currentConfig.valorcomparacion || "") !== String(getCdaProperty(cda, "valorcomparacion") || "")) return true;
+      if (String(currentConfig.simbolocomparacion || "=") !== String(getCdaProperty(cda, "simbolocomparacion") || "=")) return true;
+      if (String(currentConfig.expresion || "") !== String(getCdaProperty(cda, "expresion") || "")) return true;
+      if (String(currentConfig.mensajerechazo || "") !== String(getCdaProperty(cda, "mensajerechazo") || "")) return true;
     }
 
     return false;
@@ -136,21 +155,25 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
   const handleReset = () => {
     const configs = {};
     allCdasList.forEach(c => {
-      configs[c.cdaid] = {
+      const id = getCdaId(c);
+      if (id === undefined) return;
+      configs[id] = {
         checked: false,
-        valorcomparacion: c.valorcomparacion || "",
-        simbolocomparacion: c.simbolocomparacion || "=",
-        expresion: c.expresion || "",
-        mensajerechazo: c.mensajerechazo || ""
+        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
+        simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
+        expresion: getCdaProperty(c, "expresion") || "",
+        mensajerechazo: getCdaProperty(c, "mensajerechazo") || ""
       };
     });
     linkedCdasList.forEach(c => {
-      configs[c.cdaid] = {
+      const id = getCdaId(c);
+      if (id === undefined) return;
+      configs[id] = {
         checked: true,
-        valorcomparacion: c.valorcomparacion || "",
-        simbolocomparacion: c.simbolocomparacion || "=",
-        expresion: c.expresion || "",
-        mensajerechazo: c.mensajerechazo || ""
+        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
+        simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
+        expresion: getCdaProperty(c, "expresion") || "",
+        mensajerechazo: getCdaProperty(c, "mensajerechazo") || ""
       };
     });
     setCdaConfigs(configs);
@@ -161,16 +184,19 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
     try {
       const listacda = Object.entries(cdaConfigs)
         .filter(([_, config]) => config.checked)
-        .map(([id, config]) => ({
-          cdaid: Number(id),
-          valorcomparacion: config.valorcomparacion,
-          simbolocomparacion: config.simbolocomparacion,
-          expresion: config.expresion,
-          mensajerechazo: config.mensajerechazo
-        }));
+        .map(([id, config]) => {
+          let valorSaneado = String(config.valorcomparacion || "").trim();
+          if (valorSaneado === '""' || valorSaneado === "''") {
+            valorSaneado = "";
+          }
+          return {
+            cdaid: Number(id),
+            valorcomparacion: valorSaneado
+          };
+        });
 
       await vincularCda({
-        cadenavalorid: cadenaId,
+        cadenavalorid: Number(cadenaId),
         listacda: listacda
       });
 
@@ -185,8 +211,6 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
       setConfirmOpen(false);
     }
   };
-
-
 
   const isLoading = isLoadingTodos || isLoadingLinked;
 
@@ -216,8 +240,6 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
           </>
         )}
 
-
-
         <div className={styles.cdasSection}>
           <div className={styles.cdasTitle}>Configuración de CDAs</div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" }}>
@@ -227,23 +249,33 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
               </div>
             ) : (
               allCdasList
-                .filter(cda => !isReadOnly || (cdaConfigs[cda.cdaid]?.checked))
+                .filter(cda => !isReadOnly || (cdaConfigs[getCdaId(cda)]?.checked))
                 .map((cda) => {
-                  const config = cdaConfigs[cda.cdaid] || { checked: false, valorcomparacion: cda.valorcomparacion || "", simbolocomparacion: cda.simbolocomparacion || "=", expresion: cda.expresion || "", mensajerechazo: cda.mensajerechazo || "" };
+                  const id = getCdaId(cda);
+                  if (id === undefined) return null;
+
+                  const config = cdaConfigs[id] || { 
+                    checked: false, 
+                    valorcomparacion: getCdaProperty(cda, "valorcomparacion") || "", 
+                    simbolocomparacion: getCdaProperty(cda, "simbolocomparacion") || "=", 
+                    expresion: getCdaProperty(cda, "expresion") || "", 
+                    mensajerechazo: getCdaProperty(cda, "mensajerechazo") || "" 
+                  };
+
                   const isChecked = config.checked;
                   const valComparacion = config.valorcomparacion;
                   const simboloComparacion = config.simbolocomparacion;
                   const exprComparacion = config.expresion;
                   const mensajeRechazo = config.mensajerechazo;
 
-                  const isDefault = cda.vinculadefaultcv === "S";
+                  const isDefault = String(getCdaProperty(cda, "vinculadefaultcv")) === "1" || String(getCdaProperty(cda, "vinculadefaultcv")).toUpperCase() === "S";
 
                   return (
                     <div
-                      key={cda.cdaid}
+                      key={id}
                       className={`${styles.cdaCard} ${isChecked ? styles.cdaCardChecked : ""}`}
                     >
-                      <div className={styles.checkboxWrapper} onClick={() => { if(!isReadOnly) handleToggleCda(cda.cdaid) }}>
+                      <div className={styles.checkboxWrapper} onClick={() => { if(!isReadOnly) handleToggleCda(id) }}>
                         <div className={`${styles.customCheckbox} ${isChecked ? styles.checked : ""}`}>
                           {isChecked && <FiCheck size={14} className={styles.checkmarkIcon} />}
                         </div>
@@ -252,7 +284,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
                         className={styles.cdaContent}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                          <strong className={styles.cdaTitleText}>{cda.descripcion}</strong>
+                          <strong className={styles.cdaTitleText}>{getCdaProperty(cda, "descripcion")}</strong>
                           {isDefault && (
                             <span className={styles.defaultBadge}>Por Defecto</span>
                           )}
@@ -265,7 +297,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
                           <input
                             type="text"
                             value={exprComparacion}
-                            onChange={(e) => handleExpressionChange(cda.cdaid, e.target.value)}
+                            onChange={(e) => handleExpressionChange(id, e.target.value)}
                             className={styles.inlineExpressionInput}
                             placeholder="Expresión"
                             disabled={true}
@@ -274,7 +306,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
                           
                           <select
                             value={simboloComparacion}
-                            onChange={(e) => handleSymbolChange(cda.cdaid, e.target.value)}
+                            onChange={(e) => handleSymbolChange(id, e.target.value)}
                             className={styles.inlineSymbolSelect}
                             disabled={true}
                             onClick={(e) => e.stopPropagation()}
@@ -290,7 +322,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
                           <input
                             type="text"
                             value={valComparacion}
-                            onChange={(e) => handleValueChange(cda.cdaid, e.target.value)}
+                            onChange={(e) => handleValueChange(id, e.target.value)}
                             className={styles.inlineValueInput}
                             placeholder="Valor"
                             disabled={!isChecked || isReadOnly}
@@ -304,7 +336,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
                           <input
                             type="text"
                             value={mensajeRechazo}
-                            onChange={(e) => handleRechazoChange(cda.cdaid, e.target.value)}
+                            onChange={(e) => handleRechazoChange(id, e.target.value)}
                             className={styles.inlineRechazoInput}
                             placeholder="Mensaje de rechazo que verá el analista..."
                             disabled={!isChecked || isReadOnly}
