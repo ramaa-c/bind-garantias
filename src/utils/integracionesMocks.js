@@ -229,16 +229,35 @@ export const INTEGRACIONES_MOCKS = {
     ]
   },
   NOSIS: {
-    "score": 750,
-    "probabilidadDefault": 0.02,
-    "peorSituacionBCRA": 1,
-    "bancosConDeuda": 2,
-    "montoTotalDeuda": 450000.50,
-    "chequesRechazados": {
-      "cantidadUltimos6Meses": 0,
-      "montoUltimos6Meses": 0
-    },
-    "juiciosActivos": 0
+    "Contenido": {
+      "Pedido": {
+        "Usuario": 0,
+        "Documento": "string",
+        "VR": "string",
+        "Timeout": 0
+      },
+      "Resultado": {
+        "Estado": 0,
+        "Novedad": "string",
+        "Tiempo": 0,
+        "FechaRecepcion": "string",
+        "Transaccion": "string",
+        "Referencia": "string",
+        "Servidor": "string",
+        "Version": "string"
+      },
+      "Datos": {
+        "Variables": [
+          {
+            "Nombre": "string",
+            "Valor": "string",
+            "Descripcion": "string",
+            "Tipo": "string",
+            "FechaAct": "string"
+          }
+        ]
+      }
+    }
   },
   SGRPLUS: {
     "socioParticipe": true,
