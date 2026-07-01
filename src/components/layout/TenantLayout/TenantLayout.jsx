@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useParams, Outlet, Navigate, useNavigate } from "react-router-dom";
 import { useChannel } from "../../../context/ChannelContext";
 import { useObtenerPorCadenaValorIdWeb, useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
+import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 
 const TenantLayout = () => {
   const { cadenaSlug } = useParams();
@@ -26,29 +27,35 @@ const TenantLayout = () => {
 
     const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
 
-    if (String(cadenaObj.activa) === "0") {
+    const isActiva = cadenaObj.activa ?? cadenaObj.Activa;
+    const resolvedDenominacion = cadenaObj.denominacion || cadenaObj.Denominacion;
+    
+    if (String(isActiva) === "0") {
       navigate("/cadena-inactiva", { 
         replace: true, 
-        state: { denominacion: cadenaObj.denominacion } 
+        state: { denominacion: resolvedDenominacion } 
       });
       return;
     }
 
     let formatLogo = null;
-    if (cadenaObj.logo) {
+    const resolvedLogo = cadenaObj.logo ?? cadenaObj.Logo;
+    if (resolvedLogo) {
       if (
-        cadenaObj.logo.startsWith("data:") ||
-        cadenaObj.logo.startsWith("http")
+        resolvedLogo.startsWith("data:") ||
+        resolvedLogo.startsWith("http")
       ) {
-        formatLogo = cadenaObj.logo;
+        formatLogo = resolvedLogo;
       } else {
-        formatLogo = `data:image/png;base64,${cadenaObj.logo}`;
+        formatLogo = `data:image/png;base64,${resolvedLogo}`;
       }
     }
 
+    const resolvedId = cadenaObj.cadenavalorid ?? cadenaObj.CadenaValorID ?? cadenaObj.cadenaValorId;
+
     setChannelInfo({
-      id: String(cadenaObj.cadenavalorid),
-      nombre: cadenaObj.denominacion || "Cadena de Valor",
+      id: String(resolvedId),
+      nombre: resolvedDenominacion || "Cadena de Valor",
       logo: formatLogo,
       colorPrincipal: "var(--color-azul-bind)",
       colorSecundario: "var(--color-amarillo-bind)",
@@ -60,7 +67,12 @@ const TenantLayout = () => {
   }
 
   if (isLoading || isLoadingTodas) {
-    return null;
+    return (
+      <LoadingScreen
+        title="Validando acceso"
+        message="Estamos verificando la información de la cadena..."
+      />
+    );
   }
 
   return <Outlet />;

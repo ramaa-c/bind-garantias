@@ -46,7 +46,7 @@ const RecuperarClave = () => {
   };
 
   const onSubmit = async (data) => {
-    const canalId = (channelInfo.id && channelInfo.id !== "default" && channelInfo.id !== "bind") ? channelInfo.id : "canal1";
+    const canalId = channelInfo.id;
 
     const payloadReset = {
       email: data.email,
@@ -57,7 +57,7 @@ const RecuperarClave = () => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: "",
+      denominacion: canalId,
     };
 
     try {
@@ -157,4 +157,4 @@ const RecuperarClave = () => {
   );
 };
 
-export default RecuperarClave;
+export default RecuperarClave;

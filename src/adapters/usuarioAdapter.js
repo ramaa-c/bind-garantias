@@ -17,13 +17,13 @@ export const usuarioAdapter = {
     if (!data) return data;
     return {
       Email: data?.email ?? data?.Email,
-      UsuarioWebID: data?.usuarioWebID ?? data?.UsuarioWebID,
-      fchAlta: data?.fchAlta ?? data?.fchAlta,
-      fchVencimiento: data?.fchVencimiento ?? data?.fchVencimiento,
-      HashSeguridad: data?.hashSeguridad ?? data?.HashSeguridad,
+      UsuarioWebID: data?.usuarioWebID ?? data?.UsuarioWebID ?? data?.usuariowebid,
+      fchAlta: data?.fchAlta ?? data?.fchAlta ?? data?.fchalta,
+      fchVencimiento: data?.fchVencimiento ?? data?.fchVencimiento ?? data?.fchvencimiento,
+      HashSeguridad: data?.hashSeguridad ?? data?.HashSeguridad ?? data?.hashseguridad,
       Estado: data?.estado ?? data?.Estado,
-      DebeCambiarClave: data?.debeCambiarClave ?? data?.DebeCambiarClave,
-      EsAdministrador: data?.esAdministrador ?? data?.EsAdministrador,
+      DebeCambiarClave: data?.debeCambiarClave ?? data?.DebeCambiarClave ?? data?.debecambiarclave,
+      EsAdministrador: data?.esAdministrador ?? data?.EsAdministrador ?? data?.esadministrador,
       Denominacion: data?.denominacion ?? data?.Denominacion,
     };
   },
@@ -31,13 +31,13 @@ export const usuarioAdapter = {
     if (!data) return data;
     return {
       Email: data?.email ?? data?.Email,
-      UsuarioWebID: data?.usuarioWebID ?? data?.UsuarioWebID ?? 0,
-      fchAlta: data?.fchAlta ?? data?.fchAlta,
-      fchVencimiento: data?.fchVencimiento ?? data?.fchVencimiento,
-      HashSeguridad: data?.hashSeguridad ?? data?.HashSeguridad,
+      UsuarioWebID: data?.usuarioWebID ?? data?.UsuarioWebID ?? data?.usuariowebid ?? 0,
+      fchAlta: data?.fchAlta ?? data?.fchAlta ?? data?.fchalta,
+      fchVencimiento: data?.fchVencimiento ?? data?.fchVencimiento ?? data?.fchvencimiento,
+      HashSeguridad: data?.hashSeguridad ?? data?.HashSeguridad ?? data?.hashseguridad,
       Estado: data?.estado ?? data?.Estado,
-      DebeCambiarClave: data?.debeCambiarClave ?? data?.DebeCambiarClave,
-      EsAdministrador: data?.esAdministrador ?? data?.EsAdministrador,
+      DebeCambiarClave: data?.debeCambiarClave ?? data?.DebeCambiarClave ?? data?.debecambiarclave,
+      EsAdministrador: data?.esAdministrador ?? data?.EsAdministrador ?? data?.esadministrador,
       Denominacion: data?.denominacion ?? data?.Denominacion,
     };
   },
