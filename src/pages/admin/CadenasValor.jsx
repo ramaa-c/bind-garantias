@@ -20,6 +20,7 @@ import {
   EditarCadenaModal,
   UsuariosRelacionadosModal,
   RequisitosConfigModal,
+  CdaConfigModal,
 } from "../../components/features";
 import { toast } from "sonner";
 
@@ -172,7 +173,11 @@ export default function CadenasValor() {
   );
 
   if (isLoadingActive) {
-    return <Spinner center size={80} />;
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+        <Spinner size={80} />
+      </div>
+    );
   }
 
   return (
@@ -324,6 +329,15 @@ export default function CadenasValor() {
                         >
                           <FiSliders />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          className={`${styles.iconBtnAction} ${styles.btnList}`}
+                          title="Ver CDAs Activos"
+                          onClick={() => handleActionClick(item, "cda")}
+                          disabled={isInactive}
+                        >
+                          <FiList />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -373,6 +387,13 @@ export default function CadenasValor() {
         isOpen={isModalOpen && modalType === "requisitos"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}
+      />
+
+      <CdaConfigModal
+        isOpen={isModalOpen && modalType === "cda"}
+        onClose={() => setIsModalOpen(false)}
+        activeItem={activeItem}
+        isReadOnly={true}
       />
     </div>
   );
