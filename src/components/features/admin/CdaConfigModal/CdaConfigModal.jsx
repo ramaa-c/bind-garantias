@@ -12,7 +12,7 @@ export const CdaConfigModal = ({ isOpen, onClose, activeItem, isReadOnly = false
       maxWidth="850px"
       variant="blue"
     >
-      <CdaPanel activeItem={activeItem} onClose={onClose} isReadOnly={isReadOnly} />
+      <CdaPanel activeItem={activeItem} onClose={onClose} isReadOnly={isReadOnly} hideCheckboxes={isReadOnly} />
     </Modal>
   );
 };

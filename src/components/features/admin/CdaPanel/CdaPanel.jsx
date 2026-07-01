@@ -12,7 +12,7 @@ import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CdaPanel.module.css";
 
-export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader = false }) => {
+export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
@@ -234,13 +234,15 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
               cadenavalorid={activeItem?.cadenavalorid}
               cuittercero={activeItem?.cuittercero}
             />
-            <p style={{ fontSize: "0.825rem", color: "#8b949e", marginBottom: "1.25rem", lineHeight: "1.4" }}>
-              Seleccioná los CDAs que se deben ejecutar durante la validación de esta cadena de valor y personalizá sus valores límites y mensajes de rechazo.
+            <p style={{ fontSize: "0.825rem", color: "#8b949e", lineHeight: "1.4" }}>
+              {isReadOnly 
+                ? "Listado de los CDAs que se encuentran activos y vinculados para validar esta cadena de valor."
+                : "Seleccioná los CDAs que se deben ejecutar durante la validación de esta cadena de valor y personalizá sus valores límites y mensajes de rechazo."}
             </p>
           </>
         )}
 
-        <div className={styles.cdasSection}>
+        <div className={`${styles.cdasSection} ${isReadOnly ? styles.readOnly : ""}`}>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {allCdasList.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
@@ -248,7 +250,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
               </div>
             ) : (
               allCdasList
-                .filter(cda => !isReadOnly || (cdaConfigs[getCdaId(cda)]?.checked))
+                .filter(cda => !hideUnchecked || (cdaConfigs[getCdaId(cda)]?.checked))
                 .map((cda) => {
                   const id = getCdaId(cda);
                   if (id === undefined) return null;
@@ -274,11 +276,13 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
                       key={id}
                       className={`${styles.cdaCard} ${isChecked ? styles.cdaCardChecked : ""}`}
                     >
-                      <div className={styles.checkboxWrapper} onClick={() => { if(!isReadOnly) handleToggleCda(id) }}>
-                        <div className={`${styles.customCheckbox} ${isChecked ? styles.checked : ""}`}>
-                          {isChecked && <FiCheck size={14} className={styles.checkmarkIcon} />}
+                      {!hideCheckboxes && (
+                        <div className={styles.checkboxWrapper} onClick={() => { if(!isReadOnly) handleToggleCda(id) }}>
+                          <div className={`${styles.customCheckbox} ${isChecked ? styles.checked : ""}`}>
+                            {isChecked && <FiCheck size={14} className={styles.checkmarkIcon} />}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       <div
                         className={styles.cdaContent}
                       >

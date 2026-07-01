@@ -588,5 +588,17 @@
   box-shadow: 0 0 6px rgba(56, 161, 105, 0.25);
 }
 
+/* --- Overrides para modo Solo Lectura (Ej: Cadena Inactiva) --- */
+.readOnly .cdaCardChecked {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
+}
 
+.readOnly .customCheckbox.checked {
+  background: #c9d1d9 !important;
+  border-color: #c9d1d9 !important;
+}
 
+.readOnly .checkmarkIcon {
+  color: #0d1117 !important;
+}

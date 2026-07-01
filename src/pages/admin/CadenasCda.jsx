@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FiLock } from "react-icons/fi";
 import styles from "./CadenasCda.module.css";
 import { CadenaSelectCard } from "../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import { CdaPanel } from "../../components/features/admin/CdaPanel/CdaPanel";
@@ -50,9 +51,19 @@ export default function CadenasCda() {
             border: "1px solid rgba(255, 255, 255, 0.06)",
             borderRadius: "0.75rem",
             padding: "1.25rem",
-            backdropFilter: "blur(8px)"
+            backdropFilter: "blur(8px)",
+            position: "relative",
+            ...(String(activeItem.activa) === "0" ? { 
+              opacity: 0.6, 
+              filter: "grayscale(100%)"
+            } : {})
           }}>
-            <CdaPanel activeItem={activeItem} hideHeader={true} isReadOnly={false} />
+            <CdaPanel 
+              activeItem={activeItem} 
+              hideHeader={true} 
+              isReadOnly={String(activeItem.activa) === "0"} 
+              hideUnchecked={false}
+            />
           </div>
         ) : selectedCadenaId && !activeItem ? (
           <div className={styles.emptyMsg}>
