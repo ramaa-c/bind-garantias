@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCrearCda } from "../../hooks/useCda";
@@ -7,6 +7,7 @@ import { INTEGRACIONES_MOCKS } from "../../utils/integracionesMocks";
 import { Button } from "../../components/ui/Button/Button";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
+import { FiPlus, FiTrash2 } from "react-icons/fi";
 import styles from "./CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -93,12 +94,49 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
   );
 };
 
+// Catálogo de variables de NOSIS extraídas del JSON real
+const NOSIS_VARIABLES_CATALOG = [
+  { value: "CDA", label: "CDA (Criterio de Aceptación General)" },
+  { value: "CDA_DICT", label: "CDA_DICT (Dictamen)" },
+  { value: "CDA_AF", label: "CDA_AF (Identidad Válida)" },
+  { value: "CDA_VI.EDAD", label: "CDA_VI.EDAD (Edad)" },
+  { value: "CDA_VI.FCS", label: "CDA_VI.FCS (Fecha Contrato Social)" },
+  { value: "CDA_VI.ACT", label: "CDA_VI.ACT (Actividades)" },
+  { value: "CDA_AP", label: "CDA_AP (Aportes Patronales)" },
+  { value: "CDA_CI", label: "CDA_CI (Bureau de Crédito del BCRA)" },
+  { value: "CDA_OJ", label: "CDA_OJ (Oficios Judiciales)" },
+  { value: "CDA_HC", label: "CDA_HC (Cheques Rechazados del BCRA)" },
+  { value: "CDA_DE", label: "CDA_DE (Deudores Entidades Liquidadas)" },
+  { value: "CDA_QU.1", label: "CDA_QU.1 (Concurso o Quiebra)" },
+  { value: "CDA_QU.2", label: "CDA_QU.2 (Pedido Quiebra)" },
+  { value: "CDA_QU.3", label: "CDA_QU.3 (Juicios - Demandado)" },
+  { value: "CDA_BC", label: "CDA_BC (Comunicaciones del BCRA)" },
+  { value: "CDA_RC.P", label: "CDA_RC.P (Referencias Comerciales Propias)" },
+  { value: "CDA_RC.T", label: "CDA_RC.T (Referencias Comerciales de Terceros)" },
+  { value: "CDA_FA", label: "CDA_FA (Facturas Apócrifas)" },
+  { value: "CDA_LD", label: "CDA_LD (Laudos Incumplidos)" },
+  { value: "CDA_DF", label: "CDA_DF (Antecedentes Fiscales)" },
+  { value: "CDA_DC", label: "CDA_DC (Documentos Cuestionados)" },
+  { value: "CDA_DP", label: "CDA_DP (Deudores Previsionales)" },
+  { value: "CDA_SCO", label: "CDA_SCO (Score - Estado)" },
+  { value: "CDA_Valor.SCO", label: "CDA_Valor.SCO (Score - Valor)" },
+  { value: "CDA_NSE", label: "CDA_NSE (Facturación Estimada - Estado)" },
+  { value: "CDA_Valor.NSE", label: "CDA_Valor.NSE (Facturación Estimada - Nivel)" },
+  { value: "CDA_COMPMENSUALES", label: "CDA_COMPMENSUALES (Compromisos Mensuales)" },
+];
+
 export default function CdasGlobales() {
   const queryClient = useQueryClient();
   const { mutateAsync: crearCda, isPending: isCreando } = useCrearCda();
 
   const [isProcesando, setIsProcesando] = useState(false);
   const [integracion, setIntegracion] = useState("");
+  const [cdaMode, setCdaMode] = useState("simple"); // "simple" o "compuesto"
+  const [conditions, setConditions] = useState([
+    { id: 1, variable: "CDA_Valor.SCO", operador: ">", valor: "500" }
+  ]);
+  const [connector, setConnector] = useState("AND");
+
   const [descripcion, setDescripcion] = useState("");
   const [expresion, setExpresion] = useState("");
   const [simbolocomparacion, setSimbolocomparacion] = useState(">");
@@ -110,7 +148,32 @@ export default function CdasGlobales() {
   const handleIntegracionChange = (val) => {
     setIntegracion(val);
     setExpresion(""); // reset expression when changing integration
+    if (val !== "NOSIS") {
+      setCdaMode("simple");
+    }
   };
+
+  // Generar expresión lógica a partir de las condiciones compuestas
+  const generateCompoundExpression = (conds, conn) => {
+    if (!conds || conds.length === 0) return "";
+    return conds
+      .map(c => {
+        const val = c.valor.trim();
+        const isNum = !isNaN(val) && val !== "";
+        const formattedVal = isNum ? val : (val === "" ? "''" : `'${val.toLowerCase()}'`);
+        return `nosis.Variables(${c.variable}) ${c.operador} ${formattedVal}`;
+      })
+      .join(` ${conn} `);
+  };
+
+  useEffect(() => {
+    if (integracion === "NOSIS" && cdaMode === "compuesto") {
+      const expr = generateCompoundExpression(conditions, connector);
+      setExpresion(expr);
+      setSimbolocomparacion("");
+      setValorcomparacion("");
+    }
+  }, [conditions, connector, cdaMode, integracion]);
 
   const handleSelectField = (fieldPath) => {
     const prefix = INTEGRACION_PREFIXES[integracion] || "";
@@ -182,10 +245,12 @@ export default function CdasGlobales() {
         cdaID: 0,
         descripcion: descripcion.trim(),
         expresion: expresion.trim(),
-        simboloComparacion: simbolocomparacion,
-        valorComparacion: valorSaneado,
+        simboloComparacion: cdaMode === "compuesto" ? "" : simbolocomparacion,
+        valorComparacion: cdaMode === "compuesto" ? "" : valorSaneado,
         vinculaDefaultCV: vinculadefaultcv ? "1" : "0",
-        expresionLog: `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`,
+        expresionLog: cdaMode === "compuesto" 
+          ? expresion.trim() 
+          : `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`,
         mensajeRechazo: mensajerechazo.trim()
       });
 
@@ -250,6 +315,9 @@ export default function CdasGlobales() {
       setValorcomparacion("");
       setMensajerechazo("");
       setVinculadefaultcv(true);
+      setConditions([
+        { id: Date.now(), variable: "CDA_Valor.SCO", operador: ">", valor: "500" }
+      ]);
     } catch (err) {
       console.error(err);
       toast.error("Ocurrió un error al guardar el CDA.");
@@ -288,20 +356,150 @@ export default function CdasGlobales() {
               placeholder="-- Seleccioná una integración --"
               variant="admin"
               disabled={isCreando || isProcesando}
+              hideErrorSpace={true}
             />
           </div>
 
-          <div className={styles.jsonViewerContainer}>
-            {currentJsonData ? (
-              <JsonViewer data={currentJsonData} onSelectField={handleSelectField} />
-            ) : (
-              <div className={styles.jsonViewerMessage}>
-                Seleccioná una integración arriba para ver su estructura de datos.
-                <br /><br />
-                Podrás hacer clic en cualquier valor para usar su campo en la regla.
+          {integracion === "NOSIS" && (
+            <div className={styles.modeToggleContainer}>
+              <button
+                type="button"
+                className={`${styles.modeTab} ${cdaMode === "simple" ? styles.modeTabActive : ""}`}
+                onClick={() => setCdaMode("simple")}
+              >
+                Vista Simple (Árbol JSON)
+              </button>
+              <button
+                type="button"
+                className={`${styles.modeTab} ${cdaMode === "compuesto" ? styles.modeTabActive : ""}`}
+                onClick={() => setCdaMode("compuesto")}
+              >
+                Creador de Reglas Nosis (Compuestas)
+              </button>
+            </div>
+          )}
+
+          {cdaMode === "compuesto" && integracion === "NOSIS" ? (
+            <div className={styles.builderContainer}>
+              <p className={styles.builderIntro}>
+                Combiná múltiples variables del reporte de Nosis para crear reglas de validación complejas.
+              </p>
+              
+              <div className={styles.connectorWrapper}>
+                <span className={styles.connectorLabel}>Conector Lógico:</span>
+                <select
+                  value={connector}
+                  onChange={(e) => setConnector(e.target.value)}
+                  className={styles.connectorSelect}
+                  disabled={isCreando || isProcesando}
+                >
+                  <option value="AND">AND (Y)</option>
+                  <option value="OR">OR (O)</option>
+                </select>
               </div>
-            )}
-          </div>
+
+              <div className={styles.conditionsList}>
+                {conditions.map((cond, idx) => (
+                  <div key={cond.id} className={styles.conditionRow}>
+                    <select
+                      value={cond.variable}
+                      onChange={(e) => {
+                        const newConds = [...conditions];
+                        newConds[idx].variable = e.target.value;
+                        setConditions(newConds);
+                      }}
+                      className={styles.variableSelect}
+                      disabled={isCreando || isProcesando}
+                    >
+                      {NOSIS_VARIABLES_CATALOG.map(item => (
+                        <option key={item.value} value={item.value}>
+                          {item.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={cond.operador}
+                      onChange={(e) => {
+                        const newConds = [...conditions];
+                        newConds[idx].operador = e.target.value;
+                        setConditions(newConds);
+                      }}
+                      className={styles.opSelect}
+                      disabled={isCreando || isProcesando}
+                    >
+                      <option value="=">=</option>
+                      <option value=">">&gt;</option>
+                      <option value="<">&lt;</option>
+                      <option value=">=">&gt;=</option>
+                      <option value="<=">&lt;=</option>
+                      <option value="<>">&lt;&gt;</option>
+                    </select>
+
+                    <input
+                      type="text"
+                      value={cond.valor}
+                      onChange={(e) => {
+                        const newConds = [...conditions];
+                        newConds[idx].valor = e.target.value;
+                        setConditions(newConds);
+                      }}
+                      placeholder="Valor"
+                      className={styles.valInput}
+                      disabled={isCreando || isProcesando}
+                    />
+
+                    {conditions.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setConditions(conditions.filter(c => c.id !== cond.id));
+                        }}
+                        className={styles.btnDelete}
+                        title="Eliminar condición"
+                        disabled={isCreando || isProcesando}
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setConditions([
+                    ...conditions,
+                    { id: Date.now(), variable: "CDA_Valor.SCO", operador: ">", valor: "" }
+                  ]);
+                }}
+                className={styles.btnAddCondition}
+                disabled={isCreando || isProcesando}
+              >
+                <FiPlus size={14} /> Agregar Condición
+              </button>
+
+              <div className={styles.previewCard}>
+                <div className={styles.previewTitle}>Regla Lógica Generada:</div>
+                <div className={styles.previewCode}>
+                  {expresion || "(Agregá condiciones para visualizar)"}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.jsonViewerContainer}>
+              {currentJsonData ? (
+                <JsonViewer data={currentJsonData} onSelectField={handleSelectField} />
+              ) : (
+                <div className={styles.jsonViewerMessage}>
+                  Seleccioná una integración arriba para ver su estructura de datos.
+                  <br /><br />
+                  Podrás hacer clic en cualquier valor para usar su campo en la regla.
+                </div>
+              )}
+            </div>
+          )}
         </div>
         </div>
 
@@ -326,44 +524,52 @@ export default function CdasGlobales() {
 
             <InputSimple
               label="Expresión (Campo a evaluar)"
+              type="textarea"
               value={expresion}
               onChange={setExpresion}
-              disabled={isCreando || isProcesando}
+              disabled={isCreando || isProcesando || cdaMode === "compuesto"}
               variant="admin"
+              hideErrorSpace={true}
             />
 
-            <div style={{ display: "flex", gap: "1rem" }}>
-              <div style={{ flex: 1 }}>
-                <SelectSimple
-                  label="Operador"
-                  value={simbolocomparacion}
-                  onChange={setSimbolocomparacion}
-                  options={[
-                    { value: "=", label: "=" },
-                    { value: ">", label: ">" },
-                    { value: "<", label: "<" },
-                    { value: ">=", label: ">=" },
-                    { value: "<=", label: "<=" },
-                    { value: "<>", label: "<>" }
-                  ]}
-                  disabled={isCreando || isProcesando}
-                  variant="admin"
-                />
+            {cdaMode === "compuesto" ? (
+              <div className={styles.rightColInfoBox} style={{ marginTop: "-0.5rem", marginBottom: "0.75rem" }}>
+                ℹ️ <strong>Regla Compuesta Activa:</strong> El operador y el valor se definen a partir de las condiciones en el constructor de la izquierda.
               </div>
+            ) : (
+              <div style={{ display: "flex", gap: "1rem" }}>
+                <div style={{ flex: 1 }}>
+                  <SelectSimple
+                    label="Operador"
+                    value={simbolocomparacion}
+                    onChange={setSimbolocomparacion}
+                    options={[
+                      { value: "=", label: "=" },
+                      { value: ">", label: ">" },
+                      { value: "<", label: "<" },
+                      { value: ">=", label: ">=" },
+                      { value: "<=", label: "<=" },
+                      { value: "<>", label: "<>" }
+                    ]}
+                    disabled={isCreando || isProcesando}
+                    variant="admin"
+                  />
+                </div>
 
-              <div style={{ flex: 2 }}>
-                <InputSimple
-                  label="Valor de Comparación"
-                  value={valorcomparacion}
-                  onChange={setValorcomparacion}
-                  disabled={isCreando || isProcesando}
-                  variant="admin"
-                />
-                <p className={styles.helperText}>
-                  Si querés comparar por vacío, dejá este campo vacío.
-                </p>
+                <div style={{ flex: 2 }}>
+                  <InputSimple
+                    label="Valor de Comparación"
+                    value={valorcomparacion}
+                    onChange={setValorcomparacion}
+                    disabled={isCreando || isProcesando}
+                    variant="admin"
+                  />
+                  <p className={styles.helperText}>
+                    Si querés comparar por vacío, dejá este campo vacío.
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
 
             <InputSimple
               label="Mensaje de Rechazo Global"

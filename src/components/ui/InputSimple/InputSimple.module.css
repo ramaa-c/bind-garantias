@@ -228,3 +228,14 @@
   color: var(--color-azul-bind, #4c65e6);
   background: rgba(76, 101, 230, 0.1);
 }
+
+.textarea {
+  min-height: 80px !important;
+  resize: vertical !important;
+  padding-top: 1.625rem !important;
+  padding-bottom: 0.625rem !important;
+}
+
+.textareaWrapper {
+  overflow: visible !important;
+}

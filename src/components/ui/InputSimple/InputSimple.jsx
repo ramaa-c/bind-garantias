@@ -66,7 +66,7 @@ export const InputSimple = forwardRef(({
 
     return (
       <div className={containerClasses}>
-        <div className={styles.inputWrapper}>
+        <div className={`${styles.inputWrapper} ${type === "textarea" ? styles.textareaWrapper : ""}`}>
           {mask ? (
             <IMaskInput
               id={inputId}
@@ -80,6 +80,20 @@ export const InputSimple = forwardRef(({
               onFocus={handleFocus}
               onBlur={handleBlur}
               inputRef={inputRef}
+              {...props}
+            />
+          ) : type === "textarea" ? (
+            <textarea
+              id={inputId}
+              className={`${styles.input} ${styles.textarea}`}
+              placeholder=" "
+              value={val || ""}
+              onChange={(e) => {
+                if (onCh) onCh(e.target.value);
+              }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              ref={inputRef}
               {...props}
             />
           ) : (
