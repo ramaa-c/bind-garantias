@@ -131,30 +131,48 @@ export default function CdasGlobales() {
     setValidationError("");
     setIsProcesando(true);
 
-    // Saneamos el valor de comparación para evitar almacenar comillas literales \"\" en la DB
+    // Saneamos el valor de comparación para evitar almacenar comillas externas en la DB
     let valorSaneado = valorcomparacion.trim();
-    if (valorSaneado === '""' || valorSaneado === "''") {
-      valorSaneado = "";
+    if (
+      valorSaneado === '""' || 
+      valorSaneado === "''" || 
+      (valorSaneado.startsWith('"') && valorSaneado.endsWith('"')) ||
+      (valorSaneado.startsWith("'") && valorSaneado.endsWith("'"))
+    ) {
+      if (valorSaneado === '""' || valorSaneado === "''") {
+        valorSaneado = "";
+      } else {
+        valorSaneado = valorSaneado.slice(1, -1);
+      }
     }
 
-    // Determinar si el valor es numérico o no, para agregarle comillas si no las tiene
+    // Si no es numérico, convertimos el valor a minúsculas
+    const isNumericVal = !isNaN(valorSaneado) && valorSaneado !== "";
+    if (!isNumericVal && valorSaneado !== "") {
+      valorSaneado = valorSaneado.toLowerCase();
+    }
+
+    // Determinar si el valor es numérico o no, para agregarle comillas simples si no las tiene
     const formatValorParaLog = (val) => {
       const trimmed = val.trim();
-      if (trimmed === "") return '""';
+      if (trimmed === "") return "''";
       
+      let cleanVal = trimmed;
       if (
-        (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-        (trimmed.startsWith("'") && trimmed.endsWith("'"))
+        (cleanVal.startsWith('"') && cleanVal.endsWith('"')) ||
+        (cleanVal.startsWith("'") && cleanVal.endsWith("'"))
       ) {
-        return trimmed;
+        cleanVal = cleanVal.slice(1, -1);
       }
       
-      const isNumeric = !isNaN(trimmed) && trimmed !== "";
+      if (cleanVal === "") return "''";
+      
+      const isNumeric = !isNaN(cleanVal) && cleanVal !== "";
       if (isNumeric) {
-        return trimmed;
+        return cleanVal;
       }
       
-      return `"${trimmed}"`;
+      return `'${cleanVal.toLowerCase()}'`;
     };
 
     const valorParaLog = formatValorParaLog(valorSaneado);
@@ -342,7 +360,7 @@ export default function CdasGlobales() {
                   variant="admin"
                 />
                 <p className={styles.helperText}>
-                  Dejá vacío o escribí <code>""</code> para evaluar un texto vacío.
+                  Si querés comparar por vacío, dejá este campo vacío.
                 </p>
               </div>
             </div>
