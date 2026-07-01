@@ -86,7 +86,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: "",
+      denominacion: canalId,
     };
 
     try {

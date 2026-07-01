@@ -241,8 +241,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
         )}
 
         <div className={styles.cdasSection}>
-          <div className={styles.cdasTitle}>Configuración de CDAs</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {allCdasList.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
                 No hay CDAs creados en el sistema.

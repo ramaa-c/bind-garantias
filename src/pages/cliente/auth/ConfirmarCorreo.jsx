@@ -42,12 +42,7 @@ const ConfirmarCorreo = () => {
       return date.toISOString().split(".")[0];
     };
 
-    const canalId =
-      channelInfo.id &&
-      channelInfo.id !== "default" &&
-      channelInfo.id !== "bind"
-        ? channelInfo.id
-        : "canal1";
+    const canalId = channelInfo.id;
 
     reenviarCorreo(
       {
@@ -59,7 +54,7 @@ const ConfirmarCorreo = () => {
         estado: "",
         debecambiarclave: "",
         esadministrador: "",
-        denominacion: "",
+        denominacion: canalId,
       },
       {
         onSuccess: () => {
@@ -96,7 +91,13 @@ const ConfirmarCorreo = () => {
             <img
               src={logoBind}
               alt="Logo BIND"
-              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+              onClick={() =>
+                navigate(
+                  channelInfo?.id && channelInfo.id !== "default"
+                    ? `/${channelInfo.id}/login`
+                    : "/login",
+                )
+              }
               className={styles.clickableLogo}
             />
             {channelInfo?.id !== "default" && (
