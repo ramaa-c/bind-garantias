@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCrearCda } from "../../hooks/useCda";
+import { cadenaValorService } from "../../services/cadenaValorService";
 import { INTEGRACIONES_MOCKS } from "../../utils/integracionesMocks";
 import { Button } from "../../components/ui/Button/Button";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
@@ -96,6 +97,7 @@ export default function CdasGlobales() {
   const queryClient = useQueryClient();
   const { mutateAsync: crearCda, isPending: isCreando } = useCrearCda();
 
+  const [isProcesando, setIsProcesando] = useState(false);
   const [integracion, setIntegracion] = useState("");
   const [descripcion, setDescripcion] = useState("");
   const [expresion, setExpresion] = useState("");
@@ -127,6 +129,7 @@ export default function CdasGlobales() {
     }
     
     setValidationError("");
+    setIsProcesando(true);
 
     // Saneamos el valor de comparación para evitar almacenar comillas literales \"\" en la DB
     let valorSaneado = valorcomparacion.trim();
@@ -134,22 +137,92 @@ export default function CdasGlobales() {
       valorSaneado = "";
     }
 
-    // Para el log de evaluación, si está vacío le ponemos comillas para mantener validez sintáctica
-    const valorParaLog = valorSaneado === "" ? '""' : valorSaneado;
+    // Determinar si el valor es numérico o no, para agregarle comillas si no las tiene
+    const formatValorParaLog = (val) => {
+      const trimmed = val.trim();
+      if (trimmed === "") return '""';
+      
+      if (
+        (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+        (trimmed.startsWith("'") && trimmed.endsWith("'"))
+      ) {
+        return trimmed;
+      }
+      
+      const isNumeric = !isNaN(trimmed) && trimmed !== "";
+      if (isNumeric) {
+        return trimmed;
+      }
+      
+      return `"${trimmed}"`;
+    };
+
+    const valorParaLog = formatValorParaLog(valorSaneado);
 
     try {
-      await crearCda({
-        cdaid: 0,
+      const response = await crearCda({
+        cdaID: 0,
         descripcion: descripcion.trim(),
         expresion: expresion.trim(),
-        simbolocomparacion: simbolocomparacion,
-        valorcomparacion: valorSaneado,
-        vinculadefaultcv: vinculadefaultcv ? "1" : "0",
-        expresionlog: `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`,
-        mensajerechazo: mensajerechazo.trim()
+        simboloComparacion: simbolocomparacion,
+        valorComparacion: valorSaneado,
+        vinculaDefaultCV: vinculadefaultcv ? "1" : "0",
+        expresionLog: `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`,
+        mensajeRechazo: mensajerechazo.trim()
       });
 
-      await queryClient.invalidateQueries({ queryKey: ['cda', 'todos_list'] });
+      const newCdaId = response?.CdaID || response?.cdaID || response?.cdaid || response?.id;
+
+      if (vinculadefaultcv && newCdaId) {
+        toast.info("Vinculando criterio de aceptación global a todas las cadenas de valor existentes...");
+        try {
+          const todasCadenas = await cadenaValorService.obtenerTodasWeb();
+          const cadenasList = Array.isArray(todasCadenas) ? todasCadenas : todasCadenas?.items || todasCadenas?.data || [];
+          
+          let linkedCount = 0;
+          for (const cadena of cadenasList) {
+            const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
+            if (!cadenaId) continue;
+            
+            try {
+              const linkedCdas = await cadenaValorService.obtenerCdasPorCadenaId(cadenaId);
+              const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+              
+              const getCdaId = (c) => c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
+              const yaVinculado = linkedCdasList.some(c => getCdaId(c) === newCdaId);
+              
+              if (!yaVinculado) {
+                const listacda = linkedCdasList.map(c => ({
+                  cdaid: getCdaId(c),
+                  valorcomparacion: c.valorcomparacion !== undefined ? c.valorcomparacion : (c.ValorComparacion !== undefined ? c.ValorComparacion : "")
+                }));
+                
+                listacda.push({
+                  cdaid: newCdaId,
+                  valorcomparacion: valorSaneado
+                });
+                
+                await cadenaValorService.vincularCdas({
+                  cadenavalorid: Number(cadenaId),
+                  listacda: listacda
+                });
+                linkedCount++;
+              }
+            } catch (linkErr) {
+              console.error(`Error al vincular CDA default a la cadena ${cadenaId}:`, linkErr);
+            }
+          }
+          if (linkedCount > 0) {
+            toast.success(`Vinculado con éxito a ${linkedCount} cadenas de valor.`);
+          }
+        } catch (chainErr) {
+          console.error("Error al obtener cadenas de valor para vinculación automática:", chainErr);
+          toast.error("El CDA se creó, pero no se pudo vincular automáticamente a las cadenas existentes.");
+        }
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['cda'] });
+      await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
       toast.success("Criterio de Aceptación Global creado exitosamente");
       
       // Limpiar formulario excepto integración
@@ -162,6 +235,8 @@ export default function CdasGlobales() {
     } catch (err) {
       console.error(err);
       toast.error("Ocurrió un error al guardar el CDA.");
+    } finally {
+      setIsProcesando(false);
     }
   };
 
@@ -194,6 +269,7 @@ export default function CdasGlobales() {
               ]}
               placeholder="-- Seleccioná una integración --"
               variant="admin"
+              disabled={isCreando || isProcesando}
             />
           </div>
 
@@ -226,7 +302,7 @@ export default function CdasGlobales() {
               label="Descripción del CDA"
               value={descripcion}
               onChange={setDescripcion}
-              disabled={isCreando}
+              disabled={isCreando || isProcesando}
               variant="admin"
             />
 
@@ -234,7 +310,7 @@ export default function CdasGlobales() {
               label="Expresión (Campo a evaluar)"
               value={expresion}
               onChange={setExpresion}
-              disabled={isCreando}
+              disabled={isCreando || isProcesando}
               variant="admin"
             />
 
@@ -252,7 +328,7 @@ export default function CdasGlobales() {
                     { value: "<=", label: "<=" },
                     { value: "<>", label: "<>" }
                   ]}
-                  disabled={isCreando}
+                  disabled={isCreando || isProcesando}
                   variant="admin"
                 />
               </div>
@@ -262,7 +338,7 @@ export default function CdasGlobales() {
                   label="Valor de Comparación"
                   value={valorcomparacion}
                   onChange={setValorcomparacion}
-                  disabled={isCreando}
+                  disabled={isCreando || isProcesando}
                   variant="admin"
                 />
                 <p className={styles.helperText}>
@@ -275,7 +351,7 @@ export default function CdasGlobales() {
               label="Mensaje de Rechazo Global"
               value={mensajerechazo}
               onChange={setMensajerechazo}
-              disabled={isCreando}
+              disabled={isCreando || isProcesando}
               variant="admin"
             />
 
@@ -285,7 +361,7 @@ export default function CdasGlobales() {
                 type="checkbox"
                 checked={vinculadefaultcv}
                 onChange={(e) => setVinculadefaultcv(e.target.checked)}
-                disabled={isCreando}
+                disabled={isCreando || isProcesando}
               />
               <label htmlFor="cda-default">
                 Vincular por defecto a nuevas Cadenas de Valor
@@ -297,7 +373,7 @@ export default function CdasGlobales() {
                 type="submit"
                 variant="blue"
                 size="md"
-                isLoading={isCreando}
+                isLoading={isCreando || isProcesando}
               >
                 Crear Criterio Global
               </Button>

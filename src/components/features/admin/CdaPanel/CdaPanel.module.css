@@ -420,10 +420,13 @@
   font-family: monospace;
   font-size: 0.8rem;
   color: #58a6ff;
-  background: rgba(88, 166, 255, 0.1);
-  padding: 0.15rem 0.4rem;
+  background: rgba(88, 166, 255, 0.05);
+  border: 1px solid rgba(88, 166, 255, 0.15);
+  padding: 0.15rem 0.6rem;
   border-radius: 4px;
-  word-break: break-all; /* Expresiones muy largas sin espacios se cortan */
+  word-break: break-all;
+  flex: 1;
+  min-width: 200px;
   max-width: 100%;
 }
 
@@ -557,28 +560,32 @@
   flex-shrink: 0;
 }
 
-.inlineRechazoInput {
+.inlineRechazoVal {
   flex: 1;
-  background: rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
   color: #c9d1d9;
-  padding: 0.25rem 0.5rem;
+  padding: 0.25rem 0;
   font-size: 0.775rem;
-  outline: none;
-  transition: all 0.2s ease;
+  word-break: break-word;
+  opacity: 0.85;
 }
 
-.inlineRechazoInput:focus {
-  border-color: #38a169;
-  background: rgba(56, 161, 105, 0.05);
+.inlineSymbolBadge {
+  background: rgba(255, 123, 114, 0.08);
+  border: 1px dashed rgba(255, 123, 114, 0.25);
+  border-radius: 4px;
+  color: #ff7b72;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.8rem;
+  font-family: monospace;
+  font-weight: bold;
+  text-align: center;
+  user-select: none;
 }
 
-.inlineRechazoInput:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(255, 255, 255, 0.03);
+.inlineValueInput:not(:disabled) {
+  border-color: rgba(56, 161, 105, 0.5) !important;
+  background: rgba(56, 161, 105, 0.08) !important;
+  box-shadow: 0 0 6px rgba(56, 161, 105, 0.25);
 }
 
 

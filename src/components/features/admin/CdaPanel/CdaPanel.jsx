@@ -293,30 +293,13 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
                         <div className={styles.formulaWrapper}>
                           <span className={styles.formulaLabel}>Regla:</span>
                           
-                          <input
-                            type="text"
-                            value={exprComparacion}
-                            onChange={(e) => handleExpressionChange(id, e.target.value)}
-                            className={styles.inlineExpressionInput}
-                            placeholder="Expresión"
-                            disabled={true}
-                            onClick={(e) => e.stopPropagation()}
-                          />
+                          <span className={styles.formulaPart} onClick={(e) => e.stopPropagation()}>
+                            {exprComparacion}
+                          </span>
                           
-                          <select
-                            value={simboloComparacion}
-                            onChange={(e) => handleSymbolChange(id, e.target.value)}
-                            className={styles.inlineSymbolSelect}
-                            disabled={true}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <option value="=">=</option>
-                            <option value=">">&gt;</option>
-                            <option value="<">&lt;</option>
-                            <option value=">=">&gt;=</option>
-                            <option value="<=">&lt;=</option>
-                            <option value="<>">&lt;&gt;</option>
-                          </select>
+                          <span className={styles.inlineSymbolBadge} onClick={(e) => e.stopPropagation()}>
+                            {simboloComparacion}
+                          </span>
 
                           <input
                             type="text"
@@ -329,18 +312,12 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideHeader =
                           />
                         </div>
 
-                        {/* Edición en Línea del Mensaje de Rechazo */}
+                        {/* Mensaje de Rechazo de muestra */}
                         <div className={styles.inlineRechazoWrapper}>
                           <span className={styles.inlineRechazoLabel}>Mensaje Rechazo:</span>
-                          <input
-                            type="text"
-                            value={mensajeRechazo}
-                            onChange={(e) => handleRechazoChange(id, e.target.value)}
-                            className={styles.inlineRechazoInput}
-                            placeholder="Mensaje de rechazo que verá el analista..."
-                            disabled={!isChecked || isReadOnly}
-                            onClick={(e) => e.stopPropagation()}
-                          />
+                          <span className={styles.inlineRechazoVal} onClick={(e) => e.stopPropagation()}>
+                            {mensajeRechazo || "Sin mensaje de rechazo configurado"}
+                          </span>
                         </div>
                       </div>
                       <div className={styles.actionsWrapper}>
