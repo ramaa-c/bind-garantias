@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCrearCda } from "../../hooks/useCda";
+import { useCrearCda, useProbarCda } from "../../hooks/useCda";
 import { cadenaValorService } from "../../services/cadenaValorService";
 import { INTEGRACIONES_MOCKS } from "../../utils/integracionesMocks";
 import { Button } from "../../components/ui/Button/Button";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
-import { FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiCheck } from "react-icons/fi";
 import styles from "./CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -17,6 +17,27 @@ const INTEGRACION_PREFIXES = {
   LUFE: "lufe.",
   NOSIS: "nosis.",
   SGRPLUS: "sgrplus."
+};
+
+// Estrategias de casing (mayúsculas/minúsculas) requeridas por cada integración
+const INTEGRACION_CASING_STRATEGY = {
+  ARCA: "UPPERCASE",   // ARCA (AFIP) requiere mayúsculas
+  LUFE: "PRESERVE",    // LUFE requiere conservar el formato exacto del JSON
+  NOSIS: "PRESERVE",   // NOSIS requiere conservar el formato exacto del JSON
+  CASFOG: "PRESERVE",
+  SGRPLUS: "PRESERVE"
+};
+
+const applyCasingStrategy = (val, integrationName) => {
+  if (!val) return val;
+  const strategy = INTEGRACION_CASING_STRATEGY[integrationName] || "PRESERVE";
+  if (strategy === "UPPERCASE") {
+    return val.toUpperCase();
+  }
+  if (strategy === "LOWERCASE") {
+    return val.toLowerCase();
+  }
+  return val;
 };
 
 // Componente recursivo para renderizar el JSON de forma interactiva
@@ -128,6 +149,7 @@ const NOSIS_VARIABLES_CATALOG = [
 export default function CdasGlobales() {
   const queryClient = useQueryClient();
   const { mutateAsync: crearCda, isPending: isCreando } = useCrearCda();
+  const { mutateAsync: probarCda, isPending: isTesting } = useProbarCda();
 
   const [isProcesando, setIsProcesando] = useState(false);
   const [integracion, setIntegracion] = useState("");
@@ -144,10 +166,100 @@ export default function CdasGlobales() {
   const [mensajerechazo, setMensajerechazo] = useState("");
   const [vinculadefaultcv, setVinculadefaultcv] = useState(true);
   const [validationError, setValidationError] = useState("");
+  const [expresionLog, setExpresionLog] = useState("");
+  const [userEditedExpresionLog, setUserEditedExpresionLog] = useState(false);
+
+  // Estado para vinculación automática a pantalla
+  const [vincularPantalla, setVincularPantalla] = useState("");
+
+  // Estados para laboratorio de pruebas de CDAs
+  const [testCuit, setTestCuit] = useState("30714430048");
+  const [testResult, setTestResult] = useState(null);
+
+  // Determinar si el valor es numérico o no, para agregarle comillas simples si no las tiene
+  const formatValorParaLog = (val) => {
+    const trimmed = val.trim();
+    if (trimmed === "") return "''";
+    
+    let cleanVal = trimmed;
+    if (
+      (cleanVal.startsWith('"') && cleanVal.endsWith('"')) ||
+      (cleanVal.startsWith("'") && cleanVal.endsWith("'"))
+    ) {
+      cleanVal = cleanVal.slice(1, -1);
+    }
+    
+    if (cleanVal === "") return "''";
+    
+    const isNumeric = !isNaN(cleanVal) && cleanVal !== "";
+    if (isNumeric) {
+      return cleanVal;
+    }
+    
+    const casedCleanVal = applyCasingStrategy(cleanVal, integracion);
+    return `'${casedCleanVal}'`;
+  };
+
+  const handleTestExpression = async (e) => {
+    e.preventDefault();
+    if (!testCuit.trim()) {
+      toast.error("Por favor ingresá un CUIT para la prueba.");
+      return;
+    }
+    if (!expresion.trim()) {
+      toast.error("La expresión a evaluar está vacía.");
+      return;
+    }
+
+    setTestResult(null);
+
+    let valorSaneado = valorcomparacion.trim();
+    if (
+      valorSaneado === '""' || 
+      valorSaneado === "''" || 
+      (valorSaneado.startsWith('"') && valorSaneado.endsWith('"')) ||
+      (valorSaneado.startsWith("'") && valorSaneado.endsWith("'"))
+    ) {
+      if (valorSaneado === '""' || valorSaneado === "''") {
+        valorSaneado = "";
+      } else {
+        valorSaneado = valorSaneado.slice(1, -1);
+      }
+    }
+    const isNumericVal = !isNaN(valorSaneado) && valorSaneado !== "";
+    if (!isNumericVal && valorSaneado !== "") {
+      valorSaneado = applyCasingStrategy(valorSaneado, integracion);
+    }
+    const valorParaLog = formatValorParaLog(valorSaneado);
+
+    const fullExpression = cdaMode === "compuesto" 
+      ? expresion.trim() 
+      : `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+
+    try {
+      const res = await probarCda({
+        cuit: testCuit.trim(),
+        expresion: fullExpression
+      });
+
+      setTestResult({
+        status: res.status,
+        message: res.data?.message || res.data || ""
+      });
+    } catch (err) {
+      console.error(err);
+      setTestResult({
+        status: 500,
+        message: "Error de red o servidor al ejecutar la prueba."
+      });
+    }
+  };
 
   const handleIntegracionChange = (val) => {
     setIntegracion(val);
     setExpresion(""); // reset expression when changing integration
+    setExpresionLog("");
+    setUserEditedExpresionLog(false);
     if (val !== "NOSIS") {
       setCdaMode("simple");
     }
@@ -160,7 +272,8 @@ export default function CdasGlobales() {
       .map(c => {
         const val = c.valor.trim();
         const isNum = !isNaN(val) && val !== "";
-        const formattedVal = isNum ? val : (val === "" ? "''" : `'${val.toLowerCase()}'`);
+        const casedVal = applyCasingStrategy(val, integracion);
+        const formattedVal = isNum ? val : (casedVal === "" ? "''" : `'${casedVal}'`);
         return `nosis.Variables(${c.variable}) ${c.operador} ${formattedVal}`;
       })
       .join(` ${conn} `);
@@ -172,12 +285,19 @@ export default function CdasGlobales() {
       setExpresion(expr);
       setSimbolocomparacion("");
       setValorcomparacion("");
+      if (!userEditedExpresionLog) {
+        setExpresionLog(expr);
+      }
     }
-  }, [conditions, connector, cdaMode, integracion]);
+  }, [conditions, connector, cdaMode, integracion, userEditedExpresionLog]);
 
   const handleSelectField = (fieldPath) => {
     const prefix = INTEGRACION_PREFIXES[integracion] || "";
-    setExpresion(`${prefix}${fieldPath}`);
+    const fullPath = `${prefix}${fieldPath}`;
+    setExpresion(fullPath);
+    if (!userEditedExpresionLog) {
+      setExpresionLog(fullPath);
+    }
   };
 
   const handleSave = async (e) => {
@@ -209,36 +329,30 @@ export default function CdasGlobales() {
       }
     }
 
-    // Si no es numérico, convertimos el valor a minúsculas
     const isNumericVal = !isNaN(valorSaneado) && valorSaneado !== "";
     if (!isNumericVal && valorSaneado !== "") {
-      valorSaneado = valorSaneado.toLowerCase();
+      valorSaneado = applyCasingStrategy(valorSaneado, integracion);
     }
 
-    // Determinar si el valor es numérico o no, para agregarle comillas simples si no las tiene
-    const formatValorParaLog = (val) => {
-      const trimmed = val.trim();
-      if (trimmed === "") return "''";
-      
-      let cleanVal = trimmed;
-      if (
-        (cleanVal.startsWith('"') && cleanVal.endsWith('"')) ||
-        (cleanVal.startsWith("'") && cleanVal.endsWith("'"))
-      ) {
-        cleanVal = cleanVal.slice(1, -1);
-      }
-      
-      if (cleanVal === "") return "''";
-      
-      const isNumeric = !isNaN(cleanVal) && cleanVal !== "";
-      if (isNumeric) {
-        return cleanVal;
-      }
-      
-      return `'${cleanVal.toLowerCase()}'`;
-    };
-
     const valorParaLog = formatValorParaLog(valorSaneado);
+    const fullExpression = cdaMode === "compuesto" 
+      ? expresion.trim() 
+      : `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+
+    try {
+      const resValida = await probarCda({
+        cuit: testCuit.trim() || "30714430048",
+        expresion: fullExpression
+      });
+
+      if (resValida.status === 500) {
+        setValidationError(`Formato de expresión inválido: ${resValida.message || resValida.data?.message || resValida.data || "Error de sintaxis"}`);
+        setIsProcesando(false);
+        return;
+      }
+    } catch (valErr) {
+      console.warn("Fallo la verificación previa de sintaxis, pero se continuará guardando:", valErr);
+    }
 
     try {
       const response = await crearCda({
@@ -248,9 +362,7 @@ export default function CdasGlobales() {
         simboloComparacion: cdaMode === "compuesto" ? "" : simbolocomparacion,
         valorComparacion: cdaMode === "compuesto" ? "" : valorSaneado,
         vinculaDefaultCV: vinculadefaultcv ? "1" : "0",
-        expresionLog: cdaMode === "compuesto" 
-          ? expresion.trim() 
-          : `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`,
+        expresionLog: expresionLog.trim(),
         mensajeRechazo: mensajerechazo.trim()
       });
 
@@ -304,17 +416,67 @@ export default function CdasGlobales() {
         }
       }
 
+      // Vincular a pantalla seleccionada si corresponde
+      if (vincularPantalla && newCdaId) {
+        toast.info(`Vinculando criterio a la pantalla ${vincularPantalla}...`);
+        
+        let listacda = [];
+        let expresionAgrupacionActual = "";
+        
+        try {
+          const currentConfig = await cdaService.obtenerPantallaGrupoCda(vincularPantalla, 0);
+          if (currentConfig) {
+            expresionAgrupacionActual = currentConfig.ExpresionAgrupacion || currentConfig.expresionAgrupacion || "";
+            const currentList = currentConfig.ListaCda || currentConfig.listaCda || [];
+            listacda = currentList.map(c => {
+              if (typeof c === "object" && c !== null) {
+                return c.cdaid || c.CdaId || c.CdaID || c.id;
+              }
+              return Number(c);
+            }).filter(Boolean);
+          }
+        } catch (fetchErr) {
+          console.warn("No se pudo obtener la configuración existente de la pantalla (puede que no exista aún):", fetchErr);
+        }
+        
+        try {
+          if (!listacda.includes(Number(newCdaId))) {
+            listacda.push(Number(newCdaId));
+          }
+
+          let nuevaExpresion = "";
+          if (expresionAgrupacionActual.trim()) {
+            nuevaExpresion = `(${expresionAgrupacionActual.trim()}) and cda${newCdaId}`;
+          }
+
+          await cdaService.vincularPantallaCda({
+            Pantalla: vincularPantalla,
+            ExpresionAgrupacion: nuevaExpresion,
+            ListaCda: listacda
+          });
+
+          toast.success(`Criterio vinculado exitosamente a ${vincularPantalla}`);
+        } catch (linkScreenErr) {
+          console.error("Error al vincular a la pantalla seleccionada:", linkScreenErr);
+          toast.error(`No se pudo vincular automáticamente a la pantalla ${vincularPantalla}`);
+        }
+      }
+
       await queryClient.invalidateQueries({ queryKey: ['cda'] });
+      await queryClient.invalidateQueries({ queryKey: ["cda", "pantallaGrupo"] });
       await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
       toast.success("Criterio de Aceptación Global creado exitosamente");
       
       // Limpiar formulario excepto integración
       setDescripcion("");
       setExpresion("");
+      setExpresionLog("");
+      setUserEditedExpresionLog(false);
       setSimbolocomparacion(">");
       setValorcomparacion("");
       setMensajerechazo("");
       setVinculadefaultcv(true);
+      setVincularPantalla("");
       setConditions([
         { id: Date.now(), variable: "CDA_Valor.SCO", operador: ">", valor: "500" }
       ]);
@@ -520,17 +682,39 @@ export default function CdasGlobales() {
               onChange={setDescripcion}
               disabled={isCreando || isProcesando}
               variant="admin"
+              hideErrorSpace={true}
             />
 
             <InputSimple
               label="Expresión (Campo a evaluar)"
               type="textarea"
               value={expresion}
-              onChange={setExpresion}
+              onChange={(val) => {
+                setExpresion(val);
+                if (!userEditedExpresionLog) {
+                  setExpresionLog(val);
+                }
+              }}
               disabled={isCreando || isProcesando || cdaMode === "compuesto"}
               variant="admin"
               hideErrorSpace={true}
             />
+
+            <InputSimple
+              label="Expresión de Retorno para Logs (Opcional)"
+              type="textarea"
+              value={expresionLog}
+              onChange={(val) => {
+                setExpresionLog(val);
+                setUserEditedExpresionLog(true);
+              }}
+              disabled={isCreando || isProcesando}
+              variant="admin"
+              hideErrorSpace={true}
+            />
+            <p className={styles.helperText} style={{ marginTop: "-0.5rem", marginBottom: "0.75rem" }}>
+              Por defecto se autocompleta con el campo a evaluar. Podés ingresar múltiples campos de retorno separados por coma.
+            </p>
 
             {cdaMode === "compuesto" ? (
               <div className={styles.rightColInfoBox} style={{ marginTop: "-0.5rem", marginBottom: "0.75rem" }}>
@@ -563,8 +747,9 @@ export default function CdasGlobales() {
                     onChange={setValorcomparacion}
                     disabled={isCreando || isProcesando}
                     variant="admin"
+                    hideErrorSpace={true}
                   />
-                  <p className={styles.helperText}>
+                  <p className={styles.helperText} style={{ marginTop: "0.25rem" }}>
                     Si querés comparar por vacío, dejá este campo vacío.
                   </p>
                 </div>
@@ -577,20 +762,91 @@ export default function CdasGlobales() {
               onChange={setMensajerechazo}
               disabled={isCreando || isProcesando}
               variant="admin"
+              hideErrorSpace={true}
             />
 
-            <div className={styles.formFieldCheck}>
-              <input
-                id="cda-default"
-                type="checkbox"
-                checked={vinculadefaultcv}
-                onChange={(e) => setVinculadefaultcv(e.target.checked)}
-                disabled={isCreando || isProcesando}
-              />
-              <label htmlFor="cda-default">
+            <SelectSimple
+              label="Vincular a Pantalla al crear (Opcional)"
+              value={vincularPantalla}
+              onChange={setVincularPantalla}
+              options={[
+                { value: "", label: "-- No vincular --" },
+                { value: "PANTALLA_INGRESO_CUIT", label: "PANTALLA_INGRESO_CUIT (Validación inicial de CUIT)" },
+                { value: "PANTALLA_SOCIOS", label: "PANTALLA_SOCIOS (Validación de Socios y Representantes)" }
+              ]}
+              placeholder="-- Seleccioná una pantalla --"
+              variant="admin"
+              disabled={isCreando || isProcesando}
+              hideErrorSpace={true}
+            />
+
+            {/* Checkbox Vincular por defecto (Premium e Interactivo) */}
+            <div 
+              className={styles.customCheckboxContainer} 
+              onClick={() => { if (!isCreando && !isProcesando) setVinculadefaultcv(!vinculadefaultcv); }}
+            >
+              <div className={`${styles.customCheckbox} ${vinculadefaultcv ? styles.checkboxChecked : ""}`}>
+                {vinculadefaultcv && <FiCheck size={12} className={styles.checkmarkIcon} />}
+              </div>
+              <span className={styles.checkboxLabel}>
                 Vincular por defecto a nuevas Cadenas de Valor
-              </label>
+              </span>
             </div>
+
+            {/* Laboratorio de Pruebas (Opcional) */}
+            {integracion && expresion.trim() && (
+              <div className={styles.sandboxContainer}>
+                <h3 className={styles.sandboxTitle}>Laboratorio de Pruebas (Opcional)</h3>
+                <p className={styles.sandboxIntro}>
+                  Probá el criterio en tiempo real contra los datos de un CUIT antes de guardarlo.
+                </p>
+                
+                <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end", marginBottom: "0.25rem" }}>
+                  <div style={{ flex: 1 }}>
+                    <InputSimple
+                      label="CUIT para la prueba"
+                      value={testCuit}
+                      onChange={setTestCuit}
+                      disabled={isTesting || isCreando || isProcesando}
+                      variant="admin"
+                      hideErrorSpace={true}
+                    />
+                  </div>
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outlineBlue"
+                      size="md"
+                      onClick={handleTestExpression}
+                      isLoading={isTesting}
+                      disabled={isCreando || isProcesando}
+                    >
+                      Probar Expresión
+                    </Button>
+                  </div>
+                </div>
+
+                {testResult && (
+                  <div className={styles.testResultBox}>
+                    <div className={styles.testResultHeader}>
+                      <span>Resultado de Validación:</span>
+                      {testResult.status === 202 ? (
+                        <span className={styles.badgeSuccess}>202 - VERDADERO</span>
+                      ) : testResult.status === 406 ? (
+                        <span className={styles.badgeWarning}>406 - FALSO</span>
+                      ) : (
+                        <span className={styles.badgeDanger}>{testResult.status} - ERROR</span>
+                      )}
+                    </div>
+                    <div className={styles.testResultMessage}>
+                      {testResult.status === 202 && "El criterio es válido y la condición se cumple para el CUIT ingresado."}
+                      {testResult.status === 406 && "El criterio es válido, pero la condición no se cumple (da falso) para el CUIT ingresado."}
+                      {testResult.status !== 202 && testResult.status !== 406 && (testResult.message || "Error al compilar la expresión o datos faltantes.")}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className={styles.formActions}>
               <Button

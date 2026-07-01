@@ -110,7 +110,8 @@ export const SelectSimple = ({
   };
 
   const renderSelect = (val, onCh, onBl, ref) => {
-    const hasValue = val !== undefined && val !== null && String(val).length > 0;
+    const matchedOption = options ? options.find((c) => String(c.value) === String(val)) : null;
+    const hasValue = val !== undefined && val !== null && (String(val).length > 0 || !!matchedOption);
     const hasError = !!error;
 
     let statusClass = inputStyles.statusDefault;

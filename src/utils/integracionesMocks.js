@@ -231,29 +231,64 @@ export const INTEGRACIONES_MOCKS = {
   NOSIS: {
     "Contenido": {
       "Pedido": {
-        "Usuario": 0,
-        "Documento": "string",
-        "VR": "string",
-        "Timeout": 0
+        "Usuario": 63288,
+        "Documento": "30714430048",
+        "VR": "2",
+        "Timeout": 300
       },
       "Resultado": {
-        "Estado": 0,
-        "Novedad": "string",
-        "Tiempo": 0,
-        "FechaRecepcion": "string",
-        "Transaccion": "string",
-        "Referencia": "string",
-        "Servidor": "string",
-        "Version": "string"
+        "Estado": 200,
+        "Novedad": "OK",
+        "Tiempo": 1400,
+        "FechaRecepcion": "2026-07-01T13:46:02.000-03:00",
+        "Transaccion": "c6405a8a-3d8b-4846-9c58-12c0b97eab4e",
+        "Referencia": "30714430048",
+        "Servidor": "SACWEBZ13",
+        "Version": "1.3.0"
       },
       "Datos": {
         "Variables": [
           {
-            "Nombre": "string",
-            "Valor": "string",
-            "Descripcion": "string",
-            "Tipo": "string",
-            "FechaAct": "string"
+            "Nombre": "VI_RazonSocial",
+            "Valor": "LYCOFULL SRL",
+            "Descripcion": "Razón Social",
+            "Tipo": "TEXTO",
+            "FechaAct": "2025-09-24"
+          },
+          {
+            "Nombre": "VI_Inscrip_IVA",
+            "Valor": "Si",
+            "Descripcion": "Inscripción IVA",
+            "Tipo": "BOOLEANO",
+            "FechaAct": null
+          },
+          {
+            "Nombre": "SCO_Vig",
+            "Valor": "825",
+            "Descripcion": "Score",
+            "Tipo": "ENTERO",
+            "FechaAct": null
+          },
+          {
+            "Nombre": "CDA",
+            "Valor": "Aprobado",
+            "Descripcion": "Criterio de aceptación definido por el usuario",
+            "Tipo": "TEXTO",
+            "FechaAct": null
+          },
+          {
+            "Nombre": "CDA_Valor.SCO",
+            "Valor": "825",
+            "Descripcion": "Score",
+            "Tipo": "TEXTO",
+            "FechaAct": null
+          },
+          {
+            "Nombre": "CDA_DC",
+            "Valor": "N/C",
+            "Descripcion": "Documentos Cuestionados",
+            "Tipo": "TEXTO",
+            "FechaAct": null
           }
         ]
       }

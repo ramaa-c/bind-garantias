@@ -20,6 +20,7 @@ export const InputSimple = forwardRef(({
   onBlur: manualOnBlur,
   variant,
   mask,
+  hideErrorSpace = false,
   ...props
 }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -51,6 +52,7 @@ export const InputSimple = forwardRef(({
       statusClass,
       hasValue || isFocused ? styles.hasValue : "",
       isAdmin ? styles.adminVariant : "",
+      hideErrorSpace ? styles.noErrorSpace : "",
       className,
     ].filter(Boolean).join(" ");
 

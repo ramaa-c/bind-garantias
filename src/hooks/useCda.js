@@ -47,3 +47,15 @@ export const useObtenerTodosCdas = (options = {}) => {
     ...options,
   });
 };
+
+export const useVincularPantallaCda = () => {
+  return useMutation({
+    mutationFn: (payload) => cdaService.vincularPantallaCda(payload),
+  });
+};
+
+export const useProbarCda = () => {
+  return useMutation({
+    mutationFn: ({ cuit, expresion }) => cdaService.probarCda(cuit, expresion),
+  });
+};

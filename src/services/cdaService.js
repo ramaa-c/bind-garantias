@@ -51,4 +51,27 @@ export const cdaService = {
     const response = await api.get("api/cda/Cda");
     return response.data;
   },
+
+  vincularPantallaCda: async (payload) => {
+    const response = await api.post("api/cda/PantallaGrupoCda", payload);
+    return response.data;
+  },
+
+  probarCda: async (cuit, expresion) => {
+    try {
+      const response = await api.post("api/cda/execute:test", {
+        Cuit: cuit,
+        Expresion: expresion
+      });
+      return { status: response.status, data: response.data };
+    } catch (error) {
+      if (error.response) {
+        return {
+          status: error.response.status,
+          data: error.response.data
+        };
+      }
+      throw error;
+    }
+  },
 };

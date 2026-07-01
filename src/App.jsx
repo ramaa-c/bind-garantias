@@ -37,6 +37,7 @@ import Terminos from "./pages/admin/Terminos";
 import CadenasValor from "./pages/admin/CadenasValor";
 import CadenasCda from "./pages/admin/CadenasCda";
 import CdasGlobales from "./pages/admin/CdasGlobales";
+import CdasPantalla from "./pages/admin/CdasPantalla";
 import LineasCadena from "./pages/admin/LineasCadena";
 import LineasProducto from "./pages/admin/LineasProducto";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
@@ -257,6 +258,16 @@ function App() {
               <AdminGuard>
                 <AdminLayout>
                   <CdasGlobales />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/cdas-pantalla"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <CdasPantalla />
                 </AdminLayout>
               </AdminGuard>
             }
