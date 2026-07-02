@@ -13,4 +13,23 @@ export const nosisService = {
       throw error;
     }
   },
+  obtenerDatosNormalizados: async (cuit) => {
+    const data = await nosisService.obtenerVariables(cuit);
+    if (
+      !data ||
+      !data.Contenido ||
+      !data.Contenido.Datos ||
+      !data.Contenido.Datos.Variables
+    ) {
+      return null;
+    }
+    const variables = data.Contenido.Datos.Variables;
+    const diccionario = {};
+    variables.forEach((v) => {
+      if (v.Nombre) {
+        diccionario[v.Nombre] = v.Valor;
+      }
+    });
+    return diccionario;
+  },
 };
