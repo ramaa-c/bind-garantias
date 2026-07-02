@@ -32,6 +32,7 @@ export function RepresentanteModal({
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
+  const [cdaRechazado, setCdaRechazado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [prevProps, setPrevProps] = useState({ isOpen, representante, representanteInicial });
@@ -39,6 +40,7 @@ export function RepresentanteModal({
     setPrevProps({ isOpen, representante, representanteInicial });
     if (isOpen) {
       setAfipValidado(!!(representante || representanteInicial));
+      setCdaRechazado(false);
       setShowConfirm(false);
     }
   }
@@ -124,16 +126,17 @@ export function RepresentanteModal({
     });
 
     const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam);
-    
+
     if (!result.success) {
+      setCdaRechazado(true);
       setProcesoModal(prev => ({
         ...prev,
         hasError: true,
         isSystemError: result.errors.some((e) => e.isSystemError),
-        pasos: prev.pasos.map(p => 
-          p.id === "sgr" ? { 
-              ...p, 
-              estado: "error", 
+        pasos: prev.pasos.map(p =>
+          p.id === "sgr" ? {
+              ...p,
+              estado: "error",
               descripcion: `Falló la validación del representante:`,
               errores: result.errors.map(e => e.message)
           } : p
@@ -142,7 +145,8 @@ export function RepresentanteModal({
       setValidando(false);
       return;
     }
-    
+
+    setCdaRechazado(false);
     setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
     try {
@@ -245,6 +249,13 @@ export function RepresentanteModal({
 
     const isValid = await trigger();
     if (!isValid) return;
+
+    if (cdaRechazado) {
+      toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {
+        description: "Volvé a consultar el CUIT para reintentar la validación.",
+      });
+      return;
+    }
 
     if (!isDirty) {
       onClose();

@@ -11,7 +11,6 @@ import { CargaArchivos } from "../../../../../ui/CargaArchivos/CargaArchivos";
 import { ProcesamientoModal } from "../../../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
-import { useEmpresaActiva } from "../../../../../../hooks/useEmpresaActiva";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { nosisService } from "../../../../../../services/nosisService";
@@ -91,13 +90,13 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
+  const [cdaRechazado, setCdaRechazado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
-  const { cuitActivo } = useEmpresaActiva();
 
   const relacionId = socio?.relacionId || 
                      socio?.relacion?.sociotercerorelacionid || 
@@ -192,6 +191,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setErrorDniFrente(false);
       setErrorDniDorso(false);
       setShowConfirm(false);
+      setCdaRechazado(false);
       if (socio) {
         setAfipValidado(true);
       } else {
@@ -315,41 +315,39 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
     clearErrors("cuit");
 
-    const cuitLimpioEmpresa = cuitActivo ? String(cuitActivo).replace(/\D/g, "") : "";
+    setProcesoModal({
+      isOpen: true,
+      titulo: "Validando Socio",
+      pasos: [
+        { id: "sgr", etiqueta: "Conectando con SGR+", estado: "cargando", descripcion: "Validando situación e historial societario." },
+      ],
+      hasError: false,
+      isSystemError: false
+    });
 
-    if (cuitLimpioEmpresa && cuitLimpio !== cuitLimpioEmpresa) {
-      setProcesoModal({
-        isOpen: true,
-        titulo: "Validando Socio",
-        pasos: [
-          { id: "sgr", etiqueta: "Conectando con SGR+", estado: "cargando", descripcion: "Validando situación e historial societario." },
-        ],
-        hasError: false,
-        isSystemError: false
-      });
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam);
 
-      const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam);
-      
-      if (!result.success) {
-        setProcesoModal(prev => ({
-          ...prev,
-          hasError: true,
-          isSystemError: result.errors.some((e) => e.isSystemError),
-          pasos: prev.pasos.map(p => 
-            p.id === "sgr" ? { 
-                ...p, 
-                estado: "error", 
-                descripcion: `Falló la validación del socio:`,
-                errores: result.errors.map(e => e.message)
-            } : p
-          )
-        }));
-        setValidando(false);
-        return;
-      }
-      
-      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+    if (!result.success) {
+      setCdaRechazado(true);
+      setProcesoModal(prev => ({
+        ...prev,
+        hasError: true,
+        isSystemError: result.errors.some((e) => e.isSystemError),
+        pasos: prev.pasos.map(p =>
+          p.id === "sgr" ? {
+              ...p,
+              estado: "error",
+              descripcion: `Falló la validación del socio:`,
+              errores: result.errors.map(e => e.message)
+          } : p
+        )
+      }));
+      setValidando(false);
+      return;
     }
+
+    setCdaRechazado(false);
+    setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
     try {
       let terceroEncontrado = null;
@@ -576,6 +574,13 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     const isValid = await trigger();
     
     if (!isValid || hasDropzoneErrors) return;
+
+    if (cdaRechazado) {
+      toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {
+        description: "Volvé a consultar el CUIT para reintentar la validación.",
+      });
+      return;
+    }
 
     if (!isDirty && !filesChanged) {
       onClose();
