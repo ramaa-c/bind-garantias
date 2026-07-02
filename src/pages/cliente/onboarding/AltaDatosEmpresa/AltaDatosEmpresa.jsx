@@ -213,14 +213,20 @@ export const AltaDatosEmpresa = () => {
           );
         }
 
+        // retry: 0 explícito porque axios ya reintenta a nivel de transporte
+        // (src/api/axios.js). Sin esto, un mismo fallo se reintenta dos veces
+        // por acá y hasta dos veces más por axios, y las 3 queries corren en
+        // paralelo justo después de los POST de alta.
         await Promise.all([
           queryClient.prefetchQuery({
             queryKey: ["socioArchivos", socioId],
             queryFn: () => socioArchivoService.obtenerArchivos(socioId),
+            retry: 0,
           }),
           queryClient.prefetchQuery({
             queryKey: ["sociosWeb", "detalle", socioId],
             queryFn: () => sociosService.obtenerSocioWebPorId(socioId),
+            retry: 0,
           }),
           queryClient.prefetchQuery({
             queryKey: [
@@ -236,6 +242,7 @@ export const AltaDatosEmpresa = () => {
                 data.razonSocial,
                 true,
               ),
+            retry: 0,
           }),
         ]);
 
