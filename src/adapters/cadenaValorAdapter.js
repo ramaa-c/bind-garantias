@@ -1,44 +1,51 @@
+import { normalizarClaves } from "../utils/normalizarClaves";
+
 export const cadenaValorAdapter = {
   adaptarPayload1: (data) => {
     if (!data) return data;
+    const d = normalizarClaves(data);
     return {
-      CadenaValorID: data?.cadenaValorID ?? data?.CadenaValorID,
-      Denominacion: data?.denominacion ?? data?.Denominacion,
-      Referencia: data?.referencia ?? data?.Referencia,
-      Logo: data?.logo ?? data?.Logo,
-      TipoCanalComercializacionID: data?.tipoCanalComercializacionID ?? data?.TipoCanalComercializacionID,
-      EquipoComercialID: data?.equipoComercialID ?? data?.EquipoComercialID,
-      MontoMaximo: data?.montoMaximo ?? data?.MontoMaximo,
-      PorcentajeMaximo: data?.porcentajeMaximo ?? data?.PorcentajeMaximo,
-      Activa: data?.activa ?? data?.Activa,
+      CadenaValorID: d.cadenavalorid,
+      Denominacion: d.denominacion,
+      Referencia: d.referencia,
+      Logo: d.logo,
+      TipoCanalComercializacionID: d.tipocanalcomercializacionid,
+      EquipoComercialID: d.equipocomercialid,
+      MontoMaximo: d.montomaximo,
+      PorcentajeMaximo: d.porcentajemaximo,
+      Activa: d.activa,
     };
   },
   adaptarPayload2: (data) => {
     if (!data) return data;
+    const d = normalizarClaves(data);
     return {
-      CadenaValorID: data?.cadenaValorID ?? data?.CadenaValorID,
-      Denominacion: data?.denominacion ?? data?.Denominacion,
-      Referencia: data?.referencia ?? data?.Referencia,
-      Logo: data?.logo ?? data?.Logo,
-      TipoCanalComercializacionID: data?.tipoCanalComercializacionID ?? data?.TipoCanalComercializacionID,
-      EquipoComercialID: data?.equipoComercialID ?? data?.EquipoComercialID,
-      MontoMaximo: data?.montoMaximo ?? data?.MontoMaximo,
-      PorcentajeMaximo: data?.porcentajeMaximo ?? data?.PorcentajeMaximo,
-      Activa: data?.activa ?? data?.Activa,
+      CadenaValorID: d.cadenavalorid,
+      Denominacion: d.denominacion,
+      Referencia: d.referencia,
+      Logo: d.logo,
+      TipoCanalComercializacionID: d.tipocanalcomercializacionid,
+      EquipoComercialID: d.equipocomercialid,
+      MontoMaximo: d.montomaximo,
+      PorcentajeMaximo: d.porcentajemaximo,
+      Activa: d.activa,
     };
   },
   adaptarPayload3: (data) => {
     if (!data) return data;
-    const cadenaValorID = data?.cadenavalorid ?? data?.cadenaValorID ?? data?.CadenaValorID;
-    const listaCdaRaw = data?.listacda ?? data?.listaCda ?? data?.ListaCda ?? [];
+    const d = normalizarClaves(data);
+    const listaCdaRaw = d.listacda ?? [];
 
-    const listaCda = listaCdaRaw.map(item => ({
-      CdaID: item?.cdaid ?? item?.CdaID ?? item?.CdaId,
-      ValorComparacion: item?.valorcomparacion ?? item?.ValorComparacion ?? ""
-    }));
+    const listaCda = listaCdaRaw.map((item) => {
+      const i = normalizarClaves(item);
+      return {
+        CdaID: i.cdaid,
+        ValorComparacion: i.valorcomparacion ?? "",
+      };
+    });
 
     return {
-      CadenaValorID: cadenaValorID,
+      CadenaValorID: d.cadenavalorid,
       ListaCda: listaCda,
     };
   },

@@ -1,26 +1,56 @@
+import { normalizarClaves } from "../utils/normalizarClaves";
+
 export const requisitosAdapter = {
   adaptarPayload1: (data) => {
     if (!data) return data;
+    const d = normalizarClaves(data);
     return {
-      CadenaValorParametroID: data?.cadenaValorParametroID ?? data?.CadenaValorParametroID,
-      CadenaValorID: data?.cadenaValorID ?? data?.CadenaValorID,
-      TipoPersonaID: data?.tipoPersonaID ?? data?.TipoPersonaID,
-      TipoDocumentoArchivoID: data?.tipoDocumentoArchivoID ?? data?.TipoDocumentoArchivoID,
-      TipoRelacionSocioID: data?.tipoRelacionSocioID ?? data?.TipoRelacionSocioID,
-      Requerimiento: data?.requerimiento ?? data?.Requerimiento,
-      TipoSociedad: data?.tipoSociedad ?? data?.TipoSociedad,
+      CadenaValorParametroID: d.cadenavalorparametroid,
+      CadenaValorID: d.cadenavalorid,
+      TipoPersonaID: d.tipopersonaid,
+      TipoDocumentoArchivoID: d.tipodocumentoarchivoid,
+      TipoRelacionSocioID: d.tiporelacionsocioid,
+      Requerimiento: d.requerimiento,
+      TipoSociedad: d.tiposociedad,
     };
   },
   adaptarPayload2: (data) => {
     if (!data) return data;
+    const d = normalizarClaves(data);
     return {
-      CadenaValorParametroID: data?.cadenaValorParametroID ?? data?.CadenaValorParametroID,
-      CadenaValorID: data?.cadenaValorID ?? data?.CadenaValorID,
-      TipoPersonaID: data?.tipoPersonaID ?? data?.TipoPersonaID,
-      TipoDocumentoArchivoID: data?.tipoDocumentoArchivoID ?? data?.TipoDocumentoArchivoID,
-      TipoRelacionSocioID: data?.tipoRelacionSocioID ?? data?.TipoRelacionSocioID,
-      Requerimiento: data?.requerimiento ?? data?.Requerimiento,
-      TipoSociedad: data?.tipoSociedad ?? data?.TipoSociedad,
+      CadenaValorParametroID: d.cadenavalorparametroid,
+      CadenaValorID: d.cadenavalorid,
+      TipoPersonaID: d.tipopersonaid,
+      TipoDocumentoArchivoID: d.tipodocumentoarchivoid,
+      TipoRelacionSocioID: d.tiporelacionsocioid,
+      Requerimiento: d.requerimiento,
+      TipoSociedad: d.tiposociedad,
+    };
+  },
+  adaptarPayload3: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      CadenaValorParametroID: d.cadenavalorparametroid,
+      CadenaValorID: d.cadenavalorid,
+      TipoPersonaID: d.tipopersonaid,
+      TipoDocumentoArchivoID: d.tipodocumentoarchivoid,
+      TipoRelacionSocioID: d.tiporelacionsocioid,
+      Requerimiento: d.requerimiento,
+      TipoSociedad: d.tiposociedad,
+    };
+  },
+  adaptarPayload4: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      CadenaValorParametroID: d.cadenavalorparametroid,
+      CadenaValorID: d.cadenavalorid,
+      TipoPersonaID: d.tipopersonaid,
+      TipoDocumentoArchivoID: d.tipodocumentoarchivoid,
+      TipoRelacionSocioID: d.tiporelacionsocioid,
+      Requerimiento: d.requerimiento,
+      TipoSociedad: d.tiposociedad,
     };
   },
 };
