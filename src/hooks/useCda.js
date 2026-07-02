@@ -1,11 +1,11 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { cdaService } from "../services/cdaService";
 
-export const useObtenerGrupoCda = (grupoId, options = {}) => {
+export const useObtenerGrupoCda = (pantalla, options = {}) => {
   return useQuery({
-    queryKey: ["cda", "grupo", grupoId],
-    queryFn: () => cdaService.obtenerGrupoCda(grupoId),
-    enabled: !!grupoId,
+    queryKey: ["cda", "grupo", pantalla],
+    queryFn: () => cdaService.obtenerGrupoCda(pantalla),
+    enabled: !!pantalla,
     ...options,
   });
 };
@@ -19,11 +19,11 @@ export const useObtenerCda = (cdaId, options = {}) => {
   });
 };
 
-export const useObtenerPantallaGrupoCda = (pantalla, grupoId, options = {}) => {
+export const useObtenerPantallaGrupoCda = (pantalla, options = {}) => {
   return useQuery({
-    queryKey: ["cda", "pantallaGrupo", pantalla, grupoId],
-    queryFn: () => cdaService.obtenerPantallaGrupoCda(pantalla, grupoId),
-    enabled: !!pantalla && !!grupoId,
+    queryKey: ["cda", "pantallaGrupo", pantalla],
+    queryFn: () => cdaService.obtenerPantallaGrupoCda(pantalla),
+    enabled: !!pantalla,
     ...options,
   });
 };

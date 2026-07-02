@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCrearCda, useProbarCda } from "../../hooks/useCda";
+import { cdaService } from "../../services/cdaService";
 import { cadenaValorService } from "../../services/cadenaValorService";
 import { INTEGRACIONES_MOCKS } from "../../utils/integracionesMocks";
 import { Button } from "../../components/ui/Button/Button";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
+import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { FiPlus, FiTrash2, FiCheck } from "react-icons/fi";
 import styles from "./CdasGlobales.module.css";
 
@@ -168,9 +170,11 @@ export default function CdasGlobales() {
   const [validationError, setValidationError] = useState("");
   const [expresionLog, setExpresionLog] = useState("");
   const [userEditedExpresionLog, setUserEditedExpresionLog] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Estado para vinculación automática a pantalla
   const [vincularPantalla, setVincularPantalla] = useState("");
+  const [conectorPantalla, setConectorPantalla] = useState("and");
 
   // Estados para laboratorio de pruebas de CDAs
   const [testCuit, setTestCuit] = useState("30714430048");
@@ -300,7 +304,7 @@ export default function CdasGlobales() {
     }
   };
 
-  const handleSave = async (e) => {
+  const handleSave = (e) => {
     e.preventDefault();
     if (!descripcion.trim() || !expresion.trim() || !mensajerechazo.trim()) {
       setValidationError("Por favor completá todos los campos obligatorios.");
@@ -310,8 +314,12 @@ export default function CdasGlobales() {
       setValidationError("Debés seleccionar una integración.");
       return;
     }
-    
+
     setValidationError("");
+    setConfirmOpen(true);
+  };
+
+  const confirmarCreacion = async () => {
     setIsProcesando(true);
 
     // Saneamos el valor de comparación para evitar almacenar comillas externas en la DB
@@ -419,34 +427,54 @@ export default function CdasGlobales() {
       // Vincular a pantalla seleccionada si corresponde
       if (vincularPantalla && newCdaId) {
         toast.info(`Vinculando criterio a la pantalla ${vincularPantalla}...`);
-        
+
         let listacda = [];
         let expresionAgrupacionActual = "";
-        
+
         try {
-          const currentConfig = await cdaService.obtenerPantallaGrupoCda(vincularPantalla, 0);
-          if (currentConfig) {
-            expresionAgrupacionActual = currentConfig.ExpresionAgrupacion || currentConfig.expresionAgrupacion || "";
-            const currentList = currentConfig.ListaCda || currentConfig.listaCda || [];
-            listacda = currentList.map(c => {
-              if (typeof c === "object" && c !== null) {
-                return c.cdaid || c.CdaId || c.CdaID || c.id;
-              }
-              return Number(c);
-            }).filter(Boolean);
-          }
+          const [currentConfig, currentGrupo] = await Promise.all([
+            cdaService.obtenerPantallaGrupoCda(vincularPantalla),
+            cdaService.obtenerGrupoCda(vincularPantalla),
+          ]);
+
+          // La API devuelve un array (uno por Pantalla filtrada, normalmente un solo elemento)
+          const pantallaRow = Array.isArray(currentConfig) ? currentConfig[0] : currentConfig;
+          expresionAgrupacionActual = pantallaRow?.ExpresionAgrupacion || pantallaRow?.expresionAgrupacion || "";
+
+          const currentList = Array.isArray(currentGrupo) ? currentGrupo : currentGrupo?.items || currentGrupo?.data || [];
+          listacda = currentList
+            .map(c => c.cdaid ?? c.CdaId ?? c.CdaID)
+            .filter((id) => id !== undefined && id !== null);
         } catch (fetchErr) {
           console.warn("No se pudo obtener la configuración existente de la pantalla (puede que no exista aún):", fetchErr);
         }
-        
+
         try {
+          const existingExpr = expresionAgrupacionActual.trim();
+          const idsPrevios = listacda.slice();
+
           if (!listacda.includes(Number(newCdaId))) {
             listacda.push(Number(newCdaId));
           }
 
           let nuevaExpresion = "";
-          if (expresionAgrupacionActual.trim()) {
-            nuevaExpresion = `(${expresionAgrupacionActual.trim()}) and cda${newCdaId}`;
+          if (!existingExpr) {
+            // No había expresión explícita (lista con AND implícito, o vacía).
+            // No hace falta agrupar con paréntesis: como "and" tiene mayor
+            // precedencia que "or", concatenar en plano ya da el resultado
+            // esperado sea cual sea el conector elegido para el nuevo CDA.
+            if (idsPrevios.length > 0) {
+              nuevaExpresion = `${idsPrevios.map((id) => `cda${id}`).join(" and ")} ${conectorPantalla} cda${newCdaId}`;
+            }
+          } else {
+            // Ya había una expresión compuesta explícita (armada a mano desde
+            // "CDAs por Pantalla"). Acá sí hace falta agrupar con paréntesis
+            // para no alterar su precedencia original.
+            // OJO: el motor de expresiones del backend tiene un bug conocido
+            // con paréntesis + IDs de CDA que son prefijo numérico de otro
+            // (ej: cda1 dentro de cda1050) -> devuelve 500 "Couldn't find cdaX".
+            // Reportado a backend (Victor).
+            nuevaExpresion = `(${existingExpr}) ${conectorPantalla} cda${newCdaId}`;
           }
 
           await cdaService.vincularPantallaCda({
@@ -477,6 +505,7 @@ export default function CdasGlobales() {
       setMensajerechazo("");
       setVinculadefaultcv(true);
       setVincularPantalla("");
+      setConectorPantalla("and");
       setConditions([
         { id: Date.now(), variable: "CDA_Valor.SCO", operador: ">", valor: "500" }
       ]);
@@ -485,10 +514,15 @@ export default function CdasGlobales() {
       toast.error("Ocurrió un error al guardar el CDA.");
     } finally {
       setIsProcesando(false);
+      setConfirmOpen(false);
     }
   };
 
   const currentJsonData = integracion ? INTEGRACIONES_MOCKS[integracion] : null;
+
+  const previewSimple = cdaMode !== "compuesto" && expresion.trim()
+    ? `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valorcomparacion)}`
+    : "";
 
   return (
     <div className={styles.container}>
@@ -676,121 +710,158 @@ export default function CdasGlobales() {
               </div>
             )}
 
-            <InputSimple
-              label="Descripción del CDA"
-              value={descripcion}
-              onChange={setDescripcion}
-              disabled={isCreando || isProcesando}
-              variant="admin"
-              hideErrorSpace={true}
-            />
+            <div className={styles.fieldGroup}>
+              <h3 className={styles.fieldGroupLabel}>Identificación</h3>
+              <InputSimple
+                label="Descripción del CDA"
+                value={descripcion}
+                onChange={setDescripcion}
+                disabled={isCreando || isProcesando}
+                variant="admin"
+                hideErrorSpace={true}
+              />
+            </div>
 
-            <InputSimple
-              label="Expresión (Campo a evaluar)"
-              type="textarea"
-              value={expresion}
-              onChange={(val) => {
-                setExpresion(val);
-                if (!userEditedExpresionLog) {
-                  setExpresionLog(val);
-                }
-              }}
-              disabled={isCreando || isProcesando || cdaMode === "compuesto"}
-              variant="admin"
-              hideErrorSpace={true}
-            />
+            <div className={styles.fieldGroup}>
+              <h3 className={styles.fieldGroupLabel}>Regla de Evaluación</h3>
 
-            <InputSimple
-              label="Expresión de Retorno para Logs (Opcional)"
-              type="textarea"
-              value={expresionLog}
-              onChange={(val) => {
-                setExpresionLog(val);
-                setUserEditedExpresionLog(true);
-              }}
-              disabled={isCreando || isProcesando}
-              variant="admin"
-              hideErrorSpace={true}
-            />
-            <p className={styles.helperText} style={{ marginTop: "-0.5rem", marginBottom: "0.75rem" }}>
-              Por defecto se autocompleta con el campo a evaluar. Podés ingresar múltiples campos de retorno separados por coma.
-            </p>
-
-            {cdaMode === "compuesto" ? (
-              <div className={styles.rightColInfoBox} style={{ marginTop: "-0.5rem", marginBottom: "0.75rem" }}>
-                ℹ️ <strong>Regla Compuesta Activa:</strong> El operador y el valor se definen a partir de las condiciones en el constructor de la izquierda.
+              <div className={styles.compactField}>
+                <InputSimple
+                  label="Expresión (Campo a evaluar)"
+                  type="textarea"
+                  value={expresion}
+                  onChange={(val) => {
+                    setExpresion(val);
+                    if (!userEditedExpresionLog) {
+                      setExpresionLog(val);
+                    }
+                  }}
+                  disabled={isCreando || isProcesando || cdaMode === "compuesto"}
+                  variant="admin"
+                  hideErrorSpace={true}
+                />
               </div>
-            ) : (
-              <div style={{ display: "flex", gap: "1rem" }}>
-                <div style={{ flex: 1 }}>
-                  <SelectSimple
-                    label="Operador"
-                    value={simbolocomparacion}
-                    onChange={setSimbolocomparacion}
-                    options={[
-                      { value: "=", label: "=" },
-                      { value: ">", label: ">" },
-                      { value: "<", label: "<" },
-                      { value: ">=", label: ">=" },
-                      { value: "<=", label: "<=" },
-                      { value: "<>", label: "<>" }
-                    ]}
-                    disabled={isCreando || isProcesando}
-                    variant="admin"
-                  />
-                </div>
 
-                <div style={{ flex: 2 }}>
-                  <InputSimple
-                    label="Valor de Comparación"
-                    value={valorcomparacion}
-                    onChange={setValorcomparacion}
-                    disabled={isCreando || isProcesando}
+              {cdaMode === "compuesto" ? (
+                <div className={styles.rightColInfoBox}>
+                  ℹ️ <strong>Regla Compuesta Activa:</strong> El operador y el valor se definen a partir de las condiciones en el constructor de la izquierda.
+                </div>
+              ) : (
+                <div className={styles.fieldRow}>
+                  <div style={{ flex: "0 0 30%" }}>
+                    <SelectSimple
+                      label="Operador"
+                      value={simbolocomparacion}
+                      onChange={setSimbolocomparacion}
+                      options={[
+                        { value: "=", label: "=" },
+                        { value: ">", label: ">" },
+                        { value: "<", label: "<" },
+                        { value: ">=", label: ">=" },
+                        { value: "<=", label: "<=" },
+                        { value: "<>", label: "<>" }
+                      ]}
+                      disabled={isCreando || isProcesando}
+                      variant="admin"
+                    />
+                  </div>
+
+                  <div>
+                    <InputSimple
+                      label="Valor de Comparación"
+                      value={valorcomparacion}
+                      onChange={setValorcomparacion}
+                      disabled={isCreando || isProcesando}
+                      variant="admin"
+                      hideErrorSpace={true}
+                    />
+                    <p className={styles.helperText} style={{ marginTop: "0.25rem" }}>
+                      Si querés comparar por vacío, dejá este campo vacío.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className={styles.compactField}>
+                <InputSimple
+                  label="Expresión de Retorno para Logs (Opcional)"
+                  type="textarea"
+                  value={expresionLog}
+                  onChange={(val) => {
+                    setExpresionLog(val);
+                    setUserEditedExpresionLog(true);
+                  }}
+                  disabled={isCreando || isProcesando}
+                  variant="admin"
+                  hideErrorSpace={true}
+                />
+              </div>
+              <p className={styles.helperText} style={{ marginTop: "-0.35rem" }}>
+                Por defecto se autocompleta con el campo a evaluar. Podés ingresar múltiples campos de retorno separados por coma.
+              </p>
+            </div>
+
+            <div className={styles.fieldGroup}>
+              <h3 className={styles.fieldGroupLabel}>Mensaje y Vinculación</h3>
+
+              <InputSimple
+                label="Mensaje de Rechazo Global"
+                value={mensajerechazo}
+                onChange={setMensajerechazo}
+                disabled={isCreando || isProcesando}
+                variant="admin"
+                hideErrorSpace={true}
+              />
+
+              <div className={styles.vinculacionBox}>
+                <SelectSimple
+                  label="Vincular a Pantalla al crear (Opcional)"
+                  value={vincularPantalla}
+                  onChange={setVincularPantalla}
+                  options={[
+                    { value: "", label: "-- No vincular --" },
+                    { value: "PANTALLA_INGRESO_CUIT", label: "PANTALLA_INGRESO_CUIT (Validación inicial de CUIT)" },
+                    { value: "PANTALLA_SOCIOS", label: "PANTALLA_SOCIOS (Validación de Socios y Representantes)" }
+                  ]}
+                  placeholder="-- Seleccioná una pantalla --"
+                  variant="admin"
+                  disabled={isCreando || isProcesando}
+                  hideErrorSpace={true}
+                />
+
+                {vincularPantalla && (
+                  <SelectSimple
+                    label="Conector con los criterios ya vinculados a la pantalla"
+                    value={conectorPantalla}
+                    onChange={setConectorPantalla}
+                    options={[
+                      { value: "and", label: "AND (debe cumplir este Y los existentes)" },
+                      { value: "or", label: "OR (alcanza con este O los existentes)" }
+                    ]}
                     variant="admin"
+                    disabled={isCreando || isProcesando}
                     hideErrorSpace={true}
                   />
-                  <p className={styles.helperText} style={{ marginTop: "0.25rem" }}>
-                    Si querés comparar por vacío, dejá este campo vacío.
-                  </p>
+                )}
+
+                {/* Checkbox Vincular por defecto (Premium e Interactivo) */}
+                <div
+                  className={styles.customCheckboxContainer}
+                  onClick={() => { if (!isCreando && !isProcesando) setVinculadefaultcv(!vinculadefaultcv); }}
+                >
+                  <div className={`${styles.customCheckbox} ${vinculadefaultcv ? styles.checkboxChecked : ""}`}>
+                    {vinculadefaultcv && <FiCheck size={12} className={styles.checkmarkIcon} />}
+                  </div>
+                  <div className={styles.checkboxTextGroup}>
+                    <span className={styles.checkboxLabel}>
+                      Vincular por defecto a nuevas Cadenas de Valor
+                    </span>
+                    <span className={styles.checkboxDescription}>
+                      Cada vez que se cree una Cadena de Valor nueva, este criterio se va a vincular automáticamente.
+                    </span>
+                  </div>
                 </div>
               </div>
-            )}
-
-            <InputSimple
-              label="Mensaje de Rechazo Global"
-              value={mensajerechazo}
-              onChange={setMensajerechazo}
-              disabled={isCreando || isProcesando}
-              variant="admin"
-              hideErrorSpace={true}
-            />
-
-            <SelectSimple
-              label="Vincular a Pantalla al crear (Opcional)"
-              value={vincularPantalla}
-              onChange={setVincularPantalla}
-              options={[
-                { value: "", label: "-- No vincular --" },
-                { value: "PANTALLA_INGRESO_CUIT", label: "PANTALLA_INGRESO_CUIT (Validación inicial de CUIT)" },
-                { value: "PANTALLA_SOCIOS", label: "PANTALLA_SOCIOS (Validación de Socios y Representantes)" }
-              ]}
-              placeholder="-- Seleccioná una pantalla --"
-              variant="admin"
-              disabled={isCreando || isProcesando}
-              hideErrorSpace={true}
-            />
-
-            {/* Checkbox Vincular por defecto (Premium e Interactivo) */}
-            <div 
-              className={styles.customCheckboxContainer} 
-              onClick={() => { if (!isCreando && !isProcesando) setVinculadefaultcv(!vinculadefaultcv); }}
-            >
-              <div className={`${styles.customCheckbox} ${vinculadefaultcv ? styles.checkboxChecked : ""}`}>
-                {vinculadefaultcv && <FiCheck size={12} className={styles.checkmarkIcon} />}
-              </div>
-              <span className={styles.checkboxLabel}>
-                Vincular por defecto a nuevas Cadenas de Valor
-              </span>
             </div>
 
             {/* Laboratorio de Pruebas (Opcional) */}
@@ -800,7 +871,12 @@ export default function CdasGlobales() {
                 <p className={styles.sandboxIntro}>
                   Probá el criterio en tiempo real contra los datos de un CUIT antes de guardarlo.
                 </p>
-                
+                {previewSimple && (
+                  <p className={styles.sandboxRulePreview}>
+                    La regla actual que diseñaste es: <code>{previewSimple}</code>
+                  </p>
+                )}
+
                 <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end", marginBottom: "0.25rem" }}>
                   <div style={{ flex: 1 }}>
                     <InputSimple
@@ -861,6 +937,32 @@ export default function CdasGlobales() {
           </form>
         </div>
       </div>
+
+      <ConfirmacionModal
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmarCreacion}
+        titulo="Confirmar Criterio de Aceptación"
+        mensaje={
+          <>
+            ¿Confirmás la creación de este criterio de aceptación global?
+            {(cdaMode === "compuesto" ? expresion.trim() : previewSimple) && (
+              <>
+                <br /><br />
+                <strong>Regla:</strong>
+                <br />
+                <code className={styles.confirmModalCode}>{cdaMode === "compuesto" ? expresion.trim() : previewSimple}</code>
+              </>
+            )}
+          </>
+        }
+        variant="blue"
+        confirmText="CREAR CRITERIO"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={isCreando || isProcesando}
+      />
     </div>
   );
 }
