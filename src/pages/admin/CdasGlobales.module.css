@@ -1,20 +1,27 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.1rem;
   width: 100%;
+  height: calc(100dvh - 13rem);
+  min-height: 0;
+}
+
+@media (max-width: 1024px) {
+  .container {
+    height: calc(100dvh - 12.5rem);
+  }
 }
 
 .header {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 1rem;
+  gap: 0.25rem;
+  flex: 0 0 auto;
 }
 
 .titleBox h1 {
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 800;
   margin: 0;
   color: #ffffff;
@@ -22,86 +29,131 @@
 
 .titleBox p {
   color: #8b949e;
-  margin: 0.25rem 0 0 0;
-  font-size: 0.875rem;
+  margin: 0.2rem 0 0 0;
+  font-size: 0.8rem;
 }
 
-.mainLayout {
+/* ============ WORKBENCH: layout de 3 columnas ============ */
+.workbench {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.1rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (min-width: 1280px) {
+  .workbench {
+    grid-template-columns: minmax(260px, 0.85fr) minmax(340px, 1.15fr) minmax(300px, 1fr);
+  }
+}
+
+.col {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+  padding: 1.1rem;
+  min-height: 0;
 }
 
-@media (min-width: 992px) {
-  .mainLayout {
-    flex-direction: row;
-    align-items: stretch;
+@media (min-width: 1280px) {
+  .col {
+    overflow: hidden;
   }
-  
-  .leftColWrapper {
-    position: relative;
-    flex: 1;
-    min-width: 0;
-  }
-  
-  .leftCol {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+}
+
+.colHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 0 0 auto;
+}
+
+.colStepBadge {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: rgba(76, 101, 230, 0.15);
+  border: 1px solid rgba(76, 101, 230, 0.35);
+  color: var(--color-azul-bind, #4c65e6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.colTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.colSubtitle {
+  font-size: 0.7rem;
+  color: #8b949e;
+  margin: 0.1rem 0 0 0;
+  line-height: 1.3;
+}
+
+.colScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 1280px) {
+  .colScroll {
     overflow-y: auto;
+    padding-right: 0.35rem;
+    margin-right: -0.35rem;
   }
-}
-
-.leftCol {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-}
-
-.rightCol {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  position: sticky;
-  top: 2rem;
 }
 
 /* Integrations Selector */
-.comboLabel {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #c9d1d9;
-  margin-bottom: 0.5rem;
+.modeToggleContainer {
+  display: flex;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  padding: 0.2rem;
+  gap: 0.2rem;
+  flex: 0 0 auto;
 }
 
-.comboSelect {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  background-color: #0d1117;
-  border: 1px solid #30363d;
-  color: #c9d1d9;
-  border-radius: 0.5rem;
-  font-size: 0.95rem;
-  outline: none;
+.modeTab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.375rem;
+  color: #8b949e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.comboSelect:focus {
-  border-color: #58a6ff;
-  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.15);
+.modeTab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.modeTabActive {
+  background: #3b4ed1;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(59, 78, 209, 0.3);
+}
+
+.modeTabActive:hover {
+  background: #4c65e6;
 }
 
 /* JSON Viewer */
@@ -109,22 +161,26 @@
   background-color: #0d1117;
   border: 1px solid #30363d;
   border-radius: 0.5rem;
-  padding: 1rem;
-  overflow-x: auto;
+  padding: 0.85rem;
+  overflow: auto;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   line-height: 1.5;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .jsonViewerMessage {
   color: #8b949e;
   text-align: center;
-  padding: 2rem;
+  padding: 1.5rem 0.5rem;
   font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 .jsonNode {
-  margin-left: 1.5rem;
+  margin-left: 1.25rem;
 }
 
 .jsonKey {
@@ -147,43 +203,20 @@
   background-color: rgba(88, 166, 255, 0.15);
 }
 
-/* Form Styles */
-.formSection {
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-}
-
-.formSectionTitle {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #ffffff;
-  margin: 0 0 0.5rem 0;
-  border-bottom: 1px solid #30363d;
-  padding-bottom: 0.5rem;
-}
-
-/* Agrupación de campos dentro del formulario, estilo consistente con el resto del admin */
-.fieldGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.fieldGroupLabel {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #8b949e;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  border-bottom: 1px solid rgba(59, 78, 209, 0.15);
-  padding-bottom: 0.35rem;
-  margin: 0;
+/* Form */
+.validationError {
+  background-color: rgba(248, 81, 73, 0.1);
+  color: #ff7b72;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.8rem;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  flex: 0 0 auto;
 }
 
 .fieldRow {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .fieldRow > * {
@@ -193,23 +226,85 @@
 
 /* Textareas de una sola línea (expresión, log): no necesitan la altura por defecto */
 .compactField textarea {
-  min-height: 2.75rem !important;
+  min-height: 2.5rem !important;
+}
+
+.helperText {
+  font-size: 0.7rem;
+  color: #8b949e;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* Secciones dentro de la tarjeta "Definí la Regla" */
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.3rem;
+  margin: 0 0 0.15rem 0;
+}
+
+/* Toggle para revelar campos secundarios (menos carga visual) */
+.advancedToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.4rem;
+  color: #8b949e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  align-self: flex-start;
+  margin-top: -0.25rem;
+  transition: all 0.15s ease;
+}
+
+.advancedToggle:hover {
+  color: #ffffff;
+  border-color: rgba(88, 166, 255, 0.3);
+  background: rgba(88, 166, 255, 0.05);
+}
+
+.advancedToggleIcon {
+  font-size: 0.85rem;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.advancedToggleIconOpen {
+  transform: rotate(180deg);
+}
+
+.advancedToggleHint {
+  color: #5c6672;
+  font-weight: 500;
 }
 
 /* Custom premium checkbox styles */
 .customCheckboxContainer {
   display: flex;
-  align-items: center;
-  gap: 0.65rem;
+  align-items: flex-start;
+  gap: 0.6rem;
   cursor: pointer;
   user-select: none;
-  padding: 0.25rem 0;
-  margin-top: 0.25rem;
 }
 
 .customCheckbox {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   border: 2px solid #30363d;
   border-radius: 4px;
   display: flex;
@@ -217,6 +312,8 @@
   justify-content: center;
   transition: all 0.15s ease;
   background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  margin-top: 0.1rem;
 }
 
 .checkboxChecked {
@@ -229,7 +326,7 @@
 }
 
 .checkboxLabel {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #c9d1d9;
   cursor: pointer;
 }
@@ -237,11 +334,11 @@
 .checkboxTextGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.1rem;
 }
 
 .checkboxDescription {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #8b949e;
   cursor: pointer;
   line-height: 1.3;
@@ -251,87 +348,58 @@
 .vinculacionBox {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.65rem;
   background: rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.5rem;
-  padding: 1rem;
+  border-radius: 0.65rem;
+  padding: 0.85rem;
+  flex: 0 0 auto;
+}
+
+.boxLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* Tarjeta distinta para el toggle "vincular por defecto" (se diferencia
+   a propósito de la caja neutra de vinculación por pantalla) */
+.defaultCvBox {
+  background: rgba(59, 78, 209, 0.05);
+  border: 1px solid rgba(59, 78, 209, 0.18);
+  border-radius: 0.65rem;
+  padding: 0.85rem;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition: border-color 0.15s ease;
+}
+
+.defaultCvBox:hover {
+  border-color: rgba(76, 101, 230, 0.4);
 }
 
 .formActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 0.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid #30363d;
+  flex: 0 0 auto;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.validationError {
-  background-color: rgba(248, 81, 73, 0.1);
-  color: #ff7b72;
-  padding: 0.75rem;
-  border-radius: 0.375rem;
-  font-size: 0.85rem;
-  border: 1px solid rgba(248, 81, 73, 0.4);
-}
-
-.helperText {
-  font-size: 0.75rem;
-  color: #8b949e;
-  margin-top: -1.35rem;
-  margin-bottom: 0;
-  line-height: 1.3;
-  position: relative;
-  padding-left: 0.25rem;
-}
-
-/* Mode Selector Tabs */
-.modeToggleContainer {
-  display: flex;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.5rem;
-  padding: 0.25rem;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-.modeTab {
-  flex: 1;
-  background: none;
-  border: none;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  color: #8b949e;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.modeTab:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.modeTabActive {
-  background: #3b4ed1;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(59, 78, 209, 0.3);
-}
-
-.modeTabActive:hover {
-  background: #4c65e6;
+.formActions button {
+  width: 100%;
 }
 
 /* Compound Builder */
 .builderContainer {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.85rem;
   animation: fadeIn 0.2s ease-out;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 @keyframes fadeIn {
@@ -340,7 +408,7 @@
 }
 
 .builderIntro {
-  font-size: 0.825rem;
+  font-size: 0.75rem;
   color: #8b949e;
   line-height: 1.4;
   margin: 0;
@@ -349,15 +417,15 @@
 .connectorWrapper {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   background: rgba(59, 78, 209, 0.05);
   border: 1px solid rgba(59, 78, 209, 0.15);
-  padding: 0.5rem 0.75rem;
+  padding: 0.45rem 0.65rem;
   border-radius: 0.5rem;
 }
 
 .connectorLabel {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   color: #c9d1d9;
   text-transform: uppercase;
@@ -369,7 +437,7 @@
   color: #58a6ff;
   border-radius: 0.375rem;
   padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   outline: none;
@@ -378,16 +446,16 @@
 .conditionsList {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
 }
 
 .conditionRow {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
   align-items: center;
   background: rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  padding: 0.75rem;
+  padding: 0.6rem;
   border-radius: 0.5rem;
 }
 
@@ -399,21 +467,21 @@
   border: 1px solid #30363d;
   color: #c9d1d9;
   border-radius: 0.375rem;
-  padding: 0.4rem 0.5rem;
-  font-size: 0.825rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.775rem;
   outline: none;
   cursor: pointer;
 }
 
 .opSelect {
-  flex: 0 0 60px;
-  width: 60px;
+  flex: 0 0 55px;
+  width: 55px;
   background: #0d1117;
   border: 1px solid #30363d;
   color: #ff7b72;
   border-radius: 0.375rem;
-  padding: 0.4rem 0.5rem;
-  font-size: 0.825rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.775rem;
   font-weight: bold;
   text-align: center;
   outline: none;
@@ -428,8 +496,8 @@
   border: 1px solid #30363d;
   color: #ffffff;
   border-radius: 0.375rem;
-  padding: 0.4rem 0.5rem;
-  font-size: 0.825rem;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.775rem;
   outline: none;
 }
 
@@ -438,14 +506,14 @@
 }
 
 .btnDelete {
-  flex: 0 0 36px;
-  width: 36px;
-  height: 32px;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 30px;
   background: rgba(248, 81, 73, 0.08);
   border: 1px solid rgba(248, 81, 73, 0.25);
   color: #ff7b72;
   border-radius: 0.375rem;
-  padding: 0.45rem;
+  padding: 0.4rem;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -467,9 +535,9 @@
   background: rgba(56, 161, 105, 0.08);
   border: 1px dashed rgba(56, 161, 105, 0.3);
   color: #38a169;
-  padding: 0.5rem;
+  padding: 0.45rem;
   border-radius: 0.5rem;
-  font-size: 0.825rem;
+  font-size: 0.775rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -481,26 +549,26 @@
   border-color: #38a169;
 }
 
-/* Preview Card */
+/* Preview Card (regla compuesta, columna 1) */
 .previewCard {
   background: rgba(88, 166, 255, 0.02);
   border: 1px solid rgba(88, 166, 255, 0.08);
   border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.65rem;
 }
 
 .previewTitle {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   color: #58a6ff;
   text-transform: uppercase;
-  margin-bottom: 0.375rem;
+  margin-bottom: 0.3rem;
   letter-spacing: 0.05em;
 }
 
 .previewCode {
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #c9d1d9;
   background: #0d1117;
   padding: 0.5rem;
@@ -510,50 +578,64 @@
   line-height: 1.4;
 }
 
-/* Right Col Info Box when compound mode active */
+/* Info box cuando la regla compuesta está activa */
 .rightColInfoBox {
   background: rgba(59, 78, 209, 0.04);
   border: 1px solid rgba(59, 78, 209, 0.15);
   border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
-  font-size: 0.825rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.75rem;
   color: #a3a3a3;
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
-/* Testing Sandbox Container */
+/* Testing Sandbox */
 .sandboxContainer {
-  margin-top: 1rem;
-  padding: 1rem;
+  padding: 0.85rem;
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 0.75rem;
+  border-radius: 0.65rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  flex: 0 0 auto;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* Separa el laboratorio de pruebas (zona fija) de la vinculación (zona con scroll) */
+.colDivider {
+  flex: 0 0 auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 0.1rem 0;
 }
 
 .sandboxTitle {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #ffffff;
   margin: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding-bottom: 0.4rem;
 }
 
-.sandboxIntro {
-  font-size: 0.775rem;
+.sandboxRulePreview {
+  font-size: 0.7rem;
   color: #8b949e;
   line-height: 1.4;
   margin: 0;
 }
 
-.sandboxRulePreview {
-  font-size: 0.775rem;
-  color: #8b949e;
-  line-height: 1.5;
-  margin: 0;
+.sandboxRulePreview code {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #58a6ff;
+  background: #0d1117;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.375rem;
+  border: 1px solid #30363d;
+  word-break: break-all;
+  line-height: 1.35;
 }
 
 .confirmModalCode {
@@ -571,41 +653,27 @@
   text-align: left;
 }
 
-.sandboxRulePreview code {
-  display: block;
-  margin-top: 0.35rem;
-  font-family: monospace;
-  font-size: 0.8rem;
-  color: #58a6ff;
-  background: #0d1117;
-  padding: 0.5rem 0.6rem;
-  border-radius: 0.375rem;
-  border: 1px solid #30363d;
-  word-break: break-all;
-  line-height: 1.4;
-}
-
 .testResultBox {
   background: #0d1117;
   border: 1px solid #30363d;
   border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
 }
 
 .testResultHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.775rem;
+  font-size: 0.75rem;
   font-weight: bold;
   color: #8b949e;
 }
 
 .testResultMessage {
-  font-size: 0.825rem;
+  font-size: 0.8rem;
   color: #ffffff;
   line-height: 1.4;
   word-break: break-all;

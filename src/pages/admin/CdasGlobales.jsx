@@ -9,7 +9,7 @@ import { Button } from "../../components/ui/Button/Button";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { FiPlus, FiTrash2, FiCheck } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiCheck, FiChevronDown } from "react-icons/fi";
 import styles from "./CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -171,6 +171,7 @@ export default function CdasGlobales() {
   const [expresionLog, setExpresionLog] = useState("");
   const [userEditedExpresionLog, setUserEditedExpresionLog] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [mostrarExpresionLog, setMostrarExpresionLog] = useState(false);
 
   // Estado para vinculación automática a pantalla
   const [vincularPantalla, setVincularPantalla] = useState("");
@@ -524,6 +525,8 @@ export default function CdasGlobales() {
     ? `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valorcomparacion)}`
     : "";
 
+  const reglaActual = cdaMode === "compuesto" ? expresion.trim() : previewSimple;
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -533,28 +536,33 @@ export default function CdasGlobales() {
         </div>
       </div>
 
-      <div className={styles.mainLayout}>
-        {/* COLUMNA IZQUIERDA: Selector e Interfaz JSON */}
-        <div className={styles.leftColWrapper}>
-          <div className={styles.leftCol}>
-          <div>
-            <SelectSimple
-              label="Seleccionar Integración"
-              value={integracion}
-              onChange={handleIntegracionChange}
-              options={[
-                { value: "ARCA", label: "ARCA" },
-                { value: "CASFOG", label: "CASFOG" },
-                { value: "LUFE", label: "LUFE" },
-                { value: "NOSIS", label: "NOSIS" },
-                { value: "SGRPLUS", label: "SGRPLUS" }
-              ]}
-              placeholder="-- Seleccioná una integración --"
-              variant="admin"
-              disabled={isCreando || isProcesando}
-              hideErrorSpace={true}
-            />
+      <form onSubmit={handleSave} className={styles.workbench}>
+        {/* COLUMNA 1: Fuente de Datos */}
+        <div className={styles.col}>
+          <div className={styles.colHeader}>
+            <span className={styles.colStepBadge}>1</span>
+            <div>
+              <h2 className={styles.colTitle}>Fuente de Datos</h2>
+              <p className={styles.colSubtitle}>Elegí la integración y el campo a evaluar</p>
+            </div>
           </div>
+
+          <SelectSimple
+            label="Seleccionar Integración"
+            value={integracion}
+            onChange={handleIntegracionChange}
+            options={[
+              { value: "ARCA", label: "ARCA" },
+              { value: "CASFOG", label: "CASFOG" },
+              { value: "LUFE", label: "LUFE" },
+              { value: "NOSIS", label: "NOSIS" },
+              { value: "SGRPLUS", label: "SGRPLUS" }
+            ]}
+            placeholder="-- Seleccioná una integración --"
+            variant="admin"
+            disabled={isCreando || isProcesando}
+            hideErrorSpace={true}
+          />
 
           {integracion === "NOSIS" && (
             <div className={styles.modeToggleContainer}>
@@ -563,14 +571,14 @@ export default function CdasGlobales() {
                 className={`${styles.modeTab} ${cdaMode === "simple" ? styles.modeTabActive : ""}`}
                 onClick={() => setCdaMode("simple")}
               >
-                Vista Simple (Árbol JSON)
+                Árbol JSON
               </button>
               <button
                 type="button"
                 className={`${styles.modeTab} ${cdaMode === "compuesto" ? styles.modeTabActive : ""}`}
                 onClick={() => setCdaMode("compuesto")}
               >
-                Creador de Reglas Nosis (Compuestas)
+                Reglas Compuestas
               </button>
             </div>
           )}
@@ -580,7 +588,7 @@ export default function CdasGlobales() {
               <p className={styles.builderIntro}>
                 Combiná múltiples variables del reporte de Nosis para crear reglas de validación complejas.
               </p>
-              
+
               <div className={styles.connectorWrapper}>
                 <span className={styles.connectorLabel}>Conector Lógico:</span>
                 <select
@@ -697,21 +705,26 @@ export default function CdasGlobales() {
             </div>
           )}
         </div>
-        </div>
 
-        {/* COLUMNA DERECHA: Formulario de Creación */}
-        <div className={styles.rightCol}>
-          <h2 className={styles.formSectionTitle}>Definición de Regla</h2>
-          
-          <form onSubmit={handleSave} className={styles.formSection}>
+        {/* COLUMNA 2: Definir la Regla */}
+        <div className={styles.col}>
+          <div className={styles.colHeader}>
+            <span className={styles.colStepBadge}>2</span>
+            <div>
+              <h2 className={styles.colTitle}>Definí la Regla</h2>
+              <p className={styles.colSubtitle}>Condición, mensaje y datos del criterio</p>
+            </div>
+          </div>
+
+          <div className={styles.colScroll}>
             {validationError && (
               <div className={styles.validationError}>
                 {validationError}
               </div>
             )}
 
-            <div className={styles.fieldGroup}>
-              <h3 className={styles.fieldGroupLabel}>Identificación</h3>
+            <div className={styles.sectionGroup}>
+              <h3 className={styles.sectionLabel}>Descripción</h3>
               <InputSimple
                 label="Descripción del CDA"
                 value={descripcion}
@@ -722,8 +735,8 @@ export default function CdasGlobales() {
               />
             </div>
 
-            <div className={styles.fieldGroup}>
-              <h3 className={styles.fieldGroupLabel}>Regla de Evaluación</h3>
+            <div className={styles.sectionGroup}>
+              <h3 className={styles.sectionLabel}>Armá tu Regla</h3>
 
               <div className={styles.compactField}>
                 <InputSimple
@@ -744,7 +757,7 @@ export default function CdasGlobales() {
 
               {cdaMode === "compuesto" ? (
                 <div className={styles.rightColInfoBox}>
-                  ℹ️ <strong>Regla Compuesta Activa:</strong> El operador y el valor se definen a partir de las condiciones en el constructor de la izquierda.
+                  ℹ️ <strong>Regla Compuesta Activa:</strong> el operador y el valor se definen desde el constructor de la columna 1.
                 </div>
               ) : (
                 <div className={styles.fieldRow}>
@@ -775,35 +788,41 @@ export default function CdasGlobales() {
                       variant="admin"
                       hideErrorSpace={true}
                     />
-                    <p className={styles.helperText} style={{ marginTop: "0.25rem" }}>
-                      Si querés comparar por vacío, dejá este campo vacío.
-                    </p>
                   </div>
                 </div>
               )}
 
-              <div className={styles.compactField}>
-                <InputSimple
-                  label="Expresión de Retorno para Logs (Opcional)"
-                  type="textarea"
-                  value={expresionLog}
-                  onChange={(val) => {
-                    setExpresionLog(val);
-                    setUserEditedExpresionLog(true);
-                  }}
-                  disabled={isCreando || isProcesando}
-                  variant="admin"
-                  hideErrorSpace={true}
-                />
-              </div>
-              <p className={styles.helperText} style={{ marginTop: "-0.35rem" }}>
-                Por defecto se autocompleta con el campo a evaluar. Podés ingresar múltiples campos de retorno separados por coma.
-              </p>
+              <button
+                type="button"
+                className={styles.advancedToggle}
+                onClick={() => setMostrarExpresionLog((prev) => !prev)}
+                aria-expanded={mostrarExpresionLog}
+              >
+                <FiChevronDown className={`${styles.advancedToggleIcon} ${mostrarExpresionLog ? styles.advancedToggleIconOpen : ""}`} />
+                Personalizar expresión de log
+                <span className={styles.advancedToggleHint}>(opcional)</span>
+              </button>
+
+              {mostrarExpresionLog && (
+                <div className={styles.compactField}>
+                  <InputSimple
+                    label="Expresión de Retorno para Logs (Opcional)"
+                    type="textarea"
+                    value={expresionLog}
+                    onChange={(val) => {
+                      setExpresionLog(val);
+                      setUserEditedExpresionLog(true);
+                    }}
+                    disabled={isCreando || isProcesando}
+                    variant="admin"
+                    hideErrorSpace={true}
+                  />
+                </div>
+              )}
             </div>
 
-            <div className={styles.fieldGroup}>
-              <h3 className={styles.fieldGroupLabel}>Mensaje y Vinculación</h3>
-
+            <div className={styles.sectionGroup}>
+              <h3 className={styles.sectionLabel}>Mensaje</h3>
               <InputSimple
                 label="Mensaje de Rechazo Global"
                 value={mensajerechazo}
@@ -812,131 +831,148 @@ export default function CdasGlobales() {
                 variant="admin"
                 hideErrorSpace={true}
               />
+            </div>
+          </div>
+        </div>
 
-              <div className={styles.vinculacionBox}>
+        {/* COLUMNA 3: Probar y Publicar */}
+        <div className={styles.col}>
+          <div className={styles.colHeader}>
+            <span className={styles.colStepBadge}>3</span>
+            <div>
+              <h2 className={styles.colTitle}>Probá y Publicá</h2>
+              <p className={styles.colSubtitle}>Vinculación, prueba en vivo y creación</p>
+            </div>
+          </div>
+
+          <div className={styles.colScroll}>
+            <div className={styles.vinculacionBox}>
+              <p className={styles.boxLabel}>Vincular a Pantalla</p>
+              <SelectSimple
+                label="Vincular a Pantalla al crear (Opcional)"
+                value={vincularPantalla}
+                onChange={setVincularPantalla}
+                options={[
+                  { value: "", label: "-- No vincular --" },
+                  { value: "PANTALLA_INGRESO_CUIT", label: "PANTALLA_INGRESO_CUIT (Validación inicial de CUIT)" },
+                  { value: "PANTALLA_SOCIOS", label: "PANTALLA_SOCIOS (Validación de Socios y Representantes)" }
+                ]}
+                placeholder="-- Seleccioná una pantalla --"
+                variant="admin"
+                disabled={isCreando || isProcesando}
+                hideErrorSpace={true}
+              />
+
+              {vincularPantalla && (
                 <SelectSimple
-                  label="Vincular a Pantalla al crear (Opcional)"
-                  value={vincularPantalla}
-                  onChange={setVincularPantalla}
+                  label="Conector con los criterios ya vinculados"
+                  value={conectorPantalla}
+                  onChange={setConectorPantalla}
                   options={[
-                    { value: "", label: "-- No vincular --" },
-                    { value: "PANTALLA_INGRESO_CUIT", label: "PANTALLA_INGRESO_CUIT (Validación inicial de CUIT)" },
-                    { value: "PANTALLA_SOCIOS", label: "PANTALLA_SOCIOS (Validación de Socios y Representantes)" }
+                    { value: "and", label: "AND (debe cumplir este Y los existentes)" },
+                    { value: "or", label: "OR (alcanza con este O los existentes)" }
                   ]}
-                  placeholder="-- Seleccioná una pantalla --"
                   variant="admin"
                   disabled={isCreando || isProcesando}
                   hideErrorSpace={true}
                 />
+              )}
+            </div>
 
-                {vincularPantalla && (
-                  <SelectSimple
-                    label="Conector con los criterios ya vinculados a la pantalla"
-                    value={conectorPantalla}
-                    onChange={setConectorPantalla}
-                    options={[
-                      { value: "and", label: "AND (debe cumplir este Y los existentes)" },
-                      { value: "or", label: "OR (alcanza con este O los existentes)" }
-                    ]}
-                    variant="admin"
-                    disabled={isCreando || isProcesando}
-                    hideErrorSpace={true}
-                  />
-                )}
-
-                {/* Checkbox Vincular por defecto (Premium e Interactivo) */}
-                <div
-                  className={styles.customCheckboxContainer}
-                  onClick={() => { if (!isCreando && !isProcesando) setVinculadefaultcv(!vinculadefaultcv); }}
-                >
-                  <div className={`${styles.customCheckbox} ${vinculadefaultcv ? styles.checkboxChecked : ""}`}>
-                    {vinculadefaultcv && <FiCheck size={12} className={styles.checkmarkIcon} />}
-                  </div>
-                  <div className={styles.checkboxTextGroup}>
-                    <span className={styles.checkboxLabel}>
-                      Vincular por defecto a nuevas Cadenas de Valor
-                    </span>
-                    <span className={styles.checkboxDescription}>
-                      Cada vez que se cree una Cadena de Valor nueva, este criterio se va a vincular automáticamente.
-                    </span>
-                  </div>
+            <div
+              className={styles.defaultCvBox}
+              onClick={() => { if (!isCreando && !isProcesando) setVinculadefaultcv(!vinculadefaultcv); }}
+            >
+              <div className={styles.customCheckboxContainer}>
+                <div className={`${styles.customCheckbox} ${vinculadefaultcv ? styles.checkboxChecked : ""}`}>
+                  {vinculadefaultcv && <FiCheck size={12} className={styles.checkmarkIcon} />}
+                </div>
+                <div className={styles.checkboxTextGroup}>
+                  <span className={styles.checkboxLabel}>
+                    Vincular por defecto a nuevas Cadenas de Valor
+                  </span>
+                  <span className={styles.checkboxDescription}>
+                    Se vincula automáticamente a cada Cadena de Valor nueva.
+                  </span>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Laboratorio de Pruebas (Opcional) */}
-            {integracion && expresion.trim() && (
-              <div className={styles.sandboxContainer}>
-                <h3 className={styles.sandboxTitle}>Laboratorio de Pruebas (Opcional)</h3>
-                <p className={styles.sandboxIntro}>
-                  Probá el criterio en tiempo real contra los datos de un CUIT antes de guardarlo.
-                </p>
-                {previewSimple && (
-                  <p className={styles.sandboxRulePreview}>
-                    La regla actual que diseñaste es: <code>{previewSimple}</code>
-                  </p>
-                )}
+          <div className={styles.colDivider} />
 
-                <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end", marginBottom: "0.25rem" }}>
-                  <div style={{ flex: 1 }}>
-                    <InputSimple
-                      label="CUIT para la prueba"
-                      value={testCuit}
-                      onChange={setTestCuit}
-                      disabled={isTesting || isCreando || isProcesando}
-                      variant="admin"
-                      hideErrorSpace={true}
-                    />
-                  </div>
-                  <div>
-                    <Button
-                      type="button"
-                      variant="outlineBlue"
-                      size="md"
-                      onClick={handleTestExpression}
-                      isLoading={isTesting}
-                      disabled={isCreando || isProcesando}
-                    >
-                      Probar Expresión
-                    </Button>
-                  </div>
-                </div>
+          {/* Laboratorio de Pruebas: siempre visible, zona fija */}
+          <div className={styles.sandboxContainer}>
+            <h3 className={styles.sandboxTitle}>Laboratorio de Pruebas</h3>
 
-                {testResult && (
-                  <div className={styles.testResultBox}>
-                    <div className={styles.testResultHeader}>
-                      <span>Resultado de Validación:</span>
-                      {testResult.status === 202 ? (
-                        <span className={styles.badgeSuccess}>202 - VERDADERO</span>
-                      ) : testResult.status === 406 ? (
-                        <span className={styles.badgeWarning}>406 - FALSO</span>
-                      ) : (
-                        <span className={styles.badgeDanger}>{testResult.status} - ERROR</span>
-                      )}
-                    </div>
-                    <div className={styles.testResultMessage}>
-                      {testResult.status === 202 && "El criterio es válido y la condición se cumple para el CUIT ingresado."}
-                      {testResult.status === 406 && "El criterio es válido, pero la condición no se cumple (da falso) para el CUIT ingresado."}
-                      {testResult.status !== 202 && testResult.status !== 406 && (testResult.message || "Error al compilar la expresión o datos faltantes.")}
-                    </div>
-                  </div>
-                )}
-              </div>
+            {reglaActual ? (
+              <p className={styles.sandboxRulePreview}>
+                La regla actual que diseñaste es: <code>{reglaActual}</code>
+              </p>
+            ) : (
+              <p className={styles.sandboxRulePreview}>
+                Definí una regla en el paso 2 para poder probarla acá.
+              </p>
             )}
 
-            <div className={styles.formActions}>
-              <Button
-                type="submit"
-                variant="blue"
-                size="md"
-                isLoading={isCreando || isProcesando}
-              >
-                Crear Criterio Global
-              </Button>
+            <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end" }}>
+              <div style={{ flex: 1 }}>
+                <InputSimple
+                  label="CUIT para la prueba"
+                  value={testCuit}
+                  onChange={setTestCuit}
+                  disabled={isTesting || isCreando || isProcesando}
+                  variant="admin"
+                  hideErrorSpace={true}
+                />
+              </div>
+              <div>
+                <Button
+                  type="button"
+                  variant="outlineBlue"
+                  size="md"
+                  onClick={handleTestExpression}
+                  isLoading={isTesting}
+                  disabled={isCreando || isProcesando || !reglaActual}
+                >
+                  Probar
+                </Button>
+              </div>
             </div>
-          </form>
+
+            {testResult && (
+              <div className={styles.testResultBox}>
+                <div className={styles.testResultHeader}>
+                  <span>Resultado:</span>
+                  {testResult.status === 202 ? (
+                    <span className={styles.badgeSuccess}>202 - VERDADERO</span>
+                  ) : testResult.status === 406 ? (
+                    <span className={styles.badgeWarning}>406 - FALSO</span>
+                  ) : (
+                    <span className={styles.badgeDanger}>{testResult.status} - ERROR</span>
+                  )}
+                </div>
+                <div className={styles.testResultMessage}>
+                  {testResult.status === 202 && "El criterio es válido y la condición se cumple para el CUIT ingresado."}
+                  {testResult.status === 406 && "El criterio es válido, pero la condición no se cumple (da falso) para el CUIT ingresado."}
+                  {testResult.status !== 202 && testResult.status !== 406 && (testResult.message || "Error al compilar la expresión o datos faltantes.")}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={styles.formActions}>
+            <Button
+              type="submit"
+              variant="blue"
+              size="md"
+              isLoading={isCreando || isProcesando}
+            >
+              Crear Criterio Global
+            </Button>
+          </div>
         </div>
-      </div>
+      </form>
 
       <ConfirmacionModal
         isOpen={confirmOpen}
@@ -946,12 +982,12 @@ export default function CdasGlobales() {
         mensaje={
           <>
             ¿Confirmás la creación de este criterio de aceptación global?
-            {(cdaMode === "compuesto" ? expresion.trim() : previewSimple) && (
+            {reglaActual && (
               <>
                 <br /><br />
                 <strong>Regla:</strong>
                 <br />
-                <code className={styles.confirmModalCode}>{cdaMode === "compuesto" ? expresion.trim() : previewSimple}</code>
+                <code className={styles.confirmModalCode}>{reglaActual}</code>
               </>
             )}
           </>
