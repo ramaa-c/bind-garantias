@@ -202,7 +202,7 @@ export default function CdasPantalla() {
         <div className={styles.leftCol}>
           <h2 className={styles.sectionTitle}>Pantalla y Agrupación</h2>
           
-          <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", flex: 1 }}>
             <SelectSimple
               label="Seleccionar Pantalla Web"
               value={selectedPantalla}
@@ -340,7 +340,7 @@ export default function CdasPantalla() {
                   </div>
                 )}
 
-                <div style={{ marginTop: "1rem", display: "flex", justifyContent: "flex-end" }}>
+                <div style={{ marginTop: "auto", display: "flex", justifyContent: "flex-end" }}>
                   <Button
                     type="submit"
                     variant="blue"
