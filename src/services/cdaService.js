@@ -2,9 +2,10 @@ import { cdaAdapter } from "../adapters/cdaAdapter";
 import api from "../api/axios";
 
 export const cdaService = {
-  obtenerGrupoCda: async (grupoId) => {
+  // GET api/cda/GrupoCda?Pantalla=X - Devuelve el listado de vinculos CDA<->Pantalla ([{ GrupoCdaID, CdaID, PantallaGrupoCdaID }])
+  obtenerGrupoCda: async (pantalla) => {
     const response = await api.get("api/cda/GrupoCda", {
-      params: { GrupoID: grupoId },
+      params: { Pantalla: pantalla },
     });
     return response.data;
   },
@@ -16,9 +17,10 @@ export const cdaService = {
     return response.data;
   },
 
-  obtenerPantallaGrupoCda: async (pantalla, grupoId) => {
+  // GET api/cda/PantallaGrupoCda?Pantalla=X - Devuelve { PantallaGrupoCdaID, Pantalla, ExpresionAgrupacion } (sin listado de CDAs)
+  obtenerPantallaGrupoCda: async (pantalla) => {
     const response = await api.get("api/cda/PantallaGrupoCda", {
-      params: { Pantalla: pantalla, GrupoID: grupoId },
+      params: { Pantalla: pantalla },
     });
     return response.data;
   },

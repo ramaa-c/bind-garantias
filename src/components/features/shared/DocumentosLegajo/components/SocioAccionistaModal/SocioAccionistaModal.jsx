@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser } from "react-icons/fi";
+import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
 import { Modal } from "../../../../../ui/Modal/Modal";
@@ -22,6 +22,7 @@ import { matchProvinciaAfip } from "../../../../../../utils/provinciaUtils";
 import { useProvincias, useCiudades, usePartidos } from "../../../../../../hooks/useCatalogos";
 import { parseAddress } from "../../../../../../utils/direccionParser";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
+import { useParams } from "react-router-dom";
 import styles from "./SocioAccionistaModal.module.css";
 
 const normalizarTexto = (str) =>

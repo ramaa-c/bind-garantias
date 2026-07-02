@@ -51,40 +51,37 @@ export default function CdasPantalla() {
     const fetchCurrentConfig = async () => {
       setIsLoadingConfig(true);
       try {
-        const data = await cdaService.obtenerPantallaGrupoCda(selectedPantalla, 0);
-        if (data) {
-          const expr = data.ExpresionAgrupacion || data.expresionAgrupacion || "";
-          setExpresionAgrupacion(expr);
-          
-          const list = data.ListaCda || data.listaCda || [];
-          const ids = list.map(c => {
-            if (typeof c === "object" && c !== null) {
-              return c.cdaid || c.CdaId || c.CdaID || c.id;
-            }
-            return Number(c);
-          }).filter(Boolean);
+        const [pantallaData, grupoData] = await Promise.all([
+          cdaService.obtenerPantallaGrupoCda(selectedPantalla),
+          cdaService.obtenerGrupoCda(selectedPantalla),
+        ]);
 
-          setSelectedCdaIds(ids);
+        // La API devuelve un array (uno por Pantalla filtrada, normalmente un solo elemento)
+        const pantallaRow = Array.isArray(pantallaData) ? pantallaData[0] : pantallaData;
+        const expr = pantallaRow?.ExpresionAgrupacion || pantallaRow?.expresionAgrupacion || "";
+        setExpresionAgrupacion(expr);
 
-          // Detectar tipo de agrupación según la expresión
-          if (!expr.trim()) {
-            setAgrupacionType("and");
-          } else {
-            // Verificar si es un OR implícito de todos los IDs
-            const expectedOrExpr = ids.map(id => `cda${id}`).join(" or ");
-            const expectedOrExprUpper = ids.map(id => `cda${id}`).join(" OR ");
-            const normalizedExpr = expr.trim().replace(/\s+/g, " ");
+        const grupoList = Array.isArray(grupoData) ? grupoData : grupoData?.items || grupoData?.data || [];
+        const ids = grupoList
+          .map(c => c.cdaid ?? c.CdaId ?? c.CdaID)
+          .filter((id) => id !== undefined && id !== null);
 
-            if (normalizedExpr === expectedOrExpr || normalizedExpr === expectedOrExprUpper) {
-              setAgrupacionType("or");
-            } else {
-              setAgrupacionType("custom");
-            }
-          }
-        } else {
-          setExpresionAgrupacion("");
-          setSelectedCdaIds([]);
+        setSelectedCdaIds(ids);
+
+        // Detectar tipo de agrupación según la expresión
+        if (!expr.trim()) {
           setAgrupacionType("and");
+        } else {
+          // Verificar si es un OR implícito de todos los IDs
+          const expectedOrExpr = ids.map(id => `cda${id}`).join(" or ");
+          const expectedOrExprUpper = ids.map(id => `cda${id}`).join(" OR ");
+          const normalizedExpr = expr.trim().replace(/\s+/g, " ");
+
+          if (normalizedExpr === expectedOrExpr || normalizedExpr === expectedOrExprUpper) {
+            setAgrupacionType("or");
+          } else {
+            setAgrupacionType("custom");
+          }
         }
       } catch (err) {
         console.warn("No se pudo cargar la configuración previa (puede ser normal si no existe aún):", err);
@@ -334,6 +331,11 @@ export default function CdasPantalla() {
                     <div className={styles.infoBox}>
                       <FiInfo style={{ marginRight: "0.4rem", verticalAlign: "middle" }} />
                       Recordá combinar los IDs de la forma: <code>cda1042 and (cda1043 or cda1044)</code>.
+                    </div>
+
+                    <div className={styles.infoBox}>
+                      <FiInfo style={{ marginRight: "0.4rem", verticalAlign: "middle" }} />
+                      <strong>Cuidado con los paréntesis:</strong> si usás paréntesis y alguno de los IDs de CDA es prefijo numérico de otro (ej: <code>cda1</code> y <code>cda1050</code>), el motor de validación del servidor puede fallar con error 500 (bug conocido, reportado). Si te pasa, probá evitar los paréntesis cuando todos los términos usan el mismo conector (<code>and</code> ya tiene más precedencia que <code>or</code>, así que en la mayoría de los casos no hacen falta).
                     </div>
                   </div>
                 )}
