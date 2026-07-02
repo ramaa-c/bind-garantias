@@ -12,6 +12,7 @@ import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";
+import { nosisService } from "../../../../services/nosisService";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { tercerosService } from "../../../../services/tercerosService";
 import { useParams } from "react-router-dom";
@@ -173,38 +174,57 @@ export function RepresentanteModal({
         return;
       }
 
-      // 2. Si no tiene datos completos o es modo edición, consultamos AFIP/LUFE
+      // 2. Si no tiene datos completos o es modo edición, consultamos NOSIS/AFIP/LUFE
+      let nosisData = null;
       let res = null;
       try {
-        res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
-      } catch (afipErr) {
-        console.warn("[RepresentanteModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+        nosisData = await nosisService.obtenerDatosNormalizados(cuitLimpio);
+      } catch (nosisErr) {
+        console.warn("[RepresentanteModal] Nosis no disponible, probando fallback a AFIP:", nosisErr);
+      }
+
+      if (!nosisData) {
         try {
-          const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
-          if (lufeEntidad && lufeEntidad.success) {
-            res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+          res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
+        } catch (afipErr) {
+          console.warn("[RepresentanteModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+          try {
+            const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
+            if (lufeEntidad && lufeEntidad.success) {
+              res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+            }
+          } catch (lufeErr) {
+            console.error("[RepresentanteModal] LUFE Entidad también falló:", lufeErr);
           }
-        } catch (lufeErr) {
-          console.error("[RepresentanteModal] LUFE Entidad también falló:", lufeErr);
         }
       }
 
-      if (res && res.datosgenerales) {
-        const dg = res.datosgenerales;
-        const nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
-                          dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
+      if (nosisData || (res && res.datosgenerales)) {
+        let nombreRep = "";
+        let emailVal = "";
+        let telVal = "";
+
+        if (nosisData) {
+          nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                      nosisData.VI_RazonSocial || `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim() || "Representante";
+          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || "";
+          telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || "";
+        } else {
+          const dg = res.datosgenerales;
+          nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                      dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
+          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
+          telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
+        }
+
         setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
-        
-        const emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
         setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
-        
-        const telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
         setValue("telefono", telVal, { shouldValidate: true, shouldDirty: true });
 
         setAfipValidado(true);
-        toast.success(representante || representanteInicial ? "Datos actualizados desde AFIP/LUFE." : "Datos del representante recuperados.");
+        toast.success(representante || representanteInicial ? "Datos actualizados desde Nosis/AFIP/LUFE." : "Datos del representante recuperados.");
       } else {
-        setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de AFIP." });
+        setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de Nosis ni AFIP." });
         setAfipValidado(false);
       }
     } catch (err) {
