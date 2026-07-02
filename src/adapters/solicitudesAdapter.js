@@ -1,17 +1,20 @@
+import { normalizarClaves } from "../utils/normalizarClaves";
+
 export const solicitudesAdapter = {
   adaptarPayload1: (data) => {
     if (!data) return data;
+    const d = normalizarClaves(data);
     return {
-      SolicitudEnProcesoID: data?.solicitudEnProcesoID ?? data?.SolicitudEnProcesoID,
-      FechaCarga: data?.fechaCarga ?? data?.FechaCarga,
-      Cuit: data?.cuit ?? data?.Cuit,
-      TipoLimiteID: data?.tipoLimiteID ?? data?.TipoLimiteID,
-      CadenaValorID: data?.cadenaValorID ?? data?.CadenaValorID,
-      MonedaID: data?.monedaID ?? data?.MonedaID,
-      Importe: data?.importe ?? data?.Importe,
-      EstadoSolicitud: data?.estadoSolicitud ?? data?.EstadoSolicitud,
-      IDExterno: data?.iDExterno ?? data?.IDExterno,
-      TerceroViaID: data?.terceroViaID ?? data?.TerceroViaID,
+      SolicitudEnProcesoID: d.solicitudenprocesoid,
+      FechaCarga: d.fechacarga,
+      Cuit: d.cuit,
+      TipoLimiteID: d.tipolimiteid,
+      CadenaValorID: d.cadenavalorid,
+      MonedaID: d.monedaid,
+      Importe: d.importe,
+      EstadoSolicitud: d.estadosolicitud,
+      IDExterno: d.idexterno,
+      TerceroViaID: d.terceroviaid,
     };
   },
 };

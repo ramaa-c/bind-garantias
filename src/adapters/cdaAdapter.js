@@ -1,15 +1,18 @@
+import { normalizarClaves } from "../utils/normalizarClaves";
+
 export const cdaAdapter = {
   adaptarPayload1: (data) => {
     if (!data) return data;
+    const d = normalizarClaves(data);
     return {
-      CdaID: data?.cdaID ?? data?.CdaID ?? data?.cdaid,
-      Descripcion: data?.descripcion ?? data?.Descripcion,
-      Expresion: data?.expresion ?? data?.Expresion,
-      ExpresionLog: data?.expresionLog ?? data?.ExpresionLog ?? data?.expresionlog,
-      MensajeRechazo: data?.mensajeRechazo ?? data?.MensajeRechazo ?? data?.mensajerechazo,
-      SimboloComparacion: data?.simboloComparacion ?? data?.SimboloComparacion ?? data?.simbolocomparacion,
-      ValorComparacion: data?.valorComparacion ?? data?.ValorComparacion ?? data?.valorcomparacion,
-      VinculaDefaultCV: data?.vinculaDefaultCV ?? data?.VinculaDefaultCV ?? data?.vinculadefaultcv,
+      CdaID: d.cdaid,
+      Descripcion: d.descripcion,
+      Expresion: d.expresion,
+      ExpresionLog: d.expresionlog,
+      MensajeRechazo: d.mensajerechazo,
+      SimboloComparacion: d.simbolocomparacion,
+      ValorComparacion: d.valorcomparacion,
+      VinculaDefaultCV: d.vinculadefaultcv,
     };
   },
 };
