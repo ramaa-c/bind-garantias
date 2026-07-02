@@ -864,18 +864,31 @@ export default function CdasGlobales() {
               />
 
               {vincularPantalla && (
-                <SelectSimple
-                  label="Conector con los criterios ya vinculados"
-                  value={conectorPantalla}
-                  onChange={setConectorPantalla}
-                  options={[
-                    { value: "and", label: "AND (debe cumplir este Y los existentes)" },
-                    { value: "or", label: "OR (alcanza con este O los existentes)" }
-                  ]}
-                  variant="admin"
-                  disabled={isCreando || isProcesando}
-                  hideErrorSpace={true}
-                />
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.25rem" }}>
+                  <span className={styles.boxLabel} style={{ fontSize: "0.65rem" }}>
+                    Conector Lógico (con criterios ya vinculados)
+                  </span>
+                  <div className={styles.modeToggleContainer}>
+                    <button
+                      type="button"
+                      className={`${styles.modeTab} ${conectorPantalla === "and" ? styles.modeTabActive : ""}`}
+                      onClick={() => setConectorPantalla("and")}
+                      disabled={isCreando || isProcesando}
+                      title="Debe cumplir este criterio Y los ya existentes"
+                    >
+                      AND (Cumplir ambos)
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.modeTab} ${conectorPantalla === "or" ? styles.modeTabActive : ""}`}
+                      onClick={() => setConectorPantalla("or")}
+                      disabled={isCreando || isProcesando}
+                      title="Alcanza con cumplir este criterio O los ya existentes"
+                    >
+                      OR (Cumplir cualquiera)
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 

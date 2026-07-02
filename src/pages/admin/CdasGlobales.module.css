@@ -51,7 +51,7 @@
 .col {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1.1rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 1rem;
@@ -106,7 +106,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1.5rem;
 }
 
 @media (min-width: 1280px) {
@@ -240,7 +240,7 @@
 .sectionGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.85rem;
 }
 
 .sectionLabel {
@@ -348,7 +348,7 @@
 .vinculacionBox {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.85rem;
   background: rgba(0, 0, 0, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.65rem;
@@ -395,7 +395,7 @@
 .builderContainer {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1rem;
   animation: fadeIn 0.2s ease-out;
   flex: 1 1 auto;
   min-height: 0;
@@ -591,13 +591,13 @@
 
 /* Testing Sandbox */
 .sandboxContainer {
-  padding: 0.85rem;
+  padding: 1.1rem;
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 0.65rem;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.85rem;
   flex: 0 0 auto;
   max-height: 320px;
   overflow-y: auto;
