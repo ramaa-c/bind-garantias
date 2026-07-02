@@ -14,6 +14,7 @@ import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useEmpresaActiva } from "../../../../../../hooks/useEmpresaActiva";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
+import { nosisService } from "../../../../../../services/nosisService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { formatBase64Size, procesarArchivo } from "../../../../../../utils/fileUtils";
@@ -393,64 +394,104 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         return;
       }
 
+      let nosisData = null;
       let res = null;
       try {
-        res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
-      } catch (afipErr) {
-        console.warn("[SocioAccionistaModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+        nosisData = await nosisService.obtenerDatosNormalizados(cuitLimpio);
+      } catch (nosisErr) {
+        console.warn("[SocioAccionistaModal] Nosis no disponible, probando fallback a AFIP:", nosisErr);
+      }
+
+      if (!nosisData) {
         try {
-          const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
-          if (lufeEntidad && lufeEntidad.success) {
-            res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+          res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
+        } catch (afipErr) {
+          console.warn("[SocioAccionistaModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+          try {
+            const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
+            if (lufeEntidad && lufeEntidad.success) {
+              res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+            }
+          } catch (lufeErr) {
+            console.error("[SocioAccionistaModal] LUFE Entidad también falló:", lufeErr);
           }
-        } catch (lufeErr) {
-          console.error("[SocioAccionistaModal] LUFE Entidad también falló:", lufeErr);
         }
       }
 
-      if (res && res.datosgenerales) {
-        const dg = res.datosgenerales;
-        const nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
-                            dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Socio AFIP";
-        setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
-        
-        const emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
-        setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
-        
-        const celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
-        setValue("celular", celularVal, { shouldValidate: true, shouldDirty: true });
+      if (nosisData || (res && res.datosgenerales)) {
+        let nombreSocio = "";
+        let emailVal = "";
+        let celularVal = "";
+        let direccionVal = "";
+        let parsedDir = { calle: "", numero: 0, piso: "" };
+        let deptoVal = "";
+        let ciudadVal = "";
+        let codposVal = "";
+        let provIdVal = 0;
 
-        const dom = dg.domiciliofiscal || dg.domicilio;
-        const direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) || 
-                             (dom ? (dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "")) : "") || "";
-        setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
-        
-        const parsedDir = parseAddress(direccionVal);
-        setValue("calle", parsedDir.calle, { shouldValidate: true, shouldDirty: true });
-        setValue("numero", parsedDir.numero, { shouldValidate: true, shouldDirty: true });
-        setValue("piso", parsedDir.piso, { shouldValidate: true, shouldDirty: true });
-        setValue("departamento", dom?.departamento || terceroEncontrado?.departamento || "", { shouldValidate: true, shouldDirty: true });
-
-        setValue("ciudad", dom?.localidad || "", { shouldValidate: true, shouldDirty: true });
-        setValue("ciudadid", Number(terceroEncontrado?.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
-        setValue("codpos", dom?.codpostal || terceroEncontrado?.codpos || "", { shouldValidate: true, shouldDirty: true });
-
-        let provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
-        if (!provIdVal && dom) {
-          const provNombre = dom.descripcionprovincia || dom.provincia || "";
-          if (provNombre) {
-            const match = matchProvinciaAfip(provNombre, opcionesProvincias);
+        if (nosisData) {
+          nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                        nosisData.VI_RazonSocial || `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim() || "Socio";
+          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || "";
+          celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || "";
+          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) || 
+                         `${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim() || "";
+          parsedDir = parseAddress(direccionVal);
+          deptoVal = terceroEncontrado?.departamento || nosisData.VI_DomAF_Dto || "";
+          ciudadVal = nosisData.VI_DomAF_Loc || "";
+          codposVal = terceroEncontrado?.codpos || nosisData.VI_DomAF_CP || "";
+          
+          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
+          if (!provIdVal && nosisData.VI_DomAF_Prov) {
+            const match = matchProvinciaAfip(nosisData.VI_DomAF_Prov, opcionesProvincias);
             if (match) {
               provIdVal = match.value;
             }
           }
+        } else {
+          const dg = res.datosgenerales;
+          nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                        dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Socio AFIP";
+          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
+          celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
+          const dom = dg.domiciliofiscal || dg.domicilio;
+          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) || 
+                         (dom ? (dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "")) : "") || "";
+          parsedDir = parseAddress(direccionVal);
+          deptoVal = dom?.departamento || terceroEncontrado?.departamento || "";
+          ciudadVal = dom?.localidad || "";
+          codposVal = dom?.codpostal || terceroEncontrado?.codpos || "";
+          
+          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
+          if (!provIdVal && dom) {
+            const provNombre = dom.descripcionprovincia || dom.provincia || "";
+            if (provNombre) {
+              const match = matchProvinciaAfip(provNombre, opcionesProvincias);
+              if (match) {
+                provIdVal = match.value;
+              }
+            }
+          }
         }
+
+        setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
+        setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
+        setValue("celular", celularVal, { shouldValidate: true, shouldDirty: true });
+        setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
+        setValue("calle", parsedDir.calle, { shouldValidate: true, shouldDirty: true });
+        setValue("numero", parsedDir.numero, { shouldValidate: true, shouldDirty: true });
+        setValue("piso", parsedDir.piso, { shouldValidate: true, shouldDirty: true });
+        setValue("departamento", deptoVal, { shouldValidate: true, shouldDirty: true });
+        setValue("ciudad", ciudadVal, { shouldValidate: true, shouldDirty: true });
+        setValue("ciudadid", Number(terceroEncontrado?.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
+        setValue("codpos", codposVal, { shouldValidate: true, shouldDirty: true });
+
         if (provIdVal) {
           setValue("provinciaid", String(provIdVal), { shouldValidate: true, shouldDirty: true });
         }
         
         setAfipValidado(true);
-        toast.success(socio ? "Datos actualizados desde AFIP/LUFE." : "Datos del accionista recuperados.");
+        toast.success(socio ? "Datos actualizados desde Nosis/AFIP/LUFE." : "Datos del accionista recuperados.");
       } else {
         if (terceroEncontrado) {
           const nombreSocio = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Socio del Sistema";

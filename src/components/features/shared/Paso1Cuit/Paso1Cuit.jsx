@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
 import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { sociosService } from "../../../../services/sociosService";
+import { nosisService } from "../../../../services/nosisService";
 import { useValidarCuitAfip } from "../../../../hooks/useAfip";
 import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
@@ -67,10 +68,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
       pasos: [
         {
           id: "afip",
-          etiqueta: "Consultando padrón AFIP",
+          etiqueta: "Consultando padrón",
           estado: "cargando",
           descripcion:
-            "Obteniendo los datos de la empresa desde el padrón federal en tiempo real.",
+            "Obteniendo los datos de la empresa desde el padrón federal/bureau en tiempo real.",
         },
         {
           id: "sgrcore",
@@ -91,41 +92,64 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
     });
 
     try {
-      // 3. CONSULTA AFIP con Fallback a LUFE
+      // 3. CONSULTA NOSIS con Fallback a AFIP/LUFE
+      let nosisData = null;
       let afipData = null;
+
       try {
-        afipData = await validarAfip(cuit);
+        nosisData = await nosisService.obtenerDatosNormalizados(cuit);
       } catch (e) {
-        console.warn("Error consultando AFIP, se intentará LUFE...", e);
+        console.warn("Error consultando Nosis, se intentará AFIP...", e);
       }
 
-      if (!afipData || !afipData.datosgenerales) {
-        // Intentamos fallback a LUFE
+      if (!nosisData) {
         setProcesoModal((prev) => ({
           ...prev,
           pasos: prev.pasos.map((p) =>
             p.id === "afip"
               ? {
                   ...p,
-                  etiqueta: "Probando en LUFE...",
+                  etiqueta: "Probando en AFIP...",
                   descripcion:
-                    "AFIP no disponible. Consultando entidad en LUFE en su lugar.",
+                    "Nosis no disponible. Consultando padrón AFIP en su lugar.",
                 }
               : p,
           ),
         }));
         try {
-          const lufeData = await sociosService.obtenerEntidadLufe(cuit);
-          if (lufeData) {
-            afipData = sociosService.normalizarLufeAEstructuraAfip(lufeData);
+          afipData = await validarAfip(cuit);
+        } catch (e) {
+          console.warn("Error consultando AFIP, se intentará LUFE...", e);
+        }
+
+        if (!afipData || !afipData.datosgenerales) {
+          // Intentamos fallback a LUFE
+          setProcesoModal((prev) => ({
+            ...prev,
+            pasos: prev.pasos.map((p) =>
+              p.id === "afip"
+                ? {
+                    ...p,
+                    etiqueta: "Probando en LUFE...",
+                    descripcion:
+                      "AFIP no disponible. Consultando entidad en LUFE en su lugar.",
+                  }
+                : p,
+            ),
+          }));
+          try {
+            const lufeData = await sociosService.obtenerEntidadLufe(cuit);
+            if (lufeData) {
+              afipData = sociosService.normalizarLufeAEstructuraAfip(lufeData);
+            }
+          } catch (lufeError) {
+            console.warn("Error consultando LUFE como fallback:", lufeError);
           }
-        } catch (lufeError) {
-          console.warn("Error consultando LUFE como fallback:", lufeError);
         }
       }
 
-      if (afipData && afipData.datosgenerales) {
-        const dg = afipData.datosgenerales;
+      if (nosisData || (afipData && afipData.datosgenerales)) {
+        const dg = afipData ? afipData.datosgenerales : null;
 
         // Marcamos AFIP/LUFE como completado y SGRCore como cargando
         setProcesoModal((prev) => ({
@@ -286,63 +310,38 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           );
         }
 
-        const nombreCompleto = decodeHtmlEntities(
-          dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim()
-        );
-        setValue("razonSocial", nombreCompleto, { shouldValidate: true });
+        if (nosisData) {
+          const nombreCompleto = decodeHtmlEntities(
+            nosisData.VI_RazonSocial || `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim()
+          );
+          setValue("razonSocial", nombreCompleto, { shouldValidate: true });
 
-        const dom = dg.domiciliofiscal || {};
-        const fullDireccion = decodeHtmlEntities(dom.direccion || "");
-        setValue("direccion", fullDireccion, { shouldValidate: true });
-        setValue("codpos", dom.codpostal || "", { shouldValidate: true });
+          const fullDireccion = decodeHtmlEntities(`${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim());
+          setValue("direccion", fullDireccion, { shouldValidate: true });
+          setValue("codpos", nosisData.VI_DomAF_CP || "", { shouldValidate: true });
 
-        const parsedDir = parseAddress(fullDireccion);
-        setValue("calle", parsedDir.calle, { shouldValidate: true });
-        setValue("sinNumero", parsedDir.numero === 0, { shouldValidate: true });
-        setValue("numero", parsedDir.numero, { shouldValidate: true });
-        if (parsedDir.numero === 0) {
-          clearErrors("numero");
-        }
-        setValue("piso", parsedDir.piso, { shouldValidate: true });
-        setValue("departamento", parsedDir.departamento, { shouldValidate: true });
+          setValue("calle", nosisData.VI_DomAF_Calle || "", { shouldValidate: true });
+          const hasNumber = !!nosisData.VI_DomAF_Nro;
+          setValue("sinNumero", !hasNumber, { shouldValidate: true });
+          setValue("numero", hasNumber ? nosisData.VI_DomAF_Nro : 0, { shouldValidate: true });
+          if (!hasNumber) clearErrors("numero");
+          setValue("piso", nosisData.VI_DomAF_Piso || "", { shouldValidate: true });
+          setValue("departamento", nosisData.VI_DomAF_Dto || "", { shouldValidate: true });
 
-        const localidadStr = decodeHtmlEntities(dom.localidad || "");
-        setValue("localidad", localidadStr, { shouldValidate: true });
-        setValue("localidadid", null);
+          const localidadStr = decodeHtmlEntities(nosisData.VI_DomAF_Loc || "");
+          setValue("localidad", localidadStr, { shouldValidate: true });
+          setValue("localidadid", null);
 
-        const provNombreAfip = decodeHtmlEntities(dom.descripcionprovincia || "");
-        const provMatched = matchProvinciaAfip(
-          provNombreAfip,
-          opcionesProvincias,
-        );
-        const matchedProvId = provMatched ? Number(provMatched.value) : null;
-        setValue("provinciaid", matchedProvId, { shouldValidate: true });
-        setValue(
-          "provincia",
-          provMatched ? provMatched.value : provNombreAfip,
-          {
-            shouldValidate: true,
-          },
-        );
+          const provNombre = decodeHtmlEntities(nosisData.VI_DomAF_Prov || "");
+          const provMatched = matchProvinciaAfip(provNombre, opcionesProvincias);
+          const matchedProvId = provMatched ? Number(provMatched.value) : null;
+          setValue("provinciaid", matchedProvId, { shouldValidate: true });
+          setValue("provincia", provMatched ? provMatched.value : provNombre, { shouldValidate: true });
 
-        setValue("ciudad", dom.localidad || "", { shouldValidate: true });
-        setValue("ciudadid", null);
+          setValue("ciudad", nosisData.VI_DomAF_Loc || "", { shouldValidate: true });
+          setValue("ciudadid", null);
 
-        let tipoPersonaId = 0;
-        const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
-        if (
-          tipoPersonaStr.includes("JURIDICA") ||
-          tipoPersonaStr.includes("JURÍDICA")
-        ) {
-          tipoPersonaId = 10;
-        } else if (
-          tipoPersonaStr.includes("FISICA") ||
-          tipoPersonaStr.includes("FÍSICA") ||
-          tipoPersonaStr.includes("HUMANA")
-        ) {
-          tipoPersonaId = 1;
-        } else {
-          // Fallback basado en prefijo de CUIT
+          let tipoPersonaId = 0;
           const cleanCuit = String(cuit).replace(/\D/g, "");
           const prefix = cleanCuit.substring(0, 2);
           if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
@@ -350,64 +349,146 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
             tipoPersonaId = 10;
           }
-        }
-        setValue("tipopersonaid", tipoPersonaId);
+          setValue("tipopersonaid", tipoPersonaId);
 
-        let mesCierre = null;
-        if (dg.mescierre) {
-          mesCierre = parseInt(dg.mescierre, 10);
-        } else if (dg.mes_cierre) {
-          mesCierre = parseInt(dg.mes_cierre, 10);
-        }
-        setValue("mescierre", mesCierre);
+          setValue("mescierre", null);
 
-        // ── EXTRAER FECHA DE INICIO DE ACTIVIDADES (AFIP)
-        let fechaInicioActividades = null;
-        const actividades = [];
-
-        if (Array.isArray(afipData.datosregimengeneral?.actividad)) {
-          actividades.push(...afipData.datosregimengeneral.actividad);
-        }
-        if (Array.isArray(afipData.datosmonotributo?.actividad)) {
-          actividades.push(...afipData.datosmonotributo.actividad);
-        }
-
-        let minPeriodo = null;
-        for (const act of actividades) {
-          if (act.periodo) {
-            if (minPeriodo === null || act.periodo < minPeriodo) {
-              minPeriodo = act.periodo;
-            }
+          let fechaInicioActividades = null;
+          if (nosisData.VI_Act01_FecInicio) {
+            fechaInicioActividades = `${nosisData.VI_Act01_FecInicio}T00:00:00`;
           }
-        }
+          setValue("fechainicioactividades", fechaInicioActividades);
 
-        if (minPeriodo) {
-          const minPeriodoStr = minPeriodo.toString();
-          if (minPeriodoStr.length === 6) {
-            const year = parseInt(minPeriodoStr.substring(0, 4), 10);
-            const month = parseInt(minPeriodoStr.substring(4, 6), 10);
-            const lastDay = new Date(year, month, 0).getDate();
-            fechaInicioActividades = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}T00:00:00`;
-          }
-        }
-        setValue("fechainicioactividades", fechaInicioActividades);
-
-        // ── DETERMINAR TIPO REGIMEN IVA
-        let tipoRegimenIvaId = 1;
-        const monotributo = afipData.datosmonotributo;
-        if (monotributo) {
-          const tieneDatosMonotributo = Object.values(monotributo).some((val) => {
-            if (val === null || val === undefined) return false;
-            if (Array.isArray(val)) return val.length > 0;
-            if (typeof val === "object") return Object.keys(val).length > 0;
-            return val !== "";
-          });
-
-          if (tieneDatosMonotributo) {
+          let tipoRegimenIvaId = 1;
+          if (nosisData.VI_Inscrip_Monotributo === "Si" || nosisData.VI_Inscrip_Monotributo_Es === "Si" || nosisData.VI_Inscrip_Monotributo) {
             tipoRegimenIvaId = 2;
           }
+          setValue("tiporegimenivaid", tipoRegimenIvaId);
+
+        } else {
+          const nombreCompleto = decodeHtmlEntities(
+            dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim()
+          );
+          setValue("razonSocial", nombreCompleto, { shouldValidate: true });
+
+          const dom = dg.domiciliofiscal || {};
+          const fullDireccion = decodeHtmlEntities(dom.direccion || "");
+          setValue("direccion", fullDireccion, { shouldValidate: true });
+          setValue("codpos", dom.codpostal || "", { shouldValidate: true });
+
+          const parsedDir = parseAddress(fullDireccion);
+          setValue("calle", parsedDir.calle, { shouldValidate: true });
+          setValue("sinNumero", parsedDir.numero === 0, { shouldValidate: true });
+          setValue("numero", parsedDir.numero, { shouldValidate: true });
+          if (parsedDir.numero === 0) {
+            clearErrors("numero");
+          }
+          setValue("piso", parsedDir.piso, { shouldValidate: true });
+          setValue("departamento", parsedDir.departamento, { shouldValidate: true });
+
+          const localidadStr = decodeHtmlEntities(dom.localidad || "");
+          setValue("localidad", localidadStr, { shouldValidate: true });
+          setValue("localidadid", null);
+
+          const provNombreAfip = decodeHtmlEntities(dom.descripcionprovincia || "");
+          const provMatched = matchProvinciaAfip(
+            provNombreAfip,
+            opcionesProvincias,
+          );
+          const matchedProvId = provMatched ? Number(provMatched.value) : null;
+          setValue("provinciaid", matchedProvId, { shouldValidate: true });
+          setValue(
+            "provincia",
+            provMatched ? provMatched.value : provNombreAfip,
+            {
+              shouldValidate: true,
+            },
+          );
+
+          setValue("ciudad", dom.localidad || "", { shouldValidate: true });
+          setValue("ciudadid", null);
+
+          let tipoPersonaId = 0;
+          const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
+          if (
+            tipoPersonaStr.includes("JURIDICA") ||
+            tipoPersonaStr.includes("JURÍDICA")
+          ) {
+            tipoPersonaId = 10;
+          } else if (
+            tipoPersonaStr.includes("FISICA") ||
+            tipoPersonaStr.includes("FÍSICA") ||
+            tipoPersonaStr.includes("HUMANA")
+          ) {
+            tipoPersonaId = 1;
+          } else {
+            // Fallback basado en prefijo de CUIT
+            const cleanCuit = String(cuit).replace(/\D/g, "");
+            const prefix = cleanCuit.substring(0, 2);
+            if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
+              tipoPersonaId = 1;
+            } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
+              tipoPersonaId = 10;
+            }
+          }
+          setValue("tipopersonaid", tipoPersonaId);
+
+          let mesCierre = null;
+          if (dg.mescierre) {
+            mesCierre = parseInt(dg.mescierre, 10);
+          } else if (dg.mes_cierre) {
+            mesCierre = parseInt(dg.mes_cierre, 10);
+          }
+          setValue("mescierre", mesCierre);
+
+          // ── EXTRAER FECHA DE INICIO DE ACTIVIDADES (AFIP)
+          let fechaInicioActividades = null;
+          const actividades = [];
+
+          if (Array.isArray(afipData.datosregimengeneral?.actividad)) {
+            actividades.push(...afipData.datosregimengeneral.actividad);
+          }
+          if (Array.isArray(afipData.datosmonotributo?.actividad)) {
+            actividades.push(...afipData.datosmonotributo.actividad);
+          }
+
+          let minPeriodo = null;
+          for (const act of actividades) {
+            if (act.periodo) {
+              if (minPeriodo === null || act.periodo < minPeriodo) {
+                minPeriodo = act.periodo;
+              }
+            }
+          }
+
+          if (minPeriodo) {
+            const minPeriodoStr = minPeriodo.toString();
+            if (minPeriodoStr.length === 6) {
+              const year = parseInt(minPeriodoStr.substring(0, 4), 10);
+              const month = parseInt(minPeriodoStr.substring(4, 6), 10);
+              const lastDay = new Date(year, month, 0).getDate();
+              fechaInicioActividades = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}T00:00:00`;
+            }
+          }
+          setValue("fechainicioactividades", fechaInicioActividades);
+
+          // ── DETERMINAR TIPO REGIMEN IVA
+          let tipoRegimenIvaId = 1;
+          const monotributo = afipData.datosmonotributo;
+          if (monotributo) {
+            const tieneDatosMonotributo = Object.values(monotributo).some((val) => {
+              if (val === null || val === undefined) return false;
+              if (Array.isArray(val)) return val.length > 0;
+              if (typeof val === "object") return Object.keys(val).length > 0;
+              return val !== "";
+            });
+
+            if (tieneDatosMonotributo) {
+              tipoRegimenIvaId = 2;
+            }
+          }
+          setValue("tiporegimenivaid", tipoRegimenIvaId);
         }
-        setValue("tiporegimenivaid", tipoRegimenIvaId);
 
         setTimeout(() => {
           setProcesoModal({
@@ -429,7 +510,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
               ? {
                   ...p,
                   estado: "error",
-                  error: "No se encontraron datos en AFIP ni LUFE.",
+                  error: "No se encontraron datos en Nosis, AFIP ni LUFE.",
                 }
               : p,
           ),
