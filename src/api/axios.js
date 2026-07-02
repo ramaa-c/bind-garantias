@@ -12,6 +12,20 @@ const api = axios.create({
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 1000;
 
+// Firma típica de FireDAC/Delphi cuando el pool de conexiones a BD del backend
+// se agotó. En ese caso NO conviene reintentar automáticamente: el backend ya
+// está saturado y un reintento inmediato solo suma presión al pool. Distinto
+// es el caso de "backend dormido" (timeout/error de red), donde sí queremos
+// reintentar porque la primera request suele fallar mientras el servicio arranca.
+const POOL_EXHAUSTION_PATTERN = /FireDAC|Cannot acquire item/i;
+
+const isPoolExhaustionError = (error) => {
+  const data = error.response?.data;
+  if (!data) return false;
+  const text = typeof data === "string" ? data : JSON.stringify(data);
+  return POOL_EXHAUSTION_PATTERN.test(text);
+};
+
 const transformKeysToLowercase = (obj) => {
   if (obj === null || typeof obj !== "object") {
     return obj;
@@ -52,7 +66,8 @@ api.interceptors.response.use(
 
     const isNetworkError = !error.response;
     const isServerError = error.response && error.response.status >= 500;
-    const isSafeToRetry = isNetworkError || isServerError;
+    const isSafeToRetry =
+      (isNetworkError || isServerError) && !isPoolExhaustionError(error);
 
     if (isSafeToRetry && !config.noRetry && config.__retryCount < MAX_RETRIES) {
       config.__retryCount += 1;

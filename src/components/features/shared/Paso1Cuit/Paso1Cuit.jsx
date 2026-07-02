@@ -109,42 +109,45 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             p.id === "afip"
               ? {
                   ...p,
-                  etiqueta: "Probando en AFIP...",
+                  etiqueta: "Probando en LUFE...",
                   descripcion:
-                    "Nosis no disponible. Consultando padrón AFIP en su lugar.",
+                    "Nosis no disponible. Consultando entidad en LUFE en su lugar.",
                 }
               : p,
           ),
         }));
-        try {
-          afipData = await validarAfip(cuit);
-        } catch (e) {
-          console.warn("Error consultando AFIP, se intentará LUFE...", e);
-        }
+      }
 
-        if (!afipData || !afipData.datosgenerales) {
-          // Intentamos fallback a LUFE
+      // SIEMPRE consultamos LUFE/AFIP porque necesitamos mescierre y tipopersona (a pedido del usuario)
+      try {
+        const lufeData = await sociosService.obtenerEntidadLufe(cuit);
+        if (lufeData && lufeData.success) {
+          afipData = sociosService.normalizarLufeAEstructuraAfip(lufeData);
+        }
+      } catch (lufeError) {
+        console.warn("Error consultando LUFE:", lufeError);
+      }
+
+      if (!afipData || !afipData.datosgenerales) {
+        if (!nosisData) {
           setProcesoModal((prev) => ({
             ...prev,
             pasos: prev.pasos.map((p) =>
               p.id === "afip"
                 ? {
                     ...p,
-                    etiqueta: "Probando en LUFE...",
+                    etiqueta: "Probando en AFIP...",
                     descripcion:
-                      "AFIP no disponible. Consultando entidad en LUFE en su lugar.",
+                      "LUFE no disponible. Consultando padrón AFIP en su lugar.",
                   }
                 : p,
             ),
           }));
-          try {
-            const lufeData = await sociosService.obtenerEntidadLufe(cuit);
-            if (lufeData) {
-              afipData = sociosService.normalizarLufeAEstructuraAfip(lufeData);
-            }
-          } catch (lufeError) {
-            console.warn("Error consultando LUFE como fallback:", lufeError);
-          }
+        }
+        try {
+          afipData = await validarAfip(cuit);
+        } catch (e) {
+          console.warn("Error consultando AFIP como fallback...", e);
         }
       }
 
@@ -342,16 +345,40 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           setValue("ciudadid", null);
 
           let tipoPersonaId = 0;
-          const cleanCuit = String(cuit).replace(/\D/g, "");
-          const prefix = cleanCuit.substring(0, 2);
-          if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
-            tipoPersonaId = 1;
-          } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
-            tipoPersonaId = 10;
+          let mesCierre = null;
+          
+          if (afipData && afipData.datosgenerales) {
+            const dg = afipData.datosgenerales;
+            const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
+            if (tipoPersonaStr.includes("JURIDICA") || tipoPersonaStr.includes("JURÍDICA")) {
+              tipoPersonaId = 10;
+            } else if (tipoPersonaStr.includes("FISICA") || tipoPersonaStr.includes("FÍSICA") || tipoPersonaStr.includes("HUMANA")) {
+              tipoPersonaId = 1;
+            } else {
+              const cleanCuit = String(cuit).replace(/\D/g, "");
+              const prefix = cleanCuit.substring(0, 2);
+              if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
+                tipoPersonaId = 1;
+              } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
+                tipoPersonaId = 10;
+              }
+            }
+            if (dg.mescierre) {
+              mesCierre = parseInt(dg.mescierre, 10);
+            } else if (dg.mes_cierre) {
+              mesCierre = parseInt(dg.mes_cierre, 10);
+            }
+          } else {
+            const cleanCuit = String(cuit).replace(/\D/g, "");
+            const prefix = cleanCuit.substring(0, 2);
+            if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
+              tipoPersonaId = 1;
+            } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
+              tipoPersonaId = 10;
+            }
           }
           setValue("tipopersonaid", tipoPersonaId);
-
-          setValue("mescierre", null);
+          setValue("mescierre", mesCierre);
 
           let fechaInicioActividades = null;
           if (nosisData.VI_Act01_FecInicio) {
