@@ -9,6 +9,19 @@ import {
   useObtenerCadenasPorUsuario,
 } from "../../../hooks/useUsuario";
 
+const parsearRegistroUsuario = (db) => {
+  if (!db) return null;
+  if (Array.isArray(db)) return db[0] || null;
+  if (db.items) return db.items[0] || null;
+  if (db.data) return db.data[0] || null;
+  return db;
+};
+
+const esAdministradorActivo = (registro) => {
+  const valor = registro?.esadministrador ?? registro?.EsAdministrador;
+  return valor === "1" || valor === 1 || valor === true;
+};
+
 export const AdminGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
@@ -18,24 +31,13 @@ export const AdminGuard = ({ children }) => {
   const { data: usuarioDb, isPending: isUserLoading } =
     useObtenerPorNombreOEmail(user?.email || "");
 
-  const parsearUsuarioWebId = (db) => {
-    if (!db) return null;
-    if (Array.isArray(db))
-      return db[0]?.usuariowebid || db[0]?.UsuarioWebID || db[0]?.id;
-    if (db.items)
-      return (
-        db.items[0]?.usuariowebid ||
-        db.items[0]?.UsuarioWebID ||
-        db.items[0]?.id
-      );
-    if (db.data)
-      return (
-        db.data[0]?.usuariowebid || db.data[0]?.UsuarioWebID || db.data[0]?.id
-      );
-    return db.usuariowebid || db.UsuarioWebID || db.id || null;
-  };
-
-  const usuarioWebId = parsearUsuarioWebId(usuarioDb);
+  const registroUsuario = parsearRegistroUsuario(usuarioDb);
+  const usuarioWebId =
+    registroUsuario?.usuariowebid ??
+    registroUsuario?.UsuarioWebID ??
+    registroUsuario?.id ??
+    null;
+  const esAdministrador = esAdministradorActivo(registroUsuario);
 
   const { data: cadenasData, isPending: isCadenasLoading } =
     useObtenerCadenasPorUsuario(usuarioWebId);
@@ -62,7 +64,7 @@ export const AdminGuard = ({ children }) => {
     );
   }
 
-  const isAdmin = isBasicAdmin || isAdminCadena;
+  const isAdmin = isBasicAdmin || esAdministrador || isAdminCadena;
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;

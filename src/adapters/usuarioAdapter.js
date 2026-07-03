@@ -83,4 +83,12 @@ export const usuarioAdapter = {
       Activa: d.activa,
     };
   },
+  adaptarPayload9: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      UsuarioWebID: d.usuariowebid,
+      Denominacion: d.denominacion,
+    };
+  },
 };

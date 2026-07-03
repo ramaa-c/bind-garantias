@@ -1,8 +1,14 @@
 import React from "react";
-import { FiAlertCircle } from "react-icons/fi";
+import { FiHelpCircle, FiAlertTriangle } from "react-icons/fi";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import styles from "./ConfirmacionModal.module.css";
+
+const ICONOS_POR_VARIANTE = {
+  danger: FiAlertTriangle,
+  blue: FiHelpCircle,
+  default: FiHelpCircle,
+};
 
 export function ConfirmacionModal({
   isOpen,
@@ -18,27 +24,29 @@ export function ConfirmacionModal({
   cancelVariant = "outline",
   maxWidth = "400px",
 }) {
+  const tono = styles[variant] ? variant : "default";
+  const Icono = ICONOS_POR_VARIANTE[tono] || ICONOS_POR_VARIANTE.default;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={titulo}
       maxWidth={maxWidth}
-      variant={variant}
+      variant={variant === "blue" ? "blue" : "default"}
     >
       <div className={styles.container}>
-        <div
-          className={`${styles.iconContainer} ${styles[variant] || ""} ${variant === "blue" ? styles.blue : ""}`}
-        >
-          <FiAlertCircle className={styles.icon} />
+        <div className={`${styles.iconBadge} ${styles[tono]}`}>
+          <span className={`${styles.iconPulse} ${styles[tono]}`} />
+          <Icono className={styles.icon} />
         </div>
+
         <p className={styles.mensaje}>{mensaje}</p>
-        <div className={styles.actions}>
-          <Button
-            variant={cancelVariant}
-            onClick={onClose}
-            disabled={isLoading}
-          >
+
+        <div
+          className={`${styles.actions} ${variant === "blue" ? styles.actionsBlue : ""}`}
+        >
+          <Button variant={cancelVariant} onClick={onClose} disabled={isLoading}>
             {cancelText}
           </Button>
           <Button

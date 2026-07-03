@@ -88,6 +88,7 @@
   transition: all 0.2s ease;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  min-width: 220px;
 }
 
 .userTrigger:hover {
@@ -117,6 +118,11 @@
   color: #ffffff;
   font-size: 0.85rem;
   font-weight: 700;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
 }
 
 .userChevron {
@@ -179,6 +185,32 @@
 
 .userDropdownFooter {
   padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.userAccountBtn {
+  width: 100%;
+  background-color: rgba(76, 101, 230, 0.08);
+  color: var(--color-azul-bind, #4c65e6);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.userAccountBtn:hover {
+  background-color: rgba(76, 101, 230, 0.15);
 }
 
 .userLogoutBtn {

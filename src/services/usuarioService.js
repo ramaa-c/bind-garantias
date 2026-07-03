@@ -26,9 +26,9 @@ export const usuarioService = {
   crearUsuario: async (nuevoUsuario) =>
     (await api.post("api/usuario/alta", usuarioAdapter.adaptarPayload4(nuevoUsuario))).data,
 
-  // PUT api/usuario/password:change
-  cambiarPassword: async (datosCambioClave) =>
-    (await api.put("api/usuario/password-change", usuarioAdapter.adaptarPayload5(datosCambioClave))).data,
+  // PUT api/usuario/{usuarioid}/password:change
+  cambiarPassword: async (usuarioId, datosCambioClave) =>
+    (await api.put(`api/usuario/${usuarioId}/password-change`, usuarioAdapter.adaptarPayload5(datosCambioClave))).data,
 
   // GET api/usuario/{encrypt}/:byencrypt
   obtenerPorEncrypt: async (encryptToken) =>
@@ -93,5 +93,9 @@ export const usuarioService = {
   actualizarUsuarioCadenaValor: async (payload) => {
     return (await api.put("api/UsuarioCadenaValor", usuarioAdapter.adaptarPayload8(payload))).data;
   },
+
+  // PUT api/usuarios
+  actualizarUsuario: async (data) =>
+    (await api.put("api/usuarios", usuarioAdapter.adaptarPayload9(data))).data,
 };
 

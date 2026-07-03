@@ -203,18 +203,25 @@ const checkAccesoAdmin = async (email) => {
     const userDb = await usuarioService.obtenerPorNombreOEmail(cleanEmail);
     if (!userDb) return false;
 
-    let usuarioWebId = null;
+    let registro = null;
     if (Array.isArray(userDb)) {
-      usuarioWebId = userDb[0]?.usuariowebid || userDb[0]?.UsuarioWebID || userDb[0]?.id;
+      registro = userDb[0] || null;
     } else if (userDb.items) {
-      usuarioWebId = userDb.items[0]?.usuariowebid || userDb.items[0]?.UsuarioWebID || userDb.items[0]?.id;
+      registro = userDb.items[0] || null;
     } else if (userDb.data) {
-      usuarioWebId = userDb.data[0]?.usuariowebid || userDb.data[0]?.UsuarioWebID || userDb.data[0]?.id;
+      registro = userDb.data[0] || null;
     } else {
-      usuarioWebId = userDb.usuariowebid || userDb.UsuarioWebID || userDb.id;
+      registro = userDb;
     }
 
+    const usuarioWebId = registro?.usuariowebid || registro?.UsuarioWebID || registro?.id;
     if (!usuarioWebId) return false;
+
+    const esAdministradorFlag = registro?.esadministrador ?? registro?.EsAdministrador;
+    const esAdministrador =
+      esAdministradorFlag === "1" || esAdministradorFlag === 1 || esAdministradorFlag === true;
+
+    if (esAdministrador) return true;
 
     const chainsData = await usuarioService.obtenerUsuariosRelacionados({ usuarioid: usuarioWebId });
     if (!chainsData) return false;

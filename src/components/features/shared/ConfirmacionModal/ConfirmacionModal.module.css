@@ -2,43 +2,149 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
-  padding: 1.5rem;
+  text-align: center;
+  gap: 1.1rem;
 }
 
-.iconContainer {
+/* ── ICONO ───────────────────────────────────────────────────────────────── */
+
+.iconBadge {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 50%;
-  background-color: rgba(255, 152, 0, 0.1);
-  color: #ff9800;
+  width: 3.75rem;
+  height: 3.75rem;
+  flex-shrink: 0;
+  border-radius: 1.25rem;
+  border: 1px solid transparent;
+  animation: badgeIn 0.35s var(--ease-out, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.iconPulse {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: ringPulse 2.4s ease-out infinite;
+  pointer-events: none;
 }
 
 .icon {
-  width: 1.5rem;
-  height: 1.5rem;
+  position: relative;
+  width: 1.625rem;
+  height: 1.625rem;
+  z-index: 1;
 }
 
-.mensaje {
-  font-size: 1rem;
-  color: #e0e0e0;
-  text-align: center;
-  margin: 0;
-  line-height: 1.5;
+@keyframes badgeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
+
+@keyframes ringPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.45;
+  }
+  70% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+/* Tonos por variante — aplicados tanto al badge como al pulso */
+
+.default {
+  background: rgba(245, 244, 0, 0.1);
+  border-color: rgba(245, 244, 0, 0.28);
+  color: var(--yellow, #f5f400);
+}
+
+.iconPulse.default {
+  background: rgba(245, 244, 0, 0.4);
+}
+
+.blue {
+  background: rgba(76, 101, 230, 0.12);
+  border-color: rgba(76, 101, 230, 0.3);
+  color: var(--color-azul-bind, #4c65e6);
+}
+
+.iconPulse.blue {
+  background: rgba(76, 101, 230, 0.45);
+}
+
+.danger {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: var(--error-red, #ef4444);
+}
+
+.iconPulse.danger {
+  background: rgba(239, 68, 68, 0.45);
+}
+
+/* ── MENSAJE ─────────────────────────────────────────────────────────────── */
+
+.mensaje {
+  max-width: 28rem;
+  margin: 0;
+  color: var(--text-muted, #a3a3a3);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+}
+
+.mensaje code {
+  display: inline-block;
+  margin-top: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  color: var(--white-muted, #f0f0f0);
+  font-size: 0.8125rem;
+  word-break: break-word;
+}
+
+/* ── ACCIONES ────────────────────────────────────────────────────────────── */
 
 .actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  width: 100%;
-  margin-top: 1rem;
+  justify-content: center;
+  gap: 0.75rem;
+  width: calc(100% + 3rem);
+  margin: 0.5rem -1.5rem -1.5rem;
+  padding: 1.125rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.18);
 }
 
-.iconContainer.blue {
-  background-color: rgba(43, 113, 200, 0.15) !important;
-  color: #2b71c8 !important;
+.actions > * {
+  min-width: 8rem;
+}
+
+.actionsBlue {
+  border-top-color: rgba(76, 101, 230, 0.14);
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column-reverse;
+    gap: 0.6rem;
+  }
+
+  .actions > * {
+    width: 100%;
+    min-width: 0;
+  }
 }
