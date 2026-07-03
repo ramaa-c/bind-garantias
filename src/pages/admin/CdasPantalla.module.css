@@ -411,3 +411,16 @@
   border-radius: 0.5rem;
   font-size: 0.85rem;
 }
+
+/* Skeleton de carga para la lista de CDAs */
+.skeletonBlock {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
