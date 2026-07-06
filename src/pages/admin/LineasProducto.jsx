@@ -421,7 +421,6 @@ export default function LineasProducto() {
         title={activeProducto ? "EDITAR PRODUCTO" : "NUEVO PRODUCTO VINCULADO"}
         maxWidth="500px"
         variant="blue"
-        allowOverflow={true}
       >
         <ConfigModalInner
           activeProducto={activeProducto}

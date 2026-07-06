@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { FiBriefcase, FiShield, FiZap, FiCheckCircle } from "react-icons/fi";
 import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
 import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { sociosService } from "../../../../services/sociosService";
@@ -10,7 +11,10 @@ import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
-import { parseAddress, decodeHtmlEntities } from "../../../../utils/direccionParser";
+import {
+  parseAddress,
+  decodeHtmlEntities,
+} from "../../../../utils/direccionParser";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useParams } from "react-router-dom";
 import styles from "./Paso1Cuit.module.css";
@@ -29,7 +33,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   const { mutateAsync: validarSocioCore } = useValidarSocioCore();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
   const user = useAuthStore((state) => state.user);
-  
+
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
 
@@ -215,7 +219,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
         const resultCda = await ejecutarValidaciones(
           "PANTALLA_INGRESO_CUIT",
           cuit,
-          cadenaValorIdParam
+          cadenaValorIdParam,
         );
 
         if (!resultCda.success) {
@@ -253,7 +257,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           const sociosWebEncontrados = await sociosService.obtenerSocios({
             Cuit: cuit,
           });
-          
+
           if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
             const socioWebExistente = sociosWebEncontrados[0];
 
@@ -272,9 +276,11 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           }
 
           // 2. Si no está en la web, verificamos si existe históricamente en SGRPlus Core
-          const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus({
-            Cuit: cuit,
-          });
+          const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus(
+            {
+              Cuit: cuit,
+            },
+          );
 
           if (sociosSgrEncontrados && sociosSgrEncontrados.length > 0) {
             if (!isVendor) {
@@ -303,7 +309,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
                 return; // Bloquea al usuario normal porque el email de SGRPlus no coincide
               }
             }
-            // Si es vendor, o si es un usuario normal y el email SÍ coincide, 
+            // Si es vendor, o si es un usuario normal y el email SÍ coincide,
             // no hacemos return. Dejamos que el flujo continúe.
           }
         } catch (errorSocios) {
@@ -315,51 +321,84 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
         if (nosisData) {
           const nombreCompleto = decodeHtmlEntities(
-            nosisData.VI_RazonSocial || `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim()
+            nosisData.VI_RazonSocial ||
+              `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim(),
           );
           setValue("razonSocial", nombreCompleto, { shouldValidate: true });
 
-          const fullDireccion = decodeHtmlEntities(`${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim());
+          const fullDireccion = decodeHtmlEntities(
+            `${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim(),
+          );
           setValue("direccion", fullDireccion, { shouldValidate: true });
-          setValue("codpos", nosisData.VI_DomAF_CP || "", { shouldValidate: true });
+          setValue("codpos", nosisData.VI_DomAF_CP || "", {
+            shouldValidate: true,
+          });
 
-          setValue("calle", nosisData.VI_DomAF_Calle || "", { shouldValidate: true });
+          setValue("calle", nosisData.VI_DomAF_Calle || "", {
+            shouldValidate: true,
+          });
           const hasNumber = !!nosisData.VI_DomAF_Nro;
           setValue("sinNumero", !hasNumber, { shouldValidate: true });
-          setValue("numero", hasNumber ? nosisData.VI_DomAF_Nro : 0, { shouldValidate: true });
+          setValue("numero", hasNumber ? nosisData.VI_DomAF_Nro : 0, {
+            shouldValidate: true,
+          });
           if (!hasNumber) clearErrors("numero");
-          setValue("piso", nosisData.VI_DomAF_Piso || "", { shouldValidate: true });
-          setValue("departamento", nosisData.VI_DomAF_Dto || "", { shouldValidate: true });
+          setValue("piso", nosisData.VI_DomAF_Piso || "", {
+            shouldValidate: true,
+          });
+          setValue("departamento", nosisData.VI_DomAF_Dto || "", {
+            shouldValidate: true,
+          });
 
           const localidadStr = decodeHtmlEntities(nosisData.VI_DomAF_Loc || "");
           setValue("localidad", localidadStr, { shouldValidate: true });
           setValue("localidadid", null);
 
           const provNombre = decodeHtmlEntities(nosisData.VI_DomAF_Prov || "");
-          const provMatched = matchProvinciaAfip(provNombre, opcionesProvincias);
+          const provMatched = matchProvinciaAfip(
+            provNombre,
+            opcionesProvincias,
+          );
           const matchedProvId = provMatched ? Number(provMatched.value) : null;
           setValue("provinciaid", matchedProvId, { shouldValidate: true });
-          setValue("provincia", provMatched ? provMatched.value : provNombre, { shouldValidate: true });
+          setValue("provincia", provMatched ? provMatched.value : provNombre, {
+            shouldValidate: true,
+          });
 
-          setValue("ciudad", nosisData.VI_DomAF_Loc || "", { shouldValidate: true });
+          setValue("ciudad", nosisData.VI_DomAF_Loc || "", {
+            shouldValidate: true,
+          });
           setValue("ciudadid", null);
 
           let tipoPersonaId = 0;
           let mesCierre = null;
-          
+
           if (afipData && afipData.datosgenerales) {
             const dg = afipData.datosgenerales;
             const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
-            if (tipoPersonaStr.includes("JURIDICA") || tipoPersonaStr.includes("JURÍDICA")) {
+            if (
+              tipoPersonaStr.includes("JURIDICA") ||
+              tipoPersonaStr.includes("JURÍDICA")
+            ) {
               tipoPersonaId = 10;
-            } else if (tipoPersonaStr.includes("FISICA") || tipoPersonaStr.includes("FÍSICA") || tipoPersonaStr.includes("HUMANA")) {
+            } else if (
+              tipoPersonaStr.includes("FISICA") ||
+              tipoPersonaStr.includes("FÍSICA") ||
+              tipoPersonaStr.includes("HUMANA")
+            ) {
               tipoPersonaId = 1;
             } else {
               const cleanCuit = String(cuit).replace(/\D/g, "");
               const prefix = cleanCuit.substring(0, 2);
-              if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
+              if (
+                ["20", "23", "24", "27", "25", "26"].includes(prefix) ||
+                cleanCuit.startsWith("2")
+              ) {
                 tipoPersonaId = 1;
-              } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
+              } else if (
+                ["30", "33", "34"].includes(prefix) ||
+                cleanCuit.startsWith("3")
+              ) {
                 tipoPersonaId = 10;
               }
             }
@@ -371,9 +410,15 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           } else {
             const cleanCuit = String(cuit).replace(/\D/g, "");
             const prefix = cleanCuit.substring(0, 2);
-            if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
+            if (
+              ["20", "23", "24", "27", "25", "26"].includes(prefix) ||
+              cleanCuit.startsWith("2")
+            ) {
               tipoPersonaId = 1;
-            } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
+            } else if (
+              ["30", "33", "34"].includes(prefix) ||
+              cleanCuit.startsWith("3")
+            ) {
               tipoPersonaId = 10;
             }
           }
@@ -387,14 +432,17 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           setValue("fechainicioactividades", fechaInicioActividades);
 
           let tipoRegimenIvaId = 1;
-          if (nosisData.VI_Inscrip_Monotributo === "Si" || nosisData.VI_Inscrip_Monotributo_Es === "Si" || nosisData.VI_Inscrip_Monotributo) {
+          if (
+            nosisData.VI_Inscrip_Monotributo === "Si" ||
+            nosisData.VI_Inscrip_Monotributo_Es === "Si" ||
+            nosisData.VI_Inscrip_Monotributo
+          ) {
             tipoRegimenIvaId = 2;
           }
           setValue("tiporegimenivaid", tipoRegimenIvaId);
-
         } else {
           const nombreCompleto = decodeHtmlEntities(
-            dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim()
+            dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim(),
           );
           setValue("razonSocial", nombreCompleto, { shouldValidate: true });
 
@@ -405,19 +453,25 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
           const parsedDir = parseAddress(fullDireccion);
           setValue("calle", parsedDir.calle, { shouldValidate: true });
-          setValue("sinNumero", parsedDir.numero === 0, { shouldValidate: true });
+          setValue("sinNumero", parsedDir.numero === 0, {
+            shouldValidate: true,
+          });
           setValue("numero", parsedDir.numero, { shouldValidate: true });
           if (parsedDir.numero === 0) {
             clearErrors("numero");
           }
           setValue("piso", parsedDir.piso, { shouldValidate: true });
-          setValue("departamento", parsedDir.departamento, { shouldValidate: true });
+          setValue("departamento", parsedDir.departamento, {
+            shouldValidate: true,
+          });
 
           const localidadStr = decodeHtmlEntities(dom.localidad || "");
           setValue("localidad", localidadStr, { shouldValidate: true });
           setValue("localidadid", null);
 
-          const provNombreAfip = decodeHtmlEntities(dom.descripcionprovincia || "");
+          const provNombreAfip = decodeHtmlEntities(
+            dom.descripcionprovincia || "",
+          );
           const provMatched = matchProvinciaAfip(
             provNombreAfip,
             opcionesProvincias,
@@ -452,9 +506,15 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             // Fallback basado en prefijo de CUIT
             const cleanCuit = String(cuit).replace(/\D/g, "");
             const prefix = cleanCuit.substring(0, 2);
-            if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cleanCuit.startsWith("2")) {
+            if (
+              ["20", "23", "24", "27", "25", "26"].includes(prefix) ||
+              cleanCuit.startsWith("2")
+            ) {
               tipoPersonaId = 1;
-            } else if (["30", "33", "34"].includes(prefix) || cleanCuit.startsWith("3")) {
+            } else if (
+              ["30", "33", "34"].includes(prefix) ||
+              cleanCuit.startsWith("3")
+            ) {
               tipoPersonaId = 10;
             }
           }
@@ -503,12 +563,14 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           let tipoRegimenIvaId = 1;
           const monotributo = afipData.datosmonotributo;
           if (monotributo) {
-            const tieneDatosMonotributo = Object.values(monotributo).some((val) => {
-              if (val === null || val === undefined) return false;
-              if (Array.isArray(val)) return val.length > 0;
-              if (typeof val === "object") return Object.keys(val).length > 0;
-              return val !== "";
-            });
+            const tieneDatosMonotributo = Object.values(monotributo).some(
+              (val) => {
+                if (val === null || val === undefined) return false;
+                if (Array.isArray(val)) return val.length > 0;
+                if (typeof val === "object") return Object.keys(val).length > 0;
+                return val !== "";
+              },
+            );
 
             if (tieneDatosMonotributo) {
               tipoRegimenIvaId = 2;
@@ -559,28 +621,18 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
 
   return (
     <div className={styles.pasoContainer}>
-      <div className={styles.decorativeBanner} style={{ minHeight: "3.75rem" }}>
-        <div className={styles.bannerIcon}>
-          <svg
-            width="1rem"
-            height="1rem"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-          </svg>
-        </div>
-        <div className={styles.bannerText}>
-          <p className={styles.bannerTitle}>Proceso 100% seguro y online</p>
-          <p className={styles.bannerSub}>
-            Tu información es validada en tiempo real contra AFIP
-          </p>
-        </div>
+      <div className={styles.heroIcon}>
+        <FiBriefcase />
       </div>
+
+      <div className={styles.heroCopy}>
+        <h2 className={styles.heroTitle}>¿Cuál es el CUIT de tu empresa?</h2>
+        <p className={styles.heroSub}>
+          Validamos tu información fiscal y crediticia en tiempo real para
+          agilizar el registro de tu empresa.
+        </p>
+      </div>
+
       <div className={styles.inputWrapper}>
         <BuscadorCuit
           name="cuit"
@@ -592,6 +644,18 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           buttonText="VALIDAR CUIT"
           isLoading={isLoading}
         />
+      </div>
+
+      <div className={styles.trustRow}>
+        <span className={styles.trustChip}>
+          <FiShield /> Datos encriptados
+        </span>
+        <span className={styles.trustChip}>
+          <FiZap /> Validación en segundos
+        </span>
+        <span className={styles.trustChip}>
+          <FiCheckCircle /> Sin costo
+        </span>
       </div>
 
       <ProcesamientoModal

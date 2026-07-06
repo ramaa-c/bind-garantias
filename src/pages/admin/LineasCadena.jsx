@@ -586,7 +586,6 @@ export default function LineasCadena() {
         }
         maxWidth="600px"
         variant="blue"
-        allowOverflow={true}
       >
         <div style={{ position: "relative" }}>
           {(crearMutation.isPending || actualizarMutation.isPending) && (

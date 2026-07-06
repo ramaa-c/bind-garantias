@@ -15,10 +15,12 @@
   background-color: #1a1a1a;
   width: 92%;
   max-width: 420px;
+  max-height: 92vh;
   border-radius: 1.25rem;
   border: 1px solid #333;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
   animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
