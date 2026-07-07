@@ -24,6 +24,7 @@ export const InputPasswordSeguro = React.forwardRef(
       email = "",
       esValido,
       className = "",
+      theme = "yellow",
       id,
       value,
       ...props
@@ -56,7 +57,8 @@ export const InputPasswordSeguro = React.forwardRef(
     };
 
     const { width, color } = getStrength(currentValue);
-    const dynamicColor = currentValue ? color : "var(--yellow, #f5f400)";
+    const defaultColor = theme === "blue" ? "var(--primary-blue, #4c65e6)" : "var(--yellow, #f5f400)";
+    const dynamicColor = currentValue ? color : defaultColor;
 
     return (
       <div

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { HiOutlineMailOpen, HiClock } from "react-icons/hi";
+import { FiMail } from "react-icons/fi";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/ChannelContext";
@@ -125,20 +126,7 @@ const ConfirmarCorreo = () => {
 
           {/* Email destacado */}
           <div className={styles.emailDestacado}>
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <rect x="2" y="4" width="20" height="16" rx="2" />
-              <path d="m2 7 8.5 6a2 2 0 0 0 3 0L22 7" />
-            </svg>
+            <FiMail size={16} aria-hidden="true" />
             {emailUsuario}
           </div>
 

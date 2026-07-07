@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle } from "react-icons/fi";
+import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
 import { Modal } from "../../../../../ui/Modal/Modal";
@@ -762,9 +762,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             <div className={styles.cuitSearchStep}>
               <div className={styles.cuitSearchBanner}>
                 <div className={styles.cuitSearchBannerIcon}>
-                  <svg width="1rem" height="1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
+                  <FiShield />
                 </div>
                 <div className={styles.cuitSearchBannerText}>
                   <p className={styles.cuitSearchBannerTitle}>Validación segura con AFIP</p>

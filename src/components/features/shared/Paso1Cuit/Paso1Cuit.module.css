@@ -2,63 +2,128 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.5rem;
   padding: 0;
   width: 100%;
+  animation: fadeIn 0.35s ease;
 }
+
+/* ── HERO ────────────────────────────────────────────────────────────────── */
+
+.heroIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1.15rem;
+  background: rgba(245, 244, 0, 0.08);
+  border: 1px solid rgba(245, 244, 0, 0.22);
+  color: var(--yellow, #f5f400);
+  font-size: 1.5rem;
+  box-shadow: 0 8px 24px rgba(245, 244, 0, 0.08);
+  animation: badgeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.heroCopy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  max-width: 26rem;
+}
+
+.heroTitle {
+  margin: 0;
+  color: var(--white, #fff);
+  font-size: 1.1875rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.heroSub {
+  margin: 0;
+  color: var(--text-muted, #a3a3a3);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+@keyframes badgeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── INPUT ───────────────────────────────────────────────────────────────── */
 
 .inputWrapper {
   width: 100%;
   max-width: 26rem;
 }
 
-.decorativeBanner {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
-  background: rgba(245, 244, 0, 0.04);
-  border: 1px solid rgba(245, 244, 0, 0.12);
-  width: 26rem;
-  transition: all 0.25s ease;
-}
+/* ── TRUST CHIPS ─────────────────────────────────────────────────────────── */
 
-.decorativeBanner:hover {
-  border-color: rgba(245, 244, 0, 0.2);
-  background: rgba(245, 244, 0, 0.05);
-}
-
-.bannerIcon {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 50%;
-  background: rgba(245, 244, 0, 0.06);
-  border: 1px solid rgba(245, 244, 0, 0.18);
+.trustRow {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: 0.5rem;
+  max-width: 26rem;
+}
+
+.trustChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8b949e;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.trustChip svg {
+  font-size: 0.8rem;
   color: var(--yellow, #f5f400);
   flex-shrink: 0;
 }
 
-.bannerText {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+.trustChip:hover {
+  border-color: rgba(245, 244, 0, 0.22);
+  background: rgba(245, 244, 0, 0.04);
+  color: #c9d1d9;
 }
 
-.bannerTitle {
-  color: #ffffff;
-  font-size: 0.825rem;
-  font-weight: 600;
-  margin: 0;
-  letter-spacing: 0.01em;
+@media (max-width: 26rem) {
+  .trustRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .trustChip {
+    justify-content: center;
+  }
 }
 
-.bannerSub {
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 0.725rem;
-  margin: 0;
-  line-height: 1.4;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

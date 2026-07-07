@@ -52,8 +52,8 @@ export const useCrearUsuario = () => {
 
 export const useCambiarPassword = () => {
   return useMutation({
-    mutationFn: (datosCambioClave) =>
-      usuarioService.cambiarPassword(datosCambioClave),
+    mutationFn: ({ usuarioid, data }) =>
+      usuarioService.cambiarPassword(usuarioid, data),
   });
 };
 

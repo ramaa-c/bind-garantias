@@ -4,6 +4,12 @@ import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import styles from "./ConfirmacionModal.module.css";
 
+const ICONOS_POR_VARIANTE = {
+  danger: FiAlertTriangle,
+  blue: FiHelpCircle,
+  default: FiHelpCircle,
+};
+
 export function ConfirmacionModal({
   isOpen,
   onClose,

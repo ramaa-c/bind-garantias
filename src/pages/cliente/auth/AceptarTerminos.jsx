@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { FiCheck } from "react-icons/fi";
 import { Button } from "../../../components/ui/Button/Button";
 import {
   RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
@@ -165,17 +166,7 @@ export default function AceptarTerminos() {
               <span
                 className={`${styles.checkmark} ${aceptado ? styles.checkmarkActive : ""}`}
               >
-                {aceptado && (
-                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                    <path
-                      d="M1 4L3.5 6.5L9 1"
-                      stroke="#000"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
+                {aceptado && <FiCheck size={12} color="#000" strokeWidth={3} />}
               </span>
             </span>
             <span className={styles.checkboxLabel}>

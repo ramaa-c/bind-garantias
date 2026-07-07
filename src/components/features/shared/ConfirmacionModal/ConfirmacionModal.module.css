@@ -102,6 +102,8 @@
   opacity: 0.55;
 }
 
+/* ── MENSAJE ─────────────────────────────────────────────────────────────── */
+
 .mensaje {
   font-size: 0.925rem;
   line-height: 1.65;
@@ -114,6 +116,8 @@
   color: var(--white, #fffefe);
   font-weight: 600;
 }
+
+/* ── ACCIONES ────────────────────────────────────────────────────────────── */
 
 .actions {
   display: flex;
