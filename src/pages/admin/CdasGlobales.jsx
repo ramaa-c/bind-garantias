@@ -45,6 +45,57 @@ const INTEGRACION_COLOR_DEFAULT = { bg: "rgba(139, 148, 158, 0.12)", color: "#8b
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 const debeIrSinComillas = (val) => (val !== "" && !isNaN(val)) || FECHA_REGEX.test(val);
 
+// Interpreta el status HTTP de `cda/execute:test` (ver docs del motor de CDAs)
+// para diferenciar con claridad "la expresión está mal escrita" (400/500) de
+// "la expresión es válida pero da falso" (406), y no perder esa distinción
+// bajo un genérico "ERROR".
+const getResultadoPrueba = (status, styles) => {
+  switch (status) {
+    case 202:
+      return {
+        badgeClass: styles.badgeSuccess,
+        label: "202 · VERDADERO",
+        descripcion: "El criterio es válido y la condición se cumple para el CUIT ingresado.",
+      };
+    case 406:
+      return {
+        badgeClass: styles.badgeWarning,
+        label: "406 · FALSO",
+        descripcion: "El criterio es válido, pero la condición no se cumple (da falso) para el CUIT ingresado.",
+      };
+    case 400:
+      return {
+        badgeClass: styles.badgeDanger,
+        label: "400 · CDA INEXISTENTE",
+        descripcion: "El backend no encuentra este criterio. Puede que la expresión no se haya guardado o esté mal referenciada.",
+      };
+    case 409:
+      return {
+        badgeClass: styles.badgeDanger,
+        label: "409 · DATO FALTANTE",
+        descripcion: "Falta un dato necesario para evaluar la expresión (revisá que el campo exista para este CUIT).",
+      };
+    case 500:
+      return {
+        badgeClass: styles.badgeDanger,
+        label: "500 · EXPRESIÓN INVÁLIDA",
+        descripcion: "La expresión tiene un error de sintaxis o formato. Esto no significa que dé falso: hay que corregir cómo está escrita.",
+      };
+    case "network":
+      return {
+        badgeClass: styles.badgeDanger,
+        label: "SIN CONEXIÓN",
+        descripcion: "No se pudo contactar al servidor para ejecutar la prueba.",
+      };
+    default:
+      return {
+        badgeClass: styles.badgeDanger,
+        label: `${status} · ERROR`,
+        descripcion: "Ocurrió un error inesperado al ejecutar la prueba.",
+      };
+  }
+};
+
 const applyCasingStrategy = (val, integrationName) => {
   if (!val) return val;
   const strategy = INTEGRACION_CASING_STRATEGY[integrationName] || "PRESERVE";
@@ -222,6 +273,7 @@ export default function CdasGlobales() {
   const [comparaPorVacio, setComparaPorVacio] = useState(false);
   const [mensajerechazo, setMensajerechazo] = useState("");
   const [vinculadefaultcv, setVinculadefaultcv] = useState(true);
+  const [vincularExistentes, setVincularExistentes] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [intentoEnviar, setIntentoEnviar] = useState(false);
   const [expresionLog, setExpresionLog] = useState("");
@@ -332,8 +384,8 @@ export default function CdasGlobales() {
     } catch (err) {
       console.error(err);
       setTestResult({
-        status: 500,
-        message: "Error de red o servidor al ejecutar la prueba."
+        status: "network",
+        message: "Error de red o servidor al ejecutar la prueba. Verificá tu conexión (VPN)."
       });
     }
   };
@@ -376,6 +428,7 @@ export default function CdasGlobales() {
     setComparaPorVacio(false);
     setMensajerechazo("");
     setVinculadefaultcv(true);
+    setVincularExistentes(false);
     setValidationError("");
     setIntentoEnviar(false);
     setTestResult(null);
@@ -405,6 +458,7 @@ export default function CdasGlobales() {
     setComparaPorVacio(valor.trim() === "");
     setMensajerechazo(getCdaProp(cda, "mensajerechazo") || "");
     setVinculadefaultcv(defaultCv === "" ? true : (defaultCv === "1" || defaultCv.toUpperCase() === "S"));
+    setVincularExistentes(false);
     setValidationError("");
     setIntentoEnviar(false);
     setTestResult(null);
@@ -433,6 +487,60 @@ export default function CdasGlobales() {
     setIntentoEnviar(false);
     setValidationError("");
     setConfirmOpen(true);
+  };
+
+  // Vincula un CDA puntual a todas las cadenas de valor YA EXISTENTES. Es una
+  // acción explícita disparada por el checkbox "vincularExistentes": el flag
+  // "vinculadefaultcv" solo controla si el backend lo suma automáticamente a
+  // las cadenas de valor que se creen de ahora en adelante, no a las actuales.
+  const vincularCdaEnCadenasExistentes = async (cdaId, valorParaVincular) => {
+    toast.info("Vinculando criterio de aceptación a las cadenas de valor existentes...");
+    try {
+      const todasCadenas = await cadenaValorService.obtenerTodasWeb();
+      const cadenasList = Array.isArray(todasCadenas) ? todasCadenas : todasCadenas?.items || todasCadenas?.data || [];
+
+      let linkedCount = 0;
+      for (const cadena of cadenasList) {
+        const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
+        if (!cadenaId) continue;
+
+        try {
+          const linkedCdas = await cadenaValorService.obtenerCdasPorCadenaId(cadenaId);
+          const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+
+          const yaVinculado = linkedCdasList.some((c) => getCdaId(c) === cdaId);
+
+          if (!yaVinculado) {
+            const listacda = linkedCdasList.map((c) => ({
+              cdaid: getCdaId(c),
+              valorcomparacion: c.valorcomparacion !== undefined ? c.valorcomparacion : (c.ValorComparacion !== undefined ? c.ValorComparacion : ""),
+            }));
+
+            listacda.push({
+              cdaid: cdaId,
+              valorcomparacion: valorParaVincular,
+            });
+
+            await cadenaValorService.vincularCdas({
+              cadenavalorid: Number(cadenaId),
+              listacda: listacda,
+            });
+            linkedCount++;
+          }
+        } catch (linkErr) {
+          console.error(`Error al vincular CDA a la cadena ${cadenaId}:`, linkErr);
+        }
+      }
+
+      if (linkedCount > 0) {
+        toast.success(`Vinculado con éxito a ${linkedCount} cadena${linkedCount !== 1 ? "s" : ""} de valor existente${linkedCount !== 1 ? "s" : ""}.`);
+      } else {
+        toast.info("El criterio ya estaba vinculado a todas las cadenas de valor existentes.");
+      }
+    } catch (chainErr) {
+      console.error("Error al obtener cadenas de valor para vinculación:", chainErr);
+      toast.error("El CDA se guardó, pero no se pudo vincular automáticamente a las cadenas existentes.");
+    }
   };
 
   const confirmarCreacion = async () => {
@@ -490,6 +598,12 @@ export default function CdasGlobales() {
     try {
       if (esEdicion) {
         await actualizarCda(payloadCda);
+
+        if (vincularExistentes) {
+          const cdaId = getCdaId(cdaEditando);
+          if (cdaId) await vincularCdaEnCadenasExistentes(cdaId, valorSaneado);
+        }
+
         await queryClient.invalidateQueries({ queryKey: ['cda'] });
         toast.success("Criterio de Aceptación actualizado exitosamente.");
         resetFormulario();
@@ -499,51 +613,8 @@ export default function CdasGlobales() {
         const response = await crearCda(payloadCda);
         const newCdaId = response?.CdaID || response?.cdaID || response?.cdaid || response?.id;
 
-        if (vinculadefaultcv && newCdaId) {
-          toast.info("Vinculando criterio de aceptación global a todas las cadenas de valor existentes...");
-          try {
-            const todasCadenas = await cadenaValorService.obtenerTodasWeb();
-            const cadenasList = Array.isArray(todasCadenas) ? todasCadenas : todasCadenas?.items || todasCadenas?.data || [];
-
-            let linkedCount = 0;
-            for (const cadena of cadenasList) {
-              const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
-              if (!cadenaId) continue;
-
-              try {
-                const linkedCdas = await cadenaValorService.obtenerCdasPorCadenaId(cadenaId);
-                const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
-
-                const yaVinculado = linkedCdasList.some(c => getCdaId(c) === newCdaId);
-
-                if (!yaVinculado) {
-                  const listacda = linkedCdasList.map(c => ({
-                    cdaid: getCdaId(c),
-                    valorcomparacion: c.valorcomparacion !== undefined ? c.valorcomparacion : (c.ValorComparacion !== undefined ? c.ValorComparacion : "")
-                  }));
-
-                  listacda.push({
-                    cdaid: newCdaId,
-                    valorcomparacion: valorSaneado
-                  });
-
-                  await cadenaValorService.vincularCdas({
-                    cadenavalorid: Number(cadenaId),
-                    listacda: listacda
-                  });
-                  linkedCount++;
-                }
-              } catch (linkErr) {
-                console.error(`Error al vincular CDA default a la cadena ${cadenaId}:`, linkErr);
-              }
-            }
-            if (linkedCount > 0) {
-              toast.success(`Vinculado con éxito a ${linkedCount} cadenas de valor.`);
-            }
-          } catch (chainErr) {
-            console.error("Error al obtener cadenas de valor para vinculación automática:", chainErr);
-            toast.error("El CDA se creó, pero no se pudo vincular automáticamente a las cadenas existentes.");
-          }
+        if (vincularExistentes && newCdaId) {
+          await vincularCdaEnCadenasExistentes(newCdaId, valorSaneado);
         }
 
         await queryClient.invalidateQueries({ queryKey: ['cda'] });
@@ -948,25 +1019,30 @@ export default function CdasGlobales() {
               </div>
             </div>
 
-            {testResult && (
-              <div className={styles.testResultBox}>
-                <div className={styles.testResultHeader}>
-                  <span>Resultado:</span>
-                  {testResult.status === 202 ? (
-                    <span className={styles.badgeSuccess}>202 - VERDADERO</span>
-                  ) : testResult.status === 406 ? (
-                    <span className={styles.badgeWarning}>406 - FALSO</span>
-                  ) : (
-                    <span className={styles.badgeDanger}>{testResult.status} - ERROR</span>
+            {testResult && (() => {
+              const resultado = getResultadoPrueba(testResult.status, styles);
+              const valorLog =
+                typeof testResult.message === "string"
+                  ? testResult.message
+                  : testResult.message
+                  ? JSON.stringify(testResult.message)
+                  : "";
+              return (
+                <div className={styles.testResultBox}>
+                  <div className={styles.testResultHeader}>
+                    <span>Resultado:</span>
+                    <span className={resultado.badgeClass}>{resultado.label}</span>
+                  </div>
+                  <div className={styles.testResultMessage}>{resultado.descripcion}</div>
+                  {valorLog && (
+                    <div className={styles.testResultLog}>
+                      <span className={styles.testResultLogLabel}>Valor de log devuelto por el backend</span>
+                      <code className={styles.testResultLogValue}>{valorLog}</code>
+                    </div>
                   )}
                 </div>
-                <div className={styles.testResultMessage}>
-                  {testResult.status === 202 && "El criterio es válido y la condición se cumple para el CUIT ingresado."}
-                  {testResult.status === 406 && "El criterio es válido, pero la condición no se cumple (da falso) para el CUIT ingresado."}
-                  {testResult.status !== 202 && testResult.status !== 406 && (testResult.message || "Error al compilar la expresión o datos faltantes.")}
-                </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           <div className={styles.colDivider} />
@@ -992,7 +1068,26 @@ export default function CdasGlobales() {
                     Marcar como CDA por Defecto
                   </span>
                   <span className={styles.checkboxDescription}>
-                    Los CDAs por defecto se vinculan automáticamente a todas las cadenas de valor: a las existentes en el momento de crearlo, y también a las que se creen en el futuro.
+                    Se vincula automáticamente a las cadenas de valor que se creen de ahora en adelante.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className={`${styles.defaultCvBox} ${vincularExistentes ? styles.defaultCvBoxActive : ""}`}
+              onClick={() => { if (!isCreando && !isActualizando && !isProcesando) setVincularExistentes(!vincularExistentes); }}
+            >
+              <div className={styles.customCheckboxContainer}>
+                <div className={`${styles.customCheckboxLg} ${vincularExistentes ? styles.checkboxChecked : ""}`}>
+                  {vincularExistentes && <FiCheck size={14} className={styles.checkmarkIcon} />}
+                </div>
+                <div className={styles.checkboxTextGroup}>
+                  <span className={styles.checkboxLabelLg}>
+                    Vincular también a las cadenas de valor existentes
+                  </span>
+                  <span className={styles.checkboxDescription}>
+                    Al guardar, se vincula también a las cadenas de valor ya existentes.
                   </span>
                 </div>
               </div>

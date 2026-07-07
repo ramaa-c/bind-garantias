@@ -25,6 +25,7 @@ import DocumentacionView from "./pages/cliente/operaciones/documentacion/Documen
 import SociosView from "./pages/cliente/operaciones/socios/SociosView";
 import NotFound from "./pages/shared/NotFound/NotFound";
 import CadenaInactiva from "./pages/shared/CadenaInactiva/CadenaInactiva";
+import FueraDeServicio from "./pages/shared/FueraDeServicio/FueraDeServicio";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
 import AltaDatosEmpresa from "./pages/cliente/onboarding/AltaDatosEmpresa/AltaDatosEmpresa";
@@ -40,6 +41,7 @@ import CdasGlobales from "./pages/admin/CdasGlobales";
 import CdasPantalla from "./pages/admin/CdasPantalla";
 import LineasCadena from "./pages/admin/LineasCadena";
 import LineasProducto from "./pages/admin/LineasProducto";
+import ModoOffline from "./pages/admin/ModoOffline";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
 import RootRedirect from "./components/layout/RootRedirect/RootRedirect";
 import "./components/ui/CustomScroll/Scroll.module.css";
@@ -55,6 +57,7 @@ function App() {
           <Route path="/login" element={<LoginAdmin />} />
           <Route path="/not-found" element={<NotFound />} />
           <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
+          <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
 
           <Route path="/0/:token" element={<CrearClave />} />
 
@@ -288,6 +291,16 @@ function App() {
               <AdminGuard>
                 <AdminLayout>
                   <LineasCadena />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/modo-offline"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <ModoOffline />
                 </AdminLayout>
               </AdminGuard>
             }

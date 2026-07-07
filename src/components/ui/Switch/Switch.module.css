@@ -1,0 +1,89 @@
+.wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.wrapper.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.track {
+  position: relative;
+  border-radius: 999px;
+  background: #30363d;
+  border: 1px solid #444c56;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.25s var(--ease-out, ease), border-color 0.25s ease;
+}
+
+.track:disabled {
+  cursor: not-allowed;
+}
+
+.thumb {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: #c9d1d9;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: transform 0.25s var(--ease-out, ease), background-color 0.25s ease;
+}
+
+.checked .thumb {
+  background: #ffffff;
+}
+
+/* ── Sizes ────────────────────────────────────────────────── */
+
+.md {
+  width: 3rem;
+  height: 1.625rem;
+}
+
+.md .thumb {
+  left: 0.1875rem;
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.md.checked .thumb {
+  transform: translate(1.375rem, -50%);
+}
+
+.lg {
+  width: 4.5rem;
+  height: 2.4375rem;
+}
+
+.lg .thumb {
+  left: 0.28125rem;
+  width: 1.875rem;
+  height: 1.875rem;
+}
+
+.lg.checked .thumb {
+  transform: translate(2.0625rem, -50%);
+}
+
+.track.admin.checked {
+  background: var(--color-azul-bind, #4c65e6);
+  border-color: var(--color-azul-bind, #4c65e6);
+}
+
+.track.client.checked {
+  background: var(--yellow, #f5f400);
+  border-color: var(--yellow, #f5f400);
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #c9d1d9;
+}

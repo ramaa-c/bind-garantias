@@ -1,0 +1,506 @@
+/* =========================================================
+   MODO OFFLINE — Bind Fintech · glass card language
+   ========================================================= */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.header {
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 3.5rem;
+  height: 2px;
+  background: var(--color-azul-bind, #4c65e6);
+  border-radius: 2px;
+}
+
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.header p {
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0.35rem 0 0 0;
+  font-size: 0.875rem;
+  max-width: 45rem;
+}
+
+/* ── STATUS HERO ─────────────────────────────────────────── */
+
+.statusHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.875rem;
+  padding: 1.5rem 1.75rem;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.statusOnline {
+  box-shadow:
+    inset 3px 0 0 0 var(--success-green, #3fb950),
+    0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.statusOffline {
+  box-shadow:
+    inset 3px 0 0 0 var(--error-red, #ef4444),
+    0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.statusGlow {
+  position: absolute;
+  top: 50%;
+  right: 8rem;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  filter: blur(3.5rem);
+  pointer-events: none;
+  opacity: 0.12;
+}
+
+.statusOnline .statusGlow {
+  background: var(--success-green, #3fb950);
+}
+
+.statusOffline .statusGlow {
+  background: var(--error-red, #ef4444);
+}
+
+.statusHeroLeft {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.statusIconWrap {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.statusOnline .statusIconWrap {
+  background: rgba(63, 185, 80, 0.1);
+  color: #3fb950;
+}
+
+.statusOffline .statusIconWrap {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error-red, #ef4444);
+  animation: iconPulse 2.2s ease-in-out infinite;
+}
+
+.statusInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.statusLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.pulseDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusOnline .pulseDot {
+  background: #3fb950;
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+.statusOffline .pulseDot {
+  background: var(--error-red, #ef4444);
+  animation: dotPulse 1.2s ease-in-out infinite;
+}
+
+.statusInfo h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.statusMetaRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.25rem;
+  min-height: 1.35rem;
+}
+
+.statusMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.durationBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error-red, #ef4444);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  font-variant-numeric: tabular-nums;
+}
+
+.statusHeroRight {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.switchHint {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 0.35rem transparent;
+    opacity: 0.7;
+  }
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 0.5rem rgba(239, 68, 68, 0);
+  }
+}
+
+/* ── WORKSPACE: editor + preview ─────────────────────────── */
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.875rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  border-color: rgba(76, 101, 230, 0.2);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(76, 101, 230, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.cardIconWrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(76, 101, 230, 0.12);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+  color: var(--color-azul-bind, #4c65e6);
+}
+
+.cardHeaderText {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardHeader h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.cardHeader p {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0.2rem 0 0 0;
+  line-height: 1.4;
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(61, 220, 132, 0.1);
+  color: var(--success-green, #3ddc84);
+  border: 1px solid rgba(61, 220, 132, 0.25);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.liveDot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--success-green, #3ddc84);
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+.textarea {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 7rem;
+  flex: 1;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: rgba(76, 101, 230, 0.5);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.2),
+    0 0 0 3px rgba(76, 101, 230, 0.15);
+}
+
+.progressTrack {
+  width: 100%;
+  height: 0.25rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-azul-bind, #4c65e6);
+  border-radius: 999px;
+  transition: width 0.15s ease;
+}
+
+.messageFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.charCount {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── LIVE PREVIEW MOCK ───────────────────────────────────── */
+
+.previewFrame {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.625rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0a0c14;
+  min-height: 16rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.previewBrowserBar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trafficLights {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.trafficLights span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  display: block;
+}
+
+.trafficRed {
+  background: #ef4444;
+}
+
+.trafficYellow {
+  background: var(--color-amarillo-bind, #f5f400);
+}
+
+.trafficGreen {
+  background: #3ddc84;
+}
+
+.addressBar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.35);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.75rem 1.5rem;
+  gap: 0.4rem;
+}
+
+.previewLogo {
+  height: 1.5rem;
+  opacity: 0.9;
+  margin-bottom: 0.85rem;
+}
+
+.previewIconWrap {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(245, 217, 0, 0.08);
+  color: var(--yellow, #f5f400);
+  margin-bottom: 0.5rem;
+}
+
+.previewTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.previewMessage {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  max-width: 22rem;
+  overflow-wrap: anywhere;
+}
+
+.previewHint {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin-top: 0.35rem;
+}

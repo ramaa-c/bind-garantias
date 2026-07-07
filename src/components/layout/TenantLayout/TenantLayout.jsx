@@ -2,12 +2,14 @@ import React, { useEffect } from "react";
 import { useParams, Outlet, Navigate, useNavigate } from "react-router-dom";
 import { useChannel } from "../../../context/ChannelContext";
 import { useObtenerPorCadenaValorIdWeb, useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
+import { useModoOffline } from "../../../hooks/useModoOffline";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 
 const TenantLayout = () => {
   const { cadenaSlug } = useParams();
   const { setChannelInfo } = useChannel();
   const navigate = useNavigate();
+  const { activo: enMantenimiento } = useModoOffline();
 
   const cadenaValorId = Number(cadenaSlug);
   const isValidId = !Number.isNaN(cadenaValorId) && cadenaValorId > 0;
@@ -61,6 +63,10 @@ const TenantLayout = () => {
       colorSecundario: "var(--color-amarillo-bind)",
     });
   }, [cadenaSlug, cadenaData, isLoading, isLoadingTodas, todasCadenas, setChannelInfo, navigate, isValidId]);
+
+  if (enMantenimiento) {
+    return <Navigate to="/fuera-de-servicio" replace />;
+  }
 
   if (!cadenaSlug) {
     return <Navigate to="/not-found" replace />;

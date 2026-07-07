@@ -628,8 +628,10 @@
   color: #ffce54;
 }
 
-/* Tarjeta distinta para el toggle "vincular por defecto" (se hace notoria
-   a propósito: vincula el CDA a TODAS las cadenas de valor, actuales y futuras) */
+/* Tarjeta distinta para los toggles "vincular por defecto" (solo afecta a las
+   cadenas de valor que se creen a futuro) y "vincular a existentes" (acción
+   explícita e inmediata sobre las cadenas ya creadas) — se hacen notorios a
+   propósito por el alcance de la acción */
 .defaultCvBox {
   background: rgba(59, 78, 209, 0.06);
   border: 1.5px solid rgba(59, 78, 209, 0.3);
@@ -935,6 +937,31 @@
   line-height: 1.4;
   word-break: break-all;
   font-family: monospace;
+}
+
+.testResultLog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid #21262d;
+}
+
+.testResultLogLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.testResultLogValue {
+  font-size: 0.8rem;
+  color: #58a6ff;
+  font-family: monospace;
+  word-break: break-all;
+  line-height: 1.4;
 }
 
 .badgeSuccess {

@@ -66,6 +66,7 @@ export default function AdminNavbar() {
     "CDAs por Pantalla",
     "Líneas",
     "Productos de Líneas",
+    "Modo Offline",
   ];
 
   return (
@@ -178,6 +179,8 @@ export default function AdminNavbar() {
                     destPath = "/admin/lineas-cadenas";
                   } else if (item === "Productos de Líneas") {
                     destPath = "/admin/lineas-productos";
+                  } else if (item === "Modo Offline") {
+                    destPath = "/admin/modo-offline";
                   }
                   return (
                     <button type="button"
