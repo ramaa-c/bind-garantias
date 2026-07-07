@@ -94,8 +94,8 @@ export const usuarioService = {
     return (await api.put("api/UsuarioCadenaValor", usuarioAdapter.adaptarPayload8(payload))).data;
   },
 
-  // PUT api/usuarios
+  // PUT api/usuario/actualizar
   actualizarUsuario: async (data) =>
-    (await api.put("api/usuarios", usuarioAdapter.adaptarPayload9(data))).data,
+    (await api.put("api/usuario/actualizar", usuarioAdapter.adaptarPayload9(data))).data,
 };
 

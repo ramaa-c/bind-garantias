@@ -15,6 +15,11 @@ import { FiPlus, FiX, FiUserPlus } from "react-icons/fi";
 
 const EMPTY_ARRAY = [];
 
+const esAdministradorActivo = (registro) => {
+  const valor = registro?.esadministrador ?? registro?.EsAdministrador;
+  return valor === "1" || valor === 1 || valor === true;
+};
+
 export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
   const { channelInfo } = useChannel();
   const [showForm, setShowForm] = useState(false);
@@ -141,6 +146,17 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
 
       if (!userId) {
         throw new Error("No se pudo obtener el ID del usuario.");
+      }
+
+      // Un Administrador General ya tiene acceso a todas las cadenas de
+      // valor: no tiene sentido (ni corresponde) vincularlo a una en
+      // particular como usuario de cadena.
+      if (targetUser && esAdministradorActivo(targetUser)) {
+        toast.error("No se puede vincular este usuario", {
+          description:
+            "Es Administrador General y ya tiene acceso a todas las cadenas de valor.",
+        });
+        return;
       }
 
       // 3. Link user to value chain

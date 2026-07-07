@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
@@ -24,6 +24,7 @@ const esAdministradorActivo = (registro) => {
 
 export const AdminGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
   const location = useLocation();
   const { channelInfo } = useChannel();
   const channelSlug = channelInfo?.id || "default";
@@ -38,6 +39,19 @@ export const AdminGuard = ({ children }) => {
     registroUsuario?.id ??
     null;
   const esAdministrador = esAdministradorActivo(registroUsuario);
+  const denominacionReal =
+    registroUsuario?.denominacion ?? registroUsuario?.Denominacion ?? "";
+
+  // Corrige el nombre mostrado (userTrigger del navbar) en cuanto conocemos el
+  // registro real: si no tiene denominación cargada, mostramos el email en
+  // vez del placeholder "Administrador General" seteado al loguearse.
+  useEffect(() => {
+    if (!registroUsuario) return;
+    const nombreResuelto = denominacionReal || user?.email || "";
+    if (nombreResuelto && nombreResuelto !== user?.nombre) {
+      setUser({ ...user, nombre: nombreResuelto });
+    }
+  }, [registroUsuario, denominacionReal, user, setUser]);
 
   const { data: cadenasData, isPending: isCadenasLoading } =
     useObtenerCadenasPorUsuario(usuarioWebId);

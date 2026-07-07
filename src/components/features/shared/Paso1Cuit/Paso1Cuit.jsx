@@ -373,7 +373,11 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           let tipoPersonaId = 0;
           let mesCierre = null;
 
-          if (afipData && afipData.datosgenerales) {
+          if (nosisData.VI_TipoPersona === "1") {
+            tipoPersonaId = 10;
+          } else if (nosisData.VI_TipoPersona === "2") {
+            tipoPersonaId = 1;
+          } else if (afipData && afipData.datosgenerales) {
             const dg = afipData.datosgenerales;
             const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
             if (
@@ -387,27 +391,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
               tipoPersonaStr.includes("HUMANA")
             ) {
               tipoPersonaId = 1;
-            } else {
-              const cleanCuit = String(cuit).replace(/\D/g, "");
-              const prefix = cleanCuit.substring(0, 2);
-              if (
-                ["20", "23", "24", "27", "25", "26"].includes(prefix) ||
-                cleanCuit.startsWith("2")
-              ) {
-                tipoPersonaId = 1;
-              } else if (
-                ["30", "33", "34"].includes(prefix) ||
-                cleanCuit.startsWith("3")
-              ) {
-                tipoPersonaId = 10;
-              }
             }
-            if (dg.mescierre) {
-              mesCierre = parseInt(dg.mescierre, 10);
-            } else if (dg.mes_cierre) {
-              mesCierre = parseInt(dg.mes_cierre, 10);
-            }
-          } else {
+          }
+
+          if (!tipoPersonaId) {
             const cleanCuit = String(cuit).replace(/\D/g, "");
             const prefix = cleanCuit.substring(0, 2);
             if (
@@ -423,6 +410,15 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
             }
           }
           setValue("tipopersonaid", tipoPersonaId);
+
+          if (afipData && afipData.datosgenerales) {
+            const dg = afipData.datosgenerales;
+            if (dg.mescierre) {
+              mesCierre = parseInt(dg.mescierre, 10);
+            } else if (dg.mes_cierre) {
+              mesCierre = parseInt(dg.mes_cierre, 10);
+            }
+          }
           setValue("mescierre", mesCierre);
 
           let fechaInicioActividades = null;

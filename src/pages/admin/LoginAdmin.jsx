@@ -362,7 +362,7 @@ const LoginAdmin = () => {
           return;
         }
 
-        setUser({ email: formData.email, role: "admin", nombre: "Administrador General" });
+        setUser({ email: formData.email, role: "admin" });
         navigate("/admin", { replace: true });
       } else {
         setError("otp", { type: "server", message: "Código incorrecto" });
@@ -398,7 +398,7 @@ const LoginAdmin = () => {
             }
 
             // Se asume que el back devuelve los permisos necesarios.
-            setUser({ email: formData.email, role: "admin", nombre: "Administrador General" });
+            setUser({ email: formData.email, role: "admin" });
             navigate("/admin", { replace: true });
           },
           onError: (error) => {

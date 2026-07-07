@@ -120,7 +120,7 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
     const denominacion = formData.denominacion.trim();
 
     actualizarUsuarioMutation.mutate(
-      { usuariowebid: usuarioWebId, denominacion },
+      { ...registro, usuariowebid: usuarioWebId, denominacion },
       {
         onSuccess: () => {
           toast.success("Nombre de usuario actualizado correctamente");
@@ -280,6 +280,7 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
                       email={user?.email || ""}
                       esValido={!passwordErrors.newPassword && !!newPasswordValue}
                       disabled={cambiarPasswordMutation.isPending}
+                      theme="blue"
                     />
                   )}
                 />

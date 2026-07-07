@@ -7,7 +7,6 @@ import styles from "./AdminNavbar.module.css";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useAdminRestrictions } from "../../../../hooks/useAdminRestrictions";
-import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { CuentaUsuarioModal } from "../../../features/admin/CuentaUsuarioModal/CuentaUsuarioModal";
 
 export default function AdminNavbar() {
@@ -25,29 +24,10 @@ export default function AdminNavbar() {
   const navRef = useRef(null);
   const profileRef = useRef(null);
 
-  const isMockUser =
-    user?.email === "admin" ||
-    user?.email === "admin_restricto" ||
-    user?.email === "admin restricto";
-
-  const { data: usuarioDb } = useObtenerPorNombreOEmail(
-    !isMockUser ? user?.email || "" : "",
-  );
-
-  const extraerRegistro = (db) => {
-    if (!db) return null;
-    if (Array.isArray(db)) return db[0] || null;
-    if (db.items) return db.items[0] || null;
-    if (db.data) return db.data[0] || null;
-    return db;
-  };
-
-  const registroUsuario = extraerRegistro(usuarioDb);
-  const denominacionActual =
-    registroUsuario?.denominacion ?? registroUsuario?.Denominacion ?? "";
-
-  const nombreMostrado =
-    denominacionActual || user?.nombre || user?.email || "Administrador";
+  // AdminGuard ya resuelve el registro real del usuario y corrige
+  // user.nombre (denominación real, o el email si no tiene una cargada) en
+  // cuanto lo conoce, así que acá alcanza con leer el store.
+  const nombreMostrado = user?.nombre || user?.email || "Administrador";
 
   useEffect(() => {
     const handleClickOutside = (event) => {

@@ -3,21 +3,17 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "./useUsuario";
 import { usuarioService } from "../services/usuarioService";
 
-const parsearUsuarioWebId = (db) => {
+const parsearRegistroUsuario = (db) => {
   if (!db) return null;
-  if (Array.isArray(db))
-    return db[0]?.usuariowebid || db[0]?.UsuarioWebID || db[0]?.id;
-  if (db.items)
-    return (
-      db.items[0]?.usuariowebid ||
-      db.items[0]?.UsuarioWebID ||
-      db.items[0]?.id
-    );
-  if (db.data)
-    return (
-      db.data[0]?.usuariowebid || db.data[0]?.UsuarioWebID || db.data[0]?.id
-    );
-  return db.usuariowebid || db.UsuarioWebID || db.id || null;
+  if (Array.isArray(db)) return db[0] || null;
+  if (db.items) return db.items[0] || null;
+  if (db.data) return db.data[0] || null;
+  return db;
+};
+
+const esAdministradorActivo = (registro) => {
+  const valor = registro?.esadministrador ?? registro?.EsAdministrador;
+  return valor === "1" || valor === 1 || valor === true;
 };
 
 export const useAdminRestrictions = () => {
@@ -29,7 +25,13 @@ export const useAdminRestrictions = () => {
 
   const emailToFetch = isMock ? "" : email;
   const { data: usuarioDb, isPending: isLoadingUser } = useObtenerPorNombreOEmail(emailToFetch);
-  const usuarioWebId = parsearUsuarioWebId(usuarioDb);
+  const registroUsuario = parsearRegistroUsuario(usuarioDb);
+  const usuarioWebId =
+    registroUsuario?.usuariowebid ??
+    registroUsuario?.UsuarioWebID ??
+    registroUsuario?.id ??
+    null;
+  const esAdministrador = esAdministradorActivo(registroUsuario);
 
   const { data: adminCadenas, isPending: isLoadingCadenas } = useQuery({
     queryKey: ["admin", "cadenas", usuarioWebId || "mock"],
@@ -59,7 +61,10 @@ export const useAdminRestrictions = () => {
     };
   }
 
-  const isRestricted = listaCadenas.length > 0;
+  // Un administrador general (EsAdministrador=1) ve todo el panel aunque
+  // además tenga cadenas de valor vinculadas; la restricción de navegación
+  // es exclusiva de los usuarios atados solo a cadena(s) de valor.
+  const isRestricted = !esAdministrador && listaCadenas.length > 0;
   const isPending = isLoadingUser || (!!usuarioWebId && isLoadingCadenas);
 
   return {
