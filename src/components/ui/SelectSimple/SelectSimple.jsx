@@ -43,6 +43,7 @@ export const SelectSimple = ({
     valueContainer: (base) => ({
       ...base,
       padding: "0 1rem",
+      flexWrap: "nowrap",
     }),
     singleValue: (base) => ({
       ...base,
@@ -51,12 +52,20 @@ export const SelectSimple = ({
       fontSize: "1rem",
       letterSpacing: "0.01em",
       fontFamily: "var(--font-principal, inherit)",
+      maxWidth: "100%",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
     }),
     placeholder: (base) => ({
       ...base,
       color: "#555",
       fontSize: "1rem",
       fontFamily: "var(--font-principal, inherit)",
+      maxWidth: "100%",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
     }),
     input: (base) => ({
       ...base,

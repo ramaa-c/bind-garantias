@@ -719,7 +719,7 @@ export default function CdasGlobales() {
               { value: "CASFOG", label: "CASFOG" },
               { value: "SGRPLUS", label: "SGR+" }
             ]}
-            placeholder="-- Seleccioná una integración (opcional) --"
+            placeholder="Seleccioná una integración"
             variant="admin"
             disabled={isCreando || isActualizando || isProcesando}
             hideErrorSpace={true}
