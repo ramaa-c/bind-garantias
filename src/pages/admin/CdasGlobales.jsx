@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCrearCda, useProbarCda } from "../../hooks/useCda";
-import { cdaService } from "../../services/cdaService";
+import { useCrearCda, useActualizarCda, useObtenerTodosCdas, useProbarCda } from "../../hooks/useCda";
 import { cadenaValorService } from "../../services/cadenaValorService";
 import { INTEGRACIONES_MOCKS } from "../../utils/integracionesMocks";
 import { Button } from "../../components/ui/Button/Button";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { FiPlus, FiTrash2, FiCheck, FiChevronDown } from "react-icons/fi";
+import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox } from "react-icons/fi";
 import styles from "./CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -29,6 +29,21 @@ const INTEGRACION_CASING_STRATEGY = {
   CASFOG: "PRESERVE",
   SGRPLUS: "PRESERVE"
 };
+
+// Colores distintivos por integración, usados como badges en el listado
+const INTEGRACION_COLORS = {
+  ARCA: { bg: "rgba(88, 166, 255, 0.12)", color: "#58a6ff", border: "rgba(88, 166, 255, 0.35)" },
+  NOSIS: { bg: "rgba(179, 136, 255, 0.12)", color: "#b388ff", border: "rgba(179, 136, 255, 0.35)" },
+  LUFE: { bg: "rgba(221, 155, 32, 0.12)", color: "#dd9b20", border: "rgba(221, 155, 32, 0.35)" },
+  CASFOG: { bg: "rgba(255, 121, 198, 0.12)", color: "#ff79c6", border: "rgba(255, 121, 198, 0.35)" },
+  SGRPLUS: { bg: "rgba(56, 161, 105, 0.12)", color: "#38a169", border: "rgba(56, 161, 105, 0.35)" },
+};
+const INTEGRACION_COLOR_DEFAULT = { bg: "rgba(139, 148, 158, 0.12)", color: "#8b949e", border: "rgba(139, 148, 158, 0.3)" };
+
+// Nosis (y en general el motor de CDAs) espera valores numéricos y fechas
+// (YYYY-MM-DD) sin comillas; solo el texto va entre comillas simples.
+const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const debeIrSinComillas = (val) => (val !== "" && !isNaN(val)) || FECHA_REGEX.test(val);
 
 const applyCasingStrategy = (val, integrationName) => {
   if (!val) return val;
@@ -117,69 +132,136 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
   );
 };
 
-// Catálogo de variables de NOSIS extraídas del JSON real
-const NOSIS_VARIABLES_CATALOG = [
-  { value: "CDA", label: "CDA (Criterio de Aceptación General)" },
-  { value: "CDA_DICT", label: "CDA_DICT (Dictamen)" },
-  { value: "CDA_AF", label: "CDA_AF (Identidad Válida)" },
-  { value: "CDA_VI.EDAD", label: "CDA_VI.EDAD (Edad)" },
-  { value: "CDA_VI.FCS", label: "CDA_VI.FCS (Fecha Contrato Social)" },
-  { value: "CDA_VI.ACT", label: "CDA_VI.ACT (Actividades)" },
-  { value: "CDA_AP", label: "CDA_AP (Aportes Patronales)" },
-  { value: "CDA_CI", label: "CDA_CI (Bureau de Crédito del BCRA)" },
-  { value: "CDA_OJ", label: "CDA_OJ (Oficios Judiciales)" },
-  { value: "CDA_HC", label: "CDA_HC (Cheques Rechazados del BCRA)" },
-  { value: "CDA_DE", label: "CDA_DE (Deudores Entidades Liquidadas)" },
-  { value: "CDA_QU.1", label: "CDA_QU.1 (Concurso o Quiebra)" },
-  { value: "CDA_QU.2", label: "CDA_QU.2 (Pedido Quiebra)" },
-  { value: "CDA_QU.3", label: "CDA_QU.3 (Juicios - Demandado)" },
-  { value: "CDA_BC", label: "CDA_BC (Comunicaciones del BCRA)" },
-  { value: "CDA_RC.P", label: "CDA_RC.P (Referencias Comerciales Propias)" },
-  { value: "CDA_RC.T", label: "CDA_RC.T (Referencias Comerciales de Terceros)" },
-  { value: "CDA_FA", label: "CDA_FA (Facturas Apócrifas)" },
-  { value: "CDA_LD", label: "CDA_LD (Laudos Incumplidos)" },
-  { value: "CDA_DF", label: "CDA_DF (Antecedentes Fiscales)" },
-  { value: "CDA_DC", label: "CDA_DC (Documentos Cuestionados)" },
-  { value: "CDA_DP", label: "CDA_DP (Deudores Previsionales)" },
-  { value: "CDA_SCO", label: "CDA_SCO (Score - Estado)" },
-  { value: "CDA_Valor.SCO", label: "CDA_Valor.SCO (Score - Valor)" },
-  { value: "CDA_NSE", label: "CDA_NSE (Facturación Estimada - Estado)" },
-  { value: "CDA_Valor.NSE", label: "CDA_Valor.NSE (Facturación Estimada - Nivel)" },
-  { value: "CDA_COMPMENSUALES", label: "CDA_COMPMENSUALES (Compromisos Mensuales)" },
-];
+// Selector de variables de NOSIS: en vez de navegar el JSON crudo, se arma la
+// expresión (nosis.<Nombre>) a partir del mismo listado de variables que devuelve
+// la integración, para que siempre coincida con el nombre que espera el backend.
+const NosisVariablePicker = ({ variables, searchTerm, onSearchChange, selectedExpresion, onSelect, styles }) => {
+  const term = searchTerm.trim().toLowerCase();
+  const filtradas = term
+    ? variables.filter(
+        (v) =>
+          String(v.Nombre || "").toLowerCase().includes(term) ||
+          String(v.Descripcion || "").toLowerCase().includes(term)
+      )
+    : variables;
+
+  return (
+    <div className={styles.nosisPickerContainer}>
+      <input
+        type="text"
+        placeholder="Buscar variable por nombre o descripción..."
+        value={searchTerm}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className={styles.nosisSearchInput}
+      />
+      <div className={styles.nosisVarListScroll}>
+        {filtradas.length === 0 ? (
+          <div className={styles.nosisVarEmpty}>No se encontraron variables.</div>
+        ) : (
+          filtradas.map((v) => {
+            const activa = selectedExpresion.trim() === `nosis.${v.Nombre}`;
+            return (
+              <div
+                key={v.Nombre}
+                className={`${styles.nosisVarRow} ${activa ? styles.nosisVarRowActive : ""}`}
+                onClick={() => onSelect(v.Nombre)}
+                title={`Usar nosis.${v.Nombre} en la expresión`}
+              >
+                <div className={styles.nosisVarHead}>
+                  <span className={styles.nosisVarName}>nosis.{v.Nombre}</span>
+                  {v.Tipo && <span className={styles.nosisVarType}>{v.Tipo}</span>}
+                </div>
+                {v.Descripcion && <span className={styles.nosisVarDesc}>{v.Descripcion}</span>}
+                {v.Valor !== undefined && v.Valor !== null && (
+                  <span className={styles.nosisVarExample}>Ejemplo: {String(v.Valor)}</span>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
+
+const CdaRowSkeleton = ({ styles }) => (
+  <tr>
+    <td>
+      <div className={styles.skeletonBlock} style={{ height: "0.85rem", width: "65%", marginBottom: "0.4rem" }} />
+      <div className={styles.skeletonBlock} style={{ height: "0.65rem", width: "35%" }} />
+    </td>
+    <td><div className={styles.skeletonBlock} style={{ height: "1.2rem", width: "70px", borderRadius: "999px" }} /></td>
+    <td><div className={styles.skeletonBlock} style={{ height: "0.8rem", width: "85%" }} /></td>
+    <td><div className={styles.skeletonBlock} style={{ height: "0.8rem", width: "70%" }} /></td>
+    <td style={{ textAlign: "center" }}><div className={styles.skeletonBlock} style={{ height: "1.2rem", width: "36px", borderRadius: "999px", margin: "0 auto" }} /></td>
+    <td></td>
+  </tr>
+);
 
 export default function CdasGlobales() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { mutateAsync: crearCda, isPending: isCreando } = useCrearCda();
+  const { mutateAsync: actualizarCda, isPending: isActualizando } = useActualizarCda();
+  const { data: todosCdasData, isLoading: isLoadingLista } = useObtenerTodosCdas();
   const { mutateAsync: probarCda, isPending: isTesting } = useProbarCda();
+
+  // "lista": listado de CDAs existentes. "formulario": alta/edición (misma pantalla para ambos casos).
+  const [vista, setVista] = useState("lista");
+  const [cdaEditando, setCdaEditando] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [isProcesando, setIsProcesando] = useState(false);
   const [integracion, setIntegracion] = useState("");
-  const [cdaMode, setCdaMode] = useState("simple"); // "simple" o "compuesto"
-  const [conditions, setConditions] = useState([
-    { id: 1, variable: "CDA_Valor.SCO", operador: ">", valor: "500" }
-  ]);
-  const [connector, setConnector] = useState("AND");
+  const [nosisSearchTerm, setNosisSearchTerm] = useState("");
 
   const [descripcion, setDescripcion] = useState("");
   const [expresion, setExpresion] = useState("");
   const [simbolocomparacion, setSimbolocomparacion] = useState(">");
   const [valorcomparacion, setValorcomparacion] = useState("");
+  const [comparaPorVacio, setComparaPorVacio] = useState(false);
   const [mensajerechazo, setMensajerechazo] = useState("");
   const [vinculadefaultcv, setVinculadefaultcv] = useState(true);
   const [validationError, setValidationError] = useState("");
+  const [intentoEnviar, setIntentoEnviar] = useState(false);
   const [expresionLog, setExpresionLog] = useState("");
   const [userEditedExpresionLog, setUserEditedExpresionLog] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [postSaveModalOpen, setPostSaveModalOpen] = useState(false);
   const [mostrarExpresionLog, setMostrarExpresionLog] = useState(false);
-
-  // Estado para vinculación automática a pantalla
-  const [vincularPantalla, setVincularPantalla] = useState("");
-  const [conectorPantalla, setConectorPantalla] = useState("and");
 
   // Estados para laboratorio de pruebas de CDAs
   const [testCuit, setTestCuit] = useState("30714430048");
   const [testResult, setTestResult] = useState(null);
+
+  const todosCdasList = Array.isArray(todosCdasData) ? todosCdasData : todosCdasData?.items || todosCdasData?.data || [];
+
+  const getCdaId = (c) => {
+    if (!c) return undefined;
+    return c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
+  };
+
+  const getCdaProp = (c, propName) => {
+    if (!c) return "";
+    const pascal = propName.charAt(0).toUpperCase() + propName.slice(1);
+    const val = c[propName] !== undefined ? c[propName] : c[pascal];
+    return val !== undefined && val !== null ? val : "";
+  };
+
+  const detectarIntegracion = (expr) => {
+    const e = (expr || "").toLowerCase();
+    const found = Object.entries(INTEGRACION_PREFIXES).find(([, prefix]) => e.startsWith(prefix.toLowerCase()));
+    return found ? found[0] : "";
+  };
+
+  const cdasFiltrados = todosCdasList.filter((c) => {
+    if (!searchTerm.trim()) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      String(getCdaProp(c, "descripcion")).toLowerCase().includes(term) ||
+      String(getCdaProp(c, "expresion")).toLowerCase().includes(term)
+    );
+  });
 
   // Determinar si el valor es numérico o no, para agregarle comillas simples si no las tiene
   const formatValorParaLog = (val) => {
@@ -195,12 +277,11 @@ export default function CdasGlobales() {
     }
     
     if (cleanVal === "") return "''";
-    
-    const isNumeric = !isNaN(cleanVal) && cleanVal !== "";
-    if (isNumeric) {
+
+    if (debeIrSinComillas(cleanVal)) {
       return cleanVal;
     }
-    
+
     const casedCleanVal = applyCasingStrategy(cleanVal, integracion);
     return `'${casedCleanVal}'`;
   };
@@ -231,15 +312,12 @@ export default function CdasGlobales() {
         valorSaneado = valorSaneado.slice(1, -1);
       }
     }
-    const isNumericVal = !isNaN(valorSaneado) && valorSaneado !== "";
-    if (!isNumericVal && valorSaneado !== "") {
+    if (!debeIrSinComillas(valorSaneado) && valorSaneado !== "") {
       valorSaneado = applyCasingStrategy(valorSaneado, integracion);
     }
     const valorParaLog = formatValorParaLog(valorSaneado);
 
-    const fullExpression = cdaMode === "compuesto" 
-      ? expresion.trim() 
-      : `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+    const fullExpression = `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
 
     try {
       const res = await probarCda({
@@ -265,36 +343,8 @@ export default function CdasGlobales() {
     setExpresion(""); // reset expression when changing integration
     setExpresionLog("");
     setUserEditedExpresionLog(false);
-    if (val !== "NOSIS") {
-      setCdaMode("simple");
-    }
+    setNosisSearchTerm("");
   };
-
-  // Generar expresión lógica a partir de las condiciones compuestas
-  const generateCompoundExpression = (conds, conn) => {
-    if (!conds || conds.length === 0) return "";
-    return conds
-      .map(c => {
-        const val = c.valor.trim();
-        const isNum = !isNaN(val) && val !== "";
-        const casedVal = applyCasingStrategy(val, integracion);
-        const formattedVal = isNum ? val : (casedVal === "" ? "''" : `'${casedVal}'`);
-        return `nosis.Variables(${c.variable}) ${c.operador} ${formattedVal}`;
-      })
-      .join(` ${conn} `);
-  };
-
-  useEffect(() => {
-    if (integracion === "NOSIS" && cdaMode === "compuesto") {
-      const expr = generateCompoundExpression(conditions, connector);
-      setExpresion(expr);
-      setSimbolocomparacion("");
-      setValorcomparacion("");
-      if (!userEditedExpresionLog) {
-        setExpresionLog(expr);
-      }
-    }
-  }, [conditions, connector, cdaMode, integracion, userEditedExpresionLog]);
 
   const handleSelectField = (fieldPath) => {
     const prefix = INTEGRACION_PREFIXES[integracion] || "";
@@ -305,29 +355,95 @@ export default function CdasGlobales() {
     }
   };
 
+  const handleSelectNosisVariable = (nombre) => {
+    const fullPath = `nosis.${nombre}`;
+    setExpresion(fullPath);
+    if (!userEditedExpresionLog) {
+      setExpresionLog(fullPath);
+    }
+  };
+
+  const resetFormulario = () => {
+    setCdaEditando(null);
+    setIntegracion("");
+    setNosisSearchTerm("");
+    setDescripcion("");
+    setExpresion("");
+    setExpresionLog("");
+    setUserEditedExpresionLog(false);
+    setSimbolocomparacion(">");
+    setValorcomparacion("");
+    setComparaPorVacio(false);
+    setMensajerechazo("");
+    setVinculadefaultcv(true);
+    setValidationError("");
+    setIntentoEnviar(false);
+    setTestResult(null);
+  };
+
+  const handleCrearNuevo = () => {
+    resetFormulario();
+    setVista("formulario");
+  };
+
+  const handleEditarCda = (cda) => {
+    const expr = getCdaProp(cda, "expresion") || "";
+    const valor = String(getCdaProp(cda, "valorcomparacion") ?? "");
+    const simbolo = getCdaProp(cda, "simbolocomparacion") || "=";
+    const exprLog = getCdaProp(cda, "expresionlog") || "";
+    const defaultCv = String(getCdaProp(cda, "vinculadefaultcv"));
+
+    setCdaEditando(cda);
+    setIntegracion(detectarIntegracion(expr));
+    setNosisSearchTerm("");
+    setDescripcion(getCdaProp(cda, "descripcion") || "");
+    setExpresion(expr);
+    setExpresionLog(exprLog || expr);
+    setUserEditedExpresionLog(!!exprLog && exprLog !== expr);
+    setSimbolocomparacion(simbolo || "=");
+    setValorcomparacion(valor);
+    setComparaPorVacio(valor.trim() === "");
+    setMensajerechazo(getCdaProp(cda, "mensajerechazo") || "");
+    setVinculadefaultcv(defaultCv === "" ? true : (defaultCv === "1" || defaultCv.toUpperCase() === "S"));
+    setValidationError("");
+    setIntentoEnviar(false);
+    setTestResult(null);
+    setVista("formulario");
+  };
+
+  const errorDescripcion = intentoEnviar && !descripcion.trim();
+  const errorExpresion = intentoEnviar && !expresion.trim();
+  const errorValor = intentoEnviar && !comparaPorVacio && !valorcomparacion.trim();
+  const errorMensaje = intentoEnviar && !mensajerechazo.trim();
+
   const handleSave = (e) => {
     e.preventDefault();
-    if (!descripcion.trim() || !expresion.trim() || !mensajerechazo.trim()) {
-      setValidationError("Por favor completá todos los campos obligatorios.");
-      return;
-    }
-    if (!integracion) {
-      setValidationError("Debés seleccionar una integración.");
+
+    const faltaAlgunCampo =
+      !descripcion.trim() ||
+      !expresion.trim() ||
+      (!comparaPorVacio && !valorcomparacion.trim()) ||
+      !mensajerechazo.trim();
+
+    if (faltaAlgunCampo) {
+      setIntentoEnviar(true);
       return;
     }
 
+    setIntentoEnviar(false);
     setValidationError("");
     setConfirmOpen(true);
   };
 
   const confirmarCreacion = async () => {
     setIsProcesando(true);
+    const esEdicion = !!cdaEditando;
 
     // Saneamos el valor de comparación para evitar almacenar comillas externas en la DB
-    let valorSaneado = valorcomparacion.trim();
+    let valorSaneado = comparaPorVacio ? "" : valorcomparacion.trim();
     if (
-      valorSaneado === '""' || 
-      valorSaneado === "''" || 
+      valorSaneado === '""' ||
+      valorSaneado === "''" ||
       (valorSaneado.startsWith('"') && valorSaneado.endsWith('"')) ||
       (valorSaneado.startsWith("'") && valorSaneado.endsWith("'"))
     ) {
@@ -338,15 +454,12 @@ export default function CdasGlobales() {
       }
     }
 
-    const isNumericVal = !isNaN(valorSaneado) && valorSaneado !== "";
-    if (!isNumericVal && valorSaneado !== "") {
+    if (!debeIrSinComillas(valorSaneado) && valorSaneado !== "") {
       valorSaneado = applyCasingStrategy(valorSaneado, integracion);
     }
 
     const valorParaLog = formatValorParaLog(valorSaneado);
-    const fullExpression = cdaMode === "compuesto" 
-      ? expresion.trim() 
-      : `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+    const fullExpression = `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
 
     try {
       const resValida = await probarCda({
@@ -363,156 +476,87 @@ export default function CdasGlobales() {
       console.warn("Fallo la verificación previa de sintaxis, pero se continuará guardando:", valErr);
     }
 
+    const payloadCda = {
+      cdaID: esEdicion ? (getCdaId(cdaEditando) ?? 0) : 0,
+      descripcion: descripcion.trim(),
+      expresion: expresion.trim(),
+      simboloComparacion: simbolocomparacion,
+      valorComparacion: valorSaneado,
+      vinculaDefaultCV: vinculadefaultcv ? "1" : "0",
+      expresionLog: expresionLog.trim(),
+      mensajeRechazo: mensajerechazo.trim()
+    };
+
     try {
-      const response = await crearCda({
-        cdaID: 0,
-        descripcion: descripcion.trim(),
-        expresion: expresion.trim(),
-        simboloComparacion: cdaMode === "compuesto" ? "" : simbolocomparacion,
-        valorComparacion: cdaMode === "compuesto" ? "" : valorSaneado,
-        vinculaDefaultCV: vinculadefaultcv ? "1" : "0",
-        expresionLog: expresionLog.trim(),
-        mensajeRechazo: mensajerechazo.trim()
-      });
+      if (esEdicion) {
+        await actualizarCda(payloadCda);
+        await queryClient.invalidateQueries({ queryKey: ['cda'] });
+        toast.success("Criterio de Aceptación actualizado exitosamente.");
+        resetFormulario();
+        setVista("lista");
+        setPostSaveModalOpen(true);
+      } else {
+        const response = await crearCda(payloadCda);
+        const newCdaId = response?.CdaID || response?.cdaID || response?.cdaid || response?.id;
 
-      const newCdaId = response?.CdaID || response?.cdaID || response?.cdaid || response?.id;
+        if (vinculadefaultcv && newCdaId) {
+          toast.info("Vinculando criterio de aceptación global a todas las cadenas de valor existentes...");
+          try {
+            const todasCadenas = await cadenaValorService.obtenerTodasWeb();
+            const cadenasList = Array.isArray(todasCadenas) ? todasCadenas : todasCadenas?.items || todasCadenas?.data || [];
 
-      if (vinculadefaultcv && newCdaId) {
-        toast.info("Vinculando criterio de aceptación global a todas las cadenas de valor existentes...");
-        try {
-          const todasCadenas = await cadenaValorService.obtenerTodasWeb();
-          const cadenasList = Array.isArray(todasCadenas) ? todasCadenas : todasCadenas?.items || todasCadenas?.data || [];
-          
-          let linkedCount = 0;
-          for (const cadena of cadenasList) {
-            const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
-            if (!cadenaId) continue;
-            
-            try {
-              const linkedCdas = await cadenaValorService.obtenerCdasPorCadenaId(cadenaId);
-              const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
-              
-              const getCdaId = (c) => c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
-              const yaVinculado = linkedCdasList.some(c => getCdaId(c) === newCdaId);
-              
-              if (!yaVinculado) {
-                const listacda = linkedCdasList.map(c => ({
-                  cdaid: getCdaId(c),
-                  valorcomparacion: c.valorcomparacion !== undefined ? c.valorcomparacion : (c.ValorComparacion !== undefined ? c.ValorComparacion : "")
-                }));
-                
-                listacda.push({
-                  cdaid: newCdaId,
-                  valorcomparacion: valorSaneado
-                });
-                
-                await cadenaValorService.vincularCdas({
-                  cadenavalorid: Number(cadenaId),
-                  listacda: listacda
-                });
-                linkedCount++;
+            let linkedCount = 0;
+            for (const cadena of cadenasList) {
+              const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
+              if (!cadenaId) continue;
+
+              try {
+                const linkedCdas = await cadenaValorService.obtenerCdasPorCadenaId(cadenaId);
+                const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+
+                const yaVinculado = linkedCdasList.some(c => getCdaId(c) === newCdaId);
+
+                if (!yaVinculado) {
+                  const listacda = linkedCdasList.map(c => ({
+                    cdaid: getCdaId(c),
+                    valorcomparacion: c.valorcomparacion !== undefined ? c.valorcomparacion : (c.ValorComparacion !== undefined ? c.ValorComparacion : "")
+                  }));
+
+                  listacda.push({
+                    cdaid: newCdaId,
+                    valorcomparacion: valorSaneado
+                  });
+
+                  await cadenaValorService.vincularCdas({
+                    cadenavalorid: Number(cadenaId),
+                    listacda: listacda
+                  });
+                  linkedCount++;
+                }
+              } catch (linkErr) {
+                console.error(`Error al vincular CDA default a la cadena ${cadenaId}:`, linkErr);
               }
-            } catch (linkErr) {
-              console.error(`Error al vincular CDA default a la cadena ${cadenaId}:`, linkErr);
             }
-          }
-          if (linkedCount > 0) {
-            toast.success(`Vinculado con éxito a ${linkedCount} cadenas de valor.`);
-          }
-        } catch (chainErr) {
-          console.error("Error al obtener cadenas de valor para vinculación automática:", chainErr);
-          toast.error("El CDA se creó, pero no se pudo vincular automáticamente a las cadenas existentes.");
-        }
-      }
-
-      // Vincular a pantalla seleccionada si corresponde
-      if (vincularPantalla && newCdaId) {
-        toast.info(`Vinculando criterio a la pantalla ${vincularPantalla}...`);
-
-        let listacda = [];
-        let expresionAgrupacionActual = "";
-
-        try {
-          const [currentConfig, currentGrupo] = await Promise.all([
-            cdaService.obtenerPantallaGrupoCda(vincularPantalla),
-            cdaService.obtenerGrupoCda(vincularPantalla),
-          ]);
-
-          // La API devuelve un array (uno por Pantalla filtrada, normalmente un solo elemento)
-          const pantallaRow = Array.isArray(currentConfig) ? currentConfig[0] : currentConfig;
-          expresionAgrupacionActual = pantallaRow?.ExpresionAgrupacion || pantallaRow?.expresionAgrupacion || "";
-
-          const currentList = Array.isArray(currentGrupo) ? currentGrupo : currentGrupo?.items || currentGrupo?.data || [];
-          listacda = currentList
-            .map(c => c.cdaid ?? c.CdaId ?? c.CdaID)
-            .filter((id) => id !== undefined && id !== null);
-        } catch (fetchErr) {
-          console.warn("No se pudo obtener la configuración existente de la pantalla (puede que no exista aún):", fetchErr);
-        }
-
-        try {
-          const existingExpr = expresionAgrupacionActual.trim();
-          const idsPrevios = listacda.slice();
-
-          if (!listacda.includes(Number(newCdaId))) {
-            listacda.push(Number(newCdaId));
-          }
-
-          let nuevaExpresion = "";
-          if (!existingExpr) {
-            // No había expresión explícita (lista con AND implícito, o vacía).
-            // No hace falta agrupar con paréntesis: como "and" tiene mayor
-            // precedencia que "or", concatenar en plano ya da el resultado
-            // esperado sea cual sea el conector elegido para el nuevo CDA.
-            if (idsPrevios.length > 0) {
-              nuevaExpresion = `${idsPrevios.map((id) => `cda${id}`).join(" and ")} ${conectorPantalla} cda${newCdaId}`;
+            if (linkedCount > 0) {
+              toast.success(`Vinculado con éxito a ${linkedCount} cadenas de valor.`);
             }
-          } else {
-            // Ya había una expresión compuesta explícita (armada a mano desde
-            // "CDAs por Pantalla"). Acá sí hace falta agrupar con paréntesis
-            // para no alterar su precedencia original.
-            // OJO: el motor de expresiones del backend tiene un bug conocido
-            // con paréntesis + IDs de CDA que son prefijo numérico de otro
-            // (ej: cda1 dentro de cda1050) -> devuelve 500 "Couldn't find cdaX".
-            // Reportado a backend (Victor).
-            nuevaExpresion = `(${existingExpr}) ${conectorPantalla} cda${newCdaId}`;
+          } catch (chainErr) {
+            console.error("Error al obtener cadenas de valor para vinculación automática:", chainErr);
+            toast.error("El CDA se creó, pero no se pudo vincular automáticamente a las cadenas existentes.");
           }
-
-          await cdaService.vincularPantallaCda({
-            Pantalla: vincularPantalla,
-            ExpresionAgrupacion: nuevaExpresion,
-            ListaCda: listacda
-          });
-
-          toast.success(`Criterio vinculado exitosamente a ${vincularPantalla}`);
-        } catch (linkScreenErr) {
-          console.error("Error al vincular a la pantalla seleccionada:", linkScreenErr);
-          toast.error(`No se pudo vincular automáticamente a la pantalla ${vincularPantalla}`);
         }
-      }
 
-      await queryClient.invalidateQueries({ queryKey: ['cda'] });
-      await queryClient.invalidateQueries({ queryKey: ["cda", "pantallaGrupo"] });
-      await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
-      toast.success("Criterio de Aceptación Global creado exitosamente");
-      
-      // Limpiar formulario excepto integración
-      setDescripcion("");
-      setExpresion("");
-      setExpresionLog("");
-      setUserEditedExpresionLog(false);
-      setSimbolocomparacion(">");
-      setValorcomparacion("");
-      setMensajerechazo("");
-      setVinculadefaultcv(true);
-      setVincularPantalla("");
-      setConectorPantalla("and");
-      setConditions([
-        { id: Date.now(), variable: "CDA_Valor.SCO", operador: ">", valor: "500" }
-      ]);
+        await queryClient.invalidateQueries({ queryKey: ['cda'] });
+        await queryClient.invalidateQueries({ queryKey: ["cda", "pantallaGrupo"] });
+        await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
+        toast.success("Criterio de Aceptación Global creado exitosamente.");
+        resetFormulario();
+        setVista("lista");
+        setPostSaveModalOpen(true);
+      }
     } catch (err) {
       console.error(err);
-      toast.error("Ocurrió un error al guardar el CDA.");
+      toast.error(esEdicion ? "Ocurrió un error al actualizar el CDA." : "Ocurrió un error al guardar el CDA.");
     } finally {
       setIsProcesando(false);
       setConfirmOpen(false);
@@ -520,19 +564,136 @@ export default function CdasGlobales() {
   };
 
   const currentJsonData = integracion ? INTEGRACIONES_MOCKS[integracion] : null;
+  const nosisVariables = INTEGRACIONES_MOCKS?.NOSIS?.Contenido?.Datos?.Variables || [];
 
-  const previewSimple = cdaMode !== "compuesto" && expresion.trim()
+  const reglaActual = expresion.trim()
     ? `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valorcomparacion)}`
     : "";
 
-  const reglaActual = cdaMode === "compuesto" ? expresion.trim() : previewSimple;
+  const postSaveModal = (
+    <ConfirmacionModal
+      isOpen={postSaveModalOpen}
+      onClose={() => setPostSaveModalOpen(false)}
+      onConfirm={() => { setPostSaveModalOpen(false); navigate("/admin/cdas-pantalla"); }}
+      titulo="Vincular a una Pantalla"
+      mensaje='El criterio se guardó correctamente, pero todavía no está activo. ¿Querés ir ahora a "CDAs por Pantalla" para vincularlo?'
+      variant="blue"
+      confirmText="IR AHORA"
+      cancelText="MÁS TARDE"
+      confirmVariant="blue"
+      cancelVariant="outlineBlue"
+    />
+  );
+
+  if (vista === "lista") {
+    return (
+      <div className={styles.containerLista}>
+        <div className={styles.header}>
+          <div className={styles.titleBox}>
+            <h1>Criterios de Aceptación Globales</h1>
+            <p>Gestioná los criterios de aceptación (CDA) existentes o creá uno nuevo.</p>
+          </div>
+          <div className={styles.actionsTop}>
+            <Button type="button" variant="blue" size="md" onClick={handleCrearNuevo}>
+              <FiPlus /> Crear nuevo CDA
+            </Button>
+          </div>
+        </div>
+
+        <div className={styles.filtersCard}>
+          <div className={styles.searchWrap}>
+            <FiSearch className={styles.iconSearch} />
+            <input
+              type="text"
+              placeholder="Buscar por descripción o expresión..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {!isLoadingLista && (
+            <span className={styles.listCount}>
+              {cdasFiltrados.length} criterio{cdasFiltrados.length !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+
+        <div className={styles.tableCard}>
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Descripción</th>
+                    <th>Integración</th>
+                    <th>Expresión</th>
+                    <th>Mensaje de Rechazo</th>
+                    <th style={{ textAlign: "center", width: "160px" }}>Vinculación Default</th>
+                    <th style={{ width: "2.5rem" }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoadingLista ? (
+                    Array.from({ length: 6 }).map((_, i) => <CdaRowSkeleton key={i} styles={styles} />)
+                  ) : cdasFiltrados.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ padding: 0 }}>
+                        <div className={styles.emptyState}>
+                          <FiInbox className={styles.emptyStateIcon} />
+                          <span>No hay criterios de aceptación cargados todavía.</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    cdasFiltrados.map((cda) => {
+                      const id = getCdaId(cda);
+                      const defaultCv = String(getCdaProp(cda, "vinculadefaultcv"));
+                      const esDefault = defaultCv === "1" || defaultCv.toUpperCase() === "S";
+                      const integ = detectarIntegracion(getCdaProp(cda, "expresion"));
+                      const integColor = INTEGRACION_COLORS[integ] || INTEGRACION_COLOR_DEFAULT;
+                      return (
+                        <tr key={id} className={styles.clickableRow} onClick={() => handleEditarCda(cda)}>
+                          <td>
+                            <strong>{getCdaProp(cda, "descripcion") || "-"}</strong>
+                            <span className={styles.rowIdTag}>ID #{id}</span>
+                          </td>
+                          <td>
+                            <span
+                              className={styles.integracionBadge}
+                              style={{ background: integColor.bg, color: integColor.color, borderColor: integColor.border }}
+                            >
+                              {integ || "—"}
+                            </span>
+                          </td>
+                          <td><code className={styles.tableCode}>{getCdaProp(cda, "expresion") || "-"}</code></td>
+                          <td>{getCdaProp(cda, "mensajerechazo") || "-"}</td>
+                          <td style={{ textAlign: "center" }}>
+                            <span className={esDefault ? styles.pillYes : styles.pillNo}>{esDefault ? "Sí" : "No"}</span>
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <FiChevronRight className={styles.rowChevron} />
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+        </div>
+
+        {postSaveModal}
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.titleBox}>
-          <h1>Criterios de Aceptación Globales</h1>
-          <p>Definí las reglas base (CDA) seleccionando campos directamente desde las integraciones disponibles.</p>
+          <button type="button" className={styles.backButton} onClick={() => { resetFormulario(); setVista("lista"); }}>
+            <FiArrowLeft /> Volver al listado
+          </button>
+          <h1>{cdaEditando ? "Editar Criterio de Aceptación" : "Criterios de Aceptación Globales"}</h1>
+          <p>{cdaEditando ? "Modificá los datos del criterio seleccionado." : "Definí las reglas base (CDA) seleccionando campos directamente desde las integraciones disponibles."}</p>
         </div>
       </div>
 
@@ -553,144 +714,29 @@ export default function CdasGlobales() {
             onChange={handleIntegracionChange}
             options={[
               { value: "ARCA", label: "ARCA" },
-              { value: "CASFOG", label: "CASFOG" },
-              { value: "LUFE", label: "LUFE" },
               { value: "NOSIS", label: "NOSIS" },
-              { value: "SGRPLUS", label: "SGRPLUS" }
+              { value: "LUFE", label: "LUFE" },
+              { value: "CASFOG", label: "CASFOG" },
+              { value: "SGRPLUS", label: "SGR+" }
             ]}
-            placeholder="-- Seleccioná una integración --"
+            placeholder="-- Seleccioná una integración (opcional) --"
             variant="admin"
-            disabled={isCreando || isProcesando}
+            disabled={isCreando || isActualizando || isProcesando}
             hideErrorSpace={true}
           />
+          <p className={styles.helperText}>
+            Es opcional: podés armar la expresión con clics o escribirla manualmente sin seleccionar nada.
+          </p>
 
-          {integracion === "NOSIS" && (
-            <div className={styles.modeToggleContainer}>
-              <button
-                type="button"
-                className={`${styles.modeTab} ${cdaMode === "simple" ? styles.modeTabActive : ""}`}
-                onClick={() => setCdaMode("simple")}
-              >
-                Árbol JSON
-              </button>
-              <button
-                type="button"
-                className={`${styles.modeTab} ${cdaMode === "compuesto" ? styles.modeTabActive : ""}`}
-                onClick={() => setCdaMode("compuesto")}
-              >
-                Reglas Compuestas
-              </button>
-            </div>
-          )}
-
-          {cdaMode === "compuesto" && integracion === "NOSIS" ? (
-            <div className={styles.builderContainer}>
-              <p className={styles.builderIntro}>
-                Combiná múltiples variables del reporte de Nosis para crear reglas de validación complejas.
-              </p>
-
-              <div className={styles.connectorWrapper}>
-                <span className={styles.connectorLabel}>Conector Lógico:</span>
-                <select
-                  value={connector}
-                  onChange={(e) => setConnector(e.target.value)}
-                  className={styles.connectorSelect}
-                  disabled={isCreando || isProcesando}
-                >
-                  <option value="AND">AND (Y)</option>
-                  <option value="OR">OR (O)</option>
-                </select>
-              </div>
-
-              <div className={styles.conditionsList}>
-                {conditions.map((cond, idx) => (
-                  <div key={cond.id} className={styles.conditionRow}>
-                    <select
-                      value={cond.variable}
-                      onChange={(e) => {
-                        const newConds = [...conditions];
-                        newConds[idx].variable = e.target.value;
-                        setConditions(newConds);
-                      }}
-                      className={styles.variableSelect}
-                      disabled={isCreando || isProcesando}
-                    >
-                      {NOSIS_VARIABLES_CATALOG.map(item => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={cond.operador}
-                      onChange={(e) => {
-                        const newConds = [...conditions];
-                        newConds[idx].operador = e.target.value;
-                        setConditions(newConds);
-                      }}
-                      className={styles.opSelect}
-                      disabled={isCreando || isProcesando}
-                    >
-                      <option value="=">=</option>
-                      <option value=">">&gt;</option>
-                      <option value="<">&lt;</option>
-                      <option value=">=">&gt;=</option>
-                      <option value="<=">&lt;=</option>
-                      <option value="<>">&lt;&gt;</option>
-                    </select>
-
-                    <input
-                      type="text"
-                      value={cond.valor}
-                      onChange={(e) => {
-                        const newConds = [...conditions];
-                        newConds[idx].valor = e.target.value;
-                        setConditions(newConds);
-                      }}
-                      placeholder="Valor"
-                      className={styles.valInput}
-                      disabled={isCreando || isProcesando}
-                    />
-
-                    {conditions.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setConditions(conditions.filter(c => c.id !== cond.id));
-                        }}
-                        className={styles.btnDelete}
-                        title="Eliminar condición"
-                        disabled={isCreando || isProcesando}
-                      >
-                        <FiTrash2 size={14} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setConditions([
-                    ...conditions,
-                    { id: Date.now(), variable: "CDA_Valor.SCO", operador: ">", valor: "" }
-                  ]);
-                }}
-                className={styles.btnAddCondition}
-                disabled={isCreando || isProcesando}
-              >
-                <FiPlus size={14} /> Agregar Condición
-              </button>
-
-              <div className={styles.previewCard}>
-                <div className={styles.previewTitle}>Regla Lógica Generada:</div>
-                <div className={styles.previewCode}>
-                  {expresion || "(Agregá condiciones para visualizar)"}
-                </div>
-              </div>
-            </div>
+          {integracion === "NOSIS" ? (
+            <NosisVariablePicker
+              variables={nosisVariables}
+              searchTerm={nosisSearchTerm}
+              onSearchChange={setNosisSearchTerm}
+              selectedExpresion={expresion}
+              onSelect={handleSelectNosisVariable}
+              styles={styles}
+            />
           ) : (
             <div className={styles.jsonViewerContainer}>
               {currentJsonData ? (
@@ -716,7 +762,7 @@ export default function CdasGlobales() {
             </div>
           </div>
 
-          <div className={styles.colScroll}>
+          <div className={`${styles.colScroll} ${styles.colScrollTight}`}>
             {validationError && (
               <div className={styles.validationError}>
                 {validationError}
@@ -729,9 +775,9 @@ export default function CdasGlobales() {
                 label="Descripción del CDA"
                 value={descripcion}
                 onChange={setDescripcion}
-                disabled={isCreando || isProcesando}
+                disabled={isCreando || isActualizando || isProcesando}
                 variant="admin"
-                hideErrorSpace={true}
+                error={errorDescripcion ? "Campo obligatorio" : undefined}
               />
             </div>
 
@@ -749,48 +795,63 @@ export default function CdasGlobales() {
                       setExpresionLog(val);
                     }
                   }}
-                  disabled={isCreando || isProcesando || cdaMode === "compuesto"}
+                  disabled={isCreando || isActualizando || isProcesando}
                   variant="admin"
-                  hideErrorSpace={true}
+                  error={errorExpresion ? "Campo obligatorio" : undefined}
                 />
               </div>
 
-              {cdaMode === "compuesto" ? (
-                <div className={styles.rightColInfoBox}>
-                  ℹ️ <strong>Regla Compuesta Activa:</strong> el operador y el valor se definen desde el constructor de la columna 1.
+              <div className={styles.fieldRow}>
+                <div style={{ flex: "0 0 30%" }}>
+                  <SelectSimple
+                    label="Operador"
+                    value={simbolocomparacion}
+                    onChange={setSimbolocomparacion}
+                    options={[
+                      { value: "=", label: "=" },
+                      { value: ">", label: ">" },
+                      { value: "<", label: "<" },
+                      { value: ">=", label: ">=" },
+                      { value: "<=", label: "<=" },
+                      { value: "<>", label: "<>" }
+                    ]}
+                    disabled={isCreando || isActualizando || isProcesando}
+                    variant="admin"
+                  />
                 </div>
-              ) : (
-                <div className={styles.fieldRow}>
-                  <div style={{ flex: "0 0 30%" }}>
-                    <SelectSimple
-                      label="Operador"
-                      value={simbolocomparacion}
-                      onChange={setSimbolocomparacion}
-                      options={[
-                        { value: "=", label: "=" },
-                        { value: ">", label: ">" },
-                        { value: "<", label: "<" },
-                        { value: ">=", label: ">=" },
-                        { value: "<=", label: "<=" },
-                        { value: "<>", label: "<>" }
-                      ]}
-                      disabled={isCreando || isProcesando}
-                      variant="admin"
-                    />
-                  </div>
 
-                  <div>
-                    <InputSimple
-                      label="Valor de Comparación"
-                      value={valorcomparacion}
-                      onChange={setValorcomparacion}
-                      disabled={isCreando || isProcesando}
-                      variant="admin"
-                      hideErrorSpace={true}
-                    />
+                <div>
+                  <InputSimple
+                    label="Valor de Comparación"
+                    value={valorcomparacion}
+                    onChange={setValorcomparacion}
+                    disabled={isCreando || isActualizando || isProcesando || comparaPorVacio}
+                    variant="admin"
+                    hideErrorSpace={true}
+                    error={errorValor ? true : undefined}
+                  />
+                  <div className={styles.valorBelowRow}>
+                    <span className={errorValor ? styles.valorErrorText : styles.valorHintText}>
+                      {errorValor ? "Campo obligatorio" : "Fechas: AAAA-MM-DD"}
+                    </span>
+                    <div
+                      className={styles.vacioCheckRow}
+                      onClick={() => {
+                        if (isCreando || isActualizando || isProcesando) return;
+                        const next = !comparaPorVacio;
+                        setComparaPorVacio(next);
+                        if (next) setValorcomparacion("");
+                      }}
+                      title="Marcá esto si el criterio compara contra un texto vacío. Si necesitás comparar contra el número 0, escribilo directamente en el campo."
+                    >
+                      <div className={`${styles.customCheckbox} ${comparaPorVacio ? styles.checkboxChecked : ""}`}>
+                        {comparaPorVacio && <FiCheck size={11} className={styles.checkmarkIcon} />}
+                      </div>
+                      <span className={styles.vacioCheckLabel}>Comparar contra vacío</span>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               <button
                 type="button"
@@ -813,10 +874,13 @@ export default function CdasGlobales() {
                       setExpresionLog(val);
                       setUserEditedExpresionLog(true);
                     }}
-                    disabled={isCreando || isProcesando}
+                    disabled={isCreando || isActualizando || isProcesando}
                     variant="admin"
                     hideErrorSpace={true}
                   />
+                  <p className={styles.helperText}>
+                    Podés agregar más de una, separándolas con coma, o dejarlo vacío si no lo necesitás.
+                  </p>
                 </div>
               )}
             </div>
@@ -827,9 +891,9 @@ export default function CdasGlobales() {
                 label="Mensaje de Rechazo Global"
                 value={mensajerechazo}
                 onChange={setMensajerechazo}
-                disabled={isCreando || isProcesando}
+                disabled={isCreando || isActualizando || isProcesando}
                 variant="admin"
-                hideErrorSpace={true}
+                error={errorMensaje ? "Campo obligatorio" : undefined}
               />
             </div>
           </div>
@@ -841,80 +905,11 @@ export default function CdasGlobales() {
             <span className={styles.colStepBadge}>3</span>
             <div>
               <h2 className={styles.colTitle}>Probá y Publicá</h2>
-              <p className={styles.colSubtitle}>Vinculación, prueba en vivo y creación</p>
+              <p className={styles.colSubtitle}>Vinculación por defecto, prueba en vivo y guardado</p>
             </div>
           </div>
 
-          <div className={styles.colScroll}>
-            <div className={styles.vinculacionBox}>
-              <p className={styles.boxLabel}>Vincular a Pantalla</p>
-              <SelectSimple
-                label="Vincular a Pantalla al crear (Opcional)"
-                value={vincularPantalla}
-                onChange={setVincularPantalla}
-                options={[
-                  { value: "", label: "-- No vincular --" },
-                  { value: "PANTALLA_INGRESO_CUIT", label: "PANTALLA_INGRESO_CUIT (Validación inicial de CUIT)" },
-                  { value: "PANTALLA_SOCIOS", label: "PANTALLA_SOCIOS (Validación de Socios y Representantes)" }
-                ]}
-                placeholder="-- Seleccioná una pantalla --"
-                variant="admin"
-                disabled={isCreando || isProcesando}
-                hideErrorSpace={true}
-              />
-
-              {vincularPantalla && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.25rem" }}>
-                  <span className={styles.boxLabel} style={{ fontSize: "0.65rem" }}>
-                    Conector Lógico (con criterios ya vinculados)
-                  </span>
-                  <div className={styles.modeToggleContainer}>
-                    <button
-                      type="button"
-                      className={`${styles.modeTab} ${conectorPantalla === "and" ? styles.modeTabActive : ""}`}
-                      onClick={() => setConectorPantalla("and")}
-                      disabled={isCreando || isProcesando}
-                      title="Debe cumplir este criterio Y los ya existentes"
-                    >
-                      AND (Cumplir ambos)
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.modeTab} ${conectorPantalla === "or" ? styles.modeTabActive : ""}`}
-                      onClick={() => setConectorPantalla("or")}
-                      disabled={isCreando || isProcesando}
-                      title="Alcanza con cumplir este criterio O los ya existentes"
-                    >
-                      OR (Cumplir cualquiera)
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div
-              className={styles.defaultCvBox}
-              onClick={() => { if (!isCreando && !isProcesando) setVinculadefaultcv(!vinculadefaultcv); }}
-            >
-              <div className={styles.customCheckboxContainer}>
-                <div className={`${styles.customCheckbox} ${vinculadefaultcv ? styles.checkboxChecked : ""}`}>
-                  {vinculadefaultcv && <FiCheck size={12} className={styles.checkmarkIcon} />}
-                </div>
-                <div className={styles.checkboxTextGroup}>
-                  <span className={styles.checkboxLabel}>
-                    Vincular por defecto a nuevas Cadenas de Valor
-                  </span>
-                  <span className={styles.checkboxDescription}>
-                    Se vincula automáticamente a cada Cadena de Valor nueva.
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.colDivider} />
-
-          {/* Laboratorio de Pruebas: siempre visible, zona fija */}
+          {/* Laboratorio de Pruebas: arriba, zona fija */}
           <div className={styles.sandboxContainer}>
             <h3 className={styles.sandboxTitle}>Laboratorio de Pruebas</h3>
 
@@ -934,7 +929,7 @@ export default function CdasGlobales() {
                   label="CUIT para la prueba"
                   value={testCuit}
                   onChange={setTestCuit}
-                  disabled={isTesting || isCreando || isProcesando}
+                  disabled={isTesting || isCreando || isActualizando || isProcesando}
                   variant="admin"
                   hideErrorSpace={true}
                 />
@@ -946,7 +941,7 @@ export default function CdasGlobales() {
                   size="md"
                   onClick={handleTestExpression}
                   isLoading={isTesting}
-                  disabled={isCreando || isProcesando || !reglaActual}
+                  disabled={isCreando || isActualizando || isProcesando || !reglaActual}
                 >
                   Probar
                 </Button>
@@ -974,14 +969,44 @@ export default function CdasGlobales() {
             )}
           </div>
 
+          <div className={styles.colDivider} />
+
+          <div className={styles.colScroll}>
+            <div className={styles.screenWarningBox}>
+              <FiAlertTriangle className={styles.screenWarningIcon} size={20} />
+              <div className={styles.screenWarningText}>
+                <strong>¡Atención!</strong> Este criterio no se va a aplicar hasta que lo vincules a una pantalla desde <strong>CDAs por Pantalla</strong>.
+              </div>
+            </div>
+
+            <div
+              className={`${styles.defaultCvBox} ${vinculadefaultcv ? styles.defaultCvBoxActive : ""}`}
+              onClick={() => { if (!isCreando && !isActualizando && !isProcesando) setVinculadefaultcv(!vinculadefaultcv); }}
+            >
+              <div className={styles.customCheckboxContainer}>
+                <div className={`${styles.customCheckboxLg} ${vinculadefaultcv ? styles.checkboxChecked : ""}`}>
+                  {vinculadefaultcv && <FiCheck size={14} className={styles.checkmarkIcon} />}
+                </div>
+                <div className={styles.checkboxTextGroup}>
+                  <span className={styles.checkboxLabelLg}>
+                    Marcar como CDA por Defecto
+                  </span>
+                  <span className={styles.checkboxDescription}>
+                    Los CDAs por defecto se vinculan automáticamente a todas las cadenas de valor: a las existentes en el momento de crearlo, y también a las que se creen en el futuro.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className={styles.formActions}>
             <Button
               type="submit"
               variant="blue"
               size="md"
-              isLoading={isCreando || isProcesando}
+              isLoading={isCreando || isActualizando || isProcesando}
             >
-              Crear Criterio Global
+              {cdaEditando ? "Guardar Cambios" : "Crear Criterio Global"}
             </Button>
           </div>
         </div>
@@ -991,10 +1016,12 @@ export default function CdasGlobales() {
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmarCreacion}
-        titulo="Confirmar Criterio de Aceptación"
+        titulo={cdaEditando ? "Confirmar Actualización de Criterio" : "Confirmar Criterio de Aceptación"}
         mensaje={
           <>
-            ¿Confirmás la creación de este criterio de aceptación global?
+            {cdaEditando
+              ? "¿Confirmás guardar los cambios de este criterio de aceptación?"
+              : "¿Confirmás la creación de este criterio de aceptación global?"}
             {reglaActual && (
               <>
                 <br /><br />
@@ -1006,12 +1033,14 @@ export default function CdasGlobales() {
           </>
         }
         variant="blue"
-        confirmText="CREAR CRITERIO"
+        confirmText={cdaEditando ? "GUARDAR CAMBIOS" : "CREAR CRITERIO"}
         cancelText="CANCELAR"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
-        isLoading={isCreando || isProcesando}
+        isLoading={isCreando || isActualizando || isProcesando}
       />
+
+      {postSaveModal}
     </div>
   );
 }

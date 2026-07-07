@@ -294,6 +294,8 @@ export function SociosLegajo() {
             ? `¿Está seguro de que desea desvincular al Agente de Bolsa ${deleteTarget?.nombre}?`
             : `¿Está seguro de que desea eliminar a ${deleteTarget?.nombre} del legajo?`
         }
+        tone="danger"
+        confirmText={deleteTarget?.rolId === 21 ? "Desvincular" : "Eliminar"}
         isLoading={loadingDelete}
       />
     </div>

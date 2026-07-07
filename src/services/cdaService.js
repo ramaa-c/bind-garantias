@@ -49,6 +49,11 @@ export const cdaService = {
     return response.data;
   },
 
+  actualizarCda: async (cdaData) => {
+    const response = await api.put("api/cda/Cda", cdaAdapter.adaptarPayload1(cdaData));
+    return response.data;
+  },
+
   obtenerTodosCdas: async () => {
     const response = await api.get("api/cda/Cda");
     return response.data;

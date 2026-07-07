@@ -6,9 +6,23 @@ import { cdaService } from "../../services/cdaService";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../components/ui/Button/Button";
-import { Spinner } from "../../components/ui/Spinner/Spinner";
 import { FiCheck, FiInfo } from "react-icons/fi";
 import styles from "./CdasPantalla.module.css";
+
+const CdaRowSkeleton = () => (
+  <div className={styles.cdaRow}>
+    <div className={styles.checkboxWrapper}>
+      <div className={styles.customCheckbox} />
+    </div>
+    <div className={styles.cdaDetails}>
+      <div className={styles.cdaHeaderInfo}>
+        <div className={styles.skeletonBlock} style={{ height: "0.85rem", width: "55%" }} />
+        <div className={styles.skeletonBlock} style={{ height: "1rem", width: "48px", borderRadius: "999px" }} />
+      </div>
+      <div className={styles.skeletonBlock} style={{ height: "0.7rem", width: "80%", marginTop: "0.45rem" }} />
+    </div>
+  </div>
+);
 
 export default function CdasPantalla() {
   const queryClient = useQueryClient();
@@ -208,8 +222,8 @@ export default function CdasPantalla() {
               value={selectedPantalla}
               onChange={setSelectedPantalla}
               options={[
-                { value: "PANTALLA_INGRESO_CUIT", label: "PANTALLA_INGRESO_CUIT (Validación inicial de CUIT)" },
-                { value: "PANTALLA_SOCIOS", label: "PANTALLA_SOCIOS (Validación de Socios y Representantes)" },
+                { value: "PANTALLA_INGRESO_CUIT", label: "Validación inicial de CUIT" },
+                { value: "PANTALLA_SOCIOS", label: "Validación de Socios y Representantes" },
               ]}
               placeholder="-- Seleccioná una pantalla --"
               variant="admin"
@@ -332,11 +346,6 @@ export default function CdasPantalla() {
                       <FiInfo style={{ marginRight: "0.4rem", verticalAlign: "middle" }} />
                       Recordá combinar los IDs de la forma: <code>cda1042 and (cda1043 or cda1044)</code>.
                     </div>
-
-                    <div className={styles.infoBox}>
-                      <FiInfo style={{ marginRight: "0.4rem", verticalAlign: "middle" }} />
-                      <strong>Cuidado con los paréntesis:</strong> si usás paréntesis y alguno de los IDs de CDA es prefijo numérico de otro (ej: <code>cda1</code> y <code>cda1050</code>), el motor de validación del servidor puede fallar con error 500 (bug conocido, reportado). Si te pasa, probá evitar los paréntesis cuando todos los términos usan el mismo conector (<code>and</code> ya tiene más precedencia que <code>or</code>, así que en la mayoría de los casos no hacen falta).
-                    </div>
                   </div>
                 )}
 
@@ -364,8 +373,10 @@ export default function CdasPantalla() {
               Seleccioná una pantalla a la izquierda para ver y vincular criterios.
             </div>
           ) : isLoadingCdas || isLoadingConfig ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-              <Spinner size={40} />
+            <div className={styles.cdasListContainer}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <CdaRowSkeleton key={i} />
+              ))}
             </div>
           ) : (
             <>
@@ -418,7 +429,7 @@ export default function CdasPantalla() {
                         <div className={styles.cdaDetails}>
                           <div className={styles.cdaHeaderInfo}>
                             <span className={styles.cdaDesc} title={getCdaDesc(cda)}>{getCdaDesc(cda)}</span>
-                            <span className={styles.cdaIdBadge}>ID: {id}</span>
+                            <span className={styles.cdaIdBadge}>cda{id}</span>
                           </div>
                           <span className={styles.cdaExpr} title={getCdaExpr(cda)}>Expresión: {getCdaExpr(cda)}</span>
                         </div>

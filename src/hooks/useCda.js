@@ -40,6 +40,12 @@ export const useCrearCda = () => {
   });
 };
 
+export const useActualizarCda = () => {
+  return useMutation({
+    mutationFn: (cdaData) => cdaService.actualizarCda(cdaData),
+  });
+};
+
 export const useObtenerTodosCdas = (options = {}) => {
   return useQuery({
     queryKey: ["cda", "todos_list"],
