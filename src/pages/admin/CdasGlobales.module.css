@@ -321,6 +321,7 @@
   border-radius: 1rem;
   padding: 1.1rem;
   min-height: 0;
+  min-width: 0;
 }
 
 @media (min-width: 1280px) {
@@ -743,6 +744,7 @@
   gap: 0.6rem;
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
 }
 
 .nosisSearchInput {
@@ -763,7 +765,9 @@
 .nosisVarListScroll {
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
@@ -779,6 +783,7 @@
   padding: 0.5rem 0.65rem;
   cursor: pointer;
   transition: all 0.15s ease;
+  min-width: 0;
 }
 
 .nosisVarRow:hover {
@@ -796,6 +801,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .nosisVarName {
@@ -803,6 +809,11 @@
   font-size: 0.8rem;
   font-weight: 700;
   color: #b388ff;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .nosisVarType {
@@ -819,11 +830,13 @@
 .nosisVarDesc {
   font-size: 0.75rem;
   color: #c9d1d9;
+  overflow-wrap: anywhere;
 }
 
 .nosisVarExample {
   font-size: 0.7rem;
   color: #8b949e;
+  overflow-wrap: anywhere;
 }
 
 .nosisVarEmpty {

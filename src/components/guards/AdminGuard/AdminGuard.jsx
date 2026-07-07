@@ -64,6 +64,14 @@ export const AdminGuard = ({ children }) => {
   const { isRestricted, isPending } = useAdminRestrictions();
 
   const isBasicAdmin = user?.role === "admin" || user?.email === "admin";
+  const tieneSesion = !!user?.email;
+
+  // Sin sesión, `useObtenerPorNombreOEmail` queda deshabilitado (email vacío)
+  // y su query nunca sale de "pending" en react-query: sin este corte,
+  // isLoading quedaría en true para siempre y el guard jamás redirige.
+  if (!tieneSesion) {
+    return <Navigate to="/login" replace />;
+  }
 
   const isLoading =
     !isBasicAdmin &&
