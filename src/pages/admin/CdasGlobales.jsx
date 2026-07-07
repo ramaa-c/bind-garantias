@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ import { Button } from "../../components/ui/Button/Button";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { FiPlus, FiTrash2, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox } from "react-icons/fi";
+import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox } from "react-icons/fi";
 import styles from "./CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -39,6 +39,11 @@ const INTEGRACION_COLORS = {
   SGRPLUS: { bg: "rgba(56, 161, 105, 0.12)", color: "#38a169", border: "rgba(56, 161, 105, 0.35)" },
 };
 const INTEGRACION_COLOR_DEFAULT = { bg: "rgba(139, 148, 158, 0.12)", color: "#8b949e", border: "rgba(139, 148, 158, 0.3)" };
+
+// Nosis (y en general el motor de CDAs) espera valores numéricos y fechas
+// (YYYY-MM-DD) sin comillas; solo el texto va entre comillas simples.
+const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const debeIrSinComillas = (val) => (val !== "" && !isNaN(val)) || FECHA_REGEX.test(val);
 
 const applyCasingStrategy = (val, integrationName) => {
   if (!val) return val;
@@ -127,36 +132,57 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
   );
 };
 
-// Catálogo de variables de NOSIS extraídas del JSON real
-const NOSIS_VARIABLES_CATALOG = [
-  { value: "CDA", label: "CDA (Criterio de Aceptación General)" },
-  { value: "CDA_DICT", label: "CDA_DICT (Dictamen)" },
-  { value: "CDA_AF", label: "CDA_AF (Identidad Válida)" },
-  { value: "CDA_VI.EDAD", label: "CDA_VI.EDAD (Edad)" },
-  { value: "CDA_VI.FCS", label: "CDA_VI.FCS (Fecha Contrato Social)" },
-  { value: "CDA_VI.ACT", label: "CDA_VI.ACT (Actividades)" },
-  { value: "CDA_AP", label: "CDA_AP (Aportes Patronales)" },
-  { value: "CDA_CI", label: "CDA_CI (Bureau de Crédito del BCRA)" },
-  { value: "CDA_OJ", label: "CDA_OJ (Oficios Judiciales)" },
-  { value: "CDA_HC", label: "CDA_HC (Cheques Rechazados del BCRA)" },
-  { value: "CDA_DE", label: "CDA_DE (Deudores Entidades Liquidadas)" },
-  { value: "CDA_QU.1", label: "CDA_QU.1 (Concurso o Quiebra)" },
-  { value: "CDA_QU.2", label: "CDA_QU.2 (Pedido Quiebra)" },
-  { value: "CDA_QU.3", label: "CDA_QU.3 (Juicios - Demandado)" },
-  { value: "CDA_BC", label: "CDA_BC (Comunicaciones del BCRA)" },
-  { value: "CDA_RC.P", label: "CDA_RC.P (Referencias Comerciales Propias)" },
-  { value: "CDA_RC.T", label: "CDA_RC.T (Referencias Comerciales de Terceros)" },
-  { value: "CDA_FA", label: "CDA_FA (Facturas Apócrifas)" },
-  { value: "CDA_LD", label: "CDA_LD (Laudos Incumplidos)" },
-  { value: "CDA_DF", label: "CDA_DF (Antecedentes Fiscales)" },
-  { value: "CDA_DC", label: "CDA_DC (Documentos Cuestionados)" },
-  { value: "CDA_DP", label: "CDA_DP (Deudores Previsionales)" },
-  { value: "CDA_SCO", label: "CDA_SCO (Score - Estado)" },
-  { value: "CDA_Valor.SCO", label: "CDA_Valor.SCO (Score - Valor)" },
-  { value: "CDA_NSE", label: "CDA_NSE (Facturación Estimada - Estado)" },
-  { value: "CDA_Valor.NSE", label: "CDA_Valor.NSE (Facturación Estimada - Nivel)" },
-  { value: "CDA_COMPMENSUALES", label: "CDA_COMPMENSUALES (Compromisos Mensuales)" },
-];
+// Selector de variables de NOSIS: en vez de navegar el JSON crudo, se arma la
+// expresión (nosis.<Nombre>) a partir del mismo listado de variables que devuelve
+// la integración, para que siempre coincida con el nombre que espera el backend.
+const NosisVariablePicker = ({ variables, searchTerm, onSearchChange, selectedExpresion, onSelect, styles }) => {
+  const term = searchTerm.trim().toLowerCase();
+  const filtradas = term
+    ? variables.filter(
+        (v) =>
+          String(v.Nombre || "").toLowerCase().includes(term) ||
+          String(v.Descripcion || "").toLowerCase().includes(term)
+      )
+    : variables;
+
+  return (
+    <div className={styles.nosisPickerContainer}>
+      <input
+        type="text"
+        placeholder="Buscar variable por nombre o descripción..."
+        value={searchTerm}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className={styles.nosisSearchInput}
+      />
+      <div className={styles.nosisVarListScroll}>
+        {filtradas.length === 0 ? (
+          <div className={styles.nosisVarEmpty}>No se encontraron variables.</div>
+        ) : (
+          filtradas.map((v) => {
+            const activa = selectedExpresion.trim() === `nosis.${v.Nombre}`;
+            return (
+              <div
+                key={v.Nombre}
+                className={`${styles.nosisVarRow} ${activa ? styles.nosisVarRowActive : ""}`}
+                onClick={() => onSelect(v.Nombre)}
+                title={`Usar nosis.${v.Nombre} en la expresión`}
+              >
+                <div className={styles.nosisVarHead}>
+                  <span className={styles.nosisVarName}>nosis.{v.Nombre}</span>
+                  {v.Tipo && <span className={styles.nosisVarType}>{v.Tipo}</span>}
+                </div>
+                {v.Descripcion && <span className={styles.nosisVarDesc}>{v.Descripcion}</span>}
+                {v.Valor !== undefined && v.Valor !== null && (
+                  <span className={styles.nosisVarExample}>Ejemplo: {String(v.Valor)}</span>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
 
 const CdaRowSkeleton = ({ styles }) => (
   <tr>
@@ -187,11 +213,7 @@ export default function CdasGlobales() {
 
   const [isProcesando, setIsProcesando] = useState(false);
   const [integracion, setIntegracion] = useState("");
-  const [cdaMode, setCdaMode] = useState("simple"); // "simple" o "compuesto"
-  const [conditions, setConditions] = useState([
-    { id: 1, variable: "CDA_Valor.SCO", operador: ">", valor: "500" }
-  ]);
-  const [connector, setConnector] = useState("AND");
+  const [nosisSearchTerm, setNosisSearchTerm] = useState("");
 
   const [descripcion, setDescripcion] = useState("");
   const [expresion, setExpresion] = useState("");
@@ -255,12 +277,11 @@ export default function CdasGlobales() {
     }
     
     if (cleanVal === "") return "''";
-    
-    const isNumeric = !isNaN(cleanVal) && cleanVal !== "";
-    if (isNumeric) {
+
+    if (debeIrSinComillas(cleanVal)) {
       return cleanVal;
     }
-    
+
     const casedCleanVal = applyCasingStrategy(cleanVal, integracion);
     return `'${casedCleanVal}'`;
   };
@@ -291,15 +312,12 @@ export default function CdasGlobales() {
         valorSaneado = valorSaneado.slice(1, -1);
       }
     }
-    const isNumericVal = !isNaN(valorSaneado) && valorSaneado !== "";
-    if (!isNumericVal && valorSaneado !== "") {
+    if (!debeIrSinComillas(valorSaneado) && valorSaneado !== "") {
       valorSaneado = applyCasingStrategy(valorSaneado, integracion);
     }
     const valorParaLog = formatValorParaLog(valorSaneado);
 
-    const fullExpression = cdaMode === "compuesto" 
-      ? expresion.trim() 
-      : `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+    const fullExpression = `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
 
     try {
       const res = await probarCda({
@@ -325,36 +343,8 @@ export default function CdasGlobales() {
     setExpresion(""); // reset expression when changing integration
     setExpresionLog("");
     setUserEditedExpresionLog(false);
-    if (val !== "NOSIS") {
-      setCdaMode("simple");
-    }
+    setNosisSearchTerm("");
   };
-
-  // Generar expresión lógica a partir de las condiciones compuestas
-  const generateCompoundExpression = (conds, conn) => {
-    if (!conds || conds.length === 0) return "";
-    return conds
-      .map(c => {
-        const val = c.valor.trim();
-        const isNum = !isNaN(val) && val !== "";
-        const casedVal = applyCasingStrategy(val, integracion);
-        const formattedVal = isNum ? val : (casedVal === "" ? "''" : `'${casedVal}'`);
-        return `nosis.Variables(${c.variable}) ${c.operador} ${formattedVal}`;
-      })
-      .join(` ${conn} `);
-  };
-
-  useEffect(() => {
-    if (integracion === "NOSIS" && cdaMode === "compuesto") {
-      const expr = generateCompoundExpression(conditions, connector);
-      setExpresion(expr);
-      setSimbolocomparacion("");
-      setValorcomparacion("");
-      if (!userEditedExpresionLog) {
-        setExpresionLog(expr);
-      }
-    }
-  }, [conditions, connector, cdaMode, integracion, userEditedExpresionLog]);
 
   const handleSelectField = (fieldPath) => {
     const prefix = INTEGRACION_PREFIXES[integracion] || "";
@@ -365,12 +355,18 @@ export default function CdasGlobales() {
     }
   };
 
+  const handleSelectNosisVariable = (nombre) => {
+    const fullPath = `nosis.${nombre}`;
+    setExpresion(fullPath);
+    if (!userEditedExpresionLog) {
+      setExpresionLog(fullPath);
+    }
+  };
+
   const resetFormulario = () => {
     setCdaEditando(null);
     setIntegracion("");
-    setCdaMode("simple");
-    setConditions([{ id: Date.now(), variable: "CDA_Valor.SCO", operador: ">", valor: "500" }]);
-    setConnector("AND");
+    setNosisSearchTerm("");
     setDescripcion("");
     setExpresion("");
     setExpresionLog("");
@@ -399,7 +395,7 @@ export default function CdasGlobales() {
 
     setCdaEditando(cda);
     setIntegracion(detectarIntegracion(expr));
-    setCdaMode("simple");
+    setNosisSearchTerm("");
     setDescripcion(getCdaProp(cda, "descripcion") || "");
     setExpresion(expr);
     setExpresionLog(exprLog || expr);
@@ -416,8 +412,8 @@ export default function CdasGlobales() {
   };
 
   const errorDescripcion = intentoEnviar && !descripcion.trim();
-  const errorExpresion = intentoEnviar && cdaMode !== "compuesto" && !expresion.trim();
-  const errorValor = intentoEnviar && cdaMode !== "compuesto" && !comparaPorVacio && !valorcomparacion.trim();
+  const errorExpresion = intentoEnviar && !expresion.trim();
+  const errorValor = intentoEnviar && !comparaPorVacio && !valorcomparacion.trim();
   const errorMensaje = intentoEnviar && !mensajerechazo.trim();
 
   const handleSave = (e) => {
@@ -425,8 +421,8 @@ export default function CdasGlobales() {
 
     const faltaAlgunCampo =
       !descripcion.trim() ||
-      (cdaMode !== "compuesto" && !expresion.trim()) ||
-      (cdaMode !== "compuesto" && !comparaPorVacio && !valorcomparacion.trim()) ||
+      !expresion.trim() ||
+      (!comparaPorVacio && !valorcomparacion.trim()) ||
       !mensajerechazo.trim();
 
     if (faltaAlgunCampo) {
@@ -458,15 +454,12 @@ export default function CdasGlobales() {
       }
     }
 
-    const isNumericVal = !isNaN(valorSaneado) && valorSaneado !== "";
-    if (!isNumericVal && valorSaneado !== "") {
+    if (!debeIrSinComillas(valorSaneado) && valorSaneado !== "") {
       valorSaneado = applyCasingStrategy(valorSaneado, integracion);
     }
 
     const valorParaLog = formatValorParaLog(valorSaneado);
-    const fullExpression = cdaMode === "compuesto"
-      ? expresion.trim()
-      : `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+    const fullExpression = `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
 
     try {
       const resValida = await probarCda({
@@ -487,8 +480,8 @@ export default function CdasGlobales() {
       cdaID: esEdicion ? (getCdaId(cdaEditando) ?? 0) : 0,
       descripcion: descripcion.trim(),
       expresion: expresion.trim(),
-      simboloComparacion: cdaMode === "compuesto" ? "" : simbolocomparacion,
-      valorComparacion: cdaMode === "compuesto" ? "" : valorSaneado,
+      simboloComparacion: simbolocomparacion,
+      valorComparacion: valorSaneado,
       vinculaDefaultCV: vinculadefaultcv ? "1" : "0",
       expresionLog: expresionLog.trim(),
       mensajeRechazo: mensajerechazo.trim()
@@ -571,12 +564,11 @@ export default function CdasGlobales() {
   };
 
   const currentJsonData = integracion ? INTEGRACIONES_MOCKS[integracion] : null;
+  const nosisVariables = INTEGRACIONES_MOCKS?.NOSIS?.Contenido?.Datos?.Variables || [];
 
-  const previewSimple = cdaMode !== "compuesto" && expresion.trim()
+  const reglaActual = expresion.trim()
     ? `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valorcomparacion)}`
     : "";
-
-  const reglaActual = cdaMode === "compuesto" ? expresion.trim() : previewSimple;
 
   const postSaveModal = (
     <ConfirmacionModal
@@ -722,10 +714,10 @@ export default function CdasGlobales() {
             onChange={handleIntegracionChange}
             options={[
               { value: "ARCA", label: "ARCA" },
-              { value: "CASFOG", label: "CASFOG" },
-              { value: "LUFE", label: "LUFE" },
               { value: "NOSIS", label: "NOSIS" },
-              { value: "SGRPLUS", label: "SGRPLUS" }
+              { value: "LUFE", label: "LUFE" },
+              { value: "CASFOG", label: "CASFOG" },
+              { value: "SGRPLUS", label: "SGR+" }
             ]}
             placeholder="-- Seleccioná una integración (opcional) --"
             variant="admin"
@@ -733,136 +725,18 @@ export default function CdasGlobales() {
             hideErrorSpace={true}
           />
           <p className={styles.helperText}>
-            Es opcional: solo se usa para navegar la estructura del JSON y armar la expresión con clics. También podés escribirla manualmente sin seleccionar ninguna.
+            Es opcional: podés armar la expresión con clics o escribirla manualmente sin seleccionar nada.
           </p>
 
-          {integracion === "NOSIS" && (
-            <div className={styles.modeToggleContainer}>
-              <button
-                type="button"
-                className={`${styles.modeTab} ${cdaMode === "simple" ? styles.modeTabActive : ""}`}
-                onClick={() => setCdaMode("simple")}
-              >
-                Árbol JSON
-              </button>
-              <button
-                type="button"
-                className={`${styles.modeTab} ${cdaMode === "compuesto" ? styles.modeTabActive : ""}`}
-                onClick={() => setCdaMode("compuesto")}
-              >
-                Reglas Compuestas
-              </button>
-            </div>
-          )}
-
-          {cdaMode === "compuesto" && integracion === "NOSIS" ? (
-            <div className={styles.builderContainer}>
-              <p className={styles.builderIntro}>
-                Combiná múltiples variables del reporte de Nosis para crear reglas de validación complejas.
-              </p>
-
-              <div className={styles.connectorWrapper}>
-                <span className={styles.connectorLabel}>Conector Lógico:</span>
-                <select
-                  value={connector}
-                  onChange={(e) => setConnector(e.target.value)}
-                  className={styles.connectorSelect}
-                  disabled={isCreando || isActualizando || isProcesando}
-                >
-                  <option value="AND">AND (Y)</option>
-                  <option value="OR">OR (O)</option>
-                </select>
-              </div>
-
-              <div className={styles.conditionsList}>
-                {conditions.map((cond, idx) => (
-                  <div key={cond.id} className={styles.conditionRow}>
-                    <select
-                      value={cond.variable}
-                      onChange={(e) => {
-                        const newConds = [...conditions];
-                        newConds[idx].variable = e.target.value;
-                        setConditions(newConds);
-                      }}
-                      className={styles.variableSelect}
-                      disabled={isCreando || isActualizando || isProcesando}
-                    >
-                      {NOSIS_VARIABLES_CATALOG.map(item => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-
-                    <select
-                      value={cond.operador}
-                      onChange={(e) => {
-                        const newConds = [...conditions];
-                        newConds[idx].operador = e.target.value;
-                        setConditions(newConds);
-                      }}
-                      className={styles.opSelect}
-                      disabled={isCreando || isActualizando || isProcesando}
-                    >
-                      <option value="=">=</option>
-                      <option value=">">&gt;</option>
-                      <option value="<">&lt;</option>
-                      <option value=">=">&gt;=</option>
-                      <option value="<=">&lt;=</option>
-                      <option value="<>">&lt;&gt;</option>
-                    </select>
-
-                    <input
-                      type="text"
-                      value={cond.valor}
-                      onChange={(e) => {
-                        const newConds = [...conditions];
-                        newConds[idx].valor = e.target.value;
-                        setConditions(newConds);
-                      }}
-                      placeholder="Valor"
-                      className={styles.valInput}
-                      disabled={isCreando || isActualizando || isProcesando}
-                    />
-
-                    {conditions.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setConditions(conditions.filter(c => c.id !== cond.id));
-                        }}
-                        className={styles.btnDelete}
-                        title="Eliminar condición"
-                        disabled={isCreando || isActualizando || isProcesando}
-                      >
-                        <FiTrash2 size={14} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setConditions([
-                    ...conditions,
-                    { id: Date.now(), variable: "CDA_Valor.SCO", operador: ">", valor: "" }
-                  ]);
-                }}
-                className={styles.btnAddCondition}
-                disabled={isCreando || isActualizando || isProcesando}
-              >
-                <FiPlus size={14} /> Agregar Condición
-              </button>
-
-              <div className={styles.previewCard}>
-                <div className={styles.previewTitle}>Regla Lógica Generada:</div>
-                <div className={styles.previewCode}>
-                  {expresion || "(Agregá condiciones para visualizar)"}
-                </div>
-              </div>
-            </div>
+          {integracion === "NOSIS" ? (
+            <NosisVariablePicker
+              variables={nosisVariables}
+              searchTerm={nosisSearchTerm}
+              onSearchChange={setNosisSearchTerm}
+              selectedExpresion={expresion}
+              onSelect={handleSelectNosisVariable}
+              styles={styles}
+            />
           ) : (
             <div className={styles.jsonViewerContainer}>
               {currentJsonData ? (
@@ -888,7 +762,7 @@ export default function CdasGlobales() {
             </div>
           </div>
 
-          <div className={styles.colScroll}>
+          <div className={`${styles.colScroll} ${styles.colScrollTight}`}>
             {validationError && (
               <div className={styles.validationError}>
                 {validationError}
@@ -921,70 +795,63 @@ export default function CdasGlobales() {
                       setExpresionLog(val);
                     }
                   }}
-                  disabled={isCreando || isActualizando || isProcesando || cdaMode === "compuesto"}
+                  disabled={isCreando || isActualizando || isProcesando}
                   variant="admin"
-                  hideErrorSpace={cdaMode === "compuesto"}
                   error={errorExpresion ? "Campo obligatorio" : undefined}
                 />
               </div>
 
-              {cdaMode === "compuesto" ? (
-                <div className={styles.rightColInfoBox}>
-                  ℹ️ <strong>Regla Compuesta Activa:</strong> el operador y el valor se definen desde el constructor de la columna 1.
+              <div className={styles.fieldRow}>
+                <div style={{ flex: "0 0 30%" }}>
+                  <SelectSimple
+                    label="Operador"
+                    value={simbolocomparacion}
+                    onChange={setSimbolocomparacion}
+                    options={[
+                      { value: "=", label: "=" },
+                      { value: ">", label: ">" },
+                      { value: "<", label: "<" },
+                      { value: ">=", label: ">=" },
+                      { value: "<=", label: "<=" },
+                      { value: "<>", label: "<>" }
+                    ]}
+                    disabled={isCreando || isActualizando || isProcesando}
+                    variant="admin"
+                  />
                 </div>
-              ) : (
-                <div className={styles.fieldRow}>
-                  <div style={{ flex: "0 0 30%" }}>
-                    <SelectSimple
-                      label="Operador"
-                      value={simbolocomparacion}
-                      onChange={setSimbolocomparacion}
-                      options={[
-                        { value: "=", label: "=" },
-                        { value: ">", label: ">" },
-                        { value: "<", label: "<" },
-                        { value: ">=", label: ">=" },
-                        { value: "<=", label: "<=" },
-                        { value: "<>", label: "<>" }
-                      ]}
-                      disabled={isCreando || isActualizando || isProcesando}
-                      variant="admin"
-                    />
-                  </div>
 
-                  <div>
-                    <InputSimple
-                      label="Valor de Comparación"
-                      value={valorcomparacion}
-                      onChange={setValorcomparacion}
-                      disabled={isCreando || isActualizando || isProcesando || comparaPorVacio}
-                      variant="admin"
-                      hideErrorSpace={true}
-                      error={errorValor ? true : undefined}
-                    />
-                    <div className={styles.valorBelowRow}>
-                      <span className={styles.valorErrorText}>
-                        {errorValor ? "Campo obligatorio" : ""}
-                      </span>
-                      <div
-                        className={styles.vacioCheckRow}
-                        onClick={() => {
-                          if (isCreando || isActualizando || isProcesando) return;
-                          const next = !comparaPorVacio;
-                          setComparaPorVacio(next);
-                          if (next) setValorcomparacion("");
-                        }}
-                        title="Marcá esto si el criterio compara contra un texto vacío. Si necesitás comparar contra el número 0, escribilo directamente en el campo."
-                      >
-                        <span className={styles.vacioCheckLabel}>Comparar contra vacío</span>
-                        <div className={`${styles.customCheckbox} ${comparaPorVacio ? styles.checkboxChecked : ""}`}>
-                          {comparaPorVacio && <FiCheck size={10} className={styles.checkmarkIcon} />}
-                        </div>
+                <div>
+                  <InputSimple
+                    label="Valor de Comparación"
+                    value={valorcomparacion}
+                    onChange={setValorcomparacion}
+                    disabled={isCreando || isActualizando || isProcesando || comparaPorVacio}
+                    variant="admin"
+                    hideErrorSpace={true}
+                    error={errorValor ? true : undefined}
+                  />
+                  <div className={styles.valorBelowRow}>
+                    <span className={errorValor ? styles.valorErrorText : styles.valorHintText}>
+                      {errorValor ? "Campo obligatorio" : "Fechas: AAAA-MM-DD"}
+                    </span>
+                    <div
+                      className={styles.vacioCheckRow}
+                      onClick={() => {
+                        if (isCreando || isActualizando || isProcesando) return;
+                        const next = !comparaPorVacio;
+                        setComparaPorVacio(next);
+                        if (next) setValorcomparacion("");
+                      }}
+                      title="Marcá esto si el criterio compara contra un texto vacío. Si necesitás comparar contra el número 0, escribilo directamente en el campo."
+                    >
+                      <div className={`${styles.customCheckbox} ${comparaPorVacio ? styles.checkboxChecked : ""}`}>
+                        {comparaPorVacio && <FiCheck size={11} className={styles.checkmarkIcon} />}
                       </div>
+                      <span className={styles.vacioCheckLabel}>Comparar contra vacío</span>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
               <button
                 type="button"

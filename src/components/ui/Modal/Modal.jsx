@@ -36,7 +36,7 @@ export const Modal = ({
   return createPortal(
     <div className={styles.overlay} onMouseDown={onClose}>
       <div
-        className={`${styles.modalBox} ${variant === "blue" ? styles.blueVariant : ""} ${allowOverflow ? styles.allowOverflow : ""} ${className}`}
+        className={`${styles.modalBox} ${variant === "blue" ? styles.blueVariant : ""} ${variant === "confirm" ? styles.confirmVariant : ""} ${allowOverflow ? styles.allowOverflow : ""} ${className}`}
         style={{ maxWidth }}
         onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
@@ -44,24 +44,35 @@ export const Modal = ({
         aria-labelledby={title ? "modal-title" : undefined}
       >
         {/* ── HEADER ── */}
-        <div className={styles.header}>
-          <div className={styles.headerText}>
-            {title && (
-              <h2 id="modal-title" className={styles.title}>
-                {title}
-              </h2>
-            )}
-            {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+        {title || subtitle ? (
+          <div className={styles.header}>
+            <div className={styles.headerText}>
+              {title && (
+                <h2 id="modal-title" className={styles.title}>
+                  {title}
+                </h2>
+              )}
+              {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+            </div>
+            <button
+              type="button"
+              className={styles.closeButton}
+              onClick={onClose}
+              aria-label="Cerrar modal"
+            >
+              <FiX size={18} />
+            </button>
           </div>
+        ) : (
           <button
             type="button"
-            className={styles.closeButton}
+            className={styles.closeButtonFloating}
             onClick={onClose}
             aria-label="Cerrar modal"
           >
             <FiX size={18} />
           </button>
-        </div>
+        )}
 
         {/* ── BODY ── */}
         <div className={`${styles.body} ${allowOverflow ? styles.allowOverflow : ""}`}>{children}</div>

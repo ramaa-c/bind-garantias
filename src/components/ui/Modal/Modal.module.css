@@ -105,6 +105,42 @@
   transform: scale(0.95);
 }
 
+/* Botón de cerrar flotante: se usa cuando el Modal no recibe title/subtitle
+   (ej. ConfirmacionModal, que arma su propio encabezado dentro del body) */
+.closeButtonFloating {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #555;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.15s ease;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.closeButtonFloating:hover {
+  color: var(--white, #fffefe);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
+}
+
+.closeButtonFloating:active {
+  transform: scale(0.95);
+}
+
 /* ── BODY ────────────────────────────────────────────────────────────────────── */
 
 .body {
@@ -167,6 +203,18 @@
 
 .blueVariant .body::-webkit-scrollbar-thumb:hover {
   background: rgba(59, 78, 209, 0.5);
+}
+
+/* ── CONFIRM VARIANT (usada por ConfirmacionModal) ─────────────────────────────
+   Sin la barra de acento lateral de las otras variantes: el color de marca lo
+   aporta el propio contenido (sello, líneas, botón), no el contenedor. */
+
+.confirmVariant {
+  background-color: #12141a;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
 /* ── ANIMATIONS ──────────────────────────────────────────────────────────────── */

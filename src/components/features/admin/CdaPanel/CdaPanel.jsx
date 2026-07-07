@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiEdit, FiCheck, FiPlus, FiX, FiRotateCcw, FiSave } from "react-icons/fi";
+import { FiCheck, FiRotateCcw, FiSave, FiLock, FiEdit3, FiSearch } from "react-icons/fi";
 import { toast } from "sonner";
 import { useObtenerCdasPorCadenaId, useVincularCdas } from "../../../../hooks/useCadenaValor";
 import { useObtenerTodosCdas } from "../../../../hooks/useCda";
@@ -43,11 +43,15 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
   // cdaid -> { checked: boolean, valorcomparacion: string, simbolocomparacion: string, expresion: string, mensajerechazo: string }
   const [cdaConfigs, setCdaConfigs] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Inicializar estado local a partir de los datos cargados
-  useEffect(() => {
+  // La expresión, el operador y el mensaje de rechazo son propiedades del CDA global
+  // (nunca se editan por cadena) y siempre salen de allCdasList. El endpoint de
+  // vinculación por cadena solo devuelve {cdaid, valorcomparacion}, así que ese es
+  // el único campo que puede pisar el valor por defecto.
+  const buildCdaConfigs = (allList, linkedList) => {
     const configs = {};
-    allCdasList.forEach(c => {
+    allList.forEach(c => {
       const id = getCdaId(c);
       if (id === undefined) return;
       configs[id] = {
@@ -58,18 +62,21 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
         mensajerechazo: getCdaProperty(c, "mensajerechazo") || ""
       };
     });
-    linkedCdasList.forEach(c => {
+    linkedList.forEach(c => {
       const id = getCdaId(c);
-      if (id === undefined) return;
+      if (id === undefined || !configs[id]) return;
       configs[id] = {
+        ...configs[id],
         checked: true,
-        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
-        simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
-        expresion: getCdaProperty(c, "expresion") || "",
-        mensajerechazo: getCdaProperty(c, "mensajerechazo") || ""
+        valorcomparacion: getCdaProperty(c, "valorcomparacion") || ""
       };
     });
-    setCdaConfigs(configs);
+    return configs;
+  };
+
+  // Inicializar estado local a partir de los datos cargados
+  useEffect(() => {
+    setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
   }, [todosCdas, linkedCdas]);
 
   const handleToggleCda = (cdaId) => {
@@ -92,36 +99,6 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
     }));
   };
 
-  const handleSymbolChange = (cdaId, symbol) => {
-    setCdaConfigs(prev => ({
-      ...prev,
-      [cdaId]: {
-        ...prev[cdaId],
-        simbolocomparacion: symbol
-      }
-    }));
-  };
-
-  const handleExpressionChange = (cdaId, expr) => {
-    setCdaConfigs(prev => ({
-      ...prev,
-      [cdaId]: {
-        ...prev[cdaId],
-        expresion: expr
-      }
-    }));
-  };
-
-  const handleRechazoChange = (cdaId, msg) => {
-    setCdaConfigs(prev => ({
-      ...prev,
-      [cdaId]: {
-        ...prev[cdaId],
-        mensajerechazo: msg
-      }
-    }));
-  };
-
   // Comparar estado actual vs inicial para habilitar el botón de Guardar
   const hasChanges = () => {
     const currentActiveIds = Object.keys(cdaConfigs)
@@ -133,16 +110,13 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
     if (currentActiveIds.length !== initialActiveIds.length) return true;
     if (currentActiveIds.some(id => !initialActiveIds.includes(id))) return true;
 
-    // 2. Ver si cambió el valor, el símbolo, la expresión o el mensaje de rechazo en alguno de los activos
+    // 2. Ver si cambió el valor de comparación en alguno de los activos (es lo único editable por cadena)
     for (const cda of linkedCdasList) {
       const id = getCdaId(cda);
       if (id === undefined) continue;
       const currentConfig = cdaConfigs[id];
       if (!currentConfig) continue;
       if (String(currentConfig.valorcomparacion || "") !== String(getCdaProperty(cda, "valorcomparacion") || "")) return true;
-      if (String(currentConfig.simbolocomparacion || "=") !== String(getCdaProperty(cda, "simbolocomparacion") || "=")) return true;
-      if (String(currentConfig.expresion || "") !== String(getCdaProperty(cda, "expresion") || "")) return true;
-      if (String(currentConfig.mensajerechazo || "") !== String(getCdaProperty(cda, "mensajerechazo") || "")) return true;
     }
 
     return false;
@@ -153,30 +127,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
   };
 
   const handleReset = () => {
-    const configs = {};
-    allCdasList.forEach(c => {
-      const id = getCdaId(c);
-      if (id === undefined) return;
-      configs[id] = {
-        checked: false,
-        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
-        simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
-        expresion: getCdaProperty(c, "expresion") || "",
-        mensajerechazo: getCdaProperty(c, "mensajerechazo") || ""
-      };
-    });
-    linkedCdasList.forEach(c => {
-      const id = getCdaId(c);
-      if (id === undefined) return;
-      configs[id] = {
-        checked: true,
-        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
-        simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
-        expresion: getCdaProperty(c, "expresion") || "",
-        mensajerechazo: getCdaProperty(c, "mensajerechazo") || ""
-      };
-    });
-    setCdaConfigs(configs);
+    setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
     toast.success("CDAs restablecidos a la configuración guardada");
   };
 
@@ -214,6 +165,17 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
 
   const isLoading = isLoadingTodos || isLoadingLinked;
 
+  const cdasVisibles = allCdasList
+    .filter(cda => !hideUnchecked || (cdaConfigs[getCdaId(cda)]?.checked))
+    .filter(cda => {
+      const term = searchTerm.trim().toLowerCase();
+      if (!term) return true;
+      return (
+        String(getCdaProperty(cda, "descripcion")).toLowerCase().includes(term) ||
+        String(getCdaProperty(cda, "expresion")).toLowerCase().includes(term)
+      );
+    });
+
   if (isLoading) {
     return (
       <div style={{ padding: "2rem", display: "flex", justifyContent: "center" }}>
@@ -226,20 +188,30 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div className={styles.modalBody}>
         {!hideHeader && (
-          <>
-            <CadenaHeaderCard
-              denominacion={activeItem?.denominacion}
-              logo={activeItem?.logo}
-              referencia={activeItem?.referencia}
-              cadenavalorid={activeItem?.cadenavalorid}
-              cuittercero={activeItem?.cuittercero}
+          <CadenaHeaderCard
+            denominacion={activeItem?.denominacion}
+            logo={activeItem?.logo}
+            referencia={activeItem?.referencia}
+            cadenavalorid={activeItem?.cadenavalorid}
+            cuittercero={activeItem?.cuittercero}
+          />
+        )}
+        <p style={{ fontSize: "0.825rem", color: "#8b949e", lineHeight: "1.4" }}>
+          {isReadOnly
+            ? "Listado de los CDAs activos para esta cadena. La regla y el mensaje de rechazo se definen en Criterios de Aceptación; el valor mostrado es el vigente para esta cadena."
+            : "Activá los CDAs que se deben ejecutar para esta cadena. La regla y el mensaje de rechazo son los definidos en Criterios de Aceptación: acá solo podés personalizar, por cadena, el valor límite de cada uno."}
+        </p>
+
+        {!hideUnchecked && allCdasList.length > 0 && (
+          <div className={styles.searchWrap}>
+            <FiSearch className={styles.iconSearch} />
+            <input
+              type="text"
+              placeholder="Buscar por descripción o expresión..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <p style={{ fontSize: "0.825rem", color: "#8b949e", lineHeight: "1.4" }}>
-              {isReadOnly 
-                ? "Listado de los CDAs que se encuentran activos y vinculados para validar esta cadena de valor."
-                : "Seleccioná los CDAs que se deben ejecutar durante la validación de esta cadena de valor y personalizá sus valores límites y mensajes de rechazo."}
-            </p>
-          </>
+          </div>
         )}
 
         <div className={`${styles.cdasSection} ${isReadOnly ? styles.readOnly : ""}`}>
@@ -248,9 +220,12 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
                 No hay CDAs creados en el sistema.
               </div>
+            ) : cdasVisibles.length === 0 ? (
+              <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
+                No se encontraron CDAs que coincidan con la búsqueda.
+              </div>
             ) : (
-              allCdasList
-                .filter(cda => !hideUnchecked || (cdaConfigs[getCdaId(cda)]?.checked))
+              cdasVisibles
                 .map((cda) => {
                   const id = getCdaId(cda);
                   if (id === undefined) return null;
@@ -270,6 +245,9 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
                   const mensajeRechazo = config.mensajerechazo;
 
                   const isDefault = String(getCdaProperty(cda, "vinculadefaultcv")) === "1" || String(getCdaProperty(cda, "vinculadefaultcv")).toUpperCase() === "S";
+
+                  const valorGlobal = getCdaProperty(cda, "valorcomparacion") || "";
+                  const esValorPersonalizado = isChecked && String(valComparacion || "") !== String(valorGlobal);
 
                   return (
                     <div
@@ -293,38 +271,44 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
                           )}
                         </div>
 
-                        {/* Formula Visual con Inputs en Línea */}
-                        <div className={styles.formulaWrapper}>
-                          <span className={styles.formulaLabel}>Regla:</span>
-                          
-                          <span className={styles.formulaPart} onClick={(e) => e.stopPropagation()}>
-                            {exprComparacion}
-                          </span>
-                          
-                          <span className={styles.inlineSymbolBadge} onClick={(e) => e.stopPropagation()}>
-                            {simboloComparacion}
-                          </span>
+                        {/* Regla global: solo lectura, definida en Criterios de Aceptación */}
+                        <div className={styles.globalRuleRow} title="Definida en Criterios de Aceptación. No se edita por cadena.">
+                          <FiLock className={styles.lockIcon} size={11} />
+                          <span className={styles.globalRuleLabel}>Regla global</span>
+                          <code className={styles.globalRuleExpr}>{exprComparacion}</code>
+                          <span className={styles.globalRuleOperator}>{simboloComparacion}</span>
+                        </div>
 
+                        <div className={styles.globalRechazoRow}>
+                          {mensajeRechazo ? (
+                            <span className={styles.globalRechazoText}>
+                              <span className={styles.globalRechazoLabel}>Mensaje de rechazo global:</span> "{mensajeRechazo}"
+                            </span>
+                          ) : (
+                            <span className={styles.globalRechazoTextEmpty}>Sin mensaje de rechazo configurado</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className={styles.controlPanel}>
+                        <span className={styles.controlPanelLabel}>Valor en esta cadena</span>
+                        <div className={styles.controlValueWrap}>
                           <input
                             type="text"
                             value={valComparacion}
                             onChange={(e) => handleValueChange(id, e.target.value)}
-                            className={styles.inlineValueInput}
+                            className={styles.controlValueInput}
                             placeholder="Valor"
                             disabled={!isChecked || isReadOnly}
                             onClick={(e) => e.stopPropagation()}
                           />
+                          {!isReadOnly && <FiEdit3 className={styles.controlPencilIcon} size={12} />}
                         </div>
-
-                        {/* Mensaje de Rechazo de muestra */}
-                        <div className={styles.inlineRechazoWrapper}>
-                          <span className={styles.inlineRechazoLabel}>Mensaje Rechazo:</span>
-                          <span className={styles.inlineRechazoVal} onClick={(e) => e.stopPropagation()}>
-                            {mensajeRechazo || "Sin mensaje de rechazo configurado"}
+                        {esValorPersonalizado && (
+                          <span className={styles.overrideHint} title={`El valor definido en Criterios de Aceptación es "${valorGlobal || "(vacío)"}"`}>
+                            ≠ global: {valorGlobal || "(vacío)"}
                           </span>
-                        </div>
-                      </div>
-                      <div className={styles.actionsWrapper}>
+                        )}
                         <span className={`${styles.cdaStatusBadge} ${isChecked ? styles.badgeActive : styles.badgeInactive}`}>
                           {isChecked ? "Activo" : "Inactivo"}
                         </span>
