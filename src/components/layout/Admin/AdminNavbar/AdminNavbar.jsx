@@ -143,6 +143,16 @@ export default function AdminNavbar() {
           {!isRestricted && (
             <>
 
+          {/* Empresas */}
+          <button type="button"
+            className={`${styles.navButton} ${
+              isActive("/admin/empresas") ? styles.active : ""
+            }`}
+            onClick={() => handleNavigate("/admin/empresas")}
+          >
+            Empresas
+          </button>
+
           {/* Criterios de Aceptación */}
           <button type="button"
             className={`${styles.navButton} ${

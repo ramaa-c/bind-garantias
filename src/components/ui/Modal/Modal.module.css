@@ -175,6 +175,12 @@
 /* ── BLUE VARIANT ───────────────────────────────────────────────────────────── */
 
 .blueVariant {
+  /* El modal se porta a document.body (createPortal), fuera del árbol donde
+     .admin-theme define --scrollbar-thumb en azul. Se redefinen acá para que
+     cualquier scroll dentro del modal (el propio .body y los de componentes
+     hijos, ej. CdaPanel) hereden el azul en vez de caer al amarillo default. */
+  --scrollbar-thumb: rgba(59, 78, 209, 0.25);
+  --scrollbar-thumb-hover: rgba(59, 78, 209, 0.5);
   background-color: #0d1117;
   border-color: rgba(59, 78, 209, 0.2);
   box-shadow:

@@ -49,24 +49,45 @@ const ESTRUCTURA_SOCIOS = [
   },
 ];
 
-export function SociosLegajo() {
-  const { socioIdActivo, tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
+export function SociosLegajo({
+  socioIdOverride,
+  tipoPersonaIdOverride,
+  nombreEmpresaOverride,
+  adminMode = false,
+} = {}) {
+  const empresaActiva = useEmpresaActiva(adminMode);
 
+  const { socioIdActivo, tipoPersonaId, nombreEmpresa } = adminMode
+    ? {
+        socioIdActivo: socioIdOverride,
+        tipoPersonaId: tipoPersonaIdOverride,
+        nombreEmpresa: nombreEmpresaOverride,
+      }
+    : empresaActiva;
+
+  // En modo admin no se conoce con certeza a qué cadena de valor pertenece
+  // el socio, así que se muestran todas las pestañas sin filtrar por
+  // requisitos (ver DocumentosLegajo para el mismo criterio).
   const { cadenaSlug } = useParams();
   const cadenaId = Number(cadenaSlug) || 1;
-  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
+  const { requisitos } = useRequisitos(
+    adminMode ? null : cadenaId,
+    adminMode ? null : tipoPersonaId,
+    adminMode ? null : nombreEmpresa,
+  );
 
   const tabsDisponibles = useMemo(() => {
     let baseTabs = ESTRUCTURA_SOCIOS;
     if (tipoPersonaId === 1) {
       baseTabs = ESTRUCTURA_SOCIOS.filter(t => t.key !== "accionistas");
     }
+    if (adminMode) return baseTabs;
     // Filtrar según los requisitos configurados
     return baseTabs.filter(t => {
       const configVal = requisitos?.relaciones?.[t.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [tipoPersonaId, requisitos]);
+  }, [tipoPersonaId, requisitos, adminMode]);
 
   const [activeTab, setActiveTab] = useState(null);
 
@@ -201,11 +222,11 @@ export function SociosLegajo() {
               {isActive && <span className={styles.activeBar} />}
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
-                {requisitos?.relaciones?.[doc.key] === 1 ? (
+                {!adminMode && (requisitos?.relaciones?.[doc.key] === 1 ? (
                   <span className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}>Obligatorio</span>
                 ) : (
                   <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
-                )}
+                ))}
               </div>
               <FiChevronDown
                 className={styles.mobileChevron}

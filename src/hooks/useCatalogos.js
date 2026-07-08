@@ -31,7 +31,7 @@ const useTipoActividadBCRA = () =>
     select: (data) => mapAndSort(data, "tipoactividadbcraid"),
   });
 
-const useSituacionBCRA = () =>
+export const useSituacionBCRA = () =>
   useQuery({
     queryKey: ["catalogos", "situacionBCRA"],
     queryFn: catalogosService.obtenerSituacionBCRA,
@@ -39,7 +39,7 @@ const useSituacionBCRA = () =>
     select: (data) => mapAndSort(data, "situacionbcraid"),
   });
 
-const useEstadoSocio = () =>
+export const useEstadoSocio = () =>
   useQuery({
     queryKey: ["catalogos", "estadoSocio"],
     queryFn: catalogosService.obtenerEstadoSocio,
@@ -47,7 +47,7 @@ const useEstadoSocio = () =>
     select: (data) => mapAndSort(data, "estadosocioid"),
   });
 
-const useTamanioEmpresa = () =>
+export const useTamanioEmpresa = () =>
   useQuery({
     queryKey: ["catalogos", "tamanioEmpresa"],
     queryFn: catalogosService.obtenerTamanioEmpresa,

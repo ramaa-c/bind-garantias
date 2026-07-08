@@ -32,6 +32,8 @@ import AltaDatosEmpresa from "./pages/cliente/onboarding/AltaDatosEmpresa/AltaDa
 import SeleccionarEmpresa from "./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
+import Empresas from "./pages/admin/Empresas";
+import EmpresaDetalle from "./pages/admin/EmpresaDetalle";
 
 import RolesPermisos from "./pages/admin/RolesPermisos";
 import Terminos from "./pages/admin/Terminos";
@@ -214,6 +216,26 @@ function App() {
             }
           />
 
+          <Route
+            path="/admin/empresas"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <Empresas />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/empresas/:id"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <EmpresaDetalle />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
           <Route
             path="/admin/roles-permisos"
             element={

@@ -9,7 +9,7 @@ import { Button } from "../../components/ui/Button/Button";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox } from "react-icons/fi";
+import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox, FiX } from "react-icons/fi";
 import styles from "./CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -283,7 +283,7 @@ export default function CdasGlobales() {
   const [mostrarExpresionLog, setMostrarExpresionLog] = useState(false);
 
   // Estados para laboratorio de pruebas de CDAs
-  const [testCuit, setTestCuit] = useState("30714430048");
+  const [testCuit, setTestCuit] = useState("");
   const [testResult, setTestResult] = useState(null);
 
   const todosCdasList = Array.isArray(todosCdasData) ? todosCdasData : todosCdasData?.items || todosCdasData?.data || [];
@@ -980,42 +980,46 @@ export default function CdasGlobales() {
             </div>
           </div>
 
-          {/* Laboratorio de Pruebas: arriba, zona fija */}
+          {/* Laboratorio de Pruebas: zona fija arriba. El resultado se superpone
+              a este mismo contenedor (overlay), así que nunca crece ni empuja
+              a la vinculación de abajo. */}
           <div className={styles.sandboxContainer}>
             <h3 className={styles.sandboxTitle}>Laboratorio de Pruebas</h3>
 
-            {reglaActual ? (
-              <p className={styles.sandboxRulePreview}>
-                La regla actual que diseñaste es: <code>{reglaActual}</code>
-              </p>
-            ) : (
-              <p className={styles.sandboxRulePreview}>
-                Definí una regla en el paso 2 para poder probarla acá.
-              </p>
-            )}
+            <div className={styles.sandboxBody}>
+              {reglaActual ? (
+                <p className={styles.sandboxRulePreview}>
+                  La regla actual que diseñaste es: <code>{reglaActual}</code>
+                </p>
+              ) : (
+                <p className={styles.sandboxRulePreview}>
+                  Definí una regla en el paso 2 para poder probarla acá.
+                </p>
+              )}
 
-            <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end" }}>
-              <div style={{ flex: 1 }}>
-                <InputSimple
-                  label="CUIT para la prueba"
-                  value={testCuit}
-                  onChange={setTestCuit}
-                  disabled={isTesting || isCreando || isActualizando || isProcesando}
-                  variant="admin"
-                  hideErrorSpace={true}
-                />
-              </div>
-              <div>
-                <Button
-                  type="button"
-                  variant="outlineBlue"
-                  size="md"
-                  onClick={handleTestExpression}
-                  isLoading={isTesting}
-                  disabled={isCreando || isActualizando || isProcesando || !reglaActual}
-                >
-                  Probar
-                </Button>
+              <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end" }}>
+                <div style={{ flex: 1 }}>
+                  <InputSimple
+                    label="CUIT para la prueba"
+                    value={testCuit}
+                    onChange={setTestCuit}
+                    disabled={isTesting || isCreando || isActualizando || isProcesando}
+                    variant="admin"
+                    hideErrorSpace={true}
+                  />
+                </div>
+                <div>
+                  <Button
+                    type="button"
+                    variant="outlineBlue"
+                    size="md"
+                    onClick={handleTestExpression}
+                    isLoading={isTesting}
+                    disabled={isCreando || isActualizando || isProcesando || !reglaActual || !testCuit.trim()}
+                  >
+                    Probar
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -1031,7 +1035,18 @@ export default function CdasGlobales() {
                 <div className={styles.testResultBox}>
                   <div className={styles.testResultHeader}>
                     <span>Resultado:</span>
-                    <span className={resultado.badgeClass}>{resultado.label}</span>
+                    <div className={styles.testResultHeaderRight}>
+                      <span className={resultado.badgeClass}>{resultado.label}</span>
+                      <button
+                        type="button"
+                        className={styles.testResultCloseBtn}
+                        onClick={() => setTestResult(null)}
+                        title="Cerrar resultado"
+                        aria-label="Cerrar resultado"
+                      >
+                        <FiX size={14} />
+                      </button>
+                    </div>
                   </div>
                   <div className={styles.testResultMessage}>{resultado.descripcion}</div>
                   {valorLog && (
@@ -1047,6 +1062,7 @@ export default function CdasGlobales() {
 
           <div className={styles.colDivider} />
 
+          {/* Vinculación: zona scrolleable, debajo del laboratorio de pruebas */}
           <div className={styles.colScroll}>
             <div className={styles.screenWarningBox}>
               <FiAlertTriangle className={styles.screenWarningIcon} size={20} />
