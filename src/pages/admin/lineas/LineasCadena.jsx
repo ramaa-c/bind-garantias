@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { FiPlus, FiEdit, FiTrash2, FiX, FiList } from "react-icons/fi";
 import { toast } from "sonner";
 
-import { useObtenerTodasWebConEstado } from "../../hooks/useCadenaValor";
-import { useMonedas, useTiposProducto, useObligaciones } from "../../hooks/useCatalogos";
+import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
+import { useMonedas, useTiposProducto, useObligaciones } from "../../../hooks/useCatalogos";
 import {
   useObtenerLimitesCadenaValor,
   useCrearLimiteCadenaValor,
   useActualizarLimiteCadenaValor,
   useObtenerProductosPorLimite,
-} from "../../hooks/useLinea";
+} from "../../../hooks/useLinea";
 import {
   SelectSimple,
   Modal,
@@ -17,8 +17,8 @@ import {
   Spinner,
   InputSimple,
   SelectFechaSimple,
-} from "../../components/ui";
-import { CadenaSelectCard } from "../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
+} from "../../../components/ui";
+import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import styles from "./LineasProductos.module.css";
 
 const MOCK_MONEDAS = [

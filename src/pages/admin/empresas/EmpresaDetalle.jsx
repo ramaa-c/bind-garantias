@@ -13,23 +13,23 @@ import {
   FiCalendar,
   FiArrowLeft,
 } from "react-icons/fi";
-import { useSocioPorId, useActualizarSocio } from "../../hooks/useSocios";
+import { useSocioPorId, useActualizarSocio } from "../../../hooks/useSocios";
 import {
   useSituacionBCRA,
   useEstadoSocio,
   useTamanioEmpresa,
   useTipoCanalComercializacion,
-} from "../../hooks/useCatalogos";
+} from "../../../hooks/useCatalogos";
 import {
   Button,
   InputSimple,
   SelectSimple,
   SelectFechaSimple,
   Spinner,
-} from "../../components/ui";
-import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { DocumentosLegajo } from "../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
-import { SociosLegajo } from "../../components/features/shared/SociosLegajo/SociosLegajo";
+} from "../../../components/ui";
+import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+import { DocumentosLegajo } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
+import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
 import styles from "./EmpresaDetalle.module.css";
 
 const getTipoPersonaLabel = (tipoPersonaId) => {

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { FiLock } from "react-icons/fi";
 import styles from "./CadenasCda.module.css";
-import { CadenaSelectCard } from "../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
-import { CdaPanel } from "../../components/features/admin/CdaPanel/CdaPanel";
-import { useObtenerTodasWebConEstado } from "../../hooks/useCadenaValor";
+import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
+import { CdaPanel } from "../../../components/features/admin/CdaPanel/CdaPanel";
+import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 
 export default function CadenasCda() {
   const [selectedCadenaId, setSelectedCadenaId] = useState("");

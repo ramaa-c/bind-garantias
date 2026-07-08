@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { FiEdit } from "react-icons/fi";
 import { toast } from "sonner";
 
-import { useTiposProducto, useObligaciones } from "../../hooks/useCatalogos";
+import { useTiposProducto, useObligaciones } from "../../../hooks/useCatalogos";
 import {
   useObtenerProductosPorLimite,
   useAsociarProductoLimite,
   useActualizarProductoLimite,
-} from "../../hooks/useLinea";
+} from "../../../hooks/useLinea";
 
 import {
   Modal,
@@ -15,8 +15,8 @@ import {
   Spinner,
   InputSimple,
   SelectSimple,
-} from "../../components/ui";
-import { CadenaSelectCard } from "../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
+} from "../../../components/ui";
+import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import styles from "./LineasProductos.module.css";
 
 // --- CHILD COMPONENT: SKELETON CARD ---
