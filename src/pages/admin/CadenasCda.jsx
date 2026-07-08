@@ -3,7 +3,7 @@ import { FiLock } from "react-icons/fi";
 import styles from "./CadenasCda.module.css";
 import { CadenaSelectCard } from "../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import { CdaPanel } from "../../components/features/admin/CdaPanel/CdaPanel";
-import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
+import { useObtenerTodasWebConEstado } from "../../hooks/useCadenaValor";
 
 export default function CadenasCda() {
   const [selectedCadenaId, setSelectedCadenaId] = useState("");
@@ -11,7 +11,7 @@ export default function CadenasCda() {
   const {
     data: activeCadenas,
     isLoading: isLoadingActive,
-  } = useObtenerTodasWeb();
+  } = useObtenerTodasWebConEstado();
 
   const activeList = activeCadenas || [];
   
@@ -53,15 +53,15 @@ export default function CadenasCda() {
             padding: "1.25rem",
             backdropFilter: "blur(8px)",
             position: "relative",
-            ...(String(activeItem.activa) === "0" ? { 
-              opacity: 0.6, 
+            ...(!activeItem.activaOperativa ? {
+              opacity: 0.6,
               filter: "grayscale(100%)"
             } : {})
           }}>
-            <CdaPanel 
-              activeItem={activeItem} 
-              hideHeader={true} 
-              isReadOnly={String(activeItem.activa) === "0"} 
+            <CdaPanel
+              activeItem={activeItem}
+              hideHeader={true}
+              isReadOnly={!activeItem.activaOperativa}
               hideUnchecked={false}
             />
           </div>

@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { useQuery, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { cadenaValorService } from '../services/cadenaValorService';
+import { esCadenaAprobadaYVigente, esCadenaOperativaParaWeb, obtenerCadenaValorId } from '../utils/cadenaValorUtils';
 
 export const useObtenerTodas = (page = 1, pageSize = 10) => {
     return useQuery({
@@ -10,11 +12,14 @@ export const useObtenerTodas = (page = 1, pageSize = 10) => {
     });
 };
 
-const useObtenerTodasPorPlataforma = (cursaPlataforma, page = 1, pageSize = 10) => {
+// Cadenas que cursan por plataforma (CursaPlataforma=1): incluye las que
+// cursan solo por plataforma y las que además cursan por SGR+. Es la fuente
+// de verdad de Estado/VigenciaHasta para determinar si una cadena está activa.
+export const useObtenerCadenasCursanPlataforma = () => {
     return useQuery({
-        queryKey: ['cadenaValor', 'plataforma', cursaPlataforma, page, pageSize],
-        queryFn: () => cadenaValorService.obtenerTodasPorPlataforma(cursaPlataforma, page, pageSize),
-        enabled: !!cursaPlataforma
+        queryKey: ['cadenaValor', 'cursanPlataforma'],
+        queryFn: () => cadenaValorService.obtenerTodasPorPlataforma(1, 1, 200),
+        staleTime: 1000 * 60 * 5,
     });
 };
 
@@ -120,6 +125,40 @@ export const useObtenerTodasWeb = () => {
         queryKey: ['cadenaValor', 'web', 'todas_list'],
         queryFn: () => cadenaValorService.obtenerTodasWeb(),
     });
+};
+
+// Cadenas de la web (con su config de canal/equipo/logo) enriquecidas con:
+// - "aprobadaVigente": el estado real según CORE (Estado=Aprobada y
+//   VigenciaHasta no vencida).
+// - "activaOperativa": aprobadaVigente Y no desactivada manualmente con el
+//   switch "Activa" de la tabla web. Es el criterio que determina si la
+//   cadena está realmente disponible para operar (selectores, acceso cliente).
+export const useObtenerTodasWebConEstado = () => {
+    const webQuery = useObtenerTodasWeb();
+    const coreQuery = useObtenerCadenasCursanPlataforma();
+
+    // Memoizado por referencia de dato (no por render): evita romper efectos
+    // o memos de quien consuma este hook con un array nuevo en cada render.
+    const data = useMemo(() => {
+        const webList = Array.isArray(webQuery.data) ? webQuery.data : webQuery.data?.items || webQuery.data?.data || [];
+        const coreList = Array.isArray(coreQuery.data) ? coreQuery.data : coreQuery.data?.items || coreQuery.data?.data || [];
+        const coreById = new Map(coreList.map((c) => [String(obtenerCadenaValorId(c)), c]));
+
+        return webList.map((item) => {
+            const cadenaCore = coreById.get(String(item.cadenavalorid));
+            return {
+                ...item,
+                aprobadaVigente: esCadenaAprobadaYVigente(cadenaCore),
+                activaOperativa: esCadenaOperativaParaWeb(item, cadenaCore),
+            };
+        });
+    }, [webQuery.data, coreQuery.data]);
+
+    return {
+        data,
+        isLoading: webQuery.isLoading || coreQuery.isLoading,
+        refetch: () => Promise.all([webQuery.refetch(), coreQuery.refetch()]),
+    };
 };
 
 export const useVincularCdas = () => {

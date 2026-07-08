@@ -697,6 +697,10 @@
   margin: 0;
 }
 
+.switch input:disabled {
+  cursor: not-allowed;
+}
+
 .slider {
   position: absolute;
   top: 0;
@@ -731,6 +735,10 @@
 .switch input:checked + .slider:before {
   transform: translateX(20px);
   background-color: var(--color-azul-bind, #4c65e6);
+}
+
+.switch input:disabled + .slider {
+  opacity: 0.5;
 }
 
 .switchLoaderWrap {

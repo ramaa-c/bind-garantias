@@ -1,8 +1,9 @@
 import React, { useEffect } from "react";
 import { useParams, Outlet, Navigate, useNavigate } from "react-router-dom";
 import { useChannel } from "../../../context/ChannelContext";
-import { useObtenerPorCadenaValorIdWeb, useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
+import { useObtenerPorCadenaValorIdWeb, useObtenerPorId } from "../../../hooks/useCadenaValor";
 import { useModoOffline } from "../../../hooks/useModoOffline";
+import { esCadenaOperativaParaWeb } from "../../../utils/cadenaValorUtils";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 
 const TenantLayout = () => {
@@ -17,10 +18,12 @@ const TenantLayout = () => {
   const { data: cadenaData, isLoading } = useObtenerPorCadenaValorIdWeb(
     isValidId ? cadenaValorId : 0,
   );
-  const { data: todasCadenas, isLoading: isLoadingTodas } = useObtenerTodasWeb();
+  const { data: cadenaCoreData, isLoading: isLoadingCore } = useObtenerPorId(
+    isValidId ? cadenaValorId : 0,
+  );
 
   useEffect(() => {
-    if (isLoading || isLoadingTodas) return;
+    if (isLoading || isLoadingCore) return;
 
     if (!isValidId || !cadenaData || cadenaData.error || (Array.isArray(cadenaData) && cadenaData.length === 0)) {
       navigate("/not-found", { replace: true });
@@ -28,14 +31,17 @@ const TenantLayout = () => {
     }
 
     const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
+    const cadenaCoreObj = Array.isArray(cadenaCoreData) ? cadenaCoreData[0] : cadenaCoreData;
 
-    const isActiva = cadenaObj.activa ?? cadenaObj.Activa;
     const resolvedDenominacion = cadenaObj.denominacion || cadenaObj.Denominacion;
-    
-    if (String(isActiva) === "0") {
-      navigate("/cadena-inactiva", { 
-        replace: true, 
-        state: { denominacion: resolvedDenominacion } 
+
+    // Igual que en el panel admin: la cadena debe estar Aprobada y vigente en
+    // CORE, y además no haber sido desactivada manualmente con el switch
+    // "Activa" de la tabla web.
+    if (!esCadenaOperativaParaWeb(cadenaObj, cadenaCoreObj)) {
+      navigate("/cadena-inactiva", {
+        replace: true,
+        state: { denominacion: resolvedDenominacion }
       });
       return;
     }
@@ -62,7 +68,7 @@ const TenantLayout = () => {
       colorPrincipal: "var(--color-azul-bind)",
       colorSecundario: "var(--color-amarillo-bind)",
     });
-  }, [cadenaSlug, cadenaData, isLoading, isLoadingTodas, todasCadenas, setChannelInfo, navigate, isValidId]);
+  }, [cadenaSlug, cadenaData, cadenaCoreData, isLoading, isLoadingCore, setChannelInfo, navigate, isValidId]);
 
   if (enMantenimiento) {
     return <Navigate to="/fuera-de-servicio" replace />;
@@ -72,7 +78,7 @@ const TenantLayout = () => {
     return <Navigate to="/not-found" replace />;
   }
 
-  if (isLoading || isLoadingTodas) {
+  if (isLoading || isLoadingCore) {
     return (
       <LoadingScreen
         title="Validando acceso"
