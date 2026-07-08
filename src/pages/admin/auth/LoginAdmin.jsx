@@ -4,14 +4,14 @@ import { useForm, useController } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
-import { Button } from "../../components/ui/Button/Button";
-import { InputOTP } from "../../components/ui/InputOtp/InputOtp";
-import { useLogin, useLoginByCode } from "../../hooks/useUsuario";
-import { useAuthStore } from "../../store/useAuthStore";
-import { usuarioService } from "../../services/usuarioService";
-import styles from "../cliente/auth/Login.module.css";
-import logoBind from "../../assets/images/bind-g-logo.svg";
+import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
+import { Button } from "../../../components/ui/Button/Button";
+import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
+import { useLogin, useLoginByCode } from "../../../hooks/useUsuario";
+import { useAuthStore } from "../../../store/useAuthStore";
+import { usuarioService } from "../../../services/usuarioService";
+import styles from "../../cliente/auth/Login.module.css";
+import logoBind from "../../../assets/images/bind-g-logo.svg";
 
 const emailSchema = z.object({
   email: z

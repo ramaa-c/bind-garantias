@@ -4,8 +4,8 @@ import { toast } from "sonner";
 import {
   RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
   parseTerminos,
-} from "../../constants/terminosCondiciones";
-import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+} from "../../../constants/terminosCondiciones";
+import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./Terminos.module.css";
 
 const documentosIniciales = {

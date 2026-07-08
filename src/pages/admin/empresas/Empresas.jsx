@@ -2,8 +2,8 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { FiInbox, FiSearch, FiChevronRight } from "react-icons/fi";
-import { useObtenerSocios } from "../../hooks/useSocios";
-import { Paginacion } from "../../components/ui/Paginacion/Paginacion";
+import { useObtenerSocios } from "../../../hooks/useSocios";
+import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import styles from "./Empresas.module.css";
 
 const ELEMENTOS_POR_PAGINA = 10;

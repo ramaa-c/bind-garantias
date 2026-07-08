@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { FiPower, FiClock, FiEdit3, FiEye, FiSave, FiTool, FiLock } from "react-icons/fi";
 import { toast } from "sonner";
-import { Switch, Button } from "../../components/ui";
-import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { useModoOffline } from "../../hooks/useModoOffline";
+import { Switch, Button } from "../../../components/ui";
+import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+import { useModoOffline } from "../../../hooks/useModoOffline";
 import {
   activarModoOffline,
   desactivarModoOffline,
   actualizarMensajeOffline,
   MENSAJE_OFFLINE_DEFAULT,
-} from "../../utils/modoOffline";
-import logoBind from "../../assets/images/bind-g-logo.svg";
+} from "../../../utils/modoOffline";
+import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./ModoOffline.module.css";
 
 const MAX_MENSAJE = 280;

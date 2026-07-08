@@ -8,20 +8,20 @@ import {
   FiSliders,
 } from "react-icons/fi";
 import styles from "./CadenasValor.module.css";
-import { useObtenerTodasWebConEstado, useActualizarCadenaValor } from "../../hooks/useCadenaValor";
-import { cadenaValorService } from "../../services/cadenaValorService";
+import { useObtenerTodasWebConEstado, useActualizarCadenaValor } from "../../../hooks/useCadenaValor";
+import { cadenaValorService } from "../../../services/cadenaValorService";
 import {
   useTipoCanalComercializacion,
   useEquipoComercial,
-} from "../../hooks/useCatalogos";
-import { Spinner, Button, Alert } from "../../components/ui";
+} from "../../../hooks/useCatalogos";
+import { Spinner, Button, Alert } from "../../../components/ui";
 import {
   ActivarCadenaModal,
   EditarCadenaModal,
   UsuariosRelacionadosModal,
   RequisitosConfigModal,
   CdaConfigModal,
-} from "../../components/features";
+} from "../../../components/features";
 import { toast } from "sonner";
 
 export default function CadenasValor() {
