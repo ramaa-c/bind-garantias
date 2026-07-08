@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FiPlus, FiEdit, FiTrash2, FiX, FiList } from "react-icons/fi";
 import { toast } from "sonner";
 
-import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
+import { useObtenerTodasWebConEstado } from "../../hooks/useCadenaValor";
 import { useMonedas, useTiposProducto, useObligaciones } from "../../hooks/useCatalogos";
 import {
   useObtenerLimitesCadenaValor,
@@ -337,7 +337,7 @@ export default function LineasCadena() {
   });
 
   // Queries
-  const { data: cadenas, isLoading: isLoadingCadenas } = useObtenerTodasWeb();
+  const { data: cadenas, isLoading: isLoadingCadenas } = useObtenerTodasWebConEstado();
   const { data: lineas, isLoading: isLoadingLineas } =
     useObtenerLimitesCadenaValor(selectedCadenaId);
   const { data: monedas } = useMonedas();
@@ -503,11 +503,7 @@ export default function LineasCadena() {
     (c) => String(c.cadenavalorid) === selectedCadenaId,
   );
 
-  const isCadenaInactiva = selectedCadena && (
-    String(selectedCadena.activa) === "0" || 
-    selectedCadena.activa === false || 
-    String(selectedCadena.activa).toLowerCase() === "false"
-  );
+  const isCadenaInactiva = selectedCadena && !selectedCadena.activaOperativa;
 
   const chainsSelectOptions = listCadenas.map((c) => ({
     value: String(c.cadenavalorid),

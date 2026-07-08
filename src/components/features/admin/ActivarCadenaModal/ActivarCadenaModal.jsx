@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
 import { FiSearch, FiArrowLeft, FiUploadCloud, FiChevronRight } from "react-icons/fi";
 import { toast } from "sonner";
-import { useObtenerTodas, useCrearCadenaValor } from "../../../../hooks/useCadenaValor";
+import { useObtenerCadenasCursanPlataforma, useCrearCadenaValor } from "../../../../hooks/useCadenaValor";
+import { esCadenaAprobadaYVigente } from "../../../../utils/cadenaValorUtils";
 import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../hooks/useCatalogos";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
@@ -36,7 +37,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
   const fileInputRef = useRef(null);
 
   // Queries & Mutations
-  const { data: todasCadenasData, isLoading: isLoadingTodas } = useObtenerTodas(1, 200);
+  const { data: todasCadenasData, isLoading: isLoadingTodas } = useObtenerCadenasCursanPlataforma();
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
   const crearMutation = useCrearCadenaValor();
@@ -50,8 +51,11 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     ? todasCadenasData
     : todasCadenasData?.items || todasCadenasData?.data || [];
 
+  // Solo se puede activar en la web una cadena Aprobada y con vigencia vigente.
+  const cadenasHabilitadas = todasList.filter(esCadenaAprobadaYVigente);
+
   const activeIds = new Set(activeList.map(c => c.cadenavalorid));
-  const inactiveCadenas = todasList.filter(c => !activeIds.has(c.cadenavalorid));
+  const inactiveCadenas = cadenasHabilitadas.filter(c => !activeIds.has(c.cadenavalorid));
 
   const filteredInactive = inactiveCadenas.filter(c =>
     c.denominacion?.toLowerCase().includes(searchQuery.toLowerCase()) ||

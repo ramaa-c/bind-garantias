@@ -385,6 +385,31 @@
   font-weight: bold;
 }
 
+.cdaIdGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+/* Para qué cadenas de valor está activo este CDA (informativo) */
+.cadenasBadge {
+  background: rgba(76, 101, 230, 0.1);
+  color: #8fa3f3;
+  border: 1px solid rgba(76, 101, 230, 0.3);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.cadenasBadgeEmpty {
+  background: rgba(139, 148, 158, 0.08);
+  color: #8b949e;
+  border-color: rgba(139, 148, 158, 0.25);
+}
+
 .cdaDesc {
   font-size: 0.85rem;
   font-weight: 600;

@@ -1,5 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { cdaService } from "../services/cdaService";
+import { cadenaValorService } from "../services/cadenaValorService";
 
 export const useObtenerGrupoCda = (pantalla, options = {}) => {
   return useQuery({
@@ -63,5 +64,37 @@ export const useVincularPantallaCda = () => {
 export const useProbarCda = () => {
   return useMutation({
     mutationFn: ({ cuit, expresion }) => cdaService.probarCda(cuit, expresion),
+  });
+};
+
+// No existe un endpoint "cadenas por CDA" (solo el inverso: CDAs por cadena).
+// Se arma acá cruzando, cadena por cadena, cuáles CDAs tiene vinculados.
+// Secuencial (no Promise.all): el backend usa un pool de conexiones limitado.
+export const useObtenerCadenasPorCda = (cadenas) => {
+  const listaCadenas = cadenas || [];
+  const idsKey = listaCadenas.map((c) => c.cadenavalorid).join(",");
+
+  return useQuery({
+    queryKey: ["cda", "cadenasPorCda", idsKey],
+    queryFn: async () => {
+      const mapa = {};
+      for (const cadena of listaCadenas) {
+        try {
+          const linked = await cadenaValorService.obtenerCdasPorCadenaId(cadena.cadenavalorid);
+          const linkedList = Array.isArray(linked) ? linked : linked?.items || linked?.data || [];
+          linkedList.forEach((l) => {
+            const cdaId = l.cdaid ?? l.CdaId ?? l.CdaID;
+            if (cdaId === undefined) return;
+            if (!mapa[cdaId]) mapa[cdaId] = [];
+            mapa[cdaId].push({ denominacion: cadena.denominacion, aprobadaVigente: cadena.aprobadaVigente });
+          });
+        } catch (err) {
+          console.error(`Error al obtener CDAs vinculados a la cadena ${cadena.cadenavalorid}:`, err);
+        }
+      }
+      return mapa;
+    },
+    enabled: listaCadenas.length > 0,
+    staleTime: 1000 * 60 * 5,
   });
 };

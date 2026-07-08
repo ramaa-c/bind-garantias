@@ -99,12 +99,12 @@ export const CadenaSelectCard = ({
         onClick={() => setIsOpen(!isOpen)}
       >
         {selectedChain ? (
-          <div 
-            className={styles.cardWrapper} 
-            style={String(selectedChain.activa) === "0" ? { opacity: 0.6, filter: "grayscale(100%)" } : {}}
+          <div
+            className={styles.cardWrapper}
+            style={!selectedChain.activaOperativa ? { opacity: 0.6, filter: "grayscale(100%)" } : {}}
           >
             <CadenaHeaderCard
-              denominacion={selectedChain.denominacion + (String(selectedChain.activa) === "0" ? " (INACTIVA)" : "")}
+              denominacion={selectedChain.denominacion + (!selectedChain.activaOperativa ? " (INACTIVA)" : "")}
               logo={selectedChain.logo}
               referencia={selectedChain.referencia}
               cadenavalorid={selectedChain.cadenavalorid}
@@ -156,7 +156,7 @@ export const CadenaSelectCard = ({
                     key={c.cadenavalorid}
                     className={`${styles.optionItem} ${isSelected ? styles.optionSelected : ""}`}
                     onClick={() => handleSelect(c.cadenavalorid)}
-                    style={String(c.activa) === "0" ? { opacity: 0.6, filter: "grayscale(100%)" } : {}}
+                    style={!c.activaOperativa ? { opacity: 0.6, filter: "grayscale(100%)" } : {}}
                   >
                     <div className={styles.optionLogoBox}>
                       {logoSrc ? (
@@ -179,7 +179,7 @@ export const CadenaSelectCard = ({
                     <div className={styles.optionInfo}>
                       <span className={styles.optionName}>
                         {c.denominacion || "Cadena sin nombre"}
-                        {String(c.activa) === "0" && (
+                        {!c.activaOperativa && (
                           <span style={{ color: "var(--red, #ef4444)", fontSize: "0.75rem", marginLeft: "0.5rem", fontWeight: "bold" }}>
                             (INACTIVA)
                           </span>

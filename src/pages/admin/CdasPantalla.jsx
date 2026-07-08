@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { useObtenerTodosCdas, useVincularPantallaCda } from "../../hooks/useCda";
+import { useObtenerTodosCdas, useVincularPantallaCda, useObtenerCadenasPorCda } from "../../hooks/useCda";
+import { useObtenerTodasWebConEstado } from "../../hooks/useCadenaValor";
 import { cdaService } from "../../services/cdaService";
 import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
 import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
@@ -28,6 +29,8 @@ export default function CdasPantalla() {
   const queryClient = useQueryClient();
   const { data: todosCdas, isLoading: isLoadingCdas } = useObtenerTodosCdas();
   const { mutateAsync: vincularPantallaCda, isPending: isSaving } = useVincularPantallaCda();
+  const { data: cadenasWeb } = useObtenerTodasWebConEstado();
+  const { data: cadenasPorCda = {}, isLoading: isLoadingCadenasPorCda } = useObtenerCadenasPorCda(cadenasWeb);
 
   const [selectedPantalla, setSelectedPantalla] = useState("");
   const [agrupacionType, setAgrupacionType] = useState("and"); // "and" | "or" | "custom"
@@ -413,6 +416,7 @@ export default function CdasPantalla() {
                     const id = getCdaId(cda);
                     if (id === undefined) return null;
                     const isActive = selectedCdaIds.includes(id);
+                    const cadenasActivasDeEsteCda = (cadenasPorCda[id] || []).filter((c) => c.aprobadaVigente);
 
                     return (
                       <div
@@ -425,11 +429,29 @@ export default function CdasPantalla() {
                             {isActive && <FiCheck size={12} className={styles.checkmarkIcon} />}
                           </div>
                         </div>
-                        
+
                         <div className={styles.cdaDetails}>
                           <div className={styles.cdaHeaderInfo}>
                             <span className={styles.cdaDesc} title={getCdaDesc(cda)}>{getCdaDesc(cda)}</span>
-                            <span className={styles.cdaIdBadge}>cda{id}</span>
+                            <div className={styles.cdaIdGroup}>
+                              {isLoadingCadenasPorCda ? (
+                                <div className={styles.skeletonBlock} style={{ height: "1rem", width: "56px", borderRadius: "999px" }} />
+                              ) : (
+                                <span
+                                  className={`${styles.cadenasBadge} ${cadenasActivasDeEsteCda.length === 0 ? styles.cadenasBadgeEmpty : ""}`}
+                                  title={
+                                    cadenasActivasDeEsteCda.length === 0
+                                      ? "No está activo para ninguna cadena de valor"
+                                      : `Activo para: ${cadenasActivasDeEsteCda.map((c) => c.denominacion).join(", ")}`
+                                  }
+                                >
+                                  {cadenasActivasDeEsteCda.length === 0
+                                    ? "Sin cadenas"
+                                    : `${cadenasActivasDeEsteCda.length} cadena${cadenasActivasDeEsteCda.length !== 1 ? "s" : ""}`}
+                                </span>
+                              )}
+                              <span className={styles.cdaIdBadge}>cda{id}</span>
+                            </div>
                           </div>
                           <span className={styles.cdaExpr} title={getCdaExpr(cda)}>Expresión: {getCdaExpr(cda)}</span>
                         </div>
