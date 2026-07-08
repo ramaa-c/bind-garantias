@@ -29,6 +29,8 @@ export function RepresentanteModal({
 }) {
   const { cadenaSlug } = useParams();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
@@ -429,12 +431,13 @@ export function RepresentanteModal({
         onClose={onClose}
         title={representante || representanteInicial ? "Editar Representante" : "Agregar Representante"}
         maxWidth="600px"
+        variant={isAdmin ? "blue" : "default"}
       >
         <form onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !representante && !representanteInicial ? (
             <div className={styles.cuitSearchStep}>
-              <div className={styles.cuitSearchBanner}>
-                <div className={styles.cuitSearchBannerIcon}>
+              <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
+                <div className={`${styles.cuitSearchBannerIcon} ${isAdmin ? styles.cuitSearchBannerIconAdmin : ""}`}>
                   <FiShield />
                 </div>
                 <div className={styles.cuitSearchBannerText}>
@@ -577,7 +580,7 @@ export function RepresentanteModal({
 
           <div className={styles.modalFooter}>
             {(afipValidado || representante || representanteInicial) && (
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant={isAdmin ? "blue" : "primary"}>
                 {representante || representanteInicial ? "Guardar Cambios" : "Agregar Representante"}
               </Button>
             )}

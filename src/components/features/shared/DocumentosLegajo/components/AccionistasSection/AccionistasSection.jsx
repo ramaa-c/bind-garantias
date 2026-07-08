@@ -26,6 +26,8 @@ export function AccionistasSection({
   const [editAccionista, setEditAccionista] = useState(null);
   const [expandedSocio, setExpandedSocio] = useState(null);
   const [portalTarget, setPortalTarget] = useState(null);
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
   useEffect(() => {
     setPortalTarget(document.getElementById("socios-header-action-portal"));
@@ -45,7 +47,7 @@ export function AccionistasSection({
           {portalTarget && createPortal(
             <button
               type="button"
-              className={styles.addButton}
+              className={`${styles.addButton} ${isAdmin ? styles.addButtonAdmin : ""}`}
               onClick={() => {
                 setEditAccionista(null);
                 setModalAccionistaOpen(true);
@@ -172,7 +174,7 @@ export function AccionistasSection({
                     >
                       <button
                         type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
+                        className={`${styles.actionBtn} ${styles.actionBtnEdit} ${isAdmin ? styles.actionBtnEditAdmin : ""}`}
                         onClick={() => {
                           setEditAccionista(socio);
                           setModalAccionistaOpen(true);

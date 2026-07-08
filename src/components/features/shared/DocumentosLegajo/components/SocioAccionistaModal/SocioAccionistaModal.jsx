@@ -87,6 +87,8 @@ const DEFAULT_ACCIONISTAS = [];
 export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
   const { cadenaSlug } = useParams();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
@@ -756,12 +758,13 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         onClose={onClose}
         title={socio ? "Editar Accionista" : "Agregar Accionista"}
         maxWidth="800px"
+        variant={isAdmin ? "blue" : "default"}
       >
         <form onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !socio ? (
             <div className={styles.cuitSearchStep}>
-              <div className={styles.cuitSearchBanner}>
-                <div className={styles.cuitSearchBannerIcon}>
+              <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
+                <div className={`${styles.cuitSearchBannerIcon} ${isAdmin ? styles.cuitSearchBannerIconAdmin : ""}`}>
                   <FiShield />
                 </div>
                 <div className={styles.cuitSearchBannerText}>
@@ -1054,7 +1057,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
           <div className={styles.modalFooter}>
             {(afipValidado || socio) && (
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant={isAdmin ? "blue" : "primary"}>
                 {socio ? "Guardar Cambios" : "Agregar Accionista"}
               </Button>
             )}

@@ -245,7 +245,9 @@ export function SociosLegajo({
                   <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", flex: "1 1 200px" }}>
                       <div className={styles.viewerMeta}>
-                        <span className={styles.viewerBadge}>{doc.category}</span>
+                        <span className={`${styles.viewerBadge} ${adminMode ? styles.viewerBadgeAdmin : ""}`}>
+                          {doc.category}
+                        </span>
                       </div>
                       <h4 className={styles.viewerTitle}>{doc.title}</h4>
                       <p className={styles.viewerInfo}>
@@ -255,7 +257,7 @@ export function SociosLegajo({
                             href={doc.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={styles.helperLink}
+                            className={`${styles.helperLink} ${adminMode ? styles.helperLinkAdmin : ""}`}
                           >
                             {doc.linkText} <FiExternalLink size={11} />
                           </a>

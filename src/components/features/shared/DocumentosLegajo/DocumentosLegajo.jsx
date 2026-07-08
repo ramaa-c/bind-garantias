@@ -535,7 +535,9 @@ export function DocumentosLegajo({
       <section className={styles.viewer}>
         <header className={styles.viewerHeader}>
           <div className={styles.viewerMeta}>
-            <span className={styles.viewerBadge}>{doc.category}</span>
+            <span className={`${styles.viewerBadge} ${adminMode ? styles.viewerBadgeAdmin : ""}`}>
+              {doc.category}
+            </span>
             {isLufe && (
               <span className={`${styles.viewerBadge} ${styles.viewerBadgeLufe}`}>
                 Vía LUFE
@@ -547,7 +549,7 @@ export function DocumentosLegajo({
             {files.length > 1 && (
               <button
                 type="button"
-                className={styles.downloadCategoryBtn}
+                className={`${styles.downloadCategoryBtn} ${adminMode ? styles.downloadCategoryBtnAdmin : ""}`}
                 onClick={handleDownloadCategoryZip}
                 title={`Descargar todos los archivos de tipo ${doc.title}`}
               >
@@ -562,7 +564,7 @@ export function DocumentosLegajo({
                 href={doc.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={styles.helperLink}
+                className={`${styles.helperLink} ${adminMode ? styles.helperLinkAdmin : ""}`}
               >
                 {doc.linkText} <FiExternalLink size={11} />
               </a>
@@ -574,7 +576,10 @@ export function DocumentosLegajo({
           <div className={styles.perfilGrid}>
             <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
-                <FiBriefcase className={styles.perfilChipIcon} size={20} />
+                <FiBriefcase
+                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
+                  size={20}
+                />
                 <span className={styles.perfilChipLabel}>Razón Social</span>
               </div>
               <span className={styles.perfilChipValue}>
@@ -583,7 +588,10 @@ export function DocumentosLegajo({
             </div>
             <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
-                <FiCreditCard className={styles.perfilChipIcon} size={20} />
+                <FiCreditCard
+                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
+                  size={20}
+                />
                 <span className={styles.perfilChipLabel}>CUIT</span>
               </div>
               <span className={styles.perfilChipValue}>
@@ -592,14 +600,20 @@ export function DocumentosLegajo({
             </div>
             <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
-                <FiMapPin className={styles.perfilChipIcon} size={20} />
+                <FiMapPin
+                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
+                  size={20}
+                />
                 <span className={styles.perfilChipLabel}>Domicilio</span>
               </div>
               <span className={styles.perfilChipValue}>{direccion || "—"}</span>
             </div>
             <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
-                <FiPhone className={styles.perfilChipIcon} size={20} />
+                <FiPhone
+                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
+                  size={20}
+                />
                 <span className={styles.perfilChipLabel}>Teléfono</span>
               </div>
               <span className={styles.perfilChipValue}>{telefono || "—"}</span>
@@ -619,7 +633,10 @@ export function DocumentosLegajo({
                       className={`${styles.subTab} ${isActive ? styles.subTabActive : ""}`}
                       title={file.nombrearchivo}
                     >
-                      <FiFile size={12} className={styles.subTabIcon} />
+                      <FiFile
+                        size={12}
+                        className={`${styles.subTabIcon} ${isActive && adminMode ? styles.subTabIconAdminActive : ""}`}
+                      />
                       <span className={styles.subTabText}>
                         {file.nombrearchivo.length > 25
                           ? `${file.nombrearchivo.substring(0, 22)}...`
@@ -649,7 +666,7 @@ export function DocumentosLegajo({
                 <button
                   type="button"
                   onClick={() => selectSubTab(doc.key, "nuevo")}
-                  className={`${styles.subTab} ${styles.subTabAdd} ${currentSubTab === "nuevo" ? styles.subTabActive : ""}`}
+                  className={`${styles.subTab} ${styles.subTabAdd} ${adminMode ? styles.subTabAddAdmin : ""} ${currentSubTab === "nuevo" ? styles.subTabActive : ""}`}
                 >
                   <FiPlus size={12} />
                   <span>Subir otro</span>

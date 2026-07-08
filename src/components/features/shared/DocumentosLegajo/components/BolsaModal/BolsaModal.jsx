@@ -12,6 +12,8 @@ import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal"
 import styles from "./BolsaModal.module.css";
 
 export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdActivo }) {
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [showConfirm, setShowConfirm] = useState(false);
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
@@ -138,6 +140,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
         onClose={onClose}
         title={agenteBolsa ? "Editar Agente de Bolsa" : "Vincular Agente de Bolsa"}
         maxWidth="500px"
+        variant={isAdmin ? "blue" : "default"}
       >
         <form onSubmit={handlePreSubmit} className={styles.modalForm}>
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -177,7 +180,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
           </div>
 
           <div className={styles.modalFooter}>
-            <Button type="submit" variant="primary" disabled={cargandoAgentes}>
+            <Button type="submit" variant={isAdmin ? "blue" : "primary"} disabled={cargandoAgentes}>
               {agenteBolsa ? "Guardar Cambios" : "Vincular Agente"}
             </Button>
           </div>
