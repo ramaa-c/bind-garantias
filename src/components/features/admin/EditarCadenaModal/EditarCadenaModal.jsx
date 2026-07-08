@@ -23,6 +23,28 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
 
   const fileInputRef = useRef(null);
 
+  // Bloque numérico compartido por los inputs enmascarados de Monto/Porcentaje
+  // Máximo: coma como separador decimal (es-AR) y "." mapeado a coma al tipear.
+  const bloqueNumerico = (max) => ({
+    mask: Number,
+    scale: 2,
+    signed: false,
+    min: 0,
+    ...(max !== undefined ? { max } : {}),
+    thousandsSeparator: ".",
+    padFractionalZeros: true,
+    normalizeZeros: true,
+    radix: ",",
+    mapToRadix: ["."],
+  });
+
+  // El valor que llega por onAccept es el string ya enmascarado (ej: "$ 1.234,56"
+  // o "% 66,32"); antes de validar/enviar hay que limpiarlo a un número plano.
+  const desenmascarar = (val) => {
+    if (typeof val !== "string") return val;
+    return val.replace(/[^0-9,]/g, "").replace(",", ".");
+  };
+
   // Queries & Mutations
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
@@ -84,11 +106,14 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       toast.error("El logo de la cadena de valor es requerido");
       return;
     }
-    if (formState.montomaximo === "" || isNaN(Number(formState.montomaximo)) || Number(formState.montomaximo) < 0) {
+    const montoLimpio = desenmascarar(formState.montomaximo);
+    const porcentajeLimpio = desenmascarar(formState.porcentajemaximo);
+
+    if (montoLimpio === "" || isNaN(Number(montoLimpio)) || Number(montoLimpio) < 0) {
       toast.error("Ingrese un monto máximo válido");
       return;
     }
-    if (formState.porcentajemaximo === "" || isNaN(Number(formState.porcentajemaximo)) || Number(formState.porcentajemaximo) < 0 || Number(formState.porcentajemaximo) > 100) {
+    if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) < 0 || Number(porcentajeLimpio) > 100) {
       toast.error("Ingrese un porcentaje máximo válido (0 a 100)");
       return;
     }
@@ -104,8 +129,8 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       logo: formState.logo,
       tipocanalcomercializacionid: Number(formState.tipocanalcomercializacionid),
       equipocomercialid: Number(formState.equipocomercialid),
-      montomaximo: Number(formState.montomaximo),
-      porcentajemaximo: Number(formState.porcentajemaximo),
+      montomaximo: Number(desenmascarar(formState.montomaximo)),
+      porcentajemaximo: Number(desenmascarar(formState.porcentajemaximo)),
       activa: formState.activa
     };
 
@@ -212,19 +237,23 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
             <div style={{ flex: 1 }}>
               <InputSimple
                 label="Monto Máximo *"
-                type="number"
                 value={formState.montomaximo}
                 onChange={val => setFormState({ ...formState, montomaximo: val })}
-                className={`${styles.compactInput} ${styles.hideSpinners}`}
+                mask="$ num"
+                blocks={{ num: bloqueNumerico() }}
+                lazy={false}
+                className={styles.compactInput}
               />
             </div>
             <div style={{ flex: 1 }}>
               <InputSimple
                 label="Porcentaje Máximo (%) *"
-                type="number"
                 value={formState.porcentajemaximo}
                 onChange={val => setFormState({ ...formState, porcentajemaximo: val })}
-                className={`${styles.compactInput} ${styles.hideSpinners}`}
+                mask="% num"
+                blocks={{ num: bloqueNumerico(100) }}
+                lazy={false}
+                className={styles.compactInput}
               />
             </div>
           </div>

@@ -160,7 +160,7 @@
   background: rgba(0, 0, 0, 0.1);
 }
 .tableWrapper::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
@@ -848,8 +848,13 @@
   font-size: 0.8rem;
 }
 
-/* Testing Sandbox */
+/* Testing Sandbox: zona fija arriba, no vive dentro de .colScroll. Es
+   position:relative porque el resultado (.testResultBox) se superpone acá
+   mismo (overlay), ocupando todo el contenedor -título incluido- sin
+   empujar nada hacia abajo ni crecer el bloque. */
 .sandboxContainer {
+  position: relative;
+  flex: 0 0 auto;
   padding: 1.1rem;
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -857,12 +862,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  flex: 0 0 auto;
-  max-height: 320px;
-  overflow-y: auto;
+  min-height: 9rem;
 }
 
-/* Separa el laboratorio de pruebas (zona fija) de la vinculación (zona con scroll) */
+.sandboxBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* Separa el laboratorio de pruebas (zona fija, arriba) de la vinculación (zona con scroll, abajo) */
 .colDivider {
   flex: 0 0 auto;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -913,6 +922,9 @@
 }
 
 .testResultBox {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   background: #0d1117;
   border: 1px solid #30363d;
   border-radius: 0.5rem;
@@ -920,6 +932,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  overflow-y: auto;
+  animation: testResultFadeIn 0.15s ease;
+}
+
+@keyframes testResultFadeIn {
+  from { opacity: 0; transform: translateY(-0.25rem); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .testResultHeader {
@@ -929,6 +948,32 @@
   font-size: 0.75rem;
   font-weight: bold;
   color: #8b949e;
+}
+
+.testResultHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.testResultCloseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #8b949e;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.testResultCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .testResultMessage {
@@ -957,11 +1002,14 @@
 }
 
 .testResultLogValue {
+  display: block;
   font-size: 0.8rem;
   color: #58a6ff;
   font-family: monospace;
   word-break: break-all;
   line-height: 1.4;
+  max-height: 6rem;
+  overflow-y: auto;
 }
 
 .badgeSuccess {

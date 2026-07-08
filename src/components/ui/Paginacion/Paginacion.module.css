@@ -1,58 +1,93 @@
 .container {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  margin-top: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+.withSummary {
+  justify-content: space-between;
+}
+
+.summary {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.summary strong {
+  color: #ffffff;
+  font-weight: 700;
 }
 
 .pagination {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
 }
 
 .pageButton {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 2.5rem;
-  height: 2.5rem;
+  min-width: 2.25rem;
+  height: 2.25rem;
   padding: 0 0.5rem;
-  background-color: transparent;
-  color: var(--white, #fff);
-  border: 1px solid #333;
-  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: #c9d1d9;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.6rem;
   cursor: pointer;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
+  font-size: 0.825rem;
+  font-weight: 600;
+  transition: all 0.18s ease;
   outline: none;
 }
 
-.pageButton:hover:not(:disabled) {
-  transform: translateY(-0.1875rem);
-  filter: brightness(1.05);
-  box-shadow:
-    0 10px 20px rgba(253, 252, 1, 0.3),
-    0 0 10px rgba(253, 252, 1, 0.2);
-}
-
-.pageButtonActive {
-  background-color: var(--yellow);
-  color: #000;
-  border-color: var(--yellow);
-  font-weight: bold;
-}
-
 .pageButton:disabled {
-  color: #555;
+  color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.05);
   cursor: not-allowed;
-  border-color: #222;
-}
-
-.pageButton:disabled:hover {
-  background-color: transparent;
-  border-color: #222;
 }
 
 .icon {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
+}
+
+/* ── Admin (azul) ─────────────────────────────────────────── */
+.admin.pageButton:hover:not(:disabled) {
+  border-color: var(--color-azul-bind, #4c65e6);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(76, 101, 230, 0.25);
+}
+
+.admin.pageButtonActive {
+  background: var(--color-azul-bind, #4c65e6);
+  border-color: var(--color-azul-bind, #4c65e6);
+  color: #ffffff;
+}
+
+.admin.pageButtonActive:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(76, 101, 230, 0.35);
+}
+
+/* ── Client (amarillo) ────────────────────────────────────── */
+.client.pageButton:hover:not(:disabled) {
+  border-color: var(--yellow, #f5f400);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(245, 244, 0, 0.15);
+}
+
+.client.pageButtonActive {
+  background: var(--yellow, #f5f400);
+  border-color: var(--yellow, #f5f400);
+  color: #000000;
+}
+
+.client.pageButtonActive:hover:not(:disabled) {
+  box-shadow: 0 4px 14px rgba(245, 244, 0, 0.3);
 }

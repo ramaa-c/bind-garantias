@@ -6,25 +6,26 @@ import {
 } from "./useSocios";
 import { useVendor } from "./useVendor";
 
-export const useEmpresaActiva = () => {
+export const useEmpresaActiva = (skip = false) => {
   const user = useAuthStore((state) => state.user);
   const activeSocioId = useAuthStore((state) => state.activeSocioId);
 
   const { data: usuarioDb, isPending: isLoadingUser } =
-    useObtenerPorNombreOEmail(user?.email);
+    useObtenerPorNombreOEmail(skip ? undefined : user?.email);
 
   const usuarioWebId =
     usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id || null;
 
   const { data: socioUsuarios, isPending: isPendingSocios } =
-    useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
+    useObtenerSocioUsuarioPorUsuarioId(skip ? undefined : usuarioWebId);
 
-  const { data: vendorData } = useVendor();
+  const { data: vendorData } = useVendor(skip);
   const isVendor = vendorData?.isVendor || false;
 
-  let socioId = activeSocioId;
+  let socioId = skip ? null : activeSocioId;
 
   if (
+    !skip &&
     !socioId &&
     !isVendor &&
     Array.isArray(socioUsuarios) &&
@@ -34,7 +35,7 @@ export const useEmpresaActiva = () => {
   }
 
   const { data: socioWeb, isPending: isPendingSocioWeb } =
-    useSocioWebPorId(socioId);
+    useSocioWebPorId(skip ? undefined : socioId);
 
   const cuitActivo = socioWeb?.cuit || socioWeb?.Cuit || null;
   const nombreEmpresa =

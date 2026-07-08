@@ -132,15 +132,3 @@
 .compactInput {
   padding-bottom: 0.2rem !important;
 }
-
-/* Chrome, Safari, Edge, Opera - hide spin buttons */
-.hideSpinners input[type=number]::-webkit-outer-spin-button,
-.hideSpinners input[type=number]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Firefox - hide spin buttons */
-.hideSpinners input[type=number] {
-  -moz-appearance: textfield;
-}

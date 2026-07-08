@@ -169,11 +169,17 @@ const getDownloadCategoryText = (key, title) => {
   return `Descargar ${plurals[key] || `todos: ${title}`}`;
 };
 
-export function DocumentosLegajo() {
+export function DocumentosLegajo({
+  socioIdOverride,
+  empresaOverride,
+  adminMode = false,
+} = {}) {
   const { control, setValue } = useFormContext();
   const formValues = useWatch({ control });
   const { intentoAvanzar } = formValues;
   const queryClient = useQueryClient();
+
+  const empresaActiva = useEmpresaActiva(adminMode);
 
   const {
     socioIdActivo,
@@ -182,19 +188,29 @@ export function DocumentosLegajo() {
     direccion,
     telefono,
     tipoPersonaId,
-  } = useEmpresaActiva();
+  } = adminMode
+    ? { socioIdActivo: socioIdOverride, ...empresaOverride }
+    : empresaActiva;
 
+  // En modo admin no se conoce con certeza a qué cadena de valor pertenece
+  // el socio (no hay un campo CadenaValorID en Socio), así que se muestra
+  // el legajo completo sin aplicar el filtro de requisitos por cadena.
   const { cadenaSlug } = useParams();
   const cadenaId = Number(cadenaSlug) || 1;
-  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
+  const { requisitos } = useRequisitos(
+    adminMode ? null : cadenaId,
+    adminMode ? null : tipoPersonaId,
+    adminMode ? null : nombreEmpresa,
+  );
 
   const estructuraFiltrada = useMemo(() => {
+    if (adminMode) return ESTRUCTURA_LEGAJO;
     return ESTRUCTURA_LEGAJO.filter((doc) => {
       if (doc.key === "perfil") return true;
       const configVal = requisitos?.documentos?.[doc.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [requisitos]);
+  }, [requisitos, adminMode]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -503,7 +519,7 @@ export function DocumentosLegajo() {
     if (!doc) return null;
     const isPerfil = doc.key === "perfil";
     const files = categoryFiles;
-    const isRequired = requisitos?.documentos?.[doc.key] === 1;
+    const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
     const showSubTabs = !isPerfil && files.length > 0;
     
     const fileProp = activeFile ? {
@@ -744,7 +760,7 @@ export function DocumentosLegajo() {
             const isPerfil = doc.key === "perfil";
             const currentFile = formValues[doc.key];
             const isComplete = isPerfil || !!currentFile;
-            const isRequired = requisitos?.documentos?.[doc.key] === 1;
+            const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
             const hasError =
               intentoAvanzar && !isPerfil && isRequired && !currentFile;
             const isActive = activeTab === doc.key;
@@ -768,7 +784,7 @@ export function DocumentosLegajo() {
                   <div className={styles.tabTitleGroup}>
                     <span className={styles.tabTitle}>{doc.title}</span>
                     <div className={styles.badgeRow}>
-                      {!isPerfil &&
+                      {!isPerfil && !adminMode &&
                         (isRequired ? (
                           <span
                             className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}
@@ -814,7 +830,7 @@ export function DocumentosLegajo() {
         const isPerfil = doc.key === "perfil";
         const currentFile = formValues[doc.key];
         const isComplete = isPerfil || !!currentFile;
-        const isRequired = requisitos?.documentos?.[doc.key] === 1;
+        const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
         const hasError =
           intentoAvanzar && !isPerfil && isRequired && !currentFile;
         const isActive = activeTab === doc.key;
@@ -840,7 +856,7 @@ export function DocumentosLegajo() {
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
                 <div className={styles.badgeRow}>
-                  {!isPerfil &&
+                  {!isPerfil && !adminMode &&
                     (isRequired ? (
                       <span
                         className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}

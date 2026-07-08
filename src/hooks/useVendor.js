@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { cadenaValorService } from "../services/cadenaValorService";
 import { useAuthStore } from "../store/useAuthStore";
 
-export const useVendor = () => {
+export const useVendor = (skip = false) => {
   const user = useAuthStore((state) => state.user);
-  const email = user?.email || "";
+  const email = skip ? "" : user?.email || "";
 
   return useQuery({
     queryKey: ["vendor", email],
