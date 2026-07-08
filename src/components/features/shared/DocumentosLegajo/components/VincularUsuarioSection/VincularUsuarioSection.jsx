@@ -10,6 +10,8 @@ export function VincularUsuarioSection({ socioIdActivo }) {
   const [emailVincular, setEmailVincular] = useState("");
   const [emailError, setEmailError] = useState("");
   const [loadingVinculacion, setLoadingVinculacion] = useState(false);
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
   const handleVincularUsuario = async (e) => {
     if (e) e.preventDefault();
@@ -91,7 +93,7 @@ export function VincularUsuarioSection({ socioIdActivo }) {
           <div className={styles.vincularInputGroup}>
             <input
               type="email"
-              className={`${styles.vincularInput} ${emailError ? styles.vincularInputError : ""}`}
+              className={`${styles.vincularInput} ${isAdmin ? styles.vincularInputAdmin : ""} ${emailError ? styles.vincularInputError : ""}`}
               placeholder="ejemplo@correo.com"
               value={emailVincular}
               onChange={(e) => {
@@ -108,7 +110,7 @@ export function VincularUsuarioSection({ socioIdActivo }) {
             />
             <Button
               type="button"
-              variant="primary"
+              variant={isAdmin ? "blue" : "primary"}
               size="sm"
               onClick={handleVincularUsuario}
               disabled={loadingVinculacion}

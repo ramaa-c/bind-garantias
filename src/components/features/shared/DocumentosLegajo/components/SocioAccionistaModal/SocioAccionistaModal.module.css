@@ -58,6 +58,13 @@
 .cuitSearchBanner:hover {
   border-color: rgba(245, 244, 0, 0.18);
 }
+.cuitSearchBannerAdmin {
+  background: rgba(76, 101, 230, 0.05);
+  border-color: rgba(76, 101, 230, 0.15);
+}
+.cuitSearchBannerAdmin:hover {
+  border-color: rgba(76, 101, 230, 0.3);
+}
 .cuitSearchBannerIcon {
   width: 2.25rem;
   height: 2.25rem;
@@ -69,6 +76,11 @@
   justify-content: center;
   color: var(--color-amarillo-bind, #f5f400);
   flex-shrink: 0;
+}
+.cuitSearchBannerIconAdmin {
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.25);
+  color: var(--color-azul-bind, #4c65e6);
 }
 .cuitSearchBannerText {
   display: flex;

@@ -180,6 +180,13 @@
   padding: 0.15rem 0.55rem;
 }
 
+/* Variante admin: mismo estilo, acento azul en vez del amarillo del cliente */
+.viewerBadgeAdmin {
+  color: #8a9fff;
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.25);
+}
+
 .viewerTitle {
   color: var(--white, #fff);
   font-size: 1.0625rem;
@@ -208,6 +215,10 @@
 
 .helperLink:hover {
   opacity: 0.75;
+}
+
+.helperLinkAdmin {
+  color: var(--color-azul-bind, #4c65e6);
 }
 
 /* ── USUARIOS VINCULADOS ─────────────────────────────────────────────────────── */
@@ -271,6 +282,10 @@
   outline: none;
   background: rgba(0, 0, 0, 0.4);
   border-color: var(--yellow, #f4f500);
+}
+
+.vincularInputAdmin:focus {
+  border-color: var(--color-azul-bind, #4c65e6);
 }
 
 .vincularInput:disabled {
@@ -393,6 +408,10 @@
   display: flex;
   align-items: center;
   flex-shrink: 0;
+}
+
+.perfilChipIconAdmin {
+  color: var(--color-azul-bind, #4c65e6);
 }
 
 .perfilChipLabel {
@@ -942,6 +961,18 @@
   box-shadow: none !important;
 }
 
+.addButtonAdmin {
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.3);
+  color: var(--color-azul-bind-300, #8a9fff);
+}
+
+.addButtonAdmin:hover {
+  background: var(--color-azul-bind, #4c65e6);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(76, 101, 230, 0.25);
+}
+
 /* BARRA DE PROGRESO DE PARTICIPACIÓN */
 .progressContainer {
   margin-bottom: 1rem;
@@ -1075,6 +1106,12 @@
   border-color: rgba(245, 244, 0, 0.3);
   background: rgba(245, 244, 0, 0.08);
   color: var(--color-amarillo-bind, #f5f400);
+}
+
+.actionBtnEditAdmin:hover {
+  border-color: rgba(76, 101, 230, 0.35);
+  background: rgba(76, 101, 230, 0.1);
+  color: var(--color-azul-bind-300, #8a9fff);
 }
 
 .actionBtnDelete:hover {
@@ -1593,6 +1630,16 @@
   transform: translateY(-1px);
 }
 
+.downloadCategoryBtnAdmin {
+  color: #8a9fff;
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.25);
+}
+
+.downloadCategoryBtnAdmin:hover {
+  background: rgba(76, 101, 230, 0.18);
+}
+
 .viewerContent {
   display: flex;
   flex-direction: column;
@@ -1653,6 +1700,10 @@
 
 .subTabActive .subTabIcon {
   color: var(--yellow, #f4f500);
+}
+
+.subTabIcon.subTabIconAdminActive {
+  color: var(--color-azul-bind-300, #8a9fff);
 }
 
 .subTabText {
@@ -1723,6 +1774,23 @@
 .subTabAdd.subTabActive {
   background: rgba(244, 245, 0, 0.1);
   border-color: rgba(244, 245, 0, 0.2);
+  color: #fff;
+}
+
+.subTabAddAdmin {
+  color: var(--color-azul-bind-300, #8a9fff);
+  border-color: rgba(76, 101, 230, 0.4);
+  background: rgba(76, 101, 230, 0.05);
+}
+
+.subTabAddAdmin:hover {
+  background: rgba(76, 101, 230, 0.08);
+  color: #fff;
+}
+
+.subTabAddAdmin.subTabActive {
+  background: rgba(76, 101, 230, 0.14);
+  border-color: rgba(76, 101, 230, 0.35);
   color: #fff;
 }
 

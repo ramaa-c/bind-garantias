@@ -26,6 +26,8 @@ export function RepresentantesSection({
   const [editRepresentante, setEditRepresentante] = useState(null);
   const [expandedRep, setExpandedRep] = useState(null);
   const [portalTarget, setPortalTarget] = useState(null);
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
   useEffect(() => {
     setPortalTarget(document.getElementById("socios-header-action-portal"));
@@ -45,7 +47,7 @@ export function RepresentantesSection({
           {portalTarget && createPortal(
             <button
               type="button"
-              className={styles.addButton}
+              className={`${styles.addButton} ${isAdmin ? styles.addButtonAdmin : ""}`}
               onClick={() => {
                 setEditRepresentante(null);
                 setModalRepresentanteOpen(true);
@@ -113,7 +115,7 @@ export function RepresentantesSection({
                     >
                       <button
                         type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
+                        className={`${styles.actionBtn} ${styles.actionBtnEdit} ${isAdmin ? styles.actionBtnEditAdmin : ""}`}
                         onClick={() => {
                           setEditRepresentante(rep);
                           setModalRepresentanteOpen(true);

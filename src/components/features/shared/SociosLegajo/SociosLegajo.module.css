@@ -198,6 +198,12 @@
   padding: 0.15rem 0.55rem;
 }
 
+.viewerBadgeAdmin {
+  color: #8a9fff;
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.25);
+}
+
 .viewerTitle {
   color: var(--white, #fff);
   font-size: 1.0625rem;
@@ -226,6 +232,10 @@
 
 .helperLink:hover {
   opacity: 0.75;
+}
+
+.helperLinkAdmin {
+  color: var(--color-azul-bind, #4c65e6);
 }
 
 /* ── USUARIOS VINCULADOS ─────────────────────────────────────────────────────── */

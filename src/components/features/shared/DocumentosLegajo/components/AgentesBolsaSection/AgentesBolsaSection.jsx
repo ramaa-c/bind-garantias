@@ -15,6 +15,8 @@ export function AgentesBolsaSection({
   const [modalBolsaOpen, setModalBolsaOpen] = useState(false);
   const [editBolsa, setEditBolsa] = useState(null);
   const [portalTarget, setPortalTarget] = useState(null);
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
   useEffect(() => {
     setPortalTarget(document.getElementById("socios-header-action-portal"));
@@ -34,7 +36,7 @@ export function AgentesBolsaSection({
           {portalTarget && createPortal(
             <button
               type="button"
-              className={styles.addButton}
+              className={`${styles.addButton} ${isAdmin ? styles.addButtonAdmin : ""}`}
               onClick={() => {
                 setEditBolsa(null);
                 setModalBolsaOpen(true);
@@ -91,7 +93,7 @@ export function AgentesBolsaSection({
                     >
                       <button
                         type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
+                        className={`${styles.actionBtn} ${styles.actionBtnEdit} ${isAdmin ? styles.actionBtnEditAdmin : ""}`}
                         onClick={() => {
                           setEditBolsa(bolsa);
                           setModalBolsaOpen(true);
