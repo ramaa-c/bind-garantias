@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { cdaService } from "../services/cdaService";
 import { cadenaValorService } from "../services/cadenaValorService";
+import { esCdaActivo } from "../utils/cdaUtils";
 
 export const useObtenerGrupoCda = (pantalla, options = {}) => {
   return useQuery({
@@ -63,7 +64,7 @@ export const useVincularPantallaCda = () => {
 
 export const useProbarCda = () => {
   return useMutation({
-    mutationFn: ({ cuit, expresion }) => cdaService.probarCda(cuit, expresion),
+    mutationFn: ({ cuit, expresion, expresionLog }) => cdaService.probarCda(cuit, expresion, expresionLog),
   });
 };
 
@@ -82,7 +83,7 @@ export const useObtenerCadenasPorCda = (cadenas) => {
         try {
           const linked = await cadenaValorService.obtenerCdasPorCadenaId(cadena.cadenavalorid);
           const linkedList = Array.isArray(linked) ? linked : linked?.items || linked?.data || [];
-          linkedList.forEach((l) => {
+          linkedList.filter(esCdaActivo).forEach((l) => {
             const cdaId = l.cdaid ?? l.CdaId ?? l.CdaID;
             if (cdaId === undefined) return;
             if (!mapa[cdaId]) mapa[cdaId] = [];
