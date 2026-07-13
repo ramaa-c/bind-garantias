@@ -64,6 +64,24 @@ export const cdaService = {
     return response.data;
   },
 
+  // GET api/cda/execute?CdaID=X&Cuit=Y - Vuelve a evaluar un CDA puntual (ej.
+  // tras reactivar una integración que lo había dejado en estado Pendiente).
+  // Igual que probarCda: nunca tira, devuelve { status, data } para poder
+  // diferenciar 202 (aprobado) de 406 (rechazado) sin try/catch afuera.
+  reejecutarCda: async ({ cdaId, cuit, usuarioId }) => {
+    const params = { CdaID: cdaId, Cuit: cuit };
+    if (usuarioId) params.UsuarioID = usuarioId;
+    try {
+      const response = await api.get("api/cda/execute", { params });
+      return { status: response.status, data: response.data };
+    } catch (error) {
+      if (error.response) {
+        return { status: error.response.status, data: error.response.data };
+      }
+      throw error;
+    }
+  },
+
   probarCda: async (cuit, expresion, expresionLog) => {
     try {
       const response = await api.post("api/cda/execute:test", {

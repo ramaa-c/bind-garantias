@@ -77,6 +77,15 @@ export const sociosService = {
     return response.data;
   },
 
+  // GET api/Socios/ExecuteCda?SocioID=X - Historial de ejecuciones de CDAs de
+  // un socio (una fila por cada intento de evaluación, no solo la vigente).
+  obtenerExecuteCda: async (socioId) => {
+    const response = await api.get("api/Socios/ExecuteCda", {
+      params: { SocioID: socioId },
+    });
+    return response.data;
+  },
+
   // Crea nuevo socio
   crearSocio: async (socioData) => {
     const response = await api.post("api/Socio", sociosAdapter.adaptarPayload1(socioData));

@@ -1,5 +1,7 @@
 import axios from "axios";
 import { toast } from "sonner";
+import { queryClient } from "./queryClient";
+import { obtenerUltimoStatus, esOffline } from "../utils/statusPlataforma";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -7,6 +9,51 @@ const api = axios.create({
   headers: {
     Accept: "application/json",
   },
+});
+
+// ─────────────────────────────────────────────────────────────
+// Gate de "modo offline": si la plataforma cliente está fuera de
+// servicio, cortamos acá CUALQUIER request que dispare una pantalla
+// cliente (alta de legajo, solicitudes, carga de documentación, etc.)
+// en vez de dejar que llegue al backend. El panel admin queda afuera
+// a propósito: tiene que poder seguir operando para reactivarla.
+//
+// El estado se lee de la caché de react-query que ya mantiene
+// actualizada `useObtenerStatusPlataforma` (poll cada 30s desde
+// TenantLayout), así evitamos un segundo poller independiente y no
+// hace falta tocar ningún service/hook existente.
+// ─────────────────────────────────────────────────────────────
+
+const esRutaAdmin = () => {
+  const path = window.location.pathname;
+  return path.startsWith("/admin") || path === "/login";
+};
+
+let yaRedirigiendo = false;
+
+const redirigirAFueraDeServicio = () => {
+  if (yaRedirigiendo || window.location.pathname === "/fuera-de-servicio") return;
+  yaRedirigiendo = true;
+  toast.error("La plataforma está en mantenimiento", {
+    description: "Te vamos a redirigir a la pantalla de estado.",
+  });
+  setTimeout(() => window.location.assign("/fuera-de-servicio"), 900);
+};
+
+api.interceptors.request.use((config) => {
+  // El propio chequeo de estado nunca se bloquea a sí mismo.
+  if (config.url?.includes("StatusPlataforma") || esRutaAdmin()) {
+    return config;
+  }
+
+  const statusCacheado = queryClient.getQueryData(["statusPlataforma"]);
+  if (esOffline(obtenerUltimoStatus(statusCacheado))) {
+    const error = new Error("La plataforma cliente está en mantenimiento");
+    error.isPlataformaOffline = true;
+    return Promise.reject(error);
+  }
+
+  return config;
 });
 
 const MAX_RETRIES = 2;
@@ -58,6 +105,11 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
+    if (error?.isPlataformaOffline) {
+      redirigirAFueraDeServicio();
+      return Promise.reject(error);
+    }
+
     const config = error.config;
 
     if (!config) return Promise.reject(error);

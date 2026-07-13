@@ -2,19 +2,23 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiTool } from "react-icons/fi";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
-import { useModoOffline } from "../../../hooks/useModoOffline";
-import { MENSAJE_OFFLINE_DEFAULT } from "../../../utils/modoOffline";
+import { useObtenerStatusPlataforma } from "../../../hooks/useStatusPlataforma";
+import { obtenerUltimoStatus, esOffline } from "../../../utils/statusPlataforma";
 import styles from "./FueraDeServicio.module.css";
+
+const MENSAJE_MANTENIMIENTO =
+  "Estamos realizando tareas de mantenimiento programado. Por favor, volvé a intentarlo en unos minutos.";
 
 const FueraDeServicio = () => {
   const navigate = useNavigate();
-  const { activo, mensaje } = useModoOffline();
+  const { data, isLoading } = useObtenerStatusPlataforma();
+  const activo = esOffline(obtenerUltimoStatus(data));
 
   useEffect(() => {
-    if (!activo) {
+    if (!isLoading && !activo) {
       navigate("/", { replace: true });
     }
-  }, [activo, navigate]);
+  }, [activo, isLoading, navigate]);
 
   return (
     <div className={styles.container}>
@@ -24,7 +28,7 @@ const FueraDeServicio = () => {
           <FiTool size={64} className={styles.icon} />
         </div>
         <h2 className={styles.title}>Plataforma en mantenimiento</h2>
-        <p className={styles.message}>{mensaje || MENSAJE_OFFLINE_DEFAULT}</p>
+        <p className={styles.message}>{MENSAJE_MANTENIMIENTO}</p>
         <span className={styles.hint}>
           Esta página se actualiza sola apenas el servicio vuelva a estar disponible.
         </span>

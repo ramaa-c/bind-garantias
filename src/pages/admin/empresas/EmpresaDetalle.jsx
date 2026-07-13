@@ -12,14 +12,28 @@ import {
   FiBriefcase,
   FiCalendar,
   FiArrowLeft,
+  FiAlertTriangle,
+  FiRefreshCw,
 } from "react-icons/fi";
-import { useSocioPorId, useActualizarSocio } from "../../../hooks/useSocios";
+import {
+  useSocioPorId,
+  useActualizarSocio,
+  useObtenerExecuteCda,
+} from "../../../hooks/useSocios";
 import {
   useSituacionBCRA,
   useEstadoSocio,
   useTamanioEmpresa,
   useTipoCanalComercializacion,
+  useEstadoExecuteCda,
 } from "../../../hooks/useCatalogos";
+import { useObtenerTodosCdas, useReejecutarCda } from "../../../hooks/useCda";
+import { useAuthStore } from "../../../store/useAuthStore";
+import {
+  ultimaEjecucionPorCda,
+  ordenarEjecucionesCda,
+  formatearMomentoControl,
+} from "../../../utils/executeCda";
 import {
   Button,
   InputSimple,
@@ -425,21 +439,177 @@ function TercerosTab({ socio }) {
   );
 }
 
-function CdasTab() {
-  return (
-    <div className={styles.cdasPlaceholderWrap}>
-      <div className={styles.cdasPlaceholder}>
-        <FiClock className={styles.cdasPlaceholderIcon} />
-        <h3>Próximamente</h3>
-        <p>
-          Esta sección permitirá intervenir manualmente los Criterios de
-          Aceptación de esta empresa: revisar el resultado de las
-          validaciones, forzar la aprobación de un CDA rechazado ajustando
-          relaciones o reglas, y volver a probar los criterios. Todavía no
-          está disponible porque el backend no expone los endpoints
-          necesarios (historial de evaluaciones por empresa).
-        </p>
+function CdasTab({ socio }) {
+  const usuarioWebId = useAuthStore((state) => state.user?.usuarioWebId) || 0;
+  const [cdaEnCurso, setCdaEnCurso] = useState(null);
+
+  const {
+    data: ejecucionesData,
+    isLoading,
+    isError,
+  } = useObtenerExecuteCda(socio.socioid);
+  const { data: estadosExecuteCda } = useEstadoExecuteCda();
+  const { data: todosCdas } = useObtenerTodosCdas();
+  const { mutate: reejecutar, isPending: isReejecutando } = useReejecutarCda();
+
+  const descripcionPorCda = useMemo(() => {
+    const mapa = new Map();
+    const lista = Array.isArray(todosCdas) ? todosCdas : [];
+    lista.forEach((cda) => {
+      const id = Number(cda.cdaid);
+      mapa.set(id, cda.descripcion || cda.expresion);
+    });
+    return mapa;
+  }, [todosCdas]);
+
+  const ultimasPorCda = useMemo(
+    () => ultimaEjecucionPorCda(ejecucionesData),
+    [ejecucionesData],
+  );
+  const historialCompleto = useMemo(
+    () => ordenarEjecucionesCda(ejecucionesData),
+    [ejecucionesData],
+  );
+
+  const handleReejecutar = (item) => {
+    setCdaEnCurso(item.cdaid);
+    reejecutar(
+      { cdaId: item.cdaid, cuit: socio.cuit, usuarioId: usuarioWebId },
+      {
+        onSuccess: ({ status, data }) => {
+          setCdaEnCurso(null);
+          if (status === 202) {
+            toast.success("CDA aprobado", {
+              description: "El criterio se volvió a evaluar y pasó correctamente.",
+            });
+          } else if (status === 406) {
+            toast.error("CDA rechazado", {
+              description: typeof data === "string" ? data : "El criterio no se cumple.",
+            });
+          } else if (status === 409) {
+            toast.error("Falta un dato requerido para evaluar este CDA.");
+          } else {
+            toast.error("No se pudo re-ejecutar el CDA.");
+          }
+        },
+        onError: () => {
+          setCdaEnCurso(null);
+          toast.error("No se pudo re-ejecutar el CDA.");
+        },
+      },
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className={styles.cdasPlaceholderWrap}>
+        <Spinner center size={60} color="#4c65e6" />
       </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className={styles.cdasPlaceholderWrap}>
+        <div className={styles.cdasPlaceholder}>
+          <FiAlertTriangle className={styles.cdasPlaceholderIcon} />
+          <h3>No se pudo cargar el historial de CDAs</h3>
+          <p>Ocurrió un error al consultar las evaluaciones de esta empresa. Probá de nuevo en unos segundos.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (ultimasPorCda.length === 0) {
+    return (
+      <div className={styles.cdasPlaceholderWrap}>
+        <div className={styles.cdasPlaceholder}>
+          <FiShield className={styles.cdasPlaceholderIcon} />
+          <h3>Sin evaluaciones registradas</h3>
+          <p>Todavía no se ejecutó ningún Criterio de Aceptación para esta empresa.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.cdasScroll}>
+      <section className={styles.cdasSection}>
+        <header className={styles.sectionCardHeader}>
+          <span className={styles.sectionCardIcon}>
+            <FiShield size={15} />
+          </span>
+          <h3>Estado actual de los CDAs</h3>
+        </header>
+        <div className={styles.cdasList}>
+          {ultimasPorCda.map((item) => {
+            const estadoLabel =
+              resolverLabel(estadosExecuteCda?.opciones, item.estadoexecutecdaid) || "Desconocido";
+            const tono = getEstadoTono(estadoLabel);
+            const descripcion =
+              descripcionPorCda.get(Number(item.cdaid)) || item.expresion || `CDA #${item.cdaid}`;
+            const puedeReejecutar = tono !== "success";
+
+            return (
+              <div key={item.cdaid} className={styles.cdaRow}>
+                <div className={styles.cdaRowInfo}>
+                  <span className={styles.cdaRowTitulo}>{descripcion}</span>
+                  {item.valorresultado && (
+                    <span className={styles.cdaRowResultado}>{item.valorresultado}</span>
+                  )}
+                </div>
+                <span className={`${styles.badge} ${styles[`badge-${tono}`]}`}>
+                  <span className={styles.badgeDot} /> {estadoLabel}
+                </span>
+                <span className={styles.cdaRowFecha}>{formatearMomentoControl(item.momentocontrol)}</span>
+                {puedeReejecutar && (
+                  <Button
+                    variant="outlineBlue"
+                    size="sm"
+                    onClick={() => handleReejecutar(item)}
+                    isLoading={isReejecutando && cdaEnCurso === item.cdaid}
+                    disabled={isReejecutando}
+                  >
+                    <FiRefreshCw size={13} /> Volver a ejecutar
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className={styles.cdasSection}>
+        <header className={styles.sectionCardHeader}>
+          <span className={styles.sectionCardIcon}>
+            <FiClock size={15} />
+          </span>
+          <h3>Historial completo</h3>
+        </header>
+        <div className={styles.cdasHistorialList}>
+          {historialCompleto.map((item) => {
+            const estadoLabel =
+              resolverLabel(estadosExecuteCda?.opciones, item.estadoexecutecdaid) || "Desconocido";
+            const tono = getEstadoTono(estadoLabel);
+            const descripcion =
+              descripcionPorCda.get(Number(item.cdaid)) || item.expresion || `CDA #${item.cdaid}`;
+
+            return (
+              <div key={item.socioexecutecdaid} className={styles.cdaHistorialItem}>
+                <span className={`${styles.dot} ${styles[`dot-${tono}`]}`} />
+                <div className={styles.cdaHistorialInfo}>
+                  <span className={styles.cdaHistorialTitulo}>
+                    {descripcion} · <strong>{estadoLabel}</strong>
+                  </span>
+                  <span className={styles.cdaHistorialMeta}>
+                    {formatearMomentoControl(item.momentocontrol)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
 }
@@ -531,7 +701,7 @@ export default function EmpresaDetalle() {
         {activeTab === "datos" && <DatosTab socio={socio} />}
         {activeTab === "documentacion" && <DocumentacionTab socio={socio} />}
         {activeTab === "terceros" && <TercerosTab socio={socio} />}
-        {activeTab === "cdas" && <CdasTab />}
+        {activeTab === "cdas" && <CdasTab socio={socio} />}
       </div>
     </div>
   );

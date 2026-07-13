@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { cdaService } from "../services/cdaService";
 import { cadenaValorService } from "../services/cadenaValorService";
 import { esCdaActivo } from "../utils/cdaUtils";
@@ -65,6 +65,16 @@ export const useVincularPantallaCda = () => {
 export const useProbarCda = () => {
   return useMutation({
     mutationFn: ({ cuit, expresion, expresionLog }) => cdaService.probarCda(cuit, expresion, expresionLog),
+  });
+};
+
+export const useReejecutarCda = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => cdaService.reejecutarCda(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["socios", "executeCda"] });
+    },
   });
 };
 
