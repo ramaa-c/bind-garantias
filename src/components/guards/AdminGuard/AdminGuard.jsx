@@ -48,10 +48,16 @@ export const AdminGuard = ({ children }) => {
   useEffect(() => {
     if (!registroUsuario) return;
     const nombreResuelto = denominacionReal || user?.email || "";
-    if (nombreResuelto && nombreResuelto !== user?.nombre) {
-      setUser({ ...user, nombre: nombreResuelto });
+    const necesitaNombre = !!nombreResuelto && nombreResuelto !== user?.nombre;
+    const necesitaUsuarioWebId = !!usuarioWebId && usuarioWebId !== user?.usuarioWebId;
+    if (necesitaNombre || necesitaUsuarioWebId) {
+      setUser({
+        ...user,
+        ...(necesitaNombre ? { nombre: nombreResuelto } : {}),
+        ...(necesitaUsuarioWebId ? { usuarioWebId } : {}),
+      });
     }
-  }, [registroUsuario, denominacionReal, user, setUser]);
+  }, [registroUsuario, denominacionReal, usuarioWebId, user, setUser]);
 
   const { data: cadenasData, isPending: isCadenasLoading } =
     useObtenerCadenasPorUsuario(usuarioWebId);

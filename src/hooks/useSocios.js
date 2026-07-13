@@ -65,6 +65,14 @@ export const useActualizarSocio = () => {
   });
 };
 
+export const useObtenerExecuteCda = (socioId) => {
+  return useQuery({
+    queryKey: ["socios", "executeCda", socioId],
+    queryFn: () => sociosService.obtenerExecuteCda(socioId),
+    enabled: !!socioId,
+  });
+};
+
 export const useSocioWebPorId = (socioId) => {
   return useQuery({
     queryKey: ["sociosWeb", "detalle", socioId],

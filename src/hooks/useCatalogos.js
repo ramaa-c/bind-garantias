@@ -47,6 +47,14 @@ export const useEstadoSocio = () =>
     select: (data) => mapAndSort(data, "estadosocioid"),
   });
 
+export const useEstadoExecuteCda = () =>
+  useQuery({
+    queryKey: ["catalogos", "estadoExecuteCda"],
+    queryFn: catalogosService.obtenerEstadoExecuteCda,
+    staleTime: STALE_TIME,
+    select: (data) => mapAndSort(data, "estadoexecutecdaid"),
+  });
+
 export const useTamanioEmpresa = () =>
   useQuery({
     queryKey: ["catalogos", "tamanioEmpresa"],

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiSave, FiEye, FiEdit3, FiFileText, FiClock, FiCheckCircle } from "react-icons/fi";
+import { FiSave, FiEye, FiEdit3, FiFileText, FiClock, FiAlertTriangle } from "react-icons/fi";
 import { toast } from "sonner";
 import {
   RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
@@ -130,7 +130,9 @@ export default function Terminos() {
           </div>
 
           <div className={styles.infoCardNote}>
-            <h4>⚠️ Notificación a Socios</h4>
+            <h4>
+              <FiAlertTriangle /> Notificación a Socios
+            </h4>
             <p>
               Modificar cláusulas críticas marca automáticamente las firmas digitales previas
               como desactualizadas para la operatoria futura.
