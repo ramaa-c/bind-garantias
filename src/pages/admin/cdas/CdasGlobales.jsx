@@ -3,27 +3,16 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-<<<<<<< HEAD:src/pages/admin/cdas/CdasGlobales.jsx
 import { useCrearCda, useActualizarCda, useObtenerTodosCdas, useProbarCda } from "../../../hooks/useCda";
+import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
 import { cadenaValorService } from "../../../services/cadenaValorService";
 import { INTEGRACIONES_MOCKS } from "../../../utils/integracionesMocks";
+import { esCdaActivo } from "../../../utils/cdaUtils";
 import { Button } from "../../../components/ui/Button/Button";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../components/ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox, FiX } from "react-icons/fi";
-=======
-import { useCrearCda, useActualizarCda, useObtenerTodosCdas, useProbarCda } from "../../hooks/useCda";
-import { useUsuarioWebIdActual } from "../../hooks/useUsuario";
-import { cadenaValorService } from "../../services/cadenaValorService";
-import { INTEGRACIONES_MOCKS } from "../../utils/integracionesMocks";
-import { esCdaActivo } from "../../utils/cdaUtils";
-import { Button } from "../../components/ui/Button/Button";
-import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
-import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
-import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox, FiX, FiTrash2, FiInfo } from "react-icons/fi";
->>>>>>> feature-mati:src/pages/admin/CdasGlobales.jsx
 import styles from "./CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -134,8 +123,8 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
       typeof data === "number"
         ? styles.jsonValueNumber
         : typeof data === "boolean"
-        ? styles.jsonValueBoolean
-        : styles.jsonValueString;
+          ? styles.jsonValueBoolean
+          : styles.jsonValueString;
 
     return (
       <span
@@ -162,7 +151,7 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
           const currentPath = parentKey ? (isArray ? `${parentKey}[${key}]` : `${parentKey}.${key}`) : key;
           const isLast = index === keys.length - 1;
           const isValArray = Array.isArray(data[key]);
-          
+
           return (
             <div key={key}>
               {!isArray && (
@@ -204,10 +193,10 @@ const NosisVariablePicker = ({ variables, searchTerm, onSearchChange, selectedEx
   const term = searchTerm.trim().toLowerCase();
   const filtradas = term
     ? variables.filter(
-        (v) =>
-          String(v.Nombre || "").toLowerCase().includes(term) ||
-          String(v.Descripcion || "").toLowerCase().includes(term)
-      )
+      (v) =>
+        String(v.Nombre || "").toLowerCase().includes(term) ||
+        String(v.Descripcion || "").toLowerCase().includes(term)
+    )
     : variables;
 
   return (
@@ -386,7 +375,7 @@ export default function CdasGlobales() {
   const formatValorParaLog = (val) => {
     const trimmed = val.trim();
     if (trimmed === "") return "''";
-    
+
     let cleanVal = trimmed;
     if (
       (cleanVal.startsWith('"') && cleanVal.endsWith('"')) ||
@@ -394,7 +383,7 @@ export default function CdasGlobales() {
     ) {
       cleanVal = cleanVal.slice(1, -1);
     }
-    
+
     if (cleanVal === "") return "''";
 
     if (debeIrSinComillas(cleanVal)) {
@@ -420,8 +409,8 @@ export default function CdasGlobales() {
 
     let valorSaneado = valorcomparacion.trim();
     if (
-      valorSaneado === '""' || 
-      valorSaneado === "''" || 
+      valorSaneado === '""' ||
+      valorSaneado === "''" ||
       (valorSaneado.startsWith('"') && valorSaneado.endsWith('"')) ||
       (valorSaneado.startsWith("'") && valorSaneado.endsWith("'"))
     ) {
@@ -844,66 +833,66 @@ export default function CdasGlobales() {
         </div>
 
         <div className={styles.tableCard}>
-            <div className={styles.tableWrapper}>
-              <table className={styles.table}>
-                <thead>
+          <div className={styles.tableWrapper}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Descripción</th>
+                  <th>Integración</th>
+                  <th>Expresión</th>
+                  <th>Mensaje de Rechazo</th>
+                  <th style={{ textAlign: "center", width: "160px" }}>Vinculación Default</th>
+                  <th style={{ width: "2.5rem" }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {isLoadingLista ? (
+                  Array.from({ length: 6 }).map((_, i) => <CdaRowSkeleton key={i} styles={styles} />)
+                ) : cdasFiltrados.length === 0 ? (
                   <tr>
-                    <th>Descripción</th>
-                    <th>Integración</th>
-                    <th>Expresión</th>
-                    <th>Mensaje de Rechazo</th>
-                    <th style={{ textAlign: "center", width: "160px" }}>Vinculación Default</th>
-                    <th style={{ width: "2.5rem" }}></th>
+                    <td colSpan={6} style={{ padding: 0 }}>
+                      <div className={styles.emptyState}>
+                        <FiInbox className={styles.emptyStateIcon} />
+                        <span>No hay criterios de aceptación cargados todavía.</span>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {isLoadingLista ? (
-                    Array.from({ length: 6 }).map((_, i) => <CdaRowSkeleton key={i} styles={styles} />)
-                  ) : cdasFiltrados.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} style={{ padding: 0 }}>
-                        <div className={styles.emptyState}>
-                          <FiInbox className={styles.emptyStateIcon} />
-                          <span>No hay criterios de aceptación cargados todavía.</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    cdasFiltrados.map((cda) => {
-                      const id = getCdaId(cda);
-                      const defaultCv = String(getCdaProp(cda, "vinculadefaultcv"));
-                      const esDefault = defaultCv === "1" || defaultCv.toUpperCase() === "S";
-                      const integ = detectarIntegracion(getCdaProp(cda, "expresion"));
-                      const integColor = INTEGRACION_COLORS[integ] || INTEGRACION_COLOR_DEFAULT;
-                      return (
-                        <tr key={id} className={styles.clickableRow} onClick={() => handleEditarCda(cda)}>
-                          <td>
-                            <strong>{getCdaProp(cda, "descripcion") || "-"}</strong>
-                            <span className={styles.rowIdTag}>ID #{id}</span>
-                          </td>
-                          <td>
-                            <span
-                              className={styles.integracionBadge}
-                              style={{ background: integColor.bg, color: integColor.color, borderColor: integColor.border }}
-                            >
-                              {integ || "—"}
-                            </span>
-                          </td>
-                          <td><code className={styles.tableCode}>{getCdaProp(cda, "expresion") || "-"}</code></td>
-                          <td>{getCdaProp(cda, "mensajerechazo") || "-"}</td>
-                          <td style={{ textAlign: "center" }}>
-                            <span className={esDefault ? styles.pillYes : styles.pillNo}>{esDefault ? "Sí" : "No"}</span>
-                          </td>
-                          <td style={{ textAlign: "center" }}>
-                            <FiChevronRight className={styles.rowChevron} />
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                ) : (
+                  cdasFiltrados.map((cda) => {
+                    const id = getCdaId(cda);
+                    const defaultCv = String(getCdaProp(cda, "vinculadefaultcv"));
+                    const esDefault = defaultCv === "1" || defaultCv.toUpperCase() === "S";
+                    const integ = detectarIntegracion(getCdaProp(cda, "expresion"));
+                    const integColor = INTEGRACION_COLORS[integ] || INTEGRACION_COLOR_DEFAULT;
+                    return (
+                      <tr key={id} className={styles.clickableRow} onClick={() => handleEditarCda(cda)}>
+                        <td>
+                          <strong>{getCdaProp(cda, "descripcion") || "-"}</strong>
+                          <span className={styles.rowIdTag}>ID #{id}</span>
+                        </td>
+                        <td>
+                          <span
+                            className={styles.integracionBadge}
+                            style={{ background: integColor.bg, color: integColor.color, borderColor: integColor.border }}
+                          >
+                            {integ || "—"}
+                          </span>
+                        </td>
+                        <td><code className={styles.tableCode}>{getCdaProp(cda, "expresion") || "-"}</code></td>
+                        <td>{getCdaProp(cda, "mensajerechazo") || "-"}</td>
+                        <td style={{ textAlign: "center" }}>
+                          <span className={esDefault ? styles.pillYes : styles.pillNo}>{esDefault ? "Sí" : "No"}</span>
+                        </td>
+                        <td style={{ textAlign: "center" }}>
+                          <FiChevronRight className={styles.rowChevron} />
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {postSaveModal}

@@ -1,22 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-<<<<<<< HEAD:src/pages/admin/cdas/CdasPantalla.jsx
 import { useObtenerTodosCdas, useVincularPantallaCda, useObtenerCadenasPorCda } from "../../../hooks/useCda";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { cdaService } from "../../../services/cdaService";
+import { esCdaActivo } from "../../../utils/cdaUtils";
 import { SelectSimple } from "../../../components/ui/SelectSimple/SelectSimple";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
-=======
-import { useObtenerTodosCdas, useVincularPantallaCda, useObtenerCadenasPorCda } from "../../hooks/useCda";
-import { useObtenerTodasWebConEstado } from "../../hooks/useCadenaValor";
-import { cdaService } from "../../services/cdaService";
-import { esCdaActivo } from "../../utils/cdaUtils";
-import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
-import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
-import { Button } from "../../components/ui/Button/Button";
->>>>>>> feature-mati:src/pages/admin/CdasPantalla.jsx
 import { FiCheck, FiInfo } from "react-icons/fi";
 import styles from "./CdasPantalla.module.css";
 
@@ -198,7 +189,7 @@ export default function CdasPantalla() {
         ExpresionAgrupacion: finalExpresion,
         ListaCda: selectedCdaIds,
       });
-      
+
       await queryClient.invalidateQueries({ queryKey: ["cda", "pantallaGrupo"] });
       toast.success("Configuración de pantalla guardada correctamente");
     } catch (err) {
@@ -228,7 +219,7 @@ export default function CdasPantalla() {
         {/* COLUMNA IZQUIERDA: Configuración */}
         <div className={styles.leftCol}>
           <h2 className={styles.sectionTitle}>Pantalla y Agrupación</h2>
-          
+
           <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", flex: 1 }}>
             <SelectSimple
               label="Seleccionar Pantalla Web"
@@ -249,7 +240,7 @@ export default function CdasPantalla() {
                 {/* Tipo de Agrupación Selector */}
                 <div className={styles.typeSelector}>
                   <label className={styles.customTextareaLabel}>Tipo de Agrupación Lógica</label>
-                  
+
                   <div
                     className={`${styles.radioOption} ${agrupacionType === "and" ? styles.radioActive : ""}`}
                     onClick={() => setAgrupacionType("and")}
