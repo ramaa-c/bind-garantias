@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+<<<<<<< HEAD:src/pages/admin/cdas/CdasGlobales.jsx
 import { useCrearCda, useActualizarCda, useObtenerTodosCdas, useProbarCda } from "../../../hooks/useCda";
 import { cadenaValorService } from "../../../services/cadenaValorService";
 import { INTEGRACIONES_MOCKS } from "../../../utils/integracionesMocks";
@@ -10,6 +12,18 @@ import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../components/ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox, FiX } from "react-icons/fi";
+=======
+import { useCrearCda, useActualizarCda, useObtenerTodosCdas, useProbarCda } from "../../hooks/useCda";
+import { useUsuarioWebIdActual } from "../../hooks/useUsuario";
+import { cadenaValorService } from "../../services/cadenaValorService";
+import { INTEGRACIONES_MOCKS } from "../../utils/integracionesMocks";
+import { esCdaActivo } from "../../utils/cdaUtils";
+import { Button } from "../../components/ui/Button/Button";
+import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
+import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
+import { ConfirmacionModal } from "../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox, FiX, FiTrash2, FiInfo } from "react-icons/fi";
+>>>>>>> feature-mati:src/pages/admin/CdasGlobales.jsx
 import styles from "./CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -249,6 +263,54 @@ const CdaRowSkeleton = ({ styles }) => (
   </tr>
 );
 
+// Fila compacta para las opciones de vinculación (columna 3): switch chico +
+// nombre corto + ícono de info con la descripción larga en un tooltip, para
+// que entren varias opciones sin que cada una ocupe una tarjeta completa.
+// El tooltip se renderiza en un portal con posición fija: la columna tiene
+// overflow-y:auto, así que un tooltip absoluto quedaría recortado.
+const ToggleOptionRow = ({ label, description, checked, onToggle, disabled }) => {
+  const infoRef = useRef(null);
+  const [tooltipPos, setTooltipPos] = useState(null);
+
+  const mostrarTooltip = () => {
+    const rect = infoRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setTooltipPos({ top: rect.top - 8, right: window.innerWidth - rect.right - 6 });
+  };
+  const ocultarTooltip = () => setTooltipPos(null);
+
+  return (
+    <div className={styles.toggleOptionRow}>
+      <label className={styles.miniSwitch}>
+        <input type="checkbox" checked={checked} onChange={onToggle} disabled={disabled} />
+        <span className={styles.miniSlider} />
+      </label>
+      <span className={styles.toggleOptionLabel} title={label}>{label}</span>
+      <div
+        ref={infoRef}
+        className={styles.toggleOptionInfoWrapper}
+        tabIndex={0}
+        onMouseEnter={mostrarTooltip}
+        onMouseLeave={ocultarTooltip}
+        onFocus={mostrarTooltip}
+        onBlur={ocultarTooltip}
+      >
+        <FiInfo className={styles.toggleOptionInfoIcon} size={17} />
+      </div>
+      {tooltipPos && createPortal(
+        <div
+          className={styles.toggleOptionTooltip}
+          role="tooltip"
+          style={{ top: tooltipPos.top, right: tooltipPos.right }}
+        >
+          {description}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
+
 export default function CdasGlobales() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -256,11 +318,14 @@ export default function CdasGlobales() {
   const { mutateAsync: actualizarCda, isPending: isActualizando } = useActualizarCda();
   const { data: todosCdasData, isLoading: isLoadingLista } = useObtenerTodosCdas();
   const { mutateAsync: probarCda, isPending: isTesting } = useProbarCda();
+  const usuarioWebId = useUsuarioWebIdActual();
+  const [isEliminando, setIsEliminando] = useState(false);
 
   // "lista": listado de CDAs existentes. "formulario": alta/edición (misma pantalla para ambos casos).
   const [vista, setVista] = useState("lista");
   const [cdaEditando, setCdaEditando] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const [isProcesando, setIsProcesando] = useState(false);
   const [integracion, setIntegracion] = useState("");
@@ -274,6 +339,7 @@ export default function CdasGlobales() {
   const [mensajerechazo, setMensajerechazo] = useState("");
   const [vinculadefaultcv, setVinculadefaultcv] = useState(true);
   const [vincularExistentes, setVincularExistentes] = useState(false);
+  const [propagarValorATodasCadenas, setPropagarValorATodasCadenas] = useState(false);
   const [validationError, setValidationError] = useState("");
   const [intentoEnviar, setIntentoEnviar] = useState(false);
   const [expresionLog, setExpresionLog] = useState("");
@@ -286,7 +352,8 @@ export default function CdasGlobales() {
   const [testCuit, setTestCuit] = useState("");
   const [testResult, setTestResult] = useState(null);
 
-  const todosCdasList = Array.isArray(todosCdasData) ? todosCdasData : todosCdasData?.items || todosCdasData?.data || [];
+  // Un CDA con activo="0" se comporta como eliminado: no debe aparecer en el listado.
+  const todosCdasList = (Array.isArray(todosCdasData) ? todosCdasData : todosCdasData?.items || todosCdasData?.data || []).filter(esCdaActivo);
 
   const getCdaId = (c) => {
     if (!c) return undefined;
@@ -374,12 +441,15 @@ export default function CdasGlobales() {
     try {
       const res = await probarCda({
         cuit: testCuit.trim(),
-        expresion: fullExpression
+        expresion: fullExpression,
+        expresionLog: expresionLog.trim()
       });
 
+      const data = res.data;
       setTestResult({
         status: res.status,
-        message: res.data?.message || res.data || ""
+        message: typeof data === "string" ? data : (data?.message || data?.Message || ""),
+        log: data?.expresionlog ?? data?.ExpresionLog ?? ""
       });
     } catch (err) {
       console.error(err);
@@ -429,6 +499,7 @@ export default function CdasGlobales() {
     setMensajerechazo("");
     setVinculadefaultcv(true);
     setVincularExistentes(false);
+    setPropagarValorATodasCadenas(false);
     setValidationError("");
     setIntentoEnviar(false);
     setTestResult(null);
@@ -459,6 +530,7 @@ export default function CdasGlobales() {
     setMensajerechazo(getCdaProp(cda, "mensajerechazo") || "");
     setVinculadefaultcv(defaultCv === "" ? true : (defaultCv === "1" || defaultCv.toUpperCase() === "S"));
     setVincularExistentes(false);
+    setPropagarValorATodasCadenas(false);
     setValidationError("");
     setIntentoEnviar(false);
     setTestResult(null);
@@ -511,19 +583,11 @@ export default function CdasGlobales() {
           const yaVinculado = linkedCdasList.some((c) => getCdaId(c) === cdaId);
 
           if (!yaVinculado) {
-            const listacda = linkedCdasList.map((c) => ({
-              cdaid: getCdaId(c),
-              valorcomparacion: c.valorcomparacion !== undefined ? c.valorcomparacion : (c.ValorComparacion !== undefined ? c.ValorComparacion : ""),
-            }));
-
-            listacda.push({
-              cdaid: cdaId,
-              valorcomparacion: valorParaVincular,
-            });
-
+            // El POST ahora agrega en vez de reemplazar: alcanza con mandar
+            // únicamente el CDA nuevo, no hace falta reenviar los existentes.
             await cadenaValorService.vincularCdas({
               cadenavalorid: Number(cadenaId),
-              listacda: listacda,
+              listacda: [{ cdaid: cdaId, valorcomparacion: valorParaVincular }],
             });
             linkedCount++;
           }
@@ -540,6 +604,57 @@ export default function CdasGlobales() {
     } catch (chainErr) {
       console.error("Error al obtener cadenas de valor para vinculación:", chainErr);
       toast.error("El CDA se guardó, pero no se pudo vincular automáticamente a las cadenas existentes.");
+    }
+  };
+
+  // Sobrescribe el valor por cadena en TODAS las cadenas donde este CDA ya
+  // está vinculado y activo (no toca las que no lo tienen vinculado: para eso
+  // está "vincularExistentes"). Es la acción disparada por el checkbox
+  // "propagarValorATodasCadenas" al editar un CDA global.
+  const propagarValorATodasLasCadenasActivas = async (cdaId, valorNuevo) => {
+    toast.info("Aplicando el nuevo valor en las cadenas donde este criterio está activo...");
+    try {
+      const todasCadenas = await cadenaValorService.obtenerTodasWeb();
+      const cadenasList = Array.isArray(todasCadenas) ? todasCadenas : todasCadenas?.items || todasCadenas?.data || [];
+
+      let actualizadas = 0;
+      for (const cadena of cadenasList) {
+        const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
+        if (!cadenaId) continue;
+
+        try {
+          const linkedCdas = await cadenaValorService.obtenerCdasPorCadenaId(cadenaId);
+          const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+          const vinculacion = linkedCdasList.find((c) => getCdaId(c) === cdaId);
+          if (!vinculacion || !esCdaActivo(vinculacion)) continue;
+
+          const cdaCadenaValorId = getCdaProp(vinculacion, "cdacadenavalorid");
+          if (cdaCadenaValorId === "" || cdaCadenaValorId === undefined) {
+            console.warn(`No se encontró CdaCadenaValorID para el CDA ${cdaId} en la cadena ${cadenaId}; se omite.`);
+            continue;
+          }
+
+          await cadenaValorService.actualizarVinculacionCda({
+            cdacadenavalorid: cdaCadenaValorId,
+            cadenavalorid: Number(cadenaId),
+            cdaid: cdaId,
+            valorcomparacion: valorNuevo,
+            usuariowebid: usuarioWebId,
+          });
+          actualizadas++;
+        } catch (linkErr) {
+          console.error(`Error al actualizar el valor del CDA en la cadena ${cadenaId}:`, linkErr);
+        }
+      }
+
+      if (actualizadas > 0) {
+        toast.success(`Valor actualizado en ${actualizadas} cadena${actualizadas !== 1 ? "s" : ""} donde el criterio estaba activo.`);
+      } else {
+        toast.info("Este criterio no estaba activo en ninguna cadena de valor.");
+      }
+    } catch (chainErr) {
+      console.error("Error al obtener cadenas de valor para propagar el valor:", chainErr);
+      toast.error("El CDA se guardó, pero no se pudo propagar el valor a las cadenas donde está activo.");
     }
   };
 
@@ -572,7 +687,8 @@ export default function CdasGlobales() {
     try {
       const resValida = await probarCda({
         cuit: testCuit.trim() || "30714430048",
-        expresion: fullExpression
+        expresion: fullExpression,
+        expresionLog: expresionLog.trim()
       });
 
       if (resValida.status === 500) {
@@ -592,16 +708,18 @@ export default function CdasGlobales() {
       valorComparacion: valorSaneado,
       vinculaDefaultCV: vinculadefaultcv ? "1" : "0",
       expresionLog: expresionLog.trim(),
-      mensajeRechazo: mensajerechazo.trim()
+      mensajeRechazo: mensajerechazo.trim(),
+      activo: "1",
+      usuariowebid: usuarioWebId
     };
 
     try {
       if (esEdicion) {
         await actualizarCda(payloadCda);
 
-        if (vincularExistentes) {
+        if (propagarValorATodasCadenas) {
           const cdaId = getCdaId(cdaEditando);
-          if (cdaId) await vincularCdaEnCadenasExistentes(cdaId, valorSaneado);
+          if (cdaId) await propagarValorATodasLasCadenasActivas(cdaId, valorSaneado);
         }
 
         await queryClient.invalidateQueries({ queryKey: ['cda'] });
@@ -631,6 +749,43 @@ export default function CdasGlobales() {
     } finally {
       setIsProcesando(false);
       setConfirmOpen(false);
+    }
+  };
+
+  const handleEliminarCda = () => {
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmEliminarCda = async () => {
+    if (!cdaEditando) return;
+    setIsEliminando(true);
+    try {
+      // Ya no existe un DELETE físico: se "elimina" marcando activo="0", que
+      // hace que el CDA se filtre de todos los listados como si no existiera.
+      await actualizarCda({
+        cdaID: getCdaId(cdaEditando) ?? 0,
+        descripcion: getCdaProp(cdaEditando, "descripcion") || "",
+        expresion: getCdaProp(cdaEditando, "expresion") || "",
+        expresionLog: getCdaProp(cdaEditando, "expresionlog") || "",
+        simboloComparacion: getCdaProp(cdaEditando, "simbolocomparacion") || "",
+        valorComparacion: getCdaProp(cdaEditando, "valorcomparacion") || "",
+        vinculaDefaultCV: getCdaProp(cdaEditando, "vinculadefaultcv") || "0",
+        mensajeRechazo: getCdaProp(cdaEditando, "mensajerechazo") || "",
+        activo: "0",
+        usuariowebid: usuarioWebId
+      });
+      await queryClient.invalidateQueries({ queryKey: ['cda'] });
+      await queryClient.invalidateQueries({ queryKey: ["cda", "pantallaGrupo"] });
+      await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
+      toast.success("Criterio de Aceptación eliminado correctamente.");
+      resetFormulario();
+      setVista("lista");
+    } catch (err) {
+      console.error(err);
+      toast.error("Ocurrió un error al eliminar el CDA.");
+    } finally {
+      setIsEliminando(false);
+      setDeleteConfirmOpen(false);
     }
   };
 
@@ -1025,12 +1180,6 @@ export default function CdasGlobales() {
 
             {testResult && (() => {
               const resultado = getResultadoPrueba(testResult.status, styles);
-              const valorLog =
-                typeof testResult.message === "string"
-                  ? testResult.message
-                  : testResult.message
-                  ? JSON.stringify(testResult.message)
-                  : "";
               return (
                 <div className={styles.testResultBox}>
                   <div className={styles.testResultHeader}>
@@ -1049,10 +1198,16 @@ export default function CdasGlobales() {
                     </div>
                   </div>
                   <div className={styles.testResultMessage}>{resultado.descripcion}</div>
-                  {valorLog && (
+                  {testResult.message && (
                     <div className={styles.testResultLog}>
-                      <span className={styles.testResultLogLabel}>Valor de log devuelto por el backend</span>
-                      <code className={styles.testResultLogValue}>{valorLog}</code>
+                      <span className={styles.testResultLogLabel}>Mensaje devuelto por el backend</span>
+                      <code className={styles.testResultLogValue}>{testResult.message}</code>
+                    </div>
+                  )}
+                  {testResult.log && (
+                    <div className={styles.testResultLog}>
+                      <span className={styles.testResultLogLabel}>Valor de log resuelto</span>
+                      <code className={styles.testResultLogValue}>{testResult.log}</code>
                     </div>
                   )}
                 </div>
@@ -1071,51 +1226,53 @@ export default function CdasGlobales() {
               </div>
             </div>
 
-            <div
-              className={`${styles.defaultCvBox} ${vinculadefaultcv ? styles.defaultCvBoxActive : ""}`}
-              onClick={() => { if (!isCreando && !isActualizando && !isProcesando) setVinculadefaultcv(!vinculadefaultcv); }}
-            >
-              <div className={styles.customCheckboxContainer}>
-                <div className={`${styles.customCheckboxLg} ${vinculadefaultcv ? styles.checkboxChecked : ""}`}>
-                  {vinculadefaultcv && <FiCheck size={14} className={styles.checkmarkIcon} />}
-                </div>
-                <div className={styles.checkboxTextGroup}>
-                  <span className={styles.checkboxLabelLg}>
-                    Marcar como CDA por Defecto
-                  </span>
-                  <span className={styles.checkboxDescription}>
-                    Se vincula automáticamente a las cadenas de valor que se creen de ahora en adelante.
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`${styles.defaultCvBox} ${vincularExistentes ? styles.defaultCvBoxActive : ""}`}
-              onClick={() => { if (!isCreando && !isActualizando && !isProcesando) setVincularExistentes(!vincularExistentes); }}
-            >
-              <div className={styles.customCheckboxContainer}>
-                <div className={`${styles.customCheckboxLg} ${vincularExistentes ? styles.checkboxChecked : ""}`}>
-                  {vincularExistentes && <FiCheck size={14} className={styles.checkmarkIcon} />}
-                </div>
-                <div className={styles.checkboxTextGroup}>
-                  <span className={styles.checkboxLabelLg}>
-                    Vincular también a las cadenas de valor existentes
-                  </span>
-                  <span className={styles.checkboxDescription}>
-                    Al guardar, se vincula también a las cadenas de valor ya existentes.
-                  </span>
-                </div>
-              </div>
+            <div className={styles.toggleOptionsPanel}>
+              <ToggleOptionRow
+                label="CDA por Defecto"
+                description="Se vincula automáticamente a las cadenas de valor que se creen de ahora en adelante. No afecta a las cadenas ya existentes."
+                checked={vinculadefaultcv}
+                onToggle={() => setVinculadefaultcv(!vinculadefaultcv)}
+                disabled={isCreando || isActualizando || isProcesando}
+              />
+              {!cdaEditando && (
+                <ToggleOptionRow
+                  label="Vincular a todas las cadenas existentes"
+                  description="Al guardar, este criterio va a pasar a estar activo en todas las cadenas de valor que ya existen (no solo en las que se creen de ahora en adelante)."
+                  checked={vincularExistentes}
+                  onToggle={() => setVincularExistentes(!vincularExistentes)}
+                  disabled={isCreando || isActualizando || isProcesando}
+                />
+              )}
+              {cdaEditando && (
+                <ToggleOptionRow
+                  label="Aplicar valor en cadenas activas"
+                  description={'Sobrescribe el valor de comparación en cada cadena de valor donde este criterio ya está vinculado y activo (por ejemplo, si en una cadena el score debía ser mayor a 500 y en otra mayor a 600, en ambas va a quedar el nuevo valor). Después se puede volver a personalizar por cadena desde CDAs por Cadena.'}
+                  checked={propagarValorATodasCadenas}
+                  onToggle={() => setPropagarValorATodasCadenas(!propagarValorATodasCadenas)}
+                  disabled={isCreando || isActualizando || isProcesando}
+                />
+              )}
             </div>
           </div>
 
           <div className={styles.formActions}>
+            {cdaEditando && (
+              <Button
+                type="button"
+                variant="danger"
+                size="md"
+                onClick={handleEliminarCda}
+                disabled={isCreando || isActualizando || isProcesando || isEliminando}
+              >
+                <FiTrash2 /> Eliminar
+              </Button>
+            )}
             <Button
               type="submit"
               variant="blue"
               size="md"
               isLoading={isCreando || isActualizando || isProcesando}
+              disabled={isEliminando}
             >
               {cdaEditando ? "Guardar Cambios" : "Crear Criterio Global"}
             </Button>
@@ -1149,6 +1306,26 @@ export default function CdasGlobales() {
         confirmVariant="blue"
         cancelVariant="outlineBlue"
         isLoading={isCreando || isActualizando || isProcesando}
+      />
+
+      <ConfirmacionModal
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={confirmEliminarCda}
+        titulo="Eliminar Criterio de Aceptación"
+        mensaje={
+          <>
+            ¿Confirmás eliminar el criterio <strong>"{descripcion}"</strong>?
+            <br /><br />
+            Esta acción borra también su historial y lo desvincula de todas las pantallas y cadenas de valor donde esté en uso. No se puede deshacer.
+          </>
+        }
+        variant="blue"
+        tone="danger"
+        confirmText="ELIMINAR"
+        cancelText="CANCELAR"
+        cancelVariant="outlineBlue"
+        isLoading={isEliminando}
       />
 
       {postSaveModal}

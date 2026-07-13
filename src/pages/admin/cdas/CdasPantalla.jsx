@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+<<<<<<< HEAD:src/pages/admin/cdas/CdasPantalla.jsx
 import { useObtenerTodosCdas, useVincularPantallaCda, useObtenerCadenasPorCda } from "../../../hooks/useCda";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { cdaService } from "../../../services/cdaService";
 import { SelectSimple } from "../../../components/ui/SelectSimple/SelectSimple";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
+=======
+import { useObtenerTodosCdas, useVincularPantallaCda, useObtenerCadenasPorCda } from "../../hooks/useCda";
+import { useObtenerTodasWebConEstado } from "../../hooks/useCadenaValor";
+import { cdaService } from "../../services/cdaService";
+import { esCdaActivo } from "../../utils/cdaUtils";
+import { SelectSimple } from "../../components/ui/SelectSimple/SelectSimple";
+import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
+import { Button } from "../../components/ui/Button/Button";
+>>>>>>> feature-mati:src/pages/admin/CdasPantalla.jsx
 import { FiCheck, FiInfo } from "react-icons/fi";
 import styles from "./CdasPantalla.module.css";
 
@@ -39,7 +49,7 @@ export default function CdasPantalla() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  const allCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
+  const allCdasList = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivo);
 
   const getCdaId = (c) => {
     if (!c) return undefined;

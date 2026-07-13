@@ -5,6 +5,7 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { usuarioService } from "../services/usuarioService";
+import { useAuthStore } from "../store/useAuthStore";
 
 export const useLogin = () => {
   return useMutation({
@@ -83,6 +84,17 @@ export const useObtenerPorNombreOEmail = (identificador) => {
     queryFn: () => usuarioService.obtenerPorNombreOEmail(identificador),
     enabled: !!identificador && !isMock,
   });
+};
+
+// UsuarioWebID del usuario logueado (admin o cliente): varios endpoints de
+// escritura ahora lo piden para dejar registrado quién hizo el cambio.
+export const useUsuarioWebIdActual = () => {
+  const user = useAuthStore((state) => state.user);
+  const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email || "");
+  const registro = Array.isArray(usuarioDb)
+    ? usuarioDb[0]
+    : usuarioDb?.items?.[0] || usuarioDb?.data?.[0] || usuarioDb;
+  return registro?.usuariowebid ?? registro?.UsuarioWebID ?? registro?.id ?? null;
 };
 
 export const useBuscarUsuarios = (

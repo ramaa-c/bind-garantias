@@ -49,4 +49,22 @@ export const cadenaValorAdapter = {
       ListaCda: listaCda,
     };
   },
+  // PUT /api/cadenavalor/cdas - Modifica UNA vinculación CDA<->Cadena existente
+  // (a diferencia del POST, que ahora solo agrega vinculaciones nuevas).
+  // "Activo" ("1"/"0") es el equivalente a vincular/desvincular sin borrar la fila.
+  adaptarPayload4: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    const payload = {
+      CdaCadenaValorID: d.cdacadenavalorid,
+      CadenaValorID: d.cadenavalorid,
+      CdaID: d.cdaid,
+      ValorComparacion: d.valorcomparacion ?? "",
+      Activo: d.activo ?? "1",
+    };
+    if (d.usuariowebid !== undefined && d.usuariowebid !== null) {
+      payload.UsuarioWebID = d.usuariowebid;
+    }
+    return payload;
+  },
 };

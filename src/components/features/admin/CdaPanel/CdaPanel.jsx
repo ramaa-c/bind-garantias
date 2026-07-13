@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiCheck, FiRotateCcw, FiSave, FiLock, FiEdit3, FiSearch } from "react-icons/fi";
 import { toast } from "sonner";
-import { useObtenerCdasPorCadenaId, useVincularCdas } from "../../../../hooks/useCadenaValor";
+import { useObtenerCdasPorCadenaId, useVincularCdas, useActualizarVinculacionCda } from "../../../../hooks/useCadenaValor";
 import { useObtenerTodosCdas } from "../../../../hooks/useCda";
+import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
+import { esCdaActivo } from "../../../../utils/cdaUtils";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { Button } from "../../../ui/Button/Button";
 import { Spinner } from "../../../ui/Spinner/Spinner";
@@ -23,12 +25,22 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
   const { data: linkedCdas, isLoading: isLoadingLinked } = useObtenerCdasPorCadenaId(cadenaId);
 
   const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdas();
-  const allCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
+  const { mutateAsync: actualizarVinculacionCda, isPending: isActualizandoVinculacion } = useActualizarVinculacionCda();
+  const usuarioWebId = useUsuarioWebIdActual();
+  const allCdasList = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivo);
   const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
 
   const getCdaId = (c) => {
     if (!c) return undefined;
     return c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
+  };
+
+  // ID de la fila de vinculación (join CDA<->Cadena), necesario para el PUT
+  // que modifica una vinculación existente. TODO: confirmar el nombre exacto
+  // del campo contra el swagger real una vez que se pueda probar con VPN.
+  const getCdaCadenaValorId = (c) => {
+    if (!c) return undefined;
+    return c.cdacadenavalorid ?? c.CdaCadenaValorId ?? c.CdaCadenaValorID ?? undefined;
   };
 
   const getCdaProperty = (c, propName) => {
@@ -40,15 +52,16 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
     return c[propName] !== undefined ? c[propName] : (c[pascalPropName] !== undefined ? c[pascalPropName] : "");
   };
 
-  // cdaid -> { checked: boolean, valorcomparacion: string, simbolocomparacion: string, expresion: string, mensajerechazo: string }
+  // cdaid -> { checked, valorcomparacion, simbolocomparacion, expresion, mensajerechazo, cdacadenavalorid }
+  // "checked" refleja si la vinculación está Activo="1"; "cdacadenavalorid" es
+  // el id de la fila de vinculación si ya existe (activa o no), para poder
+  // reactivarla por PUT en vez de crear una duplicada por POST.
   const [cdaConfigs, setCdaConfigs] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   // La expresión, el operador y el mensaje de rechazo son propiedades del CDA global
-  // (nunca se editan por cadena) y siempre salen de allCdasList. El endpoint de
-  // vinculación por cadena solo devuelve {cdaid, valorcomparacion}, así que ese es
-  // el único campo que puede pisar el valor por defecto.
+  // (nunca se editan por cadena) y siempre salen de allCdasList.
   const buildCdaConfigs = (allList, linkedList) => {
     const configs = {};
     allList.forEach(c => {
@@ -59,7 +72,8 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
         valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
         simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
         expresion: getCdaProperty(c, "expresion") || "",
-        mensajerechazo: getCdaProperty(c, "mensajerechazo") || ""
+        mensajerechazo: getCdaProperty(c, "mensajerechazo") || "",
+        cdacadenavalorid: undefined
       };
     });
     linkedList.forEach(c => {
@@ -67,8 +81,9 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
       if (id === undefined || !configs[id]) return;
       configs[id] = {
         ...configs[id],
-        checked: true,
-        valorcomparacion: getCdaProperty(c, "valorcomparacion") || ""
+        checked: esCdaActivo(c),
+        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
+        cdacadenavalorid: getCdaCadenaValorId(c)
       };
     });
     return configs;
@@ -101,25 +116,14 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
 
   // Comparar estado actual vs inicial para habilitar el botón de Guardar
   const hasChanges = () => {
-    const currentActiveIds = Object.keys(cdaConfigs)
-      .filter(id => cdaConfigs[id]?.checked)
-      .map(Number);
-    const initialActiveIds = linkedCdasList.map(c => getCdaId(c)).filter(id => id !== undefined);
-
-    // 1. Ver si cambió la selección de activos/inactivos
-    if (currentActiveIds.length !== initialActiveIds.length) return true;
-    if (currentActiveIds.some(id => !initialActiveIds.includes(id))) return true;
-
-    // 2. Ver si cambió el valor de comparación en alguno de los activos (es lo único editable por cadena)
-    for (const cda of linkedCdasList) {
-      const id = getCdaId(cda);
-      if (id === undefined) continue;
-      const currentConfig = cdaConfigs[id];
-      if (!currentConfig) continue;
-      if (String(currentConfig.valorcomparacion || "") !== String(getCdaProperty(cda, "valorcomparacion") || "")) return true;
-    }
-
-    return false;
+    const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
+    return Object.entries(cdaConfigs).some(([idStr, config]) => {
+      const base = baseConfigs[Number(idStr)];
+      if (!base) return false;
+      if (config.checked !== base.checked) return true;
+      if (config.checked && String(config.valorcomparacion || "") !== String(base.valorcomparacion || "")) return true;
+      return false;
+    });
   };
 
   const handleSaveVinculacion = () => {
@@ -131,25 +135,68 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
     toast.success("CDAs restablecidos a la configuración guardada");
   };
 
+  const sanearValor = (val) => {
+    let valorSaneado = String(val || "").trim();
+    if (valorSaneado === '""' || valorSaneado === "''") {
+      valorSaneado = "";
+    }
+    return valorSaneado;
+  };
+
   const confirmSaveVinculacion = async () => {
     try {
-      const listacda = Object.entries(cdaConfigs)
-        .filter(([_, config]) => config.checked)
-        .map(([id, config]) => {
-          let valorSaneado = String(config.valorcomparacion || "").trim();
-          if (valorSaneado === '""' || valorSaneado === "''") {
-            valorSaneado = "";
-          }
-          return {
-            cdaid: Number(id),
-            valorcomparacion: valorSaneado
-          };
-        });
+      const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
 
-      await vincularCda({
-        cadenavalorid: Number(cadenaId),
-        listacda: listacda
+      // El POST ahora solo agrega vinculaciones que nunca existieron. Activar,
+      // desactivar o cambiar el valor de una que ya existe (aunque esté
+      // inactiva) va por PUT con el campo Activo, una por una.
+      const nuevos = [];
+      const modificados = [];
+
+      Object.entries(cdaConfigs).forEach(([idStr, config]) => {
+        const id = Number(idStr);
+        const base = baseConfigs[id];
+        if (!base) return;
+        const valorSaneado = sanearValor(config.valorcomparacion);
+        const valorBase = sanearValor(base.valorcomparacion);
+
+        if (config.checked && !base.checked) {
+          if (base.cdacadenavalorid !== undefined) {
+            modificados.push({ cdacadenavalorid: base.cdacadenavalorid, cdaid: id, valorcomparacion: valorSaneado, activo: "1" });
+          } else {
+            nuevos.push({ cdaid: id, valorcomparacion: valorSaneado });
+          }
+        } else if (!config.checked && base.checked) {
+          modificados.push({ cdacadenavalorid: base.cdacadenavalorid, cdaid: id, valorcomparacion: valorSaneado, activo: "0" });
+        } else if (config.checked && base.checked && valorSaneado !== valorBase) {
+          modificados.push({ cdacadenavalorid: base.cdacadenavalorid, cdaid: id, valorcomparacion: valorSaneado, activo: "1" });
+        }
       });
+
+      if (nuevos.length > 0) {
+        await vincularCda({
+          cadenavalorid: Number(cadenaId),
+          listacda: nuevos
+        });
+      }
+
+      // Secuencial: cada PUT toca una sola vinculación y el backend usa un
+      // pool de conexiones limitado (FireDAC).
+      for (const mod of modificados) {
+        if (mod.cdacadenavalorid === undefined) {
+          console.warn(`No se encontró CdaCadenaValorID para el CDA ${mod.cdaid}; no se pudo actualizar.`);
+          toast.error(`No se pudo actualizar el criterio ${mod.cdaid} (falta el ID de vinculación).`);
+          continue;
+        }
+        await actualizarVinculacionCda({
+          cdacadenavalorid: mod.cdacadenavalorid,
+          cadenavalorid: Number(cadenaId),
+          cdaid: mod.cdaid,
+          valorcomparacion: mod.valorcomparacion,
+          activo: mod.activo,
+          usuariowebid: usuarioWebId
+        });
+      }
 
       await queryClient.invalidateQueries({ queryKey: ['cda', 'todos_list'] });
       await queryClient.invalidateQueries({ queryKey: ['cadenaValor', 'cdas', cadenaId] });
@@ -338,7 +385,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
             size="sm"
             onClick={handleSaveVinculacion}
             disabled={!hasChanges()}
-            isLoading={isVinculandoCda}
+            isLoading={isVinculandoCda || isActualizandoVinculacion}
           >
             <FiSave style={{ marginRight: "0.5rem" }} />
             VINCULAR SELECCIÓN
@@ -357,7 +404,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
         cancelText="CANCELAR"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
-        isLoading={isVinculandoCda}
+        isLoading={isVinculandoCda || isActualizandoVinculacion}
       />
     </div>
   );
