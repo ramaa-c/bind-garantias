@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useObtenerTodosCdas, useVincularPantallaCda, useObtenerCadenasPorCda } from "../../../hooks/useCda";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { cdaService } from "../../../services/cdaService";
+import { esCdaActivo } from "../../../utils/cdaUtils";
 import { SelectSimple } from "../../../components/ui/SelectSimple/SelectSimple";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
@@ -39,7 +40,7 @@ export default function CdasPantalla() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoadingConfig, setIsLoadingConfig] = useState(false);
 
-  const allCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
+  const allCdasList = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivo);
 
   const getCdaId = (c) => {
     if (!c) return undefined;
@@ -188,7 +189,7 @@ export default function CdasPantalla() {
         ExpresionAgrupacion: finalExpresion,
         ListaCda: selectedCdaIds,
       });
-      
+
       await queryClient.invalidateQueries({ queryKey: ["cda", "pantallaGrupo"] });
       toast.success("Configuración de pantalla guardada correctamente");
     } catch (err) {
@@ -218,7 +219,7 @@ export default function CdasPantalla() {
         {/* COLUMNA IZQUIERDA: Configuración */}
         <div className={styles.leftCol}>
           <h2 className={styles.sectionTitle}>Pantalla y Agrupación</h2>
-          
+
           <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "1.25rem", flex: 1 }}>
             <SelectSimple
               label="Seleccionar Pantalla Web"
@@ -239,7 +240,7 @@ export default function CdasPantalla() {
                 {/* Tipo de Agrupación Selector */}
                 <div className={styles.typeSelector}>
                   <label className={styles.customTextareaLabel}>Tipo de Agrupación Lógica</label>
-                  
+
                   <div
                     className={`${styles.radioOption} ${agrupacionType === "and" ? styles.radioActive : ""}`}
                     onClick={() => setAgrupacionType("and")}

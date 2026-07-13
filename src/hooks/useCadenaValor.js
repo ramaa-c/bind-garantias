@@ -166,3 +166,9 @@ export const useVincularCdas = () => {
         mutationFn: (vinculacionData) => cadenaValorService.vincularCdas(vinculacionData),
     });
 };
+
+export const useActualizarVinculacionCda = () => {
+    return useMutation({
+        mutationFn: (vinculacionData) => cadenaValorService.actualizarVinculacionCda(vinculacionData),
+    });
+};

@@ -101,7 +101,13 @@ export const cadenaValorService = {
   obtenerTodasWeb: async () =>
     (await api.get("api/cadenavalor")).data,
 
-  // POST /api/cadenavalor/cdas
+  // POST /api/cadenavalor/cdas - Agrega vinculaciones nuevas (ya no reemplaza
+  // la lista completa: hay que mandar únicamente lo que se quiere agregar).
   vincularCdas: async (vinculacionData) =>
     (await api.post("api/cadenavalor/cdas", cadenaValorAdapter.adaptarPayload3(vinculacionData))).data,
+
+  // PUT /api/cadenavalor/cdas - Modifica el valor de UNA vinculación ya
+  // existente (requiere CdaCadenaValorID); queda registrado en el historial.
+  actualizarVinculacionCda: async (vinculacionData) =>
+    (await api.put("api/cadenavalor/cdas", cadenaValorAdapter.adaptarPayload4(vinculacionData))).data,
 };

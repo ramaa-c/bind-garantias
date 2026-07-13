@@ -82,11 +82,12 @@ export const cdaService = {
     }
   },
 
-  probarCda: async (cuit, expresion) => {
+  probarCda: async (cuit, expresion, expresionLog) => {
     try {
       const response = await api.post("api/cda/execute:test", {
         Cuit: cuit,
-        Expresion: expresion
+        Expresion: expresion,
+        ExpresionLog: expresionLog || ""
       });
       return { status: response.status, data: response.data };
     } catch (error) {
