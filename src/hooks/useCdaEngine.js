@@ -44,14 +44,41 @@ export const useCdaEngine = () => {
       console.error("[CDA ENGINE] Error durante la validación del CDA:", err);
 
       const responseData = err.response?.data;
+      const status = err.response?.status;
       console.log("[CDA ENGINE] Response data:", responseData);
 
       const isInfraError =
-        err.response?.status >= 500 ||
+        status >= 500 ||
         (typeof responseData === "string" &&
           /FireDAC|Exception|Cannot acquire item|Connection/i.test(
             responseData,
           ));
+
+      // 409 = "dato faltante": el backend evaluó el CDA pero una integración
+      // necesaria no devolvió el dato (p. ej. está deshabilitada) y lo dejó
+      // registrado como Pendiente en su historial. Rechazamos el alta ahora
+      // mismo; no tiene sentido que el usuario reintente porque la integración
+      // sigue caída del lado del backend. Un admin lo re-ejecuta más tarde
+      // desde el panel (ver reejecutarCda) cuando la integración vuelva.
+      if (status === 409) {
+        console.log(
+          "[CDA ENGINE] CDA quedó pendiente (409): integración sin dato disponible",
+        );
+
+        setLoading(false);
+        return {
+          success: false,
+          errors: [
+            {
+              cdaid: 0,
+              isInvalidante: true,
+              message:
+                "No pudimos completar una de las validaciones porque el servicio consultado no está disponible en este momento. La solicitud queda pendiente de revisión y un administrador podrá reintentarla cuando el servicio esté disponible.",
+              isSystemError: false,
+            },
+          ],
+        };
+      }
 
       let rawErrors = [];
       if (!isInfraError) {

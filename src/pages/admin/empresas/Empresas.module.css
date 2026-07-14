@@ -5,7 +5,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   width: 100%;
 }
 
@@ -14,7 +14,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding-bottom: 1.25rem;
+  padding-bottom: 0.9rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   position: relative;
   flex: 0 0 auto;
@@ -51,7 +51,7 @@
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.75rem;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 1rem;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
@@ -100,11 +100,22 @@
 }
 
 .listCount {
-  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
   font-weight: 600;
-  color: #8b949e;
+  color: var(--color-azul-bind-300);
+  background: var(--color-azul-bind-bg);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
   white-space: nowrap;
   margin-left: auto;
+}
+
+.listCount svg {
+  font-size: 0.85rem;
 }
 
 /* ── TABLE ───────────────────────────────────────────────── */
@@ -139,13 +150,14 @@
 
 .table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   text-align: left;
 }
 
 .table th,
 .table td {
-  padding: 0.9rem 1.1rem;
+  padding: 0.58rem 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -155,12 +167,14 @@
   color: #8b949e;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  background: rgba(20, 24, 32, 0.97);
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .table td {
   font-size: 0.825rem;
   color: #c9d1d9;
+  vertical-align: middle;
 }
 
 .table tr:last-child td {
@@ -192,10 +206,127 @@
   transform: translateX(0);
 }
 
+/* ── EMPRESA (avatar + nombre + cuit) ───────────────────────── */
+.empresaCell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--color-azul-bind-200);
+  background: linear-gradient(155deg, rgba(76, 101, 230, 0.28), rgba(76, 101, 230, 0.08));
+  border: 1px solid rgba(76, 101, 230, 0.3);
+}
+
+.empresaInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.denominacion {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cuit {
+  font-size: 0.72rem;
+  color: #8b949e;
+  font-variant-numeric: tabular-nums;
+  margin-top: 0.15rem;
+}
+
+/* ── CONTACTO ────────────────────────────────────────────── */
+.contactoCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.contactoLinea {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: #c9d1d9;
+  min-width: 0;
+}
+
+.contactoIcon {
+  color: #8b949e;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.contactoTexto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── TIPO ────────────────────────────────────────────────── */
+.tipoBadge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.tipo-juridica {
+  color: var(--color-azul-bind-300);
+  background: var(--color-azul-bind-bg);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+}
+
+.tipo-fisica {
+  color: #c9d1d9;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tipo-indefinido {
+  color: rgba(255, 255, 255, 0.35);
+  background: transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
 .skeletonBlock {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;
   animation: pulse 1.5s infinite ease-in-out;
+}
+
+.skeletonAvatar {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.skeletonPill {
+  width: 5.5rem;
+  height: 1.4rem;
+  border-radius: 999px;
 }
 
 @keyframes pulse {

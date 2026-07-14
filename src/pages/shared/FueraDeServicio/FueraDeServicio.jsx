@@ -29,9 +29,6 @@ const FueraDeServicio = () => {
         </div>
         <h2 className={styles.title}>Plataforma en mantenimiento</h2>
         <p className={styles.message}>{MENSAJE_MANTENIMIENTO}</p>
-        <span className={styles.hint}>
-          Esta página se actualiza sola apenas el servicio vuelva a estar disponible.
-        </span>
       </main>
     </div>
   );

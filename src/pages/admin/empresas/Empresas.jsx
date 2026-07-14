@@ -1,27 +1,46 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
-import { FiInbox, FiSearch, FiChevronRight } from "react-icons/fi";
+import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase } from "react-icons/fi";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import styles from "./Empresas.module.css";
 
-const ELEMENTOS_POR_PAGINA = 10;
+// Filas más altas que antes (avatar + contacto en dos líneas): con 10
+// se generaba scroll de página en full HD, por eso se bajó a 8.
+const ELEMENTOS_POR_PAGINA = 8;
 
-const getTipoPersonaLabel = (tipoPersonaId) => {
-  const id = Number(tipoPersonaId);
-  if (id === 1) return "Persona Física";
-  if (id === 10) return "Persona Jurídica";
-  return "-";
+const TIPO_PERSONA = {
+  1: { label: "Persona Física", tono: "fisica" },
+  10: { label: "Persona Jurídica", tono: "juridica" },
+};
+
+const getTipoPersona = (tipoPersonaId) =>
+  TIPO_PERSONA[Number(tipoPersonaId)] || { label: "Sin definir", tono: "indefinido" };
+
+const getIniciales = (denominacion) => {
+  if (!denominacion) return "?";
+  const palabras = denominacion.trim().split(/\s+/).filter(Boolean);
+  if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
+  return (palabras[0][0] + palabras[1][0]).toUpperCase();
 };
 
 const EmpresaRowSkeleton = () => (
   <tr>
-    <td><div className={styles.skeletonBlock} style={{ height: "0.85rem", width: "75%" }} /></td>
-    <td><div className={styles.skeletonBlock} style={{ height: "0.85rem", width: "55%" }} /></td>
-    <td><div className={styles.skeletonBlock} style={{ height: "0.85rem", width: "80%" }} /></td>
-    <td><div className={styles.skeletonBlock} style={{ height: "0.85rem", width: "45%" }} /></td>
-    <td><div className={styles.skeletonBlock} style={{ height: "0.85rem", width: "50%" }} /></td>
+    <td>
+      <div className={styles.empresaCell}>
+        <div className={`${styles.skeletonBlock} ${styles.skeletonAvatar}`} />
+        <div className={styles.empresaInfo}>
+          <div className={styles.skeletonBlock} style={{ height: "0.9rem", width: "70%" }} />
+          <div className={styles.skeletonBlock} style={{ height: "0.7rem", width: "40%", marginTop: "0.4rem" }} />
+        </div>
+      </div>
+    </td>
+    <td>
+      <div className={styles.skeletonBlock} style={{ height: "0.75rem", width: "65%" }} />
+      <div className={styles.skeletonBlock} style={{ height: "0.75rem", width: "45%", marginTop: "0.45rem" }} />
+    </td>
+    <td><div className={`${styles.skeletonBlock} ${styles.skeletonPill}`} /></td>
     <td></td>
   </tr>
 );
@@ -84,6 +103,7 @@ export default function Empresas() {
         </div>
         {!isLoading && (
           <span className={styles.listCount}>
+            <FiBriefcase />
             {empresas.length} empresa{empresas.length !== 1 ? "s" : ""}
           </span>
         )}
@@ -94,11 +114,9 @@ export default function Empresas() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Denominación</th>
-                <th>CUIT</th>
-                <th>Email</th>
-                <th>Teléfono</th>
-                <th>Tipo</th>
+                <th style={{ width: "38%" }}>Empresa</th>
+                <th style={{ width: "36%" }}>Contacto</th>
+                <th style={{ width: "18%" }}>Tipo</th>
                 <th style={{ width: "2.5rem" }}></th>
               </tr>
             </thead>
@@ -107,7 +125,7 @@ export default function Empresas() {
                 Array.from({ length: 6 }).map((_, i) => <EmpresaRowSkeleton key={i} />)
               ) : empresasPagina.length === 0 ? (
                 <tr>
-                  <td colSpan={6} style={{ padding: 0 }}>
+                  <td colSpan={4} style={{ padding: 0 }}>
                     <div className={styles.emptyState}>
                       <FiInbox className={styles.emptyStateIcon} />
                       <span>No se encontraron empresas que coincidan con los criterios de búsqueda.</span>
@@ -115,22 +133,46 @@ export default function Empresas() {
                   </td>
                 </tr>
               ) : (
-                empresasPagina.map((e, idx) => (
-                  <tr
-                    key={e.socioid || `${e.cuit}-${idx}`}
-                    className={styles.clickableRow}
-                    onClick={() => navigate(`/admin/empresas/${e.socioid}`)}
-                  >
-                    <td><strong>{e.denominacion || "-"}</strong></td>
-                    <td>{e.cuit || "-"}</td>
-                    <td>{e.email || "-"}</td>
-                    <td>{e.telefono || "-"}</td>
-                    <td>{getTipoPersonaLabel(e.tipopersonaid)}</td>
-                    <td style={{ textAlign: "center" }}>
-                      <FiChevronRight className={styles.rowChevron} />
-                    </td>
-                  </tr>
-                ))
+                empresasPagina.map((e, idx) => {
+                  const tipo = getTipoPersona(e.tipopersonaid);
+                  return (
+                    <tr
+                      key={e.socioid || `${e.cuit}-${idx}`}
+                      className={styles.clickableRow}
+                      onClick={() => navigate(`/admin/empresas/${e.socioid}`)}
+                    >
+                      <td>
+                        <div className={styles.empresaCell}>
+                          <div className={styles.avatar}>{getIniciales(e.denominacion)}</div>
+                          <div className={styles.empresaInfo}>
+                            <span className={styles.denominacion}>{e.denominacion || "-"}</span>
+                            <span className={styles.cuit}>CUIT {e.cuit || "-"}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className={styles.contactoCell}>
+                          <span className={styles.contactoLinea}>
+                            <FiMail className={styles.contactoIcon} />
+                            <span className={styles.contactoTexto}>{e.email || "-"}</span>
+                          </span>
+                          <span className={styles.contactoLinea}>
+                            <FiPhone className={styles.contactoIcon} />
+                            <span className={styles.contactoTexto}>{e.telefono || "-"}</span>
+                          </span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`${styles.tipoBadge} ${styles[`tipo-${tipo.tono}`]}`}>
+                          {tipo.label}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: "center" }}>
+                        <FiChevronRight className={styles.rowChevron} />
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
