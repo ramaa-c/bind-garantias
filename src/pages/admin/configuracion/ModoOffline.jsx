@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FiPower, FiClock, FiCpu, FiUser, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Switch } from "../../../components/ui";
@@ -6,6 +6,7 @@ import { Alert } from "../../../components/ui/Alert/Alert";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useObtenerStatusPlataforma, useActualizarStatusPlataforma } from "../../../hooks/useStatusPlataforma";
+import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
 import {
   INTEGRACIONES,
   obtenerUltimoStatus,
@@ -16,6 +17,13 @@ import {
   formatearMomento,
 } from "../../../utils/statusPlataforma";
 import styles from "./ModoOffline.module.css";
+
+const NombreUsuario = ({ usuarioid }) => {
+  const { data } = useObtenerUsuarioPorId(usuarioid);
+  if (!usuarioid) return "Usuario desconocido";
+  const partes = [data?.denominacion, data?.email].filter(Boolean);
+  return partes.length > 0 ? partes.join(" - ") : `Usuario #${usuarioid}`;
+};
 
 const formatearDuracion = (ms) => {
   const totalSeg = Math.max(0, Math.floor(ms / 1000));
@@ -40,11 +48,24 @@ export default function ModoOffline() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [ahora, setAhora] = useState(() => Date.now());
 
+  const integracionesCardRef = useRef(null);
+  const [alturaIntegraciones, setAlturaIntegraciones] = useState(null);
+
   useEffect(() => {
     if (!offline) return undefined;
     const intervalId = setInterval(() => setAhora(Date.now()), 1000);
     return () => clearInterval(intervalId);
   }, [offline]);
+
+  useLayoutEffect(() => {
+    const el = integracionesCardRef.current;
+    if (!el) return undefined;
+    const actualizarAltura = () => setAlturaIntegraciones(el.offsetHeight);
+    actualizarAltura();
+    const observer = new ResizeObserver(actualizarAltura);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isLoading]);
 
   const enviarCambio = (cambios, mensajeExito) => {
     if (!usuarioWebId) {
@@ -152,7 +173,7 @@ export default function ModoOffline() {
               )}
               {ultimoStatus && (
                 <span className={styles.statusMeta}>
-                  <FiUser /> Usuario #{ultimoStatus.usuariowebid}
+                  <FiUser /> <NombreUsuario usuarioid={ultimoStatus.usuariowebid} />
                   {usuarioWebId && Number(ultimoStatus.usuariowebid) === Number(usuarioWebId) ? " (vos)" : ""}
                 </span>
               )}
@@ -174,7 +195,7 @@ export default function ModoOffline() {
       </div>
 
       <div className={styles.workspace}>
-        <div className={styles.card}>
+        <div className={styles.card} ref={integracionesCardRef}>
           <div className={styles.cardHeader}>
             <div className={styles.cardIconWrap}>
               <FiCpu size={18} />
@@ -209,7 +230,10 @@ export default function ModoOffline() {
           </div>
         </div>
 
-        <div className={styles.card}>
+        <div
+          className={styles.card}
+          style={alturaIntegraciones ? { maxHeight: alturaIntegraciones } : undefined}
+        >
           <div className={styles.cardHeader}>
             <div className={styles.cardIconWrap}>
               <FiClock size={18} />
@@ -234,7 +258,7 @@ export default function ModoOffline() {
                   <div className={styles.historialInfo}>
                     <span className={styles.historialEstado}>{item.cambios.join(", ")}</span>
                     <span className={styles.historialMeta}>
-                      {formatearMomento(item.momento)} · Usuario #{item.usuariowebid}
+                      {formatearMomento(item.momento)} · <NombreUsuario usuarioid={item.usuariowebid} />
                     </span>
                   </div>
                 </div>
