@@ -51,12 +51,31 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
     isSystemError: false,
   });
 
+  // El motor de cda/execute del backend crea por su cuenta un Socio "stub"
+  // (todo en blanco salvo el Cuit) cuando necesita un SocioID contra el cual
+  // guardar el historial de una ejecución — esto pasa aunque nuestro propio
+  // POST parcial nunca llegue a correr. Por eso NO podemos usar "¿existe un
+  // socio con este Cuit?" como criterio de "ya está registrado": hay que
+  // distinguir ese stub vacío (adoptable por cualquiera) de un registro real
+  // (bloqueante).
+  const esSocioVacio = (socio) => {
+    if (!socio) return true;
+    const denominacion = String(
+      socio.denominacion ?? socio.Denominacion ?? "",
+    ).trim();
+    const tipopersonaid = Number(socio.tipopersonaid ?? socio.TipoPersonaID ?? 0);
+    const socioestadoid = Number(
+      socio.socioestadoid ?? socio.SocioEstadoId ?? socio.SocioEstadoID ?? 0,
+    );
+    return !denominacion && !tipopersonaid && !socioestadoid;
+  };
+
   // El backend no expone forma de preguntar "¿este socio tiene algún usuario
   // vinculado?" (SocioUsuario solo se puede filtrar por UsuarioWebID, nunca
-  // por SocioID). Por eso, para saber si un CUIT ya existente es "mío"
-  // (retomable) o "de otro" (bloqueante), consultamos al revés: si el
-  // usuario actual ya está vinculado a ese SocioID.
-  const esSocioPropio = async (socioId) => {
+  // por SocioID), así que para evitar re-vincular en cada reintento
+  // chequeamos al revés: si el usuario actual ya figura vinculado a ese
+  // SocioID.
+  const yaVinculadoAMi = async (socioId) => {
     if (!usuarioWebId || !socioId) return false;
     try {
       const vinculos =
@@ -73,89 +92,106 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
     }
   };
 
+  const vincularSiHaceFalta = async (socioId) => {
+    if (!usuarioWebId || !socioId) return;
+    const yaVinculado = await yaVinculadoAMi(socioId);
+    if (yaVinculado) return;
+    await sociosService.vincularSocioUsuario({
+      usuariowebid: usuarioWebId,
+      socioid: socioId,
+      momentocreacion: new Date().toISOString().split(".")[0],
+    });
+  };
+
   // Cuando el CDA de PANTALLA_INGRESO_CUIT queda "pendiente" (409, ver
-  // useCdaEngine), no queda ningún Socio creado y por lo tanto el admin no
-  // tiene forma de ver ni re-ejecutar ese CDA desde EmpresaDetalle (el
-  // historial se consulta por SocioID). Creamos un socio parcial —con lo
-  // mínimo que ya tenemos de Nosis/AFIP— y lo vinculamos al usuario actual
-  // ahí mismo, para poder trackear el pendiente y para que, si el usuario
-  // reintenta más tarde y el CDA ya pasa, podamos reconocer el CUIT como
-  // "propio" (ver esSocioPropio) y completar ese mismo registro en vez de
-  // bloquear el flujo con el modal de "empresa ya registrada".
-  const asegurarSocioParcial = async (cuit, nosisData, afipData) => {
+  // useCdaEngine), el admin necesita un SocioID para ver/re-ejecutar ese CDA
+  // desde EmpresaDetalle (el historial se consulta por SocioID). El backend
+  // puede haber creado ya el stub vacío al ejecutar el CDA; si no lo hizo,
+  // lo creamos nosotros. En ambos casos, lo vinculamos al usuario actual acá
+  // mismo (el backend no lo hace solo) para poder reconocerlo como propio en
+  // el próximo intento.
+  //
+  // socioIdConocido: si el chequeo de existencia al principio de
+  // handleValidar ya encontró un stub para este Cuit, se pasa acá para no
+  // repetir el lookup.
+  const asegurarSocioParcial = async (cuit, nosisData, afipData, socioIdConocido = null) => {
     if (!usuarioWebId) return;
     try {
-      const existentes = await sociosService.obtenerSocios({ Cuit: cuit });
-      if (existentes && existentes.length > 0) return; // ya hay un socio (propio o ajeno); no duplicar
+      let socioId = socioIdConocido;
 
-      const cuitLimpio = String(cuit).replace(/\D/g, "");
-      const prefix = cuitLimpio.substring(0, 2);
-      const tipopersonaid = ["30", "33", "34"].includes(prefix) ? 10 : 1;
-      const dg = afipData?.datosgenerales;
-      const denominacion =
-        decodeHtmlEntities(
-          nosisData?.VI_RazonSocial ||
-            `${nosisData?.VI_Nombre || ""} ${nosisData?.VI_Apellido || ""}`.trim() ||
-            dg?.razonsocial ||
-            `${dg?.nombre || ""} ${dg?.apellido || ""}`.trim(),
-        ) || cuitLimpio;
+      if (!socioId) {
+        const existentes = await sociosService.obtenerSocios({ Cuit: cuit });
+        const existente = existentes?.[0];
+        if (existente && !esSocioVacio(existente)) return; // registro real (propio o ajeno): no tocar
+        socioId = existente?.socioid;
+      }
 
-      const nuevoSocio = await sociosService.crearSocio({
-        entidadid: 1,
-        tiposocioid: 9,
-        cuit: cuitLimpio,
-        denominacion,
-        calle: "",
-        numero: 0,
-        piso: "",
-        departamento: "",
-        ciudadid: null,
-        telefono: "",
-        fax: "",
-        email: user?.email || "",
-        tipopersonaid,
-        tipocarteraid: 2,
-        sectorcontableid: 700,
-        tipoactividadbcraid: 0,
-        tipoactividadsepymeid: null,
-        marcavinculacion: "",
-        situacionbcraid: 1,
-        fechabaja: null,
-        motivobajaid: null,
-        socioestadoid: 9,
-        codpos: "",
-        tamanioempresaid: 0,
-        fechacierreejercicio: new Date().toISOString().split(".")[0],
-        legajo: 0,
-        tiporegimenivaid: 1,
-        actividadespecifica: "",
-        partido: "",
-        telefono2: "",
-        telefono3: "",
-        visitado: "0",
-        scoringcomercial: "0",
-        partidoid: null,
-        provinciaid: null,
-        fechainicioactividades: new Date().toISOString().split(".")[0],
-        tipoactividadglobalid: 0,
-        tipocanalcomercializacionid: 0,
-        emailfacturacion: user?.email || "",
-        minapoderadosrequeridos: 0,
-        tipocondicionfianzaid: 0,
-        jsoncondicionfianza: "",
-      });
+      if (!socioId) {
+        const cuitLimpio = String(cuit).replace(/\D/g, "");
+        const prefix = cuitLimpio.substring(0, 2);
+        const tipopersonaid = ["30", "33", "34"].includes(prefix) ? 10 : 1;
+        const dg = afipData?.datosgenerales;
+        const denominacion =
+          decodeHtmlEntities(
+            nosisData?.VI_RazonSocial ||
+              `${nosisData?.VI_Nombre || ""} ${nosisData?.VI_Apellido || ""}`.trim() ||
+              dg?.razonsocial ||
+              `${dg?.nombre || ""} ${dg?.apellido || ""}`.trim(),
+          ) || cuitLimpio;
 
-      const nuevoSocioId = nuevoSocio?.socioid || nuevoSocio?.id;
-      if (!nuevoSocioId) return;
+        const nuevoSocio = await sociosService.crearSocio({
+          entidadid: 1,
+          tiposocioid: 9,
+          cuit: cuitLimpio,
+          denominacion,
+          calle: "",
+          numero: 0,
+          piso: "",
+          departamento: "",
+          ciudadid: null,
+          telefono: "",
+          fax: "",
+          email: user?.email || "",
+          tipopersonaid,
+          tipocarteraid: 2,
+          sectorcontableid: 700,
+          tipoactividadbcraid: 0,
+          tipoactividadsepymeid: null,
+          marcavinculacion: "",
+          situacionbcraid: 1,
+          fechabaja: null,
+          motivobajaid: null,
+          socioestadoid: 9,
+          codpos: "",
+          tamanioempresaid: 0,
+          fechacierreejercicio: new Date().toISOString().split(".")[0],
+          legajo: 0,
+          tiporegimenivaid: 1,
+          actividadespecifica: "",
+          partido: "",
+          telefono2: "",
+          telefono3: "",
+          visitado: "0",
+          scoringcomercial: "0",
+          partidoid: null,
+          provinciaid: null,
+          fechainicioactividades: new Date().toISOString().split(".")[0],
+          tipoactividadglobalid: 0,
+          tipocanalcomercializacionid: 0,
+          emailfacturacion: user?.email || "",
+          minapoderadosrequeridos: 0,
+          tipocondicionfianzaid: 0,
+          jsoncondicionfianza: "",
+        });
 
-      await sociosService.vincularSocioUsuario({
-        usuariowebid: usuarioWebId,
-        socioid: nuevoSocioId,
-        momentocreacion: new Date().toISOString().split(".")[0],
-      });
+        socioId = nuevoSocio?.socioid || nuevoSocio?.id;
+      }
+
+      if (!socioId) return;
+      await vincularSiHaceFalta(socioId);
     } catch (e) {
       console.error(
-        "[Paso1Cuit] No se pudo crear el socio parcial para trackear el CDA pendiente:",
+        "[Paso1Cuit] No se pudo asegurar el socio parcial para trackear el CDA pendiente:",
         e,
       );
     }
@@ -209,6 +245,77 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
     });
 
     try {
+      // ── VALIDACIÓN DE EXISTENCIA PRIMERO: si el CUIT ya está bloqueado
+      // (registro real, propio o ajeno), cortamos acá y no gastamos las
+      // llamadas a AFIP/SGRPlus/CDA. Si lo que existe es un stub vacío
+      // (creado por un intento anterior propio que quedó pendiente, o por
+      // el motor de CDA), guardamos su SocioID para reusarlo más abajo en
+      // vez de crear uno nuevo.
+      let socioIdPendiente = null;
+      try {
+        const sociosWebEncontrados = await sociosService.obtenerSocios({
+          Cuit: cuit,
+        });
+
+        if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
+          const socioWebExistente = sociosWebEncontrados[0];
+
+          if (!esSocioVacio(socioWebExistente)) {
+            setProcesoModal({
+              isOpen: false,
+              titulo: "",
+              pasos: [],
+              hasError: false,
+              isSystemError: false,
+            });
+            if (onSocioExistente) {
+              onSocioExistente(socioWebExistente, "ya_existe");
+            }
+            return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
+          }
+
+          socioIdPendiente = socioWebExistente.socioid;
+        }
+
+        // Si no está en la web, verificamos si existe históricamente en SGRPlus Core
+        const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus(
+          { Cuit: cuit },
+        );
+
+        if (sociosSgrEncontrados && sociosSgrEncontrados.length > 0 && !isVendor) {
+          const socioSgrExistente = sociosSgrEncontrados[0];
+          const socioEmailStr = socioSgrExistente.email
+            ? socioSgrExistente.email.trim()
+            : "";
+          const currentUserEmail = user?.email ? user.email.trim() : "";
+
+          if (
+            socioEmailStr &&
+            currentUserEmail &&
+            socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
+          ) {
+            setProcesoModal({
+              isOpen: false,
+              titulo: "",
+              pasos: [],
+              hasError: false,
+              isSystemError: false,
+            });
+            if (onSocioExistente) {
+              onSocioExistente(socioSgrExistente, "email_mismatch");
+            }
+            return; // Bloquea al usuario normal porque el email de SGRPlus no coincide
+          }
+          // Si es vendor, o si es un usuario normal y el email SÍ coincide,
+          // no hacemos return. Dejamos que el flujo continúe.
+        }
+      } catch (errorSocios) {
+        console.warn(
+          "Error consultando socios para validación de existencia:",
+          errorSocios,
+        );
+      }
+
       // 3. CONSULTA NOSIS con Fallback a AFIP/LUFE
       let nosisData = null;
       let afipData = null;
@@ -356,7 +463,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
           }));
 
           if (resultCda.errors.some((e) => e.isPendiente)) {
-            await asegurarSocioParcial(cuit, nosisData, afipData);
+            await asegurarSocioParcial(cuit, nosisData, afipData, socioIdPendiente);
           }
           return;
         }
@@ -369,84 +476,14 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
           ),
         }));
 
-        // ── NUEVA VALIDACIÓN: Existencia en base de datos (Web y SGRPlus)
-        try {
-          // 1. Verificamos si ya existe en la plataforma web
-          const sociosWebEncontrados = await sociosService.obtenerSocios({
-            Cuit: cuit,
-          });
-
-          if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
-            const socioWebExistente = sociosWebEncontrados[0];
-
-            // Puede ser un socio "parcial" creado por nosotros mismos en un
-            // intento anterior cuyo CDA quedó pendiente (ver
-            // asegurarSocioParcial). Si el usuario actual ya está vinculado
-            // a ese socio, lo tratamos como propio y dejamos retomar el
-            // registro en vez de bloquear con "empresa ya registrada".
-            const esPropio = await esSocioPropio(socioWebExistente.socioid);
-            if (!esPropio) {
-              setProcesoModal({
-                isOpen: false,
-                titulo: "",
-                pasos: [],
-                hasError: false,
-                isSystemError: false,
-              });
-
-              if (onSocioExistente) {
-                onSocioExistente(socioWebExistente, "ya_existe");
-              }
-              return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
-            }
-
-            if (onSocioParcialPropio) {
-              onSocioParcialPropio(socioWebExistente.socioid);
-            }
+        // Si veníamos de un stub detectado en el chequeo de existencia (al
+        // principio de este mismo intento), lo vinculamos y avisamos al
+        // padre para que el submit final haga PUT en vez de POST.
+        if (socioIdPendiente) {
+          await vincularSiHaceFalta(socioIdPendiente);
+          if (onSocioParcialPropio) {
+            onSocioParcialPropio(socioIdPendiente);
           }
-
-          // 2. Si no está en la web, verificamos si existe históricamente en SGRPlus Core
-          const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus(
-            {
-              Cuit: cuit,
-            },
-          );
-
-          if (sociosSgrEncontrados && sociosSgrEncontrados.length > 0) {
-            if (!isVendor) {
-              const socioSgrExistente = sociosSgrEncontrados[0];
-              const socioEmailStr = socioSgrExistente.email
-                ? socioSgrExistente.email.trim()
-                : "";
-              const currentUserEmail = user?.email ? user.email.trim() : "";
-
-              if (
-                socioEmailStr &&
-                currentUserEmail &&
-                socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
-              ) {
-                setProcesoModal({
-                  isOpen: false,
-                  titulo: "",
-                  pasos: [],
-                  hasError: false,
-                  isSystemError: false,
-                });
-
-                if (onSocioExistente) {
-                  onSocioExistente(socioSgrExistente, "email_mismatch");
-                }
-                return; // Bloquea al usuario normal porque el email de SGRPlus no coincide
-              }
-            }
-            // Si es vendor, o si es un usuario normal y el email SÍ coincide,
-            // no hacemos return. Dejamos que el flujo continúe.
-          }
-        } catch (errorSocios) {
-          console.warn(
-            "Error consultando socios para validación de existencia:",
-            errorSocios,
-          );
         }
 
         if (nosisData) {
