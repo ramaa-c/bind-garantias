@@ -10,6 +10,7 @@ import { useValidarCuitAfip } from "../../../../hooks/useAfip";
 import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
+import { useObtenerPorCadenaValorIdWeb } from "../../../../hooks/useCadenaValor";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import {
@@ -22,7 +23,9 @@ import styles from "./Paso1Cuit.module.css";
 
 import { useVendor } from "../../../../hooks/useVendor";
 
-export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialPropio }) {
+const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
+
+export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }) {
   const { cadenaSlug } = useParams();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const { control, getValues, setValue, setError, clearErrors } =
@@ -36,6 +39,8 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
   const user = useAuthStore((state) => state.user);
   const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email);
   const usuarioWebId = usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id;
+  const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorIdParam);
+  const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
 
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
@@ -50,152 +55,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
     hasError: false,
     isSystemError: false,
   });
-
-  // El motor de cda/execute del backend crea por su cuenta un Socio "stub"
-  // (todo en blanco salvo el Cuit) cuando necesita un SocioID contra el cual
-  // guardar el historial de una ejecución — esto pasa aunque nuestro propio
-  // POST parcial nunca llegue a correr. Por eso NO podemos usar "¿existe un
-  // socio con este Cuit?" como criterio de "ya está registrado": hay que
-  // distinguir ese stub vacío (adoptable por cualquiera) de un registro real
-  // (bloqueante).
-  const esSocioVacio = (socio) => {
-    if (!socio) return true;
-    const denominacion = String(
-      socio.denominacion ?? socio.Denominacion ?? "",
-    ).trim();
-    const tipopersonaid = Number(socio.tipopersonaid ?? socio.TipoPersonaID ?? 0);
-    const socioestadoid = Number(
-      socio.socioestadoid ?? socio.SocioEstadoId ?? socio.SocioEstadoID ?? 0,
-    );
-    return !denominacion && !tipopersonaid && !socioestadoid;
-  };
-
-  // El backend no expone forma de preguntar "¿este socio tiene algún usuario
-  // vinculado?" (SocioUsuario solo se puede filtrar por UsuarioWebID, nunca
-  // por SocioID), así que para evitar re-vincular en cada reintento
-  // chequeamos al revés: si el usuario actual ya figura vinculado a ese
-  // SocioID.
-  const yaVinculadoAMi = async (socioId) => {
-    if (!usuarioWebId || !socioId) return false;
-    try {
-      const vinculos =
-        await sociosService.obtenerSocioUsuarioPorUsuarioId(usuarioWebId);
-      const lista = Array.isArray(vinculos)
-        ? vinculos
-        : vinculos?.items || vinculos?.data || [];
-      return lista.some(
-        (v) => Number(v.socioid ?? v.SocioID ?? v.SocioId) === Number(socioId),
-      );
-    } catch (e) {
-      console.warn("[Paso1Cuit] No se pudo verificar vinculación previa:", e);
-      return false;
-    }
-  };
-
-  const vincularSiHaceFalta = async (socioId) => {
-    if (!usuarioWebId || !socioId) return;
-    const yaVinculado = await yaVinculadoAMi(socioId);
-    if (yaVinculado) return;
-    await sociosService.vincularSocioUsuario({
-      usuariowebid: usuarioWebId,
-      socioid: socioId,
-      momentocreacion: new Date().toISOString().split(".")[0],
-    });
-  };
-
-  // Cuando el CDA de PANTALLA_INGRESO_CUIT queda "pendiente" (409, ver
-  // useCdaEngine), el admin necesita un SocioID para ver/re-ejecutar ese CDA
-  // desde EmpresaDetalle (el historial se consulta por SocioID). El backend
-  // puede haber creado ya el stub vacío al ejecutar el CDA; si no lo hizo,
-  // lo creamos nosotros. En ambos casos, lo vinculamos al usuario actual acá
-  // mismo (el backend no lo hace solo) para poder reconocerlo como propio en
-  // el próximo intento.
-  //
-  // socioIdConocido: si el chequeo de existencia al principio de
-  // handleValidar ya encontró un stub para este Cuit, se pasa acá para no
-  // repetir el lookup.
-  const asegurarSocioParcial = async (cuit, nosisData, afipData, socioIdConocido = null) => {
-    if (!usuarioWebId) return;
-    try {
-      let socioId = socioIdConocido;
-
-      if (!socioId) {
-        const existentes = await sociosService.obtenerSocios({ Cuit: cuit });
-        const existente = existentes?.[0];
-        if (existente && !esSocioVacio(existente)) return; // registro real (propio o ajeno): no tocar
-        socioId = existente?.socioid;
-      }
-
-      if (!socioId) {
-        const cuitLimpio = String(cuit).replace(/\D/g, "");
-        const prefix = cuitLimpio.substring(0, 2);
-        const tipopersonaid = ["30", "33", "34"].includes(prefix) ? 10 : 1;
-        const dg = afipData?.datosgenerales;
-        const denominacion =
-          decodeHtmlEntities(
-            nosisData?.VI_RazonSocial ||
-              `${nosisData?.VI_Nombre || ""} ${nosisData?.VI_Apellido || ""}`.trim() ||
-              dg?.razonsocial ||
-              `${dg?.nombre || ""} ${dg?.apellido || ""}`.trim(),
-          ) || cuitLimpio;
-
-        const nuevoSocio = await sociosService.crearSocio({
-          entidadid: 1,
-          tiposocioid: 9,
-          cuit: cuitLimpio,
-          denominacion,
-          calle: "",
-          numero: 0,
-          piso: "",
-          departamento: "",
-          ciudadid: null,
-          telefono: "",
-          fax: "",
-          email: user?.email || "",
-          tipopersonaid,
-          tipocarteraid: 2,
-          sectorcontableid: 700,
-          tipoactividadbcraid: 0,
-          tipoactividadsepymeid: null,
-          marcavinculacion: "",
-          situacionbcraid: 1,
-          fechabaja: null,
-          motivobajaid: null,
-          socioestadoid: 9,
-          codpos: "",
-          tamanioempresaid: 0,
-          fechacierreejercicio: new Date().toISOString().split(".")[0],
-          legajo: 0,
-          tiporegimenivaid: 1,
-          actividadespecifica: "",
-          partido: "",
-          telefono2: "",
-          telefono3: "",
-          visitado: "0",
-          scoringcomercial: "0",
-          partidoid: null,
-          provinciaid: null,
-          fechainicioactividades: new Date().toISOString().split(".")[0],
-          tipoactividadglobalid: 0,
-          tipocanalcomercializacionid: 0,
-          emailfacturacion: user?.email || "",
-          minapoderadosrequeridos: 0,
-          tipocondicionfianzaid: 0,
-          jsoncondicionfianza: "",
-        });
-
-        socioId = nuevoSocio?.socioid || nuevoSocio?.id;
-      }
-
-      if (!socioId) return;
-      await vincularSiHaceFalta(socioId);
-    } catch (e) {
-      console.error(
-        "[Paso1Cuit] No se pudo asegurar el socio parcial para trackear el CDA pendiente:",
-        e,
-      );
-    }
-  };
 
   const cuitValue = useWatch({ control, name: "cuit" });
 
@@ -220,17 +79,23 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
       titulo: "Validando Empresa",
       pasos: [
         {
-          id: "afip",
-          etiqueta: "Consultando padrón",
-          estado: "cargando",
-          descripcion:
-            "Obteniendo los datos de la empresa desde el padrón federal/bureau en tiempo real.",
-        },
-        {
           id: "sgrcore",
           etiqueta: "Validando con SGRPlus",
-          estado: "pendiente",
+          estado: "cargando",
           descripcion: "Verificando estado del socio en el sistema core.",
+        },
+        {
+          id: "pyme",
+          etiqueta: "Verificando Certificado PyME",
+          estado: "pendiente",
+          descripcion: "Comprobando la vigencia del certificado PyME.",
+        },
+        {
+          id: "afip",
+          etiqueta: "Consultando padrón",
+          estado: "pendiente",
+          descripcion:
+            "Obteniendo los datos de la empresa desde el padrón federal/bureau en tiempo real.",
         },
         {
           id: "cda",
@@ -245,36 +110,28 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
     });
 
     try {
-      // ── VALIDACIÓN DE EXISTENCIA PRIMERO: si el CUIT ya está bloqueado
-      // (registro real, propio o ajeno), cortamos acá y no gastamos las
-      // llamadas a AFIP/SGRPlus/CDA. Si lo que existe es un stub vacío
-      // (creado por un intento anterior propio que quedó pendiente, o por
-      // el motor de CDA), guardamos su SocioID para reusarlo más abajo en
-      // vez de crear uno nuevo.
-      let socioIdPendiente = null;
+      // ── 1. SOCIO EXISTENTE: acordado con backend que el POST a Socio (con
+      // datos reales) pasa a hacerse ANTES del CDA, más abajo — así que a
+      // partir de este cambio, si el CUIT ya figura en Socios, es siempre
+      // un registro real. Ya no hace falta distinguir "vacío" de "con
+      // datos": bloqueamos directo, sin gastar las llamadas a AFIP/SGRPlus/CDA.
       try {
         const sociosWebEncontrados = await sociosService.obtenerSocios({
           Cuit: cuit,
         });
 
         if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
-          const socioWebExistente = sociosWebEncontrados[0];
-
-          if (!esSocioVacio(socioWebExistente)) {
-            setProcesoModal({
-              isOpen: false,
-              titulo: "",
-              pasos: [],
-              hasError: false,
-              isSystemError: false,
-            });
-            if (onSocioExistente) {
-              onSocioExistente(socioWebExistente, "ya_existe");
-            }
-            return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
+          setProcesoModal({
+            isOpen: false,
+            titulo: "",
+            pasos: [],
+            hasError: false,
+            isSystemError: false,
+          });
+          if (onSocioExistente) {
+            onSocioExistente(sociosWebEncontrados[0], "ya_existe");
           }
-
-          socioIdPendiente = socioWebExistente.socioid;
+          return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
         }
 
         // Si no está en la web, verificamos si existe históricamente en SGRPlus Core
@@ -316,7 +173,94 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
         );
       }
 
-      // 3. CONSULTA NOSIS con Fallback a AFIP/LUFE
+      // ── 2. VALIDACIÓN SGRPlus Core — corre antes del Certificado PyME y
+      // de Nosis/AFIP, según lo acordado con backend.
+      try {
+        const resultSgrCore = await validarSocioCore({
+          cuit,
+          cadenaValorId: cadenaValorIdParam,
+        });
+        if (resultSgrCore?.data && resultSgrCore.data.success === false) {
+          setProcesoModal((prev) => ({
+            ...prev,
+            hasError: true,
+            isSystemError: false,
+            pasos: prev.pasos.map((p) =>
+              p.id === "sgrcore"
+                ? {
+                    ...p,
+                    estado: "error",
+                    errores: [
+                      resultSgrCore.data.message ||
+                        "El socio no cumple con los requisitos del sistema.",
+                    ],
+                    error: "Rechazado por SGRPlus",
+                  }
+                : p,
+            ),
+          }));
+          return;
+        }
+      } catch (sgrError) {
+        if (sgrError?.response?.status !== 404) {
+          console.warn("Error consultando sgrcore ValidarSocio:", sgrError);
+        }
+      }
+
+      // Marcamos SGRPlus como completado y el Certificado PyME como cargando
+      setProcesoModal((prev) => ({
+        ...prev,
+        pasos: prev.pasos.map((p) =>
+          p.id === "sgrcore"
+            ? { ...p, estado: "completado" }
+            : p.id === "pyme"
+              ? { ...p, estado: "cargando" }
+              : p,
+        ),
+      }));
+
+      // ── 3. VALIDACIÓN Certificado PyME (GET Socio/CertificadoVigente/
+      // {Cuit}). 200 = vigente, 401 = no vigente/rechazo (el backend
+      // reutiliza el código HTTP como semántica de negocio, no es un fallo
+      // de autenticación real). Un 500 (confirmado con pruebas manuales:
+      // 4 reintentos seguidos dieron 200 después de un único 500) es un
+      // error transitorio de infraestructura, no un rechazo — hay que
+      // distinguirlo para no bloquear al usuario con un mensaje de
+      // "no vigente" que en realidad es un hiccup del backend.
+      const resultPyme = await sociosService.obtenerCertificadoVigente(cuit);
+      if (resultPyme.status !== 200) {
+        const isPymeInfraError = resultPyme.status >= 500;
+        const mensajePyme = isPymeInfraError
+          ? "El servicio de validación del Certificado PyME no se encuentra disponible momentáneamente. Por favor, intente nuevamente."
+          : (typeof resultPyme.data === "string" ? resultPyme.data : null) ||
+            resultPyme.data?.message ||
+            resultPyme.data?.Message ||
+            "El certificado PyME no se encuentra vigente.";
+        setProcesoModal((prev) => ({
+          ...prev,
+          hasError: true,
+          isSystemError: isPymeInfraError,
+          pasos: prev.pasos.map((p) =>
+            p.id === "pyme"
+              ? { ...p, estado: "error", error: mensajePyme }
+              : p,
+          ),
+        }));
+        return;
+      }
+
+      setProcesoModal((prev) => ({
+        ...prev,
+        pasos: prev.pasos.map((p) =>
+          p.id === "pyme"
+            ? { ...p, estado: "completado" }
+            : p.id === "afip"
+              ? { ...p, estado: "cargando" }
+              : p,
+        ),
+      }));
+
+      // ── 4. CONSULTA NOSIS con Fallback a AFIP/LUFE
       let nosisData = null;
       let afipData = null;
 
@@ -378,114 +322,18 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
       if (nosisData || (afipData && afipData.datosgenerales)) {
         const dg = afipData ? afipData.datosgenerales : null;
 
-        // Marcamos AFIP/LUFE como completado y SGRCore como cargando
+        // Marcamos el padrón como completado (SGRPlus y el Certificado PyME
+        // ya se validaron antes de esta consulta, ver más arriba)
         setProcesoModal((prev) => ({
           ...prev,
           pasos: prev.pasos.map((p) =>
-            p.id === "afip"
-              ? { ...p, estado: "completado" }
-              : p.id === "sgrcore"
-                ? { ...p, estado: "cargando" }
-                : p,
+            p.id === "afip" ? { ...p, estado: "completado" } : p,
           ),
         }));
 
-        // ── VALIDACIÓN SGRPlus Core
-        try {
-          const resultSgrCore = await validarSocioCore({
-            cuit,
-            cadenaValorId: cadenaValorIdParam,
-          });
-          if (resultSgrCore?.data && resultSgrCore.data.success === false) {
-            setProcesoModal((prev) => ({
-              ...prev,
-              hasError: true,
-              isSystemError: false,
-              pasos: prev.pasos.map((p) =>
-                p.id === "sgrcore"
-                  ? {
-                      ...p,
-                      estado: "error",
-                      errores: [
-                        resultSgrCore.data.message ||
-                          "El socio no cumple con los requisitos del sistema.",
-                      ],
-                      error: "Rechazado por SGRPlus",
-                    }
-                  : p,
-              ),
-            }));
-            return;
-          }
-        } catch (sgrError) {
-          if (sgrError?.response?.status !== 404) {
-            console.warn("Error consultando sgrcore ValidarSocio:", sgrError);
-          }
-        }
-
-        // Avanzamos a CDA
-        setProcesoModal((prev) => ({
-          ...prev,
-          pasos: prev.pasos.map((p) =>
-            p.id === "sgrcore"
-              ? { ...p, estado: "completado" }
-              : p.id === "cda"
-                ? { ...p, estado: "cargando" }
-                : p,
-          ),
-        }));
-
-        // ── VALIDACIÓN CDA (PANTALLA_INGRESO_CUIT)
-        const resultCda = await ejecutarValidaciones(
-          "PANTALLA_INGRESO_CUIT",
-          cuit,
-          cadenaValorIdParam,
-          usuarioWebId,
-        );
-
-        if (!resultCda.success) {
-          setProcesoModal((prev) => ({
-            ...prev,
-            hasError: true,
-            isSystemError: resultCda.errors.some((e) => e.isSystemError),
-            pasos: prev.pasos.map((p) =>
-              p.id === "cda"
-                ? {
-                    ...p,
-                    estado: "error",
-                    errores: resultCda.errors.map((e) => e.message),
-                    error:
-                      resultCda.errors.find((e) => e.isInvalidante)?.message ||
-                      "Error en validación CDA",
-                  }
-                : p,
-            ),
-          }));
-
-          if (resultCda.errors.some((e) => e.isPendiente)) {
-            await asegurarSocioParcial(cuit, nosisData, afipData, socioIdPendiente);
-          }
-          return;
-        }
-
-        // Todo exitoso! Marcamos CDA como completado
-        setProcesoModal((prev) => ({
-          ...prev,
-          pasos: prev.pasos.map((p) =>
-            p.id === "cda" ? { ...p, estado: "completado" } : p,
-          ),
-        }));
-
-        // Si veníamos de un stub detectado en el chequeo de existencia (al
-        // principio de este mismo intento), lo vinculamos y avisamos al
-        // padre para que el submit final haga PUT en vez de POST.
-        if (socioIdPendiente) {
-          await vincularSiHaceFalta(socioIdPendiente);
-          if (onSocioParcialPropio) {
-            onSocioParcialPropio(socioIdPendiente);
-          }
-        }
-
+        // ── 5. Población de campos del formulario a partir de Nosis/AFIP.
+        // Se adelanta a este punto (antes vivía después del CDA) porque el
+        // POST a Socio del paso siguiente necesita estos valores resueltos.
         if (nosisData) {
           const nombreCompleto = decodeHtmlEntities(
             nosisData.VI_RazonSocial ||
@@ -741,6 +589,145 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioParcialP
           }
           setValue("tiporegimenivaid", tipoRegimenIvaId);
         }
+
+        // ── 6. UMBRAL: acá el socio pasa a existir de verdad. POST con los
+        // datos recién resueltos + vinculación a SocioUsuario. De acá en
+        // adelante, cualquier resultado del CDA (pase o no) ya queda
+        // trackeado contra un socio real — ya no hace falta ningún manejo
+        // especial para "pendiente" ni socios parciales.
+        const valores = getValues();
+        const payloadSocio = {
+          entidadid: 1,
+          tiposocioid: 9,
+          cuit,
+          denominacion: valores.razonSocial,
+          calle: valores.calle || valores.direccion,
+          numero: Number(valores.numero) || 0,
+          piso: valores.piso || "",
+          departamento: valores.departamento || "",
+          ciudadid: valores.ciudadid ? Number(valores.ciudadid) : null,
+          telefono: "",
+          fax: "",
+          email: user?.email,
+          tipopersonaid: valores.tipopersonaid,
+          tipocarteraid: 2,
+          sectorcontableid: 700,
+          tipoactividadbcraid: 0,
+          tipoactividadsepymeid: null,
+          marcavinculacion: "",
+          situacionbcraid: 1,
+          fechabaja: null,
+          motivobajaid: null,
+          socioestadoid: 9,
+          codpos: valores.codpos || "",
+          tamanioempresaid: 0,
+          fechacierreejercicio: valores.mescierre
+            ? `${new Date().getFullYear()}-${String(valores.mescierre).padStart(2, "0")}-${String(new Date(new Date().getFullYear(), valores.mescierre, 0).getDate()).padStart(2, "0")}T00:00:00`
+            : getCSharpIsoDate(),
+          legajo: 0,
+          tiporegimenivaid: valores.tiporegimenivaid,
+          actividadespecifica: "",
+          partido: valores.localidad,
+          telefono2: "",
+          telefono3: "",
+          visitado: "0",
+          scoringcomercial: "0",
+          partidoid: valores.localidadid ? Number(valores.localidadid) : null,
+          provinciaid: valores.provinciaid ? Number(valores.provinciaid) : null,
+          fechainicioactividades:
+            valores.fechainicioactividades || getCSharpIsoDate(),
+          tipoactividadglobalid: 0,
+          tipocanalcomercializacionid:
+            cadenaObj?.tipocanalcomercializacionid ||
+            cadenaObj?.TipoCanalComercializacionID ||
+            0,
+          emailfacturacion: user?.email || "",
+          minapoderadosrequeridos: 0,
+          tipocondicionfianzaid: 0,
+          jsoncondicionfianza: "",
+        };
+
+        const socioResult = await sociosService.crearSocio(payloadSocio);
+        const socioId = socioResult?.socioid || socioResult?.id;
+
+        if (!socioId) {
+          setProcesoModal((prev) => ({
+            ...prev,
+            hasError: true,
+            isSystemError: true,
+            pasos: prev.pasos.map((p) =>
+              p.id === "afip"
+                ? {
+                    ...p,
+                    estado: "error",
+                    error: "No se pudo registrar la empresa. Intentá nuevamente.",
+                  }
+                : p,
+            ),
+          }));
+          return;
+        }
+
+        if (usuarioWebId) {
+          await sociosService.vincularSocioUsuario({
+            usuariowebid: usuarioWebId,
+            socioid: socioId,
+            momentocreacion: getCSharpIsoDate(),
+          });
+        }
+
+        if (onSocioCreado) {
+          onSocioCreado(socioId);
+        }
+
+        // Avanzamos a CDA (SGRPlus y el padrón ya están resueltos)
+        setProcesoModal((prev) => ({
+          ...prev,
+          pasos: prev.pasos.map((p) =>
+            p.id === "cda" ? { ...p, estado: "cargando" } : p,
+          ),
+        }));
+
+        // ── 7. VALIDACIÓN CDA (PANTALLA_INGRESO_CUIT) — corre contra un
+        // socio que ya existe con datos reales. Si no pasa (rechazo 406 o
+        // pendiente 409 por integración caída), el historial ya queda
+        // asociado a este SocioID sin que hagamos nada especial acá: el
+        // admin puede verlo y re-ejecutarlo desde EmpresaDetalle.
+        const resultCda = await ejecutarValidaciones(
+          "PANTALLA_INGRESO_CUIT",
+          cuit,
+          cadenaValorIdParam,
+          usuarioWebId,
+        );
+
+        if (!resultCda.success) {
+          setProcesoModal((prev) => ({
+            ...prev,
+            hasError: true,
+            isSystemError: resultCda.errors.some((e) => e.isSystemError),
+            pasos: prev.pasos.map((p) =>
+              p.id === "cda"
+                ? {
+                    ...p,
+                    estado: "error",
+                    errores: resultCda.errors.map((e) => e.message),
+                    error:
+                      resultCda.errors.find((e) => e.isInvalidante)?.message ||
+                      "Error en validación CDA",
+                  }
+                : p,
+            ),
+          }));
+          return;
+        }
+
+        // Todo exitoso! Marcamos CDA como completado
+        setProcesoModal((prev) => ({
+          ...prev,
+          pasos: prev.pasos.map((p) =>
+            p.id === "cda" ? { ...p, estado: "completado" } : p,
+          ),
+        }));
 
         setTimeout(() => {
           setProcesoModal({

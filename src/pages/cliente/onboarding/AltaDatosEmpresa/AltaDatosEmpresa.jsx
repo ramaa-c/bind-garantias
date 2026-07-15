@@ -56,11 +56,12 @@ export const AltaDatosEmpresa = () => {
     reason: null,
   });
 
-  // SocioID de un registro "parcial" propio (creado cuando un CDA quedó
-  // pendiente en un intento anterior, ver asegurarSocioParcial en
-  // Paso1Cuit). Si está seteado, el submit final completa ese mismo
-  // registro (PUT) en vez de crear uno nuevo (POST).
-  const [socioIdExistente, setSocioIdExistente] = useState(null);
+  // Acordado con backend: el POST a Socio (con los datos de Nosis/AFIP) y la
+  // vinculación a SocioUsuario ahora se hacen en Paso1Cuit, ANTES de
+  // ejecutar el CDA — no acá. Para cuando el usuario llega al Paso 2, el
+  // socio ya existe; el submit acá abajo siempre completa ese mismo
+  // registro (PUT), nunca crea uno nuevo.
+  const [socioId, setSocioId] = useState(null);
 
   const user = useAuthStore((state) => state.user);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
@@ -124,7 +125,7 @@ export const AltaDatosEmpresa = () => {
     reset();
     setPasoActual(1);
     setMaxPasoAlcanzado(1);
-    setSocioIdExistente(null);
+    setSocioId(null);
   };
 
   const onSubmitFinal = async (data) => {
@@ -182,40 +183,23 @@ export const AltaDatosEmpresa = () => {
         jsoncondicionfianza: "",
       };
 
-      // Si Paso1Cuit detectó un socio "parcial" propio (creado por un CDA
-      // que había quedado pendiente), completamos ese mismo registro en vez
-      // de crear uno nuevo — así conservamos el historial de CDA ya
-      // asociado a ese SocioID.
-      let socioId = socioIdExistente;
-      if (socioId) {
-        console.log(
-          "[AltaDatosEmpresa] PUT a /Socio (completando registro parcial) con payload:",
-          { ...payloadSocio, socioid: socioId },
+      // El socio ya existe y ya está vinculado al usuario — eso se resolvió
+      // en Paso1Cuit, antes de ejecutar el CDA. Acá solo completamos el
+      // registro con lo que el usuario terminó de cargar/editar en el
+      // Paso 2.
+      if (!socioId) {
+        throw new Error(
+          "No se encontró el socio creado en el paso anterior.",
         );
-        await sociosService.actualizarSocio({ ...payloadSocio, socioid: socioId });
-      } else {
-        console.log("[AltaDatosEmpresa] POST a /Socio con payload:", payloadSocio);
-        const socioResult = await sociosService.crearSocio(payloadSocio);
-        console.log("[AltaDatosEmpresa] Respuesta de /Socio:", socioResult);
-        socioId = socioResult?.socioid || socioResult?.id;
       }
 
-      if (!socioId) throw new Error("No se obtuvo el ID del socio.");
+      console.log(
+        "[AltaDatosEmpresa] PUT a /Socio con payload:",
+        { ...payloadSocio, socioid: socioId },
+      );
+      await sociosService.actualizarSocio({ ...payloadSocio, socioid: socioId });
 
       if (usuariowebidReal) {
-        // Si veníamos de un socio parcial, ya se vinculó al usuario cuando
-        // se creó (ver asegurarSocioParcial en Paso1Cuit) — vincular de
-        // nuevo acá duplicaría la fila en SocioUsuario.
-        if (!socioIdExistente) {
-          const payloadVinculo = {
-            usuariowebid: usuariowebidReal,
-            socioid: socioId,
-            momentocreacion: getCSharpIsoDate(),
-          };
-
-          await sociosService.vincularSocioUsuario(payloadVinculo);
-        }
-
         // --- PRECARGA Y ENRIQUECIMIENTO DE ACCIONISTAS (LUFE + AFIP) ---
         try {
           await enriquecerSociosLufeAfip(socioId, data.cuit);
@@ -348,7 +332,7 @@ export const AltaDatosEmpresa = () => {
           onSocioExistente={(socioData, reason) =>
             setSocioExistenteModal({ isOpen: true, socioData, reason })
           }
-          onSocioParcialPropio={setSocioIdExistente}
+          onSocioCreado={setSocioId}
         />
       );
     }
