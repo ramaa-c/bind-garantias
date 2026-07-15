@@ -10,6 +10,7 @@ import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
 import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
+import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";
 import { nosisService } from "../../../../services/nosisService";
@@ -49,6 +50,7 @@ export function RepresentanteModal({
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
+  const usuarioWebIdActual = useUsuarioWebIdActual();
 
   const { control, reset, setValue, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -127,7 +129,7 @@ export function RepresentanteModal({
       isSystemError: false
     });
 
-    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam);
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam, usuarioWebIdActual);
 
     if (!result.success) {
       setCdaRechazado(true);

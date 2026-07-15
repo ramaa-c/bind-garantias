@@ -172,7 +172,14 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
       const bolsaMap = {};
 
       const now = new Date();
-      for (const rel of arr) {
+
+      // Se descartan primero las relaciones vencidas o sin tercero asociado
+      // (no requieren red), y recién ahí se piden los terceros. Los pedidos
+      // van en paralelo (son lecturas, no escrituras: no aplica el límite
+      // de pool de FireDAC que obliga a serializar las escrituras) para que
+      // el refetch tras guardar/editar no tarde N veces la latencia del
+      // backend por cada accionista/representante/agente de bolsa.
+      const relacionesValidas = arr.filter((rel) => {
         const fd = rel.fechadesde || rel.FechaDesde;
         const fh = rel.fechahasta || rel.FechaHasta;
         if (fh && fh !== "") {
@@ -186,27 +193,34 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
                 startDate.toISOString().split("T")[0]);
 
           if (!isSameAsStart && expirationDate < now) {
-            continue;
+            return false;
           }
         }
 
         const tid =
           rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
-        if (!tid) continue;
+        return !!tid;
+      });
 
-        try {
-          let t = null;
+      const itemsResueltos = await Promise.all(
+        relacionesValidas.map(async (rel) => {
+          const tid =
+            rel.terceroid || rel.tercerorelacionadoid || rel.TerceroRelacionadoID;
+
           try {
-            t = await tercerosService.obtenerTerceroPorId(tid);
-          } catch (apiErr) {
+            let t = null;
             try {
-              t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
-            } catch (sgrErr) {
-              // Ignore error
+              t = await tercerosService.obtenerTerceroPorId(tid);
+            } catch (apiErr) {
+              try {
+                t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
+              } catch (sgrErr) {
+                // Ignore error
+              }
             }
-          }
 
-          if (t) {
+            if (!t) return null;
+
             const tiporel =
               rel.tiporelacionsocioid ||
               rel.TipoRelacionSocioID ||
@@ -257,46 +271,54 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
               tipopersonaid: t.tipopersonaid || t.TipoPersonaID || t.TipoPersonaId || 1,
             };
 
-            const identifier =
-              item.cuit && item.cuit !== "—" ? item.cuit : item.id;
+            return { rel, tiporelNum, item };
+          } catch (e) {
+            console.warn("Error fetching third party detail:", tid, e);
+            return null;
+          }
+        }),
+      );
 
-            if (tiporelNum === 25) {
-              if (item.participacion === 0) continue; // Omitir suplentes / accionistas con 0%
-              const existing = accMap[identifier];
-              if (!existing) {
-                accMap[identifier] = item;
-              } else {
-                const existingMomento = new Date(existing.relacion?.momento || existing.relacion?.Momento || 0).getTime();
-                const currentMomento = new Date(rel.momento || rel.Momento || 0).getTime();
-                const existingId = Number(existing.relacionId || 0);
-                const currentId = Number(rel.sociotercerorelacionid || rel.SocioTerceroRelacionID || 0);
-                
-                if (currentMomento > existingMomento || (currentMomento === existingMomento && currentId > existingId)) {
-                  accMap[identifier] = item;
-                }
-              }
-            } else if (tiporelNum === 210 || tiporelNum === 230) {
-              const existing = repMap[identifier];
-              if (!existing) {
-                repMap[identifier] = item;
-              } else {
-                if (item.rolId === 230 && existing.rolId !== 230) {
-                  repMap[identifier] = item;
-                }
-              }
-            } else if (tiporelNum === 21) {
-              const existing = bolsaMap[identifier];
-              if (!existing) {
-                bolsaMap[identifier] = item;
-              } else {
-                if (item.nrosubcuentacaja && !existing.nrosubcuentacaja) {
-                  bolsaMap[identifier] = item;
-                }
-              }
+      for (const resuelto of itemsResueltos) {
+        if (!resuelto) continue;
+        const { rel, tiporelNum, item } = resuelto;
+
+        const identifier =
+          item.cuit && item.cuit !== "—" ? item.cuit : item.id;
+
+        if (tiporelNum === 25) {
+          if (item.participacion === 0) continue; // Omitir suplentes / accionistas con 0%
+          const existing = accMap[identifier];
+          if (!existing) {
+            accMap[identifier] = item;
+          } else {
+            const existingMomento = new Date(existing.relacion?.momento || existing.relacion?.Momento || 0).getTime();
+            const currentMomento = new Date(rel.momento || rel.Momento || 0).getTime();
+            const existingId = Number(existing.relacionId || 0);
+            const currentId = Number(rel.sociotercerorelacionid || rel.SocioTerceroRelacionID || 0);
+
+            if (currentMomento > existingMomento || (currentMomento === existingMomento && currentId > existingId)) {
+              accMap[identifier] = item;
             }
           }
-        } catch (e) {
-          console.warn("Error fetching third party detail:", tid, e);
+        } else if (tiporelNum === 210 || tiporelNum === 230) {
+          const existing = repMap[identifier];
+          if (!existing) {
+            repMap[identifier] = item;
+          } else {
+            if (item.rolId === 230 && existing.rolId !== 230) {
+              repMap[identifier] = item;
+            }
+          }
+        } else if (tiporelNum === 21) {
+          const existing = bolsaMap[identifier];
+          if (!existing) {
+            bolsaMap[identifier] = item;
+          } else {
+            if (item.nrosubcuentacaja && !existing.nrosubcuentacaja) {
+              bolsaMap[identifier] = item;
+            }
+          }
         }
       }
 

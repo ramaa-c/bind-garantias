@@ -94,6 +94,12 @@
   color: #6e7681;
 }
 
+.stepStatusErrorText {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--error-red, #ef4444);
+}
+
 .stepStatusSkeleton {
   width: 90px;
   height: 0.7rem;

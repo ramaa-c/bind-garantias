@@ -724,6 +724,7 @@ export default function CdasGlobales() {
         }
 
         await queryClient.invalidateQueries({ queryKey: ['cda'] });
+        await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
         toast.success("Criterio de Aceptación actualizado exitosamente.");
         resetFormulario();
         setVista("lista");

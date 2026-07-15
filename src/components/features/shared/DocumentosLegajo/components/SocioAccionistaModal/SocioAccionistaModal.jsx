@@ -11,6 +11,7 @@ import { CargaArchivos } from "../../../../../ui/CargaArchivos/CargaArchivos";
 import { ProcesamientoModal } from "../../../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
+import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { nosisService } from "../../../../../../services/nosisService";
@@ -99,6 +100,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
+  const usuarioWebIdActual = useUsuarioWebIdActual();
 
   const relacionId = socio?.relacionId || 
                      socio?.relacion?.sociotercerorelacionid || 
@@ -327,7 +329,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       isSystemError: false
     });
 
-    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam);
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam, usuarioWebIdActual);
 
     if (!result.success) {
       setCdaRechazado(true);

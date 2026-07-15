@@ -22,12 +22,12 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   const cadenaId = activeItem?.cadenavalorid;
 
   // 1. Obtener TODOS los CDAs en el sistema
-  const { data: todosCdas, isLoading: isLoadingTodos } = useObtenerTodosCdas();
+  const { data: todosCdas, isLoading: isLoadingTodos, isError: isErrorTodos, refetch: refetchTodos } = useObtenerTodosCdas();
 
   // 2. Resolver el GrupoCda de (pantalla, cadena) y los CDAs vinculados a él.
   // Lectura pasiva: si el grupo todavía no existe no lo crea (eso pasa recién
   // al guardar, vía resolverGrupoCda).
-  const { data: grupoData, isLoading: isLoadingGrupo } = useObtenerGrupoCdaConCdas(cadenaId, pantalla);
+  const { data: grupoData, isLoading: isLoadingGrupo, isError: isErrorGrupo, refetch: refetchGrupo } = useObtenerGrupoCdaConCdas(cadenaId, pantalla);
 
   const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdasAGrupo();
   const { mutateAsync: actualizarVinculacionCda, isPending: isActualizandoVinculacion } = useActualizarVinculacionCda();
@@ -61,6 +61,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   const [cdaConfigs, setCdaConfigs] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [soloActivos, setSoloActivos] = useState(false);
 
   // Expresión de agrupación lógica del GrupoCda (AND / OR / personalizada)
   const [agrupacionType, setAgrupacionType] = useState("and"); // "and" | "or" | "custom"
@@ -308,6 +309,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
 
   const cdasVisibles = allCdasList
     .filter(cda => !hideUnchecked || (cdaConfigs[getCdaId(cda)]?.checked))
+    .filter(cda => !soloActivos || (cdaConfigs[getCdaId(cda)]?.checked))
     .filter(cda => {
       const term = searchTerm.trim().toLowerCase();
       if (!term) return true;
@@ -315,12 +317,43 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         String(getCdaProperty(cda, "descripcion")).toLowerCase().includes(term) ||
         String(getCdaProperty(cda, "expresion")).toLowerCase().includes(term)
       );
+    })
+    // Los activos siempre arriba; Array.prototype.sort es estable, así que
+    // dentro de cada grupo (activo/inactivo) se conserva el orden original.
+    .sort((a, b) => {
+      const aChecked = cdaConfigs[getCdaId(a)]?.checked ? 1 : 0;
+      const bChecked = cdaConfigs[getCdaId(b)]?.checked ? 1 : 0;
+      return bChecked - aChecked;
     });
 
   if (isLoading) {
     return (
       <div style={{ padding: "2rem", display: "flex", justifyContent: "center" }}>
         <Spinner size={50} />
+      </div>
+    );
+  }
+
+  // Nunca mostrar el checklist como si "no hubiera nada vinculado" cuando en
+  // realidad falló la petición de red: eso invita a re-vincular algo que ya
+  // estaba vinculado y genera duplicados. Mostrar el error y dejar reintentar.
+  if (isErrorTodos || isErrorGrupo) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        <p style={{ color: "#ea4a5a", marginBottom: "1rem" }}>
+          Ocurrió un error de red al traer los CDAs. No se muestra el listado para evitar vincular algo que ya podría estar vinculado.
+        </p>
+        <Button
+          type="button"
+          variant="outlineBlue"
+          size="sm"
+          onClick={() => {
+            if (isErrorTodos) refetchTodos();
+            if (isErrorGrupo) refetchGrupo();
+          }}
+        >
+          Reintentar
+        </Button>
       </div>
     );
   }
@@ -465,14 +498,28 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
 
         <div className={styles.rightCol}>
         {!hideUnchecked && allCdasList.length > 0 && (
-          <div className={styles.searchWrap}>
-            <FiSearch className={styles.iconSearch} />
-            <input
-              type="text"
-              placeholder="Buscar por descripción o expresión..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className={styles.searchRow}>
+            <div className={styles.searchWrap}>
+              <FiSearch className={styles.iconSearch} />
+              <input
+                type="text"
+                placeholder="Buscar por descripción o expresión..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <label className={styles.activosToggle}>
+              <input
+                type="checkbox"
+                className={styles.activosToggleInput}
+                checked={soloActivos}
+                onChange={(e) => setSoloActivos(e.target.checked)}
+              />
+              <span className={styles.activosToggleTrack}>
+                <span className={styles.activosToggleThumb} />
+              </span>
+              <span className={styles.activosToggleText}>Solo activos</span>
+            </label>
           </div>
         )}
 

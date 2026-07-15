@@ -23,6 +23,7 @@ export const PantallaTabs = ({ value, onChange, estados = {} }) => {
         const estado = estados[p.value];
         const cantidad = estado?.cantidad;
         const cargando = estado?.cargando;
+        const conError = estado?.error;
 
         return (
           <React.Fragment key={p.value}>
@@ -38,6 +39,8 @@ export const PantallaTabs = ({ value, onChange, estados = {} }) => {
                 <span className={styles.stepLabel}>{p.label}</span>
                 {cargando ? (
                   <span className={styles.stepStatusSkeleton} />
+                ) : conError ? (
+                  <span className={styles.stepStatusErrorText}>Error al cargar, no confiar</span>
                 ) : cantidad > 0 ? (
                   <span className={styles.stepStatusOk}>
                     <FiCheck size={11} /> {cantidad} CDA{cantidad !== 1 ? "s" : ""} activo{cantidad !== 1 ? "s" : ""}
