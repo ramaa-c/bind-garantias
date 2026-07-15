@@ -13,18 +13,18 @@ export const useCdaEngine = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const ejecutarValidaciones = useCallback(async (pantalla, cuit, cadenaValorId = null) => {
+  const ejecutarValidaciones = useCallback(async (pantalla, cuit, cadenaValorId = null, usuarioId = null) => {
     setLoading(true);
     setError(null);
 
     try {
       const cuitLimpio = String(cuit).replace(/\D/g, "");
       console.log(
-        `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}", CUIT ${cuitLimpio} y CadenaValorID ${cadenaValorId}`,
+        `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}", CUIT ${cuitLimpio}, CadenaValorID ${cadenaValorId} y UsuarioID ${usuarioId}`,
       );
 
       // 202: WSResponseCDA { Result: true, ListTest: [...] } - pasó todo.
-      await cdaService.ejecutarCda(pantalla, cuitLimpio, cadenaValorId);
+      await cdaService.ejecutarCda(pantalla, cuitLimpio, cadenaValorId, usuarioId);
 
       console.log(
         `[CDA ENGINE] Validaciones de CDAs para pantalla "${pantalla}" superadas con éxito (Status: 202)`,

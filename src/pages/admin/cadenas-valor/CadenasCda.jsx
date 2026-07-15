@@ -35,8 +35,8 @@ export default function CadenasCda() {
   const grupoSocios = useObtenerGrupoCdaConCdas(cadenaId, PANTALLAS_CDA[1].value);
 
   const estadosPantallas = {
-    [PANTALLAS_CDA[0].value]: { cantidad: contarCdasActivos(grupoIngresoCuit.data), cargando: grupoIngresoCuit.isLoading },
-    [PANTALLAS_CDA[1].value]: { cantidad: contarCdasActivos(grupoSocios.data), cargando: grupoSocios.isLoading },
+    [PANTALLAS_CDA[0].value]: { cantidad: contarCdasActivos(grupoIngresoCuit.data), cargando: grupoIngresoCuit.isLoading, error: grupoIngresoCuit.isError },
+    [PANTALLAS_CDA[1].value]: { cantidad: contarCdasActivos(grupoSocios.data), cargando: grupoSocios.isLoading, error: grupoSocios.isError },
   };
 
   return (

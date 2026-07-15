@@ -9,6 +9,7 @@ import { nosisService } from "../../../../services/nosisService";
 import { useValidarCuitAfip } from "../../../../hooks/useAfip";
 import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
+import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import {
@@ -30,6 +31,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
   const { mutateAsync: validarAfip, isPending: isLoadingAfip } =
     useValidarCuitAfip();
   const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
+  const usuarioWebIdActual = useUsuarioWebIdActual();
   const { mutateAsync: validarSocioCore } = useValidarSocioCore();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
   const user = useAuthStore((state) => state.user);
@@ -220,6 +222,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente }) {
           "PANTALLA_INGRESO_CUIT",
           cuit,
           cadenaValorIdParam,
+          usuarioWebIdActual,
         );
 
         if (!resultCda.success) {

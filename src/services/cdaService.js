@@ -67,18 +67,23 @@ export const cdaService = {
     return created?.pantallagrupocdaid;
   },
 
-  ejecutarCda: async (pantallaOrObj, cuit, cadenaValorId) => {
+  ejecutarCda: async (pantallaOrObj, cuit, cadenaValorId, usuarioId) => {
     let Pantalla = pantallaOrObj;
     let Cuit = cuit;
     let CadenaValorID = cadenaValorId;
+    let UsuarioID = usuarioId;
     if (typeof pantallaOrObj === "object" && pantallaOrObj !== null) {
       Pantalla = pantallaOrObj.pantalla || pantallaOrObj.Pantalla;
       Cuit = pantallaOrObj.cuit || pantallaOrObj.Cuit;
       CadenaValorID = pantallaOrObj.cadenaValorId || pantallaOrObj.CadenaValorID || pantallaOrObj.cadenavalorid || cadenaValorId;
+      UsuarioID = pantallaOrObj.usuarioId || pantallaOrObj.UsuarioID || usuarioId;
     }
     const params = { Pantalla, Cuit };
     if (CadenaValorID !== undefined && CadenaValorID !== null && String(CadenaValorID).trim() !== "" && !isNaN(Number(CadenaValorID))) {
       params.CadenaValorID = Number(CadenaValorID);
+    }
+    if (UsuarioID !== undefined && UsuarioID !== null && String(UsuarioID).trim() !== "" && !isNaN(Number(UsuarioID))) {
+      params.UsuarioID = Number(UsuarioID);
     }
     const response = await api.get("api/cda/execute", {
       params,
