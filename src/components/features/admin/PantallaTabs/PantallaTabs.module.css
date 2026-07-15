@@ -1,0 +1,132 @@
+.stepper {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+.step {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
+  padding: 0.9rem 1.1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  min-width: 0;
+}
+
+.step:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.stepActive {
+  background: rgba(76, 101, 230, 0.08);
+  border-color: var(--color-azul-bind, #4c65e6);
+  box-shadow: 0 0 0 1px var(--color-azul-bind, #4c65e6), 0 8px 20px rgba(76, 101, 230, 0.12);
+}
+
+.stepNumber {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.06);
+  color: #8b949e;
+  transition: all 0.2s ease;
+}
+
+.stepActive .stepNumber {
+  background: var(--color-azul-bind, #4c65e6);
+  color: #ffffff;
+}
+
+.stepIcon {
+  flex-shrink: 0;
+  color: #8b949e;
+  transition: color 0.2s ease;
+}
+
+.stepActive .stepIcon {
+  color: var(--color-azul-bind-300, #8a9fff);
+}
+
+.stepText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.stepLabel {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stepStatusOk {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--success-green, #3ddc84);
+}
+
+.stepStatusEmpty {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6e7681;
+}
+
+.stepStatusSkeleton {
+  width: 90px;
+  height: 0.7rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.connector {
+  flex-shrink: 0;
+  width: 2.5rem;
+  align-self: center;
+  height: 2px;
+  background: repeating-linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.18) 0,
+    rgba(255, 255, 255, 0.18) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+@media (max-width: 640px) {
+  .stepper {
+    flex-direction: column;
+  }
+  .connector {
+    display: none;
+  }
+}

@@ -44,11 +44,35 @@
   z-index: 10;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 992px) {
   .selectorSection {
     flex-direction: row;
     align-items: stretch;
   }
+}
+
+/* Compacto a propósito: elegir la cadena es un paso rápido, no necesita
+   ocupar todo el ancho de la pantalla. El espacio libre se lo lleva el
+   paso a paso de pantallas, al lado, que es lo que hay que completar. */
+.compactSelector {
+  width: 100%;
+  max-width: 440px;
+}
+
+@media (min-width: 992px) {
+  .compactSelector {
+    flex: 0 0 380px;
+    max-width: 380px;
+  }
+}
+
+.panelWrap {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  backdrop-filter: blur(8px);
+  position: relative;
 }
 
 /* Empty message */

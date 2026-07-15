@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Modal } from "../../../ui/Modal/Modal";
-import { Button } from "../../../ui/Button/Button";
 import { CdaPanel } from "../CdaPanel/CdaPanel";
+import { PantallaTabs } from "../PantallaTabs/PantallaTabs";
+import { PANTALLAS_CDA } from "../../../../utils/pantallasCda";
 
 export const CdaConfigModal = ({ isOpen, onClose, activeItem, isReadOnly = false }) => {
+  const [selectedPantalla, setSelectedPantalla] = useState(PANTALLAS_CDA[0].value);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -12,7 +15,17 @@ export const CdaConfigModal = ({ isOpen, onClose, activeItem, isReadOnly = false
       maxWidth="850px"
       variant="blue"
     >
-      <CdaPanel activeItem={activeItem} onClose={onClose} isReadOnly={isReadOnly} hideCheckboxes={isReadOnly} />
+      <div style={{ marginBottom: "1rem" }}>
+        <PantallaTabs value={selectedPantalla} onChange={setSelectedPantalla} />
+      </div>
+      <CdaPanel
+        activeItem={activeItem}
+        pantalla={selectedPantalla}
+        onClose={onClose}
+        isReadOnly={isReadOnly}
+        hideCheckboxes={isReadOnly}
+        key={`${activeItem?.cadenavalorid}-${selectedPantalla}`}
+      />
     </Modal>
   );
 };

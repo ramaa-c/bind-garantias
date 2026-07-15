@@ -2,11 +2,34 @@ import { cdaAdapter } from "../adapters/cdaAdapter";
 import api from "../api/axios";
 
 export const cdaService = {
-  // GET api/cda/GrupoCda?Pantalla=X - Devuelve el listado de vinculos CDA<->Pantalla ([{ GrupoCdaID, CdaID, PantallaGrupoCdaID }])
-  obtenerGrupoCda: async (pantalla) => {
-    const response = await api.get("api/cda/GrupoCda", {
-      params: { Pantalla: pantalla },
-    });
+  // GET api/cda/GrupoCda?Pantalla=X&CadenaValorID=Y - Grupo de CDAs para una
+  // combinación Pantalla+Cadena, con su propia ExpresionAgrupacion.
+  //
+  // ⚠️ El backend hoy IGNORA el filtro CadenaValorID (devuelve todos los
+  // grupos de la pantalla, sin importar la cadena pedida) — reportado a
+  // Victor. Filtramos acá del lado del cliente para no terminar operando
+  // sobre el GrupoCda de otra cadena. Sacar este filtro extra el día que el
+  // backend lo resuelva de verdad.
+  obtenerGrupoCda: async (pantalla, cadenaValorId) => {
+    const params = { Pantalla: pantalla };
+    if (cadenaValorId !== undefined && cadenaValorId !== null) {
+      params.CadenaValorID = cadenaValorId;
+    }
+    const response = await api.get("api/cda/GrupoCda", { params });
+    const data = response.data;
+    if (cadenaValorId === undefined || cadenaValorId === null) return data;
+
+    const list = Array.isArray(data) ? data : data?.items || data?.data || (data ? [data] : []);
+    return list.filter((row) => String(row.cadenavalorid) === String(cadenaValorId));
+  },
+
+  crearGrupoCda: async (grupoData) => {
+    const response = await api.post("api/cda/GrupoCda", cdaAdapter.adaptarGrupoCda(grupoData));
+    return response.data;
+  },
+
+  actualizarGrupoCda: async (grupoData) => {
+    const response = await api.put("api/cda/GrupoCda", cdaAdapter.adaptarGrupoCda(grupoData));
     return response.data;
   },
 
@@ -17,12 +40,31 @@ export const cdaService = {
     return response.data;
   },
 
-  // GET api/cda/PantallaGrupoCda?Pantalla=X - Devuelve { PantallaGrupoCdaID, Pantalla, ExpresionAgrupacion } (sin listado de CDAs)
+  // GET api/cda/PantallaGrupoCda?Pantalla=X - Devuelve { PantallaGrupoCdaID, Pantalla } (registro de la pantalla en sí; ya no lleva ExpresionAgrupacion)
   obtenerPantallaGrupoCda: async (pantalla) => {
     const response = await api.get("api/cda/PantallaGrupoCda", {
       params: { Pantalla: pantalla },
     });
     return response.data;
+  },
+
+  crearPantallaGrupoCda: async (pantallaData) => {
+    const response = await api.post("api/cda/PantallaGrupoCda", cdaAdapter.adaptarPantallaGrupoCda(pantallaData));
+    return response.data;
+  },
+
+  // Get-or-create: los registros de pantalla son globales (no por cadena) y
+  // deberían existir de antes, pero este fallback evita romper en un
+  // ambiente donde todavía no se crearon.
+  obtenerOCrearPantallaGrupoCda: async (pantallaLiteral) => {
+    const existing = await cdaService.obtenerPantallaGrupoCda(pantallaLiteral);
+    const existingList = Array.isArray(existing) ? existing : existing?.items || existing?.data || (existing ? [existing] : []);
+    const row = existingList[0];
+    const id = row?.pantallagrupocdaid;
+    if (id !== undefined && id !== null) return id;
+
+    const created = await cdaService.crearPantallaGrupoCda({ pantalla: pantallaLiteral });
+    return created?.pantallagrupocdaid;
   },
 
   ejecutarCda: async (pantallaOrObj, cuit, cadenaValorId) => {
@@ -56,11 +98,6 @@ export const cdaService = {
 
   obtenerTodosCdas: async () => {
     const response = await api.get("api/cda/Cda");
-    return response.data;
-  },
-
-  vincularPantallaCda: async (payload) => {
-    const response = await api.post("api/cda/PantallaGrupoCda", payload);
     return response.data;
   },
 

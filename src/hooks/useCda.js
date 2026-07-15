@@ -1,31 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { cdaService } from "../services/cdaService";
-import { cadenaValorService } from "../services/cadenaValorService";
-import { esCdaActivo } from "../utils/cdaUtils";
-
-export const useObtenerGrupoCda = (pantalla, options = {}) => {
-  return useQuery({
-    queryKey: ["cda", "grupo", pantalla],
-    queryFn: () => cdaService.obtenerGrupoCda(pantalla),
-    enabled: !!pantalla,
-    ...options,
-  });
-};
 
 export const useObtenerCda = (cdaId, options = {}) => {
   return useQuery({
     queryKey: ["cda", "detalle", cdaId],
     queryFn: () => cdaService.obtenerCda(cdaId),
     enabled: !!cdaId,
-    ...options,
-  });
-};
-
-export const useObtenerPantallaGrupoCda = (pantalla, options = {}) => {
-  return useQuery({
-    queryKey: ["cda", "pantallaGrupo", pantalla],
-    queryFn: () => cdaService.obtenerPantallaGrupoCda(pantalla),
-    enabled: !!pantalla,
     ...options,
   });
 };
@@ -48,17 +28,17 @@ export const useActualizarCda = () => {
   });
 };
 
+export const useActualizarGrupoCda = () => {
+  return useMutation({
+    mutationFn: (grupoData) => cdaService.actualizarGrupoCda(grupoData),
+  });
+};
+
 export const useObtenerTodosCdas = (options = {}) => {
   return useQuery({
     queryKey: ["cda", "todos_list"],
     queryFn: () => cdaService.obtenerTodosCdas(),
     ...options,
-  });
-};
-
-export const useVincularPantallaCda = () => {
-  return useMutation({
-    mutationFn: (payload) => cdaService.vincularPantallaCda(payload),
   });
 };
 
@@ -75,37 +55,5 @@ export const useReejecutarCda = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["socios", "executeCda"] });
     },
-  });
-};
-
-// No existe un endpoint "cadenas por CDA" (solo el inverso: CDAs por cadena).
-// Se arma acá cruzando, cadena por cadena, cuáles CDAs tiene vinculados.
-// Secuencial (no Promise.all): el backend usa un pool de conexiones limitado.
-export const useObtenerCadenasPorCda = (cadenas) => {
-  const listaCadenas = cadenas || [];
-  const idsKey = listaCadenas.map((c) => c.cadenavalorid).join(",");
-
-  return useQuery({
-    queryKey: ["cda", "cadenasPorCda", idsKey],
-    queryFn: async () => {
-      const mapa = {};
-      for (const cadena of listaCadenas) {
-        try {
-          const linked = await cadenaValorService.obtenerCdasPorCadenaId(cadena.cadenavalorid);
-          const linkedList = Array.isArray(linked) ? linked : linked?.items || linked?.data || [];
-          linkedList.filter(esCdaActivo).forEach((l) => {
-            const cdaId = l.cdaid ?? l.CdaId ?? l.CdaID;
-            if (cdaId === undefined) return;
-            if (!mapa[cdaId]) mapa[cdaId] = [];
-            mapa[cdaId].push({ denominacion: cadena.denominacion, aprobadaVigente: cadena.aprobadaVigente });
-          });
-        } catch (err) {
-          console.error(`Error al obtener CDAs vinculados a la cadena ${cadena.cadenavalorid}:`, err);
-        }
-      }
-      return mapa;
-    },
-    enabled: listaCadenas.length > 0,
-    staleTime: 1000 * 60 * 5,
   });
 };

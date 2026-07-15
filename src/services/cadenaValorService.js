@@ -85,9 +85,11 @@ export const cadenaValorService = {
   obtenerPorCadenaValorIdWeb: async (cadenaValorId) =>
     (await api.get("api/cadenavalor", { params: { CadenaValorID: cadenaValorId } })).data,
 
-  // GET /api/cadenavalor/cdas/{CadenaID}
-  obtenerCdasPorCadenaId: async (cadenaId) =>
-    (await api.get(`api/cadenavalor/cdas/${cadenaId}`)).data,
+  // GET /api/cda/cadenavalor/obtener:byGrupo?GrupoID=X - CDAs vinculados a un
+  // GrupoCda (Pantalla x Cadena). Reemplaza al viejo GET
+  // /api/cadenavalor/cdas/{CadenaID}, que el backend eliminó.
+  obtenerCdasPorGrupo: async (grupoId) =>
+    (await api.get("api/cda/cadenavalor/obtener:byGrupo", { params: { GrupoID: grupoId } })).data,
 
   // POST /api/cadenavalor
   crearCadenaValor: async (cadenaValorData) =>
@@ -101,13 +103,14 @@ export const cadenaValorService = {
   obtenerTodasWeb: async () =>
     (await api.get("api/cadenavalor")).data,
 
-  // POST /api/cadenavalor/cdas - Agrega vinculaciones nuevas (ya no reemplaza
-  // la lista completa: hay que mandar únicamente lo que se quiere agregar).
-  vincularCdas: async (vinculacionData) =>
-    (await api.post("api/cadenavalor/cdas", cadenaValorAdapter.adaptarPayload3(vinculacionData))).data,
+  // POST /api/cadenavalor/cdas - Agrega CDAs nuevos a un GrupoCda (ya no
+  // reemplaza la lista completa: hay que mandar únicamente lo que se agrega).
+  vincularCdasAGrupo: async (vinculacionData) =>
+    (await api.post("api/cadenavalor/cdas", cadenaValorAdapter.adaptarVinculacionGrupo(vinculacionData))).data,
 
-  // PUT /api/cadenavalor/cdas - Modifica el valor de UNA vinculación ya
-  // existente (requiere CdaCadenaValorID); queda registrado en el historial.
+  // PUT /api/cda/cadenavalor:actualizar - Modifica el valor/Activo de UNA
+  // vinculación ya existente (requiere CdaCadenaValorID); queda registrado
+  // en el historial.
   actualizarVinculacionCda: async (vinculacionData) =>
-    (await api.put("api/cadenavalor/cdas", cadenaValorAdapter.adaptarPayload4(vinculacionData))).data,
+    (await api.put("api/cda/cadenavalor:actualizar", cadenaValorAdapter.adaptarActualizarVinculacion(vinculacionData))).data,
 };

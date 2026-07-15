@@ -1,43 +1,48 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheck, FiRotateCcw, FiSave, FiLock, FiEdit3, FiSearch } from "react-icons/fi";
+import { FiCheck, FiRotateCcw, FiSave, FiLock, FiEdit3, FiSearch, FiInfo } from "react-icons/fi";
 import { toast } from "sonner";
-import { useObtenerCdasPorCadenaId, useVincularCdas, useActualizarVinculacionCda } from "../../../../hooks/useCadenaValor";
-import { useObtenerTodosCdas } from "../../../../hooks/useCda";
+import { useObtenerGrupoCdaConCdas, useVincularCdasAGrupo, useActualizarVinculacionCda } from "../../../../hooks/useCadenaValor";
+import { useObtenerTodosCdas, useActualizarGrupoCda } from "../../../../hooks/useCda";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { esCdaActivo } from "../../../../utils/cdaUtils";
-import { InputSimple } from "../../../ui/InputSimple/InputSimple";
+import { resolverGrupoCda } from "../../../../utils/grupoCdaUtils";
 import { Button } from "../../../ui/Button/Button";
 import { Spinner } from "../../../ui/Spinner/Spinner";
-import { Modal } from "../../../ui/Modal/Modal";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CdaPanel.module.css";
 
-export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false }) => {
+// Edita los CDAs (checklist + valor por cadena) y la expresión de agrupación
+// lógica (AND/OR/personalizada) de UN GrupoCda puntual, identificado por la
+// combinación (pantalla, cadena). El padre (CadenasCda.jsx / CdaConfigModal.jsx)
+// decide qué pantalla mostrar (tabs); acá solo se edita una a la vez.
+export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
   // 1. Obtener TODOS los CDAs en el sistema
   const { data: todosCdas, isLoading: isLoadingTodos } = useObtenerTodosCdas();
 
-  // 2. Obtener los CDAs vinculados a esta cadena de valor
-  const { data: linkedCdas, isLoading: isLoadingLinked } = useObtenerCdasPorCadenaId(cadenaId);
+  // 2. Resolver el GrupoCda de (pantalla, cadena) y los CDAs vinculados a él.
+  // Lectura pasiva: si el grupo todavía no existe no lo crea (eso pasa recién
+  // al guardar, vía resolverGrupoCda).
+  const { data: grupoData, isLoading: isLoadingGrupo } = useObtenerGrupoCdaConCdas(cadenaId, pantalla);
 
-  const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdas();
+  const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdasAGrupo();
   const { mutateAsync: actualizarVinculacionCda, isPending: isActualizandoVinculacion } = useActualizarVinculacionCda();
+  const { mutateAsync: actualizarGrupoCda, isPending: isActualizandoGrupo } = useActualizarGrupoCda();
   const usuarioWebId = useUsuarioWebIdActual();
   const allCdasList = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivo);
-  const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+  const linkedCdasList = Array.isArray(grupoData?.cdas) ? grupoData.cdas : grupoData?.cdas?.items || grupoData?.cdas?.data || [];
 
   const getCdaId = (c) => {
     if (!c) return undefined;
     return c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
   };
 
-  // ID de la fila de vinculación (join CDA<->Cadena), necesario para el PUT
-  // que modifica una vinculación existente. TODO: confirmar el nombre exacto
-  // del campo contra el swagger real una vez que se pueda probar con VPN.
+  // ID de la fila de vinculación (join CDA<->Grupo), necesario para el PUT
+  // que modifica una vinculación existente.
   const getCdaCadenaValorId = (c) => {
     if (!c) return undefined;
     return c.cdacadenavalorid ?? c.CdaCadenaValorId ?? c.CdaCadenaValorID ?? undefined;
@@ -53,15 +58,14 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
   };
 
   // cdaid -> { checked, valorcomparacion, simbolocomparacion, expresion, mensajerechazo, cdacadenavalorid }
-  // "checked" refleja si la vinculación está Activo="1"; "cdacadenavalorid" es
-  // el id de la fila de vinculación si ya existe (activa o no), para poder
-  // reactivarla por PUT en vez de crear una duplicada por POST.
   const [cdaConfigs, setCdaConfigs] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // La expresión, el operador y el mensaje de rechazo son propiedades del CDA global
-  // (nunca se editan por cadena) y siempre salen de allCdasList.
+  // Expresión de agrupación lógica del GrupoCda (AND / OR / personalizada)
+  const [agrupacionType, setAgrupacionType] = useState("and"); // "and" | "or" | "custom"
+  const [expresionAgrupacion, setExpresionAgrupacion] = useState("");
+
   const buildCdaConfigs = (allList, linkedList) => {
     const configs = {};
     allList.forEach(c => {
@@ -79,6 +83,11 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
     linkedList.forEach(c => {
       const id = getCdaId(c);
       if (id === undefined || !configs[id]) return;
+      // El backend no impide que un mismo CDA termine con más de una fila de
+      // vinculación en el mismo grupo (ej. si se lo agrega dos veces por
+      // POST). Si eso pasa, priorizamos la fila activa en vez de quedarnos
+      // con la que aparezca última en la respuesta.
+      if (configs[id].checked && !esCdaActivo(c)) return;
       configs[id] = {
         ...configs[id],
         checked: esCdaActivo(c),
@@ -92,7 +101,29 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
   // Inicializar estado local a partir de los datos cargados
   useEffect(() => {
     setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
-  }, [todosCdas, linkedCdas]);
+  }, [todosCdas, grupoData]);
+
+  // Detectar el tipo de agrupación a partir de la expresión guardada
+  useEffect(() => {
+    const grupo = grupoData?.grupo;
+    const expr = grupo?.expresionagrupacion || "";
+    setExpresionAgrupacion(expr);
+
+    if (!expr.trim()) {
+      setAgrupacionType("and");
+      return;
+    }
+    const linkedActiveIds = linkedCdasList.filter(esCdaActivo).map(getCdaId).filter((id) => id !== undefined);
+    const expectedOrExpr = linkedActiveIds.map(id => `cda${id}`).join(" or");
+    const expectedOrExprUpper = linkedActiveIds.map(id => `cda${id}`).join(" OR ");
+    const normalizedExpr = expr.trim().replace(/\s+/g, " ");
+
+    if (normalizedExpr === expectedOrExpr || normalizedExpr === expectedOrExprUpper) {
+      setAgrupacionType("or");
+    } else {
+      setAgrupacionType("custom");
+    }
+  }, [grupoData]);
 
   const handleToggleCda = (cdaId) => {
     setCdaConfigs(prev => ({
@@ -114,16 +145,65 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
     }));
   };
 
+  const checkedIds = Object.entries(cdaConfigs)
+    .filter(([, config]) => config.checked)
+    .map(([idStr]) => Number(idStr));
+
+  // Función para insertar tokens en la posición del cursor de la textarea
+  const insertTextAtCursor = (textToInsert) => {
+    const textarea = document.getElementById("expresion-agrupacion-textarea");
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const textBefore = expresionAgrupacion.substring(0, start);
+    const textAfter = expresionAgrupacion.substring(end);
+
+    let cleanText = textToInsert;
+    if (start > 0 && textBefore[start - 1] !== " " && !cleanText.startsWith(" ")) {
+      cleanText = " " + cleanText;
+    }
+    if (textAfter.length > 0 && textAfter[0] !== " " && !cleanText.endsWith(" ")) {
+      cleanText = cleanText + " ";
+    }
+
+    const newText = textBefore + cleanText + textAfter;
+    setExpresionAgrupacion(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + cleanText.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
   // Comparar estado actual vs inicial para habilitar el botón de Guardar
   const hasChanges = () => {
     const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
-    return Object.entries(cdaConfigs).some(([idStr, config]) => {
+    const baseExpr = grupoData?.grupo?.expresionagrupacion || "";
+
+    const checklistChanged = Object.entries(cdaConfigs).some(([idStr, config]) => {
       const base = baseConfigs[Number(idStr)];
       if (!base) return false;
       if (config.checked !== base.checked) return true;
       if (config.checked && String(config.valorcomparacion || "") !== String(base.valorcomparacion || "")) return true;
       return false;
     });
+
+    const finalExpresion = calcularExpresionFinal();
+    const expresionChanged = finalExpresion !== baseExpr;
+
+    return checklistChanged || expresionChanged;
+  };
+
+  const calcularExpresionFinal = () => {
+    if (agrupacionType === "or") {
+      return checkedIds.map((id) => `cda${id}`).join(" or ");
+    }
+    if (agrupacionType === "custom") {
+      return expresionAgrupacion.trim();
+    }
+    return ""; // "and": expresión vacía, el backend interpreta AND de todos los activos por defecto
   };
 
   const handleSaveVinculacion = () => {
@@ -132,6 +212,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
 
   const handleReset = () => {
     setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
+    setExpresionAgrupacion(grupoData?.grupo?.expresionagrupacion || "");
     toast.success("CDAs restablecidos a la configuración guardada");
   };
 
@@ -145,11 +226,13 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
 
   const confirmSaveVinculacion = async () => {
     try {
+      // El grupo puede no existir todavía (cadena activada antes de este
+      // cambio de modelo): se crea recién acá, al guardar de verdad.
+      const grupoActual = grupoData?.grupo || (await resolverGrupoCda(pantalla, cadenaId));
+      const grupoCdaId = grupoActual.grupocdaid;
+
       const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
 
-      // El POST ahora solo agrega vinculaciones que nunca existieron. Activar,
-      // desactivar o cambiar el valor de una que ya existe (aunque esté
-      // inactiva) va por PUT con el campo Activo, una por una.
       const nuevos = [];
       const modificados = [];
 
@@ -175,8 +258,8 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
 
       if (nuevos.length > 0) {
         await vincularCda({
-          cadenavalorid: Number(cadenaId),
-          listacda: nuevos
+          grupocdaid: grupoCdaId,
+          listacda: nuevos.map((n) => ({ ...n, usuariowebid: usuarioWebId }))
         });
       }
 
@@ -190,7 +273,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
         }
         await actualizarVinculacionCda({
           cdacadenavalorid: mod.cdacadenavalorid,
-          cadenavalorid: Number(cadenaId),
+          grupocdaid: grupoCdaId,
           cdaid: mod.cdaid,
           valorcomparacion: mod.valorcomparacion,
           activo: mod.activo,
@@ -198,8 +281,18 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
         });
       }
 
+      const finalExpresion = calcularExpresionFinal();
+      if (finalExpresion !== (grupoActual.expresionagrupacion || "")) {
+        await actualizarGrupoCda({
+          grupocdaid: grupoCdaId,
+          pantallagrupocdaid: grupoActual.pantallagrupocdaid,
+          cadenavalorid: cadenaId,
+          expresionagrupacion: finalExpresion
+        });
+      }
+
       await queryClient.invalidateQueries({ queryKey: ['cda', 'todos_list'] });
-      await queryClient.invalidateQueries({ queryKey: ['cadenaValor', 'cdas', cadenaId] });
+      await queryClient.invalidateQueries({ queryKey: ['cadenaValor', 'grupoCdaConCdas', pantalla, cadenaId] });
       toast.success("Criterios de aceptación y vinculación actualizados correctamente");
       setConfirmOpen(false);
       if (onClose) onClose();
@@ -210,7 +303,8 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
     }
   };
 
-  const isLoading = isLoadingTodos || isLoadingLinked;
+  const isLoading = isLoadingTodos || isLoadingGrupo;
+  const isSaving = isVinculandoCda || isActualizandoVinculacion || isActualizandoGrupo;
 
   const cdasVisibles = allCdasList
     .filter(cda => !hideUnchecked || (cdaConfigs[getCdaId(cda)]?.checked))
@@ -245,10 +339,131 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
         )}
         <p style={{ fontSize: "0.825rem", color: "#8b949e", lineHeight: "1.4" }}>
           {isReadOnly
-            ? "Listado de los CDAs activos para esta cadena. La regla y el mensaje de rechazo se definen en Criterios de Aceptación; el valor mostrado es el vigente para esta cadena."
-            : "Activá los CDAs que se deben ejecutar para esta cadena. La regla y el mensaje de rechazo son los definidos en Criterios de Aceptación: acá solo podés personalizar, por cadena, el valor límite de cada uno."}
+            ? "Listado de los CDAs activos para esta cadena y pantalla. La regla y el mensaje de rechazo se definen en Criterios de Aceptación; el valor mostrado es el vigente para esta combinación."
+            : "Activá los CDAs que se deben ejecutar para esta cadena en esta pantalla, y definí cómo se combinan entre sí. La regla y el mensaje de rechazo son los definidos en Criterios de Aceptación: acá solo podés personalizar, por cadena, el valor límite de cada uno."}
         </p>
 
+        <div className={styles.mainLayout}>
+        <div className={styles.leftCol}>
+          <div className={styles.agrupacionSection}>
+            <span className={styles.customTextareaLabel}>Agrupación lógica de esta cadena y pantalla</span>
+
+            <div className={styles.typeSelector}>
+              <div
+                className={`${styles.radioOption} ${agrupacionType === "and" ? styles.radioActive : ""}`}
+                onClick={() => !isReadOnly && setAgrupacionType("and")}
+              >
+                <input
+                  type="radio"
+                  className={styles.radioInput}
+                  checked={agrupacionType === "and"}
+                  onChange={() => setAgrupacionType("and")}
+                  disabled={isReadOnly || isSaving}
+                />
+                <div className={styles.radioLabel}>
+                  <span className={styles.radioLabelText}>Cumplir todos los criterios (AND)</span>
+                  <span className={styles.radioDescText}>Se deben cumplir todos los CDAs activos.</span>
+                </div>
+              </div>
+
+              <div
+                className={`${styles.radioOption} ${agrupacionType === "or" ? styles.radioActive : ""}`}
+                onClick={() => !isReadOnly && setAgrupacionType("or")}
+              >
+                <input
+                  type="radio"
+                  className={styles.radioInput}
+                  checked={agrupacionType === "or"}
+                  onChange={() => setAgrupacionType("or")}
+                  disabled={isReadOnly || isSaving}
+                />
+                <div className={styles.radioLabel}>
+                  <span className={styles.radioLabelText}>Cumplir al menos un criterio (OR)</span>
+                  <span className={styles.radioDescText}>Basta con que se cumpla cualquiera de los CDAs activos.</span>
+                </div>
+              </div>
+
+              <div
+                className={`${styles.radioOption} ${agrupacionType === "custom" ? styles.radioActive : ""}`}
+                onClick={() => !isReadOnly && setAgrupacionType("custom")}
+              >
+                <input
+                  type="radio"
+                  className={styles.radioInput}
+                  checked={agrupacionType === "custom"}
+                  onChange={() => setAgrupacionType("custom")}
+                  disabled={isReadOnly || isSaving}
+                />
+                <div className={styles.radioLabel}>
+                  <span className={styles.radioLabelText}>Expresión personalizada (Avanzado)</span>
+                  <span className={styles.radioDescText}>Escribí una expresión lógica compleja utilizando los IDs de los CDAs.</span>
+                </div>
+              </div>
+            </div>
+
+            {agrupacionType === "custom" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div className={styles.customTextareaGroup}>
+                  <label htmlFor="expresion-agrupacion-textarea" className={styles.customTextareaLabel}>
+                    Fórmula de Agrupación
+                  </label>
+                  <textarea
+                    id="expresion-agrupacion-textarea"
+                    className={styles.customTextarea}
+                    value={expresionAgrupacion}
+                    onChange={(e) => setExpresionAgrupacion(e.target.value)}
+                    placeholder="Ej: cda1042 and (cda1043 or cda1044)"
+                    disabled={isReadOnly || isSaving}
+                  />
+                </div>
+
+                {!isReadOnly && (
+                  <div className={styles.pillsContainer}>
+                    <h4 className={styles.pillGroupTitle}>Insertar CDAs Activos</h4>
+                    <div className={styles.pillsList}>
+                      {checkedIds.length === 0 ? (
+                        <span style={{ fontSize: "0.75rem", color: "#8b949e" }}>
+                          Activá criterios en la lista de la derecha para ver sus botones de inserción rápida.
+                        </span>
+                      ) : (
+                        checkedIds.map(id => {
+                          const found = allCdasList.find(c => getCdaId(c) === id);
+                          const label = found ? getCdaProperty(found, "descripcion") : `Criterio ${id}`;
+                          return (
+                            <button
+                              type="button"
+                              key={id}
+                              className={styles.cdaPill}
+                              title={label}
+                              onClick={() => insertTextAtCursor(`cda${id}`)}
+                            >
+                              cda{id}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <h4 className={styles.pillGroupTitle} style={{ marginTop: "0.5rem" }}>Insertar Conectores</h4>
+                    <div className={styles.pillsList}>
+                      <button type="button" className={styles.operatorPill} onClick={() => insertTextAtCursor("and")}>and</button>
+                      <button type="button" className={styles.operatorPill} onClick={() => insertTextAtCursor("or")}>or</button>
+                      <button type="button" className={styles.operatorPill} onClick={() => insertTextAtCursor("(")}>(</button>
+                      <button type="button" className={styles.operatorPill} onClick={() => insertTextAtCursor(")")}>)</button>
+                    </div>
+                  </div>
+                )}
+
+                <div className={styles.infoBox}>
+                  <FiInfo style={{ marginRight: "0.4rem", verticalAlign: "middle" }} />
+                  Recordá combinar los IDs de la forma: <code>cda1042 and (cda1043 or cda1044)</code>.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.rightCol}>
         {!hideUnchecked && allCdasList.length > 0 && (
           <div className={styles.searchWrap}>
             <FiSearch className={styles.iconSearch} />
@@ -258,6 +473,12 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+          </div>
+        )}
+
+        {!hideUnchecked && allCdasList.length > 0 && (
+          <div className={styles.checklistHeader}>
+            <span>{checkedIds.length} de {allCdasList.length} CDA{allCdasList.length !== 1 ? "s" : ""} activo{checkedIds.length !== 1 ? "s" : ""}</span>
           </div>
         )}
 
@@ -277,12 +498,12 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
                   const id = getCdaId(cda);
                   if (id === undefined) return null;
 
-                  const config = cdaConfigs[id] || { 
-                    checked: false, 
-                    valorcomparacion: getCdaProperty(cda, "valorcomparacion") || "", 
-                    simbolocomparacion: getCdaProperty(cda, "simbolocomparacion") || "=", 
-                    expresion: getCdaProperty(cda, "expresion") || "", 
-                    mensajerechazo: getCdaProperty(cda, "mensajerechazo") || "" 
+                  const config = cdaConfigs[id] || {
+                    checked: false,
+                    valorcomparacion: getCdaProperty(cda, "valorcomparacion") || "",
+                    simbolocomparacion: getCdaProperty(cda, "simbolocomparacion") || "=",
+                    expresion: getCdaProperty(cda, "expresion") || "",
+                    mensajerechazo: getCdaProperty(cda, "mensajerechazo") || ""
                   };
 
                   const isChecked = config.checked;
@@ -366,6 +587,8 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
             )}
           </div>
         </div>
+        </div>
+        </div>
       </div>
 
       {!isReadOnly && (
@@ -385,7 +608,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
             size="sm"
             onClick={handleSaveVinculacion}
             disabled={!hasChanges()}
-            isLoading={isVinculandoCda || isActualizandoVinculacion}
+            isLoading={isSaving}
           >
             <FiSave style={{ marginRight: "0.5rem" }} />
             VINCULAR SELECCIÓN
@@ -404,7 +627,7 @@ export const CdaPanel = ({ activeItem, onClose, isReadOnly = false, hideUnchecke
         cancelText="CANCELAR"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
-        isLoading={isVinculandoCda || isActualizandoVinculacion}
+        isLoading={isSaving}
       />
     </div>
   );

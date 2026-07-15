@@ -40,7 +40,6 @@ import Terminos from "./pages/admin/configuracion/Terminos";
 import CadenasValor from "./pages/admin/cadenas-valor/CadenasValor";
 import CadenasCda from "./pages/admin/cadenas-valor/CadenasCda";
 import CdasGlobales from "./pages/admin/cdas/CdasGlobales";
-import CdasPantalla from "./pages/admin/cdas/CdasPantalla";
 import LineasCadena from "./pages/admin/lineas/LineasCadena";
 import LineasProducto from "./pages/admin/lineas/LineasProducto";
 import ModoOffline from "./pages/admin/configuracion/ModoOffline";
@@ -283,16 +282,6 @@ function App() {
               <AdminGuard>
                 <AdminLayout>
                   <CdasGlobales />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/admin/cdas-pantalla"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <CdasPantalla />
                 </AdminLayout>
               </AdminGuard>
             }

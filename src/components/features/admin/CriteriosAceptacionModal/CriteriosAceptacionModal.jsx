@@ -7,7 +7,7 @@ import { Button } from "../../../ui/Button/Button";
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { sociosService } from "../../../../services/sociosService";
 import { tercerosService } from "../../../../services/tercerosService";
-import { useObtenerCdasPorCadenaId } from "../../../../hooks/useCadenaValor";
+import { useObtenerGrupoCdaConCdas } from "../../../../hooks/useCadenaValor";
 import styles from "./CriteriosAceptacionModal.module.css";
 
 export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
@@ -136,9 +136,11 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // 3. Obtener CDAs vinculados a la cadena de valor
+  // 3. Obtener CDAs vinculados a la cadena de valor (grupo de la pantalla de
+  // ingreso de CUIT, que es la que valida a la empresa solicitante)
   const cadenaId = Number(solicitud?.cadenavalorid) || 1;
-  const { data: cdasReal, isLoading: isLoadingCdas } = useObtenerCdasPorCadenaId(cadenaId);
+  const { data: grupoCdaData, isLoading: isLoadingCdas } = useObtenerGrupoCdaConCdas(cadenaId, "PANTALLA_INGRESO_CUIT");
+  const cdasReal = grupoCdaData?.cdas;
 
   const listCdas = Array.isArray(cdasReal)
     ? cdasReal

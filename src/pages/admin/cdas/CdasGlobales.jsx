@@ -8,11 +8,13 @@ import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
 import { cadenaValorService } from "../../../services/cadenaValorService";
 import { INTEGRACIONES_MOCKS } from "../../../utils/integracionesMocks";
 import { esCdaActivo } from "../../../utils/cdaUtils";
+import { resolverGrupoCda } from "../../../utils/grupoCdaUtils";
+import { PANTALLAS_CDA } from "../../../utils/pantallasCda";
 import { Button } from "../../../components/ui/Button/Button";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../components/ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiAlertTriangle, FiInbox, FiX, FiTrash2, FiInfo } from "react-icons/fi";
+import { FiPlus, FiCheck, FiChevronDown, FiChevronRight, FiSearch, FiArrowLeft, FiInbox, FiX, FiTrash2, FiInfo } from "react-icons/fi";
 import styles from "./CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -437,8 +439,8 @@ export default function CdasGlobales() {
       const data = res.data;
       setTestResult({
         status: res.status,
-        message: typeof data === "string" ? data : (data?.message || data?.Message || ""),
-        log: data?.expresionlog ?? data?.ExpresionLog ?? ""
+        message: typeof data === "string" ? data : (data?.mensaje || data?.Mensaje || ""),
+        log: data?.valor ?? data?.Valor ?? ""
       });
     } catch (err) {
       console.error(err);
@@ -550,10 +552,11 @@ export default function CdasGlobales() {
     setConfirmOpen(true);
   };
 
-  // Vincula un CDA puntual a todas las cadenas de valor YA EXISTENTES. Es una
-  // acción explícita disparada por el checkbox "vincularExistentes": el flag
-  // "vinculadefaultcv" solo controla si el backend lo suma automáticamente a
-  // las cadenas de valor que se creen de ahora en adelante, no a las actuales.
+  // Vincula un CDA puntual a todas las cadenas de valor YA EXISTENTES, en
+  // ambas pantallas. Es una acción explícita disparada por el checkbox
+  // "vincularExistentes": el flag "vinculadefaultcv" solo controla si el
+  // backend lo suma automáticamente a las cadenas de valor que se creen de
+  // ahora en adelante, no a las actuales.
   const vincularCdaEnCadenasExistentes = async (cdaId, valorParaVincular) => {
     toast.info("Vinculando criterio de aceptación a las cadenas de valor existentes...");
     try {
@@ -565,28 +568,31 @@ export default function CdasGlobales() {
         const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
         if (!cadenaId) continue;
 
-        try {
-          const linkedCdas = await cadenaValorService.obtenerCdasPorCadenaId(cadenaId);
-          const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+        for (const pantalla of PANTALLAS_CDA) {
+          try {
+            const grupo = await resolverGrupoCda(pantalla.value, cadenaId);
+            const linkedCdas = await cadenaValorService.obtenerCdasPorGrupo(grupo.grupocdaid);
+            const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
 
-          const yaVinculado = linkedCdasList.some((c) => getCdaId(c) === cdaId);
+            const yaVinculado = linkedCdasList.some((c) => getCdaId(c) === cdaId);
 
-          if (!yaVinculado) {
-            // El POST ahora agrega en vez de reemplazar: alcanza con mandar
-            // únicamente el CDA nuevo, no hace falta reenviar los existentes.
-            await cadenaValorService.vincularCdas({
-              cadenavalorid: Number(cadenaId),
-              listacda: [{ cdaid: cdaId, valorcomparacion: valorParaVincular }],
-            });
-            linkedCount++;
+            if (!yaVinculado) {
+              // El POST ahora agrega en vez de reemplazar: alcanza con mandar
+              // únicamente el CDA nuevo, no hace falta reenviar los existentes.
+              await cadenaValorService.vincularCdasAGrupo({
+                grupocdaid: grupo.grupocdaid,
+                listacda: [{ cdaid: cdaId, valorcomparacion: valorParaVincular, usuariowebid: usuarioWebId }],
+              });
+              linkedCount++;
+            }
+          } catch (linkErr) {
+            console.error(`Error al vincular CDA a la cadena ${cadenaId} (${pantalla.value}):`, linkErr);
           }
-        } catch (linkErr) {
-          console.error(`Error al vincular CDA a la cadena ${cadenaId}:`, linkErr);
         }
       }
 
       if (linkedCount > 0) {
-        toast.success(`Vinculado con éxito a ${linkedCount} cadena${linkedCount !== 1 ? "s" : ""} de valor existente${linkedCount !== 1 ? "s" : ""}.`);
+        toast.success(`Vinculado con éxito a ${linkedCount} combinación${linkedCount !== 1 ? "es" : ""} de cadena y pantalla existente${linkedCount !== 1 ? "s" : ""}.`);
       } else {
         toast.info("El criterio ya estaba vinculado a todas las cadenas de valor existentes.");
       }
@@ -596,10 +602,10 @@ export default function CdasGlobales() {
     }
   };
 
-  // Sobrescribe el valor por cadena en TODAS las cadenas donde este CDA ya
-  // está vinculado y activo (no toca las que no lo tienen vinculado: para eso
-  // está "vincularExistentes"). Es la acción disparada por el checkbox
-  // "propagarValorATodasCadenas" al editar un CDA global.
+  // Sobrescribe el valor por cadena en TODAS las cadenas y pantallas donde
+  // este CDA ya está vinculado y activo (no toca las que no lo tienen
+  // vinculado: para eso está "vincularExistentes"). Es la acción disparada
+  // por el checkbox "propagarValorATodasCadenas" al editar un CDA global.
   const propagarValorATodasLasCadenasActivas = async (cdaId, valorNuevo) => {
     toast.info("Aplicando el nuevo valor en las cadenas donde este criterio está activo...");
     try {
@@ -611,33 +617,36 @@ export default function CdasGlobales() {
         const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
         if (!cadenaId) continue;
 
-        try {
-          const linkedCdas = await cadenaValorService.obtenerCdasPorCadenaId(cadenaId);
-          const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
-          const vinculacion = linkedCdasList.find((c) => getCdaId(c) === cdaId);
-          if (!vinculacion || !esCdaActivo(vinculacion)) continue;
+        for (const pantalla of PANTALLAS_CDA) {
+          try {
+            const grupo = await resolverGrupoCda(pantalla.value, cadenaId);
+            const linkedCdas = await cadenaValorService.obtenerCdasPorGrupo(grupo.grupocdaid);
+            const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+            const vinculacion = linkedCdasList.find((c) => getCdaId(c) === cdaId);
+            if (!vinculacion || !esCdaActivo(vinculacion)) continue;
 
-          const cdaCadenaValorId = getCdaProp(vinculacion, "cdacadenavalorid");
-          if (cdaCadenaValorId === "" || cdaCadenaValorId === undefined) {
-            console.warn(`No se encontró CdaCadenaValorID para el CDA ${cdaId} en la cadena ${cadenaId}; se omite.`);
-            continue;
+            const cdaCadenaValorId = getCdaProp(vinculacion, "cdacadenavalorid");
+            if (cdaCadenaValorId === "" || cdaCadenaValorId === undefined) {
+              console.warn(`No se encontró CdaCadenaValorID para el CDA ${cdaId} en la cadena ${cadenaId} (${pantalla.value}); se omite.`);
+              continue;
+            }
+
+            await cadenaValorService.actualizarVinculacionCda({
+              cdacadenavalorid: cdaCadenaValorId,
+              grupocdaid: grupo.grupocdaid,
+              cdaid: cdaId,
+              valorcomparacion: valorNuevo,
+              usuariowebid: usuarioWebId,
+            });
+            actualizadas++;
+          } catch (linkErr) {
+            console.error(`Error al actualizar el valor del CDA en la cadena ${cadenaId} (${pantalla.value}):`, linkErr);
           }
-
-          await cadenaValorService.actualizarVinculacionCda({
-            cdacadenavalorid: cdaCadenaValorId,
-            cadenavalorid: Number(cadenaId),
-            cdaid: cdaId,
-            valorcomparacion: valorNuevo,
-            usuariowebid: usuarioWebId,
-          });
-          actualizadas++;
-        } catch (linkErr) {
-          console.error(`Error al actualizar el valor del CDA en la cadena ${cadenaId}:`, linkErr);
         }
       }
 
       if (actualizadas > 0) {
-        toast.success(`Valor actualizado en ${actualizadas} cadena${actualizadas !== 1 ? "s" : ""} donde el criterio estaba activo.`);
+        toast.success(`Valor actualizado en ${actualizadas} combinación${actualizadas !== 1 ? "es" : ""} de cadena y pantalla donde el criterio estaba activo.`);
       } else {
         toast.info("Este criterio no estaba activo en ninguna cadena de valor.");
       }
@@ -694,7 +703,10 @@ export default function CdasGlobales() {
       descripcion: descripcion.trim(),
       expresion: expresion.trim(),
       simboloComparacion: simbolocomparacion,
-      valorComparacion: valorSaneado,
+      // El motor de CDAs espera los valores de texto entre comillas simples
+      // (ej. 'REINA') y los numéricos/fechas sin comillas: mismo criterio
+      // que ya usa el Laboratorio de Pruebas (formatValorParaLog).
+      valorComparacion: valorParaLog,
       vinculaDefaultCV: vinculadefaultcv ? "1" : "0",
       expresionLog: expresionLog.trim(),
       mensajeRechazo: mensajerechazo.trim(),
@@ -708,7 +720,7 @@ export default function CdasGlobales() {
 
         if (propagarValorATodasCadenas) {
           const cdaId = getCdaId(cdaEditando);
-          if (cdaId) await propagarValorATodasLasCadenasActivas(cdaId, valorSaneado);
+          if (cdaId) await propagarValorATodasLasCadenasActivas(cdaId, valorParaLog);
         }
 
         await queryClient.invalidateQueries({ queryKey: ['cda'] });
@@ -721,7 +733,7 @@ export default function CdasGlobales() {
         const newCdaId = response?.CdaID || response?.cdaID || response?.cdaid || response?.id;
 
         if (vincularExistentes && newCdaId) {
-          await vincularCdaEnCadenasExistentes(newCdaId, valorSaneado);
+          await vincularCdaEnCadenasExistentes(newCdaId, valorParaLog);
         }
 
         await queryClient.invalidateQueries({ queryKey: ['cda'] });
@@ -734,7 +746,8 @@ export default function CdasGlobales() {
       }
     } catch (err) {
       console.error(err);
-      toast.error(esEdicion ? "Ocurrió un error al actualizar el CDA." : "Ocurrió un error al guardar el CDA.");
+      const backendMessage = err.response?.data?.message || err.response?.data?.Message || (typeof err.response?.data === "string" ? err.response.data : null);
+      toast.error(backendMessage || (esEdicion ? "Ocurrió un error al actualizar el CDA." : "Ocurrió un error al guardar el CDA."));
     } finally {
       setIsProcesando(false);
       setConfirmOpen(false);
@@ -771,7 +784,8 @@ export default function CdasGlobales() {
       setVista("lista");
     } catch (err) {
       console.error(err);
-      toast.error("Ocurrió un error al eliminar el CDA.");
+      const backendMessage = err.response?.data?.message || err.response?.data?.Message || (typeof err.response?.data === "string" ? err.response.data : null);
+      toast.error(backendMessage || "Ocurrió un error al eliminar el CDA.");
     } finally {
       setIsEliminando(false);
       setDeleteConfirmOpen(false);
@@ -789,9 +803,9 @@ export default function CdasGlobales() {
     <ConfirmacionModal
       isOpen={postSaveModalOpen}
       onClose={() => setPostSaveModalOpen(false)}
-      onConfirm={() => { setPostSaveModalOpen(false); navigate("/admin/cdas-pantalla"); }}
-      titulo="Vincular a una Pantalla"
-      mensaje='El criterio se guardó correctamente, pero todavía no está activo. ¿Querés ir ahora a "CDAs por Pantalla" para vincularlo?'
+      onConfirm={() => { setPostSaveModalOpen(false); navigate("/admin/cadenas-cda"); }}
+      titulo="Vincular a una Cadena"
+      mensaje='El criterio se guardó correctamente, pero todavía no está activo. ¿Querés ir ahora a "CDAs por Cadena" para vincularlo?'
       variant="blue"
       confirmText="IR AHORA"
       cancelText="MÁS TARDE"
@@ -1195,7 +1209,7 @@ export default function CdasGlobales() {
                   )}
                   {testResult.log && (
                     <div className={styles.testResultLog}>
-                      <span className={styles.testResultLogLabel}>Valor de log resuelto</span>
+                      <span className={styles.testResultLogLabel}>Valor resuelto</span>
                       <code className={styles.testResultLogValue}>{testResult.log}</code>
                     </div>
                   )}
@@ -1208,13 +1222,6 @@ export default function CdasGlobales() {
 
           {/* Vinculación: zona scrolleable, debajo del laboratorio de pruebas */}
           <div className={styles.colScroll}>
-            <div className={styles.screenWarningBox}>
-              <FiAlertTriangle className={styles.screenWarningIcon} size={20} />
-              <div className={styles.screenWarningText}>
-                <strong>¡Atención!</strong> Este criterio no se va a aplicar hasta que lo vincules a una pantalla desde <strong>CDAs por Pantalla</strong>.
-              </div>
-            </div>
-
             <div className={styles.toggleOptionsPanel}>
               <ToggleOptionRow
                 label="CDA por Defecto"
@@ -1226,7 +1233,7 @@ export default function CdasGlobales() {
               {!cdaEditando && (
                 <ToggleOptionRow
                   label="Vincular a todas las cadenas existentes"
-                  description="Al guardar, este criterio va a pasar a estar activo en todas las cadenas de valor que ya existen (no solo en las que se creen de ahora en adelante)."
+                  description="Al guardar, este criterio va a pasar a estar activo en todas las cadenas de valor que ya existen, en sus dos pantallas (Ingreso de CUIT y Socios)."
                   checked={vincularExistentes}
                   onToggle={() => setVincularExistentes(!vincularExistentes)}
                   disabled={isCreando || isActualizando || isProcesando}
@@ -1235,7 +1242,7 @@ export default function CdasGlobales() {
               {cdaEditando && (
                 <ToggleOptionRow
                   label="Aplicar valor en cadenas activas"
-                  description={'Sobrescribe el valor de comparación en cada cadena de valor donde este criterio ya está vinculado y activo (por ejemplo, si en una cadena el score debía ser mayor a 500 y en otra mayor a 600, en ambas va a quedar el nuevo valor). Después se puede volver a personalizar por cadena desde CDAs por Cadena.'}
+                  description={'Sobrescribe el valor de comparación en cada combinación de cadena y pantalla donde este criterio ya está vinculado y activo (por ejemplo, si en Ingreso de CUIT el score debía ser mayor a 500 y en Socios mayor a 600, en ambas va a quedar el nuevo valor). Después se puede volver a personalizar por cadena y pantalla desde CDAs por Cadena.'}
                   checked={propagarValorATodasCadenas}
                   onToggle={() => setPropagarValorATodasCadenas(!propagarValorATodasCadenas)}
                   disabled={isCreando || isActualizando || isProcesando}

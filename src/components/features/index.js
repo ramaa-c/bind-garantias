@@ -1,5 +1,6 @@
 // --- COMPARTIDOS ---
 export * from "./admin/CdaPanel/CdaPanel";
+export * from "./admin/PantallaTabs/PantallaTabs";
 export { default as Paso1Cuit } from './shared/Paso1Cuit/Paso1Cuit';
 export { default as Paso2Datos } from './shared/Paso2Datos/Paso2Datos';
 export { default as Paso3Simulador } from './shared/Paso3Simulador/Paso3Simulador';

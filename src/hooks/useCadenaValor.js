@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { cadenaValorService } from '../services/cadenaValorService';
+import { cdaService } from '../services/cdaService';
 import { esCadenaAprobadaYVigente, esCadenaOperativaParaWeb, obtenerCadenaValorId } from '../utils/cadenaValorUtils';
 
 export const useObtenerTodas = (page = 1, pageSize = 10) => {
@@ -100,11 +101,23 @@ export const useObtenerPorCadenaValorIdWeb = (cadenaValorId) => {
     });
 };
 
-export const useObtenerCdasPorCadenaId = (cadenaId) => {
+// Lectura pasiva (no crea nada): resuelve el GrupoCda de (Pantalla, Cadena) y
+// trae sus CDAs vinculados. Si el grupo todavía no existe, devuelve
+// { grupo: null, cdas: [] } en vez de crearlo — la creación queda para el
+// momento de guardar (ver resolverGrupoCda en grupoCdaUtils), nunca como
+// efecto secundario de abrir una pantalla de solo consulta/edición.
+export const useObtenerGrupoCdaConCdas = (cadenaId, pantalla) => {
     return useQuery({
-        queryKey: ['cadenaValor', 'cdas', cadenaId],
-        queryFn: () => cadenaValorService.obtenerCdasPorCadenaId(cadenaId),
-        enabled: !!cadenaId
+        queryKey: ['cadenaValor', 'grupoCdaConCdas', pantalla, cadenaId],
+        queryFn: async () => {
+            const grupo = await cdaService.obtenerGrupoCda(pantalla, cadenaId);
+            const grupoList = Array.isArray(grupo) ? grupo : grupo?.items || grupo?.data || (grupo ? [grupo] : []);
+            const grupoRow = grupoList[0] || null;
+            if (!grupoRow?.grupocdaid) return { grupo: null, cdas: [] };
+            const cdas = await cadenaValorService.obtenerCdasPorGrupo(grupoRow.grupocdaid);
+            return { grupo: grupoRow, cdas };
+        },
+        enabled: !!cadenaId && !!pantalla
     });
 };
 
@@ -161,9 +174,9 @@ export const useObtenerTodasWebConEstado = () => {
     };
 };
 
-export const useVincularCdas = () => {
+export const useVincularCdasAGrupo = () => {
     return useMutation({
-        mutationFn: (vinculacionData) => cadenaValorService.vincularCdas(vinculacionData),
+        mutationFn: (vinculacionData) => cadenaValorService.vincularCdasAGrupo(vinculacionData),
     });
 };
 

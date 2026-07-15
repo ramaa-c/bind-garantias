@@ -2,7 +2,12 @@ import React, { useState, useRef } from "react";
 import { FiSearch, FiArrowLeft, FiUploadCloud, FiChevronRight } from "react-icons/fi";
 import { toast } from "sonner";
 import { useObtenerCadenasCursanPlataforma, useCrearCadenaValor } from "../../../../hooks/useCadenaValor";
+import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { esCadenaAprobadaYVigente } from "../../../../utils/cadenaValorUtils";
+import { esCdaActivo } from "../../../../utils/cdaUtils";
+import { PANTALLAS_CDA } from "../../../../utils/pantallasCda";
+import { cdaService } from "../../../../services/cdaService";
+import { cadenaValorService } from "../../../../services/cadenaValorService";
 import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../hooks/useCatalogos";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
@@ -41,6 +46,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
   const crearMutation = useCrearCadenaValor();
+  const usuarioWebId = useUsuarioWebIdActual();
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
@@ -153,6 +159,40 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
           await requisitosService.guardarRequisitos(payload.cadenavalorid, defaultConfigs);
         } catch (reqErr) {
           console.error("Error al inicializar requisitos por defecto para nueva cadena:", reqErr);
+        }
+
+        // Crear el GrupoCda de esta cadena para ambas pantallas, sembrado con
+        // los CDAs marcados "CDA por Defecto" (todos unidos por AND).
+        try {
+          const todosCdas = await cdaService.obtenerTodosCdas();
+          const todosCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
+          const defaultCdas = todosCdasList.filter((c) => {
+            if (!esCdaActivo(c)) return false;
+            const flag = c.vinculadefaultcv ?? c.VinculaDefaultCV;
+            return String(flag) === "1" || String(flag).toUpperCase() === "S";
+          });
+
+          for (const pantalla of PANTALLAS_CDA) {
+            const pantallaGrupoCdaId = await cdaService.obtenerOCrearPantallaGrupoCda(pantalla.value);
+            const grupo = await cdaService.crearGrupoCda({
+              pantallagrupocdaid: pantallaGrupoCdaId,
+              cadenavalorid: payload.cadenavalorid,
+              expresionagrupacion: "",
+            });
+
+            if (defaultCdas.length > 0) {
+              await cadenaValorService.vincularCdasAGrupo({
+                grupocdaid: grupo?.grupocdaid,
+                listacda: defaultCdas.map((c) => ({
+                  cdaid: c.cdaid ?? c.CdaId ?? c.CdaID,
+                  valorcomparacion: c.valorcomparacion ?? c.ValorComparacion ?? "",
+                  usuariowebid: usuarioWebId,
+                })),
+              });
+            }
+          }
+        } catch (grupoErr) {
+          console.error("Error al inicializar grupos de CDAs por defecto para la nueva cadena:", grupoErr);
         }
 
         toast.success("Cadena de valor activada exitosamente para la web");

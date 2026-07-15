@@ -353,10 +353,6 @@
 .modalBody {
   flex: 1;
   min-height: 0;
-  max-height: 70vh;
-  overflow-y: auto;
-  padding-right: 0.5rem;
-  margin-right: -0.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -608,6 +604,242 @@
   height: 16px;
   accent-color: #3b4ed1;
   cursor: pointer;
+}
+
+/* --- Layout de 2 columnas: agrupación a la izquierda, checklist a la
+   derecha (mismo espíritu que la vieja pantalla "CDAs por Pantalla") --- */
+.mainLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 992px) {
+  .mainLayout {
+    flex-direction: row;
+    align-items: stretch;
+    max-height: 65vh;
+  }
+
+  /* Cada columna scrollea de forma independiente: la de agrupación queda
+     siempre a la vista sin importar cuán larga sea la lista de CDAs. */
+  .leftCol,
+  .rightCol {
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 0.5rem;
+    margin-right: -0.5rem;
+  }
+
+  .leftCol {
+    flex: 0 0 320px;
+  }
+
+  .rightCol {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.leftCol,
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.checklistHeader {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8fa3f3;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* --- Expresión de Agrupación (AND/OR/personalizada) del GrupoCda --- */
+.agrupacionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.typeSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #c9d1d9;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.radioOption:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.radioActive {
+  border-color: #3b4ed1;
+  background: rgba(59, 78, 209, 0.04);
+}
+
+.radioInput {
+  accent-color: #58a6ff;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.radioLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  cursor: pointer;
+}
+
+.radioLabelText {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 0.825rem;
+}
+
+.radioDescText {
+  font-size: 0.7rem;
+  color: #8b949e;
+}
+
+.customTextareaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.customTextareaLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #8b949e;
+}
+
+.customTextarea {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.5rem;
+  resize: vertical;
+  min-height: 70px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.customTextarea:focus {
+  border-color: #3b4ed1;
+  box-shadow: 0 0 0 2px rgba(59, 78, 209, 0.2);
+}
+
+.customTextarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pillsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+}
+
+.pillGroupTitle {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.pillsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.cdaPill {
+  background: rgba(59, 78, 209, 0.1);
+  border: 1px solid rgba(59, 78, 209, 0.25);
+  color: #58a6ff;
+  font-size: 0.75rem;
+  font-family: monospace;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.cdaPill:hover {
+  background: rgba(59, 78, 209, 0.25);
+  border-color: #58a6ff;
+  box-shadow: 0 0 4px rgba(88, 166, 255, 0.3);
+}
+
+.operatorPill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.operatorPill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.infoBox {
+  background: rgba(88, 166, 255, 0.03);
+  border: 1px solid rgba(88, 166, 255, 0.1);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.775rem;
+  color: #c9d1d9;
+  line-height: 1.45;
+}
+
+.infoBox code {
+  background: #0d1117;
+  padding: 0.15rem 0.3rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  color: #ff7b72;
 }
 
 /* --- Overrides para modo Solo Lectura (Ej: Cadena Inactiva) --- */
