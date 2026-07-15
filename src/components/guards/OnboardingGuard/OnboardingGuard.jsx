@@ -1,7 +1,10 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useObtenerSocioUsuarioPorUsuarioId } from "../../../hooks/useSocios";
+import {
+  useObtenerSocioUsuarioPorUsuarioId,
+  useEmpresasCompletas,
+} from "../../../hooks/useSocios";
 import {
   useObtenerPorNombreOEmail,
   useObtenerCadenasPorUsuario,
@@ -78,7 +81,15 @@ export const OnboardingGuard = ({ children }) => {
 
   const listaEmpresasBase = parsearEmpresas(socioUsuarios);
   const isVendorMock = user?.email?.toLowerCase() === "vendorbind@yopmail.com";
-  const listaEmpresas = isVendorMock ? [1, 2, 3] : listaEmpresasBase;
+
+  // Un socioUsuario vinculado puede apuntar a un socio "stub" (creado por
+  // cda/execute, o por un onboarding abandonado en el Paso 2 sin completar
+  // datos) — eso no cuenta como empresa registrada. Filtramos esos casos acá
+  // para no mandar al usuario a /legajo con una empresa vacía, dejándolo sin
+  // forma de volver a completar el alta.
+  const { empresasCompletas, isLoading: isLoadingEmpresasCompletas } =
+    useEmpresasCompletas(isVendorMock ? [] : listaEmpresasBase);
+  const listaEmpresas = isVendorMock ? [1, 2, 3] : empresasCompletas;
   const tieneEmpresas = listaEmpresas.length > 0;
 
   const isVendor = vendorData?.isVendor || false;
@@ -160,6 +171,7 @@ export const OnboardingGuard = ({ children }) => {
 
   if (
     (usuarioWebId && isPendingSocios) ||
+    (usuarioWebId && !isPendingSocios && isLoadingEmpresasCompletas) ||
     (usuarioWebId && isCadenasLoading) ||
     isLoadingVendor ||
     isVerifying

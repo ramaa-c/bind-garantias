@@ -86,6 +86,28 @@ export const sociosService = {
     return response.data;
   },
 
+  // GET api/Socio/CertificadoVigente/{Cuit} - Valida si la empresa tiene un
+  // certificado PyME vigente. 200 = vigente, 401 = no vigente — el backend
+  // reutiliza el código HTTP como semántica de negocio (mismo patrón que
+  // cda/execute con 202/406/409), no es un fallo de autenticación real: no
+  // hay ningún header de auth en esta app. Nunca tira: devuelve
+  // { status, data } para diferenciar sin try/catch afuera (mismo patrón
+  // que probarCda/reejecutarCda).
+  obtenerCertificadoVigente: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    try {
+      const response = await api.get(
+        `api/Socio/CertificadoVigente/${cuitLimpio}`,
+      );
+      return { status: response.status, data: response.data };
+    } catch (error) {
+      if (error.response) {
+        return { status: error.response.status, data: error.response.data };
+      }
+      throw error;
+    }
+  },
+
   // Crea nuevo socio
   crearSocio: async (socioData) => {
     const response = await api.post("api/Socio", sociosAdapter.adaptarPayload1(socioData));

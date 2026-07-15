@@ -1,10 +1,12 @@
 import {
   useQuery,
+  useQueries,
   useMutation,
   useQueryClient,
   keepPreviousData,
 } from "@tanstack/react-query";
 import { sociosService } from "../services/sociosService";
+import { esSocioVacio } from "../utils/socioUtils";
 
 export const useObtenerSocios = (params = {}) => {
   return useQuery({
@@ -81,6 +83,35 @@ export const useSocioWebPorId = (socioId) => {
     staleTime: 1000 * 60 * 5, // 5 minutos
     placeholderData: keepPreviousData,
   });
+};
+
+// SocioUsuario solo devuelve { SocioID, UsuarioWebID, momentoCreacion } — no
+// alcanza para saber si esa vinculación apunta a una empresa realmente
+// registrada o a un socio "stub" (creado por cda/execute o por un intento de
+// onboarding abandonado en el Paso 2, ver Paso1Cuit). Este hook trae el
+// detalle de cada socio vinculado y filtra los vacíos, para que
+// OnboardingGuard (y quien más lo necesite) no trate un stub como una
+// empresa completa.
+export const useEmpresasCompletas = (socioUsuarios) => {
+  const lista = Array.isArray(socioUsuarios) ? socioUsuarios : [];
+  const socioIds = lista
+    .map((s) => s.socioid ?? s.SocioID ?? s.SocioId)
+    .filter((id) => id !== undefined && id !== null);
+
+  const resultados = useQueries({
+    queries: socioIds.map((socioId) => ({
+      queryKey: ["socios", "detalle", socioId],
+      queryFn: () => sociosService.obtenerSocioPorId(socioId),
+      staleTime: 1000 * 60 * 5,
+    })),
+  });
+
+  const isLoading = resultados.some((r) => r.isPending);
+  const empresasCompletas = resultados
+    .map((r) => r.data)
+    .filter((socio) => socio && !esSocioVacio(socio));
+
+  return { empresasCompletas, isLoading };
 };
 
 export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
