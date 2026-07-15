@@ -483,9 +483,17 @@ function CdasTab({ socio }) {
               description: "El criterio se volvió a evaluar y pasó correctamente.",
             });
           } else if (status === 406) {
-            toast.error("CDA rechazado", {
-              description: typeof data === "string" ? data : "El criterio no se cumple.",
-            });
+            // WSResponseCDA { Result, ListTest: [{ Result, Valor, Mensaje }] }.
+            // El body de un error 4xx no pasa por el interceptor que baja las
+            // keys a minúsculas (solo lo hace con respuestas exitosas), así
+            // que puede llegar en PascalCase tal cual lo manda el backend.
+            const listTest = data?.listtest ?? data?.ListTest ?? [];
+            const rechazo = listTest.find((t) => (t.result ?? t.Result) === false);
+            const mensaje =
+              (rechazo && (rechazo.mensaje || rechazo.Mensaje)) ||
+              (typeof data === "string" ? data : null) ||
+              "El criterio no se cumple.";
+            toast.error("CDA rechazado", { description: mensaje });
           } else if (status === 409) {
             toast.error("Falta un dato requerido para evaluar este CDA.");
           } else {
