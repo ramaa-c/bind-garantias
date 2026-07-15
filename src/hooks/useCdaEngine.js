@@ -1,22 +1,13 @@
-import React, { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { cdaService } from "../services/cdaService";
 
-const CDA_MESSAGES = {
-  1: "El CUIT ingresado no se encuentra activo o vigente en los registros oficiales.",
-  2: "La empresa no cumple con la antigüedad mínima requerida para operar.",
-  3: "La actividad registrada pertenece a un sector excluido de la operatoria.",
-  4: "La empresa no posee al menos una de las actividades económicas habilitadas.",
-  5: "No se admiten clientes monotributistas para este tipo de producto.",
-  6: "La empresa no se encuentra registrada como monotributista.",
-  7: "La categoría de monotributo registrada no está admitida para operar.",
-  8: "El tipo de persona de la empresa debe ser JURÍDICA.",
-  9: "La persona declarada debe revestir carácter de Persona Física para poder avanzar.",
-  10: "El socio ya se encuentra registrado como socio protector en otra SGR.",
-  11: "El certificado PyME presentado ha vencido o no se encuentra vigente.",
-  12: "Los accionistas de la empresa son socios protectores de otra SGR superando el límite del 50%.",
-  13: "El tamaño de la empresa indicado en el certificado PyME no está dentro de los límites admitidos.",
-  14: "El sector industrial de la empresa no está dentro de los admitidos para operar.",
-};
+// El CDA "Valida al socio que no sea socio protector de otra SGR" (ID 10) es
+// el único criterio no bloqueante: si no se cumple, es informativo pero no
+// impide avanzar. `ListTest` (la respuesta de cda/execute) ya no trae el
+// CdaID de cada ítem, así que se identifica por el texto exacto de su
+// MensajeRechazo. Frágil: si se edita el mensaje de ese CDA en CDAs
+// Globales, hay que actualizar este texto también.
+const MENSAJE_CDA_NO_BLOQUEANTE = "Reviste carácter de socio protector de otra SGR";
 
 export const useCdaEngine = () => {
   const [loading, setLoading] = useState(false);
@@ -32,6 +23,7 @@ export const useCdaEngine = () => {
         `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}", CUIT ${cuitLimpio} y CadenaValorID ${cadenaValorId}`,
       );
 
+      // 202: WSResponseCDA { Result: true, ListTest: [...] } - pasó todo.
       await cdaService.ejecutarCda(pantalla, cuitLimpio, cadenaValorId);
 
       console.log(
@@ -43,16 +35,14 @@ export const useCdaEngine = () => {
     } catch (err) {
       console.error("[CDA ENGINE] Error durante la validación del CDA:", err);
 
-      const responseData = err.response?.data;
       const status = err.response?.status;
-      console.log("[CDA ENGINE] Response data:", responseData);
+      const responseData = err.response?.data;
+      console.log("[CDA ENGINE] Status:", status, "| Response data:", responseData);
 
       const isInfraError =
         status >= 500 ||
         (typeof responseData === "string" &&
-          /FireDAC|Exception|Cannot acquire item|Connection/i.test(
-            responseData,
-          ));
+          /FireDAC|Exception|Cannot acquire item|Connection/i.test(responseData));
 
       // 409 = "dato faltante": el backend evaluó el CDA pero una integración
       // necesaria no devolvió el dato (p. ej. está deshabilitada) y lo dejó
@@ -80,82 +70,69 @@ export const useCdaEngine = () => {
         };
       }
 
-      let rawErrors = [];
-      if (!isInfraError) {
-        if (typeof responseData === "string") {
-          const msgs = responseData
-            .split(/\r?\n/)
-            .filter((line) => line.trim().length > 0);
-          rawErrors = msgs.map((msg) => ({
-            descripcion: msg.trim(),
-            bloqueante: true,
+      // 406: WSResponseCDA { Result: false, ListTest: [{ Result, Valor, Mensaje }] }
+      // Rechazo de negocio normal: se arman los errores a partir de los
+      // ítems que dieron Result=false.
+      if (status === 406 && responseData && typeof responseData === "object" && !isInfraError) {
+        const listTest = responseData.listtest ?? responseData.ListTest ?? [];
+        const rechazos = listTest.filter((t) => (t.result ?? t.Result) === false);
+
+        const mappedErrors = rechazos.map((t) => {
+          const mensaje =
+            t.mensaje || t.Mensaje || "No se cumple el criterio de aceptación.";
+          const isInvalidante = mensaje.trim() !== MENSAJE_CDA_NO_BLOQUEANTE;
+          return {
             cdaid: 0,
-          }));
-        } else if (Array.isArray(responseData)) {
-          rawErrors = responseData;
-        } else if (responseData && Array.isArray(responseData.errors)) {
-          rawErrors = responseData.errors;
-        } else if (responseData && typeof responseData === "object") {
-          rawErrors = [responseData];
-        }
-      }
-
-      if (rawErrors.length === 0 || !responseData || isInfraError) {
-        const isSystemError = true;
-        const isInvalidante = true;
-
-        let msg =
-          err.response?.data?.message ||
-          err.message ||
-          "Error de comunicación con el servicio de validación CDA.";
-        if (isInfraError) {
-          msg =
-            "El servicio de validaciones no se encuentra disponible momentáneamente. Por favor, intente nuevamente.";
-        }
+            isInvalidante,
+            message: mensaje,
+            isSystemError: false,
+          };
+        });
 
         setLoading(false);
-        return {
-          success: false,
-          errors: [
-            {
-              cdaid: 0,
-              isInvalidante,
-              message: msg,
-              isSystemError,
-            },
-          ],
-        };
+
+        if (mappedErrors.length === 0) {
+          // 406 sin detalle de qué falló: tratar como bloqueante genérico.
+          return {
+            success: false,
+            errors: [
+              {
+                cdaid: 0,
+                isInvalidante: true,
+                message: "No se cumplieron los criterios de aceptación.",
+                isSystemError: false,
+              },
+            ],
+          };
+        }
+
+        const hasBlockingErrors = mappedErrors.some((e) => e.isInvalidante);
+        return { success: !hasBlockingErrors, errors: mappedErrors };
       }
 
-      const mappedErrors = rawErrors.map((raw) => {
-        const cdaId = Number(raw.cdaid || raw.CdaID || raw.id || 0);
-
-        const isBloqueante = raw.bloqueante ?? raw.Bloqueante ?? true;
-
-        const isInvalidante = cdaId === 10 ? false : isBloqueante;
-
-        const backendMessage =
-          raw.descripcion || raw.Descripcion || raw.message || raw.Message;
-        const mappedMessage =
-          backendMessage ||
-          CDA_MESSAGES[cdaId] ||
-          "Error de validación CDA desconocido.";
-
-        return {
-          cdaid: cdaId,
-          isInvalidante: isInvalidante,
-          message: mappedMessage,
-          isSystemError: raw.sistemico ?? raw.Sistemico ?? false,
-        };
-      });
+      // 400 / 500 / red / cualquier otra cosa: error de sistema, no un
+      // rechazo de negocio real.
+      let msg =
+        responseData?.message ||
+        responseData?.Message ||
+        err.message ||
+        "Error de comunicación con el servicio de validación CDA.";
+      if (isInfraError) {
+        msg =
+          "El servicio de validaciones no se encuentra disponible momentáneamente. Por favor, intente nuevamente.";
+      }
 
       setLoading(false);
-
-      const hasBlockingErrors = mappedErrors.some((e) => e.isInvalidante);
-
       return {
-        success: !hasBlockingErrors,
-        errors: mappedErrors,
+        success: false,
+        errors: [
+          {
+            cdaid: 0,
+            isInvalidante: true,
+            message: msg,
+            isSystemError: true,
+          },
+        ],
       };
     }
   }, []);

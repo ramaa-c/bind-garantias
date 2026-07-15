@@ -14,8 +14,17 @@ export const Modal = ({
   className = "",
   variant = "default",
   allowOverflow = false,
+  // Mientras hay una acción en curso (ej. guardando/eliminando) no debería
+  // poder cerrarse haciendo click afuera, con ESC o con la X: solo los
+  // botones internos (que ya se deshabilitan con isLoading) pueden decidir.
+  preventClose = false,
 }) => {
-  useEscape(onClose, isOpen);
+  const handleClose = () => {
+    if (preventClose) return;
+    onClose();
+  };
+
+  useEscape(handleClose, isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -34,7 +43,7 @@ export const Modal = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className={styles.overlay} onMouseDown={onClose}>
+    <div className={styles.overlay} onMouseDown={handleClose}>
       <div
         className={`${styles.modalBox} ${variant === "blue" ? styles.blueVariant : ""} ${variant === "confirm" ? styles.confirmVariant : ""} ${allowOverflow ? styles.allowOverflow : ""} ${className}`}
         style={{ maxWidth }}
@@ -57,7 +66,7 @@ export const Modal = ({
             <button
               type="button"
               className={styles.closeButton}
-              onClick={onClose}
+              onClick={handleClose}
               aria-label="Cerrar modal"
             >
               <FiX size={18} />
@@ -67,7 +76,7 @@ export const Modal = ({
           <button
             type="button"
             className={styles.closeButtonFloating}
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Cerrar modal"
           >
             <FiX size={18} />

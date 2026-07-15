@@ -1,4 +1,5 @@
 import { normalizarClaves } from "../utils/normalizarClaves";
+import { momentoActual } from "../utils/momentoUtils";
 
 export const cadenaValorAdapter = {
   adaptarPayload1: (data) => {
@@ -31,36 +32,46 @@ export const cadenaValorAdapter = {
       Activa: d.activa,
     };
   },
-  adaptarPayload3: (data) => {
+  // POST /api/cadenavalor/cdas - Agrega CDAs a un GrupoCda (Pantalla x
+  // Cadena) ya existente. Ya no lleva CadenaValorID directo: la cadena está
+  // implícita en el GrupoCdaID.
+  adaptarVinculacionGrupo: (data) => {
     if (!data) return data;
     const d = normalizarClaves(data);
     const listaCdaRaw = d.listacda ?? [];
 
     const listaCda = listaCdaRaw.map((item) => {
       const i = normalizarClaves(item);
-      return {
+      const cdaItem = {
         CdaID: i.cdaid,
         ValorComparacion: i.valorcomparacion ?? "",
+        Activo: i.activo ?? "1",
+        Momento: momentoActual(),
       };
+      if (i.usuariowebid !== undefined && i.usuariowebid !== null) {
+        cdaItem.UsuarioWebID = i.usuariowebid;
+      }
+      return cdaItem;
     });
 
     return {
-      CadenaValorID: d.cadenavalorid,
+      GrupoCdaID: d.grupocdaid,
       ListaCda: listaCda,
     };
   },
-  // PUT /api/cadenavalor/cdas - Modifica UNA vinculación CDA<->Cadena existente
-  // (a diferencia del POST, que ahora solo agrega vinculaciones nuevas).
-  // "Activo" ("1"/"0") es el equivalente a vincular/desvincular sin borrar la fila.
-  adaptarPayload4: (data) => {
+  // PUT /api/cda/cadenavalor:actualizar - Modifica UNA vinculación CDA<->Grupo
+  // existente. "Activo" ("1"/"0") es el equivalente a vincular/desvincular
+  // sin borrar la fila.
+  adaptarActualizarVinculacion: (data) => {
     if (!data) return data;
     const d = normalizarClaves(data);
     const payload = {
       CdaCadenaValorID: d.cdacadenavalorid,
-      CadenaValorID: d.cadenavalorid,
       CdaID: d.cdaid,
+      GrupoCdaID: d.grupocdaid,
       ValorComparacion: d.valorcomparacion ?? "",
       Activo: d.activo ?? "1",
+      Momento: momentoActual(),
     };
     if (d.usuariowebid !== undefined && d.usuariowebid !== null) {
       payload.UsuarioWebID = d.usuariowebid;

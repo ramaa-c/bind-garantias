@@ -575,38 +575,6 @@
   margin: 0;
 }
 
-/* Aviso notorio: recordar que el CDA necesita vincularse a una pantalla para activarse */
-.screenWarningBox {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 0.6rem;
-  background: rgba(221, 155, 32, 0.1);
-  border: 1.5px solid rgba(221, 155, 32, 0.45);
-  border-radius: 0.65rem;
-  padding: 0.85rem;
-  flex: 0 0 auto;
-  /* Empuja este bloque (y el botonero de opciones que le sigue) al fondo del
-     área scrolleable, para que queden pegados arriba del botón de guardar */
-  margin-top: auto;
-}
-
-.screenWarningIcon {
-  color: #dd9b20;
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-
-.screenWarningText {
-  font-size: 0.8rem;
-  color: #f0c674;
-  line-height: 1.4;
-}
-
-.screenWarningText strong {
-  color: #ffce54;
-}
-
 /* Botonero compacto de opciones de vinculación: switch chico + nombre corto +
    ícono de info con la descripción larga en un tooltip. Reemplaza a las
    tarjetas grandes de antes, que con 3 opciones ya no entraban en la columna. */

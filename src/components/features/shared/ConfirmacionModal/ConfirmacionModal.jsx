@@ -53,7 +53,7 @@ export function ConfirmacionModal({
   const toneClass = isDanger ? styles.danger : variant === "blue" ? styles.blue : styles.yellow;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth={maxWidth} variant="confirm">
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth={maxWidth} variant="confirm" preventClose={isLoading}>
       <div ref={dialogRef} className={`${styles.dialog} ${toneClass}`} onKeyDown={handleKeyDown}>
         <div className={styles.sealRow}>
           <div className={styles.seal}>
