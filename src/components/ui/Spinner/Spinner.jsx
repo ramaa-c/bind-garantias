@@ -84,7 +84,9 @@ export function Spinner({
 
 const styles = {
   center: {
-    height: "100vh",
+    width: "100%",
+    height: "100%",
+    minHeight: "20rem",
     display: "flex",
     justifyContent: "center",
     alignItems: "center"

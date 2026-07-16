@@ -13,7 +13,7 @@ import styles from "./Sidebar.module.css";
 export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { nombreEmpresa, cuitActivo } = useEmpresaActiva();
+  const { nombreEmpresa, cuitActivo, onboardingCompleto } = useEmpresaActiva();
   const isVinculado = !!nombreEmpresa;
   
   const user = useAuthStore((state) => state.user);
@@ -106,49 +106,55 @@ export default function Sidebar({ isOpen, onClose }) {
             </div>
           </div>
 
-          <div className={styles.scrollArea}>
-            <nav className={styles.navMenu}>
-              <div
-                className={styles.sectionHeader}
-                onClick={() => toggleSection("general")}
-              >
-                <p className={styles.heading}>GENERAL</p>
-                <FiChevronDown
-                  className={`${styles.chevron} ${expandedSections.general ? styles.chevronOpen : ""}`}
-                />
-              </div>
-              <div
-                className={`${styles.collapsibleContent} ${expandedSections.general ? styles.expanded : ""}`}
-              >
-                {isSolicitudesEnabled && (
+          {/* Hasta que se complete el Paso 2 del alta (ver AltaDatosEmpresa)
+              y se confirme el PUT, el socio ya tiene denominación pero no es
+              una empresa operable todavía — no mostramos navegación a
+              secciones a las que igual no puede entrar. */}
+          {onboardingCompleto && (
+            <div className={styles.scrollArea}>
+              <nav className={styles.navMenu}>
+                <div
+                  className={styles.sectionHeader}
+                  onClick={() => toggleSection("general")}
+                >
+                  <p className={styles.heading}>GENERAL</p>
+                  <FiChevronDown
+                    className={`${styles.chevron} ${expandedSections.general ? styles.chevronOpen : ""}`}
+                  />
+                </div>
+                <div
+                  className={`${styles.collapsibleContent} ${expandedSections.general ? styles.expanded : ""}`}
+                >
+                  {isSolicitudesEnabled && (
+                    <button type="button"
+                      className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
+                      onClick={() => handleNavigate("/solicitudes")}
+                    >
+                      <FiFileText className={styles.icon} /> Solicitudes
+                    </button>
+                  )}
                   <button type="button"
-                    className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
-                    onClick={() => handleNavigate("/solicitudes")}
+                    className={`${styles.link} ${isActive("/legajo") ? styles.active : ""}`}
+                    onClick={() => handleNavigate("/legajo")}
                   >
-                    <FiFileText className={styles.icon} /> Solicitudes
+                    <FiUsers className={styles.icon} /> Legajo
                   </button>
-                )}
-                <button type="button"
-                  className={`${styles.link} ${isActive("/legajo") ? styles.active : ""}`}
-                  onClick={() => handleNavigate("/legajo")}
-                >
-                  <FiUsers className={styles.icon} /> Legajo
-                </button>
-                <button type="button"
-                  className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
-                  onClick={() => handleNavigate("/documentacion")}
-                >
-                  <FiArchive className={styles.icon} /> Documentación
-                </button>
-                <button type="button"
-                  className={`${styles.link} ${styles.mobileOnlyLink}`}
-                  onClick={() => setIsTasasModalOpen(true)}
-                >
-                  <FiTrendingUp className={styles.icon} /> Tasas vigentes
-                </button>
-              </div>
-            </nav>
-          </div>
+                  <button type="button"
+                    className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
+                    onClick={() => handleNavigate("/documentacion")}
+                  >
+                    <FiArchive className={styles.icon} /> Documentación
+                  </button>
+                  <button type="button"
+                    className={`${styles.link} ${styles.mobileOnlyLink}`}
+                    onClick={() => setIsTasasModalOpen(true)}
+                  >
+                    <FiTrendingUp className={styles.icon} /> Tasas vigentes
+                  </button>
+                </div>
+              </nav>
+            </div>
+          )}
         </>
       )}
 

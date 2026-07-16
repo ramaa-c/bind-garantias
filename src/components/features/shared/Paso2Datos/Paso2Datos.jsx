@@ -103,15 +103,17 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
           <h2 className={styles.empresaName}>{razonSocial}</h2>
           <p className={styles.empresaCuit}>CUIT {cuit || "20-12345678-9"}</p>
         </div>
-        <button
-          type="button"
-          className={styles.editLink}
-          onClick={onVolver}
-          disabled={isSubmitting}
-          aria-label="Editar CUIT"
-        >
-          <FiEdit2 size={13} />
-        </button>
+        {onVolver && (
+          <button
+            type="button"
+            className={styles.editLink}
+            onClick={onVolver}
+            disabled={isSubmitting}
+            aria-label="Editar CUIT"
+          >
+            <FiEdit2 size={13} />
+          </button>
+        )}
       </div>
 
       {/* TAREAS ──────────────────────────────────────────────────────────────── */}

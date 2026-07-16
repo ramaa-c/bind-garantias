@@ -25,7 +25,7 @@ export default function FirmaProcesoModal({ isOpen, onClose }) {
   const handleFinalizar = () => {
     setPaso(1);
     onClose();
-    navigate(`/${channelInfo?.id || "default"}/inicio`);
+    navigate(`/${channelInfo?.id || "default"}/legajo`);
   };
 
   return createPortal(

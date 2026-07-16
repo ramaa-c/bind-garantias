@@ -4,6 +4,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import {
   useObtenerSocioUsuarioPorUsuarioId,
   useEmpresasCompletas,
+  useEstadoCdaSocio,
 } from "../../../hooks/useSocios";
 import {
   useObtenerPorNombreOEmail,
@@ -29,6 +30,9 @@ export const OnboardingGuard = ({ children }) => {
   );
   const isSolicitudesPage = location.pathname.endsWith("/solicitudes");
   const isInicioPage = location.pathname.endsWith("/inicio");
+  const isEstadoSolicitudPage = location.pathname.endsWith(
+    "/estado-solicitud",
+  );
 
   const isSolicitudesEnabled = useAuthStore(
     (state) => state.isSolicitudesEnabled,
@@ -81,6 +85,7 @@ export const OnboardingGuard = ({ children }) => {
 
   const listaEmpresasBase = parsearEmpresas(socioUsuarios);
   const isVendorMock = user?.email?.toLowerCase() === "vendorbind@yopmail.com";
+  const isVendor = vendorData?.isVendor || false;
 
   // Un socioUsuario vinculado puede apuntar a un socio "stub" (creado por
   // cda/execute, o por un onboarding abandonado en el Paso 2 sin completar
@@ -92,7 +97,21 @@ export const OnboardingGuard = ({ children }) => {
   const listaEmpresas = isVendorMock ? [1, 2, 3] : empresasCompletas;
   const tieneEmpresas = listaEmpresas.length > 0;
 
-  const isVendor = vendorData?.isVendor || false;
+  // El socio ya puede tener datos reales (esSocioVacio ya no alcanza) sin
+  // que el CDA de PANTALLA_INGRESO_CUIT haya pasado — eso pasa siempre que
+  // el usuario cruzó el umbral (ver Paso1Cuit) pero el CDA quedó rechazado
+  // o pendiente. Para vendors no lo chequeamos: pueden gestionar varias
+  // empresas con estados distintos, y ese flujo queda fuera de este cambio
+  // por ahora.
+  const empresaActual = !isVendor && !isVendorMock ? listaEmpresas[0] : null;
+  const socioIdParaEstado =
+    empresaActual?.socioid ?? empresaActual?.SocioID ?? null;
+  const { data: estadoCda, isPending: isPendingEstadoCda } =
+    useEstadoCdaSocio(socioIdParaEstado);
+  const telefonoActual = String(
+    empresaActual?.telefono ?? empresaActual?.Telefono ?? "",
+  ).trim();
+
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
 
@@ -172,6 +191,7 @@ export const OnboardingGuard = ({ children }) => {
   if (
     (usuarioWebId && isPendingSocios) ||
     (usuarioWebId && !isPendingSocios && isLoadingEmpresasCompletas) ||
+    (socioIdParaEstado && isPendingEstadoCda) ||
     (usuarioWebId && isCadenasLoading) ||
     isLoadingVendor ||
     isVerifying
@@ -201,15 +221,41 @@ export const OnboardingGuard = ({ children }) => {
       ) {
         return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
       }
-    } else {
-      if (
-        isTerminosPage ||
-        isAltaDatosPage ||
-        isSeleccionarEmpresaPage ||
-        isInicioPage
-      ) {
-        return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+    } else if (estadoCda === "rechazado" || estadoCda === "pendiente") {
+      // Cruzó el umbral (existe el socio, con datos reales) pero el CDA
+      // todavía no está aprobado — no lo dejamos entrar a ningún lado
+      // salvo la pantalla de estado.
+      if (!isEstadoSolicitudPage) {
+        return (
+          <Navigate
+            to={`/${channelInfo.id}/estado-solicitud`}
+            state={{ estado: estadoCda }}
+            replace
+          />
+        );
       }
+    } else if (estadoCda === "aprobado" && !telefonoActual) {
+      // El CDA pasó, pero nunca completó el Paso 2 (ver Paso1Cuit: el socio
+      // se crea con el "umbral", el Paso 2 es lo que termina de cargar
+      // datos como el teléfono). Lo mandamos directo a completarlo, sin
+      // pasar de nuevo por Paso1Cuit (ese paso bloquearía por "ya existe").
+      if (!isAltaDatosPage) {
+        return (
+          <Navigate
+            to={`/${channelInfo.id}/alta-datos-empresa`}
+            state={{ socioParaCompletar: empresaActual }}
+            replace
+          />
+        );
+      }
+    } else if (
+      isTerminosPage ||
+      isAltaDatosPage ||
+      isSeleccionarEmpresaPage ||
+      isInicioPage ||
+      isEstadoSolicitudPage
+    ) {
+      return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
     }
 
     if (!isSolicitudesEnabled && isSolicitudesPage) {

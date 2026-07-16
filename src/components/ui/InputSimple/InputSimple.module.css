@@ -213,6 +213,28 @@
   }
 }
 
+/* ── COMPACT VARIANT (ej: SelectSimple `compact`) ─────────────────────────────
+   Achica el control de floating-label para usarlo en barras/inline junto a
+   badges y botones chicos, donde el alto de 3.2rem por defecto se ve
+   desproporcionado. Etiqueta y valor comparten menos espacio vertical. ─── */
+.compact {
+  gap: 0.2rem;
+}
+
+.compact .inputWrapper {
+  border-radius: 0.6rem;
+}
+
+.compact .label {
+  font-size: 0.75rem;
+}
+
+.compact.hasValue .label,
+.compact.statusFocus .label {
+  top: 0.28rem;
+  font-size: 0.56rem;
+}
+
 /* ── ADMIN VARIANT OVERRIDES ────────────────────────────────────────────────── */
 .adminVariant.statusFocus .inputWrapper {
   border-color: var(--color-azul-bind, #4c65e6);
