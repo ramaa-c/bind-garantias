@@ -9,6 +9,10 @@ import {
   useObtenerPorNombreOEmail,
   useObtenerCadenasPorUsuario,
 } from "../../../hooks/useUsuario";
+import {
+  useObtenerTerminosVigentes,
+  useObtenerConfirmacionTyC,
+} from "../../../hooks/useTerminos";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 import { useChannel } from "../../../context/ChannelContext";
 import { useVendor } from "../../../hooks/useVendor";
@@ -96,6 +100,46 @@ export const OnboardingGuard = ({ children }) => {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
 
+  // Términos y Condiciones: se chequea una sola vez por sesión de login
+  // (terminosVerificado vive en el store de auth, no acá) para no
+  // interrumpir a un usuario ya operando si el admin publica una versión
+  // nueva mientras tanto — recién se le vuelve a pedir en su próximo login.
+  const terminosVerificado = useAuthStore((state) => state.terminosVerificado);
+  const setTerminosVerificado = useAuthStore(
+    (state) => state.setTerminosVerificado,
+  );
+
+  const necesitaChequeoTerminos = !!usuarioWebId && !isVendor && !terminosVerificado;
+
+  const { data: terminosVigentes, isLoading: isLoadingTerminosVigentes } =
+    useObtenerTerminosVigentes({ enabled: necesitaChequeoTerminos });
+  const { data: ultimaConfirmacionTyC, isLoading: isLoadingConfirmacionTyC } =
+    useObtenerConfirmacionTyC(usuarioWebId, { enabled: necesitaChequeoTerminos });
+
+  const terminosVigenteId = terminosVigentes?.terminosycondicionesid;
+  // Si todavía no hay ningún término configurado en el backend, no bloqueamos a nadie.
+  const yaAceptoTerminosVigentes =
+    !terminosVigenteId ||
+    ultimaConfirmacionTyC?.terminosycondicionesid === terminosVigenteId;
+  const debeAceptarTerminos = necesitaChequeoTerminos && !yaAceptoTerminosVigentes;
+
+  React.useEffect(() => {
+    if (
+      necesitaChequeoTerminos &&
+      !isLoadingTerminosVigentes &&
+      !isLoadingConfirmacionTyC &&
+      yaAceptoTerminosVigentes
+    ) {
+      setTerminosVerificado(true);
+    }
+  }, [
+    necesitaChequeoTerminos,
+    isLoadingTerminosVigentes,
+    isLoadingConfirmacionTyC,
+    yaAceptoTerminosVigentes,
+    setTerminosVerificado,
+  ]);
+
   React.useEffect(() => {
     if (tieneEmpresas && !activeSocioId && !isVendor) {
       const firstSocioId =
@@ -173,6 +217,8 @@ export const OnboardingGuard = ({ children }) => {
     (usuarioWebId && isPendingSocios) ||
     (usuarioWebId && !isPendingSocios && isLoadingEmpresasCompletas) ||
     (usuarioWebId && isCadenasLoading) ||
+    (necesitaChequeoTerminos &&
+      (isLoadingTerminosVigentes || isLoadingConfirmacionTyC)) ||
     isLoadingVendor ||
     isVerifying
   ) {
@@ -182,6 +228,10 @@ export const OnboardingGuard = ({ children }) => {
         message="Estamos obteniendo tu información y empresas vinculadas..."
       />
     );
+  }
+
+  if (debeAceptarTerminos && !isTerminosPage) {
+    return <Navigate to={`/${channelInfo.id}/terminos`} replace />;
   }
 
   if (usuarioWebId && tieneEmpresas) {
@@ -194,7 +244,7 @@ export const OnboardingGuard = ({ children }) => {
 
       if (
         activeSocioId &&
-        (isTerminosPage ||
+        ((isTerminosPage && !debeAceptarTerminos) ||
           isSeleccionarEmpresaPage ||
           isAltaDatosPage ||
           isInicioPage)
@@ -203,7 +253,7 @@ export const OnboardingGuard = ({ children }) => {
       }
     } else {
       if (
-        isTerminosPage ||
+        (isTerminosPage && !debeAceptarTerminos) ||
         isAltaDatosPage ||
         isSeleccionarEmpresaPage ||
         isInicioPage
@@ -220,10 +270,12 @@ export const OnboardingGuard = ({ children }) => {
       if (!isSeleccionarEmpresaPage && !isAltaDatosPage) {
         return <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />;
       }
-    } else {
-      if (!isTerminosPage && !isAltaDatosPage) {
-        return <Navigate to={`/${channelInfo.id}/terminos`} replace />;
-      }
+    } else if (!debeAceptarTerminos && !isAltaDatosPage) {
+      // El chequeo de arriba ya lo mandó a /terminos si todavía le faltaba
+      // aceptar. Si llegó hasta acá sin necesitarlo (o ya lo aceptó en un
+      // intento de alta anterior que abandonó antes de crear la empresa),
+      // lo mandamos directo al alta — no hace falta mostrarle /terminos de nuevo.
+      return <Navigate to={`/${channelInfo.id}/alta-datos-empresa`} replace />;
     }
   }
 

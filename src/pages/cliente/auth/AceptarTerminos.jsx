@@ -1,12 +1,22 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiCheck } from "react-icons/fi";
+import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
-import {
-  RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
-  parseTerminos,
-} from "../../../constants/terminosCondiciones";
+import { Spinner } from "../../../components/ui/Spinner/Spinner";
+import { parseTerminos } from "../../../constants/terminosCondiciones";
 import { useChannel } from "../../../context/ChannelContext";
+import { useAuthStore } from "../../../store/useAuthStore";
+import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
+import {
+  useObtenerSocioUsuarioPorUsuarioId,
+  useEmpresasCompletas,
+} from "../../../hooks/useSocios";
+import {
+  useObtenerTerminosVigentes,
+  useConfirmarTyC,
+} from "../../../hooks/useTerminos";
+import { generarPdfConfirmacionTyC } from "../../../utils/terminosPdf";
 import styles from "./AceptarTerminos.module.css";
 
 export default function AceptarTerminos() {
@@ -16,16 +26,26 @@ export default function AceptarTerminos() {
   const [progreso, setProgreso] = useState(0);
   const scrollRef = useRef(null);
 
-  // Cargar términos dinámicamente
-  const [terminos, setTerminos] = useState([]);
+  const { channelInfo } = useChannel();
+  const user = useAuthStore((state) => state.user);
+  const setTerminosVerificado = useAuthStore(
+    (state) => state.setTerminosVerificado,
+  );
 
-  useEffect(() => {
-    const rawContent =
-      localStorage.getItem("terminos_y_condiciones_content") ||
-      RAW_TERMINOS_Y_CONDICIONES_DEFAULT;
-    const parsed = parseTerminos(rawContent);
-    setTerminos(parsed);
-  }, []);
+  const usuarioWebId = useUsuarioWebIdActual();
+  const { data: socioUsuarios } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
+  const { empresasCompletas } = useEmpresasCompletas(socioUsuarios);
+  const tieneEmpresas = empresasCompletas.length > 0;
+
+  const { data: terminosVigentes, isLoading: isLoadingTerminos } =
+    useObtenerTerminosVigentes();
+  const { mutateAsync: confirmarTyC, isPending: isConfirmando } =
+    useConfirmarTyC();
+
+  const terminos = useMemo(
+    () => (terminosVigentes?.textotyc ? parseTerminos(terminosVigentes.textotyc) : []),
+    [terminosVigentes],
+  );
 
   const tablaContenido = useMemo(() => {
     return terminos
@@ -33,10 +53,37 @@ export default function AceptarTerminos() {
       .map((s) => ({ id: s.id, titulo: s.titulo }));
   }, [terminos]);
 
-  const { channelInfo } = useChannel();
+  const handleAceptarTerminos = async () => {
+    if (!aceptado || isConfirmando) return;
 
-  const handleAceptarTerminos = () => {
-    if (aceptado) navigate(`/${channelInfo.id}/alta-datos-empresa`);
+    if (!usuarioWebId || !terminosVigentes?.terminosycondicionesid) {
+      toast.error(
+        "No se pudo determinar la versión vigente de los Términos. Reintentá en unos segundos.",
+      );
+      return;
+    }
+
+    try {
+      const contenidoTyC = await generarPdfConfirmacionTyC({
+        textoTyC: terminosVigentes.textotyc,
+        email: user?.email || "",
+        fecha: new Date(),
+      });
+
+      await confirmarTyC({
+        usuarioWebId,
+        terminosyCondicionesId: terminosVigentes.terminosycondicionesid,
+        contenidoTyC,
+      });
+
+      setTerminosVerificado(true);
+      navigate(
+        `/${channelInfo.id}/${tieneEmpresas ? "legajo" : "alta-datos-empresa"}`,
+      );
+    } catch (err) {
+      console.error("[AceptarTerminos] Error al registrar la aceptación:", err);
+      toast.error("No se pudo registrar la aceptación. Intentá nuevamente.");
+    }
   };
 
   useEffect(() => {
@@ -63,13 +110,37 @@ export default function AceptarTerminos() {
 
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [terminos]);
 
   const scrollTo = (id) => {
     const el = scrollRef.current;
     const target = el?.querySelector(`[data-section-id="${id}"]`);
     if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
   };
+
+  if (isLoadingTerminos) {
+    return (
+      <div className={styles.page}>
+        <Spinner size={40} />
+      </div>
+    );
+  }
+
+  if (!terminosVigentes) {
+    return (
+      <div className={styles.page}>
+        <div className={styles.document}>
+          <div className={styles.docHeader}>
+            <h1 className={styles.docTitle}>Términos y Condiciones</h1>
+            <p className={styles.docSubtitle}>
+              Todavía no hay una versión de los Términos y Condiciones
+              publicada. Volvé a intentarlo en unos minutos.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.page}>
@@ -80,7 +151,7 @@ export default function AceptarTerminos() {
           <div className={styles.docHeaderMeta}>
             <span className={styles.docBadge}>Documento legal</span>
             <span className={styles.docVersion}>
-              Versión 1.0 · {new Date().getFullYear()}
+              Versión {terminosVigentes.terminosycondicionesid}
             </span>
           </div>
           <h1 className={styles.docTitle}>Términos y Condiciones</h1>
@@ -178,6 +249,7 @@ export default function AceptarTerminos() {
           <Button
             variant="primary"
             disabled={!aceptado}
+            isLoading={isConfirmando}
             onClick={handleAceptarTerminos}
             className={styles.btnAceptar}
           >
