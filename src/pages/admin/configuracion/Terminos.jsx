@@ -1,49 +1,41 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FiSave, FiEye, FiEdit3, FiFileText, FiClock, FiAlertTriangle } from "react-icons/fi";
 import { toast } from "sonner";
-import {
-  RAW_TERMINOS_Y_CONDICIONES_DEFAULT,
-  parseTerminos,
-} from "../../../constants/terminosCondiciones";
+import { parseTerminos } from "../../../constants/terminosCondiciones";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+import { Spinner } from "../../../components/ui/Spinner/Spinner";
+import { useObtenerTerminosVigentes, usePublicarTerminos } from "../../../hooks/useTerminos";
+import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
 import styles from "./Terminos.module.css";
 
-const documentosIniciales = {
-  terminos: {
-    titulo: "Términos y Condiciones Generales",
-    version: "v1.0",
-    ultimaModificacion: "10/06/2026",
-    contenido: "", // Se inicializará desde localStorage o default
-  },
+const formatearMomento = (momento) => {
+  if (!momento) return "—";
+  const fecha = new Date(momento);
+  if (Number.isNaN(fecha.getTime())) return "—";
+  return new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short" }).format(fecha);
 };
 
-export default function Terminos() {
-  const [docs, setDocs] = useState(() => {
-    const termContent = localStorage.getItem("terminos_y_condiciones_content") || RAW_TERMINOS_Y_CONDICIONES_DEFAULT;
-    return {
-      ...documentosIniciales,
-      terminos: {
-        ...documentosIniciales.terminos,
-        contenido: termContent,
-      },
-    };
-  });
-  const [docActivo, setDocActivo] = useState("terminos");
-  const [modoVista, setModoVista] = useState("editar"); // editar | vista
+const TITULO_TERMINOS = "Términos y Condiciones Generales";
 
-  const [textoEditable, setTextoEditable] = useState(docs.terminos.contenido);
+export default function Terminos() {
+  const usuarioWebId = useUsuarioWebIdActual();
+  const { data: terminosVigentes, isLoading: isLoadingTerminos } = useObtenerTerminosVigentes();
+  const { mutateAsync: publicarTerminos, isPending: isPublicando } = usePublicarTerminos();
+
+  const [modoVista, setModoVista] = useState("editar"); // editar | vista
+  const [textoEditable, setTextoEditable] = useState("");
   const [hasUnsaved, setHasUnsaved] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const handleSelectDoc = (key) => {
-    if (hasUnsaved) {
-      const confirmacion = window.confirm("Tenés cambios sin guardar. ¿Querés cambiar de documento de todos modos?");
-      if (!confirmacion) return;
+  // Sincroniza el editor con el texto vigente cuando llega/cambia, pero no
+  // si el admin ya tiene cambios sin guardar en curso (no le pisamos lo que
+  // está escribiendo).
+  useEffect(() => {
+    if (!hasUnsaved) {
+      setTextoEditable(terminosVigentes?.textotyc || "");
     }
-    setDocActivo(key);
-    setTextoEditable(docs[key].contenido);
-    setHasUnsaved(false);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [terminosVigentes]);
 
   const handleChangeTexto = (val) => {
     setTextoEditable(val);
@@ -54,36 +46,20 @@ export default function Terminos() {
     setConfirmOpen(true);
   };
 
-  const confirmSave = () => {
-    const nextVersion = "v" + (parseFloat(docs[docActivo].version.replace("v", "")) + 0.1).toFixed(1);
-    const today = new Date().toLocaleDateString("es-AR");
-
-    setDocs((prev) => {
-      const updatedDocs = {
-        ...prev,
-        [docActivo]: {
-          ...prev[docActivo],
-          contenido: textoEditable,
-          ultimaModificacion: today,
-          version: nextVersion,
-        },
-      };
-
-      if (docActivo === "terminos") {
-        localStorage.setItem("terminos_y_condiciones_content", textoEditable);
-      }
-
-      return updatedDocs;
-    });
-
-    setHasUnsaved(false);
-    setConfirmOpen(false);
-    toast.success("Documento legal actualizado", {
-      description: `Los nuevos "${docs[docActivo].titulo}" requieren nueva aceptación por los usuarios tras el próximo inicio de sesión.`,
-    });
+  const confirmSave = async () => {
+    try {
+      await publicarTerminos({ textoTyC: textoEditable, usuarioWebId });
+      setHasUnsaved(false);
+      setConfirmOpen(false);
+      toast.success("Documento legal actualizado", {
+        description: `Los nuevos "${TITULO_TERMINOS}" requieren nueva aceptación por los usuarios en su próximo inicio de sesión.`,
+      });
+    } catch (err) {
+      console.error("[Terminos] Error al publicar la nueva versión:", err);
+      setConfirmOpen(false);
+      toast.error("No se pudo publicar la nueva versión. Intentá nuevamente.");
+    }
   };
-
-  const currentDoc = docs[docActivo];
 
   return (
     <div className={styles.container}>
@@ -92,14 +68,14 @@ export default function Terminos() {
         <div>
           <h1>Edición de Documentación Legal y TyC</h1>
           <p>
-            Actualizá las cláusulas de Términos y Condiciones, Criterios de Aceptación y
-            Disclaimers. Al publicar, el sistema puede solicitar la re-aceptación de los socios.
+            Actualizá las cláusulas de Términos y Condiciones. Al publicar, el sistema le
+            vuelve a pedir la aceptación a los socios en su próximo inicio de sesión.
           </p>
         </div>
         <button type="button"
           onClick={handleGuardarCambios}
           className={`${styles.btnPublish} ${hasUnsaved ? styles.btnPublishGlow : ""}`}
-          disabled={!hasUnsaved}
+          disabled={!hasUnsaved || isLoadingTerminos || isPublicando}
         >
           <FiSave /> Publicar Nueva Versión
         </button>
@@ -110,23 +86,15 @@ export default function Terminos() {
         <div className={styles.docSelectSidebar}>
           <h3 className={styles.sideTitle}>Documentos Disponibles</h3>
           <div className={styles.docsList}>
-            {Object.keys(docs).map((k) => {
-              const d = docs[k];
-              const isSelected = k === docActivo;
-              return (
-                <button type="button"
-                  key={k}
-                  onClick={() => handleSelectDoc(k)}
-                  className={`${styles.docCardBtn} ${isSelected ? styles.activeDoc : ""}`}
-                >
-                  <FiFileText className={styles.docIcon} />
-                  <div className={styles.docMeta}>
-                    <span className={styles.docName}>{d.titulo}</span>
-                    <span className={styles.docVers}>Versión actual: {d.version}</span>
-                  </div>
-                </button>
-              );
-            })}
+            <button type="button" className={`${styles.docCardBtn} ${styles.activeDoc}`} disabled>
+              <FiFileText className={styles.docIcon} />
+              <div className={styles.docMeta}>
+                <span className={styles.docName}>{TITULO_TERMINOS}</span>
+                <span className={styles.docVers}>
+                  Versión actual: {terminosVigentes?.terminosycondicionesid ?? "—"}
+                </span>
+              </div>
+            </button>
           </div>
 
           <div className={styles.infoCardNote}>
@@ -134,87 +102,99 @@ export default function Terminos() {
               <FiAlertTriangle /> Notificación a Socios
             </h4>
             <p>
-              Modificar cláusulas críticas marca automáticamente las firmas digitales previas
-              como desactualizadas para la operatoria futura.
+              Cada publicación queda registrada como una versión nueva e irreversible — no
+              hay forma de deshacer una publicación, solo publicar otra encima.
             </p>
           </div>
         </div>
 
         {/* Panel Central de Edición */}
         <div className={styles.mainEditorPanel}>
-          <div className={styles.editorHead}>
-            <div className={styles.headLeft}>
-              <h2>{currentDoc.titulo}</h2>
-              <span className={styles.versionBadge}>{currentDoc.version}</span>
-              <span className={styles.timestampInfo}>
-                <FiClock /> Última actualización: {currentDoc.ultimaModificacion}
-              </span>
+          {isLoadingTerminos ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
+              <Spinner size={36} />
             </div>
+          ) : (
+            <>
+              <div className={styles.editorHead}>
+                <div className={styles.headLeft}>
+                  <h2>{TITULO_TERMINOS}</h2>
+                  <span className={styles.versionBadge}>
+                    {terminosVigentes?.terminosycondicionesid
+                      ? `v${terminosVigentes.terminosycondicionesid}`
+                      : "Sin publicar"}
+                  </span>
+                  <span className={styles.timestampInfo}>
+                    <FiClock /> Última actualización: {formatearMomento(terminosVigentes?.momento)}
+                  </span>
+                </div>
 
-            {/* Selector de Tabs Editor / Preview */}
-            <div className={styles.modeTabs}>
-              <button type="button"
-                className={`${styles.modeBtn} ${modoVista === "editar" ? styles.modeActive : ""}`}
-                onClick={() => setModoVista("editar")}
-              >
-                <FiEdit3 /> Modo Editor
-              </button>
-              <button type="button"
-                className={`${styles.modeBtn} ${modoVista === "vista" ? styles.modeActive : ""}`}
-                onClick={() => setModoVista("vista")}
-              >
-                <FiEye /> Vista Previa
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.editorBody}>
-            {modoVista === "editar" ? (
-              <div className={styles.textareaWrapper}>
-                <textarea
-                  value={textoEditable}
-                  onChange={(e) => handleChangeTexto(e.target.value)}
-                  className={styles.richTextarea}
-                  placeholder="Escribí aquí las cláusulas en formato texto o Markdown simple..."
-                />
-                <div className={styles.editorFooter}>
-                  <span>Formato compatible con párrafos y saltos de línea automáticos.</span>
-                  <span>Caracteres: {textoEditable.length}</span>
+                {/* Selector de Tabs Editor / Preview */}
+                <div className={styles.modeTabs}>
+                  <button type="button"
+                    className={`${styles.modeBtn} ${modoVista === "editar" ? styles.modeActive : ""}`}
+                    onClick={() => setModoVista("editar")}
+                  >
+                    <FiEdit3 /> Modo Editor
+                  </button>
+                  <button type="button"
+                    className={`${styles.modeBtn} ${modoVista === "vista" ? styles.modeActive : ""}`}
+                    onClick={() => setModoVista("vista")}
+                  >
+                    <FiEye /> Vista Previa
+                  </button>
                 </div>
               </div>
-            ) : (
-              <div className={styles.previewPanel}>
-                <div className={styles.previewContent}>
-                  {parseTerminos(textoEditable).map((seccion, sIdx) => (
-                    <div key={seccion.id || sIdx} className={styles.previewSeccion}>
-                      {seccion.titulo && (
-                        <h3 className={styles.previewHeading}>{seccion.titulo}</h3>
-                      )}
 
-                      {seccion.esTabla ? (
-                        <table className={styles.tablaPreview}>
-                          <tbody>
-                            {(seccion.tableRows || []).map((row, rIdx) => (
-                              <tr key={rIdx}>
-                                <td className={styles.tablaTermPreview}>{row.term}</td>
-                                <td className={styles.tablaDefPreview}>{row.definition}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      ) : (
-                        (seccion.parrafos || []).map((parrafo, pIdx) => (
-                          <p key={pIdx} className={styles.previewParagraph}>
-                            {parrafo}
-                          </p>
-                        ))
-                      )}
+              <div className={styles.editorBody}>
+                {modoVista === "editar" ? (
+                  <div className={styles.textareaWrapper}>
+                    <textarea
+                      value={textoEditable}
+                      onChange={(e) => handleChangeTexto(e.target.value)}
+                      className={styles.richTextarea}
+                      placeholder="Escribí aquí las cláusulas en formato texto o Markdown simple..."
+                    />
+                    <div className={styles.editorFooter}>
+                      <span>Formato compatible con párrafos y saltos de línea automáticos.</span>
+                      <span>Caracteres: {textoEditable.length}</span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className={styles.previewPanel}>
+                    <div className={styles.previewContent}>
+                      {parseTerminos(textoEditable).map((seccion, sIdx) => (
+                        <div key={seccion.id || sIdx} className={styles.previewSeccion}>
+                          {seccion.titulo && (
+                            <h3 className={styles.previewHeading}>{seccion.titulo}</h3>
+                          )}
+
+                          {seccion.esTabla ? (
+                            <table className={styles.tablaPreview}>
+                              <tbody>
+                                {(seccion.tableRows || []).map((row, rIdx) => (
+                                  <tr key={rIdx}>
+                                    <td className={styles.tablaTermPreview}>{row.term}</td>
+                                    <td className={styles.tablaDefPreview}>{row.definition}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          ) : (
+                            (seccion.parrafos || []).map((parrafo, pIdx) => (
+                              <p key={pIdx} className={styles.previewParagraph}>
+                                {parrafo}
+                              </p>
+                            ))
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -223,12 +203,13 @@ export default function Terminos() {
         onClose={() => setConfirmOpen(false)}
         onConfirm={confirmSave}
         titulo="Publicar Nueva Versión"
-        mensaje={`¿Estás seguro de que deseas publicar una nueva versión de "${docs[docActivo].titulo}"? Esto requerirá que todos los usuarios vuelvan a aceptar los términos y condiciones al iniciar sesión.`}
+        mensaje={`¿Estás seguro de que deseas publicar una nueva versión de "${TITULO_TERMINOS}"? Esto requerirá que todos los usuarios vuelvan a aceptar los términos y condiciones en su próximo inicio de sesión.`}
         variant="blue"
         confirmText="PUBLICAR"
         cancelText="CANCELAR"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
+        isLoading={isPublicando}
       />
     </div>
   );

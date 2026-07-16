@@ -122,7 +122,14 @@ function App() {
               }
             />
 
-            <Route path="terminos" element={<AceptarTerminos />} />
+            <Route
+              path="terminos"
+              element={
+                <OnboardingGuard>
+                  <AceptarTerminos />
+                </OnboardingGuard>
+              }
+            />
             <Route
               path="alta-datos-empresa"
               element={
