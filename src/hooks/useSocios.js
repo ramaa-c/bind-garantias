@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { sociosService } from "../services/sociosService";
 import { esSocioVacio } from "../utils/socioUtils";
+import { ultimaEjecucionPorCda } from "../utils/executeCda";
 
 export const useObtenerSocios = (params = {}) => {
   return useQuery({
@@ -112,6 +113,38 @@ export const useEmpresasCompletas = (socioUsuarios) => {
     .filter((socio) => socio && !esSocioVacio(socio));
 
   return { empresasCompletas, isLoading };
+};
+
+// Deriva el estado actual del CDA de pantalla (PANTALLA_INGRESO_CUIT) de un
+// socio a partir de su historial, en vez de re-ejecutar el CDA en cada
+// login (eso ensuciaría el historial con una fila nueva por cada entrada).
+// La fila que importa es la de CdaID=0 (el resultado combinado del grupo,
+// que loguea cda/execute cuando se le pasa Pantalla) — nos quedamos con la
+// más reciente vía ultimaEjecucionPorCda.
+//
+// ⚠️ Si el admin re-ejecuta un CDA puntual por CdaID desde EmpresaDetalle
+// (no toda la pantalla), esa fila de grupo NO se recalcula sola — va a
+// seguir reflejando el último resultado global conocido hasta que se vuelva
+// a correr la pantalla completa. Si esto resulta insuficiente en la
+// práctica, la alternativa es re-ejecutar el CDA en vivo en cada login.
+export const useEstadoCdaSocio = (socioId) => {
+  return useQuery({
+    queryKey: ["socios", "estadoCda", socioId],
+    queryFn: async () => {
+      const historial = await sociosService.obtenerExecuteCda(socioId);
+      const ultimas = ultimaEjecucionPorCda(historial);
+      const grupo = ultimas.find(
+        (item) => Number(item.cdaid ?? item.CdaID ?? -1) === 0,
+      );
+      const estadoId = Number(
+        grupo?.estadoexecutecdaid ?? grupo?.EstadoExecuteCdaID ?? 0,
+      );
+      if (estadoId === 3) return "aprobado";
+      if (estadoId === 2) return "rechazado";
+      return "pendiente"; // estadoId === 1, o sin fila de grupo todavía
+    },
+    enabled: !!socioId,
+  });
 };
 
 export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {

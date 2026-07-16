@@ -166,6 +166,15 @@
 }
 
 /* ── TABS ────────────────────────────────────────────────── */
+.tabsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  flex: 0 0 auto;
+}
+
 .tabs {
   display: flex;
   flex-wrap: wrap;
@@ -177,6 +186,33 @@
   padding: 0.35rem;
   width: fit-content;
   max-width: 100%;
+}
+
+/* Disparador del historial completo: vive en la misma fila que los tabs pero
+   a la derecha del todo, y solo se muestra con la pestaña CDAs activa. Se
+   distingue a propósito del grupo de tabs (chip suelto, no segmentado) para
+   marcar que abre algo aparte (un modal), no una cuarta pestaña. */
+.historialTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(76, 101, 230, 0.06);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+  color: #8fa3f3;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.historialTrigger:hover {
+  background: rgba(76, 101, 230, 0.14);
+  border-color: rgba(76, 101, 230, 0.5);
+  color: #ffffff;
 }
 
 .tabBtn {
@@ -417,6 +453,92 @@
   gap: 0.75rem;
 }
 
+/* ── BARRA DE ESTADO DEL GRUPO (CdaID 0) ─────────────────────
+   No es un CDA más: es el resultado combinado de la pantalla, por eso
+   se destaca aparte con un borde de color en vez de vivir en la lista. */
+.grupoBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid transparent;
+  border-radius: 0.9rem;
+  padding: 0.9rem 1.1rem;
+}
+
+.grupoBar-success {
+  border-left-color: #3ddc84;
+  box-shadow: -1px 0 20px -8px rgba(61, 220, 132, 0.35);
+}
+
+.grupoBar-warning {
+  border-left-color: #ffb300;
+  box-shadow: -1px 0 20px -8px rgba(255, 179, 0, 0.35);
+}
+
+.grupoBar-danger {
+  border-left-color: #ff5252;
+  box-shadow: -1px 0 20px -8px rgba(255, 82, 82, 0.35);
+}
+
+.grupoBar-neutral {
+  border-left-color: #8a9fff;
+}
+
+.grupoBarInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.grupoBarIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  flex-shrink: 0;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.grupoBarTitulo {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.grupoBarExpresion {
+  display: block;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.grupoBarRight {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.grupoBarAction {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.grupoBarInputWrap {
+  width: 13rem;
+}
+
 .cdasList {
   display: flex;
   flex-direction: column;
@@ -460,13 +582,41 @@
   white-space: nowrap;
 }
 
-.cdasHistorialList {
+/* Sin max-height/overflow propio: vive dentro del body del Modal, que ya
+   scrollea solo, así que la lista simplemente crece con el contenido. Gap más
+   grande que el de los items sueltos: es el aire que separa una corrida
+   (ejecución de pantalla) de la siguiente. */
+.historialModalList {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  max-height: 16rem;
-  overflow-y: auto;
-  padding-right: 0.25rem;
+  gap: 0.9rem;
+}
+
+/* Fila(s) más nuevas que cualquier corrida de pantalla registrada (ej. un
+   "Volver a ejecutar" puntual): no tienen resultado de grupo asociado
+   todavía, así que van sueltas y sin indent. */
+.historialSueltos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.historialCorrida {
+  display: flex;
+  flex-direction: column;
+}
+
+/* CDAs puntuales de una misma corrida: indentados y colgando de una línea
+   conectora, para que se lea que "pertenecen" a la fila de resultado general
+   de arriba sin necesitar un acordeón ni una tarjeta separada. */
+.historialCorridaItems {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  margin-left: 0.9rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid rgba(76, 101, 230, 0.15);
 }
 
 .cdaHistorialItem {
@@ -477,6 +627,14 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.6rem;
   padding: 0.55rem 0.85rem;
+}
+
+/* Fila de resultado general (CdaID 0): mismo componente visual que un CDA
+   puntual, con un leve tinte azul para diferenciarla como "encabezado" de la
+   corrida sin gritar demasiado. */
+.cdaHistorialItemGrupo {
+  background: rgba(76, 101, 230, 0.06);
+  border-color: rgba(76, 101, 230, 0.2);
 }
 
 .cdaHistorialInfo {
@@ -496,9 +654,25 @@
   color: #ffffff;
 }
 
+.cdaHistorialExpresion {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
 .cdaHistorialMeta {
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.4);
+}
+
+.historialModalMsg {
+  margin: 0;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #8b949e;
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 .dot {

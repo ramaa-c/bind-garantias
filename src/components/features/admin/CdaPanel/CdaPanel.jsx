@@ -328,7 +328,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
 
   if (isLoading) {
     return (
-      <div style={{ padding: "2rem", display: "flex", justifyContent: "center" }}>
+      <div style={{ flex: 1, minHeight: "18rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Spinner size={50} />
       </div>
     );
@@ -339,7 +339,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   // estaba vinculado y genera duplicados. Mostrar el error y dejar reintentar.
   if (isErrorTodos || isErrorGrupo) {
     return (
-      <div style={{ padding: "2rem", textAlign: "center" }}>
+      <div style={{ flex: 1, minHeight: "18rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "2rem" }}>
         <p style={{ color: "#ea4a5a", marginBottom: "1rem" }}>
           Ocurrió un error de red al traer los CDAs. No se muestra el listado para evitar vincular algo que ya podría estar vinculado.
         </p>
@@ -530,7 +530,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         )}
 
         <div className={`${styles.cdasSection} ${isReadOnly ? styles.readOnly : ""}`}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {allCdasList.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
                 No hay CDAs creados en el sistema.
@@ -596,7 +596,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
 
                         <div className={styles.globalRechazoRow}>
                           {mensajeRechazo ? (
-                            <span className={styles.globalRechazoText}>
+                            <span className={styles.globalRechazoText} title={mensajeRechazo}>
                               <span className={styles.globalRechazoLabel}>Mensaje de rechazo global:</span> "{mensajeRechazo}"
                             </span>
                           ) : (

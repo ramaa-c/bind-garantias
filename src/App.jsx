@@ -30,6 +30,7 @@ import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
 import AltaDatosEmpresa from "./pages/cliente/onboarding/AltaDatosEmpresa/AltaDatosEmpresa";
 import SeleccionarEmpresa from "./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa";
+import EstadoSolicitud from "./pages/cliente/onboarding/EstadoSolicitud/EstadoSolicitud";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
 import Dashboard from "./pages/admin/dashboard/Dashboard";
 import Empresas from "./pages/admin/empresas/Empresas";
@@ -65,7 +66,7 @@ function App() {
           <Route path="/:cadenaSlug" element={<TenantLayout />}>
             <Route index element={<Navigate to="login" replace />} />
             <Route path="login" element={<Login />} />
-            <Route path="ingresar" element={<Navigate to="login" replace />} />
+            <Route path="ingresar" element={<Navigate to="../login" replace />} />
             <Route path="registro" element={<Registro />} />
 
             <Route path="0/:token" element={<CrearClave />} />
@@ -83,7 +84,7 @@ function App() {
                 </OnboardingGuard>
               }
             />
-            <Route path="socios" element={<Navigate to="legajo" replace />} />
+            <Route path="socios" element={<Navigate to="../legajo" replace />} />
 
             <Route
               path="usuarios"
@@ -107,7 +108,7 @@ function App() {
             />
             <Route
               path="inicio"
-              element={<Navigate to="legajo" replace />}
+              element={<Navigate to="../legajo" replace />}
             />
 
             <Route
@@ -139,6 +140,14 @@ function App() {
                   <DashboardLayout>
                     <SeleccionarEmpresa />
                   </DashboardLayout>
+                </OnboardingGuard>
+              }
+            />
+            <Route
+              path="estado-solicitud"
+              element={
+                <OnboardingGuard>
+                  <EstadoSolicitud />
                 </OnboardingGuard>
               }
             />
