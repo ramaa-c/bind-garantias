@@ -30,33 +30,45 @@ export const formatearMomentoControl = (momento) => {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "medium" }).format(fecha);
 };
 
+// El backend usó 0 (no null) como default de CadenaValorID/PantallaGrupoCdaID
+// mientras el INSERT de SocioExecuteCda todavía no los completaba (bug ya
+// arreglado, pero deja filas viejas con 0 mezcladas en el mismo historial que
+// filas nuevas con el ID real — confirmado con datos reales). 0 nunca es un
+// ID real acá, así que se trata como "dato desconocido", igual que null: no
+// sirve ni para excluir una fila (no se puede probar que NO corresponda) ni
+// como valor buscado (filtrar por CadenaValorID=0 no debe excluir filas con
+// ID real).
+const esIdValido = (valor) => valor != null && Number(valor) > 0;
+
 // Desde que el backend manda CadenaValorID y PantallaGrupoCdaID en cada fila
 // del historial (WSSocioExecuteCda), se puede filtrar por contexto real en
-// vez de inferirlo por posición. Las filas viejas (previas a ese cambio) no
-// traen estos campos — se tratan como compatibles con cualquier contexto
-// (no hay forma de probar que NO correspondan), así que el filtro solo
-// descarta una fila cuando SÍ tiene el campo y no coincide.
+// vez de inferirlo por posición. Las filas viejas (previas a ese cambio, o
+// con el bug del INSERT que no las completaba) no traen un ID real — se
+// tratan como compatibles con cualquier contexto (no hay forma de probar que
+// NO correspondan), así que el filtro solo descarta una fila cuando AMBOS
+// lados (lo buscado y la fila) tienen un ID real y no coinciden.
 const coincideConContexto = (item, pantallaGrupoCdaId, cadenaValorId) => {
   const rowPantalla = item?.pantallagrupocdaid ?? item?.PantallaGrupoCdaID;
   const rowCadena = item?.cadenavalorid ?? item?.CadenaValorID;
-  if (pantallaGrupoCdaId != null && rowPantalla != null && Number(rowPantalla) !== Number(pantallaGrupoCdaId)) {
+  if (esIdValido(pantallaGrupoCdaId) && esIdValido(rowPantalla) && Number(rowPantalla) !== Number(pantallaGrupoCdaId)) {
     return false;
   }
-  if (cadenaValorId != null && rowCadena != null && Number(rowCadena) !== Number(cadenaValorId)) {
+  if (esIdValido(cadenaValorId) && esIdValido(rowCadena) && Number(rowCadena) !== Number(cadenaValorId)) {
     return false;
   }
   return true;
 };
 
 // La cadena real de un socio ya no hace falta adivinarla: se toma la de la
-// ejecución más reciente que traiga CadenaValorID. Si todo el historial es
-// previo al cambio de backend (o el socio nunca se evaluó), no hay forma de
+// ejecución más reciente que traiga un CadenaValorID real (>0 — ver
+// esIdValido). Si todo el historial es previo al cambio de backend, o cayó
+// en la ventana en que el INSERT todavía no lo completaba, no hay forma de
 // saberla y se devuelve null — el admin la sigue eligiendo a mano en ese caso.
 export const detectarCadenaValorId = (data) => {
   const ordenado = ordenarEjecucionesCda(data);
-  const conCadena = ordenado.find((item) => (item.cadenavalorid ?? item.CadenaValorID) != null);
+  const conCadena = ordenado.find((item) => esIdValido(item.cadenavalorid ?? item.CadenaValorID));
   const id = Number(conCadena?.cadenavalorid ?? conCadena?.CadenaValorID);
-  return Number.isNaN(id) || id <= 0 ? null : id;
+  return Number.isNaN(id) ? null : id;
 };
 
 // A partir del historial completo de un socio, arma un mapa CdaID -> boolean

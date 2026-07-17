@@ -534,12 +534,8 @@
   gap: 0.75rem;
 }
 
-.grupoBarInputWrap {
-  width: 13rem;
-}
-
 /* Modificador de .sectionCardHeader: título a la izquierda, controles
-   (selector de cadena + reejecutar grupo) a la derecha, en la misma fila. */
+   (cadena detectada + reejecutar grupo) a la derecha, en la misma fila. */
 .cdasSectionHeaderRow {
   justify-content: space-between;
   flex-wrap: wrap;
