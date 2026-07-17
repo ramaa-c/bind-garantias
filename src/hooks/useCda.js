@@ -1,29 +1,11 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { cdaService } from "../services/cdaService";
-
-export const useObtenerGrupoCda = (grupoId, options = {}) => {
-  return useQuery({
-    queryKey: ["cda", "grupo", grupoId],
-    queryFn: () => cdaService.obtenerGrupoCda(grupoId),
-    enabled: !!grupoId,
-    ...options,
-  });
-};
 
 export const useObtenerCda = (cdaId, options = {}) => {
   return useQuery({
     queryKey: ["cda", "detalle", cdaId],
     queryFn: () => cdaService.obtenerCda(cdaId),
     enabled: !!cdaId,
-    ...options,
-  });
-};
-
-export const useObtenerPantallaGrupoCda = (pantalla, grupoId, options = {}) => {
-  return useQuery({
-    queryKey: ["cda", "pantallaGrupo", pantalla, grupoId],
-    queryFn: () => cdaService.obtenerPantallaGrupoCda(pantalla, grupoId),
-    enabled: !!pantalla && !!grupoId,
     ...options,
   });
 };
@@ -40,10 +22,38 @@ export const useCrearCda = () => {
   });
 };
 
+export const useActualizarCda = () => {
+  return useMutation({
+    mutationFn: (cdaData) => cdaService.actualizarCda(cdaData),
+  });
+};
+
+export const useActualizarGrupoCda = () => {
+  return useMutation({
+    mutationFn: (grupoData) => cdaService.actualizarGrupoCda(grupoData),
+  });
+};
+
 export const useObtenerTodosCdas = (options = {}) => {
   return useQuery({
     queryKey: ["cda", "todos_list"],
     queryFn: () => cdaService.obtenerTodosCdas(),
     ...options,
+  });
+};
+
+export const useProbarCda = () => {
+  return useMutation({
+    mutationFn: ({ cuit, expresion, expresionLog }) => cdaService.probarCda(cuit, expresion, expresionLog),
+  });
+};
+
+export const useReejecutarCda = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => cdaService.reejecutarCda(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["socios", "executeCda"] });
+    },
   });
 };

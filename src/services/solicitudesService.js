@@ -1,3 +1,4 @@
+import { solicitudesAdapter } from "../adapters/solicitudesAdapter";
 import api from "../api/axios";
 
 export const solicitudesService = {
@@ -7,7 +8,7 @@ export const solicitudesService = {
   },
 
   crearSolicitudEnProceso: async (solicitudData) => {
-    const response = await api.post("sgrplus/SolicitudEnProceso", solicitudData);
+    const response = await api.post("sgrplus/SolicitudEnProceso", solicitudesAdapter.adaptarPayload1(solicitudData));
     return response.data;
   },
 };

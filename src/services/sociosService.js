@@ -1,4 +1,5 @@
 import api from "../api/axios";
+import { sociosAdapter } from "../adapters/sociosAdapter";
 import { socioArchivoService } from "./socioArchivoService";
 
 const cuitCache = new Map();
@@ -76,21 +77,52 @@ export const sociosService = {
     return response.data;
   },
 
+  // GET api/Socios/ExecuteCda?SocioID=X - Historial de ejecuciones de CDAs de
+  // un socio (una fila por cada intento de evaluación, no solo la vigente).
+  obtenerExecuteCda: async (socioId) => {
+    const response = await api.get("api/Socios/ExecuteCda", {
+      params: { SocioID: socioId },
+    });
+    return response.data;
+  },
+
+  // GET api/Socio/CertificadoVigente/{Cuit} - Valida si la empresa tiene un
+  // certificado PyME vigente. 200 = vigente, 401 = no vigente — el backend
+  // reutiliza el código HTTP como semántica de negocio (mismo patrón que
+  // cda/execute con 202/406/409), no es un fallo de autenticación real: no
+  // hay ningún header de auth en esta app. Nunca tira: devuelve
+  // { status, data } para diferenciar sin try/catch afuera (mismo patrón
+  // que probarCda/reejecutarCda).
+  obtenerCertificadoVigente: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    try {
+      const response = await api.get(
+        `api/Socio/CertificadoVigente/${cuitLimpio}`,
+      );
+      return { status: response.status, data: response.data };
+    } catch (error) {
+      if (error.response) {
+        return { status: error.response.status, data: error.response.data };
+      }
+      throw error;
+    }
+  },
+
   // Crea nuevo socio
   crearSocio: async (socioData) => {
-    const response = await api.post("api/Socio", socioData);
+    const response = await api.post("api/Socio", sociosAdapter.adaptarPayload1(socioData));
     return response.data;
   },
 
   // Actualiza un socio
   actualizarSocio: async (socioData) => {
-    const response = await api.put("api/Socio", socioData);
+    const response = await api.put("api/Socio", sociosAdapter.adaptarPayload2(socioData));
     return response.data;
   },
 
   // POST api/SocioUsuario - Carga de nueva relación entre socio y usuario
   vincularSocioUsuario: async (socioUsuarioData) => {
-    const response = await api.post("api/SocioUsuario", socioUsuarioData);
+    const response = await api.post("api/SocioUsuario", sociosAdapter.adaptarPayload3(socioUsuarioData));
     return response.data;
   },
 
@@ -253,9 +285,9 @@ export const sociosService = {
 
   // Envía todos los datos consolidados del legajo al esquema SGR+
   enviarASgrPlus: async (socioId) => {
-    const response = await api.post("api/Socio/Migrar", {
+    const response = await api.post("api/Socio/Migrar", sociosAdapter.adaptarPayload4({
       socioid: Number(socioId),
-    });
+    }));
     return {
       success: true,
       message: response.data?.message || "Legajo enviado a SGR+ exitosamente.",

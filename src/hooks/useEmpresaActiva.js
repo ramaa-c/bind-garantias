@@ -6,25 +6,26 @@ import {
 } from "./useSocios";
 import { useVendor } from "./useVendor";
 
-export const useEmpresaActiva = () => {
+export const useEmpresaActiva = (skip = false) => {
   const user = useAuthStore((state) => state.user);
   const activeSocioId = useAuthStore((state) => state.activeSocioId);
 
   const { data: usuarioDb, isPending: isLoadingUser } =
-    useObtenerPorNombreOEmail(user?.email);
+    useObtenerPorNombreOEmail(skip ? undefined : user?.email);
 
   const usuarioWebId =
     usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id || null;
 
   const { data: socioUsuarios, isPending: isPendingSocios } =
-    useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
+    useObtenerSocioUsuarioPorUsuarioId(skip ? undefined : usuarioWebId);
 
-  const { data: vendorData } = useVendor();
+  const { data: vendorData } = useVendor(skip);
   const isVendor = vendorData?.isVendor || false;
 
-  let socioId = activeSocioId;
+  let socioId = skip ? null : activeSocioId;
 
   if (
+    !skip &&
     !socioId &&
     !isVendor &&
     Array.isArray(socioUsuarios) &&
@@ -34,13 +35,15 @@ export const useEmpresaActiva = () => {
   }
 
   const { data: socioWeb, isPending: isPendingSocioWeb } =
-    useSocioWebPorId(socioId);
+    useSocioWebPorId(skip ? undefined : socioId);
 
   const cuitActivo = socioWeb?.cuit || socioWeb?.Cuit || null;
   const nombreEmpresa =
     socioWeb?.denominacion || socioWeb?.Denominacion || null;
   const direccion = socioWeb?.calle || socioWeb?.Calle || "";
   const telefono = socioWeb?.telefono || socioWeb?.Telefono || "";
+  const fechaCierreEjercicio =
+    socioWeb?.fechacierreejercicio || socioWeb?.FechaCierreEjercicio || null;
   let tipoPersonaId =
     socioWeb?.tipopersonaid || socioWeb?.TipoPersonaID || null;
   if (!tipoPersonaId && cuitActivo) {
@@ -64,13 +67,24 @@ export const useEmpresaActiva = () => {
     (usuarioWebId && isPendingSocios) ||
     (socioId && isPendingSocioWeb);
 
+  // El socio ya tiene denominación real desde que cruza el "umbral" en
+  // Paso1Cuit (POST antes del CDA), aunque todavía le falte completar el
+  // Paso 2 (el teléfono es el campo que marca eso). Por eso nombreEmpresa
+  // truthy ya NO alcanza para decidir si mostrar navegación plena — hace
+  // falta este flag aparte, para no romper a los demás consumidores de
+  // nombreEmpresa/cuitActivo que sí necesitan mostrarlos aunque el
+  // onboarding no esté 100% terminado.
+  const onboardingCompleto = !!nombreEmpresa && !!telefono;
+
   return {
     cuitActivo,
     socioIdActivo: socioId,
     nombreEmpresa,
     direccion,
     telefono,
+    fechaCierreEjercicio,
     tipoPersonaId,
+    onboardingCompleto,
     isLoading,
   };
 };

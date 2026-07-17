@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { FiChevronDown, FiLogOut } from "react-icons/fi";
+import { FiChevronDown, FiLogOut, FiSettings } from "react-icons/fi";
 import { FaRegUserCircle } from "react-icons/fa";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./AdminNavbar.module.css";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useAdminRestrictions } from "../../../../hooks/useAdminRestrictions";
+import { CuentaUsuarioModal } from "../../../features/admin/CuentaUsuarioModal/CuentaUsuarioModal";
 
 export default function AdminNavbar() {
   const navigate = useNavigate();
@@ -19,8 +20,14 @@ export default function AdminNavbar() {
 
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isCuentaModalOpen, setIsCuentaModalOpen] = useState(false);
   const navRef = useRef(null);
   const profileRef = useRef(null);
+
+  // AdminGuard ya resuelve el registro real del usuario y corrige
+  // user.nombre (denominación real, o el email si no tiene una cargada) en
+  // cuanto lo conoce, así que acá alcanza con leer el store.
+  const nombreMostrado = user?.nombre || user?.email || "Administrador";
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -54,8 +61,11 @@ export default function AdminNavbar() {
 
   const adminMenu = [
     "Cadenas de Valor",
+    "CDAs Globales",
+    "CDAs por Cadena",
     "Líneas",
     "Productos de Líneas",
+    "Modo Offline",
   ];
 
   return (
@@ -74,9 +84,7 @@ export default function AdminNavbar() {
             <div className={styles.avatarWrapper}>
               <FaRegUserCircle className={styles.userIcon} />
             </div>
-            <span className={styles.userName}>
-              {user?.nombre || user?.email || "Administrador"}
-            </span>
+            <span className={styles.userName}>{nombreMostrado}</span>
             <FiChevronDown
               className={`${styles.userChevron} ${isProfileOpen ? styles.userChevronOpen : ""}`}
             />
@@ -89,11 +97,21 @@ export default function AdminNavbar() {
                   {user?.email || "admin"}
                 </p>
                 <p className={styles.userDropdownRole}>
-                  Administrador General
+                  Administrador
                 </p>
               </div>
 
               <div className={styles.userDropdownFooter}>
+                <button
+                  type="button"
+                  className={styles.userAccountBtn}
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    setIsCuentaModalOpen(true);
+                  }}
+                >
+                  Mi cuenta <FiSettings />
+                </button>
                 <button type="button" className={styles.userLogoutBtn} onClick={handleLogout}>
                   Cerrar sesión <FiLogOut />
                 </button>
@@ -102,6 +120,11 @@ export default function AdminNavbar() {
           )}
         </div>
       </div>
+
+      <CuentaUsuarioModal
+        isOpen={isCuentaModalOpen}
+        onClose={() => setIsCuentaModalOpen(false)}
+      />
 
       {/* Main navigation links bar mimicking the blue header */}
       <nav className={styles.mainNav} ref={navRef}>
@@ -118,6 +141,16 @@ export default function AdminNavbar() {
 
           {!isRestricted && (
             <>
+
+          {/* Empresas */}
+          <button type="button"
+            className={`${styles.navButton} ${
+              isActive("/admin/empresas") ? styles.active : ""
+            }`}
+            onClick={() => handleNavigate("/admin/empresas")}
+          >
+            Empresas
+          </button>
 
           {/* Criterios de Aceptación */}
           <button type="button"
@@ -145,10 +178,16 @@ export default function AdminNavbar() {
                   let destPath = null;
                   if (item === "Cadenas de Valor") {
                     destPath = "/admin/cadenas-valor";
+                  } else if (item === "CDAs Globales") {
+                    destPath = "/admin/cdas";
+                  } else if (item === "CDAs por Cadena") {
+                    destPath = "/admin/cadenas-cda";
                   } else if (item === "Líneas") {
                     destPath = "/admin/lineas-cadenas";
                   } else if (item === "Productos de Líneas") {
                     destPath = "/admin/lineas-productos";
+                  } else if (item === "Modo Offline") {
+                    destPath = "/admin/modo-offline";
                   }
                   return (
                     <button type="button"

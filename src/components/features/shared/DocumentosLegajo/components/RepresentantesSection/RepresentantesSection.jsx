@@ -26,6 +26,8 @@ export function RepresentantesSection({
   const [editRepresentante, setEditRepresentante] = useState(null);
   const [expandedRep, setExpandedRep] = useState(null);
   const [portalTarget, setPortalTarget] = useState(null);
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
   useEffect(() => {
     setPortalTarget(document.getElementById("socios-header-action-portal"));
@@ -45,7 +47,7 @@ export function RepresentantesSection({
           {portalTarget && createPortal(
             <button
               type="button"
-              className={styles.addButton}
+              className={`${styles.addButton} ${isAdmin ? styles.addButtonAdmin : ""}`}
               onClick={() => {
                 setEditRepresentante(null);
                 setModalRepresentanteOpen(true);
@@ -72,13 +74,7 @@ export function RepresentantesSection({
             <div className={styles.sociosList}>
               {representantes.map((rep) => (
                 <div key={rep.id} className={styles.socioCard}>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      width: "100%",
-                    }}
-                  >
+                  <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
                       className={styles.socioCardBtn}
@@ -94,9 +90,16 @@ export function RepresentantesSection({
                         <span className={styles.socioCuit}>
                           CUIT: {rep.cuit}
                         </span>
+                        <span
+                          className={`${styles.roleBadge} ${styles.roleBadgeMobile} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}
+                        >
+                          {rep.rolId === 230
+                            ? "Representante Legal"
+                            : "Apoderado"}
+                        </span>
                       </div>
                       <span
-                        className={`${styles.roleBadge} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}
+                        className={`${styles.roleBadge} ${styles.roleBadgeDesktop} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}
                       >
                         {rep.rolId === 230
                           ? "Representante Legal"
@@ -112,7 +115,7 @@ export function RepresentantesSection({
                     >
                       <button
                         type="button"
-                        className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
+                        className={`${styles.actionBtn} ${styles.actionBtnEdit} ${isAdmin ? styles.actionBtnEditAdmin : ""}`}
                         onClick={() => {
                           setEditRepresentante(rep);
                           setModalRepresentanteOpen(true);

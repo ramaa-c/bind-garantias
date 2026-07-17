@@ -36,6 +36,12 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
   const ubicacionOk = ubicacionConfirmada && direccion.trim().length >= 5;
   const contactoOk = celular.trim().length >= 8;
 
+  const totalTareas = 2;
+  const tareasCompletas = (ubicacionOk ? 1 : 0) + (contactoOk ? 1 : 0);
+  const progresoPct = (tareasCompletas / totalTareas) * 100;
+
+  const inicialEmpresa = razonSocial?.trim()?.charAt(0)?.toUpperCase() || "?";
+
   const handleGuardarUbicacion = () => {
     setValue("ubicacionConfirmada", true, {
       shouldValidate: true,
@@ -71,57 +77,43 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
     }
   };
 
-  const pill = (done, error) => {
-    if (done) return styles.pillDone;
-    if (error) return styles.pillError;
-    return styles.pillPending;
-  };
-
   return (
     <div className={styles.container}>
-      {/* HEADER ──────────────────────────────────────────────────────────────── */}
-      <div className={styles.header}>
-        <div className={styles.completionPills}>
-          <span
-            className={`${styles.pill} ${pill(ubicacionOk, intentoAvanzar && !ubicacionOk)}`}
-          >
-            {ubicacionOk ? (
-              <FiCheckCircle size={11} />
-            ) : (
-              <FiAlertCircle size={11} />
-            )}
-            Ubicación
-          </span>
-          <span
-            className={`${styles.pill} ${pill(contactoOk, intentoAvanzar && !contactoOk)}`}
-          >
-            {contactoOk ? (
-              <FiCheckCircle size={11} />
-            ) : (
-              <FiAlertCircle size={11} />
-            )}
-            Contacto
-          </span>
+      {/* PROGRESO ────────────────────────────────────────────────────────────── */}
+      <div className={styles.progressRow}>
+        <span className={styles.progressLabel}>
+          {tareasCompletas} de {totalTareas} completado
+          {tareasCompletas === 1 ? "" : "s"}
+        </span>
+        <div className={styles.progressTrack}>
+          <div
+            className={`${styles.progressFill} ${progresoPct === 100 ? styles.progressFillDone : ""}`}
+            style={{ width: `${progresoPct}%` }}
+          />
         </div>
       </div>
 
-      {/* SUMMARY ─────────────────────────────────────────────────────────────── */}
-      <div className={styles.summaryCard}>
-        <div className={styles.summaryLeft}>
-          <span className={styles.summaryStatus}>
+      {/* EMPRESA ──────────────────────────────────────────────────────────────── */}
+      <div className={styles.empresaCard}>
+        <div className={styles.empresaAvatar}>{inicialEmpresa}</div>
+        <div className={styles.empresaInfo}>
+          <span className={styles.empresaBadge}>
             <FiCheckCircle size={11} /> Socio validado
           </span>
-          <h2 className={styles.summaryName}>{razonSocial}</h2>
-          <p className={styles.summaryCuit}>CUIT: {cuit || "20-12345678-9"}</p>
+          <h2 className={styles.empresaName}>{razonSocial}</h2>
+          <p className={styles.empresaCuit}>CUIT {cuit || "20-12345678-9"}</p>
         </div>
-        <button
-          type="button"
-          className={styles.editLink}
-          onClick={onVolver}
-          disabled={isSubmitting}
-        >
-          <FiEdit2 size={13} /> Editar
-        </button>
+        {onVolver && (
+          <button
+            type="button"
+            className={styles.editLink}
+            onClick={onVolver}
+            disabled={isSubmitting}
+            aria-label="Editar CUIT"
+          >
+            <FiEdit2 size={13} />
+          </button>
+        )}
       </div>
 
       {/* TAREAS ──────────────────────────────────────────────────────────────── */}
@@ -147,11 +139,11 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
             className={`${styles.taskIcon} ${ubicacionOk ? styles.iconSuccess : intentoAvanzar && !ubicacionOk ? styles.iconError : styles.iconWarn}`}
           >
             {ubicacionOk ? (
-              <FiCheckCircle size={16} />
+              <FiCheckCircle size={17} />
             ) : intentoAvanzar ? (
-              <FiAlertCircle size={16} />
+              <FiAlertCircle size={17} />
             ) : (
-              <FiMapPin size={16} />
+              <FiMapPin size={17} />
             )}
           </span>
 
@@ -172,7 +164,9 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
                 <FiEdit2 size={12} /> Modificar
               </>
             ) : (
-              "Completar →"
+              <>
+                Completar <FiChevronRight size={13} />
+              </>
             )}
           </span>
         </div>
@@ -198,11 +192,11 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
             className={`${styles.taskIcon} ${contactoOk ? styles.iconSuccess : intentoAvanzar && !contactoOk ? styles.iconError : styles.iconWarn}`}
           >
             {contactoOk ? (
-              <FiCheckCircle size={16} />
+              <FiCheckCircle size={17} />
             ) : intentoAvanzar ? (
-              <FiAlertCircle size={16} />
+              <FiAlertCircle size={17} />
             ) : (
-              <FiPhone size={16} />
+              <FiPhone size={17} />
             )}
           </span>
 
@@ -223,7 +217,9 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
                 <FiEdit2 size={12} /> Modificar
               </>
             ) : (
-              "Verificar →"
+              <>
+                Verificar <FiChevronRight size={13} />
+              </>
             )}
           </span>
         </div>

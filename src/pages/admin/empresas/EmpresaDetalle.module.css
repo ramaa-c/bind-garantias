@@ -1,0 +1,1076 @@
+/* =========================================================
+   EMPRESA DETALLE — Legajo de una empresa (panel admin)
+   ========================================================= */
+
+.loadingWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20rem;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+  height: calc(100dvh - 13rem);
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex: 0 0 auto;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, gap 0.15s ease;
+}
+
+.backButton:hover {
+  color: #8a9fff;
+  gap: 0.55rem;
+}
+
+.heroRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.heroIdentity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.heroAvatar {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.9rem;
+  background: linear-gradient(135deg, rgba(76, 101, 230, 0.35), rgba(76, 101, 230, 0.08));
+  border: 1px solid rgba(76, 101, 230, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  box-shadow: 0 8px 20px rgba(76, 101, 230, 0.18);
+}
+
+.heroText {
+  min-width: 0;
+}
+
+.heroIdentity h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.heroMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0.3rem 0 0 0;
+  font-size: 0.825rem;
+  font-weight: 400;
+}
+
+.heroCuit {
+  font-variant-numeric: tabular-nums;
+}
+
+.heroDot {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.headerBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.badgeDot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge-neutral {
+  background: rgba(76, 101, 230, 0.12);
+  color: #8a9fff;
+  border: 1px solid rgba(76, 101, 230, 0.3);
+}
+
+.badge-success {
+  background: rgba(61, 220, 132, 0.12);
+  color: #3ddc84;
+  border: 1px solid rgba(61, 220, 132, 0.3);
+}
+
+.badge-warning {
+  background: rgba(255, 179, 0, 0.12);
+  color: #ffb300;
+  border: 1px solid rgba(255, 179, 0, 0.3);
+}
+
+.badge-danger {
+  background: rgba(255, 82, 82, 0.12);
+  color: #ff5252;
+  border: 1px solid rgba(255, 82, 82, 0.3);
+}
+
+/* ── TABS ────────────────────────────────────────────────── */
+.tabsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  flex: 0 0 auto;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 0.35rem;
+  width: fit-content;
+  max-width: 100%;
+}
+
+/* Disparador del historial completo: vive en la misma fila que los tabs pero
+   a la derecha del todo, y solo se muestra con la pestaña CDAs activa. Se
+   distingue a propósito del grupo de tabs (chip suelto, no segmentado) para
+   marcar que abre algo aparte (un modal), no una cuarta pestaña. */
+.historialTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(76, 101, 230, 0.06);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+  color: #8fa3f3;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.historialTrigger:hover {
+  background: rgba(76, 101, 230, 0.14);
+  border-color: rgba(76, 101, 230, 0.5);
+  color: #ffffff;
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  border-radius: 0.55rem;
+  padding: 0.55rem 0.95rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tabBtn:hover {
+  color: #c9d1d9;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tabActive {
+  background: linear-gradient(135deg, rgba(76, 101, 230, 0.9), rgba(76, 101, 230, 0.65));
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(76, 101, 230, 0.3);
+}
+
+.tabActive:hover {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(76, 101, 230, 0.9), rgba(76, 101, 230, 0.65));
+}
+
+/* ── CONTENT ─────────────────────────────────────────────── */
+.tabContent {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── EMBEDDED LEGAJO (Documentación / Terceros) ─────────── */
+.embeddedLegajo {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* ── DATOS TAB ───────────────────────────────────────────── */
+.datosTab {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.9rem;
+  overflow: hidden;
+}
+
+.datosScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.2rem;
+}
+
+.sectionsGrid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  grid-template-areas:
+    "general domicilio"
+    "clasificacion fechas";
+  gap: 1rem;
+  align-items: start;
+}
+
+.areaGeneral {
+  grid-area: general;
+}
+
+.areaDomicilio {
+  grid-area: domicilio;
+}
+
+.areaClasificacion {
+  grid-area: clasificacion;
+}
+
+.areaFechas {
+  grid-area: fechas;
+}
+
+.sectionCard {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.9rem;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: border-color 0.2s ease;
+}
+
+.sectionCard:hover {
+  border-color: rgba(76, 101, 230, 0.25);
+}
+
+.sectionCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sectionCardHeader h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.sectionCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.55rem;
+  background: rgba(76, 101, 230, 0.16);
+  color: #8a9fff;
+  flex-shrink: 0;
+}
+
+.sectionCardFields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  column-gap: 1rem;
+  row-gap: 0.65rem;
+  align-items: start;
+}
+
+.fieldFull {
+  grid-column: 1 / -1;
+}
+
+/* Filas de campos cortos agrupados explícitamente: se usa flex en vez de
+   dejarlos como ítems sueltos del grid auto-fit, porque al mezclarse con
+   filas fieldFull (que abarcan todas las columnas) el conteo de columnas
+   que auto-fit calcula deja de coincidir con la cantidad real de campos
+   cortos apenas cambia el ancho disponible, dejando una columna vacía. */
+.fieldRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.fieldRow > * {
+  flex: 1 1 8rem;
+  min-width: 8rem;
+}
+
+.datosFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex: 0 0 auto;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* ── CDAS TAB (placeholder) ──────────────────────────────── */
+.cdasPlaceholderWrap {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.cdasPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 3.5rem 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 0.9rem;
+  color: #8b949e;
+}
+
+.cdasPlaceholderIcon {
+  font-size: 1.75rem;
+  color: #8a9fff;
+}
+
+.cdasPlaceholder h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.05rem;
+}
+
+.cdasPlaceholder p {
+  margin: 0;
+  max-width: 34rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* ── CDAS TAB (con datos) ────────────────────────────────── */
+.cdasScroll {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 0.1rem;
+}
+
+.cdasSection {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.9rem;
+  padding: 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── BARRA DE ESTADO DEL GRUPO (CdaID 0) ─────────────────────
+   No es un CDA más: es el resultado combinado de la pantalla, por eso
+   se destaca aparte con un borde de color en vez de vivir en la lista. */
+.grupoBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid transparent;
+  border-radius: 0.9rem;
+  padding: 0.9rem 1.1rem;
+}
+
+.grupoBar-success {
+  border-left-color: #3ddc84;
+  box-shadow: -1px 0 20px -8px rgba(61, 220, 132, 0.35);
+}
+
+.grupoBar-warning {
+  border-left-color: #ffb300;
+  box-shadow: -1px 0 20px -8px rgba(255, 179, 0, 0.35);
+}
+
+.grupoBar-danger {
+  border-left-color: #ff5252;
+  box-shadow: -1px 0 20px -8px rgba(255, 82, 82, 0.35);
+}
+
+.grupoBar-neutral {
+  border-left-color: #8a9fff;
+}
+
+.grupoBarInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.grupoBarTexto {
+  min-width: 0;
+}
+
+.grupoBarIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  flex-shrink: 0;
+  border-radius: 0.6rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.grupoBarTitulo {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.grupoBarExpresion {
+  display: block;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.grupoBarRight {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Modificador de .sectionCardHeader: título a la izquierda, controles
+   (cadena detectada + reejecutar grupo) a la derecha, en la misma fila. */
+.cdasSectionHeaderRow {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cdasSectionHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cdasSectionHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cdasList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.cdaRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.65rem;
+  padding: 0.75rem 1rem;
+}
+
+.cdaRowInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.cdaRowTitulo {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cdaRowResultado {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  overflow-wrap: anywhere;
+}
+
+.cdaRowFecha {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+}
+
+.cdaRowForzado {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: #ffb300;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+/* Indicador compacto en la fila (el detalle completo — expresión base,
+   forzada y quién la ejecutó — vive en VerExpresionModal). */
+.cdaRowForzadoPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: rgba(255, 179, 0, 0.12);
+  color: #ffb300;
+  border: 1px solid rgba(255, 179, 0, 0.3);
+  vertical-align: middle;
+}
+
+.cdaRowForzadoCode {
+  display: block;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+  color: #ffb300;
+  background: #0d1117;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 179, 0, 0.25);
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+.cdaRowActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.forzarModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.forzarModalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.forzarModalExpresionPreview {
+  display: block;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.7rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  font-size: 0.78rem;
+  color: #ffb300;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+/* ── Cuerpo del modal "Forzar expresión" ─────────────────────
+   Misma gramática visual que el Laboratorio de Pruebas de CDAs Globales
+   (CdasGlobales.module.css): etiquetas en mayúsculas con borde inferior,
+   cajas de código monoespaciado sobre fondo oscuro, badges de resultado por
+   color de estado. */
+.forzarSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.forzarSectionLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.3rem;
+  margin: 0;
+}
+
+.forzarReglaGlobal {
+  display: block;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+  color: #58a6ff;
+  background: #0d1117;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.375rem;
+  border: 1px solid #30363d;
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+.forzarHelperText {
+  font-size: 0.7rem;
+  color: #8b949e;
+  margin: 0;
+  line-height: 1.3;
+}
+
+/* ── Advertencia (idéntica a ModoOffline.module.css .warnCallout) ──────── */
+.warnCallout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  background: linear-gradient(135deg, rgba(245, 244, 0, 0.07) 0%, rgba(245, 244, 0, 0.015) 100%);
+  border: 1px solid rgba(245, 244, 0, 0.2);
+  border-radius: 0.7rem;
+  padding: 0.7rem 0.85rem;
+}
+
+.warnIconWrap {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(245, 244, 0, 0.12);
+  color: var(--yellow, #f5f400);
+}
+
+.warnText {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.warnText strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* ── Laboratorio de Pruebas (idéntico a CdasGlobales.module.css) ───────── */
+.sandboxContainer {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 1.1rem;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 9rem;
+}
+
+.sandboxBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.sandboxTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.sandboxRulePreview {
+  font-size: 0.7rem;
+  color: #8b949e;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.sandboxRulePreview code {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #58a6ff;
+  background: #0d1117;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.375rem;
+  border: 1px solid #30363d;
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+.sandboxCuitLabel {
+  font-size: 0.75rem;
+  color: #8b949e;
+  font-weight: 600;
+}
+
+.testResultBox {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  overflow-y: auto;
+  animation: testResultFadeIn 0.15s ease;
+}
+
+@keyframes testResultFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.testResultHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #8b949e;
+}
+
+.testResultHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.testResultCloseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #8b949e;
+  cursor: pointer;
+}
+
+.testResultCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.testResultMessage {
+  font-size: 0.8rem;
+  color: #ffffff;
+  line-height: 1.4;
+  word-break: break-all;
+  font-family: monospace;
+}
+
+.testResultLog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid #21262d;
+}
+
+.testResultLogLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #8b949e;
+}
+
+.testResultLogValue {
+  display: block;
+  font-size: 0.8rem;
+  color: #58a6ff;
+  font-family: monospace;
+  word-break: break-all;
+  line-height: 1.4;
+  max-height: 6rem;
+  overflow-y: auto;
+}
+
+.testBadgeSuccess {
+  background: rgba(56, 161, 105, 0.12);
+  color: #38a169;
+  border: 1px solid rgba(56, 161, 105, 0.25);
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.testBadgeWarning {
+  background: rgba(221, 107, 32, 0.12);
+  color: #dd6b20;
+  border: 1px solid rgba(221, 107, 32, 0.25);
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.testBadgeDanger {
+  background: rgba(229, 62, 62, 0.12);
+  color: #e53e3e;
+  border: 1px solid rgba(229, 62, 62, 0.25);
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+/* Sin max-height/overflow propio: vive dentro del body del Modal, que ya
+   scrollea solo, así que la lista simplemente crece con el contenido. Gap más
+   grande que el de los items sueltos: es el aire que separa una corrida
+   (ejecución de pantalla) de la siguiente. */
+.historialModalList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+/* Fila(s) más nuevas que cualquier corrida de pantalla registrada (ej. un
+   "Volver a ejecutar" puntual): no tienen resultado de grupo asociado
+   todavía, así que van sueltas y sin indent. */
+.historialSueltos {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.historialCorrida {
+  display: flex;
+  flex-direction: column;
+}
+
+/* CDAs puntuales de una misma corrida: indentados y colgando de una línea
+   conectora, para que se lea que "pertenecen" a la fila de resultado general
+   de arriba sin necesitar un acordeón ni una tarjeta separada. */
+.historialCorridaItems {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+  margin-left: 0.9rem;
+  padding-left: 0.75rem;
+  border-left: 2px solid rgba(76, 101, 230, 0.15);
+}
+
+.cdaHistorialItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.85rem;
+}
+
+/* Fila de resultado general (CdaID 0): mismo componente visual que un CDA
+   puntual, con un leve tinte azul para diferenciarla como "encabezado" de la
+   corrida sin gritar demasiado. */
+.cdaHistorialItemGrupo {
+  background: rgba(76, 101, 230, 0.06);
+  border-color: rgba(76, 101, 230, 0.2);
+}
+
+.cdaHistorialInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.cdaHistorialTitulo {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.75);
+  overflow-wrap: anywhere;
+}
+
+.cdaHistorialTitulo strong {
+  color: #ffffff;
+}
+
+.cdaHistorialExpresion {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+
+.cdaHistorialMeta {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.historialModalMsg {
+  margin: 0;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #8b949e;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-success {
+  background: #3ddc84;
+  box-shadow: 0 0 6px rgba(61, 220, 132, 0.6);
+}
+
+.dot-warning {
+  background: #ffb300;
+  box-shadow: 0 0 6px rgba(255, 179, 0, 0.6);
+}
+
+.dot-danger {
+  background: #ff5252;
+  box-shadow: 0 0 6px rgba(255, 82, 82, 0.6);
+}
+
+.dot-neutral {
+  background: #8a9fff;
+  box-shadow: 0 0 6px rgba(76, 101, 230, 0.6);
+}
+
+@media (max-width: 900px) {
+  .container {
+    height: auto;
+  }
+
+  .heroIdentity h1 {
+    max-width: 100%;
+  }
+
+  .embeddedLegajo,
+  .datosTab,
+  .cdasPlaceholderWrap,
+  .cdasScroll {
+    height: auto;
+  }
+
+  .sectionsGrid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "general"
+      "domicilio"
+      "clasificacion"
+      "fechas";
+  }
+
+  .sectionCardFields {
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  }
+}

@@ -1,0 +1,520 @@
+/* =========================================================
+   MODO OFFLINE — Bind Fintech · glass card language
+   ========================================================= */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* ── HEADER ─────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+}
+
+.btnRefresh {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.btnRefresh:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btnRefresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.spinning {
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loadingState {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.875rem;
+  padding: 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.9rem;
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 3.5rem;
+  height: 2px;
+  background: var(--color-azul-bind, #4c65e6);
+  border-radius: 2px;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+.header p {
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0.25rem 0 0 0;
+  font-size: 0.825rem;
+  max-width: 45rem;
+}
+
+/* ── STATUS HERO ─────────────────────────────────────────── */
+
+.statusHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.875rem;
+  padding: 1rem 1.5rem;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.statusOnline {
+  box-shadow:
+    inset 3px 0 0 0 var(--success-green, #3fb950),
+    0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.statusOffline {
+  box-shadow:
+    inset 3px 0 0 0 var(--error-red, #ef4444),
+    0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.statusGlow {
+  position: absolute;
+  top: 50%;
+  right: 8rem;
+  width: 18rem;
+  height: 18rem;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  filter: blur(3.5rem);
+  pointer-events: none;
+  opacity: 0.12;
+}
+
+.statusOnline .statusGlow {
+  background: var(--success-green, #3fb950);
+}
+
+.statusOffline .statusGlow {
+  background: var(--error-red, #ef4444);
+}
+
+.statusHeroLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.statusIconWrap {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.statusOnline .statusIconWrap {
+  background: rgba(63, 185, 80, 0.1);
+  color: #3fb950;
+}
+
+.statusOffline .statusIconWrap {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error-red, #ef4444);
+  animation: iconPulse 2.2s ease-in-out infinite;
+}
+
+.statusInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.statusLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.pulseDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusOnline .pulseDot {
+  background: #3fb950;
+  animation: dotPulse 2s ease-in-out infinite;
+}
+
+.statusOffline .pulseDot {
+  background: var(--error-red, #ef4444);
+  animation: dotPulse 1.2s ease-in-out infinite;
+}
+
+.statusInfo h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.015em;
+}
+
+.statusMetaRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.15rem;
+  min-height: 1.2rem;
+}
+
+.statusMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.durationBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error-red, #ef4444);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  font-variant-numeric: tabular-nums;
+}
+
+.statusHeroRight {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.switchHint {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  white-space: nowrap;
+}
+
+@keyframes dotPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 0.35rem transparent;
+    opacity: 0.7;
+  }
+}
+
+@keyframes iconPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 0.5rem rgba(239, 68, 68, 0);
+  }
+}
+
+/* ── WORKSPACE: integraciones + historial ─────────────────── */
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.875rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  border-color: rgba(76, 101, 230, 0.2);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(76, 101, 230, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.cardIconWrap {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(76, 101, 230, 0.12);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+  color: var(--color-azul-bind, #4c65e6);
+}
+
+.cardHeaderText {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardHeader h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.cardHeader p {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0.2rem 0 0 0;
+  line-height: 1.4;
+}
+
+/* Advertencia de la card de integraciones: callout propio (no el Alert
+   genérico) para que el acento ámbar y el ícono en badge sigan el mismo
+   lenguaje visual que el resto de la página (glass card, radios generosos). */
+.warnCallout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  background: linear-gradient(135deg, rgba(245, 244, 0, 0.07) 0%, rgba(245, 244, 0, 0.015) 100%);
+  border: 1px solid rgba(245, 244, 0, 0.2);
+  border-radius: 0.7rem;
+  padding: 0.7rem 0.85rem;
+}
+
+.warnIconWrap {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(245, 244, 0, 0.12);
+  color: var(--yellow, #f5f400);
+}
+
+.warnText {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.warnText strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* ── INTEGRACIONES ────────────────────────────────────────── */
+
+.integracionesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.integracionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.625rem;
+  padding: 0.75rem 1rem;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.integracionRow:hover {
+  border-color: rgba(76, 101, 230, 0.25);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.integracionInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.integracionTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.integracionNombre {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.integracionDescripcion {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── HISTORIAL ────────────────────────────────────────────── */
+
+.historialList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.historialVacio {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.historialItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.625rem;
+  padding: 0.6rem 0.85rem;
+}
+
+.historialInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.historialEstado {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #ffffff;
+}
+
+.historialMeta {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Indicador de estado (dot) compartido ─────────────────── */
+
+.dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dotOn {
+  background: #3fb950;
+  box-shadow: 0 0 6px rgba(63, 185, 80, 0.6);
+}
+
+.dotOff {
+  background: var(--error-red, #ef4444);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+}

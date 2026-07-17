@@ -1,181 +1,359 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiEdit, FiCheck, FiPlus, FiX, FiRotateCcw, FiSave } from "react-icons/fi";
+import { FiCheck, FiRotateCcw, FiSave, FiLock, FiEdit3, FiSearch, FiInfo } from "react-icons/fi";
 import { toast } from "sonner";
-import { useObtenerCdasPorCadenaId, useVincularCdas } from "../../../../hooks/useCadenaValor";
-import { useObtenerTodosCdas, useCrearCda } from "../../../../hooks/useCda";
-import { InputSimple } from "../../../ui/InputSimple/InputSimple";
+import { useObtenerGrupoCdaConCdas, useVincularCdasAGrupo, useActualizarVinculacionCda } from "../../../../hooks/useCadenaValor";
+import { useObtenerTodosCdas, useActualizarGrupoCda } from "../../../../hooks/useCda";
+import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
+import { esCdaActivo } from "../../../../utils/cdaUtils";
+import { resolverGrupoCda } from "../../../../utils/grupoCdaUtils";
 import { Button } from "../../../ui/Button/Button";
 import { Spinner } from "../../../ui/Spinner/Spinner";
-import { Modal } from "../../../ui/Modal/Modal";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CdaPanel.module.css";
 
-export const CdaPanel = ({ activeItem, onClose }) => {
+// Edita los CDAs (checklist + valor por cadena) y la expresión de agrupación
+// lógica (AND/OR/personalizada) de UN GrupoCda puntual, identificado por la
+// combinación (pantalla, cadena). El padre (CadenasCda.jsx / CdaConfigModal.jsx)
+// decide qué pantalla mostrar (tabs); acá solo se edita una a la vez.
+export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
   // 1. Obtener TODOS los CDAs en el sistema
-  const { data: todosCdas, isLoading: isLoadingTodos } = useObtenerTodosCdas();
+  const { data: todosCdas, isLoading: isLoadingTodos, isError: isErrorTodos, refetch: refetchTodos } = useObtenerTodosCdas();
 
-  // 2. Obtener los CDAs vinculados a esta cadena de valor
-  const { data: linkedCdas, isLoading: isLoadingLinked } = useObtenerCdasPorCadenaId(cadenaId);
+  // 2. Resolver el GrupoCda de (pantalla, cadena) y los CDAs vinculados a él.
+  // Lectura pasiva: si el grupo todavía no existe no lo crea (eso pasa recién
+  // al guardar, vía resolverGrupoCda).
+  const { data: grupoData, isLoading: isLoadingGrupo, isError: isErrorGrupo, refetch: refetchGrupo } = useObtenerGrupoCdaConCdas(cadenaId, pantalla);
 
-  const { mutateAsync: crearCda, isPending: isCreandoCda } = useCrearCda();
-  const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdas();
+  const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdasAGrupo();
+  const { mutateAsync: actualizarVinculacionCda, isPending: isActualizandoVinculacion } = useActualizarVinculacionCda();
+  const { mutateAsync: actualizarGrupoCda, isPending: isActualizandoGrupo } = useActualizarGrupoCda();
+  const usuarioWebId = useUsuarioWebIdActual();
+  const allCdasList = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivo);
+  const linkedCdasList = Array.isArray(grupoData?.cdas) ? grupoData.cdas : grupoData?.cdas?.items || grupoData?.cdas?.data || [];
 
-  const [localCdasStatus, setLocalCdasStatus] = useState({});
-  const [customRechazoMsgs, setCustomRechazoMsgs] = useState({});
-  const [editingCda, setEditingCda] = useState(null);
-  const [tempRechazoMsg, setTempRechazoMsg] = useState("");
+  const getCdaId = (c) => {
+    if (!c) return undefined;
+    return c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
+  };
 
-  // Estados del formulario para agregar CDA
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [descripcion, setDescripcion] = useState("");
-  const [expresion, setExpresion] = useState("");
-  const [expresionlog, setExpresionlog] = useState("");
-  const [mensajerechazo, setMensajerechazo] = useState("");
-  const [validationError, setValidationError] = useState("");
+  // ID de la fila de vinculación (join CDA<->Grupo), necesario para el PUT
+  // que modifica una vinculación existente.
+  const getCdaCadenaValorId = (c) => {
+    if (!c) return undefined;
+    return c.cdacadenavalorid ?? c.CdaCadenaValorId ?? c.CdaCadenaValorID ?? undefined;
+  };
+
+  const getCdaProperty = (c, propName) => {
+    if (!c) return "";
+    if (propName === "vinculadefaultcv") {
+      return c.vinculadefaultcv !== undefined ? c.vinculadefaultcv : (c.VinculaDefaultCV !== undefined ? c.VinculaDefaultCV : "");
+    }
+    const pascalPropName = propName.charAt(0).toUpperCase() + propName.slice(1);
+    return c[propName] !== undefined ? c[propName] : (c[pascalPropName] !== undefined ? c[pascalPropName] : "");
+  };
+
+  // cdaid -> { checked, valorcomparacion, simbolocomparacion, expresion, mensajerechazo, cdacadenavalorid }
+  const [cdaConfigs, setCdaConfigs] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [soloActivos, setSoloActivos] = useState(false);
 
-  const allCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
-  const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+  // Expresión de agrupación lógica del GrupoCda (AND / OR / personalizada)
+  const [agrupacionType, setAgrupacionType] = useState("and"); // "and" | "or" | "custom"
+  const [expresionAgrupacion, setExpresionAgrupacion] = useState("");
 
-  // Inicializar estado local de checkbox a partir de la relación actual
+  const buildCdaConfigs = (allList, linkedList) => {
+    const configs = {};
+    allList.forEach(c => {
+      const id = getCdaId(c);
+      if (id === undefined) return;
+      configs[id] = {
+        checked: false,
+        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
+        simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
+        expresion: getCdaProperty(c, "expresion") || "",
+        mensajerechazo: getCdaProperty(c, "mensajerechazo") || "",
+        cdacadenavalorid: undefined
+      };
+    });
+    linkedList.forEach(c => {
+      const id = getCdaId(c);
+      if (id === undefined || !configs[id]) return;
+      // El backend no impide que un mismo CDA termine con más de una fila de
+      // vinculación en el mismo grupo (ej. si se lo agrega dos veces por
+      // POST). Si eso pasa, priorizamos la fila activa en vez de quedarnos
+      // con la que aparezca última en la respuesta.
+      if (configs[id].checked && !esCdaActivo(c)) return;
+      configs[id] = {
+        ...configs[id],
+        checked: esCdaActivo(c),
+        valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
+        cdacadenavalorid: getCdaCadenaValorId(c)
+      };
+    });
+    return configs;
+  };
+
+  // Inicializar estado local a partir de los datos cargados
   useEffect(() => {
-    const status = {};
-    allCdasList.forEach(c => {
-      status[c.cdaid] = false;
-    });
-    linkedCdasList.forEach(c => {
-      status[c.cdaid] = true;
-    });
-    setLocalCdasStatus(status);
-  }, [todosCdas, linkedCdas]);
+    setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
+  }, [todosCdas, grupoData]);
+
+  // Detectar el tipo de agrupación a partir de la expresión guardada
+  useEffect(() => {
+    const grupo = grupoData?.grupo;
+    const expr = grupo?.expresionagrupacion || "";
+    setExpresionAgrupacion(expr);
+
+    if (!expr.trim()) {
+      setAgrupacionType("and");
+      return;
+    }
+    const linkedActiveIds = linkedCdasList.filter(esCdaActivo).map(getCdaId).filter((id) => id !== undefined);
+    const expectedOrExpr = linkedActiveIds.map(id => `cda${id}`).join(" or");
+    const expectedOrExprUpper = linkedActiveIds.map(id => `cda${id}`).join(" OR ");
+    const normalizedExpr = expr.trim().replace(/\s+/g, " ");
+
+    if (normalizedExpr === expectedOrExpr || normalizedExpr === expectedOrExprUpper) {
+      setAgrupacionType("or");
+    } else {
+      setAgrupacionType("custom");
+    }
+  }, [grupoData]);
 
   const handleToggleCda = (cdaId) => {
-    setLocalCdasStatus(prev => ({
+    setCdaConfigs(prev => ({
       ...prev,
-      [cdaId]: !prev[cdaId]
+      [cdaId]: {
+        ...prev[cdaId],
+        checked: !prev[cdaId]?.checked
+      }
     }));
   };
 
-  const getActiveCdaIds = () => {
-    return allCdasList
-      .map(c => c.cdaid)
-      .filter(id => localCdasStatus[id] === true);
+  const handleValueChange = (cdaId, val) => {
+    setCdaConfigs(prev => ({
+      ...prev,
+      [cdaId]: {
+        ...prev[cdaId],
+        valorcomparacion: val
+      }
+    }));
   };
 
-  const initialActiveCdaIds = linkedCdasList.map(c => c.cdaid);
-  const activeCdaIds = getActiveCdaIds();
-  
-  const hasChanges = activeCdaIds.length !== initialActiveCdaIds.length ||
-    activeCdaIds.some(id => !initialActiveCdaIds.includes(id)) ||
-    initialActiveCdaIds.some(id => !activeCdaIds.includes(id));
+  const checkedIds = Object.entries(cdaConfigs)
+    .filter(([, config]) => config.checked)
+    .map(([idStr]) => Number(idStr));
+
+  // Función para insertar tokens en la posición del cursor de la textarea
+  const insertTextAtCursor = (textToInsert) => {
+    const textarea = document.getElementById("expresion-agrupacion-textarea");
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const textBefore = expresionAgrupacion.substring(0, start);
+    const textAfter = expresionAgrupacion.substring(end);
+
+    let cleanText = textToInsert;
+    if (start > 0 && textBefore[start - 1] !== " " && !cleanText.startsWith(" ")) {
+      cleanText = " " + cleanText;
+    }
+    if (textAfter.length > 0 && textAfter[0] !== " " && !cleanText.endsWith(" ")) {
+      cleanText = cleanText + " ";
+    }
+
+    const newText = textBefore + cleanText + textAfter;
+    setExpresionAgrupacion(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = start + cleanText.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  // Comparar estado actual vs inicial para habilitar el botón de Guardar
+  const hasChanges = () => {
+    const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
+    const baseExpr = grupoData?.grupo?.expresionagrupacion || "";
+
+    const checklistChanged = Object.entries(cdaConfigs).some(([idStr, config]) => {
+      const base = baseConfigs[Number(idStr)];
+      if (!base) return false;
+      if (config.checked !== base.checked) return true;
+      if (config.checked && String(config.valorcomparacion || "") !== String(base.valorcomparacion || "")) return true;
+      return false;
+    });
+
+    const finalExpresion = calcularExpresionFinal();
+    const expresionChanged = finalExpresion !== baseExpr;
+
+    return checklistChanged || expresionChanged;
+  };
+
+  const calcularExpresionFinal = () => {
+    if (agrupacionType === "or") {
+      return checkedIds.map((id) => `cda${id}`).join(" or ");
+    }
+    if (agrupacionType === "custom") {
+      return expresionAgrupacion.trim();
+    }
+    return ""; // "and": expresión vacía, el backend interpreta AND de todos los activos por defecto
+  };
 
   const handleSaveVinculacion = () => {
     setConfirmOpen(true);
   };
 
   const handleReset = () => {
-    const status = {};
-    allCdasList.forEach(c => {
-      status[c.cdaid] = false;
-    });
-    linkedCdasList.forEach(c => {
-      status[c.cdaid] = true;
-    });
-    setLocalCdasStatus(status);
-    setCustomRechazoMsgs({});
+    setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
+    setExpresionAgrupacion(grupoData?.grupo?.expresionagrupacion || "");
     toast.success("CDAs restablecidos a la configuración guardada");
+  };
+
+  const sanearValor = (val) => {
+    let valorSaneado = String(val || "").trim();
+    if (valorSaneado === '""' || valorSaneado === "''") {
+      valorSaneado = "";
+    }
+    return valorSaneado;
   };
 
   const confirmSaveVinculacion = async () => {
     try {
-      await vincularCda({
-        cadenavalorid: cadenaId,
-        listacda: activeCdaIds
+      // El grupo puede no existir todavía (cadena activada antes de este
+      // cambio de modelo): se crea recién acá, al guardar de verdad.
+      const grupoActual = grupoData?.grupo || (await resolverGrupoCda(pantalla, cadenaId));
+      const grupoCdaId = grupoActual.grupocdaid;
+
+      const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
+
+      const nuevos = [];
+      const modificados = [];
+
+      Object.entries(cdaConfigs).forEach(([idStr, config]) => {
+        const id = Number(idStr);
+        const base = baseConfigs[id];
+        if (!base) return;
+        const valorSaneado = sanearValor(config.valorcomparacion);
+        const valorBase = sanearValor(base.valorcomparacion);
+
+        if (config.checked && !base.checked) {
+          if (base.cdacadenavalorid !== undefined) {
+            modificados.push({ cdacadenavalorid: base.cdacadenavalorid, cdaid: id, valorcomparacion: valorSaneado, activo: "1" });
+          } else {
+            nuevos.push({ cdaid: id, valorcomparacion: valorSaneado });
+          }
+        } else if (!config.checked && base.checked) {
+          modificados.push({ cdacadenavalorid: base.cdacadenavalorid, cdaid: id, valorcomparacion: valorSaneado, activo: "0" });
+        } else if (config.checked && base.checked && valorSaneado !== valorBase) {
+          modificados.push({ cdacadenavalorid: base.cdacadenavalorid, cdaid: id, valorcomparacion: valorSaneado, activo: "1" });
+        }
       });
 
-      await queryClient.invalidateQueries({ queryKey: ['cadenaValor', 'cdas', cadenaId] });
-      toast.success("Vinculación de CDAs actualizada correctamente");
+      if (nuevos.length > 0) {
+        await vincularCda({
+          grupocdaid: grupoCdaId,
+          listacda: nuevos.map((n) => ({ ...n, usuariowebid: usuarioWebId }))
+        });
+      }
+
+      // Secuencial: cada PUT toca una sola vinculación y el backend usa un
+      // pool de conexiones limitado (FireDAC).
+      for (const mod of modificados) {
+        if (mod.cdacadenavalorid === undefined) {
+          console.warn(`No se encontró CdaCadenaValorID para el CDA ${mod.cdaid}; no se pudo actualizar.`);
+          toast.error(`No se pudo actualizar el criterio ${mod.cdaid} (falta el ID de vinculación).`);
+          continue;
+        }
+        await actualizarVinculacionCda({
+          cdacadenavalorid: mod.cdacadenavalorid,
+          grupocdaid: grupoCdaId,
+          cdaid: mod.cdaid,
+          valorcomparacion: mod.valorcomparacion,
+          activo: mod.activo,
+          usuariowebid: usuarioWebId
+        });
+      }
+
+      const finalExpresion = calcularExpresionFinal();
+      if (finalExpresion !== (grupoActual.expresionagrupacion || "")) {
+        await actualizarGrupoCda({
+          grupocdaid: grupoCdaId,
+          pantallagrupocdaid: grupoActual.pantallagrupocdaid,
+          cadenavalorid: cadenaId,
+          expresionagrupacion: finalExpresion
+        });
+      }
+
+      await queryClient.invalidateQueries({ queryKey: ['cda', 'todos_list'] });
+      await queryClient.invalidateQueries({ queryKey: ['cadenaValor', 'grupoCdaConCdas', pantalla, cadenaId] });
+      toast.success("Criterios de aceptación y vinculación actualizados correctamente");
       setConfirmOpen(false);
       if (onClose) onClose();
     } catch (err) {
       console.error(err);
-      toast.error("Ocurrió un error al vincular los CDAs");
+      toast.error("Ocurrió un error al guardar los cambios");
       setConfirmOpen(false);
     }
   };
 
-  const handleCreateAndLinkCda = async (e) => {
-    e.preventDefault();
-    if (!descripcion.trim() || !expresion.trim() || !expresionlog.trim() || !mensajerechazo.trim()) {
-      setValidationError("Todos los campos son obligatorios");
-      return;
-    }
-    setValidationError("");
+  const isLoading = isLoadingTodos || isLoadingGrupo;
+  const isSaving = isVinculandoCda || isActualizandoVinculacion || isActualizandoGrupo;
 
-    try {
-      // 1. Crear CDA
-      const newCda = await crearCda({
-        cdaid: 0,
-        descripcion: descripcion.trim(),
-        expresion: expresion.trim(),
-        expresionlog: expresionlog.trim(),
-        mensajerechazo: mensajerechazo.trim()
-      });
-
-      let rawId = newCda?.cdaid || newCda?.cdaId || newCda?.CdaId || newCda?.CdaID || newCda?.cdaID || newCda?.Id || newCda?.id || newCda;
-      if (rawId && typeof rawId === 'object') {
-        const keys = Object.keys(rawId);
-        const idKey = keys.find(k => k.toLowerCase() === 'cdaid' || k.toLowerCase() === 'id');
-        if (idKey) {
-          rawId = rawId[idKey];
-        }
-      }
-      const newCdaId = Number(rawId);
-
-      if (!newCdaId || isNaN(newCdaId)) {
-        console.error("Respuesta de la creación de CDA:", newCda);
-        throw new Error(`ID no encontrado en la respuesta: ${JSON.stringify(newCda)}`);
-      }
-
-      // 2. Vincular el nuevo CDA manteniendo los que ya estaban activos en este panel
-      const activeCdaIds = allCdasList
-        .map(c => c.cdaid)
-        .filter(id => localCdasStatus[id] === true);
-
-      await vincularCda({
-        cadenavalorid: cadenaId,
-        listacda: [...activeCdaIds, newCdaId]
-      });
-
-      // 3. Invalidate queries
-      await queryClient.invalidateQueries({ queryKey: ['cda', 'todos_list'] });
-      await queryClient.invalidateQueries({ queryKey: ['cadenaValor', 'cdas', cadenaId] });
-
-      toast.success("Criterio de Aceptación agregado y vinculado exitosamente");
-      
-      // Reset form
-      setDescripcion("");
-      setExpresion("");
-      setExpresionlog("");
-      setMensajerechazo("");
-      setIsFormOpen(false);
-    } catch (err) {
-      console.error(err);
-      toast.error("Ocurrió un error al guardar el Criterio de Aceptación: " + (err?.response?.data?.message || err.message));
-    }
-  };
-
-  const isLoading = isLoadingTodos || isLoadingLinked;
+  const cdasVisibles = allCdasList
+    .filter(cda => !hideUnchecked || (cdaConfigs[getCdaId(cda)]?.checked))
+    .filter(cda => !soloActivos || (cdaConfigs[getCdaId(cda)]?.checked))
+    .filter(cda => {
+      const term = searchTerm.trim().toLowerCase();
+      if (!term) return true;
+      return (
+        String(getCdaProperty(cda, "descripcion")).toLowerCase().includes(term) ||
+        String(getCdaProperty(cda, "expresion")).toLowerCase().includes(term)
+      );
+    })
+    // Los activos siempre arriba; Array.prototype.sort es estable, así que
+    // dentro de cada grupo (activo/inactivo) se conserva el orden original.
+    .sort((a, b) => {
+      const aChecked = cdaConfigs[getCdaId(a)]?.checked ? 1 : 0;
+      const bChecked = cdaConfigs[getCdaId(b)]?.checked ? 1 : 0;
+      return bChecked - aChecked;
+    });
 
   if (isLoading) {
     return (
-      <div style={{ padding: "2rem", display: "flex", justifyContent: "center" }}>
+      <div style={{ flex: 1, minHeight: "18rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Spinner size={50} />
+      </div>
+    );
+  }
+
+  // Nunca mostrar el checklist como si "no hubiera nada vinculado" cuando en
+  // realidad falló la petición de red: eso invita a re-vincular algo que ya
+  // estaba vinculado y genera duplicados. Mostrar el error y dejar reintentar.
+  if (isErrorTodos || isErrorGrupo) {
+    return (
+      <div style={{ flex: 1, minHeight: "18rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "2rem" }}>
+        <p style={{ color: "#ea4a5a", marginBottom: "1rem" }}>
+          Ocurrió un error de red al traer los CDAs. No se muestra el listado para evitar vincular algo que ya podría estar vinculado.
+        </p>
+        <Button
+          type="button"
+          variant="outlineBlue"
+          size="sm"
+          onClick={() => {
+            if (isErrorTodos) refetchTodos();
+            if (isErrorGrupo) refetchGrupo();
+          }}
+        >
+          Reintentar
+        </Button>
       </div>
     );
   }
@@ -183,245 +361,307 @@ export const CdaPanel = ({ activeItem, onClose }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       <div className={styles.modalBody}>
-        <CadenaHeaderCard
-        denominacion={activeItem?.denominacion}
-        logo={activeItem?.logo}
-        referencia={activeItem?.referencia}
-        cadenavalorid={activeItem?.cadenavalorid}
-        cuittercero={activeItem?.cuittercero}
-      />
-      <p style={{ fontSize: "0.825rem", color: "#8b949e", marginBottom: "1.25rem", lineHeight: "1.4" }}>
-        Seleccioná los CDAs que se deben ejecutar durante la validación de esta cadena de valor.
-      </p>
-
-      {/* SECCION NUEVO CDA */}
-      <div className={styles.newCdaSection}>
-        {!isFormOpen ? (
-          <button
-            type="button"
-            className={styles.btnAddCda}
-            onClick={() => setIsFormOpen(true)}
-          >
-            <FiPlus size={16} />
-            <span>Agregar Criterio de Aceptación (CDA)</span>
-          </button>
-        ) : (
-          <form onSubmit={handleCreateAndLinkCda} className={styles.newCdaForm}>
-            <div className={styles.formHeader}>
-              <h4>Nuevo Criterio de Aceptación (CDA)</h4>
-              <button
-                type="button"
-                className={styles.btnCancelForm}
-                onClick={() => {
-                  setIsFormOpen(false);
-                  setValidationError("");
-                }}
-              >
-                <FiX size={16} />
-              </button>
-            </div>
-
-            {validationError && (
-              <div className={styles.validationError}>
-                {validationError}
-              </div>
-            )}
-
-            <div className={styles.formGrid}>
-              <div className={styles.formField}>
-                <label htmlFor="cda-desc">Descripción</label>
-                <input
-                  id="cda-desc"
-                  type="text"
-                  value={descripcion}
-                  onChange={(e) => setDescripcion(e.target.value)}
-                  placeholder="Ej. Evaluar si la persona supera el score..."
-                  required
-                  disabled={isCreandoCda || isVinculandoCda}
-                />
-              </div>
-
-              <div className={styles.formField}>
-                <label htmlFor="cda-expr">Expresión</label>
-                <input
-                  id="cda-expr"
-                  type="text"
-                  value={expresion}
-                  onChange={(e) => setExpresion(e.target.value)}
-                  placeholder="Ej. score <= 500"
-                  required
-                  disabled={isCreandoCda || isVinculandoCda}
-                />
-              </div>
-
-              <div className={styles.formField}>
-                <label htmlFor="cda-exprlog">Expresión Log</label>
-                <input
-                  id="cda-exprlog"
-                  type="text"
-                  value={expresionlog}
-                  onChange={(e) => setExpresionlog(e.target.value)}
-                  placeholder="Ej. SCORE <= 500"
-                  required
-                  disabled={isCreandoCda || isVinculandoCda}
-                />
-              </div>
-
-              <div className={styles.formField}>
-                <label htmlFor="cda-rechazo">Mensaje de Rechazo</label>
-                <input
-                  id="cda-rechazo"
-                  type="text"
-                  value={mensajerechazo}
-                  onChange={(e) => setMensajerechazo(e.target.value)}
-                  placeholder="Ej. El cliente supera el score permitido"
-                  required
-                  disabled={isCreandoCda || isVinculandoCda}
-                />
-              </div>
-            </div>
-
-            <div className={styles.formActions}>
-              <Button
-                type="submit"
-                variant="blue"
-                size="sm"
-                isLoading={isCreandoCda || isVinculandoCda}
-              >
-                Guardar y Vincular
-              </Button>
-            </div>
-          </form>
+        {!hideHeader && (
+          <CadenaHeaderCard
+            denominacion={activeItem?.denominacion}
+            logo={activeItem?.logo}
+            referencia={activeItem?.referencia}
+            cadenavalorid={activeItem?.cadenavalorid}
+            cuittercero={activeItem?.cuittercero}
+          />
         )}
-      </div>
+        <p style={{ fontSize: "0.825rem", color: "#8b949e", lineHeight: "1.4" }}>
+          {isReadOnly
+            ? "Listado de los CDAs activos para esta cadena y pantalla. La regla y el mensaje de rechazo se definen en Criterios de Aceptación; el valor mostrado es el vigente para esta combinación."
+            : "Activá los CDAs que se deben ejecutar para esta cadena en esta pantalla, y definí cómo se combinan entre sí. La regla y el mensaje de rechazo son los definidos en Criterios de Aceptación: acá solo podés personalizar, por cadena, el valor límite de cada uno."}
+        </p>
 
-      <div className={styles.cdasSection}>
-        <div className={styles.cdasTitle}>Configuración de CDAs</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginTop: "1rem" }}>
-          {allCdasList.length === 0 ? (
-            <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
-              No hay CDAs creados en el sistema.
+        <div className={styles.mainLayout}>
+        <div className={styles.leftCol}>
+          <div className={styles.agrupacionSection}>
+            <span className={styles.customTextareaLabel}>Agrupación lógica de esta cadena y pantalla</span>
+
+            <div className={styles.typeSelector}>
+              <div
+                className={`${styles.radioOption} ${agrupacionType === "and" ? styles.radioActive : ""}`}
+                onClick={() => !isReadOnly && setAgrupacionType("and")}
+              >
+                <input
+                  type="radio"
+                  className={styles.radioInput}
+                  checked={agrupacionType === "and"}
+                  onChange={() => setAgrupacionType("and")}
+                  disabled={isReadOnly || isSaving}
+                />
+                <div className={styles.radioLabel}>
+                  <span className={styles.radioLabelText}>Cumplir todos los criterios (AND)</span>
+                  <span className={styles.radioDescText}>Se deben cumplir todos los CDAs activos.</span>
+                </div>
+              </div>
+
+              <div
+                className={`${styles.radioOption} ${agrupacionType === "or" ? styles.radioActive : ""}`}
+                onClick={() => !isReadOnly && setAgrupacionType("or")}
+              >
+                <input
+                  type="radio"
+                  className={styles.radioInput}
+                  checked={agrupacionType === "or"}
+                  onChange={() => setAgrupacionType("or")}
+                  disabled={isReadOnly || isSaving}
+                />
+                <div className={styles.radioLabel}>
+                  <span className={styles.radioLabelText}>Cumplir al menos un criterio (OR)</span>
+                  <span className={styles.radioDescText}>Basta con que se cumpla cualquiera de los CDAs activos.</span>
+                </div>
+              </div>
+
+              <div
+                className={`${styles.radioOption} ${agrupacionType === "custom" ? styles.radioActive : ""}`}
+                onClick={() => !isReadOnly && setAgrupacionType("custom")}
+              >
+                <input
+                  type="radio"
+                  className={styles.radioInput}
+                  checked={agrupacionType === "custom"}
+                  onChange={() => setAgrupacionType("custom")}
+                  disabled={isReadOnly || isSaving}
+                />
+                <div className={styles.radioLabel}>
+                  <span className={styles.radioLabelText}>Expresión personalizada (Avanzado)</span>
+                  <span className={styles.radioDescText}>Escribí una expresión lógica compleja utilizando los IDs de los CDAs.</span>
+                </div>
+              </div>
             </div>
-          ) : (
-            allCdasList.map((cda) => {
-              const isChecked = localCdasStatus[cda.cdaid] === true;
-              const mensajeRechazoActual = customRechazoMsgs[cda.cdaid] !== undefined
-                ? customRechazoMsgs[cda.cdaid]
-                : cda.mensajerechazo;
 
-              return (
-                <div
-                  key={cda.cdaid}
-                  className={`${styles.cdaCard} ${isChecked ? styles.cdaCardChecked : ""}`}
-                >
-                  <div className={styles.checkboxWrapper} onClick={() => handleToggleCda(cda.cdaid)}>
-                    <div className={`${styles.customCheckbox} ${isChecked ? styles.checked : ""}`}>
-                      {isChecked && <FiCheck size={14} className={styles.checkmarkIcon} />}
+            {agrupacionType === "custom" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <div className={styles.customTextareaGroup}>
+                  <label htmlFor="expresion-agrupacion-textarea" className={styles.customTextareaLabel}>
+                    Fórmula de Agrupación
+                  </label>
+                  <textarea
+                    id="expresion-agrupacion-textarea"
+                    className={styles.customTextarea}
+                    value={expresionAgrupacion}
+                    onChange={(e) => setExpresionAgrupacion(e.target.value)}
+                    placeholder="Ej: cda1042 and (cda1043 or cda1044)"
+                    disabled={isReadOnly || isSaving}
+                  />
+                </div>
+
+                {!isReadOnly && (
+                  <div className={styles.pillsContainer}>
+                    <h4 className={styles.pillGroupTitle}>Insertar CDAs Activos</h4>
+                    <div className={styles.pillsList}>
+                      {checkedIds.length === 0 ? (
+                        <span style={{ fontSize: "0.75rem", color: "#8b949e" }}>
+                          Activá criterios en la lista de la derecha para ver sus botones de inserción rápida.
+                        </span>
+                      ) : (
+                        checkedIds.map(id => {
+                          const found = allCdasList.find(c => getCdaId(c) === id);
+                          const label = found ? getCdaProperty(found, "descripcion") : `Criterio ${id}`;
+                          return (
+                            <button
+                              type="button"
+                              key={id}
+                              className={styles.cdaPill}
+                              title={label}
+                              onClick={() => insertTextAtCursor(`cda${id}`)}
+                            >
+                              cda{id}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+
+                    <h4 className={styles.pillGroupTitle} style={{ marginTop: "0.5rem" }}>Insertar Conectores</h4>
+                    <div className={styles.pillsList}>
+                      <button type="button" className={styles.operatorPill} onClick={() => insertTextAtCursor("and")}>and</button>
+                      <button type="button" className={styles.operatorPill} onClick={() => insertTextAtCursor("or")}>or</button>
+                      <button type="button" className={styles.operatorPill} onClick={() => insertTextAtCursor("(")}>(</button>
+                      <button type="button" className={styles.operatorPill} onClick={() => insertTextAtCursor(")")}>)</button>
                     </div>
                   </div>
-                  <div
-                    className={styles.cdaContent}
-                    onClick={() => handleToggleCda(cda.cdaid)}
-                  >
-                    <strong className={styles.cdaTitleText}>{cda.descripcion}</strong>
-                    {mensajeRechazoActual && (
-                      <span className={styles.cdaRechazoText}>
-                        Mensaje rechazo: {mensajeRechazoActual}
-                      </span>
-                    )}
-                  </div>
-                  <div className={styles.actionsWrapper}>
-                    <button
-                      type="button"
-                      title="Editar mensaje de rechazo"
-                      className={styles.btnActionEdit}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setEditingCda(cda);
-                        setTempRechazoMsg(mensajeRechazoActual || "");
-                      }}
-                    >
-                      <FiEdit size={12} />
-                    </button>
-                    <span className={`${styles.cdaStatusBadge} ${isChecked ? styles.badgeActive : styles.badgeInactive}`}>
-                      {isChecked ? "Activo" : "Inactivo"}
-                    </span>
-                  </div>
+                )}
+
+                <div className={styles.infoBox}>
+                  <FiInfo style={{ marginRight: "0.4rem", verticalAlign: "middle" }} />
+                  Recordá combinar los IDs de la forma: <code>cda1042 and (cda1043 or cda1044)</code>.
                 </div>
-              );
-            })
-          )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.rightCol}>
+        {!hideUnchecked && allCdasList.length > 0 && (
+          <div className={styles.searchRow}>
+            <div className={styles.searchWrap}>
+              <FiSearch className={styles.iconSearch} />
+              <input
+                type="text"
+                placeholder="Buscar por descripción o expresión..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <label className={styles.activosToggle}>
+              <input
+                type="checkbox"
+                className={styles.activosToggleInput}
+                checked={soloActivos}
+                onChange={(e) => setSoloActivos(e.target.checked)}
+              />
+              <span className={styles.activosToggleTrack}>
+                <span className={styles.activosToggleThumb} />
+              </span>
+              <span className={styles.activosToggleText}>Solo activos</span>
+            </label>
+          </div>
+        )}
+
+        {!hideUnchecked && allCdasList.length > 0 && (
+          <div className={styles.checklistHeader}>
+            <span>{checkedIds.length} de {allCdasList.length} CDA{allCdasList.length !== 1 ? "s" : ""} activo{checkedIds.length !== 1 ? "s" : ""}</span>
+          </div>
+        )}
+
+        <div className={`${styles.cdasSection} ${isReadOnly ? styles.readOnly : ""}`}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            {allCdasList.length === 0 ? (
+              <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
+                No hay CDAs creados en el sistema.
+              </div>
+            ) : cdasVisibles.length === 0 ? (
+              <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
+                No se encontraron CDAs que coincidan con la búsqueda.
+              </div>
+            ) : (
+              cdasVisibles
+                .map((cda) => {
+                  const id = getCdaId(cda);
+                  if (id === undefined) return null;
+
+                  const config = cdaConfigs[id] || {
+                    checked: false,
+                    valorcomparacion: getCdaProperty(cda, "valorcomparacion") || "",
+                    simbolocomparacion: getCdaProperty(cda, "simbolocomparacion") || "=",
+                    expresion: getCdaProperty(cda, "expresion") || "",
+                    mensajerechazo: getCdaProperty(cda, "mensajerechazo") || ""
+                  };
+
+                  const isChecked = config.checked;
+                  const valComparacion = config.valorcomparacion;
+                  const simboloComparacion = config.simbolocomparacion;
+                  const exprComparacion = config.expresion;
+                  const mensajeRechazo = config.mensajerechazo;
+
+                  const isDefault = String(getCdaProperty(cda, "vinculadefaultcv")) === "1" || String(getCdaProperty(cda, "vinculadefaultcv")).toUpperCase() === "S";
+
+                  const valorGlobal = getCdaProperty(cda, "valorcomparacion") || "";
+                  const esValorPersonalizado = isChecked && String(valComparacion || "") !== String(valorGlobal);
+
+                  return (
+                    <div
+                      key={id}
+                      className={`${styles.cdaCard} ${isChecked ? styles.cdaCardChecked : ""}`}
+                    >
+                      {!hideCheckboxes && (
+                        <div className={styles.checkboxWrapper} onClick={() => { if(!isReadOnly) handleToggleCda(id) }}>
+                          <div className={`${styles.customCheckbox} ${isChecked ? styles.checked : ""}`}>
+                            {isChecked && <FiCheck size={14} className={styles.checkmarkIcon} />}
+                          </div>
+                        </div>
+                      )}
+                      <div
+                        className={styles.cdaContent}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                          <strong className={styles.cdaTitleText}>{getCdaProperty(cda, "descripcion")}</strong>
+                          {isDefault && (
+                            <span className={styles.defaultBadge}>Por Defecto</span>
+                          )}
+                        </div>
+
+                        {/* Regla global: solo lectura, definida en Criterios de Aceptación */}
+                        <div className={styles.globalRuleRow} title="Definida en Criterios de Aceptación. No se edita por cadena.">
+                          <FiLock className={styles.lockIcon} size={11} />
+                          <span className={styles.globalRuleLabel}>Regla global</span>
+                          <code className={styles.globalRuleExpr}>{exprComparacion}</code>
+                          <span className={styles.globalRuleOperator}>{simboloComparacion}</span>
+                        </div>
+
+                        <div className={styles.globalRechazoRow}>
+                          {mensajeRechazo ? (
+                            <span className={styles.globalRechazoText} title={mensajeRechazo}>
+                              <span className={styles.globalRechazoLabel}>Mensaje de rechazo global:</span> "{mensajeRechazo}"
+                            </span>
+                          ) : (
+                            <span className={styles.globalRechazoTextEmpty}>Sin mensaje de rechazo configurado</span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className={styles.controlPanel}>
+                        <span className={styles.controlPanelLabel}>Valor en esta cadena</span>
+                        <div className={styles.controlValueWrap}>
+                          <input
+                            type="text"
+                            value={valComparacion}
+                            onChange={(e) => handleValueChange(id, e.target.value)}
+                            className={styles.controlValueInput}
+                            placeholder="Valor"
+                            disabled={!isChecked || isReadOnly}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          {!isReadOnly && <FiEdit3 className={styles.controlPencilIcon} size={12} />}
+                        </div>
+                        {esValorPersonalizado && (
+                          <span className={styles.overrideHint} title={`El valor definido en Criterios de Aceptación es "${valorGlobal || "(vacío)"}"`}>
+                            ≠ global: {valorGlobal || "(vacío)"}
+                          </span>
+                        )}
+                        <span className={`${styles.cdaStatusBadge} ${isChecked ? styles.badgeActive : styles.badgeInactive}`}>
+                          {isChecked ? "Activo" : "Inactivo"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+            )}
+          </div>
+        </div>
+        </div>
         </div>
       </div>
-    </div>
 
-    <div className={styles.mainFooter}>
-        <Button
-          type="button"
-          variant="outlineBlue"
-          size="sm"
-          onClick={handleReset}
-        >
-          <FiRotateCcw style={{ marginRight: "0.5rem" }} />
-          REESTABLECER
-        </Button>
-        <Button
-          type="button"
-          variant="blue"
-          size="sm"
-          onClick={handleSaveVinculacion}
-          disabled={!hasChanges && Object.keys(customRechazoMsgs).length === 0}
-          isLoading={isVinculandoCda}
-        >
-          <FiSave style={{ marginRight: "0.5rem" }} />
-          VINCULAR SELECCIÓN
-        </Button>
-      </div>
-
-      <Modal
-        isOpen={!!editingCda}
-        onClose={() => setEditingCda(null)}
-        title="EDITAR MENSAJE DE RECHAZO"
-        maxWidth="500px"
-        variant="blue"
-      >
-        {editingCda && (
-          <>
-            <p style={{ fontSize: "0.875rem", color: "#8b949e", marginBottom: "1.25rem" }}>
-              Modifique el mensaje que se mostrará cuando se rechace la validación de este CDA:
-            </p>
-            <div style={{ marginBottom: "1rem" }}>
-              <strong style={{ color: "#ffffff", display: "block", marginBottom: "0.5rem", fontSize: "0.9rem" }}>
-                {editingCda.descripcion}
-              </strong>
-            </div>
-            <InputSimple
-              label="Mensaje de Rechazo"
-              value={tempRechazoMsg}
-              onChange={val => setTempRechazoMsg(val)}
-            />
-            <div className={styles.modalFooter}>
-              <Button variant="outlineBlue" onClick={() => setEditingCda(null)}>
-                CANCELAR
-              </Button>
-              <Button
-                variant="blue"
-                onClick={() => {
-                  setCustomRechazoMsgs(prev => ({
-                    ...prev,
-                    [editingCda.cdaid]: tempRechazoMsg
-                  }));
-                  setEditingCda(null);
-                  toast.success("Mensaje de rechazo actualizado (Simulado)");
-                }}
-              >
-                GUARDAR
-              </Button>
-            </div>
-          </>
-        )}
-      </Modal>
+      {!isReadOnly && (
+        <div className={styles.mainFooter}>
+          <Button
+            type="button"
+            variant="outlineBlue"
+            size="sm"
+            onClick={handleReset}
+          >
+            <FiRotateCcw style={{ marginRight: "0.5rem" }} />
+            REESTABLECER
+          </Button>
+          <Button
+            type="button"
+            variant="blue"
+            size="sm"
+            onClick={handleSaveVinculacion}
+            disabled={!hasChanges()}
+            isLoading={isSaving}
+          >
+            <FiSave style={{ marginRight: "0.5rem" }} />
+            VINCULAR SELECCIÓN
+          </Button>
+        </div>
+      )}
 
       <ConfirmacionModal
         isOpen={confirmOpen}
@@ -434,7 +674,7 @@ export const CdaPanel = ({ activeItem, onClose }) => {
         cancelText="CANCELAR"
         confirmVariant="blue"
         cancelVariant="outlineBlue"
-        isLoading={isVinculandoCda}
+        isLoading={isSaving}
       />
     </div>
   );

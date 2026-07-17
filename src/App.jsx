@@ -9,7 +9,7 @@ import {
 import { ChannelProvider } from "./context/ChannelContext";
 import { Toaster } from "sonner";
 import Login from "./pages/cliente/auth/Login";
-import LoginAdmin from "./pages/admin/LoginAdmin";
+import LoginAdmin from "./pages/admin/auth/LoginAdmin";
 import Registro from "./pages/cliente/auth/Registro";
 import CrearClave from "./pages/cliente/auth/CrearClave";
 import ConfirmarCorreo from "./pages/cliente/auth/ConfirmarCorreo";
@@ -25,18 +25,25 @@ import DocumentacionView from "./pages/cliente/operaciones/documentacion/Documen
 import SociosView from "./pages/cliente/operaciones/socios/SociosView";
 import NotFound from "./pages/shared/NotFound/NotFound";
 import CadenaInactiva from "./pages/shared/CadenaInactiva/CadenaInactiva";
+import FueraDeServicio from "./pages/shared/FueraDeServicio/FueraDeServicio";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
 import AltaDatosEmpresa from "./pages/cliente/onboarding/AltaDatosEmpresa/AltaDatosEmpresa";
 import SeleccionarEmpresa from "./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa";
+import EstadoSolicitud from "./pages/cliente/onboarding/EstadoSolicitud/EstadoSolicitud";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
-import Dashboard from "./pages/admin/Dashboard";
+import Dashboard from "./pages/admin/dashboard/Dashboard";
+import Empresas from "./pages/admin/empresas/Empresas";
+import EmpresaDetalle from "./pages/admin/empresas/EmpresaDetalle";
 
-import RolesPermisos from "./pages/admin/RolesPermisos";
-import Terminos from "./pages/admin/Terminos";
-import CadenasValor from "./pages/admin/CadenasValor";
-import LineasCadena from "./pages/admin/LineasCadena";
-import LineasProducto from "./pages/admin/LineasProducto";
+import RolesPermisos from "./pages/admin/configuracion/RolesPermisos";
+import Terminos from "./pages/admin/configuracion/Terminos";
+import CadenasValor from "./pages/admin/cadenas-valor/CadenasValor";
+import CadenasCda from "./pages/admin/cadenas-valor/CadenasCda";
+import CdasGlobales from "./pages/admin/cdas/CdasGlobales";
+import LineasCadena from "./pages/admin/lineas/LineasCadena";
+import LineasProducto from "./pages/admin/lineas/LineasProducto";
+import ModoOffline from "./pages/admin/configuracion/ModoOffline";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
 import RootRedirect from "./components/layout/RootRedirect/RootRedirect";
 import "./components/ui/CustomScroll/Scroll.module.css";
@@ -52,11 +59,14 @@ function App() {
           <Route path="/login" element={<LoginAdmin />} />
           <Route path="/not-found" element={<NotFound />} />
           <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
+          <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
+
+          <Route path="/0/:token" element={<CrearClave />} />
 
           <Route path="/:cadenaSlug" element={<TenantLayout />}>
             <Route index element={<Navigate to="login" replace />} />
             <Route path="login" element={<Login />} />
-            <Route path="ingresar" element={<Navigate to="login" replace />} />
+            <Route path="ingresar" element={<Navigate to="../login" replace />} />
             <Route path="registro" element={<Registro />} />
 
             <Route path="0/:token" element={<CrearClave />} />
@@ -74,7 +84,7 @@ function App() {
                 </OnboardingGuard>
               }
             />
-            <Route path="socios" element={<Navigate to="legajo" replace />} />
+            <Route path="socios" element={<Navigate to="../legajo" replace />} />
 
             <Route
               path="usuarios"
@@ -98,7 +108,7 @@ function App() {
             />
             <Route
               path="inicio"
-              element={<Navigate to="legajo" replace />}
+              element={<Navigate to="../legajo" replace />}
             />
 
             <Route
@@ -112,7 +122,14 @@ function App() {
               }
             />
 
-            <Route path="terminos" element={<AceptarTerminos />} />
+            <Route
+              path="terminos"
+              element={
+                <OnboardingGuard>
+                  <AceptarTerminos />
+                </OnboardingGuard>
+              }
+            />
             <Route
               path="alta-datos-empresa"
               element={
@@ -130,6 +147,14 @@ function App() {
                   <DashboardLayout>
                     <SeleccionarEmpresa />
                   </DashboardLayout>
+                </OnboardingGuard>
+              }
+            />
+            <Route
+              path="estado-solicitud"
+              element={
+                <OnboardingGuard>
+                  <EstadoSolicitud />
                 </OnboardingGuard>
               }
             />
@@ -207,6 +232,26 @@ function App() {
           />
 
           <Route
+            path="/admin/empresas"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <Empresas />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/empresas/:id"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <EmpresaDetalle />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
             path="/admin/roles-permisos"
             element={
               <AdminGuard>
@@ -237,6 +282,27 @@ function App() {
             }
           />
           <Route
+            path="/admin/cadenas-cda"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <CadenasCda />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+
+          <Route
+            path="/admin/cdas"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <CdasGlobales />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
             path="/admin/lineas-productos"
             element={
               <AdminGuard>
@@ -252,6 +318,16 @@ function App() {
               <AdminGuard>
                 <AdminLayout>
                   <LineasCadena />
+                </AdminLayout>
+              </AdminGuard>
+            }
+          />
+          <Route
+            path="/admin/modo-offline"
+            element={
+              <AdminGuard>
+                <AdminLayout>
+                  <ModoOffline />
                 </AdminLayout>
               </AdminGuard>
             }

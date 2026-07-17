@@ -2,17 +2,17 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList, FiGlobe, FiGrid, FiChevronRight } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button } from "../../components/ui/Button/Button";
-import { Badge } from "../../components/ui/Badge/Badge";
-import { Modal } from "../../components/ui/Modal/Modal";
-import { SinResultados } from "../../components/ui/SinResultados/SinResultados";
-import { TarjetaMetrica } from "../../components/ui/TarjetaMetrica/TarjetaMetrica";
-import { SelectSimple } from "../../components/ui";
-import { SkeletonTable } from "../../components/ui";
-import { useAdminRestrictions } from "../../hooks/useAdminRestrictions";
-import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
-import { CriteriosAceptacionModal } from "../../components/features";
-import api from "../../api/axios";
+import { Button } from "../../../components/ui/Button/Button";
+import { Badge } from "../../../components/ui/Badge/Badge";
+import { Modal } from "../../../components/ui/Modal/Modal";
+import { SinResultados } from "../../../components/ui/SinResultados/SinResultados";
+import { TarjetaMetrica } from "../../../components/ui/TarjetaMetrica/TarjetaMetrica";
+import { SelectSimple } from "../../../components/ui";
+import { SkeletonTable } from "../../../components/ui";
+import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
+import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
+import { CriteriosAceptacionModal } from "../../../components/features";
+import api from "../../../api/axios";
 import styles from "./Dashboard.module.css";
 
 const solicitudesIniciales = [

@@ -1,11 +1,19 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useObtenerSocioUsuarioPorUsuarioId } from "../../../hooks/useSocios";
+import {
+  useObtenerSocioUsuarioPorUsuarioId,
+  useEmpresasCompletas,
+  useEstadoCdaSocio,
+} from "../../../hooks/useSocios";
 import {
   useObtenerPorNombreOEmail,
   useObtenerCadenasPorUsuario,
 } from "../../../hooks/useUsuario";
+import {
+  useObtenerTerminosVigentes,
+  useObtenerConfirmacionTyC,
+} from "../../../hooks/useTerminos";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 import { useChannel } from "../../../context/ChannelContext";
 import { useVendor } from "../../../hooks/useVendor";
@@ -26,6 +34,9 @@ export const OnboardingGuard = ({ children }) => {
   );
   const isSolicitudesPage = location.pathname.endsWith("/solicitudes");
   const isInicioPage = location.pathname.endsWith("/inicio");
+  const isEstadoSolicitudPage = location.pathname.endsWith(
+    "/estado-solicitud",
+  );
 
   const isSolicitudesEnabled = useAuthStore(
     (state) => state.isSolicitudesEnabled,
@@ -78,12 +89,75 @@ export const OnboardingGuard = ({ children }) => {
 
   const listaEmpresasBase = parsearEmpresas(socioUsuarios);
   const isVendorMock = user?.email?.toLowerCase() === "vendorbind@yopmail.com";
-  const listaEmpresas = isVendorMock ? [1, 2, 3] : listaEmpresasBase;
+  const isVendor = vendorData?.isVendor || false;
+
+  // Un socioUsuario vinculado puede apuntar a un socio "stub" (creado por
+  // cda/execute, o por un onboarding abandonado en el Paso 2 sin completar
+  // datos) — eso no cuenta como empresa registrada. Filtramos esos casos acá
+  // para no mandar al usuario a /legajo con una empresa vacía, dejándolo sin
+  // forma de volver a completar el alta.
+  const { empresasCompletas, isLoading: isLoadingEmpresasCompletas } =
+    useEmpresasCompletas(isVendorMock ? [] : listaEmpresasBase);
+  const listaEmpresas = isVendorMock ? [1, 2, 3] : empresasCompletas;
   const tieneEmpresas = listaEmpresas.length > 0;
 
-  const isVendor = vendorData?.isVendor || false;
+  // El socio ya puede tener datos reales (esSocioVacio ya no alcanza) sin
+  // que el CDA de PANTALLA_INGRESO_CUIT haya pasado — eso pasa siempre que
+  // el usuario cruzó el umbral (ver Paso1Cuit) pero el CDA quedó rechazado
+  // o pendiente. Para vendors no lo chequeamos: pueden gestionar varias
+  // empresas con estados distintos, y ese flujo queda fuera de este cambio
+  // por ahora.
+  const empresaActual = !isVendor && !isVendorMock ? listaEmpresas[0] : null;
+  const socioIdParaEstado =
+    empresaActual?.socioid ?? empresaActual?.SocioID ?? null;
+  const { data: estadoCda, isPending: isPendingEstadoCda } =
+    useEstadoCdaSocio(socioIdParaEstado, channelInfo.id);
+  const telefonoActual = String(
+    empresaActual?.telefono ?? empresaActual?.Telefono ?? "",
+  ).trim();
+
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
+
+  // Términos y Condiciones: se chequea una sola vez por sesión de login
+  // (terminosVerificado vive en el store de auth, no acá) para no
+  // interrumpir a un usuario ya operando si el admin publica una versión
+  // nueva mientras tanto — recién se le vuelve a pedir en su próximo login.
+  const terminosVerificado = useAuthStore((state) => state.terminosVerificado);
+  const setTerminosVerificado = useAuthStore(
+    (state) => state.setTerminosVerificado,
+  );
+
+  const necesitaChequeoTerminos = !!usuarioWebId && !isVendor && !terminosVerificado;
+
+  const { data: terminosVigentes, isLoading: isLoadingTerminosVigentes } =
+    useObtenerTerminosVigentes({ enabled: necesitaChequeoTerminos });
+  const { data: ultimaConfirmacionTyC, isLoading: isLoadingConfirmacionTyC } =
+    useObtenerConfirmacionTyC(usuarioWebId, { enabled: necesitaChequeoTerminos });
+
+  const terminosVigenteId = terminosVigentes?.terminosycondicionesid;
+  // Si todavía no hay ningún término configurado en el backend, no bloqueamos a nadie.
+  const yaAceptoTerminosVigentes =
+    !terminosVigenteId ||
+    ultimaConfirmacionTyC?.terminosycondicionesid === terminosVigenteId;
+  const debeAceptarTerminos = necesitaChequeoTerminos && !yaAceptoTerminosVigentes;
+
+  React.useEffect(() => {
+    if (
+      necesitaChequeoTerminos &&
+      !isLoadingTerminosVigentes &&
+      !isLoadingConfirmacionTyC &&
+      yaAceptoTerminosVigentes
+    ) {
+      setTerminosVerificado(true);
+    }
+  }, [
+    necesitaChequeoTerminos,
+    isLoadingTerminosVigentes,
+    isLoadingConfirmacionTyC,
+    yaAceptoTerminosVigentes,
+    setTerminosVerificado,
+  ]);
 
   React.useEffect(() => {
     if (tieneEmpresas && !activeSocioId && !isVendor) {
@@ -160,7 +234,11 @@ export const OnboardingGuard = ({ children }) => {
 
   if (
     (usuarioWebId && isPendingSocios) ||
+    (usuarioWebId && !isPendingSocios && isLoadingEmpresasCompletas) ||
+    (socioIdParaEstado && isPendingEstadoCda) ||
     (usuarioWebId && isCadenasLoading) ||
+    (necesitaChequeoTerminos &&
+      (isLoadingTerminosVigentes || isLoadingConfirmacionTyC)) ||
     isLoadingVendor ||
     isVerifying
   ) {
@@ -170,6 +248,10 @@ export const OnboardingGuard = ({ children }) => {
         message="Estamos obteniendo tu información y empresas vinculadas..."
       />
     );
+  }
+
+  if (debeAceptarTerminos && !isTerminosPage) {
+    return <Navigate to={`/${channelInfo.id}/terminos`} replace />;
   }
 
   if (usuarioWebId && tieneEmpresas) {
@@ -182,22 +264,48 @@ export const OnboardingGuard = ({ children }) => {
 
       if (
         activeSocioId &&
-        (isTerminosPage ||
+        ((isTerminosPage && !debeAceptarTerminos) ||
           isSeleccionarEmpresaPage ||
           isAltaDatosPage ||
           isInicioPage)
       ) {
         return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
       }
-    } else {
-      if (
-        isTerminosPage ||
-        isAltaDatosPage ||
-        isSeleccionarEmpresaPage ||
-        isInicioPage
-      ) {
-        return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+    } else if (estadoCda === "rechazado" || estadoCda === "pendiente") {
+      // Cruzó el umbral (existe el socio, con datos reales) pero el CDA
+      // todavía no está aprobado — no lo dejamos entrar a ningún lado
+      // salvo la pantalla de estado.
+      if (!isEstadoSolicitudPage) {
+        return (
+          <Navigate
+            to={`/${channelInfo.id}/estado-solicitud`}
+            state={{ estado: estadoCda }}
+            replace
+          />
+        );
       }
+    } else if (estadoCda === "aprobado" && !telefonoActual) {
+      // El CDA pasó, pero nunca completó el Paso 2 (ver Paso1Cuit: el socio
+      // se crea con el "umbral", el Paso 2 es lo que termina de cargar
+      // datos como el teléfono). Lo mandamos directo a completarlo, sin
+      // pasar de nuevo por Paso1Cuit (ese paso bloquearía por "ya existe").
+      if (!isAltaDatosPage) {
+        return (
+          <Navigate
+            to={`/${channelInfo.id}/alta-datos-empresa`}
+            state={{ socioParaCompletar: empresaActual }}
+            replace
+          />
+        );
+      }
+    } else if (
+      isTerminosPage ||
+      isAltaDatosPage ||
+      isSeleccionarEmpresaPage ||
+      isInicioPage ||
+      isEstadoSolicitudPage
+    ) {
+      return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
     }
 
     if (!isSolicitudesEnabled && isSolicitudesPage) {
@@ -208,10 +316,12 @@ export const OnboardingGuard = ({ children }) => {
       if (!isSeleccionarEmpresaPage && !isAltaDatosPage) {
         return <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />;
       }
-    } else {
-      if (!isTerminosPage && !isAltaDatosPage) {
-        return <Navigate to={`/${channelInfo.id}/terminos`} replace />;
-      }
+    } else if (!debeAceptarTerminos && !isAltaDatosPage) {
+      // El chequeo de arriba ya lo mandó a /terminos si todavía le faltaba
+      // aceptar. Si llegó hasta acá sin necesitarlo (o ya lo aceptó en un
+      // intento de alta anterior que abandonó antes de crear la empresa),
+      // lo mandamos directo al alta — no hace falta mostrarle /terminos de nuevo.
+      return <Navigate to={`/${channelInfo.id}/alta-datos-empresa`} replace />;
     }
   }
 

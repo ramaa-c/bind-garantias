@@ -116,6 +116,7 @@ export default function DocumentacionView() {
             type="button"
             variant="outline"
             size="sm"
+            className={styles.downloadBtn}
             onClick={handleDownloadAllZip}
             title="Descargar legajo de documentos completo en un archivo ZIP"
           >

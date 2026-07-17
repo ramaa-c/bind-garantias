@@ -110,11 +110,11 @@
   border-radius: 4px;
 }
 .tableWrapper::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 .tableWrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--scrollbar-thumb-hover);
 }
 
 .table {
@@ -333,11 +333,11 @@
   background: transparent;
 }
 .modalBody::-webkit-scrollbar-thumb {
-  background: rgba(76, 101, 230, 0.25);
+  background: var(--scrollbar-thumb);
   border-radius: 10px;
 }
 .modalBody::-webkit-scrollbar-thumb:hover {
-  background: rgba(76, 101, 230, 0.55);
+  background: var(--scrollbar-thumb-hover);
 }
 
 .formGroup {
@@ -697,6 +697,10 @@
   margin: 0;
 }
 
+.switch input:disabled {
+  cursor: not-allowed;
+}
+
 .slider {
   position: absolute;
   top: 0;
@@ -731,6 +735,10 @@
 .switch input:checked + .slider:before {
   transform: translateX(20px);
   background-color: var(--color-azul-bind, #4c65e6);
+}
+
+.switch input:disabled + .slider {
+  opacity: 0.5;
 }
 
 .switchLoaderWrap {

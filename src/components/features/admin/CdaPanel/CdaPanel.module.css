@@ -1,5 +1,5 @@
 .cdasSection {
-  margin-bottom: 1rem;
+  min-height: 0;
 }
 
 .cdasTitle {
@@ -16,12 +16,12 @@
 /* --- CDA Card List --- */
 .cdaCard {
   display: flex;
-  align-items: center;
-  padding: 1rem;
+  align-items: stretch;
+  padding: 0.6rem 0.75rem;
   background: linear-gradient(135deg, rgba(59, 78, 209, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
   border: 1px solid rgba(59, 78, 209, 0.12);
-  border-radius: 0.75rem;
-  gap: 1.125rem;
+  border-radius: 0.65rem;
+  gap: 0.85rem;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -91,15 +91,17 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: 0.3rem;
   cursor: pointer;
+  min-width: 0; /* Evita que el contenedor desborde con textos muy largos */
 }
 
 .cdaTitleText {
   color: #ffffff;
-  font-size: 0.875rem;
+  font-size: 0.825rem;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.3;
   transition: color 0.2s;
 }
 
@@ -111,14 +113,7 @@
   color: #8b949e;
   font-size: 0.75rem;
   display: block;
-}
-
-/* --- Actions & Badges --- */
-.actionsWrapper {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-shrink: 0;
+  word-break: break-word;
 }
 
 .btnActionEdit {
@@ -160,6 +155,33 @@
   background: rgba(234, 74, 90, 0.08);
   color: #ea4a5a;
   border: 1px solid rgba(234, 74, 90, 0.2);
+}
+
+.inlineExpressionInput {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
+  border: 1px solid rgba(88, 166, 255, 0.25);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  min-width: 200px; /* Incrementado para dar más espacio inicial */
+  flex: 1; /* Se estira para ocupar todo el espacio disponible */
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.inlineExpressionInput:focus {
+  border-color: #58a6ff;
+  background: rgba(88, 166, 255, 0.18);
+  box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.25);
+}
+
+.inlineExpressionInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 /* --- Modal Footer inside CdaPanel editing Modal --- */
@@ -329,10 +351,8 @@
 }
 
 .modalBody {
-  max-height: calc(90vh - 250px);
-  overflow-y: auto;
-  padding-right: 0.5rem;
-  margin-right: -0.5rem;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -349,3 +369,593 @@
   background-color: rgba(0, 0, 0, 0.2);
 }
 
+/* Badges y Fórmulas */
+.defaultBadge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: rgba(59, 78, 209, 0.15);
+  color: #4c65e6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  border: 1px solid rgba(59, 78, 209, 0.3);
+  letter-spacing: 0.05em;
+  display: inline-block;
+}
+
+/* --- Regla global (solo lectura): expresión, operador y mensaje de rechazo
+   vienen de Criterios de Aceptación y nunca se editan por cadena --- */
+.globalRuleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.09);
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  max-width: 100%;
+}
+
+.lockIcon {
+  color: #6e7681;
+  flex-shrink: 0;
+}
+
+.globalRuleLabel {
+  font-size: 0.62rem;
+  color: #6e7681;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.globalRuleExpr {
+  font-family: monospace;
+  font-size: 0.775rem;
+  color: #8b949e;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.globalRuleOperator {
+  font-family: monospace;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #ff9d6c;
+  background: rgba(255, 157, 108, 0.12);
+  border: 1px solid rgba(255, 157, 108, 0.4);
+  border-radius: 4px;
+  padding: 0.1rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.globalRechazoRow {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 0.15rem;
+  min-width: 0;
+}
+
+.globalRechazoText {
+  font-size: 0.75rem;
+  color: #a3a3a3;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.globalRechazoLabel {
+  color: #8b949e;
+  font-weight: 600;
+}
+
+.globalRechazoTextEmpty {
+  font-size: 0.75rem;
+  color: #6e7681;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+/* --- Buscador --- */
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/* --- Toggle "Solo activos": switch en vez de checkbox cuadrado para no
+   confundirlo visualmente con los checks de la lista (esos activan un CDA,
+   este solo filtra la vista). El verde es el mismo de .badgeActive. --- */
+.activosToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.activosToggleInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.activosToggleTrack {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 19px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: background 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.activosToggle:hover .activosToggleTrack {
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.activosToggleThumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #8b949e;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), background 0.22s ease;
+}
+
+.activosToggleInput:checked + .activosToggleTrack {
+  background: linear-gradient(135deg, #38a169 0%, #2f8a5a 100%);
+  border-color: rgba(56, 161, 105, 0.55);
+}
+
+.activosToggle:hover .activosToggleInput:checked + .activosToggleTrack {
+  border-color: rgba(56, 161, 105, 0.8);
+}
+
+.activosToggleInput:checked + .activosToggleTrack .activosToggleThumb {
+  transform: translateX(15px);
+  background: #ffffff;
+  box-shadow: 0 0 6px rgba(56, 161, 105, 0.65);
+}
+
+.activosToggleInput:focus-visible + .activosToggleTrack {
+  outline: 2px solid #4c65e6;
+  outline-offset: 2px;
+}
+
+.activosToggleText {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #8b949e;
+  transition: color 0.2s ease;
+}
+
+.activosToggleInput:checked ~ .activosToggleText {
+  color: #38a169;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activosToggleTrack,
+  .activosToggleThumb {
+    transition: none;
+  }
+}
+
+.searchWrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  gap: 0.5rem;
+  transition: border-color 0.2s;
+}
+
+.searchWrap:focus-within {
+  border-color: var(--color-azul-bind, #4c65e6);
+}
+
+.searchWrap input {
+  background: none;
+  border: none;
+  color: #ffffff;
+  width: 100%;
+  outline: none;
+  font-size: 0.875rem;
+}
+
+.iconSearch {
+  color: #8b949e;
+  flex-shrink: 0;
+}
+
+/* --- Panel de control: lo único editable por cadena (valor + estado) --- */
+.controlPanel {
+  flex-shrink: 0;
+  width: 140px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(76, 101, 230, 0.06);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+  border-radius: 0.55rem;
+  padding: 0.5rem 0.65rem;
+}
+
+.controlPanelLabel {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8fa3f3;
+  font-weight: 700;
+  text-align: center;
+}
+
+.controlValueWrap {
+  position: relative;
+  width: 100%;
+}
+
+.controlValueInput {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(76, 101, 230, 0.4);
+  border-radius: 6px;
+  color: #ffffff;
+  padding: 0.3rem 1.5rem 0.3rem 0.55rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.controlValueInput:focus {
+  outline: none;
+  border-color: #4c65e6;
+  background: rgba(76, 101, 230, 0.12);
+  box-shadow: 0 0 0 3px rgba(76, 101, 230, 0.25);
+}
+
+.controlValueInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.controlPencilIcon {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #4c65e6;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.overrideHint {
+  font-size: 0.62rem;
+  color: #dd9b20;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Formulario de Creación */
+.selectInput {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  color: #ffffff;
+  font-size: 0.825rem;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.selectInput:focus {
+  outline: none;
+  border-color: rgba(59, 78, 209, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.selectInput option {
+  background: #161b22;
+  color: #ffffff;
+}
+
+.formFieldCheck {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: #c9d1d9;
+  user-select: none;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b4ed1;
+  cursor: pointer;
+}
+
+/* --- Layout de 2 columnas: agrupación a la izquierda, checklist a la
+   derecha (mismo espíritu que la vieja pantalla "CDAs por Pantalla") --- */
+.mainLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 992px) {
+  .mainLayout {
+    flex-direction: row;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Cada columna scrollea de forma independiente: la de agrupación queda
+     siempre a la vista sin importar cuán larga sea la lista de CDAs. */
+  .leftCol,
+  .rightCol {
+    overflow-y: auto;
+    min-height: 0;
+    padding-right: 0.5rem;
+    margin-right: -0.5rem;
+  }
+
+  .leftCol {
+    flex: 0 0 320px;
+  }
+
+  .rightCol {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.leftCol,
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.checklistHeader {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8fa3f3;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* --- Expresión de Agrupación (AND/OR/personalizada) del GrupoCda --- */
+.agrupacionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.typeSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: #c9d1d9;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.radioOption:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.radioActive {
+  border-color: #3b4ed1;
+  background: rgba(59, 78, 209, 0.04);
+}
+
+.radioInput {
+  accent-color: #58a6ff;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.radioLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  cursor: pointer;
+}
+
+.radioLabelText {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 0.825rem;
+}
+
+.radioDescText {
+  font-size: 0.7rem;
+  color: #8b949e;
+}
+
+.customTextareaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.customTextareaLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #8b949e;
+}
+
+.customTextarea {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 0.85rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.5rem;
+  resize: vertical;
+  min-height: 70px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.customTextarea:focus {
+  border-color: #3b4ed1;
+  box-shadow: 0 0 0 2px rgba(59, 78, 209, 0.2);
+}
+
+.customTextarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pillsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+}
+
+.pillGroupTitle {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.pillsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.cdaPill {
+  background: rgba(59, 78, 209, 0.1);
+  border: 1px solid rgba(59, 78, 209, 0.25);
+  color: #58a6ff;
+  font-size: 0.75rem;
+  font-family: monospace;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.cdaPill:hover {
+  background: rgba(59, 78, 209, 0.25);
+  border-color: #58a6ff;
+  box-shadow: 0 0 4px rgba(88, 166, 255, 0.3);
+}
+
+.operatorPill {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.2rem 0.45rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.operatorPill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.infoBox {
+  background: rgba(88, 166, 255, 0.03);
+  border: 1px solid rgba(88, 166, 255, 0.1);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.775rem;
+  color: #c9d1d9;
+  line-height: 1.45;
+}
+
+.infoBox code {
+  background: #0d1117;
+  padding: 0.15rem 0.3rem;
+  border-radius: 0.25rem;
+  font-family: monospace;
+  color: #ff7b72;
+}
+
+/* --- Overrides para modo Solo Lectura (Ej: Cadena Inactiva) --- */
+.readOnly .cdaCardChecked {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
+}
+
+.readOnly .customCheckbox.checked {
+  background: #c9d1d9 !important;
+  border-color: #c9d1d9 !important;
+}
+
+.readOnly .checkmarkIcon {
+  color: #0d1117 !important;
+}

@@ -46,6 +46,8 @@ import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { afipService } from "../../../../services/afipService";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { useObtenerTerceros } from "../../../../hooks/useTerceros";
+import { useDiasMargenVencimientoBalance } from "../../../../hooks/useValorOperativo";
+import { calcularEstadoBalance } from "../../../../utils/balanceVigencia";
 import styles from "./DocumentosLegajo.module.css";
 import {
   procesarArchivo,
@@ -169,11 +171,17 @@ const getDownloadCategoryText = (key, title) => {
   return `Descargar ${plurals[key] || `todos: ${title}`}`;
 };
 
-export function DocumentosLegajo() {
+export function DocumentosLegajo({
+  socioIdOverride,
+  empresaOverride,
+  adminMode = false,
+} = {}) {
   const { control, setValue } = useFormContext();
   const formValues = useWatch({ control });
   const { intentoAvanzar } = formValues;
   const queryClient = useQueryClient();
+
+  const empresaActiva = useEmpresaActiva(adminMode);
 
   const {
     socioIdActivo,
@@ -182,19 +190,44 @@ export function DocumentosLegajo() {
     direccion,
     telefono,
     tipoPersonaId,
-  } = useEmpresaActiva();
+    fechaCierreEjercicio,
+  } = adminMode
+    ? { socioIdActivo: socioIdOverride, ...empresaOverride }
+    : empresaActiva;
 
+  const { dias: margenDiasBalance } = useDiasMargenVencimientoBalance();
+
+  // Estado de vigencia del balance más nuevo del legajo (null para
+  // cualquier otro documento). "docFiles" es el array ya filtrado por
+  // TipoDocumentoArchivoID para la key que corresponda.
+  const calcularEstadoBalanceDoc = (docFiles) => {
+    const latest = [...docFiles].sort((a, b) => b.socioarchivoid - a.socioarchivoid)[0];
+    return calcularEstadoBalance({
+      fchArchivo: latest?.fcharchivo || latest?.FchArchivo,
+      fechaCierreEjercicio,
+      margenDias: margenDiasBalance,
+    });
+  };
+
+  // En modo admin no se conoce con certeza a qué cadena de valor pertenece
+  // el socio (no hay un campo CadenaValorID en Socio), así que se muestra
+  // el legajo completo sin aplicar el filtro de requisitos por cadena.
   const { cadenaSlug } = useParams();
   const cadenaId = Number(cadenaSlug) || 1;
-  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
+  const { requisitos } = useRequisitos(
+    adminMode ? null : cadenaId,
+    adminMode ? null : tipoPersonaId,
+    adminMode ? null : nombreEmpresa,
+  );
 
   const estructuraFiltrada = useMemo(() => {
+    if (adminMode) return ESTRUCTURA_LEGAJO;
     return ESTRUCTURA_LEGAJO.filter((doc) => {
       if (doc.key === "perfil") return true;
       const configVal = requisitos?.documentos?.[doc.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [requisitos]);
+  }, [requisitos, adminMode]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -215,18 +248,20 @@ export function DocumentosLegajo() {
   }, [estructuraFiltrada, activeTab]);
 
   useEffect(() => {
-    if (
-      estructuraFiltrada.length > 0 &&
-      (!activeTab || !estructuraFiltrada.some((t) => t.key === activeTab))
-    ) {
-      setActiveTab(estructuraFiltrada[0].key);
+    if (estructuraFiltrada.length > 0) {
+      if (!isMobile && !activeTab) {
+        setActiveTab(estructuraFiltrada[0].key);
+      } else if (activeTab && !estructuraFiltrada.some((t) => t.key === activeTab)) {
+        setActiveTab(isMobile ? null : estructuraFiltrada[0].key);
+      }
     }
-  }, [estructuraFiltrada, activeTab]);
+  }, [estructuraFiltrada, activeTab, isMobile]);
 
   const [archivosBackend, setArchivosBackend] = useState([]);
   const [activeSubTabs, setActiveSubTabs] = useState({});
   const [metaFecha, setMetaFecha] = useState("");
   const [metaRef, setMetaRef] = useState("");
+  const [metaFechaPeriodo, setMetaFechaPeriodo] = useState("");
   const [isSavingMeta, setIsSavingMeta] = useState(false);
 
   const cargarArchivosExistentes = async () => {
@@ -330,18 +365,34 @@ export function DocumentosLegajo() {
       const dateVal = rawDate ? rawDate.split("T")[0] : "";
       setMetaFecha(dateVal);
       setMetaRef(activeFile.referencia || "");
+
+      if (activeDoc?.key === "balance") {
+        const rawPeriodo = activeFile.fcharchivo || activeFile.FchArchivo || "";
+        setMetaFechaPeriodo(rawPeriodo ? rawPeriodo.split("T")[0] : "");
+      } else {
+        setMetaFechaPeriodo("");
+      }
     } else {
       setMetaFecha("");
       setMetaRef("");
+      setMetaFechaPeriodo("");
     }
-  }, [activeFile]);
+  }, [activeFile, activeDoc]);
 
   const handleSaveMetadata = async () => {
     if (!activeFile) return;
+    if (activeDoc?.key === "balance" && !metaFechaPeriodo) {
+      toast.error("Ingresá la fecha del período del balance.");
+      return;
+    }
     setIsSavingMeta(true);
     const toastId = toast.loading("Guardando metadatos del archivo...");
     try {
       const fchreferencia = metaFecha ? `${metaFecha.split("T")[0]}T00:00:00` : null;
+      const fchArchivoManual =
+        activeDoc?.key === "balance" && metaFechaPeriodo
+          ? `${metaFechaPeriodo.split("T")[0]}T00:00:00`
+          : null;
 
       await socioArchivoService.actualizarArchivo(
         activeFile,
@@ -350,7 +401,8 @@ export function DocumentosLegajo() {
         activeFile.descripcion,
         activeFile.vialufe || "0",
         fchreferencia,
-        metaRef
+        metaRef,
+        fchArchivoManual
       );
 
       await cargarArchivosExistentes();
@@ -373,12 +425,22 @@ export function DocumentosLegajo() {
 
   const handleFileUpload = async (key, file, docTitle, specificId = null) => {
     if (file instanceof File) {
+      if (key === "balance" && !metaFechaPeriodo) {
+        toast.error("Ingresá primero la fecha del período del balance.");
+        return;
+      }
+
       setValue(key, file, { shouldValidate: true, shouldDirty: true });
 
       if (!socioIdActivo) {
         toast.error("No se pudo identificar la empresa activa.");
         return;
       }
+
+      const fchArchivoManual =
+        key === "balance" && metaFechaPeriodo
+          ? `${metaFechaPeriodo.split("T")[0]}T00:00:00`
+          : null;
 
       const toastId = toast.loading(`Subiendo ${docTitle}...`);
       try {
@@ -395,7 +457,8 @@ export function DocumentosLegajo() {
               docTitle,
               existente.vialufe || "0",
               existente.fchreferencia,
-              existente.referencia
+              existente.referencia,
+              fchArchivoManual
             );
           } else {
             throw new Error("No se encontró el archivo a actualizar.");
@@ -405,7 +468,11 @@ export function DocumentosLegajo() {
             socioIdActivo,
             file,
             key,
-            docTitle
+            docTitle,
+            "0",
+            null,
+            "",
+            fchArchivoManual
           );
         }
 
@@ -502,23 +569,29 @@ export function DocumentosLegajo() {
     if (!doc) return null;
     const isPerfil = doc.key === "perfil";
     const files = categoryFiles;
-    const isRequired = requisitos?.documentos?.[doc.key] === 1;
+    const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
     const showSubTabs = !isPerfil && files.length > 0;
-    
+    const isBalance = doc.key === "balance";
+    const estadoBalance = isBalance ? calcularEstadoBalanceDoc(files) : null;
+    const isVencidoBalance = estadoBalance?.estado === "vencido";
+
     const fileProp = activeFile ? {
       name: activeFile.nombrearchivo,
       size: activeFile.contenido ? formatBase64Size(activeFile.contenido) : "Disponible",
       vialufe: activeFile.vialufe || activeFile.Vialufe || "0",
     } : null;
 
-    const hasError = intentoAvanzar && !isPerfil && isRequired && files.length === 0;
+    const hasError =
+      intentoAvanzar && !isPerfil && isRequired && (files.length === 0 || isVencidoBalance);
     const isLufe = files.some((a) => String(a.vialufe || a.Vialufe) === "1");
 
     return (
       <section className={styles.viewer}>
         <header className={styles.viewerHeader}>
           <div className={styles.viewerMeta}>
-            <span className={styles.viewerBadge}>{doc.category}</span>
+            <span className={`${styles.viewerBadge} ${adminMode ? styles.viewerBadgeAdmin : ""}`}>
+              {doc.category}
+            </span>
             {isLufe && (
               <span className={`${styles.viewerBadge} ${styles.viewerBadgeLufe}`}>
                 Vía LUFE
@@ -530,7 +603,7 @@ export function DocumentosLegajo() {
             {files.length > 1 && (
               <button
                 type="button"
-                className={styles.downloadCategoryBtn}
+                className={`${styles.downloadCategoryBtn} ${adminMode ? styles.downloadCategoryBtnAdmin : ""}`}
                 onClick={handleDownloadCategoryZip}
                 title={`Descargar todos los archivos de tipo ${doc.title}`}
               >
@@ -545,7 +618,7 @@ export function DocumentosLegajo() {
                 href={doc.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={styles.helperLink}
+                className={`${styles.helperLink} ${adminMode ? styles.helperLinkAdmin : ""}`}
               >
                 {doc.linkText} <FiExternalLink size={11} />
               </a>
@@ -557,7 +630,10 @@ export function DocumentosLegajo() {
           <div className={styles.perfilGrid}>
             <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
-                <FiBriefcase className={styles.perfilChipIcon} size={20} />
+                <FiBriefcase
+                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
+                  size={20}
+                />
                 <span className={styles.perfilChipLabel}>Razón Social</span>
               </div>
               <span className={styles.perfilChipValue}>
@@ -566,7 +642,10 @@ export function DocumentosLegajo() {
             </div>
             <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
-                <FiCreditCard className={styles.perfilChipIcon} size={20} />
+                <FiCreditCard
+                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
+                  size={20}
+                />
                 <span className={styles.perfilChipLabel}>CUIT</span>
               </div>
               <span className={styles.perfilChipValue}>
@@ -575,14 +654,20 @@ export function DocumentosLegajo() {
             </div>
             <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
-                <FiMapPin className={styles.perfilChipIcon} size={20} />
+                <FiMapPin
+                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
+                  size={20}
+                />
                 <span className={styles.perfilChipLabel}>Domicilio</span>
               </div>
               <span className={styles.perfilChipValue}>{direccion || "—"}</span>
             </div>
             <div className={`${styles.perfilChip} ${styles.glassCard}`}>
               <div className={styles.perfilChipHeader}>
-                <FiPhone className={styles.perfilChipIcon} size={20} />
+                <FiPhone
+                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
+                  size={20}
+                />
                 <span className={styles.perfilChipLabel}>Teléfono</span>
               </div>
               <span className={styles.perfilChipValue}>{telefono || "—"}</span>
@@ -602,7 +687,10 @@ export function DocumentosLegajo() {
                       className={`${styles.subTab} ${isActive ? styles.subTabActive : ""}`}
                       title={file.nombrearchivo}
                     >
-                      <FiFile size={12} className={styles.subTabIcon} />
+                      <FiFile
+                        size={12}
+                        className={`${styles.subTabIcon} ${isActive && adminMode ? styles.subTabIconAdminActive : ""}`}
+                      />
                       <span className={styles.subTabText}>
                         {file.nombrearchivo.length > 25
                           ? `${file.nombrearchivo.substring(0, 22)}...`
@@ -632,11 +720,41 @@ export function DocumentosLegajo() {
                 <button
                   type="button"
                   onClick={() => selectSubTab(doc.key, "nuevo")}
-                  className={`${styles.subTab} ${styles.subTabAdd} ${currentSubTab === "nuevo" ? styles.subTabActive : ""}`}
+                  className={`${styles.subTab} ${styles.subTabAdd} ${adminMode ? styles.subTabAddAdmin : ""} ${currentSubTab === "nuevo" ? styles.subTabActive : ""}`}
                 >
                   <FiPlus size={12} />
                   <span>Subir otro</span>
                 </button>
+              </div>
+            )}
+
+            {isBalance && (estadoBalance?.estado === "por_vencer" || estadoBalance?.estado === "vencido") && (
+              <div
+                className={`${styles.balanceVigenciaAviso} ${estadoBalance.estado === "vencido" ? styles.balanceVigenciaAvisoVencido : ""}`}
+              >
+                <FiAlertCircle size={14} />
+                {estadoBalance.estado === "vencido"
+                  ? "El balance cargado ya venció y no cuenta como documento válido. Subí uno nuevo."
+                  : `El balance cargado corresponde a un período anterior al último cierre de ejercicio. Tenés ${estadoBalance.diasRestantes} día${estadoBalance.diasRestantes === 1 ? "" : "s"} para actualizarlo.`}
+              </div>
+            )}
+
+            {isBalance && currentSubTab === "nuevo" && (
+              <div className={styles.metaFormContainer}>
+                <div className={styles.metaFieldGroup}>
+                  <label className={styles.metaLabel}>
+                    Fecha del período del balance *
+                  </label>
+                  <SelectFecha
+                    label=""
+                    placeholder="Seleccionar fecha"
+                    value={metaFechaPeriodo}
+                    onChange={(val) => setMetaFechaPeriodo(val)}
+                    variant="compact"
+                    placement="top"
+                    minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+                  />
+                </div>
               </div>
             )}
 
@@ -683,6 +801,27 @@ export function DocumentosLegajo() {
                 accept="application/pdf"
               />
             </div>
+
+            {/* Fecha del período del balance: en su propia fila, aparte de la
+                grilla de 3 columnas de metadatos genéricos (fecha/referencia). */}
+            {activeFile && isBalance && (
+              <div className={styles.metaFormContainer}>
+                <div className={styles.metaFieldGroup}>
+                  <label className={styles.metaLabel}>
+                    Fecha del período del balance *
+                  </label>
+                  <SelectFecha
+                    label=""
+                    placeholder="Seleccionar fecha"
+                    value={metaFechaPeriodo}
+                    onChange={(val) => setMetaFechaPeriodo(val)}
+                    variant="compact"
+                    placement="top"
+                    minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Formulario de Metadatos Adicionales (Diseño compacto horizontal) */}
             {activeFile && (
@@ -742,16 +881,18 @@ export function DocumentosLegajo() {
               doc.category !== estructuraFiltrada[index - 1].category;
             const isPerfil = doc.key === "perfil";
             const currentFile = formValues[doc.key];
-            const isComplete = isPerfil || !!currentFile;
-            const isRequired = requisitos?.documentos?.[doc.key] === 1;
-            const hasError =
-              intentoAvanzar && !isPerfil && isRequired && !currentFile;
+            const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
             const isActive = activeTab === doc.key;
 
             const docFiles = archivosBackend.filter(
               (a) => a.tipodocumentoarchivoid === socioArchivoService.TIPO_DOCUMENTO_MAP[doc.key]
             );
             const isLufe = docFiles.some((a) => String(a.vialufe || a.Vialufe) === "1");
+            const estadoBalance = doc.key === "balance" ? calcularEstadoBalanceDoc(docFiles) : null;
+            const isVencidoBalance = estadoBalance?.estado === "vencido";
+            const isComplete = isPerfil || (!!currentFile && !isVencidoBalance);
+            const hasError =
+              intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
 
             return (
               <React.Fragment key={doc.key}>
@@ -767,10 +908,10 @@ export function DocumentosLegajo() {
                   <div className={styles.tabTitleGroup}>
                     <span className={styles.tabTitle}>{doc.title}</span>
                     <div className={styles.badgeRow}>
-                      {!isPerfil &&
+                      {!isPerfil && !adminMode &&
                         (isRequired ? (
                           <span
-                            className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}
+                            className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
                           >
                             Obligatorio
                           </span>
@@ -786,6 +927,13 @@ export function DocumentosLegajo() {
                           className={`${styles.reqBadge} ${styles.reqBadgeLufe}`}
                         >
                           Vía LUFE
+                        </span>
+                      )}
+                      {!adminMode && estadoBalance?.estado === "por_vencer" && (
+                        <span
+                          className={`${styles.reqBadge} ${styles.reqBadgeVenceProximo}`}
+                        >
+                          Vence en {estadoBalance.diasRestantes}d
                         </span>
                       )}
                     </div>
@@ -812,16 +960,18 @@ export function DocumentosLegajo() {
           doc.category !== estructuraFiltrada[index - 1].category;
         const isPerfil = doc.key === "perfil";
         const currentFile = formValues[doc.key];
-        const isComplete = isPerfil || !!currentFile;
-        const isRequired = requisitos?.documentos?.[doc.key] === 1;
-        const hasError =
-          intentoAvanzar && !isPerfil && isRequired && !currentFile;
+        const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
         const isActive = activeTab === doc.key;
 
         const docFiles = archivosBackend.filter(
           (a) => a.tipodocumentoarchivoid === socioArchivoService.TIPO_DOCUMENTO_MAP[doc.key]
         );
         const isLufe = docFiles.some((a) => String(a.vialufe || a.Vialufe) === "1");
+        const estadoBalance = doc.key === "balance" ? calcularEstadoBalanceDoc(docFiles) : null;
+        const isVencidoBalance = estadoBalance?.estado === "vencido";
+        const isComplete = isPerfil || (!!currentFile && !isVencidoBalance);
+        const hasError =
+          intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
 
         return (
           <React.Fragment key={doc.key}>
@@ -839,10 +989,10 @@ export function DocumentosLegajo() {
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
                 <div className={styles.badgeRow}>
-                  {!isPerfil &&
+                  {!isPerfil && !adminMode &&
                     (isRequired ? (
                       <span
-                        className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}
+                        className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
                       >
                         Obligatorio
                       </span>
@@ -858,6 +1008,13 @@ export function DocumentosLegajo() {
                       className={`${styles.reqBadge} ${styles.reqBadgeLufe}`}
                     >
                       Vía LUFE
+                    </span>
+                  )}
+                  {!adminMode && estadoBalance?.estado === "por_vencer" && (
+                    <span
+                      className={`${styles.reqBadge} ${styles.reqBadgeVenceProximo}`}
+                    >
+                      Vence en {estadoBalance.diasRestantes}d
                     </span>
                   )}
                 </div>

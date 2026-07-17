@@ -14,8 +14,17 @@ export const Modal = ({
   className = "",
   variant = "default",
   allowOverflow = false,
+  // Mientras hay una acción en curso (ej. guardando/eliminando) no debería
+  // poder cerrarse haciendo click afuera, con ESC o con la X: solo los
+  // botones internos (que ya se deshabilitan con isLoading) pueden decidir.
+  preventClose = false,
 }) => {
-  useEscape(onClose, isOpen);
+  const handleClose = () => {
+    if (preventClose) return;
+    onClose();
+  };
+
+  useEscape(handleClose, isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -34,9 +43,9 @@ export const Modal = ({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className={styles.overlay} onMouseDown={onClose}>
+    <div className={styles.overlay} onMouseDown={handleClose}>
       <div
-        className={`${styles.modalBox} ${variant === "blue" ? styles.blueVariant : ""} ${allowOverflow ? styles.allowOverflow : ""} ${className}`}
+        className={`${styles.modalBox} ${variant === "blue" ? styles.blueVariant : ""} ${variant === "confirm" ? styles.confirmVariant : ""} ${allowOverflow ? styles.allowOverflow : ""} ${className}`}
         style={{ maxWidth }}
         onMouseDown={(e) => e.stopPropagation()}
         role="dialog"
@@ -44,24 +53,35 @@ export const Modal = ({
         aria-labelledby={title ? "modal-title" : undefined}
       >
         {/* ── HEADER ── */}
-        <div className={styles.header}>
-          <div className={styles.headerText}>
-            {title && (
-              <h2 id="modal-title" className={styles.title}>
-                {title}
-              </h2>
-            )}
-            {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+        {title || subtitle ? (
+          <div className={styles.header}>
+            <div className={styles.headerText}>
+              {title && (
+                <h2 id="modal-title" className={styles.title}>
+                  {title}
+                </h2>
+              )}
+              {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+            </div>
+            <button
+              type="button"
+              className={styles.closeButton}
+              onClick={handleClose}
+              aria-label="Cerrar modal"
+            >
+              <FiX size={18} />
+            </button>
           </div>
+        ) : (
           <button
             type="button"
-            className={styles.closeButton}
-            onClick={onClose}
+            className={styles.closeButtonFloating}
+            onClick={handleClose}
             aria-label="Cerrar modal"
           >
             <FiX size={18} />
           </button>
-        </div>
+        )}
 
         {/* ── BODY ── */}
         <div className={`${styles.body} ${allowOverflow ? styles.allowOverflow : ""}`}>{children}</div>

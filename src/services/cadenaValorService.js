@@ -1,3 +1,4 @@
+import { cadenaValorAdapter } from "../adapters/cadenaValorAdapter";
 import api from "../api/axios";
 
 export const cadenaValorService = {
@@ -84,23 +85,39 @@ export const cadenaValorService = {
   obtenerPorCadenaValorIdWeb: async (cadenaValorId) =>
     (await api.get("api/cadenavalor", { params: { CadenaValorID: cadenaValorId } })).data,
 
-  // GET /api/cadenavalor/cdas/{CadenaID}
-  obtenerCdasPorCadenaId: async (cadenaId) =>
-    (await api.get(`api/cadenavalor/cdas/${cadenaId}`)).data,
+  // GET /api/cda/cadenavalor/obtener:byGrupo?GrupoID=X - CDAs vinculados a un
+  // GrupoCda (Pantalla x Cadena). Reemplaza al viejo GET
+  // /api/cadenavalor/cdas/{CadenaID}, que el backend eliminó.
+  //
+  // Se pide como "obtener-byGrupo" (guion) en vez del ":" real: un ":" crudo
+  // en la URL que manda el navegador puede quedar bloqueado por IIS en el
+  // deploy real (confirmado: 400 en producción, 200 pegándole directo al
+  // backend). El proxy (vite.config.js en local, web.config en producción)
+  // es quien lo traduce al ":" real antes de reenviarlo — mismo patrón que
+  // ya se usa para password-reset, byencrypt, etc.
+  obtenerCdasPorGrupo: async (grupoId) =>
+    (await api.get("api/cda/cadenavalor/obtener-byGrupo", { params: { GrupoID: grupoId } })).data,
 
   // POST /api/cadenavalor
   crearCadenaValor: async (cadenaValorData) =>
-    (await api.post("api/cadenavalor", cadenaValorData)).data,
+    (await api.post("api/cadenavalor", cadenaValorAdapter.adaptarPayload1(cadenaValorData))).data,
 
   // PUT /api/cadenavalor
   actualizarCadenaValor: async (cadenaValorData) =>
-    (await api.put("api/cadenavalor", cadenaValorData)).data,
+    (await api.put("api/cadenavalor", cadenaValorAdapter.adaptarPayload2(cadenaValorData))).data,
 
   // GET /api/cadenavalor (Web) - Obtener todas las activas
   obtenerTodasWeb: async () =>
     (await api.get("api/cadenavalor")).data,
 
-  // POST /api/cadenavalor/cdas
-  vincularCdas: async (vinculacionData) =>
-    (await api.post("api/cadenavalor/cdas", vinculacionData)).data,
+  // POST /api/cadenavalor/cdas - Agrega CDAs nuevos a un GrupoCda (ya no
+  // reemplaza la lista completa: hay que mandar únicamente lo que se agrega).
+  vincularCdasAGrupo: async (vinculacionData) =>
+    (await api.post("api/cadenavalor/cdas", cadenaValorAdapter.adaptarVinculacionGrupo(vinculacionData))).data,
+
+  // PUT /api/cda/cadenavalor:actualizar - Modifica el valor/Activo de UNA
+  // vinculación ya existente (requiere CdaCadenaValorID); queda registrado
+  // en el historial.
+  actualizarVinculacionCda: async (vinculacionData) =>
+    (await api.put("api/cda/cadenavalor:actualizar", cadenaValorAdapter.adaptarActualizarVinculacion(vinculacionData))).data,
 };

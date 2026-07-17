@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser } from "react-icons/fi";
+import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
 import { Modal } from "../../../../../ui/Modal/Modal";
@@ -11,9 +11,10 @@ import { CargaArchivos } from "../../../../../ui/CargaArchivos/CargaArchivos";
 import { ProcesamientoModal } from "../../../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
-import { useEmpresaActiva } from "../../../../../../hooks/useEmpresaActiva";
+import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
+import { nosisService } from "../../../../../../services/nosisService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { formatBase64Size, procesarArchivo } from "../../../../../../utils/fileUtils";
@@ -21,6 +22,7 @@ import { matchProvinciaAfip } from "../../../../../../utils/provinciaUtils";
 import { useProvincias, useCiudades, usePartidos } from "../../../../../../hooks/useCatalogos";
 import { parseAddress } from "../../../../../../utils/direccionParser";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
+import { useParams } from "react-router-dom";
 import styles from "./SocioAccionistaModal.module.css";
 
 const normalizarTexto = (str) =>
@@ -70,8 +72,9 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
         onDrop={(e) => {
           e.preventDefault();
           setIsDragging(false);
-          if (e.dataTransfer.files?.[0]) {
-            onChange(e.dataTransfer.files[0]);
+          const droppedFile = e.dataTransfer.files?.[0];
+          if (droppedFile) {
+            onChange(droppedFile);
           }
         }}
       />
@@ -83,16 +86,21 @@ const DEFAULT_DNI_TERCEROS = {};
 const DEFAULT_ACCIONISTAS = [];
 
 export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
+  const { cadenaSlug } = useParams();
+  const cadenaValorIdParam = Number(cadenaSlug) || 0;
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
+  const [cdaRechazado, setCdaRechazado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
   const [guardando, setGuardando] = useState(false);
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
-  const { cuitActivo } = useEmpresaActiva();
+  const usuarioWebIdActual = useUsuarioWebIdActual();
 
   const relacionId = socio?.relacionId || 
                      socio?.relacion?.sociotercerorelacionid || 
@@ -187,6 +195,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setErrorDniFrente(false);
       setErrorDniDorso(false);
       setShowConfirm(false);
+      setCdaRechazado(false);
       if (socio) {
         setAfipValidado(true);
       } else {
@@ -310,41 +319,39 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
     clearErrors("cuit");
 
-    const cuitLimpioEmpresa = cuitActivo ? String(cuitActivo).replace(/\D/g, "") : "";
+    setProcesoModal({
+      isOpen: true,
+      titulo: "Validando Socio",
+      pasos: [
+        { id: "sgr", etiqueta: "Conectando con SGR+", estado: "cargando", descripcion: "Validando situación e historial societario." },
+      ],
+      hasError: false,
+      isSystemError: false
+    });
 
-    if (cuitLimpioEmpresa && cuitLimpio !== cuitLimpioEmpresa) {
-      setProcesoModal({
-        isOpen: true,
-        titulo: "Validando Socio",
-        pasos: [
-          { id: "sgr", etiqueta: "Conectando con SGR+", estado: "cargando", descripcion: "Validando situación e historial societario." },
-        ],
-        hasError: false,
-        isSystemError: false
-      });
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam, usuarioWebIdActual);
 
-      const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio);
-      
-      if (!result.success) {
-        setProcesoModal(prev => ({
-          ...prev,
-          hasError: true,
-          isSystemError: result.errors.some((e) => e.isSystemError),
-          pasos: prev.pasos.map(p => 
-            p.id === "sgr" ? { 
-                ...p, 
-                estado: "error", 
-                descripcion: `Falló la validación del socio:`,
-                errores: result.errors.map(e => e.message)
-            } : p
-          )
-        }));
-        setValidando(false);
-        return;
-      }
-      
-      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+    if (!result.success) {
+      setCdaRechazado(true);
+      setProcesoModal(prev => ({
+        ...prev,
+        hasError: true,
+        isSystemError: result.errors.some((e) => e.isSystemError),
+        pasos: prev.pasos.map(p =>
+          p.id === "sgr" ? {
+              ...p,
+              estado: "error",
+              descripcion: `Falló la validación del socio:`,
+              errores: result.errors.map(e => e.message)
+          } : p
+        )
+      }));
+      setValidando(false);
+      return;
     }
+
+    setCdaRechazado(false);
+    setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
     try {
       let terceroEncontrado = null;
@@ -390,64 +397,104 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         return;
       }
 
+      let nosisData = null;
       let res = null;
       try {
-        res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
-      } catch (afipErr) {
-        console.warn("[SocioAccionistaModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+        nosisData = await nosisService.obtenerDatosNormalizados(cuitLimpio);
+      } catch (nosisErr) {
+        console.warn("[SocioAccionistaModal] Nosis no disponible, probando fallback a AFIP:", nosisErr);
+      }
+
+      if (!nosisData) {
         try {
-          const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
-          if (lufeEntidad && lufeEntidad.success) {
-            res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+          res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
+        } catch (afipErr) {
+          console.warn("[SocioAccionistaModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+          try {
+            const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
+            if (lufeEntidad && lufeEntidad.success) {
+              res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+            }
+          } catch (lufeErr) {
+            console.error("[SocioAccionistaModal] LUFE Entidad también falló:", lufeErr);
           }
-        } catch (lufeErr) {
-          console.error("[SocioAccionistaModal] LUFE Entidad también falló:", lufeErr);
         }
       }
 
-      if (res && res.datosgenerales) {
-        const dg = res.datosgenerales;
-        const nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
-                            dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Socio AFIP";
-        setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
-        
-        const emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
-        setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
-        
-        const celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
-        setValue("celular", celularVal, { shouldValidate: true, shouldDirty: true });
+      if (nosisData || (res && res.datosgenerales)) {
+        let nombreSocio = "";
+        let emailVal = "";
+        let celularVal = "";
+        let direccionVal = "";
+        let parsedDir = { calle: "", numero: 0, piso: "" };
+        let deptoVal = "";
+        let ciudadVal = "";
+        let codposVal = "";
+        let provIdVal = 0;
 
-        const dom = dg.domiciliofiscal || dg.domicilio;
-        const direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) || 
-                             (dom ? (dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "")) : "") || "";
-        setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
-        
-        const parsedDir = parseAddress(direccionVal);
-        setValue("calle", parsedDir.calle, { shouldValidate: true, shouldDirty: true });
-        setValue("numero", parsedDir.numero, { shouldValidate: true, shouldDirty: true });
-        setValue("piso", parsedDir.piso, { shouldValidate: true, shouldDirty: true });
-        setValue("departamento", dom?.departamento || terceroEncontrado?.departamento || "", { shouldValidate: true, shouldDirty: true });
-
-        setValue("ciudad", dom?.localidad || "", { shouldValidate: true, shouldDirty: true });
-        setValue("ciudadid", Number(terceroEncontrado?.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
-        setValue("codpos", dom?.codpostal || terceroEncontrado?.codpos || "", { shouldValidate: true, shouldDirty: true });
-
-        let provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
-        if (!provIdVal && dom) {
-          const provNombre = dom.descripcionprovincia || dom.provincia || "";
-          if (provNombre) {
-            const match = matchProvinciaAfip(provNombre, opcionesProvincias);
+        if (nosisData) {
+          nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                        nosisData.VI_RazonSocial || `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim() || "Socio";
+          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || "";
+          celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || "";
+          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) || 
+                         `${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim() || "";
+          parsedDir = parseAddress(direccionVal);
+          deptoVal = terceroEncontrado?.departamento || nosisData.VI_DomAF_Dto || "";
+          ciudadVal = nosisData.VI_DomAF_Loc || "";
+          codposVal = terceroEncontrado?.codpos || nosisData.VI_DomAF_CP || "";
+          
+          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
+          if (!provIdVal && nosisData.VI_DomAF_Prov) {
+            const match = matchProvinciaAfip(nosisData.VI_DomAF_Prov, opcionesProvincias);
             if (match) {
               provIdVal = match.value;
             }
           }
+        } else {
+          const dg = res.datosgenerales;
+          nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                        dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Socio AFIP";
+          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
+          celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
+          const dom = dg.domiciliofiscal || dg.domicilio;
+          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) || 
+                         (dom ? (dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "")) : "") || "";
+          parsedDir = parseAddress(direccionVal);
+          deptoVal = dom?.departamento || terceroEncontrado?.departamento || "";
+          ciudadVal = dom?.localidad || "";
+          codposVal = dom?.codpostal || terceroEncontrado?.codpos || "";
+          
+          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
+          if (!provIdVal && dom) {
+            const provNombre = dom.descripcionprovincia || dom.provincia || "";
+            if (provNombre) {
+              const match = matchProvinciaAfip(provNombre, opcionesProvincias);
+              if (match) {
+                provIdVal = match.value;
+              }
+            }
+          }
         }
+
+        setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
+        setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
+        setValue("celular", celularVal, { shouldValidate: true, shouldDirty: true });
+        setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
+        setValue("calle", parsedDir.calle, { shouldValidate: true, shouldDirty: true });
+        setValue("numero", parsedDir.numero, { shouldValidate: true, shouldDirty: true });
+        setValue("piso", parsedDir.piso, { shouldValidate: true, shouldDirty: true });
+        setValue("departamento", deptoVal, { shouldValidate: true, shouldDirty: true });
+        setValue("ciudad", ciudadVal, { shouldValidate: true, shouldDirty: true });
+        setValue("ciudadid", Number(terceroEncontrado?.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
+        setValue("codpos", codposVal, { shouldValidate: true, shouldDirty: true });
+
         if (provIdVal) {
           setValue("provinciaid", String(provIdVal), { shouldValidate: true, shouldDirty: true });
         }
         
         setAfipValidado(true);
-        toast.success(socio ? "Datos actualizados desde AFIP/LUFE." : "Datos del accionista recuperados.");
+        toast.success(socio ? "Datos actualizados desde Nosis/AFIP/LUFE." : "Datos del accionista recuperados.");
       } else {
         if (terceroEncontrado) {
           const nombreSocio = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Socio del Sistema";
@@ -531,6 +578,13 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     const isValid = await trigger();
     
     if (!isValid || hasDropzoneErrors) return;
+
+    if (cdaRechazado) {
+      toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {
+        description: "Volvé a consultar el CUIT para reintentar la validación.",
+      });
+      return;
+    }
 
     if (!isDirty && !filesChanged) {
       onClose();
@@ -706,15 +760,14 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         onClose={onClose}
         title={socio ? "Editar Accionista" : "Agregar Accionista"}
         maxWidth="800px"
+        variant={isAdmin ? "blue" : "default"}
       >
         <form onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !socio ? (
             <div className={styles.cuitSearchStep}>
-              <div className={styles.cuitSearchBanner}>
-                <div className={styles.cuitSearchBannerIcon}>
-                  <svg width="1rem" height="1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
+              <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
+                <div className={`${styles.cuitSearchBannerIcon} ${isAdmin ? styles.cuitSearchBannerIconAdmin : ""}`}>
+                  <FiShield />
                 </div>
                 <div className={styles.cuitSearchBannerText}>
                   <p className={styles.cuitSearchBannerTitle}>Validación segura con AFIP</p>
@@ -737,20 +790,41 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           ) : (
             <>
               <div className={styles.summaryCard}>
-                <div className={styles.summaryTop}>
-                  <div className={styles.summaryLeft}>
-                    <span className={styles.summaryStatus}>
-                      {enriqueciendoAuto ? (
-                        <>
-                          <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
-                          Enriqueciendo datos...
-                        </>
-                      ) : (
-                        <>
-                          <FiCheckCircle size={11} /> Accionista validado con AFIP
-                        </>
-                      )}
-                    </span>
+                <div className={styles.summaryHeader}>
+                  <span className={styles.summaryStatus}>
+                    {enriqueciendoAuto ? (
+                      <>
+                        <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
+                        Enriqueciendo datos...
+                      </>
+                    ) : (
+                      <>
+                        <FiCheckCircle size={12} /> Validado AFIP
+                      </>
+                    )}
+                  </span>
+                  {socio ? (
+                    <button
+                      type="button"
+                      className={styles.editLink}
+                      onClick={handleAfipLookup}
+                      disabled={validando || enriqueciendoAuto}
+                    >
+                      <FiEdit2 size={11} /> {validando ? "Buscando..." : "Consultar"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className={styles.editLink}
+                      onClick={() => setAfipValidado(false)}
+                    >
+                      <FiEdit2 size={11} /> Cambiar CUIT
+                    </button>
+                  )}
+                </div>
+
+                <div className={styles.summaryBody}>
+                  <div className={styles.summaryInfo}>
                     <input
                       type="text"
                       value={nombreValue || ""}
@@ -759,85 +833,52 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       placeholder="Nombre o Razón Social"
                     />
                     <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-                    {socio ? (
-                      <button
-                        type="button"
-                        className={styles.editLink}
-                        onClick={handleAfipLookup}
-                        disabled={validando || enriqueciendoAuto}
-                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
-                      >
-                        <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar AFIP"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className={styles.editLink}
-                        onClick={() => setAfipValidado(false)}
-                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
-                      >
-                        <FiEdit2 size={12} /> Cambiar CUIT
-                      </button>
-                    )}
                   </div>
                 </div>
 
-                <div className={styles.summaryDivider}></div>
-
-                <div className={styles.summaryBottom}>
-                  <div className={styles.labelColumn}>
-                    <label
-                      htmlFor="participacionSocioInput"
-                      className={styles.percentageLabel}
-                    >
-                      Participación del socio
-                    </label>
-                    <span
-                      className={`${styles.availableText} ${maximoPermitido === 0 ? styles.availableTextError : ""
-                        }`}
-                    >
+                <div className={styles.summaryFooter}>
+                  <div className={styles.pctInfo}>
+                    <span className={styles.pctLabel}>Participación accionaria</span>
+                    <span className={`${styles.availableText} ${maximoPermitido === 0 ? styles.availableTextError : ""}`}>
                       {maximoPermitido > 0 ? `Máximo permitido: ${maximoPermitido}%` : "Cupo completo"}
                     </span>
                   </div>
 
-                  <div
-                    className={`${styles.customInputWrapper} ${
-                      errors.participacion ? styles.wrapperError : ""
-                    }`}
-                  >
-                    <Controller
-                      name="participacion"
-                      control={control}
-                      rules={{
-                        required: "Ingresá un porcentaje",
-                        min: { value: 0.01, message: "Debe ser mayor a 0%" },
-                        max: { value: maximoPermitido, message: `No puede superar el ${maximoPermitido}% máximo permitido.` },
-                      }}
-                      render={({ field }) => (
-                        <input
-                          {...field}
-                          id="participacionSocioInput"
-                          type="text"
-                          className={styles.customInput}
-                          placeholder="0"
-                          maxLength={6}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/[^0-9.]/g, "");
-                            const parts = val.split(".");
-                            if (parts.length <= 2 && Number(val || 0) <= maximoPermitido) {
-                              if (parts[1] && parts[1].length > 2) return;
-                              setValue("participacion", val, { shouldValidate: true, shouldDirty: true });
-                            }
-                          }}
-                        />
-                      )}
-                    />
-                    <span className={styles.percentageSymbol}>%</span>
-                  </div>
-
-                  <div className={styles.errorContainer}>
+                  <div className={styles.pctInputContainer}>
+                    <div className={`${styles.customInputWrapper} ${errors.participacion ? styles.wrapperError : ""}`}>
+                      <Controller
+                        name="participacion"
+                        control={control}
+                        rules={{
+                          required: "Requerido",
+                          min: { value: 0.01, message: "Mayor a 0" },
+                          max: { value: maximoPermitido, message: `Máx ${maximoPermitido}%` },
+                        }}
+                        render={({ field }) => (
+                          <input
+                            {...field}
+                            id="participacionSocioInput"
+                            type="text"
+                            className={styles.customInput}
+                            placeholder="0"
+                            maxLength={6}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/[^0-9.]/g, "");
+                              const parts = val.split(".");
+                              if (parts.length <= 2 && Number(val || 0) <= maximoPermitido) {
+                                if (parts[1] && parts[1].length > 2) return;
+                                setValue("participacion", val, { shouldValidate: true, shouldDirty: true });
+                              }
+                            }}
+                          />
+                        )}
+                      />
+                      <span className={styles.percentageSymbol}>%</span>
+                    </div>
                     {errors.participacion && (
-                      <span className={styles.errorText}>{errors.participacion.message}</span>
+                      <span className={styles.errorText}>
+                        <FiAlertCircle size={11} /> {errors.participacion.message}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -1018,7 +1059,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
           <div className={styles.modalFooter}>
             {(afipValidado || socio) && (
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant={isAdmin ? "blue" : "primary"}>
                 {socio ? "Guardar Cambios" : "Agregar Accionista"}
               </Button>
             )}

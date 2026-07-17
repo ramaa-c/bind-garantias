@@ -232,6 +232,8 @@ export default function Paso4Socios({
         titulo="Eliminar del legajo"
         mensaje={`¿Está seguro de que desea desvincular a ${deleteTargetIndex !== null ? socios[deleteTargetIndex]?.nombre : ""
           } de la operación?`}
+        tone="danger"
+        confirmText="Eliminar"
         isLoading={eliminandoSocio}
       />
     </div>

@@ -1,26 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { cadenaValorService } from "../services/cadenaValorService";
 import { useAuthStore } from "../store/useAuthStore";
+import { useParams } from "react-router-dom";
 
-export const useVendor = () => {
+export const useVendor = (skip = false) => {
   const user = useAuthStore((state) => state.user);
-  const email = user?.email || "";
+  const { cadenaSlug } = useParams();
+  const currentCadenaId = Number(cadenaSlug);
+  const email = skip ? "" : user?.email || "";
 
   return useQuery({
-    queryKey: ["vendor", email],
+    queryKey: ["vendor", email, currentCadenaId],
     queryFn: async () => {
       if (!email) return { isVendor: false, vendorCuit: null, vendorId: null, cadenas: [] };
-
-      // --- MOCK PARA PRUEBAS LOCALES ---
-      if (email.toLowerCase() === "vendorbind@yopmail.com") {
-        return {
-          isVendor: true,
-          vendorCuit: "20123456789", // Un CUIT de prueba que no podrán vincular
-          vendorId: 99999,
-          cadenas: []
-        };
-      }
-      // ---------------------------------
 
       try {
         const data = await cadenaValorService.obtenerCadenasPorEmail(email);
@@ -29,14 +21,21 @@ export const useVendor = () => {
         const items = Array.isArray(data) ? data : data?.items || data?.data || [];
 
         if (items && items.length > 0) {
-          // Si devuelve datos sabemos que es vendor
-          const primerCadena = items[0];
-          return {
-            isVendor: true,
-            vendorCuit: primerCadena.cuittercero || null,
-            vendorId: null, // Si necesitamos el vendorId luego, lo agregaremos
-            cadenas: items
-          };
+          if (!isNaN(currentCadenaId)) {
+            // Buscamos si el vendor está autorizado para la cadena actual en la URL
+            const matchedCadena = items.find(
+              (c) => Number(c.cadenavalorid || c.CadenaValorID || c.id) === currentCadenaId
+            );
+
+            if (matchedCadena) {
+              return {
+                isVendor: true,
+                vendorCuit: matchedCadena.cuittercero || null,
+                vendorId: null, // Si necesitamos el vendorId luego, lo agregaremos
+                cadenas: items
+              };
+            }
+          }
         }
       } catch (error) {
         console.error("Error al verificar si es vendor (CadenaValor):", error);

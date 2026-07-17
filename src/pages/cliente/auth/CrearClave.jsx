@@ -57,7 +57,7 @@ const CrearClave = () => {
       ? `${token || ""}${window.location.hash}`
       : token || "";
 
-  const canalIntegridad = canal || "default";
+  const canalIntegridad = canal;
 
   const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
@@ -139,12 +139,7 @@ const CrearClave = () => {
       return date.toISOString().split(".")[0];
     };
 
-    const canalId =
-      channelInfo.id &&
-      channelInfo.id !== "default" &&
-      channelInfo.id !== "bind"
-        ? channelInfo.id
-        : "canal1";
+    const canalId = channelInfo.id;
 
     const payloadReset = {
       email: emailManual,
@@ -155,7 +150,7 @@ const CrearClave = () => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: "",
+      denominacion: canalId,
     };
 
     resetearPassword(payloadReset, {

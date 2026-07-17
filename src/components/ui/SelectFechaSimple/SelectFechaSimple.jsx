@@ -17,6 +17,8 @@ export const SelectFechaSimple = ({
   value: manualValue,
   onChange: manualOnChange,
   variant,
+  placement = "bottom",
+  hideErrorSpace = false,
   className = "",
 }) => {
   const formContext = useFormContext();
@@ -76,6 +78,7 @@ export const SelectFechaSimple = ({
       statusClass,
       hasValue || isCalendarOpen || isFocused ? inputStyles.hasValue : "",
       isAdmin ? inputStyles.adminVariant : "",
+      hideErrorSpace ? inputStyles.noErrorSpace : "",
       className,
     ].filter(Boolean).join(" ");
 
@@ -129,7 +132,9 @@ export const SelectFechaSimple = ({
         {hasError && <span className={inputStyles.errorMsg}>{errorDisplay}</span>}
 
         {isCalendarOpen && (
-          <div className={customStyles.calendarPopover}>
+          <div
+            className={`${customStyles.calendarPopover} ${placement === "top" ? customStyles.placementTop : ""}`}
+          >
             <DayPicker
               mode="single"
               selected={dateObj}

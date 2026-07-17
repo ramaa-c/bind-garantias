@@ -20,6 +20,7 @@ export const InputSimple = forwardRef(({
   onBlur: manualOnBlur,
   variant,
   mask,
+  hideErrorSpace = false,
   ...props
 }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -51,6 +52,7 @@ export const InputSimple = forwardRef(({
       statusClass,
       hasValue || isFocused ? styles.hasValue : "",
       isAdmin ? styles.adminVariant : "",
+      hideErrorSpace ? styles.noErrorSpace : "",
       className,
     ].filter(Boolean).join(" ");
 
@@ -66,7 +68,7 @@ export const InputSimple = forwardRef(({
 
     return (
       <div className={containerClasses}>
-        <div className={styles.inputWrapper}>
+        <div className={`${styles.inputWrapper} ${type === "textarea" ? styles.textareaWrapper : ""}`}>
           {mask ? (
             <IMaskInput
               id={inputId}
@@ -80,6 +82,20 @@ export const InputSimple = forwardRef(({
               onFocus={handleFocus}
               onBlur={handleBlur}
               inputRef={inputRef}
+              {...props}
+            />
+          ) : type === "textarea" ? (
+            <textarea
+              id={inputId}
+              className={`${styles.input} ${styles.textarea}`}
+              placeholder=" "
+              value={val || ""}
+              onChange={(e) => {
+                if (onCh) onCh(e.target.value);
+              }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              ref={inputRef}
               {...props}
             />
           ) : (

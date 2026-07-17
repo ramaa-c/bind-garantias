@@ -1,12 +1,18 @@
 import React, { useEffect } from "react";
 import { useParams, Outlet, Navigate, useNavigate } from "react-router-dom";
 import { useChannel } from "../../../context/ChannelContext";
-import { useObtenerPorCadenaValorIdWeb, useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
+import { useObtenerPorCadenaValorIdWeb, useObtenerPorId } from "../../../hooks/useCadenaValor";
+import { useObtenerStatusPlataforma } from "../../../hooks/useStatusPlataforma";
+import { esCadenaOperativaParaWeb } from "../../../utils/cadenaValorUtils";
+import { obtenerUltimoStatus, esOffline } from "../../../utils/statusPlataforma";
+import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 
 const TenantLayout = () => {
   const { cadenaSlug } = useParams();
   const { setChannelInfo } = useChannel();
   const navigate = useNavigate();
+  const { data: statusPlataformaData, isLoading: isLoadingStatus } = useObtenerStatusPlataforma();
+  const enMantenimiento = esOffline(obtenerUltimoStatus(statusPlataformaData));
 
   const cadenaValorId = Number(cadenaSlug);
   const isValidId = !Number.isNaN(cadenaValorId) && cadenaValorId > 0;
@@ -14,10 +20,12 @@ const TenantLayout = () => {
   const { data: cadenaData, isLoading } = useObtenerPorCadenaValorIdWeb(
     isValidId ? cadenaValorId : 0,
   );
-  const { data: todasCadenas, isLoading: isLoadingTodas } = useObtenerTodasWeb();
+  const { data: cadenaCoreData, isLoading: isLoadingCore } = useObtenerPorId(
+    isValidId ? cadenaValorId : 0,
+  );
 
   useEffect(() => {
-    if (isLoading || isLoadingTodas) return;
+    if (isLoading || isLoadingCore) return;
 
     if (!isValidId || !cadenaData || cadenaData.error || (Array.isArray(cadenaData) && cadenaData.length === 0)) {
       navigate("/not-found", { replace: true });
@@ -25,42 +33,69 @@ const TenantLayout = () => {
     }
 
     const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
+    const cadenaCoreObj = Array.isArray(cadenaCoreData) ? cadenaCoreData[0] : cadenaCoreData;
 
-    if (String(cadenaObj.activa) === "0") {
-      navigate("/cadena-inactiva", { 
-        replace: true, 
-        state: { denominacion: cadenaObj.denominacion } 
+    const resolvedDenominacion = cadenaObj.denominacion || cadenaObj.Denominacion;
+
+    // Igual que en el panel admin: la cadena debe estar Aprobada y vigente en
+    // CORE, y además no haber sido desactivada manualmente con el switch
+    // "Activa" de la tabla web.
+    if (!esCadenaOperativaParaWeb(cadenaObj, cadenaCoreObj)) {
+      navigate("/cadena-inactiva", {
+        replace: true,
+        state: { denominacion: resolvedDenominacion }
       });
       return;
     }
 
     let formatLogo = null;
-    if (cadenaObj.logo) {
+    const resolvedLogo = cadenaObj.logo ?? cadenaObj.Logo;
+    if (resolvedLogo) {
       if (
-        cadenaObj.logo.startsWith("data:") ||
-        cadenaObj.logo.startsWith("http")
+        resolvedLogo.startsWith("data:") ||
+        resolvedLogo.startsWith("http")
       ) {
-        formatLogo = cadenaObj.logo;
+        formatLogo = resolvedLogo;
       } else {
-        formatLogo = `data:image/png;base64,${cadenaObj.logo}`;
+        formatLogo = `data:image/png;base64,${resolvedLogo}`;
       }
     }
 
+    const resolvedId = cadenaObj.cadenavalorid ?? cadenaObj.CadenaValorID ?? cadenaObj.cadenaValorId;
+
     setChannelInfo({
-      id: String(cadenaObj.cadenavalorid),
-      nombre: cadenaObj.denominacion || "Cadena de Valor",
+      id: String(resolvedId),
+      nombre: resolvedDenominacion || "Cadena de Valor",
       logo: formatLogo,
       colorPrincipal: "var(--color-azul-bind)",
       colorSecundario: "var(--color-amarillo-bind)",
     });
-  }, [cadenaSlug, cadenaData, isLoading, isLoadingTodas, todasCadenas, setChannelInfo, navigate, isValidId]);
+  }, [cadenaSlug, cadenaData, cadenaCoreData, isLoading, isLoadingCore, setChannelInfo, navigate, isValidId]);
+
+  if (isLoadingStatus) {
+    return (
+      <LoadingScreen
+        title="Validando acceso"
+        message="Verificando el estado de la plataforma..."
+      />
+    );
+  }
+
+  if (enMantenimiento) {
+    return <Navigate to="/fuera-de-servicio" replace />;
+  }
 
   if (!cadenaSlug) {
     return <Navigate to="/not-found" replace />;
   }
 
-  if (isLoading || isLoadingTodas) {
-    return null;
+  if (isLoading || isLoadingCore) {
+    return (
+      <LoadingScreen
+        title="Validando acceso"
+        message="Estamos verificando la información de la cadena..."
+      />
+    );
   }
 
   return <Outlet />;

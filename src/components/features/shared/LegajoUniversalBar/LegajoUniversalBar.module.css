@@ -5,7 +5,7 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   padding: 0.85rem 1.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(12px);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -81,9 +81,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 55px;
-  height: 55px;
-  margin-right: 1rem;
+  width: 70px;
+  height: 70px;
+  margin-right: 0.5rem;
+  flex-shrink: 0;
 }
 
 .circularChart {
@@ -118,7 +119,7 @@
 .percentage {
   fill: #ffffff;
   font-family: inherit;
-  font-size: 0.55rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-anchor: middle;
 }
@@ -253,7 +254,15 @@
 }
 
 /* Responsive adjustments: Mobile First -> Desktop */
+.container {
+  margin-bottom: 0.25rem;
+}
+
 @media (min-width: 768px) {
+  .container {
+    margin-bottom: 1rem;
+  }
+
   .barHeader {
     flex-direction: row;
     align-items: center;
@@ -263,6 +272,16 @@
 
   .statusInfo {
     flex: 1 1 300px;
+  }
+
+  .circularProgressWrapper {
+    width: 55px;
+    height: 55px;
+    margin-right: 1rem;
+  }
+
+  .percentage {
+    font-size: 0.55rem;
   }
 
   .actions {

@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { FiPlus, FiEdit, FiTrash2, FiX, FiList } from "react-icons/fi";
 import { toast } from "sonner";
 
-import { useObtenerTodasWeb } from "../../hooks/useCadenaValor";
-import { useMonedas, useTiposProducto, useObligaciones } from "../../hooks/useCatalogos";
+import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
+import { useMonedas, useTiposProducto, useObligaciones } from "../../../hooks/useCatalogos";
 import {
   useObtenerLimitesCadenaValor,
   useCrearLimiteCadenaValor,
   useActualizarLimiteCadenaValor,
   useObtenerProductosPorLimite,
-} from "../../hooks/useLinea";
+} from "../../../hooks/useLinea";
 import {
   SelectSimple,
   Modal,
@@ -17,8 +17,8 @@ import {
   Spinner,
   InputSimple,
   SelectFechaSimple,
-} from "../../components/ui";
-import { CadenaSelectCard } from "../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
+} from "../../../components/ui";
+import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import styles from "./LineasProductos.module.css";
 
 const MOCK_MONEDAS = [
@@ -337,7 +337,7 @@ export default function LineasCadena() {
   });
 
   // Queries
-  const { data: cadenas, isLoading: isLoadingCadenas } = useObtenerTodasWeb();
+  const { data: cadenas, isLoading: isLoadingCadenas } = useObtenerTodasWebConEstado();
   const { data: lineas, isLoading: isLoadingLineas } =
     useObtenerLimitesCadenaValor(selectedCadenaId);
   const { data: monedas } = useMonedas();
@@ -503,11 +503,7 @@ export default function LineasCadena() {
     (c) => String(c.cadenavalorid) === selectedCadenaId,
   );
 
-  const isCadenaInactiva = selectedCadena && (
-    String(selectedCadena.activa) === "0" || 
-    selectedCadena.activa === false || 
-    String(selectedCadena.activa).toLowerCase() === "false"
-  );
+  const isCadenaInactiva = selectedCadena && !selectedCadena.activaOperativa;
 
   const chainsSelectOptions = listCadenas.map((c) => ({
     value: String(c.cadenavalorid),
@@ -586,7 +582,6 @@ export default function LineasCadena() {
         }
         maxWidth="600px"
         variant="blue"
-        allowOverflow={true}
       >
         <div style={{ position: "relative" }}>
           {(crearMutation.isPending || actualizarMutation.isPending) && (

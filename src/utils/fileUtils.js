@@ -62,6 +62,89 @@ const detectMimeTypeFromBase64 = (base64Str) => {
   return null;
 };
 
+const obtenerExtensionPorMime = (mimeType) => {
+  switch (mimeType) {
+    case "application/pdf":
+      return ".pdf";
+    case "image/jpeg":
+      return ".jpg";
+    case "image/png":
+      return ".png";
+    case "image/gif":
+      return ".gif";
+    case "text/plain":
+      return ".txt";
+    case "application/msword":
+      return ".doc";
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return ".docx";
+    case "application/vnd.ms-excel":
+      return ".xls";
+    case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+      return ".xlsx";
+    case "application/zip":
+    case "application/x-zip-compressed":
+      return ".zip";
+    default:
+      return "";
+  }
+};
+
+export const asegurarExtension = (filename, contenidoBase64) => {
+  let name = String(filename || "archivo").trim();
+
+  // 1. Detectar MIME
+  let mimeType = getMimeType(name);
+  if (mimeType === "application/octet-stream" && contenidoBase64) {
+    const detected = detectMimeTypeFromBase64(contenidoBase64);
+    if (detected) {
+      mimeType = detected;
+    }
+  }
+
+  const extCorrecta = obtenerExtensionPorMime(mimeType);
+  if (!extCorrecta) return name;
+
+  if (name.toLowerCase().endsWith(extCorrecta)) {
+    return name;
+  }
+
+  if (extCorrecta === ".jpg" && name.toLowerCase().endsWith(".jpeg")) {
+    return name;
+  }
+  if (extCorrecta === ".jpeg" && name.toLowerCase().endsWith(".jpg")) {
+    return name;
+  }
+
+  const extIndex = name.lastIndexOf(".");
+  if (extIndex !== -1) {
+    const extActual = name.substring(extIndex).toLowerCase();
+    const extensionesReemplazables = [
+      ".bin",
+      ".octet-stream",
+      ".tmp",
+      ".download",
+      ".unknown",
+      ".pdf",
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".txt",
+      ".doc",
+      ".docx",
+      ".xls",
+      ".xlsx",
+      ".zip",
+    ];
+    if (extensionesReemplazables.includes(extActual) || extActual.length <= 5) {
+      name = name.substring(0, extIndex);
+    }
+  }
+
+  return name + extCorrecta;
+};
+
 export const procesarArchivo = async (
   fileObj,
   archivosBackend = [],
@@ -117,30 +200,15 @@ export const procesarArchivo = async (
       }
     }
 
-    let fileName = fileData.nombrearchivo || "archivo";
-    if (
-      mimeType === "application/pdf" &&
-      !String(fileName).toLowerCase().endsWith(".pdf")
-    ) {
-      fileName += ".pdf";
-    } else if (
-      mimeType === "image/png" &&
-      !String(fileName).toLowerCase().endsWith(".png")
-    ) {
-      fileName += ".png";
-    } else if (
-      mimeType === "image/jpeg" &&
-      !String(fileName).toLowerCase().endsWith(".jpg") &&
-      !String(fileName).toLowerCase().endsWith(".jpeg")
-    ) {
-      fileName += ".jpg";
-    }
+    const fileName = asegurarExtension(
+      fileData.nombrearchivo,
+      fileData.contenido,
+    );
 
     const blob = base64ToBlob(fileData.contenido, mimeType);
     const url = URL.createObjectURL(blob);
 
     toast.dismiss(toastId);
-
 
     if (mode === "download") {
       const a = document.createElement("a");
@@ -189,7 +257,10 @@ const resolveUniqueName = (name, existingNames) => {
   return newName;
 };
 
-export const descargarArchivosEnZip = async (archivos, zipFileName = "documentos.zip") => {
+export const descargarArchivosEnZip = async (
+  archivos,
+  zipFileName = "documentos.zip",
+) => {
   if (!archivos || archivos.length === 0) {
     toast.error("No hay archivos para descargar.");
     return;
@@ -203,7 +274,8 @@ export const descargarArchivosEnZip = async (archivos, zipFileName = "documentos
 
     archivos.forEach((file) => {
       if (file.contenido) {
-        const uniqueName = resolveUniqueName(file.nombrearchivo || "archivo.pdf", existingNames);
+        const cleanName = asegurarExtension(file.nombrearchivo, file.contenido);
+        const uniqueName = resolveUniqueName(cleanName, existingNames);
         zip.file(uniqueName, file.contenido, { base64: true });
       }
     });
@@ -222,7 +294,9 @@ export const descargarArchivosEnZip = async (archivos, zipFileName = "documentos
     toast.success("ZIP descargado correctamente", { id: toastId });
   } catch (error) {
     console.error("Error al generar ZIP:", error);
-    toast.error("Error al generar el archivo ZIP. Por favor reintente.", { id: toastId });
+    toast.error("Error al generar el archivo ZIP. Por favor reintente.", {
+      id: toastId,
+    });
   }
 };
 
@@ -230,7 +304,7 @@ export const descargarLegajoCompletoZip = async (
   archivos,
   estructura,
   tipoDocumentoMap,
-  zipFileName = "legajo_completo.zip"
+  zipFileName = "legajo_completo.zip",
 ) => {
   if (!archivos || archivos.length === 0) {
     toast.error("No hay archivos cargados para descargar.");
@@ -248,7 +322,7 @@ export const descargarLegajoCompletoZip = async (
 
       // Find the document title matching this archive's type
       const docConfig = estructura.find(
-        (doc) => tipoDocumentoMap[doc.key] === file.tipodocumentoarchivoid
+        (doc) => tipoDocumentoMap[doc.key] === file.tipodocumentoarchivoid,
       );
 
       const folderName = docConfig ? docConfig.title : "Otros Documentos";
@@ -258,12 +332,15 @@ export const descargarLegajoCompletoZip = async (
         folderNamesMap[cleanFolderName] = new Set();
       }
 
+      const cleanName = asegurarExtension(file.nombrearchivo, file.contenido);
       const uniqueName = resolveUniqueName(
-        file.nombrearchivo || "archivo.pdf",
-        folderNamesMap[cleanFolderName]
+        cleanName,
+        folderNamesMap[cleanFolderName],
       );
 
-      zip.file(`${cleanFolderName}/${uniqueName}`, file.contenido, { base64: true });
+      zip.file(`${cleanFolderName}/${uniqueName}`, file.contenido, {
+        base64: true,
+      });
     });
 
     const blob = await zip.generateAsync({ type: "blob" });
@@ -280,7 +357,9 @@ export const descargarLegajoCompletoZip = async (
     toast.success("Legajo completo descargado correctamente", { id: toastId });
   } catch (error) {
     console.error("Error al generar legajo completo ZIP:", error);
-    toast.error("Error al generar el legajo completo ZIP. Por favor reintente.", { id: toastId });
+    toast.error(
+      "Error al generar el legajo completo ZIP. Por favor reintente.",
+      { id: toastId },
+    );
   }
 };
-

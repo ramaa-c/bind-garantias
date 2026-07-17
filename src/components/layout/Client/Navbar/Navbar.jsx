@@ -29,7 +29,7 @@ const Navbar = ({
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const { channelInfo } = useChannel();
   
-  const { nombreEmpresa } = useEmpresaActiva();
+  const { nombreEmpresa, onboardingCompleto } = useEmpresaActiva();
   const isVinculado = !!nombreEmpresa;
 
   const emailUsuario =
@@ -120,7 +120,7 @@ const Navbar = ({
                     </p>
                   </div>
 
-                  {isVinculado && (
+                  {onboardingCompleto && (
                     <div className={styles.dropdownBody}>
                       <button type="button"
                         className={styles.dropdownItem}

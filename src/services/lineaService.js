@@ -1,3 +1,4 @@
+import { lineaAdapter } from "../adapters/lineaAdapter";
 import api from '../api/axios';
 
 export const lineaService = {
@@ -8,7 +9,7 @@ export const lineaService = {
     obtenerLimitesPorSocio: async (socioId) => (await api.get(`api/TipoLimiteSocio?socioid=${socioId}`)).data,
 
     // POST api/TipoLimiteSocio
-    crearLimiteSocio: async (limiteData) => (await api.post(`api/TipoLimiteSocio`, limiteData)).data,
+    crearLimiteSocio: async (limiteData) => (await api.post(`api/TipoLimiteSocio`, lineaAdapter.adaptarPayload1(limiteData))).data,
 
     // GET api/TipoLimiteCadenaValor?cadenavalorid={id}
     obtenerLimitesCadenaValor: async (cadenavalorid) => 
@@ -16,11 +17,11 @@ export const lineaService = {
 
     // POST api/TipoLimiteCadenaValor
     crearLimiteCadenaValor: async (limiteData) => 
-        (await api.post('api/TipoLimiteCadenaValor', limiteData)).data,
+        (await api.post('api/TipoLimiteCadenaValor', lineaAdapter.adaptarPayload2(limiteData))).data,
 
     // PUT api/TipoLimiteCadenaValor
     actualizarLimiteCadenaValor: async (limiteData) => 
-        (await api.put('api/TipoLimiteCadenaValor', limiteData)).data,
+        (await api.put('api/TipoLimiteCadenaValor', lineaAdapter.adaptarPayload3(limiteData))).data,
 
 
 
@@ -30,11 +31,11 @@ export const lineaService = {
 
     // POST api/TipoObligacionTipoLimite
     asociarProductoLimite: async (asocData) => 
-        (await api.post('api/TipoObligacionTipoLimite', asocData)).data,
+        (await api.post('api/TipoObligacionTipoLimite', lineaAdapter.adaptarPayload4(asocData))).data,
 
     // PUT api/TipoObligacionTipoLimite
     actualizarProductoLimite: async (asocData) => 
-        (await api.put('api/TipoObligacionTipoLimite', asocData)).data,
+        (await api.put('api/TipoObligacionTipoLimite', lineaAdapter.adaptarPayload5(asocData))).data,
 
     // DELETE api/TipoObligacionTipoLimite/{id}
     desasociarProductoLimite: async (id) => 

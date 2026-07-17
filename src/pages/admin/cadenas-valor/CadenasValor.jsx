@@ -8,20 +8,20 @@ import {
   FiSliders,
 } from "react-icons/fi";
 import styles from "./CadenasValor.module.css";
-import { useObtenerTodasWeb, useActualizarCadenaValor } from "../../hooks/useCadenaValor";
-import { cadenaValorService } from "../../services/cadenaValorService";
+import { useObtenerTodasWebConEstado, useActualizarCadenaValor } from "../../../hooks/useCadenaValor";
+import { cadenaValorService } from "../../../services/cadenaValorService";
 import {
   useTipoCanalComercializacion,
   useEquipoComercial,
-} from "../../hooks/useCatalogos";
-import { Spinner, Button, Alert } from "../../components/ui";
+} from "../../../hooks/useCatalogos";
+import { Spinner, Button, Alert } from "../../../components/ui";
 import {
   ActivarCadenaModal,
   EditarCadenaModal,
-  CdaConfigModal,
   UsuariosRelacionadosModal,
   RequisitosConfigModal,
-} from "../../components/features";
+  CdaConfigModal,
+} from "../../../components/features";
 import { toast } from "sonner";
 
 export default function CadenasValor() {
@@ -41,7 +41,7 @@ export default function CadenasValor() {
     data: activeCadenas,
     isLoading: isLoadingActive,
     refetch: refetchActive,
-  } = useObtenerTodasWeb();
+  } = useObtenerTodasWebConEstado();
 
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
@@ -53,6 +53,9 @@ export default function CadenasValor() {
 
   const activeList = activeCadenas || [];
 
+  // Interruptor manual "Activa" de la tabla web: además de estar Aprobada y
+  // vigente en CORE, el admin puede optar por apagar una cadena igual.
+  // Solo interactuable cuando CORE la habilita (aprobadaVigente).
   const handleToggleActiva = async (item) => {
     const currentActive = String(item.activa || "1");
     const nuevoEstado = currentActive === "0" ? "1" : "0";
@@ -108,7 +111,6 @@ export default function CadenasValor() {
             ? `Cadena "${item.denominacion}" activada.`
             : `Cadena "${item.denominacion}" desactivada.`
         );
-        // Clear optimistic state to sync with backend refetch
         setToggledStates(prev => {
           const next = { ...prev };
           delete next[item.cadenavalorid];
@@ -124,7 +126,6 @@ export default function CadenasValor() {
       onError: (err) => {
         console.error("Error al cambiar estado de la cadena:", err);
         toast.error("Ocurrió un error al cambiar el estado de la cadena de valor");
-        // Revert optimistic state
         setToggledStates(prev => {
           const next = { ...prev };
           delete next[item.cadenavalorid];
@@ -173,7 +174,11 @@ export default function CadenasValor() {
   );
 
   if (isLoadingActive) {
-    return <Spinner center size={80} />;
+    return (
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+        <Spinner size={80} />
+      </div>
+    );
   }
 
   return (
@@ -224,10 +229,12 @@ export default function CadenasValor() {
             </thead>
             <tbody>
               {filteredCadenas.map((item) => {
-                const currentStatus = toggledStates[item.cadenavalorid] !== undefined
+                const puedeActivarse = item.aprobadaVigente;
+                const manualStatus = toggledStates[item.cadenavalorid] !== undefined
                   ? toggledStates[item.cadenavalorid]
-                  : String(item.activa);
-                const isInactive = currentStatus === "0";
+                  : String(item.activa ?? "1");
+                const isManualOff = manualStatus === "0";
+                const isInactive = !puedeActivarse || isManualOff;
                 const isUpdating = updatingIds.has(item.cadenavalorid);
 
                 return (
@@ -285,12 +292,21 @@ export default function CadenasValor() {
                           <Spinner size={16} />
                         </div>
                       ) : (
-                        <label className={styles.switch}>
+                        <label
+                          className={styles.switch}
+                          title={
+                            !puedeActivarse
+                              ? "No está Aprobada o su vigencia venció: no se puede activar desde acá"
+                              : isManualOff
+                                ? "Activar cadena"
+                                : "Desactivar cadena"
+                          }
+                        >
                           <input
                             type="checkbox"
                             checked={!isInactive}
                             onChange={() => handleToggleActiva(item)}
-                            disabled={isUpdating}
+                            disabled={isUpdating || !puedeActivarse}
                           />
                           <span className={styles.slider} />
                         </label>
@@ -309,15 +325,6 @@ export default function CadenasValor() {
                         </Button>
                         <Button
                           variant="ghost"
-                          className={`${styles.iconBtnAction} ${styles.btnList}`}
-                          title="Configurar CDAs"
-                          onClick={() => handleActionClick(item, "cdas")}
-                          disabled={isInactive}
-                        >
-                          <FiList />
-                        </Button>
-                        <Button
-                          variant="ghost"
                           className={`${styles.iconBtnAction} ${styles.btnUser}`}
                           title="Usuarios Relacionados"
                           onClick={() => handleActionClick(item, "users")}
@@ -333,6 +340,15 @@ export default function CadenasValor() {
                           disabled={isInactive}
                         >
                           <FiSliders />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className={`${styles.iconBtnAction} ${styles.btnList}`}
+                          title="Ver CDAs Activos"
+                          onClick={() => handleActionClick(item, "cda")}
+                          disabled={isInactive}
+                        >
+                          <FiList />
                         </Button>
                       </div>
                     </td>
@@ -373,12 +389,6 @@ export default function CadenasValor() {
         onSuccess={refetchActive}
       />
 
-      <CdaConfigModal
-        isOpen={isModalOpen && modalType === "cdas"}
-        onClose={() => setIsModalOpen(false)}
-        activeItem={activeItem}
-      />
-
       <UsuariosRelacionadosModal
         isOpen={isModalOpen && modalType === "users"}
         onClose={() => setIsModalOpen(false)}
@@ -389,6 +399,13 @@ export default function CadenasValor() {
         isOpen={isModalOpen && modalType === "requisitos"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}
+      />
+
+      <CdaConfigModal
+        isOpen={isModalOpen && modalType === "cda"}
+        onClose={() => setIsModalOpen(false)}
+        activeItem={activeItem}
+        isReadOnly={true}
       />
     </div>
   );

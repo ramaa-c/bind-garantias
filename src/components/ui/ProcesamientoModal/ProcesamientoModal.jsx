@@ -1,45 +1,16 @@
 import React from "react";
 import { createPortal } from "react-dom";
+import { FiCheck, FiX, FiAlertCircle } from "react-icons/fi";
 import Spinner from "../Spinner/Spinner";
 import { Button } from "../Button/Button";
 import styles from "./ProcesamientoModal.module.css";
-
-const CheckIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-const ErrorIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
 
 const BADGE_LABELS = {
   completado: "Completado",
   cargando: "En proceso",
   pendiente: "Pendiente",
   error: "Falló",
+  alerta: "Revisión",
 };
 
 export const ProcesamientoModal = ({
@@ -66,6 +37,7 @@ export const ProcesamientoModal = ({
           {pasos.map((paso, index) => {
             const isCompleted = paso.estado === "completado";
             const isError = paso.estado === "error";
+            const isAlerta = paso.estado === "alerta";
             const isLoading = paso.estado === "cargando";
             const isPending = paso.estado === "pendiente";
 
@@ -80,15 +52,16 @@ export const ProcesamientoModal = ({
                     className={`${styles.circuloIcono} ${styles[`icono_${paso.estado}`]}`}
                     aria-label={BADGE_LABELS[paso.estado]}
                   >
-                    {isCompleted && <CheckIcon />}
+                    {isCompleted && <FiCheck size={18} strokeWidth={2.5} />}
                     {isLoading && <Spinner size={18} center={false} />}
-                    {isError && <ErrorIcon />}
+                    {isError && <FiX size={18} strokeWidth={2.5} />}
+                    {isAlerta && <FiAlertCircle size={18} strokeWidth={2.5} />}
                     {isPending && <span className={styles.dotPendiente} />}
                   </div>
 
                   {index < pasos.length - 1 && (
                     <div
-                      className={`${styles.lineaConectora} ${isCompleted ? styles.lineaCompletada : ""} ${isError ? styles.lineaError : ""}`}
+                      className={`${styles.lineaConectora} ${isCompleted ? styles.lineaCompletada : ""} ${isError ? styles.lineaError : ""} ${isAlerta ? styles.lineaAlerta : ""}`}
                     />
                   )}
                 </div>
@@ -106,7 +79,7 @@ export const ProcesamientoModal = ({
                       {BADGE_LABELS[paso.estado]}
                     </span>
                   </div>
-                  {paso.descripcion && !isError && (
+                  {paso.descripcion && !isError && !isAlerta && (
                     <p className={styles.descripcionPaso}>{paso.descripcion}</p>
                   )}
                   {isError && paso.errores && paso.errores.length > 0 && (
@@ -118,6 +91,16 @@ export const ProcesamientoModal = ({
                   )}
                   {isError && paso.error && (!paso.errores || paso.errores.length === 0) && (
                     <p className={styles.errorPaso}>{paso.error}</p>
+                  )}
+                  {isAlerta && paso.errores && paso.errores.length > 0 && (
+                    <ul className={styles.listaAlertasPaso}>
+                      {paso.errores.map((err, i) => (
+                        <li key={err}>{err}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {isAlerta && paso.error && (!paso.errores || paso.errores.length === 0) && (
+                    <p className={styles.alertaPaso}>{paso.error}</p>
                   )}
                 </div>
               </li>

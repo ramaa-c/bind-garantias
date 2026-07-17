@@ -139,6 +139,12 @@
   color: #e05260;
 }
 
+.icono_alerta {
+  background-color: rgba(255, 193, 7, 0.12);
+  border: 1.5px solid rgba(255, 193, 7, 0.45);
+  color: #ffc107;
+}
+
 /* Pending dot */
 .dotPendiente {
   width: 7px;
@@ -167,6 +173,10 @@
 
 .lineaError {
   background-color: rgba(220, 53, 69, 0.35);
+}
+
+.lineaAlerta {
+  background-color: rgba(255, 193, 7, 0.35);
 }
 
 /* --- Step content --- */
@@ -206,6 +216,7 @@
 .label_cargando   { color: var(--color-azul-bind, #4c65e6); }
 .label_pendiente  { color: var(--text-muted, #666); }
 .label_error      { color: #e05260; }
+.label_alerta     { color: #ffc107; }
 
 .descripcionPaso {
   color: var(--text-muted, #666666);
@@ -246,6 +257,11 @@
   color: #e05260;
 }
 
+.badge_alerta {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+}
+
 /* --- Footer --- */
 .footerAcciones {
   display: flex;
@@ -273,5 +289,25 @@
 }
 
 .listaErroresPaso li {
+  margin-bottom: 0.25rem;
+}
+
+.alertaPaso {
+  color: #ffc107;
+  font-size: 0.875rem;
+  margin: 0.5rem 0 0 0;
+  line-height: 1.4;
+}
+
+.listaAlertasPaso {
+  margin: 0.5rem 0 0 0;
+  padding: 0 0 0 1.25rem;
+  color: #ffc107;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  list-style-type: disc;
+}
+
+.listaAlertasPaso li {
   margin-bottom: 0.25rem;
 }

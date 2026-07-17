@@ -17,13 +17,14 @@ export const SelectSimple = ({
   onChange: manualOnChange,
   onBlur: manualOnBlur,
   variant,
+  compact = false,
   className = "",
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
   // We determine if we are in admin mode to apply the blue focus theme
   const isAdmin = variant === "admin" || (variant !== "client" && typeof window !== "undefined" && window.location.pathname.includes("/admin"));
-  
+
   const focusColor = isAdmin ? "var(--color-azul-bind, #4c65e6)" : "var(--yellow, #f4f500)";
   const bgSelected = isAdmin ? "var(--color-azul-bind, #4c65e6)" : "var(--yellow, #f4f500)";
   const textSelected = isAdmin ? "#ffffff" : "#000";
@@ -36,27 +37,36 @@ export const SelectSimple = ({
       backgroundColor: "transparent",
       border: "none",
       boxShadow: "none",
-      minHeight: "3.2rem",
-      paddingTop: "0.85rem", // Leaves space for the floating label
+      minHeight: compact ? "2.35rem" : "3.2rem",
+      paddingTop: compact ? "0.5rem" : "0.85rem", // Leaves space for the floating label
       cursor: state.isDisabled ? "not-allowed" : "pointer",
     }),
     valueContainer: (base) => ({
       ...base,
-      padding: "0 1rem",
+      padding: compact ? "0 0.75rem" : "0 1rem",
+      flexWrap: "nowrap",
     }),
     singleValue: (base) => ({
       ...base,
       color: "var(--white, #fff)",
       fontWeight: "500",
-      fontSize: "1rem",
+      fontSize: compact ? "0.825rem" : "1rem",
       letterSpacing: "0.01em",
       fontFamily: "var(--font-principal, inherit)",
+      maxWidth: "100%",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
     }),
     placeholder: (base) => ({
       ...base,
       color: "#555",
-      fontSize: "1rem",
+      fontSize: compact ? "0.825rem" : "1rem",
       fontFamily: "var(--font-principal, inherit)",
+      maxWidth: "100%",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
     }),
     input: (base) => ({
       ...base,
@@ -68,7 +78,7 @@ export const SelectSimple = ({
     dropdownIndicator: (base, state) => ({
       ...base,
       color: isFocused ? focusColor : "#8b949e",
-      padding: "8px 12px",
+      padding: compact ? "6px 8px" : "8px 12px",
       "&:hover": {
         color: focusColor,
       },
@@ -110,7 +120,8 @@ export const SelectSimple = ({
   };
 
   const renderSelect = (val, onCh, onBl, ref) => {
-    const hasValue = val !== undefined && val !== null && String(val).length > 0;
+    const matchedOption = options ? options.find((c) => String(c.value) === String(val)) : null;
+    const hasValue = val !== undefined && val !== null && (String(val).length > 0 || !!matchedOption);
     const hasError = !!error;
 
     let statusClass = inputStyles.statusDefault;
@@ -126,6 +137,7 @@ export const SelectSimple = ({
       hasValue || isFocused ? inputStyles.hasValue : "",
       isAdmin ? inputStyles.adminVariant : "",
       hideErrorSpace ? inputStyles.noErrorSpace : "",
+      compact ? inputStyles.compact : "",
       className,
     ].filter(Boolean).join(" ");
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser } from "react-icons/fi";
+import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser, FiShield } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../ui/Button/Button";
 import { Modal } from "../../../ui/Modal/Modal";
@@ -10,10 +10,13 @@ import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
 import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
+import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";
+import { nosisService } from "../../../../services/nosisService";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { tercerosService } from "../../../../services/tercerosService";
+import { useParams } from "react-router-dom";
 import styles from "./RepresentanteModal.module.css";
 
 export function RepresentanteModal({
@@ -25,9 +28,14 @@ export function RepresentanteModal({
   representanteInicial,   // Form mode: initial representative data for edit
   onGuardar,              // Form mode: callback to update parent React Hook Form state
 }) {
+  const { cadenaSlug } = useParams();
+  const cadenaValorIdParam = Number(cadenaSlug) || 0;
+  const isAdmin =
+    typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
+  const [cdaRechazado, setCdaRechazado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [prevProps, setPrevProps] = useState({ isOpen, representante, representanteInicial });
@@ -35,12 +43,14 @@ export function RepresentanteModal({
     setPrevProps({ isOpen, representante, representanteInicial });
     if (isOpen) {
       setAfipValidado(!!(representante || representanteInicial));
+      setCdaRechazado(false);
       setShowConfirm(false);
     }
   }
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
+  const usuarioWebIdActual = useUsuarioWebIdActual();
 
   const { control, reset, setValue, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -119,17 +129,18 @@ export function RepresentanteModal({
       isSystemError: false
     });
 
-    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio);
-    
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam, usuarioWebIdActual);
+
     if (!result.success) {
+      setCdaRechazado(true);
       setProcesoModal(prev => ({
         ...prev,
         hasError: true,
         isSystemError: result.errors.some((e) => e.isSystemError),
-        pasos: prev.pasos.map(p => 
-          p.id === "sgr" ? { 
-              ...p, 
-              estado: "error", 
+        pasos: prev.pasos.map(p =>
+          p.id === "sgr" ? {
+              ...p,
+              estado: "error",
               descripcion: `Falló la validación del representante:`,
               errores: result.errors.map(e => e.message)
           } : p
@@ -138,7 +149,8 @@ export function RepresentanteModal({
       setValidando(false);
       return;
     }
-    
+
+    setCdaRechazado(false);
     setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
     try {
@@ -170,38 +182,57 @@ export function RepresentanteModal({
         return;
       }
 
-      // 2. Si no tiene datos completos o es modo edición, consultamos AFIP/LUFE
+      // 2. Si no tiene datos completos o es modo edición, consultamos NOSIS/AFIP/LUFE
+      let nosisData = null;
       let res = null;
       try {
-        res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
-      } catch (afipErr) {
-        console.warn("[RepresentanteModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+        nosisData = await nosisService.obtenerDatosNormalizados(cuitLimpio);
+      } catch (nosisErr) {
+        console.warn("[RepresentanteModal] Nosis no disponible, probando fallback a AFIP:", nosisErr);
+      }
+
+      if (!nosisData) {
         try {
-          const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
-          if (lufeEntidad && lufeEntidad.success) {
-            res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+          res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
+        } catch (afipErr) {
+          console.warn("[RepresentanteModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
+          try {
+            const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
+            if (lufeEntidad && lufeEntidad.success) {
+              res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
+            }
+          } catch (lufeErr) {
+            console.error("[RepresentanteModal] LUFE Entidad también falló:", lufeErr);
           }
-        } catch (lufeErr) {
-          console.error("[RepresentanteModal] LUFE Entidad también falló:", lufeErr);
         }
       }
 
-      if (res && res.datosgenerales) {
-        const dg = res.datosgenerales;
-        const nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
-                          dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
+      if (nosisData || (res && res.datosgenerales)) {
+        let nombreRep = "";
+        let emailVal = "";
+        let telVal = "";
+
+        if (nosisData) {
+          nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                      nosisData.VI_RazonSocial || `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim() || "Representante";
+          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || "";
+          telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || "";
+        } else {
+          const dg = res.datosgenerales;
+          nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                      dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
+          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
+          telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
+        }
+
         setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
-        
-        const emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
         setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
-        
-        const telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
         setValue("telefono", telVal, { shouldValidate: true, shouldDirty: true });
 
         setAfipValidado(true);
-        toast.success(representante || representanteInicial ? "Datos actualizados desde AFIP/LUFE." : "Datos del representante recuperados.");
+        toast.success(representante || representanteInicial ? "Datos actualizados desde Nosis/AFIP/LUFE." : "Datos del representante recuperados.");
       } else {
-        setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de AFIP." });
+        setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de Nosis ni AFIP." });
         setAfipValidado(false);
       }
     } catch (err) {
@@ -222,6 +253,13 @@ export function RepresentanteModal({
 
     const isValid = await trigger();
     if (!isValid) return;
+
+    if (cdaRechazado) {
+      toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {
+        description: "Volvé a consultar el CUIT para reintentar la validación.",
+      });
+      return;
+    }
 
     if (!isDirty) {
       onClose();
@@ -395,15 +433,14 @@ export function RepresentanteModal({
         onClose={onClose}
         title={representante || representanteInicial ? "Editar Representante" : "Agregar Representante"}
         maxWidth="600px"
+        variant={isAdmin ? "blue" : "default"}
       >
         <form onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !representante && !representanteInicial ? (
             <div className={styles.cuitSearchStep}>
-              <div className={styles.cuitSearchBanner}>
-                <div className={styles.cuitSearchBannerIcon}>
-                  <svg width="1rem" height="1rem" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
+              <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
+                <div className={`${styles.cuitSearchBannerIcon} ${isAdmin ? styles.cuitSearchBannerIconAdmin : ""}`}>
+                  <FiShield />
                 </div>
                 <div className={styles.cuitSearchBannerText}>
                   <p className={styles.cuitSearchBannerTitle}>Validación segura con AFIP</p>
@@ -448,7 +485,6 @@ export function RepresentanteModal({
                         className={styles.editLink}
                         onClick={handleAfipLookup}
                         disabled={validando || enriqueciendoAuto}
-                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
                       >
                         <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar AFIP"}
                       </button>
@@ -457,7 +493,6 @@ export function RepresentanteModal({
                         type="button"
                         className={styles.editLink}
                         onClick={() => setAfipValidado(false)}
-                        style={{ position: "absolute", top: "0.75rem", right: "0.75rem" }}
                       >
                         <FiEdit2 size={12} /> Cambiar CUIT
                       </button>
@@ -547,7 +582,7 @@ export function RepresentanteModal({
 
           <div className={styles.modalFooter}>
             {(afipValidado || representante || representanteInicial) && (
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant={isAdmin ? "blue" : "primary"}>
                 {representante || representanteInicial ? "Guardar Cambios" : "Agregar Representante"}
               </Button>
             )}

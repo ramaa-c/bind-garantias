@@ -1,10 +1,14 @@
 .container {
   position: relative;
   width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .trigger {
   width: 100%;
+  flex: 1;
   background: rgba(33, 38, 45, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
@@ -149,12 +153,12 @@
 }
 
 .optionsList::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-thumb);
   border-radius: 10px;
 }
 
 .optionsList::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--scrollbar-thumb-hover);
 }
 
 .noResults {

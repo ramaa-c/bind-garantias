@@ -1,3 +1,4 @@
+import { tercerosAdapter } from "../adapters/tercerosAdapter";
 import api from "../api/axios";
 
 const sanitizarRelacion = (relacionData) => {
@@ -51,7 +52,7 @@ export const tercerosService = {
   // Crea nuevo tercero relacionado
   crearTercero: async (terceroData) => {
     try {
-      const response = await api.post("api/TerceroRelacionado", terceroData);
+      const response = await api.post("api/TerceroRelacionado", tercerosAdapter.adaptarPayload1(terceroData));
       return response.data;
     } catch (err) {
       console.error("[tercerosService] POST api/TerceroRelacionado FAILED:", err.response?.status, err.response?.data || err.message);
@@ -62,7 +63,7 @@ export const tercerosService = {
   // Actualiza un tercero relacionado
   actualizarTercero: async (terceroData) => {
     try {
-      const response = await api.put("api/TerceroRelacionado", terceroData);
+      const response = await api.put("api/TerceroRelacionado", tercerosAdapter.adaptarPayload2(terceroData));
       return response.data;
     } catch (err) {
       console.error("[tercerosService] PUT api/TerceroRelacionado FAILED:", err.response?.status, err.response?.data || err.message);
@@ -82,7 +83,7 @@ export const tercerosService = {
 
   // Guarda las relaciones de un socio
   guardarRelacionesDeSocio: async (relacionData) => {
-    const response = await api.post("api/SocioTerceroRelacion", relacionData);
+    const response = await api.post("api/SocioTerceroRelacion", tercerosAdapter.adaptarPayload3(relacionData));
     return response.data;
   },
 
@@ -103,7 +104,7 @@ export const tercerosService = {
     };
 
     try {
-      const response = await api.put("api/SocioTerceroRelacion", wrappedData);
+      const response = await api.put("api/SocioTerceroRelacion", tercerosAdapter.adaptarPayload4(wrappedData));
       return response.data;
     } catch (err) {
       console.error(

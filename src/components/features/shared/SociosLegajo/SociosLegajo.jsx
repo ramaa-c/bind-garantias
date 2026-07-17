@@ -49,30 +49,56 @@ const ESTRUCTURA_SOCIOS = [
   },
 ];
 
-export function SociosLegajo() {
-  const { socioIdActivo, tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
+export function SociosLegajo({
+  socioIdOverride,
+  tipoPersonaIdOverride,
+  nombreEmpresaOverride,
+  adminMode = false,
+} = {}) {
+  const empresaActiva = useEmpresaActiva(adminMode);
 
+  const { socioIdActivo, tipoPersonaId, nombreEmpresa } = adminMode
+    ? {
+        socioIdActivo: socioIdOverride,
+        tipoPersonaId: tipoPersonaIdOverride,
+        nombreEmpresa: nombreEmpresaOverride,
+      }
+    : empresaActiva;
+
+  // En modo admin no se conoce con certeza a qué cadena de valor pertenece
+  // el socio, así que se muestran todas las pestañas sin filtrar por
+  // requisitos (ver DocumentosLegajo para el mismo criterio).
   const { cadenaSlug } = useParams();
   const cadenaId = Number(cadenaSlug) || 1;
-  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
+  const { requisitos } = useRequisitos(
+    adminMode ? null : cadenaId,
+    adminMode ? null : tipoPersonaId,
+    adminMode ? null : nombreEmpresa,
+  );
 
   const tabsDisponibles = useMemo(() => {
     let baseTabs = ESTRUCTURA_SOCIOS;
     if (tipoPersonaId === 1) {
       baseTabs = ESTRUCTURA_SOCIOS.filter(t => t.key !== "accionistas");
     }
+    if (adminMode) return baseTabs;
     // Filtrar según los requisitos configurados
     return baseTabs.filter(t => {
       const configVal = requisitos?.relaciones?.[t.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [tipoPersonaId, requisitos]);
+  }, [tipoPersonaId, requisitos, adminMode]);
 
   const [activeTab, setActiveTab] = useState(null);
 
   useEffect(() => {
-    if (tabsDisponibles.length > 0 && (!activeTab || !tabsDisponibles.some(t => t.key === activeTab))) {
-      setActiveTab(tabsDisponibles[0].key);
+    if (tabsDisponibles.length > 0) {
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile && !activeTab) {
+        setActiveTab(tabsDisponibles[0].key);
+      } else if (activeTab && !tabsDisponibles.some(t => t.key === activeTab)) {
+        setActiveTab(isMobile ? null : tabsDisponibles[0].key);
+      }
     }
   }, [tabsDisponibles, activeTab]);
 
@@ -196,11 +222,11 @@ export function SociosLegajo() {
               {isActive && <span className={styles.activeBar} />}
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
-                {requisitos?.relaciones?.[doc.key] === 1 ? (
+                {!adminMode && (requisitos?.relaciones?.[doc.key] === 1 ? (
                   <span className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}>Obligatorio</span>
                 ) : (
                   <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
-                )}
+                ))}
               </div>
               <FiChevronDown
                 className={styles.mobileChevron}
@@ -219,7 +245,9 @@ export function SociosLegajo() {
                   <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
                     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", flex: "1 1 200px" }}>
                       <div className={styles.viewerMeta}>
-                        <span className={styles.viewerBadge}>{doc.category}</span>
+                        <span className={`${styles.viewerBadge} ${adminMode ? styles.viewerBadgeAdmin : ""}`}>
+                          {doc.category}
+                        </span>
                       </div>
                       <h4 className={styles.viewerTitle}>{doc.title}</h4>
                       <p className={styles.viewerInfo}>
@@ -229,7 +257,7 @@ export function SociosLegajo() {
                             href={doc.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className={styles.helperLink}
+                            className={`${styles.helperLink} ${adminMode ? styles.helperLinkAdmin : ""}`}
                           >
                             {doc.linkText} <FiExternalLink size={11} />
                           </a>
@@ -289,6 +317,8 @@ export function SociosLegajo() {
             ? `¿Está seguro de que desea desvincular al Agente de Bolsa ${deleteTarget?.nombre}?`
             : `¿Está seguro de que desea eliminar a ${deleteTarget?.nombre} del legajo?`
         }
+        tone="danger"
+        confirmText={deleteTarget?.rolId === 21 ? "Desvincular" : "Eliminar"}
         isLoading={loadingDelete}
       />
     </div>

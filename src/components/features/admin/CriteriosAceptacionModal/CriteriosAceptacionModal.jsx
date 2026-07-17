@@ -7,7 +7,7 @@ import { Button } from "../../../ui/Button/Button";
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { sociosService } from "../../../../services/sociosService";
 import { tercerosService } from "../../../../services/tercerosService";
-import { useObtenerCdasPorCadenaId } from "../../../../hooks/useCadenaValor";
+import { useObtenerGrupoCdaConCdas } from "../../../../hooks/useCadenaValor";
 import styles from "./CriteriosAceptacionModal.module.css";
 
 export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
@@ -136,9 +136,11 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // 3. Obtener CDAs vinculados a la cadena de valor
+  // 3. Obtener CDAs vinculados a la cadena de valor (grupo de la pantalla de
+  // ingreso de CUIT, que es la que valida a la empresa solicitante)
   const cadenaId = Number(solicitud?.cadenavalorid) || 1;
-  const { data: cdasReal, isLoading: isLoadingCdas } = useObtenerCdasPorCadenaId(cadenaId);
+  const { data: grupoCdaData, isLoading: isLoadingCdas } = useObtenerGrupoCdaConCdas(cadenaId, "PANTALLA_INGRESO_CUIT");
+  const cdasReal = grupoCdaData?.cdas;
 
   const listCdas = Array.isArray(cdasReal)
     ? cdasReal
@@ -154,7 +156,13 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
   ];
 
   const cdasEmpresa = listCdas.length > 0
-    ? listCdas.map((c, i) => ({ cdaid: c.cdaid || i + 1, descripcion: c.descripcion || c.Descripcion }))
+    ? listCdas.map((c, i) => ({
+        cdaid: c.cdaid || i + 1,
+        descripcion: c.descripcion || c.Descripcion || "",
+        expresion: c.expresion || c.Expresion || "",
+        simbolocomparacion: c.simbolocomparacion || c.SimboloComparacion || "",
+        valorcomparacion: c.valorcomparacion || c.ValorComparacion || ""
+      }))
     : defaultEmpresaCdas;
 
   // CDAs para los accionistas (según fotos, evalúan edad y si son socios de otra SGR)
@@ -261,7 +269,14 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
                         ) : (
                           <span className={styles.iconDanger}><FiX /></span>
                         )}
-                        <span className={styles.cdaTitleText}>{cda.descripcion}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+                          <span className={styles.cdaTitleText}>{cda.descripcion}</span>
+                          {cda.expresion && cda.simbolocomparacion && cda.valorcomparacion && (
+                            <span className={styles.ruleBadge}>
+                              {cda.expresion} {cda.simbolocomparacion} {cda.valorcomparacion}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <FiChevronDown
                         className={`${styles.chevron} ${isExpanded ? styles.chevronOpen : ""}`}

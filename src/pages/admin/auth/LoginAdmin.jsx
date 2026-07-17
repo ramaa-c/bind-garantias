@@ -4,14 +4,14 @@ import { useForm, useController } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { InputSimple } from "../../components/ui/InputSimple/InputSimple";
-import { Button } from "../../components/ui/Button/Button";
-import { InputOTP } from "../../components/ui/InputOtp/InputOtp";
-import { useLogin, useLoginByCode } from "../../hooks/useUsuario";
-import { useAuthStore } from "../../store/useAuthStore";
-import { usuarioService } from "../../services/usuarioService";
-import styles from "../cliente/auth/Login.module.css";
-import logoBind from "../../assets/images/bind-g-logo.svg";
+import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
+import { Button } from "../../../components/ui/Button/Button";
+import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
+import { useLogin, useLoginByCode } from "../../../hooks/useUsuario";
+import { useAuthStore } from "../../../store/useAuthStore";
+import { usuarioService } from "../../../services/usuarioService";
+import styles from "../../cliente/auth/Login.module.css";
+import logoBind from "../../../assets/images/bind-g-logo.svg";
 
 const emailSchema = z.object({
   email: z
@@ -203,18 +203,25 @@ const checkAccesoAdmin = async (email) => {
     const userDb = await usuarioService.obtenerPorNombreOEmail(cleanEmail);
     if (!userDb) return false;
 
-    let usuarioWebId = null;
+    let registro = null;
     if (Array.isArray(userDb)) {
-      usuarioWebId = userDb[0]?.usuariowebid || userDb[0]?.UsuarioWebID || userDb[0]?.id;
+      registro = userDb[0] || null;
     } else if (userDb.items) {
-      usuarioWebId = userDb.items[0]?.usuariowebid || userDb.items[0]?.UsuarioWebID || userDb.items[0]?.id;
+      registro = userDb.items[0] || null;
     } else if (userDb.data) {
-      usuarioWebId = userDb.data[0]?.usuariowebid || userDb.data[0]?.UsuarioWebID || userDb.data[0]?.id;
+      registro = userDb.data[0] || null;
     } else {
-      usuarioWebId = userDb.usuariowebid || userDb.UsuarioWebID || userDb.id;
+      registro = userDb;
     }
 
+    const usuarioWebId = registro?.usuariowebid || registro?.UsuarioWebID || registro?.id;
     if (!usuarioWebId) return false;
+
+    const esAdministradorFlag = registro?.esadministrador ?? registro?.EsAdministrador;
+    const esAdministrador =
+      esAdministradorFlag === "1" || esAdministradorFlag === 1 || esAdministradorFlag === true;
+
+    if (esAdministrador) return true;
 
     const chainsData = await usuarioService.obtenerUsuariosRelacionados({ usuarioid: usuarioWebId });
     if (!chainsData) return false;
@@ -355,7 +362,7 @@ const LoginAdmin = () => {
           return;
         }
 
-        setUser({ email: formData.email, role: "admin", nombre: "Administrador General" });
+        setUser({ email: formData.email, role: "admin" });
         navigate("/admin", { replace: true });
       } else {
         setError("otp", { type: "server", message: "Código incorrecto" });
@@ -391,7 +398,7 @@ const LoginAdmin = () => {
             }
 
             // Se asume que el back devuelve los permisos necesarios.
-            setUser({ email: formData.email, role: "admin", nombre: "Administrador General" });
+            setUser({ email: formData.email, role: "admin" });
             navigate("/admin", { replace: true });
           },
           onError: (error) => {

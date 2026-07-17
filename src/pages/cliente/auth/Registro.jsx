@@ -64,7 +64,7 @@ const Registro = () => {
   };
 
   const onSubmit = async (data) => {
-    const canalId = (channelInfo.id && channelInfo.id !== "default" && channelInfo.id !== "bind") ? channelInfo.id : "canal1";
+    const canalId = channelInfo.id;
 
     const payloadSkeletor = {
       email: data.email,
@@ -74,7 +74,7 @@ const Registro = () => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: "",
+      denominacion: canalId,
     };
 
     try {
@@ -136,7 +136,7 @@ const Registro = () => {
   };
 
   const handleContinuarProcesoPendiente = async () => {
-    const canalId = (channelInfo.id && channelInfo.id !== "default" && channelInfo.id !== "bind") ? channelInfo.id : "canal1";
+    const canalId = channelInfo.id;
 
     const payloadReset = {
       email: emailPendiente,
@@ -147,7 +147,7 @@ const Registro = () => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: "",
+      denominacion: canalId,
     };
 
     try {
@@ -320,4 +320,4 @@ const Registro = () => {
   );
 };
 
-export default Registro;
+export default Registro;

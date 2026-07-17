@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
@@ -9,8 +9,22 @@ import {
   useObtenerCadenasPorUsuario,
 } from "../../../hooks/useUsuario";
 
+const parsearRegistroUsuario = (db) => {
+  if (!db) return null;
+  if (Array.isArray(db)) return db[0] || null;
+  if (db.items) return db.items[0] || null;
+  if (db.data) return db.data[0] || null;
+  return db;
+};
+
+const esAdministradorActivo = (registro) => {
+  const valor = registro?.esadministrador ?? registro?.EsAdministrador;
+  return valor === "1" || valor === 1 || valor === true;
+};
+
 export const AdminGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
   const location = useLocation();
   const { channelInfo } = useChannel();
   const channelSlug = channelInfo?.id || "default";
@@ -18,24 +32,32 @@ export const AdminGuard = ({ children }) => {
   const { data: usuarioDb, isPending: isUserLoading } =
     useObtenerPorNombreOEmail(user?.email || "");
 
-  const parsearUsuarioWebId = (db) => {
-    if (!db) return null;
-    if (Array.isArray(db))
-      return db[0]?.usuariowebid || db[0]?.UsuarioWebID || db[0]?.id;
-    if (db.items)
-      return (
-        db.items[0]?.usuariowebid ||
-        db.items[0]?.UsuarioWebID ||
-        db.items[0]?.id
-      );
-    if (db.data)
-      return (
-        db.data[0]?.usuariowebid || db.data[0]?.UsuarioWebID || db.data[0]?.id
-      );
-    return db.usuariowebid || db.UsuarioWebID || db.id || null;
-  };
+  const registroUsuario = parsearRegistroUsuario(usuarioDb);
+  const usuarioWebId =
+    registroUsuario?.usuariowebid ??
+    registroUsuario?.UsuarioWebID ??
+    registroUsuario?.id ??
+    null;
+  const esAdministrador = esAdministradorActivo(registroUsuario);
+  const denominacionReal =
+    registroUsuario?.denominacion ?? registroUsuario?.Denominacion ?? "";
 
-  const usuarioWebId = parsearUsuarioWebId(usuarioDb);
+  // Corrige el nombre mostrado (userTrigger del navbar) en cuanto conocemos el
+  // registro real: si no tiene denominación cargada, mostramos el email en
+  // vez del placeholder "Administrador General" seteado al loguearse.
+  useEffect(() => {
+    if (!registroUsuario) return;
+    const nombreResuelto = denominacionReal || user?.email || "";
+    const necesitaNombre = !!nombreResuelto && nombreResuelto !== user?.nombre;
+    const necesitaUsuarioWebId = !!usuarioWebId && usuarioWebId !== user?.usuarioWebId;
+    if (necesitaNombre || necesitaUsuarioWebId) {
+      setUser({
+        ...user,
+        ...(necesitaNombre ? { nombre: nombreResuelto } : {}),
+        ...(necesitaUsuarioWebId ? { usuarioWebId } : {}),
+      });
+    }
+  }, [registroUsuario, denominacionReal, usuarioWebId, user, setUser]);
 
   const { data: cadenasData, isPending: isCadenasLoading } =
     useObtenerCadenasPorUsuario(usuarioWebId);
@@ -48,6 +70,14 @@ export const AdminGuard = ({ children }) => {
   const { isRestricted, isPending } = useAdminRestrictions();
 
   const isBasicAdmin = user?.role === "admin" || user?.email === "admin";
+  const tieneSesion = !!user?.email;
+
+  // Sin sesión, `useObtenerPorNombreOEmail` queda deshabilitado (email vacío)
+  // y su query nunca sale de "pending" en react-query: sin este corte,
+  // isLoading quedaría en true para siempre y el guard jamás redirige.
+  if (!tieneSesion) {
+    return <Navigate to="/login" replace />;
+  }
 
   const isLoading =
     !isBasicAdmin &&
@@ -62,7 +92,7 @@ export const AdminGuard = ({ children }) => {
     );
   }
 
-  const isAdmin = isBasicAdmin || isAdminCadena;
+  const isAdmin = isBasicAdmin || esAdministrador || isAdminCadena;
 
   if (!isAdmin) {
     return <Navigate to="/" replace />;
