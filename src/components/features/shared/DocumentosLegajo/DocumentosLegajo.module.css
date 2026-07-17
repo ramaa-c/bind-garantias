@@ -101,6 +101,13 @@
   border: 1px solid rgba(244, 245, 0, 0.2);
 }
 
+/* Obligatorio + ya cargado: mismo verde que el statusDot (.dotGreen) */
+.reqBadgeComplete {
+  background: rgba(76, 175, 80, 0.12);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
 .reqBadgeOptional {
   background: rgba(255, 255, 255, 0.05);
   color: #888;
