@@ -30,14 +30,54 @@ export const formatearMomentoControl = (momento) => {
   return new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "medium" }).format(fecha);
 };
 
+// Desde que el backend manda CadenaValorID y PantallaGrupoCdaID en cada fila
+// del historial (WSSocioExecuteCda), se puede filtrar por contexto real en
+// vez de inferirlo por posición. Las filas viejas (previas a ese cambio) no
+// traen estos campos — se tratan como compatibles con cualquier contexto
+// (no hay forma de probar que NO correspondan), así que el filtro solo
+// descarta una fila cuando SÍ tiene el campo y no coincide.
+const coincideConContexto = (item, pantallaGrupoCdaId, cadenaValorId) => {
+  const rowPantalla = item?.pantallagrupocdaid ?? item?.PantallaGrupoCdaID;
+  const rowCadena = item?.cadenavalorid ?? item?.CadenaValorID;
+  if (pantallaGrupoCdaId != null && rowPantalla != null && Number(rowPantalla) !== Number(pantallaGrupoCdaId)) {
+    return false;
+  }
+  if (cadenaValorId != null && rowCadena != null && Number(rowCadena) !== Number(cadenaValorId)) {
+    return false;
+  }
+  return true;
+};
+
+// La cadena real de un socio ya no hace falta adivinarla: se toma la de la
+// ejecución más reciente que traiga CadenaValorID. Si todo el historial es
+// previo al cambio de backend (o el socio nunca se evaluó), no hay forma de
+// saberla y se devuelve null — el admin la sigue eligiendo a mano en ese caso.
+export const detectarCadenaValorId = (data) => {
+  const ordenado = ordenarEjecucionesCda(data);
+  const conCadena = ordenado.find((item) => (item.cadenavalorid ?? item.CadenaValorID) != null);
+  const id = Number(conCadena?.cadenavalorid ?? conCadena?.CadenaValorID);
+  return Number.isNaN(id) || id <= 0 ? null : id;
+};
+
 // A partir del historial completo de un socio, arma un mapa CdaID -> boolean
 // (true=aprobado, false=rechazado, null=pendiente o sin ejecutar todavía)
 // con la ÚLTIMA ejecución de cada CDA individual (se excluye CdaID=0, la
 // fila sintética de grupo). No importa si esa última ejecución vino de una
 // corrida de pantalla completa o de un "Volver a ejecutar"/"Forzar expresión"
 // puntual posterior — siempre gana la más reciente por SocioExecuteCdaID.
-export const armarEstadoPorCda = (data) => {
-  const ultimas = ultimaEjecucionPorCda(data);
+//
+// Si se pasan cadenaValorId/pantallaGrupoCdaId, se descartan antes las filas
+// que digan explícitamente pertenecer a otro contexto (ver
+// coincideConContexto) — evita que, por ej., un mismo CdaID vinculado a dos
+// cadenas con umbrales distintos mezcle el resultado de una con el de otra.
+export const armarEstadoPorCda = (data, { cadenaValorId, pantallaGrupoCdaId } = {}) => {
+  const lista = Array.isArray(data) ? data : data ? [data] : [];
+  const filtrada =
+    cadenaValorId == null && pantallaGrupoCdaId == null
+      ? lista
+      : lista.filter((item) => coincideConContexto(item, pantallaGrupoCdaId, cadenaValorId));
+
+  const ultimas = ultimaEjecucionPorCda(filtrada);
   const mapa = new Map();
   ultimas.forEach((item) => {
     const cdaId = Number(item.cdaid ?? item.CdaID ?? -1);
@@ -85,8 +125,14 @@ export const evaluarExpresionAgrupacion = (expresion, estadoPorCda) => {
 // la pantalla haya cerrado con ese criterio en contra, ya se refleja acá —
 // no hace falta esperar a que alguien reejecute el grupo completo (que hoy
 // no se puede hacer de forma segura con un override, ver cdaService.js).
-export const calcularEstadoEfectivo = ({ historial, expresionAgrupacion, cdasActivosIds }) => {
-  const estadoPorCda = armarEstadoPorCda(historial);
+export const calcularEstadoEfectivo = ({
+  historial,
+  expresionAgrupacion,
+  cdasActivosIds,
+  cadenaValorId,
+  pantallaGrupoCdaId,
+}) => {
+  const estadoPorCda = armarEstadoPorCda(historial, { cadenaValorId, pantallaGrupoCdaId });
   const expresion =
     String(expresionAgrupacion || "").trim() ||
     (cdasActivosIds || []).map((id) => `cda${id}`).join(" and ");
@@ -106,26 +152,38 @@ export const calcularEstadoEfectivo = ({ historial, expresionAgrupacion, cdasAct
 // aparecieron después del PENÚLTIMO cierre de grupo: eso cubre tanto el
 // batch que armó el ÚLTIMO cierre como cualquier "Volver a ejecutar"/
 // "Forzar expresión" puntual posterior a ese cierre (ver EmpresaDetalle.jsx).
+//
+// Además, si grupoItem trae CadenaValorID/PantallaGrupoCdaID (filas nuevas),
+// se exige que las filas individuales coincidan con ESE contexto —
+// evita mezclar, en el mismo batch inferido, CDAs de una prueba contra otra
+// cadena que haya quedado sin cerrar su propio grupo (ver
+// coincideConContexto). Con grupoItem viejo (sin esos campos) se cae al
+// comportamiento anterior, solo por posición de ID.
 export const obtenerCdasDeLaCorridaActual = (data) => {
   const historialCompleto = ordenarEjecucionesCda(data);
-  const ultimasPorCda = ultimaEjecucionPorCda(data);
   const gruposDesc = historialCompleto.filter((item) => Number(item.cdaid ?? item.CdaID ?? -1) === 0);
   const grupoItem = gruposDesc[0] || null;
   const idCorteInferior = gruposDesc[1]
     ? Number(gruposDesc[1].socioexecutecdaid ?? gruposDesc[1].SocioExecuteCdaID) || 0
     : -Infinity;
+  const pantallaGrupo = grupoItem?.pantallagrupocdaid ?? grupoItem?.PantallaGrupoCdaID;
+  const cadenaGrupo = grupoItem?.cadenavalorid ?? grupoItem?.CadenaValorID;
 
   const cdaIdsCorridaActual = new Set(
     historialCompleto
       .filter(
         (item) =>
           Number(item.cdaid ?? item.CdaID ?? -1) !== 0 &&
-          (Number(item.socioexecutecdaid ?? item.SocioExecuteCdaID) || 0) > idCorteInferior,
+          (Number(item.socioexecutecdaid ?? item.SocioExecuteCdaID) || 0) > idCorteInferior &&
+          coincideConContexto(item, pantallaGrupo, cadenaGrupo),
       )
       .map((item) => Number(item.cdaid ?? item.CdaID)),
   );
 
-  const cdas = ultimasPorCda.filter(
+  const historialContexto = historialCompleto.filter((item) => coincideConContexto(item, pantallaGrupo, cadenaGrupo));
+  const ultimasPorCdaContexto = ultimaEjecucionPorCda(historialContexto);
+
+  const cdas = ultimasPorCdaContexto.filter(
     (item) => Number(item.cdaid ?? item.CdaID ?? -1) !== 0 && cdaIdsCorridaActual.has(Number(item.cdaid ?? item.CdaID)),
   );
 
