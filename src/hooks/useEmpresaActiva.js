@@ -42,6 +42,8 @@ export const useEmpresaActiva = (skip = false) => {
     socioWeb?.denominacion || socioWeb?.Denominacion || null;
   const direccion = socioWeb?.calle || socioWeb?.Calle || "";
   const telefono = socioWeb?.telefono || socioWeb?.Telefono || "";
+  const fechaCierreEjercicio =
+    socioWeb?.fechacierreejercicio || socioWeb?.FechaCierreEjercicio || null;
   let tipoPersonaId =
     socioWeb?.tipopersonaid || socioWeb?.TipoPersonaID || null;
   if (!tipoPersonaId && cuitActivo) {
@@ -80,6 +82,7 @@ export const useEmpresaActiva = (skip = false) => {
     nombreEmpresa,
     direccion,
     telefono,
+    fechaCierreEjercicio,
     tipoPersonaId,
     onboardingCompleto,
     isLoading,
