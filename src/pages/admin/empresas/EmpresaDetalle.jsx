@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -44,6 +44,8 @@ import {
   formatearMomentoControl,
   calcularEstadoEfectivo,
   combinarEstadoCdas,
+  obtenerCdasDeLaCorridaActual,
+  detectarCadenaValorId,
 } from "../../../utils/executeCda";
 import {
   Button,
@@ -473,6 +475,7 @@ function CdasTab({ socio }) {
   const queryClient = useQueryClient();
   const [cdaEnCurso, setCdaEnCurso] = useState(null);
   const [cadenaValorIdGrupo, setCadenaValorIdGrupo] = useState("");
+  const [autoDetectadoParaSocio, setAutoDetectadoParaSocio] = useState(null);
   const [isReejecutandoGrupo, setIsReejecutandoGrupo] = useState(false);
   const [confirmReejecutarGrupoOpen, setConfirmReejecutarGrupoOpen] = useState(false);
   const hayCadenaSeleccionada = !!Number(cadenaValorIdGrupo);
@@ -501,6 +504,29 @@ function CdasTab({ socio }) {
   const { data: estadosExecuteCda } = useEstadoExecuteCda();
   const { data: todosCdas } = useObtenerTodosCdas();
   const { mutate: reejecutar, isPending: isReejecutando } = useReejecutarCda();
+
+  // Desde que el historial trae CadenaValorID por fila, ya no hace falta que
+  // el admin adivine la cadena: se detecta de la ejecución más reciente que
+  // la traiga (ver detectarCadenaValorId) y se precarga el selector — pero
+  // sigue siendo editable a mano (ej. para probar contra otra cadena a
+  // propósito). Se resetea al cambiar de socio y se auto-completa una sola
+  // vez por socio, para no pisar un cambio manual del admin en la sesión.
+  const cadenaValorIdDetectada = useMemo(
+    () => detectarCadenaValorId(ejecucionesData),
+    [ejecucionesData],
+  );
+
+  useEffect(() => {
+    setCadenaValorIdGrupo("");
+    setAutoDetectadoParaSocio(null);
+  }, [socio.socioid]);
+
+  useEffect(() => {
+    if (cadenaValorIdDetectada && autoDetectadoParaSocio !== socio.socioid) {
+      setCadenaValorIdGrupo(String(cadenaValorIdDetectada));
+      setAutoDetectadoParaSocio(socio.socioid);
+    }
+  }, [cadenaValorIdDetectada, socio.socioid, autoDetectadoParaSocio]);
 
   const descripcionPorCda = useMemo(() => {
     const mapa = new Map();
@@ -617,42 +643,16 @@ function CdasTab({ socio }) {
     [ejecucionesData],
   );
 
-  // CdaID 0 es la fila sintética que el backend arma con el resultado
-  // combinado del grupo (no un CDA real): no se puede re-ejecutar por
-  // CdaID como el resto — reintentarlo así da 409 "Dato Requerido
-  // Faltante", que es un mensaje engañoso para este caso. Se separa acá
-  // para tratarlo distinto (ver barra de estado abajo).
-  const grupoItem = ultimasPorCda.find((item) => Number(item.cdaid) === 0);
-
-  // Un CDA que se saca del grupo (deshabilitado/desvinculado) deja de
-  // evaluarse en las próximas corridas de pantalla, pero su última fila
-  // queda en el historial para siempre — "última ejecución por CdaID" no
-  // alcanza para saber si sigue vigente. Nos quedamos solo con los CdaID
-  // que aparecieron en la corrida de pantalla más reciente: todo lo que se
-  // logueó después del penúltimo resultado de grupo (CdaID 0). Si un CDA
-  // se re-ejecuta puntual después de esa corrida, también entra (tiene un
-  // SocioExecuteCdaID más alto), que es lo correcto.
-  const cdasIndividuales = useMemo(() => {
-    const gruposDesc = historialCompleto.filter(
-      (item) => Number(item.cdaid) === 0,
-    );
-    const idCorteInferior = gruposDesc[1]
-      ? Number(gruposDesc[1].socioexecutecdaid)
-      : -Infinity;
-    const cdaIdsCorridaActual = new Set(
-      historialCompleto
-        .filter(
-          (item) =>
-            Number(item.cdaid) !== 0 &&
-            Number(item.socioexecutecdaid) > idCorteInferior,
-        )
-        .map((item) => Number(item.cdaid)),
-    );
-    return ultimasPorCda.filter(
-      (item) =>
-        Number(item.cdaid) !== 0 && cdaIdsCorridaActual.has(Number(item.cdaid)),
-    );
-  }, [historialCompleto, ultimasPorCda]);
+  // grupoItem: última fila sintética CdaID=0 (resultado combinado del
+  // grupo — no se puede re-ejecutar por CdaID como el resto, ver barra de
+  // estado abajo). cdasIndividuales: CDAs de esa misma corrida (ver
+  // obtenerCdasDeLaCorridaActual en utils/executeCda.js — desde que el
+  // historial trae CadenaValorID/PantallaGrupoCdaID por fila, el batch se
+  // scopea por ese contexto real en vez de solo por posición de ID).
+  const { grupoItem, cdas: cdasIndividuales } = useMemo(
+    () => obtenerCdasDeLaCorridaActual(ejecucionesData),
+    [ejecucionesData],
+  );
 
   // Recalcula el resultado combinado de la pantalla (aprobado/rechazado/
   // pendiente) tomando la definición VIGENTE del grupo (ExpresionAgrupacion +
@@ -675,8 +675,10 @@ function CdasTab({ socio }) {
       historial: historialCompleto,
       expresionAgrupacion: grupoDataElegido?.grupo?.expresionagrupacion,
       cdasActivosIds: cdasActivosIdsGrupo,
+      cadenaValorId: Number(cadenaValorIdGrupo),
+      pantallaGrupoCdaId: grupoDataElegido?.grupo?.pantallagrupocdaid,
     });
-  }, [hayCadenaSeleccionada, isLoadingGrupoElegido, historialCompleto, grupoDataElegido, cdasActivosIdsGrupo]);
+  }, [hayCadenaSeleccionada, isLoadingGrupoElegido, historialCompleto, grupoDataElegido, cdasActivosIdsGrupo, cadenaValorIdGrupo]);
 
   // Estado calculado SIN necesitar elegir cadena: infiere la combinación
   // and/or del propio texto del último cierre (grupoItem.expresion) y la
@@ -976,6 +978,11 @@ function CdasTab({ socio }) {
             <h3>Estado actual de los CDAs</h3>
           </div>
           <div className={styles.cdasSectionHeaderActions}>
+            {!!cadenaValorIdDetectada && cadenaValorIdGrupo === String(cadenaValorIdDetectada) && (
+              <span className={styles.cdaRowFecha} title="Se detectó del historial de ejecuciones de este socio — se puede cambiar.">
+                Cadena detectada automáticamente
+              </span>
+            )}
             <div className={styles.grupoBarInputWrap}>
               <SelectSimple
                 variant="admin"

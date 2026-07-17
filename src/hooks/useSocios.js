@@ -179,6 +179,8 @@ export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
       historial: lista,
       expresionAgrupacion: grupoData?.grupo?.expresionagrupacion,
       cdasActivosIds,
+      cadenaValorId,
+      pantallaGrupoCdaId: grupoData?.grupo?.pantallagrupocdaid,
     });
   }, [socioId, cadenaValorId, isPending, historial, grupoData]);
 

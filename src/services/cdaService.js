@@ -141,8 +141,11 @@ export const cdaService = {
   // valorParticularExpresion, mandado JUNTO CON cdaId, sí aplica solo a ese
   // CDA puntual (confirmado con pruebas manuales) — a diferencia de mandarlo
   // sin CdaID (ver el aviso en ejecutarCda). El costo: nunca genera una fila
-  // de cierre de grupo (CdaID 0) nueva, así que el resultado combinado de la
-  // pantalla queda desactualizado hasta que se re-ejecute el grupo aparte.
+  // de cierre de grupo (CdaID 0) nueva — el resultado combinado que se
+  // muestra en el frontend se recalcula igual del lado del cliente (ver
+  // combinarEstadoCdas en utils/executeCda.js), pero es temporal: si más
+  // adelante se reejecuta el grupo completo, este CDA vuelve a evaluarse con
+  // su regla real y esa fila de cierre nueva sí puede volver a rechazarlo.
   reejecutarCda: async ({ cdaId, cuit, usuarioId, pantalla, cadenaValorId, valorParticularExpresion }) => {
     const params = { CdaID: cdaId, Cuit: cuit };
     if (usuarioId) params.UsuarioID = usuarioId;
