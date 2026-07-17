@@ -86,13 +86,14 @@ export const socioArchivoService = {
   },
 
   subirArchivo: async (
-    socioId, 
-    file, 
-    docKey, 
-    descripcion = "", 
+    socioId,
+    file,
+    docKey,
+    descripcion = "",
     vialufe = "0",
     fchreferencia = null,
-    referencia = ""
+    referencia = "",
+    fchArchivoManual = null
   ) => {
     socioArchivoService.clearCache(socioId);
     const contenidoBase64 = await fileToBase64(file);
@@ -100,7 +101,7 @@ export const socioArchivoService = {
     const payload = {
       socioarchivoid: 0,
       socioid: socioId,
-      fcharchivo: formatFechaArchivo(),
+      fcharchivo: fchArchivoManual || formatFechaArchivo(),
       descripcion: descripcion || docKey || file.name,
       contenido: contenidoBase64,
       nombrearchivo: file.name,
@@ -122,19 +123,20 @@ export const socioArchivoService = {
     descripcion = "",
     vialufe = "0",
     fchreferencia = null,
-    referencia = ""
+    referencia = "",
+    fchArchivoManual = null
   ) => {
     if (archivoExistente) {
       const socioId = archivoExistente.socioid || archivoExistente.SocioID;
       socioArchivoService.clearCache(socioId);
     }
-    const contenidoBase64 = file 
-      ? await fileToBase64(file) 
+    const contenidoBase64 = file
+      ? await fileToBase64(file)
       : (archivoExistente.contenido || "");
 
     const payload = {
       ...archivoExistente,
-      fcharchivo: formatFechaArchivo(),
+      fcharchivo: fchArchivoManual || formatFechaArchivo(),
       descripcion: descripcion || docKey || (file ? file.name : archivoExistente.nombrearchivo),
       contenido: contenidoBase64,
       nombrearchivo: file ? file.name : archivoExistente.nombrearchivo,

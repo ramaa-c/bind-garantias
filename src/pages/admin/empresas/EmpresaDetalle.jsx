@@ -433,6 +433,7 @@ function DocumentacionTab({ socio }) {
             direccion: socio.calle,
             telefono: socio.telefono,
             tipoPersonaId: socio.tipopersonaid,
+            fechaCierreEjercicio: socio.fechacierreejercicio,
           }}
         />
       </FormProvider>

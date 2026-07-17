@@ -108,6 +108,13 @@
   border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
+/* Balance desactualizado pero todavía dentro del margen de prórroga */
+.reqBadgeVenceProximo {
+  background: rgba(255, 167, 38, 0.12);
+  color: #ffa726;
+  border: 1px solid rgba(255, 167, 38, 0.25);
+}
+
 .reqBadgeOptional {
   background: rgba(255, 255, 255, 0.05);
   color: #888;
@@ -1860,6 +1867,26 @@
 }
 
 /* ── FORMULARIO DE METADATOS ADICIONALES (COMPACTO) ─────────────────────── */
+
+.balanceVigenciaAviso {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  background: rgba(255, 167, 38, 0.1);
+  border: 1px solid rgba(255, 167, 38, 0.25);
+  color: #ffa726;
+}
+
+.balanceVigenciaAvisoVencido {
+  background: rgba(234, 74, 90, 0.1);
+  border-color: rgba(234, 74, 90, 0.25);
+  color: #ea4a5a;
+}
 
 .metaFormContainer {
   margin-top: 0.75rem;
