@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -474,59 +474,44 @@ function CdasTab({ socio }) {
   const usuarioWebId = useAuthStore((state) => state.user?.usuarioWebId) || 0;
   const queryClient = useQueryClient();
   const [cdaEnCurso, setCdaEnCurso] = useState(null);
-  const [cadenaValorIdGrupo, setCadenaValorIdGrupo] = useState("");
-  const [autoDetectadoParaSocio, setAutoDetectadoParaSocio] = useState(null);
   const [isReejecutandoGrupo, setIsReejecutandoGrupo] = useState(false);
   const [confirmReejecutarGrupoOpen, setConfirmReejecutarGrupoOpen] = useState(false);
-  const hayCadenaSeleccionada = !!Number(cadenaValorIdGrupo);
 
   const { data: cadenasWeb } = useObtenerTodasWebConEstado();
-  const opcionesCadenas = useMemo(() => {
-    return (cadenasWeb || [])
-      .filter((c) => c.activaOperativa)
-      .map((c) => ({
-        value: String(c.cadenavalorid),
-        label: c.denominacion,
-      }));
-  }, [cadenasWeb]);
-
-  // Definición VIGENTE del grupo (ExpresionAgrupacion + CDAs activos) para la
-  // cadena elegida arriba — se usa para recalcular el estado combinado sin
-  // pegarle de nuevo al backend (ver calcularEstadoEfectivo).
-  const { data: grupoDataElegido, isLoading: isLoadingGrupoElegido } =
-    useObtenerGrupoCdaConCdas(hayCadenaSeleccionada ? Number(cadenaValorIdGrupo) : null, PANTALLA_EMPRESA);
 
   const {
     data: ejecucionesData,
     isLoading,
     isError,
   } = useObtenerExecuteCda(socio.socioid);
-  const { data: estadosExecuteCda } = useEstadoExecuteCda();
-  const { data: todosCdas } = useObtenerTodosCdas();
-  const { mutate: reejecutar, isPending: isReejecutando } = useReejecutarCda();
 
-  // Desde que el historial trae CadenaValorID por fila, ya no hace falta que
-  // el admin adivine la cadena: se detecta de la ejecución más reciente que
-  // la traiga (ver detectarCadenaValorId) y se precarga el selector — pero
-  // sigue siendo editable a mano (ej. para probar contra otra cadena a
-  // propósito). Se resetea al cambiar de socio y se auto-completa una sola
-  // vez por socio, para no pisar un cambio manual del admin en la sesión.
+  // La cadena real de este socio ya no hay que elegirla a mano: se detecta
+  // de la ejecución más reciente del historial que traiga un CadenaValorID
+  // real (ver detectarCadenaValorId — antes el backend lo dejaba en 0, bug
+  // ya resuelto). Si el socio no tiene ninguna ejecución con ese dato
+  // (historial viejo, previo al fix), no hay forma de saberla y las
+  // acciones que la necesitan (reejecutar, forzar) quedan deshabilitadas.
   const cadenaValorIdDetectada = useMemo(
     () => detectarCadenaValorId(ejecucionesData),
     [ejecucionesData],
   );
+  const hayCadenaDetectada = !!cadenaValorIdDetectada;
 
-  useEffect(() => {
-    setCadenaValorIdGrupo("");
-    setAutoDetectadoParaSocio(null);
-  }, [socio.socioid]);
+  const nombreCadenaDetectada = useMemo(() => {
+    if (!cadenaValorIdDetectada) return null;
+    const fila = (cadenasWeb || []).find((c) => Number(c.cadenavalorid) === cadenaValorIdDetectada);
+    return fila?.denominacion || `Cadena #${cadenaValorIdDetectada}`;
+  }, [cadenasWeb, cadenaValorIdDetectada]);
 
-  useEffect(() => {
-    if (cadenaValorIdDetectada && autoDetectadoParaSocio !== socio.socioid) {
-      setCadenaValorIdGrupo(String(cadenaValorIdDetectada));
-      setAutoDetectadoParaSocio(socio.socioid);
-    }
-  }, [cadenaValorIdDetectada, socio.socioid, autoDetectadoParaSocio]);
+  // Definición VIGENTE del grupo (ExpresionAgrupacion + CDAs activos) para la
+  // cadena detectada — se usa para recalcular el estado combinado sin
+  // pegarle de nuevo al backend (ver calcularEstadoEfectivo).
+  const { data: grupoDataElegido, isLoading: isLoadingGrupoElegido } =
+    useObtenerGrupoCdaConCdas(cadenaValorIdDetectada, PANTALLA_EMPRESA);
+
+  const { data: estadosExecuteCda } = useEstadoExecuteCda();
+  const { data: todosCdas } = useObtenerTodosCdas();
+  const { mutate: reejecutar, isPending: isReejecutando } = useReejecutarCda();
 
   const descripcionPorCda = useMemo(() => {
     const mapa = new Map();
@@ -656,12 +641,11 @@ function CdasTab({ socio }) {
 
   // Recalcula el resultado combinado de la pantalla (aprobado/rechazado/
   // pendiente) tomando la definición VIGENTE del grupo (ExpresionAgrupacion +
-  // CDAs activos, elegida arriba por cadena) y la última ejecución conocida
-  // de cada CDA — el mismo cálculo que usa useEstadoCdaSocio para la
-  // validación de acceso del cliente. Reemplaza a grupoDesactualizado (que
-  // solo detectaba "quedó sin cerrar", sin poder decir hacia qué lado) en
-  // cuanto se elige una cadena; sin cadena elegida no hay forma de saber qué
-  // ExpresionAgrupacion aplica, así que se sigue mostrando el crudo.
+  // CDAs activos, de la cadena detectada) y la última ejecución conocida de
+  // cada CDA — el mismo cálculo que usa useEstadoCdaSocio para la validación
+  // de acceso del cliente. Sin cadena detectada no hay forma de saber qué
+  // ExpresionAgrupacion aplica, así que se sigue mostrando el crudo
+  // (estadoSinCadena).
   const cdasActivosIdsGrupo = useMemo(() => {
     return (grupoDataElegido?.cdas || [])
       .filter(esCdaActivo)
@@ -670,15 +654,15 @@ function CdasTab({ socio }) {
   }, [grupoDataElegido]);
 
   const estadoEfectivo = useMemo(() => {
-    if (!hayCadenaSeleccionada || isLoadingGrupoElegido) return null;
+    if (!hayCadenaDetectada || isLoadingGrupoElegido) return null;
     return calcularEstadoEfectivo({
       historial: historialCompleto,
       expresionAgrupacion: grupoDataElegido?.grupo?.expresionagrupacion,
       cdasActivosIds: cdasActivosIdsGrupo,
-      cadenaValorId: Number(cadenaValorIdGrupo),
+      cadenaValorId: cadenaValorIdDetectada,
       pantallaGrupoCdaId: grupoDataElegido?.grupo?.pantallagrupocdaid,
     });
-  }, [hayCadenaSeleccionada, isLoadingGrupoElegido, historialCompleto, grupoDataElegido, cdasActivosIdsGrupo, cadenaValorIdGrupo]);
+  }, [hayCadenaDetectada, isLoadingGrupoElegido, historialCompleto, grupoDataElegido, cdasActivosIdsGrupo, cadenaValorIdDetectada]);
 
   // Estado calculado SIN necesitar elegir cadena: infiere la combinación
   // and/or del propio texto del último cierre (grupoItem.expresion) y la
@@ -693,16 +677,16 @@ function CdasTab({ socio }) {
     [grupoItem, cdasIndividuales],
   );
 
-  // estadoEfectivo (con la cadena elegida y la definición VIGENTE del grupo)
-  // es la fuente de verdad cuando hay cadena seleccionada; estadoSinCadena
-  // (infiere el and/or del último cierre, sin necesitar cadena) es solo el
-  // fallback mientras no se eligió ninguna. NO se deja que estadoSinCadena le
-  // gane a estadoEfectivo cuando ambos están disponibles: si se agrega un CDA
-  // nuevo a un grupo ya aprobado antes, estadoSinCadena no lo sabe (nunca se
-  // ejecutó para este socio) y seguiría diciendo "aprobado" del cierre
-  // viejo — dejarlo ganar ocultaría que ese CDA nuevo todavía no se evaluó.
-  // Si difieren con cadena elegida, se avisa (ver posibleCadenaIncorrecta)
-  // en vez de forzar el badge a "aprobado".
+  // estadoEfectivo (con la cadena detectada y la definición VIGENTE del
+  // grupo) es la fuente de verdad cuando se detectó una cadena;
+  // estadoSinCadena (infiere el and/or del último cierre, sin necesitar
+  // cadena) es solo el fallback mientras no se detectó ninguna. NO se deja
+  // que estadoSinCadena le gane a estadoEfectivo cuando ambos están
+  // disponibles: si se agrega un CDA nuevo a un grupo ya aprobado antes,
+  // estadoSinCadena no lo sabe (nunca se ejecutó para este socio) y
+  // seguiría diciendo "aprobado" del cierre viejo — dejarlo ganar ocultaría
+  // que ese CDA nuevo todavía no se evaluó. Si difieren, se avisa (ver
+  // posibleCadenaIncorrecta) en vez de forzar el badge a "aprobado".
   const estadoFinal = estadoEfectivo ?? estadoSinCadena;
 
   // "Reejecutar grupo" corre sin ValorParticularExpresion (ver cdaService.js:
@@ -720,9 +704,9 @@ function CdasTab({ socio }) {
   );
 
   const handleReejecutarGrupo = async () => {
-    const cadenaValorId = Number(cadenaValorIdGrupo);
+    const cadenaValorId = cadenaValorIdDetectada;
     if (!cadenaValorId) {
-      toast.error("Ingresá el CadenaValorID para re-ejecutar el grupo.");
+      toast.error("No se detectó la cadena de este socio en el historial.");
       return;
     }
 
@@ -778,9 +762,9 @@ function CdasTab({ socio }) {
     // grupo nueva: sería inseguro en cualquier pantalla con más de un CDA
     // vinculado. Reportado a Victor: no hay forma de forzar un único CDA y
     // cerrar el grupo en la misma llamada.
-    const cadenaValorId = Number(cadenaValorIdGrupo);
+    const cadenaValorId = cadenaValorIdDetectada;
     if (!cadenaValorId) {
-      toast.error("Seleccioná la cadena de valor arriba para poder re-ejecutar un CDA puntual.");
+      toast.error("No se detectó la cadena de este socio en el historial.");
       return;
     }
     setCdaEnCurso(item.cdaid);
@@ -868,19 +852,19 @@ function CdasTab({ socio }) {
 
   return (
     <div className={styles.cdasScroll}>
-      {(grupoItem || (hayCadenaSeleccionada && cdasIndividuales.length > 0)) && (() => {
+      {(grupoItem || (hayCadenaDetectada && cdasIndividuales.length > 0)) && (() => {
         const ESTADO_LABEL_EFECTIVO = {
           aprobado: "Aprobado",
           rechazado: "Rechazado",
           pendiente: "Pendiente",
         };
 
-        const calculando = hayCadenaSeleccionada && isLoadingGrupoElegido;
+        const calculando = hayCadenaDetectada && isLoadingGrupoElegido;
         // Si el cálculo cadena-independiente (estadoSinCadena) dice
         // "aprobado" pero el que usa la definición vigente de la cadena
-        // elegida da otra cosa, lo más probable es que se haya elegido la
-        // cadena incorrecta (no hay forma de saber cuál es la real). El
-        // badge SIEMPRE muestra el resultado con la cadena elegida
+        // detectada da otra cosa, es un caso raro (ej. el socio se evaluó
+        // contra más de una cadena) — no hay forma de saber cuál pesa más.
+        // El badge SIEMPRE muestra el resultado con la cadena detectada
         // (estadoFinal prioriza estadoEfectivo, ver más arriba) — acá solo se
         // agrega una aclaración, sin tapar un rechazo real.
         const posibleCadenaIncorrecta =
@@ -904,14 +888,14 @@ function CdasTab({ socio }) {
                 </span>
                 <span className={styles.grupoBarExpresion}>
                   {calculando
-                    ? "Calculando con la definición vigente de la cadena elegida..."
+                    ? "Calculando con la definición vigente de la cadena detectada..."
                     : posibleCadenaIncorrecta
-                      ? `Se muestra "${ESTADO_LABEL_EFECTIVO[estadoEfectivo]}" con la cadena elegida, pero el último cierre (sin elegir cadena) daba "Aprobado" — puede que no sea la cadena real de este socio.`
+                      ? `Se muestra "${ESTADO_LABEL_EFECTIVO[estadoEfectivo]}" con la cadena detectada (${nombreCadenaDetectada}), pero el último cierre daba "Aprobado" — este socio puede haberse evaluado contra más de una cadena.`
                       : estadoEfectivo
-                        ? "Calculado con la definición vigente de la cadena elegida y la última ejecución de cada CDA activo."
+                        ? `Calculado con la definición vigente de ${nombreCadenaDetectada} y la última ejecución de cada CDA activo.`
                         : estadoSinCadena
-                          ? "Calculado con el último cierre y la última ejecución conocida de cada CDA — elegí la cadena para confirmarlo con la definición vigente del grupo."
-                          : "Seleccioná la cadena para calcular el resultado combinado."}
+                          ? "Calculado con el último cierre y la última ejecución conocida de cada CDA."
+                          : "Todavía no se pudo determinar un resultado combinado para este socio."}
                 </span>
               </div>
             </div>
@@ -978,29 +962,23 @@ function CdasTab({ socio }) {
             <h3>Estado actual de los CDAs</h3>
           </div>
           <div className={styles.cdasSectionHeaderActions}>
-            {!!cadenaValorIdDetectada && cadenaValorIdGrupo === String(cadenaValorIdDetectada) && (
-              <span className={styles.cdaRowFecha} title="Se detectó del historial de ejecuciones de este socio — se puede cambiar.">
-                Cadena detectada automáticamente
-              </span>
-            )}
-            <div className={styles.grupoBarInputWrap}>
-              <SelectSimple
-                variant="admin"
-                placeholder="Cadena de valor"
-                options={opcionesCadenas}
-                value={cadenaValorIdGrupo}
-                onChange={setCadenaValorIdGrupo}
-                hideErrorSpace
-                compact
-              />
-            </div>
+            <span
+              className={styles.cdaRowFecha}
+              title={
+                hayCadenaDetectada
+                  ? "Detectada del historial de ejecuciones de este socio."
+                  : "Este socio todavía no tiene ejecuciones con la cadena registrada — no se puede reejecutar desde acá."
+              }
+            >
+              {hayCadenaDetectada ? `Cadena: ${nombreCadenaDetectada}` : "Cadena no detectada"}
+            </span>
             <Button
               variant="outlineBlue"
               size="sm"
               onClick={() => setConfirmReejecutarGrupoOpen(true)}
               isLoading={isReejecutandoGrupo}
-              disabled={isReejecutandoGrupo || !hayCadenaSeleccionada}
-              title={!hayCadenaSeleccionada ? "Seleccioná la cadena de valor primero" : undefined}
+              disabled={isReejecutandoGrupo || !hayCadenaDetectada}
+              title={!hayCadenaDetectada ? "No se detectó la cadena de este socio" : undefined}
             >
               <FiRefreshCw size={13} /> Reejecutar grupo
             </Button>
@@ -1051,8 +1029,8 @@ function CdasTab({ socio }) {
                         size="sm"
                         onClick={() => handleReejecutar(item)}
                         isLoading={isReejecutando && cdaEnCurso === item.cdaid}
-                        disabled={isReejecutando || !hayCadenaSeleccionada}
-                        title={!hayCadenaSeleccionada ? "Seleccioná la cadena de valor arriba primero" : undefined}
+                        disabled={isReejecutando || !hayCadenaDetectada}
+                        title={!hayCadenaDetectada ? "No se detectó la cadena de este socio" : undefined}
                       >
                         <FiRefreshCw size={13} /> Volver a ejecutar
                       </Button>
@@ -1060,8 +1038,8 @@ function CdasTab({ socio }) {
                         variant="outlineBlue"
                         size="sm"
                         onClick={() => abrirForzarExpresion(item)}
-                        disabled={isReejecutando || !hayCadenaSeleccionada}
-                        title={!hayCadenaSeleccionada ? "Seleccioná la cadena de valor arriba primero" : undefined}
+                        disabled={isReejecutando || !hayCadenaDetectada}
+                        title={!hayCadenaDetectada ? "No se detectó la cadena de este socio" : undefined}
                       >
                         <FiEdit3 size={13} /> Forzar expresión
                       </Button>
