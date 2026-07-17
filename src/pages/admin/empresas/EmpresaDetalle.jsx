@@ -654,6 +654,22 @@ function CdasTab({ socio }) {
       .filter((id) => !Number.isNaN(id));
   }, [grupoDataElegido]);
 
+  // cdasIndividuales viene del batch histórico (obtenerCdasDeLaCorridaActual):
+  // incluye todo lo que se ejecutó en la última corrida, aunque después se
+  // haya desvinculado del grupo (ej. "Score alto" quedó Rechazado en un
+  // cierre viejo y luego se sacó del grupo — su fila sigue en el historial
+  // para siempre). Mostrar esa fila en la lista confunde: da la sensación de
+  // que el CDA sigue pesando, cuando el resultado combinado de arriba
+  // (estadoEfectivo) ya lo ignora por completo. Con el grupo vigente
+  // resuelto, se filtra la lista a solo los CDAs que siguen activos ahí —
+  // sin grupo vigente (cadena no detectada, o el grupo no existe) se sigue
+  // mostrando el crudo, es lo único que hay.
+  const hayGrupoVigente = hayCadenaDetectada && !!grupoDataElegido?.grupo;
+  const cdasParaMostrar = useMemo(() => {
+    if (!hayGrupoVigente) return cdasIndividuales;
+    return cdasIndividuales.filter((item) => cdasActivosIdsGrupo.includes(Number(item.cdaid)));
+  }, [cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo]);
+
   const estadoEfectivo = useMemo(() => {
     if (!hayCadenaDetectada || isLoadingGrupoElegido) return null;
     return calcularEstadoEfectivo({
@@ -985,8 +1001,15 @@ function CdasTab({ socio }) {
             </Button>
           </div>
         </header>
+        {hayGrupoVigente && cdasParaMostrar.length < cdasIndividuales.length && (
+          <p className={styles.cdaRowFecha} style={{ padding: "0 0 0.5rem" }}>
+            Se ocultaron {cdasIndividuales.length - cdasParaMostrar.length} criterio
+            {cdasIndividuales.length - cdasParaMostrar.length === 1 ? "" : "s"} de una corrida anterior que ya no
+            {cdasIndividuales.length - cdasParaMostrar.length === 1 ? " está vinculado" : " están vinculados"} a esta cadena.
+          </p>
+        )}
         <div className={styles.cdasList}>
-          {cdasIndividuales.map((item) => {
+          {cdasParaMostrar.map((item) => {
             const estadoLabel =
               resolverLabel(estadosExecuteCda?.opciones, item.estadoexecutecdaid) || "Desconocido";
             const tono = getEstadoTono(estadoLabel);
