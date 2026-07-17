@@ -88,8 +88,15 @@ export const cadenaValorService = {
   // GET /api/cda/cadenavalor/obtener:byGrupo?GrupoID=X - CDAs vinculados a un
   // GrupoCda (Pantalla x Cadena). Reemplaza al viejo GET
   // /api/cadenavalor/cdas/{CadenaID}, que el backend eliminó.
+  //
+  // Se pide como "obtener-byGrupo" (guion) en vez del ":" real: un ":" crudo
+  // en la URL que manda el navegador puede quedar bloqueado por IIS en el
+  // deploy real (confirmado: 400 en producción, 200 pegándole directo al
+  // backend). El proxy (vite.config.js en local, web.config en producción)
+  // es quien lo traduce al ":" real antes de reenviarlo — mismo patrón que
+  // ya se usa para password-reset, byencrypt, etc.
   obtenerCdasPorGrupo: async (grupoId) =>
-    (await api.get("api/cda/cadenavalor/obtener:byGrupo", { params: { GrupoID: grupoId } })).data,
+    (await api.get("api/cda/cadenavalor/obtener-byGrupo", { params: { GrupoID: grupoId } })).data,
 
   // POST /api/cadenavalor
   crearCadenaValor: async (cadenaValorData) =>

@@ -19,12 +19,21 @@ export default defineConfig({
             "/$1:$2",
           );
 
+          rewritten = rewritten.replace(
+            /\/execute-test(\?|$)/,
+            "/execute:test$1",
+          );
+          rewritten = rewritten.replace(
+            /\/obtener-byGrupo(\?|$)/,
+            "/obtener:byGrupo$1",
+          );
+
           return rewritten;
         },
       },
     },
   },
   esbuild: {
-    drop: ['console', 'debugger'],
+    drop: ["console", "debugger"],
   },
 });
