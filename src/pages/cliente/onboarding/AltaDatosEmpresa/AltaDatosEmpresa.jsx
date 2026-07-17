@@ -297,6 +297,18 @@ export const AltaDatosEmpresa = () => {
       );
       await sociosService.actualizarSocio({ ...payloadSocio, socioid: socioId });
 
+      // sociosService.actualizarSocio se llama acá directo (no vía
+      // useActualizarSocio) porque este componente ya maneja su propio
+      // try/catch y estado de envío — pero eso significa que hay que
+      // invalidar a mano la cache de ["socios","detalle",socioId]. Sin esto,
+      // OnboardingGuard (useEmpresasCompletas, misma queryKey) sigue leyendo
+      // el socio viejo con telefono vacío al llegar a /legajo, y como
+      // "aprobado && !telefono" es justo la condición que manda a este mismo
+      // Paso 2, rebota para acá de nuevo apenas se termina de completar.
+      await queryClient.invalidateQueries({
+        queryKey: ["socios", "detalle", socioId],
+      });
+
       if (usuariowebidReal) {
         // --- PRECARGA Y ENRIQUECIMIENTO DE ACCIONISTAS (LUFE + AFIP) ---
         try {
