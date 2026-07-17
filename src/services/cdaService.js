@@ -167,9 +167,14 @@ export const cdaService = {
     }
   },
 
+  // El backend expone esto como "api/cda/execute:test" (con ":"), pero un
+  // ":" crudo en la URL que manda el navegador puede quedar bloqueado por
+  // IIS en el deploy real (ver web.config) — el proxy (vite.config.js en
+  // local, web.config en producción) es quien traduce "execute-test" al
+  // ":" real antes de reenviarlo al backend.
   probarCda: async (cuit, expresion, expresionLog) => {
     try {
-      const response = await api.post("api/cda/execute:test", {
+      const response = await api.post("api/cda/execute-test", {
         Cuit: cuit,
         Expresion: expresion,
         ExpresionLog: expresionLog || ""
