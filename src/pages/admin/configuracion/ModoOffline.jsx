@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { FiPower, FiClock, FiCpu, FiUser, FiRefreshCw } from "react-icons/fi";
+import { FiPower, FiClock, FiCpu, FiUser, FiRefreshCw, FiAlertTriangle } from "react-icons/fi";
 import { toast } from "sonner";
 import { Switch } from "../../../components/ui";
 import { Alert } from "../../../components/ui/Alert/Alert";
@@ -157,7 +157,7 @@ export default function ModoOffline() {
 
         <div className={styles.statusHeroLeft}>
           <div className={styles.statusIconWrap}>
-            <FiPower size={24} />
+            <FiPower size={19} />
           </div>
           <div className={styles.statusInfo}>
             <span className={styles.statusLabel}>
@@ -204,6 +204,19 @@ export default function ModoOffline() {
               <h3>Integraciones externas</h3>
               <p>Apagá puntualmente una integración si está fallando, sin sacar de servicio toda la plataforma.</p>
             </div>
+          </div>
+
+          <div className={styles.warnCallout}>
+            <span className={styles.warnIconWrap}>
+              <FiAlertTriangle size={14} />
+            </span>
+            <p className={styles.warnText}>
+              <strong>No se resuelve solo:</strong> las solicitudes que dependen
+              de este chequeo van a quedar trabadas como pendientes hasta que la
+              reactives. Además, no alcanza con reactivarla: un admin va a tener
+              que volver a ejecutar el CDA desde el legajo del socio para que
+              se destrabe.
+            </p>
           </div>
 
           <div className={styles.integracionesList}>

@@ -70,16 +70,30 @@ export const cdaService = {
   // ⚠️ UsuarioID es requerido por el backend para resolver la ejecución del
   // grupo: sin él, cda/execute devuelve 409 "Dato Requerido Faltante" aunque
   // ninguna integración esté caída (confirmado comparando contra Swagger).
-  ejecutarCda: async (pantallaOrObj, cuit, cadenaValorId, usuarioId) => {
+  //
+  // ⚠️⚠️ NO usar valorParticularExpresion acá (sin CdaID, evaluación de
+  // pantalla completa): confirmado con pruebas manuales que el backend NO lo
+  // matchea contra el CDA que corresponde — evalúa esa expresión una sola
+  // vez y le asigna el MISMO resultado a TODOS los CDAs del grupo, pisando
+  // la evaluación real de los demás (ej. si el override da falso, rechaza
+  // también criterios que en realidad se cumplían). Solo es seguro pasar
+  // ValorParticularExpresion junto con CdaID (ver reejecutarCda), que sí
+  // evalúa un único CDA — a costa de nunca generar una fila de cierre de
+  // grupo (CdaID 0). Reportado a Victor: no hay forma de forzar un único CDA
+  // y cerrar el grupo en la misma llamada.
+  ejecutarCda: async (pantallaOrObj, cuit, cadenaValorId, usuarioId, valorParticularExpresion) => {
     let Pantalla = pantallaOrObj;
     let Cuit = cuit;
     let CadenaValorID = cadenaValorId;
     let UsuarioID = usuarioId;
+    let ValorParticularExpresion = valorParticularExpresion;
     if (typeof pantallaOrObj === "object" && pantallaOrObj !== null) {
       Pantalla = pantallaOrObj.pantalla || pantallaOrObj.Pantalla;
       Cuit = pantallaOrObj.cuit || pantallaOrObj.Cuit;
       CadenaValorID = pantallaOrObj.cadenaValorId || pantallaOrObj.CadenaValorID || pantallaOrObj.cadenavalorid || cadenaValorId;
       UsuarioID = pantallaOrObj.usuarioId || pantallaOrObj.UsuarioID || pantallaOrObj.usuarioid || usuarioId;
+      ValorParticularExpresion =
+        pantallaOrObj.valorParticularExpresion || pantallaOrObj.ValorParticularExpresion || valorParticularExpresion;
     }
     const params = { Pantalla, Cuit };
     if (CadenaValorID !== undefined && CadenaValorID !== null && String(CadenaValorID).trim() !== "" && !isNaN(Number(CadenaValorID))) {
@@ -87,6 +101,9 @@ export const cdaService = {
     }
     if (UsuarioID !== undefined && UsuarioID !== null && String(UsuarioID).trim() !== "" && !isNaN(Number(UsuarioID))) {
       params.UsuarioID = Number(UsuarioID);
+    }
+    if (ValorParticularExpresion && String(ValorParticularExpresion).trim()) {
+      params.ValorParticularExpresion = String(ValorParticularExpresion).trim();
     }
     const response = await api.get("api/cda/execute", {
       params,
@@ -113,9 +130,29 @@ export const cdaService = {
   // tras reactivar una integración que lo había dejado en estado Pendiente).
   // Igual que probarCda: nunca tira, devuelve { status, data } para poder
   // diferenciar 202 (aprobado) de 406 (rechazado) sin try/catch afuera.
-  reejecutarCda: async ({ cdaId, cuit, usuarioId }) => {
+  //
+  // ⚠️ Confirmado con pruebas manuales: re-ejecutar por CdaID "pelado" (sin
+  // Pantalla ni CadenaValorID) da 409 "Dato Requerido Faltante" para
+  // cualquier CDA cuya expresión necesite resolver un dato anidado de Nosis
+  // (ej. nosis.CDA_Valor.SCO), aunque el dato exista (el mismo CUIT resuelve
+  // bien con cda/execute:test o con el execute de pantalla completa). Pasar
+  // pantalla + cadenaValorId le da al backend el contexto que le falta.
+  //
+  // valorParticularExpresion, mandado JUNTO CON cdaId, sí aplica solo a ese
+  // CDA puntual (confirmado con pruebas manuales) — a diferencia de mandarlo
+  // sin CdaID (ver el aviso en ejecutarCda). El costo: nunca genera una fila
+  // de cierre de grupo (CdaID 0) nueva, así que el resultado combinado de la
+  // pantalla queda desactualizado hasta que se re-ejecute el grupo aparte.
+  reejecutarCda: async ({ cdaId, cuit, usuarioId, pantalla, cadenaValorId, valorParticularExpresion }) => {
     const params = { CdaID: cdaId, Cuit: cuit };
     if (usuarioId) params.UsuarioID = usuarioId;
+    if (pantalla) params.Pantalla = pantalla;
+    if (cadenaValorId !== undefined && cadenaValorId !== null && String(cadenaValorId).trim() !== "" && !isNaN(Number(cadenaValorId))) {
+      params.CadenaValorID = Number(cadenaValorId);
+    }
+    if (valorParticularExpresion && valorParticularExpresion.trim()) {
+      params.ValorParticularExpresion = valorParticularExpresion.trim();
+    }
     try {
       const response = await api.get("api/cda/execute", { params });
       return { status: response.status, data: response.data };

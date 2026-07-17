@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   useQuery,
   useQueries,
@@ -7,7 +8,11 @@ import {
 } from "@tanstack/react-query";
 import { sociosService } from "../services/sociosService";
 import { esSocioVacio } from "../utils/socioUtils";
-import { ultimaEjecucionPorCda } from "../utils/executeCda";
+import { calcularEstadoEfectivo, calcularEstadoDesdeHistorial } from "../utils/executeCda";
+import { esCdaActivo } from "../utils/cdaUtils";
+import { useObtenerGrupoCdaConCdas } from "./useCadenaValor";
+
+const PANTALLA_INGRESO_CUIT = "PANTALLA_INGRESO_CUIT";
 
 export const useObtenerSocios = (params = {}) => {
   return useQuery({
@@ -118,33 +123,66 @@ export const useEmpresasCompletas = (socioUsuarios) => {
 // Deriva el estado actual del CDA de pantalla (PANTALLA_INGRESO_CUIT) de un
 // socio a partir de su historial, en vez de re-ejecutar el CDA en cada
 // login (eso ensuciaría el historial con una fila nueva por cada entrada).
-// La fila que importa es la de CdaID=0 (el resultado combinado del grupo,
-// que loguea cda/execute cuando se le pasa Pantalla) — nos quedamos con la
-// más reciente vía ultimaEjecucionPorCda.
 //
-// ⚠️ Si el admin re-ejecuta un CDA puntual por CdaID desde EmpresaDetalle
-// (no toda la pantalla), esa fila de grupo NO se recalcula sola — va a
-// seguir reflejando el último resultado global conocido hasta que se vuelva
-// a correr la pantalla completa. Si esto resulta insuficiente en la
-// práctica, la alternativa es re-ejecutar el CDA en vivo en cada login.
-export const useEstadoCdaSocio = (socioId) => {
-  return useQuery({
-    queryKey: ["socios", "estadoCda", socioId],
-    queryFn: async () => {
-      const historial = await sociosService.obtenerExecuteCda(socioId);
-      const ultimas = ultimaEjecucionPorCda(historial);
-      const grupo = ultimas.find(
-        (item) => Number(item.cdaid ?? item.CdaID ?? -1) === 0,
-      );
-      const estadoId = Number(
-        grupo?.estadoexecutecdaid ?? grupo?.EstadoExecuteCdaID ?? 0,
-      );
-      if (estadoId === 3) return "aprobado";
-      if (estadoId === 2) return "rechazado";
-      return "pendiente"; // estadoId === 1, o sin fila de grupo todavía
-    },
-    enabled: !!socioId,
-  });
+// En vez de confiar en la última fila de grupo (CdaID=0) tal cual quedó
+// guardada, se RECALCULA con calcularEstadoEfectivo: toma la definición
+// VIGENTE del grupo (ExpresionAgrupacion + CDAs activos, vía
+// useObtenerGrupoCdaConCdas) y la combina con la ÚLTIMA ejecución conocida de
+// cada CDA individual (ver armarEstadoPorCda en utils/executeCda.js). Esto
+// resuelve dos problemas del enfoque anterior (leer directo la fila de
+// grupo):
+//   1. Cuando todas las integraciones de un grupo están deshabilitadas
+//      (Modo Offline), el backend no genera fila de grupo para esa corrida
+//      — antes había que detectar ese caso a mano comparando IDs.
+//   2. Si un admin fuerza un CDA puntual (CdaID + ValorParticularExpresion,
+//      ver EmpresaDetalle.jsx) después de que el grupo cerró en contra, el
+//      backend NUNCA regenera la fila de grupo por sí solo (no es seguro
+//      hacerlo con un override a nivel de pantalla completa, ver
+//      cdaService.js) — con el cálculo en el cliente, ese forzado puntual sí
+//      se refleja acá sin depender de una nueva corrida completa.
+// requiere cadenaValorId (en el cliente, el CadenaValorID de la ruta/tenant
+// actual — ver channelInfo.id en OnboardingGuard) para saber qué definición
+// de grupo usar.
+//
+// calcularEstadoDesdeHistorial (no necesita cadenaValorId: infiere la
+// combinación and/or del propio texto del último cierre) se usa SOLO como
+// fallback mientras cadenaValorId todavía no resolvió — no como red de
+// seguridad una vez que sí hay cadena. channelInfo.id (la cadena del tenant
+// actual) es siempre confiable acá, a diferencia del selector manual del
+// admin en EmpresaDetalle.jsx, así que no hace falta "salvar" a
+// estadoEfectivo con el historial si da otra cosa. Al revés sería peligroso:
+// si se agrega un CDA nuevo a un grupo ya aprobado antes, el historial no
+// sabe nada de ese CDA (nunca se ejecutó para este socio) y seguiría
+// devolviendo "aprobado" del cierre viejo — dejar que le gane a
+// estadoEfectivo dejaría pasar a un usuario sin evaluar el criterio nuevo.
+export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
+  const { data: historial, isPending: isPendingHistorial } =
+    useObtenerExecuteCda(socioId);
+  const { data: grupoData, isPending: isPendingGrupo } =
+    useObtenerGrupoCdaConCdas(cadenaValorId, PANTALLA_INGRESO_CUIT);
+
+  const isPending = !!socioId && (isPendingHistorial || (!!cadenaValorId && isPendingGrupo));
+
+  const data = useMemo(() => {
+    if (!socioId || isPending) return undefined;
+    const lista = Array.isArray(historial) ? historial : historial ? [historial] : [];
+    const estadoDesdeHistorial = calcularEstadoDesdeHistorial(lista);
+
+    if (!cadenaValorId) return estadoDesdeHistorial ?? "pendiente";
+
+    const cdasActivosIds = (grupoData?.cdas || [])
+      .filter(esCdaActivo)
+      .map((c) => Number(c.cdaid ?? c.CdaId ?? c.CdaID))
+      .filter((id) => !Number.isNaN(id));
+
+    return calcularEstadoEfectivo({
+      historial: lista,
+      expresionAgrupacion: grupoData?.grupo?.expresionagrupacion,
+      cdasActivosIds,
+    });
+  }, [socioId, cadenaValorId, isPending, historial, grupoData]);
+
+  return { data, isPending };
 };
 
 export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {

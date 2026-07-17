@@ -24,7 +24,52 @@ export const useCdaEngine = () => {
       );
 
       // 202: WSResponseCDA { Result: true, ListTest: [...] } - pasó todo.
-      await cdaService.ejecutarCda(pantalla, cuitLimpio, cadenaValorId, usuarioId);
+      const data = await cdaService.ejecutarCda(pantalla, cuitLimpio, cadenaValorId, usuarioId);
+
+      // ⚠️ Cuando una integración está deshabilitada desde Modo Offline
+      // (StatusPlataforma), el backend NO marca como pendiente/rechazado el
+      // CDA que depende de ella: directamente lo OMITE de ListTest, y el
+      // grupo sigue dando Result:true (aprobación vacía sobre lo que sí pudo
+      // evaluar). Comparamos el tamaño real de ListTest contra la cantidad
+      // de CDAs vinculados a esta pantalla+cadena — si hay menos, tratamos
+      // el resultado como pendiente en vez de confiar ciegamente en el 202.
+      //
+      // Esto solo protege este intento puntual: el backend igual registra
+      // el grupo como Aprobado en su historial (no tiene noción de
+      // "incompleto"), así que un reingreso posterior no vuelve a pasar por
+      // acá — es una mitigación parcial, no un cierre completo del hueco.
+      if (cadenaValorId) {
+        try {
+          const listTest = data?.listtest ?? data?.ListTest ?? [];
+          const vinculados = await cdaService.obtenerGrupoCda(pantalla, cadenaValorId);
+          const cantidadEsperada = Array.isArray(vinculados) ? vinculados.length : 0;
+
+          if (cantidadEsperada > 0 && listTest.length < cantidadEsperada) {
+            console.log(
+              `[CDA ENGINE] ListTest incompleto (${listTest.length}/${cantidadEsperada}): al menos un CDA se salteó, probablemente por una integración deshabilitada.`,
+            );
+            setLoading(false);
+            return {
+              success: false,
+              errors: [
+                {
+                  cdaid: 0,
+                  isInvalidante: true,
+                  isPendiente: true,
+                  message:
+                    "No pudimos completar todas las validaciones porque un servicio requerido no está disponible en este momento. La solicitud queda pendiente de revisión y un administrador podrá reintentarla cuando el servicio esté disponible.",
+                  isSystemError: false,
+                },
+              ],
+            };
+          }
+        } catch (grupoError) {
+          console.warn(
+            "[CDA ENGINE] No se pudo verificar la cantidad de CDAs vinculados (se continúa sin bloquear):",
+            grupoError,
+          );
+        }
+      }
 
       console.log(
         `[CDA ENGINE] Validaciones de CDAs para pantalla "${pantalla}" superadas con éxito (Status: 202)`,
