@@ -18,6 +18,7 @@ import {
   FiActivity,
   FiEdit3,
   FiX,
+  FiEye,
 } from "react-icons/fi";
 import {
   useSocioPorId,
@@ -34,6 +35,7 @@ import {
   useEstadoExecuteCda,
 } from "../../../hooks/useCatalogos";
 import { useObtenerTodosCdas, useReejecutarCda, useProbarCda } from "../../../hooks/useCda";
+import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { esCdaActivo } from "../../../utils/cdaUtils";
 import {
@@ -41,6 +43,7 @@ import {
   ordenarEjecucionesCda,
   formatearMomentoControl,
   calcularEstadoEfectivo,
+  combinarEstadoCdas,
 } from "../../../utils/executeCda";
 import {
   Button,
@@ -455,12 +458,23 @@ function TercerosTab({ socio }) {
 // pida a backend que lo persista, el admin lo tiene que elegir a mano.
 const PANTALLA_EMPRESA = "PANTALLA_INGRESO_CUIT";
 
+// Mismo patrón que ModoOffline.jsx: UsuarioWebID viaja en cada fila del
+// historial (WSSocioExecuteCda.UsuarioWebID), pero solo trae el ID — hace
+// falta resolverlo para mostrar quién ejecutó o forzó un CDA.
+const NombreUsuario = ({ usuarioId }) => {
+  const { data } = useObtenerUsuarioPorId(usuarioId);
+  if (!usuarioId) return "Sistema";
+  const partes = [data?.denominacion, data?.email].filter(Boolean);
+  return partes.length > 0 ? partes.join(" - ") : `Usuario #${usuarioId}`;
+};
+
 function CdasTab({ socio }) {
   const usuarioWebId = useAuthStore((state) => state.user?.usuarioWebId) || 0;
   const queryClient = useQueryClient();
   const [cdaEnCurso, setCdaEnCurso] = useState(null);
   const [cadenaValorIdGrupo, setCadenaValorIdGrupo] = useState("");
   const [isReejecutandoGrupo, setIsReejecutandoGrupo] = useState(false);
+  const [confirmReejecutarGrupoOpen, setConfirmReejecutarGrupoOpen] = useState(false);
   const hayCadenaSeleccionada = !!Number(cadenaValorIdGrupo);
 
   const { data: cadenasWeb } = useObtenerTodasWebConEstado();
@@ -518,6 +532,7 @@ function CdasTab({ socio }) {
   const [expresionForzada, setExpresionForzada] = useState("");
   const [confirmForzarOpen, setConfirmForzarOpen] = useState(false);
   const [resultadoPrueba, setResultadoPrueba] = useState(null);
+  const [verExpresionItem, setVerExpresionItem] = useState(null);
   const { mutateAsync: probarCda, isPending: isProbando } = useProbarCda();
 
   const abrirForzarExpresion = (item) => {
@@ -639,20 +654,6 @@ function CdasTab({ socio }) {
     );
   }, [historialCompleto, ultimasPorCda]);
 
-  // Confirmado con pruebas manuales: cuando TODAS las integraciones que
-  // necesitan los CDAs de la corrida están deshabilitadas, el backend deja
-  // cada CDA individual como Pendiente pero NO genera una fila de grupo
-  // nueva (no puede cerrar el AND/OR con términos sin resolver). Si hay
-  // individuales más nuevos que el último grupo, ese grupo quedó
-  // desactualizado — no refleja la corrida más reciente.
-  const grupoDesactualizado = useMemo(() => {
-    if (!grupoItem) return false;
-    const grupoId = Number(grupoItem.socioexecutecdaid);
-    return historialCompleto.some(
-      (item) => Number(item.cdaid) !== 0 && Number(item.socioexecutecdaid) > grupoId,
-    );
-  }, [grupoItem, historialCompleto]);
-
   // Recalcula el resultado combinado de la pantalla (aprobado/rechazado/
   // pendiente) tomando la definición VIGENTE del grupo (ExpresionAgrupacion +
   // CDAs activos, elegida arriba por cadena) y la última ejecución conocida
@@ -676,6 +677,45 @@ function CdasTab({ socio }) {
       cdasActivosIds: cdasActivosIdsGrupo,
     });
   }, [hayCadenaSeleccionada, isLoadingGrupoElegido, historialCompleto, grupoDataElegido, cdasActivosIdsGrupo]);
+
+  // Estado calculado SIN necesitar elegir cadena: infiere la combinación
+  // and/or del propio texto del último cierre (grupoItem.expresion) y la
+  // combina con el estado más reciente de cada CDA de esa corrida
+  // (cdasIndividuales ya toma la última ejecución de cada uno, sea del
+  // batch original o de un forzado puntual posterior al cierre — ver
+  // combinarEstadoCdas). Es lo que permite mostrar, por ejemplo, que un CDA
+  // forzado a Aprobado después de un cierre en Rechazado ya destraba el
+  // resultado combinado, sin depender de la ExpresionAgrupacion vigente.
+  const estadoSinCadena = useMemo(
+    () => combinarEstadoCdas(grupoItem, cdasIndividuales),
+    [grupoItem, cdasIndividuales],
+  );
+
+  // estadoEfectivo (con la cadena elegida y la definición VIGENTE del grupo)
+  // es la fuente de verdad cuando hay cadena seleccionada; estadoSinCadena
+  // (infiere el and/or del último cierre, sin necesitar cadena) es solo el
+  // fallback mientras no se eligió ninguna. NO se deja que estadoSinCadena le
+  // gane a estadoEfectivo cuando ambos están disponibles: si se agrega un CDA
+  // nuevo a un grupo ya aprobado antes, estadoSinCadena no lo sabe (nunca se
+  // ejecutó para este socio) y seguiría diciendo "aprobado" del cierre
+  // viejo — dejarlo ganar ocultaría que ese CDA nuevo todavía no se evaluó.
+  // Si difieren con cadena elegida, se avisa (ver posibleCadenaIncorrecta)
+  // en vez de forzar el badge a "aprobado".
+  const estadoFinal = estadoEfectivo ?? estadoSinCadena;
+
+  // "Reejecutar grupo" corre sin ValorParticularExpresion (ver cdaService.js:
+  // no es seguro mandarlo a nivel de pantalla completa), así que cualquier
+  // CDA cuya última ejecución haya sido forzada vuelve a evaluarse con su
+  // regla real y puede volver a dar rechazado — se lo advierte antes. Se
+  // busca solo en cdasIndividuales (el batch de la corrida actual, ya
+  // scopeado por el penúltimo cierre de grupo — ver su comentario más
+  // arriba), NO en ultimasPorCda (todo el historial): un CDA forzado en una
+  // corrida vieja y ajena a este grupo no se va a tocar al reejecutar, así
+  // que no corresponde advertir sobre él.
+  const cdasConExpresionForzada = useMemo(
+    () => cdasIndividuales.filter((item) => item.valorparticularexpresion),
+    [cdasIndividuales],
+  );
 
   const handleReejecutarGrupo = async () => {
     const cadenaValorId = Number(cadenaValorIdGrupo);
@@ -712,6 +752,7 @@ function CdasTab({ socio }) {
       }
     } finally {
       setIsReejecutandoGrupo(false);
+      setConfirmReejecutarGrupoOpen(false);
       queryClient.invalidateQueries({
         queryKey: ["socios", "executeCda", socio.socioid],
       });
@@ -758,7 +799,7 @@ function CdasTab({ socio }) {
             else setConfirmForzarOpen(false);
             toast.success("CDA aprobado", {
               description: valorParticularExpresion
-                ? "Se evaluó con la expresión forzada y pasó correctamente. Queda registrado en el historial, pero el resultado combinado de la pantalla no se actualiza solo — puede seguir mostrando pendiente hasta la próxima corrida completa."
+                ? "Se evaluó con la expresión forzada y pasó correctamente. El resultado combinado de la pantalla ya lo refleja — pero es temporal: si más adelante se reejecuta el grupo completo, este CDA vuelve a evaluarse con su regla real y puede volver a fallar."
                 : "El criterio se volvió a evaluar y pasó correctamente.",
             });
           } else if (status === 406) {
@@ -825,28 +866,6 @@ function CdasTab({ socio }) {
 
   return (
     <div className={styles.cdasScroll}>
-      {/* Sin fila de grupo (CdaID 0) ni cadena elegida todavía no hay dónde
-          elegirla: igual hace falta para re-ejecutar un CDA puntual (ver
-          handleReejecutar), así que se muestra acá suelta en ese caso. En
-          cuanto hay grupoItem o una cadena elegida con CDAs para mostrar, el
-          mismo selector ya vive dentro de la barra de estado de abajo. */}
-      {!grupoItem && !(hayCadenaSeleccionada && cdasIndividuales.length > 0) && (
-        <div className={styles.cdaCadenaPickerBar}>
-          <span className={styles.forzarSectionLabel}>Cadena de valor</span>
-          <div className={styles.grupoBarInputWrap}>
-            <SelectSimple
-              variant="admin"
-              placeholder="Cadena de valor"
-              options={opcionesCadenas}
-              value={cadenaValorIdGrupo}
-              onChange={setCadenaValorIdGrupo}
-              hideErrorSpace
-              compact
-            />
-          </div>
-        </div>
-      )}
-
       {(grupoItem || (hayCadenaSeleccionada && cdasIndividuales.length > 0)) && (() => {
         const ESTADO_LABEL_EFECTIVO = {
           aprobado: "Aprobado",
@@ -855,15 +874,20 @@ function CdasTab({ socio }) {
         };
 
         const calculando = hayCadenaSeleccionada && isLoadingGrupoElegido;
+        // Si el cálculo cadena-independiente (estadoSinCadena) dice
+        // "aprobado" pero el que usa la definición vigente de la cadena
+        // elegida da otra cosa, lo más probable es que se haya elegido la
+        // cadena incorrecta (no hay forma de saber cuál es la real). El
+        // badge SIEMPRE muestra el resultado con la cadena elegida
+        // (estadoFinal prioriza estadoEfectivo, ver más arriba) — acá solo se
+        // agrega una aclaración, sin tapar un rechazo real.
+        const posibleCadenaIncorrecta =
+          estadoSinCadena === "aprobado" && !!estadoEfectivo && estadoEfectivo !== "aprobado";
         const estadoLabel = calculando
           ? "Calculando..."
-          : estadoEfectivo
-            ? ESTADO_LABEL_EFECTIVO[estadoEfectivo]
-            : grupoItem
-              ? grupoDesactualizado
-                ? "Pendiente"
-                : resolverLabel(estadosExecuteCda?.opciones, grupoItem.estadoexecutecdaid) || "Desconocido"
-              : "Desconocido";
+          : estadoFinal
+            ? ESTADO_LABEL_EFECTIVO[estadoFinal]
+            : "Sin evaluar";
         const tono = calculando ? "neutral" : getEstadoTono(estadoLabel);
 
         return (
@@ -872,20 +896,20 @@ function CdasTab({ socio }) {
               <span className={styles.grupoBarIcon}>
                 <FiActivity size={17} />
               </span>
-              <div>
+              <div className={styles.grupoBarTexto}>
                 <span className={styles.grupoBarTitulo}>
-                  Resultado general de la pantalla{estadoEfectivo && !calculando ? " (recalculado)" : ""}
+                  Resultado general de la pantalla{estadoFinal && !calculando ? " (recalculado)" : ""}
                 </span>
                 <span className={styles.grupoBarExpresion}>
                   {calculando
-                    ? "Calculando con la definición vigente del grupo..."
-                    : estadoEfectivo
-                      ? "Calculado con la última ejecución conocida de cada CDA activo — incluye forzados puntuales posteriores al cierre del grupo."
-                      : grupoItem
-                        ? grupoDesactualizado
-                          ? "Hay evaluaciones más recientes sin resultado combinado — revisá los CDAs individuales abajo."
-                          : grupoItem.expresion || "—"
-                        : "Seleccioná la cadena para calcular el resultado combinado."}
+                    ? "Calculando con la definición vigente de la cadena elegida..."
+                    : posibleCadenaIncorrecta
+                      ? `Se muestra "${ESTADO_LABEL_EFECTIVO[estadoEfectivo]}" con la cadena elegida, pero el último cierre (sin elegir cadena) daba "Aprobado" — puede que no sea la cadena real de este socio.`
+                      : estadoEfectivo
+                        ? "Calculado con la definición vigente de la cadena elegida y la última ejecución de cada CDA activo."
+                        : estadoSinCadena
+                          ? "Calculado con el último cierre y la última ejecución conocida de cada CDA — elegí la cadena para confirmarlo con la definición vigente del grupo."
+                          : "Seleccioná la cadena para calcular el resultado combinado."}
                 </span>
               </div>
             </div>
@@ -899,41 +923,81 @@ function CdasTab({ socio }) {
                   Último cierre: {formatearMomentoControl(grupoItem.momentocontrol)}
                 </span>
               )}
-
-              <div className={styles.grupoBarAction}>
-                <div className={styles.grupoBarInputWrap}>
-                  <SelectSimple
-                    variant="admin"
-                    label="Cadena"
-                    placeholder="Cadena de valor"
-                    options={opcionesCadenas}
-                    value={cadenaValorIdGrupo}
-                    onChange={setCadenaValorIdGrupo}
-                    hideErrorSpace
-                    compact
-                  />
-                </div>
-                <Button
-                  variant="outlineBlue"
-                  size="sm"
-                  onClick={handleReejecutarGrupo}
-                  isLoading={isReejecutandoGrupo}
-                  disabled={isReejecutandoGrupo}
-                >
-                  <FiRefreshCw size={13} /> Reejecutar grupo
-                </Button>
-              </div>
             </div>
           </section>
         );
       })()}
 
+      <ConfirmacionModal
+        isOpen={confirmReejecutarGrupoOpen}
+        onClose={() => setConfirmReejecutarGrupoOpen(false)}
+        onConfirm={handleReejecutarGrupo}
+        titulo="Confirmar reejecución del grupo"
+        mensaje={
+          <>
+            Se va a reevaluar toda la pantalla con las reglas definidas en
+            CDAs Globales — <strong>sin ningún forzado</strong>.
+            {cdasConExpresionForzada.length > 0 && (
+              <>
+                <br />
+                <br />
+                Esto va a revertir{" "}
+                {cdasConExpresionForzada.length === 1
+                  ? "el forzado de:"
+                  : "los forzados de:"}
+                <br />
+                <code className={styles.forzarModalExpresionPreview}>
+                  {cdasConExpresionForzada
+                    .map((item) => descripcionPorCda.get(Number(item.cdaid)) || `CDA #${item.cdaid}`)
+                    .join(", ")}
+                </code>
+              </>
+            )}
+            <br />
+            <br />
+            ¿Confirmás que querés continuar?
+          </>
+        }
+        variant="blue"
+        tone="danger"
+        confirmText="REEJECUTAR GRUPO"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={isReejecutandoGrupo}
+      />
+
       <section className={styles.cdasSection}>
-        <header className={styles.sectionCardHeader}>
-          <span className={styles.sectionCardIcon}>
-            <FiShield size={15} />
-          </span>
-          <h3>Estado actual de los CDAs</h3>
+        <header className={`${styles.sectionCardHeader} ${styles.cdasSectionHeaderRow}`}>
+          <div className={styles.cdasSectionHeaderLeft}>
+            <span className={styles.sectionCardIcon}>
+              <FiShield size={15} />
+            </span>
+            <h3>Estado actual de los CDAs</h3>
+          </div>
+          <div className={styles.cdasSectionHeaderActions}>
+            <div className={styles.grupoBarInputWrap}>
+              <SelectSimple
+                variant="admin"
+                placeholder="Cadena de valor"
+                options={opcionesCadenas}
+                value={cadenaValorIdGrupo}
+                onChange={setCadenaValorIdGrupo}
+                hideErrorSpace
+                compact
+              />
+            </div>
+            <Button
+              variant="outlineBlue"
+              size="sm"
+              onClick={() => setConfirmReejecutarGrupoOpen(true)}
+              isLoading={isReejecutandoGrupo}
+              disabled={isReejecutandoGrupo || !hayCadenaSeleccionada}
+              title={!hayCadenaSeleccionada ? "Seleccioná la cadena de valor primero" : undefined}
+            >
+              <FiRefreshCw size={13} /> Reejecutar grupo
+            </Button>
+          </div>
         </header>
         <div className={styles.cdasList}>
           {cdasIndividuales.map((item) => {
@@ -943,52 +1007,72 @@ function CdasTab({ socio }) {
             const descripcion =
               descripcionPorCda.get(Number(item.cdaid)) || item.expresion || `CDA #${item.cdaid}`;
             const puedeReejecutar = tono !== "success";
+            const fueForzado = !!item.valorparticularexpresion;
 
             return (
               <div key={item.cdaid} className={styles.cdaRow}>
                 <div className={styles.cdaRowInfo}>
-                  <span className={styles.cdaRowTitulo}>{descripcion}</span>
+                  <span className={styles.cdaRowTitulo}>
+                    {descripcion}
+                    {fueForzado && (
+                      <span className={styles.cdaRowForzadoPill} title="Este resultado se forzó con una expresión personalizada">
+                        <FiEdit3 size={10} /> Forzado
+                      </span>
+                    )}
+                  </span>
                   {item.valorresultado && (
                     <span className={styles.cdaRowResultado}>{item.valorresultado}</span>
-                  )}
-                  {item.valorparticularexpresion && (
-                    <span className={styles.cdaRowForzado} title={item.valorparticularexpresion}>
-                      <FiEdit3 size={11} /> Forzado con: {item.valorparticularexpresion}
-                    </span>
                   )}
                 </div>
                 <span className={`${styles.badge} ${styles[`badge-${tono}`]}`}>
                   <span className={styles.badgeDot} /> {estadoLabel}
                 </span>
                 <span className={styles.cdaRowFecha}>{formatearMomentoControl(item.momentocontrol)}</span>
-                {puedeReejecutar && (
-                  <div className={styles.cdaRowActions}>
-                    <Button
-                      variant="outlineBlue"
-                      size="sm"
-                      onClick={() => handleReejecutar(item)}
-                      isLoading={isReejecutando && cdaEnCurso === item.cdaid}
-                      disabled={isReejecutando || !hayCadenaSeleccionada}
-                      title={!hayCadenaSeleccionada ? "Seleccioná la cadena de valor arriba primero" : undefined}
-                    >
-                      <FiRefreshCw size={13} /> Volver a ejecutar
-                    </Button>
-                    <Button
-                      variant="outlineBlue"
-                      size="sm"
-                      onClick={() => abrirForzarExpresion(item)}
-                      disabled={isReejecutando || !hayCadenaSeleccionada}
-                      title={!hayCadenaSeleccionada ? "Seleccioná la cadena de valor arriba primero" : undefined}
-                    >
-                      <FiEdit3 size={13} /> Forzar expresión
-                    </Button>
-                  </div>
-                )}
+                <div className={styles.cdaRowActions}>
+                  <Button
+                    variant="outlineBlue"
+                    size="sm"
+                    onClick={() => setVerExpresionItem(item)}
+                    title="Ver expresión evaluada"
+                  >
+                    <FiEye size={13} /> Ver expresión
+                  </Button>
+                  {puedeReejecutar && (
+                    <>
+                      <Button
+                        variant="outlineBlue"
+                        size="sm"
+                        onClick={() => handleReejecutar(item)}
+                        isLoading={isReejecutando && cdaEnCurso === item.cdaid}
+                        disabled={isReejecutando || !hayCadenaSeleccionada}
+                        title={!hayCadenaSeleccionada ? "Seleccioná la cadena de valor arriba primero" : undefined}
+                      >
+                        <FiRefreshCw size={13} /> Volver a ejecutar
+                      </Button>
+                      <Button
+                        variant="outlineBlue"
+                        size="sm"
+                        onClick={() => abrirForzarExpresion(item)}
+                        disabled={isReejecutando || !hayCadenaSeleccionada}
+                        title={!hayCadenaSeleccionada ? "Seleccioná la cadena de valor arriba primero" : undefined}
+                      >
+                        <FiEdit3 size={13} /> Forzar expresión
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             );
           })}
         </div>
       </section>
+
+      <VerExpresionModal
+        item={verExpresionItem}
+        onClose={() => setVerExpresionItem(null)}
+        descripcion={verExpresionItem ? descripcionPorCda.get(Number(verExpresionItem.cdaid)) : ""}
+        reglaGlobal={verExpresionItem ? reglaGlobalPorCda.get(Number(verExpresionItem.cdaid)) : ""}
+      />
 
       <Modal
         isOpen={!!forzarItem}
@@ -1010,10 +1094,11 @@ function CdasTab({ socio }) {
                 definas acá en vez de la definida en CDAs Globales. Usalo solo
                 cuando el rechazo se deba a un valor límite que consideres{" "}
                 <strong>salvable</strong> para este socio en particular — queda
-                registrado en el historial con la expresión utilizada. No
-                actualiza el resultado combinado de la pantalla: para eso hace
-                falta reejecutar el grupo aparte (con la regla original, sin
-                este forzado).
+                registrado en el historial con la expresión utilizada y el
+                resultado combinado de la pantalla ya lo refleja. Es
+                temporal: si más adelante se reejecuta el grupo completo, este
+                CDA vuelve a evaluarse con su regla real (sin este forzado) y
+                puede volver a fallar.
               </p>
             </div>
 
@@ -1136,8 +1221,10 @@ function CdasTab({ socio }) {
             <br />
             <code className={styles.forzarModalExpresionPreview}>{expresionForzada}</code>
             <br />
-            Esto no cierra el resultado combinado de la pantalla — para eso
-            hace falta reejecutar el grupo por separado.
+            El resultado combinado de la pantalla ya lo va a reflejar apenas
+            se guarde. Pero es temporal: si más adelante se reejecuta el
+            grupo completo, este CDA vuelve a evaluarse con su regla real
+            (sin este forzado) y puede volver a fallar.
             <br />
             ¿Confirmás que querés forzar esta evaluación?
           </>
@@ -1151,6 +1238,55 @@ function CdasTab({ socio }) {
         isLoading={isReejecutando && cdaEnCurso === forzarItem?.cdaid}
       />
     </div>
+  );
+}
+
+// Muestra la regla definida en CDAs Globales y, si el resultado se forzó con
+// una expresión personalizada (ver abrirForzarExpresion), también esa
+// expresión y quién la ejecutó — la fila de historial ya trae UsuarioWebID,
+// solo hace falta resolverlo a nombre (ver NombreUsuario).
+function VerExpresionModal({ item, onClose, descripcion, reglaGlobal }) {
+  const fueForzado = !!item?.valorparticularexpresion;
+
+  return (
+    <Modal
+      isOpen={!!item}
+      onClose={onClose}
+      title="Expresión evaluada"
+      subtitle={descripcion}
+      variant="blue"
+      maxWidth="560px"
+    >
+      {item && (
+        <div className={styles.forzarModalBody}>
+          <div className={styles.forzarSection}>
+            <h4 className={styles.forzarSectionLabel}>Regla definida en CDAs Globales</h4>
+            <code className={styles.forzarReglaGlobal}>{reglaGlobal || "—"}</code>
+          </div>
+
+          {fueForzado && (
+            <div className={styles.forzarSection}>
+              <h4 className={styles.forzarSectionLabel}>Expresión forzada</h4>
+              <code className={styles.cdaRowForzadoCode}>{item.valorparticularexpresion}</code>
+            </div>
+          )}
+
+          {item.valorresultado && (
+            <div className={styles.forzarSection}>
+              <h4 className={styles.forzarSectionLabel}>Valor resuelto</h4>
+              <code className={styles.forzarReglaGlobal}>{item.valorresultado}</code>
+            </div>
+          )}
+
+          <div className={styles.forzarSection}>
+            <h4 className={styles.forzarSectionLabel}>{fueForzado ? "Forzado por" : "Ejecutado por"}</h4>
+            <p className={styles.forzarHelperText}>
+              <NombreUsuario usuarioId={item.usuariowebid} /> · {formatearMomentoControl(item.momentocontrol)}
+            </p>
+          </div>
+        </div>
+      )}
+    </Modal>
   );
 }
 
@@ -1223,7 +1359,7 @@ function HistorialCdaModal({ isOpen, onClose, socio }) {
             </span>
           )}
           <span className={styles.cdaHistorialMeta}>
-            {formatearMomentoControl(item.momentocontrol)}
+            {formatearMomentoControl(item.momentocontrol)} · <NombreUsuario usuarioId={item.usuariowebid} />
           </span>
         </div>
       </div>

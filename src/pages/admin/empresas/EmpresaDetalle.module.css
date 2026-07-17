@@ -492,6 +492,11 @@
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.grupoBarTexto {
   min-width: 0;
 }
 
@@ -529,24 +534,29 @@
   gap: 0.75rem;
 }
 
-.grupoBarAction {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .grupoBarInputWrap {
   width: 13rem;
 }
 
-.cdaCadenaPickerBar {
+/* Modificador de .sectionCardHeader: título a la izquierda, controles
+   (selector de cadena + reejecutar grupo) a la derecha, en la misma fila. */
+.cdasSectionHeaderRow {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.cdasSectionHeaderLeft {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 1.1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.7rem;
+  gap: 0.6rem;
+}
+
+.cdasSectionHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .cdasList {
@@ -600,6 +610,38 @@
   color: #ffb300;
   font-family: "SFMono-Regular", Consolas, monospace;
   overflow-wrap: anywhere;
+}
+
+/* Indicador compacto en la fila (el detalle completo — expresión base,
+   forzada y quién la ejecutó — vive en VerExpresionModal). */
+.cdaRowForzadoPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: rgba(255, 179, 0, 0.12);
+  color: #ffb300;
+  border: 1px solid rgba(255, 179, 0, 0.3);
+  vertical-align: middle;
+}
+
+.cdaRowForzadoCode {
+  display: block;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+  color: #ffb300;
+  background: #0d1117;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 179, 0, 0.25);
+  word-break: break-all;
+  line-height: 1.35;
 }
 
 .cdaRowActions {

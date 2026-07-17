@@ -98,3 +98,74 @@ export const calcularEstadoEfectivo = ({ historial, expresionAgrupacion, cdasAct
   if (resultado === false) return "rechazado";
   return "pendiente";
 };
+
+// Un CDA que se saca del grupo (deshabilitado/desvinculado) deja de
+// evaluarse en las próximas corridas de pantalla, pero su última fila queda
+// en el historial para siempre — "última ejecución por CdaID" sola no
+// alcanza para saber si sigue vigente. Se toman solo los CdaID que
+// aparecieron después del PENÚLTIMO cierre de grupo: eso cubre tanto el
+// batch que armó el ÚLTIMO cierre como cualquier "Volver a ejecutar"/
+// "Forzar expresión" puntual posterior a ese cierre (ver EmpresaDetalle.jsx).
+export const obtenerCdasDeLaCorridaActual = (data) => {
+  const historialCompleto = ordenarEjecucionesCda(data);
+  const ultimasPorCda = ultimaEjecucionPorCda(data);
+  const gruposDesc = historialCompleto.filter((item) => Number(item.cdaid ?? item.CdaID ?? -1) === 0);
+  const grupoItem = gruposDesc[0] || null;
+  const idCorteInferior = gruposDesc[1]
+    ? Number(gruposDesc[1].socioexecutecdaid ?? gruposDesc[1].SocioExecuteCdaID) || 0
+    : -Infinity;
+
+  const cdaIdsCorridaActual = new Set(
+    historialCompleto
+      .filter(
+        (item) =>
+          Number(item.cdaid ?? item.CdaID ?? -1) !== 0 &&
+          (Number(item.socioexecutecdaid ?? item.SocioExecuteCdaID) || 0) > idCorteInferior,
+      )
+      .map((item) => Number(item.cdaid ?? item.CdaID)),
+  );
+
+  const cdas = ultimasPorCda.filter(
+    (item) => Number(item.cdaid ?? item.CdaID ?? -1) !== 0 && cdaIdsCorridaActual.has(Number(item.cdaid ?? item.CdaID)),
+  );
+
+  return { grupoItem, cdas };
+};
+
+// Combina el último cierre de grupo (grupoItem) con el estado MÁS RECIENTE
+// de cada CDA de esa corrida (cdas, ver obtenerCdasDeLaCorridaActual) sin
+// necesitar la ExpresionAgrupacion vigente de GrupoCda ni que se elija una
+// cadena: la combinación lógica (and/or) se infiere del propio texto
+// congelado en grupoItem.expresion ("TRUE and TRUE and FALSE"). Si tiene
+// algún "or" se trata como OR de todos los miembros; si no, como AND (el
+// caso más común — "and" tiene mayor precedencia y casi nunca hace falta
+// mezclar, ver CLAUDE.md). Esto es lo que permite mostrar, por ejemplo, que
+// un CDA forzado a Aprobado DESPUÉS de un cierre en Rechazado ya destraba el
+// resultado combinado, sin tener que elegir la cadena primero.
+export const combinarEstadoCdas = (grupoItem, cdas) => {
+  if (!grupoItem || !cdas || cdas.length === 0) return null;
+
+  const combinador = /\bor\b/i.test(grupoItem.expresion ?? grupoItem.Expresion ?? "") ? "or" : "and";
+  const valores = cdas.map((item) => {
+    const estadoId = Number(item.estadoexecutecdaid ?? item.EstadoExecuteCdaID ?? 0);
+    return estadoId === 3 ? true : estadoId === 2 ? false : null;
+  });
+
+  let resultado;
+  if (combinador === "and") {
+    resultado = valores.some((v) => v === false) ? false : valores.some((v) => v === null) ? null : true;
+  } else {
+    resultado = valores.some((v) => v === true) ? true : valores.some((v) => v === null) ? null : false;
+  }
+
+  if (resultado === true) return "aprobado";
+  if (resultado === false) return "rechazado";
+  return "pendiente";
+};
+
+// Atajo para quien no tenga ya grupoItem/cdas calculados (ver
+// obtenerCdasDeLaCorridaActual + combinarEstadoCdas).
+export const calcularEstadoDesdeHistorial = (data) => {
+  const { grupoItem, cdas } = obtenerCdasDeLaCorridaActual(data);
+  return combinarEstadoCdas(grupoItem, cdas);
+};

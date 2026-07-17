@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { sociosService } from "../services/sociosService";
 import { esSocioVacio } from "../utils/socioUtils";
-import { calcularEstadoEfectivo } from "../utils/executeCda";
+import { calcularEstadoEfectivo, calcularEstadoDesdeHistorial } from "../utils/executeCda";
 import { esCdaActivo } from "../utils/cdaUtils";
 import { useObtenerGrupoCdaConCdas } from "./useCadenaValor";
 
@@ -143,17 +143,33 @@ export const useEmpresasCompletas = (socioUsuarios) => {
 // requiere cadenaValorId (en el cliente, el CadenaValorID de la ruta/tenant
 // actual — ver channelInfo.id en OnboardingGuard) para saber qué definición
 // de grupo usar.
+//
+// calcularEstadoDesdeHistorial (no necesita cadenaValorId: infiere la
+// combinación and/or del propio texto del último cierre) se usa SOLO como
+// fallback mientras cadenaValorId todavía no resolvió — no como red de
+// seguridad una vez que sí hay cadena. channelInfo.id (la cadena del tenant
+// actual) es siempre confiable acá, a diferencia del selector manual del
+// admin en EmpresaDetalle.jsx, así que no hace falta "salvar" a
+// estadoEfectivo con el historial si da otra cosa. Al revés sería peligroso:
+// si se agrega un CDA nuevo a un grupo ya aprobado antes, el historial no
+// sabe nada de ese CDA (nunca se ejecutó para este socio) y seguiría
+// devolviendo "aprobado" del cierre viejo — dejar que le gane a
+// estadoEfectivo dejaría pasar a un usuario sin evaluar el criterio nuevo.
 export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
   const { data: historial, isPending: isPendingHistorial } =
     useObtenerExecuteCda(socioId);
   const { data: grupoData, isPending: isPendingGrupo } =
     useObtenerGrupoCdaConCdas(cadenaValorId, PANTALLA_INGRESO_CUIT);
 
-  const isPending = !!socioId && (!cadenaValorId || isPendingHistorial || isPendingGrupo);
+  const isPending = !!socioId && (isPendingHistorial || (!!cadenaValorId && isPendingGrupo));
 
   const data = useMemo(() => {
-    if (!socioId || !cadenaValorId || isPending) return undefined;
+    if (!socioId || isPending) return undefined;
     const lista = Array.isArray(historial) ? historial : historial ? [historial] : [];
+    const estadoDesdeHistorial = calcularEstadoDesdeHistorial(lista);
+
+    if (!cadenaValorId) return estadoDesdeHistorial ?? "pendiente";
+
     const cdasActivosIds = (grupoData?.cdas || [])
       .filter(esCdaActivo)
       .map((c) => Number(c.cdaid ?? c.CdaId ?? c.CdaID))
