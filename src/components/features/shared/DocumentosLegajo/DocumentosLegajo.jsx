@@ -804,7 +804,7 @@ export function DocumentosLegajo({
                       {!isPerfil && !adminMode &&
                         (isRequired ? (
                           <span
-                            className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}
+                            className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
                           >
                             Obligatorio
                           </span>
@@ -876,7 +876,7 @@ export function DocumentosLegajo({
                   {!isPerfil && !adminMode &&
                     (isRequired ? (
                       <span
-                        className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}
+                        className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
                       >
                         Obligatorio
                       </span>
