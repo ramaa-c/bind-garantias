@@ -118,6 +118,12 @@ export const cadenaValorService = {
   // PUT /api/cda/cadenavalor:actualizar - Modifica el valor/Activo de UNA
   // vinculación ya existente (requiere CdaCadenaValorID); queda registrado
   // en el historial.
+  //
+  // Se pide como "cadenavalor-actualizar" (guion) en vez del ":" real: un ":"
+  // crudo en la URL que manda el navegador puede quedar bloqueado por IIS en
+  // el deploy real (mismo patrón que obtenerCdasPorGrupo más arriba). El
+  // proxy (vite.config.js en local, web.config en producción) lo traduce al
+  // ":" real antes de reenviarlo.
   actualizarVinculacionCda: async (vinculacionData) =>
-    (await api.put("api/cda/cadenavalor:actualizar", cadenaValorAdapter.adaptarActualizarVinculacion(vinculacionData))).data,
+    (await api.put("api/cda/cadenavalor-actualizar", cadenaValorAdapter.adaptarActualizarVinculacion(vinculacionData))).data,
 };

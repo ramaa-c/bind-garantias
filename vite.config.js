@@ -27,6 +27,10 @@ export default defineConfig({
             /\/obtener-byGrupo(\?|$)/,
             "/obtener:byGrupo$1",
           );
+          rewritten = rewritten.replace(
+            /\/cadenavalor-actualizar(\?|$)/,
+            "/cadenavalor:actualizar$1",
+          );
 
           return rewritten;
         },

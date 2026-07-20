@@ -1,8 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { FiPower, FiClock, FiCpu, FiUser, FiRefreshCw, FiAlertTriangle } from "react-icons/fi";
+import { FiPower, FiClock, FiCpu, FiUser, FiRefreshCw, FiAlertTriangle, FiWifiOff } from "react-icons/fi";
 import { toast } from "sonner";
 import { Switch } from "../../../components/ui";
-import { Alert } from "../../../components/ui/Alert/Alert";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useObtenerStatusPlataforma, useActualizarStatusPlataforma } from "../../../hooks/useStatusPlataforma";
@@ -44,6 +43,18 @@ export default function ModoOffline() {
   const ultimoStatus = obtenerUltimoStatus(data);
   const historial = construirHistorialConCambios(data).slice(0, 8);
   const offline = esOffline(ultimoStatus);
+
+  // Sin ultimoStatus no hay forma de saber el estado real: mostrar la UI
+  // interactiva ahí caería en los defaults de esOffline/integracionActiva
+  // (todo "online", todo "activo"), que no reflejan la realidad, con
+  // switches que además arman el payload de guardado a partir de esos
+  // mismos defaults. Se bloquea toda la pantalla en vez de arriesgar eso.
+  // Si en cambio hay un estado previo (falló solo un refetch en segundo
+  // plano), se sigue mostrando esos datos reales pero pausando las
+  // acciones hasta reconectar.
+  const sinDatos = isError && !ultimoStatus;
+  const datosDesactualizados = isError && !!ultimoStatus;
+  const accionesPausadas = isPending || datosDesactualizados;
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [ahora, setAhora] = useState(() => Date.now());
@@ -145,141 +156,168 @@ export default function ModoOffline() {
         </button>
       </div>
 
-      {isError && (
-        <Alert variant="error">
-          No se pudo obtener el estado actual de la plataforma. Los datos que ves podrían estar
-          desactualizados.
-        </Alert>
-      )}
-
-      <div className={`${styles.statusHero} ${offline ? styles.statusOffline : styles.statusOnline}`}>
-        <div className={styles.statusGlow} />
-
-        <div className={styles.statusHeroLeft}>
-          <div className={styles.statusIconWrap}>
-            <FiPower size={19} />
+      {sinDatos ? (
+        <div className={styles.unavailableState}>
+          <div className={styles.unavailableGlow} />
+          <div className={styles.unavailableIconWrap}>
+            <FiWifiOff size={24} />
           </div>
-          <div className={styles.statusInfo}>
-            <span className={styles.statusLabel}>
-              <span className={styles.pulseDot} />
-              Estado actual
-            </span>
-            <h2>{offline ? "Offline — Fuera de servicio" : "Online — Operando normalmente"}</h2>
-            <div className={styles.statusMetaRow}>
-              {fechaFormateada && (
-                <span className={styles.statusMeta}>
-                  <FiClock /> {offline ? "Desde el" : "Último cambio:"} {fechaFormateada}
+          <h2>No se pudo conectar con el servidor</h2>
+          <p>
+            No pudimos obtener el estado de la plataforma ni su historial de cambios. Por
+            seguridad, no se muestra ni se permite modificar nada hasta reestablecer la conexión.
+          </p>
+          <button
+            type="button"
+            className={styles.unavailableRetryBtn}
+            onClick={handleRefrescar}
+            disabled={isFetching}
+          >
+            <FiRefreshCw className={isFetching ? styles.spinning : ""} /> Reintentar
+          </button>
+        </div>
+      ) : (
+        <>
+          {datosDesactualizados && (
+            <div className={styles.staleBanner}>
+              <FiAlertTriangle size={15} />
+              <span>
+                Sin conexión con el servidor: se muestra el último estado conocido y las acciones
+                quedan pausadas hasta reconectar.
+              </span>
+            </div>
+          )}
+
+          <div className={`${styles.statusHero} ${offline ? styles.statusOffline : styles.statusOnline}`}>
+            <div className={styles.statusGlow} />
+
+            <div className={styles.statusHeroLeft}>
+              <div className={styles.statusIconWrap}>
+                <FiPower size={19} />
+              </div>
+              <div className={styles.statusInfo}>
+                <span className={styles.statusLabel}>
+                  <span className={styles.pulseDot} />
+                  Estado actual
                 </span>
-              )}
-              {ultimoStatus && (
-                <span className={styles.statusMeta}>
-                  <FiUser /> <NombreUsuario usuarioid={ultimoStatus.usuariowebid} />
-                  {usuarioWebId && Number(ultimoStatus.usuariowebid) === Number(usuarioWebId) ? " (vos)" : ""}
-                </span>
-              )}
-              {duracionOffline && <span className={styles.durationBadge}>{duracionOffline} fuera de servicio</span>}
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.statusHeroRight}>
-          <span className={styles.switchHint}>{offline ? "Volver a poner online" : "Poner fuera de servicio"}</span>
-          <Switch
-            checked={offline}
-            onChange={() => setConfirmOpen(true)}
-            variant="admin"
-            size="lg"
-            disabled={isPending}
-          />
-        </div>
-      </div>
-
-      <div className={styles.workspace}>
-        <div className={styles.card} ref={integracionesCardRef}>
-          <div className={styles.cardHeader}>
-            <div className={styles.cardIconWrap}>
-              <FiCpu size={18} />
-            </div>
-            <div className={styles.cardHeaderText}>
-              <h3>Integraciones externas</h3>
-              <p>Apagá puntualmente una integración si está fallando, sin sacar de servicio toda la plataforma.</p>
-            </div>
-          </div>
-
-          <div className={styles.warnCallout}>
-            <span className={styles.warnIconWrap}>
-              <FiAlertTriangle size={14} />
-            </span>
-            <p className={styles.warnText}>
-              <strong>No se resuelve solo:</strong> las solicitudes que dependen
-              de este chequeo van a quedar trabadas como pendientes hasta que la
-              reactives. Además, no alcanza con reactivarla: un admin va a tener
-              que volver a ejecutar el CDA desde el legajo del socio para que
-              se destrabe.
-            </p>
-          </div>
-
-          <div className={styles.integracionesList}>
-            {INTEGRACIONES.map(({ campo, nombre, descripcion }) => {
-              const activa = integracionActiva(ultimoStatus, campo);
-              return (
-                <div key={campo} className={styles.integracionRow}>
-                  <div className={styles.integracionInfo}>
-                    <span className={`${styles.dot} ${activa ? styles.dotOn : styles.dotOff}`} />
-                    <div className={styles.integracionTexto}>
-                      <span className={styles.integracionNombre}>{nombre}</span>
-                      <span className={styles.integracionDescripcion}>{descripcion}</span>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={activa}
-                    onChange={() => handleToggleIntegracion(campo)}
-                    variant="admin"
-                    disabled={isPending}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div
-          className={styles.card}
-          style={alturaIntegraciones ? { maxHeight: alturaIntegraciones } : undefined}
-        >
-          <div className={styles.cardHeader}>
-            <div className={styles.cardIconWrap}>
-              <FiClock size={18} />
-            </div>
-            <div className={styles.cardHeaderText}>
-              <h3>Historial de cambios</h3>
-              <p>Últimos movimientos, tanto del estado general como de cada integración.</p>
-            </div>
-          </div>
-
-          <div className={styles.historialList}>
-            {historial.length === 0 && (
-              <span className={styles.historialVacio}>Todavía no hay cambios registrados.</span>
-            )}
-            {historial.map((item) => {
-              const esNegativo = item.cambios.some(
-                (cambio) => cambio.includes("OFFLINE") || cambio.includes("desactivada"),
-              );
-              return (
-                <div key={item.statusplataformaid} className={styles.historialItem}>
-                  <span className={`${styles.dot} ${esNegativo ? styles.dotOff : styles.dotOn}`} />
-                  <div className={styles.historialInfo}>
-                    <span className={styles.historialEstado}>{item.cambios.join(", ")}</span>
-                    <span className={styles.historialMeta}>
-                      {formatearMomento(item.momento)} · <NombreUsuario usuarioid={item.usuariowebid} />
+                <h2>{offline ? "Offline — Fuera de servicio" : "Online — Operando normalmente"}</h2>
+                <div className={styles.statusMetaRow}>
+                  {fechaFormateada && (
+                    <span className={styles.statusMeta}>
+                      <FiClock /> {offline ? "Desde el" : "Último cambio:"} {fechaFormateada}
                     </span>
-                  </div>
+                  )}
+                  {ultimoStatus && (
+                    <span className={styles.statusMeta}>
+                      <FiUser /> <NombreUsuario usuarioid={ultimoStatus.usuariowebid} />
+                      {usuarioWebId && Number(ultimoStatus.usuariowebid) === Number(usuarioWebId) ? " (vos)" : ""}
+                    </span>
+                  )}
+                  {duracionOffline && <span className={styles.durationBadge}>{duracionOffline} fuera de servicio</span>}
                 </div>
-              );
-            })}
+              </div>
+            </div>
+
+            <div className={styles.statusHeroRight}>
+              <span className={styles.switchHint}>{offline ? "Volver a poner online" : "Poner fuera de servicio"}</span>
+              <Switch
+                checked={offline}
+                onChange={() => setConfirmOpen(true)}
+                variant="admin"
+                size="lg"
+                disabled={accionesPausadas}
+              />
+            </div>
           </div>
-        </div>
-      </div>
+
+          <div className={styles.workspace}>
+            <div className={styles.card} ref={integracionesCardRef}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardIconWrap}>
+                  <FiCpu size={18} />
+                </div>
+                <div className={styles.cardHeaderText}>
+                  <h3>Integraciones externas</h3>
+                  <p>Apagá puntualmente una integración si está fallando, sin sacar de servicio toda la plataforma.</p>
+                </div>
+              </div>
+
+              <div className={styles.warnCallout}>
+                <span className={styles.warnIconWrap}>
+                  <FiAlertTriangle size={14} />
+                </span>
+                <p className={styles.warnText}>
+                  <strong>No se resuelve solo:</strong> las solicitudes que dependen
+                  de este chequeo van a quedar trabadas como pendientes hasta que la
+                  reactives. Además, no alcanza con reactivarla: un admin va a tener
+                  que volver a ejecutar el CDA desde el legajo del socio para que
+                  se destrabe.
+                </p>
+              </div>
+
+              <div className={styles.integracionesList}>
+                {INTEGRACIONES.map(({ campo, nombre, descripcion }) => {
+                  const activa = integracionActiva(ultimoStatus, campo);
+                  return (
+                    <div key={campo} className={styles.integracionRow}>
+                      <div className={styles.integracionInfo}>
+                        <span className={`${styles.dot} ${activa ? styles.dotOn : styles.dotOff}`} />
+                        <div className={styles.integracionTexto}>
+                          <span className={styles.integracionNombre}>{nombre}</span>
+                          <span className={styles.integracionDescripcion}>{descripcion}</span>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={activa}
+                        onChange={() => handleToggleIntegracion(campo)}
+                        variant="admin"
+                        disabled={accionesPausadas}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div
+              className={styles.card}
+              style={alturaIntegraciones ? { maxHeight: alturaIntegraciones } : undefined}
+            >
+              <div className={styles.cardHeader}>
+                <div className={styles.cardIconWrap}>
+                  <FiClock size={18} />
+                </div>
+                <div className={styles.cardHeaderText}>
+                  <h3>Historial de cambios</h3>
+                  <p>Últimos movimientos, tanto del estado general como de cada integración.</p>
+                </div>
+              </div>
+
+              <div className={styles.historialList}>
+                {historial.length === 0 && (
+                  <span className={styles.historialVacio}>Todavía no hay cambios registrados.</span>
+                )}
+                {historial.map((item) => {
+                  const esNegativo = item.cambios.some(
+                    (cambio) => cambio.includes("OFFLINE") || cambio.includes("desactivada"),
+                  );
+                  return (
+                    <div key={item.statusplataformaid} className={styles.historialItem}>
+                      <span className={`${styles.dot} ${esNegativo ? styles.dotOff : styles.dotOn}`} />
+                      <div className={styles.historialInfo}>
+                        <span className={styles.historialEstado}>{item.cambios.join(", ")}</span>
+                        <span className={styles.historialMeta}>
+                          {formatearMomento(item.momento)} · <NombreUsuario usuarioid={item.usuariowebid} />
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <ConfirmacionModal
         isOpen={confirmOpen}
