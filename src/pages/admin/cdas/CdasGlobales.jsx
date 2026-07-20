@@ -743,7 +743,13 @@ export default function CdasGlobales() {
         toast.success("Criterio de Aceptación Global creado exitosamente.");
         resetFormulario();
         setVista("lista");
-        setPostSaveModalOpen(true);
+        // El atajo a "CDAs por Cadena" solo tiene sentido si el CDA quedó
+        // SIN vincular a ninguna cadena. Si se tildó "vincular a cadenas
+        // existentes", ya se vinculó a todas más arriba: mostrar el atajo
+        // acá empujaba a vincularlo otra vez a mano y duplicaba la fila.
+        if (!vincularExistentes) {
+          setPostSaveModalOpen(true);
+        }
       }
     } catch (err) {
       console.error(err);

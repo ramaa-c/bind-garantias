@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FiCheck, FiAlertTriangle } from "react-icons/fi";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
@@ -21,6 +21,32 @@ export function ConfirmacionModal({
 }) {
   const dialogRef = useRef(null);
   const isDanger = tone === "danger";
+
+  // Guarda propia contra doble click, independiente del `isLoading` que
+  // mande el caller: si `onConfirm` hace trabajo async ANTES de que el
+  // mutation hook del caller marque su propio isPending (ej. resolver un ID
+  // antes de disparar la mutación real), el prop `isLoading` llega tarde y
+  // el botón queda clickeable un rato — suficiente para que dos o tres
+  // clicks salgan antes de que se refleje. `isConfirmandoRef` es sincrónico
+  // (se marca en el mismo tick del primer click, antes de cualquier await),
+  // así que ningún click posterior puede pasar aunque React todavía no haya
+  // re-renderizado con el estado de loading.
+  const isConfirmandoRef = useRef(false);
+  const [isConfirmando, setIsConfirmando] = useState(false);
+
+  const handleConfirmClick = async () => {
+    if (isConfirmandoRef.current || isLoading) return;
+    isConfirmandoRef.current = true;
+    setIsConfirmando(true);
+    try {
+      await onConfirm();
+    } finally {
+      isConfirmandoRef.current = false;
+      setIsConfirmando(false);
+    }
+  };
+
+  const bloqueado = isLoading || isConfirmando;
 
   const resolvedConfirmVariant =
     confirmVariant || (isDanger ? "danger" : variant === "blue" ? "blue" : "primary");
@@ -53,7 +79,7 @@ export function ConfirmacionModal({
   const toneClass = isDanger ? styles.danger : variant === "blue" ? styles.blue : styles.yellow;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth={maxWidth} variant="confirm" preventClose={isLoading}>
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth={maxWidth} variant="confirm" preventClose={bloqueado}>
       <div ref={dialogRef} className={`${styles.dialog} ${toneClass}`} onKeyDown={handleKeyDown}>
         <div className={styles.sealRow}>
           <div className={styles.seal}>
@@ -69,14 +95,14 @@ export function ConfirmacionModal({
         <div className={styles.perforation} />
 
         <div className={styles.actions}>
-          <Button variant={resolvedCancelVariant} onClick={onClose} disabled={isLoading}>
+          <Button variant={resolvedCancelVariant} onClick={onClose} disabled={bloqueado}>
             {cancelText}
           </Button>
           <Button
             variant={resolvedConfirmVariant}
-            onClick={onConfirm}
-            disabled={isLoading}
-            isLoading={isLoading}
+            onClick={handleConfirmClick}
+            disabled={bloqueado}
+            isLoading={bloqueado}
           >
             {confirmText}
           </Button>
