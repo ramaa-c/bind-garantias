@@ -43,6 +43,28 @@
   background: linear-gradient(135deg, rgba(56, 161, 105, 0.08) 0%, rgba(255, 255, 255, 0.01) 100%);
 }
 
+/* Se aplica un instante cuando un CDA se acaba de tildar/destildar y la
+   lista lo reordena, para que quede claro adónde se movió (ver
+   `recienTogglado` en CdaPanel.jsx). */
+.cdaCardJustMoved {
+  animation: cdaJustMovedPulse 1s ease-out;
+}
+
+@keyframes cdaJustMovedPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(76, 101, 230, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(76, 101, 230, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cdaCardJustMoved {
+    animation: none;
+  }
+}
+
 /* --- Checkbox custom --- */
 .checkboxWrapper {
   display: flex;

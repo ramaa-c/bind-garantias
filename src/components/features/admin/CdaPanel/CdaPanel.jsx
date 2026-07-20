@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiCheck, FiRotateCcw, FiSave, FiLock, FiEdit3, FiSearch, FiInfo } from "react-icons/fi";
 import { toast } from "sonner";
@@ -12,6 +12,22 @@ import { Spinner } from "../../../ui/Spinner/Spinner";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CdaPanel.module.css";
+
+// Busca, subiendo por los ancestros de `el`, el primer contenedor con scroll
+// PROPIO real (overflowY auto/scroll Y contenido más alto que su caja).
+// Se detiene antes de document.body: nunca deja que el scroll se le escape
+// al layout de la página (ver uso en el efecto de "recienTogglado" abajo).
+function encontrarContenedorScrolleable(el) {
+  let node = el.parentElement;
+  while (node && node !== document.body) {
+    const overflowY = getComputedStyle(node).overflowY;
+    if ((overflowY === "auto" || overflowY === "scroll") && node.scrollHeight > node.clientHeight) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return null;
+}
 
 // Edita los CDAs (checklist + valor por cadena) y la expresión de agrupación
 // lógica (AND/OR/personalizada) de UN GrupoCda puntual, identificado por la
@@ -126,6 +142,14 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
     }
   }, [grupoData]);
 
+  // Al tildar/destildar un CDA la lista se reordena (activos arriba de
+  // todo) — sin esto, el item desaparece de donde estaba y aparece en otro
+  // lado sin ningún indicio de qué pasó. Guardamos cuál fue el último
+  // tildado para, una vez que el re-render ya lo movió a su posición nueva,
+  // desplazar la vista hasta ahí y resaltarlo un instante.
+  const [recienTogglado, setRecienTogglado] = useState(null);
+  const cardRefs = useRef({});
+
   const handleToggleCda = (cdaId) => {
     setCdaConfigs(prev => ({
       ...prev,
@@ -134,7 +158,32 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         checked: !prev[cdaId]?.checked
       }
     }));
+    setRecienTogglado(cdaId);
   };
+
+  useEffect(() => {
+    if (recienTogglado === null) return;
+    const el = cardRefs.current[recienTogglado];
+    if (el) {
+      // OJO: `el.scrollIntoView()` nativo recorre TODOS los ancestros con
+      // overflow no-visible para decidir qué scrollear, y eso incluye a
+      // `.adminRoot` (overflow:hidden, pero igual "scrolleable" para el
+      // browser) — termina moviendo esa caja entera y tapando la navbar
+      // global, sin ninguna scrollbar visible para volver a subir. Por eso
+      // acá se scrollea a mano el contenedor scrolleable más cercano
+      // (`.rightCol` en desktop, `.adminContent` en mobile) y nunca se le
+      // pasa el trabajo al navegador.
+      const contenedor = encontrarContenedorScrolleable(el);
+      if (contenedor) {
+        const elRect = el.getBoundingClientRect();
+        const contRect = contenedor.getBoundingClientRect();
+        const offset = elRect.top - contRect.top - contenedor.clientHeight / 2 + elRect.height / 2;
+        contenedor.scrollBy({ top: offset, behavior: "smooth" });
+      }
+    }
+    const timer = setTimeout(() => setRecienTogglado(null), 1000);
+    return () => clearTimeout(timer);
+  }, [recienTogglado, cdaConfigs]);
 
   const handleValueChange = (cdaId, val) => {
     setCdaConfigs(prev => ({
@@ -572,7 +621,8 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
                   return (
                     <div
                       key={id}
-                      className={`${styles.cdaCard} ${isChecked ? styles.cdaCardChecked : ""}`}
+                      ref={(el) => { cardRefs.current[id] = el; }}
+                      className={`${styles.cdaCard} ${isChecked ? styles.cdaCardChecked : ""} ${recienTogglado === id ? styles.cdaCardJustMoved : ""}`}
                     >
                       {!hideCheckboxes && (
                         <div className={styles.checkboxWrapper} onClick={() => { if(!isReadOnly) handleToggleCda(id) }}>
