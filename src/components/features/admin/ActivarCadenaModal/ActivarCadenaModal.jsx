@@ -163,36 +163,40 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
 
         // Crear el GrupoCda de esta cadena para ambas pantallas, sembrado con
         // los CDAs marcados "CDA por Defecto" (todos unidos por AND).
-        try {
-          const todosCdas = await cdaService.obtenerTodosCdas();
-          const todosCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
-          const defaultCdas = todosCdasList.filter((c) => {
-            if (!esCdaActivo(c)) return false;
-            const flag = c.vinculadefaultcv ?? c.VinculaDefaultCV;
-            return String(flag) === "1" || String(flag).toUpperCase() === "S";
-          });
-
-          for (const pantalla of PANTALLAS_CDA) {
-            const pantallaGrupoCdaId = await cdaService.obtenerOCrearPantallaGrupoCda(pantalla.value);
-            const grupo = await cdaService.crearGrupoCda({
-              pantallagrupocdaid: pantallaGrupoCdaId,
-              cadenavalorid: payload.cadenavalorid,
-              expresionagrupacion: "",
+        if (!usuarioWebId) {
+          toast.warning("La cadena se activó, pero no se pudieron vincular los criterios de aceptación por defecto (no se identificó al usuario logueado). Vinculalos manualmente desde el panel de CDAs.");
+        } else {
+          try {
+            const todosCdas = await cdaService.obtenerTodosCdas();
+            const todosCdasList = Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || [];
+            const defaultCdas = todosCdasList.filter((c) => {
+              if (!esCdaActivo(c)) return false;
+              const flag = c.vinculadefaultcv ?? c.VinculaDefaultCV;
+              return String(flag) === "1" || String(flag).toUpperCase() === "S";
             });
 
-            if (defaultCdas.length > 0) {
-              await cadenaValorService.vincularCdasAGrupo({
-                grupocdaid: grupo?.grupocdaid,
-                listacda: defaultCdas.map((c) => ({
-                  cdaid: c.cdaid ?? c.CdaId ?? c.CdaID,
-                  valorcomparacion: c.valorcomparacion ?? c.ValorComparacion ?? "",
-                  usuariowebid: usuarioWebId,
-                })),
+            for (const pantalla of PANTALLAS_CDA) {
+              const pantallaGrupoCdaId = await cdaService.obtenerOCrearPantallaGrupoCda(pantalla.value);
+              const grupo = await cdaService.crearGrupoCda({
+                pantallagrupocdaid: pantallaGrupoCdaId,
+                cadenavalorid: payload.cadenavalorid,
+                expresionagrupacion: "",
               });
+
+              if (defaultCdas.length > 0) {
+                await cadenaValorService.vincularCdasAGrupo({
+                  grupocdaid: grupo?.grupocdaid,
+                  listacda: defaultCdas.map((c) => ({
+                    cdaid: c.cdaid ?? c.CdaId ?? c.CdaID,
+                    valorcomparacion: c.valorcomparacion ?? c.ValorComparacion ?? "",
+                    usuariowebid: usuarioWebId,
+                  })),
+                });
+              }
             }
+          } catch (grupoErr) {
+            console.error("Error al inicializar grupos de CDAs por defecto para la nueva cadena:", grupoErr);
           }
-        } catch (grupoErr) {
-          console.error("Error al inicializar grupos de CDAs por defecto para la nueva cadena:", grupoErr);
         }
 
         toast.success("Cadena de valor activada exitosamente para la web");

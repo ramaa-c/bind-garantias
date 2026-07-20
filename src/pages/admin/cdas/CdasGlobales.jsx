@@ -657,6 +657,10 @@ export default function CdasGlobales() {
   };
 
   const confirmarCreacion = async () => {
+    if (!usuarioWebId) {
+      toast.error("No se pudo identificar al usuario logueado; recargá la página e intentá de nuevo.");
+      return;
+    }
     setIsProcesando(true);
     const esEdicion = !!cdaEditando;
 
@@ -761,6 +765,10 @@ export default function CdasGlobales() {
 
   const confirmEliminarCda = async () => {
     if (!cdaEditando) return;
+    if (!usuarioWebId) {
+      toast.error("No se pudo identificar al usuario logueado; recargá la página e intentá de nuevo.");
+      return;
+    }
     setIsEliminando(true);
     try {
       // Ya no existe un DELETE físico: se "elimina" marcando activo="0", que
