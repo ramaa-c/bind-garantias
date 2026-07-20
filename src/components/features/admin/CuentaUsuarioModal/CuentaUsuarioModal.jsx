@@ -116,7 +116,10 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
   }, [isOpen, resetPasswordForm]);
 
   const onSubmitUsername = (formData) => {
-    if (!usuarioWebId) return;
+    if (!usuarioWebId) {
+      toast.error("No se pudo identificar al usuario logueado; recargá la página e intentá de nuevo.");
+      return;
+    }
     const denominacion = formData.denominacion.trim();
 
     actualizarUsuarioMutation.mutate(
@@ -144,7 +147,10 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
   };
 
   const onSubmitPassword = (formData) => {
-    if (!usuarioWebId) return;
+    if (!usuarioWebId) {
+      toast.error("No se pudo identificar al usuario logueado; recargá la página e intentá de nuevo.");
+      return;
+    }
 
     cambiarPasswordMutation.mutate(
       {

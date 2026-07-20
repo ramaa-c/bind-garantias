@@ -107,7 +107,7 @@ export const crearPayloadStatus = (ultimoStatus, cambios, usuarioWebId) => ({
   ...(ultimoStatus || {}),
   ...cambios,
   statusplataformaid: 0,
-  usuariowebid: usuarioWebId || 0,
+  usuariowebid: usuarioWebId,
   momento: generarMomentoActual(),
 });
 

@@ -395,6 +395,8 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
             socioid: socioId,
             momentocreacion: getCSharpIsoDate(),
           });
+        } else {
+          console.warn("No se pudo vincular el socio al usuario logueado: usuarioWebId no resolvió a tiempo.");
         }
 
         if (onSocioCreado) {

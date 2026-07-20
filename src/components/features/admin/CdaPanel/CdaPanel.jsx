@@ -226,6 +226,11 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   };
 
   const confirmSaveVinculacion = async () => {
+    if (!usuarioWebId) {
+      toast.error("No se pudo identificar al usuario logueado; recargá la página e intentá de nuevo.");
+      setConfirmOpen(false);
+      return;
+    }
     try {
       // El grupo puede no existir todavía (cadena activada antes de este
       // cambio de modelo): se crea recién acá, al guardar de verdad.
