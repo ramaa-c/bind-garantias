@@ -80,7 +80,13 @@ export function SociosLegajo({
   // Solo aplica fuera de modo admin (el badge de completitud tampoco se
   // muestra en admin, ver más abajo): reutiliza la misma validación que ya
   // decide si el legajo está completo, para no duplicar el criterio.
-  const { accionistasCompletos } = useValidacionLegajo();
+  const { accionistasCompletos, representantesCompletos, agentesBolsaCompletos } = useValidacionLegajo();
+
+  const completitudPorTab = {
+    accionistas: accionistasCompletos,
+    representantes: representantesCompletos,
+    agentesBolsa: agentesBolsaCompletos,
+  };
 
   const tabsDisponibles = useMemo(() => {
     let baseTabs = ESTRUCTURA_SOCIOS;
@@ -229,7 +235,7 @@ export function SociosLegajo({
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
                 {!adminMode && (requisitos?.relaciones?.[doc.key] === 1 ? (
-                  <span className={`${styles.reqBadge} ${isAccionistas && accionistasCompletos ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
+                  <span className={`${styles.reqBadge} ${completitudPorTab[doc.key] ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
                     Obligatorio
                   </span>
                 ) : (
