@@ -274,8 +274,11 @@ export const OnboardingGuard = ({ children }) => {
     } else if (estadoCda === "rechazado" || estadoCda === "pendiente") {
       // Cruzó el umbral (existe el socio, con datos reales) pero el CDA
       // todavía no está aprobado — no lo dejamos entrar a ningún lado
-      // salvo la pantalla de estado.
-      if (!isEstadoSolicitudPage) {
+      // salvo la pantalla de estado. Si todavía debe aceptar una versión
+      // nueva de TyC, no lo sacamos de /terminos (mismo motivo que el
+      // "else if" de más abajo: sin este guard, el check de arriba lo manda
+      // a /terminos y este lo rebota a /estado-solicitud en loop infinito).
+      if (!isEstadoSolicitudPage && !debeAceptarTerminos) {
         return (
           <Navigate
             to={`/${channelInfo.id}/estado-solicitud`}
@@ -289,7 +292,9 @@ export const OnboardingGuard = ({ children }) => {
       // se crea con el "umbral", el Paso 2 es lo que termina de cargar
       // datos como el teléfono). Lo mandamos directo a completarlo, sin
       // pasar de nuevo por Paso1Cuit (ese paso bloquearía por "ya existe").
-      if (!isAltaDatosPage) {
+      // Mismo guard que arriba: si debe aceptar TyC nuevos, que se quede en
+      // /terminos en vez de rebotar en loop hacia alta-datos-empresa.
+      if (!isAltaDatosPage && !debeAceptarTerminos) {
         return (
           <Navigate
             to={`/${channelInfo.id}/alta-datos-empresa`}
@@ -299,7 +304,7 @@ export const OnboardingGuard = ({ children }) => {
         );
       }
     } else if (
-      isTerminosPage ||
+      (isTerminosPage && !debeAceptarTerminos) ||
       isAltaDatosPage ||
       isSeleccionarEmpresaPage ||
       isInicioPage ||
