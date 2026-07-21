@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { FiBriefcase, FiShield, FiZap, FiCheckCircle } from "react-icons/fi";
 import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
 import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
+import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { sociosService } from "../../../../services/sociosService";
 import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
@@ -12,12 +13,18 @@ import { useObtenerPorCadenaValorIdWeb } from "../../../../hooks/useCadenaValor"
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
 import { useAuthStore } from "../../../../store/useAuthStore";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import styles from "./Paso1Cuit.module.css";
 
 import { useVendor } from "../../../../hooks/useVendor";
 
 const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
+
+const formatearCuit = (cuit) => {
+  const limpio = String(cuit || "").replace(/\D/g, "");
+  if (limpio.length !== 11) return cuit || "";
+  return `${limpio.slice(0, 2)}-${limpio.slice(2, 10)}-${limpio.slice(10)}`;
+};
 
 // ⚠️ TEMPORAL (17/7/2026): CASFOG está caído y hay que hacer una demo — se
 // desactiva en silencio el chequeo de Certificado PyME (no muestra error,
@@ -27,6 +34,7 @@ const BYPASS_PYME_TEMPORAL = true;
 
 export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }) {
   const { cadenaSlug } = useParams();
+  const navigate = useNavigate();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const { control, getValues, setValue, setError, clearErrors } =
     useFormContext();
@@ -54,6 +62,29 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
     isSystemError: false,
   });
 
+  // ⚠️ SEGURIDAD: una vez creado+vinculado el Socio (ver "UMBRAL" más abajo)
+  // el CUIT queda fijo para siempre en este intento. Antes de este cambio,
+  // si el CDA rechazaba después de ese punto, el input de CUIT seguía
+  // habilitado y el usuario podía probar con otro — dejando un segundo
+  // Socio+SocioUsuario vinculado al mismo usuario (confirmado en pruebas:
+  // permite ir probando CUITs hasta encontrar uno que pase el CDA, y de
+  // paso deja el usuario vinculado a más de un socio a la vez, algo que el
+  // resto de la app no contempla — ver empresaActual = listaEmpresas[0] en
+  // OnboardingGuard). thresholdCruzado bloquea el input/botón apenas el
+  // socio existe de verdad; socioIdCreadoRef evita que un reintento (ej.
+  // tras un error transitorio de sistema en el CDA) vuelva a crear/vincular
+  // el socio. cdaRechazoEstado guarda a qué pantalla de estado mandar al
+  // usuario al cerrar el modal de error (misma regla que OnboardingGuard).
+  const [thresholdCruzado, setThresholdCruzado] = useState(false);
+  const [cdaRechazoEstado, setCdaRechazoEstado] = useState(null);
+  const socioIdCreadoRef = useRef(null);
+  const cuitEnProcesoRef = useRef("");
+
+  const [confirmVinculacion, setConfirmVinculacion] = useState({
+    isOpen: false,
+    cuit: "",
+  });
+
   const cuitValue = useWatch({ control, name: "cuit" });
 
   useEffect(() => {
@@ -64,6 +95,15 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
 
   const isCuitValid = !errors.cuit && dirtyFields.cuit;
 
+  // ── FASE 1: chequeo rápido de existencia. Corre ANTES de avisarle al
+  // usuario que el CUIT quedará vinculado — si ya está tomado (por él mismo
+  // o por otro usuario/email en SGRPlus), no tiene sentido pedirle
+  // confirmación de nada, así que se lo bloquea directo como ya hacía este
+  // código. Todavía no se creó ningún Socio: si esto no bloquea, lo único
+  // que sigue es mostrar el aviso de vinculación (ver confirmVinculacion
+  // más abajo) — recién ahí, si el usuario confirma, arranca
+  // continuarValidacionCompleta con el resto de las validaciones y el
+  // POST que cruza el umbral.
   const handleValidar = async () => {
     const cuit = getValues("cuit");
     if (!cuit) return;
@@ -71,7 +111,152 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
     clearErrors("cuit");
     setIsValidatingSocio(true);
 
-    // Abrimos el ProcesamientoModal
+    try {
+      const sociosWebEncontrados = await sociosService.obtenerSocios({
+        Cuit: cuit,
+      });
+
+      if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
+        if (onSocioExistente) {
+          onSocioExistente(sociosWebEncontrados[0], "ya_existe");
+        }
+        return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
+      }
+
+      // Si no está en la web, verificamos si existe históricamente en SGRPlus Core
+      const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus({
+        Cuit: cuit,
+      });
+
+      if (sociosSgrEncontrados && sociosSgrEncontrados.length > 0 && !isVendor) {
+        const socioSgrExistente = sociosSgrEncontrados[0];
+        const socioEmailStr = socioSgrExistente.email
+          ? socioSgrExistente.email.trim()
+          : "";
+        const currentUserEmail = user?.email ? user.email.trim() : "";
+
+        if (
+          socioEmailStr &&
+          currentUserEmail &&
+          socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
+        ) {
+          if (onSocioExistente) {
+            onSocioExistente(socioSgrExistente, "email_mismatch");
+          }
+          return; // Bloquea al usuario normal porque el email de SGRPlus no coincide
+        }
+        // Si es vendor, o si es un usuario normal y el email SÍ coincide,
+        // no hacemos return. Dejamos que el flujo continúe.
+      }
+    } catch (errorSocios) {
+      console.warn(
+        "Error consultando socios para validación de existencia:",
+        errorSocios,
+      );
+    } finally {
+      setIsValidatingSocio(false);
+    }
+
+    // Nada bloqueó: antes de crear y vincular el socio de verdad, avisamos
+    // que la decisión es irreversible para este intento.
+    cuitEnProcesoRef.current = cuit;
+    setConfirmVinculacion({ isOpen: true, cuit });
+  };
+
+  // Corre el CDA de PANTALLA_INGRESO_CUIT y cierra el modal. Se usa tanto
+  // en el camino normal (recién cruzado el umbral) como en un reintento
+  // post-umbral tras un error de sistema — nunca vuelve a tocar
+  // crearSocio/vincularSocioUsuario.
+  const ejecutarCdaYFinalizar = async (cuit) => {
+    setProcesoModal((prev) => ({
+      ...prev,
+      hasError: false,
+      isSystemError: false,
+      pasos: prev.pasos.map((p) =>
+        p.id === "cda" ? { ...p, estado: "cargando" } : p,
+      ),
+    }));
+
+    // ── 7. VALIDACIÓN CDA (PANTALLA_INGRESO_CUIT) — corre contra un
+    // socio que ya existe con datos reales. Si no pasa (rechazo 406 o
+    // pendiente 409 por integración caída), el historial ya queda
+    // asociado a este SocioID sin que hagamos nada especial acá: el
+    // admin puede verlo y re-ejecutarlo desde EmpresaDetalle.
+    const resultCda = await ejecutarValidaciones(
+      "PANTALLA_INGRESO_CUIT",
+      cuit,
+      cadenaValorIdParam,
+      usuarioWebId,
+    );
+
+    if (!resultCda.success) {
+      const esErrorSistema = resultCda.errors.some((e) => e.isSystemError);
+      const esPendiente = resultCda.errors.some((e) => e.isPendiente);
+
+      // Rechazo de negocio real (o pendiente por integración caída): a
+      // partir de acá NO hay vuelta atrás para este intento. El input de
+      // CUIT ya está bloqueado (thresholdCruzado), y al cerrar el modal de
+      // error lo mandamos directo a /estado-solicitud — la misma pantalla
+      // (y la misma regla) que usaría OnboardingGuard en el próximo
+      // ingreso. Nunca lo dejamos "Aceptar" hacia un Paso1 editable.
+      if (!esErrorSistema) {
+        setCdaRechazoEstado(esPendiente ? "pendiente" : "rechazado");
+      }
+
+      setProcesoModal((prev) => ({
+        ...prev,
+        hasError: true,
+        isSystemError: esErrorSistema,
+        pasos: prev.pasos.map((p) =>
+          p.id === "cda"
+            ? {
+                ...p,
+                estado: esPendiente ? "alerta" : "error",
+                errores: resultCda.errors.map((e) => e.message),
+                error:
+                  resultCda.errors.find((e) => e.isInvalidante)?.message ||
+                  "Error en validación CDA",
+              }
+            : p,
+        ),
+      }));
+      return;
+    }
+
+    // Todo exitoso! Marcamos CDA como completado
+    setProcesoModal((prev) => ({
+      ...prev,
+      pasos: prev.pasos.map((p) =>
+        p.id === "cda" ? { ...p, estado: "completado" } : p,
+      ),
+    }));
+
+    setTimeout(() => {
+      setProcesoModal({
+        isOpen: false,
+        titulo: "",
+        pasos: [],
+        hasError: false,
+        isSystemError: false,
+      });
+      if (onValidar) onValidar();
+    }, 800);
+  };
+
+  // ── FASE 2: el usuario ya confirmó que este es el CUIT correcto. A
+  // partir de acá corre todo lo que antes pasaba de una — SGRPlus Core,
+  // Certificado PyME, Nosis/AFIP/LUFE, el POST que cruza el umbral y el
+  // CDA. Si socioIdCreadoRef ya tiene un valor (reintento de un error de
+  // sistema del CDA post-umbral), nos salteamos directo a re-ejecutar el
+  // CDA: el socio ya existe y ya está vinculado, no hay que volver a
+  // crearlo/vincularlo.
+  const continuarValidacionCompleta = async () => {
+    const cuit = cuitEnProcesoRef.current;
+    if (!cuit) return;
+
+    const yaCruzoUmbral = !!socioIdCreadoRef.current;
+    setIsValidatingSocio(true);
+
     setProcesoModal({
       isOpen: true,
       titulo: "Validando Empresa",
@@ -79,26 +264,26 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
         {
           id: "sgrcore",
           etiqueta: "Validando con SGRPlus",
-          estado: "cargando",
+          estado: yaCruzoUmbral ? "completado" : "cargando",
           descripcion: "Verificando estado del socio en el sistema core.",
         },
         {
           id: "pyme",
           etiqueta: "Verificando Certificado PyME",
-          estado: "pendiente",
+          estado: yaCruzoUmbral ? "completado" : "pendiente",
           descripcion: "Comprobando la vigencia del certificado PyME.",
         },
         {
           id: "afip",
           etiqueta: "Consultando padrón",
-          estado: "pendiente",
+          estado: yaCruzoUmbral ? "completado" : "pendiente",
           descripcion:
             "Obteniendo los datos de la empresa desde el padrón federal/bureau en tiempo real.",
         },
         {
           id: "cda",
           etiqueta: "Ejecutando validaciones CDA",
-          estado: "pendiente",
+          estado: yaCruzoUmbral ? "cargando" : "pendiente",
           descripcion:
             "Comprobando políticas de riesgo y negocio para el alta.",
         },
@@ -108,67 +293,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
     });
 
     try {
-      // ── 1. SOCIO EXISTENTE: acordado con backend que el POST a Socio (con
-      // datos reales) pasa a hacerse ANTES del CDA, más abajo — así que a
-      // partir de este cambio, si el CUIT ya figura en Socios, es siempre
-      // un registro real. Ya no hace falta distinguir "vacío" de "con
-      // datos": bloqueamos directo, sin gastar las llamadas a AFIP/SGRPlus/CDA.
-      try {
-        const sociosWebEncontrados = await sociosService.obtenerSocios({
-          Cuit: cuit,
-        });
-
-        if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
-          setProcesoModal({
-            isOpen: false,
-            titulo: "",
-            pasos: [],
-            hasError: false,
-            isSystemError: false,
-          });
-          if (onSocioExistente) {
-            onSocioExistente(sociosWebEncontrados[0], "ya_existe");
-          }
-          return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
-        }
-
-        // Si no está en la web, verificamos si existe históricamente en SGRPlus Core
-        const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus(
-          { Cuit: cuit },
-        );
-
-        if (sociosSgrEncontrados && sociosSgrEncontrados.length > 0 && !isVendor) {
-          const socioSgrExistente = sociosSgrEncontrados[0];
-          const socioEmailStr = socioSgrExistente.email
-            ? socioSgrExistente.email.trim()
-            : "";
-          const currentUserEmail = user?.email ? user.email.trim() : "";
-
-          if (
-            socioEmailStr &&
-            currentUserEmail &&
-            socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
-          ) {
-            setProcesoModal({
-              isOpen: false,
-              titulo: "",
-              pasos: [],
-              hasError: false,
-              isSystemError: false,
-            });
-            if (onSocioExistente) {
-              onSocioExistente(socioSgrExistente, "email_mismatch");
-            }
-            return; // Bloquea al usuario normal porque el email de SGRPlus no coincide
-          }
-          // Si es vendor, o si es un usuario normal y el email SÍ coincide,
-          // no hacemos return. Dejamos que el flujo continúe.
-        }
-      } catch (errorSocios) {
-        console.warn(
-          "Error consultando socios para validación de existencia:",
-          errorSocios,
-        );
+      if (yaCruzoUmbral) {
+        await ejecutarCdaYFinalizar(cuit);
+        return;
       }
 
       // ── 2. VALIDACIÓN SGRPlus Core — corre antes del Certificado PyME y
@@ -389,6 +516,13 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
           return;
         }
 
+        // ── UMBRAL cruzado de verdad: el socio ya existe en el backend.
+        // Bloqueamos el CUIT ACÁ, antes de intentar vincularlo o correr el
+        // CDA — si cualquiera de esos dos pasos falla, ya no hay forma de
+        // "empezar de nuevo" con otro CUIT sin dejar un socio duplicado.
+        socioIdCreadoRef.current = socioId;
+        setThresholdCruzado(true);
+
         if (usuarioWebId) {
           await sociosService.vincularSocioUsuario({
             usuariowebid: usuarioWebId,
@@ -411,57 +545,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
           ),
         }));
 
-        // ── 7. VALIDACIÓN CDA (PANTALLA_INGRESO_CUIT) — corre contra un
-        // socio que ya existe con datos reales. Si no pasa (rechazo 406 o
-        // pendiente 409 por integración caída), el historial ya queda
-        // asociado a este SocioID sin que hagamos nada especial acá: el
-        // admin puede verlo y re-ejecutarlo desde EmpresaDetalle.
-        const resultCda = await ejecutarValidaciones(
-          "PANTALLA_INGRESO_CUIT",
-          cuit,
-          cadenaValorIdParam,
-          usuarioWebId,
-        );
-
-        if (!resultCda.success) {
-          setProcesoModal((prev) => ({
-            ...prev,
-            hasError: true,
-            isSystemError: resultCda.errors.some((e) => e.isSystemError),
-            pasos: prev.pasos.map((p) =>
-              p.id === "cda"
-                ? {
-                    ...p,
-                    estado: resultCda.errors.some((e) => e.isPendiente) ? "alerta" : "error",
-                    errores: resultCda.errors.map((e) => e.message),
-                    error:
-                      resultCda.errors.find((e) => e.isInvalidante)?.message ||
-                      "Error en validación CDA",
-                  }
-                : p,
-            ),
-          }));
-          return;
-        }
-
-        // Todo exitoso! Marcamos CDA como completado
-        setProcesoModal((prev) => ({
-          ...prev,
-          pasos: prev.pasos.map((p) =>
-            p.id === "cda" ? { ...p, estado: "completado" } : p,
-          ),
-        }));
-
-        setTimeout(() => {
-          setProcesoModal({
-            isOpen: false,
-            titulo: "",
-            pasos: [],
-            hasError: false,
-            isSystemError: false,
-          });
-          if (onValidar) onValidar();
-        }, 800);
+        await ejecutarCdaYFinalizar(cuit);
       } else {
         setProcesoModal((prev) => ({
           ...prev,
@@ -516,6 +600,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
           esValido={isCuitValid}
           buttonText="VALIDAR CUIT"
           isLoading={isLoading}
+          disabled={thresholdCruzado}
         />
       </div>
 
@@ -537,16 +622,43 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
         pasos={procesoModal.pasos}
         hasError={procesoModal.hasError}
         isSystemError={procesoModal.isSystemError}
-        onClose={() =>
+        onClose={() => {
+          // Post-umbral no hay "Aceptar y quedarse acá": el socio ya existe
+          // (haya pasado el CDA o no) y el CUIT ya está bloqueado, así que
+          // lo mandamos a la misma pantalla de estado que usaría
+          // OnboardingGuard en el próximo ingreso. Si el error fue un
+          // hiccup transitorio de sistema (sin rechazo de negocio
+          // confirmado) usamos "pendiente" como default seguro: no hay
+          // vuelta a un Paso1 editable en ningún caso.
+          if (thresholdCruzado) {
+            navigate(`/${cadenaSlug}/estado-solicitud`, {
+              state: { estado: cdaRechazoEstado || "pendiente" },
+              replace: true,
+            });
+            return;
+          }
           setProcesoModal({
             isOpen: false,
             titulo: "",
             pasos: [],
             hasError: false,
             isSystemError: false,
-          })
-        }
-        onRetry={handleValidar}
+          });
+        }}
+        onRetry={continuarValidacionCompleta}
+      />
+
+      <ConfirmacionModal
+        isOpen={confirmVinculacion.isOpen}
+        onClose={() => setConfirmVinculacion({ isOpen: false, cuit: "" })}
+        onConfirm={() => {
+          setConfirmVinculacion({ isOpen: false, cuit: "" });
+          continuarValidacionCompleta();
+        }}
+        titulo="Confirmá el CUIT de tu empresa"
+        mensaje={`El CUIT ${formatearCuit(confirmVinculacion.cuit)} va a quedar vinculado a tu usuario. Una vez que confirmes, no vas a poder modificarlo — asegurate de que sea el correcto antes de continuar.`}
+        confirmText="Confirmar y continuar"
+        cancelText="Volver a revisar"
       />
     </div>
   );
