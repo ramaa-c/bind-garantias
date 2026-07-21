@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useFormContext, useFormState, Controller } from "react-hook-form";
 import { FiCalendar } from "react-icons/fi";
@@ -38,10 +38,9 @@ export const SelectFecha = ({
   // en un panel con overflow:auto/hidden (ej. el visor de DocumentosLegajo),
   // un calendario `position: absolute` normal queda cortado por ese
   // ancestro sin importar si abre para arriba o para abajo. Con Portal +
-  // `position: fixed` (ver popoverStyle) el calendario deja de depender del
-  // overflow de ningún contenedor padre.
+  // `position: fixed` el calendario deja de depender del overflow de ningún
+  // contenedor padre.
   const popoverRef = useRef(null);
-  const [popoverStyle, setPopoverStyle] = useState(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -56,33 +55,52 @@ export const SelectFecha = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (!isCalendarOpen) return;
+  // La posición se calcula midiendo el popover ya montado (alto real de
+  // react-day-picker, que varía según el mes/los dropdowns de año) y se
+  // aplica mutando el estilo directamente en vez de por React state: así no
+  // hace falta un segundo render para reposicionar y no hay flash en la
+  // posición equivocada. `placement` es una preferencia, no una garantía —
+  // si el lado pedido no entra entero se abre para el que tenga más
+  // espacio, y el resultado siempre se clampea contra los bordes del
+  // viewport para que el calendario nunca quede ni cortado ni fuera de
+  // pantalla, sea cual sea el tamaño de ventana o zoom.
+  useLayoutEffect(() => {
+    if (!isCalendarOpen) return undefined;
 
-    const actualizarPosicion = () => {
-      const rect = calendarRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      if (placement === "top") {
-        setPopoverStyle({
-          position: "fixed",
-          left: rect.left,
-          bottom: window.innerHeight - rect.top + 6,
-        });
-      } else {
-        setPopoverStyle({
-          position: "fixed",
-          left: rect.left,
-          top: rect.bottom + 6,
-        });
-      }
+    const MARGEN = 8;
+    const GAP = 6;
+
+    const posicionarPopover = () => {
+      const trigger = calendarRef.current;
+      const popover = popoverRef.current;
+      if (!trigger || !popover) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const altoPopover = popover.offsetHeight;
+      const anchoPopover = popover.offsetWidth;
+
+      const espacioArriba = rect.top;
+      const espacioAbajo = window.innerHeight - rect.bottom;
+      const prefiereArriba = placement === "top";
+      const abreArriba = prefiereArriba
+        ? espacioArriba >= altoPopover + MARGEN || espacioArriba >= espacioAbajo
+        : espacioAbajo < altoPopover + MARGEN && espacioArriba > espacioAbajo;
+
+      const topIdeal = abreArriba ? rect.top - GAP - altoPopover : rect.bottom + GAP;
+      const top = Math.max(MARGEN, Math.min(topIdeal, window.innerHeight - altoPopover - MARGEN));
+      const left = Math.max(MARGEN, Math.min(rect.left, window.innerWidth - anchoPopover - MARGEN));
+
+      popover.style.top = `${top}px`;
+      popover.style.left = `${left}px`;
+      popover.style.visibility = "visible";
     };
 
-    actualizarPosicion();
-    window.addEventListener("scroll", actualizarPosicion, true);
-    window.addEventListener("resize", actualizarPosicion);
+    posicionarPopover();
+    window.addEventListener("scroll", posicionarPopover, true);
+    window.addEventListener("resize", posicionarPopover);
     return () => {
-      window.removeEventListener("scroll", actualizarPosicion, true);
-      window.removeEventListener("resize", actualizarPosicion);
+      window.removeEventListener("scroll", posicionarPopover, true);
+      window.removeEventListener("resize", posicionarPopover);
     };
   }, [isCalendarOpen, placement]);
 
@@ -182,12 +200,12 @@ export const SelectFecha = ({
               <span className={styles.errorMsg}>{errorDisplay}</span>
             )}
 
-            {isCalendarOpen && popoverStyle &&
+            {isCalendarOpen &&
               createPortal(
                 <div
                   ref={popoverRef}
                   className={`${styles.calendarPopover} ${styles.calendarPopoverPortal} ${placement === "top" ? styles.placementTop : ""}`}
-                  style={popoverStyle}
+                  style={{ position: "fixed" }}
                 >
                   <DayPicker
                     mode="single"

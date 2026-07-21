@@ -1,9 +1,5 @@
 /* POPOVER */
 .calendarPopover {
-  position: absolute;
-  top: calc(100% - 0.5rem); /* Open downwards, slightly below the input text */
-  right: 0; /* Align right to prevent horizontal overflow */
-  z-index: 50;
   background-color: #0d1117;
   border: 1px solid #30363d;
   border-radius: 0.875rem;
@@ -14,9 +10,18 @@
   animation: popoverIn 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Se renderiza vía Portal a document.body: el `style` inline solo pone
+   position:fixed, top/left los mide y aplica el useLayoutEffect ya con el
+   tamaño real del popover montado. Arranca invisible (visibility, no
+   display: así se lo puede medir con offsetHeight/offsetWidth) para que ese
+   primer pase sin posicionar no se llegue a ver. z-index por sobre el de
+   Modal (9999), para que no quede tapado si el campo se usa en una modal. */
+.calendarPopoverPortal {
+  visibility: hidden;
+  z-index: 10000;
+}
+
 .calendarPopover.placementTop {
-  top: auto;
-  bottom: calc(100% + 6px);
   animation: popoverInTop 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
