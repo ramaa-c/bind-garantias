@@ -108,9 +108,15 @@ export const AltaDatosEmpresa = () => {
   // ejecutar el CDA — no acá. Para cuando el usuario llega al Paso 2, el
   // socio ya existe; el submit acá abajo siempre completa ese mismo
   // registro (PUT), nunca crea uno nuevo.
-  const [socioId, setSocioId] = useState(
-    socioParaCompletar?.socioid ?? socioParaCompletar?.SocioID ?? null,
-  );
+  // Number(...): socioParaCompletar.socioid viene de GET /Socio/{id}
+  // (useEmpresasCompletas), un endpoint distinto del que arma la queryKey
+  // que observa OnboardingGuard (ver Number() en useEmpresasCompletas,
+  // useSocios.js) — sin normalizar acá, invalidateQueries más abajo puede no
+  // calzar con esa queryKey y el guard sigue viendo el socio sin teléfono.
+  const [socioId, setSocioId] = useState(() => {
+    const id = socioParaCompletar?.socioid ?? socioParaCompletar?.SocioID ?? null;
+    return id !== null && id !== undefined ? Number(id) : null;
+  });
 
   const user = useAuthStore((state) => state.user);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
@@ -442,7 +448,7 @@ export const AltaDatosEmpresa = () => {
           onSocioExistente={(socioData, reason) =>
             setSocioExistenteModal({ isOpen: true, socioData, reason })
           }
-          onSocioCreado={setSocioId}
+          onSocioCreado={(id) => setSocioId(Number(id))}
         />
       );
     }
