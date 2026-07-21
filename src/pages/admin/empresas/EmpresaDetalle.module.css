@@ -266,8 +266,15 @@
 }
 
 /* ── DATOS TAB ───────────────────────────────────────────── */
+/* max-height (no height fijo): con height:100% la card siempre ocupaba todo
+   el alto disponible del tab aunque los campos ocupen menos, dejando un
+   hueco vacío entre las cards y el footer de Guardar/Revertir (se nota más
+   mientras más "sobre" quede ese alto disponible, ej. con zoom < 100%). Así
+   la card se achica al contenido real y el footer queda pegado abajo de los
+   campos; si el contenido no entra, sigue topeando en el mismo límite y
+   .datosScroll scrollea internamente como antes. */
 .datosTab {
-  height: 100%;
+  max-height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;

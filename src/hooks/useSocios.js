@@ -25,7 +25,7 @@ export const useObtenerSocios = (params = {}) => {
 
 export const useSocioPorId = (socioId) => {
   return useQuery({
-    queryKey: ["socios", "detalle", socioId],
+    queryKey: ["socios", "detalle", Number(socioId)],
     queryFn: () => sociosService.obtenerSocioPorId(socioId),
     enabled: !!socioId,
     staleTime: 1000 * 60 * 5, // 5 minutos
@@ -61,7 +61,7 @@ export const useActualizarSocio = () => {
           variables.socioid &&
             queryClient
               .invalidateQueries({
-                queryKey: ["socios", "detalle", variables.socioid],
+                queryKey: ["socios", "detalle", Number(variables.socioid)],
               })
               .catch(() => {}),
         ].filter(Boolean),
@@ -100,9 +100,16 @@ export const useSocioWebPorId = (socioId) => {
 // empresa completa.
 export const useEmpresasCompletas = (socioUsuarios) => {
   const lista = Array.isArray(socioUsuarios) ? socioUsuarios : [];
+  // Number(...) acá es crítico: distintos endpoints (SocioUsuario, Socio,
+  // POST /Socio) no son consistentes serializando este ID (a veces number, a
+  // veces string numérico). Si no se normaliza, la queryKey que arma este
+  // hook (la que realmente queda cacheada/observada por OnboardingGuard)
+  // puede no calzar con la que usa AltaDatosEmpresa.jsx al invalidar tras el
+  // PUT del Paso 2 — el invalidateQueries queda mudo, el guard sigue leyendo
+  // el socio viejo (sin teléfono) y rebota de nuevo al Paso 2.
   const socioIds = lista
-    .map((s) => s.socioid ?? s.SocioID ?? s.SocioId)
-    .filter((id) => id !== undefined && id !== null);
+    .map((s) => Number(s.socioid ?? s.SocioID ?? s.SocioId))
+    .filter((id) => !Number.isNaN(id));
 
   const resultados = useQueries({
     queries: socioIds.map((socioId) => ({
