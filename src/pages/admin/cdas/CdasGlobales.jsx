@@ -7,7 +7,7 @@ import { useCrearCda, useActualizarCda, useObtenerTodosCdas, useProbarCda } from
 import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
 import { cadenaValorService } from "../../../services/cadenaValorService";
 import { INTEGRACIONES_MOCKS } from "../../../utils/integracionesMocks";
-import { esCdaActivo } from "../../../utils/cdaUtils";
+import { esCdaActivo, esCdaActivoEstricto } from "../../../utils/cdaUtils";
 import { resolverGrupoCda } from "../../../utils/grupoCdaUtils";
 import { PANTALLAS_CDA } from "../../../utils/pantallasCda";
 import { Button } from "../../../components/ui/Button/Button";
@@ -346,8 +346,7 @@ export default function CdasGlobales() {
   // A diferencia de esCdaActivo (que tolera "" para no romper la vinculación
   // de CDAs migrados que ya estaban linkeados), esta lista es estricta:
   // solo se muestran los CDA con Activo="1" explícito. Uno en "0" o vacío
-  // (dato migrado sin completar) no aparece.
-  const esCdaActivoEstricto = (c) => String(c?.activo ?? c?.Activo ?? "") === "1";
+  // (dato migrado sin completar) no aparece. Mismo criterio que CdaPanel.
   const todosCdasList = (Array.isArray(todosCdasData) ? todosCdasData : todosCdasData?.items || todosCdasData?.data || []).filter(esCdaActivoEstricto);
 
   const getCdaId = (c) => {

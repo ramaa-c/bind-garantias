@@ -16,6 +16,7 @@ import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
 import Spinner from "../../../ui/Spinner/Spinner";
+import { MigracionExitosaModal } from "../MigracionExitosaModal/MigracionExitosaModal";
 import styles from "./LegajoUniversalBar.module.css";
 
 export function LegajoUniversalBar({ context }) {
@@ -36,10 +37,12 @@ export function LegajoUniversalBar({ context }) {
     faltanLegajo,
     archivosBackend,
     socioLegajoData,
+    tipoPersonaId,
   } = useValidacionLegajo();
 
   const [isMigrating, setIsMigrating] = useState(false);
   const [lastAttemptedFingerprint, setLastAttemptedFingerprint] = useState("");
+  const [showMigracionExitosa, setShowMigracionExitosa] = useState(false);
 
   const fingerprint = useMemo(() => {
     if (!socioIdActivo || isLoading) return "";
@@ -127,10 +130,10 @@ export function LegajoUniversalBar({ context }) {
         const response = await sociosService.enviarASgrPlus(socioIdActivo);
         console.log(`[LegajoUniversalBar] Respuesta de migración:`, response);
         if (response.success) {
-          toast.success("¡Legajo sincronizado con SGR+!", {
-            id: toastId,
-            description: "Los cambios se guardaron y migraron con éxito.",
-          });
+          // El toast pasaba desapercibido para un momento que el usuario
+          // necesita notar sí o sí: se reemplaza por una modal más visible.
+          toast.dismiss(toastId);
+          setShowMigracionExitosa(true);
           localStorage.setItem(localStorageKey, fingerprint);
           setMigratedFingerprint(fingerprint);
           console.log(`[LegajoUniversalBar] Migración exitosa. Guardada huella:`, fingerprint);
@@ -163,8 +166,18 @@ export function LegajoUniversalBar({ context }) {
     (context === "legajo" && totalLegajoObligatorios > 0) ||
     !context;
 
+  // Se renderiza sin importar si la barra decide ocultarse en este contexto:
+  // la migración puede completarse en cualquier momento y el aviso tiene que
+  // verse sí o sí, no solo cuando la barra también está visible.
+  const migracionExitosaModal = (
+    <MigracionExitosaModal
+      isOpen={showMigracionExitosa}
+      onClose={() => setShowMigracionExitosa(false)}
+    />
+  );
+
   if (isLoading || totalRequisitos === 0 || !hasMandatoryInContext) {
-    return null;
+    return migracionExitosaModal;
   }
 
   const isContextInvalid =
@@ -190,11 +203,14 @@ export function LegajoUniversalBar({ context }) {
     if (faltanLegajo && !faltanDocumentos) {
       const textErrores = errores.join(" ").toLowerCase();
       const faltanAcc = textErrores.includes("accionista") || textErrores.includes("participación");
-      const faltanRep = textErrores.includes("representante");
-      
-      if (faltanAcc && faltanRep) return "Te falta completar datos de accionistas y representantes legales.";
+      const faltanRep = textErrores.includes("representante") || textErrores.includes("apoderado");
+      // Persona Física llama "Apoderado" a lo que en Jurídica es
+      // "Representante Legal" (mismo dato, ver useValidacionLegajo).
+      const etiquetaRep = Number(tipoPersonaId) === 1 ? "apoderado" : "representantes legales";
+
+      if (faltanAcc && faltanRep) return `Te falta completar datos de accionistas y ${etiquetaRep}.`;
       if (faltanAcc) return "Te falta completar datos o documentos de los accionistas obligatorios.";
-      if (faltanRep) return "Te falta completar datos de los representantes legales.";
+      if (faltanRep) return `Te falta completar datos de ${etiquetaRep === "apoderado" ? "tu apoderado" : "los representantes legales"}.`;
       return "Te falta completar algunos datos requeridos del legajo.";
     }
 
@@ -206,7 +222,9 @@ export function LegajoUniversalBar({ context }) {
   };
 
   return (
-    <div className={`${styles.container} ${isValid ? styles.containerValid : (isContextInvalid ? styles.containerInvalid : "")}`}>
+    <>
+      {migracionExitosaModal}
+      <div className={`${styles.container} ${isValid ? styles.containerValid : (isContextInvalid ? styles.containerInvalid : "")}`}>
       <div className={styles.barHeader}>
         <div className={styles.statusInfo}>
           <div className={styles.circularProgressWrapper}>
@@ -277,7 +295,8 @@ export function LegajoUniversalBar({ context }) {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 

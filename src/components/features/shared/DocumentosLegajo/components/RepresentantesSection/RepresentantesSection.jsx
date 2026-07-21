@@ -21,6 +21,7 @@ export function RepresentantesSection({
   handleEliminarRelacion,
   cargarSocios,
   socioIdActivo,
+  tipoPersonaId,
 }) {
   const [modalRepresentanteOpen, setModalRepresentanteOpen] = useState(false);
   const [editRepresentante, setEditRepresentante] = useState(null);
@@ -28,6 +29,11 @@ export function RepresentantesSection({
   const [portalTarget, setPortalTarget] = useState(null);
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
+  // Persona Física llama "Apoderado" a este rol (mismo dato, ver
+  // RepresentanteModal/useValidacionLegajo). Solo cambia el texto genérico
+  // de la sección: el badge de cada fila ya distingue por rolId aparte.
+  const esPersonaFisica = Number(tipoPersonaId) === 1;
+  const etiqueta = esPersonaFisica ? "Apoderado" : "Representante";
 
   useEffect(() => {
     setPortalTarget(document.getElementById("socios-header-action-portal"));
@@ -39,7 +45,7 @@ export function RepresentantesSection({
         <div className={styles.emptySlot} style={{ display: "flex", flexDirection: "column", gap: "0.875rem", padding: "2rem" }}>
           <Spinner size={36} />
           <p className={styles.emptyTitle} style={{ margin: 0 }}>
-            Cargando representantes legales...
+            Cargando {esPersonaFisica ? "apoderado" : "representantes legales"}...
           </p>
         </div>
       ) : (
@@ -53,7 +59,7 @@ export function RepresentantesSection({
                 setModalRepresentanteOpen(true);
               }}
             >
-              <FiPlus size={14} /> Agregar Representante
+              <FiPlus size={14} /> Agregar {etiqueta}
             </button>,
             portalTarget
           )}
@@ -64,10 +70,10 @@ export function RepresentantesSection({
               style={{ minHeight: "6rem", padding: "1.5rem" }}
             >
               <p className={styles.emptyTitle}>
-                Sin representantes registrados
+                Sin {esPersonaFisica ? "apoderado registrado" : "representantes registrados"}
               </p>
               <span className={styles.emptyText}>
-                Haga click en "Agregar Representante" para dar de alta.
+                Haga click en "Agregar {etiqueta}" para dar de alta.
               </span>
             </div>
           ) : (
@@ -120,7 +126,7 @@ export function RepresentantesSection({
                           setEditRepresentante(rep);
                           setModalRepresentanteOpen(true);
                         }}
-                        title="Editar Representante"
+                        title={`Editar ${etiqueta}`}
                       >
                         <FiEdit2 size={13} />
                       </button>
@@ -128,7 +134,7 @@ export function RepresentantesSection({
                         type="button"
                         className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
                         onClick={() => handleEliminarRelacion(rep)}
-                        title="Eliminar Representante"
+                        title={`Eliminar ${etiqueta}`}
                       >
                         <FiTrash2 size={13} />
                       </button>
@@ -196,6 +202,7 @@ export function RepresentantesSection({
         onSuccess={() => cargarSocios()}
         representante={editRepresentante}
         socioIdActivo={socioIdActivo}
+        tipoPersonaId={tipoPersonaId}
       />
     </div>
   );

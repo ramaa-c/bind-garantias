@@ -27,11 +27,19 @@ export function RepresentanteModal({
   socioIdActivo,          // Both: active partner ID to link the relation
   representanteInicial,   // Form mode: initial representative data for edit
   onGuardar,              // Form mode: callback to update parent React Hook Form state
+  tipoPersonaId,          // Solo lo pasa RepresentantesSection (zona de legajo): si no viene, se
+                          // preserva el comportamiento anterior ("Representante" en todos lados).
 }) {
   const { cadenaSlug } = useParams();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
+  // Persona Física no tiene "Representante Legal" (eso es de una persona
+  // jurídica): el rol equivalente es "Apoderado". Mismo dato/flujo, solo
+  // cambia la etiqueta que ve el usuario.
+  const esPersonaFisica = Number(tipoPersonaId) === 1;
+  const etiquetaRol = esPersonaFisica ? "Apoderado" : "Representante";
+  const rolPorDefecto = esPersonaFisica ? "Apoderado" : "Representante Legal";
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
@@ -56,7 +64,7 @@ export function RepresentanteModal({
     defaultValues: {
       cuit: "",
       nombre: "",
-      rol: "Representante Legal",
+      rol: rolPorDefecto,
       email: "",
       telefono: "",
     }
@@ -99,13 +107,13 @@ export function RepresentanteModal({
         reset({
           cuit: "",
           nombre: "",
-          rol: "Representante Legal",
+          rol: rolPorDefecto,
           email: "",
           telefono: "",
         });
       }
     }
-  }, [isOpen, representante, representanteInicial, reset]);
+  }, [isOpen, representante, representanteInicial, reset, rolPorDefecto]);
 
 
   const handleAfipLookup = async () => {
@@ -121,7 +129,7 @@ export function RepresentanteModal({
     
     setProcesoModal({
       isOpen: true,
-      titulo: "Validando Representante",
+      titulo: `Validando ${etiquetaRol}`,
       pasos: [
         { id: "sgr", etiqueta: "Conectando con SGR+", estado: "cargando", descripcion: "Validando situación e historial societario." },
       ],
@@ -141,7 +149,7 @@ export function RepresentanteModal({
           p.id === "sgr" ? {
               ...p,
               estado: "error",
-              descripcion: `Falló la validación del representante:`,
+              descripcion: `Falló la validación del ${etiquetaRol.toLowerCase()}:`,
               errores: result.errors.map(e => e.message)
           } : p
         )
@@ -177,7 +185,7 @@ export function RepresentanteModal({
         setValue("telefono", terceroEncontrado.telefono || terceroEncontrado.Telefono || "", { shouldValidate: true, shouldDirty: true });
 
         setAfipValidado(true);
-        toast.success("Datos del representante recuperados del sistema.");
+        toast.success(`Datos del ${etiquetaRol.toLowerCase()} recuperados del sistema.`);
         setValidando(false);
         return;
       }
@@ -230,7 +238,7 @@ export function RepresentanteModal({
         setValue("telefono", telVal, { shouldValidate: true, shouldDirty: true });
 
         setAfipValidado(true);
-        toast.success(representante || representanteInicial ? "Datos actualizados desde Nosis/AFIP/LUFE." : "Datos del representante recuperados.");
+        toast.success(representante || representanteInicial ? "Datos actualizados desde Nosis/AFIP/LUFE." : `Datos del ${etiquetaRol.toLowerCase()} recuperados.`);
       } else {
         setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de Nosis ni AFIP." });
         setAfipValidado(false);
@@ -362,7 +370,7 @@ export function RepresentanteModal({
           delete payloadRel.provinciaid;
           delete payloadRel.ProvinciaID;
           await tercerosService.actualizarRelacionDeSocio(payloadRel);
-          toast.success("Representante actualizado correctamente.");
+          toast.success(`${etiquetaRol} actualizado correctamente.`);
         } else {
           const payloadRel = {
             socioid: socioIdActivo,
@@ -388,7 +396,7 @@ export function RepresentanteModal({
             ],
           };
           await tercerosService.guardarRelacionesDeSocio(payloadRel);
-          toast.success("Representante agregado correctamente.");
+          toast.success(`${etiquetaRol} agregado correctamente.`);
         }
       }
 
@@ -431,7 +439,7 @@ export function RepresentanteModal({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={representante || representanteInicial ? "Editar Representante" : "Agregar Representante"}
+        title={representante || representanteInicial ? `Editar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
         maxWidth="600px"
         variant={isAdmin ? "blue" : "default"}
       >
@@ -444,14 +452,14 @@ export function RepresentanteModal({
                 </div>
                 <div className={styles.cuitSearchBannerText}>
                   <p className={styles.cuitSearchBannerTitle}>Validación segura con AFIP</p>
-                  <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del representante</p>
+                  <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del {etiquetaRol.toLowerCase()}</p>
                 </div>
               </div>
               <div className={styles.cuitSearchInputWrapper}>
                 <BuscadorCuit
                   name="cuit"
                   control={control}
-                  label="CUIT del representante"
+                  label={`CUIT del ${etiquetaRol.toLowerCase()}`}
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
@@ -473,11 +481,11 @@ export function RepresentanteModal({
                         </>
                       ) : (
                         <>
-                          <FiCheckCircle size={11} /> Representante validado con AFIP
+                          <FiCheckCircle size={11} /> {etiquetaRol} validado con AFIP
                         </>
                       )}
                     </span>
-                    <h2 className={styles.summaryName}>{nombreValue || "Representante"}</h2>
+                    <h2 className={styles.summaryName}>{nombreValue || etiquetaRol}</h2>
                     <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
                     {representante || representanteInicial ? (
                       <button
@@ -583,7 +591,7 @@ export function RepresentanteModal({
           <div className={styles.modalFooter}>
             {(afipValidado || representante || representanteInicial) && (
               <Button type="submit" variant={isAdmin ? "blue" : "primary"}>
-                {representante || representanteInicial ? "Guardar Cambios" : "Agregar Representante"}
+                {representante || representanteInicial ? "Guardar Cambios" : `Agregar ${etiquetaRol}`}
               </Button>
             )}
           </div>
@@ -594,8 +602,8 @@ export function RepresentanteModal({
         isOpen={showConfirm}
         onClose={() => setShowConfirm(false)}
         onConfirm={onConfirmSave}
-        titulo={representante || representanteInicial ? "Actualizar Representante" : "Agregar Representante"}
-        mensaje={representante || representanteInicial ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas agregar este representante?"}
+        titulo={representante || representanteInicial ? `Actualizar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
+        mensaje={representante || representanteInicial ? "¿Estás seguro de que deseas guardar los cambios?" : `¿Estás seguro de que deseas agregar este ${etiquetaRol.toLowerCase()}?`}
       />
 
       <ProcesamientoModal
