@@ -5,7 +5,7 @@ import api from "../api/axios";
 export const DEFAULT_PHYSICAL_CONFIG = {
   documentos: {
     estatuto: 0,
-    balance: 0,
+    balance: 1,
     ddjjIva: 0,
     cartasDocumento: 0,
     poderes: 0,
@@ -31,7 +31,7 @@ export const DEFAULT_PHYSICAL_CONFIG = {
 export const DEFAULT_SA_CONFIG = {
   documentos: {
     estatuto: 1,
-    balance: 0,
+    balance: 1,
     ddjjIva: 0,
     cartasDocumento: 0,
     poderes: 1,
@@ -358,9 +358,9 @@ export const requisitosService = {
         };
 
         if (existente) {
-          promises.push(api.put("api/CadenaValorParametrizacion", requisitosAdapter.adaptarPayload1(payload)));
+          promises.push({ method: 'put', url: 'api/CadenaValorParametrizacion', payload });
         } else {
-          promises.push(api.post("api/CadenaValorParametrizacion", requisitosAdapter.adaptarPayload2(payload)));
+          promises.push({ method: 'post', url: 'api/CadenaValorParametrizacion', payload });
         }
       });
 

@@ -50,14 +50,39 @@ export function LegajoUniversalBar({ context }) {
         return `${a.socioarchivoid || a.id}-${a.nombrearchivo || a.nombre || a.descripcion || ""}-${refDate}-${refText}`;
       })
       .join("|");
+    // Incluye TODOS los campos editables de la persona (no solo unos pocos):
+    // cualquier cambio en el legajo de un accionista/representante/agente
+    // (nombre, CUIT, domicilio completo, ciudad, participación, etc.) tiene
+    // que volver a disparar la migración a SGR+. Si un campo editable queda
+    // afuera de esta huella, un cambio en ESE campo pasa desapercibido y el
+    // sistema cree erróneamente que sigue sincronizado.
+    const personaFingerprint = (p) =>
+      [
+        p.terceroid || p.id,
+        p.nombre || "",
+        p.cuit || "",
+        p.email || "",
+        p.telefono || p.celular || "",
+        p.direccion || p.calle || "",
+        p.numero || "",
+        p.piso || "",
+        p.departamento || "",
+        p.codpos || "",
+        p.ciudadid || "",
+        p.provinciaid || "",
+        p.participacion || 0,
+        p.nrosubcuentacaja || "",
+        p.rolId || "",
+      ].join("-");
+
     const accionistasKey = (socioLegajoData?.accionistas || [])
-      .map((a) => `${a.terceroid || a.id}-${a.participacion || 0}-${a.email || ""}-${a.celular || ""}-${a.direccion || ""}`)
+      .map(personaFingerprint)
       .join("|");
     const representantesKey = (socioLegajoData?.representantes || [])
-      .map((r) => `${r.terceroid || r.id}-${r.email || ""}-${r.celular || ""}`)
+      .map(personaFingerprint)
       .join("|");
     const agentesKey = (socioLegajoData?.agentesBolsa || [])
-      .map((b) => `${b.terceroid || b.id}-${b.nrosubcuentacaja || ""}`)
+      .map(personaFingerprint)
       .join("|");
     return `${archivosKey}#${accionistasKey}#${representantesKey}#${agentesKey}`;
   }, [socioIdActivo, archivosBackend, socioLegajoData, isLoading]);
