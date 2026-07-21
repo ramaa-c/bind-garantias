@@ -24,6 +24,7 @@ export default function AceptarTerminos() {
   const [aceptado, setAceptado] = useState(false);
   const [seccionActiva, setSeccionActiva] = useState(null);
   const [progreso, setProgreso] = useState(0);
+  const [isGenerandoPdf, setIsGenerandoPdf] = useState(false);
   const scrollRef = useRef(null);
 
   const { channelInfo } = useChannel();
@@ -31,6 +32,12 @@ export default function AceptarTerminos() {
   const setTerminosVerificado = useAuthStore(
     (state) => state.setTerminosVerificado,
   );
+
+  // Guarda sincrónica contra doble submit: `isConfirmando` (isPending de la
+  // mutación) no se activa hasta después de generar el PDF (await previo),
+  // dejando una ventana en la que el botón sigue clickeable — mismo patrón
+  // que causaba el doble/triple submit de ConfirmacionModal.
+  const isEnviandoRef = useRef(false);
 
   const usuarioWebId = useUsuarioWebIdActual();
   const { data: socioUsuarios } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId);
@@ -54,7 +61,7 @@ export default function AceptarTerminos() {
   }, [terminos]);
 
   const handleAceptarTerminos = async () => {
-    if (!aceptado || isConfirmando) return;
+    if (!aceptado || isConfirmando || isEnviandoRef.current) return;
 
     if (!usuarioWebId || !terminosVigentes?.terminosycondicionesid) {
       toast.error(
@@ -63,12 +70,15 @@ export default function AceptarTerminos() {
       return;
     }
 
+    isEnviandoRef.current = true;
+    setIsGenerandoPdf(true);
     try {
       const contenidoTyC = await generarPdfConfirmacionTyC({
         textoTyC: terminosVigentes.textotyc,
         email: user?.email || "",
         fecha: new Date(),
       });
+      setIsGenerandoPdf(false);
 
       await confirmarTyC({
         usuarioWebId,
@@ -83,6 +93,9 @@ export default function AceptarTerminos() {
     } catch (err) {
       console.error("[AceptarTerminos] Error al registrar la aceptación:", err);
       toast.error("No se pudo registrar la aceptación. Intentá nuevamente.");
+    } finally {
+      isEnviandoRef.current = false;
+      setIsGenerandoPdf(false);
     }
   };
 
@@ -248,8 +261,8 @@ export default function AceptarTerminos() {
 
           <Button
             variant="primary"
-            disabled={!aceptado}
-            isLoading={isConfirmando}
+            disabled={!aceptado || isConfirmando || isGenerandoPdf}
+            isLoading={isConfirmando || isGenerandoPdf}
             onClick={handleAceptarTerminos}
             className={styles.btnAceptar}
           >
