@@ -93,6 +93,13 @@ export const useValidacionLegajo = () => {
     });
   }
 
+  // Completitud por sección de relaciones, expuesta para que el badge
+  // "Obligatorio" de SociosLegajo pase a verde cuando ya no falta nada
+  // (mismo criterio que el badge de documentos en DocumentosLegajo).
+  let accionistasCompletos = false;
+  let representantesCompletos = false;
+  let agentesBolsaCompletos = false;
+
   // 2. Validar relaciones obligatorias (valor === 1)
   if (requisitos.relaciones) {
     const accionistas = socioLegajoData?.accionistas || [];
@@ -174,6 +181,7 @@ export const useValidacionLegajo = () => {
         });
       }
 
+      accionistasCompletos = accionistasValidos;
       if (accionistasValidos) {
         requisitosCompletados++;
       } else {
@@ -206,6 +214,7 @@ export const useValidacionLegajo = () => {
         });
       }
 
+      representantesCompletos = representantesValidos;
       if (representantesValidos) {
         requisitosCompletados++;
       } else {
@@ -235,6 +244,7 @@ export const useValidacionLegajo = () => {
         });
       }
 
+      agentesBolsaCompletos = agentesBolsaValidos;
       if (agentesBolsaValidos) {
         requisitosCompletados++;
       } else {
@@ -253,6 +263,9 @@ export const useValidacionLegajo = () => {
     totalDocumentosObligatorios,
     totalLegajoObligatorios,
     requisitosCompletados,
+    accionistasCompletos,
+    representantesCompletos,
+    agentesBolsaCompletos,
     isLoading: false,
     faltanDocumentos: erroresDocumentos.length > 0,
     faltanLegajo: erroresLegajo.length > 0,

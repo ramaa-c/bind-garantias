@@ -343,8 +343,12 @@ export default function CdasGlobales() {
   const [testCuit, setTestCuit] = useState("");
   const [testResult, setTestResult] = useState(null);
 
-  // Un CDA con activo="0" se comporta como eliminado: no debe aparecer en el listado.
-  const todosCdasList = (Array.isArray(todosCdasData) ? todosCdasData : todosCdasData?.items || todosCdasData?.data || []).filter(esCdaActivo);
+  // A diferencia de esCdaActivo (que tolera "" para no romper la vinculación
+  // de CDAs migrados que ya estaban linkeados), esta lista es estricta:
+  // solo se muestran los CDA con Activo="1" explícito. Uno en "0" o vacío
+  // (dato migrado sin completar) no aparece.
+  const esCdaActivoEstricto = (c) => String(c?.activo ?? c?.Activo ?? "") === "1";
+  const todosCdasList = (Array.isArray(todosCdasData) ? todosCdasData : todosCdasData?.items || todosCdasData?.data || []).filter(esCdaActivoEstricto);
 
   const getCdaId = (c) => {
     if (!c) return undefined;

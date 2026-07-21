@@ -195,6 +195,15 @@
   animation: popoverIn 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Se renderiza vía Portal a document.body (ver SelectFecha.jsx): la
+   posición real la pone el `style` inline (position: fixed + top/left o
+   bottom/left, calculado desde el trigger). Acá solo se sube el z-index
+   por sobre el de Modal (9999), para que el calendario no quede tapado si
+   el campo se usa dentro de una modal. */
+.calendarPopoverPortal {
+  z-index: 10000;
+}
+
 /* ── REACT-DAY-PICKER ────────────────────────────────────────────────────────── */
 
 :global(.rdp-root) {
@@ -356,10 +365,10 @@
   color: #444;
 }
 
-.calendarPopover.placementTop,
-.container.isCompact .calendarPopover.placementTop {
-  top: auto;
-  bottom: calc(100% + 6px);
+/* La posición real ahora la pone el `style` inline del Portal (ver
+   .calendarPopoverPortal arriba); esta clase solo aporta la animación con
+   la dirección correcta cuando el calendario abre hacia arriba. */
+.calendarPopover.placementTop {
   animation: popoverInTop 0.18s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

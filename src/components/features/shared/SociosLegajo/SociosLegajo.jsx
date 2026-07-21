@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useObtenerDatosSocioLegajo } from "../../../../hooks/useTerceros";
+import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import {
   FiExternalLink,
   FiUsers,
@@ -75,6 +76,11 @@ export function SociosLegajo({
     adminMode ? null : tipoPersonaId,
     adminMode ? null : nombreEmpresa,
   );
+
+  // Solo aplica fuera de modo admin (el badge de completitud tampoco se
+  // muestra en admin, ver más abajo): reutiliza la misma validación que ya
+  // decide si el legajo está completo, para no duplicar el criterio.
+  const { accionistasCompletos } = useValidacionLegajo();
 
   const tabsDisponibles = useMemo(() => {
     let baseTabs = ESTRUCTURA_SOCIOS;
@@ -223,7 +229,9 @@ export function SociosLegajo({
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
                 {!adminMode && (requisitos?.relaciones?.[doc.key] === 1 ? (
-                  <span className={`${styles.reqBadge} ${styles.reqBadgeMandatory}`}>Obligatorio</span>
+                  <span className={`${styles.reqBadge} ${isAccionistas && accionistasCompletos ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
+                    Obligatorio
+                  </span>
                 ) : (
                   <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
                 ))}

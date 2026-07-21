@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useFormContext, useFormState, Controller } from "react-hook-form";
 import { FiCalendar } from "react-icons/fi";
 import { DayPicker } from "react-day-picker";
@@ -33,10 +34,20 @@ export const SelectFecha = ({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const calendarRef = useRef(null);
+  // El popover se saca por Portal a document.body: si el campo está anidado
+  // en un panel con overflow:auto/hidden (ej. el visor de DocumentosLegajo),
+  // un calendario `position: absolute` normal queda cortado por ese
+  // ancestro sin importar si abre para arriba o para abajo. Con Portal +
+  // `position: fixed` (ver popoverStyle) el calendario deja de depender del
+  // overflow de ningún contenedor padre.
+  const popoverRef = useRef(null);
+  const [popoverStyle, setPopoverStyle] = useState(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+      const dentroDelCampo = calendarRef.current?.contains(event.target);
+      const dentroDelPopover = popoverRef.current?.contains(event.target);
+      if (!dentroDelCampo && !dentroDelPopover) {
         setIsCalendarOpen(false);
         setIsFocused(false);
       }
@@ -44,6 +55,36 @@ export const SelectFecha = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isCalendarOpen) return;
+
+    const actualizarPosicion = () => {
+      const rect = calendarRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      if (placement === "top") {
+        setPopoverStyle({
+          position: "fixed",
+          left: rect.left,
+          bottom: window.innerHeight - rect.top + 6,
+        });
+      } else {
+        setPopoverStyle({
+          position: "fixed",
+          left: rect.left,
+          top: rect.bottom + 6,
+        });
+      }
+    };
+
+    actualizarPosicion();
+    window.addEventListener("scroll", actualizarPosicion, true);
+    window.addEventListener("resize", actualizarPosicion);
+    return () => {
+      window.removeEventListener("scroll", actualizarPosicion, true);
+      window.removeEventListener("resize", actualizarPosicion);
+    };
+  }, [isCalendarOpen, placement]);
 
   const renderCalendar = (value, onChange, onBlur, ref) => {
         let dateObj = undefined;
@@ -141,21 +182,27 @@ export const SelectFecha = ({
               <span className={styles.errorMsg}>{errorDisplay}</span>
             )}
 
-            {isCalendarOpen && (
-              <div className={`${styles.calendarPopover} ${placement === "top" ? styles.placementTop : ""}`}>
-                <DayPicker
-                  mode="single"
-                  selected={dateObj}
-                  onSelect={handleDateSelect}
-                  locale={es}
-                  disabled={{ before: effectiveMinDate }}
-                  required
-                  captionLayout="dropdown-years"
-                  fromYear={effectiveMinDate.getFullYear()}
-                  toYear={effectiveMinDate.getFullYear() + 10}
-                />
-              </div>
-            )}
+            {isCalendarOpen && popoverStyle &&
+              createPortal(
+                <div
+                  ref={popoverRef}
+                  className={`${styles.calendarPopover} ${styles.calendarPopoverPortal} ${placement === "top" ? styles.placementTop : ""}`}
+                  style={popoverStyle}
+                >
+                  <DayPicker
+                    mode="single"
+                    selected={dateObj}
+                    onSelect={handleDateSelect}
+                    locale={es}
+                    disabled={{ before: effectiveMinDate }}
+                    required
+                    captionLayout="dropdown-years"
+                    fromYear={effectiveMinDate.getFullYear()}
+                    toYear={effectiveMinDate.getFullYear() + 10}
+                  />
+                </div>,
+                document.body,
+              )}
           </div>
         );
   };
