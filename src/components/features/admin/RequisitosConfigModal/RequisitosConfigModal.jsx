@@ -213,6 +213,14 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
             {RELATION_METADATA.map(({ key, title, desc }) => {
               if (activeTab === "fisica" && key === "accionistas") return null;
 
+              // Persona Física llama "Apoderado" a este rol (mismo dato:
+              // TipoRelacionSocioID 210/230), ver RepresentanteModal.
+              const esFisicaYRepresentantes = activeTab === "fisica" && key === "representantes";
+              const tituloFila = esFisicaYRepresentantes ? "Apoderado" : title;
+              const descFila = esFisicaYRepresentantes
+                ? "Administración del apoderado habilitado para operar en nombre de la persona."
+                : desc;
+
               const val = localConfig[activeTab]?.relaciones?.[key] !== undefined
                 ? localConfig[activeTab].relaciones[key]
                 : 0;
@@ -220,8 +228,8 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
               return (
                 <div key={key} className={styles.row}>
                   <div className={styles.info}>
-                    <strong className={styles.rowTitle}>{title}</strong>
-                    <span className={styles.rowDesc}>{desc}</span>
+                    <strong className={styles.rowTitle}>{tituloFila}</strong>
+                    <span className={styles.rowDesc}>{descFila}</span>
                   </div>
                   <div className={styles.segmentedControl}>
                     <button

@@ -88,6 +88,18 @@ export function SociosLegajo({
     agentesBolsa: agentesBolsaCompletos,
   };
 
+  // Para Persona Física, "Representantes legales" se muestra como
+  // "Apoderado" (mismo dato/TipoRelacionSocioID, solo cambia la etiqueta:
+  // una persona física no tiene representante legal, sino un apoderado que
+  // actúa en su nombre).
+  const esPersonaFisica = Number(tipoPersonaId) === 1;
+  const tituloTab = (doc) =>
+    doc.key === "representantes" && esPersonaFisica ? "Apoderado" : doc.title;
+  const infoTab = (doc) =>
+    doc.key === "representantes" && esPersonaFisica
+      ? "Administración del apoderado habilitado para operar en tu nombre."
+      : doc.info;
+
   const tabsDisponibles = useMemo(() => {
     let baseTabs = ESTRUCTURA_SOCIOS;
     if (tipoPersonaId === 1) {
@@ -233,7 +245,7 @@ export function SociosLegajo({
             >
               {isActive && <span className={styles.activeBar} />}
               <div className={styles.tabTitleGroup}>
-                <span className={styles.tabTitle}>{doc.title}</span>
+                <span className={styles.tabTitle}>{tituloTab(doc)}</span>
                 {!adminMode && (requisitos?.relaciones?.[doc.key] === 1 ? (
                   <span className={`${styles.reqBadge} ${completitudPorTab[doc.key] ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
                     Obligatorio
@@ -263,9 +275,9 @@ export function SociosLegajo({
                           {doc.category}
                         </span>
                       </div>
-                      <h4 className={styles.viewerTitle}>{doc.title}</h4>
+                      <h4 className={styles.viewerTitle}>{tituloTab(doc)}</h4>
                       <p className={styles.viewerInfo}>
-                        {doc.info}
+                        {infoTab(doc)}
                         {doc.url && (
                           <a
                             href={doc.url}
@@ -302,6 +314,7 @@ export function SociosLegajo({
                     handleEliminarRelacion={handleEliminarRelacion}
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
+                    tipoPersonaId={tipoPersonaId}
                   />
                 ) : isAgentesBolsa ? (
                   <AgentesBolsaSection

@@ -106,8 +106,14 @@ export const useValidacionLegajo = () => {
     const representantes = socioLegajoData?.representantes || [];
     const agentesBolsa = socioLegajoData?.agentesBolsa || [];
 
-    // Accionistas
-    if (requisitos.relaciones.accionistas === 1) {
+    // Accionistas: no aplica estructuralmente a Persona Física (una persona
+    // no puede ser accionista de sí misma). Se ignora este requisito para
+    // tipoPersonaId=1 sin importar lo que diga la configuración de la
+    // cadena — evita que un dato mal guardado (Requerimiento=1 para
+    // TipoPersonaID=1) deje a una persona física bloqueada pidiendo un dato
+    // que ni siquiera tiene dónde completar (la pestaña de accionistas no
+    // se muestra para física, ver tabsDisponibles en SociosLegajo).
+    if (requisitos.relaciones.accionistas === 1 && Number(tipoPersonaId) !== 1) {
       totalRequisitos++;
       totalLegajoObligatorios++;
       let accionistasValidos = true;
@@ -190,7 +196,11 @@ export const useValidacionLegajo = () => {
       }
     }
 
-    // Representantes
+    // Representantes (para Persona Física este rol se llama "Apoderado",
+    // ver SociosLegajo/RepresentanteModal — es el mismo dato, solo cambia
+    // el texto según a quién le está faltando).
+    const esFisica = Number(tipoPersonaId) === 1;
+    const etiquetaRep = esFisica ? "Apoderado" : "Representante Legal";
     if (requisitos.relaciones.representantes === 1) {
       totalRequisitos++;
       totalLegajoObligatorios++;
@@ -199,7 +209,7 @@ export const useValidacionLegajo = () => {
 
       if (representantes.length === 0) {
         representantesValidos = false;
-        erroresRepresentantes.push("Debe registrar al menos un Representante Legal.");
+        erroresRepresentantes.push(`Debe registrar al menos un ${etiquetaRep}.`);
       } else {
         representantes.forEach((rep) => {
           const sEmail = rep.email || rep.mail || rep.Mail || "";
@@ -208,7 +218,7 @@ export const useValidacionLegajo = () => {
           if (!sEmail || !sCel) {
             representantesValidos = false;
             erroresRepresentantes.push(
-              `El representante ${rep.nombre} tiene datos de contacto incompletos.`
+              `El ${etiquetaRep.toLowerCase()} ${rep.nombre} tiene datos de contacto incompletos.`
             );
           }
         });
@@ -263,6 +273,7 @@ export const useValidacionLegajo = () => {
     totalDocumentosObligatorios,
     totalLegajoObligatorios,
     requisitosCompletados,
+    tipoPersonaId,
     accionistasCompletos,
     representantesCompletos,
     agentesBolsaCompletos,

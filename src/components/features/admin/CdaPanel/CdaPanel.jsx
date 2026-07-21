@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { useObtenerGrupoCdaConCdas, useVincularCdasAGrupo, useActualizarVinculacionCda } from "../../../../hooks/useCadenaValor";
 import { useObtenerTodosCdas, useActualizarGrupoCda } from "../../../../hooks/useCda";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
-import { esCdaActivo } from "../../../../utils/cdaUtils";
+import { esCdaActivo, esCdaActivoEstricto } from "../../../../utils/cdaUtils";
 import { resolverGrupoCda } from "../../../../utils/grupoCdaUtils";
 import { Button } from "../../../ui/Button/Button";
 import { Spinner } from "../../../ui/Spinner/Spinner";
@@ -49,7 +49,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   const { mutateAsync: actualizarVinculacionCda, isPending: isActualizandoVinculacion } = useActualizarVinculacionCda();
   const { mutateAsync: actualizarGrupoCda, isPending: isActualizandoGrupo } = useActualizarGrupoCda();
   const usuarioWebId = useUsuarioWebIdActual();
-  const allCdasList = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivo);
+  const allCdasList = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivoEstricto);
   const linkedCdasList = Array.isArray(grupoData?.cdas) ? grupoData.cdas : grupoData?.cdas?.items || grupoData?.cdas?.data || [];
 
   const getCdaId = (c) => {

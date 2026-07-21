@@ -21,7 +21,11 @@ export const DEFAULT_PHYSICAL_CONFIG = {
   },
   relaciones: {
     accionistas: 0,
-    representantes: 0,
+    // "Representantes" es la etiqueta interna del dato (TipoRelacionSocioID
+    // 210/230): para Persona Física se muestra como "Apoderado" (ver
+    // SociosLegajo/RepresentanteModal). Por defecto opcional, no
+    // obligatorio: una persona física puede operar sin apoderado.
+    representantes: 2,
     agentesBolsa: 2,
     usuarios: 2,
   },
