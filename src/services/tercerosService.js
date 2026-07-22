@@ -60,6 +60,51 @@ export const tercerosService = {
     }
   },
 
+  // Busca un tercero por CUIT y lo devuelve si ya existe; si no, lo crea con
+  // `payloadCreacion`. Dos altas simultáneas para el mismo CUIT (dos
+  // pestañas, o dos socios distintos cargando al mismo accionista a la vez)
+  // pueden pasar la búsqueda ambas en vacío y disparar dos POST — si el
+  // POST de acá falla, se reintenta la búsqueda una vez más antes de
+  // propagar el error, para recuperar el tercero que ganó la carrera en vez
+  // de duplicarlo o directamente fallar.
+  buscarOCrearTercero: async (cuit, payloadCreacion) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+
+    const buscarPorCuit = async () => {
+      const existentes = await tercerosService.obtenerTerceros({
+        Cuit: cuitLimpio,
+      });
+      const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
+      return arr[0] || null;
+    };
+
+    let existente = null;
+    try {
+      existente = await buscarPorCuit();
+    } catch (err) {
+      console.warn("[tercerosService] Error buscando tercero por CUIT:", err);
+    }
+    if (existente) return existente;
+
+    try {
+      return await tercerosService.crearTercero({
+        ...payloadCreacion,
+        cuit: cuitLimpio,
+      });
+    } catch (createErr) {
+      try {
+        const recuperado = await buscarPorCuit();
+        if (recuperado) return recuperado;
+      } catch (retryErr) {
+        console.warn(
+          "[tercerosService] Error re-buscando tercero tras fallo de creación:",
+          retryErr,
+        );
+      }
+      throw createErr;
+    }
+  },
+
   // Actualiza un tercero relacionado
   actualizarTercero: async (terceroData) => {
     try {

@@ -4,10 +4,27 @@ import { cdaService } from "../services/cdaService";
 // El CDA "Valida al socio que no sea socio protector de otra SGR" (ID 10) es
 // el único criterio no bloqueante: si no se cumple, es informativo pero no
 // impide avanzar. `ListTest` (la respuesta de cda/execute) ya no trae el
-// CdaID de cada ítem, así que se identifica por el texto exacto de su
-// MensajeRechazo. Frágil: si se edita el mensaje de ese CDA en CDAs
-// Globales, hay que actualizar este texto también.
-const MENSAJE_CDA_NO_BLOQUEANTE = "Reviste carácter de socio protector de otra SGR";
+// CdaID de cada ítem, así que se identifica por el texto de su
+// MensajeRechazo. En vez de una comparación exacta (frágil ante cualquier
+// cambio de mayúsculas/espaciado en el admin de CDAs Globales), se matchea
+// por inclusión de una frase clave normalizada (minúsculas, espacios
+// colapsados) — tolera esos cambios menores. Igual sigue dependiendo de que
+// el backend no reescriba el mensaje por completo; si eso pasa, hay que
+// actualizar `FRASES_CDA_NO_BLOQUEANTES` acá.
+const FRASES_CDA_NO_BLOQUEANTES = ["socio protector de otra sgr"];
+
+const normalizarTexto = (texto) =>
+  String(texto || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const esCdaNoBloqueante = (mensaje) => {
+  const mensajeNormalizado = normalizarTexto(mensaje);
+  return FRASES_CDA_NO_BLOQUEANTES.some((frase) =>
+    mensajeNormalizado.includes(frase),
+  );
+};
 
 export const useCdaEngine = () => {
   const [loading, setLoading] = useState(false);
@@ -126,7 +143,7 @@ export const useCdaEngine = () => {
         const mappedErrors = rechazos.map((t) => {
           const mensaje =
             t.mensaje || t.Mensaje || "No se cumple el criterio de aceptación.";
-          const isInvalidante = mensaje.trim() !== MENSAJE_CDA_NO_BLOQUEANTE;
+          const isInvalidante = !esCdaNoBloqueante(mensaje);
           return {
             cdaid: 0,
             isInvalidante,

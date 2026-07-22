@@ -189,7 +189,6 @@ export const AltaOperacion = () => {
     fields: socios,
     append,
     remove,
-    update,
   } = useFieldArray({
     control,
     name: "socios",
@@ -644,105 +643,10 @@ export const AltaOperacion = () => {
         }
       }
 
-      if (
-        finalSocioId &&
-        cleanData.representantes &&
-        cleanData.representantes.length > 0
-      ) {
-        const ahoraRel = new Date().toISOString().split(".")[0];
-        for (const rep of cleanData.representantes) {
-          try {
-            const cuitLimpio = String(rep.cuit).replace(/\D/g, "");
-            if (!cuitLimpio) continue;
-
-            let terceroId = null;
-            try {
-              const existentes = await tercerosService.obtenerTerceros({
-                Cuit: cuitLimpio,
-              });
-              const arr = Array.isArray(existentes)
-                ? existentes
-                : existentes?.data || [];
-              if (arr.length > 0) {
-                terceroId =
-                  arr[0].tercerorelacionadoid ||
-                  arr[0].TerceroRelacionadoID ||
-                  arr[0].id;
-              }
-            } catch (buscarErr) {
-              console.warn(
-                `[ALTA OPERACION] No se pudo buscar tercero con CUIT ${cuitLimpio}:`,
-                buscarErr,
-              );
-            }
-
-            if (!terceroId) {
-              const payloadTercero = {
-                tercerorelacionadoid: 0,
-                denominacion: rep.nombre || "",
-                cuit: cuitLimpio,
-                bcraid: 0,
-                tipopersonaid: 1,
-                tipodocumentoid: 0,
-                numerodocumento: cuitLimpio,
-                estadocivilid: 0,
-                ciudadid: 0,
-                telefono: rep.celular || "",
-                conyuge: "",
-                actividad: "",
-                contacto: "",
-                nrocuenta: "",
-                codigomercado: "",
-                calle: "",
-                numero: 0,
-                piso: "",
-                departamento: "",
-                codpos: "",
-                descripcionreducida: (rep.nombre || "").substring(0, 20),
-                mail: rep.email || "",
-              };
-              const terceroResult =
-                await tercerosService.crearTercero(payloadTercero);
-              terceroId =
-                terceroResult?.tercerorelacionadoid || terceroResult?.id;
-            }
-
-            if (terceroId) {
-              const payloadRelacionRep = {
-                socioid: finalSocioId,
-                tercerosrelacionados: [
-                  {
-                    sociotercerorelacionid: 0,
-                    socioid: finalSocioId,
-                    terceroid: terceroId,
-                    tiporelacionsocioid: rep.rol === "Apoderado" ? 210 : 230,
-                    fechadesde: ahoraRel,
-                    fechahasta: unAnioMasStr,
-                    porcacciones: 0,
-                    nroinscripcion: "",
-                    condicionescomerciales: "",
-                    cbu: "",
-                    nrosubcuentacaja: "",
-                    sucursalid: 0,
-                    default: "0",
-                    subtiporelacionsocioid: 0,
-                    telefono: rep.celular || "",
-                    momento: ahoraRel,
-                  },
-                ],
-              };
-              await tercerosService.guardarRelacionesDeSocio(
-                payloadRelacionRep,
-              );
-            }
-          } catch (repError) {
-            console.error(
-              `[ALTA OPERACION] Error al procesar representante ${rep.nombre}:`,
-              repError,
-            );
-          }
-        }
-      }
+      // Los representantes/apoderados ya se persisten (tercero + SocioTerceroRelacion)
+      // desde RepresentanteModal.onConfirmSave al momento de agregarlos/editarlos en el
+      // Paso5 (o ya venían precargados de la DB vía cargarSociosDesdeDB). Volver a
+      // guardarlos acá duplicaba la relación en cada envío de solicitud.
 
       let importeEnPesos = Math.round(montoLimpio);
       if (Number(cleanData.moneda) === 2) {
@@ -904,134 +808,6 @@ export const AltaOperacion = () => {
     setValue("docExpandido", docExpandido === seccion ? "" : seccion);
   };
 
-  const handleGuardarSocioDb = async (socioIndex, datosFormulario) => {
-    const socioTarget = socios[socioIndex];
-    try {
-      let terceroId = socioTarget.tercerorelacionadoid || null;
-
-      if (!terceroId && !socioTarget.preloadedFromDb) {
-        const dg = socioTarget.dataOriginal?.datosgenerales || {};
-        const dom = dg.domiciliofiscal || {};
-
-        const payloadTercero = {
-          tercerorelacionadoid: 0,
-          denominacion: socioTarget.nombre || "",
-          cuit: String(socioTarget.cuit).replace(/\D/g, ""),
-          bcraid: 0,
-          tipopersonaid:
-            (dg.tipopersona === "FISICA" || dg.tipopersona === "HUMANA")
-              ? 1
-              : dg.tipopersona === "JURIDICA"
-                ? 2
-                : (String(socioTarget.cuit).replace(/\D/g, "").startsWith("3") ? 2 : 1),
-          tipodocumentoid: 0,
-          numerodocumento: String(socioTarget.cuit).replace(/\D/g, ""),
-          estadocivilid: 0,
-          ciudadid: 0,
-          telefono: datosFormulario.celular || "",
-          conyuge: "",
-          actividad: "",
-          contacto: "",
-          nrocuenta: "",
-          codigomercado: "",
-          calle: datosFormulario.direccion || dom.direccion || "",
-          numero: 0,
-          piso: "",
-          departamento: "",
-          codpos: dom.codpostal || "",
-          descripcionreducida: (socioTarget.nombre || "").substring(0, 20),
-          mail: datosFormulario.email || "",
-        };
-
-        const cuitLimpio = String(socioTarget.cuit).replace(/\D/g, "");
-        try {
-          const existentes = await tercerosService.obtenerTerceros({
-            Cuit: cuitLimpio,
-          });
-          const arr = Array.isArray(existentes)
-            ? existentes
-            : existentes?.data || [];
-          if (arr.length > 0) {
-            terceroId =
-              arr[0].tercerorelacionadoid ||
-              arr[0].TerceroRelacionadoID ||
-              arr[0].id;
-          }
-        } catch (buscarErr) {}
-
-        if (!terceroId) {
-          const terceroResult =
-            await tercerosService.crearTercero(payloadTercero);
-          terceroId = terceroResult?.tercerorelacionadoid || terceroResult?.id;
-        }
-
-        if (!terceroId) {
-          return false;
-        }
-
-        if (socioIdActivo) {
-          const ahora = new Date().toISOString().split(".")[0];
-          const unAnioMasSocio = new Date();
-          unAnioMasSocio.setFullYear(unAnioMasSocio.getFullYear() + 1);
-          const unAnioMasStrSocio = unAnioMasSocio.toISOString().split(".")[0];
-
-          const payloadRelacion = {
-            socioid: socioIdActivo,
-            tercerosrelacionados: [
-              {
-                sociotercerorelacionid: 0,
-                socioid: socioIdActivo,
-                terceroid: terceroId,
-                tiporelacionsocioid: 25, // Accionista / Socio
-                fechadesde: ahora,
-                fechahasta: unAnioMasStrSocio,
-                porcacciones: Number(socioTarget.participacion) || 0,
-                nroinscripcion: "",
-                condicionescomerciales: "",
-                cbu: "",
-                nrosubcuentacaja: "",
-                sucursalid: 0,
-                default: "0",
-                subtiporelacionsocioid: 0,
-                telefono: datosFormulario.celular || "",
-                momento: ahora,
-              },
-            ],
-          };
-
-          try {
-            await tercerosService.guardarRelacionesDeSocio(payloadRelacion);
-          } catch (relError) {}
-        }
-      }
-
-      const sData = {
-        ...socioTarget,
-        tercerorelacionadoid: terceroId,
-        preloadedFromDb: true,
-        email: datosFormulario.email || "",
-        celular: datosFormulario.celular || "",
-        direccion: datosFormulario.direccion || "",
-        provincia: datosFormulario.provincia || "",
-        localidad: datosFormulario.localidad || "",
-      };
-      update(socioIndex, sData);
-      return true;
-    } catch (err) {
-      console.error("Error persistiendo socio:", err);
-      const sData = {
-        ...socioTarget,
-        email: datosFormulario.email || "",
-        celular: datosFormulario.celular || "",
-        direccion: datosFormulario.direccion || "",
-        provincia: datosFormulario.provincia || "",
-        localidad: datosFormulario.localidad || "",
-      };
-      update(socioIndex, sData);
-      return false;
-    }
-  };
-
   // ----- RENDERIZADO DINÁMICO DE PASOS -----
   const renderPasoDinamico = () => {
     if (pasoActual === 1) {
@@ -1144,7 +920,6 @@ export const AltaOperacion = () => {
               }
             }
           }}
-          onGuardarSocioDb={handleGuardarSocioDb}
           isSubmitting={enviandoSolicitud}
           socioId={socioIdActivo}
         />

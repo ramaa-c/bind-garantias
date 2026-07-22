@@ -7,6 +7,7 @@ import { Modal } from "../../../../../ui/Modal/Modal";
 import { SelectSocio } from "../../../../../ui/SelectSocio/SelectSocio";
 import { InputSocioMasked } from "../../../../../ui/InputSocioMasked/InputSocioMasked";
 import { useObtenerTerceros } from "../../../../../../hooks/useTerceros";
+import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./BolsaModal.module.css";
@@ -16,6 +17,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [showConfirm, setShowConfirm] = useState(false);
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  useRegistrarModalLegajo(isOpen);
 
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);

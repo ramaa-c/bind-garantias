@@ -169,6 +169,32 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Mientras se está trayendo la lista de archivos del legajo (algunos tipos
+   de documento, como Balance o Certificado PyME, se resuelven contra LUFE y
+   pueden tardar bastante) ningún tab sabe todavía si tiene archivo o no —
+   se muestra un anillo girando en vez del punto gris de "sin archivo", que
+   se leería como "no tenés nada cargado" cuando en realidad es que todavía
+   no se sabe. */
+.dotLoading {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--color-azul-bind, #4C65E6);
+  animation: dotSpin 0.7s linear infinite;
+}
+
+@keyframes dotSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dotLoading {
+    animation: none;
+    border-top-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
 /* ── VIEWER ──────────────────────────────────────────────────────────────────── */
 
 .viewer {

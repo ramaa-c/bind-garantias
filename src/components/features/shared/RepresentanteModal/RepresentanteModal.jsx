@@ -10,6 +10,7 @@ import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
 import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
+import { useRegistrarModalLegajo } from "../../../../hooks/useRegistrarModalLegajo";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";
@@ -59,6 +60,7 @@ export function RepresentanteModal({
 
   const { ejecutarValidaciones } = useCdaEngine();
   const usuarioWebIdActual = useUsuarioWebIdActual();
+  useRegistrarModalLegajo(isOpen);
 
   const { control, reset, setValue, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
     defaultValues: {
@@ -150,50 +152,40 @@ export function RepresentanteModal({
     // falta guardar el ID acá: la va a encontrar sola.
     if (socioIdActivo && !representante && !representanteInicial) {
       try {
-        let terceroExistente = null;
-        try {
-          const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
-          const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
-          if (arr.length > 0) terceroExistente = arr[0];
-        } catch (buscarErr) {
-          console.warn("[RepresentanteModal] Error buscando tercero previo a validar CDA:", buscarErr);
-        }
-
-        let stubTerceroId = terceroExistente
-          ? (terceroExistente.tercerorelacionadoid || terceroExistente.TerceroRelacionadoID || terceroExistente.id)
-          : null;
-
-        if (!stubTerceroId) {
-          // Denominacion y descripcionreducida van VACÍAS a propósito: la
-          // precarga de más abajo hace `terceroEncontrado?.denominacion ||
-          // nosisData...`, y un placeholder no vacío gana esa cadena de ORs,
-          // pisando el nombre real que devuelva NOSIS/AFIP.
-          const nuevoTercero = await tercerosService.crearTercero({
-            tercerorelacionadoid: 0,
-            denominacion: "",
-            cuit: cuitLimpio,
-            bcraid: 0,
-            tipopersonaid: 1,
-            tipodocumentoid: 0,
-            numerodocumento: cuitLimpio,
-            estadocivilid: 0,
-            ciudadid: 0,
-            telefono: "",
-            conyuge: "",
-            actividad: "",
-            contacto: "",
-            nrocuenta: "",
-            codigomercado: "",
-            calle: "",
-            numero: 0,
-            piso: "",
-            departamento: "",
-            codpos: "",
-            descripcionreducida: "",
-            mail: "",
-          });
-          stubTerceroId = nuevoTercero.tercerorelacionadoid || nuevoTercero.id;
-        }
+        // Denominacion y descripcionreducida van VACÍAS a propósito para el
+        // caso de que haya que crearlo: la precarga de más abajo hace
+        // `terceroEncontrado?.denominacion || nosisData...`, y un
+        // placeholder no vacío gana esa cadena de ORs, pisando el nombre
+        // real que devuelva NOSIS/AFIP. `buscarOCrearTercero` busca primero
+        // por CUIT y reutiliza el existente si lo hay (evitando duplicarlo).
+        const terceroResuelto = await tercerosService.buscarOCrearTercero(cuitLimpio, {
+          tercerorelacionadoid: 0,
+          denominacion: "",
+          cuit: cuitLimpio,
+          bcraid: 0,
+          tipopersonaid: 1,
+          tipodocumentoid: 0,
+          numerodocumento: cuitLimpio,
+          estadocivilid: 0,
+          ciudadid: 0,
+          telefono: "",
+          conyuge: "",
+          actividad: "",
+          contacto: "",
+          nrocuenta: "",
+          codigomercado: "",
+          calle: "",
+          numero: 0,
+          piso: "",
+          departamento: "",
+          codpos: "",
+          descripcionreducida: "",
+          mail: "",
+        });
+        const stubTerceroId =
+          terceroResuelto.tercerorelacionadoid ||
+          terceroResuelto.TerceroRelacionadoID ||
+          terceroResuelto.id;
 
         const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
         const arrRel = Array.isArray(relaciones) ? relaciones : relaciones?.data || [];
@@ -730,7 +722,8 @@ export function RepresentanteModal({
                       value={field.value}
                       onChange={(val) => setValue("telefono", val, { shouldDirty: true, shouldValidate: true })}
                       onBlur={field.onBlur}
-                      label="Celular / Teléfono"
+                      label="Celular / Teléfono (Sin 0 ni 15)"
+                      mask={[{ mask: "00 0000-0000" }, { mask: "000 000-0000" }]}
                       icon={<FiPhone />}
                       error={fieldState.error?.message}
                     />

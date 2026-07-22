@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, FiTrendingUp, FiUser } from "react-icons/fi";
+import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiChevronRight, FiUsers, FiX, FiLogOut, FiTrendingUp, FiUser } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
+import { EmpresaPerfilModal } from "../../../features/shared/EmpresaPerfilModal/EmpresaPerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/ChannelContext";
 import styles from "./Sidebar.module.css";
@@ -15,6 +16,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const { nombreEmpresa, cuitActivo, onboardingCompleto } = useEmpresaActiva();
   const isVinculado = !!nombreEmpresa;
+  const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
   
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
@@ -35,6 +37,13 @@ export default function Sidebar({ isOpen, onClose }) {
   const [pendingPath, setPendingPath] = useState(null);
 
   const isActive = (path) => location.pathname.startsWith(`/${channelInfo.id}${path}`);
+
+  // La companyCard también se renderiza durante Paso2 de AltaDatosEmpresa
+  // (ahí "onboardingCompleto" todavía puede ser true si el teléfono ya vino
+  // precargado de AFIP/Nosis antes de que el usuario confirme el Paso2): en
+  // esa ruta puntual el perfil no está terminado de verdad todavía, así que
+  // se fuerza a que la card se vea como siempre, sin abrir nada.
+  const perfilClickeable = onboardingCompleto && !isActive("/alta-datos-empresa");
 
   const handleNavigate = (path) => {
     const fullPath = `/${channelInfo.id}${path.startsWith('/') ? path : '/' + path}`;
@@ -94,7 +103,22 @@ export default function Sidebar({ isOpen, onClose }) {
 
       {isVinculado && (
         <>
-          <div className={styles.companyCard}>
+          <div
+            className={`${styles.companyCard} ${perfilClickeable ? styles.companyCardClickable : ""}`}
+            role={perfilClickeable ? "button" : undefined}
+            tabIndex={perfilClickeable ? 0 : undefined}
+            onClick={perfilClickeable ? () => setIsPerfilModalOpen(true) : undefined}
+            onKeyDown={
+              perfilClickeable
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setIsPerfilModalOpen(true);
+                    }
+                  }
+                : undefined
+            }
+          >
             <div className={styles.companyAvatar}>
               {nombreEmpresa.charAt(0).toUpperCase()}
             </div>
@@ -104,6 +128,9 @@ export default function Sidebar({ isOpen, onClose }) {
                 <p className={styles.companyCuit}>CUIT {cuitActivo}</p>
               )}
             </div>
+            {perfilClickeable && (
+              <FiChevronRight className={styles.companyCardChevron} size={16} />
+            )}
           </div>
 
           {/* Hasta que se complete el Paso 2 del alta (ver AltaDatosEmpresa)
@@ -182,6 +209,16 @@ export default function Sidebar({ isOpen, onClose }) {
         isOpen={isTasasModalOpen}
         onClose={() => setIsTasasModalOpen(false)}
       />
+
+      {/* Montado solo mientras está abierta: trae datos de validación de
+          legajo (requisitos, terceros, archivos) que no hacen falta en el
+          resto de las pantallas donde vive el Sidebar (ej. Solicitudes). */}
+      {isPerfilModalOpen && (
+        <EmpresaPerfilModal
+          isOpen={isPerfilModalOpen}
+          onClose={() => setIsPerfilModalOpen(false)}
+        />
+      )}
 
       <ConfirmacionModal
         isOpen={!!pendingPath}

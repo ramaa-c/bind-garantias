@@ -6,12 +6,13 @@ import {
   FiPhone,
   FiEdit2,
   FiChevronRight,
+  FiLock,
 } from "react-icons/fi";
 import { Button } from "../../../ui";
 import { UbicacionModal, ContactoModal } from "../../../features";
 import styles from "./Paso2Datos.module.css";
 
-export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
+export default function Paso2Datos({ onContinuar, isSubmitting }) {
   const { setValue, trigger, control } = useFormContext();
 
   const [modalUbicacionOpen, setUbicacionModalOpen] = useState(false);
@@ -101,17 +102,13 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
           <h2 className={styles.empresaName}>{razonSocial}</h2>
           <p className={styles.empresaCuit}>CUIT {cuit || "20-12345678-9"}</p>
         </div>
-        {onVolver && (
-          <button
-            type="button"
-            className={styles.editLink}
-            onClick={onVolver}
-            disabled={isSubmitting}
-            aria-label="Editar CUIT"
-          >
-            <FiEdit2 size={13} />
-          </button>
-        )}
+        <span
+          className={styles.lockedBadge}
+          title="El CUIT ya fue validado y no se puede modificar"
+          aria-label="CUIT verificado, no editable"
+        >
+          <FiLock size={13} />
+        </span>
       </div>
 
       {/* TAREAS ──────────────────────────────────────────────────────────────── */}

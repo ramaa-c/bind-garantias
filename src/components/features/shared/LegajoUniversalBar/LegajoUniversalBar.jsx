@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
 import Spinner from "../../../ui/Spinner/Spinner";
@@ -43,6 +44,7 @@ export function LegajoUniversalBar({ context }) {
   const [isMigrating, setIsMigrating] = useState(false);
   const [lastAttemptedFingerprint, setLastAttemptedFingerprint] = useState("");
   const [showMigracionExitosa, setShowMigracionExitosa] = useState(false);
+  const modalesLegajoAbiertos = useLegajoModalStore((s) => s.modalesAbiertos);
 
   const fingerprint = useMemo(() => {
     if (!socioIdActivo || isLoading) return "";
@@ -100,6 +102,20 @@ export function LegajoUniversalBar({ context }) {
 
   useEffect(() => {
     if (!socioIdActivo || !isValid || !fingerprint || isMigrating || isLoading || totalRequisitos === 0) return;
+
+    // En "legajo" (a diferencia de "documentacion") completar el último
+    // requisito puede pasar DENTRO de una modal propia (Representante,
+    // SocioAccionista, Bolsa) que todavía sigue abierta — incluso mientras
+    // esa modal corre su propia validación de CDA. Si se dispara la
+    // migración (y el aviso de éxito) en ese momento, el usuario lo ve
+    // superpuesto a una modal que ni terminó de guardar. Se pospone hasta
+    // que no quede ninguna abierta; ver useLegajoModalStore.
+    if (context === "legajo" && modalesLegajoAbiertos > 0) {
+      console.log(
+        `[LegajoUniversalBar] Hay ${modalesLegajoAbiertos} modal(es) de legajo abierta(s): se pospone la migración hasta que se cierren.`,
+      );
+      return;
+    }
 
     const lastMigrated = localStorage.getItem(localStorageKey);
     const lockKey = `migrando_sgr_${socioIdActivo}`;
@@ -159,7 +175,7 @@ export function LegajoUniversalBar({ context }) {
     };
 
     autoMigrar();
-  }, [socioIdActivo, isValid, fingerprint, isMigrating, isLoading, lastAttemptedFingerprint, queryClient, localStorageKey]);
+  }, [socioIdActivo, isValid, fingerprint, isMigrating, isLoading, context, modalesLegajoAbiertos, lastAttemptedFingerprint, queryClient, localStorageKey]);
 
   const hasMandatoryInContext =
     (context === "documentacion" && totalDocumentosObligatorios > 0) ||
