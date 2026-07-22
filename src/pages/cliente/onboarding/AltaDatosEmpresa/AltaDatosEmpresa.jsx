@@ -338,11 +338,24 @@ export const AltaDatosEmpresa = () => {
           );
         }
 
+        // enriquecerSociosLufeAfip/obtenerDocumentosLufe escriben directo
+        // por afuera de las mutations de react-query (llaman al service a
+        // mano), así que ninguna invalidación automática se dispara. Sin
+        // esto, si ["socioLegajoCompleto", socioId] ya se había pedido una
+        // vez ANTES de que termine la precarga (con 0 accionistas), queda
+        // cacheado así hasta que venza su staleTime (10 min) — el usuario
+        // llega a /legajo y no ve nada hasta refrescar la página a mano o
+        // esperar. Confirmado en vivo (2026-07-22).
+        await queryClient.invalidateQueries({
+          queryKey: ["socioLegajoCompleto", socioId],
+        });
+
         // retry: 0 explícito porque axios ya reintenta a nivel de transporte
         // (src/api/axios.js). Sin esto, un mismo fallo se reintenta dos veces
         // por acá y hasta dos veces más por axios, y las 3 queries corren en
         // paralelo justo después de los POST de alta.
         await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioId] }),
           queryClient.prefetchQuery({
             queryKey: ["socioArchivos", socioId],
             queryFn: () => socioArchivoService.obtenerArchivos(socioId),

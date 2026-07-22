@@ -13,6 +13,7 @@ import {
 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { RepresentanteModal } from "../../../RepresentanteModal/RepresentanteModal";
+import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 
 export function RepresentantesSection({
@@ -185,6 +186,13 @@ export function RepresentantesSection({
                         </div>
                       </div>
                     </div>
+                    {isAdmin && (
+                      <TerceroCdaEstado
+                        terceroId={rep.id}
+                        cuit={rep.cuit}
+                        socioIdActivo={socioIdActivo}
+                      />
+                    )}
                   </div>
                 </div>
               ))}

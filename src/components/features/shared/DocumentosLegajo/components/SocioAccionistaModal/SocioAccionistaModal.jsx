@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield } from "react-icons/fi";
 import { toast } from "sonner";
@@ -102,6 +102,15 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const { ejecutarValidaciones } = useCdaEngine();
   const usuarioWebIdActual = useUsuarioWebIdActual();
 
+  // El motor de CDAs para PANTALLA_SOCIOS necesita que la relación
+  // tercero<->socio ya exista para poder resolver el contexto — si no,
+  // el backend responde 500 (EAccessViolation, confirmado en vivo). Por
+  // eso se crea un "stub" (participación 0, datos mínimos) ANTES de
+  // validar, igual que Paso1Cuit ya hace para la empresa: si el CDA
+  // rechaza, este registro queda igual (no se revierte). Se guarda el ID
+  // acá para que onConfirmSave lo actualice en vez de crear uno nuevo.
+  const stubIdsRef = useRef({ terceroId: null, relacionId: null });
+
   const relacionId = socio?.relacionId || 
                      socio?.relacion?.sociotercerorelacionid || 
                      socio?.relacion?.SocioTerceroRelacionID || 
@@ -196,6 +205,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setErrorDniDorso(false);
       setShowConfirm(false);
       setCdaRechazado(false);
+      stubIdsRef.current = { terceroId: null, relacionId: null };
       if (socio) {
         setAfipValidado(true);
       } else {
@@ -328,6 +338,116 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       hasError: false,
       isSystemError: false
     });
+
+    // Solo hace falta crear el stub para un accionista NUEVO — si `socio`
+    // viene seteado (edición), la relación ya existe de antes.
+    if (!socio && !stubIdsRef.current.terceroId) {
+      try {
+        let terceroExistente = null;
+        try {
+          const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
+          const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
+          if (arr.length > 0) terceroExistente = arr[0];
+        } catch (buscarErr) {
+          console.warn("[SocioAccionistaModal] Error buscando tercero previo a validar CDA:", buscarErr);
+        }
+
+        let stubTerceroId = terceroExistente
+          ? (terceroExistente.tercerorelacionadoid || terceroExistente.TerceroRelacionadoID || terceroExistente.id)
+          : null;
+
+        if (!stubTerceroId) {
+          // Denominacion y descripcionreducida van VACÍAS a propósito (no
+          // "Pendiente de datos" ni similar): la lógica de precarga de más
+          // abajo hace `terceroEncontrado?.denominacion || nosisData...`, y
+          // un placeholder no vacío gana esa cadena de ORs, pisando el
+          // nombre real que devuelva NOSIS/AFIP.
+          const nuevoTercero = await tercerosService.crearTercero({
+            tercerorelacionadoid: 0,
+            denominacion: "",
+            cuit: cuitLimpio,
+            bcraid: 0,
+            tipopersonaid: cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
+            tipodocumentoid: 0,
+            numerodocumento: cuitLimpio,
+            estadocivilid: 0,
+            ciudadid: 0,
+            provinciaid: 0,
+            telefono: "",
+            conyuge: "",
+            actividad: "",
+            contacto: "",
+            nrocuenta: "",
+            codigomercado: "",
+            calle: "",
+            numero: 0,
+            piso: "",
+            departamento: "",
+            codpos: "",
+            descripcionreducida: "",
+            mail: "",
+          });
+          stubTerceroId = nuevoTercero.tercerorelacionadoid || nuevoTercero.id;
+        }
+
+        const relacionesSocio = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+        const relacionesArr = Array.isArray(relacionesSocio) ? relacionesSocio : [];
+        const relacionExistente = relacionesArr.find(
+          (r) => Number(r.terceroid ?? r.TerceroID) === Number(stubTerceroId),
+        );
+
+        let stubRelacionId = relacionExistente
+          ? (relacionExistente.sociotercerorelacionid ?? relacionExistente.SocioTerceroRelacionID)
+          : null;
+
+        if (!stubRelacionId) {
+          const ahoraStub = new Date().toISOString().split(".")[0];
+          const unAnioMasStub = new Date();
+          unAnioMasStub.setFullYear(unAnioMasStub.getFullYear() + 1);
+          await tercerosService.guardarRelacionesDeSocio({
+            socioid: socioIdActivo,
+            tercerosrelacionados: [
+              {
+                sociotercerorelacionid: 0,
+                socioid: socioIdActivo,
+                terceroid: stubTerceroId,
+                tiporelacionsocioid: 25,
+                fechadesde: ahoraStub,
+                fechahasta: unAnioMasStub.toISOString().split(".")[0],
+                porcacciones: 0,
+                nroinscripcion: "",
+                condicionescomerciales: "",
+                cbu: "",
+                nrosubcuentacaja: "",
+                sucursalid: 0,
+                default: "0",
+                subtiporelacionsocioid: 0,
+                telefono: "",
+                momento: ahoraStub,
+              },
+            ],
+          });
+          const relacionesActualizadas = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+          const nuevaRelacion = (Array.isArray(relacionesActualizadas) ? relacionesActualizadas : []).find(
+            (r) => Number(r.terceroid ?? r.TerceroID) === Number(stubTerceroId),
+          );
+          stubRelacionId = nuevaRelacion?.sociotercerorelacionid ?? nuevaRelacion?.SocioTerceroRelacionID ?? null;
+        }
+
+        stubIdsRef.current = { terceroId: stubTerceroId, relacionId: stubRelacionId };
+        // No se avisa con onSuccess acá: mientras la participación siga en
+        // 0% (todavía no se completó el alta), la lista de accionistas lo
+        // sigue ocultando a propósito (ver useObtenerDatosSocioLegajo) —
+        // refrescar antes de eso no mostraría nada nuevo. Recién tiene
+        // sentido avisar cuando se guarda de verdad con un % real, en
+        // onConfirmSave.
+      } catch (stubErr) {
+        // No bloqueamos la validación por esto: si falla, seguimos igual
+        // (en el peor caso, el CDA va a fallar con el mismo error que ya
+        // conocíamos antes de este cambio).
+        console.error("[SocioAccionistaModal] Error creando la relación previa a validar CDA:", stubErr);
+      }
+    }
 
     const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam, usuarioWebIdActual);
 
@@ -492,7 +612,49 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         if (provIdVal) {
           setValue("provinciaid", String(provIdVal), { shouldValidate: true, shouldDirty: true });
         }
-        
+
+        // Se persiste YA lo que trajo AFIP/NOSIS (nombre/domicilio/contacto):
+        // si el usuario cierra sin guardar y vuelve más tarde, esta info no
+        // se pierde (antes quedaba solo en el formulario en memoria, y el
+        // tercero en la base seguía con denominacion="" del stub). Lo que
+        // falta — participación, DNI, o cualquier edición manual — se
+        // termina de guardar en onConfirmSave.
+        if (stubIdsRef.current.terceroId) {
+          try {
+            await tercerosService.actualizarTercero({
+              tercerorelacionadoid: stubIdsRef.current.terceroId,
+              denominacion: nombreSocio,
+              cuit: cuitLimpio,
+              bcraid: 0,
+              tipopersonaid: cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
+              tipodocumentoid: 0,
+              numerodocumento: cuitLimpio,
+              estadocivilid: 0,
+              ciudadid: Number(terceroEncontrado?.ciudadid) || 0,
+              provinciaid: Number(provIdVal) || 0,
+              telefono: celularVal,
+              conyuge: "",
+              actividad: "",
+              contacto: "",
+              nrocuenta: "",
+              codigomercado: "",
+              calle: parsedDir.calle || direccionVal || "",
+              numero: Number(parsedDir.numero) || 0,
+              piso: parsedDir.piso || "",
+              departamento: deptoVal || "",
+              codpos: codposVal || "",
+              descripcionreducida: nombreSocio.substring(0, 20),
+              mail: emailVal,
+            });
+            // No se avisa con onSuccess acá tampoco: sigue en 0% de
+            // participación, así que la lista lo sigue ocultando (ver
+            // comentario más arriba). El nombre ya quedó persistido de
+            // todas formas, para cuando el usuario complete el % y guarde.
+          } catch (persistErr) {
+            console.warn("[SocioAccionistaModal] No se pudo persistir la precarga de AFIP/NOSIS:", persistErr);
+          }
+        }
+
         setAfipValidado(true);
         toast.success(socio ? "Datos actualizados desde Nosis/AFIP/LUFE." : "Datos del accionista recuperados.");
       } else {
@@ -656,10 +818,20 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
       const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
 
-      if (relacionId) {
+      // Si esta relación se creó como "stub" antes de validar el CDA (ver
+      // handleAfipLookup), acá hay que actualizarla en vez de crear una
+      // segunda — de ahí el fallback a stubIdsRef.
+      const relacionIdEfectivo = relacionId || stubIdsRef.current.relacionId;
+
+      if (relacionIdEfectivo) {
         const payloadRel = {
+          fechadesde: ahora,
+          fechahasta: unAnioMasStr,
           ...(socio?.relacion || {}),
-          sociotercerorelacionid: relacionId,
+          sociotercerorelacionid: relacionIdEfectivo,
+          socioid: socioIdActivo,
+          terceroid: terceroId,
+          tiporelacionsocioid: 25,
           porcacciones: Number(formData.participacion),
           telefono: formData.celular || "",
           provinciaid: Number(formData.provinciaid) || 0,

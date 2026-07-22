@@ -287,7 +287,14 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
           item.cuit && item.cuit !== "—" ? item.cuit : item.id;
 
         if (tiporelNum === 25) {
-          if (item.participacion === 0) continue; // Omitir suplentes / accionistas con 0%
+          // LUFE puede traer accionistas con 0% de participación que no
+          // sirven de nada acá — se omiten. Nuestra propia modal nunca
+          // puede guardar uno en 0% (el form valida min=0.01), así que el
+          // único 0% que puede aparecer es o bien esto de LUFE, o bien un
+          // alta que se dejó a mitad de camino (el stub que se crea antes
+          // de validar el CDA, ver SocioAccionistaModal) — en ambos casos
+          // corresponde no mostrarlo hasta que tenga un % real.
+          if (item.participacion === 0) continue;
           const existing = accMap[identifier];
           if (!existing) {
             accMap[identifier] = item;
@@ -330,5 +337,15 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
     },
     enabled: !!socioId,
     staleTime: 1000 * 60 * 10, // 10 minutes cache
+  });
+};
+
+// Historial de ejecuciones de CDA de un tercero puntual (accionista/
+// representante/apoderado) — ver tercerosService.obtenerExecuteCda.
+export const useObtenerExecuteCdaTercero = (terceroId) => {
+  return useQuery({
+    queryKey: ["terceros", "executeCda", terceroId],
+    queryFn: () => tercerosService.obtenerExecuteCda(terceroId),
+    enabled: !!terceroId,
   });
 };
