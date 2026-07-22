@@ -268,6 +268,12 @@ export function DocumentosLegajo({
   const [metaRef, setMetaRef] = useState("");
   const [metaFechaPeriodo, setMetaFechaPeriodo] = useState("");
   const [isSavingMeta, setIsSavingMeta] = useState(false);
+  // Si se intenta subir un balance sin haber completado la fecha del
+  // período arriba del dropzone, en vez de bloquear con un toast (fácil de
+  // no ver) se guarda el archivo elegido acá y se lo obliga a confirmar la
+  // fecha en una modal — recién ahí se dispara el POST/PUT real.
+  const [pendingBalanceUpload, setPendingBalanceUpload] = useState(null);
+  const [fechaModalValue, setFechaModalValue] = useState("");
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
@@ -431,10 +437,21 @@ export function DocumentosLegajo({
     }
   };
 
-  const handleFileUpload = async (key, file, docTitle, specificId = null) => {
+  // `fechaPeriodoOverride` lo manda confirmarFechaBalanceModal con la fecha
+  // recién elegida: no alcanza con confiar en releer metaFechaPeriodo del
+  // estado, porque el setMetaFechaPeriodo previo todavía no se aplicó en
+  // este mismo tick (los setState de React son asincrónicos).
+  const handleFileUpload = async (key, file, docTitle, specificId = null, fechaPeriodoOverride = null) => {
     if (file instanceof File) {
-      if (key === "balance" && !metaFechaPeriodo) {
-        toast.error("Ingresá primero la fecha del período del balance.");
+      const fechaPeriodoEfectiva = fechaPeriodoOverride || metaFechaPeriodo;
+
+      if (key === "balance" && !fechaPeriodoEfectiva) {
+        // No se bloquea con un toast: se guarda el archivo elegido y se
+        // fuerza la fecha en una modal. Al confirmar, se vuelve a llamar a
+        // esta misma función (ver confirmarFechaBalanceModal), pasándole la
+        // fecha directo.
+        setPendingBalanceUpload({ key, file, docTitle, specificId });
+        setFechaModalValue("");
         return;
       }
 
@@ -446,8 +463,8 @@ export function DocumentosLegajo({
       }
 
       const fchArchivoManual =
-        key === "balance" && metaFechaPeriodo
-          ? `${metaFechaPeriodo.split("T")[0]}T00:00:00`
+        key === "balance" && fechaPeriodoEfectiva
+          ? `${fechaPeriodoEfectiva.split("T")[0]}T00:00:00`
           : null;
 
       const toastId = toast.loading(`Subiendo ${docTitle}...`);
@@ -502,6 +519,22 @@ export function DocumentosLegajo({
         toast.error("Error al subir el documento. Por favor, reintente.", { id: toastId });
       }
     }
+  };
+
+  const confirmarFechaBalanceModal = () => {
+    if (!fechaModalValue) {
+      toast.error("Seleccioná la fecha del período del balance.");
+      return;
+    }
+    const { key, file, docTitle, specificId } = pendingBalanceUpload;
+    setMetaFechaPeriodo(fechaModalValue);
+    setPendingBalanceUpload(null);
+    handleFileUpload(key, file, docTitle, specificId, fechaModalValue);
+  };
+
+  const cancelarFechaBalanceModal = () => {
+    setPendingBalanceUpload(null);
+    setFechaModalValue("");
   };
 
   const handleFileDelete = async (key, fileId, docTitle) => {
@@ -879,8 +912,41 @@ export function DocumentosLegajo({
     );
   };
 
+  // Se referencia igual desde el return desktop y el mobile (ver más abajo)
+  // en vez de duplicar el JSX: es un Modal con Portal, así que no importa
+  // en qué punto del árbol se monte.
+  const fechaBalanceModal = (
+    <Modal
+      isOpen={!!pendingBalanceUpload}
+      onClose={cancelarFechaBalanceModal}
+      title="Fecha del período del balance"
+      maxWidth="420px"
+    >
+      <p style={{ color: "#9aa1af", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+        Para subir este balance necesitamos saber a qué período corresponde.
+      </p>
+      <SelectFecha
+        label="Fecha del período"
+        placeholder="Seleccionar fecha"
+        value={fechaModalValue}
+        onChange={setFechaModalValue}
+        minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+      />
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
+        <Button variant="outline" onClick={cancelarFechaBalanceModal}>
+          Cancelar
+        </Button>
+        <Button variant="primary" onClick={confirmarFechaBalanceModal}>
+          Confirmar y subir
+        </Button>
+      </div>
+    </Modal>
+  );
+
   if (!isMobile) {
     return (
+      <>
+      {fechaBalanceModal}
       <div className={styles.workspace}>
         <div className={styles.sidebar}>
           {estructuraFiltrada.map((doc, index) => {
@@ -956,11 +1022,14 @@ export function DocumentosLegajo({
         </div>
         <div className={styles.viewerContainer}>{renderViewer(activeDoc)}</div>
       </div>
+      </>
     );
   }
 
   // Layout Mobile (Accordion vertical)
   return (
+    <>
+    {fechaBalanceModal}
     <div className={styles.workspaceMobile}>
       {estructuraFiltrada.map((doc, index) => {
         const isNewCategory =
@@ -1046,5 +1115,6 @@ export function DocumentosLegajo({
         );
       })}
     </div>
+    </>
   );
 }
