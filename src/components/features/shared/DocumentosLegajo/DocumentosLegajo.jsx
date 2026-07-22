@@ -780,25 +780,6 @@ export function DocumentosLegajo({
               </div>
             )}
 
-            {isBalance && currentSubTab === "nuevo" && (
-              <div className={styles.metaFormContainer}>
-                <div className={styles.metaFieldGroup}>
-                  <label className={styles.metaLabel}>
-                    Fecha del período del balance *
-                  </label>
-                  <SelectFecha
-                    label=""
-                    placeholder="Seleccionar fecha"
-                    value={metaFechaPeriodo}
-                    onChange={(val) => setMetaFechaPeriodo(val)}
-                    variant="compact"
-                    placement="top"
-                    minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
-                  />
-                </div>
-              </div>
-            )}
-
             <div className={styles.dropzoneContainer}>
               <CargaArchivos
                 title={currentSubTab === "nuevo" ? "Arrastrá tu nuevo archivo acá" : doc.title}
@@ -926,10 +907,11 @@ export function DocumentosLegajo({
         Para subir este balance necesitamos saber a qué período corresponde.
       </p>
       <SelectFecha
-        label="Fecha del período"
+        label=""
         placeholder="Seleccionar fecha"
         value={fechaModalValue}
         onChange={setFechaModalValue}
+        variant="compact"
         minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
       />
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>

@@ -10,6 +10,25 @@ const soloFecha = (valor) => {
   return Number.isNaN(fecha.getTime()) ? null : fecha;
 };
 
+// FechaCierreEjercicio se guarda como el cierre del ciclo actual/próximo
+// (confirmado en vivo: hoy 2026-07-22, varias empresas reales tienen
+// "2026-12-31" — una fecha que todavía no pasó). Para decidir si un balance
+// está al día hay que compararlo contra el ÚLTIMO cierre que ya ocurrió, no
+// contra uno futuro: se toma el mes/día guardado y se lo ubica en el año
+// actual; si ese día todavía no llegó, se retrocede un año.
+const ultimoCierrePasado = (fechaCierreEjercicio, hoy) => {
+  const cierre = soloFecha(fechaCierreEjercicio);
+  if (!cierre) return null;
+
+  const mes = cierre.getMonth();
+  const dia = cierre.getDate();
+  const candidato = new Date(hoy.getFullYear(), mes, dia);
+
+  return candidato.getTime() > hoy.getTime()
+    ? new Date(hoy.getFullYear() - 1, mes, dia)
+    : candidato;
+};
+
 export const calcularEstadoBalance = ({
   fchArchivo,
   fechaCierreEjercicio,
@@ -17,7 +36,8 @@ export const calcularEstadoBalance = ({
   hoy = new Date(),
 }) => {
   const fechaBalance = soloFecha(fchArchivo);
-  const fechaCierre = soloFecha(fechaCierreEjercicio);
+  const hoySoloFecha = soloFecha(hoy) || hoy;
+  const fechaCierre = ultimoCierrePasado(fechaCierreEjercicio, hoySoloFecha);
 
   if (!fechaBalance) return { estado: "faltante" };
   // Sin fecha de cierre del socio o sin margen resuelto todavía: no hay con
@@ -32,8 +52,6 @@ export const calcularEstadoBalance = ({
 
   const fechaLimite = new Date(fechaCierre);
   fechaLimite.setDate(fechaLimite.getDate() + Number(margenDias));
-
-  const hoySoloFecha = soloFecha(hoy) || hoy;
 
   if (hoySoloFecha.getTime() <= fechaLimite.getTime()) {
     const msPorDia = 1000 * 60 * 60 * 24;
