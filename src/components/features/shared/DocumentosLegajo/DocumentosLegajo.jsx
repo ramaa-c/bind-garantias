@@ -175,6 +175,7 @@ export function DocumentosLegajo({
   socioIdOverride,
   empresaOverride,
   adminMode = false,
+  cadenaIdOverride,
 } = {}) {
   const { control, setValue } = useFormContext();
   const formValues = useWatch({ control });
@@ -209,25 +210,23 @@ export function DocumentosLegajo({
     });
   };
 
-  // En modo admin no se conoce con certeza a qué cadena de valor pertenece
-  // el socio (no hay un campo CadenaValorID en Socio), así que se muestra
-  // el legajo completo sin aplicar el filtro de requisitos por cadena.
+  // No hay un campo CadenaValorID en Socio, así que en modo admin la cadena
+  // llega ya detectada desde afuera (EmpresaDetalle.jsx la infiere del
+  // historial de CDAs del socio, ver detectarCadenaValorId). Si no se pudo
+  // detectar (historial viejo o inexistente), useRequisitos cae solo al
+  // fallback por tipo de persona/sociedad — sigue siendo mejor que mostrar
+  // el legajo completo sin ningún criterio.
   const { cadenaSlug } = useParams();
-  const cadenaId = Number(cadenaSlug) || 1;
-  const { requisitos } = useRequisitos(
-    adminMode ? null : cadenaId,
-    adminMode ? null : tipoPersonaId,
-    adminMode ? null : nombreEmpresa,
-  );
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
+  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   const estructuraFiltrada = useMemo(() => {
-    if (adminMode) return ESTRUCTURA_LEGAJO;
     return ESTRUCTURA_LEGAJO.filter((doc) => {
       if (doc.key === "perfil") return true;
       const configVal = requisitos?.documentos?.[doc.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [requisitos, adminMode]);
+  }, [requisitos]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -610,7 +609,7 @@ export function DocumentosLegajo({
     if (!doc) return null;
     const isPerfil = doc.key === "perfil";
     const files = categoryFiles;
-    const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
+    const isRequired = requisitos?.documentos?.[doc.key] === 1;
     const showSubTabs = !isPerfil && files.length > 0;
     const isBalance = doc.key === "balance";
     const estadoBalance = isBalance ? calcularEstadoBalanceDoc(files) : null;
@@ -937,7 +936,7 @@ export function DocumentosLegajo({
               doc.category !== estructuraFiltrada[index - 1].category;
             const isPerfil = doc.key === "perfil";
             const currentFile = formValues[doc.key];
-            const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
+            const isRequired = requisitos?.documentos?.[doc.key] === 1;
             const isActive = activeTab === doc.key;
 
             const docFiles = archivosBackend.filter(
@@ -964,7 +963,7 @@ export function DocumentosLegajo({
                   <div className={styles.tabTitleGroup}>
                     <span className={styles.tabTitle}>{doc.title}</span>
                     <div className={styles.badgeRow}>
-                      {!isPerfil && !adminMode &&
+                      {!isPerfil &&
                         (isRequired ? (
                           <span
                             className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
@@ -985,7 +984,7 @@ export function DocumentosLegajo({
                           Vía LUFE
                         </span>
                       )}
-                      {!adminMode && estadoBalance?.estado === "por_vencer" && (
+                      {estadoBalance?.estado === "por_vencer" && (
                         <span
                           className={`${styles.reqBadge} ${styles.reqBadgeVenceProximo}`}
                         >
@@ -1019,7 +1018,7 @@ export function DocumentosLegajo({
           doc.category !== estructuraFiltrada[index - 1].category;
         const isPerfil = doc.key === "perfil";
         const currentFile = formValues[doc.key];
-        const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
+        const isRequired = requisitos?.documentos?.[doc.key] === 1;
         const isActive = activeTab === doc.key;
 
         const docFiles = archivosBackend.filter(
@@ -1048,7 +1047,7 @@ export function DocumentosLegajo({
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
                 <div className={styles.badgeRow}>
-                  {!isPerfil && !adminMode &&
+                  {!isPerfil &&
                     (isRequired ? (
                       <span
                         className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
@@ -1069,7 +1068,7 @@ export function DocumentosLegajo({
                       Vía LUFE
                     </span>
                   )}
-                  {!adminMode && estadoBalance?.estado === "por_vencer" && (
+                  {estadoBalance?.estado === "por_vencer" && (
                     <span
                       className={`${styles.reqBadge} ${styles.reqBadgeVenceProximo}`}
                     >

@@ -18,6 +18,7 @@ import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
 import Spinner from "../../../ui/Spinner/Spinner";
 import { MigracionExitosaModal } from "../MigracionExitosaModal/MigracionExitosaModal";
+import { EstadoMigracionModal } from "../EstadoMigracionModal/EstadoMigracionModal";
 import styles from "./LegajoUniversalBar.module.css";
 
 export function LegajoUniversalBar({ context }) {
@@ -44,6 +45,7 @@ export function LegajoUniversalBar({ context }) {
   const [isMigrating, setIsMigrating] = useState(false);
   const [lastAttemptedFingerprint, setLastAttemptedFingerprint] = useState("");
   const [showMigracionExitosa, setShowMigracionExitosa] = useState(false);
+  const [showEstadoMigracion, setShowEstadoMigracion] = useState(false);
   const modalesLegajoAbiertos = useLegajoModalStore((s) => s.modalesAbiertos);
 
   const fingerprint = useMemo(() => {
@@ -240,7 +242,22 @@ export function LegajoUniversalBar({ context }) {
   return (
     <>
       {migracionExitosaModal}
-      <div className={`${styles.container} ${isValid ? styles.containerValid : (isContextInvalid ? styles.containerInvalid : "")}`}>
+      <EstadoMigracionModal
+        isOpen={showEstadoMigracion}
+        onClose={() => setShowEstadoMigracion(false)}
+      />
+      <div
+        className={`${styles.container} ${styles.containerClickable} ${isValid ? styles.containerValid : (isContextInvalid ? styles.containerInvalid : "")}`}
+        role="button"
+        tabIndex={0}
+        onClick={() => setShowEstadoMigracion(true)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setShowEstadoMigracion(true);
+          }
+        }}
+      >
       <div className={styles.barHeader}>
         <div className={styles.statusInfo}>
           <div className={styles.circularProgressWrapper}>
@@ -278,7 +295,8 @@ export function LegajoUniversalBar({ context }) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   const basePath = `/${channelInfo?.id || "default"}`;
                   if (faltanLegajo) {
                     navigate(`${basePath}/legajo`);

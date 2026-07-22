@@ -81,28 +81,6 @@
   gap: 0.75rem;
 }
 
-/* Solo es clickeable una vez que el onboarding terminó (ver Sidebar.jsx):
-   antes de eso no hay perfil/legajo real que mostrar. */
-.companyCardClickable {
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.companyCardClickable:hover {
-  background: rgba(255, 255, 255, 0.055);
-  border-color: rgba(244, 245, 0, 0.2);
-}
-
-.companyCardChevron {
-  color: var(--text-muted, #a3a3a3);
-  flex-shrink: 0;
-  transition: color 0.15s ease;
-}
-
-.companyCardClickable:hover .companyCardChevron {
-  color: var(--yellow, #f4f500);
-}
-
 .companyAvatar {
   width: 2.25rem;
   height: 2.25rem;

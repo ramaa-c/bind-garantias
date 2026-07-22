@@ -1,0 +1,205 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── HERO ────────────────────────────────────────────────────────────────── */
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 1.1rem 1.2rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.hero-success {
+  border-color: rgba(61, 220, 132, 0.28);
+  background: linear-gradient(135deg, rgba(61, 220, 132, 0.12) 0%, rgba(255, 255, 255, 0.02) 100%);
+  box-shadow: 0 4px 24px rgba(61, 220, 132, 0.08);
+}
+
+.hero-ready {
+  border-color: rgba(245, 244, 0, 0.28);
+  background: linear-gradient(135deg, rgba(245, 244, 0, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+  box-shadow: 0 4px 24px rgba(245, 244, 0, 0.06);
+}
+
+.hero-pending {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.heroIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hero-success .heroIcon {
+  background: rgba(61, 220, 132, 0.15);
+  color: var(--success-green, #3ddc84);
+}
+
+.hero-ready .heroIcon {
+  background: rgba(245, 244, 0, 0.14);
+  color: var(--yellow, #f5f400);
+}
+
+.hero-pending .heroIcon {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.heroTitulo {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--white, #fffefe);
+  margin: 0;
+}
+
+.heroSubtitulo {
+  font-size: 0.8rem;
+  color: var(--text-muted, #a3a3a3);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ── PROGRESO GLOBAL ─────────────────────────────────────────────────────── */
+.progressRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 0.1rem;
+}
+
+.progressTrack {
+  flex: 1 1 auto;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fill-success {
+  background: var(--success-green, #3ddc84);
+}
+
+.fill-ready {
+  background: var(--yellow, #f5f400);
+}
+
+.fill-pending {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.progressLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #c9d1d9;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ── CHECKLISTS (Documentación / Legajo) ────────────────────────────────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #a3a3a3);
+}
+
+.sectionTally {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #c9d1d9;
+  font-variant-numeric: tabular-nums;
+}
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.checklistItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.6rem;
+}
+
+.iconDone {
+  color: var(--success-green, #3ddc84);
+  flex-shrink: 0;
+}
+
+.iconPending {
+  color: rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.labelDone {
+  font-size: 0.82rem;
+  color: #c9d1d9;
+}
+
+.labelPending {
+  font-size: 0.82rem;
+  color: var(--white, #fffefe);
+  font-weight: 600;
+}
+
+/* ── CTA ─────────────────────────────────────────────────────────────────── */
+.ctaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding-top: 0.15rem;
+}
+
+.ctaRow > * {
+  flex: 1 1 180px;
+  justify-content: center;
+}

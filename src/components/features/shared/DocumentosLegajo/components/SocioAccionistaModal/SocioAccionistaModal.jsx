@@ -870,7 +870,14 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               const descNorm = normalizarTexto(a.descripcion);
               return descNorm.includes(cuitLimpio) || descNorm.includes(normalizarTexto(formData.nombre));
             });
-            const descFrente = `DNI Frente - ${formData.nombre.toUpperCase()}`;
+            // El CUIT viaja en la descripción a propósito: es el único
+            // vínculo real entre este archivo y el accionista (no hay
+            // columna que lo relacione), y a diferencia del nombre, no
+            // cambia si el mismo tercero se actualiza después (ej. al
+            // guardarlo también como representante) — evita que ese cambio
+            // de nombre haga que useValidacionLegajo deje de encontrar el
+            // DNI y el requisito vuelva a "pendiente".
+            const descFrente = `DNI Frente - ${cuitLimpio} - ${formData.nombre.toUpperCase()}`;
             if (existenteFrente) {
               await socioArchivoService.actualizarArchivo(existenteFrente, dniFrenteFile, "socio-frente", descFrente);
             } else {
@@ -883,7 +890,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               const descNorm = normalizarTexto(a.descripcion);
               return descNorm.includes(cuitLimpio) || descNorm.includes(normalizarTexto(formData.nombre));
             });
-            const descDorso = `DNI Dorso - ${formData.nombre.toUpperCase()}`;
+            const descDorso = `DNI Dorso - ${cuitLimpio} - ${formData.nombre.toUpperCase()}`;
             if (existenteDorso) {
               await socioArchivoService.actualizarArchivo(existenteDorso, dniDorsoFile, "socio-dorso", descDorso);
             } else {
