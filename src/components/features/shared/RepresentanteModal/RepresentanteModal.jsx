@@ -137,6 +137,115 @@ export function RepresentanteModal({
       isSystemError: false
     });
 
+    // El motor de CDAs para PANTALLA_SOCIOS necesita que la relación
+    // tercero<->socio ya exista para resolver el contexto — si no, el
+    // backend responde 500 (EAccessViolation, confirmado en vivo). Se crea
+    // un stub (participación no aplica acá, pero sí porcacciones=0) ANTES
+    // de validar, igual que en SocioAccionistaModal. Solo aplica al alta
+    // nueva en modo legajo: si es edición (representante/representanteInicial)
+    // la relación ya existe; si no hay socioIdActivo (modo formulario del
+    // wizard de Alta de Operación) tampoco corresponde crear nada en la
+    // base todavía. `onConfirmSave` ya busca la relación existente por
+    // terceroId+socio antes de decidir crear o actualizar, así que no hace
+    // falta guardar el ID acá: la va a encontrar sola.
+    if (socioIdActivo && !representante && !representanteInicial) {
+      try {
+        let terceroExistente = null;
+        try {
+          const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
+          const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
+          if (arr.length > 0) terceroExistente = arr[0];
+        } catch (buscarErr) {
+          console.warn("[RepresentanteModal] Error buscando tercero previo a validar CDA:", buscarErr);
+        }
+
+        let stubTerceroId = terceroExistente
+          ? (terceroExistente.tercerorelacionadoid || terceroExistente.TerceroRelacionadoID || terceroExistente.id)
+          : null;
+
+        if (!stubTerceroId) {
+          // Denominacion y descripcionreducida van VACÍAS a propósito: la
+          // precarga de más abajo hace `terceroEncontrado?.denominacion ||
+          // nosisData...`, y un placeholder no vacío gana esa cadena de ORs,
+          // pisando el nombre real que devuelva NOSIS/AFIP.
+          const nuevoTercero = await tercerosService.crearTercero({
+            tercerorelacionadoid: 0,
+            denominacion: "",
+            cuit: cuitLimpio,
+            bcraid: 0,
+            tipopersonaid: 1,
+            tipodocumentoid: 0,
+            numerodocumento: cuitLimpio,
+            estadocivilid: 0,
+            ciudadid: 0,
+            telefono: "",
+            conyuge: "",
+            actividad: "",
+            contacto: "",
+            nrocuenta: "",
+            codigomercado: "",
+            calle: "",
+            numero: 0,
+            piso: "",
+            departamento: "",
+            codpos: "",
+            descripcionreducida: "",
+            mail: "",
+          });
+          stubTerceroId = nuevoTercero.tercerorelacionadoid || nuevoTercero.id;
+        }
+
+        const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+        const arrRel = Array.isArray(relaciones) ? relaciones : relaciones?.data || [];
+        const relacionExistente = arrRel.find(
+          (r) =>
+            Number(r.terceroid ?? r.tercerorelacionadoid ?? r.TerceroRelacionadoID) === Number(stubTerceroId) &&
+            [210, 230].includes(Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId)),
+        );
+
+        if (!relacionExistente) {
+          const ahoraStub = new Date().toISOString().split(".")[0];
+          const unAnioMasStub = new Date();
+          unAnioMasStub.setFullYear(unAnioMasStub.getFullYear() + 1);
+          const rolActual = getValues("rol");
+          const targetRolIdStub = rolActual === "Apoderado" ? 210 : 230;
+          await tercerosService.guardarRelacionesDeSocio({
+            socioid: socioIdActivo,
+            tercerosrelacionados: [
+              {
+                sociotercerorelacionid: 0,
+                socioid: socioIdActivo,
+                terceroid: stubTerceroId,
+                tiporelacionsocioid: targetRolIdStub,
+                fechadesde: ahoraStub,
+                fechahasta: unAnioMasStub.toISOString().split(".")[0],
+                porcacciones: 0,
+                nroinscripcion: "",
+                condicionescomerciales: "",
+                cbu: "",
+                nrosubcuentacaja: "",
+                sucursalid: 0,
+                default: "0",
+                subtiporelacionsocioid: 0,
+                telefono: "",
+                momento: ahoraStub,
+              },
+            ],
+          });
+        }
+        // La relación ya quedó creada en la base en este punto (aunque
+        // todavía falte completar el formulario y guardar) — se avisa ya
+        // para que la lista de representantes/apoderados se refresque y lo
+        // muestre, en vez de esperar a que se cierre/guarde la modal.
+        if (onSuccess) onSuccess();
+      } catch (stubErr) {
+        // No bloqueamos la validación por esto: si falla, seguimos igual
+        // (en el peor caso, el CDA va a fallar con el mismo error que ya
+        // conocíamos antes de este cambio).
+        console.error("[RepresentanteModal] Error creando la relación previa a validar CDA:", stubErr);
+      }
+    }
+
     const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam, usuarioWebIdActual);
 
     if (!result.success) {
@@ -236,6 +345,49 @@ export function RepresentanteModal({
         setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
         setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
         setValue("telefono", telVal, { shouldValidate: true, shouldDirty: true });
+
+        // Se persiste YA lo que trajo AFIP/NOSIS: si el usuario cierra sin
+        // guardar y vuelve más tarde, no se pierde (antes quedaba solo en
+        // el formulario en memoria, y el tercero en la base seguía con
+        // denominacion="" del stub). `terceroEncontrado` acá ya es el stub
+        // recién creado (se buscó por el mismo CUIT más arriba). Lo que
+        // falta (rol definitivo, o ediciones manuales) se guarda en
+        // onConfirmSave.
+        const idParaPersistir = terceroEncontrado?.tercerorelacionadoid || terceroEncontrado?.TerceroRelacionadoID || terceroEncontrado?.id;
+        if (idParaPersistir && !representante && !representanteInicial) {
+          try {
+            await tercerosService.actualizarTercero({
+              tercerorelacionadoid: idParaPersistir,
+              denominacion: nombreRep,
+              cuit: cuitLimpio,
+              bcraid: 0,
+              tipopersonaid: 1,
+              tipodocumentoid: 0,
+              numerodocumento: cuitLimpio,
+              estadocivilid: 0,
+              ciudadid: 0,
+              telefono: telVal,
+              conyuge: "",
+              actividad: "",
+              contacto: "",
+              nrocuenta: "",
+              codigomercado: "",
+              calle: "",
+              numero: 0,
+              piso: "",
+              departamento: "",
+              codpos: "",
+              descripcionreducida: nombreRep.substring(0, 20),
+              mail: emailVal,
+            });
+            // La tarjeta ya se mostraba "sin nombre" desde que se creó el
+            // stub — se refresca de nuevo para que pase a mostrar el
+            // nombre real sin esperar al guardado final.
+            if (onSuccess) onSuccess();
+          } catch (persistErr) {
+            console.warn("[RepresentanteModal] No se pudo persistir la precarga de AFIP/NOSIS:", persistErr);
+          }
+        }
 
         setAfipValidado(true);
         toast.success(representante || representanteInicial ? "Datos actualizados desde Nosis/AFIP/LUFE." : `Datos del ${etiquetaRol.toLowerCase()} recuperados.`);

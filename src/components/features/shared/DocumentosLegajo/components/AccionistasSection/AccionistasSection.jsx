@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { FiUsers, FiPlus, FiAlertCircle, FiUser, FiChevronDown, FiEdit2, FiTrash2, FiMail, FiPhone, FiMapPin, FiPercent } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { SocioAccionistaModal } from "../SocioAccionistaModal/SocioAccionistaModal";
+import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui";
 
 const normalizarTexto = (str) =>
@@ -250,6 +251,13 @@ export function AccionistasSection({
                         </div>
                       </div>
                     </div>
+                    {isAdmin && (
+                      <TerceroCdaEstado
+                        terceroId={socio.id}
+                        cuit={socio.cuit}
+                        socioIdActivo={socioIdActivo}
+                      />
+                    )}
                   </div>
                 </div>
               )})}

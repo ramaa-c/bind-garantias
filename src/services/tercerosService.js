@@ -150,4 +150,17 @@ export const tercerosService = {
     const response = await api.get(`sgrplus/SocioTerceroRelacion/${socioId}`);
     return response.data;
   },
+
+  // GET api/Terceros/ExecuteCda?TerceroID=X - Historial de ejecuciones de
+  // CDAs de un tercero (accionista/representante/apoderado), análogo a
+  // api/Socios/ExecuteCda pero para PANTALLA_SOCIOS. Misma forma de fila
+  // que WSSocioExecuteCda, solo cambia el nombre del ID
+  // (TerceroExecuteCdaID/TerceroRelacionadoID en vez de
+  // SocioExecuteCdaID/SocioID) — ver utils/executeCda.js.
+  obtenerExecuteCda: async (terceroId) => {
+    const response = await api.get("api/Terceros/ExecuteCda", {
+      params: { TerceroID: terceroId },
+    });
+    return response.data;
+  },
 };

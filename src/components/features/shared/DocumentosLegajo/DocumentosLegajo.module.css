@@ -121,6 +121,20 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.reqBadgeRechazado {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* Separa el bloque de Estado CDA (TerceroCdaEstado) del resto de los datos
+   de contacto — sin esto quedan pegados y se confunden visualmente. */
+.terceroCdaWrapper {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 0.5rem;
+  padding-top: 0.875rem;
+}
+
 .glassCard {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
