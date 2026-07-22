@@ -24,6 +24,7 @@ import {
 } from "../../../features";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
+import { tercerosService } from "../../../../services/tercerosService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { formatBase64Size } from "../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
@@ -76,7 +77,6 @@ export default function Paso5Documentacion({
   socios = [],
   onVolverASocios,
   avanzarPaso6,
-  onGuardarSocioDb,
   isSubmitting,
   socioId,
 }) {
@@ -303,6 +303,72 @@ export default function Paso5Documentacion({
       ? updateRep(repActivoIndex, repData)
       : appendRep(repData);
 
+  const handleEliminarRep = async (index) => {
+    const rep = representantes[index];
+    const cuitLimpio = String(rep?.cuit || "").replace(/\D/g, "");
+
+    if (socioId && cuitLimpio) {
+      try {
+        const existentes = await tercerosService.obtenerTerceros({
+          Cuit: cuitLimpio,
+        });
+        const arrTerceros = Array.isArray(existentes)
+          ? existentes
+          : existentes?.data || [];
+        const terceroId =
+          arrTerceros[0]?.tercerorelacionadoid ||
+          arrTerceros[0]?.TerceroRelacionadoID ||
+          arrTerceros[0]?.id;
+
+        if (terceroId) {
+          const relaciones =
+            await tercerosService.obtenerRelacionesDeSocio(socioId);
+          const arrRel = Array.isArray(relaciones)
+            ? relaciones
+            : relaciones?.data || [];
+          const relacionActiva = arrRel.find(
+            (r) =>
+              Number(
+                r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID,
+              ) === Number(terceroId) &&
+              [210, 230].includes(
+                Number(
+                  r.tiporelacionsocioid ||
+                    r.TipoRelacionSocioID ||
+                    r.tiporelacionsocioId,
+                ),
+              ),
+          );
+
+          if (relacionActiva) {
+            const ayer = new Date();
+            ayer.setDate(ayer.getDate() - 1);
+            const ayerStr = ayer.toISOString().split(".")[0];
+            const payload = {
+              ...relacionActiva,
+              fechahasta: ayerStr,
+              FechaHasta: ayerStr,
+            };
+            delete payload.provinciaid;
+            delete payload.ProvinciaID;
+            await tercerosService.actualizarRelacionDeSocio(payload);
+            toast.success(
+              `${rep?.rol || "Representante"} desvinculado correctamente.`,
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Error al desvincular representante:", err);
+        toast.error(
+          "Ocurrió un error al intentar desvincular al representante.",
+        );
+        return;
+      }
+    }
+
+    removeRep(index);
+  };
+
   const handleAvanzarClick = async () => {
     updateState({ intentoAvanzar: true });
     const isRepRequired = requisitos?.relaciones?.representantes === 1;
@@ -481,7 +547,7 @@ export default function Paso5Documentacion({
                       <button
                         type="button"
                         className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
-                        onClick={() => removeRep(index)}
+                        onClick={() => handleEliminarRep(index)}
                         title="Eliminar"
                       >
                         <FiTrash2 size={13} />

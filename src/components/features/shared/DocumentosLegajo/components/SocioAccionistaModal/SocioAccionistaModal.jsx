@@ -11,6 +11,7 @@ import { CargaArchivos } from "../../../../../ui/CargaArchivos/CargaArchivos";
 import { ProcesamientoModal } from "../../../../../ui/ProcesamientoModal/ProcesamientoModal";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
+import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
@@ -101,6 +102,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
   const { ejecutarValidaciones } = useCdaEngine();
   const usuarioWebIdActual = useUsuarioWebIdActual();
+  useRegistrarModalLegajo(isOpen);
 
   // El motor de CDAs para PANTALLA_SOCIOS necesita que la relación
   // tercero<->socio ya exista para poder resolver el contexto — si no,
@@ -343,52 +345,42 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     // viene seteado (edición), la relación ya existe de antes.
     if (!socio && !stubIdsRef.current.terceroId) {
       try {
-        let terceroExistente = null;
-        try {
-          const existentes = await tercerosService.obtenerTerceros({ Cuit: cuitLimpio });
-          const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
-          if (arr.length > 0) terceroExistente = arr[0];
-        } catch (buscarErr) {
-          console.warn("[SocioAccionistaModal] Error buscando tercero previo a validar CDA:", buscarErr);
-        }
-
-        let stubTerceroId = terceroExistente
-          ? (terceroExistente.tercerorelacionadoid || terceroExistente.TerceroRelacionadoID || terceroExistente.id)
-          : null;
-
-        if (!stubTerceroId) {
-          // Denominacion y descripcionreducida van VACÍAS a propósito (no
-          // "Pendiente de datos" ni similar): la lógica de precarga de más
-          // abajo hace `terceroEncontrado?.denominacion || nosisData...`, y
-          // un placeholder no vacío gana esa cadena de ORs, pisando el
-          // nombre real que devuelva NOSIS/AFIP.
-          const nuevoTercero = await tercerosService.crearTercero({
-            tercerorelacionadoid: 0,
-            denominacion: "",
-            cuit: cuitLimpio,
-            bcraid: 0,
-            tipopersonaid: cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
-            tipodocumentoid: 0,
-            numerodocumento: cuitLimpio,
-            estadocivilid: 0,
-            ciudadid: 0,
-            provinciaid: 0,
-            telefono: "",
-            conyuge: "",
-            actividad: "",
-            contacto: "",
-            nrocuenta: "",
-            codigomercado: "",
-            calle: "",
-            numero: 0,
-            piso: "",
-            departamento: "",
-            codpos: "",
-            descripcionreducida: "",
-            mail: "",
-          });
-          stubTerceroId = nuevoTercero.tercerorelacionadoid || nuevoTercero.id;
-        }
+        // Denominacion y descripcionreducida van VACÍAS a propósito (no
+        // "Pendiente de datos" ni similar) para el caso de que haya que
+        // crearlo: la lógica de precarga de más abajo hace
+        // `terceroEncontrado?.denominacion || nosisData...`, y un
+        // placeholder no vacío gana esa cadena de ORs, pisando el nombre
+        // real que devuelva NOSIS/AFIP. `buscarOCrearTercero` busca primero
+        // por CUIT y reutiliza el existente si lo hay (evitando duplicarlo).
+        const terceroResuelto = await tercerosService.buscarOCrearTercero(cuitLimpio, {
+          tercerorelacionadoid: 0,
+          denominacion: "",
+          cuit: cuitLimpio,
+          bcraid: 0,
+          tipopersonaid: cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
+          tipodocumentoid: 0,
+          numerodocumento: cuitLimpio,
+          estadocivilid: 0,
+          ciudadid: 0,
+          provinciaid: 0,
+          telefono: "",
+          conyuge: "",
+          actividad: "",
+          contacto: "",
+          nrocuenta: "",
+          codigomercado: "",
+          calle: "",
+          numero: 0,
+          piso: "",
+          departamento: "",
+          codpos: "",
+          descripcionreducida: "",
+          mail: "",
+        });
+        const stubTerceroId =
+          terceroResuelto.tercerorelacionadoid ||
+          terceroResuelto.TerceroRelacionadoID ||
+          terceroResuelto.id;
 
         const relacionesSocio = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
         const relacionesArr = Array.isArray(relacionesSocio) ? relacionesSocio : [];

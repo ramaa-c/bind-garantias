@@ -12,6 +12,7 @@ import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useObtenerPorCadenaValorIdWeb } from "../../../../hooks/useCadenaValor";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
+import { guardarSocioPendiente } from "../../../../utils/altaEmpresaPendiente";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useNavigate, useParams } from "react-router-dom";
 import styles from "./Paso1Cuit.module.css";
@@ -522,6 +523,14 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
         // "empezar de nuevo" con otro CUIT sin dejar un socio duplicado.
         socioIdCreadoRef.current = socioId;
         setThresholdCruzado(true);
+        // Blindaje contra un F5 en Paso2 (ver altaEmpresaPendiente.js): la
+        // transición a Paso2 en AltaDatosEmpresa.jsx es estado local, no
+        // navegación — sin esto, recargar la página vuelve a Paso1 con el
+        // CUIT editable aunque el socio ya exista.
+        guardarSocioPendiente(cadenaSlug, user?.email, {
+          ...payloadSocio,
+          socioid: socioId,
+        });
 
         if (usuarioWebId) {
           await sociosService.vincularSocioUsuario({

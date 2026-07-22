@@ -282,6 +282,7 @@ export const useValidacionLegajo = () => {
     faltanLegajo: erroresLegajo.length > 0,
     archivosBackend,
     socioLegajoData,
+    requisitos,
   };
 };
 

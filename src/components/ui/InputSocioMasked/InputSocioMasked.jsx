@@ -15,6 +15,7 @@ export const InputSocioMasked = forwardRef(({
   tooltip,
   className = "",
   defaultValue = "",
+  disabled = false,
   value: manualValue,
   onChange: manualOnChange,
   onFocus: manualOnFocus,
@@ -42,6 +43,7 @@ export const InputSocioMasked = forwardRef(({
       styles.container,
       statusClass,
       hasValue || isFocused ? styles.hasValue : "",
+      disabled ? styles.isDisabled : "",
       className,
     ]
       .filter(Boolean)
@@ -76,6 +78,7 @@ export const InputSocioMasked = forwardRef(({
                 className={styles.input}
                 placeholder=" "
                 inputRef={inputRef}
+                disabled={disabled}
                 {...props}
               />
             ) : (
@@ -89,6 +92,7 @@ export const InputSocioMasked = forwardRef(({
                 className={styles.input}
                 placeholder=" "
                 ref={inputRef}
+                disabled={disabled}
                 {...props}
               />
             )}

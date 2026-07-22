@@ -258,6 +258,11 @@ export function DocumentosLegajo({
   }, [estructuraFiltrada, activeTab, isMobile]);
 
   const [archivosBackend, setArchivosBackend] = useState([]);
+  // Arranca en true (no en false) porque apenas se monta ya se sabe que va
+  // a haber un fetch: si arrancara en false, en la primera pintada todos
+  // los tabs se verían un instante como "sin archivo" (punto gris) antes de
+  // que dispare el loading real.
+  const [cargandoArchivos, setCargandoArchivos] = useState(true);
   const [activeSubTabs, setActiveSubTabs] = useState({});
   const [metaFecha, setMetaFecha] = useState("");
   const [metaRef, setMetaRef] = useState("");
@@ -266,6 +271,7 @@ export function DocumentosLegajo({
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
+    setCargandoArchivos(true);
     try {
       const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo);
       if (Array.isArray(archivos)) {
@@ -312,6 +318,8 @@ export function DocumentosLegajo({
       }
     } catch (err) {
       console.error("Error cargando archivos del legajo:", err);
+    } finally {
+      setCargandoArchivos(false);
     }
   };
 
@@ -892,7 +900,7 @@ export function DocumentosLegajo({
             const isVencidoBalance = estadoBalance?.estado === "vencido";
             const isComplete = isPerfil || (!!currentFile && !isVencidoBalance);
             const hasError =
-              intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
+              !cargandoArchivos && intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
 
             return (
               <React.Fragment key={doc.key}>
@@ -939,7 +947,7 @@ export function DocumentosLegajo({
                     </div>
                   </div>
                   <span
-                    className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
+                    className={`${styles.statusDot} ${cargandoArchivos ? styles.dotLoading : isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
                   />
                 </button>
               </React.Fragment>
@@ -971,7 +979,7 @@ export function DocumentosLegajo({
         const isVencidoBalance = estadoBalance?.estado === "vencido";
         const isComplete = isPerfil || (!!currentFile && !isVencidoBalance);
         const hasError =
-          intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
+          !cargandoArchivos && intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
 
         return (
           <React.Fragment key={doc.key}>
@@ -1020,7 +1028,7 @@ export function DocumentosLegajo({
                 </div>
               </div>
               <span
-                className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
+                className={`${styles.statusDot} ${cargandoArchivos ? styles.dotLoading : isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
               />
               <FiChevronDown
                 className={styles.mobileChevron}

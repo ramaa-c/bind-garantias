@@ -21,6 +21,10 @@ import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useObtenerPorCadenaValorIdWeb } from "../../../../hooks/useCadenaValor";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
+import {
+  leerSocioPendiente,
+  limpiarSocioPendiente,
+} from "../../../../utils/altaEmpresaPendiente";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/ChannelContext";
 import styles from "./AltaDatosEmpresa.module.css";
@@ -52,7 +56,7 @@ const mapearSocioAValoresFormulario = (socio) => {
     direccion: `${calle} ${numero || ""}`.trim(),
     calle,
     sinNumero: !numero,
-    numero,
+    numero: numero || "",
     piso: socio.piso || socio.Piso || "",
     departamento: socio.departamento || socio.Departamento || "",
     localidad,
@@ -76,12 +80,25 @@ export const AltaDatosEmpresa = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
-  const socioParaCompletar = location.state?.socioParaCompletar || null;
   const { channelInfo } = useChannel();
   const { cadenaSlug } = useParams();
   const cadenaValorId = Number(cadenaSlug);
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
   const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
+  const user = useAuthStore((state) => state.user);
+
+  // location.state.socioParaCompletar es lo que manda OnboardingGuard
+  // cuando resuelve desde el servidor que el socio ya cruzó el umbral. Si
+  // no está (ej. un F5 en Paso2: esa transición es estado local, no
+  // navegación, así que no hay location.state que sobreviva) caemos al
+  // respaldo guardado en sessionStorage por Paso1Cuit en el momento exacto
+  // en que se cruzó el umbral — ver utils/altaEmpresaPendiente.js.
+  const [socioParaCompletar] = useState(
+    () =>
+      location.state?.socioParaCompletar ||
+      leerSocioPendiente(cadenaSlug, user?.email) ||
+      null,
+  );
 
   const [pasoActual, setPasoActual] = useState(socioParaCompletar ? 2 : 1);
   const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(
@@ -118,7 +135,6 @@ export const AltaDatosEmpresa = () => {
     return id !== null && id !== undefined ? Number(id) : null;
   });
 
-  const user = useAuthStore((state) => state.user);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
   const [isNavigating, setIsNavigating] = useState(false);
 
@@ -152,7 +168,7 @@ export const AltaDatosEmpresa = () => {
           direccion: "",
           calle: "",
           sinNumero: false,
-          numero: 0,
+          numero: "",
           piso: "",
           departamento: "",
           localidad: "",
@@ -221,16 +237,27 @@ export const AltaDatosEmpresa = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socioParaCompletar, isPendingProvincias]);
 
-  const handleVolver = () => {
-    setPasoActual((prev) => (prev === 1 ? 1 : prev - 1));
-  };
-
-  const handleClickReiniciar = () => {
-    reset();
-    setPasoActual(1);
-    setMaxPasoAlcanzado(1);
-    setSocioId(null);
-  };
+  // ⚠️ SEGURIDAD: una vez en Paso 2 el CUIT ya está comprometido (el socio
+  // existe en el backend y ya pasó el CDA, ver Paso1Cuit.jsx) — no puede
+  // haber forma de volver a Paso1, reiniciar, ni editarlo desde acá. Por
+  // eso no existen handlers de "volver"/"reiniciar": BarraProgreso y
+  // Paso2Datos directamente no reciben esos props una vez que pasoActual
+  // es 2 (ver más abajo), sin importar si se llegó por el flujo normal o
+  // por el modo "completar".
+  useEffect(() => {
+    if (pasoActual !== 2) return;
+    // Recargar/cerrar la pestaña en Paso2 tira el estado local (pasoActual
+    // vuelve a 1 al remontar) — el respaldo en sessionStorage (ver
+    // altaEmpresaPendiente.js) evita que eso reabra el CUIT, pero igual
+    // conviene el aviso nativo del navegador antes de perder lo que el
+    // usuario ya cargó en el formulario.
+    const handler = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [pasoActual]);
 
   const onSubmitFinal = async (data) => {
     if (enviandoSolicitud) return;
@@ -388,6 +415,7 @@ export const AltaDatosEmpresa = () => {
           queryKey: ["socioUsuario", "listaPorUsuario", usuariowebidReal],
         });
 
+        limpiarSocioPendiente(cadenaSlug, user?.email);
         toast.success("Empresa creada y vinculada correctamente");
 
         if (vendorData?.isVendor) {
@@ -468,10 +496,6 @@ export const AltaDatosEmpresa = () => {
     if (pasoActual === 2) {
       return (
         <Paso2Datos
-          // En modo "completar" no hay Paso 1 al que volver (ver
-          // BarraProgreso más abajo, mismo motivo): omitimos onVolver para
-          // que Paso2Datos oculte el lápiz de "Editar CUIT".
-          onVolver={socioParaCompletar ? null : handleVolver}
           onContinuar={async () => {
             if (await trigger(["direccion", "localidad", "celular"])) {
               handleSubmit(onSubmitFinal)();
@@ -512,15 +536,14 @@ export const AltaDatosEmpresa = () => {
                 hitos={["CUIT", "DATOS"]}
                 hitoActual={pasoActual}
                 maxHitoAlcanzado={maxPasoAlcanzado}
-                // En modo "completar" (socio ya existente, solo falta el
-                // Paso 2) no hay Paso 1 al que volver: si el usuario
-                // re-ingresara su propio CUIT ahí, el chequeo de "socio
-                // existente" lo bloquearía. Deshabilitamos toda navegación
-                // hacia atrás en ese caso.
-                onStepClick={socioParaCompletar ? undefined : setPasoActual}
-                onVolver={
-                  pasoActual > 1 && !socioParaCompletar ? handleVolver : null
-                }
+                // El CUIT queda comprometido apenas se llega a Paso 2 (ver
+                // Paso1Cuit.jsx): el socio ya existe en el backend y ya pasó
+                // el CDA, así que no puede haber forma de volver a Paso1, ni
+                // de reiniciar, sin importar cómo se llegó hasta acá (alta
+                // nueva o modo "completar"). Un solo camino posible:
+                // completar los datos y avanzar.
+                onStepClick={pasoActual === 2 ? undefined : setPasoActual}
+                onVolver={null}
                 onVolverInicio={
                   pasoActual === 1
                     ? () => {
@@ -532,11 +555,7 @@ export const AltaDatosEmpresa = () => {
                       }
                     : null
                 }
-                onReiniciar={
-                  pasoActual > 1 && !socioParaCompletar
-                    ? handleClickReiniciar
-                    : null
-                }
+                onReiniciar={null}
               />
 
               <div className={styles.bienvenidaHeader}>

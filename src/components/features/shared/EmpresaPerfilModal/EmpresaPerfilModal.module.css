@@ -1,0 +1,207 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── HEADER ──────────────────────────────────────────────────────────────── */
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.9rem;
+  background: linear-gradient(135deg, var(--yellow, #f4f500) 0%, #c9c800 100%);
+  color: #000;
+  font-weight: 800;
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.profileName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--white, #fffefe);
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileCuit {
+  font-size: 0.78rem;
+  color: var(--text-muted, #a3a3a3);
+  margin: 0;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #a3a3a3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.badge-success {
+  background: rgba(61, 220, 132, 0.12);
+  color: var(--success-green, #3ddc84);
+  border-color: rgba(61, 220, 132, 0.3);
+}
+
+.badge-warning {
+  background: rgba(244, 245, 0, 0.1);
+  color: var(--yellow, #f4f500);
+  border-color: rgba(244, 245, 0, 0.25);
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error-red, #ef4444);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ── CONTACTO ────────────────────────────────────────────────────────────── */
+.contactRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+  padding: 0.75rem 0.9rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.7rem;
+}
+
+.contactItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #c9d1d9;
+}
+
+/* ── CHECKLISTS (Documentación / Legajo) ────────────────────────────────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sectionTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #a3a3a3);
+}
+
+.sectionTally {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #c9d1d9;
+  font-variant-numeric: tabular-nums;
+}
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.checklistItem {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.6rem;
+}
+
+.iconDone {
+  color: var(--success-green, #3ddc84);
+  flex-shrink: 0;
+}
+
+.iconPending {
+  color: rgba(255, 255, 255, 0.18);
+  flex-shrink: 0;
+}
+
+.labelDone {
+  font-size: 0.82rem;
+  color: #c9d1d9;
+}
+
+.labelPending {
+  font-size: 0.82rem;
+  color: var(--white, #fffefe);
+  font-weight: 600;
+}
+
+/* ── ESTADO DE MIGRACIÓN A SGR+ ─────────────────────────────────────────── */
+.migrationBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.migrationDone {
+  background: rgba(61, 220, 132, 0.1);
+  border: 1px solid rgba(61, 220, 132, 0.3);
+  color: var(--success-green, #3ddc84);
+}
+
+.migrationReady {
+  background: rgba(244, 245, 0, 0.08);
+  border: 1px solid rgba(244, 245, 0, 0.25);
+  color: var(--yellow, #f4f500);
+}
+
+.migrationPending {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted, #a3a3a3);
+}

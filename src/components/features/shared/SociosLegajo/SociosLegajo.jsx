@@ -23,7 +23,7 @@ import { RepresentantesSection } from "../DocumentosLegajo/components/Representa
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
 
-const ESTRUCTURA_SOCIOS = [
+export const ESTRUCTURA_SOCIOS = [
   {
     category: "Legajo",
     key: "accionistas",
