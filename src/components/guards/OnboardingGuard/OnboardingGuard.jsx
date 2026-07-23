@@ -111,7 +111,7 @@ export const OnboardingGuard = ({ children }) => {
   const socioIdParaEstado =
     empresaActual?.socioid ?? empresaActual?.SocioID ?? null;
   const { data: estadoCda, isPending: isPendingEstadoCda } =
-    useEstadoCdaSocio(socioIdParaEstado, channelInfo.id);
+    useEstadoCdaSocio(socioIdParaEstado);
   const telefonoActual = String(
     empresaActual?.telefono ?? empresaActual?.Telefono ?? "",
   ).trim();

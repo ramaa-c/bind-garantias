@@ -67,7 +67,12 @@ export default function Empresas() {
 
   const { data, isLoading, isFetching } = useObtenerSocios(params);
 
-  const empresas = useMemo(() => data || [], [data]);
+  // Más nuevas primero: el backend no garantiza un orden particular en la
+  // respuesta de Socios.
+  const empresas = useMemo(
+    () => [...(data || [])].sort((a, b) => Number(b.socioid) - Number(a.socioid)),
+    [data],
+  );
 
   const totalPaginas = Math.max(1, Math.ceil(empresas.length / ELEMENTOS_POR_PAGINA));
   const paginaActual = Math.min(pagina, totalPaginas);

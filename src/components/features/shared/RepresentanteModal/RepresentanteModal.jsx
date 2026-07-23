@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser, FiShield } from "react-icons/fi";
+import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser, FiShield, FiMapPin, FiMap } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../ui/Button/Button";
 import { Modal } from "../../../ui/Modal/Modal";
@@ -12,11 +12,14 @@ import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../hooks/useRegistrarModalLegajo";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
+import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
 import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";
 import { nosisService } from "../../../../services/nosisService";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { tercerosService } from "../../../../services/tercerosService";
+import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
+import { parseAddress } from "../../../../utils/direccionParser";
 import { useParams } from "react-router-dom";
 import styles from "./RepresentanteModal.module.css";
 
@@ -69,11 +72,26 @@ export function RepresentanteModal({
       rol: rolPorDefecto,
       email: "",
       telefono: "",
+      direccion: "",
+      calle: "",
+      numero: 0,
+      piso: "",
+      departamento: "",
+      ciudad: "",
+      ciudadid: 0,
+      provinciaid: "",
+      codpos: "",
     }
   });
 
   const cuitValue = useWatch({ control, name: "cuit" });
   const nombreValue = useWatch({ control, name: "nombre" });
+  const currentProvincia = useWatch({ control, name: "provinciaid" });
+
+  const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
+  const opcionesProvincias = provinciasData?.opciones || [];
+  const { data: ciudadesData, isLoading: cargandoCiudades } = useCiudades(currentProvincia);
+  const opcionesCiudades = ciudadesData?.opciones || [];
 
   useEffect(() => {
     if (errors.cuit?.type === "manual") {
@@ -85,23 +103,46 @@ export function RepresentanteModal({
   useEffect(() => {
     if (isOpen) {
       if (representante) {
-        // Legajo mode edit
+        // Legajo mode edit — ver useObtenerDatosSocioLegajo (useTerceros.js):
+        // arma el domicilio de representantes con el mismo mapeo que usa
+        // para accionistas (mismo tercero compartido), aunque este modal
+        // antes no lo mostrara.
+        const parsedDir = parseAddress(representante.direccion || representante.calle || "");
         reset({
           cuit: representante.cuit || "",
           nombre: representante.nombre || "",
           rol: representante.rolId === 230 ? "Representante Legal" : "Apoderado",
           email: representante.email || "",
           telefono: representante.telefono || "",
+          direccion: representante.direccion || "",
+          calle: representante.calle || parsedDir.calle || "",
+          numero: Number(representante.numero) || parsedDir.numero || 0,
+          piso: representante.piso || parsedDir.piso || "",
+          departamento: representante.departamento || parsedDir.departamento || "",
+          ciudad: representante.ciudad || "",
+          ciudadid: Number(representante.ciudadid) || 0,
+          provinciaid: String(representante.provinciaid || ""),
+          codpos: representante.codpos || "",
         });
 
       } else if (representanteInicial) {
         // Form mode edit
+        const parsedDir = parseAddress(representanteInicial.direccion || representanteInicial.calle || "");
         reset({
           cuit: representanteInicial.cuit || "",
           nombre: representanteInicial.nombre || "",
           rol: representanteInicial.rol || "Representante Legal",
           email: representanteInicial.email || "",
           telefono: representanteInicial.celular || representanteInicial.telefono || "",
+          direccion: representanteInicial.direccion || "",
+          calle: representanteInicial.calle || parsedDir.calle || "",
+          numero: Number(representanteInicial.numero) || parsedDir.numero || 0,
+          piso: representanteInicial.piso || parsedDir.piso || "",
+          departamento: representanteInicial.departamento || parsedDir.departamento || "",
+          ciudad: representanteInicial.ciudad || "",
+          ciudadid: Number(representanteInicial.ciudadid) || 0,
+          provinciaid: String(representanteInicial.provinciaid || ""),
+          codpos: representanteInicial.codpos || "",
         });
 
       } else {
@@ -112,6 +153,15 @@ export function RepresentanteModal({
           rol: rolPorDefecto,
           email: "",
           telefono: "",
+          direccion: "",
+          calle: "",
+          numero: 0,
+          piso: "",
+          departamento: "",
+          ciudad: "",
+          ciudadid: 0,
+          provinciaid: "",
+          codpos: "",
         });
       }
     }
@@ -285,6 +335,21 @@ export function RepresentanteModal({
         setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail || "", { shouldValidate: true, shouldDirty: true });
         setValue("telefono", terceroEncontrado.telefono || terceroEncontrado.Telefono || "", { shouldValidate: true, shouldDirty: true });
 
+        const direccionExistente = terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "";
+        setValue("direccion", direccionExistente, { shouldValidate: true, shouldDirty: true });
+        const parsedDirExistente = parseAddress(direccionExistente);
+        setValue("calle", parsedDirExistente.calle || terceroEncontrado.calle || "", { shouldValidate: true, shouldDirty: true });
+        setValue("numero", Number(terceroEncontrado.numero) || parsedDirExistente.numero || 0, { shouldValidate: true, shouldDirty: true });
+        setValue("piso", terceroEncontrado.piso || parsedDirExistente.piso || "", { shouldValidate: true, shouldDirty: true });
+        setValue("departamento", terceroEncontrado.departamento || parsedDirExistente.departamento || "", { shouldValidate: true, shouldDirty: true });
+        setValue("ciudad", terceroEncontrado.ciudad || "", { shouldValidate: true, shouldDirty: true });
+        setValue("ciudadid", Number(terceroEncontrado.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
+        setValue("codpos", terceroEncontrado.codpos || "", { shouldValidate: true, shouldDirty: true });
+        const provIdExistente = terceroEncontrado.provinciaid || terceroEncontrado.ProvinciaID || 0;
+        if (provIdExistente) {
+          setValue("provinciaid", String(provIdExistente), { shouldValidate: true, shouldDirty: true });
+        }
+
         setAfipValidado(true);
         toast.success(`Datos del ${etiquetaRol.toLowerCase()} recuperados del sistema.`);
         setValidando(false);
@@ -320,23 +385,66 @@ export function RepresentanteModal({
         let nombreRep = "";
         let emailVal = "";
         let telVal = "";
+        let direccionVal = "";
+        let parsedDir = { calle: "", numero: 0, piso: "" };
+        let deptoVal = "";
+        let ciudadVal = "";
+        let codposVal = "";
+        let provIdVal = 0;
 
         if (nosisData) {
           nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
                       nosisData.VI_RazonSocial || `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim() || "Representante";
           emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || "";
           telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || "";
+          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) ||
+                         `${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim() || "";
+          parsedDir = parseAddress(direccionVal);
+          deptoVal = terceroEncontrado?.departamento || nosisData.VI_DomAF_Dto || "";
+          ciudadVal = nosisData.VI_DomAF_Loc || "";
+          codposVal = terceroEncontrado?.codpos || nosisData.VI_DomAF_CP || "";
+          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
+          if (!provIdVal && nosisData.VI_DomAF_Prov) {
+            const match = matchProvinciaAfip(nosisData.VI_DomAF_Prov, opcionesProvincias);
+            if (match) provIdVal = match.value;
+          }
         } else {
           const dg = res.datosgenerales;
           nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
                       dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
           emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
           telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
+          const dom = dg.domiciliofiscal || dg.domicilio;
+          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) ||
+                         (dom ? (dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "")) : "") || "";
+          parsedDir = parseAddress(direccionVal);
+          deptoVal = dom?.departamento || terceroEncontrado?.departamento || "";
+          ciudadVal = dom?.localidad || "";
+          codposVal = dom?.codpostal || terceroEncontrado?.codpos || "";
+          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
+          if (!provIdVal && dom) {
+            const provNombre = dom.descripcionprovincia || dom.provincia || "";
+            if (provNombre) {
+              const match = matchProvinciaAfip(provNombre, opcionesProvincias);
+              if (match) provIdVal = match.value;
+            }
+          }
         }
 
         setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
         setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
         setValue("telefono", telVal, { shouldValidate: true, shouldDirty: true });
+        setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
+        setValue("calle", parsedDir.calle, { shouldValidate: true, shouldDirty: true });
+        setValue("numero", parsedDir.numero, { shouldValidate: true, shouldDirty: true });
+        setValue("piso", parsedDir.piso, { shouldValidate: true, shouldDirty: true });
+        setValue("departamento", deptoVal, { shouldValidate: true, shouldDirty: true });
+        setValue("ciudad", ciudadVal, { shouldValidate: true, shouldDirty: true });
+        setValue("ciudadid", Number(terceroEncontrado?.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
+        setValue("codpos", codposVal, { shouldValidate: true, shouldDirty: true });
+        if (provIdVal) {
+          setValue("provinciaid", String(provIdVal), { shouldValidate: true, shouldDirty: true });
+        }
 
         // Se persiste YA lo que trajo AFIP/NOSIS: si el usuario cierra sin
         // guardar y vuelve más tarde, no se pierde (antes quedaba solo en
@@ -348,27 +456,33 @@ export function RepresentanteModal({
         const idParaPersistir = terceroEncontrado?.tercerorelacionadoid || terceroEncontrado?.TerceroRelacionadoID || terceroEncontrado?.id;
         if (idParaPersistir && !representante && !representanteInicial) {
           try {
+            // Mismo cuidado que en onConfirmSave: preservar lo que el
+            // tercero ya tenía en los campos que este modal no gestiona
+            // (conyuge, actividad, etc.) — domicilio ahora sí lo gestiona,
+            // así que se manda el recién resuelto (parsedDir/provIdVal),
+            // no el preservado.
             await tercerosService.actualizarTercero({
               tercerorelacionadoid: idParaPersistir,
               denominacion: nombreRep,
               cuit: cuitLimpio,
-              bcraid: 0,
+              bcraid: terceroEncontrado?.bcraid ?? 0,
               tipopersonaid: 1,
-              tipodocumentoid: 0,
+              tipodocumentoid: terceroEncontrado?.tipodocumentoid ?? 0,
               numerodocumento: cuitLimpio,
-              estadocivilid: 0,
-              ciudadid: 0,
+              estadocivilid: terceroEncontrado?.estadocivilid ?? 0,
+              ciudadid: Number(terceroEncontrado?.ciudadid) || 0,
+              provinciaid: Number(provIdVal) || 0,
               telefono: telVal,
-              conyuge: "",
-              actividad: "",
-              contacto: "",
-              nrocuenta: "",
-              codigomercado: "",
-              calle: "",
-              numero: 0,
-              piso: "",
-              departamento: "",
-              codpos: "",
+              conyuge: terceroEncontrado?.conyuge ?? "",
+              actividad: terceroEncontrado?.actividad ?? "",
+              contacto: terceroEncontrado?.contacto ?? "",
+              nrocuenta: terceroEncontrado?.nrocuenta ?? "",
+              codigomercado: terceroEncontrado?.codigomercado ?? "",
+              calle: parsedDir.calle || direccionVal || "",
+              numero: Number(parsedDir.numero) || 0,
+              piso: parsedDir.piso || "",
+              departamento: deptoVal || "",
+              codpos: codposVal || "",
               descripcionreducida: nombreRep.substring(0, 20),
               mail: emailVal,
             });
@@ -403,6 +517,26 @@ export function RepresentanteModal({
     e.preventDefault();
     e.stopPropagation();
 
+    const calleVal = getValues("calle") || "";
+    const numeroVal = getValues("numero") || "";
+    const pisoVal = getValues("piso") || "";
+    const deptoVal = getValues("departamento") || "";
+
+    let fullDir = calleVal;
+    if (numeroVal && Number(numeroVal) > 0) fullDir += ` ${numeroVal}`;
+    if (pisoVal) fullDir += ` Piso:${pisoVal}`;
+    if (deptoVal) fullDir += ` Dpto:${deptoVal}`;
+
+    setValue("direccion", fullDir, { shouldDirty: true });
+
+    const ciudadidVal = getValues("ciudadid");
+    if (ciudadidVal) {
+      const selectedCiudad = opcionesCiudades.find((c) => String(c.value) === String(ciudadidVal));
+      if (selectedCiudad) {
+        setValue("ciudad", selectedCiudad.label, { shouldDirty: true });
+      }
+    }
+
     const isValid = await trigger();
     if (!isValid) return;
 
@@ -428,6 +562,7 @@ export function RepresentanteModal({
       const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
 
       let terceroId = null;
+      let terceroExistente = null;
       try {
         const existentes = await tercerosService.obtenerTerceros({
           Cuit: cuitLimpio,
@@ -436,10 +571,11 @@ export function RepresentanteModal({
           ? existentes
           : existentes?.data || [];
         if (arr.length > 0) {
+          terceroExistente = arr[0];
           terceroId =
-            arr[0].tercerorelacionadoid ||
-            arr[0].TerceroRelacionadoID ||
-            arr[0].id;
+            terceroExistente.tercerorelacionadoid ||
+            terceroExistente.TerceroRelacionadoID ||
+            terceroExistente.id;
         }
       } catch (err) {
         console.warn(
@@ -448,27 +584,40 @@ export function RepresentanteModal({
         );
       }
 
+      // ⚠️ Este modal gestiona cuit/nombre/rol/email/teléfono/domicilio —
+      // no participación ni DNI (eso sigue siendo exclusivo de
+      // SocioAccionistaModal). TerceroRelacionado es un registro
+      // COMPARTIDO: la misma persona puede ser también accionista, y el
+      // PUT de abajo (api/TerceroRelacionado) reemplaza el registro
+      // entero. El domicilio ahora se manda con lo que hay en el
+      // formulario (formData.calle/numero/etc. — se precargan solos desde
+      // el tercero existente o Nosis/AFIP en handleAfipLookup, igual que
+      // en SocioAccionistaModal). Lo que este modal NO gestiona
+      // (conyuge, actividad, estadocivilid, etc.) se sigue preservando del
+      // tercero existente para no perderlo — eso fue justamente lo que
+      // rompía el requisito de accionistas antes de este cambio.
       const payloadTercero = {
         tercerorelacionadoid: terceroId || 0,
         denominacion: formData.nombre,
         cuit: cuitLimpio,
-        bcraid: 0,
+        bcraid: terceroExistente?.bcraid ?? 0,
         tipopersonaid: 1,
-        tipodocumentoid: 0,
+        tipodocumentoid: terceroExistente?.tipodocumentoid ?? 0,
         numerodocumento: cuitLimpio,
-        estadocivilid: 0,
-        ciudadid: 0,
+        estadocivilid: terceroExistente?.estadocivilid ?? 0,
+        ciudadid: Number(formData.ciudadid) || 0,
+        provinciaid: Number(formData.provinciaid) || 0,
         telefono: formData.telefono || "",
-        conyuge: "",
-        actividad: "",
-        contacto: "",
-        nrocuenta: "",
-        codigomercado: "",
-        calle: "",
-        numero: 0,
-        piso: "",
-        departamento: "",
-        codpos: "",
+        conyuge: terceroExistente?.conyuge ?? "",
+        actividad: terceroExistente?.actividad ?? "",
+        contacto: terceroExistente?.contacto ?? "",
+        nrocuenta: terceroExistente?.nrocuenta ?? "",
+        codigomercado: terceroExistente?.codigomercado ?? "",
+        calle: formData.calle || formData.direccion || "",
+        numero: Number(formData.numero) || 0,
+        piso: formData.piso || "",
+        departamento: formData.departamento || "",
+        codpos: formData.codpos || "",
         descripcionreducida: formData.nombre.substring(0, 20),
         mail: formData.email || "",
       };
@@ -584,7 +733,7 @@ export function RepresentanteModal({
         isOpen={isOpen}
         onClose={onClose}
         title={representante || representanteInicial ? `Editar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
-        maxWidth="600px"
+        maxWidth="800px"
         variant={isAdmin ? "blue" : "default"}
       >
         <form onSubmit={handlePreSubmit} className={styles.modalForm}>
@@ -671,7 +820,7 @@ export function RepresentanteModal({
                 />
               </div>
 
-              <div className={styles.modalRow2}>
+              <div className={styles.modalRow}>
                 <Controller
                   name="rol"
                   control={control}
@@ -687,7 +836,9 @@ export function RepresentanteModal({
                     />
                   )}
                 />
-                
+              </div>
+
+              <div className={styles.modalRow2}>
                 <Controller
                   name="email"
                   control={control}
@@ -710,9 +861,7 @@ export function RepresentanteModal({
                     />
                   )}
                 />
-              </div>
 
-              <div className={styles.modalRow2}>
                 <Controller
                   name="telefono"
                   control={control}
@@ -725,6 +874,107 @@ export function RepresentanteModal({
                       label="Celular / Teléfono (Sin 0 ni 15)"
                       mask={[{ mask: "00 0000-0000" }, { mask: "000 000-0000" }]}
                       icon={<FiPhone />}
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+              </div>
+
+              {/* Mismos campos de domicilio que SocioAccionistaModal —
+                  cuando esta misma persona ya es accionista, se precargan
+                  solos desde el tercero existente (ver handleAfipLookup),
+                  para que quede consistente entre los dos roles. */}
+              <h4 className={styles.sectionTitle}>Domicilio</h4>
+
+              <div className={styles.modalRow}>
+                <Controller
+                  name="calle"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("calle", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Calle / Avenida"
+                      icon={<FiMapPin />}
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+              </div>
+
+              <div className={styles.modalRow3}>
+                <Controller
+                  name="numero"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("numero", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Número"
+                      type="number"
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="piso"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("piso", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Piso"
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="departamento"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("departamento", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Depto / Of."
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+              </div>
+
+              <div className={styles.modalRow2}>
+                <Controller
+                  name="provinciaid"
+                  control={control}
+                  render={({ fieldState }) => (
+                    <SelectSocio
+                      control={control}
+                      name="provinciaid"
+                      label={cargandoProvincias ? "Cargando provincias..." : "Provincia"}
+                      icon={<FiMapPin />}
+                      options={opcionesProvincias}
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="ciudadid"
+                  control={control}
+                  render={({ fieldState }) => (
+                    <SelectSocio
+                      control={control}
+                      name="ciudadid"
+                      label={cargandoCiudades ? "Cargando..." : "Ciudad"}
+                      icon={<FiMap />}
+                      options={opcionesCiudades}
+                      isLoading={cargandoCiudades}
                       error={fieldState.error?.message}
                     />
                   )}

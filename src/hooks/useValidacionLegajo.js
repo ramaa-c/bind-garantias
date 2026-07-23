@@ -29,10 +29,25 @@ const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-export const useValidacionLegajo = () => {
-  const { socioIdActivo, tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
+// En modo admin (EmpresaDetalle.jsx) no hay ni usuario logueado como cliente
+// ni :cadenaSlug en la ruta, así que socioIdActivo/tipoPersonaId/nombreEmpresa
+// y la cadena de valor se reciben ya resueltos (la cadena se detecta del
+// historial de CDAs del socio, ver detectarCadenaValorId en utils/executeCda.js)
+// en vez de salir de useEmpresaActiva/useParams.
+export const useValidacionLegajo = ({
+  adminMode = false,
+  socioIdActivo: socioIdOverride,
+  tipoPersonaId: tipoPersonaIdOverride,
+  nombreEmpresa: nombreEmpresaOverride,
+  cadenaId: cadenaIdOverride,
+} = {}) => {
+  const empresaActiva = useEmpresaActiva(adminMode);
   const { cadenaSlug } = useParams();
-  const cadenaId = Number(cadenaSlug) || 1;
+
+  const socioIdActivo = adminMode ? socioIdOverride : empresaActiva.socioIdActivo;
+  const tipoPersonaId = adminMode ? tipoPersonaIdOverride : empresaActiva.tipoPersonaId;
+  const nombreEmpresa = adminMode ? nombreEmpresaOverride : empresaActiva.nombreEmpresa;
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
 
   const { requisitos, isLoading: loadingRequisitos } = useRequisitos(
     cadenaId,

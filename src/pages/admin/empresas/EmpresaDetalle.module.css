@@ -265,6 +265,27 @@
   overflow-y: auto;
 }
 
+.cadenaAviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 0 0.1rem 0.85rem;
+  flex-shrink: 0;
+}
+
+.cadenaAviso svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.cadenaAvisoFuerte {
+  color: #8fa3f3;
+  font-weight: 600;
+}
+
 /* ── DATOS TAB ───────────────────────────────────────────── */
 /* max-height (no height fijo): con height:100% la card siempre ocupaba todo
    el alto disponible del tab aunque los campos ocupen menos, dejando un
@@ -541,6 +562,46 @@
   gap: 0.75rem;
 }
 
+/* ── AVISO: el grupo de CDAs de la cadena cambió desde la última evaluación
+   real de este socio (ver cdaDefinicionCambio) — reejecutar puede dar otro
+   resultado. Mismo lenguaje visual que .grupoBar-warning (ámbar), pero como
+   alerta propia para que no se confunda con el resultado combinado. */
+.avisoCambioCda {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  background: rgba(255, 179, 0, 0.06);
+  border: 1px solid rgba(255, 179, 0, 0.22);
+  border-radius: 0.9rem;
+  padding: 0.85rem 1.1rem;
+}
+
+.avisoCambioCdaIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 179, 0, 0.14);
+  color: #ffb300;
+  margin-top: 0.05rem;
+}
+
+.avisoCambioCdaTexto {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.avisoCambioCdaSub {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
 /* Modificador de .sectionCardHeader: título a la izquierda, controles
    (cadena detectada + reejecutar grupo) a la derecha, en la misma fila. */
 .cdasSectionHeaderRow {
@@ -577,6 +638,26 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.65rem;
   padding: 0.75rem 1rem;
+}
+
+/* CDA que ya no está vinculado a esta cadena (ver estaVinculado): toda la
+   fila se apaga, no solo el pill, para que se lea de un vistazo como
+   "esto ya no cuenta" al separarla del resto de la lista. */
+.cdaRowDesvinculada {
+  opacity: 0.55;
+  filter: grayscale(0.5);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.cdaListDivider {
+  margin: 0.2rem 0 0;
+  padding-top: 0.4rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .cdaRowInfo {
@@ -631,6 +712,27 @@
   background: rgba(255, 179, 0, 0.12);
   color: #ffb300;
   border: 1px solid rgba(255, 179, 0, 0.3);
+  vertical-align: middle;
+}
+
+/* CDA que sigue en el historial de la corrida pero ya no está vinculado a
+   esta cadena (ver estaVinculado) — tono neutro/apagado a propósito: no es
+   una alerta (eso ya lo cubre el aviso de arriba si corresponde), es solo
+   la aclaración de por qué no pesa en el resultado combinado. */
+.cdaRowDesvinculadoPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   vertical-align: middle;
 }
 

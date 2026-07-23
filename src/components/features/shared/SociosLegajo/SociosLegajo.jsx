@@ -55,6 +55,7 @@ export function SociosLegajo({
   tipoPersonaIdOverride,
   nombreEmpresaOverride,
   adminMode = false,
+  cadenaIdOverride,
 } = {}) {
   const empresaActiva = useEmpresaActiva(adminMode);
 
@@ -66,21 +67,25 @@ export function SociosLegajo({
       }
     : empresaActiva;
 
-  // En modo admin no se conoce con certeza a qué cadena de valor pertenece
-  // el socio, así que se muestran todas las pestañas sin filtrar por
-  // requisitos (ver DocumentosLegajo para el mismo criterio).
+  // No hay un campo CadenaValorID en Socio: en modo admin la cadena llega ya
+  // detectada desde afuera (EmpresaDetalle.jsx la infiere del historial de
+  // CDAs del socio, ver detectarCadenaValorId). Sin detección, useRequisitos
+  // cae solo al fallback por tipo de persona/sociedad (ver mismo criterio en
+  // DocumentosLegajo).
   const { cadenaSlug } = useParams();
-  const cadenaId = Number(cadenaSlug) || 1;
-  const { requisitos } = useRequisitos(
-    adminMode ? null : cadenaId,
-    adminMode ? null : tipoPersonaId,
-    adminMode ? null : nombreEmpresa,
-  );
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
+  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
-  // Solo aplica fuera de modo admin (el badge de completitud tampoco se
-  // muestra en admin, ver más abajo): reutiliza la misma validación que ya
-  // decide si el legajo está completo, para no duplicar el criterio.
-  const { accionistasCompletos, representantesCompletos, agentesBolsaCompletos } = useValidacionLegajo();
+  // Reutiliza la misma validación que ya decide si el legajo está completo,
+  // para no duplicar el criterio (ver useValidacionLegajo para el manejo de
+  // adminMode).
+  const { accionistasCompletos, representantesCompletos, agentesBolsaCompletos } = useValidacionLegajo({
+    adminMode,
+    socioIdActivo,
+    tipoPersonaId,
+    nombreEmpresa,
+    cadenaId,
+  });
 
   const completitudPorTab = {
     accionistas: accionistasCompletos,
@@ -105,13 +110,12 @@ export function SociosLegajo({
     if (tipoPersonaId === 1) {
       baseTabs = ESTRUCTURA_SOCIOS.filter(t => t.key !== "accionistas");
     }
-    if (adminMode) return baseTabs;
     // Filtrar según los requisitos configurados
     return baseTabs.filter(t => {
       const configVal = requisitos?.relaciones?.[t.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [tipoPersonaId, requisitos, adminMode]);
+  }, [tipoPersonaId, requisitos]);
 
   const [activeTab, setActiveTab] = useState(null);
 
@@ -246,7 +250,7 @@ export function SociosLegajo({
               {isActive && <span className={styles.activeBar} />}
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{tituloTab(doc)}</span>
-                {!adminMode && (requisitos?.relaciones?.[doc.key] === 1 ? (
+                {(requisitos?.relaciones?.[doc.key] === 1 ? (
                   <span className={`${styles.reqBadge} ${completitudPorTab[doc.key] ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
                     Obligatorio
                   </span>
