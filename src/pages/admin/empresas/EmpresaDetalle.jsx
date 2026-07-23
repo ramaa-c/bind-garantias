@@ -659,7 +659,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   // obtenerCdasDeLaCorridaActual en utils/executeCda.js — desde que el
   // historial trae CadenaValorID/PantallaGrupoCdaID por fila, el batch se
   // scopea por ese contexto real en vez de solo por posición de ID).
-  const { grupoItem, cdas: cdasIndividuales } = useMemo(
+  const { grupoItem, cdas: cdasIndividuales, cdaIdsDelCierre } = useMemo(
     () => obtenerCdasDeLaCorridaActual(ejecucionesData),
     [ejecucionesData],
   );
@@ -739,22 +739,24 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   // Aprobado después de un cierre en Rechazado ya destraba el resultado
   // combinado, sin depender de esa expresión vigente.
   //
-  // Sí usa cdasActivosIdsGrupo (la vinculación vigente) para descartar
-  // CDAs desvinculados de la combinación — ver el comentario de
-  // combinarEstadoCdas: sin esto, desvincular parte de un grupo y
-  // reejecutar con lo que queda podía seguir arrastrando el resultado
-  // viejo de los CDAs ya sacados (confirmado en vivo: pasa cuando el
-  // backend no genera un cierre nuevo para una corrida de un solo CDA).
-  // Solo se pasa cuando hay grupo vigente resuelto — sin cadena detectada,
-  // sigue funcionando 100% desde el historial, como antes.
+  // Sí usa cdasActivosIdsGrupo (la vinculación vigente, información que el
+  // cliente a propósito no usa — ver useEstadoCdaSocio en useSocios.js)
+  // para descartar CDAs desvinculados de la combinación. Además pasa
+  // cdaIdsDelCierre (ver combinarEstadoCdas) para que un CDA ajeno al
+  // cierre viejo (nunca fue miembro de él) decida solo el resultado en vez
+  // de arrastrar a los miembros ya obsoletos — mismo mecanismo que usa el
+  // cliente, con el filtro de vinculación vigente como plus admin. Solo se
+  // pasa cdasActivosIdsGrupo cuando hay grupo vigente resuelto — sin
+  // cadena detectada, sigue funcionando 100% desde el historial.
   const estadoSinCadena = useMemo(
     () =>
       combinarEstadoCdas(
         grupoItem,
         cdasIndividuales,
         hayGrupoVigente ? cdasActivosIdsGrupo : undefined,
+        cdaIdsDelCierre,
       ),
-    [grupoItem, cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo],
+    [grupoItem, cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo, cdaIdsDelCierre],
   );
 
   // El badge principal muestra estadoSinCadena (lo que realmente se evaluó
