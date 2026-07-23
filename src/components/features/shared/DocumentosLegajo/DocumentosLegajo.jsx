@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useFormContext, useWatch, useForm, Controller } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
@@ -274,6 +274,12 @@ export function DocumentosLegajo({
   // fecha en una modal — recién ahí se dispara el POST/PUT real.
   const [pendingBalanceUpload, setPendingBalanceUpload] = useState(null);
   const [fechaModalValue, setFechaModalValue] = useState("");
+  // Guarda sincrónica contra doble click en "Confirmar y subir": el cierre
+  // de la modal (setPendingBalanceUpload(null)) recién se refleja en el
+  // próximo render de React, no en este mismo tick — dos clicks muy rápidos
+  // podrían alcanzar a disparar dos subidas del mismo archivo antes de eso.
+  const confirmandoFechaBalanceRef = useRef(false);
+  const [confirmandoFechaBalance, setConfirmandoFechaBalance] = useState(false);
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
@@ -522,17 +528,25 @@ export function DocumentosLegajo({
   };
 
   const confirmarFechaBalanceModal = () => {
+    if (confirmandoFechaBalanceRef.current) return;
     if (!fechaModalValue) {
       toast.error("Seleccioná la fecha del período del balance.");
       return;
     }
+    confirmandoFechaBalanceRef.current = true;
+    setConfirmandoFechaBalance(true);
     const { key, file, docTitle, specificId } = pendingBalanceUpload;
     setMetaFechaPeriodo(fechaModalValue);
     setPendingBalanceUpload(null);
-    handleFileUpload(key, file, docTitle, specificId, fechaModalValue);
+    handleFileUpload(key, file, docTitle, specificId, fechaModalValue).finally(() => {
+      confirmandoFechaBalanceRef.current = false;
+      setConfirmandoFechaBalance(false);
+    });
   };
 
   const cancelarFechaBalanceModal = () => {
+    confirmandoFechaBalanceRef.current = false;
+    setConfirmandoFechaBalance(false);
     setPendingBalanceUpload(null);
     setFechaModalValue("");
   };
@@ -902,6 +916,7 @@ export function DocumentosLegajo({
       onClose={cancelarFechaBalanceModal}
       title="Fecha del período del balance"
       maxWidth="420px"
+      preventClose={confirmandoFechaBalance}
     >
       <p style={{ color: "#9aa1af", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
         Para subir este balance necesitamos saber a qué período corresponde.
@@ -915,10 +930,15 @@ export function DocumentosLegajo({
         minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
       />
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
-        <Button variant="outline" onClick={cancelarFechaBalanceModal}>
+        <Button variant="outline" onClick={cancelarFechaBalanceModal} disabled={confirmandoFechaBalance}>
           Cancelar
         </Button>
-        <Button variant="primary" onClick={confirmarFechaBalanceModal}>
+        <Button
+          variant="primary"
+          onClick={confirmarFechaBalanceModal}
+          disabled={confirmandoFechaBalance}
+          isLoading={confirmandoFechaBalance}
+        >
           Confirmar y subir
         </Button>
       </div>
