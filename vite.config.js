@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/proxy-backend": {
-        target: "http://192.168.2.103:9988",
+        target: "http://192.168.2.120:9988",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => {

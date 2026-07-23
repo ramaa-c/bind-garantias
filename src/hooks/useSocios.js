@@ -134,30 +134,22 @@ export const useEmpresasCompletas = (socioUsuarios) => {
 // cada login (eso ensuciaría el historial con una fila nueva por cada
 // entrada).
 //
-// ⚠️ A propósito NO compara contra la definición VIGENTE del grupo de CDAs
-// de la cadena (ExpresionAgrupacion/CDAs activos actuales) — eso se probó y
-// se descartó: como esa definición puede cambiar en cualquier momento desde
-// el admin, comparar contra ella hace que un socio ya evaluado (aprobado o
-// no) pueda pasar a mostrar otro resultado en su próximo login sin que se
-// haya ejecutado nada nuevo para él, solo porque alguien editó el grupo de
-// esa cadena. Acá se usa calcularEstadoDesdeHistorial: infiere la
-// combinación and/or del propio texto congelado del último cierre de grupo
-// (grupoItem.expresion) y la combina con la ÚLTIMA ejecución conocida de
-// cada CDA de esa misma corrida (ver obtenerCdasDeLaCorridaActual +
-// combinarEstadoCdas en utils/executeCda.js) — un snapshot de lo que
-// realmente se evaluó para ESE socio, no de las reglas de hoy.
-//
-// Esto sigue reflejando un forzado puntual del admin post-cierre (CdaID +
-// ValorParticularExpresion, ver EmpresaDetalle.jsx): esa fila queda con un
-// SocioExecuteCdaID más nuevo que el último cierre, así que
-// obtenerCdasDeLaCorridaActual la toma igual. Lo que NO hace (a propósito,
-// es la contracara aceptada del cambio): si se agrega un CDA nuevo a un
-// grupo ya aprobado antes, el historial no sabe nada de ese CDA para este
-// socio y el resultado sigue siendo el del cierre viejo — un socio ya
-// procesado no queda retroactivamente afectado por cambios futuros al
-// grupo de su cadena. EmpresaDetalle.jsx sí sigue comparando contra la
-// definición vigente (estadoEfectivo) — ahí es información para el admin,
-// no la puerta de acceso del cliente.
+// ⚠️ A propósito NO mira la vinculación vigente del grupo de CDAs de la
+// cadena: si un socio aprobó al hacer el alta, esa sigue siendo su
+// condición aunque el admin después modifique el grupo (agregue, saque o
+// reemplace CDAs) — es el admin quien decide si corresponde reejecutar
+// para los socios que quedaron con la configuración anterior, no algo que
+// deba pasar solo porque cambió la cadena. calcularEstadoDesdeHistorial
+// (utils/executeCda.js) resuelve esto de puro historial: combina el
+// último cierre de grupo (grupoItem.expresion, congelado) con la última
+// ejecución de cada CDA de esa misma corrida, PERO si aparece un CDA ajeno
+// al cierre (nunca fue miembro de él — pasa cuando se desvincularon los
+// viejos y se vinculó uno nuevo en un grupo reducido a 1, que no genera
+// cierre) ese único ajeno pasa a ser todo el resultado, sin arrastrar a
+// los miembros viejos ya obsoletos (ver combinarEstadoCdas/cdaIdsDelCierre
+// para el detalle). Si en cambio se agrega un CDA nuevo al grupo sin
+// evaluarlo para este socio, el historial no sabe nada de él y el
+// resultado sigue siendo el del cierre viejo — tampoco lo afecta.
 export const useEstadoCdaSocio = (socioId) => {
   const { data: historial, isPending } = useObtenerExecuteCda(socioId);
 

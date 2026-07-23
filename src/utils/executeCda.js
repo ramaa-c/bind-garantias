@@ -1,5 +1,10 @@
 const idDe = (item) => Number(item?.socioexecutecdaid ?? item?.SocioExecuteCdaID) || 0;
 
+const estadoDeItem = (item) => {
+  const estadoId = Number(item?.estadoexecutecdaid ?? item?.EstadoExecuteCdaID ?? 0);
+  return estadoId === 3 ? "aprobado" : estadoId === 2 ? "rechazado" : "pendiente";
+};
+
 // El GET devuelve una fila por cada intento de evaluación (no solo la
 // vigente), igual que el historial de StatusPlataforma.
 export const ordenarEjecucionesCda = (data) => {
@@ -198,6 +203,13 @@ export const calcularEstadoEfectivo = ({
 // cadena que haya quedado sin cerrar su propio grupo (ver
 // coincideConContexto). Con grupoItem viejo (sin esos campos) se cae al
 // comportamiento anterior, solo por posición de ID.
+//
+// cdaIdsDelCierre: CdaIDs que integraron el batch que produjo grupoItem
+// (SocioExecuteCdaID entre el penúltimo cierre y este, inclusive). Sirve
+// para que combinarEstadoCdas distinga un CDA que actualiza/fuerza su lugar
+// DENTRO de ese grupo (mismo id que un miembro del cierre) de un CDA ajeno
+// a él (id que nunca fue miembro de ESE cierre) — señal de que el grupo
+// cambió de composición sin generar un cierre nuevo (ver combinarEstadoCdas).
 export const obtenerCdasDeLaCorridaActual = (data) => {
   const historialCompleto = ordenarEjecucionesCda(data);
   const gruposDesc = historialCompleto.filter((item) => Number(item.cdaid ?? item.CdaID ?? -1) === 0);
@@ -205,6 +217,7 @@ export const obtenerCdasDeLaCorridaActual = (data) => {
   const idCorteInferior = gruposDesc[1]
     ? Number(gruposDesc[1].socioexecutecdaid ?? gruposDesc[1].SocioExecuteCdaID) || 0
     : -Infinity;
+  const grupoItemId = grupoItem ? idDe(grupoItem) : -Infinity;
   const pantallaGrupo = grupoItem?.pantallagrupocdaid ?? grupoItem?.PantallaGrupoCdaID;
   const cadenaGrupo = grupoItem?.cadenavalorid ?? grupoItem?.CadenaValorID;
 
@@ -219,6 +232,18 @@ export const obtenerCdasDeLaCorridaActual = (data) => {
       .map((item) => Number(item.cdaid ?? item.CdaID)),
   );
 
+  const cdaIdsDelCierre = new Set(
+    historialCompleto
+      .filter(
+        (item) =>
+          Number(item.cdaid ?? item.CdaID ?? -1) !== 0 &&
+          (Number(item.socioexecutecdaid ?? item.SocioExecuteCdaID) || 0) > idCorteInferior &&
+          (Number(item.socioexecutecdaid ?? item.SocioExecuteCdaID) || 0) <= grupoItemId &&
+          coincideConContexto(item, pantallaGrupo, cadenaGrupo),
+      )
+      .map((item) => Number(item.cdaid ?? item.CdaID)),
+  );
+
   const historialContexto = historialCompleto.filter((item) => coincideConContexto(item, pantallaGrupo, cadenaGrupo));
   const ultimasPorCdaContexto = ultimaEjecucionPorCda(historialContexto);
 
@@ -226,7 +251,7 @@ export const obtenerCdasDeLaCorridaActual = (data) => {
     (item) => Number(item.cdaid ?? item.CdaID ?? -1) !== 0 && cdaIdsCorridaActual.has(Number(item.cdaid ?? item.CdaID)),
   );
 
-  return { grupoItem, cdas };
+  return { grupoItem, cdas, cdaIdsDelCierre };
 };
 
 // Combina el último cierre de grupo (grupoItem) con el estado MÁS RECIENTE
@@ -242,19 +267,35 @@ export const obtenerCdasDeLaCorridaActual = (data) => {
 //
 // cdasActivosIds (opcional, solo lo pasa el panel admin — ver
 // EmpresaDetalle.jsx) filtra a los CDAs que siguen vinculados antes de
-// combinar. Hace falta porque "cdas" viene de obtenerCdasDeLaCorridaActual,
-// que ubica el corte de la corrida por SocioExecuteCdaID: si se desvincula
-// parte de un grupo (ej. de 3 CDAs a 1) y se reejecuta, y el backend no
-// genera un cierre nuevo para un grupo de un solo CDA (confirmado en vivo:
-// no siempre lo hace), el corte sigue anclado al cierre viejo — los 2 CDAs
-// que ya NO están vinculados, pero que quedan dentro de esa ventana por
-// fecha, se siguen combinando como si formaran parte de la corrida nueva.
-// Sin este filtro, un CDA desvinculado sigue pesando en estadoSinCadena
-// (no solo en estadoEfectivo, que ya se corrigió antes). No se usa para el
-// cálculo del cliente (calcularEstadoDesdeHistorial no lo pasa) — ahí
-// depender de la vinculación vigente reintroduciría exactamente lo que se
-// sacó a propósito (ver useEstadoCdaSocio en useSocios.js).
-export const combinarEstadoCdas = (grupoItem, cdas, cdasActivosIds) => {
+// combinar — es información vigente que el cliente a propósito no usa (ver
+// useEstadoCdaSocio en useSocios.js).
+//
+// cdaIdsDelCierre (ver obtenerCdasDeLaCorridaActual) es lo que sí usa el
+// cliente para distinguir, DE PURO HISTORIAL, dos situaciones muy
+// distintas cuando hay CDAs posteriores al último cierre (o directamente
+// sin ningún cierre):
+//   1. Actualizan/fuerzan un CDA que YA era miembro de ese cierre (mismo
+//      id) — es un "Volver a ejecutar"/"Forzar expresión" puntual DENTRO
+//      del mismo grupo: se recombina con el resto de los miembros, como ya
+//      hacía este cálculo.
+//   2. Aparecen uno o más CDAs AJENOS al cierre (id que nunca fue miembro
+//      de él) — pasa cuando el admin fue desvinculando/vinculando CDAs
+//      distintos de a uno (el backend no genera cierre para un grupo de un
+//      solo CDA, así que cada prueba mono-CDA sucesiva queda suelta en el
+//      historial). NO es un caso raro ni ambiguo: cada una de esas
+//      ejecuciones sueltas fue, en su momento, "todo el grupo" — así que
+//      gana siempre la MÁS RECIENTE (mayor SocioExecuteCdaID) de todas
+//      ellas, e ignora tanto a los miembros viejos del cierre como a
+//      cualquier otro ajeno más antiguo. Mismo criterio, sin ningún
+//      cierre en absoluto (grupoItem null): puede haber varios CDAs
+//      distintos probados uno a la vez a lo largo del tiempo — gana el
+//      más reciente igual.
+// Esto es lo que permite que "el socio no pierda acceso porque se va
+// modificando el grupo de la cadena": su condición queda fija en lo último
+// que se evaluó para él hasta que un admin lo reejecute — ni retrocede por
+// un CDA nuevo sin evaluar, ni por uno viejo que se desvinculó, siempre que
+// haya una ejecución puntual del nuevo/único CDA que lo reemplaza.
+export const combinarEstadoCdas = (grupoItem, cdas, cdasActivosIds, cdaIdsDelCierre) => {
   if (!cdas || cdas.length === 0) return null;
 
   const cdasFiltrados = cdasActivosIds
@@ -262,36 +303,28 @@ export const combinarEstadoCdas = (grupoItem, cdas, cdasActivosIds) => {
     : cdas;
   if (cdasFiltrados.length === 0) return null;
 
+  const masReciente = (lista) => lista.reduce((acc, item) => (idDe(item) > idDe(acc) ? item : acc));
+
   // Nunca hubo un cierre de grupo (CdaID=0) para este socio en este
   // contexto — confirmado en vivo: pasa cuando el grupo tiene un solo CDA
   // vinculado (el backend no genera esa fila sintética en ese caso). Sin
   // grupoItem no hay ExpresionAgrupacion congelada de la cual inferir
-  // and/or, así que solo se puede resolver sin ambigüedad si hay un único
-  // CDA en la corrida — ese resultado ES el del grupo. Con más de uno, no
-  // hay forma de saber si el criterio real es and/or sin un cierre o la
-  // ExpresionAgrupacion vigente, así que se deja sin determinar (null,
-  // el caller lo trata como "pendiente").
+  // and/or, pero eso no es un problema: si hay más de un CDA distinto acá,
+  // son pruebas mono-CDA sucesivas (se fue reconfigurando el grupo de a
+  // un CDA por vez) — gana la más reciente.
   if (!grupoItem) {
-    if (cdasFiltrados.length !== 1) return null;
-    const estadoId = Number(
-      cdasFiltrados[0].estadoexecutecdaid ?? cdasFiltrados[0].EstadoExecuteCdaID ?? 0,
-    );
-    return estadoId === 3 ? "aprobado" : estadoId === 2 ? "rechazado" : "pendiente";
+    return estadoDeItem(masReciente(cdasFiltrados));
   }
 
-  // ⚠️ Hubo acá un atajo ("esReevaluacionRealPostCierre") que dejaba que la
-  // ejecución más reciente del batch decidiera sola cuando no tenía
-  // ValorParticularExpresion, sin importar cuántos otros CDAs siguieran
-  // activos. Se sacó: confirmado con un caso real (socio con historial
-  // grande, un solo CDA reevaluado) que ese atajo dejaba a un CDA puntual
-  // hijackear todo el resultado incluso cuando el grupo seguía teniendo
-  // más de un miembro vigente — y aplicaba también del lado del cliente
-  // (calcularEstadoDesdeHistorial no pasa cdasActivosIds, así que no hay
-  // forma de confirmar ahí que el grupo realmente se redujo a ese único
-  // CDA). El filtro por cdasActivosIds ya alcanza para el caso que motivó
-  // el atajo (grupo reducido a 1 CDA sin cierre nuevo): al combinar una
-  // lista de un solo elemento, el and/or de abajo ya da ese mismo
-  // resultado sin necesitar tratarlo aparte.
+  if (cdaIdsDelCierre) {
+    const ajenos = cdasFiltrados.filter(
+      (item) => !cdaIdsDelCierre.has(Number(item.cdaid ?? item.CdaID)),
+    );
+    if (ajenos.length > 0) return estadoDeItem(masReciente(ajenos));
+    // ajenos.length === 0: todos los de cdasFiltrados ya eran miembros del
+    // cierre (o actualizaciones/forzados de ellos) — sigue el combine normal.
+  }
+
   const combinador = /\bor\b/i.test(grupoItem.expresion ?? grupoItem.Expresion ?? "") ? "or" : "and";
   const valores = cdasFiltrados.map((item) => {
     const estadoId = Number(item.estadoexecutecdaid ?? item.EstadoExecuteCdaID ?? 0);
@@ -311,8 +344,10 @@ export const combinarEstadoCdas = (grupoItem, cdas, cdasActivosIds) => {
 };
 
 // Atajo para quien no tenga ya grupoItem/cdas calculados (ver
-// obtenerCdasDeLaCorridaActual + combinarEstadoCdas).
+// obtenerCdasDeLaCorridaActual + combinarEstadoCdas). Es lo que usa el
+// gate del cliente (useEstadoCdaSocio): puro historial, sin vinculación
+// vigente — ver el comentario de combinarEstadoCdas sobre cdaIdsDelCierre.
 export const calcularEstadoDesdeHistorial = (data) => {
-  const { grupoItem, cdas } = obtenerCdasDeLaCorridaActual(data);
-  return combinarEstadoCdas(grupoItem, cdas);
+  const { grupoItem, cdas, cdaIdsDelCierre } = obtenerCdasDeLaCorridaActual(data);
+  return combinarEstadoCdas(grupoItem, cdas, undefined, cdaIdsDelCierre);
 };
