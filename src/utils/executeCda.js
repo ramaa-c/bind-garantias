@@ -131,31 +131,39 @@ export const evaluarExpresionAgrupacion = (expresion, estadoPorCda) => {
   return false;
 };
 
-// Combina la definición VIGENTE del grupo (ExpresionAgrupacion + CDAs activos
-// de GrupoCda) con la última ejecución conocida de cada CDA individual, sin
-// pegarle de nuevo al backend. Si un CDA se forzó puntualmente después de que
-// la pantalla haya cerrado con ese criterio en contra, ya se refleja acá —
-// no hace falta esperar a que alguien reejecute el grupo completo (que hoy
-// no se puede hacer de forma segura con un override, ver cdaService.js).
+// Combina la definición VIGENTE del grupo (ExpresionAgrupacion + CDAs
+// activos de GrupoCda) con el estado de cada CDA DENTRO DE LA CORRIDA ACTUAL
+// (cdasCorridaActual — ver obtenerCdasDeLaCorridaActual), sin pegarle de
+// nuevo al backend. Si un CDA se forzó puntualmente después de que la
+// pantalla haya cerrado con ese criterio en contra, ya se refleja acá — no
+// hace falta esperar a que alguien reejecute el grupo completo (que hoy no
+// se puede hacer de forma segura con un override, ver cdaService.js).
 //
-// ⚠️ Un CDA que se desvincula del grupo (Activo=0 en la vinculación) NO debe
-// seguir pesando con su último resultado histórico, aunque su token
-// ("cdaN") siga mencionado en la ExpresionAgrupacion congelada — la
-// desvinculación no reescribe esa expresión sola. Sin este filtro, activar/
-// desactivar un CDA ya ejecutado antes no cambiaba nada acá (armarEstadoPorCda
-// encuentra su resultado viejo igual), así que ni el badge ni el aviso de
-// "los CDA cambiaron" (ver cdaDefinicionCambio en EmpresaDetalle.jsx)
-// reaccionaban a esa edición. Se trata como "no evaluado" (null) a cualquier
-// CdaID que no esté en cdasActivosIds — si el array no se pasa (undefined),
-// no se filtra nada (mismo comportamiento que antes).
+// ⚠️ A propósito NO busca en TODO el historial (antes usaba
+// armarEstadoPorCda sin restricción): un CDA reactivado (Activo=1 de
+// nuevo) cuya única ejecución real quedó vieja, de antes de varios
+// cierres, contaba igual como "conocido" con ese valor añejo — haciendo
+// que estadoEfectivo pareciera coincidir con estadoSinCadena (sin avisar
+// de nada) aunque nadie lo haya evaluado en la corrida actual. Ahora, si un
+// CDA vigente no aparece en cdasCorridaActual, cuenta como no evaluado
+// (null) acá también — igual que ya pasa en estadoSinCadena — así que
+// reactivar un CDA con dato viejo siempre difiere del resultado ya
+// evaluado (dispara cdaDefinicionCambio) hasta que se lo reejecute de
+// verdad. Mismo criterio para un CDA desvinculado (Activo=0): si no está
+// en cdasActivosIds, tampoco cuenta — si el array no se pasa (undefined),
+// no se filtra nada.
 export const calcularEstadoEfectivo = ({
-  historial,
+  cdasCorridaActual,
   expresionAgrupacion,
   cdasActivosIds,
-  cadenaValorId,
-  pantallaGrupoCdaId,
 }) => {
-  const estadoPorCdaCompleto = armarEstadoPorCda(historial, { cadenaValorId, pantallaGrupoCdaId });
+  const estadoPorCdaCompleto = new Map();
+  (cdasCorridaActual || []).forEach((item) => {
+    const cdaId = Number(item?.cdaid ?? item?.CdaID ?? -1);
+    if (cdaId === 0) return;
+    const estadoId = Number(item?.estadoexecutecdaid ?? item?.EstadoExecuteCdaID ?? 0);
+    estadoPorCdaCompleto.set(cdaId, estadoId === 3 ? true : estadoId === 2 ? false : null);
+  });
   const estadoPorCda = cdasActivosIds
     ? new Map(
         [...estadoPorCdaCompleto].filter(([cdaId]) =>
@@ -271,36 +279,19 @@ export const combinarEstadoCdas = (grupoItem, cdas, cdasActivosIds) => {
     return estadoId === 3 ? "aprobado" : estadoId === 2 ? "rechazado" : "pendiente";
   }
 
-  // Una ejecución posterior al cierre SIN ValorParticularExpresion es una
-  // reevaluación REAL (con la regla real del CDA, no un forzado puntual) —
-  // a diferencia de un forzado, que está pensado para coexistir con el
-  // resto del cierre viejo, esta reemplaza al cierre entero como veredicto.
-  // Confirmado con un caso real: un grupo de 3 CDAs cierra "TRUE and TRUE
-  // and FALSE"; se desvinculan 2 y se reejecuta el que queda — el backend
-  // no siempre genera un cierre nuevo para un grupo de un solo CDA, así
-  // que sin esto, combinarEstadoCdas seguía mezclando el resultado viejo de
-  // los 2 CDAs ya desvinculados con el nuevo. Se identifica la ejecución
-  // MÁS RECIENTE de todo el batch (no necesariamente la del CDA que había
-  // dado el cierre en contra): si es posterior al cierre y no tiene
-  // ValorParticularExpresion, decide sola. Si en cambio la más reciente
-  // tiene ValorParticularExpresion (forzado explícito), se sigue
-  // combinando con el resto vía la lógica de abajo, como ya se hacía.
-  const grupoItemId = Number(grupoItem.socioexecutecdaid ?? grupoItem.SocioExecuteCdaID) || 0;
-  const masReciente = cdasFiltrados.reduce((acc, item) => {
-    const id = Number(item.socioexecutecdaid ?? item.SocioExecuteCdaID) || 0;
-    const idAcc = acc ? Number(acc.socioexecutecdaid ?? acc.SocioExecuteCdaID) || 0 : -Infinity;
-    return id > idAcc ? item : acc;
-  }, null);
-  const esReevaluacionRealPostCierre =
-    masReciente &&
-    !masReciente.valorparticularexpresion &&
-    (Number(masReciente.socioexecutecdaid ?? masReciente.SocioExecuteCdaID) || 0) > grupoItemId;
-
-  if (esReevaluacionRealPostCierre) {
-    const estadoId = Number(masReciente.estadoexecutecdaid ?? masReciente.EstadoExecuteCdaID ?? 0);
-    return estadoId === 3 ? "aprobado" : estadoId === 2 ? "rechazado" : "pendiente";
-  }
-
+  // ⚠️ Hubo acá un atajo ("esReevaluacionRealPostCierre") que dejaba que la
+  // ejecución más reciente del batch decidiera sola cuando no tenía
+  // ValorParticularExpresion, sin importar cuántos otros CDAs siguieran
+  // activos. Se sacó: confirmado con un caso real (socio con historial
+  // grande, un solo CDA reevaluado) que ese atajo dejaba a un CDA puntual
+  // hijackear todo el resultado incluso cuando el grupo seguía teniendo
+  // más de un miembro vigente — y aplicaba también del lado del cliente
+  // (calcularEstadoDesdeHistorial no pasa cdasActivosIds, así que no hay
+  // forma de confirmar ahí que el grupo realmente se redujo a ese único
+  // CDA). El filtro por cdasActivosIds ya alcanza para el caso que motivó
+  // el atajo (grupo reducido a 1 CDA sin cierre nuevo): al combinar una
+  // lista de un solo elemento, el and/or de abajo ya da ese mismo
+  // resultado sin necesitar tratarlo aparte.
   const combinador = /\bor\b/i.test(grupoItem.expresion ?? grupoItem.Expresion ?? "") ? "or" : "and";
   const valores = cdasFiltrados.map((item) => {
     const estadoId = Number(item.estadoexecutecdaid ?? item.EstadoExecuteCdaID ?? 0);

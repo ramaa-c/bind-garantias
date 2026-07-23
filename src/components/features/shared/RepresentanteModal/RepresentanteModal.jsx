@@ -733,7 +733,7 @@ export function RepresentanteModal({
         isOpen={isOpen}
         onClose={onClose}
         title={representante || representanteInicial ? `Editar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
-        maxWidth="600px"
+        maxWidth="800px"
         variant={isAdmin ? "blue" : "default"}
       >
         <form onSubmit={handlePreSubmit} className={styles.modalForm}>
@@ -820,7 +820,7 @@ export function RepresentanteModal({
                 />
               </div>
 
-              <div className={styles.modalRow2}>
+              <div className={styles.modalRow}>
                 <Controller
                   name="rol"
                   control={control}
@@ -836,7 +836,9 @@ export function RepresentanteModal({
                     />
                   )}
                 />
-                
+              </div>
+
+              <div className={styles.modalRow2}>
                 <Controller
                   name="email"
                   control={control}
@@ -859,9 +861,7 @@ export function RepresentanteModal({
                     />
                   )}
                 />
-              </div>
 
-              <div className={styles.modalRow2}>
                 <Controller
                   name="telefono"
                   control={control}

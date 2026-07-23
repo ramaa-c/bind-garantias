@@ -652,10 +652,6 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
     () => ultimaEjecucionPorCda(ejecucionesData),
     [ejecucionesData],
   );
-  const historialCompleto = useMemo(
-    () => ordenarEjecucionesCda(ejecucionesData),
-    [ejecucionesData],
-  );
 
   // grupoItem: última fila sintética CdaID=0 (resultado combinado del
   // grupo — no se puede re-ejecutar por CdaID como el resto, ver barra de
@@ -699,6 +695,15 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   // Vinculados primero, desvinculados al final — con el estado (activo vs.
   // desvinculado) mezclado en la lista sin ningún orden, era fácil pasar
   // por alto que había CDAs que ya no pesaban en el resultado combinado.
+  //
+  // ⚠️ Un desvinculado solo se muestra si sigue siendo parte de "la
+  // ejecución vigente": si ALGÚN CDA que sigue vinculado ya se reevaluó
+  // DESPUÉS del último cierre, el desvinculado quedó del lado de una
+  // corrida ya superada — mostrarlo confunde (parece que recién se sacó
+  // del grupo, cuando en realidad es historia vieja de antes de esas
+  // reevaluaciones). Confirmado en vivo: reejecutar el único CDA que queda
+  // vinculado, dos veces seguidas después del cierre, seguía mostrando a
+  // los ya desvinculados como si nada hubiera pasado desde el cierre.
   const cdasIndividualesOrdenados = useMemo(() => {
     if (!hayGrupoVigente) return cdasIndividuales;
     const activos = [];
@@ -706,19 +711,24 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
     cdasIndividuales.forEach((item) => {
       (cdasActivosIdsGrupo.includes(Number(item.cdaid)) ? activos : desvinculados).push(item);
     });
-    return [...activos, ...desvinculados];
-  }, [cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo]);
+
+    const idDeItem = (item) => Number(item?.socioexecutecdaid ?? item?.SocioExecuteCdaID) || 0;
+    const grupoItemId = idDeItem(grupoItem);
+    const huboReevaluacionPostCierre =
+      !!grupoItem && activos.some((item) => idDeItem(item) > grupoItemId);
+    const desvinculadosVigentes = huboReevaluacionPostCierre ? [] : desvinculados;
+
+    return [...activos, ...desvinculadosVigentes];
+  }, [cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo, grupoItem]);
 
   const estadoEfectivo = useMemo(() => {
     if (!hayCadenaDetectada || isLoadingGrupoElegido) return null;
     return calcularEstadoEfectivo({
-      historial: historialCompleto,
+      cdasCorridaActual: cdasIndividuales,
       expresionAgrupacion: grupoDataElegido?.grupo?.expresionagrupacion,
       cdasActivosIds: cdasActivosIdsGrupo,
-      cadenaValorId: cadenaValorIdDetectada,
-      pantallaGrupoCdaId: grupoDataElegido?.grupo?.pantallagrupocdaid,
     });
-  }, [hayCadenaDetectada, isLoadingGrupoElegido, historialCompleto, grupoDataElegido, cdasActivosIdsGrupo, cadenaValorIdDetectada]);
+  }, [hayCadenaDetectada, isLoadingGrupoElegido, cdasIndividuales, grupoDataElegido, cdasActivosIdsGrupo]);
 
   // Estado calculado SIN necesitar la ExpresionAgrupacion vigente: infiere
   // la combinación and/or del propio texto del último cierre
@@ -767,12 +777,42 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   // difieren, reejecutar el grupo puede dar un resultado distinto al que se
   // ve arriba — en cualquier sentido (aprobado→rechazado, rechazado
   // →aprobado, o quedar pendiente).
+  //
+  // ⚠️ estadoSinCadena puede dar null (no solo "otro valor"): pasa cuando el
+  // único CDA vigente no tiene NINGUNA ejecución dentro de "la corrida
+  // actual" (ver obtenerCdasDeLaCorridaActual) — ej. se activó un CDA cuya
+  // última ejecución quedó muy vieja, de antes de varios cierres — en ese
+  // caso combinarEstadoCdas no tiene con qué combinar y devuelve null. Antes
+  // esto apagaba el aviso por completo (exigía que AMBOS valores existieran
+  // para comparar), justo en el caso donde más hace falta: el badge de
+  // arriba termina mostrando estadoEfectivo puro (ver estadoFinal), sin
+  // ningún respaldo del historial reciente, y el aviso se quedaba callado.
   const cdaDefinicionCambio =
     hayCadenaDetectada &&
     !isLoadingGrupoElegido &&
     !!estadoEfectivo &&
-    !!estadoSinCadena &&
-    estadoEfectivo !== estadoSinCadena;
+    (estadoSinCadena == null || estadoEfectivo !== estadoSinCadena);
+
+  // Para el detalle del aviso: qué CDA vigente no tiene una ejecución
+  // reciente para este socio (ni en "la corrida actual" — puede ser que
+  // nunca se ejecutó, o que su última ejecución quedó vieja, de antes de
+  // los últimos cierres) y qué aparece en gris (ver cdasIndividualesOrdenados)
+  // — así el aviso no es solo "algo cambió" sino qué CDA puntual es.
+  const cdaIdsEnCorridaActual = useMemo(
+    () => new Set(cdasIndividuales.map((item) => Number(item.cdaid ?? item.CdaID))),
+    [cdasIndividuales],
+  );
+  const cdasNuevosSinEvaluar = useMemo(() => {
+    if (!hayGrupoVigente) return [];
+    return cdasActivosIdsGrupo.filter((id) => !cdaIdsEnCorridaActual.has(id));
+  }, [hayGrupoVigente, cdasActivosIdsGrupo, cdaIdsEnCorridaActual]);
+  const cdasDesvinculadosVigentes = useMemo(
+    () =>
+      hayGrupoVigente
+        ? cdasIndividualesOrdenados.filter((item) => !cdasActivosIdsGrupo.includes(Number(item.cdaid)))
+        : [],
+    [cdasIndividualesOrdenados, hayGrupoVigente, cdasActivosIdsGrupo],
+  );
 
   // "Reejecutar grupo" corre sin ValorParticularExpresion (ver cdaService.js:
   // no es seguro mandarlo a nivel de pantalla completa), así que cualquier
@@ -783,10 +823,17 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   // arriba), NO en ultimasPorCda (todo el historial): un CDA forzado en una
   // corrida vieja y ajena a este grupo no se va a tocar al reejecutar, así
   // que no corresponde advertir sobre él.
-  const cdasConExpresionForzada = useMemo(
-    () => cdasIndividuales.filter((item) => item.valorparticularexpresion),
-    [cdasIndividuales],
-  );
+  //
+  // ⚠️ Tampoco corresponde advertir sobre un forzado que sigue en
+  // cdasIndividuales pero ya se desvinculó del grupo (mismo criterio que
+  // cdasActivosIdsGrupo usa en todos lados): "Reejecutar grupo" solo evalúa
+  // los CDAs vigentes, así que un forzado desvinculado no se va a tocar.
+  const cdasConExpresionForzada = useMemo(() => {
+    const forzados = cdasIndividuales.filter((item) => item.valorparticularexpresion);
+    return hayGrupoVigente
+      ? forzados.filter((item) => cdasActivosIdsGrupo.includes(Number(item.cdaid)))
+      : forzados;
+  }, [cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo]);
 
   const handleReejecutarGrupo = async () => {
     const cadenaValorId = cadenaValorIdDetectada;
@@ -935,19 +982,29 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
     );
   }
 
+  // Sin esto, con el historial ya cargado pero el grupo vigente todavía no
+  // (isLoadingGrupoElegido), hayGrupoVigente da false y el estado/lista se
+  // arman sin el filtro de cdasActivosIdsGrupo — mostrando por un instante
+  // el resultado crudo del historial (con CDAs ya desvinculados pesando
+  // igual) que después "salta" al valor real apenas resuelve el grupo.
+  // Confunde más que un spinner corto. Solo aplica si hay cadena detectada
+  // (si no, no hay ningún grupo que esperar — useObtenerGrupoCdaConCdas
+  // queda deshabilitado y esto nunca sería true).
+  if (hayCadenaDetectada && isLoadingGrupoElegido) {
+    return (
+      <div className={styles.cdasPlaceholderWrap}>
+        <Spinner center size={60} color="#4c65e6" />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.cdasScroll}>
       {(grupoItem || (hayCadenaDetectada && cdasIndividuales.length > 0)) && (() => {
-        // estadoFinal (ver más arriba) ya prioriza estadoSinCadena — no hace
-        // falta esperar a que resuelva el grupo vigente (isLoadingGrupoElegido)
-        // para mostrarlo, así que "Calculando..." solo aparece si todavía no
-        // hay ningún resultado para mostrar. getEstadoTono("Calculando...")
-        // no matchea ningún patrón y cae solo a "neutral".
-        const estadoLabel = estadoFinal
-          ? ESTADO_LABEL_EFECTIVO[estadoFinal]
-          : hayCadenaDetectada && isLoadingGrupoElegido
-            ? "Calculando..."
-            : "Sin evaluar";
+        // Para cuando se llega hasta acá, isLoadingGrupoElegido ya resolvió
+        // (ver el gate de carga más arriba) — no hace falta un estado
+        // intermedio de "Calculando...".
+        const estadoLabel = estadoFinal ? ESTADO_LABEL_EFECTIVO[estadoFinal] : "Sin evaluar";
         const tono = getEstadoTono(estadoLabel);
 
         return (
@@ -991,11 +1048,34 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
             <strong>Los criterios de {nombreCadenaDetectada} cambiaron</strong> desde
             la última evaluación de este socio.
             <span className={styles.avisoCambioCdaSub}>
-              Con la definición vigente el resultado sería{" "}
-              <strong>{ESTADO_LABEL_EFECTIVO[estadoEfectivo]}</strong>, pero la última
-              evaluación real dio <strong>{ESTADO_LABEL_EFECTIVO[estadoSinCadena]}</strong>.
-              Si reejecutás el grupo, el resultado puede cambiar en cualquier sentido
-              (incluyendo de Aprobado a Rechazado).
+              {estadoSinCadena == null ? (
+                "No hay ninguna evaluación real reciente que respalde el estado que ves arriba — reejecutar el grupo puede cambiarlo."
+              ) : (
+                <>
+                  El estado que ves arriba es el de la última evaluación real
+                  (<strong>{ESTADO_LABEL_EFECTIVO[estadoSinCadena]}</strong>) — puede
+                  cambiar si reejecutás el grupo.
+                </>
+              )}
+              {cdasNuevosSinEvaluar.length > 0 && (
+                <>
+                  {" "}No {cdasNuevosSinEvaluar.length === 1 ? "tiene" : "tienen"} una
+                  ejecución reciente:{" "}
+                  {cdasNuevosSinEvaluar
+                    .map((id) => descripcionPorCda.get(id) || `CDA #${id}`)
+                    .join(", ")}.
+                </>
+              )}
+              {cdasDesvinculadosVigentes.length > 0 && (
+                <>
+                  {" "}{cdasDesvinculadosVigentes.length === 1 ? "Ya no está vinculado" : "Ya no están vinculados"}:{" "}
+                  {cdasDesvinculadosVigentes
+                    .map((item) => descripcionPorCda.get(Number(item.cdaid)) || `CDA #${item.cdaid}`)
+                    .join(", ")}{" "}
+                  — reejecutar el grupo va a dejar de tenerlo
+                  {cdasDesvinculadosVigentes.length === 1 ? "" : "s"} en cuenta.
+                </>
+              )}
             </span>
           </div>
         </div>
@@ -1009,7 +1089,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
         mensaje={
           <>
             Se va a reevaluar toda la pantalla con las reglas definidas en
-            CDAs Globales — <strong>sin ningún forzado</strong>.
+            CDAs Globales.
             {cdasConExpresionForzada.length > 0 && (
               <>
                 <br />
