@@ -8,7 +8,6 @@ import {
   FiClock,
   FiAlertCircle,
   FiBriefcase,
-  FiCreditCard,
   FiMapPin,
   FiPhone,
   FiExternalLink,
@@ -38,13 +37,20 @@ import {
   BuscadorCuit,
   SelectFecha,
 } from "../../../ui";
+import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { tercerosService } from "../../../../services/tercerosService";
 import { sociosService } from "../../../../services/sociosService";
 import { usuarioService } from "../../../../services/usuarioService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { afipService } from "../../../../services/afipService";
-import { useProvincias } from "../../../../hooks/useCatalogos";
+import {
+  useProvincias,
+  useTamanioEmpresa,
+  useSituacionBCRA,
+  useTipoCanalComercializacion,
+  useEstadoSocio,
+} from "../../../../hooks/useCatalogos";
 import { useObtenerTerceros } from "../../../../hooks/useTerceros";
 import { useDiasMargenVencimientoBalance } from "../../../../hooks/useValorOperativo";
 import { calcularEstadoBalance } from "../../../../utils/balanceVigencia";
@@ -189,9 +195,21 @@ export function DocumentosLegajo({
     nombreEmpresa,
     cuitActivo,
     direccion,
+    numero,
+    piso,
+    departamento,
+    partido,
+    codigoPostal,
+    email,
     telefono,
+    telefono2,
     tipoPersonaId,
     fechaCierreEjercicio,
+    fechaInicioActividades,
+    tamanioEmpresaId,
+    situacionBcraId,
+    tipoCanalComercializacionId,
+    socioEstadoId,
   } = adminMode
     ? { socioIdActivo: socioIdOverride, ...empresaOverride }
     : empresaActiva;
@@ -210,6 +228,57 @@ export function DocumentosLegajo({
     });
   };
 
+  const { data: tamaniosEmpresa } = useTamanioEmpresa();
+  const { data: situacionesBcra } = useSituacionBCRA();
+  const { data: canalesComercializacion } = useTipoCanalComercializacion();
+  const { data: estadosSocio } = useEstadoSocio();
+
+  const resolverLabel = (opciones, id) => {
+    if (id === undefined || id === null || Number(id) === 0) return null;
+    const encontrada = (opciones || []).find((o) => o.value === String(id));
+    return encontrada?.label || null;
+  };
+
+  const formatCuit = (cuit) => {
+    const digitos = String(cuit || "").replace(/\D/g, "");
+    if (digitos.length !== 11) return cuit || null;
+    return `${digitos.slice(0, 2)}-${digitos.slice(2, 10)}-${digitos.slice(10)}`;
+  };
+
+  const formatFecha = (fecha) => {
+    if (!fecha) return null;
+    const d = new Date(fecha);
+    if (Number.isNaN(d.getTime())) return null;
+    return new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(d);
+  };
+
+  const tamanioEmpresaLabel = resolverLabel(tamaniosEmpresa?.opciones, tamanioEmpresaId);
+  const situacionBcraLabel = resolverLabel(situacionesBcra?.opciones, situacionBcraId);
+  const canalComercializacionLabel = resolverLabel(
+    canalesComercializacion?.opciones,
+    tipoCanalComercializacionId,
+  );
+  const estadoSocioLabel = resolverLabel(estadosSocio?.opciones, socioEstadoId);
+
+  const tipoPersonaLabel =
+    Number(tipoPersonaId) === 1
+      ? "Persona Física"
+      : Number(tipoPersonaId) === 10
+        ? "Persona Jurídica"
+        : null;
+
+  const domicilioCompleto = useMemo(() => {
+    const calleNumero = [direccion, numero].filter(Boolean).join(" ");
+    const pisoDepto = [piso && `Piso ${piso}`, departamento && `Depto ${departamento}`]
+      .filter(Boolean)
+      .join(" ");
+    return (
+      [calleNumero, pisoDepto, partido, codigoPostal && `CP ${codigoPostal}`]
+        .filter(Boolean)
+        .join(", ") || null
+    );
+  }, [direccion, numero, piso, departamento, partido, codigoPostal]);
+
   // No hay un campo CadenaValorID en Socio, así que en modo admin la cadena
   // llega ya detectada desde afuera (EmpresaDetalle.jsx la infiere del
   // historial de CDAs del socio, ver detectarCadenaValorId). Si no se pudo
@@ -221,12 +290,13 @@ export function DocumentosLegajo({
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   const estructuraFiltrada = useMemo(() => {
-    return ESTRUCTURA_LEGAJO.filter((doc) => {
-      if (doc.key === "perfil") return true;
-      const configVal = requisitos?.documentos?.[doc.key];
+    return ESTRUCTURA_LEGAJO.filter((item) => {
+      if (adminMode && item.key === "perfil") return false;
+      
+      const configVal = requisitos?.documentos?.[item.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [requisitos]);
+  }, [requisitos, adminMode]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -279,6 +349,7 @@ export function DocumentosLegajo({
   // podrían alcanzar a disparar dos subidas del mismo archivo antes de eso.
   const confirmandoFechaBalanceRef = useRef(false);
   const [confirmandoFechaBalance, setConfirmandoFechaBalance] = useState(false);
+  const [archivoAEliminar, setArchivoAEliminar] = useState(null);
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
@@ -681,50 +752,86 @@ export function DocumentosLegajo({
         </header>
 
         {isPerfil ? (
-          <div className={styles.perfilGrid}>
-            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
-              <div className={styles.perfilChipHeader}>
-                <FiBriefcase
-                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
-                  size={20}
-                />
-                <span className={styles.perfilChipLabel}>Razón Social</span>
+          <div className={styles.perfilPanel}>
+            <div className={`${styles.perfilHero} ${styles.glassCard}`}>
+              <div className={`${styles.perfilAvatar} ${adminMode ? styles.perfilAvatarAdmin : ""}`}>
+                {(nombreEmpresa || "?").trim().charAt(0).toUpperCase()}
               </div>
-              <span className={styles.perfilChipValue}>
-                {nombreEmpresa || "—"}
-              </span>
+              <div className={styles.perfilHeroInfo}>
+                <span className={styles.perfilHeroName}>{nombreEmpresa || "—"}</span>
+                <span className={styles.perfilHeroMeta}>
+                  {formatCuit(cuitActivo) || "CUIT no disponible"}
+                  {tipoPersonaLabel && (
+                    <>
+                      <span className={styles.perfilHeroDot}>·</span>
+                      {tipoPersonaLabel}
+                    </>
+                  )}
+                </span>
+              </div>
+              {estadoSocioLabel && (
+                <span className={`${styles.perfilEstadoBadge} ${adminMode ? styles.perfilEstadoBadgeAdmin : ""}`}>
+                  {estadoSocioLabel}
+                </span>
+              )}
             </div>
-            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
-              <div className={styles.perfilChipHeader}>
-                <FiCreditCard
-                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
-                  size={20}
-                />
-                <span className={styles.perfilChipLabel}>CUIT</span>
-              </div>
-              <span className={styles.perfilChipValue}>
-                {cuitActivo || "—"}
-              </span>
-            </div>
-            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
-              <div className={styles.perfilChipHeader}>
-                <FiMapPin
-                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
-                  size={20}
-                />
-                <span className={styles.perfilChipLabel}>Domicilio</span>
-              </div>
-              <span className={styles.perfilChipValue}>{direccion || "—"}</span>
-            </div>
-            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
-              <div className={styles.perfilChipHeader}>
-                <FiPhone
-                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
-                  size={20}
-                />
-                <span className={styles.perfilChipLabel}>Teléfono</span>
-              </div>
-              <span className={styles.perfilChipValue}>{telefono || "—"}</span>
+
+            <div className={styles.perfilSections}>
+              <section className={`${styles.perfilSection} ${styles.glassCard}`}>
+                <h5 className={styles.perfilSectionTitle}>
+                  <FiPhone size={13} /> Contacto
+                </h5>
+                <dl className={styles.perfilRows}>
+                  <div className={styles.perfilRow}>
+                    <dt>Email</dt>
+                    <dd>{email || "—"}</dd>
+                  </div>
+                  <div className={styles.perfilRow}>
+                    <dt>Teléfono</dt>
+                    <dd>{[telefono, telefono2].filter(Boolean).join(" / ") || "—"}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section className={`${styles.perfilSection} ${styles.glassCard}`}>
+                <h5 className={styles.perfilSectionTitle}>
+                  <FiMapPin size={13} /> Domicilio
+                </h5>
+                <dl className={styles.perfilRows}>
+                  <div className={styles.perfilRow}>
+                    <dt>Dirección</dt>
+                    <dd>{domicilioCompleto || "—"}</dd>
+                  </div>
+                </dl>
+              </section>
+
+              <section className={`${styles.perfilSection} ${styles.glassCard}`}>
+                <h5 className={styles.perfilSectionTitle}>
+                  <FiBriefcase size={13} /> Datos comerciales
+                </h5>
+                <dl className={styles.perfilRows}>
+                  <div className={styles.perfilRow}>
+                    <dt>Tamaño de empresa</dt>
+                    <dd>{tamanioEmpresaLabel || "—"}</dd>
+                  </div>
+                  <div className={styles.perfilRow}>
+                    <dt>Situación BCRA</dt>
+                    <dd>{situacionBcraLabel || "—"}</dd>
+                  </div>
+                  <div className={styles.perfilRow}>
+                    <dt>Canal de comercialización</dt>
+                    <dd>{canalComercializacionLabel || "—"}</dd>
+                  </div>
+                  <div className={styles.perfilRow}>
+                    <dt>Inicio de actividades</dt>
+                    <dd>{formatFecha(fechaInicioActividades) || "—"}</dd>
+                  </div>
+                  <div className={styles.perfilRow}>
+                    <dt>Cierre de ejercicio</dt>
+                    <dd>{formatFecha(fechaCierreEjercicio) || "—"}</dd>
+                  </div>
+                </dl>
+              </section>
             </div>
           </div>
         ) : (
@@ -755,13 +862,12 @@ export function DocumentosLegajo({
                         tabIndex={0}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (
-                            window.confirm(
-                              `¿Estás seguro de que deseas eliminar el archivo "${file.nombrearchivo}"?`
-                            )
-                          ) {
-                            handleFileDelete(doc.key, file.socioarchivoid, doc.title);
-                          }
+                          setArchivoAEliminar({
+                            key: doc.key,
+                            fileId: file.socioarchivoid,
+                            docTitle: doc.title,
+                            nombreArchivo: file.nombrearchivo,
+                          });
                         }}
                         className={styles.subTabClose}
                         title="Eliminar archivo"
@@ -944,10 +1050,31 @@ export function DocumentosLegajo({
     </Modal>
   );
 
+  const confirmarEliminarArchivoModal = (
+    <ConfirmacionModal
+      isOpen={!!archivoAEliminar}
+      onClose={() => setArchivoAEliminar(null)}
+      onConfirm={async () => {
+        await handleFileDelete(
+          archivoAEliminar.key,
+          archivoAEliminar.fileId,
+          archivoAEliminar.docTitle,
+        );
+        setArchivoAEliminar(null);
+      }}
+      titulo="Eliminar archivo"
+      mensaje={`¿Estás seguro de que deseas eliminar el archivo "${archivoAEliminar?.nombreArchivo}"?`}
+      tone="danger"
+      confirmText="Eliminar"
+      cancelText="Cancelar"
+    />
+  );
+
   if (!isMobile) {
     return (
       <>
       {fechaBalanceModal}
+      {confirmarEliminarArchivoModal}
       <div className={styles.workspace}>
         <div className={styles.sidebar}>
           {estructuraFiltrada.map((doc, index) => {
@@ -1014,7 +1141,7 @@ export function DocumentosLegajo({
                     </div>
                   </div>
                   <span
-                    className={`${styles.statusDot} ${cargandoArchivos ? styles.dotLoading : isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
+                    className={`${styles.statusDot} ${cargandoArchivos ? styles.dotLoading : isComplete ? styles.dotGreen : hasError ? styles.dotRed : isRequired ? styles.dotYellow : styles.dotGray}`}
                   />
                 </button>
               </React.Fragment>
@@ -1031,6 +1158,7 @@ export function DocumentosLegajo({
   return (
     <>
     {fechaBalanceModal}
+    {confirmarEliminarArchivoModal}
     <div className={styles.workspaceMobile}>
       {estructuraFiltrada.map((doc, index) => {
         const isNewCategory =
@@ -1098,7 +1226,7 @@ export function DocumentosLegajo({
                 </div>
               </div>
               <span
-                className={`${styles.statusDot} ${cargandoArchivos ? styles.dotLoading : isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
+                className={`${styles.statusDot} ${cargandoArchivos ? styles.dotLoading : isComplete ? styles.dotGreen : hasError ? styles.dotRed : isRequired ? styles.dotYellow : styles.dotGray}`}
               />
               <FiChevronDown
                 className={styles.mobileChevron}

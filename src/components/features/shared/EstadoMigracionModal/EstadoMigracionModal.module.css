@@ -27,11 +27,6 @@
   box-shadow: 0 4px 24px rgba(245, 244, 0, 0.06);
 }
 
-.hero-pending {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
-}
-
 .heroIcon {
   display: flex;
   align-items: center;
@@ -50,11 +45,6 @@
 .hero-ready .heroIcon {
   background: rgba(245, 244, 0, 0.14);
   color: var(--yellow, #f5f400);
-}
-
-.hero-pending .heroIcon {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.55);
 }
 
 .heroText {
@@ -78,6 +68,20 @@
   line-height: 1.4;
 }
 
+/* Reemplaza al hero cuando falta completar algo: ese estado ya se explica
+   en LegajoUniversalBar (containerInvalid), así que acá alcanza con un
+   renglón chico que introduzca el checklist de abajo, sin repetir título ni
+   mensaje. */
+.pendingLead {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ffd000;
+}
+
 /* ── PROGRESO GLOBAL ─────────────────────────────────────────────────────── */
 .progressRow {
   display: flex;
@@ -95,9 +99,11 @@
 }
 
 .progressFill {
+  width: 100%;
   height: 100%;
   border-radius: 999px;
-  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transform-origin: left;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .fill-success {

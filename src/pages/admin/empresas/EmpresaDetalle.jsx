@@ -467,9 +467,21 @@ function DocumentacionTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada
             nombreEmpresa: socio.denominacion,
             cuitActivo: socio.cuit,
             direccion: socio.calle,
+            numero: socio.numero,
+            piso: socio.piso,
+            departamento: socio.departamento,
+            partido: socio.partido,
+            codigoPostal: socio.codpos,
+            email: socio.email,
             telefono: socio.telefono,
+            telefono2: socio.telefono2,
             tipoPersonaId: socio.tipopersonaid,
             fechaCierreEjercicio: socio.fechacierreejercicio,
+            fechaInicioActividades: socio.fechainicioactividades,
+            tamanioEmpresaId: socio.tamanioempresaid,
+            situacionBcraId: socio.situacionbcraid,
+            tipoCanalComercializacionId: socio.tipocanalcomercializacionid,
+            socioEstadoId: socio.socioestadoid,
           }}
         />
       </FormProvider>
@@ -1669,8 +1681,8 @@ export default function EmpresaDetalle() {
     socio.socioestadoid,
   );
   const estadoTono = getEstadoTono(estadoSocioLabel);
-  const estaMigrado = Number(socio.legajo) > 0;
   const legajoCompleto = totalRequisitos > 0 && requisitosCompletados === totalRequisitos;
+  const estaMigrado = Number(socio.legajo) > 0 || legajoCompleto;
 
   return (
     <div className={styles.container}>
@@ -1705,7 +1717,7 @@ export default function EmpresaDetalle() {
                 className={`${styles.badge} ${styles["badge-success"]}`}
                 title="El legajo ya se migró al sistema core (SGR+)."
               >
-                <FiCheckCircle size={12} /> Migrado · Legajo #{socio.legajo}
+                <FiCheckCircle size={12} /> Migrado {Number(socio.legajo) > 0 ? `· Legajo #${socio.legajo}` : ""}
               </span>
             ) : (
               estadoSocioLabel && (

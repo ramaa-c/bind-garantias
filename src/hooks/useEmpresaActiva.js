@@ -41,9 +41,29 @@ export const useEmpresaActiva = (skip = false) => {
   const nombreEmpresa =
     socioWeb?.denominacion || socioWeb?.Denominacion || null;
   const direccion = socioWeb?.calle || socioWeb?.Calle || "";
+  const numero = socioWeb?.numero || socioWeb?.Numero || "";
+  const piso = socioWeb?.piso || socioWeb?.Piso || "";
+  const departamento = socioWeb?.departamento || socioWeb?.Departamento || "";
+  const partido = socioWeb?.partido || socioWeb?.Partido || "";
+  const codigoPostal = socioWeb?.codpos || socioWeb?.CodPos || "";
+  const email = socioWeb?.email || socioWeb?.Email || "";
   const telefono = socioWeb?.telefono || socioWeb?.Telefono || "";
+  const telefono2 = socioWeb?.telefono2 || socioWeb?.Telefono2 || "";
   const fechaCierreEjercicio =
     socioWeb?.fechacierreejercicio || socioWeb?.FechaCierreEjercicio || null;
+  const fechaInicioActividades =
+    socioWeb?.fechainicioactividades || socioWeb?.FechaInicioActividades || null;
+  const tamanioEmpresaId =
+    Number(socioWeb?.tamanioempresaid ?? socioWeb?.TamanioEmpresaID) || null;
+  const situacionBcraId =
+    Number(socioWeb?.situacionbcraid ?? socioWeb?.SituacionBcraID) || null;
+  const tipoCanalComercializacionId =
+    Number(
+      socioWeb?.tipocanalcomercializacionid ??
+        socioWeb?.TipoCanalComercializacionID,
+    ) || null;
+  const socioEstadoId =
+    Number(socioWeb?.socioestadoid ?? socioWeb?.SocioEstadoID) || null;
   let tipoPersonaId =
     socioWeb?.tipopersonaid || socioWeb?.TipoPersonaID || null;
   if (!tipoPersonaId && cuitActivo) {
@@ -81,8 +101,20 @@ export const useEmpresaActiva = (skip = false) => {
     socioIdActivo: socioId,
     nombreEmpresa,
     direccion,
+    numero,
+    piso,
+    departamento,
+    partido,
+    codigoPostal,
+    email,
     telefono,
+    telefono2,
     fechaCierreEjercicio,
+    fechaInicioActividades,
+    tamanioEmpresaId,
+    situacionBcraId,
+    tipoCanalComercializacionId,
+    socioEstadoId,
     tipoPersonaId,
     onboardingCompleto,
     isLoading,

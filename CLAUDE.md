@@ -132,3 +132,8 @@ Reglas de negocio evaluadas contra datos de integraciones externas para aprobar/
 - `GET cda/PantallaGrupoCda` devuelve un **array** (aunque se filtre por una sola pantalla) y NO incluye la lista de CDAs (solo `ExpresionAgrupacion`); la lista sale de `GET cda/GrupoCda?Pantalla=`.
 - El backend usa FireDAC con pool de conexiones limitado: al hacer múltiples escrituras (ej. guardar requisitos), enviarlas **secuencialmente**, no en `Promise.all`.
 - CUIT: prefijos `20/23/24/25/26/27` = persona física (`TipoPersonaID` 1), `30/33/34` = jurídica (10 en socios, 2 en terceros — ojo, difiere por tabla).
+
+# Reglas de Estilo de Código
+* NUNCA agregues comentarios explicativos dentro de los bloques de código.
+* El código debe entregarse limpio y listo para producción.
+* Si necesitas explicar algo, hacelo fuera del bloque de código, en texto plano.

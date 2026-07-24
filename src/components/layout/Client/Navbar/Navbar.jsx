@@ -116,7 +116,7 @@ const Navbar = ({
                   <div className={styles.dropdownHeader}>
                     <p className={styles.dropdownEmail}>{emailUsuario}</p>
                     <p className={`${styles.dropdownRole} ${!isVinculado ? styles.roleNoVinculado : ""}`}>
-                      {isVinculado ? "Socio activo" : "No vinculado"}
+                      {isVinculado ? "Socio vinculado" : "No vinculado"}
                     </p>
                   </div>
 

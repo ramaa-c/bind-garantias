@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
-import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase } from "react-icons/fi";
+import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle } from "react-icons/fi";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import styles from "./Empresas.module.css";
@@ -25,6 +25,8 @@ const getIniciales = (denominacion) => {
   return (palabras[0][0] + palabras[1][0]).toUpperCase();
 };
 
+import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
+
 const EmpresaRowSkeleton = () => (
   <tr>
     <td>
@@ -41,9 +43,39 @@ const EmpresaRowSkeleton = () => (
       <div className={styles.skeletonBlock} style={{ height: "0.75rem", width: "45%", marginTop: "0.45rem" }} />
     </td>
     <td><div className={`${styles.skeletonBlock} ${styles.skeletonPill}`} /></td>
+    <td><div className={`${styles.skeletonBlock} ${styles.skeletonPill}`} /></td>
     <td></td>
   </tr>
 );
+
+const EstadoBadge = ({ e }) => {
+  const { requisitosCompletados, totalRequisitos, isLoading } = useValidacionLegajo({
+    adminMode: true,
+    socioIdActivo: e.socioid,
+    tipoPersonaId: e.tipopersonaid,
+    nombreEmpresa: e.denominacion,
+  });
+
+  const isMigrado = Number(e.legajo) > 0 || (!isLoading && totalRequisitos > 0 && requisitosCompletados === totalRequisitos);
+
+  if (isLoading && Number(e.legajo) === 0) {
+    return (
+      <span className={`${styles.estadoBadge} ${styles.estadoAzulBind}`} style={{ opacity: 0.6 }}>
+        ...
+      </span>
+    );
+  }
+
+  return isMigrado ? (
+    <span className={`${styles.estadoBadge} ${styles.estadoSuccess}`}>
+      <FiCheckCircle size={12} /> Migrado
+    </span>
+  ) : (
+    <span className={`${styles.estadoBadge} ${styles.estadoAzulBind}`}>
+      Postulante
+    </span>
+  );
+};
 
 export default function Empresas() {
   const navigate = useNavigate();
@@ -120,8 +152,9 @@ export default function Empresas() {
             <thead>
               <tr>
                 <th style={{ width: "38%" }}>Empresa</th>
-                <th style={{ width: "36%" }}>Contacto</th>
-                <th style={{ width: "18%" }}>Tipo</th>
+                <th style={{ width: "32%" }}>Contacto</th>
+                <th style={{ width: "14%" }}>Tipo</th>
+                <th style={{ width: "14%" }}>Estado</th>
                 <th style={{ width: "2.5rem" }}></th>
               </tr>
             </thead>
@@ -130,7 +163,7 @@ export default function Empresas() {
                 Array.from({ length: 6 }).map((_, i) => <EmpresaRowSkeleton key={i} />)
               ) : empresasPagina.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: 0 }}>
+                  <td colSpan={5} style={{ padding: 0 }}>
                     <div className={styles.emptyState}>
                       <FiInbox className={styles.emptyStateIcon} />
                       <span>No se encontraron empresas que coincidan con los criterios de búsqueda.</span>
@@ -171,6 +204,9 @@ export default function Empresas() {
                         <span className={`${styles.tipoBadge} ${styles[`tipo-${tipo.tono}`]}`}>
                           {tipo.label}
                         </span>
+                      </td>
+                      <td>
+                        <EstadoBadge e={e} />
                       </td>
                       <td style={{ textAlign: "center" }}>
                         <FiChevronRight className={styles.rowChevron} />
