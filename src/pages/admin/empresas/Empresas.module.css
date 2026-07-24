@@ -310,6 +310,30 @@
   border: 1px dashed rgba(255, 255, 255, 0.15);
 }
 
+/* ── ESTADO ──────────────────────────────────────────────── */
+.estadoBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.estadoSuccess {
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.12);
+  border: 1px solid rgba(76, 175, 80, 0.25);
+}
+
+.estadoAzulBind {
+  color: var(--color-azul-bind-300, #8a9fff);
+  background: rgba(76, 101, 230, 0.1);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+}
+
 .skeletonBlock {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 4px;

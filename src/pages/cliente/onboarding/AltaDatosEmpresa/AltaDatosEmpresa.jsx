@@ -67,6 +67,8 @@ const mapearSocioAValoresFormulario = (socio) => {
     provinciaid: Number(socio.provinciaid ?? socio.ProvinciaId) || 0,
     codpos: socio.codpos || socio.CodPos || "",
     celular: socio.telefono || socio.Telefono || "",
+    emailfacturacion:
+      socio.emailfacturacion || socio.EmailFacturacion || "",
     tipopersonaid: Number(socio.tipopersonaid ?? socio.TipoPersonaID) || 0,
     mescierre,
     fechainicioactividades:
@@ -179,6 +181,7 @@ export const AltaDatosEmpresa = () => {
           provinciaid: 0,
           codpos: "",
           celular: "",
+          emailfacturacion: "",
           tipopersonaid: 0,
           mescierre: null,
           fechainicioactividades: null,
@@ -308,7 +311,7 @@ export const AltaDatosEmpresa = () => {
           cadenaObj?.tipocanalcomercializacionid ||
           cadenaObj?.TipoCanalComercializacionID ||
           0,
-        emailfacturacion: user?.email || "",
+        emailfacturacion: data.emailfacturacion || user?.email || "",
         minapoderadosrequeridos: 0,
         tipocondicionfianzaid: 0,
         jsoncondicionfianza: "",
@@ -497,7 +500,14 @@ export const AltaDatosEmpresa = () => {
       return (
         <Paso2Datos
           onContinuar={async () => {
-            if (await trigger(["direccion", "localidad", "celular"])) {
+            if (
+              await trigger([
+                "direccion",
+                "localidad",
+                "celular",
+                "emailfacturacion",
+              ])
+            ) {
               handleSubmit(onSubmitFinal)();
             }
           }}

@@ -4,19 +4,23 @@ import {
   FiCheckCircle,
   FiMapPin,
   FiPhone,
+  FiMail,
   FiEdit2,
   FiChevronRight,
   FiLock,
 } from "react-icons/fi";
 import { Button } from "../../../ui";
-import { UbicacionModal, ContactoModal } from "../../../features";
+import { UbicacionModal, ContactoModal, FacturacionModal } from "../../../features";
 import styles from "./Paso2Datos.module.css";
+
+const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
 export default function Paso2Datos({ onContinuar, isSubmitting }) {
   const { setValue, trigger, control } = useFormContext();
 
   const [modalUbicacionOpen, setUbicacionModalOpen] = useState(false);
   const [modalContactoOpen, setContactoModalOpen] = useState(false);
+  const [modalFacturacionOpen, setFacturacionModalOpen] = useState(false);
 
   const calle = useWatch({ control, name: "calle" });
   const numero = useWatch({ control, name: "numero" });
@@ -25,6 +29,7 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
   const localidad = useWatch({ control, name: "localidad" });
   const direccion = useWatch({ control, name: "direccion" }) || "";
   const celular = useWatch({ control, name: "celular" }) || "";
+  const emailFacturacion = useWatch({ control, name: "emailfacturacion" }) || "";
   const cuit = useWatch({ control, name: "cuit" }) || "";
   const razonSocial =
     useWatch({ control, name: "razonSocial" }) || "Razón Social Desconocida";
@@ -34,10 +39,12 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
 
   const ubicacionOk = ubicacionConfirmada && direccion.trim().length >= 5;
   const contactoOk = celular.trim().length >= 8;
-  const puedeContinuar = ubicacionOk && contactoOk;
+  const facturacionOk = EMAIL_REGEX.test(emailFacturacion.trim());
+  const puedeContinuar = ubicacionOk && contactoOk && facturacionOk;
 
-  const totalTareas = 2;
-  const tareasCompletas = (ubicacionOk ? 1 : 0) + (contactoOk ? 1 : 0);
+  const totalTareas = 3;
+  const tareasCompletas =
+    (ubicacionOk ? 1 : 0) + (contactoOk ? 1 : 0) + (facturacionOk ? 1 : 0);
   const progresoPct = (tareasCompletas / totalTareas) * 100;
 
   const inicialEmpresa = razonSocial?.trim()?.charAt(0)?.toUpperCase() || "?";
@@ -54,6 +61,10 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
     setContactoModalOpen(false);
   };
 
+  const handleGuardarFacturacion = () => {
+    setFacturacionModalOpen(false);
+  };
+
   const [isValidando, setIsValidando] = useState(false);
 
   const handleAvanzarClick = async () => {
@@ -67,6 +78,7 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
         "provincia",
         "localidad",
         "celular",
+        "emailfacturacion",
       ]);
       if (puedeContinuar && esValidoGlobal) {
         await onContinuar();
@@ -206,6 +218,51 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
             )}
           </span>
         </div>
+
+        {/* FACTURACIÓN */}
+        <div
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (!isSubmitting && (e.key === "Enter" || e.key === " ")) {
+              e.preventDefault();
+              setFacturacionModalOpen(true);
+            }
+          }}
+          className={`${styles.taskRow} ${facturacionOk ? styles.rowSuccess : ""}`}
+          onClick={() => !isSubmitting && setFacturacionModalOpen(true)}
+          style={{
+            cursor: isSubmitting ? "not-allowed" : "pointer",
+            opacity: isSubmitting ? 0.7 : 1,
+          }}
+        >
+          <span
+            className={`${styles.taskIcon} ${facturacionOk ? styles.iconSuccess : styles.iconWarn}`}
+          >
+            {facturacionOk ? <FiCheckCircle size={17} /> : <FiMail size={17} />}
+          </span>
+
+          <div className={styles.taskInfo}>
+            <strong className={styles.taskTitle}>Email de Facturación</strong>
+            <span className={styles.taskSub}>
+              {facturacionOk ? emailFacturacion : "Ingresar email para tus facturas"}
+            </span>
+          </div>
+
+          <span
+            className={`${styles.taskAction} ${facturacionOk ? styles.taskActionEdit : ""}`}
+          >
+            {facturacionOk ? (
+              <>
+                <FiEdit2 size={12} /> Modificar
+              </>
+            ) : (
+              <>
+                Completar <FiChevronRight size={13} />
+              </>
+            )}
+          </span>
+        </div>
       </div>
 
       {/* FOOTER ──────────────────────────────────────────────────────────────── */}
@@ -230,6 +287,11 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
         isOpen={modalContactoOpen}
         onClose={() => setContactoModalOpen(false)}
         onGuardar={handleGuardarContacto}
+      />
+      <FacturacionModal
+        isOpen={modalFacturacionOpen}
+        onClose={() => setFacturacionModalOpen(false)}
+        onGuardar={handleGuardarFacturacion}
       />
     </div>
   );

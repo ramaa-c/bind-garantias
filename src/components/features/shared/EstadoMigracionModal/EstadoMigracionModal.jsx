@@ -126,28 +126,25 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   const faltanLegajo = legajoChecklist.some((i) => !i.done);
 
   const estado = estaMigrado ? "migrado" : legajoListo ? "listo" : "pendiente";
+  const tono = estado === "migrado" ? "success" : estado === "listo" ? "ready" : "pending";
 
+  // El estado "pendiente" ya no tiene hero propio: el título y el mensaje
+  // genérico ("Legajo incompleto para SGR+" / "Te falta completar...") ya se
+  // ven en LegajoUniversalBar (containerInvalid) — repetirlos acá arriba del
+  // checklist no agregaba nada, solo empujaba hacia abajo el detalle
+  // puntual que es lo único que este modal aporta de más. "migrado" y
+  // "listo" sí conservan su hero porque dicen algo que la barra no dice
+  // (el número de legajo SGR+, que la migración es automática).
   const HERO_POR_ESTADO = {
     migrado: {
       icon: <FiCheckCircle size={22} />,
-      tono: "success",
       titulo: "Migrado a SGR+",
       subtitulo: `Legajo #${legajoSgrPlus} sincronizado correctamente con el sistema core.`,
     },
     listo: {
       icon: <FiClock size={22} />,
-      tono: "ready",
       titulo: "Listo para migrar",
       subtitulo: "Completaste todos los requisitos. La migración a SGR+ se dispara automáticamente.",
-    },
-    pendiente: {
-      icon: <FiAlertTriangle size={22} />,
-      tono: "pending",
-      titulo: "Legajo incompleto",
-      subtitulo:
-        totalItems > 0
-          ? `Faltan ${totalItems - itemsCompletados} de ${totalItems} requisitos para migrar a SGR+.`
-          : "Todavía no hay requisitos configurados para evaluar.",
     },
   };
   const hero = HERO_POR_ESTADO[estado];
@@ -169,20 +166,28 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
         <Spinner center size={50} />
       ) : (
         <div className={styles.container}>
-          <div className={`${styles.hero} ${styles[`hero-${hero.tono}`]}`}>
-            <span className={styles.heroIcon}>{hero.icon}</span>
-            <div className={styles.heroText}>
-              <h3 className={styles.heroTitulo}>{hero.titulo}</h3>
-              <p className={styles.heroSubtitulo}>{hero.subtitulo}</p>
+          {hero ? (
+            <div className={`${styles.hero} ${styles[`hero-${tono}`]}`}>
+              <span className={styles.heroIcon}>{hero.icon}</span>
+              <div className={styles.heroText}>
+                <h3 className={styles.heroTitulo}>{hero.titulo}</h3>
+                <p className={styles.heroSubtitulo}>{hero.subtitulo}</p>
+              </div>
             </div>
-          </div>
+          ) : (
+            totalItems > 0 && (
+              <p className={styles.pendingLead}>
+                <FiAlertTriangle size={13} /> Esto es lo que falta completar para migrar a SGR+:
+              </p>
+            )
+          )}
 
           {totalItems > 0 && (
             <div className={styles.progressRow}>
               <div className={styles.progressTrack}>
                 <div
-                  className={`${styles.progressFill} ${styles[`fill-${hero.tono}`]}`}
-                  style={{ width: `${porcentaje}%` }}
+                  className={`${styles.progressFill} ${styles[`fill-${tono}`]}`}
+                  style={{ transform: `scaleX(${porcentaje / 100})` }}
                 />
               </div>
               <span className={styles.progressLabel}>

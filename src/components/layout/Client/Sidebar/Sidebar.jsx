@@ -167,7 +167,7 @@ export default function Sidebar({ isOpen, onClose }) {
             <div className={styles.userCardInfo}>
               <p className={styles.userCardEmail}>{emailUsuario}</p>
               <p className={`${styles.userCardRole} ${!isVinculado ? styles.roleNoVinculado : ""}`}>
-                {isVinculado ? "SOCIO ACTIVO" : "NO VINCULADO"}
+                {isVinculado ? "SOCIO VINCULADO" : "NO VINCULADO"}
               </p>
             </div>
           </div>

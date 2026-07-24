@@ -138,6 +138,31 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+.dotYellow {
+  background: var(--yellow, #f4f500);
+  box-shadow: 0 0 4px rgba(244, 245, 0, 0.4);
+}
+
+.dotLoading {
+  background: transparent;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-top-color: var(--color-azul-bind, #4C65E6);
+  animation: dotSpin 0.7s linear infinite;
+}
+
+@keyframes dotSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dotLoading {
+    animation: none;
+    border-top-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
 /* ── VIEWER ──────────────────────────────────────────────────────────────────── */
 
 .viewer {

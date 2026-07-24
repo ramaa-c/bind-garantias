@@ -1,15 +1,27 @@
 .container {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
   background: rgba(30, 30, 30, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  padding: 0.85rem 1.25rem;
+  border-radius: 14px;
+  padding: 0.6rem 0.9rem;
   margin-bottom: 0.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(12px);
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s var(--ease-out, ease), border-color 0.2s ease,
+    box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.container:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.container:focus-visible {
+  outline: 2px solid rgba(245, 244, 0, 0.55);
+  outline-offset: 2px;
 }
 
 .containerValid {
@@ -18,350 +30,158 @@
   background: linear-gradient(135deg, rgba(30, 30, 30, 0.7) 0%, rgba(61, 220, 132, 0.05) 100%);
 }
 
+.containerValid:hover {
+  border-color: rgba(61, 220, 132, 0.4);
+  box-shadow: 0 8px 30px rgba(61, 220, 132, 0.16);
+}
+
 .containerInvalid {
   border-color: rgba(245, 244, 0, 0.15);
   box-shadow: 0 4px 24px rgba(245, 244, 0, 0.03);
   background: linear-gradient(135deg, rgba(30, 30, 30, 0.7) 0%, rgba(245, 244, 0, 0.02) 100%);
 }
 
-/* Toda la barra abre el detalle de estado de migración (EstadoMigracionModal)
-   al hacer click — salvo el botón "Ir" interno, que hace stopPropagation
-   para navegar directo sin abrir el modal encima. */
-.containerClickable {
-  cursor: pointer;
+.containerInvalid:hover {
+  border-color: rgba(245, 244, 0, 0.38);
+  box-shadow: 0 8px 30px rgba(245, 244, 0, 0.1);
+  background: linear-gradient(135deg, rgba(30, 30, 30, 0.7) 0%, rgba(245, 244, 0, 0.05) 100%);
 }
 
-.containerClickable:hover {
-  border-color: rgba(255, 255, 255, 0.16);
-}
-
-.containerValid.containerClickable:hover {
-  border-color: rgba(61, 220, 132, 0.4);
-  box-shadow: 0 6px 28px rgba(61, 220, 132, 0.14);
-}
-
-.containerInvalid.containerClickable:hover {
-  border-color: rgba(245, 244, 0, 0.3);
-  box-shadow: 0 6px 28px rgba(245, 244, 0, 0.06);
-}
-
-.containerClickable:focus-visible {
-  outline: 2px solid rgba(245, 244, 0, 0.55);
-  outline-offset: 2px;
-}
-
-.barHeader {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 1rem;
-}
-
-.statusInfo {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1 1 auto;
-}
-
-.statusIcon {
+.ring {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   flex-shrink: 0;
+  transition: box-shadow 0.8s var(--ease-out, ease);
 }
 
-.iconGreen {
-  background: rgba(61, 220, 132, 0.1);
-  color: var(--success-green, #3ddc84);
+.ringGlowSuccess {
+  box-shadow: 0 0 14px 1px rgba(61, 220, 132, 0.35);
 }
 
-.iconAmber {
-  background: rgba(245, 244, 0, 0.08);
-  color: #ffd000;
+.ringGlowWarning {
+  box-shadow: 0 0 14px 1px rgba(245, 244, 0, 0.3);
+}
+
+.ringChart {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ringTrack {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 4.5;
+}
+
+.ringFill {
+  fill: none;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.8s var(--ease-out, ease);
+}
+
+.ringFillSuccess {
+  stroke: var(--success-green, #3ddc84);
+}
+
+.ringFillWarning {
+  stroke: var(--yellow, #f5f400);
+}
+
+.ringLabel {
+  fill: #ffffff;
+  font-family: inherit;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-anchor: middle;
 }
 
 .textGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  justify-content: center;
+  gap: 0.15rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.statusTitle {
-  font-size: 1.05rem;
+.title {
+  font-size: 0.92rem;
   font-weight: 600;
   color: #ffffff;
   letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.statusSubtitle {
-  font-size: 0.85rem;
+.subtitle {
+  display: none;
+  font-size: 0.8rem;
   color: var(--text-muted, #a3a3a3);
+  line-height: 1.35;
 }
 
-/* Circular Progress Chart */
-.circularProgressWrapper {
+.cta {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 70px;
-  height: 70px;
-  margin-right: 0.5rem;
   flex-shrink: 0;
 }
 
-.circularChart {
-  display: block;
-  width: 100%;
-  max-height: 250px;
+.ctaBtn {
+  white-space: nowrap;
 }
 
-.circleBg {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.08);
-  stroke-width: 3.5;
-}
-
-.circleFill {
-  fill: none;
-  stroke-width: 3.5;
-  stroke-linecap: round;
-  transition: stroke-dasharray 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.fillGreenStroke {
-  stroke: var(--success-green, #3ddc84);
-  filter: drop-shadow(0 0 3px rgba(61, 220, 132, 0.4));
-}
-
-.fillAmberStroke {
-  stroke: #ffd000;
-  filter: drop-shadow(0 0 3px rgba(255, 208, 0, 0.3));
-}
-
-.percentage {
-  fill: #ffffff;
-  font-family: inherit;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-anchor: middle;
-}
-
-/* Actions and buttons */
-.actions {
-  display: flex;
+.statusChip {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  justify-content: flex-end;
-  width: 100%;
-}
-
-.toggleBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.85rem;
-  font-weight: 500;
-  padding: 0.5rem 0.85rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex: 1;
-}
-
-.toggleBtn:hover {
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-}
-
-.sendBtn {
-  min-width: 130px;
-  font-weight: 600 !important;
-  letter-spacing: 0.02em;
-  transition: all 0.3s ease;
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.sendBtnActive {
-  background: var(--yellow) !important;
-  color: var(--carbon-black) !important;
-  border: 1px solid var(--yellow) !important;
-}
-
-.sendBtnActive:hover {
-  transform: translateY(-1px);
-}
-
-.sendBtnInactive {
-  opacity: 0.5;
-}
-
-/* Details panel dropdown */
-.detailsPanel {
-  margin-top: 1.25rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.detailsTitle {
-  display: flex;
-  align-items: center;
-  font-size: 0.88rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.78rem;
   font-weight: 600;
-  color: #ffc83b;
-  margin-bottom: 0.75rem;
+  color: var(--text-muted, #a3a3a3);
+  white-space: nowrap;
 }
 
-.errorList {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding-left: 0.25rem;
-}
-
-.errorItem {
-  display: flex;
-  align-items: center;
-  font-size: 0.84rem;
-  color: rgba(255, 255, 255, 0.75);
-  line-height: 1.4;
-}
-
-.bulletRed {
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  background-color: var(--error-red, #ef4444);
-  border-radius: 50%;
-  margin-right: 0.6rem;
-  flex-shrink: 0;
-}
-
-/* Animations */
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.pulseAnimation {
-  animation: pulse 2s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.05);
-    opacity: 0.85;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* Responsive adjustments: Mobile First -> Desktop */
-.container {
-  margin-bottom: 0.25rem;
+.statusChipSuccess {
+  background: rgba(61, 220, 132, 0.1);
+  border-color: rgba(61, 220, 132, 0.25);
+  color: var(--success-green, #3ddc84);
 }
 
 @media (min-width: 768px) {
   .container {
+    padding: 0.7rem 1.1rem;
+    gap: 1rem;
     margin-bottom: 1rem;
   }
 
-  .barHeader {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.5rem;
+  .ring {
+    width: 56px;
+    height: 56px;
   }
 
-  .statusInfo {
-    flex: 1 1 300px;
+  .ringLabel {
+    font-size: 0.58rem;
   }
 
-  .circularProgressWrapper {
-    width: 55px;
-    height: 55px;
-    margin-right: 1rem;
+  .title {
+    font-size: 1rem;
   }
 
-  .percentage {
-    font-size: 0.55rem;
+  .subtitle {
+    display: block;
   }
 
-  .actions {
-    justify-content: flex-start;
-    width: auto;
-    flex-shrink: 0;
-  }
-
-  .toggleBtn, .sendBtn {
-    flex: initial;
-    justify-content: flex-start;
-  }
-}
-
-.syncStatus {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.85rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #a3a3a3;
-}
-
-.syncStatusSuccess {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.85rem;
-  border-radius: 8px;
-  background: rgba(61, 220, 132, 0.08);
-  border: 1px solid rgba(61, 220, 132, 0.2);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #3ddc84;
-}
-
-.syncIconSuccess {
-  color: #3ddc84;
-  font-size: 1.1rem;
-}
-
-.syncSpinner {
-  animation: spinnerRotate 0.8s linear infinite;
-}
-
-@keyframes spinnerRotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
+  .statusChip {
+    font-size: 0.82rem;
   }
 }

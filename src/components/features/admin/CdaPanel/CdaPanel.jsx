@@ -94,7 +94,8 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         simbolocomparacion: getCdaProperty(c, "simbolocomparacion") || "=",
         expresion: getCdaProperty(c, "expresion") || "",
         mensajerechazo: getCdaProperty(c, "mensajerechazo") || "",
-        cdacadenavalorid: undefined
+        cdacadenavalorid: undefined,
+        initiallyChecked: false
       };
     });
     linkedList.forEach(c => {
@@ -109,7 +110,8 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         ...configs[id],
         checked: esCdaActivo(c),
         valorcomparacion: getCdaProperty(c, "valorcomparacion") || "",
-        cdacadenavalorid: getCdaCadenaValorId(c)
+        cdacadenavalorid: getCdaCadenaValorId(c),
+        initiallyChecked: esCdaActivo(c)
       };
     });
     return configs;
@@ -372,11 +374,13 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         String(getCdaProperty(cda, "expresion")).toLowerCase().includes(term)
       );
     })
-    // Los activos siempre arriba; Array.prototype.sort es estable, así que
-    // dentro de cada grupo (activo/inactivo) se conserva el orden original.
+    // Los activos (o que estaban activos al abrir) siempre arriba; Array.prototype.sort es estable,
+    // así que dentro de cada grupo se conserva el orden original.
     .sort((a, b) => {
-      const aChecked = cdaConfigs[getCdaId(a)]?.checked ? 1 : 0;
-      const bChecked = cdaConfigs[getCdaId(b)]?.checked ? 1 : 0;
+      const confA = cdaConfigs[getCdaId(a)];
+      const confB = cdaConfigs[getCdaId(b)];
+      const aChecked = confA?.checked || confA?.initiallyChecked ? 1 : 0;
+      const bChecked = confB?.checked || confB?.initiallyChecked ? 1 : 0;
       return bChecked - aChecked;
     });
 

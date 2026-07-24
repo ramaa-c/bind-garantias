@@ -18,6 +18,7 @@ export * from './shared/RepresentanteModal/RepresentanteModal';
 export * from './shared/SocioTaskCard/SocioTaskCard';
 export { default as UbicacionModal } from "./shared/UbicacionModal/UbicacionModal";
 export { default as ContactoModal } from "./shared/ContactoModal/ContactoModal";
+export { default as FacturacionModal } from "./shared/FacturacionModal/FacturacionModal";
 export { default as ConfirmacionBorradorModal } from "./shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 export * from "./shared/HistorialEstadoModal/HistorialEstadoModal";
 export * from "./shared/DocumentosLegajo/DocumentosLegajo";

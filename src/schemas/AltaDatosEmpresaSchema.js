@@ -20,6 +20,10 @@ export const AltaDatosEmpresaSchema = z.object({
   provincia: z.string().min(1, "La provincia es requerida").optional(),
   provinciaid: z.coerce.number().optional(),
   celular: z.string().min(8, "El número de contacto es inválido"),
+  emailfacturacion: z
+    .string()
+    .min(1, "El email de facturación es requerido")
+    .email("Ingresá un email válido"),
   tipopersonaid: z.coerce.number().optional(),
   mescierre: z.coerce.number().nullable().optional(),
   fechainicioactividades: z.string().nullable().optional(),

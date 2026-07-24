@@ -258,6 +258,9 @@ export function SociosLegajo({
                   <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
                 ))}
               </div>
+              <span
+                className={`${styles.statusDot} ${loadingSocios ? styles.dotLoading : completitudPorTab[doc.key] ? styles.dotGreen : requisitos?.relaciones?.[doc.key] === 1 ? styles.dotYellow : styles.dotGray}`}
+              />
               <FiChevronDown
                 className={styles.mobileChevron}
                 style={{

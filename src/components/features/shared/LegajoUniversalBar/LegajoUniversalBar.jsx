@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  FiCheckCircle,
-  FiAlertTriangle,
-  FiChevronDown,
-  FiChevronUp,
-  FiInfo,
-  FiArrowRight,
-} from "react-icons/fi";
+import { FiCheckCircle, FiChevronRight, FiArrowRight } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
@@ -217,13 +210,11 @@ export function LegajoUniversalBar({ context }) {
     if (faltanDocumentos && faltanLegajo) {
       return "Te falta subir documentos obligatorios y completar datos de personas en el legajo.";
     }
-    
+
     if (faltanLegajo && !faltanDocumentos) {
       const textErrores = errores.join(" ").toLowerCase();
       const faltanAcc = textErrores.includes("accionista") || textErrores.includes("participación");
       const faltanRep = textErrores.includes("representante") || textErrores.includes("apoderado");
-      // Persona Física llama "Apoderado" a lo que en Jurídica es
-      // "Representante Legal" (mismo dato, ver useValidacionLegajo).
       const etiquetaRep = Number(tipoPersonaId) === 1 ? "apoderado" : "representantes legales";
 
       if (faltanAcc && faltanRep) return `Te falta completar datos de accionistas y ${etiquetaRep}.`;
@@ -247,7 +238,7 @@ export function LegajoUniversalBar({ context }) {
         onClose={() => setShowEstadoMigracion(false)}
       />
       <div
-        className={`${styles.container} ${styles.containerClickable} ${isValid ? styles.containerValid : (isContextInvalid ? styles.containerInvalid : "")}`}
+        className={`${styles.container} ${isValid ? styles.containerValid : (isContextInvalid ? styles.containerInvalid : "")}`}
         role="button"
         tabIndex={0}
         onClick={() => setShowEstadoMigracion(true)}
@@ -258,39 +249,45 @@ export function LegajoUniversalBar({ context }) {
           }
         }}
       >
-      <div className={styles.barHeader}>
-        <div className={styles.statusInfo}>
-          <div className={styles.circularProgressWrapper}>
-            <svg viewBox="0 0 36 36" className={styles.circularChart}>
-              <path
-                className={styles.circleBg}
-                d="M18 2.0845
-                  a 15.9155 15.9155 0 0 1 0 31.831
-                  a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-              <path
-                className={`${styles.circleFill} ${isValid ? styles.fillGreenStroke : styles.fillAmberStroke}`}
-                strokeDasharray={`${porcentaje}, 100`}
-                d="M18 2.0845
-                  a 15.9155 15.9155 0 0 1 0 31.831
-                  a 15.9155 15.9155 0 0 1 0 -31.831"
-              />
-              <text x="18" y="21.5" className={styles.percentage}>{porcentaje}%</text>
-            </svg>
-          </div>
-          <div className={styles.textGroup}>
-            <div className={styles.statusTitle}>
-              {isValid ? "Legajo completo y verificado" : "Legajo incompleto para SGR+"}
-            </div>
-            <div className={styles.statusSubtitle}>
-              {getMissingActionMessage()}
-            </div>
-          </div>
+        <div className={`${styles.ring} ${isValid ? styles.ringGlowSuccess : styles.ringGlowWarning}`}>
+          <svg viewBox="0 0 36 36" className={styles.ringChart}>
+            <path
+              className={styles.ringTrack}
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+            />
+            <path
+              className={`${styles.ringFill} ${isValid ? styles.ringFillSuccess : styles.ringFillWarning}`}
+              strokeDasharray={`${porcentaje}, 100`}
+              d="M18 2.0845
+                a 15.9155 15.9155 0 0 1 0 31.831
+                a 15.9155 15.9155 0 0 1 0 -31.831"
+            />
+            <text x="18" y="21.5" className={styles.ringLabel}>{porcentaje}%</text>
+          </svg>
         </div>
 
-        <div className={styles.actions}>
+        <div className={styles.textGroup}>
+          <span className={styles.title}>
+            {isValid ? "Legajo verificado" : "Legajo incompleto"}
+          </span>
+          <span className={styles.subtitle}>{getMissingActionMessage()}</span>
+        </div>
+
+        <div className={styles.cta}>
           {!isValid ? (
-            !context && (
+            context ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={styles.ctaBtn}
+                iconRight={<FiChevronRight size={14} />}
+              >
+                Ver qué falta
+              </Button>
+            ) : (
               <Button
                 type="button"
                 variant="outline"
@@ -304,31 +301,26 @@ export function LegajoUniversalBar({ context }) {
                     navigate(`${basePath}/documentacion`);
                   }
                 }}
-                className={styles.sendBtn}
+                className={styles.ctaBtn}
+                iconRight={<FiArrowRight size={14} />}
               >
                 Ir
-                <FiArrowRight style={{ marginLeft: "0.5rem" }} />
               </Button>
             )
+          ) : isMigrating ? (
+            <span className={styles.statusChip}>
+              <Spinner size={13} />
+              Sincronizando
+            </span>
+          ) : isAlreadyMigrated ? (
+            <span className={`${styles.statusChip} ${styles.statusChipSuccess}`}>
+              <FiCheckCircle size={13} />
+              Sincronizado
+            </span>
           ) : (
-            isMigrating ? (
-              <div className={styles.syncStatus}>
-                <Spinner size={16} className={styles.syncSpinner} />
-                <span>Sincronizando...</span>
-              </div>
-            ) : isAlreadyMigrated ? (
-              <div className={styles.syncStatusSuccess}>
-                <FiCheckCircle className={styles.syncIconSuccess} />
-                <span>Sincronizado</span>
-              </div>
-            ) : (
-              <div className={styles.syncStatus}>
-                <span>Sincronización pendiente</span>
-              </div>
-            )
+            <span className={styles.statusChip}>Sincronización pendiente</span>
           )}
         </div>
-      </div>
       </div>
     </>
   );
