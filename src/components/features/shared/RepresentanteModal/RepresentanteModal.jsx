@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser, FiShield, FiMapPin, FiMap } from "react-icons/fi";
 import { toast } from "sonner";
@@ -13,6 +13,8 @@ import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../hooks/useRegistrarModalLegajo";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
+import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
+import { useValidarDomicilioRequerido } from "../../../../hooks/useValidarDomicilioRequerido";
 import { afipService } from "../../../../services/afipService";
 import { sociosService } from "../../../../services/sociosService";
 import { nosisService } from "../../../../services/nosisService";
@@ -91,7 +93,35 @@ export function RepresentanteModal({
   const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
   const { data: ciudadesData, isLoading: cargandoCiudades } = useCiudades(currentProvincia);
-  const opcionesCiudades = ciudadesData?.opciones || [];
+  const opcionesCiudades = useMemo(() => ciudadesData?.opciones || [], [ciudadesData]);
+
+  const currentCiudad = useWatch({ control, name: "ciudad" });
+  const currentCiudadId = useWatch({ control, name: "ciudadid" });
+  const currentCalle = useWatch({ control, name: "calle" });
+
+  // Ciudad se filtra por la provincia elegida (useCiudades recibe
+  // currentProvincia) - ver useSincronizarCatalogoPorTexto para el detalle
+  // de como se resuelve/limpia ciudadid (AFIP/Nosis/LUFE solo traen el
+  // nombre de la ciudad en texto, nunca un id ya resuelto).
+  useSincronizarCatalogoPorTexto({
+    cargando: cargandoCiudades,
+    opciones: opcionesCiudades,
+    valorTexto: currentCiudad,
+    valorId: currentCiudadId,
+    campoTexto: "ciudad",
+    campoId: "ciudadid",
+    setValue,
+  });
+
+  const validarDomicilio = useValidarDomicilioRequerido({
+    getValues,
+    setError,
+    clearErrors,
+    errors,
+    currentCalle,
+    currentProvincia,
+    currentCiudadId,
+  });
 
   useEffect(() => {
     if (errors.cuit?.type === "manual") {
@@ -539,6 +569,13 @@ export function RepresentanteModal({
 
     const isValid = await trigger();
     if (!isValid) return;
+
+    if (!validarDomicilio()) {
+      toast.error("Completá la ubicación antes de guardar.", {
+        description: "Calle, provincia y ciudad son obligatorias.",
+      });
+      return;
+    }
 
     if (cdaRechazado) {
       toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {

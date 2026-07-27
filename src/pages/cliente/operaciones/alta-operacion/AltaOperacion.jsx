@@ -27,6 +27,7 @@ import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/Help
 import { Alert, Spinner, LoadingScreen } from "../../../../components/ui";
 import styles from "./AltaOperacion.module.css";
 import { solicitudesService } from "../../../../services/solicitudesService";
+import { sociosService } from "../../../../services/sociosService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { lineaService } from "../../../../services/lineaService";
 import { afipService } from "../../../../services/afipService";
@@ -569,6 +570,30 @@ export const AltaOperacion = () => {
         });
         setEnviandoSolicitud(false);
         return;
+      }
+
+      // El email de facturación se pide y valida como obligatorio en el
+      // Paso 5 (ver Paso5Documentacion), pero nunca se persistía en
+      // ningún lado - se descartaba apenas se enviaba la solicitud. El PUT
+      // a /Socio reemplaza el registro entero, así que hay que partir del
+      // socio ya guardado (no solo de `cleanData`) para no pisarle el
+      // resto de los campos con vacíos.
+      if (cleanData.emailFacturacion) {
+        try {
+          const socioActual = await sociosService.obtenerSocioPorId(finalSocioId);
+          if (socioActual && socioActual.emailfacturacion !== cleanData.emailFacturacion) {
+            await sociosService.actualizarSocio({
+              ...socioActual,
+              socioid: finalSocioId,
+              emailfacturacion: cleanData.emailFacturacion,
+            });
+          }
+        } catch (emailError) {
+          console.error(
+            "[ALTA OPERACION] Error al actualizar el email de facturación:",
+            emailError,
+          );
+        }
       }
 
       const montoLimpio = Number(cleanData.monto) || 0;

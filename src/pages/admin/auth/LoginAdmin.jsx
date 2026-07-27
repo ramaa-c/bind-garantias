@@ -250,12 +250,22 @@ const LoginAdmin = () => {
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
-  
+
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
   const { mutate: loginByCode, isPending: solicitandoCodigo } = useLoginByCode();
 
   const isPending = isLoginPending || solicitandoCodigo || isCheckingAdmin;
+
+  // AdminGuard revalida contra el backend apenas se entra a /admin (esadministrador
+  // / cadenas asociadas), así que este redirect es solo un atajo de UX: si el rol
+  // persistido no fuera realmente admin, el guard lo rebota a "/" igual.
+  useEffect(() => {
+    if (user?.role === "admin") {
+      navigate("/admin", { replace: true });
+    }
+  }, [user, navigate]);
 
   const currentSchema =
     fase === "ingreso_credenciales"
@@ -371,16 +381,6 @@ const LoginAdmin = () => {
     }
 
     if (fase === "ingreso_credenciales") {
-      if (formData.email === "admin" && formData.password === "admin") {
-        setUser({
-          email: "admin",
-          role: "admin",
-          nombre: "Administrador General",
-        });
-        navigate("/admin", { replace: true });
-        return;
-      }
-
       iniciarSesion(
         { email: formData.email, password: formData.password },
         {
