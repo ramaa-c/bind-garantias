@@ -45,10 +45,14 @@ const INTEGRACION_COLORS = {
 };
 const INTEGRACION_COLOR_DEFAULT = { bg: "rgba(139, 148, 158, 0.12)", color: "#8b949e", border: "rgba(139, 148, 158, 0.3)" };
 
-// Nosis (y en general el motor de CDAs) espera valores numéricos y fechas
-// (YYYY-MM-DD) sin comillas; solo el texto va entre comillas simples.
+// El motor de CDAs espera valores numéricos y fechas (YYYY-MM-DD) sin
+// comillas; el texto va entre comillas simples. Ojo: esto se decide por el
+// TIPO REAL del campo elegido, no por si el valor tipeado "parece" un
+// número — un campo de texto (ej. CodPostal) puede tener contenido
+// numérico ("5710") y el motor lo rompe igual si se lo manda sin comillas
+// (confirmado en vivo). Ver esCampoNumericoActual/valorDebeIrSinComillas
+// dentro del componente, que sí conocen el tipo real del campo.
 const FECHA_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-const debeIrSinComillas = (val) => (val !== "" && !isNaN(val)) || FECHA_REGEX.test(val);
 
 // Interpreta el status HTTP de `cda/execute:test` (ver docs del motor de CDAs)
 // para diferenciar con claridad "la expresión está mal escrita" (400/500) de
@@ -120,13 +124,19 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
   }
 
   if (typeof data !== "object") {
+    const isNumber = typeof data === "number";
     const isString = typeof data === "string";
-    const valueClass =
-      typeof data === "number"
-        ? styles.jsonValueNumber
-        : typeof data === "boolean"
-          ? styles.jsonValueBoolean
-          : styles.jsonValueString;
+    const valueClass = isNumber
+      ? styles.jsonValueNumber
+      : typeof data === "boolean"
+        ? styles.jsonValueBoolean
+        : styles.jsonValueString;
+
+    // En vez del valor de ejemplo del mock (que confunde: "string" o "0" no
+    // dicen nada del campo real), mostramos el TIPO — es lo único que importa
+    // para armar bien la expresión (con o sin comillas, ver
+    // esCampoNumericoActual/valorDebeIrSinComillas).
+    const displayText = isNumber ? "NUMÉRICO" : isString ? "CADENA" : String(data);
 
     return (
       <span
@@ -137,7 +147,7 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
         }}
         title={`Seleccionar campo: ${parentKey}`}
       >
-        {isString ? `"${data}"` : String(data)}
+        {displayText}
       </span>
     );
   }
@@ -391,7 +401,7 @@ export default function CdasGlobales() {
 
     if (cleanVal === "") return "''";
 
-    if (debeIrSinComillas(cleanVal)) {
+    if (valorDebeIrSinComillas(cleanVal)) {
       return cleanVal;
     }
 
@@ -427,7 +437,7 @@ export default function CdasGlobales() {
         valorSaneado = valorSaneado.slice(1, -1);
       }
     }
-    if (!debeIrSinComillas(valorSaneado) && valorSaneado !== "") {
+    if (!valorDebeIrSinComillas(valorSaneado) && valorSaneado !== "") {
       valorSaneado = applyCasingStrategy(valorSaneado, integracion);
     }
     const valorParaLog = formatValorParaLog(valorSaneado);
@@ -686,7 +696,7 @@ export default function CdasGlobales() {
       }
     }
 
-    if (!debeIrSinComillas(valorSaneado) && valorSaneado !== "") {
+    if (!valorDebeIrSinComillas(valorSaneado) && valorSaneado !== "") {
       valorSaneado = applyCasingStrategy(valorSaneado, integracion);
     }
 
@@ -855,6 +865,12 @@ export default function CdasGlobales() {
     }
     return false;
   };
+
+  // Reemplaza al viejo "debeIrSinComillas": las fechas van sin comillas por
+  // el formato del valor tipeado (eso no depende del campo), pero para todo
+  // lo demás lo que importa es si el CAMPO elegido es numérico de verdad, no
+  // si el valor que escribió el admin "parece" un número.
+  const valorDebeIrSinComillas = (val) => FECHA_REGEX.test(val) || esCampoNumericoActual();
 
   const reglaActual = expresion.trim()
     ? `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valorcomparacion)}`
