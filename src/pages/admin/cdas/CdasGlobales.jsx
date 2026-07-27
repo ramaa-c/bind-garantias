@@ -412,7 +412,9 @@ export default function CdasGlobales() {
 
     setTestResult(null);
 
-    let valorSaneado = valorcomparacion.trim();
+    let valorSaneado = comparaPorVacio
+      ? (esCampoNumericoActual() ? "0" : "")
+      : valorcomparacion.trim();
     if (
       valorSaneado === '""' ||
       valorSaneado === "''" ||
@@ -668,7 +670,9 @@ export default function CdasGlobales() {
     const esEdicion = !!cdaEditando;
 
     // Saneamos el valor de comparación para evitar almacenar comillas externas en la DB
-    let valorSaneado = comparaPorVacio ? "" : valorcomparacion.trim();
+    let valorSaneado = comparaPorVacio
+      ? (esCampoNumericoActual() ? "0" : "")
+      : valorcomparacion.trim();
     if (
       valorSaneado === '""' ||
       valorSaneado === "''" ||
@@ -812,6 +816,45 @@ export default function CdasGlobales() {
 
   const currentJsonData = integracion ? INTEGRACIONES_MOCKS[integracion] : null;
   const nosisVariables = INTEGRACIONES_MOCKS?.NOSIS?.Contenido?.Datos?.Variables || [];
+
+  // El motor de CDAs no maneja bien comparar un campo numérico contra el
+  // literal vacío (''): si el campo es un número real explota (500), y si
+  // es un texto que numéricamente "parece" un número (ej. NOSIS manda DNI/
+  // CUIT como string aunque el contenido sea todo dígitos) da un resultado
+  // incorrecto en silencio. Comparar contra 0 en vez de '' funciona igual en
+  // ambos casos (confirmado en vivo) — así que si detectamos que el campo
+  // elegido es numérico, "Comparar contra vacío" manda "0" en vez de "".
+  //
+  // Para NOSIS el "Tipo" declarado no alcanza (VI_DNI dice "TEXTO" pero su
+  // contenido real es solo dígitos, y ahí rompe igual): si ya se corrió el
+  // Laboratorio de Pruebas para este mismo campo, se usa el valor real que
+  // devolvió esa prueba en vez de confiar en el ejemplo estático del mock.
+  const TIPOS_NOSIS_NUMERICOS = ["ENTERO", "NUMERO", "DECIMAL", "IMPORTE", "MONTO", "DOCUMENTO"];
+  const esCampoNumericoActual = () => {
+    const path = expresion.trim();
+    if (!path) return false;
+    if (integracion === "NOSIS") {
+      const testeoCoincide = testResult && (expresionLog.trim() || path) === path;
+      if (testeoCoincide && testResult.log !== undefined && testResult.log !== "") {
+        return !isNaN(testResult.log);
+      }
+      const nombre = path.replace(/^nosis\./i, "");
+      const variable = nosisVariables.find((v) => v.Nombre === nombre);
+      if (variable?.Tipo && TIPOS_NOSIS_NUMERICOS.includes(variable.Tipo.toUpperCase())) return true;
+      const val = variable?.Valor;
+      return val !== undefined && val !== null && val !== "" && !isNaN(val);
+    }
+    if (integracion === "ARCA") {
+      const segments = path.replace(/^afip\./i, "").split(".").filter(Boolean);
+      let node = INTEGRACIONES_MOCKS.ARCA;
+      for (const key of segments) {
+        if (node === null || typeof node !== "object") return false;
+        node = node[key.toLowerCase()];
+      }
+      return typeof node === "number";
+    }
+    return false;
+  };
 
   const reglaActual = expresion.trim()
     ? `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valorcomparacion)}`
@@ -1087,14 +1130,20 @@ export default function CdasGlobales() {
                         if (isCreando || isActualizando || isProcesando) return;
                         const next = !comparaPorVacio;
                         setComparaPorVacio(next);
-                        if (next) setValorcomparacion("");
+                        if (next) setValorcomparacion(esCampoNumericoActual() ? "0" : "");
                       }}
-                      title="Marcá esto si el criterio compara contra un texto vacío. Si necesitás comparar contra el número 0, escribilo directamente en el campo."
+                      title={
+                        comparaPorVacio && esCampoNumericoActual()
+                          ? "Este campo es numérico: el motor de CDAs no puede comparar un número contra vacío ('') sin fallar, así que se compara contra 0 en su lugar."
+                          : "Marcá esto si el criterio compara contra un texto vacío."
+                      }
                     >
                       <div className={`${styles.customCheckbox} ${comparaPorVacio ? styles.checkboxChecked : ""}`}>
                         {comparaPorVacio && <FiCheck size={11} className={styles.checkmarkIcon} />}
                       </div>
-                      <span className={styles.vacioCheckLabel}>Comparar contra vacío</span>
+                      <span className={styles.vacioCheckLabel}>
+                        {comparaPorVacio && esCampoNumericoActual() ? "Comparar contra vacío (campo numérico → se usa 0)" : "Comparar contra vacío"}
+                      </span>
                     </div>
                   </div>
                 </div>
