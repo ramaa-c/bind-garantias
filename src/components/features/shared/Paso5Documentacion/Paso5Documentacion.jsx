@@ -17,7 +17,7 @@ import {
   FiMail,
 } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, InputFlotante, InputSocioMasked } from "../../../ui";
+import { Button, InputSocioMasked } from "../../../ui";
 import {
   DocumentosEmpresaModal,
   RepresentanteModal,

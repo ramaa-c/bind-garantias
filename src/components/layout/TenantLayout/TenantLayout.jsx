@@ -6,6 +6,7 @@ import { useObtenerStatusPlataforma } from "../../../hooks/useStatusPlataforma";
 import { esCadenaOperativaParaWeb } from "../../../utils/cadenaValorUtils";
 import { obtenerUltimoStatus, esOffline } from "../../../utils/statusPlataforma";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
+import ErrorServicio from "../../../pages/shared/ErrorServicio/ErrorServicio";
 
 const TenantLayout = () => {
   const { cadenaSlug } = useParams();
@@ -17,15 +18,28 @@ const TenantLayout = () => {
   const cadenaValorId = Number(cadenaSlug);
   const isValidId = !Number.isNaN(cadenaValorId) && cadenaValorId > 0;
 
-  const { data: cadenaData, isLoading } = useObtenerPorCadenaValorIdWeb(
-    isValidId ? cadenaValorId : 0,
-  );
-  const { data: cadenaCoreData, isLoading: isLoadingCore } = useObtenerPorId(
-    isValidId ? cadenaValorId : 0,
-  );
+  const {
+    data: cadenaData,
+    isLoading,
+    isError: isErrorWeb,
+    isFetching: isFetchingWeb,
+    refetch: refetchWeb,
+  } = useObtenerPorCadenaValorIdWeb(isValidId ? cadenaValorId : 0);
+  const {
+    data: cadenaCoreData,
+    isLoading: isLoadingCore,
+    isError: isErrorCore,
+    isFetching: isFetchingCore,
+    refetch: refetchCore,
+  } = useObtenerPorId(isValidId ? cadenaValorId : 0);
+
+  // Si alguna de las dos consultas falló (backend caído, error 5xx, red), no
+  // se puede saber si la cadena existe: se muestra un error de servicio con
+  // reintento en vez de redirigir a not-found.
+  const hayErrorServicio = isErrorWeb || isErrorCore;
 
   useEffect(() => {
-    if (isLoading || isLoadingCore) return;
+    if (isLoading || isLoadingCore || hayErrorServicio) return;
 
     if (!isValidId || !cadenaData || cadenaData.error || (Array.isArray(cadenaData) && cadenaData.length === 0)) {
       navigate("/not-found", { replace: true });
@@ -70,7 +84,7 @@ const TenantLayout = () => {
       colorPrincipal: "var(--color-azul-bind)",
       colorSecundario: "var(--color-amarillo-bind)",
     });
-  }, [cadenaSlug, cadenaData, cadenaCoreData, isLoading, isLoadingCore, setChannelInfo, navigate, isValidId]);
+  }, [cadenaSlug, cadenaData, cadenaCoreData, isLoading, isLoadingCore, hayErrorServicio, setChannelInfo, navigate, isValidId]);
 
   if (isLoadingStatus) {
     return (
@@ -94,6 +108,18 @@ const TenantLayout = () => {
       <LoadingScreen
         title="Validando acceso"
         message="Estamos verificando la información de la cadena..."
+      />
+    );
+  }
+
+  if (hayErrorServicio) {
+    return (
+      <ErrorServicio
+        onReintentar={() => {
+          if (isErrorWeb) refetchWeb();
+          if (isErrorCore) refetchCore();
+        }}
+        reintentando={isFetchingWeb || isFetchingCore}
       />
     );
   }
