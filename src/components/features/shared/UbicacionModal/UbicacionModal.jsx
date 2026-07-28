@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { FiMapPin, FiMap, FiX } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
@@ -8,6 +8,7 @@ import { SelectSocio } from "../../../ui/SelectSocio/SelectSocio";
 import styles from "./UbicacionModal.module.css";
 import { useEscape } from "../../../../hooks/useEscape";
 import { useProvincias, useCiudades, usePartidos } from "../../../../hooks/useCatalogos";
+import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
 
 export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
   const {
@@ -31,31 +32,46 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
   // Fetch cities and localities based on selected province
   const { data: ciudadesData, isLoading: cargandoCiudades } =
     useCiudades(currentProvincia);
-  const opcionesCiudades = ciudadesData?.opciones || [];
+  const opcionesCiudades = useMemo(
+    () => ciudadesData?.opciones || [],
+    [ciudadesData],
+  );
 
   const { data: partidosData, isLoading: cargandoPartidos } =
     usePartidos(currentProvincia);
-  const opcionesLocalidades = partidosData?.opciones || [];
+  const opcionesLocalidades = useMemo(
+    () => partidosData?.opciones || [],
+    [partidosData],
+  );
 
   const currentCiudad = watch("ciudad");
   const currentCiudadId = watch("ciudadid");
   const currentLocalidad = watch("localidad");
   const currentLocalidadId = watch("localidadid");
 
+  // Ciudad y Localidad se filtran por la provincia elegida (useCiudades /
+  // usePartidos reciben currentProvincia) - ver useSincronizarCatalogoPorTexto
+  // para el detalle de como se resuelven/limpian ciudadid y localidadid.
+  useSincronizarCatalogoPorTexto({
+    cargando: cargandoCiudades,
+    opciones: opcionesCiudades,
+    valorTexto: currentCiudad,
+    valorId: currentCiudadId,
+    campoTexto: "ciudad",
+    campoId: "ciudadid",
+    setValue,
+  });
 
-
-  React.useEffect(() => {
-    if (!cargandoPartidos && opcionesLocalidades.length > 0 && currentLocalidad && (!currentLocalidadId || currentLocalidadId === 0)) {
-      const normalizarTexto = (str) => String(str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toUpperCase();
-      const normAfip = normalizarTexto(currentLocalidad);
-      const exactMatch = opcionesLocalidades.find((l) => normalizarTexto(l.label) === normAfip);
-      const partialMatch = exactMatch || opcionesLocalidades.find((l) => normalizarTexto(l.label).includes(normAfip) || normAfip.includes(normalizarTexto(l.label)));
-      if (partialMatch) {
-        setValue("localidadid", Number(partialMatch.value), { shouldValidate: true, shouldDirty: true });
-        setValue("localidad", partialMatch.label, { shouldValidate: true, shouldDirty: true });
-      }
-    }
-  }, [cargandoPartidos, opcionesLocalidades, currentLocalidad, currentLocalidadId, setValue]);
+  useSincronizarCatalogoPorTexto({
+    cargando: cargandoPartidos,
+    opciones: opcionesLocalidades,
+    valorTexto: currentLocalidad,
+    valorId: currentLocalidadId,
+    campoTexto: "localidad",
+    campoId: "localidadid",
+    setValue,
+    validarTextoAlLimpiar: true,
+  });
 
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);

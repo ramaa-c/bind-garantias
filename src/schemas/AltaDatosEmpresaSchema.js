@@ -16,7 +16,7 @@ export const AltaDatosEmpresaSchema = z.object({
   localidad: z.string().min(1, "La localidad es requerida"),
   localidadid: z.coerce.number().optional(),
   ciudad: z.string().optional(),
-  ciudadid: z.coerce.number().optional(),
+  ciudadid: z.coerce.number().min(1, "La ciudad es requerida"),
   provincia: z.string().min(1, "La provincia es requerida").optional(),
   provinciaid: z.coerce.number().optional(),
   celular: z.string().min(8, "El número de contacto es inválido"),

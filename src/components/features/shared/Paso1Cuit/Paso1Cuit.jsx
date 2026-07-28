@@ -482,7 +482,8 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
           visitado: "0",
           scoringcomercial: "0",
           partidoid: valores.localidadid ? Number(valores.localidadid) : null,
-          provinciaid: valores.provinciaid ? Number(valores.provinciaid) : null,
+          // No existe ProvinciaID en Socio (swagger confirmado) - el backend
+          // la resuelve solo a partir de CiudadID. No se manda.
           fechainicioactividades:
             valores.fechainicioactividades || getCSharpIsoDate(),
           tipoactividadglobalid: 0,
@@ -490,7 +491,13 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
             cadenaObj?.tipocanalcomercializacionid ||
             cadenaObj?.TipoCanalComercializacionID ||
             0,
-          emailfacturacion: user?.email || "",
+          // Vacío a propósito: EmailFacturacion es obligatorio recién en el
+          // Paso 2 (ver FacturacionModal/AltaDatosEmpresaSchema) — dejarlo
+          // sin cargar acá permite usarlo como señal de "onboarding
+          // incompleto", igual que ya se hace con `telefono` (ver
+          // OnboardingGuard.jsx). Si mandáramos el email de login acá, un
+          // socio recién creado ya parecería tener el Paso 2 completo.
+          emailfacturacion: "",
           minapoderadosrequeridos: 0,
           tipocondicionfianzaid: 0,
           jsoncondicionfianza: "",

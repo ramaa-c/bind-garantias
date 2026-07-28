@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield } from "react-icons/fi";
 import { toast } from "sonner";
@@ -20,7 +20,9 @@ import { socioArchivoService } from "../../../../../../services/socioArchivoServ
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { formatBase64Size, procesarArchivo } from "../../../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../../../utils/provinciaUtils";
-import { useProvincias, useCiudades, usePartidos } from "../../../../../../hooks/useCatalogos";
+import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
+import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincronizarCatalogoPorTexto";
+import { useValidarDomicilioRequerido } from "../../../../../../hooks/useValidarDomicilioRequerido";
 import { parseAddress } from "../../../../../../utils/direccionParser";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import { useParams } from "react-router-dom";
@@ -174,7 +176,35 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
   const { data: ciudadesData, isLoading: cargandoCiudades } =
     useCiudades(currentProvincia);
-  const opcionesCiudades = ciudadesData?.opciones || [];
+  const opcionesCiudades = useMemo(() => ciudadesData?.opciones || [], [ciudadesData]);
+
+  const currentCiudad = useWatch({ control, name: "ciudad" });
+  const currentCiudadId = useWatch({ control, name: "ciudadid" });
+  const currentCalle = useWatch({ control, name: "calle" });
+
+  // Ciudad se filtra por la provincia elegida (useCiudades recibe
+  // currentProvincia) - ver useSincronizarCatalogoPorTexto para el detalle
+  // de como se resuelve/limpia ciudadid (AFIP/Nosis/LUFE solo traen el
+  // nombre de la ciudad en texto, nunca un id ya resuelto).
+  useSincronizarCatalogoPorTexto({
+    cargando: cargandoCiudades,
+    opciones: opcionesCiudades,
+    valorTexto: currentCiudad,
+    valorId: currentCiudadId,
+    campoTexto: "ciudad",
+    campoId: "ciudadid",
+    setValue,
+  });
+
+  const validarDomicilio = useValidarDomicilioRequerido({
+    getValues,
+    setError,
+    clearErrors,
+    errors,
+    currentCalle,
+    currentProvincia,
+    currentCiudadId,
+  });
 
   useEffect(() => {
     if (errors.cuit?.type === "manual") {
@@ -730,8 +760,15 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     }
 
     const isValid = await trigger();
-    
+
     if (!isValid || hasDropzoneErrors) return;
+
+    if (!validarDomicilio()) {
+      toast.error("Completá la ubicación antes de guardar.", {
+        description: "Calle, provincia y ciudad son obligatorias.",
+      });
+      return;
+    }
 
     if (cdaRechazado) {
       toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {

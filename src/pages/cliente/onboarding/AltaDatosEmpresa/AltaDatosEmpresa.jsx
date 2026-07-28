@@ -303,7 +303,8 @@ export const AltaDatosEmpresa = () => {
         visitado: "0",
         scoringcomercial: "0",
         partidoid: data.localidadid ? Number(data.localidadid) : null,
-        provinciaid: data.provinciaid ? Number(data.provinciaid) : null,
+        // No existe ProvinciaID en Socio (swagger confirmado) - el backend
+        // la resuelve solo a partir de CiudadID. No se manda.
         fechainicioactividades:
           data.fechainicioactividades || getCSharpIsoDate(),
         tipoactividadglobalid: 0,
