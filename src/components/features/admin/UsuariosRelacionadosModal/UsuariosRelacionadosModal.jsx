@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Modal, Button, InputSimple, Spinner } from "../../../ui";
+import { Modal, Button, InputSimple, Skeleton } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import {
   useObtenerUsuariosRelacionados,
@@ -278,9 +278,27 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
 
         {/* Relations List */}
         {loadingRelations ? (
-          <div className={styles.loadingContainer}>
-            <Spinner size={30} />
-            <p className={styles.loadingText}>Cargando usuarios relacionados...</p>
+          <div className={styles.tableWrapper}>
+            <table className={styles.usersTable}>
+              <thead>
+                <tr>
+                  <th>Nombre de usuario / Email</th>
+                  <th>Habilitado</th>
+                  <th style={{ textAlign: "right", width: "120px" }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i}>
+                    <td><Skeleton width="70%" height="0.85rem" /></td>
+                    <td><Skeleton width="2.6rem" height="1.3rem" radius="pill" /></td>
+                    <td>
+                      <Skeleton width="6.5rem" height="1.8rem" radius="0.5rem" style={{ marginLeft: "auto" }} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : errorRelations ? (
           <div className={styles.emptyContainer} style={{ borderColor: "rgba(234, 74, 90, 0.2)" }}>

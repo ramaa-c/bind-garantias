@@ -55,8 +55,8 @@ import {
   InputSimple,
   SelectSimple,
   SelectFechaSimple,
-  Spinner,
   Modal,
+  Skeleton,
 } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { DocumentosLegajo } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
@@ -111,6 +111,29 @@ const TABS = [
   { key: "terceros", label: "Terceros Relacionados", icon: FiUsers },
   { key: "cdas", label: "CDAs", icon: FiShield },
 ];
+
+// Filas fantasma con la forma real del panel de CDAs (barra de resultado
+// general + filas de criterio con badge/fecha/acciones): mientras carga se
+// ve la estructura, no un spinner centrado.
+const CdasPanelSkeleton = () => (
+  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%" }}>
+    <Skeleton width="100%" height="3.6rem" radius="0.75rem" />
+    {Array.from({ length: 5 }).map((_, i) => (
+      <div key={i} className={styles.cdaRow}>
+        <div style={{ flex: 1, minWidth: "12rem" }}>
+          <Skeleton width="55%" height="0.9rem" />
+          <Skeleton width="30%" height="0.7rem" style={{ marginTop: "0.45rem" }} />
+        </div>
+        <Skeleton width="6rem" height="1.4rem" radius="pill" />
+        <Skeleton width="7rem" height="0.75rem" />
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <Skeleton width="7.5rem" height="1.9rem" radius="0.5rem" />
+          <Skeleton width="8.5rem" height="1.9rem" radius="0.5rem" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 const construirEstadoInicial = (socio) => ({
   denominacion: socio.denominacion || "",
@@ -965,11 +988,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   };
 
   if (isLoading) {
-    return (
-      <div className={styles.cdasPlaceholderWrap}>
-        <Spinner center size={60} color="#4c65e6" />
-      </div>
-    );
+    return <CdasPanelSkeleton />;
   }
 
   if (isError) {
@@ -1005,11 +1024,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   // (si no, no hay ningún grupo que esperar — useObtenerGrupoCdaConCdas
   // queda deshabilitado y esto nunca sería true).
   if (hayCadenaDetectada && isLoadingGrupoElegido) {
-    return (
-      <div className={styles.cdasPlaceholderWrap}>
-        <Spinner center size={60} color="#4c65e6" />
-      </div>
-    );
+    return <CdasPanelSkeleton />;
   }
 
   return (
@@ -1596,7 +1611,18 @@ function HistorialCdaModal({ isOpen, onClose, socio }) {
       maxWidth="640px"
     >
       {isLoading ? (
-        <Spinner center size={50} color="#4c65e6" />
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className={styles.cdaRow}>
+              <div style={{ flex: 1 }}>
+                <Skeleton width="60%" height="0.85rem" />
+                <Skeleton width="35%" height="0.7rem" style={{ marginTop: "0.4rem" }} />
+              </div>
+              <Skeleton width="5.5rem" height="1.3rem" radius="pill" />
+              <Skeleton width="6.5rem" height="0.75rem" />
+            </div>
+          ))}
+        </div>
       ) : isError ? (
         <p className={styles.historialModalMsg}>
           Ocurrió un error al consultar el historial. Probá de nuevo en unos segundos.
@@ -1667,10 +1693,48 @@ export default function EmpresaDetalle() {
       cadenaId: cadenaValorIdDetectada,
     });
 
+  // Skeleton con la forma real del detalle (hero + tabs + contenido) en vez
+  // de un spinner de página completa.
   if (isLoading || !socio) {
     return (
-      <div className={styles.loadingWrap}>
-        <Spinner center size={80} color="#4c65e6" />
+      <div className={styles.container}>
+        <header className={styles.header}>
+          <Skeleton width="8.5rem" height="0.8rem" />
+          <div className={styles.heroRow}>
+            <div className={styles.heroIdentity}>
+              <Skeleton width="3rem" height="3rem" radius="0.9rem" />
+              <div>
+                <Skeleton width="16rem" height="1.35rem" style={{ maxWidth: "60vw" }} />
+                <Skeleton width="11rem" height="0.8rem" style={{ marginTop: "0.55rem" }} />
+              </div>
+            </div>
+            <div className={styles.headerBadges}>
+              <Skeleton width="7.5rem" height="1.5rem" radius="pill" />
+              <Skeleton width="6.5rem" height="1.5rem" radius="pill" />
+            </div>
+          </div>
+        </header>
+
+        <div className={styles.tabsRow}>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            {TABS.map((tab) => (
+              <Skeleton key={tab.key} width="9rem" height="2.2rem" radius="0.6rem" />
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.tabContent}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem", padding: "0.5rem 0" }}>
+            <Skeleton width="14rem" height="1rem" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                <Skeleton width="30%" height="2.4rem" radius="0.5rem" />
+                <Skeleton width="30%" height="2.4rem" radius="0.5rem" />
+                <Skeleton width="30%" height="2.4rem" radius="0.5rem" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

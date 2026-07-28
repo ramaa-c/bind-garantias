@@ -284,19 +284,6 @@
   opacity: 0.4;
 }
 
-/* Skeleton de carga para la tabla del listado */
-.skeletonBlock {
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 4px;
-  animation: skeletonPulse 1.5s infinite ease-in-out;
-}
-
-@keyframes skeletonPulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-
 /* ============ WORKBENCH: layout de 3 columnas ============ */
 .workbench {
   display: grid;

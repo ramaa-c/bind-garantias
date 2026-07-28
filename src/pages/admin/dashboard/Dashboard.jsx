@@ -8,7 +8,7 @@ import { Modal } from "../../../components/ui/Modal/Modal";
 import { SinResultados } from "../../../components/ui/SinResultados/SinResultados";
 import { TarjetaMetrica } from "../../../components/ui/TarjetaMetrica/TarjetaMetrica";
 import { SelectSimple } from "../../../components/ui";
-import { SkeletonTable } from "../../../components/ui";
+import { SkeletonTable, Skeleton } from "../../../components/ui";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
 import { CriteriosAceptacionModal } from "../../../components/features";
@@ -314,18 +314,18 @@ export default function Dashboard() {
           {loading ? (
             <div className={styles.chainSelectorCard}>
               <div className={styles.chainCardHeader}>
-                <div className={styles.skeletonBlock} style={{ width: '48px', height: '48px', borderRadius: '0.625rem', flexShrink: 0 }}></div>
+                <Skeleton width="48px" height="48px" radius="0.625rem" />
                 <div style={{ flex: 1 }}>
-                  <div className={styles.skeletonBlock} style={{ height: '1.1875rem', width: '60%', marginBottom: '0.15rem', borderRadius: '4px' }}></div>
-                  <div className={styles.skeletonBlock} style={{ height: '0.8rem', width: '40%', borderRadius: '4px', marginTop: '0.2rem' }}></div>
+                  <Skeleton height="1.1875rem" width="60%" style={{ marginBottom: '0.15rem' }} />
+                  <Skeleton height="0.8rem" width="40%" style={{ marginTop: '0.2rem' }} />
                 </div>
               </div>
               <div>
-                <div className={styles.skeletonBlock} style={{ height: '0.8375rem', width: '90%', borderRadius: '4px', marginBottom: '0.4rem' }}></div>
-                <div className={styles.skeletonBlock} style={{ height: '0.8375rem', width: '70%', borderRadius: '4px' }}></div>
+                <Skeleton height="0.8375rem" width="90%" style={{ marginBottom: '0.4rem' }} />
+                <Skeleton height="0.8375rem" width="70%" />
               </div>
               <div className={styles.btnRow}>
-                <div className={styles.skeletonBlock} style={{ height: '32px', width: '120px', borderRadius: '6px' }}></div>
+                <Skeleton height="32px" width="120px" radius="6px" />
               </div>
             </div>
           ) : selectedCadenaId === "all" ? (

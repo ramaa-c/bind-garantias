@@ -11,6 +11,7 @@ import { esCdaActivo, esCdaActivoEstricto } from "../../../utils/cdaUtils";
 import { resolverGrupoCda } from "../../../utils/grupoCdaUtils";
 import { PANTALLAS_CDA } from "../../../utils/pantallasCda";
 import { Button } from "../../../components/ui/Button/Button";
+import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../components/ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -250,16 +251,16 @@ const NosisVariablePicker = ({ variables, searchTerm, onSearchChange, selectedEx
   );
 };
 
-const CdaRowSkeleton = ({ styles }) => (
+const CdaRowSkeleton = () => (
   <tr>
     <td>
-      <div className={styles.skeletonBlock} style={{ height: "0.85rem", width: "65%", marginBottom: "0.4rem" }} />
-      <div className={styles.skeletonBlock} style={{ height: "0.65rem", width: "35%" }} />
+      <Skeleton height="0.85rem" width="65%" style={{ marginBottom: "0.4rem" }} />
+      <Skeleton height="0.65rem" width="35%" />
     </td>
-    <td><div className={styles.skeletonBlock} style={{ height: "1.2rem", width: "70px", borderRadius: "999px" }} /></td>
-    <td><div className={styles.skeletonBlock} style={{ height: "0.8rem", width: "85%" }} /></td>
-    <td><div className={styles.skeletonBlock} style={{ height: "0.8rem", width: "70%" }} /></td>
-    <td style={{ textAlign: "center" }}><div className={styles.skeletonBlock} style={{ height: "1.2rem", width: "36px", borderRadius: "999px", margin: "0 auto" }} /></td>
+    <td><Skeleton height="1.2rem" width="70px" radius="pill" /></td>
+    <td><Skeleton height="0.8rem" width="85%" /></td>
+    <td><Skeleton height="0.8rem" width="70%" /></td>
+    <td style={{ textAlign: "center" }}><Skeleton height="1.2rem" width="36px" radius="pill" style={{ margin: "0 auto" }} /></td>
     <td></td>
   </tr>
 );
@@ -938,7 +939,7 @@ export default function CdasGlobales() {
               </thead>
               <tbody>
                 {isLoadingLista ? (
-                  Array.from({ length: 6 }).map((_, i) => <CdaRowSkeleton key={i} styles={styles} />)
+                  Array.from({ length: 6 }).map((_, i) => <CdaRowSkeleton key={i} />)
                 ) : cdasFiltrados.length === 0 ? (
                   <tr>
                     <td colSpan={6} style={{ padding: 0 }}>

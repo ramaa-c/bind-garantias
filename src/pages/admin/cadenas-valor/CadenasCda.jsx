@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import styles from "./CadenasCda.module.css";
+import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import { CdaPanel } from "../../../components/features/admin/CdaPanel/CdaPanel";
 import { PantallaTabs } from "../../../components/features/admin/PantallaTabs/PantallaTabs";
@@ -52,10 +53,7 @@ export default function CadenasCda() {
 
       <div className={styles.selectorSection}>
         {isLoadingActive ? (
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "58px", width: "100%", maxWidth: "440px", borderRadius: "0.75rem" }}
-          ></div>
+          <Skeleton height="58px" width="100%" radius="0.75rem" style={{ maxWidth: "440px" }} />
         ) : (
           <div className={styles.compactSelector}>
             <CadenaSelectCard

@@ -10,7 +10,7 @@ import {
   Button,
   InputSimple,
   InputPasswordSeguro,
-  Spinner,
+  Skeleton,
 } from "../../../ui";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import {
@@ -197,8 +197,24 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
           </p>
         </div>
       ) : isLoadingUsuario ? (
-        <div className={styles.loadingWrap}>
-          <Spinner />
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", padding: "0.9rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.75rem" }}>
+            <Skeleton width="2.6rem" height="2.6rem" radius="50%" />
+            <div style={{ flex: 1 }}>
+              <Skeleton width="55%" height="0.9rem" />
+              <Skeleton width="30%" height="0.7rem" style={{ marginTop: "0.45rem" }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} style={{ flex: "1 1 16rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                <Skeleton width="50%" height="0.9rem" />
+                <Skeleton width="80%" height="0.7rem" />
+                <Skeleton width="100%" height="2.6rem" radius="0.5rem" />
+                <Skeleton width="9rem" height="2.2rem" radius="0.5rem" style={{ marginLeft: "auto" }} />
+              </div>
+            ))}
+          </div>
         </div>
       ) : !usuarioWebId ? (
         <div className={styles.avisoNoDisponible}>

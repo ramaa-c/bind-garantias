@@ -334,31 +334,6 @@
   border: 1px solid rgba(76, 101, 230, 0.25);
 }
 
-.skeletonBlock {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  animation: pulse 1.5s infinite ease-in-out;
-}
-
-.skeletonAvatar {
-  width: 2.35rem;
-  height: 2.35rem;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.skeletonPill {
-  width: 5.5rem;
-  height: 1.4rem;
-  border-radius: 999px;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-
 .emptyState {
   display: flex;
   flex-direction: column;

@@ -8,7 +8,7 @@ import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { esCdaActivo, esCdaActivoEstricto } from "../../../../utils/cdaUtils";
 import { resolverGrupoCda } from "../../../../utils/grupoCdaUtils";
 import { Button } from "../../../ui/Button/Button";
-import { Spinner } from "../../../ui/Spinner/Spinner";
+import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CdaPanel.module.css";
@@ -384,10 +384,33 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
       return bChecked - aChecked;
     });
 
+  // Skeleton con la forma real del panel (columna de agrupación + checklist
+  // de CDAs) en vez de un spinner centrado.
   if (isLoading) {
     return (
-      <div style={{ flex: 1, minHeight: "18rem", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Spinner size={50} />
+      <div style={{ flex: 1, minHeight: "18rem", display: "flex", flexDirection: "column", gap: "1rem", padding: "0.5rem 0" }}>
+        <Skeleton width="85%" height="0.8rem" />
+        <div style={{ display: "flex", gap: "1.25rem", flex: 1, flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 16rem", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <Skeleton width="60%" height="0.8rem" />
+            <Skeleton width="100%" height="3.2rem" radius="0.6rem" />
+            <Skeleton width="100%" height="3.2rem" radius="0.6rem" />
+            <Skeleton width="100%" height="5rem" radius="0.6rem" />
+          </div>
+          <div style={{ flex: "1 1 18rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+            <Skeleton width="100%" height="2.4rem" radius="0.6rem" />
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <Skeleton width="1.1rem" height="1.1rem" radius="0.3rem" />
+                <div style={{ flex: 1 }}>
+                  <Skeleton width="65%" height="0.85rem" />
+                  <Skeleton width="40%" height="0.65rem" style={{ marginTop: "0.35rem" }} />
+                </div>
+                <Skeleton width="4.5rem" height="1.6rem" radius="0.4rem" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

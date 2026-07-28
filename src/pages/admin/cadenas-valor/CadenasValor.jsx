@@ -14,7 +14,7 @@ import {
   useTipoCanalComercializacion,
   useEquipoComercial,
 } from "../../../hooks/useCatalogos";
-import { Spinner, Button, Alert } from "../../../components/ui";
+import { Spinner, Button, Alert, Skeleton } from "../../../components/ui";
 import {
   ActivarCadenaModal,
   EditarCadenaModal,
@@ -23,6 +23,32 @@ import {
   CdaConfigModal,
 } from "../../../components/features";
 import { toast } from "sonner";
+
+// Mientras carga la lista se muestran filas fantasma con la misma forma que
+// las reales (el header, buscador y tabla quedan visibles al instante), en
+// vez de un spinner de página completa. Mismo patrón que Empresas/CdasGlobales.
+const CadenaRowSkeleton = () => (
+  <tr>
+    <td><Skeleton width="50px" height="25px" radius="0.25rem" /></td>
+    <td>
+      <Skeleton width="60%" height="0.9rem" />
+      <Skeleton width="35%" height="0.65rem" style={{ marginTop: "0.4rem" }} />
+    </td>
+    <td><Skeleton width="55%" height="0.8rem" /></td>
+    <td><Skeleton width="70%" height="0.8rem" /></td>
+    <td><Skeleton width="60%" height="0.8rem" /></td>
+    <td style={{ textAlign: "center" }}>
+      <Skeleton width="36px" height="20px" radius="pill" style={{ margin: "0 auto" }} />
+    </td>
+    <td>
+      <div style={{ display: "flex", gap: "0.4rem", justifyContent: "center" }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} width="28px" height="28px" radius="0.4rem" />
+        ))}
+      </div>
+    </td>
+  </tr>
+);
 
 export default function CadenasValor() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -173,14 +199,6 @@ export default function CadenasValor() {
       c.referencia?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  if (isLoadingActive) {
-    return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-        <Spinner size={80} />
-      </div>
-    );
-  }
-
   return (
     <div className={styles.container}>
       {/* Header */}
@@ -228,7 +246,9 @@ export default function CadenasValor() {
               </tr>
             </thead>
             <tbody>
-              {filteredCadenas.map((item) => {
+              {isLoadingActive &&
+                Array.from({ length: 6 }).map((_, i) => <CadenaRowSkeleton key={i} />)}
+              {!isLoadingActive && filteredCadenas.map((item) => {
                 const puedeActivarse = item.aprobadaVigente;
                 const manualStatus = toggledStates[item.cadenavalorid] !== undefined
                   ? toggledStates[item.cadenavalorid]
@@ -355,7 +375,7 @@ export default function CadenasValor() {
                   </tr>
                 );
               })}
-              {filteredCadenas.length === 0 && (
+              {!isLoadingActive && filteredCadenas.length === 0 && (
                 <tr>
                   <td
                     colSpan={7}

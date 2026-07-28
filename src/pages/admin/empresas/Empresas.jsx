@@ -4,6 +4,7 @@ import { useDebounce } from "use-debounce";
 import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle } from "react-icons/fi";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
+import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import styles from "./Empresas.module.css";
 
 // Filas más altas que antes (avatar + contacto en dos líneas): con 10
@@ -31,19 +32,19 @@ const EmpresaRowSkeleton = () => (
   <tr>
     <td>
       <div className={styles.empresaCell}>
-        <div className={`${styles.skeletonBlock} ${styles.skeletonAvatar}`} />
+        <Skeleton width="2.35rem" height="2.35rem" radius="50%" />
         <div className={styles.empresaInfo}>
-          <div className={styles.skeletonBlock} style={{ height: "0.9rem", width: "70%" }} />
-          <div className={styles.skeletonBlock} style={{ height: "0.7rem", width: "40%", marginTop: "0.4rem" }} />
+          <Skeleton height="0.9rem" width="70%" />
+          <Skeleton height="0.7rem" width="40%" style={{ marginTop: "0.4rem" }} />
         </div>
       </div>
     </td>
     <td>
-      <div className={styles.skeletonBlock} style={{ height: "0.75rem", width: "65%" }} />
-      <div className={styles.skeletonBlock} style={{ height: "0.75rem", width: "45%", marginTop: "0.45rem" }} />
+      <Skeleton height="0.75rem" width="65%" />
+      <Skeleton height="0.75rem" width="45%" style={{ marginTop: "0.45rem" }} />
     </td>
-    <td><div className={`${styles.skeletonBlock} ${styles.skeletonPill}`} /></td>
-    <td><div className={`${styles.skeletonBlock} ${styles.skeletonPill}`} /></td>
+    <td><Skeleton width="5.5rem" height="1.4rem" radius="pill" /></td>
+    <td><Skeleton width="5.5rem" height="1.4rem" radius="pill" /></td>
     <td></td>
   </tr>
 );

@@ -117,19 +117,6 @@
   justify-content: center;
 }
 
-/* Skeleton Loading */
-.skeletonBlock {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  animation: pulse 1.5s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-
 .cardSection {
   display: flex;
   flex-direction: column;

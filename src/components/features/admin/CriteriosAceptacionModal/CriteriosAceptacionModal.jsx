@@ -4,7 +4,7 @@ import { FiCheck, FiX, FiChevronDown, FiRotateCw, FiHelpCircle, FiBriefcase, FiU
 import { toast } from "sonner";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
-import { Spinner } from "../../../ui/Spinner/Spinner";
+import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { sociosService } from "../../../../services/sociosService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { useObtenerGrupoCdaConCdas } from "../../../../hooks/useCadenaValor";
@@ -227,9 +227,21 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
     >
       <div className={styles.modalBody}>
         {isLoading ? (
-          <div className={styles.loaderWrapper}>
-            <Spinner size={50} />
-            <p>Consultando criterios de aceptación y accionistas...</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.75rem" }}>
+              <Skeleton width="2.2rem" height="2.2rem" radius="0.5rem" />
+              <div style={{ flex: 1 }}>
+                <Skeleton width="30%" height="0.7rem" />
+                <Skeleton width="50%" height="0.95rem" style={{ marginTop: "0.4rem" }} />
+              </div>
+            </div>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.85rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.65rem" }}>
+                <Skeleton width="1.4rem" height="1.4rem" radius="50%" />
+                <Skeleton width="45%" height="0.85rem" />
+                <Skeleton width="9rem" height="1.2rem" radius="pill" style={{ marginLeft: "auto" }} />
+              </div>
+            ))}
           </div>
         ) : (
           <>

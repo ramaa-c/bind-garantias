@@ -15,6 +15,7 @@ import {
   Modal,
   Button,
   Spinner,
+  Skeleton,
   InputSimple,
   SelectFechaSimple,
 } from "../../../components/ui";
@@ -34,67 +35,34 @@ const LineaSkeletonCard = () => {
     <div className={styles.lineaCard}>
       <div className={styles.cardHeader}>
         <div className={styles.headerTitleWrapper}>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "1rem", width: "180px" }}
-          ></div>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "0.75rem", width: "100px" }}
-          ></div>
+          <Skeleton height="1rem" width="180px" />
+          <Skeleton height="0.75rem" width="100px" />
         </div>
         <div className={styles.headerActions}>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "32px", width: "32px", borderRadius: "0.375rem" }}
-          ></div>
+          <Skeleton height="32px" width="32px" radius="0.375rem" />
         </div>
       </div>
 
       <div className={styles.cardBody}>
         <div className={styles.detailsGrid}>
           <div className={styles.detailItem}>
-            <div
-              className={styles.skeletonBlock}
-              style={{ height: "0.75rem", width: "60px" }}
-            ></div>
-            <div
-              className={styles.skeletonBlock}
-              style={{ height: "1rem", width: "120px" }}
-            ></div>
+            <Skeleton height="0.75rem" width="60px" />
+            <Skeleton height="1rem" width="120px" />
           </div>
           <div className={styles.detailItem}>
-            <div
-              className={styles.skeletonBlock}
-              style={{ height: "0.75rem", width: "70px" }}
-            ></div>
-            <div
-              className={styles.skeletonBlock}
-              style={{ height: "1rem", width: "90px" }}
-            ></div>
+            <Skeleton height="0.75rem" width="70px" />
+            <Skeleton height="1rem" width="90px" />
           </div>
           <div className={`${styles.detailItem} ${styles.fullWidthItem}`}>
-            <div
-              className={styles.skeletonBlock}
-              style={{ height: "0.75rem", width: "80px" }}
-            ></div>
-            <div
-              className={styles.skeletonBlock}
-              style={{ height: "1.25rem", width: "140px" }}
-            ></div>
+            <Skeleton height="0.75rem" width="80px" />
+            <Skeleton height="1.25rem" width="140px" />
           </div>
         </div>
       </div>
 
       <div className={styles.cardTogglesBottom}>
-        <div
-          className={styles.skeletonBlock}
-          style={{ height: "1.25rem", width: "100px", borderRadius: "0.25rem" }}
-        ></div>
-        <div
-          className={styles.skeletonBlock}
-          style={{ height: "1.25rem", width: "150px", borderRadius: "0.25rem" }}
-        ></div>
+        <Skeleton height="1.25rem" width="100px" radius="0.25rem" />
+        <Skeleton height="1.25rem" width="150px" radius="0.25rem" />
       </div>
     </div>
   );
@@ -117,8 +85,16 @@ const ProductosVinculadosModal = ({ isOpen, onClose, tipolimiteid }) => {
       maxWidth="500px"
     >
       {isLoading || isObligacionesLoading ? (
-        <div style={{ display: "flex", justifyContent: "center", padding: "2rem" }}>
-          <Spinner size={30} />
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.75rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.6rem" }}>
+              <Skeleton width="2rem" height="2rem" radius="0.5rem" />
+              <div style={{ flex: 1 }}>
+                <Skeleton width="55%" height="0.85rem" />
+                <Skeleton width="35%" height="0.7rem" style={{ marginTop: "0.4rem" }} />
+              </div>
+            </div>
+          ))}
         </div>
       ) : listVinculados.length === 0 ? (
         <div style={{ padding: "1rem", textAlign: "center", color: "var(--text-secondary)" }}>
@@ -531,10 +507,7 @@ export default function LineasCadena() {
 
       <div className={styles.selectorSection}>
         {isLoadingCadenas ? (
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "82px", width: "100%", borderRadius: "0.75rem" }}
-          ></div>
+          <Skeleton height="82px" width="100%" radius="0.75rem" />
         ) : (
           <CadenaSelectCard
             options={listCadenas}

@@ -127,19 +127,6 @@
   backdrop-filter: blur(8px);
 }
 
-/* Skeleton Loading */
-.skeletonBlock {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  animation: pulse 1.5s infinite ease-in-out;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.4; }
-  100% { opacity: 1; }
-}
-
 .cardGrid {
   display: grid;
   grid-template-columns: 1fr;

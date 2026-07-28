@@ -753,19 +753,18 @@ export function DocumentosLegajo({
 
         {isPerfil ? (
           <div className={styles.perfilPanel}>
-            <div className={`${styles.perfilHero} ${styles.glassCard}`}>
+            <div className={`${styles.perfilHero} ${styles.glassCard} ${adminMode ? styles.perfilHeroAdmin : ""}`}>
               <div className={`${styles.perfilAvatar} ${adminMode ? styles.perfilAvatarAdmin : ""}`}>
                 {(nombreEmpresa || "?").trim().charAt(0).toUpperCase()}
               </div>
               <div className={styles.perfilHeroInfo}>
                 <span className={styles.perfilHeroName}>{nombreEmpresa || "—"}</span>
                 <span className={styles.perfilHeroMeta}>
-                  {formatCuit(cuitActivo) || "CUIT no disponible"}
+                  <span className={styles.perfilCuitChip}>
+                    {formatCuit(cuitActivo) || "CUIT no disponible"}
+                  </span>
                   {tipoPersonaLabel && (
-                    <>
-                      <span className={styles.perfilHeroDot}>·</span>
-                      {tipoPersonaLabel}
-                    </>
+                    <span className={styles.perfilHeroTipo}>{tipoPersonaLabel}</span>
                   )}
                 </span>
               </div>
@@ -779,56 +778,71 @@ export function DocumentosLegajo({
             <div className={styles.perfilSections}>
               <section className={`${styles.perfilSection} ${styles.glassCard}`}>
                 <h5 className={styles.perfilSectionTitle}>
-                  <FiPhone size={13} /> Contacto
+                  <span className={`${styles.perfilSectionIcon} ${adminMode ? styles.perfilSectionIconAdmin : ""}`}>
+                    <FiPhone size={13} />
+                  </span>
+                  Contacto
                 </h5>
                 <dl className={styles.perfilRows}>
                   <div className={styles.perfilRow}>
                     <dt>Email</dt>
-                    <dd>{email || "—"}</dd>
+                    <dd className={email ? "" : styles.perfilVacio}>{email || "—"}</dd>
                   </div>
                   <div className={styles.perfilRow}>
                     <dt>Teléfono</dt>
-                    <dd>{[telefono, telefono2].filter(Boolean).join(" / ") || "—"}</dd>
+                    <dd className={[telefono, telefono2].filter(Boolean).length ? "" : styles.perfilVacio}>
+                      {[telefono, telefono2].filter(Boolean).join(" / ") || "—"}
+                    </dd>
                   </div>
                 </dl>
               </section>
 
               <section className={`${styles.perfilSection} ${styles.glassCard}`}>
                 <h5 className={styles.perfilSectionTitle}>
-                  <FiMapPin size={13} /> Domicilio
+                  <span className={`${styles.perfilSectionIcon} ${adminMode ? styles.perfilSectionIconAdmin : ""}`}>
+                    <FiMapPin size={13} />
+                  </span>
+                  Domicilio
                 </h5>
                 <dl className={styles.perfilRows}>
                   <div className={styles.perfilRow}>
                     <dt>Dirección</dt>
-                    <dd>{domicilioCompleto || "—"}</dd>
+                    <dd className={domicilioCompleto ? "" : styles.perfilVacio}>{domicilioCompleto || "—"}</dd>
                   </div>
                 </dl>
               </section>
 
-              <section className={`${styles.perfilSection} ${styles.glassCard}`}>
+              <section className={`${styles.perfilSection} ${styles.perfilSectionWide} ${styles.glassCard}`}>
                 <h5 className={styles.perfilSectionTitle}>
-                  <FiBriefcase size={13} /> Datos comerciales
+                  <span className={`${styles.perfilSectionIcon} ${adminMode ? styles.perfilSectionIconAdmin : ""}`}>
+                    <FiBriefcase size={13} />
+                  </span>
+                  Datos comerciales
                 </h5>
-                <dl className={styles.perfilRows}>
-                  <div className={styles.perfilRow}>
+                <dl className={styles.perfilRowsGrid}>
+                  <div className={styles.perfilCelda}>
                     <dt>Tamaño de empresa</dt>
-                    <dd>{tamanioEmpresaLabel || "—"}</dd>
+                    <dd className={tamanioEmpresaLabel ? "" : styles.perfilVacio}>{tamanioEmpresaLabel || "—"}</dd>
                   </div>
-                  <div className={styles.perfilRow}>
+                  <div className={styles.perfilCelda}>
                     <dt>Situación BCRA</dt>
-                    <dd>{situacionBcraLabel || "—"}</dd>
+                    <dd className={situacionBcraLabel ? "" : styles.perfilVacio}>{situacionBcraLabel || "—"}</dd>
                   </div>
-                  <div className={styles.perfilRow}>
+                  <div className={styles.perfilCelda}>
                     <dt>Canal de comercialización</dt>
-                    <dd>{canalComercializacionLabel || "—"}</dd>
+                    <dd className={canalComercializacionLabel ? "" : styles.perfilVacio}>{canalComercializacionLabel || "—"}</dd>
                   </div>
-                  <div className={styles.perfilRow}>
+                  <div className={styles.perfilCelda}>
                     <dt>Inicio de actividades</dt>
-                    <dd>{formatFecha(fechaInicioActividades) || "—"}</dd>
+                    <dd className={formatFecha(fechaInicioActividades) ? "" : styles.perfilVacio}>
+                      {formatFecha(fechaInicioActividades) || "—"}
+                    </dd>
                   </div>
-                  <div className={styles.perfilRow}>
+                  <div className={styles.perfilCelda}>
                     <dt>Cierre de ejercicio</dt>
-                    <dd>{formatFecha(fechaCierreEjercicio) || "—"}</dd>
+                    <dd className={formatFecha(fechaCierreEjercicio) ? "" : styles.perfilVacio}>
+                      {formatFecha(fechaCierreEjercicio) || "—"}
+                    </dd>
                   </div>
                 </dl>
               </section>

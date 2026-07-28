@@ -19,10 +19,10 @@ export function MigracionExitosaModal({ isOpen, onClose }) {
           </span>
         </div>
 
-        <h2 className={styles.title}>¡Legajo sincronizado con éxito!</h2>
+        <h2 className={styles.title}>¡Legajo completo!</h2>
         <p className={styles.mensaje}>
-          Todos los datos y documentos de tu empresa se cargaron y migraron
-          correctamente. Tu legajo ya está al día.
+          Ya cargaste todos los datos y documentos de tu empresa. Tu legajo
+          está al día.
         </p>
 
         <Button variant="primary" onClick={onClose} className={styles.btnAceptar}>
