@@ -288,7 +288,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
               })}
               {filteredInactive.length === 0 && (
                 <div style={{ padding: "2.5rem 1rem", textAlign: "center", color: "#8b949e", fontSize: "0.875rem" }}>
-                  No se encontraron cadenas de valor inactivas para activar.
+                  No se encontraron cadenas de valor vigentes para activar.
                 </div>
               )}
             </div>

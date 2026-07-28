@@ -112,7 +112,8 @@ export const useValidacionLegajo = ({
   // "Obligatorio" de SociosLegajo pase a verde cuando ya no falta nada
   // (mismo criterio que el badge de documentos en DocumentosLegajo).
   let accionistasCompletos = false;
-  let representantesCompletos = false;
+  let apoderadosCompletos = false;
+  let representanteLegalCompletos = false;
   let agentesBolsaCompletos = false;
 
   // 2. Validar relaciones obligatorias (valor === 1)
@@ -211,40 +212,78 @@ export const useValidacionLegajo = ({
       }
     }
 
-    // Representantes (para Persona Física este rol se llama "Apoderado",
-    // ver SociosLegajo/RepresentanteModal — es el mismo dato, solo cambia
-    // el texto según a quién le está faltando).
+    // Apoderado (TipoRelacionSocioID 210) - aplica tanto a Persona Física
+    // como Jurídica. Antes se validaba junto con Representante Legal bajo
+    // una sola clave "representantes"; ahora son requisitos independientes
+    // (ver requisitosService.js).
     const esFisica = Number(tipoPersonaId) === 1;
-    const etiquetaRep = esFisica ? "Apoderado" : "Representante Legal";
-    if (requisitos.relaciones.representantes === 1) {
+    const apoderados = representantes.filter((r) => Number(r.rolId) === 210);
+    if (requisitos.relaciones.apoderados === 1) {
       totalRequisitos++;
       totalLegajoObligatorios++;
-      let representantesValidos = true;
-      const erroresRepresentantes = [];
+      let apoderadosValidos = true;
+      const erroresApoderados = [];
 
-      if (representantes.length === 0) {
-        representantesValidos = false;
-        erroresRepresentantes.push(`Debe registrar al menos un ${etiquetaRep}.`);
+      if (apoderados.length === 0) {
+        apoderadosValidos = false;
+        erroresApoderados.push("Debe registrar al menos un Apoderado.");
       } else {
-        representantes.forEach((rep) => {
+        apoderados.forEach((rep) => {
           const sEmail = rep.email || rep.mail || rep.Mail || "";
           const sCel = rep.celular || rep.telefono || rep.Telefono || "";
 
           if (!sEmail || !sCel) {
-            representantesValidos = false;
-            erroresRepresentantes.push(
-              `El ${etiquetaRep.toLowerCase()} ${rep.nombre} tiene datos de contacto incompletos.`
+            apoderadosValidos = false;
+            erroresApoderados.push(
+              `El apoderado ${rep.nombre} tiene datos de contacto incompletos.`
             );
           }
         });
       }
 
-      representantesCompletos = representantesValidos;
-      if (representantesValidos) {
+      apoderadosCompletos = apoderadosValidos;
+      if (apoderadosValidos) {
         requisitosCompletados++;
       } else {
-        errores.push(...erroresRepresentantes);
-        erroresLegajo.push(...erroresRepresentantes);
+        errores.push(...erroresApoderados);
+        erroresLegajo.push(...erroresApoderados);
+      }
+    }
+
+    // Representante Legal (TipoRelacionSocioID 230) - no aplica a Persona
+    // Física (no tiene "representante legal", solo apoderado). Se ignora
+    // este requisito para tipoPersonaId=1 sin importar lo que diga la
+    // configuración, mismo criterio que ya se usa para Accionistas.
+    const representantesLegales = representantes.filter((r) => Number(r.rolId) === 230);
+    if (requisitos.relaciones.representanteLegal === 1 && !esFisica) {
+      totalRequisitos++;
+      totalLegajoObligatorios++;
+      let repLegalValidos = true;
+      const erroresRepLegal = [];
+
+      if (representantesLegales.length === 0) {
+        repLegalValidos = false;
+        erroresRepLegal.push("Debe registrar al menos un Representante Legal.");
+      } else {
+        representantesLegales.forEach((rep) => {
+          const sEmail = rep.email || rep.mail || rep.Mail || "";
+          const sCel = rep.celular || rep.telefono || rep.Telefono || "";
+
+          if (!sEmail || !sCel) {
+            repLegalValidos = false;
+            erroresRepLegal.push(
+              `El representante legal ${rep.nombre} tiene datos de contacto incompletos.`
+            );
+          }
+        });
+      }
+
+      representanteLegalCompletos = repLegalValidos;
+      if (repLegalValidos) {
+        requisitosCompletados++;
+      } else {
+        errores.push(...erroresRepLegal);
+        erroresLegajo.push(...erroresRepLegal);
       }
     }
 
@@ -290,7 +329,8 @@ export const useValidacionLegajo = ({
     requisitosCompletados,
     tipoPersonaId,
     accionistasCompletos,
-    representantesCompletos,
+    apoderadosCompletos,
+    representanteLegalCompletos,
     agentesBolsaCompletos,
     isLoading: false,
     faltanDocumentos: erroresDocumentos.length > 0,

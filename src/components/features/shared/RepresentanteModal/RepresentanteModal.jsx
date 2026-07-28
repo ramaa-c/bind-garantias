@@ -25,6 +25,13 @@ import { parseAddress } from "../../../../utils/direccionParser";
 import { useParams } from "react-router-dom";
 import styles from "./RepresentanteModal.module.css";
 
+// Motor interno compartido por RepresentanteLegalModal y ApoderadoModal —
+// no se usa directo desde ningún otro lado. `rolFijo` reemplaza al viejo
+// select "Rol / Tipo Relación": antes el mismo modal dejaba elegir
+// Representante Legal o Apoderado sin importar el tipo de persona del
+// socio (una persona física podía terminar con "Representante Legal", que
+// no aplica). Ahora cada wrapper fija su propio rol y el modal no ofrece
+// la opción de cambiarlo.
 export function RepresentanteModal({
   isOpen,
   onClose,
@@ -33,19 +40,13 @@ export function RepresentanteModal({
   socioIdActivo,          // Both: active partner ID to link the relation
   representanteInicial,   // Form mode: initial representative data for edit
   onGuardar,              // Form mode: callback to update parent React Hook Form state
-  tipoPersonaId,          // Solo lo pasa RepresentantesSection (zona de legajo): si no viene, se
-                          // preserva el comportamiento anterior ("Representante" en todos lados).
+  rolFijo,                // "Representante Legal" | "Apoderado" - lo fija el wrapper, no el usuario.
 }) {
   const { cadenaSlug } = useParams();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
-  // Persona Física no tiene "Representante Legal" (eso es de una persona
-  // jurídica): el rol equivalente es "Apoderado". Mismo dato/flujo, solo
-  // cambia la etiqueta que ve el usuario.
-  const esPersonaFisica = Number(tipoPersonaId) === 1;
-  const etiquetaRol = esPersonaFisica ? "Apoderado" : "Representante";
-  const rolPorDefecto = esPersonaFisica ? "Apoderado" : "Representante Legal";
+  const etiquetaRol = rolFijo;
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
@@ -62,7 +63,7 @@ export function RepresentanteModal({
     defaultValues: {
       cuit: "",
       nombre: "",
-      rol: rolPorDefecto,
+      rol: rolFijo,
       email: "",
       telefono: "",
       direccion: "",
@@ -99,7 +100,7 @@ export function RepresentanteModal({
         reset({
           cuit: representante.cuit || "",
           nombre: representante.nombre || "",
-          rol: representante.rolId === 230 ? "Representante Legal" : "Apoderado",
+          rol: rolFijo,
           email: representante.email || "",
           telefono: representante.telefono || "",
           direccion: representante.direccion || "",
@@ -118,7 +119,7 @@ export function RepresentanteModal({
         reset({
           cuit: representanteInicial.cuit || "",
           nombre: representanteInicial.nombre || "",
-          rol: representanteInicial.rol || "Representante Legal",
+          rol: rolFijo,
           email: representanteInicial.email || "",
           telefono: representanteInicial.celular || representanteInicial.telefono || "",
           direccion: representanteInicial.direccion || "",
@@ -136,7 +137,7 @@ export function RepresentanteModal({
         reset({
           cuit: "",
           nombre: "",
-          rol: rolPorDefecto,
+          rol: rolFijo,
           email: "",
           telefono: "",
           direccion: "",
@@ -278,8 +279,7 @@ export function RepresentanteModal({
           const ahoraStub = new Date().toISOString().split(".")[0];
           const unAnioMasStub = new Date();
           unAnioMasStub.setFullYear(unAnioMasStub.getFullYear() + 1);
-          const rolActual = getValues("rol");
-          const targetRolIdStub = rolActual === "Apoderado" ? 210 : 230;
+          const targetRolIdStub = rolFijo === "Apoderado" ? 210 : 230;
           await tercerosService.guardarRelacionesDeSocio({
             socioid: socioIdActivo,
             tercerosrelacionados: [
@@ -663,7 +663,7 @@ export function RepresentanteModal({
       const unAnioMas = new Date();
       unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
       const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
-      const targetRolId = formData.rol === "Apoderado" ? 210 : 230;
+      const targetRolId = rolFijo === "Apoderado" ? 210 : 230;
 
       // Direct Save to DB if socioIdActivo is present
       if (socioIdActivo) {
@@ -752,11 +752,6 @@ export function RepresentanteModal({
     }
   };
 
-  const opcionesRoles = [
-    { value: "Representante Legal", label: "Representante Legal" },
-    { value: "Apoderado", label: "Apoderado" },
-  ];
-
   return (
     <>
       <Modal
@@ -844,24 +839,6 @@ export function RepresentanteModal({
                       onBlur={field.onBlur}
                       label="Nombre Completo"
                       icon={<FiUser />}
-                      error={fieldState.error?.message}
-                    />
-                  )}
-                />
-              </div>
-
-              <div className={styles.modalRow}>
-                <Controller
-                  name="rol"
-                  control={control}
-                  rules={{ required: "El rol es obligatorio" }}
-                  render={({ fieldState }) => (
-                    <SelectSocio
-                      control={control}
-                      name="rol"
-                      label="Rol / Tipo Relación"
-                      icon={<FiUser />}
-                      options={opcionesRoles}
                       error={fieldState.error?.message}
                     />
                   )}
@@ -978,7 +955,7 @@ export function RepresentanteModal({
                 />
               </div>
 
-              <div className={styles.modalRow2}>
+              <div className={styles.modalRow3}>
                 <Controller
                   name="provinciaid"
                   control={control}
@@ -1005,6 +982,20 @@ export function RepresentanteModal({
                       icon={<FiMap />}
                       options={opcionesCiudades}
                       isLoading={cargandoCiudades}
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="codpos"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("codpos", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Código Postal"
                       error={fieldState.error?.message}
                     />
                   )}

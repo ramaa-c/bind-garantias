@@ -70,7 +70,6 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     campoTexto: "localidad",
     campoId: "localidadid",
     setValue,
-    validarTextoAlLimpiar: true,
   });
 
   if (isOpen !== prevIsOpen) {
@@ -84,12 +83,17 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
 
   if (!isOpen) return null;
 
+  // `ciudadid`/`localidadid` usan 0 como "sin seleccionar" - sin el
+  // `val !== 0`, ese 0 pasaba `hasValue` igual (Number(0).toString() es
+  // "0", un string no vacío), mostrando el error de esos dos selects apenas
+  // se completaban en segundo plano (ver useSincronizarCatalogoPorTexto),
+  // sin que el usuario hubiera tocado nada todavía.
   const getError = (campo) => {
     if (campo === "numero" && watch("sinNumero")) return null;
     const err = errors?.[campo];
     const val = watch(campo);
     const hasValue =
-      val !== undefined && val !== null && val.toString().trim().length > 0;
+      val !== undefined && val !== null && val !== 0 && val.toString().trim().length > 0;
     return err && (hasValue || intentoGuardar) ? err.message : null;
   };
 
@@ -98,7 +102,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     const err = errors?.[campo];
     const val = watch(campo);
     const hasValue =
-      val !== undefined && val !== null && val.toString().trim().length > 0;
+      val !== undefined && val !== null && val !== 0 && val.toString().trim().length > 0;
     return !err && hasValue;
   };
 

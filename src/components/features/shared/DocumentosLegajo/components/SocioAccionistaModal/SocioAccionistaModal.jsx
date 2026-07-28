@@ -1199,7 +1199,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 />
               </div>
 
-              <div className={styles.modalRow2}>
+              <div className={styles.modalRow3}>
                 <Controller
                   name="provinciaid"
                   control={control}
@@ -1227,6 +1227,20 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       icon={<FiMap />}
                       options={opcionesCiudades}
                       isLoading={cargandoCiudades}
+                      error={fieldState.error?.message}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="codpos"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <InputSocioMasked
+                      value={field.value}
+                      onChange={(val) => setValue("codpos", val, { shouldDirty: true, shouldValidate: true })}
+                      onBlur={field.onBlur}
+                      label="Código Postal"
                       error={fieldState.error?.message}
                     />
                   )}

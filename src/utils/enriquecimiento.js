@@ -3,6 +3,7 @@ import { afipService } from "../services/afipService";
 import { tercerosService } from "../services/tercerosService";
 import { catalogosService } from "../services/catalogosService";
 import { matchProvinciaAfip } from "./provinciaUtils";
+import { parseAddress } from "./direccionParser";
 
 const getCSharpIsoDate = () => {
   const date = new Date();
@@ -34,10 +35,13 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
   }
   const arrRelaciones = Array.isArray(relacionesSocio) ? relacionesSocio : [];
 
+  // Accionistas (25), Representantes Legales (230) y Apoderados (210) - los
+  // 3 tipos de terceros relacionados que se completan con datos de
+  // AFIP/LUFE. Antes solo se enriquecían los accionistas.
   const relacionAccionistas = arrRelaciones.filter((r) => {
     const rid =
       r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId;
-    return Number(rid) === 25;
+    return [25, 210, 230].includes(Number(rid));
   });
 
   if (relacionAccionistas.length === 0) {
@@ -108,6 +112,12 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
           (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "") ||
           terceroLocal.calle ||
           "";
+        // AFIP/LUFE devuelven la dirección como un solo string ("SANTIAGO
+        // RUBIO 497") - parseAddress la separa en calle/numero/piso/depto,
+        // igual que ya hace obtenerDatosEmpresaPorCuit para la empresa.
+        // Antes esto no se parseaba: se guardaba el string completo en
+        // "calle" y numero/piso/departamento quedaban siempre vacíos.
+        const parsedDir = parseAddress(direccionVal);
         const localidadVal =
           dom.localidad || dom.localidadNombre || terceroLocal.contacto || "";
 
@@ -116,7 +126,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
           denominacion:
             terceroLocal.denominacion ||
             `${dg.nombre || ""} ${dg.apellido || ""}`.trim() ||
-            "Accionista",
+            "Tercero",
           cuit: cuitSocioLimpio,
           bcraid: 0,
           tipopersonaid:
@@ -133,10 +143,10 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
           contacto: localidadVal,
           nrocuenta: "",
           codigomercado: "",
-          calle: direccionVal,
-          numero: 0,
-          piso: "",
-          departamento: "",
+          calle: parsedDir.calle || terceroLocal.calle || "",
+          numero: parsedDir.numero || Number(terceroLocal.numero) || 0,
+          piso: parsedDir.piso || terceroLocal.piso || "",
+          departamento: parsedDir.departamento || terceroLocal.departamento || "",
           codpos: dom.codpostal || dom.codpos || terceroLocal.codpos || "",
           descripcionreducida: (terceroLocal.denominacion || "").substring(0, 20),
           mail: emailVal,

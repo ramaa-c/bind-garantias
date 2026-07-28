@@ -61,7 +61,7 @@ export default function SociosView() {
     setShowConfirmModal(false);
     const toastId = toast.loading("Sincronizando legajo con LUFE y AFIP...");
     try {
-      // 1. Ejecutar la precarga LUFE + enriquecimiento síncrono AFIP + PUTs de accionistas
+      // 1. Ejecutar la precarga LUFE + enriquecimiento síncrono AFIP + PUTs de accionistas y representantes/apoderados
       const resEnriquecimiento = await enriquecerSociosLufeAfip(socioIdActivo, cuitActivo);
 
       // 2. Vincular documentos de LUFE

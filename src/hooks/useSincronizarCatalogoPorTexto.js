@@ -33,11 +33,15 @@ const buscarPorTexto = (texto, opciones) => {
  *   2. Si no (o no habia id todavia), intenta resolverlo matcheando
  *      `valorTexto` contra `opciones` - cubre el caso de integraciones
  *      externas (AFIP/Nosis/LUFE) que solo devuelven el nombre en texto y
- *      nunca un id ya resuelto.
- *   3. Si tampoco matchea, limpia id y texto para forzar que el usuario
- *      elija de nuevo - pasa, por ejemplo, cuando cambia el campo por el
- *      que se filtra (la provincia) y la seleccion vieja ya no pertenece a
- *      la lista nueva.
+ *      nunca un id ya resuelto. Acá sí se valida (shouldValidate) porque
+ *      un match limpia cualquier error previo sobre un valor que ahora es
+ *      valido.
+ *   3. Si tampoco matchea, limpia id y texto SIN forzar validacion - esto
+ *      corre en el background (ej. apenas cambia la provincia, o al abrir
+ *      el modal), no en respuesta a un intento de guardar del usuario, asi
+ *      que no corresponde mostrarle todavia "la ciudad es requerida". Esa
+ *      validacion queda para el submit (trigger()/handleGuardar propio de
+ *      cada formulario).
  */
 export const useSincronizarCatalogoPorTexto = ({
   cargando,
@@ -47,11 +51,6 @@ export const useSincronizarCatalogoPorTexto = ({
   campoTexto,
   campoId,
   setValue,
-  // El campo texto suele ser solo informativo (la validacion real vive en
-  // el id), pero algunos schemas exigen el texto en si (ej. `localidad` en
-  // AltaDatosEmpresaSchema) - en esos casos pasar true para que el error
-  // aparezca apenas se limpia, no recien en el proximo submit.
-  validarTextoAlLimpiar = false,
 }) => {
   useEffect(() => {
     if (cargando) return;
@@ -77,20 +76,8 @@ export const useSincronizarCatalogoPorTexto = ({
     }
 
     if (valorId) {
-      setValue(campoId, 0, { shouldValidate: true, shouldDirty: true });
-      setValue(campoTexto, "", {
-        shouldValidate: validarTextoAlLimpiar,
-        shouldDirty: true,
-      });
+      setValue(campoId, 0, { shouldDirty: true });
+      setValue(campoTexto, "", { shouldDirty: true });
     }
-  }, [
-    cargando,
-    opciones,
-    valorTexto,
-    valorId,
-    campoTexto,
-    campoId,
-    setValue,
-    validarTextoAlLimpiar,
-  ]);
+  }, [cargando, opciones, valorTexto, valorId, campoTexto, campoId, setValue]);
 };

@@ -20,6 +20,7 @@ import styles from "./SociosLegajo.module.css";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { AccionistasSection } from "../DocumentosLegajo/components/AccionistasSection/AccionistasSection";
 import { RepresentantesSection } from "../DocumentosLegajo/components/RepresentantesSection/RepresentantesSection";
+import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
 
@@ -32,9 +33,15 @@ export const ESTRUCTURA_SOCIOS = [
   },
   {
     category: "Legajo",
-    key: "representantes",
+    key: "representanteLegal",
     title: "Representantes legales",
-    info: "Administración de representantes legales y apoderados habilitados.",
+    info: "Administración de representantes legales habilitados.",
+  },
+  {
+    category: "Legajo",
+    key: "apoderados",
+    title: "Apoderados",
+    info: "Administración de apoderados habilitados para operar en nombre del titular.",
   },
   {
     category: "Legajo",
@@ -79,7 +86,7 @@ export function SociosLegajo({
   // Reutiliza la misma validación que ya decide si el legajo está completo,
   // para no duplicar el criterio (ver useValidacionLegajo para el manejo de
   // adminMode).
-  const { accionistasCompletos, representantesCompletos, agentesBolsaCompletos } = useValidacionLegajo({
+  const { accionistasCompletos, apoderadosCompletos, representanteLegalCompletos, agentesBolsaCompletos } = useValidacionLegajo({
     adminMode,
     socioIdActivo,
     tipoPersonaId,
@@ -89,33 +96,29 @@ export function SociosLegajo({
 
   const completitudPorTab = {
     accionistas: accionistasCompletos,
-    representantes: representantesCompletos,
+    representanteLegal: representanteLegalCompletos,
+    apoderados: apoderadosCompletos,
     agentesBolsa: agentesBolsaCompletos,
   };
 
-  // Para Persona Física, "Representantes legales" se muestra como
-  // "Apoderado" (mismo dato/TipoRelacionSocioID, solo cambia la etiqueta:
-  // una persona física no tiene representante legal, sino un apoderado que
-  // actúa en su nombre).
   const esPersonaFisica = Number(tipoPersonaId) === 1;
-  const tituloTab = (doc) =>
-    doc.key === "representantes" && esPersonaFisica ? "Apoderado" : doc.title;
-  const infoTab = (doc) =>
-    doc.key === "representantes" && esPersonaFisica
-      ? "Administración del apoderado habilitado para operar en tu nombre."
-      : doc.info;
+  const tituloTab = (doc) => doc.title;
+  const infoTab = (doc) => doc.info;
 
   const tabsDisponibles = useMemo(() => {
     let baseTabs = ESTRUCTURA_SOCIOS;
-    if (tipoPersonaId === 1) {
-      baseTabs = ESTRUCTURA_SOCIOS.filter(t => t.key !== "accionistas");
+    if (esPersonaFisica) {
+      // Persona Física no tiene Representante Legal (230) - solo Apoderado
+      // (210, ver tab "apoderados" más abajo), ni Accionistas (no puede ser
+      // accionista de sí misma).
+      baseTabs = ESTRUCTURA_SOCIOS.filter(t => t.key !== "accionistas" && t.key !== "representanteLegal");
     }
     // Filtrar según los requisitos configurados
     return baseTabs.filter(t => {
       const configVal = requisitos?.relaciones?.[t.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [tipoPersonaId, requisitos]);
+  }, [esPersonaFisica, requisitos]);
 
   const [activeTab, setActiveTab] = useState(null);
 
@@ -134,7 +137,12 @@ export function SociosLegajo({
   const { data: socioLegajoData, isLoading: loadingQuery } = useObtenerDatosSocioLegajo(socioIdActivo);
 
   const accionistas = socioLegajoData?.accionistas || [];
-  const representantes = socioLegajoData?.representantes || [];
+  // socioLegajoData.representantes junta Representante Legal (230) y
+  // Apoderado (210, ver useObtenerDatosSocioLegajo) - cada pestaña se
+  // queda solo con lo suyo.
+  const representantesYApoderados = socioLegajoData?.representantes || [];
+  const representantes = representantesYApoderados.filter((r) => Number(r.rolId) === 230);
+  const apoderados = representantesYApoderados.filter((r) => Number(r.rolId) === 210);
   const agentesBolsa = socioLegajoData?.agentesBolsa || [];
   const loadingSocios = loadingQuery;
 
@@ -227,7 +235,8 @@ export function SociosLegajo({
         const isActive = activeTab === doc.key;
 
         const isAccionistas = doc.key === "accionistas";
-        const isRepresentantes = doc.key === "representantes";
+        const isRepresentantes = doc.key === "representanteLegal";
+        const isApoderados = doc.key === "apoderados";
         const isAgentesBolsa = doc.key === "agentesBolsa";
         const isUsuarios = doc.key === "usuarios";
 
@@ -321,7 +330,14 @@ export function SociosLegajo({
                     handleEliminarRelacion={handleEliminarRelacion}
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
-                    tipoPersonaId={tipoPersonaId}
+                  />
+                ) : isApoderados ? (
+                  <ApoderadosSection
+                    loadingSocios={loadingSocios}
+                    apoderados={apoderados}
+                    handleEliminarRelacion={handleEliminarRelacion}
+                    cargarSocios={cargarSocios}
+                    socioIdActivo={socioIdActivo}
                   />
                 ) : isAgentesBolsa ? (
                   <AgentesBolsaSection

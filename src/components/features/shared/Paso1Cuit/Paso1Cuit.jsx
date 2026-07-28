@@ -434,8 +434,15 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
         // ── 5. Población de campos del formulario. Se adelanta a este
         // punto (antes vivía después del CDA) porque el POST a Socio del
         // paso siguiente necesita estos valores resueltos.
+        // ciudadid/localidadid siempre llegan en null acá (ver
+        // datosEmpresaPorCuit.js: ninguna integración resuelve un id, solo
+        // texto) — se completan recién en el Paso 2 vía el select de
+        // Ciudad/Localidad. Si se validaran con el resto, el requisito de
+        // "ciudad obligatoria" saltaría en rojo apenas termina este paso,
+        // antes de que el usuario llegue siquiera a Paso 2.
         Object.entries(resultadoDatos.valores).forEach(([campo, val]) => {
-          setValue(campo, val, { shouldValidate: true });
+          const shouldValidate = campo !== "ciudadid" && campo !== "localidadid";
+          setValue(campo, val, { shouldValidate });
         });
         if (resultadoDatos.valores.sinNumero) clearErrors("numero");
 

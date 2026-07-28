@@ -14,7 +14,12 @@ export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { nombreEmpresa, cuitActivo, onboardingCompleto } = useEmpresaActiva();
-  const isVinculado = !!nombreEmpresa;
+  // En alta-datos-empresa se está dando de alta una empresa NUEVA que todavía
+  // no es la "activa" del usuario (activeSocioId sigue apuntando a otra
+  // empresa ya onboardeada, o a ninguna) — mostrar acá la tarjeta/nav de esa
+  // otra empresa es confuso y directamente incorrecto, sin importar cuál sea.
+  const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
+  const isVinculado = !!nombreEmpresa && !enAltaDatosEmpresa;
 
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);

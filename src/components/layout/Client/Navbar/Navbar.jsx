@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FaRegUserCircle } from "react-icons/fa";
 import {
   FiMenu,
@@ -21,6 +21,7 @@ const Navbar = ({
   onToggleSidebar,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isTasasModalOpen, setIsTasasModalOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -28,9 +29,13 @@ const Navbar = ({
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const { channelInfo } = useChannel();
-  
+
   const { nombreEmpresa, onboardingCompleto } = useEmpresaActiva();
-  const isVinculado = !!nombreEmpresa;
+  // Ver mismo criterio en Sidebar.jsx: en alta-datos-empresa no hay una
+  // empresa "activa" real que mostrar todavía.
+  const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
+  const isVinculado = !!nombreEmpresa && !enAltaDatosEmpresa;
+  const onboardingCompletoEfectivo = onboardingCompleto && !enAltaDatosEmpresa;
 
   const emailUsuario =
     typeof user === "string"
@@ -120,7 +125,7 @@ const Navbar = ({
                     </p>
                   </div>
 
-                  {onboardingCompleto && (
+                  {onboardingCompletoEfectivo && (
                     <div className={styles.dropdownBody}>
                       <button type="button"
                         className={styles.dropdownItem}
