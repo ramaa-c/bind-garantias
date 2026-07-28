@@ -20,7 +20,8 @@ import { toast } from "sonner";
 import { Button, InputSocioMasked } from "../../../ui";
 import {
   DocumentosEmpresaModal,
-  RepresentanteModal,
+  RepresentanteLegalModal,
+  ApoderadoModal,
 } from "../../../features";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
@@ -85,6 +86,19 @@ export default function Paso5Documentacion({
 
   const { tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
+  const esPersonaFisica = Number(tipoPersonaId) === 1;
+
+  // Apoderado (210) y Representante Legal (230) son requisitos
+  // independientes desde la parametrización (ver requisitosService.js) -
+  // esta sección todavía junta la carga de ambos roles en un solo bloque
+  // (a diferencia del Legajo, que ya tiene una pestaña propia por rol), así
+  // que se combinan acá: se muestra/exige si cualquiera de los dos aplica.
+  const requisitoApoderados = requisitos?.relaciones?.apoderados;
+  const requisitoRepLegal = esPersonaFisica ? 0 : requisitos?.relaciones?.representanteLegal;
+  const mostrarApoderado = requisitoApoderados !== 0;
+  const mostrarRepLegal = requisitoRepLegal !== 0;
+  const mostrarSeccionReps = mostrarApoderado || mostrarRepLegal;
+  const repRequerido = requisitoApoderados === 1 || requisitoRepLegal === 1;
 
   const docItemsFiltered = DOC_ITEMS.filter(({ key }) => {
     const configVal = requisitos?.documentos?.[key];
@@ -110,7 +124,7 @@ export default function Paso5Documentacion({
     socioActivoIndex: null,
     repActivoIndex: null,
     modalDocsOpen: false,
-    modalRepOpen: false,
+    modalRepTipo: null, // null | "legal" | "apoderado"
     draggingKey: null,
     backupSocio: {},
     backupArchivos: {},
@@ -178,7 +192,7 @@ export default function Paso5Documentacion({
     socioActivoIndex,
     repActivoIndex,
     modalDocsOpen,
-    modalRepOpen,
+    modalRepTipo,
     draggingKey,
     backupSocio,
     intentoAvanzar,
@@ -296,8 +310,8 @@ export default function Paso5Documentacion({
     return true; // Si es opcional (2) o no visible, no bloquea el avance
   });
 
-  const handleAbrirModalRep = (index) =>
-    updateState({ repActivoIndex: index, modalRepOpen: true });
+  const handleAbrirModalRep = (index, tipo) =>
+    updateState({ repActivoIndex: index, modalRepTipo: tipo });
   const handleGuardarRep = (repData) =>
     repActivoIndex !== null
       ? updateRep(repActivoIndex, repData)
@@ -371,9 +385,9 @@ export default function Paso5Documentacion({
 
   const handleAvanzarClick = async () => {
     updateState({ intentoAvanzar: true });
-    const isRepRequired = requisitos?.relaciones?.representantes === 1;
+    const isRepRequired = repRequerido;
     const tieneRepresentantes = representantes.length > 0;
-    const canAdvanceReps = !isRepRequired || tieneRepresentantes || requisitos?.relaciones?.representantes === 0;
+    const canAdvanceReps = !isRepRequired || tieneRepresentantes;
 
     const emailFacValido = await trigger("emailFacturacion");
     if (
@@ -418,7 +432,7 @@ export default function Paso5Documentacion({
             )}
             Documentos
           </span>
-          {requisitos?.relaciones?.representantes !== 0 && (
+          {mostrarSeccionReps && (
             <span
               className={`${styles.pill} ${pill(representantes.length > 0, intentoAvanzar)}`}
             >
@@ -495,32 +509,61 @@ export default function Paso5Documentacion({
 
 
         {/* REPRESENTANTES */}
-        {requisitos?.relaciones?.representantes !== 0 && (
+        {mostrarSeccionReps && (
           <section className={styles.section}>
             <div className={styles.sectionHeaderRow}>
               <span className={styles.sectionLabel}>
                 Representantes y Apoderados
               </span>
               {representantes.length > 0 && (
-                <button
-                  type="button"
-                  className={styles.actionLink}
-                  onClick={() => handleAbrirModalRep(null)}
-                >
-                  <FiPlus size={11} /> Agregar
-                </button>
+                <div style={{ display: "flex", gap: "0.75rem" }}>
+                  {mostrarRepLegal && (
+                    <button
+                      type="button"
+                      className={styles.actionLink}
+                      onClick={() => handleAbrirModalRep(null, "legal")}
+                    >
+                      <FiPlus size={11} /> Repr. Legal
+                    </button>
+                  )}
+                  {mostrarApoderado && (
+                    <button
+                      type="button"
+                      className={styles.actionLink}
+                      onClick={() => handleAbrirModalRep(null, "apoderado")}
+                    >
+                      <FiPlus size={11} /> Apoderado
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
             {representantes.length === 0 ? (
-              <button
-                type="button"
-                className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
-                onClick={() => handleAbrirModalRep(null)}
-              >
-                <FiPlus size={14} />
-                <span>Agregar representante o apoderado</span>
-              </button>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {mostrarRepLegal && (
+                  <button
+                    type="button"
+                    className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
+                    style={{ flex: 1 }}
+                    onClick={() => handleAbrirModalRep(null, "legal")}
+                  >
+                    <FiPlus size={14} />
+                    <span>Agregar representante legal</span>
+                  </button>
+                )}
+                {mostrarApoderado && (
+                  <button
+                    type="button"
+                    className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
+                    style={{ flex: 1 }}
+                    onClick={() => handleAbrirModalRep(null, "apoderado")}
+                  >
+                    <FiPlus size={14} />
+                    <span>Agregar apoderado</span>
+                  </button>
+                )}
+              </div>
             ) : (
               <div className={styles.compactList}>
                 {representantes.map((rep, index) => (
@@ -539,7 +582,12 @@ export default function Paso5Documentacion({
                       <button
                         type="button"
                         className={styles.iconBtn}
-                        onClick={() => handleAbrirModalRep(index)}
+                        onClick={() =>
+                          handleAbrirModalRep(
+                            index,
+                            rep.rol === "Representante Legal" ? "legal" : "apoderado",
+                          )
+                        }
                         title="Editar"
                       >
                         <FiEdit2 size={13} />
@@ -611,13 +659,28 @@ export default function Paso5Documentacion({
         requisitos={requisitos}
       />
 
-      <RepresentanteModal
-        isOpen={modalRepOpen}
+      <RepresentanteLegalModal
+        isOpen={modalRepTipo === "legal"}
         onClose={() =>
-          updateState({ modalRepOpen: false, repActivoIndex: null })
+          updateState({ modalRepTipo: null, repActivoIndex: null })
         }
         representanteInicial={
-          repActivoIndex !== null ? representantes[repActivoIndex] : null
+          modalRepTipo === "legal" && repActivoIndex !== null
+            ? representantes[repActivoIndex]
+            : null
+        }
+        socioIdActivo={socioId}
+        onGuardar={handleGuardarRep}
+      />
+      <ApoderadoModal
+        isOpen={modalRepTipo === "apoderado"}
+        onClose={() =>
+          updateState({ modalRepTipo: null, repActivoIndex: null })
+        }
+        representanteInicial={
+          modalRepTipo === "apoderado" && repActivoIndex !== null
+            ? representantes[repActivoIndex]
+            : null
         }
         socioIdActivo={socioId}
         onGuardar={handleGuardarRep}

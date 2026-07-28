@@ -221,8 +221,15 @@ export const AltaDatosEmpresa = () => {
           opcionesProvincias,
         );
         if (cancelado || !resultado.encontrado) return;
+        // ciudadid/localidadid siempre llegan en null acá (ninguna
+        // integración resuelve un id, solo texto — ver
+        // datosEmpresaPorCuit.js) y se completan recién con el select de
+        // Ciudad/Localidad más abajo en este mismo paso. Si se validaran
+        // ya, el requisito de "ciudad obligatoria" saltaría en rojo antes
+        // de que el usuario llegue a tocar el campo.
         Object.entries(resultado.valores).forEach(([campo, val]) => {
-          metodosFormulario.setValue(campo, val, { shouldValidate: true });
+          const shouldValidate = campo !== "ciudadid" && campo !== "localidadid";
+          metodosFormulario.setValue(campo, val, { shouldValidate });
         });
       } catch (e) {
         console.error(

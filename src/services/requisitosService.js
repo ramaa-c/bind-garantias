@@ -21,11 +21,11 @@ export const DEFAULT_PHYSICAL_CONFIG = {
   },
   relaciones: {
     accionistas: 0,
-    // "Representantes" es la etiqueta interna del dato (TipoRelacionSocioID
-    // 210/230): para Persona Física se muestra como "Apoderado" (ver
-    // SociosLegajo/RepresentanteModal). Por defecto opcional, no
-    // obligatorio: una persona física puede operar sin apoderado.
-    representantes: 2,
+    // Persona Física solo puede tener Apoderado (TipoRelacionSocioID 210) -
+    // no existe "Representante Legal" (230) para este tipo de persona, por
+    // eso ni se incluye esa clave acá. Por defecto opcional, no obligatorio:
+    // una persona física puede operar sin apoderado.
+    apoderados: 2,
     agentesBolsa: 2,
     usuarios: 2,
   },
@@ -51,7 +51,12 @@ export const DEFAULT_SA_CONFIG = {
   },
   relaciones: {
     accionistas: 1,
-    representantes: 1,
+    // Apoderados (210) y Representante Legal (230) son requisitos
+    // independientes desde acá. Apoderado es un caso de excepción para
+    // Persona Jurídica (lo normal es el Representante Legal) - la base
+    // es "No mostrar" y cada cadena lo activa a mano si lo necesita.
+    apoderados: 0,
+    representanteLegal: 2,
     agentesBolsa: 2,
     usuarios: 2,
   },
@@ -126,7 +131,8 @@ export const TIPO_DOCUMENTO_MAP = {
 
 export const TIPO_RELACION_MAP = {
   accionistas: 25,
-  representantes: 210,
+  apoderados: 210,
+  representanteLegal: 230,
   agentesBolsa: 21,
   usuarios: 999,
 };

@@ -27,7 +27,8 @@ const DOCUMENT_METADATA = [
 
 const RELATION_METADATA = [
   { key: "accionistas", title: "Composición Accionaria", desc: "Declaración del cuadro accionario y participaciones societarias (Socio/Fiador)." },
-  { key: "representantes", title: "Representantes Legales", desc: "Administración de representantes legales y apoderados habilitados." },
+  { key: "representanteLegal", title: "Representantes Legales", desc: "Administración de representantes legales habilitados." },
+  { key: "apoderados", title: "Apoderados", desc: "Administración de apoderados habilitados para operar en nombre del titular." },
   { key: "agentesBolsa", title: "Agentes de Bolsa", desc: "Vinculación y administración de cuentas comitentes con agentes de bolsa." },
   { key: "usuarios", title: "Vincular Usuarios", desc: "Autorización y otorgamiento de accesos a otros usuarios en la plataforma." }
 ];
@@ -212,14 +213,9 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
           <div className={styles.list}>
             {RELATION_METADATA.map(({ key, title, desc }) => {
               if (activeTab === "fisica" && key === "accionistas") return null;
-
-              // Persona Física llama "Apoderado" a este rol (mismo dato:
-              // TipoRelacionSocioID 210/230), ver RepresentanteModal.
-              const esFisicaYRepresentantes = activeTab === "fisica" && key === "representantes";
-              const tituloFila = esFisicaYRepresentantes ? "Apoderado" : title;
-              const descFila = esFisicaYRepresentantes
-                ? "Administración del apoderado habilitado para operar en nombre de la persona."
-                : desc;
+              // Persona Física no tiene Representante Legal (230) - solo
+              // Apoderado (210), que sí aplica a ambos tipos de persona.
+              if (activeTab === "fisica" && key === "representanteLegal") return null;
 
               const val = localConfig[activeTab]?.relaciones?.[key] !== undefined
                 ? localConfig[activeTab].relaciones[key]
@@ -228,8 +224,8 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
               return (
                 <div key={key} className={styles.row}>
                   <div className={styles.info}>
-                    <strong className={styles.rowTitle}>{tituloFila}</strong>
-                    <span className={styles.rowDesc}>{descFila}</span>
+                    <strong className={styles.rowTitle}>{title}</strong>
+                    <span className={styles.rowDesc}>{desc}</span>
                   </div>
                   <div className={styles.segmentedControl}>
                     <button

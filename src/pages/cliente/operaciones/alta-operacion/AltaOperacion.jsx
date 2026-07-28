@@ -922,9 +922,16 @@ export const AltaOperacion = () => {
             const ok = await trigger("emailFacturacion");
             const reps = getValues("representantes");
             
-            const isRepRequired = requisitos?.relaciones?.representantes === 1;
+            // Apoderado (210) y Representante Legal (230) son requisitos
+            // independientes desde la parametrización - acá se combinan
+            // porque este paso todavía junta la carga de ambos roles en
+            // un solo bloque (ver Paso5Documentacion).
+            const repLegalAplica = Number(tipoPersonaId) !== 1;
+            const isRepRequired =
+              requisitos?.relaciones?.apoderados === 1 ||
+              (repLegalAplica && requisitos?.relaciones?.representanteLegal === 1);
             const tieneRepresentantes = reps?.length > 0;
-            const canAdvanceReps = !isRepRequired || tieneRepresentantes || requisitos?.relaciones?.representantes === 0;
+            const canAdvanceReps = !isRepRequired || tieneRepresentantes;
 
             if (!canAdvanceReps && isRepRequired) {
               toast.error("Debe declarar al menos un representante legal o apoderado.");
