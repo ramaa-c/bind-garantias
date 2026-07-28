@@ -227,6 +227,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     socio !== prevDeps.socio
   ) {
     const wasOpen = prevDeps.isOpen;
+    const socioCambio = socio !== prevDeps.socio;
     setPrevDeps({ isOpen, cuitValue, nombreValue, archivosBackend, dniTerceros, socio });
 
     if (isOpen && !wasOpen) {
@@ -242,6 +243,51 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         setAfipValidado(true);
       } else {
         setAfipValidado(false);
+      }
+    }
+
+    // Reset de valores Y errores en el mismo pase de render en que se
+    // detecta la apertura (o el cambio de socio con el modal ya abierto),
+    // en vez de en un useEffect aparte que corre un render despues - evita
+    // que se vea un frame con los datos/errores de la sesion anterior (ej.
+    // "El celular es obligatorio") apenas se reabre el modal para un
+    // accionista distinto.
+    if (isOpen && (!wasOpen || socioCambio)) {
+      if (socio) {
+        const parsedDir = parseAddress(socio.direccion || socio.calle || "");
+        reset({
+          cuit: socio.cuit,
+          nombre: socio.nombre,
+          participacion: socio.participacion,
+          email: socio.email,
+          celular: socio.celular || socio.telefono || "",
+          direccion: socio.direccion || "",
+          calle: socio.calle || parsedDir.calle || "",
+          numero: Number(socio.numero) || parsedDir.numero || 0,
+          piso: socio.piso || parsedDir.piso || "",
+          departamento: socio.departamento || parsedDir.departamento || "",
+          ciudad: socio.ciudad || "",
+          ciudadid: Number(socio.ciudadid) || 0,
+          provinciaid: String(socio.provinciaid || ""),
+          codpos: socio.codpos || "",
+        });
+      } else {
+        reset({
+          cuit: "",
+          nombre: "",
+          participacion: "",
+          email: "",
+          celular: "",
+          direccion: "",
+          calle: "",
+          numero: 0,
+          piso: "",
+          departamento: "",
+          ciudad: "",
+          ciudadid: 0,
+          provinciaid: "",
+          codpos: "",
+        });
       }
     }
 
@@ -308,48 +354,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     }
     setFilesChanged(false);
   }
-
-  useEffect(() => {
-    if (isOpen) {
-      if (socio) {
-        const parsedDir = parseAddress(socio.direccion || socio.calle || "");
-        reset({
-          cuit: socio.cuit,
-          nombre: socio.nombre,
-          participacion: socio.participacion,
-          email: socio.email,
-          celular: socio.celular || socio.telefono || "",
-          direccion: socio.direccion || "",
-          calle: socio.calle || parsedDir.calle || "",
-          numero: Number(socio.numero) || parsedDir.numero || 0,
-          piso: socio.piso || parsedDir.piso || "",
-          departamento: socio.departamento || parsedDir.departamento || "",
-          ciudad: socio.ciudad || "",
-          ciudadid: Number(socio.ciudadid) || 0,
-          provinciaid: String(socio.provinciaid || ""),
-          codpos: socio.codpos || "",
-        });
-      } else {
-        reset({
-          cuit: "",
-          nombre: "",
-          participacion: "",
-          email: "",
-          celular: "",
-          direccion: "",
-          calle: "",
-          numero: 0,
-          piso: "",
-          departamento: "",
-          ciudad: "",
-          ciudadid: 0,
-          provinciaid: "",
-          codpos: "",
-        });
-      }
-    }
-  }, [isOpen, socio, reset]);
-
 
   const handleAfipLookup = async () => {
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
@@ -760,15 +764,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     }
 
     const isValid = await trigger();
+    const domicilioValido = validarDomicilio();
 
-    if (!isValid || hasDropzoneErrors) return;
-
-    if (!validarDomicilio()) {
-      toast.error("Completá la ubicación antes de guardar.", {
-        description: "Calle, provincia y ciudad son obligatorias.",
-      });
-      return;
-    }
+    if (!isValid || hasDropzoneErrors || !domicilioValido) return;
 
     if (cdaRechazado) {
       toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {

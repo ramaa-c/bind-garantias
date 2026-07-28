@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { FaCheck } from "react-icons/fa";
-import { getPasswordScore } from "../../../utils/PasswordSeguro";
+import {
+  getPasswordScore,
+  precargarZxcvbn,
+} from "../../../utils/PasswordSeguro";
 import styles from "./InputPasswordSeguro.module.css";
 
 const REQUIREMENTS = [
@@ -33,7 +36,12 @@ export const InputPasswordSeguro = React.forwardRef(
   ) => {
     const generatedId = React.useId();
     const [showPassword, setShowPassword] = useState(false);
+    const [, setZxcvbnListo] = useState(false);
     const inputId = id || props.name || generatedId;
+
+    useEffect(() => {
+      precargarZxcvbn().then(() => setZxcvbnListo(true));
+    }, []);
 
     const getStrength = (pass) => {
       if (!pass) return { width: "0%", color: "transparent" };

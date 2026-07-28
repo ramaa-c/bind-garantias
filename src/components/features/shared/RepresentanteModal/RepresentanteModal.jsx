@@ -52,15 +52,6 @@ export function RepresentanteModal({
   const [cdaRechazado, setCdaRechazado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const [prevProps, setPrevProps] = useState({ isOpen, representante, representanteInicial });
-  if (isOpen !== prevProps.isOpen || representante !== prevProps.representante || representanteInicial !== prevProps.representanteInicial) {
-    setPrevProps({ isOpen, representante, representanteInicial });
-    if (isOpen) {
-      setAfipValidado(!!(representante || representanteInicial));
-      setCdaRechazado(false);
-      setShowConfirm(false);
-    }
-  }
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
@@ -85,6 +76,82 @@ export function RepresentanteModal({
       codpos: "",
     }
   });
+
+  // Reset de valores Y errores en el mismo pase de render que se detecta el
+  // cambio de props (en vez de en un useEffect aparte, que corre un render
+  // despues) - evita que se vea un frame con los datos/errores de la
+  // sesion anterior (ej. "El telefono es obligatorio") apenas se reabre el
+  // modal para cargar un tercero distinto.
+  const [prevProps, setPrevProps] = useState({ isOpen, representante, representanteInicial });
+  if (isOpen !== prevProps.isOpen || representante !== prevProps.representante || representanteInicial !== prevProps.representanteInicial) {
+    setPrevProps({ isOpen, representante, representanteInicial });
+    if (isOpen) {
+      setAfipValidado(!!(representante || representanteInicial));
+      setCdaRechazado(false);
+      setShowConfirm(false);
+
+      if (representante) {
+        // Legajo mode edit — ver useObtenerDatosSocioLegajo (useTerceros.js):
+        // arma el domicilio de representantes con el mismo mapeo que usa
+        // para accionistas (mismo tercero compartido), aunque este modal
+        // antes no lo mostrara.
+        const parsedDir = parseAddress(representante.direccion || representante.calle || "");
+        reset({
+          cuit: representante.cuit || "",
+          nombre: representante.nombre || "",
+          rol: representante.rolId === 230 ? "Representante Legal" : "Apoderado",
+          email: representante.email || "",
+          telefono: representante.telefono || "",
+          direccion: representante.direccion || "",
+          calle: representante.calle || parsedDir.calle || "",
+          numero: Number(representante.numero) || parsedDir.numero || 0,
+          piso: representante.piso || parsedDir.piso || "",
+          departamento: representante.departamento || parsedDir.departamento || "",
+          ciudad: representante.ciudad || "",
+          ciudadid: Number(representante.ciudadid) || 0,
+          provinciaid: String(representante.provinciaid || ""),
+          codpos: representante.codpos || "",
+        });
+      } else if (representanteInicial) {
+        // Form mode edit
+        const parsedDir = parseAddress(representanteInicial.direccion || representanteInicial.calle || "");
+        reset({
+          cuit: representanteInicial.cuit || "",
+          nombre: representanteInicial.nombre || "",
+          rol: representanteInicial.rol || "Representante Legal",
+          email: representanteInicial.email || "",
+          telefono: representanteInicial.celular || representanteInicial.telefono || "",
+          direccion: representanteInicial.direccion || "",
+          calle: representanteInicial.calle || parsedDir.calle || "",
+          numero: Number(representanteInicial.numero) || parsedDir.numero || 0,
+          piso: representanteInicial.piso || parsedDir.piso || "",
+          departamento: representanteInicial.departamento || parsedDir.departamento || "",
+          ciudad: representanteInicial.ciudad || "",
+          ciudadid: Number(representanteInicial.ciudadid) || 0,
+          provinciaid: String(representanteInicial.provinciaid || ""),
+          codpos: representanteInicial.codpos || "",
+        });
+      } else {
+        // Create mode (both)
+        reset({
+          cuit: "",
+          nombre: "",
+          rol: rolPorDefecto,
+          email: "",
+          telefono: "",
+          direccion: "",
+          calle: "",
+          numero: 0,
+          piso: "",
+          departamento: "",
+          ciudad: "",
+          ciudadid: 0,
+          provinciaid: "",
+          codpos: "",
+        });
+      }
+    }
+  }
 
   const cuitValue = useWatch({ control, name: "cuit" });
   const nombreValue = useWatch({ control, name: "nombre" });
@@ -129,74 +196,6 @@ export function RepresentanteModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cuitValue, clearErrors]);
-
-  useEffect(() => {
-    if (isOpen) {
-      if (representante) {
-        // Legajo mode edit — ver useObtenerDatosSocioLegajo (useTerceros.js):
-        // arma el domicilio de representantes con el mismo mapeo que usa
-        // para accionistas (mismo tercero compartido), aunque este modal
-        // antes no lo mostrara.
-        const parsedDir = parseAddress(representante.direccion || representante.calle || "");
-        reset({
-          cuit: representante.cuit || "",
-          nombre: representante.nombre || "",
-          rol: representante.rolId === 230 ? "Representante Legal" : "Apoderado",
-          email: representante.email || "",
-          telefono: representante.telefono || "",
-          direccion: representante.direccion || "",
-          calle: representante.calle || parsedDir.calle || "",
-          numero: Number(representante.numero) || parsedDir.numero || 0,
-          piso: representante.piso || parsedDir.piso || "",
-          departamento: representante.departamento || parsedDir.departamento || "",
-          ciudad: representante.ciudad || "",
-          ciudadid: Number(representante.ciudadid) || 0,
-          provinciaid: String(representante.provinciaid || ""),
-          codpos: representante.codpos || "",
-        });
-
-      } else if (representanteInicial) {
-        // Form mode edit
-        const parsedDir = parseAddress(representanteInicial.direccion || representanteInicial.calle || "");
-        reset({
-          cuit: representanteInicial.cuit || "",
-          nombre: representanteInicial.nombre || "",
-          rol: representanteInicial.rol || "Representante Legal",
-          email: representanteInicial.email || "",
-          telefono: representanteInicial.celular || representanteInicial.telefono || "",
-          direccion: representanteInicial.direccion || "",
-          calle: representanteInicial.calle || parsedDir.calle || "",
-          numero: Number(representanteInicial.numero) || parsedDir.numero || 0,
-          piso: representanteInicial.piso || parsedDir.piso || "",
-          departamento: representanteInicial.departamento || parsedDir.departamento || "",
-          ciudad: representanteInicial.ciudad || "",
-          ciudadid: Number(representanteInicial.ciudadid) || 0,
-          provinciaid: String(representanteInicial.provinciaid || ""),
-          codpos: representanteInicial.codpos || "",
-        });
-
-      } else {
-        // Create mode (both)
-        reset({
-          cuit: "",
-          nombre: "",
-          rol: rolPorDefecto,
-          email: "",
-          telefono: "",
-          direccion: "",
-          calle: "",
-          numero: 0,
-          piso: "",
-          departamento: "",
-          ciudad: "",
-          ciudadid: 0,
-          provinciaid: "",
-          codpos: "",
-        });
-      }
-    }
-  }, [isOpen, representante, representanteInicial, reset, rolPorDefecto]);
-
 
   const handleAfipLookup = async () => {
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
@@ -568,14 +567,8 @@ export function RepresentanteModal({
     }
 
     const isValid = await trigger();
-    if (!isValid) return;
-
-    if (!validarDomicilio()) {
-      toast.error("Completá la ubicación antes de guardar.", {
-        description: "Calle, provincia y ciudad son obligatorias.",
-      });
-      return;
-    }
+    const domicilioValido = validarDomicilio();
+    if (!isValid || !domicilioValido) return;
 
     if (cdaRechazado) {
       toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {
