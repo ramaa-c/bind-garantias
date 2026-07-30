@@ -10,12 +10,10 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(12px);
   cursor: pointer;
-  transition: transform 0.2s var(--ease-out, ease), border-color 0.2s ease,
-    box-shadow 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .container:hover {
-  transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.16);
 }
 
@@ -32,7 +30,7 @@
 
 .containerValid:hover {
   border-color: rgba(61, 220, 132, 0.4);
-  box-shadow: 0 8px 30px rgba(61, 220, 132, 0.16);
+  box-shadow: 0 4px 24px rgba(61, 220, 132, 0.08);
 }
 
 .containerInvalid {
@@ -43,7 +41,6 @@
 
 .containerInvalid:hover {
   border-color: rgba(245, 244, 0, 0.38);
-  box-shadow: 0 8px 30px rgba(245, 244, 0, 0.1);
   background: linear-gradient(135deg, rgba(30, 30, 30, 0.7) 0%, rgba(245, 244, 0, 0.05) 100%);
 }
 

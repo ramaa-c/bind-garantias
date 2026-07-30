@@ -29,6 +29,53 @@ const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
+// Criterio de contacto + domicilio + CUIT valido, compartido por las 3
+// personas del legajo (accionista, representante legal, apoderado).
+// `etiqueta` solo cambia el texto del error. El DNI frente/dorso queda
+// aparte (ver requiereDni): solo Accionista lo pide, porque es el unico de
+// los tres cuyo modal (SocioAccionistaModal) tiene forma de cargarlo -
+// Representante Legal y Apoderado no tienen esa seccion, asi que pedirselo
+// era un requisito imposible de cumplir.
+const validarContactoDomicilioYDni = (persona, archivosBackend, etiqueta, { requiereDni = true } = {}) => {
+  const errores = [];
+  const sEmail = persona.email || persona.mail || persona.Mail || "";
+  const sCel = persona.celular || persona.telefono || persona.Telefono || "";
+  const sDir = persona.direccion || persona.calle || "";
+  const sProv = persona.provincia || persona.provinciaid || "";
+
+  if (!sEmail || !sCel || !sDir || !sProv) {
+    errores.push(`El ${etiqueta} ${persona.nombre} tiene datos de contacto o domicilio incompletos.`);
+  }
+
+  const cuitLimpio = String(persona.cuit || "").replace(/\D/g, "");
+  if (!cuitLimpio) {
+    errores.push(`El ${etiqueta} ${persona.nombre} no posee CUIT válido.`);
+  } else if (requiereDni) {
+    const nombreNorm = normalizarTexto(persona.nombre);
+
+    const tieneDniFrente = archivosBackend.some((a) => {
+      if (a.tipodocumentoarchivoid !== 8) return false;
+      const descNorm = normalizarTexto(a.descripcion);
+      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+    });
+
+    const tieneDniDorso = archivosBackend.some((a) => {
+      if (a.tipodocumentoarchivoid !== 9) return false;
+      const descNorm = normalizarTexto(a.descripcion);
+      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+    });
+
+    if (!tieneDniFrente || !tieneDniDorso) {
+      const faltantes = [];
+      if (!tieneDniFrente) faltantes.push("DNI Frente");
+      if (!tieneDniDorso) faltantes.push("DNI Dorso");
+      errores.push(`El ${etiqueta} ${persona.nombre} no tiene cargado: ${faltantes.join(" y ")}.`);
+    }
+  }
+
+  return errores;
+};
+
 // En modo admin (EmpresaDetalle.jsx) no hay ni usuario logueado como cliente
 // ni :cadenaSlug en la ruta, así que socioIdActivo/tipoPersonaId/nombreEmpresa
 // y la cadena de valor se reciben ya resueltos (la cadena se detecta del
@@ -151,54 +198,12 @@ export const useValidacionLegajo = ({
           );
         }
 
-        // Validar datos de contacto y DNI para cada accionista
+        // Validar datos de contacto, domicilio, CUIT y DNI para cada accionista
         accionistas.forEach((socio) => {
-          const sEmail = socio.email || socio.mail || socio.Mail || "";
-          const sCel = socio.celular || socio.telefono || socio.Telefono || "";
-          const sDir = socio.direccion || socio.calle || "";
-          const sProv = socio.provincia || socio.provinciaid || "";
-
-          if (!sEmail || !sCel || !sDir || !sProv) {
+          const erroresSocio = validarContactoDomicilioYDni(socio, archivosBackend, "accionista");
+          if (erroresSocio.length > 0) {
             accionistasValidos = false;
-            erroresAccionistas.push(
-              `El accionista ${socio.nombre} tiene datos de contacto o domicilio incompletos.`
-            );
-          }
-
-          const cuitLimpio = String(socio.cuit || "").replace(/\D/g, "");
-          if (!cuitLimpio) {
-            accionistasValidos = false;
-            erroresAccionistas.push(`El accionista ${socio.nombre} no posee CUIT válido.`);
-          } else {
-            const nombreNorm = normalizarTexto(socio.nombre);
-
-            const tieneDniFrente = archivosBackend.some((a) => {
-              if (a.tipodocumentoarchivoid !== 8) return false;
-              const descNorm = normalizarTexto(a.descripcion);
-              return (
-                descNorm.includes(cuitLimpio) ||
-                (nombreNorm && descNorm.includes(nombreNorm))
-              );
-            });
-
-            const tieneDniDorso = archivosBackend.some((a) => {
-              if (a.tipodocumentoarchivoid !== 9) return false;
-              const descNorm = normalizarTexto(a.descripcion);
-              return (
-                descNorm.includes(cuitLimpio) ||
-                (nombreNorm && descNorm.includes(nombreNorm))
-              );
-            });
-
-            if (!tieneDniFrente || !tieneDniDorso) {
-              accionistasValidos = false;
-              const faltantes = [];
-              if (!tieneDniFrente) faltantes.push("DNI Frente");
-              if (!tieneDniDorso) faltantes.push("DNI Dorso");
-              erroresAccionistas.push(
-                `El accionista ${socio.nombre} no tiene cargado: ${faltantes.join(" y ")}.`
-              );
-            }
+            erroresAccionistas.push(...erroresSocio);
           }
         });
       }
@@ -229,14 +234,10 @@ export const useValidacionLegajo = ({
         erroresApoderados.push("Debe registrar al menos un Apoderado.");
       } else {
         apoderados.forEach((rep) => {
-          const sEmail = rep.email || rep.mail || rep.Mail || "";
-          const sCel = rep.celular || rep.telefono || rep.Telefono || "";
-
-          if (!sEmail || !sCel) {
+          const erroresRep = validarContactoDomicilioYDni(rep, archivosBackend, "apoderado", { requiereDni: false });
+          if (erroresRep.length > 0) {
             apoderadosValidos = false;
-            erroresApoderados.push(
-              `El apoderado ${rep.nombre} tiene datos de contacto incompletos.`
-            );
+            erroresApoderados.push(...erroresRep);
           }
         });
       }
@@ -266,14 +267,10 @@ export const useValidacionLegajo = ({
         erroresRepLegal.push("Debe registrar al menos un Representante Legal.");
       } else {
         representantesLegales.forEach((rep) => {
-          const sEmail = rep.email || rep.mail || rep.Mail || "";
-          const sCel = rep.celular || rep.telefono || rep.Telefono || "";
-
-          if (!sEmail || !sCel) {
+          const erroresRep = validarContactoDomicilioYDni(rep, archivosBackend, "representante legal", { requiereDni: false });
+          if (erroresRep.length > 0) {
             repLegalValidos = false;
-            erroresRepLegal.push(
-              `El representante legal ${rep.nombre} tiene datos de contacto incompletos.`
-            );
+            erroresRepLegal.push(...erroresRep);
           }
         });
       }

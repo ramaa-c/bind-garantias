@@ -2,9 +2,10 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle } from "react-icons/fi";
-import { useObtenerSocios } from "../../../hooks/useSocios";
+import { useObtenerSocios, useObtenerExecuteCda } from "../../../hooks/useSocios";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
+import { detectarCadenaValorId } from "../../../utils/executeCda";
 import styles from "./Empresas.module.css";
 
 // Filas más altas que antes (avatar + contacto en dos líneas): con 10
@@ -50,11 +51,22 @@ const EmpresaRowSkeleton = () => (
 );
 
 const EstadoBadge = ({ e }) => {
+  // Mismo criterio que EmpresaDetalle.jsx: sin esto, useValidacionLegajo
+  // nunca resuelve la cadena real de la empresa y cae al fallback genérico
+  // de useRequisitos (DEFAULT_SA_CONFIG/etc.), dando un total de requisitos
+  // distinto (y potencialmente incorrecto) al que se ve en el detalle.
+  const { data: ejecucionesCda } = useObtenerExecuteCda(e.socioid);
+  const cadenaValorIdDetectada = useMemo(
+    () => detectarCadenaValorId(ejecucionesCda),
+    [ejecucionesCda],
+  );
+
   const { requisitosCompletados, totalRequisitos, isLoading } = useValidacionLegajo({
     adminMode: true,
     socioIdActivo: e.socioid,
     tipoPersonaId: e.tipopersonaid,
     nombreEmpresa: e.denominacion,
+    cadenaId: cadenaValorIdDetectada,
   });
 
   const isMigrado = Number(e.legajo) > 0 || (!isLoading && totalRequisitos > 0 && requisitosCompletados === totalRequisitos);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   useForm,
   FormProvider,
@@ -17,7 +17,6 @@ import {
 import { BarraProgreso, BotonVolver } from "../../../../components/ui";
 import {
   Paso3Simulador,
-  Paso4Socios,
   Paso5Documentacion,
   Paso6Bolsa,
   Paso7Exito,
@@ -33,11 +32,10 @@ import { lineaService } from "../../../../services/lineaService";
 import { afipService } from "../../../../services/afipService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { catalogosService } from "../../../../services/catalogosService";
-import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 
-const STORAGE_KEY = "draft_alta_operacion";
+const STORAGE_KEY = "draft_alta_operacion_v2";
 
 const generarIdAleatorio = () => String(Math.floor(Math.random() * 9000) + 1000);
 
@@ -56,29 +54,12 @@ export const AltaOperacion = () => {
 
   const { requisitos } = useRequisitos(Number(cadenaSlug), tipoPersonaId ?? null, nombreEmpresa);
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
-
-  useEffect(() => {
-    if (requisitos?.relaciones?.accionistas === 0 && pasoActual === 1) {
-      setPasoActual(2);
-    }
-  }, [requisitos, pasoActual, setPasoActual]);
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
-  const [isLoadingAFIP, setIsLoadingAFIP] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [buscandoSocios, setBuscandoSocios] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [validandoAcceso, setValidandoAcceso] = useState(true);
-  const [archivosBackend, setArchivosBackend] = useState([]);
-
-  const handleContinuarSocios = async () => {
-    const sociosList = getValues("socios") || [];
-    if (sociosList.length === 0) {
-      toast.error("Debe declarar al menos un socio.");
-      return;
-    }
-    setPasoActual(2);
-  };
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -87,20 +68,6 @@ export const AltaOperacion = () => {
   }, []);
 
   const sociosPrecargadosRef = useRef(false);
-
-  useEffect(() => {
-    if (!socioIdActivo) return;
-    const cargarArchivosBackend = async () => {
-      try {
-        const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
-        const arr = Array.isArray(archivosExistentes) ? archivosExistentes : [];
-        setArchivosBackend(arr);
-      } catch (err) {
-        console.warn("No se pudieron cargar archivos del backend:", err);
-      }
-    };
-    cargarArchivosBackend();
-  }, [socioIdActivo]);
 
   useEffect(() => {
     if (isLoadingEmpresa) return;
@@ -186,11 +153,7 @@ export const AltaOperacion = () => {
     setMaxPasoAlcanzado((m) => Math.max(m, pasoActual));
   }, [pasoActual]);
 
-  const {
-    fields: socios,
-    append,
-    remove,
-  } = useFieldArray({
+  const { fields: socios } = useFieldArray({
     control,
     name: "socios",
   });
@@ -220,13 +183,6 @@ export const AltaOperacion = () => {
     }
 
     try {
-      try {
-        const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
-        setArchivosBackend(Array.isArray(archivosExistentes) ? archivosExistentes : []);
-      } catch (err) {
-        console.warn("No se pudieron recargar los archivos de DNI del backend:", err);
-      }
-
       let relacionesSGR = [];
       let relacionesLocal = [];
 
@@ -490,10 +446,6 @@ export const AltaOperacion = () => {
     }
   }, [socioIdActivo, resetKey]);
 
-  const handleVolver = () => {
-    setPasoActual((prev) => (prev === 1 ? 1 : prev - 1));
-  };
-
   const handleResetFlujoCompleto = () => {
     clearStorage();
     metodosFormulario.reset({
@@ -742,9 +694,9 @@ export const AltaOperacion = () => {
       await lineaService.crearLimiteSocio({ coleccionlinea: [payloadLimite] });
 
       if (cleanData.tipoProducto === "cheque") {
-        setPasoActual(5);
-      } else {
         setPasoActual(4);
+      } else {
+        setPasoActual(3);
       }
     } catch (error) {
       console.error("[ALTA OPERACION] Error en enviarSolicitud:", error);
@@ -802,33 +754,6 @@ export const AltaOperacion = () => {
     navigate(`/${channelInfo?.id}/solicitudes`, { state: { nuevaSolicitud } });
   };
 
-  const eliminarSocio = async (index) => {
-    const socioTarget = socios[index];
-    if (socioTarget.preloadedFromDb || socioTarget.relacion) {
-      try {
-        const ayer = new Date();
-        ayer.setDate(ayer.getDate() - 1);
-        const ayerStr = ayer.toISOString().split(".")[0];
-
-        const payload = {
-          ...socioTarget.relacion,
-          fechahasta: ayerStr,
-          FechaHasta: ayerStr,
-        };
-        await tercerosService.actualizarRelacionDeSocio(payload);
-        toast.success("Socio desvinculado del legajo.");
-      } catch (err) {
-        console.error("Error al desvincular socio:", err);
-        toast.error("Ocurrió un error al intentar desvincular al socio.");
-        return;
-      }
-    }
-    remove(index);
-    if (socios.length === 1) {
-      setValue("faseSocio", "ingresar_cuit");
-    }
-  };
-
   const toggleDoc = (seccion) => {
     setValue("docExpandido", docExpandido === seccion ? "" : seccion);
   };
@@ -836,20 +761,6 @@ export const AltaOperacion = () => {
   // ----- RENDERIZADO DINÁMICO DE PASOS -----
   const renderPasoDinamico = () => {
     if (pasoActual === 1) {
-      return (
-        <Paso4Socios
-          socios={socios}
-          eliminarSocio={eliminarSocio}
-          continuarAlProximoPaso={handleContinuarSocios}
-          socioIdActivo={socioIdActivo}
-          archivosBackend={archivosBackend}
-          cargarSociosDesdeDB={cargarSociosDesdeDB}
-          isLoading={isLoadingAFIP}
-        />
-      );
-    }
-
-    if (pasoActual === 2) {
       const IS_DLR = String(moneda) === "2";
 
       let opcionesProducto = [];
@@ -897,7 +808,7 @@ export const AltaOperacion = () => {
               setMostrarResultados(true);
             }
           }}
-          onContinuar={() => setPasoActual(3)}
+          onContinuar={() => setPasoActual(2)}
           onCancelar={() => setMostrarResultados(false)}
           opcionesMoneda={opcionesMoneda}
           opcionesProducto={opcionesProducto}
@@ -911,13 +822,13 @@ export const AltaOperacion = () => {
       );
     }
 
-    if (pasoActual === 3) {
+    if (pasoActual === 2) {
       return (
         <Paso5Documentacion
           docExpandido={docExpandido}
           toggleDoc={toggleDoc}
           socios={socios}
-          onVolverASocios={() => setPasoActual(2)}
+          onVolverASocios={() => setPasoActual(1)}
           avanzarPaso6={async () => {
             const ok = await trigger("emailFacturacion");
             const reps = getValues("representantes");
@@ -940,7 +851,7 @@ export const AltaOperacion = () => {
 
             if (ok && canAdvanceReps) {
               if (tipoProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
-                setPasoActual(4);
+                setPasoActual(3);
               } else if (tipoProducto === "cheque") {
                 handleSubmit(onSubmitFinalCheques, (errors) => {
                   console.error("Errores de validación del schema:", errors);
@@ -959,7 +870,7 @@ export const AltaOperacion = () => {
     }
 
     if (tipoProducto === "cheque") {
-      if (pasoActual === 4) {
+      if (pasoActual === 3) {
         return (
           <Paso6Bolsa
             avanzarConBolsa={async () => {
@@ -979,37 +890,14 @@ export const AltaOperacion = () => {
           />
         );
       }
-      if (pasoActual === 5)
+      if (pasoActual === 4)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     } else if (tipoProducto === "prestamo" || tipoProducto === "pagare") {
-      if (pasoActual === 4)
+      if (pasoActual === 3)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     }
 
     return null;
-  };
-
-  const renderBarraProgreso = () => {
-    if (pasoActual === 5 && tipoProducto === "cheque") return null;
-    if (
-      pasoActual === 4 &&
-      (tipoProducto === "prestamo" || tipoProducto === "pagare")
-    )
-      return null;
-
-    let hitos = ["ACCIONISTAS", "MONTOS", "DOCUMENTOS"];
-    let hitoActual = pasoActual - 1;
-
-    if (tipoProducto === "cheque") {
-      hitos = ["ACCIONISTAS", "MONTOS", "DOCUMENTOS", "BOLSA"];
-      hitoActual = pasoActual - 1;
-    }
-
-    return (
-      <nav className={styles.stepperNav}>
-        <BarraPills hitos={hitos} hitoActual={pasoActual} />
-      </nav>
-    );
   };
 
   const obtenerTextosCabecera = () => {
@@ -1017,28 +905,22 @@ export const AltaOperacion = () => {
       case 1:
         return {
           badge: "Alta de Línea",
-          t: "Declaración de Accionistas",
-          s: "Revisá y confirmá la composición accionaria.",
-        };
-      case 2:
-        return {
-          badge: "Alta de Línea",
           t: "Alta de Operación",
           s: "Seleccioná el tipo de operación y las condiciones.",
         };
-      case 3:
+      case 2:
         return {
           badge: "Alta de Línea",
           t: "Documentación Requerida",
           s: "Adjuntá los respaldos de la operación.",
         };
-      case 4:
+      case 3:
         return {
           badge: "Alta de Línea",
           t: "Sociedad de Bolsa",
           s: "Confirmá tu cuenta comitente.",
         };
-      case 5:
+      case 4:
         return {
           badge: "Alta de Línea",
           t: "Operación Confirmada",
@@ -1050,12 +932,9 @@ export const AltaOperacion = () => {
   };
 
   const stepToHitoMap = useMemo(() => {
-    const map = [];
-    if (requisitos?.relaciones?.accionistas !== 0) map.push(1);
-    map.push(2);
-    map.push(3);
+    const map = [1, 2];
     if (tipoProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
-      map.push(4);
+      map.push(3);
     }
     return map;
   }, [requisitos, tipoProducto]);
@@ -1085,12 +964,7 @@ export const AltaOperacion = () => {
   };
 
   const hitosVisuales = useMemo(() => {
-    const list = [];
-    if (requisitos?.relaciones?.accionistas !== 0) {
-      list.push("Accionistas");
-    }
-    list.push("Operación");
-    list.push("Documentos");
+    const list = ["Operación", "Documentos"];
     if (tipoProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
       list.push("Bolsa");
     }
@@ -1098,17 +972,17 @@ export const AltaOperacion = () => {
   }, [requisitos, tipoProducto]);
 
   const showHeaderYStepper =
-    !(pasoActual === 5 && tipoProducto === "cheque") &&
+    !(pasoActual === 4 && tipoProducto === "cheque") &&
     !(
-      pasoActual === 4 &&
+      pasoActual === 3 &&
       (tipoProducto === "prestamo" || tipoProducto === "pagare")
     );
 
   const mostrarBotonVolver =
     pasoActual > 1 &&
-    !(pasoActual === 5 && tipoProducto === "cheque") &&
+    !(pasoActual === 4 && tipoProducto === "cheque") &&
     !(
-      pasoActual === 4 &&
+      pasoActual === 3 &&
       (tipoProducto === "prestamo" || tipoProducto === "pagare")
     );
 
@@ -1150,7 +1024,7 @@ export const AltaOperacion = () => {
                   onStepClick={handleStepClickMapped}
                   onVolver={mostrarBotonVolver ? handleVolverMapped : null}
                   onVolverInicio={
-                    pasoActual === 1 || (requisitos?.relaciones?.accionistas === 0 && pasoActual === 2)
+                    pasoActual === 1
                       ? () => navigate(`/${channelInfo?.id}/solicitudes`)
                       : null
                   }

@@ -591,27 +591,50 @@ export function RepresentanteModal({
     try {
       const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
 
-      let terceroId = null;
+      // Si ya se sabe qué tercero se está editando, se usa ese ID directo
+      // en vez de volver a buscar por CUIT: si hay más de un tercero con el
+      // mismo CUIT (ej. un stub viejo que quedó sin vincular), la búsqueda
+      // por CUIT puede devolver uno DISTINTO al que la relación de este
+      // socio ya apunta — el PUT de abajo actualizaría ese otro registro, y
+      // la relación seguiría mostrando el de siempre: el guardado avisa
+      // éxito, pero los cambios nunca se ven al reabrir.
+      const idConocido =
+        representante?.id ||
+        (representanteInicial?.preloadedFromDb ? representanteInicial?.id : null);
+
+      let terceroId = idConocido || null;
       let terceroExistente = null;
-      try {
-        const existentes = await tercerosService.obtenerTerceros({
-          Cuit: cuitLimpio,
-        });
-        const arr = Array.isArray(existentes)
-          ? existentes
-          : existentes?.data || [];
-        if (arr.length > 0) {
-          terceroExistente = arr[0];
-          terceroId =
-            terceroExistente.tercerorelacionadoid ||
-            terceroExistente.TerceroRelacionadoID ||
-            terceroExistente.id;
+
+      if (terceroId) {
+        try {
+          terceroExistente = await tercerosService.obtenerTerceroPorId(terceroId);
+        } catch (err) {
+          console.warn(
+            "[RepresentanteModal] Error obteniendo tercero por ID conocido:",
+            err,
+          );
         }
-      } catch (err) {
-        console.warn(
-          "[RepresentanteModal] Error buscando tercero existente:",
-          err,
-        );
+      } else {
+        try {
+          const existentes = await tercerosService.obtenerTerceros({
+            Cuit: cuitLimpio,
+          });
+          const arr = Array.isArray(existentes)
+            ? existentes
+            : existentes?.data || [];
+          if (arr.length > 0) {
+            terceroExistente = arr[0];
+            terceroId =
+              terceroExistente.tercerorelacionadoid ||
+              terceroExistente.TerceroRelacionadoID ||
+              terceroExistente.id;
+          }
+        } catch (err) {
+          console.warn(
+            "[RepresentanteModal] Error buscando tercero existente:",
+            err,
+          );
+        }
       }
 
       // ⚠️ Este modal gestiona cuit/nombre/rol/email/teléfono/domicilio —
@@ -688,9 +711,9 @@ export function RepresentanteModal({
             ...(activeRel?.relacion || activeRel),
             tiporelacionsocioid: targetRolId,
             telefono: formData.telefono || "",
+            provinciaid: Number(formData.provinciaid) || 0,
             momento: ahora,
           };
-          delete payloadRel.provinciaid;
           delete payloadRel.ProvinciaID;
           await tercerosService.actualizarRelacionDeSocio(payloadRel);
           toast.success(`${etiquetaRol} actualizado correctamente.`);
@@ -714,6 +737,7 @@ export function RepresentanteModal({
                 default: "0",
                 subtiporelacionsocioid: 0,
                 telefono: formData.telefono || "",
+                provinciaid: Number(formData.provinciaid) || 0,
                 momento: ahora,
               },
             ],
