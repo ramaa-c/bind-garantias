@@ -789,22 +789,33 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     const mainToastId = toast.loading("Guardando datos del accionista...");
     try {
       const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
-      let terceroId = null;
-      try {
-        const existentes = await tercerosService.obtenerTerceros({
-          Cuit: cuitLimpio,
-        });
-        const arr = Array.isArray(existentes)
-          ? existentes
-          : existentes?.data || [];
-        if (arr.length > 0) {
-          terceroId =
-            arr[0].tercerorelacionadoid ||
-            arr[0].TerceroRelacionadoID ||
-            arr[0].id;
+
+      // Si ya se sabe qué tercero se está editando (socio.id, o el stub
+      // creado antes de validar el CDA), se usa ese ID directo en vez de
+      // volver a buscar por CUIT: si hay más de un tercero con el mismo
+      // CUIT, la búsqueda por CUIT puede devolver uno DISTINTO al que la
+      // relación de este socio ya apunta — el PUT de abajo actualizaría ese
+      // otro registro, y la relación seguiría apuntando al de siempre: el
+      // guardado avisa éxito, pero los cambios nunca se ven al reabrir.
+      let terceroId = socio?.id || stubIdsRef.current.terceroId || null;
+
+      if (!terceroId) {
+        try {
+          const existentes = await tercerosService.obtenerTerceros({
+            Cuit: cuitLimpio,
+          });
+          const arr = Array.isArray(existentes)
+            ? existentes
+            : existentes?.data || [];
+          if (arr.length > 0) {
+            terceroId =
+              arr[0].tercerorelacionadoid ||
+              arr[0].TerceroRelacionadoID ||
+              arr[0].id;
+          }
+        } catch (err) {
+          console.warn("[MODAL - ACCIONISTA] Error buscando tercero existente:", err);
         }
-      } catch (err) {
-        console.warn("[MODAL - ACCIONISTA] Error buscando tercero existente:", err);
       }
 
       const payloadTercero = {

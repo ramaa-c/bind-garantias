@@ -8,6 +8,8 @@ import {
   FiTrash2,
   FiMail,
   FiPhone,
+  FiMapPin,
+  FiAlertCircle,
 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { ApoderadoModal } from "../../../ApoderadoModal/ApoderadoModal";
@@ -16,7 +18,8 @@ import { Spinner } from "../../../../../ui/Spinner/Spinner";
 
 // Solo Apoderado (TipoRelacionSocioID 210) - aplica tanto a persona física
 // como jurídica. Representante Legal tiene su propia pestaña/sección (ver
-// RepresentantesSection).
+// RepresentantesSection). No pide DNI frente/dorso (a diferencia de
+// Accionistas): este modal no tiene forma de cargarlo, ver useValidacionLegajo.
 export function ApoderadosSection({
   loadingSocios,
   apoderados,
@@ -78,8 +81,22 @@ export function ApoderadosSection({
             </div>
           ) : (
             <div className={styles.sociosList}>
-              {apoderados.map((rep) => (
-                <div key={rep.id} className={styles.socioCard}>
+              {apoderados.map((rep) => {
+                const faltantes = [];
+                const sEmail = rep.email || rep.mail || rep.Mail || "";
+                const sCel = rep.celular || rep.telefono || rep.Telefono || "";
+                const sDir = rep.direccion || rep.calle || "";
+                const sProv = rep.provincia || rep.provinciaid || "";
+
+                if (!sEmail) faltantes.push("Email");
+                if (!sCel) faltantes.push("Teléfono");
+                if (!sDir || !sProv) faltantes.push("Domicilio completo");
+
+                const cuitLimpio = String(rep.cuit || "").replace(/\D/g, "");
+                if (!cuitLimpio) faltantes.push("CUIT válido");
+
+                return (
+                <div key={rep.id} className={`${styles.socioCard} ${faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
                   <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
@@ -88,6 +105,19 @@ export function ApoderadosSection({
                         setExpandedRep(expandedRep === rep.id ? null : rep.id)
                       }
                     >
+                      {faltantes.length > 0 && (
+                        <div className={styles.socioWarningWrapper}>
+                          <FiAlertCircle className={styles.socioWarningIcon} />
+                          <div className={styles.socioWarningTooltip}>
+                            <strong>Faltan datos obligatorios:</strong>
+                            <ul>
+                              {faltantes.map((f, i) => (
+                                <li key={i}>{f}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
                       <div className={styles.socioAvatar}>
                         <FiUser size={16} />
                       </div>
@@ -164,6 +194,20 @@ export function ApoderadosSection({
                           </div>
                         </div>
                       )}
+                      {rep.direccion && (
+                        <div className={styles.socioDetail}>
+                          <FiMapPin className={styles.socioDetailIcon} />
+                          <div>
+                            <span className={styles.socioDetailLabel}>
+                              Dirección
+                            </span>
+                            <span className={styles.socioDetailVal}>
+                              {rep.direccion}
+                              {rep.codpos ? ` (${rep.codpos})` : ""}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     {isAdmin && (
                       <TerceroCdaEstado
@@ -174,7 +218,8 @@ export function ApoderadosSection({
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

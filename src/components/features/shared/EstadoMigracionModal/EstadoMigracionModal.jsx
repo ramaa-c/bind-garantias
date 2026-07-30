@@ -72,7 +72,8 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
     requisitos,
     archivosBackend,
     accionistasCompletos,
-    representantesCompletos,
+    representanteLegalCompletos,
+    apoderadosCompletos,
     agentesBolsaCompletos,
     isLoading: cargandoValidacion,
   } = useValidacionLegajo();
@@ -101,17 +102,19 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   // Persona Física, ver SociosLegajo).
   const completitudPorTab = {
     accionistas: accionistasCompletos,
-    representantes: representantesCompletos,
+    representanteLegal: representanteLegalCompletos,
+    apoderados: apoderadosCompletos,
     agentesBolsa: agentesBolsaCompletos,
   };
   const legajoChecklist = ESTRUCTURA_SOCIOS.filter(
     (doc) =>
       doc.key !== "usuarios" &&
       requisitos?.relaciones?.[doc.key] === 1 &&
-      !(doc.key === "accionistas" && esPersonaFisica),
+      !(doc.key === "accionistas" && esPersonaFisica) &&
+      !(doc.key === "representanteLegal" && esPersonaFisica),
   ).map((doc) => ({
     key: doc.key,
-    label: doc.key === "representantes" && esPersonaFisica ? "Apoderado" : doc.title,
+    label: doc.title,
     done: !!completitudPorTab[doc.key],
   }));
 
