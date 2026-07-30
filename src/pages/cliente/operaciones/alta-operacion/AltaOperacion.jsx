@@ -183,6 +183,16 @@ export const AltaOperacion = () => {
     }
 
     try {
+      try {
+        const socioActual = await sociosService.obtenerSocioPorId(socioIdActivo);
+        const emailFact = socioActual?.emailfacturacion || "";
+        if (emailFact && !getValues("emailFacturacion")) {
+          setValue("emailFacturacion", emailFact);
+        }
+      } catch (err) {
+        console.warn("No se pudo obtener el email de facturación del socio:", err);
+      }
+
       let relacionesSGR = [];
       let relacionesLocal = [];
 
@@ -389,7 +399,9 @@ export const AltaOperacion = () => {
               if (cuit && (!cuitsRepsYaCargados.has(cuit) || force)) {
                 cuitsRepsYaCargados.add(cuit);
 
+                const calleRep = tercero.calle || tercero.Calle || "";
                 representantesCargados.push({
+                  id: terceroId,
                   cuit,
                   nombre:
                     tercero.denominacion ||
@@ -401,7 +413,19 @@ export const AltaOperacion = () => {
                   rol:
                     tiporelNum === 230 ? "Representante Legal" : "Apoderado",
                   email: tercero.mail || tercero.Mail || "",
-                  celular: tercero.telefono || tercero.Telefono || "",
+                  celular:
+                    tercero.telefono || tercero.Telefono || rel.telefono || "",
+                  direccion: calleRep || tercero.direccion || "",
+                  calle: calleRep,
+                  numero: tercero.numero || 0,
+                  piso: tercero.piso || "",
+                  departamento: tercero.departamento || "",
+                  ciudad: tercero.ciudad || "",
+                  ciudadid: tercero.ciudadid || 0,
+                  codpos: tercero.codpos || "",
+                  provinciaid: rel.provinciaid || tercero.provinciaid || "",
+                  preloadedFromDb: true,
+                  relacion: rel,
                 });
               }
             } else if (tiporelNum === 21) {
