@@ -687,6 +687,7 @@ export function RepresentanteModal({
       unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
       const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
       const targetRolId = rolFijo === "Apoderado" ? 210 : 230;
+      let relacionGuardada = null;
 
       // Direct Save to DB if socioIdActivo is present
       if (socioIdActivo) {
@@ -716,6 +717,7 @@ export function RepresentanteModal({
           };
           delete payloadRel.ProvinciaID;
           await tercerosService.actualizarRelacionDeSocio(payloadRel);
+          relacionGuardada = payloadRel;
           toast.success(`${etiquetaRol} actualizado correctamente.`);
         } else {
           const payloadRel = {
@@ -744,18 +746,51 @@ export function RepresentanteModal({
           };
           await tercerosService.guardarRelacionesDeSocio(payloadRel);
           toast.success(`${etiquetaRol} agregado correctamente.`);
+
+          // El POST no devuelve el sociotercerorelacionid asignado - se
+          // refresca una vez para poder identificar la relación recién
+          // creada en la próxima edición (ver onGuardar más abajo).
+          try {
+            const relacionesPost = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+            const arrRelPost = Array.isArray(relacionesPost) ? relacionesPost : relacionesPost?.data || [];
+            relacionGuardada = arrRelPost.find(
+              (r) =>
+                Number(r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID) === Number(terceroId) &&
+                [210, 230].includes(Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId)),
+            );
+          } catch (postRelErr) {
+            console.warn("[RepresentanteModal] No se pudo refrescar la relación recién creada:", postRelErr);
+          }
         }
       }
 
-      // If we are in Form Mode (Wizard), propagate to react-hook-form state
+      // If we are in Form Mode (Wizard), propagate to react-hook-form state.
+      // El payload incluye domicilio/id/relacion (no solo cuit/nombre/rol/
+      // email/celular) porque este objeto reemplaza por completo la entrada
+      // anterior en el field array del wizard (ver Paso5Documentacion /
+      // AltaOperacion) - si se omite acá, se pierde la ubicación cargada al
+      // reabrir el modal más tarde en la misma sesión, y `onConfirmSave`
+      // deja de poder distinguir "editar" de "crear" en la próxima vuelta
+      // (necesita `id` + `relacion.sociotercerorelacionid` para no duplicar
+      // la relación).
       if (onGuardar) {
         onGuardar({
+          id: terceroId,
           cuit: cuitLimpio,
           nombre: formData.nombre,
           rol: formData.rol,
           email: formData.email,
           celular: formData.telefono,
+          direccion: formData.direccion || formData.calle || "",
+          calle: formData.calle || "",
+          numero: Number(formData.numero) || 0,
+          piso: formData.piso || "",
+          departamento: formData.departamento || "",
+          ciudadid: Number(formData.ciudadid) || 0,
+          codpos: formData.codpos || "",
+          provinciaid: formData.provinciaid || "",
           preloadedFromDb: true,
+          relacion: relacionGuardada || undefined,
         });
       }
 

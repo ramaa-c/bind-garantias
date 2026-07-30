@@ -293,15 +293,15 @@
 }
 
 .tipo-juridica {
-  color: var(--color-azul-bind-300);
-  background: var(--color-azul-bind-bg);
-  border: 1px solid rgba(76, 101, 230, 0.25);
+  color: #b9a3f7;
+  background: rgba(147, 112, 219, 0.14);
+  border: 1px solid rgba(147, 112, 219, 0.3);
 }
 
 .tipo-fisica {
-  color: #c9d1d9;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #5eead4;
+  background: rgba(45, 212, 191, 0.14);
+  border: 1px solid rgba(45, 212, 191, 0.3);
 }
 
 .tipo-indefinido {

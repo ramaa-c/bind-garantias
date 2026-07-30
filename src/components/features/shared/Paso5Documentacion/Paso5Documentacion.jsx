@@ -410,50 +410,26 @@ export default function Paso5Documentacion({
   const isEmailFacturacionValido =
     !errorEmailFacturacion && emailFacturacionVal.trim() !== "";
 
-  // ── pill helpers ────────────────────────────────────────────────────────────
-  const pill = (done, warn) => {
-    if (done) return styles.pillDone;
-    if (warn) return styles.pillError;
-    return styles.pillPending;
-  };
+  const totalTareas = mostrarSeccionReps ? 3 : 2;
+  const tareasCompletas =
+    (docsEmpresaListos ? 1 : 0) +
+    (mostrarSeccionReps && representantes.length > 0 ? 1 : 0) +
+    (isEmailFacturacionValido ? 1 : 0);
+  const progresoPct = (tareasCompletas / totalTareas) * 100;
 
   return (
     <div className={styles.container}>
-      {/* HEADER ─────────────────────────────────────────────────────────────── */}
-      <div className={styles.header}>
-        <div className={styles.completionPills}>
-          <span
-            className={`${styles.pill} ${pill(docsEmpresaListos, intentoAvanzar)}`}
-          >
-            {docsEmpresaListos ? (
-              <FiCheckCircle size={11} />
-            ) : (
-              <FiAlertCircle size={11} />
-            )}
-            Documentos
-          </span>
-          {mostrarSeccionReps && (
-            <span
-              className={`${styles.pill} ${pill(representantes.length > 0, intentoAvanzar)}`}
-            >
-              {representantes.length > 0 ? (
-                <FiCheckCircle size={11} />
-              ) : (
-                <FiAlertCircle size={11} />
-              )}
-              Representantes
-            </span>
-          )}
-          <span
-            className={`${styles.pill} ${pill(isEmailFacturacionValido, intentoAvanzar && !isEmailFacturacionValido)}`}
-          >
-            {isEmailFacturacionValido ? (
-              <FiCheckCircle size={11} />
-            ) : (
-              <FiAlertCircle size={11} />
-            )}
-            Facturación
-          </span>
+      {/* PROGRESO ────────────────────────────────────────────────────────────── */}
+      <div className={styles.progressRow}>
+        <span className={styles.progressLabel}>
+          {tareasCompletas} de {totalTareas} completado
+          {tareasCompletas === 1 ? "" : "s"}
+        </span>
+        <div className={styles.progressTrack}>
+          <div
+            className={`${styles.progressFill} ${progresoPct === 100 ? styles.progressFillDone : ""}`}
+            style={{ transform: `scaleX(${progresoPct / 100})` }}
+          />
         </div>
       </div>
 
