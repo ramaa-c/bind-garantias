@@ -1,0 +1,76 @@
+/* --- LAYOUTS BASE --- */
+.base {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  font-family: var(--font-secundaria);
+}
+
+/* Formato Caja (Ancho completo) */
+.box {
+  background-color: rgba(255, 255, 255, 0.03);
+  padding: 15px 20px;
+  gap: 15px;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+/* Formato Píldora (Se adapta al contenido) */
+.pill {
+  display: inline-flex;
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 10px 15px;
+  gap: 10px;
+  width: auto;
+}
+
+/* --- VARIANTES DE COLOR (Bordes e Íconos) --- */
+/* Info / Default (Gris) */
+.default {
+  border-left: 3px solid #888;
+}
+.default .icon { color: #888; }
+.default .text { color: #bbb; }
+
+/* Destacado / Atención (Amarillo) */
+.warning {
+  border-left: 3px solid var(--yellow);
+}
+.warning .icon { color: var(--yellow); }
+.warning .text { color: #ccc; }
+
+/* Éxito (Verde) */
+.success {
+  border-left: 3px solid #4caf50;
+  background-color: rgba(76, 175, 80, 0.05);
+}
+.success .icon { color: #4caf50; }
+.success .text { color: #ccc; }
+
+/* Error (Rojo) */
+.error {
+  border-left: 3px solid #ff5252;
+  background-color: rgba(255, 82, 82, 0.05);
+}
+.error .icon { color: #ff5252; }
+.error .text { color: #ff5252; }
+
+/* --- TEXTOS E ÍCONOS --- */
+.icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.pill .icon {
+  font-size: 1.2rem;
+}
+
+.text {
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.pill .text {
+  font-size: 0.9rem;
+}

@@ -1,0 +1,248 @@
+/* ── OVERLAY ─────────────────────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 1rem;
+  animation: overlayIn 0.2s ease-out;
+}
+
+/* ── BOX ─────────────────────────────────────────────────────────────────────── */
+
+.modalBox {
+  background-color: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 1.125rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow:
+    inset 3px 0 0 rgba(245, 244, 0, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: modalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── HEADER ──────────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.375rem 1.5rem 1.125rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  background: linear-gradient(180deg,
+      rgba(245, 244, 0, 0.025) 0%,
+      transparent 100%);
+  flex-shrink: 0;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.title {
+  color: var(--white, #fffefe);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.025em;
+  line-height: 1.3;
+}
+
+.subtitle {
+  color: var(--text-muted, #666);
+  font-size: 0.8125rem;
+  margin: 0;
+  line-height: 1.45;
+}
+
+/* ── CLOSE BUTTON ────────────────────────────────────────────────────────────── */
+
+.closeButton {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #555;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.15s ease;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.closeButton:hover {
+  background: rgba(245, 244, 0, 0.08);
+  border-color: rgba(245, 244, 0, 0.25);
+  color: var(--color-amarillo-bind, #f5f400);
+  transform: scale(1.05);
+}
+
+.closeButton:active {
+  transform: scale(0.95);
+}
+
+/* Botón de cerrar flotante: se usa cuando el Modal no recibe title/subtitle
+   (ej. ConfirmacionModal, que arma su propio encabezado dentro del body) */
+.closeButtonFloating {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  color: #555;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.15s ease;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.closeButtonFloating:hover {
+  color: var(--white, #fffefe);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: scale(1.05);
+}
+
+.closeButtonFloating:active {
+  transform: scale(0.95);
+}
+
+/* ── BODY ────────────────────────────────────────────────────────────────────── */
+
+.body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.modalBox.allowOverflow,
+.body.allowOverflow {
+  overflow: visible !important;
+}
+
+/* Scrollbar refinado */
+.body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+}
+
+.body::-webkit-scrollbar-thumb:hover {
+  background: rgba(245, 244, 0, 0.25);
+}
+
+/* ── BLUE VARIANT ───────────────────────────────────────────────────────────── */
+
+.blueVariant {
+  /* El modal se porta a document.body (createPortal), fuera del árbol donde
+     .admin-theme define --scrollbar-thumb en azul. Se redefinen acá para que
+     cualquier scroll dentro del modal (el propio .body y los de componentes
+     hijos, ej. CdaPanel) hereden el azul en vez de caer al amarillo default. */
+  --scrollbar-thumb: rgba(59, 78, 209, 0.25);
+  --scrollbar-thumb-hover: rgba(59, 78, 209, 0.5);
+  background-color: #0d1117;
+  border-color: rgba(59, 78, 209, 0.2);
+  box-shadow:
+    inset 3px 0 0 rgba(59, 78, 209, 0.5),
+    0 0 0 1px rgba(59, 78, 209, 0.08),
+    0 24px 64px rgba(0, 0, 0, 0.6),
+    0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.blueVariant .header {
+  background: linear-gradient(180deg,
+      rgba(59, 78, 209, 0.06) 0%,
+      transparent 100%);
+  border-bottom-color: rgba(59, 78, 209, 0.12);
+}
+
+.blueVariant .closeButton:hover {
+  background: rgba(59, 78, 209, 0.1);
+  border-color: rgba(59, 78, 209, 0.35);
+  color: var(--color-azul-bind-400);
+}
+
+.blueVariant .body::-webkit-scrollbar-thumb {
+  background: rgba(59, 78, 209, 0.25);
+}
+
+.blueVariant .body::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 78, 209, 0.5);
+}
+
+/* ── CONFIRM VARIANT (usada por ConfirmacionModal) ─────────────────────────────
+   Sin la barra de acento lateral de las otras variantes: el color de marca lo
+   aporta el propio contenido (sello, líneas, botón), no el contenedor. */
+
+.confirmVariant {
+  background-color: #12141a;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* ── ANIMATIONS ──────────────────────────────────────────────────────────────── */
+
+@keyframes overlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

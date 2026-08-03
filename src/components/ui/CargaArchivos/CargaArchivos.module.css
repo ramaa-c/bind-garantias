@@ -1,0 +1,170 @@
+.box {
+  background: rgba(255, 255, 255, 0.015);
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 1rem;
+  padding: 25px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: 160px;
+  flex: 1;
+  box-sizing: border-box;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.box:hover {
+  border-color: var(--color-azul-bind, #4c65e6);
+  background: rgba(76, 101, 230, 0.03);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+}
+
+.dragging {
+  border-color: var(--yellow);
+  background-color: rgba(244, 245, 0, 0.05);
+  transform: scale(1.02);
+  box-shadow: 0 0 20px rgba(244, 245, 0, 0.1);
+}
+
+.icon {
+  font-size: 2.5rem;
+  color: #888;
+  margin-bottom: 10px;
+  transition: color 0.3s;
+  pointer-events: none;
+}
+
+.box:hover .icon {
+  color: var(--yellow);
+}
+
+.dragging .icon {
+  color: var(--yellow);
+}
+
+.text {
+  color: var(--white);
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  pointer-events: none;
+}
+
+.subtext {
+  color: #888;
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+/* --- ESTADO: ARCHIVO CARGADO --- */
+.loaded {
+  border: 2px solid rgba(61, 220, 132, 0.3);
+  background-color: rgba(61, 220, 132, 0.05);
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 25px 20px;
+}
+
+.loaded:hover {
+  transform: none;
+  border-color: var(--success-green, #3ddc84);
+  background-color: rgba(61, 220, 132, 0.08);
+}
+
+.loadedInfo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.loadedIcon {
+  font-size: 2rem;
+  color: var(--success-green, #3ddc84);
+  flex-shrink: 0;
+}
+
+.textGroup {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.filename {
+  color: var(--white);
+  font-weight: 500;
+  font-size: 0.95rem;
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filesize {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+/* --- ESTADO: ERROR --- */
+.error {
+  border-color: #ff5252;
+  background-color: rgba(255, 82, 82, 0.05);
+}
+
+.error .icon {
+  color: #ff5252;
+}
+
+.error:hover {
+  border-color: #ff5252;
+  background-color: rgba(255, 82, 82, 0.08);
+}
+
+.error:hover .icon {
+  color: #ff5252;
+}
+
+.actionsGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.lufeBadge {
+  background: rgba(76, 101, 230, 0.15);
+  border: 1px solid rgba(76, 101, 230, 0.3);
+  color: #a3b2f7;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+}
+
+.lufeBadgeIcon {
+  font-size: 0.78rem;
+  color: #a3b2f7;
+}

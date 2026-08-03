@@ -1,0 +1,6 @@
+.modalForm { display: flex; flex-direction: column; gap: 1.125rem; }
+.modalRow { display: grid; grid-template-columns: 1fr; gap: 0.875rem; }
+.modalRow2 { display: grid; grid-template-columns: 1fr; gap: 0.875rem; }
+.modalRow3 { display: grid; grid-template-columns: 1fr; gap: 0.875rem; }
+@media (min-width: 36rem) { .modalRow2 { grid-template-columns: repeat(2, 1fr); } .modalRow3 { grid-template-columns: 2fr 1fr 1fr; } }
+.modalFooter { display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1.25rem; border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 0.25rem; }

@@ -1,0 +1,334 @@
+/* ── BASE ────────────────────────────────────────────────────────────────────── */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  margin: -0.5rem;
+}
+
+/* ── HERO ────────────────────────────────────────────────────────────────────── */
+
+.hero {
+  padding: 1rem 1.75rem;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+}
+
+.heroTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.125rem;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tagSolicitud {
+  background: rgba(244, 245, 0, 0.1);
+  border: 0.5px solid rgba(244, 245, 0, 0.25);
+  color: #e8e900;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.tagId {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.25);
+  font-family: var(--font-mono, monospace);
+  letter-spacing: 0.03em;
+}
+
+/* BADGES DE ESTADO */
+
+.estadoBadge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 0.5px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.badgeGreen {
+  background: rgba(76, 175, 80, 0.1);
+  color: #66bb6a;
+  border-color: rgba(76, 175, 80, 0.25);
+}
+
+.badgeYellow {
+  background: rgba(244, 245, 0, 0.08);
+  color: #e8e900;
+  border-color: rgba(244, 245, 0, 0.2);
+}
+
+.badgeRed {
+  background: rgba(239, 83, 80, 0.1);
+  color: #ef5350;
+  border-color: rgba(239, 83, 80, 0.25);
+}
+
+.badgeGrey {
+  background: rgba(255, 255, 255, 0.06);
+  color: #888;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* NOMBRE Y CUIT */
+
+.empresaNombre {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  margin: 0 0 0.25rem;
+}
+
+.empresaCuit {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.25);
+  font-family: var(--font-mono, monospace);
+  margin: 0 0 1.25rem;
+}
+
+/* MÉTRICAS */
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.metric {
+  background: rgba(255, 255, 255, 0.03);
+  border: 0.5px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.metricLabel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.28);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.metricValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metricHighlight {
+  color: #e8e900;
+  font-size: 14px;
+}
+
+/* ALERTA */
+
+.alertBox {
+  margin-top: 1rem;
+  background: rgba(239, 83, 80, 0.06);
+  border: 0.5px solid rgba(239, 83, 80, 0.2);
+  border-left: 2px solid rgba(239, 83, 80, 0.5);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+}
+
+.alertTitle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ef5350;
+  margin-bottom: 6px;
+}
+
+.alertList {
+  margin: 0;
+  padding-left: 1.125rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.alertList li {
+  font-size: 12px;
+  color: rgba(239, 83, 80, 0.75);
+  line-height: 1.45;
+}
+
+/* ── SECCIÓN ─────────────────────────────────────────────────────────────────── */
+
+.section {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.875rem;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.countPill {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+/* ── FIADORES ────────────────────────────────────────────────────────────────── */
+
+.fiadoresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.fiadorCard {
+  background: rgba(255, 255, 255, 0.025);
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+
+.fiadorCard:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.fiadorAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(244, 245, 0, 0.07);
+  border: 0.5px solid rgba(244, 245, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e8e900;
+  flex-shrink: 0;
+}
+
+.fiadorInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.fiadorName {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fiadorPart {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.partBar {
+  height: 3px;
+  width: 40px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.partFill {
+  height: 100%;
+  background: #e8e900;
+  border-radius: 999px;
+  opacity: 0.7;
+}
+
+.emptyText {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.25);
+  margin: 0;
+}
+
+/* ── FOOTER ──────────────────────────────────────────────────────────────────── */
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.75rem;
+}
+
+.footerHint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.btnClose {
+  background: rgba(244, 245, 0, 0.9) !important;
+  color: #0e0e0e !important;
+  border: none !important;
+  border-radius: 999px !important;
+  padding: 9px 28px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  min-width: 9rem;
+  transition: opacity 0.15s, transform 0.1s !important;
+}
+
+.btnClose:hover {
+  opacity: 0.88 !important;
+}
+
+.btnClose:active {
+  transform: scale(0.97) !important;
+}

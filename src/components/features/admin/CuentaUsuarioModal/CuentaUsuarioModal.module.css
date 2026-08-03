@@ -1,0 +1,154 @@
+.modalBody {
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.identityCard {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1.25rem;
+  background: rgba(76, 101, 230, 0.06);
+  border: 1px solid rgba(76, 101, 230, 0.18);
+  border-radius: 0.75rem;
+}
+
+.identityAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(76, 101, 230, 0.15);
+  color: var(--color-azul-bind, #4c65e6);
+  border: 1px solid rgba(76, 101, 230, 0.3);
+  font-size: 1.25rem;
+}
+
+.identityEmail {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  word-break: break-all;
+}
+
+.identityRole {
+  margin: 0.1rem 0 0 0;
+  color: var(--color-azul-bind-400, #8a9fff);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.columnsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid rgba(59, 78, 209, 0.14);
+  border-radius: 0.85rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1.25rem;
+}
+
+.sectionGroup + .sectionGroup {
+  border-left: 1px solid rgba(59, 78, 209, 0.14);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.sectionTitle svg {
+  color: var(--color-azul-bind, #4c65e6);
+  font-size: 0.95rem;
+}
+
+.sectionHint {
+  margin: -0.35rem 0 0.15rem 0;
+  color: #8b949e;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  min-height: 2.1rem;
+}
+
+.sectionActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 0.65rem;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+@media (max-width: 720px) {
+  .columnsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionGroup + .sectionGroup {
+    border-left: none;
+    border-top: 1px solid rgba(59, 78, 209, 0.14);
+  }
+}
+
+.loadingWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 10rem;
+}
+
+.avisoNoDisponible {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  color: #8b949e;
+}
+
+.avisoNoDisponible svg {
+  font-size: 2rem;
+  color: #ea4a5a;
+}
+
+.avisoNoDisponible p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.modalFoot {
+  margin: 1.25rem -1.5rem -1.5rem -1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(59, 78, 209, 0.12);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+}

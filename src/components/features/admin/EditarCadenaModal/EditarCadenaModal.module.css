@@ -1,0 +1,134 @@
+.modalBody {
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.sectionTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(59, 78, 209, 0.12);
+  padding-bottom: 0.3rem;
+  margin: 0 0 0.1rem 0;
+}
+
+.inputsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.row {
+  display: flex;
+  gap: 1rem;
+}
+
+.logoSection {
+  margin-top: 0.75rem;
+}
+
+.modalLogoPreviewWrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1.25rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(59, 78, 209, 0.12);
+  border-radius: 0.75rem;
+}
+
+.btnRemoveLogo {
+  background: rgba(234, 74, 90, 0.12);
+  color: #ea4a5a;
+  border: 1px solid rgba(234, 74, 90, 0.25);
+  padding: 0.45rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btnRemoveLogo:hover {
+  background: #ea4a5a;
+  color: #ffffff;
+}
+
+.uploadZone {
+  border: 2px dashed rgba(59, 78, 209, 0.35);
+  border-radius: 0.75rem;
+  padding: 1.25rem 2rem;
+  text-align: center;
+  color: var(--color-azul-bind-400);
+  background: rgba(59, 78, 209, 0.03);
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+}
+
+.uploadZone:hover {
+  background: rgba(59, 78, 209, 0.08);
+  border-color: rgba(59, 78, 209, 0.8);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.uploadIcon {
+  font-size: 1.75rem;
+  color: rgba(59, 78, 209, 0.7);
+  transition: color 0.2s;
+}
+
+.uploadZone:hover .uploadIcon {
+  color: var(--yellow, #f5f400);
+}
+
+.modalFoot {
+  margin: 1.25rem -1.5rem -1.5rem -1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(59, 78, 209, 0.12);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.checkboxLabel {
+  color: #8b949e;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.checkboxInput {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: var(--color-azul-bind, #4c65e6);
+  cursor: pointer;
+}
+
+.compactInput {
+  padding-bottom: 0.2rem !important;
+}

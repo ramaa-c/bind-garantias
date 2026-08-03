@@ -1,0 +1,89 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--carbon-black);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+.globalLogo {
+  position: absolute;
+  top: 40px;
+  left: 50px;
+  z-index: 10;
+}
+
+.logoImg {
+  max-height: 70px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* --- Layout Split --- */
+.layoutSplit {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100vh;
+}
+
+@media (min-width: 900px) {
+  .layoutSplit {
+    grid-template-columns: 45% 55%;
+  }
+}
+
+/* --- Columna Izquierda (Formulario) --- */
+.sideForm {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: var(--carbon-black);
+  z-index: 2;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* --- Columna Derecha (Marca) --- */
+.sideBrand {
+  display: none;
+  background-color: var(--graphite);
+  background-image: radial-gradient(rgba(244, 245, 0, 0.08) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+  position: relative;
+}
+
+@media (min-width: 900px) {
+  .sideBrand {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 4rem;
+  }
+}
+
+.brandContent {
+  max-width: 500px;
+}
+
+.brandTitle {
+  font-size: 3rem;
+  color: var(--white);
+  line-height: 1.2;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+}
+
+.brandSubtitle {
+  font-size: 1.2rem;
+  color: #aaa;
+  line-height: 1.5;
+}

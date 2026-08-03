@@ -1,0 +1,19 @@
+.contenidoDudas {
+  display: flex;
+  flex-direction: column;
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.respuesta {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.6;
+  margin: 0;
+  padding-top: 0.25rem;
+  padding-bottom: 0.5rem;
+}

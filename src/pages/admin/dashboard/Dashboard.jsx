@@ -1,0 +1,869 @@
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList, FiGlobe, FiGrid, FiChevronRight } from "react-icons/fi";
+import { toast } from "sonner";
+import { Button } from "../../../components/ui/Button/Button";
+import { Badge } from "../../../components/ui/Badge/Badge";
+import { Modal } from "../../../components/ui/Modal/Modal";
+import { SinResultados } from "../../../components/ui/SinResultados/SinResultados";
+import { TarjetaMetrica } from "../../../components/ui/TarjetaMetrica/TarjetaMetrica";
+import { SelectSimple } from "../../../components/ui";
+import { SkeletonTable, Skeleton } from "../../../components/ui";
+import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
+import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
+import { CriteriosAceptacionModal } from "../../../components/features";
+import api from "../../../api/axios";
+import styles from "./Dashboard.module.css";
+
+const solicitudesIniciales = [
+  {
+    id: "16557",
+    tipo: "Alta de línea en John Deere",
+    monto: "100.000.000",
+    cliente: "COMERCIALIZADORA DE BIENES DE CAPITAL SA",
+    cuit: "30-59319937-8",
+    usuario: "30593199378@yopmail.com",
+    estado: "Pendiente de validación",
+    accionPendiente: "Espera de documentación de Alta de línea",
+    creado: "14/07/2025 20:08",
+    actualizado: "14/07/2025 20:31",
+    tags: ["TyC aceptados", "Legajo validado"],
+    cadenaSlug: "canal1",
+  },
+  {
+    id: "16546",
+    tipo: "Alta de línea en John Deere",
+    monto: "12.000.400",
+    cliente: "RAPTOR.MAX S.R.L.",
+    cuit: "30-71654889-5",
+    usuario: "30716548895@yopmail.com",
+    estado: "Pendiente de validación",
+    accionPendiente: "Espera de documentación de Alta de línea",
+    creado: "05/06/2025 11:31",
+    actualizado: "05/06/2025 11:41",
+    tags: ["TyC aceptados", "Legajo validado"],
+    cadenaSlug: "canal1",
+  },
+  {
+    id: "16540",
+    tipo: "Cheque Avalado BIND",
+    monto: "5.500.000",
+    cliente: "AGROPECUARIA DEL SUR S.A.",
+    cuit: "30-65432110-1",
+    usuario: "brunetti@yopmail.com",
+    estado: "Aprobada",
+    accionPendiente: "Lista para monetizar",
+    creado: "14/05/2025 12:08",
+    actualizado: "15/05/2025 18:21",
+    tags: ["Garantía Digital"],
+    cadenaSlug: "default",
+  },
+  {
+    id: "16538",
+    tipo: "Pagaré Bursátil USD",
+    monto: "250.000",
+    moneda: "U$D",
+    cliente: "TECH INNOVA S.R.L.",
+    cuit: "30-88776655-2",
+    usuario: "finanzas@techinnova.com",
+    estado: "Rechazada",
+    accionPendiente: "Falta de cupo crediticio",
+    creado: "10/05/2025 09:15",
+    actualizado: "11/05/2025 14:00",
+    tags: ["Requiere revisión"],
+    cadenaSlug: "default",
+  },
+];
+
+const opcionesEstado = [
+  { value: "todos", label: "Todos los estados" },
+  { value: "pendiente", label: "Pendiente" },
+  { value: "aprobada", label: "Aprobada" },
+  { value: "rechazada", label: "Rechazada" },
+];
+
+const opcionesOrden = [
+  { value: "desc", label: "Más Recientes (N° Desc)" },
+  { value: "asc", label: "Más Antiguas (N° Asc)" },
+];
+
+export default function Dashboard() {
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [orden, setOrden] = useState("desc");
+  const [selectedCadenaId, setSelectedCadenaId] = useState("all");
+
+  // Detalle Modal
+  const [solicitudDetalle, setSolicitudDetalle] = useState(null);
+  const [solicitudCda, setSolicitudCda] = useState(null);
+  const [isChainModalOpen, setIsChainModalOpen] = useState(false);
+  const [chainSearchQuery, setChainSearchQuery] = useState("");
+  const { isRestricted, cadenas } = useAdminRestrictions();
+  const { data: activeCadenas } = useObtenerTodasWeb();
+
+  const selectedChain = (activeCadenas || []).find(
+    (c) => String(c.cadenavalorid || c.CadenaValorID) === String(selectedCadenaId)
+  );
+
+  // Normalize restricted cadenas
+  const restrictedIds = new Set(
+    (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid)
+  );
+
+  const visibleCadenas = isRestricted
+    ? (activeCadenas || []).filter((c) => {
+        const id = c.cadenavalorid || c.CadenaValorID;
+        return restrictedIds.has(id);
+      })
+    : (activeCadenas || []);
+
+  const selectOptions = [
+    { value: "all", label: "Todas las cadenas de valor" },
+    ...visibleCadenas.map((c) => ({
+      value: String(c.cadenavalorid || c.CadenaValorID),
+      label: c.denominacion || `ID: ${c.cadenavalorid || c.CadenaValorID}`,
+    })),
+  ];
+
+  const cadenasKey = (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid).join(",");
+
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      try {
+        const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
+        
+        const params = {};
+        if (targetCadenaId > 0) {
+          params.CadenaValorID = targetCadenaId;
+        }
+
+        const resLimites = await api.get("api/TipoLimiteSocio", { params });
+        const listLimites = resLimites.data || [];
+
+        const resSocios = await api.get("api/Socios");
+        const listSocios = resSocios.data || [];
+
+        const sociosMap = new Map();
+        listSocios.forEach((s) => {
+          const socioId = s.socioid || s.SocioID;
+          if (socioId) sociosMap.set(socioId, s);
+        });
+
+        const matchedLimites = listLimites.filter((l) => {
+          const lCadenaId = l.cadenavalorid || l.CadenaValorID;
+          if (isRestricted && !restrictedIds.has(lCadenaId)) {
+            return false;
+          }
+          if (targetCadenaId > 0 && lCadenaId !== targetCadenaId) {
+            return false;
+          }
+          return true;
+        });
+
+        const mapped = matchedLimites.map((l) => {
+          const socioId = l.socioid || l.SocioID;
+          let socio = socioId ? sociosMap.get(socioId) : null;
+          if (!socio) {
+            socio = listSocios.find((s) => s.denominacion) || null;
+          }
+
+          const tipoLimiteEstadoId = l.tipolimiteestadoid || l.TipoLimiteEstadoID || 0;
+          const estadoText =
+            tipoLimiteEstadoId === 2
+              ? "Aprobada"
+              : tipoLimiteEstadoId === 3
+                ? "Rechazada"
+                : "Pendiente de validación";
+
+          const accionText =
+            tipoLimiteEstadoId === 2
+              ? "Aprobada por Administrador"
+              : tipoLimiteEstadoId === 3
+                ? "Rechazada por Administrador"
+                : "Espera de documentación de Alta de línea";
+
+          const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
+          const tipoText =
+            tipoLimiteId === 1
+              ? "Alta de línea (Cheque)"
+              : tipoLimiteId === 2
+                ? "Alta de línea (Préstamo)"
+                : "Alta de línea (Pagaré)";
+
+          const importeLimite = l.importelimite || l.ImporteLimite;
+          const monedaId = l.monedaid || l.MonedaID;
+          const fchVigenciaDesde = l.fchvigenciadesde || l.FchVigenciaDesde;
+          const fchVigenciaHasta = l.fchvigenciahasta || l.FchVigenciaHasta;
+          const tipoLimiteSocioId = l.tipolimitesocioid || l.TipoLimiteSocioID;
+
+          return {
+            id: tipoLimiteSocioId?.toString() || Math.random().toString(),
+            tipo: tipoText,
+            monto: importeLimite
+              ? new Intl.NumberFormat("es-AR").format(importeLimite)
+              : "0",
+            moneda: monedaId === 2 ? "U$D" : "$",
+            cliente: socio?.denominacion || "SANTA ANGELINA S.A.",
+            cuit: socio?.cuit || "30-68052476-5",
+            usuario: socio?.email || "pruebabind19@yopmail.com",
+            estado: estadoText,
+            accionPendiente: accionText,
+            creado: fchVigenciaDesde
+              ? new Date(fchVigenciaDesde).toLocaleString("es-AR")
+              : "Reciente",
+            actualizado: fchVigenciaHasta
+              ? new Date(fchVigenciaHasta).toLocaleString("es-AR")
+              : "Reciente",
+            tags: ["Canal Activo", "Legajo validado"],
+            cadenaSlug: "default",
+          };
+        });
+
+        setSolicitudes(mapped);
+      } catch (e) {
+        console.error("Error al cargar datos del dashboard de admin:", e);
+        toast.error("Error al cargar solicitudes reales.");
+        setSolicitudes(solicitudesIniciales);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [selectedCadenaId, isRestricted, cadenasKey]);
+
+  const solicitudesCanal = solicitudes;
+
+  const handleAceptar = (id) => {
+    setSolicitudes((prev) =>
+      prev.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              estado: "Aprobada",
+              accionPendiente: "Aprobada por Administrador",
+            }
+          : s,
+      ),
+    );
+    toast.success(`Solicitud N°${id} Aprobada exitosamente`, {
+      description: "Los fondos o cupos han sido habilitados para el cliente.",
+    });
+  };
+
+  const handleRechazar = (id) => {
+    setSolicitudes((prev) =>
+      prev.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              estado: "Rechazada",
+              accionPendiente: "Rechazada por Administrador",
+            }
+          : s,
+      ),
+    );
+    toast.error(`Solicitud N°${id} Rechazada`, {
+      description: "Se ha notificado al cliente el rechazo de la operación.",
+    });
+  };
+
+  const filtradas = solicitudesCanal
+    .filter((s) => {
+      const matchTexto =
+        s.cliente.toLowerCase().includes(busqueda.toLowerCase()) ||
+        s.cuit.includes(busqueda) ||
+        s.id.includes(busqueda) ||
+        s.usuario.toLowerCase().includes(busqueda.toLowerCase());
+
+      if (filtroEstado === "todos") return matchTexto;
+      return (
+        matchTexto &&
+        s.estado.toLowerCase().includes(filtroEstado.toLowerCase())
+      );
+    })
+    .sort((a, b) => {
+      if (orden === "desc") return b.id.localeCompare(a.id);
+      return a.id.localeCompare(b.id);
+    });
+
+  const totalMonto = solicitudesCanal.reduce((acc, curr) => {
+    const val = parseFloat(curr.monto.replace(/\./g, "")) || 0;
+    return acc + (curr.moneda === "U$D" ? val * 1500 : val);
+  }, 0);
+
+  return (
+    <div className={styles.dashboardContainer}>
+      {/* Header and top KPI widgets */}
+      <div className={styles.headerTitle}>
+        <div>
+          <h1>Panel General de Control</h1>
+          <p>
+            Supervisión global de todas las líneas y solicitudes activas en el
+            sistema.
+          </p>
+        </div>
+      </div>
+
+      <div className={styles.topSectionSplit}>
+        {/* Left Column: Selected Chain Card */}
+        <div className={styles.selectedChainCardContainer}>
+          {loading ? (
+            <div className={styles.chainSelectorCard}>
+              <div className={styles.chainCardHeader}>
+                <Skeleton width="48px" height="48px" radius="0.625rem" />
+                <div style={{ flex: 1 }}>
+                  <Skeleton height="1.1875rem" width="60%" style={{ marginBottom: '0.15rem' }} />
+                  <Skeleton height="0.8rem" width="40%" style={{ marginTop: '0.2rem' }} />
+                </div>
+              </div>
+              <div>
+                <Skeleton height="0.8375rem" width="90%" style={{ marginBottom: '0.4rem' }} />
+                <Skeleton height="0.8375rem" width="70%" />
+              </div>
+              <div className={styles.btnRow}>
+                <Skeleton height="32px" width="120px" radius="6px" />
+              </div>
+            </div>
+          ) : selectedCadenaId === "all" ? (
+            <div className={`${styles.chainSelectorCard} ${styles.globalConsolidatedCard}`}>
+              <div className={styles.chainCardHeader}>
+                <div className={styles.globalIconWrapper}>
+                  <FiGlobe size={24} />
+                </div>
+                <div>
+                  <h2 className={styles.chainCardTitle}>Consolidado General</h2>
+                  <p className={styles.chainCardSubtitle}>Todas las Cadenas de Valor</p>
+                </div>
+              </div>
+              <p className={styles.chainCardDescription}>
+                Supervisando solicitudes de todas las cadenas comerciales activas en el portal.
+              </p>
+              <Button
+                onClick={() => {
+                  setChainSearchQuery("");
+                  setIsChainModalOpen(true);
+                }}
+                variant="blue"
+                size="sm"
+                className={styles.changeChainBtn}
+              >
+                Seleccionar Cadena <FiChevronRight />
+              </Button>
+            </div>
+          ) : (
+            <div className={styles.chainSelectorCard}>
+              <div className={styles.chainCardHeader}>
+                {selectedChain?.logo ? (
+                  <div className={styles.selectedChainLogoWrapper}>
+                    <img
+                      src={
+                        selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
+                          ? selectedChain.logo
+                          : `data:image/png;base64,${selectedChain.logo}`
+                      }
+                      alt={selectedChain.denominacion}
+                      className={styles.selectedChainLogo}
+                    />
+                  </div>
+                ) : (
+                  <div className={styles.globalIconWrapper}>
+                    <FiGrid size={24} />
+                  </div>
+                )}
+                <div>
+                  <h2 className={styles.chainCardTitle}>{selectedChain?.denominacion || "Cargando..."}</h2>
+                  <p className={styles.chainCardSubtitle}>Referencia: {selectedChain?.referencia || "Sin Ref"}</p>
+                </div>
+              </div>
+              <p className={styles.chainCardDescription}>
+                Visualizando solicitudes de la cadena comercial seleccionada. ID: #{selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}.
+              </p>
+              <div className={styles.btnRow}>
+                <Button
+                  onClick={() => {
+                    setChainSearchQuery("");
+                    setIsChainModalOpen(true);
+                  }}
+                  variant="outlineBlue"
+                  size="sm"
+                  className={styles.changeChainBtn}
+                >
+                  Cambiar Cadena <FiChevronRight />
+                </Button>
+                <Button
+                  onClick={() => setSelectedCadenaId("all")}
+                  variant="ghost"
+                  size="sm"
+                  className={styles.viewAllBtn}
+                >
+                  Ver Todas
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Compact Metrics Grid (2x2) */}
+        <div className={styles.compactMetricsGrid}>
+          <TarjetaMetrica
+            className={styles.kpiCardCompact}
+            labelClassName={styles.kpiLabelCompact}
+            valueClassName={styles.kpiValueCompact}
+            icon={FiBriefcase}
+            label="Líneas"
+            value={solicitudesCanal.length}
+            isLoading={loading}
+          />
+          <TarjetaMetrica
+            className={styles.kpiCardCompact}
+            labelClassName={styles.kpiLabelCompact}
+            valueClassName={styles.kpiValueCompact}
+            icon={FiTrendingUp}
+            label="Volumen"
+            value={`$ ${(totalMonto / 1000000).toFixed(1)}M`}
+            isLoading={loading}
+          />
+          <TarjetaMetrica
+            className={styles.kpiCardCompact}
+            labelClassName={styles.kpiLabelCompact}
+            valueClassName={styles.kpiValueWarningCompact}
+            icon={FiClock}
+            label="Pendientes"
+            value={solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length}
+            isLoading={loading}
+          />
+          <TarjetaMetrica
+            className={styles.kpiCardCompact}
+            labelClassName={styles.kpiLabelCompact}
+            valueClassName={styles.kpiValueSuccessCompact}
+            icon={FiCheckCircle}
+            label="Aprobadas"
+            value={solicitudesCanal.filter((s) => s.estado === "Aprobada").length}
+            isLoading={loading}
+          />
+        </div>
+      </div>
+
+      {/* Controls & Filter toolbar */}
+      <div className={styles.toolbarCard}>
+        <div className={styles.searchWrap}>
+          <FiSearch className={styles.iconSearch} />
+          <input
+            type="text"
+            placeholder="Buscar por Cliente, CUIT, Usuario o N° Solicitud..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className={styles.inputSearch}
+          />
+        </div>
+
+        <div className={styles.filtersGroup}>
+          <div className={styles.customSelectWrapper}>
+            <SelectSimple
+              label="Estado"
+              value={filtroEstado}
+              onChange={setFiltroEstado}
+              options={opcionesEstado}
+              placeholder="Estado"
+              isSearchable={false}
+              hideErrorSpace
+              size="sm"
+            />
+          </div>
+
+          <div className={styles.customSelectWrapper}>
+            <SelectSimple
+              label="Orden"
+              value={orden}
+              onChange={setOrden}
+              options={opcionesOrden}
+              placeholder="Orden"
+              isSearchable={false}
+              hideErrorSpace
+              size="sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Main Operations List mimicking user screenshot */}
+      <div className={styles.listWrapper}>
+        {loading ? (
+          <SkeletonTable rows={4} />
+        ) : filtradas.length === 0 ? (
+          <SinResultados
+            className={styles.emptyState}
+            message="No se encontraron solicitudes que coincidan con los criterios de búsqueda."
+          />
+        ) : (
+          filtradas.map((item) => {
+            const isAprobada = item.estado === "Aprobada";
+            const isRechazada = item.estado === "Rechazada";
+            const isPendiente = !isAprobada && !isRechazada;
+
+            return (
+              <div
+                key={item.id}
+                className={`${styles.itemRow} ${
+                  isAprobada
+                    ? styles.rowApproved
+                    : isRechazada
+                      ? styles.rowRejected
+                      : styles.rowPending
+                }`}
+              >
+                <div className={styles.rowMain}>
+                  {/* Left Column: Data Info */}
+                  <div className={styles.infoCol}>
+                    <div className={styles.rowHeaderInfo}>
+                      <span className={styles.tipoText}>{item.tipo}</span>
+                      <div className={styles.tagsWrap}>
+                        {item.tags?.map((t) => {
+                          const lowerT = t.toLowerCase();
+                          let tagStyle = styles.tagBadge;
+                          if (lowerT.includes("activo") || lowerT.includes("validado") || lowerT.includes("aceptados")) {
+                            tagStyle = `${styles.tagBadge} ${styles.tagSuccess}`;
+                          } else if (lowerT.includes("pendiente") || lowerT.includes("revisión")) {
+                            tagStyle = `${styles.tagBadge} ${styles.tagWarning}`;
+                          } else if (lowerT.includes("nuevo")) {
+                            tagStyle = `${styles.tagBadge} ${styles.tagInfo}`;
+                          }
+                          
+                          return (
+                            <Badge key={t} className={tagStyle}>
+                              {t}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <h2 className={styles.solicitudHeading}>
+                      Solicitud N°{item.id} por{" "}
+                      <span className={styles.montoHighlight}>
+                        {item.moneda || "$"} {item.monto}
+                      </span>
+                    </h2>
+
+                    <div className={styles.detailsGrid}>
+                      <div>
+                        <span className={styles.detailLabel}>Cliente:</span>{" "}
+                        <span className={styles.detailStrong}>
+                          {item.cliente} ({item.cuit})
+                        </span>
+                      </div>
+                      <div>
+                        <span className={styles.detailLabel}>Usuario:</span>{" "}
+                        <span className={styles.detailText}>
+                          {item.usuario}
+                        </span>
+                      </div>
+                      <div>
+                        <span className={styles.detailLabel}>Estado:</span>{" "}
+                        <Badge
+                          className={`${styles.statusPill} ${
+                            isAprobada
+                              ? styles.pillApproved
+                              : isRechazada
+                                ? styles.pillRejected
+                                : styles.pillPending
+                          }`}
+                        >
+                          {item.estado}
+                        </Badge>
+                      </div>
+                      <div className={styles.fullSpan}>
+                        <span className={styles.detailLabel}>
+                          Acción pendiente:
+                        </span>{" "}
+                        <span className={styles.actionHighlight}>
+                          {item.accionPendiente}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Actions & Timestamps */}
+                  <div className={styles.actionCol}>
+                    <div className={styles.timestamps}>
+                      <div>Creado: {item.creado}</div>
+                      <div>Actualizado: {item.actualizado}</div>
+                    </div>
+
+                    <div className={styles.buttonsWrap}>
+                      {isRestricted ? (
+                        <>
+                          <Button
+                            onClick={() => setSolicitudCda(item)}
+                            variant="outlineBlue"
+                            size="sm"
+                            className={styles.btnCdaCustom}
+                          >
+                            <FiList /> CRITERIOS
+                          </Button>
+                          <Button
+                            onClick={() => setSolicitudDetalle(item)}
+                            variant="ghost"
+                            size="sm"
+                            className={styles.btnDetailCustom}
+                          >
+                            <FiEye /> VER DETALLE
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          {isPendiente && (
+                            <div className={styles.quickDecisions}>
+                              <Button
+                                onClick={() => handleAceptar(item.id)}
+                                variant="success"
+                                size="xs"
+                                className={styles.btnAcceptCustom}
+                                title="Aprobar Solicitud"
+                              >
+                                <FiCheck /> ACEPTAR
+                              </Button>
+                              <Button
+                                onClick={() => handleRechazar(item.id)}
+                                variant="danger"
+                                size="xs"
+                                className={styles.btnRejectCustom}
+                                title="Rechazar Solicitud"
+                              >
+                                <FiX /> RECHAZAR
+                              </Button>
+                            </div>
+                          )}
+
+                          <Button
+                            onClick={() => {
+                              toast.info(
+                                `Continuando flujo de gestión N°${item.id}`,
+                              );
+                            }}
+                            variant="outlineBlue"
+                            size="sm"
+                            className={styles.btnContinueCustom}
+                          >
+                            CONTINUAR <FiArrowRight />
+                          </Button>
+
+                          <Button
+                            onClick={() => setSolicitudDetalle(item)}
+                            variant="ghost"
+                            size="sm"
+                            className={styles.btnDetailCustom}
+                          >
+                            <FiEye /> VER DETALLE
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Mock Detail Modal */}
+      <Modal
+        isOpen={!!solicitudDetalle}
+        onClose={() => setSolicitudDetalle(null)}
+        title="DETALLE DE SOLICITUD"
+        maxWidth="40rem"
+        variant="blue"
+      >
+        {solicitudDetalle && (
+          <>
+            <div className={styles.modalBodyCustom}>
+              {/* Solicitud Hero Card */}
+              <div className={styles.solicitudHeroCard}>
+                <div className={styles.solicitudAvatar}>
+                  <FiFileText size={20} />
+                </div>
+                <div className={styles.solicitudHeaderDetails}>
+                  <div className={styles.solicitudMeta}>
+                    <span className={styles.solicitudNumber}>SOLICITUD N°{solicitudDetalle.id}</span>
+                    <span className={`${styles.solicitudStatusBadge} ${
+                      solicitudDetalle.estado === "Aprobada" ? styles.badgeAproved :
+                      solicitudDetalle.estado === "Rechazada" ? styles.badgeRejected : styles.badgePending
+                    }`}>
+                      {solicitudDetalle.estado}
+                    </span>
+                  </div>
+                  <h3 className={styles.solicitudProduct}>{solicitudDetalle.tipo}</h3>
+                </div>
+                <div className={styles.solicitudAmount}>
+                  <span className={styles.amountLabel}>Monto Solicitado</span>
+                  <strong className={styles.amountValue}>
+                    {solicitudDetalle.moneda || "$"} {solicitudDetalle.monto}
+                  </strong>
+                </div>
+              </div>
+
+              {/* Grid with 2 columns */}
+              <div className={styles.detailsGridSplit}>
+                <div className={styles.detailsBlock}>
+                  <h4 className={styles.detailsBlockTitle}>Datos del Solicitante</h4>
+                  <div className={styles.detailFields}>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>Razón Social</span>
+                      <span className={styles.fieldValue}>{solicitudDetalle.cliente}</span>
+                    </div>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>CUIT / Identificador</span>
+                      <span className={styles.fieldValue}>{solicitudDetalle.cuit}</span>
+                    </div>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>Email Operador</span>
+                      <span className={styles.fieldValue}>{solicitudDetalle.usuario}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className={styles.detailsBlock}>
+                  <h4 className={styles.detailsBlockTitle}>Detalle de la Operación</h4>
+                  <div className={styles.detailFields}>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>Línea / Producto</span>
+                      <span className={styles.fieldValue}>{solicitudDetalle.tipo}</span>
+                    </div>
+                    <div className={styles.detailField}>
+                      <span className={styles.fieldLabel}>Último Hito de Control</span>
+                      <span className={styles.fieldValueHighlight}>{solicitudDetalle.accionPendiente}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom metadata banner */}
+              <div className={styles.trazabilidadBanner}>
+                <div className={styles.trazabilidadItem}>
+                  <span className={styles.trazabilidadLabel}>Carga Inicial:</span>
+                  <span className={styles.trazabilidadValue}>{solicitudDetalle.creado}</span>
+                </div>
+                <div className={styles.trazabilidadItem}>
+                  <span className={styles.trazabilidadLabel}>Última Modificación:</span>
+                  <span className={styles.trazabilidadValue}>{solicitudDetalle.actualizado}</span>
+                </div>
+                <div className={styles.trazabilidadItem}>
+                  <span className={styles.trazabilidadLabel}>Canal Origen:</span>
+                  <span className={styles.trazabilidadValue}>BIND Garantías Portal Web</span>
+                </div>
+              </div>
+            </div>
+            <div className={styles.modalFootCustom}>
+              <Button
+                variant="outlineBlue"
+                size="sm"
+                onClick={() => setSolicitudDetalle(null)}
+              >
+                Cerrar
+              </Button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      <CriteriosAceptacionModal
+        isOpen={!!solicitudCda}
+        onClose={() => setSolicitudCda(null)}
+        solicitud={solicitudCda}
+      />
+
+      {/* Value Chain Selection Modal */}
+      <Modal
+        isOpen={isChainModalOpen}
+        onClose={() => setIsChainModalOpen(false)}
+        title="SELECCIONAR CADENA DE VALOR"
+        maxWidth="50rem"
+        variant="blue"
+      >
+        <div className={styles.modalChainContent}>
+          <div className={styles.modalSearchWrap}>
+            <FiSearch className={styles.iconSearchModal} />
+            <input
+              type="text"
+              placeholder="Buscar cadena por denominación o referencia..."
+              value={chainSearchQuery}
+              onChange={(e) => setChainSearchQuery(e.target.value)}
+              className={styles.modalSearchInput}
+            />
+          </div>
+
+          <div className={styles.chainGridModal}>
+            {/* Option: All Chains */}
+            <div
+              className={`${styles.chainCardModal} ${selectedCadenaId === "all" ? styles.chainCardActive : ""}`}
+              onClick={() => {
+                setSelectedCadenaId("all");
+                setIsChainModalOpen(false);
+              }}
+            >
+              <div className={styles.chainCardLogo}>
+                <FiGlobe size={28} />
+              </div>
+              <div className={styles.chainCardModalInfo}>
+                <h3>Todas las cadenas</h3>
+                <p>Consolidado General de solicitudes</p>
+              </div>
+            </div>
+
+            {/* Filter and map visible chains */}
+            {visibleCadenas
+              .filter((c) => {
+                const denom = (c.denominacion || "").toLowerCase();
+                const ref = (c.referencia || "").toLowerCase();
+                const q = chainSearchQuery.toLowerCase();
+                return denom.includes(q) || ref.includes(q);
+              })
+              .map((c) => {
+                const id = String(c.cadenavalorid || c.CadenaValorID);
+                const isSelected = String(selectedCadenaId) === id;
+                return (
+                  <div
+                    key={id}
+                    className={`${styles.chainCardModal} ${isSelected ? styles.chainCardActive : ""}`}
+                    onClick={() => {
+                      setSelectedCadenaId(id);
+                      setIsChainModalOpen(false);
+                    }}
+                  >
+                    <div className={styles.chainCardLogo}>
+                      {c.logo ? (
+                        <img
+                          src={
+                            c.logo.startsWith("data:") || c.logo.startsWith("http")
+                              ? c.logo
+                              : `data:image/png;base64,${c.logo}`
+                          }
+                          alt={c.denominacion}
+                        />
+                      ) : (
+                        <FiGrid size={28} />
+                      )}
+                    </div>
+                    <div className={styles.chainCardModalInfo}>
+                      <h3>{c.denominacion}</h3>
+                      <p>{c.referencia || `ID: #${id}`}</p>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+        <div className={styles.modalFootCustom}>
+          <Button variant="outlineBlue" size="sm" onClick={() => setIsChainModalOpen(false)}>
+            Cancelar
+          </Button>
+        </div>
+      </Modal>
+    </div>
+  );
+}

@@ -1,0 +1,375 @@
+.container {
+  width: 18rem;
+  background: var(--carbon-black, #1a1a1a);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  transform: translateX(-100%);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.open {
+  transform: translateX(0);
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 1.25rem;
+  min-height: 4.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.logosWrapper {
+  display: none;
+}
+
+.logo {
+  display: none;
+  height: 2.25rem;
+  width: auto;
+  opacity: 1;
+}
+
+.closeButton {
+  background: rgba(255, 255, 255, 0.05);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  cursor: pointer;
+  color: var(--white);
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.closeIcon {
+  font-size: 1.25rem;
+}
+
+.scrollArea {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.scrollArea::-webkit-scrollbar {
+  display: none;
+}
+
+.companyCard {
+  margin: 1.5rem 1.25rem 0.5rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.companyAvatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  background: var(--yellow, #f4f500);
+  color: #000;
+  font-weight: 800;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6rem;
+  flex-shrink: 0;
+}
+
+.companyInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow: hidden;
+}
+
+.companyName {
+  color: var(--white);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.companyCuit {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  margin: 0;
+}
+
+.navMenu {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: background 0.2s;
+}
+.sectionHeader:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.heading {
+  color: #888888;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.chevron {
+  color: var(--text-dim);
+  transition: transform 0.3s ease;
+}
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.collapsibleContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.expanded {
+  max-height: 300px;
+  opacity: 1;
+  overflow: visible;
+  margin-top: 0.25rem;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.link:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--white);
+}
+
+.active {
+  background: rgba(76, 101, 230, 0.12);
+  color: var(--white);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--color-azul-bind, #4c65e6);
+}
+
+.icon {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+.active .icon {
+  color: var(--color-azul-bind, #4c65e6);
+}
+
+.footer {
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.versionText {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  text-align: center;
+  margin: 0;
+}
+
+/* --- MOBILE ONLY USER SECTION --- */
+.mobileOnlyFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 1.25rem;
+}
+
+.userCard {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1rem;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.userCardAvatar {
+  background: rgba(76, 101, 230, 0.15);
+  color: var(--color-azul-bind, #4c65e6);
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.userCardInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.userCardEmail {
+  color: var(--white);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userCardRole {
+  color: var(--color-azul-bind, #4c65e6);
+  font-size: 0.65rem;
+  font-weight: 800;
+  margin: 0;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.roleNoVinculado {
+  color: var(--text-dim);
+}
+
+.logoutLargeBtn {
+  background: rgba(255, 82, 82, 0.1);
+  color: #ff5252;
+  border: 1px solid rgba(255, 82, 82, 0.15);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  font-family: inherit;
+}
+
+.logoutLargeBtn:hover {
+  background: rgba(255, 82, 82, 0.2);
+}
+
+/* ── ESCRITORIO ── */
+@media (min-width: 64rem) {
+  .container {
+    position: relative;
+    transform: translateX(0);
+    margin: 0.75rem 0 1.25rem 1.25rem;
+    height: calc(100dvh - 2rem);
+    border-radius: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+  }
+
+  .sidebarHeader {
+    justify-content: center;
+    min-height: 5rem;
+  }
+
+  .logosWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .logoSeparator {
+    width: 1px;
+    height: 2rem;
+    background-color: rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+  }
+
+  .channelLogo {
+    display: block;
+    height: 2.5rem;
+    max-width: 9rem;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .logo {
+    display: block;
+    height: 2.7rem;
+    max-width: 7rem;
+    object-fit: contain;
+    margin: 0;
+  }
+
+  .mobileOnlyFooter {
+    display: none;
+  }
+  
+  .mobileOnlyLink {
+    display: none;
+  }
+  
+  .footer {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .closeButton {
+    display: none;
+  }
+}

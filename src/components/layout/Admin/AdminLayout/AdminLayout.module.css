@@ -1,0 +1,83 @@
+.adminRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background-color: #070a11;
+  background-image: 
+    radial-gradient(ellipse at 50% -20%, rgba(76, 101, 230, 0.1) 0%, transparent 60%),
+    radial-gradient(ellipse at 0% 100%, rgba(76, 101, 230, 0.05) 0%, transparent 50%);
+  color: #f0f6fc;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+.blobTop {
+  position: absolute;
+  top: -15vw;
+  left: -5vw;
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(
+    circle,
+    rgba(76, 101, 230, 0.15) 0%,
+    rgba(76, 101, 230, 0) 65%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(50px);
+}
+
+.blobRight {
+  position: absolute;
+  top: 30vw;
+  right: -15vw;
+  width: 55vw;
+  height: 55vw;
+  background: radial-gradient(
+    circle,
+    rgba(62, 207, 142, 0.06) 0%,
+    rgba(62, 207, 142, 0) 65%
+  );
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(60px);
+}
+
+.adminContent {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 11rem 4.5rem 2rem 4.5rem;
+  position: relative;
+  z-index: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.containerInner {
+  max-width: 85rem;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .adminContent {
+    padding: 10.5rem 3rem 2rem 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .adminContent {
+    padding: 10rem 1rem 1.25rem 1rem;
+  }
+}
