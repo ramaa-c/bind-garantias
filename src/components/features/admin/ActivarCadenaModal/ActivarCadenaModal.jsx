@@ -112,11 +112,6 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       toast.error("Seleccione un Equipo Comercial");
       return;
     }
-    if (!formState.logo) {
-      toast.error("El logo de la cadena de valor es requerido");
-      return;
-    }
-
     setConfirmOpen(true);
   };
 
@@ -391,7 +386,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                   <FiUploadCloud className={styles.uploadIcon} />
                   <div style={{ textAlign: "left" }}>
                     <div style={{ fontSize: "0.8125rem", fontWeight: "600", color: "#ffffff" }}>
-                      Cargar Logo de la Cadena *
+                      Cargar Logo de la Cadena (Opcional)
                     </div>
                     <div style={{ fontSize: "0.7rem", color: "#8b949e", marginTop: "0.15rem" }}>
                       Arrastrá o hacé click aquí. Fondo transparente, Max 500kb.

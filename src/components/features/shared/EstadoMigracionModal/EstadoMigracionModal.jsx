@@ -141,13 +141,13 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   const HERO_POR_ESTADO = {
     migrado: {
       icon: <FiCheckCircle size={22} />,
-      titulo: "Migrado a SGR+",
-      subtitulo: `Legajo #${legajoSgrPlus} sincronizado correctamente con el sistema core.`,
+      titulo: "Legajo completo",
+      subtitulo: `Tu legajo #${legajoSgrPlus} ya está completo y al día.`,
     },
     listo: {
       icon: <FiClock size={22} />,
-      titulo: "Listo para migrar",
-      subtitulo: "Completaste todos los requisitos. La migración a SGR+ se dispara automáticamente.",
+      titulo: "Todo listo",
+      subtitulo: "Completaste todos los requisitos. En unos instantes tu legajo va a quedar al día.",
     },
   };
   const hero = HERO_POR_ESTADO[estado];
@@ -161,7 +161,7 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Estado de migración a SGR+"
+      title="Estado de tu legajo"
       subtitle={nombreEmpresa}
       maxWidth="520px"
     >
@@ -180,7 +180,7 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
           ) : (
             totalItems > 0 && (
               <p className={styles.pendingLead}>
-                <FiAlertTriangle size={13} /> Esto es lo que falta completar para migrar a SGR+:
+                <FiAlertTriangle size={13} /> Esto es lo que te falta completar:
               </p>
             )
           )}
