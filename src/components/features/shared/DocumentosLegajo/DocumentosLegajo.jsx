@@ -335,6 +335,10 @@ export function DocumentosLegajo({
   const [activeSubTabs, setActiveSubTabs] = useState({});
   const [metaFecha, setMetaFecha] = useState("");
   const [metaRef, setMetaRef] = useState("");
+  // Solo aplica en mobile: con un archivo ya cargado, el selector de
+  // archivo/"Subir otro"/metadatos quedan colapsados detrás de este toggle
+  // para no abrumar la pantalla — en desktop siempre van expandidos.
+  const [mostrarOpcionesArchivo, setMostrarOpcionesArchivo] = useState(false);
   const [metaFechaPeriodo, setMetaFechaPeriodo] = useState("");
   const [isSavingMeta, setIsSavingMeta] = useState(false);
   // Si se intenta subir un balance sin haber completado la fecha del
@@ -450,6 +454,7 @@ export function DocumentosLegajo({
 
   // Sincronizar los campos de metadatos cuando cambia el archivo seleccionado
   useEffect(() => {
+    setMostrarOpcionesArchivo(false);
     if (activeFile) {
       const rawDate = activeFile.fchreferencia || "";
       const dateVal = rawDate ? rawDate.split("T")[0] : "";
@@ -849,8 +854,8 @@ export function DocumentosLegajo({
             </div>
           </div>
         ) : (
-          <div className={styles.viewerContent}>
-            {showSubTabs && (
+          (() => {
+            const bloqueSubTabs = showSubTabs && (
               <div className={styles.subTabsContainer}>
                 {files.map((file, idx) => {
                   const isActive = currentSubTab === idx;
@@ -900,9 +905,9 @@ export function DocumentosLegajo({
                   <span>Subir otro</span>
                 </button>
               </div>
-            )}
+            );
 
-            {isBalance && (estadoBalance?.estado === "por_vencer" || estadoBalance?.estado === "vencido") && (
+            const bloqueAvisoBalance = isBalance && (estadoBalance?.estado === "por_vencer" || estadoBalance?.estado === "vencido") && (
               <div
                 className={`${styles.balanceVigenciaAviso} ${estadoBalance.estado === "vencido" ? styles.balanceVigenciaAvisoVencido : ""}`}
               >
@@ -911,116 +916,167 @@ export function DocumentosLegajo({
                   ? "El balance cargado ya venció y no cuenta como documento válido. Subí uno nuevo."
                   : `El balance cargado corresponde a un período anterior al último cierre de ejercicio. Tenés ${estadoBalance.diasRestantes} día${estadoBalance.diasRestantes === 1 ? "" : "s"} para actualizarlo.`}
               </div>
-            )}
+            );
 
-            <div className={styles.dropzoneContainer}>
-              <CargaArchivos
-                title={currentSubTab === "nuevo" ? "Arrastrá tu nuevo archivo acá" : doc.title}
-                subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
-                hasError={hasError}
-                file={fileProp}
-                onClick={() =>
-                  document.getElementById(`file-input-${doc.key}`).click()
-                }
-                onEdit={() =>
-                  document.getElementById(`file-input-${doc.key}`).click()
-                }
-                onDrop={(e) => {
-                  if (e.dataTransfer.files?.[0]) {
-                    const specificId = activeFile ? activeFile.socioarchivoid : null;
-                    handleFileUpload(doc.key, e.dataTransfer.files[0], doc.title, specificId);
+            const bloqueDropzone = (
+              <div className={styles.dropzoneContainer}>
+                <CargaArchivos
+                  title={currentSubTab === "nuevo" ? "Arrastrá tu nuevo archivo acá" : doc.title}
+                  subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
+                  hasError={hasError}
+                  file={fileProp}
+                  onClick={() =>
+                    document.getElementById(`file-input-${doc.key}`).click()
                   }
-                }}
-                onView={() => {
-                  if (activeFile) {
-                    procesarArchivo(activeFile, archivosBackend, "view");
+                  onEdit={() =>
+                    document.getElementById(`file-input-${doc.key}`).click()
                   }
-                }}
-                onDownload={() => {
-                  if (activeFile) {
-                    procesarArchivo(activeFile, archivosBackend, "download");
-                  }
-                }}
-              />
-              <input
-                id={`file-input-${doc.key}`}
-                type="file"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    const specificId = activeFile ? activeFile.socioarchivoid : null;
-                    handleFileUpload(doc.key, e.target.files[0], doc.title, specificId);
-                  }
-                  e.target.value = null;
-                }}
-                accept="application/pdf"
-              />
-            </div>
-
-            {/* Fecha del período del balance: en su propia fila, aparte de la
-                grilla de 3 columnas de metadatos genéricos (fecha/referencia). */}
-            {activeFile && isBalance && (
-              <div className={styles.metaFormContainer}>
-                <div className={styles.metaFieldGroup}>
-                  <label className={styles.metaLabel}>
-                    Fecha del período del balance *
-                  </label>
-                  <SelectFecha
-                    label=""
-                    placeholder="Seleccionar fecha"
-                    value={metaFechaPeriodo}
-                    onChange={(val) => setMetaFechaPeriodo(val)}
-                    variant="compact"
-                    placement="top"
-                    minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
-                  />
-                </div>
+                  onDrop={(e) => {
+                    if (e.dataTransfer.files?.[0]) {
+                      const specificId = activeFile ? activeFile.socioarchivoid : null;
+                      handleFileUpload(doc.key, e.dataTransfer.files[0], doc.title, specificId);
+                    }
+                  }}
+                  onView={() => {
+                    if (activeFile) {
+                      procesarArchivo(activeFile, archivosBackend, "view");
+                    }
+                  }}
+                  onDownload={() => {
+                    if (activeFile) {
+                      procesarArchivo(activeFile, archivosBackend, "download");
+                    }
+                  }}
+                />
+                <input
+                  id={`file-input-${doc.key}`}
+                  type="file"
+                  style={{ display: "none" }}
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      const specificId = activeFile ? activeFile.socioarchivoid : null;
+                      handleFileUpload(doc.key, e.target.files[0], doc.title, specificId);
+                    }
+                    e.target.value = null;
+                  }}
+                  accept="application/pdf"
+                />
               </div>
-            )}
+            );
 
-            {/* Formulario de Metadatos Adicionales (Diseño compacto horizontal) */}
-            {activeFile && (
-              <div className={styles.metaFormContainer}>
-                <div className={styles.metaFormFields}>
-                  <div className={styles.metaFieldGroup}>
-                    <label className={styles.metaLabel}>
-                      Fecha (Opcional)
-                    </label>
-                    <SelectFecha
-                      label=""
-                      placeholder="Seleccionar fecha"
-                      value={metaFecha}
-                      onChange={(val) => setMetaFecha(val)}
-                      variant="compact"
-                      placement="top"
-                      minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
-                    />
+            const bloqueMetadatos = (
+              <>
+                {/* Fecha del período del balance: en su propia fila, aparte de la
+                    grilla de 3 columnas de metadatos genéricos (fecha/referencia). */}
+                {activeFile && isBalance && (
+                  <div className={styles.metaFormContainer}>
+                    <div className={styles.metaFieldGroup}>
+                      <label className={styles.metaLabel}>
+                        Fecha del período del balance *
+                      </label>
+                      <SelectFecha
+                        label=""
+                        placeholder="Seleccionar fecha"
+                        value={metaFechaPeriodo}
+                        onChange={(val) => setMetaFechaPeriodo(val)}
+                        variant="compact"
+                        placement="top"
+                        minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+                      />
+                    </div>
                   </div>
-                  <div className={styles.metaFieldGroup}>
-                    <label htmlFor="meta-ref" className={styles.metaLabel}>
-                      Referencia (Opcional)
-                    </label>
-                    <input
-                      id="meta-ref"
-                      type="text"
-                      placeholder="Ej. Año 2025 o Versión final"
-                      value={metaRef}
-                      onChange={(e) => setMetaRef(e.target.value)}
-                      className={styles.metaInput}
-                    />
+                )}
+
+                {/* Formulario de Metadatos Adicionales (Diseño compacto horizontal) */}
+                {activeFile && (
+                  <div className={styles.metaFormContainer}>
+                    <div className={styles.metaFormFields}>
+                      <div className={styles.metaFieldGroup}>
+                        <label className={styles.metaLabel}>
+                          Fecha (Opcional)
+                        </label>
+                        <SelectFecha
+                          label=""
+                          placeholder="Seleccionar fecha"
+                          value={metaFecha}
+                          onChange={(val) => setMetaFecha(val)}
+                          variant="compact"
+                          placement="top"
+                          minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+                        />
+                      </div>
+                      <div className={styles.metaFieldGroup}>
+                        <label htmlFor="meta-ref" className={styles.metaLabel}>
+                          Referencia (Opcional)
+                        </label>
+                        <input
+                          id="meta-ref"
+                          type="text"
+                          placeholder="Ej. Año 2025 o Versión final"
+                          value={metaRef}
+                          onChange={(e) => setMetaRef(e.target.value)}
+                          className={styles.metaInput}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSaveMetadata}
+                        disabled={isSavingMeta}
+                        className={styles.saveMetaBtn}
+                      >
+                        {isSavingMeta ? "..." : "Guardar"}
+                      </button>
+                    </div>
                   </div>
+                )}
+              </>
+            );
+
+            // En mobile, con un archivo ya cargado, el selector de archivos/
+            // "Subir otro"/metadatos quedan colapsados detrás de un toggle: la
+            // tarjeta del archivo (con ver/descargar/editar) es lo único que
+            // importa a simple vista. En desktop hay espacio de sobra, así que
+            // todo va expandido como siempre.
+            if (isMobile && activeFile) {
+              return (
+                <div className={styles.viewerContent}>
+                  {bloqueAvisoBalance}
+                  {bloqueDropzone}
                   <button
                     type="button"
-                    onClick={handleSaveMetadata}
-                    disabled={isSavingMeta}
-                    className={styles.saveMetaBtn}
+                    onClick={() => setMostrarOpcionesArchivo((v) => !v)}
+                    className={`${styles.mobileOpcionesToggle} ${adminMode ? styles.mobileOpcionesToggleAdmin : ""}`}
+                    aria-expanded={mostrarOpcionesArchivo}
                   >
-                    {isSavingMeta ? "..." : "Guardar"}
+                    <span>
+                      {files.length > 1
+                        ? `Ver ${files.length} archivos y más opciones`
+                        : "Ver más opciones"}
+                    </span>
+                    <FiChevronDown
+                      size={14}
+                      className={`${styles.mobileOpcionesChevron} ${mostrarOpcionesArchivo ? styles.mobileOpcionesChevronOpen : ""}`}
+                    />
                   </button>
+                  {mostrarOpcionesArchivo && (
+                    <div className={styles.mobileOpcionesPanel}>
+                      {bloqueSubTabs}
+                      {bloqueMetadatos}
+                    </div>
+                  )}
                 </div>
+              );
+            }
+
+            return (
+              <div className={styles.viewerContent}>
+                {bloqueSubTabs}
+                {bloqueAvisoBalance}
+                {bloqueDropzone}
+                {bloqueMetadatos}
               </div>
-            )}
-          </div>
+            );
+          })()
         )}
       </section>
     );

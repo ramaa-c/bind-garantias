@@ -2111,6 +2111,55 @@
   color: #ea4a5a;
 }
 
+/* ── COLAPSO DE OPCIONES (mobile, archivo ya cargado) ────────────────── */
+
+.mobileOpcionesToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  background: rgba(244, 245, 0, 0.05);
+  border: 1px dashed rgba(244, 245, 0, 0.3);
+  border-radius: 0.625rem;
+  padding: 0.55rem 0.8rem;
+  color: var(--yellow, #f4f500);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.mobileOpcionesToggle:hover {
+  background: rgba(244, 245, 0, 0.09);
+}
+
+.mobileOpcionesToggleAdmin {
+  color: var(--color-azul-bind-300, #8a9fff);
+  border-color: rgba(76, 101, 230, 0.4);
+  background: rgba(76, 101, 230, 0.06);
+}
+
+.mobileOpcionesToggleAdmin:hover {
+  background: rgba(76, 101, 230, 0.1);
+}
+
+.mobileOpcionesChevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobileOpcionesChevronOpen {
+  transform: rotate(180deg);
+}
+
+.mobileOpcionesPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
 .metaFormContainer {
   margin-top: 0.75rem;
   background: rgba(255, 255, 255, 0.02);
