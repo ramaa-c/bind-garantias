@@ -18,9 +18,12 @@ export function ConfirmacionModal({
   confirmVariant,
   cancelVariant,
   maxWidth = "420px",
+  preventClose = false,
 }) {
   const dialogRef = useRef(null);
   const isDanger = tone === "danger";
+  const isWarning = tone === "warning";
+  const isAlerta = isDanger || isWarning;
 
   // Guarda propia contra doble click, independiente del `isLoading` que
   // mande el caller: si `onConfirm` hace trabajo async ANTES de que el
@@ -76,14 +79,20 @@ export function ConfirmacionModal({
     }
   };
 
-  const toneClass = isDanger ? styles.danger : variant === "blue" ? styles.blue : styles.yellow;
+  const toneClass = isDanger
+    ? styles.danger
+    : isWarning
+      ? styles.warning
+      : variant === "blue"
+        ? styles.blue
+        : styles.yellow;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} maxWidth={maxWidth} variant="confirm" preventClose={bloqueado}>
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth={maxWidth} variant="confirm" preventClose={preventClose || bloqueado}>
       <div ref={dialogRef} className={`${styles.dialog} ${toneClass}`} onKeyDown={handleKeyDown}>
         <div className={styles.sealRow}>
           <div className={styles.seal}>
-            {isDanger ? <FiAlertTriangle /> : <FiCheck />}
+            {isAlerta ? <FiAlertTriangle /> : <FiCheck />}
           </div>
           <h2 className={styles.title}>{titulo}</h2>
         </div>
