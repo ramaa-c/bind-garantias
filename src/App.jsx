@@ -11,6 +11,8 @@ import { Toaster } from "sonner";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
+import GuestGuard from "./components/guards/GuestGuard/GuestGuard";
+import SessionTimeoutManager from "./components/guards/SessionTimeoutManager/SessionTimeoutManager";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
 import RootRedirect from "./components/layout/RootRedirect/RootRedirect";
@@ -98,6 +100,7 @@ function App() {
     <BrowserRouter>
       <ChannelProvider>
         <Toaster position="top-right" richColors closeButton theme="dark" />
+        <SessionTimeoutManager />
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<RootRedirect />} />
@@ -110,17 +113,38 @@ function App() {
 
             <Route path="/:cadenaSlug" element={<TenantLayout />}>
               <Route index element={<Navigate to="login" replace />} />
-              <Route path="login" element={<Login />} />
+              <Route
+                path="login"
+                element={
+                  <GuestGuard>
+                    <Login />
+                  </GuestGuard>
+                }
+              />
               <Route
                 path="ingresar"
                 element={<Navigate to="../login" replace />}
               />
-              <Route path="registro" element={<Registro />} />
+              <Route
+                path="registro"
+                element={
+                  <GuestGuard>
+                    <Registro />
+                  </GuestGuard>
+                }
+              />
 
               <Route path="0/:token" element={<CrearClave />} />
 
               <Route path="confirmar-correo" element={<ConfirmarCorreo />} />
-              <Route path="recuperar-clave" element={<RecuperarClave />} />
+              <Route
+                path="recuperar-clave"
+                element={
+                  <GuestGuard>
+                    <RecuperarClave />
+                  </GuestGuard>
+                }
+              />
 
               <Route
                 path="legajo"

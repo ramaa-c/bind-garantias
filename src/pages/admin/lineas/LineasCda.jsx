@@ -4,6 +4,8 @@ import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import { CdaLineaPanel } from "../../../components/features/admin/CdaLineaPanel/CdaLineaPanel";
 import { useTiposProducto } from "../../../hooks/useCatalogos";
+import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
+import { useObtenerLimitesCadenaValor } from "../../../hooks/useLinea";
 
 // Las Líneas de crédito no tienen "pantallas" como el onboarding de cadenas
 // (Paso1Cuit, modales de socios): se evalúan en un único punto, al aprobar/
@@ -12,23 +14,47 @@ import { useTiposProducto } from "../../../hooks/useCatalogos";
 const PANTALLA_LINEA = "PANTALLA_LINEA";
 
 export default function LineasCda() {
-  const [selectedTipoLimiteId, setSelectedTipoLimiteId] = useState("");
+  const [selectedCadenaId, setSelectedCadenaId] = useState("");
+  const [selectedTipoLimiteCadenaId, setSelectedTipoLimiteCadenaId] = useState("");
 
-  const { data: tiposLimite, isLoading } = useTiposProducto();
+  const { data: cadenas, isLoading: isLoadingCadenas } = useObtenerTodasWebConEstado();
+  const { data: tiposLimite } = useTiposProducto();
+  const { data: lineasCadena, isLoading: isLoadingLineas } =
+    useObtenerLimitesCadenaValor(selectedCadenaId);
 
-  const listLineas = tiposLimite?.raw || [];
-  const mappedLineas = listLineas.map((tl) => ({
-    tipolimiteid: tl.tipolimiteid,
-    descripcion: tl.descripcion,
-    cadenavalorid: String(tl.tipolimiteid),
-    denominacion: tl.descripcion,
-    referencia: "LÍNEA",
-    cuittercero: null,
-    logo: null,
-    activaOperativa: true,
-  }));
+  // Solo cadenas activas: no tiene sentido configurar CDAs de línea para
+  // una cadena inactiva (mismo criterio que CadenasCda.jsx).
+  const listCadenas = (cadenas || []).filter((c) => c.activaOperativa);
 
-  const activeItem = mappedLineas.find((l) => String(l.tipolimiteid) === String(selectedTipoLimiteId));
+  // Las líneas mostradas son las que ya están vinculadas a la cadena
+  // elegida (TipoLimiteCadenaValor), no todo el catálogo global de tipos:
+  // sin la cadena como filtro, se podían elegir líneas que esa cadena ni
+  // siquiera tiene habilitadas.
+  const listLineas = lineasCadena || [];
+  const mappedLineas = listLineas.map((l) => {
+    const tipo = tiposLimite?.raw?.find(
+      (t) => String(t.tipolimiteid) === String(l.tipolimiteid),
+    );
+    const tipoDesc = tipo?.descripcion || `Línea #${l.tipolimiteid}`;
+    return {
+      tipolimiteid: l.tipolimiteid,
+      cadenavalorid: String(l.tipolimitecadenavalorid),
+      denominacion: l.descripcion || tipoDesc,
+      referencia: tipoDesc,
+      cuittercero: null,
+      logo: null,
+      activaOperativa: String(l.activa) === "1",
+    };
+  });
+
+  const activeItem = mappedLineas.find(
+    (l) => String(l.cadenavalorid) === String(selectedTipoLimiteCadenaId),
+  );
+
+  const handleChangeCadena = (val) => {
+    setSelectedCadenaId(String(val));
+    setSelectedTipoLimiteCadenaId("");
+  };
 
   return (
     <div className={styles.container}>
@@ -42,22 +68,49 @@ export default function LineasCda() {
       </div>
 
       <div className={styles.selectorSection}>
-        {isLoading ? (
+        {isLoadingCadenas ? (
           <Skeleton height="58px" width="100%" radius="0.75rem" style={{ maxWidth: "440px" }} />
         ) : (
           <div className={styles.compactSelector}>
             <CadenaSelectCard
-              options={mappedLineas}
-              value={selectedTipoLimiteId}
-              onChange={(val) => setSelectedTipoLimiteId(String(val))}
-              placeholder="Elegir línea de crédito..."
+              options={listCadenas}
+              value={selectedCadenaId}
+              onChange={handleChangeCadena}
+              placeholder="Elegir cadena de valor..."
             />
           </div>
+        )}
+
+        {selectedCadenaId && (
+          isLoadingLineas ? (
+            <Skeleton height="58px" width="100%" radius="0.75rem" style={{ maxWidth: "440px" }} />
+          ) : (
+            <div className={styles.compactSelector}>
+              <CadenaSelectCard
+                options={mappedLineas}
+                value={selectedTipoLimiteCadenaId}
+                onChange={(val) => setSelectedTipoLimiteCadenaId(String(val))}
+                placeholder="Elegir línea de crédito..."
+              />
+            </div>
+          )
         )}
       </div>
 
       <div className={styles.cardSection}>
-        {selectedTipoLimiteId && activeItem ? (
+        {!selectedCadenaId ? (
+          <div className={styles.emptyMsg}>
+            Seleccioná una cadena de valor para ver sus líneas.
+          </div>
+        ) : isLoadingLineas ? (
+          <div className={styles.emptyMsg}>
+            Cargando líneas de la cadena...
+          </div>
+        ) : mappedLineas.length === 0 ? (
+          <div className={styles.emptyMsg}>
+            Esta cadena de valor no tiene líneas de crédito configuradas.
+          </div>
+        ) : selectedTipoLimiteCadenaId && activeItem ? (
           <div className={styles.panelWrap}>
             <CdaLineaPanel
               activeItem={activeItem}
@@ -66,10 +119,6 @@ export default function LineasCda() {
               hideUnchecked={false}
               key={activeItem.tipolimiteid}
             />
-          </div>
-        ) : selectedTipoLimiteId && !activeItem ? (
-          <div className={styles.emptyMsg}>
-            Línea de crédito no encontrada.
           </div>
         ) : (
           <div className={styles.emptyMsg}>
