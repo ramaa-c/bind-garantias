@@ -13,6 +13,7 @@ import {
 } from "react-icons/fi";
 import { FaUserLock } from "react-icons/fa";
 import {
+  Alert,
   Button,
   Spinner,
   InputPasswordSeguro,
@@ -50,6 +51,7 @@ const CrearClave = () => {
   const { channelInfo } = useChannel();
   const navigate = useNavigate();
   const [emailManual, setEmailManual] = useState("");
+  const [emailManualTouched, setEmailManualTouched] = useState(false);
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const tokenIntegridad =
@@ -247,7 +249,13 @@ const CrearClave = () => {
       ) : (
         <div className={styles.loginContainer}>
           {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
-          <section className={styles.loginFormSection}>
+          <section
+            className={`${styles.loginFormSection} ${
+              mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen
+                ? styles.loginFormSectionCentered
+                : ""
+            }`}
+          >
             <div className={styles.globalLogo}>
               <div className={styles.logosWrapper}>
                 <img
@@ -379,13 +387,16 @@ const CrearClave = () => {
                         label="Ingresá tu correo electrónico"
                         value={emailManual}
                         onChange={setEmailManual}
+                        onBlur={() => setEmailManualTouched(true)}
                         type="email"
                         disabled={solicitandoNuevo}
                         esValido={
                           emailManual.length > 0 && isValidEmail(emailManual)
                         }
                         error={
-                          emailManual.length > 0 && !isValidEmail(emailManual)
+                          emailManualTouched &&
+                          emailManual.length > 0 &&
+                          !isValidEmail(emailManual)
                             ? { message: "Formato de correo inválido" }
                             : null
                         }
@@ -492,6 +503,13 @@ const CrearClave = () => {
                               ? "PROCESANDO..."
                               : "Omitir e ingresar con código"}
                           </Button>
+                          <Alert variant="warning">
+                            Tu cuenta todavía no está activada. Si salís de
+                            esta pantalla sin crear una contraseña ni usar la
+                            opción "Omitir e ingresar con código", vas a
+                            necesitar un nuevo enlace para completar el
+                            proceso.
+                          </Alert>
                         </>
                       )}
                     </div>

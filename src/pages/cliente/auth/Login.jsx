@@ -7,7 +7,9 @@ import { toast } from "sonner";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
 import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
-import { useLogin, useLoginByCode } from "../../../hooks/useUsuario";
+import { ActivacionPendienteModal } from "../../../components/features/shared/ActivacionPendienteModal/ActivacionPendienteModal";
+import { useLogin, useLoginByCode, useResetearPassword } from "../../../hooks/useUsuario";
+import { usuarioService } from "../../../services/usuarioService";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Login.module.css";
@@ -248,6 +250,8 @@ const CredentialsPhase = ({
 const Login = () => {
   const [fase, setFase] = useState("ingreso_credenciales");
   const [generatedOtp, setGeneratedOtp] = useState(null);
+  const [modalPendiente, setModalPendiente] = useState(false);
+  const [emailPendiente, setEmailPendiente] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const setUser = useAuthStore((state) => state.setUser);
@@ -255,8 +259,48 @@ const Login = () => {
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
   const { mutate: loginByCode, isPending: solicitandoCodigo } =
     useLoginByCode();
+  const { mutateAsync: reenviarCorreo, isPending: reenviando } =
+    useResetearPassword();
 
   const isPending = isLoginPending || solicitandoCodigo;
+
+  const getCSharpIsoDate = (addYears = 0) => {
+    const date = new Date();
+    if (addYears) date.setFullYear(date.getFullYear() + addYears);
+    return date.toISOString().split(".")[0];
+  };
+
+  const handleReenviarActivacion = async () => {
+    const canalId = channelInfo.id;
+
+    const payloadReset = {
+      email: emailPendiente,
+      usuariowebid: 0,
+      fchalta: getCSharpIsoDate(),
+      fchvencimiento: getCSharpIsoDate(1),
+      hashseguridad: canalId,
+      estado: "",
+      debecambiarclave: "",
+      esadministrador: "",
+      denominacion: canalId,
+    };
+
+    try {
+      await reenviarCorreo(payloadReset);
+      setModalPendiente(false);
+      navigate(`/${channelInfo.id}/confirmar-correo`, {
+        state: {
+          emailIngresado: emailPendiente,
+          canal: canalId,
+          origen: "registro",
+        },
+      });
+    } catch {
+      toast.error("Error al reenviar el correo", {
+        description: "Ocurrió un error. Intentá más tarde.",
+      });
+    }
+  };
 
   const currentSchema =
     fase === "ingreso_credenciales"
@@ -319,19 +363,28 @@ const Login = () => {
             setFase("validacion_otp");
             toast.success("Código enviado a tu email");
           },
-          onError: (error) => {
+          onError: async (error) => {
             const status = error?.response?.status;
-            const errorData = error?.response?.data;
             if (!error?.response || status >= 500) {
               toast.error("Error de servidor", {
                 description: "Ocurrió un error. Intentá más tarde.",
               });
-            } else {
-              const message =
-                errorData?.message ||
-                "Error al solicitar código. Verificá los datos.";
-              setError("email", { type: "server", message });
+              return;
             }
+
+            const pendiente = await usuarioService.esCuentaPendienteActivacion(
+              formData.email,
+            );
+            if (pendiente) {
+              setEmailPendiente(formData.email);
+              setModalPendiente(true);
+              return;
+            }
+
+            setError("email", {
+              type: "server",
+              message: "Error al solicitar código. Verificá los datos.",
+            });
           },
         },
       );
@@ -356,19 +409,29 @@ const Login = () => {
             setUser({ email: formData.email, role: "user" });
             navigate(`/${channelInfo.id}/legajo`, { replace: true });
           },
-          onError: (error) => {
+          onError: async (error) => {
             const status = error?.response?.status;
             if (!error?.response || status >= 500) {
               clearErrors("password");
               toast.error("Error de servidor", {
                 description: "Ocurrió un error. Intentá más tarde.",
               });
-            } else {
-              setError("password", {
-                type: "server",
-                message: "Usuario o contraseña incorrecto.",
-              });
+              return;
             }
+
+            const pendiente = await usuarioService.esCuentaPendienteActivacion(
+              formData.email,
+            );
+            if (pendiente) {
+              setEmailPendiente(formData.email);
+              setModalPendiente(true);
+              return;
+            }
+
+            setError("password", {
+              type: "server",
+              message: "Usuario o contraseña incorrecto.",
+            });
           },
         },
       );
@@ -404,6 +467,7 @@ const Login = () => {
   };
 
   return (
+    <>
     <div className={styles.layoutSplit}>
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
@@ -516,6 +580,15 @@ const Login = () => {
         </div>
       </section>
     </div>
+
+    <ActivacionPendienteModal
+      isOpen={modalPendiente}
+      onClose={() => setModalPendiente(false)}
+      email={emailPendiente}
+      onReenviar={handleReenviarActivacion}
+      isLoading={reenviando}
+    />
+    </>
   );
 };
 

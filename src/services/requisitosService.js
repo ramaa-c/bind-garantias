@@ -89,10 +89,14 @@ export const DEFAULT_OTRAS_CONFIG = {
 
 export const getSocTypeFromDenominacion = (denominacion) => {
   if (!denominacion) return "otras";
-  const name = denominacion.toUpperCase().replace(/\./g, "");
-  if (/\bSA\b/.test(name) || name.includes("S A")) return "sa";
-  if (/\bSRL\b/.test(name) || name.includes("S R L")) return "srl";
-  if (/\bSH\b/.test(name) || name.includes("S H")) return "sh";
+  const name = denominacion
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\./g, "");
+  if (/\bSA\b/.test(name) || name.includes("S A") || name.includes("SOCIEDAD ANONIMA")) return "sa";
+  if (/\bSRL\b/.test(name) || name.includes("S R L") || name.includes("SOCIEDAD DE RESPONSABILIDAD LIMITADA")) return "srl";
+  if (/\bSH\b/.test(name) || name.includes("S H") || name.includes("SOCIEDAD DE HECHO")) return "sh";
   return "otras";
 };
 
