@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   FiUser,
@@ -21,6 +21,7 @@ import {
   FiEye,
   FiInfo,
   FiCheckCircle,
+  FiDownload,
 } from "react-icons/fi";
 import {
   useSocioPorId,
@@ -41,6 +42,8 @@ import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { esCdaActivo } from "../../../utils/cdaUtils";
+import { socioArchivoService } from "../../../services/socioArchivoService";
+import { descargarLegajoCompletoZip } from "../../../utils/fileUtils";
 import {
   ultimaEjecucionPorCda,
   ordenarEjecucionesCda,
@@ -59,7 +62,7 @@ import {
   Skeleton,
 } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { DocumentosLegajo } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
+import { DocumentosLegajo, ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
 import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
 import styles from "./EmpresaDetalle.module.css";
 
@@ -1693,6 +1696,31 @@ export default function EmpresaDetalle() {
       cadenaId: cadenaValorIdDetectada,
     });
 
+  // Vive acá (no dentro de DocumentacionTab) porque el botón se muestra en
+  // la fila de tabs, junto a "Ver historial completo" de CDAs — misma
+  // queryKey que ya invalida DocumentosLegajo al subir/borrar archivos.
+  const { data: archivosBackend = [] } = useQuery({
+    queryKey: ["socioArchivos", socio?.socioid],
+    queryFn: () => socioArchivoService.obtenerArchivos(socio.socioid),
+    enabled: !!socio?.socioid,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const handleDownloadLegajoCompleto = () => {
+    if (archivosBackend.length === 0) {
+      toast.error("No hay archivos cargados para descargar.");
+      return;
+    }
+    const cleanRazonSocial = (socio?.denominacion || "Empresa").replace(/\s+/g, "_");
+    const zipName = `Legajo_Completo_${cleanRazonSocial}.zip`;
+    descargarLegajoCompletoZip(
+      archivosBackend,
+      ESTRUCTURA_LEGAJO,
+      socioArchivoService.TIPO_DOCUMENTO_MAP,
+      zipName,
+    );
+  };
+
   // Skeleton con la forma real del detalle (hero + tabs + contenido) en vez
   // de un spinner de página completa.
   if (isLoading || !socio) {
@@ -1830,6 +1858,18 @@ export default function EmpresaDetalle() {
           >
             <FiClock size={14} /> Ver historial completo
           </button>
+        )}
+
+        {activeTab === "documentacion" && archivosBackend.length > 0 && (
+          <Button
+            type="button"
+            variant="outlineBlue"
+            size="sm"
+            onClick={handleDownloadLegajoCompleto}
+            title="Descargar legajo de documentos completo en un archivo ZIP"
+          >
+            <FiDownload size={13} /> Descargar Legajo Completo
+          </Button>
         )}
       </div>
 
