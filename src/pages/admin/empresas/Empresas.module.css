@@ -334,6 +334,30 @@
   border: 1px solid rgba(76, 101, 230, 0.25);
 }
 
+.estadoCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  max-width: 100%;
+}
+
+.cadenaChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cadenaChip svg {
+  flex-shrink: 0;
+}
+
 .emptyState {
   display: flex;
   flex-direction: column;

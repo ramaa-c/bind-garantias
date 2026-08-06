@@ -18,6 +18,10 @@
   --tone-color: var(--error-red, #ef4444);
 }
 
+.dialog.warning {
+  --tone-color: #ffc107;
+}
+
 .sealRow {
   display: flex;
   align-items: center;

@@ -35,6 +35,13 @@
   background-color: var(--carbon-black, #1a1a1a);
 }
 
+/* Modificador puntual: el estado "enlace expirado o inválido" en CrearClave
+   no tiene el bloque de éxito ni el formulario largo, por lo que queda
+   pegado arriba en vez de centrado. Solo se aplica a ese estado. */
+.loginFormSectionCentered {
+  justify-content: center;
+}
+
 .sideForm::before,
 .loginFormSection::before {
   content: "";
@@ -563,41 +570,6 @@
   margin: 0;
   line-height: 1.5;
 }
-
-/* ── MODAL USUARIO EXISTENTE ── */
-
-.modalTexto {
-  font-size: 0.875rem;
-  color: #555;
-  line-height: 1.65;
-  margin: 0;
-}
-
-.modalEmailDestacado {
-  color: var(--white, #fffefe);
-  font-weight: 600;
-}
-
-.modalAlerta {
-  background: rgba(245, 244, 0, 0.03);
-  border: 1px solid rgba(245, 244, 0, 0.1);
-  border-left: 2px solid rgba(245, 244, 0, 0.3);
-  border-radius: 0;
-  padding: 0.875rem 1rem;
-  font-size: 0.8rem;
-  color: #555;
-  line-height: 1.6;
-}
-
-.modalFooter {
-  display: flex;
-  gap: 0.625rem;
-  justify-content: flex-end;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* ── MISC ── */
 
 /* ── CONFIRMAR CORREO ── */
 

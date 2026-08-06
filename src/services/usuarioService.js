@@ -67,6 +67,23 @@ export const usuarioService = {
     }
   },
 
+  // Un usuario existe pero nunca completó CrearClave (ni seteó contraseña ni
+  // "omitió" con login por código). Se distingue de un usuario bloqueado por
+  // un admin porque ambos comparten Estado="0", pero solo este caso tiene
+  // DebeCambiarClave="1". Único lugar que hace esta comparación: si cambia el
+  // casing/tipo que devuelve el backend, se corrige acá y no en cada pantalla.
+  esCuentaPendienteActivacion: async (email) => {
+    try {
+      const userData = await usuarioService.obtenerPorNombreOEmail(email);
+      const targetUser = Array.isArray(userData)
+        ? userData[0]
+        : userData?.items?.[0] || userData?.data?.[0] || userData;
+      return !!targetUser && String(targetUser.debecambiarclave) === "1";
+    } catch {
+      return false;
+    }
+  },
+
   // GET api/usuarios
   buscarUsuarios: async (page = 1, pageSize = 10, email = "", nombre = "") => {
     const params = { page, page_size: pageSize };

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { setLastActivity, clearLastActivity } from "../utils/sessionActivity";
 
 export const useAuthStore = create(
   persist(
@@ -26,6 +27,12 @@ export const useAuthStore = create(
 
         const { hashseguridad, ...safeUser } = userData;
 
+        // Marca el arranque del reloj de inactividad justo en el login -
+        // así, cuando useSessionTimeout recalcule el tiempo restante (al
+        // montar, al volver de background, o en otra pestaña), parte de "0
+        // segundos transcurridos" y no de un timestamp viejo/inexistente.
+        setLastActivity();
+
         set({
           user: safeUser,
           isAuthenticated: true,
@@ -34,6 +41,7 @@ export const useAuthStore = create(
       },
 
       clearAuth: () => {
+        clearLastActivity();
         if (typeof window !== "undefined") {
           try {
             window.sessionStorage?.clear();
