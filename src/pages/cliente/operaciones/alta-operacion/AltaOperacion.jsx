@@ -651,7 +651,7 @@ export const AltaOperacion = () => {
 
       let importeEnPesos = Math.round(montoLimpio);
       if (Number(cleanData.moneda) === 2) {
-        const hoy = "2026-04-08";
+        const hoy = new Date().toISOString().split("T")[0];
         try {
           const cotizacionData = await catalogosService.obtenerCotizacion({
             moneda: 2,
@@ -703,7 +703,9 @@ export const AltaOperacion = () => {
         resolucion: "",
         tipolimitesolicitudid: 1,
         importemonex:
-          Number(cleanData.moneda) === 2 ? Math.round(montoLimpio) : 0,
+          Number(cleanData.moneda) === 2
+            ? Math.round(montoLimpio)
+            : importeEnPesos,
         tipolibradorid: 2,
         contratoid: null,
         cadenavalorid: Number(cadenaSlug) || 0,
@@ -715,7 +717,7 @@ export const AltaOperacion = () => {
         tercerogeneradorid: 0,
       };
 
-      await lineaService.crearLimiteSocio({ coleccionlinea: [payloadLimite] });
+      await lineaService.crearLimiteSocio(payloadLimite);
 
       if (cleanData.tipoProducto === "cheque") {
         setPasoActual(4);

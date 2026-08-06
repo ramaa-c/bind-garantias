@@ -4,10 +4,9 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { Modal } from "../../../components/ui/Modal/Modal";
-import { FiMail } from "react-icons/fi";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
+import { ActivacionPendienteModal } from "../../../components/features/shared/ActivacionPendienteModal/ActivacionPendienteModal";
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
 import { useChannel } from "../../../context/ChannelContext";
@@ -92,14 +91,11 @@ const Registro = () => {
       if (error?.response?.status === 409) {
         setVerificandoEstado(true);
         try {
-          const userData = await usuarioService.obtenerPorNombreOEmail(
+          const pendiente = await usuarioService.esCuentaPendienteActivacion(
             data.email,
           );
-          const targetUser = Array.isArray(userData)
-            ? userData[0]
-            : userData?.items?.[0] || userData?.data?.[0] || userData;
 
-          if (targetUser && String(targetUser.debecambiarclave) === "1") {
+          if (pendiente) {
             setEmailPendiente(data.email);
             setModalUsuarioExistente(true);
           } else {
@@ -109,11 +105,6 @@ const Registro = () => {
                 "Ya existe una cuenta con este correo. Intenta iniciar sesión.",
             });
           }
-        } catch (fetchError) {
-          setError("email", {
-            type: "server",
-            message: "Este correo ya se encuentra registrado.",
-          });
         } finally {
           setVerificandoEstado(false);
         }
@@ -281,41 +272,13 @@ const Registro = () => {
         </section>
       </div>
 
-      {/* MODAL DE USUARIO EXISTENTE */}
-      <Modal
+      <ActivacionPendienteModal
         isOpen={modalUsuarioExistente}
-        onClose={() => !reenviando && setModalUsuarioExistente(false)}
-        title="Usuario pendiente de activación"
-      >
-        <div className={styles.modalUsuarioExistente}>
-          <p className={styles.modalTexto}>
-            El correo{" "}
-            <span className={styles.modalEmailDestacado}>{emailPendiente}</span>{" "}
-            ya se encuentra registrado, pero el proceso de creación de
-            contraseña no fue completado.
-          </p>
-          <div className={styles.modalAlerta}>
-            Te enviaremos un nuevo enlace de activación a esa dirección. Revisá
-            tu bandeja de entrada o la carpeta de SPAM.
-          </div>
-          <div className={styles.modalFooter}>
-            <Button
-              variant="outline"
-              onClick={() => setModalUsuarioExistente(false)}
-              disabled={reenviando}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleContinuarProcesoPendiente}
-              disabled={reenviando}
-            >
-              {reenviando ? "Enviando..." : "Reenviar enlace"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        onClose={() => setModalUsuarioExistente(false)}
+        email={emailPendiente}
+        onReenviar={handleContinuarProcesoPendiente}
+        isLoading={reenviando}
+      />
     </>
   );
 };
