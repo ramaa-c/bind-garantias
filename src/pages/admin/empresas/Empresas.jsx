@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
-import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle } from "react-icons/fi";
+import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink } from "react-icons/fi";
 import { useObtenerSocios, useObtenerExecuteCda } from "../../../hooks/useSocios";
+import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { detectarCadenaValorId } from "../../../utils/executeCda";
@@ -50,7 +51,7 @@ const EmpresaRowSkeleton = () => (
   </tr>
 );
 
-const EstadoBadge = ({ e }) => {
+const EstadoBadge = ({ e, cadenasWeb }) => {
   // Mismo criterio que EmpresaDetalle.jsx: sin esto, useValidacionLegajo
   // nunca resuelve la cadena real de la empresa y cae al fallback genérico
   // de useRequisitos (DEFAULT_SA_CONFIG/etc.), dando un total de requisitos
@@ -60,6 +61,19 @@ const EstadoBadge = ({ e }) => {
     () => detectarCadenaValorId(ejecucionesCda),
     [ejecucionesCda],
   );
+
+  // Como Socio no tiene un CadenaValorID propio, el mismo CUIT puede
+  // ingresar por el slug de cualquier cadena y ver requisitos distintos a
+  // los de la cadena por la que efectivamente hizo su alta. Se muestra a
+  // qué cadena corresponde el estado de este badge para no confundir "no
+  // migrado acá" con "no migrado en ningún lado" (ver EmpresaDetalle.jsx).
+  const nombreCadenaDetectada = useMemo(() => {
+    if (!cadenaValorIdDetectada) return null;
+    const fila = (cadenasWeb || []).find(
+      (c) => Number(c.cadenavalorid) === cadenaValorIdDetectada,
+    );
+    return fila?.denominacion || `Cadena #${cadenaValorIdDetectada}`;
+  }, [cadenasWeb, cadenaValorIdDetectada]);
 
   const { requisitosCompletados, totalRequisitos, isLoading } = useValidacionLegajo({
     adminMode: true,
@@ -79,14 +93,23 @@ const EstadoBadge = ({ e }) => {
     );
   }
 
-  return isMigrado ? (
-    <span className={`${styles.estadoBadge} ${styles.estadoSuccess}`}>
-      <FiCheckCircle size={12} /> Migrado
-    </span>
-  ) : (
-    <span className={`${styles.estadoBadge} ${styles.estadoAzulBind}`}>
-      Postulante
-    </span>
+  return (
+    <div className={styles.estadoCell}>
+      {isMigrado ? (
+        <span className={`${styles.estadoBadge} ${styles.estadoSuccess}`}>
+          <FiCheckCircle size={12} /> Migrado
+        </span>
+      ) : (
+        <span className={`${styles.estadoBadge} ${styles.estadoAzulBind}`}>
+          Postulante
+        </span>
+      )}
+      {nombreCadenaDetectada && (
+        <span className={styles.cadenaChip} title={nombreCadenaDetectada}>
+          <FiLink size={10} /> {nombreCadenaDetectada}
+        </span>
+      )}
+    </div>
   );
 };
 
@@ -111,6 +134,7 @@ export default function Empresas() {
   }, [debouncedBusqueda]);
 
   const { data, isLoading, isFetching } = useObtenerSocios(params);
+  const { data: cadenasWeb } = useObtenerTodasWebConEstado();
 
   // Más nuevas primero: el backend no garantiza un orden particular en la
   // respuesta de Socios.
@@ -219,7 +243,7 @@ export default function Empresas() {
                         </span>
                       </td>
                       <td>
-                        <EstadoBadge e={e} />
+                        <EstadoBadge e={e} cadenasWeb={cadenasWeb} />
                       </td>
                       <td style={{ textAlign: "center" }}>
                         <FiChevronRight className={styles.rowChevron} />

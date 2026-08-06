@@ -651,11 +651,13 @@ export const AltaOperacion = () => {
 
       let importeEnPesos = Math.round(montoLimpio);
       if (Number(cleanData.moneda) === 2) {
-        const hoy = new Date().toISOString().split("T")[0];
+        const ayer = new Date();
+        ayer.setDate(ayer.getDate() - 1);
+        const fechaCotizacion = ayer.toISOString().split("T")[0];
         try {
           const cotizacionData = await catalogosService.obtenerCotizacion({
             moneda: 2,
-            fecha: hoy,
+            fecha: fechaCotizacion,
             tipoCotizacion: 50,
           });
 
