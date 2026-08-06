@@ -22,6 +22,7 @@ import {
   FiInfo,
   FiCheckCircle,
   FiDownload,
+  FiLink,
 } from "react-icons/fi";
 import {
   useSocioPorId,
@@ -1827,6 +1828,14 @@ export default function EmpresaDetalle() {
                 title="Documentación + terceros relacionados obligatorios, según los requisitos de su cadena."
               >
                 <span className={styles.badgeDot} /> Legajo {requisitosCompletados}/{totalRequisitos}
+              </span>
+            )}
+            {cadenaValorIdDetectada && (
+              <span
+                className={`${styles.badge} ${styles["badge-neutral"]}`}
+                title="Cadena detectada del historial de CDAs de esta empresa. Como el socio no está atado a una única cadena, puede ingresar y verse distinto desde el slug de otra cadena."
+              >
+                <FiLink size={12} /> {nombreCadenaDetectada}
               </span>
             )}
           </div>
