@@ -95,7 +95,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [validando, setValidando] = useState(false);
-  const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
+  const [enriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);

@@ -49,7 +49,7 @@ export function RepresentanteModal({
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const etiquetaRol = rolFijo;
   const [validando, setValidando] = useState(false);
-  const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
+  const [enriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 

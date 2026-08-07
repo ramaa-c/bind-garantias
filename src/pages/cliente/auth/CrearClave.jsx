@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,11 +9,11 @@ import {
   FiCircle,
   FiXCircle,
   FiAlertCircle,
+  FiAlertTriangle,
   FiLock,
 } from "react-icons/fi";
 import { FaUserLock } from "react-icons/fa";
 import {
-  Alert,
   Button,
   Spinner,
   InputPasswordSeguro,
@@ -231,6 +231,22 @@ const CrearClave = () => {
 
   const mostrarErrorFaltaUsuario =
     !usuario && tokenExpirado && !verificandoToken;
+
+  const cuentaPendienteActivacion =
+    !tokenInvalidoDeOrigen && !!usuario && usuario.estado !== 1;
+
+  useEffect(() => {
+    if (!cuentaPendienteActivacion) return;
+
+    const avisarAntesDeCerrar = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", avisarAntesDeCerrar);
+    return () =>
+      window.removeEventListener("beforeunload", avisarAntesDeCerrar);
+  }, [cuentaPendienteActivacion]);
 
   return (
     <>
@@ -503,19 +519,27 @@ const CrearClave = () => {
                               ? "PROCESANDO..."
                               : "Omitir e ingresar con código"}
                           </Button>
-                          <Alert variant="warning">
-                            Tu cuenta todavía no está activada. Si salís de
-                            esta pantalla sin crear una contraseña ni usar la
-                            opción "Omitir e ingresar con código", vas a
-                            necesitar un nuevo enlace para completar el
-                            proceso.
-                          </Alert>
                         </>
                       )}
                     </div>
                   </form>
                 )}
               </div>
+
+              {cuentaPendienteActivacion && (
+                <div className={styles.warningCallout}>
+                  <FiAlertTriangle className={styles.warningCalloutIcon} />
+                  <div className={styles.calloutContent}>
+                    <h2 className={styles.warningCalloutTitle}>
+                      Activación pendiente
+                    </h2>
+                    <p>
+                      Si salís sin crear una contraseña o usar "Omitir e
+                      ingresar con código", vas a necesitar un nuevo enlace.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
 
