@@ -570,7 +570,7 @@
 .formGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 @media (min-width: 576px) {
@@ -592,6 +592,131 @@
 .formGroup label {
   font-size: 0.8125rem;
   color: #8b949e;
+}
+
+/* Tarjeta de disponibilidad de la cadena, arriba de la grilla de "Línea":
+   antes era un texto gris suelto debajo del input de Monto Máximo, difícil
+   de notar. Ahora es visible de entrada, con barra de uso coloreada según
+   qué tan cerca está del techo de la cadena. */
+.cvUsageCard {
+  background: rgba(76, 101, 230, 0.05);
+  border: 1px solid rgba(76, 101, 230, 0.18);
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.cvUsageTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cvUsageLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8b949e;
+}
+
+.cvUsageAmount {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-azul-bind-400, #6b82ff);
+  font-variant-numeric: tabular-nums;
+}
+
+.cvUsageTrack {
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.cvUsageFill {
+  height: 100%;
+  width: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--color-azul-bind, #4c65e6), var(--color-azul-bind-400, #6b82ff));
+  transform-origin: left center;
+  transition: transform 0.3s ease;
+}
+
+.cvUsageFillWarning {
+  background: linear-gradient(90deg, #d68a1f, #f5a623);
+}
+
+.cvUsageFillDanger {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.cvUsageBottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #8b949e;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reemplaza la vieja tarjeta con borde/ícono/subtítulo por sección: en un
+   modal con muchos campos esas cards duplicaban borde+padding en cada grupo
+   y empujaban el alto total. Un divisor liviano alcanza para separar
+   "Línea" de "Contrato" sin gastar tanto espacio vertical. */
+.formSectionDivider {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b949e;
+}
+
+.formSectionDivider svg {
+  flex-shrink: 0;
+  color: var(--color-azul-bind-400, #6b82ff);
+}
+
+.formHint {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: -0.25rem 0 0 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 0.75rem;
+  color: #8b949e;
+  line-height: 1.45;
+}
+
+.formHint strong {
+  color: #c9d1d9;
+  font-weight: 600;
+}
+
+/* Todo el texto (incluido el <strong>) va en un único span: si quedaran
+   sueltos como hijos directos de .formHint, el flex los trata como items
+   separados y el texto se corta en columnas en vez de fluir como una
+   oración. */
+.formHintText {
+  flex: 1;
+  min-width: 0;
+}
+
+.formHint svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--color-azul-bind-400, #6b82ff);
 }
 
 .formInput, .formSelect {

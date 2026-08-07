@@ -38,13 +38,22 @@ export const SelectSimple = ({
       border: "none",
       boxShadow: "none",
       minHeight: compact ? "2.35rem" : "3.2rem",
-      paddingTop: compact ? "0.5rem" : "0.85rem", // Leaves space for the floating label
+      height: compact ? "2.35rem" : "3.2rem", // Fijo, no solo mínimo: sin esto react-select puede quedar más alto que InputSimple/SelectFechaSimple según el contenido interno.
       cursor: state.isDisabled ? "not-allowed" : "pointer",
     }),
+    // El paddingTop (espacio para el label flotante) va acá y no en `control`:
+    // si estuviera en `control` empujaba hacia abajo TODOS sus hijos por
+    // igual, incluida la flecha del indicatorsContainer, descentrándola
+    // verticalmente. Así solo se corre el texto del valor.
     valueContainer: (base) => ({
       ...base,
-      padding: compact ? "0 0.75rem" : "0 1rem",
+      padding: compact ? "0.5rem 0.75rem 0" : "0.85rem 1rem 0",
       flexWrap: "nowrap",
+    }),
+    indicatorsContainer: (base) => ({
+      ...base,
+      height: compact ? "2.35rem" : "3.2rem",
+      alignItems: "center",
     }),
     singleValue: (base) => ({
       ...base,
