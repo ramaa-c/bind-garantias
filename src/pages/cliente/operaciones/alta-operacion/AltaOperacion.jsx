@@ -29,6 +29,8 @@ import { solicitudesService } from "../../../../services/solicitudesService";
 import { sociosService } from "../../../../services/sociosService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { lineaService } from "../../../../services/lineaService";
+import { cadenaValorService } from "../../../../services/cadenaValorService";
+import { posicionConsolidadaService } from "../../../../services/posicionConsolidadaService";
 import { afipService } from "../../../../services/afipService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { catalogosService } from "../../../../services/catalogosService";
@@ -574,6 +576,68 @@ export const AltaOperacion = () => {
 
       const montoLimpio = Number(cleanData.monto) || 0;
 
+      // Convertido a pesos ANTES de crear nada: si la validación de cupo de
+      // la cadena (más abajo) rechaza la operación, no queremos dejar una
+      // SolicitudEnProceso huérfana sin línea asociada.
+      let importeEnPesos = Math.round(montoLimpio);
+      if (Number(cleanData.moneda) === 2) {
+        const hoy = new Date().toISOString().split("T")[0];
+        try {
+          const cotizacionData = await catalogosService.obtenerCotizacion({
+            moneda: 2,
+            fecha: hoy,
+            tipoCotizacion: 50,
+          });
+
+          const valorCotizacion = Array.isArray(cotizacionData)
+            ? cotizacionData[0]?.cotizacion ||
+              cotizacionData[0]?.Cotizacion ||
+              0
+            : cotizacionData?.cotizacion || cotizacionData?.Cotizacion || 0;
+
+          if (valorCotizacion > 0) {
+            importeEnPesos = Math.round(montoLimpio * valorCotizacion);
+          }
+        } catch (e) {}
+      }
+
+      // Requisito de Victor: la suma de lo ya utilizado en las líneas de
+      // SGRPlus de este socio para esta cadena, más la operación nueva, no
+      // puede superar el CadenaValor.MontoMaximo. Ambos datos viven en el
+      // CORE (no en la tabla Web) — PosicionConsolidada/ObtenerLimiteSocio
+      // pide el SocioID del CORE (se resuelve por CUIT, ver
+      // posicionConsolidadaService.obtenerLimiteSocioPorCuit) y cada línea
+      // trae su propio CadenaValorID para filtrar solo las de esta cadena.
+      try {
+        const [lineasSocio, cadenaData] = await Promise.all([
+          posicionConsolidadaService.obtenerLimiteSocioPorCuit(cuitLimpio),
+          cadenaValorService.obtenerPorId(Number(cadenaSlug)),
+        ]);
+
+        const lineasArr = Array.isArray(lineasSocio) ? lineasSocio : [];
+        const utilizadoActual = lineasArr
+          .filter((l) => Number(l.cadenavalorid) === Number(cadenaSlug))
+          .reduce((acc, l) => acc + (Number(l.importeutilizado) || 0), 0);
+
+        const montoMaximoCadena = Number(
+          cadenaData?.montomaximo ?? cadenaData?.MontoMaximo ?? 0,
+        );
+
+        if (montoMaximoCadena > 0 && utilizadoActual + importeEnPesos > montoMaximoCadena) {
+          const disponible = Math.max(0, montoMaximoCadena - utilizadoActual);
+          toast.error("No hay cupo disponible en la cadena", {
+            description: `${channelInfo?.nombre || "Esta cadena"} tiene un disponible de $${disponible.toLocaleString("es-AR")}, pero la operación pedida es de $${importeEnPesos.toLocaleString("es-AR")}.`,
+          });
+          setEnviandoSolicitud(false);
+          return;
+        }
+      } catch (validacionError) {
+        console.error(
+          "[ALTA OPERACION] Error al validar el cupo disponible de la cadena:",
+          validacionError,
+        );
+      }
+
       const unAnioMasRel = new Date();
       unAnioMasRel.setFullYear(unAnioMasRel.getFullYear() + 1);
       const unAnioMasStr = unAnioMasRel.toISOString().split(".")[0];
@@ -648,28 +712,6 @@ export const AltaOperacion = () => {
       // desde RepresentanteModal.onConfirmSave al momento de agregarlos/editarlos en el
       // Paso5 (o ya venían precargados de la DB vía cargarSociosDesdeDB). Volver a
       // guardarlos acá duplicaba la relación en cada envío de solicitud.
-
-      let importeEnPesos = Math.round(montoLimpio);
-      if (Number(cleanData.moneda) === 2) {
-        const hoy = "2026-04-08";
-        try {
-          const cotizacionData = await catalogosService.obtenerCotizacion({
-            moneda: 2,
-            fecha: hoy,
-            tipoCotizacion: 50,
-          });
-
-          const valorCotizacion = Array.isArray(cotizacionData)
-            ? cotizacionData[0]?.cotizacion ||
-              cotizacionData[0]?.Cotizacion ||
-              0
-            : cotizacionData?.cotizacion || cotizacionData?.Cotizacion || 0;
-
-          if (valorCotizacion > 0) {
-            importeEnPesos = Math.round(montoLimpio * valorCotizacion);
-          }
-        } catch (e) {}
-      }
 
       const fchDesde = new Date().toISOString().split(".")[0];
       const unAnioMas = new Date();

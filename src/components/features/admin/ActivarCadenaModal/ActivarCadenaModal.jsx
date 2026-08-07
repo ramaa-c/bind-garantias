@@ -8,7 +8,7 @@ import { esCdaActivo } from "../../../../utils/cdaUtils";
 import { PANTALLAS_CDA } from "../../../../utils/pantallasCda";
 import { cdaService } from "../../../../services/cdaService";
 import { cadenaValorService } from "../../../../services/cadenaValorService";
-import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../hooks/useCatalogos";
+import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato } from "../../../../hooks/useCatalogos";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
@@ -36,7 +36,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     referencia: "",
     logo: "",
     tipocanalcomercializacionid: "",
-    equipocomercialid: ""
+    equipocomercialid: "",
+    tipocontratoid: ""
   });
 
   const fileInputRef = useRef(null);
@@ -45,11 +46,13 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
   const { data: todasCadenasData, isLoading: isLoadingTodas } = useObtenerCadenasCursanPlataforma();
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
+  const { data: contratosData } = useTipoContrato();
   const crearMutation = useCrearCadenaValor();
   const usuarioWebId = useUsuarioWebIdActual();
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
+  const contratosOpciones = contratosData?.opciones || [];
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -76,7 +79,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       referencia: chain.referencia || "",
       logo: chain.logo || "",
       tipocanalcomercializacionid: chain.tipocanalcomercializacionid != null ? chain.tipocanalcomercializacionid.toString() : "",
-      equipocomercialid: chain.equipocomercialid != null ? chain.equipocomercialid.toString() : ""
+      equipocomercialid: chain.equipocomercialid != null ? chain.equipocomercialid.toString() : "",
+      tipocontratoid: chain.tipocontratoid != null ? chain.tipocontratoid.toString() : ""
     });
     setStep("form");
   };
@@ -112,6 +116,10 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       toast.error("Seleccione un Equipo Comercial");
       return;
     }
+    if (!formState.tipocontratoid) {
+      toast.error("Seleccione un Tipo de Contrato");
+      return;
+    }
     setConfirmOpen(true);
   };
 
@@ -135,6 +143,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       logo: formState.logo,
       tipocanalcomercializacionid: Number(formState.tipocanalcomercializacionid),
       equipocomercialid: Number(formState.equipocomercialid),
+      tipocontratoid: Number(formState.tipocontratoid),
       montomaximo: parseMonto(selectedChain),
       porcentajemaximo: 100,
       activa: "1"
@@ -360,6 +369,15 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     options={equiposOpciones}
                     value={formState.equipocomercialid}
                     onChange={val => setFormState({ ...formState, equipocomercialid: val })}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <SelectSimple
+                    label="Tipo de Contrato *"
+                    placeholder="Seleccione tipo de contrato..."
+                    options={contratosOpciones}
+                    value={formState.tipocontratoid}
+                    onChange={val => setFormState({ ...formState, tipocontratoid: val })}
                   />
                 </div>
               </div>
