@@ -65,6 +65,7 @@ import {
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { DocumentosLegajo, ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
 import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
+import { LegajoUniversalBar } from "../../../components/features/shared/LegajoUniversalBar/LegajoUniversalBar";
 import styles from "./EmpresaDetalle.module.css";
 
 const getTipoPersonaLabel = (tipoPersonaId) => {
@@ -887,7 +888,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
     try {
       await cdaService.ejecutarCda(
         PANTALLA_EMPRESA,
-        socio.cuit,
+        { socioId: socio.socioid },
         cadenaValorId,
         usuarioWebId,
       );
@@ -944,7 +945,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
     reejecutar(
       {
         cdaId: item.cdaid,
-        cuit: socio.cuit,
+        socioId: socio.socioid,
         usuarioId: usuarioWebId,
         pantalla: PANTALLA_EMPRESA,
         cadenaValorId,
@@ -1779,6 +1780,13 @@ export default function EmpresaDetalle() {
 
   return (
     <div className={styles.container}>
+      <LegajoUniversalBar
+        adminMode
+        socioIdActivo={socio?.socioid}
+        tipoPersonaId={socio?.tipopersonaid}
+        nombreEmpresa={socio?.denominacion}
+        cadenaId={cadenaValorIdDetectada}
+      />
       <header className={styles.header}>
         <button
           type="button"

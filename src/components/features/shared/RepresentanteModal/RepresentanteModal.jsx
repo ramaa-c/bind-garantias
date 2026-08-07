@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser, FiShield, FiMapPin, FiMap } from "react-icons/fi";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../hooks/useRegistrarModalLegajo";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
+import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../utils/executeCda";
 import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../hooks/useValidarDomicilioRequerido";
@@ -50,13 +51,16 @@ export function RepresentanteModal({
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
-  const [cdaRechazado, setCdaRechazado] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
   const usuarioWebIdActual = useUsuarioWebIdActual();
+  // Guarda el TerceroID del stub creado para poder validar el CDA contra él
+  // más abajo — `stubTerceroId` (ver más abajo) vive dentro de un try{} que
+  // sale de scope antes de llegar a ejecutarValidaciones.
+  const stubTerceroIdRef = useRef(null);
   useRegistrarModalLegajo(isOpen);
 
   const { control, reset, setValue, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
@@ -88,7 +92,6 @@ export function RepresentanteModal({
     setPrevProps({ isOpen, representante, representanteInicial });
     if (isOpen) {
       setAfipValidado(!!(representante || representanteInicial));
-      setCdaRechazado(false);
       setShowConfirm(false);
 
       if (representante) {
@@ -208,12 +211,25 @@ export function RepresentanteModal({
     
     setValidando(true);
     clearErrors("cuit");
-    
+
+    // Refleja los 3 tramos reales de esta función, en el mismo orden que
+    // Paso1Cuit: vincular (solo alta nueva) → consultar padrón → CDA al
+    // final. A diferencia de Paso1Cuit, acá el CDA YA NO bloquea si
+    // rechaza: se deja completar y guardar igual, y la persona queda
+    // marcada como rechazada (ver AccionistasSection/RepresentantesSection/
+    // ApoderadosSection) para que un admin la reintente después. Solo el
+    // padrón (no encontrar a la persona en ningún lado) sigue bloqueando —
+    // ahí no hay nada razonable para completar a mano. En edición no hay
+    // nada que vincular, así que ese paso arranca directo "completado".
+    const necesitaVinculo = socioIdActivo && !representante && !representanteInicial;
+
     setProcesoModal({
       isOpen: true,
       titulo: `Validando ${etiquetaRol}`,
       pasos: [
-        { id: "sgr", etiqueta: "Conectando con SGR+", estado: "cargando", descripcion: "Validando situación e historial societario." },
+        { id: "vinculo", etiqueta: "Vinculando con el socio", estado: necesitaVinculo ? "cargando" : "completado", descripcion: "Registrando la relación en el sistema." },
+        { id: "padron", etiqueta: "Consultando padrón", estado: necesitaVinculo ? "pendiente" : "cargando", descripcion: "Obteniendo los datos de la persona desde el padrón federal/bureau en tiempo real." },
+        { id: "cda", etiqueta: "Ejecutando validaciones CDA", estado: "pendiente", descripcion: "Comprobando políticas de riesgo y negocio para el alta." },
       ],
       hasError: false,
       isSystemError: false
@@ -230,7 +246,7 @@ export function RepresentanteModal({
     // base todavía. `onConfirmSave` ya busca la relación existente por
     // terceroId+socio antes de decidir crear o actualizar, así que no hace
     // falta guardar el ID acá: la va a encontrar sola.
-    if (socioIdActivo && !representante && !representanteInicial) {
+    if (necesitaVinculo) {
       try {
         // Denominacion y descripcionreducida van VACÍAS a propósito para el
         // caso de que haya que crearlo: la precarga de más abajo hace
@@ -266,6 +282,7 @@ export function RepresentanteModal({
           terceroResuelto.tercerorelacionadoid ||
           terceroResuelto.TerceroRelacionadoID ||
           terceroResuelto.id;
+        stubTerceroIdRef.current = stubTerceroId;
 
         const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
         const arrRel = Array.isArray(relaciones) ? relaciones : relaciones?.data || [];
@@ -315,31 +332,14 @@ export function RepresentanteModal({
         // conocíamos antes de este cambio).
         console.error("[RepresentanteModal] Error creando la relación previa a validar CDA:", stubErr);
       }
-    }
-
-    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam, usuarioWebIdActual);
-
-    if (!result.success) {
-      setCdaRechazado(true);
       setProcesoModal(prev => ({
         ...prev,
-        hasError: true,
-        isSystemError: result.errors.some((e) => e.isSystemError),
         pasos: prev.pasos.map(p =>
-          p.id === "sgr" ? {
-              ...p,
-              estado: "error",
-              descripcion: `Falló la validación del ${etiquetaRol.toLowerCase()}:`,
-              errores: result.errors.map(e => e.message)
-          } : p
-        )
+          p.id === "vinculo" ? { ...p, estado: "completado" } :
+          p.id === "padron" ? { ...p, estado: "cargando" } : p
+        ),
       }));
-      setValidando(false);
-      return;
     }
-
-    setCdaRechazado(false);
-    setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
     try {
       // 1. Buscar primero en la base de datos de terceros
@@ -355,8 +355,14 @@ export function RepresentanteModal({
       }
 
       // Si existe en la BD y tiene los datos mínimos, los usamos directamente si no estamos editando
-      const tieneDatosCompletos = terceroEncontrado && 
+      const tieneDatosCompletos = terceroEncontrado &&
         (terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail);
+
+      // El CDA corre AL FINAL (ver más abajo), después de que el padrón
+      // haya terminado por cualquiera de los dos caminos posibles —
+      // `padronOk` es lo que permite que el segundo (NOSIS/AFIP/LUFE) se
+      // salte cuando el primero (datos locales) ya alcanzó.
+      let padronOk = false;
 
       if (terceroEncontrado && tieneDatosCompletos && !representante && !representanteInicial) {
         const nombreRep = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Representante del Sistema";
@@ -379,22 +385,22 @@ export function RepresentanteModal({
           setValue("provinciaid", String(provIdExistente), { shouldValidate: true, shouldDirty: true });
         }
 
-        setAfipValidado(true);
         toast.success(`Datos del ${etiquetaRol.toLowerCase()} recuperados del sistema.`);
-        setValidando(false);
-        return;
+        padronOk = true;
       }
 
       // 2. Si no tiene datos completos o es modo edición, consultamos NOSIS/AFIP/LUFE
+      // (solo si el camino anterior no alcanzó ya)
       let nosisData = null;
       let res = null;
+      if (!padronOk)
       try {
         nosisData = await nosisService.obtenerDatosNormalizados(cuitLimpio);
       } catch (nosisErr) {
         console.warn("[RepresentanteModal] Nosis no disponible, probando fallback a AFIP:", nosisErr);
       }
 
-      if (!nosisData) {
+      if (!padronOk && !nosisData) {
         try {
           res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
         } catch (afipErr) {
@@ -410,7 +416,7 @@ export function RepresentanteModal({
         }
       }
 
-      if (nosisData || (res && res.datosgenerales)) {
+      if (!padronOk && (nosisData || (res && res.datosgenerales))) {
         let nombreRep = "";
         let emailVal = "";
         let telVal = "";
@@ -524,22 +530,98 @@ export function RepresentanteModal({
           }
         }
 
-        setAfipValidado(true);
         toast.success(representante || representanteInicial ? "Datos actualizados desde Nosis/AFIP/LUFE." : `Datos del ${etiquetaRol.toLowerCase()} recuperados.`);
-      } else {
+        padronOk = true;
+      } else if (!padronOk) {
+        // Padrón no encontrado por ningún lado: acá sí se bloquea, no hay
+        // nada razonable para completar a mano sin al menos un nombre.
         setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de Nosis ni AFIP." });
         setAfipValidado(false);
+        setProcesoModal(prev => ({
+          ...prev,
+          hasError: true,
+          isSystemError: false,
+          pasos: prev.pasos.map(p =>
+            p.id === "padron" ? { ...p, estado: "error", errores: ["No se encontraron datos en Nosis ni AFIP para este CUIT."] } : p
+          ),
+        }));
+        setValidando(false);
+        return;
       }
     } catch (err) {
       console.error("Error validando representante en AFIP/SGR:", err);
-      toast.error("Servicio de AFIP/LUFE no disponible", {
-        description: "No se pudieron obtener datos automáticos.",
-      });
       setError("cuit", { type: "manual", message: "Servicios de AFIP/LUFE caídos. Intente más tarde." });
       setAfipValidado(false);
-    } finally {
+      setProcesoModal(prev => ({
+        ...prev,
+        hasError: true,
+        isSystemError: true,
+        pasos: prev.pasos.map(p =>
+          p.id === "padron" ? { ...p, estado: "error", errores: ["Servicio de AFIP/LUFE no disponible. No se pudieron obtener datos automáticos."] } : p
+        ),
+      }));
       setValidando(false);
+      return;
     }
+
+    // Padrón resuelto (por cualquiera de los dos caminos): ahora sí corre
+    // el CDA, al final. Ya NO bloquea si rechaza — se deja completar y
+    // guardar el formulario igual; la persona queda con la ejecución
+    // rechazada en su historial (ver AccionistasSection/RepresentantesSection/
+    // ApoderadosSection, que la muestran en rojo) para que un admin la
+    // reintente después desde EmpresaDetalle.
+    setProcesoModal(prev => ({
+      ...prev,
+      pasos: prev.pasos.map(p =>
+        p.id === "padron" ? { ...p, estado: "completado" } :
+        p.id === "cda" ? { ...p, estado: "cargando" } : p
+      ),
+    }));
+
+    const terceroIdValidacion =
+      representante?.id ||
+      (representanteInicial?.preloadedFromDb ? representanteInicial?.id : null) ||
+      stubTerceroIdRef.current;
+
+    if (!terceroIdValidacion) {
+      setProcesoModal(prev => ({
+        ...prev,
+        hasError: true,
+        isSystemError: true,
+        pasos: prev.pasos.map(p =>
+          p.id === "cda" ? {
+              ...p,
+              estado: "error",
+              errores: ["No se pudo identificar a la persona para validar los criterios de aceptación. Intentá nuevamente."]
+          } : p
+        )
+      }));
+      setAfipValidado(false);
+      setValidando(false);
+      return;
+    }
+
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam, usuarioWebIdActual);
+
+    if (!result.success) {
+      setProcesoModal(prev => ({
+        ...prev,
+        pasos: prev.pasos.map(p =>
+          p.id === "cda" ? { ...p, estado: "alerta", errores: result.errors.map(e => e.message) } : p
+        ),
+      }));
+    } else {
+      setProcesoModal(prev => ({
+        ...prev,
+        pasos: prev.pasos.map(p => (p.id === "cda" ? { ...p, estado: "completado" } : p)),
+      }));
+    }
+
+    setAfipValidado(true);
+    setTimeout(() => {
+      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+    }, result.success ? 600 : 1200);
+    setValidando(false);
   };
 
   const handlePreSubmit = async (e) => {
@@ -570,13 +652,6 @@ export function RepresentanteModal({
     const domicilioValido = validarDomicilio();
     if (!isValid || !domicilioValido) return;
 
-    if (cdaRechazado) {
-      toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {
-        description: "Volvé a consultar el CUIT para reintentar la validación.",
-      });
-      return;
-    }
-
     if (!isDirty) {
       onClose();
       return;
@@ -587,6 +662,67 @@ export function RepresentanteModal({
   };
 
   const onConfirmSave = async () => {
+    // Al editar un representante/apoderado existente (ej. precargado por
+    // LUFE) el paso de "Validar CUIT" se salta directo al formulario —
+    // handleAfipLookup, que es donde corre el CDA, nunca se dispara. Acá,
+    // recién al confirmar el guardado (no antes, en el primer click de
+    // "Guardar Cambios"), es la única oportunidad de validarlo, ya con los
+    // datos completos.
+    //
+    // Se cierra el diálogo de confirmación genérico y se muestra el mismo
+    // modal de progreso que usa handleAfipLookup, para que quede visible
+    // que se está validando — antes esto corría en silencio (solo el
+    // spinner del botón) y era fácil no darse cuenta.
+    //
+    // Si ya tiene un CDA Aprobado vigente (mismo cálculo que usa
+    // TerceroCdaEstado para el badge), se confía en eso y no se vuelve a
+    // ejecutar. Si rechaza, YA NO bloquea el guardado (unificado con
+    // handleAfipLookup): se guarda igual, y la persona queda marcada en
+    // rojo en la lista para que un admin la reintente después.
+    if (representante || representanteInicial) {
+      const terceroIdValidacion =
+        representante?.id ||
+        (representanteInicial?.preloadedFromDb ? representanteInicial?.id : null);
+
+      if (terceroIdValidacion) {
+        let yaAprobado = false;
+        try {
+          const historial = await tercerosService.obtenerExecuteCda(terceroIdValidacion);
+          yaAprobado = calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial)) === "aprobado";
+        } catch (histErr) {
+          console.warn("[RepresentanteModal] No se pudo obtener el historial de CDA, se re-ejecuta por las dudas:", histErr);
+        }
+
+        if (!yaAprobado) {
+          setShowConfirm(false);
+          setProcesoModal({
+            isOpen: true,
+            titulo: `Validando ${etiquetaRol}`,
+            pasos: [
+              { id: "cda", etiqueta: "Ejecutando validaciones CDA", estado: "cargando", descripcion: "Comprobando políticas de riesgo y negocio." },
+            ],
+            hasError: false,
+            isSystemError: false,
+          });
+          const resultCda = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam, usuarioWebIdActual);
+          setProcesoModal((prev) => ({
+            ...prev,
+            pasos: prev.pasos.map((p) =>
+              p.id === "cda"
+                ? {
+                    ...p,
+                    estado: resultCda.success ? "completado" : "alerta",
+                    errores: resultCda.success ? undefined : resultCda.errors.map((e) => e.message),
+                  }
+                : p
+            ),
+          }));
+          await new Promise((resolve) => setTimeout(resolve, resultCda.success ? 500 : 1400));
+          setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+        }
+      }
+    }
+
     const formData = getValues();
     try {
       const cuitLimpio = String(formData.cuit).replace(/\D/g, "");
@@ -1065,7 +1201,7 @@ export function RepresentanteModal({
 
           <div className={styles.modalFooter}>
             {(afipValidado || representante || representanteInicial) && (
-              <Button type="submit" variant={isAdmin ? "blue" : "primary"}>
+              <Button type="submit" variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
                 {representante || representanteInicial ? "Guardar Cambios" : `Agregar ${etiquetaRol}`}
               </Button>
             )}

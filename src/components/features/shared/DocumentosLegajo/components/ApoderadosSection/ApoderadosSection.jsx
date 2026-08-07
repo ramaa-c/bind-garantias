@@ -10,11 +10,13 @@ import {
   FiPhone,
   FiMapPin,
   FiAlertCircle,
+  FiXCircle,
 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { ApoderadoModal } from "../../../ApoderadoModal/ApoderadoModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
+import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
 
 // Solo Apoderado (TipoRelacionSocioID 210) - aplica tanto a persona física
 // como jurídica. Representante Legal tiene su propia pestaña/sección (ver
@@ -33,6 +35,8 @@ export function ApoderadosSection({
   const [portalTarget, setPortalTarget] = useState(null);
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
+
+  const { data: estadoCdaMap } = useEstadoCdaTerceros(apoderados.map((r) => r.id));
 
   const abrirModal = (rep = null) => {
     setEditApoderado(rep);
@@ -95,8 +99,16 @@ export function ApoderadosSection({
                 const cuitLimpio = String(rep.cuit || "").replace(/\D/g, "");
                 if (!cuitLimpio) faltantes.push("CUIT válido");
 
+                const cdaRechazado = estadoCdaMap?.get(Number(rep.id)) === "rechazado";
+
                 return (
-                <div key={rep.id} className={`${styles.socioCard} ${faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
+                <div key={rep.id} className={`${styles.socioCard} ${cdaRechazado ? styles.socioCardRejected : faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
+                  {cdaRechazado && (
+                    <div className={styles.socioRejectedBanner}>
+                      <FiXCircle size={14} />
+                      <span>Esta persona no superó las validaciones de aceptación correspondientes. Comunicate con nosotros para que la revisemos.</span>
+                    </div>
+                  )}
                   <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
@@ -212,7 +224,6 @@ export function ApoderadosSection({
                     {isAdmin && (
                       <TerceroCdaEstado
                         terceroId={rep.id}
-                        cuit={rep.cuit}
                         socioIdActivo={socioIdActivo}
                       />
                     )}

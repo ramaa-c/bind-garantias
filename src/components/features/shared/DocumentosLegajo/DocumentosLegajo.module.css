@@ -748,6 +748,36 @@
   ) !important;
 }
 
+/* Tercero con el CDA rechazado (ver TerceroCdaEstado/useEstadoCdaTerceros):
+   tiene prioridad visual sobre warning/success — no pasó las validaciones
+   correspondientes y queda pendiente de que un admin lo reintente. */
+.socioCardRejected {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(239, 68, 68, 0.06) 0%,
+    transparent 100%
+  ) !important;
+}
+
+.socioRejectedBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0.875rem 0;
+  padding: 0.6rem 0.875rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 0.5rem;
+  color: #ef4444;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.socioRejectedBanner svg {
+  flex-shrink: 0;
+}
+
 .socioWarningWrapper {
   position: relative;
   display: flex;

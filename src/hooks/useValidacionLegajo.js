@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { useEmpresaActiva } from "./useEmpresaActiva";
 import { useRequisitos } from "./useRequisitos";
-import { useObtenerDatosSocioLegajo } from "./useTerceros";
+import { useObtenerDatosSocioLegajo, useEstadoCdaTerceros } from "./useTerceros";
 import { socioArchivoService } from "../services/socioArchivoService";
 
 const DOCUMENT_TITLES = {
@@ -105,6 +105,14 @@ export const useValidacionLegajo = ({
   const { data: socioLegajoData, isLoading: loadingLegajo } =
     useObtenerDatosSocioLegajo(socioIdActivo);
 
+  // Un accionista/representante/apoderado con el CDA rechazado no cuenta
+  // como completo (ver más abajo) — el legajo queda inválido hasta que se
+  // reejecute y pase, momento en el cual LegajoUniversalBar migra solo.
+  const { data: estadoCdaMap, isLoading: loadingEstadoCda } = useEstadoCdaTerceros([
+    ...(socioLegajoData?.accionistas || []).map((a) => a.id),
+    ...(socioLegajoData?.representantes || []).map((r) => r.id),
+  ]);
+
   const { data: archivosBackend = [], isLoading: loadingArchivos } = useQuery({
     queryKey: ["socioArchivos", socioIdActivo],
     queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo),
@@ -112,7 +120,14 @@ export const useValidacionLegajo = ({
     staleTime: 1000 * 60 * 5,
   });
 
-  const isLoading = loadingRequisitos || loadingLegajo || loadingArchivos;
+  // ⚠️ loadingEstadoCda tiene que estar acá: si no, cuando socioLegajoData
+  // refresca (ej. se acaba de agregar un accionista) pero el estado CDA de
+  // ese tercero todavía no llegó, isValid puede computar en `true` con un
+  // mapa incompleto (el nuevo tercero no figura como "rechazado" porque
+  // todavía no se sabe nada de él) — eso alcanzó a disparar la migración
+  // automática de LegajoUniversalBar antes de que la card se pintara de
+  // rojo. Confirmado en vivo (2026-08-07).
+  const isLoading = loadingRequisitos || loadingLegajo || loadingArchivos || loadingEstadoCda;
 
   if (isLoading || !requisitos) {
     return {
@@ -186,9 +201,19 @@ export const useValidacionLegajo = ({
         accionistasValidos = false;
         erroresAccionistas.push("Debe registrar la composición accionaria (Accionistas).");
       } else {
+        // Un accionista con el CDA rechazado no cuenta para la sumatoria
+        // (queda "afuera" hasta que se reejecute y pase) — ver
+        // AccionistasSection, que lo muestra en rojo.
+        const accionistasRechazados = accionistas.filter(
+          (s) => estadoCdaMap?.get(Number(s.id)) === "rechazado"
+        );
+
         // Validar participación = 100%
         const totalParticipacion = Number(
-          accionistas.reduce((acc, s) => acc + Number(s.participacion || 0), 0).toFixed(2)
+          accionistas
+            .filter((s) => estadoCdaMap?.get(Number(s.id)) !== "rechazado")
+            .reduce((acc, s) => acc + Number(s.participacion || 0), 0)
+            .toFixed(2)
         );
 
         if (totalParticipacion !== 100) {
@@ -196,6 +221,15 @@ export const useValidacionLegajo = ({
           erroresAccionistas.push(
             `La sumatoria de las participaciones de los accionistas debe ser exactamente 100% (actual: ${totalParticipacion}%).`
           );
+        }
+
+        if (accionistasRechazados.length > 0) {
+          accionistasValidos = false;
+          accionistasRechazados.forEach((s) => {
+            erroresAccionistas.push(
+              `El accionista ${s.nombre} no pasó los Criterios de Aceptación — un administrador debe reintentarlo.`
+            );
+          });
         }
 
         // Validar datos de contacto, domicilio, CUIT y DNI para cada accionista
@@ -239,6 +273,12 @@ export const useValidacionLegajo = ({
             apoderadosValidos = false;
             erroresApoderados.push(...erroresRep);
           }
+          if (estadoCdaMap?.get(Number(rep.id)) === "rechazado") {
+            apoderadosValidos = false;
+            erroresApoderados.push(
+              `El apoderado ${rep.nombre} no pasó los Criterios de Aceptación — un administrador debe reintentarlo.`
+            );
+          }
         });
       }
 
@@ -271,6 +311,12 @@ export const useValidacionLegajo = ({
           if (erroresRep.length > 0) {
             repLegalValidos = false;
             erroresRepLegal.push(...erroresRep);
+          }
+          if (estadoCdaMap?.get(Number(rep.id)) === "rechazado") {
+            repLegalValidos = false;
+            erroresRepLegal.push(
+              `El representante legal ${rep.nombre} no pasó los Criterios de Aceptación — un administrador debe reintentarlo.`
+            );
           }
         });
       }

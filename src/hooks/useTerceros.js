@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { tercerosService } from '../services/tercerosService';
+import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from '../utils/executeCda';
 
 export const useObtenerTerceros = (params = {}) => {
     return useQuery({
@@ -347,5 +348,35 @@ export const useObtenerExecuteCdaTercero = (terceroId) => {
     queryKey: ["terceros", "executeCda", terceroId],
     queryFn: () => tercerosService.obtenerExecuteCda(terceroId),
     enabled: !!terceroId,
+  });
+};
+
+// Estado CDA ("aprobado"/"rechazado"/"pendiente"/null) de varios terceros a
+// la vez — usado para pintar en rojo la card de un accionista/representante/
+// apoderado rechazado en las listas del legajo, y para el gate de
+// completitud de useValidacionLegajo. No existe un endpoint bulk confiable
+// (GET api/Terceros/ExecuteCda sin TerceroID no responde en un tiempo
+// razonable, probado en vivo) — se resuelve en paralelo, uno por tercero,
+// igual que ya hace useObtenerDatosSocioLegajo.
+export const useEstadoCdaTerceros = (terceroIds = []) => {
+  const ids = [...new Set((terceroIds || []).filter(Boolean).map(Number))].sort((a, b) => a - b);
+  const idsKey = ids.join(",");
+  return useQuery({
+    queryKey: ["terceros", "estadoCdaBulk", idsKey],
+    queryFn: async () => {
+      const entries = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const historial = await tercerosService.obtenerExecuteCda(id);
+            return [id, calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial))];
+          } catch (err) {
+            console.warn("[useEstadoCdaTerceros] Error obteniendo historial de CDA para tercero", id, err);
+            return [id, null];
+          }
+        }),
+      );
+      return new Map(entries);
+    },
+    enabled: ids.length > 0,
   });
 };

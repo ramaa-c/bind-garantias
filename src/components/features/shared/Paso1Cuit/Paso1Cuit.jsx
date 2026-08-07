@@ -168,7 +168,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
   // en el camino normal (recién cruzado el umbral) como en un reintento
   // post-umbral tras un error de sistema — nunca vuelve a tocar
   // crearSocio/vincularSocioUsuario.
-  const ejecutarCdaYFinalizar = async (cuit) => {
+  const ejecutarCdaYFinalizar = async () => {
     setProcesoModal((prev) => ({
       ...prev,
       hasError: false,
@@ -185,7 +185,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
     // admin puede verlo y re-ejecutarlo desde EmpresaDetalle.
     const resultCda = await ejecutarValidaciones(
       "PANTALLA_INGRESO_CUIT",
-      cuit,
+      { socioId: socioIdCreadoRef.current },
       cadenaValorIdParam,
       usuarioWebId,
     );
@@ -295,7 +295,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
 
     try {
       if (yaCruzoUmbral) {
-        await ejecutarCdaYFinalizar(cuit);
+        await ejecutarCdaYFinalizar();
         return;
       }
 
@@ -568,7 +568,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
           ),
         }));
 
-        await ejecutarCdaYFinalizar(cuit);
+        await ejecutarCdaYFinalizar();
       } else {
         setProcesoModal((prev) => ({
           ...prev,
@@ -587,6 +587,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
         return;
       }
     } catch (err) {
+      // Este catch envuelve todo lo que corre entre el padrón y el CDA
+      // (crearSocio, vincularSocioUsuario, etc.) — sin loguear acá no hay
+      // forma de saber cuál de esos pasos fue el que tiró, ni por qué.
+      console.error("[Paso1Cuit] Error inesperado en continuarValidacionCompleta:", err);
       setProcesoModal((prev) => ({
         ...prev,
         hasError: true,

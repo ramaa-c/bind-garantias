@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { FiUsers, FiPlus, FiAlertCircle, FiUser, FiChevronDown, FiEdit2, FiTrash2, FiMail, FiPhone, FiMapPin, FiPercent } from "react-icons/fi";
+import { FiUsers, FiPlus, FiAlertCircle, FiUser, FiChevronDown, FiEdit2, FiTrash2, FiMail, FiPhone, FiMapPin, FiPercent, FiXCircle } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { SocioAccionistaModal } from "../SocioAccionistaModal/SocioAccionistaModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui";
+import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
 
 const normalizarTexto = (str) =>
   String(str || "")
@@ -29,6 +30,8 @@ export function AccionistasSection({
   const [portalTarget, setPortalTarget] = useState(null);
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
+
+  const { data: estadoCdaMap } = useEstadoCdaTerceros(accionistas.map((a) => a.id));
 
   useEffect(() => {
     setPortalTarget(document.getElementById("socios-header-action-portal"));
@@ -128,8 +131,16 @@ export function AccionistasSection({
                   if (!tieneDniDorso) faltantes.push("Foto DNI Dorso");
                 }
 
+                const cdaRechazado = estadoCdaMap?.get(Number(socio.id)) === "rechazado";
+
                 return (
-                <div key={socio.id} className={`${styles.socioCard} ${faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
+                <div key={socio.id} className={`${styles.socioCard} ${cdaRechazado ? styles.socioCardRejected : faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
+                  {cdaRechazado && (
+                    <div className={styles.socioRejectedBanner}>
+                      <FiXCircle size={14} />
+                      <span>Esta persona no superó las validaciones de aceptación correspondientes. Comunicate con nosotros para que la revisemos.</span>
+                    </div>
+                  )}
                   <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
@@ -254,7 +265,6 @@ export function AccionistasSection({
                     {isAdmin && (
                       <TerceroCdaEstado
                         terceroId={socio.id}
-                        cuit={socio.cuit}
                         socioIdActivo={socioIdActivo}
                       />
                     )}

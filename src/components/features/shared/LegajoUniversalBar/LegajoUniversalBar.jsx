@@ -14,8 +14,22 @@ import { MigracionExitosaModal } from "../MigracionExitosaModal/MigracionExitosa
 import { EstadoMigracionModal } from "../EstadoMigracionModal/EstadoMigracionModal";
 import styles from "./LegajoUniversalBar.module.css";
 
-export function LegajoUniversalBar({ context }) {
-  const { socioIdActivo } = useEmpresaActiva();
+// adminMode/socioIdActivo/tipoPersonaId/nombreEmpresa/cadenaId: mismos
+// overrides opcionales que ya acepta useValidacionLegajo, para poder montar
+// esta barra también en EmpresaDetalle.jsx (admin) — ahí no hay usuario
+// cliente logueado del que sacar el socio activo. En admin no se muestra la
+// tarjeta completa (navegación a pestañas de cliente no aplica ahí): solo
+// corre el efecto de auto-migración y el modal de éxito, en silencio.
+export function LegajoUniversalBar({
+  context,
+  adminMode = false,
+  socioIdActivo: socioIdOverride,
+  tipoPersonaId: tipoPersonaIdOverride,
+  nombreEmpresa: nombreEmpresaOverride,
+  cadenaId: cadenaIdOverride,
+}) {
+  const empresaActiva = useEmpresaActiva(adminMode);
+  const socioIdActivo = adminMode ? socioIdOverride : empresaActiva.socioIdActivo;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { channelInfo } = useChannel();
@@ -33,7 +47,13 @@ export function LegajoUniversalBar({ context }) {
     archivosBackend,
     socioLegajoData,
     tipoPersonaId,
-  } = useValidacionLegajo();
+  } = useValidacionLegajo({
+    adminMode,
+    socioIdActivo: socioIdOverride,
+    tipoPersonaId: tipoPersonaIdOverride,
+    nombreEmpresa: nombreEmpresaOverride,
+    cadenaId: cadenaIdOverride,
+  });
 
   const [isMigrating, setIsMigrating] = useState(false);
   const [lastAttemptedFingerprint, setLastAttemptedFingerprint] = useState("");
@@ -104,8 +124,10 @@ export function LegajoUniversalBar({ context }) {
     // esa modal corre su propia validación de CDA. Si se dispara la
     // migración (y el aviso de éxito) en ese momento, el usuario lo ve
     // superpuesto a una modal que ni terminó de guardar. Se pospone hasta
-    // que no quede ninguna abierta; ver useLegajoModalStore.
-    if (context === "legajo" && modalesLegajoAbiertos > 0) {
+    // que no quede ninguna abierta; ver useLegajoModalStore. En admin
+    // (EmpresaDetalle) no hay concepto de "context", pero el mismo store
+    // global lo comparten los mismos modales — se aplica el mismo guard.
+    if ((context === "legajo" || adminMode) && modalesLegajoAbiertos > 0) {
       console.log(
         `[LegajoUniversalBar] Hay ${modalesLegajoAbiertos} modal(es) de legajo abierta(s): se pospone la migración hasta que se cierren.`,
       );
@@ -170,7 +192,7 @@ export function LegajoUniversalBar({ context }) {
     };
 
     autoMigrar();
-  }, [socioIdActivo, isValid, fingerprint, isMigrating, isLoading, context, modalesLegajoAbiertos, lastAttemptedFingerprint, queryClient, localStorageKey]);
+  }, [socioIdActivo, isValid, fingerprint, isMigrating, isLoading, context, adminMode, modalesLegajoAbiertos, lastAttemptedFingerprint, queryClient, localStorageKey]);
 
   const hasMandatoryInContext =
     (context === "documentacion" && totalDocumentosObligatorios > 0) ||
@@ -187,7 +209,11 @@ export function LegajoUniversalBar({ context }) {
     />
   );
 
-  if (isLoading || totalRequisitos === 0 || !hasMandatoryInContext) {
+  // En admin no se muestra la tarjeta completa (navegación a pestañas de
+  // cliente, botones "Ir"/"Ver qué falta") — el componente solo se monta ahí
+  // por el efecto de auto-migración de arriba; el modal de éxito sí se
+  // deja, para que el admin también vea la confirmación si dispara una.
+  if (adminMode || isLoading || totalRequisitos === 0 || !hasMandatoryInContext) {
     return migracionExitosaModal;
   }
 

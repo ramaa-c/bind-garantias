@@ -155,6 +155,12 @@ export function SociosLegajo({
   const cargarSocios = () => {
     queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto", socioIdActivo] });
     queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] });
+    // Sin esto, la card de accionistas/representantes/apoderados (y el gate
+    // de isValid de useValidacionLegajo) siguen mostrando el estado CDA
+    // viejo hasta que algo más invalide esta query a mano — ver
+    // useEstadoCdaTerceros. Coincide con el prefijo de TODAS las variantes
+    // de idsKey (invalidateQueries matchea por prefijo).
+    queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
     cargarArchivosExistentes();
   };
 

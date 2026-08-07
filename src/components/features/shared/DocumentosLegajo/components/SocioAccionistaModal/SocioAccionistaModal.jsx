@@ -13,6 +13,7 @@ import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
+import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../../../utils/executeCda";
 import { afipService } from "../../../../../../services/afipService";
 import { sociosService } from "../../../../../../services/sociosService";
 import { nosisService } from "../../../../../../services/nosisService";
@@ -96,7 +97,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto, setEnriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
-  const [cdaRechazado, setCdaRechazado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
   const [guardando, setGuardando] = useState(false);
@@ -237,7 +237,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setErrorDniFrente(false);
       setErrorDniDorso(false);
       setShowConfirm(false);
-      setCdaRechazado(false);
       stubIdsRef.current = { terceroId: null, relacionId: null };
       if (socio) {
         setAfipValidado(true);
@@ -365,11 +364,23 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
     clearErrors("cuit");
 
+    // Refleja los 3 tramos reales de esta función, en el mismo orden que
+    // Paso1Cuit: vincular (solo alta nueva) → consultar padrón → CDA al
+    // final. El CDA YA NO bloquea si rechaza: se deja completar y guardar
+    // igual, y la persona queda marcada como rechazada (ver
+    // AccionistasSection) para que un admin la reintente después. El
+    // padrón (no encontrar a la persona en ningún lado) sí sigue
+    // bloqueando. En edición no hay nada que vincular, así que ese paso
+    // arranca directo "completado".
+    const necesitaVinculo = !socio && !stubIdsRef.current.terceroId;
+
     setProcesoModal({
       isOpen: true,
       titulo: "Validando Socio",
       pasos: [
-        { id: "sgr", etiqueta: "Conectando con SGR+", estado: "cargando", descripcion: "Validando situación e historial societario." },
+        { id: "vinculo", etiqueta: "Vinculando con el socio", estado: necesitaVinculo ? "cargando" : "completado", descripcion: "Registrando la relación en el sistema." },
+        { id: "padron", etiqueta: "Consultando padrón", estado: necesitaVinculo ? "pendiente" : "cargando", descripcion: "Obteniendo los datos de la persona desde el padrón federal/bureau en tiempo real." },
+        { id: "cda", etiqueta: "Ejecutando validaciones CDA", estado: "pendiente", descripcion: "Comprobando políticas de riesgo y negocio para el alta." },
       ],
       hasError: false,
       isSystemError: false
@@ -377,7 +388,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
     // Solo hace falta crear el stub para un accionista NUEVO — si `socio`
     // viene seteado (edición), la relación ya existe de antes.
-    if (!socio && !stubIdsRef.current.terceroId) {
+    if (necesitaVinculo) {
       try {
         // Denominacion y descripcionreducida van VACÍAS a propósito (no
         // "Pendiente de datos" ni similar) para el caso de que haya que
@@ -473,31 +484,14 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         // conocíamos antes de este cambio).
         console.error("[SocioAccionistaModal] Error creando la relación previa a validar CDA:", stubErr);
       }
-    }
-
-    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", cuitLimpio, cadenaValorIdParam, usuarioWebIdActual);
-
-    if (!result.success) {
-      setCdaRechazado(true);
       setProcesoModal(prev => ({
         ...prev,
-        hasError: true,
-        isSystemError: result.errors.some((e) => e.isSystemError),
         pasos: prev.pasos.map(p =>
-          p.id === "sgr" ? {
-              ...p,
-              estado: "error",
-              descripcion: `Falló la validación del socio:`,
-              errores: result.errors.map(e => e.message)
-          } : p
-        )
+          p.id === "vinculo" ? { ...p, estado: "completado" } :
+          p.id === "padron" ? { ...p, estado: "cargando" } : p
+        ),
       }));
-      setValidando(false);
-      return;
     }
-
-    setCdaRechazado(false);
-    setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
     try {
       let terceroEncontrado = null;
@@ -511,9 +505,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         console.warn("[SocioAccionistaModal] Error buscando tercero en base de datos local:", dbErr);
       }
 
-      const tieneDatosCompletos = terceroEncontrado && 
+      const tieneDatosCompletos = terceroEncontrado &&
         (terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail) &&
         (terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion);
+
+      let padronOk = false;
 
       if (terceroEncontrado && tieneDatosCompletos && !socio) {
         const nombreSocio = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Socio del Sistema";
@@ -537,21 +533,24 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           setValue("provinciaid", String(provId), { shouldValidate: true, shouldDirty: true });
         }
 
-        setAfipValidado(true);
         toast.success("Datos del accionista recuperados del sistema.");
-        setValidando(false);
-        return;
+        padronOk = true;
       }
 
+      // El CDA corre AL FINAL (ver más abajo), después de que el padrón
+      // haya terminado por cualquiera de los caminos posibles — `padronOk`
+      // es lo que permite saltar el resto de este bloque cuando el primero
+      // (datos locales) ya alcanzó.
       let nosisData = null;
       let res = null;
+      if (!padronOk)
       try {
         nosisData = await nosisService.obtenerDatosNormalizados(cuitLimpio);
       } catch (nosisErr) {
         console.warn("[SocioAccionistaModal] Nosis no disponible, probando fallback a AFIP:", nosisErr);
       }
 
-      if (!nosisData) {
+      if (!padronOk && !nosisData) {
         try {
           res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
         } catch (afipErr) {
@@ -567,7 +566,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         }
       }
 
-      if (nosisData || (res && res.datosgenerales)) {
+      if (!padronOk && (nosisData || (res && res.datosgenerales))) {
         let nombreSocio = "";
         let emailVal = "";
         let celularVal = "";
@@ -681,50 +680,96 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           }
         }
 
-        setAfipValidado(true);
         toast.success(socio ? "Datos actualizados desde Nosis/AFIP/LUFE." : "Datos del accionista recuperados.");
-      } else {
-        if (terceroEncontrado) {
-          const nombreSocio = terceroEncontrado.denominacion || terceroEncontrado.razonsocial || terceroEncontrado.nombre || "Socio del Sistema";
-          setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
-          setValue("email", terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail || "", { shouldValidate: true, shouldDirty: true });
-          setValue("celular", terceroEncontrado.telefono || terceroEncontrado.Telefono || "", { shouldValidate: true, shouldDirty: true });
-          setValue("direccion", terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "", { shouldValidate: true, shouldDirty: true });
-          
-          const parsedDir = parseAddress(terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion || "");
-          setValue("calle", parsedDir.calle || terceroEncontrado.calle || "", { shouldValidate: true, shouldDirty: true });
-          setValue("numero", Number(terceroEncontrado.numero) || parsedDir.numero || 0, { shouldValidate: true, shouldDirty: true });
-          setValue("piso", terceroEncontrado.piso || parsedDir.piso || "", { shouldValidate: true, shouldDirty: true });
-          setValue("departamento", terceroEncontrado.departamento || "", { shouldValidate: true, shouldDirty: true });
-
-          setValue("ciudad", terceroEncontrado.ciudad || "", { shouldValidate: true, shouldDirty: true });
-          setValue("ciudadid", Number(terceroEncontrado.ciudadid) || 0, { shouldValidate: true, shouldDirty: true });
-          setValue("codpos", terceroEncontrado.codpos || "", { shouldValidate: true, shouldDirty: true });
-
-          const provId = terceroEncontrado.provinciaid || terceroEncontrado.ProvinciaID || 0;
-          if (provId) {
-            setValue("provinciaid", String(provId), { shouldValidate: true, shouldDirty: true });
-          }
-          setAfipValidado(true);
-          toast.info("No se halló AFIP/LUFE. Se usaron los datos locales del tercero.");
-        } else {
-          toast.error("CUIT no encontrado en AFIP/LUFE", {
-            description: "No se encontraron datos automáticos. Podés ingresarlos manualmente.",
-          });
-          setValue("nombre", "");
-          setAfipValidado(true);
-        }
+        padronOk = true;
+      } else if (!padronOk) {
+        // Padrón no encontrado por ningún lado (ni NOSIS/AFIP/LUFE, ni un
+        // tercero local con datos completos): acá sí se bloquea, igual que
+        // en RepresentanteModal — no hay nada razonable para completar a
+        // mano sin al menos un nombre.
+        setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de Nosis ni AFIP." });
+        setAfipValidado(false);
+        setProcesoModal(prev => ({
+          ...prev,
+          hasError: true,
+          isSystemError: false,
+          pasos: prev.pasos.map(p =>
+            p.id === "padron" ? { ...p, estado: "error", errores: ["No se encontraron datos en Nosis ni AFIP para este CUIT."] } : p
+          ),
+        }));
+        setValidando(false);
+        return;
       }
     } catch (err) {
       console.error("Error validando CUIT en AFIP/SGR:", err);
-      toast.error("Servicio de AFIP/LUFE no disponible", {
-        description: "No se pudieron obtener datos automáticos. Podés ingresarlos manualmente.",
-      });
-      setValue("nombre", "");
-      setAfipValidado(true);
-    } finally {
+      setError("cuit", { type: "manual", message: "Servicios de AFIP/LUFE caídos. Intente más tarde." });
+      setAfipValidado(false);
+      setProcesoModal(prev => ({
+        ...prev,
+        hasError: true,
+        isSystemError: true,
+        pasos: prev.pasos.map(p =>
+          p.id === "padron" ? { ...p, estado: "error", errores: ["Servicio de AFIP/LUFE no disponible. No se pudieron obtener datos automáticos."] } : p
+        ),
+      }));
       setValidando(false);
+      return;
     }
+
+    // Padrón resuelto: ahora sí corre el CDA, al final. Ya NO bloquea si
+    // rechaza — se deja completar y guardar el formulario igual; la
+    // persona queda con la ejecución rechazada en su historial (ver
+    // AccionistasSection, que la muestra en rojo) para que un admin la
+    // reintente después desde EmpresaDetalle.
+    setProcesoModal(prev => ({
+      ...prev,
+      pasos: prev.pasos.map(p =>
+        p.id === "padron" ? { ...p, estado: "completado" } :
+        p.id === "cda" ? { ...p, estado: "cargando" } : p
+      ),
+    }));
+
+    const terceroIdValidacion = socio?.id || stubIdsRef.current.terceroId || null;
+
+    if (!terceroIdValidacion) {
+      setProcesoModal(prev => ({
+        ...prev,
+        hasError: true,
+        isSystemError: true,
+        pasos: prev.pasos.map(p =>
+          p.id === "cda" ? {
+              ...p,
+              estado: "error",
+              errores: ["No se pudo identificar a la persona para validar los criterios de aceptación. Intentá nuevamente."]
+          } : p
+        )
+      }));
+      setAfipValidado(false);
+      setValidando(false);
+      return;
+    }
+
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam, usuarioWebIdActual);
+
+    if (!result.success) {
+      setProcesoModal(prev => ({
+        ...prev,
+        pasos: prev.pasos.map(p =>
+          p.id === "cda" ? { ...p, estado: "alerta", errores: result.errors.map(e => e.message) } : p
+        ),
+      }));
+    } else {
+      setProcesoModal(prev => ({
+        ...prev,
+        pasos: prev.pasos.map(p => (p.id === "cda" ? { ...p, estado: "completado" } : p)),
+      }));
+    }
+
+    setAfipValidado(true);
+    setTimeout(() => {
+      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+    }, result.success ? 600 : 1200);
+    setValidando(false);
   };
 
   const handlePreSubmit = async (e) => {
@@ -768,13 +813,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
     if (!isValid || hasDropzoneErrors || !domicilioValido) return;
 
-    if (cdaRechazado) {
-      toast.error("No se puede guardar: no pasó la validación de Criterios de Aceptación.", {
-        description: "Volvé a consultar el CUIT para reintentar la validación.",
-      });
-      return;
-    }
-
     if (!isDirty && !filesChanged) {
       onClose();
       return;
@@ -784,6 +822,60 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   };
 
   const onConfirmSave = async () => {
+    // Al editar un accionista existente (ej. precargado por LUFE) el paso
+    // de "Validar CUIT" se salta directo al formulario — handleAfipLookup,
+    // que es donde corre el CDA, nunca se dispara. Acá, recién al confirmar
+    // el guardado (no antes, en el primer click de "Guardar Cambios"), es
+    // la única oportunidad de validarlo, ya con los datos completos.
+    //
+    // Se cierra el diálogo de confirmación genérico y se muestra el mismo
+    // modal de progreso que usa handleAfipLookup, para que quede visible
+    // que se está validando — antes esto corría en silencio (solo el
+    // spinner del botón) y era fácil no darse cuenta.
+    //
+    // Si ya tiene un CDA Aprobado vigente (mismo cálculo que usa
+    // TerceroCdaEstado para el badge), se confía en eso y no se vuelve a
+    // ejecutar. Si rechaza, YA NO bloquea el guardado (unificado con
+    // handleAfipLookup): se guarda igual, y la persona queda marcada en
+    // rojo en la lista para que un admin la reintente después.
+    if (socio) {
+      let yaAprobado = false;
+      try {
+        const historial = await tercerosService.obtenerExecuteCda(socio.id);
+        yaAprobado = calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial)) === "aprobado";
+      } catch (histErr) {
+        console.warn("[SocioAccionistaModal] No se pudo obtener el historial de CDA, se re-ejecuta por las dudas:", histErr);
+      }
+
+      if (!yaAprobado) {
+        setShowConfirm(false);
+        setProcesoModal({
+          isOpen: true,
+          titulo: "Validando Accionista",
+          pasos: [
+            { id: "cda", etiqueta: "Ejecutando validaciones CDA", estado: "cargando", descripcion: "Comprobando políticas de riesgo y negocio." },
+          ],
+          hasError: false,
+          isSystemError: false,
+        });
+        const resultCda = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: socio.id }, cadenaValorIdParam, usuarioWebIdActual);
+        setProcesoModal((prev) => ({
+          ...prev,
+          pasos: prev.pasos.map((p) =>
+            p.id === "cda"
+              ? {
+                  ...p,
+                  estado: resultCda.success ? "completado" : "alerta",
+                  errores: resultCda.success ? undefined : resultCda.errors.map((e) => e.message),
+                }
+              : p
+          ),
+        }));
+        await new Promise((resolve) => setTimeout(resolve, resultCda.success ? 500 : 1400));
+        setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+      }
+    }
+
     const formData = getValues();
     setGuardando(true);
     const mainToastId = toast.loading("Guardando datos del accionista...");
@@ -1290,7 +1382,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
           <div className={styles.modalFooter}>
             {(afipValidado || socio) && (
-              <Button type="submit" variant={isAdmin ? "blue" : "primary"}>
+              <Button type="submit" variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
                 {socio ? "Guardar Cambios" : "Agregar Accionista"}
               </Button>
             )}
