@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useFormContext, useFormState, Controller } from "react-hook-form";
 import { FiCalendar } from "react-icons/fi";
 import { DayPicker } from "react-day-picker";
-import { format, parseISO, isValid as isValidDate } from "date-fns";
+import { format, parseISO, isValid as isValidDate, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
 import inputStyles from "../InputSimple/InputSimple.module.css";
@@ -21,6 +21,7 @@ export const SelectFechaSimple = ({
   placement = "bottom",
   hideErrorSpace = false,
   className = "",
+  mostrarDiasDesdeHoy = false,
 }) => {
   const formContext = useFormContext();
   const control = formContext?.control;
@@ -119,6 +120,9 @@ export const SelectFechaSimple = ({
     }
 
     const hasValue = !!dateObj;
+    const diasDesdeHoy = hasValue
+      ? Math.max(0, differenceInCalendarDays(dateObj, new Date()))
+      : null;
     const hasError = !!errorDisplay;
     const isAdmin = variant === "admin" || (variant !== "client" && typeof window !== "undefined" && window.location.pathname.includes("/admin"));
 
@@ -157,7 +161,13 @@ export const SelectFechaSimple = ({
             type="text"
             readOnly
             className={inputStyles.input}
-            value={hasValue ? format(dateObj, "dd/MM/yyyy", { locale: es }) : ""}
+            value={
+              hasValue
+                ? `${format(dateObj, "dd/MM/yyyy", { locale: es })}${
+                    mostrarDiasDesdeHoy ? ` · ${diasDesdeHoy} días` : ""
+                  }`
+                : ""
+            }
             placeholder=" "
             disabled={disabled}
             onFocus={() => {
