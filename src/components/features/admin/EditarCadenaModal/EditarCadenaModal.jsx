@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FiUploadCloud } from "react-icons/fi";
 import { toast } from "sonner";
 import { useActualizarCadenaValor } from "../../../../hooks/useCadenaValor";
-import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../hooks/useCatalogos";
+import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato } from "../../../../hooks/useCatalogos";
 import { Modal, Button, InputSimple, SelectSimple } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
@@ -16,6 +16,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     logo: "",
     tipocanalcomercializacionid: "",
     equipocomercialid: "",
+    tipocontratoid: "",
     montomaximo: "",
     porcentajemaximo: "",
     activa: "1"
@@ -48,10 +49,12 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
   // Queries & Mutations
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
+  const { data: contratosData } = useTipoContrato();
   const actualizarMutation = useActualizarCadenaValor();
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
+  const contratosOpciones = contratosData?.opciones || [];
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -64,8 +67,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
         logo: activeItem.logo || "",
         tipocanalcomercializacionid: activeItem.tipocanalcomercializacionid != null ? activeItem.tipocanalcomercializacionid.toString() : "",
         equipocomercialid: activeItem.equipocomercialid != null ? activeItem.equipocomercialid.toString() : "",
-        montomaximo: activeItem.montomaximo != null ? activeItem.montomaximo.toString() : "100",
-        porcentajemaximo: activeItem.porcentajemaximo != null ? activeItem.porcentajemaximo.toString() : "100",
+        tipocontratoid: activeItem.tipocontratoid != null ? activeItem.tipocontratoid.toString() : "",
+        montomaximo: activeItem.montomaximo != null && activeItem.montomaximo !== "" ? activeItem.montomaximo.toString() : "100",
+        porcentajemaximo: activeItem.porcentajemaximo != null && activeItem.porcentajemaximo !== "" ? activeItem.porcentajemaximo.toString() : "100",
         activa: activeItem.activa || "1"
       });
     }
@@ -102,6 +106,10 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       toast.error("Seleccione un Equipo Comercial");
       return;
     }
+    if (!formState.tipocontratoid) {
+      toast.error("Seleccione un Tipo de Contrato");
+      return;
+    }
     const montoLimpio = desenmascarar(formState.montomaximo);
     const porcentajeLimpio = desenmascarar(formState.porcentajemaximo);
 
@@ -125,6 +133,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       logo: formState.logo,
       tipocanalcomercializacionid: Number(formState.tipocanalcomercializacionid),
       equipocomercialid: Number(formState.equipocomercialid),
+      tipocontratoid: Number(formState.tipocontratoid),
       montomaximo: Number(desenmascarar(formState.montomaximo)),
       porcentajemaximo: Number(desenmascarar(formState.porcentajemaximo)),
       activa: formState.activa
@@ -221,6 +230,16 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 options={equiposOpciones}
                 value={formState.equipocomercialid}
                 onChange={val => setFormState({ ...formState, equipocomercialid: val })}
+                className={styles.compactInput}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <SelectSimple
+                label="Tipo de Contrato *"
+                placeholder="Seleccione tipo de contrato..."
+                options={contratosOpciones}
+                value={formState.tipocontratoid}
+                onChange={val => setFormState({ ...formState, tipocontratoid: val })}
                 className={styles.compactInput}
               />
             </div>

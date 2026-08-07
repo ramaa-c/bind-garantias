@@ -403,6 +403,7 @@ export default function CadenasValor() {
       />
 
       <EditarCadenaModal
+        key={activeItem?.cadenavalorid ?? "none"}
         isOpen={isModalOpen && modalType === "edit"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}
