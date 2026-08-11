@@ -154,6 +154,32 @@
   color: var(--success-green, #3ddc84);
 }
 
+.adminSyncBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, rgba(30, 30, 30, 0.7) 0%, rgba(76, 101, 230, 0.06) 100%);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+  border-radius: 14px;
+  padding: 0.65rem 1rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+}
+
+.adminSyncIcon {
+  flex-shrink: 0;
+  color: var(--color-azul-bind-300, #8a9fff);
+  font-size: 1.05rem;
+}
+
+.adminSyncText {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ffffff;
+}
+
 @media (min-width: 768px) {
   .container {
     padding: 0.7rem 1.1rem;
