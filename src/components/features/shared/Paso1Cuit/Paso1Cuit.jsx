@@ -27,12 +27,6 @@ const formatearCuit = (cuit) => {
   return `${limpio.slice(0, 2)}-${limpio.slice(2, 10)}-${limpio.slice(10)}`;
 };
 
-// ⚠️ TEMPORAL (17/7/2026): CASFOG está caído y hay que hacer una demo — se
-// desactiva en silencio el chequeo de Certificado PyME (no muestra error,
-// deja pasar como si estuviera vigente). Volver a poner en `false` en
-// cuanto CASFOG esté arriba de nuevo.
-const BYPASS_PYME_TEMPORAL = true;
-
 export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }) {
   const { cadenaSlug } = useParams();
   const navigate = useNavigate();
@@ -389,9 +383,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
       // El body del 401 no trae un mensaje pensado para el usuario (el
       // backend devuelve literalmente {"Message":"Unauthorized"}), así que
       // no lo mostramos: usamos un mensaje fijo propio para el rechazo.
-      const resultPyme = BYPASS_PYME_TEMPORAL
-        ? { status: 200 }
-        : await sociosService.obtenerCertificadoVigente(cuit);
+      const resultPyme = await sociosService.obtenerCertificadoVigente(cuit);
       if (resultPyme.status !== 200) {
         const isPymeInfraError = resultPyme.status >= 500;
         const mensajePyme = isPymeInfraError
