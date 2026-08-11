@@ -562,17 +562,11 @@ export const AltaDatosEmpresa = () => {
                 // completar los datos y avanzar.
                 onStepClick={pasoActual === 2 ? undefined : setPasoActual}
                 onVolver={null}
-                onVolverInicio={
-                  pasoActual === 1
-                    ? () => {
-                        if (vendorData?.isVendor) {
-                          navigate(`/${cadenaSlug}/seleccionar-empresa`);
-                        } else {
-                          navigate(`/${cadenaSlug}/legajo`);
-                        }
-                      }
-                    : null
-                }
+                // Sin botón de "Inicio"/"Volver": el CUIT queda comprometido
+                // apenas se llega a Paso 2 (ver comentario de onStepClick
+                // arriba) y en Paso 1 tampoco tiene sentido — no hay nada
+                // reversible desde ahí que amerite un atajo de salida.
+                onVolverInicio={null}
                 onReiniciar={null}
               />
 

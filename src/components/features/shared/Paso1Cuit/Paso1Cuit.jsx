@@ -80,10 +80,17 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
   const [cdaRechazoEstado, setCdaRechazoEstado] = useState(null);
   const socioIdCreadoRef = useRef(null);
   const cuitEnProcesoRef = useRef("");
+  // Datos de la empresa (Nosis/AFIP/LUFE) obtenidos al mostrar el cartel de
+  // confirmación de vinculación (ver handleValidar) — se guardan acá en
+  // "limbo" para poder precargarlos en continuarValidacionCompleta sin
+  // volver a golpear las integraciones si el usuario confirma. Si cancela,
+  // se descartan (ver onClose del ConfirmacionModal más abajo).
+  const datosEmpresaPrefetchRef = useRef(null);
 
   const [confirmVinculacion, setConfirmVinculacion] = useState({
     isOpen: false,
     cuit: "",
+    nombreEmpresa: "",
   });
 
   const cuitValue = useWatch({ control, name: "cuit" });
@@ -113,55 +120,80 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
     setIsValidatingSocio(true);
 
     try {
-      const sociosWebEncontrados = await sociosService.obtenerSocios({
-        Cuit: cuit,
-      });
+      try {
+        const sociosWebEncontrados = await sociosService.obtenerSocios({
+          Cuit: cuit,
+        });
 
-      if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
-        if (onSocioExistente) {
-          onSocioExistente(sociosWebEncontrados[0], "ya_existe");
-        }
-        return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
-      }
-
-      // Si no está en la web, verificamos si existe históricamente en SGRPlus Core
-      const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus({
-        Cuit: cuit,
-      });
-
-      if (sociosSgrEncontrados && sociosSgrEncontrados.length > 0 && !isVendor) {
-        const socioSgrExistente = sociosSgrEncontrados[0];
-        const socioEmailStr = socioSgrExistente.email
-          ? socioSgrExistente.email.trim()
-          : "";
-        const currentUserEmail = user?.email ? user.email.trim() : "";
-
-        if (
-          socioEmailStr &&
-          currentUserEmail &&
-          socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
-        ) {
+        if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
           if (onSocioExistente) {
-            onSocioExistente(socioSgrExistente, "email_mismatch");
+            onSocioExistente(sociosWebEncontrados[0], "ya_existe");
           }
-          return; // Bloquea al usuario normal porque el email de SGRPlus no coincide
+          return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
         }
-        // Si es vendor, o si es un usuario normal y el email SÍ coincide,
-        // no hacemos return. Dejamos que el flujo continúe.
+
+        // Si no está en la web, verificamos si existe históricamente en SGRPlus Core
+        const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus({
+          Cuit: cuit,
+        });
+
+        if (sociosSgrEncontrados && sociosSgrEncontrados.length > 0 && !isVendor) {
+          const socioSgrExistente = sociosSgrEncontrados[0];
+          const socioEmailStr = socioSgrExistente.email
+            ? socioSgrExistente.email.trim()
+            : "";
+          const currentUserEmail = user?.email ? user.email.trim() : "";
+
+          if (
+            socioEmailStr &&
+            currentUserEmail &&
+            socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
+          ) {
+            if (onSocioExistente) {
+              onSocioExistente(socioSgrExistente, "email_mismatch");
+            }
+            return; // Bloquea al usuario normal porque el email de SGRPlus no coincide
+          }
+          // Si es vendor, o si es un usuario normal y el email SÍ coincide,
+          // no hacemos return. Dejamos que el flujo continúe.
+        }
+      } catch (errorSocios) {
+        console.warn(
+          "Error consultando socios para validación de existencia:",
+          errorSocios,
+        );
       }
-    } catch (errorSocios) {
-      console.warn(
-        "Error consultando socios para validación de existencia:",
-        errorSocios,
-      );
+
+      // Nada bloqueó: antes de avisar que la decisión es irreversible,
+      // buscamos los datos reales de la empresa (mismo origen que usa el
+      // Paso 2: Nosis con fallback a LUFE y AFIP) para poder mostrar su
+      // nombre en el cartel en vez de solo el CUIT.
+      datosEmpresaPrefetchRef.current = null;
+      let resultadoDatos = null;
+      try {
+        resultadoDatos = await obtenerDatosEmpresaPorCuit(cuit, opcionesProvincias);
+      } catch (errorDatos) {
+        console.warn("Error consultando datos de la empresa para el CUIT:", errorDatos);
+      }
+
+      if (!resultadoDatos || !resultadoDatos.encontrado) {
+        setError("cuit", {
+          type: "manual",
+          message: "No se encontraron datos para este CUIT en Nosis, AFIP ni LUFE.",
+        });
+        return;
+      }
+
+      datosEmpresaPrefetchRef.current = resultadoDatos;
+      cuitEnProcesoRef.current = cuit;
+      setConfirmVinculacion({
+        isOpen: true,
+        cuit,
+        nombreEmpresa: resultadoDatos.valores.razonSocial,
+      });
     } finally {
       setIsValidatingSocio(false);
     }
-
-    // Nada bloqueó: antes de crear y vincular el socio de verdad, avisamos
-    // que la decisión es irreversible para este intento.
-    cuitEnProcesoRef.current = cuit;
-    setConfirmVinculacion({ isOpen: true, cuit });
   };
 
   // Corre el CDA de PANTALLA_INGRESO_CUIT y cierra el modal. Se usa tanto
@@ -384,52 +416,19 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
           p.id === "pyme"
             ? { ...p, estado: "completado" }
             : p.id === "afip"
-              ? { ...p, estado: "cargando" }
+              ? { ...p, estado: "completado" }
               : p,
         ),
       }));
 
-      // ── 4. CONSULTA NOSIS con Fallback a AFIP/LUFE, y población de campos
-      // del formulario a partir de esos datos (lógica compartida con el
-      // modo "completar" de AltaDatosEmpresa — ver utils/datosEmpresaPorCuit).
-      const resultadoDatos = await obtenerDatosEmpresaPorCuit(
-        cuit,
-        opcionesProvincias,
-        {
-          onProgress: (fuente) => {
-            setProcesoModal((prev) => ({
-              ...prev,
-              pasos: prev.pasos.map((p) =>
-                p.id === "afip"
-                  ? fuente === "lufe"
-                    ? {
-                        ...p,
-                        etiqueta: "Probando en LUFE...",
-                        descripcion:
-                          "Nosis no disponible. Consultando entidad en LUFE en su lugar.",
-                      }
-                    : {
-                        ...p,
-                        etiqueta: "Probando en AFIP...",
-                        descripcion:
-                          "LUFE no disponible. Consultando padrón AFIP en su lugar.",
-                      }
-                  : p,
-              ),
-            }));
-          },
-        },
-      );
-
-      if (resultadoDatos.encontrado) {
-        // Marcamos el padrón como completado (SGRPlus y el Certificado PyME
-        // ya se validaron antes de esta consulta, ver más arriba)
-        setProcesoModal((prev) => ({
-          ...prev,
-          pasos: prev.pasos.map((p) =>
-            p.id === "afip" ? { ...p, estado: "completado" } : p,
-          ),
-        }));
+      // ── 4. Datos de la empresa (Nosis con fallback a AFIP/LUFE): ya se
+      // obtuvieron en handleValidar para poder mostrar el nombre real en el
+      // cartel de confirmación — se reutilizan tal cual acá, sin volver a
+      // golpear las integraciones. Solo puede faltar si esta llamada es un
+      // reintento tras un error posterior (ver onRetry), caso en el que el
+      // ref sigue teniendo el valor de la corrida original.
+      {
+        const resultadoDatos = datosEmpresaPrefetchRef.current;
 
         // ── 5. Población de campos del formulario. Se adelanta a este
         // punto (antes vivía después del CDA) porque el POST a Socio del
@@ -569,22 +568,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
         }));
 
         await ejecutarCdaYFinalizar();
-      } else {
-        setProcesoModal((prev) => ({
-          ...prev,
-          hasError: true,
-          isSystemError: false,
-          pasos: prev.pasos.map((p) =>
-            p.id === "afip"
-              ? {
-                  ...p,
-                  estado: "error",
-                  error: "No se encontraron datos en Nosis, AFIP ni LUFE.",
-                }
-              : p,
-          ),
-        }));
-        return;
       }
     } catch (err) {
       // Este catch envuelve todo lo que corre entre el padrón y el CDA
@@ -677,13 +660,16 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
 
       <ConfirmacionModal
         isOpen={confirmVinculacion.isOpen}
-        onClose={() => setConfirmVinculacion({ isOpen: false, cuit: "" })}
+        onClose={() => {
+          setConfirmVinculacion({ isOpen: false, cuit: "", nombreEmpresa: "" });
+          datosEmpresaPrefetchRef.current = null;
+        }}
         onConfirm={() => {
-          setConfirmVinculacion({ isOpen: false, cuit: "" });
+          setConfirmVinculacion({ isOpen: false, cuit: "", nombreEmpresa: "" });
           continuarValidacionCompleta();
         }}
-        titulo="Confirmá el CUIT de tu empresa"
-        mensaje={`El CUIT ${formatearCuit(confirmVinculacion.cuit)} va a quedar vinculado a tu usuario. Una vez que confirmes, no vas a poder modificarlo — asegurate de que sea el correcto antes de continuar.`}
+        titulo="Confirmá tu empresa"
+        mensaje={`Vas a vincular la empresa ${confirmVinculacion.nombreEmpresa} (CUIT ${formatearCuit(confirmVinculacion.cuit)}) a tu usuario. Una vez que confirmes, no vas a poder modificarla — asegurate de que sea la correcta antes de continuar.`}
         confirmText="Confirmar y continuar"
         cancelText="Volver a revisar"
       />
