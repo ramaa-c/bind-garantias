@@ -28,6 +28,7 @@ import {
   useSocioPorId,
   useActualizarSocio,
   useObtenerExecuteCda,
+  useEstaMigradoEnSgrPlus,
 } from "../../../hooks/useSocios";
 import { cdaService } from "../../../services/cdaService";
 import { useObtenerTodasWebConEstado, useObtenerGrupoCdaConCdas } from "../../../hooks/useCadenaValor";
@@ -1698,6 +1699,14 @@ export default function EmpresaDetalle() {
       cadenaId: cadenaValorIdDetectada,
     });
 
+  // Confirmación real de migración: si el CUIT aparece en sgrplus/Socios es
+  // porque efectivamente vive en el core. Antes "Migrado" también se daba
+  // por tener el legajo 100% completo en la web (legajoCompleto) sin haber
+  // migrado nunca — confirmado en vivo (2026-08-11) con un socio (ALESSO SA,
+  // CUIT 30711671206) cuya migración había fallado con 500 y que igual
+  // aparecía como "Migrado" en este header.
+  const { data: migradoEnSgrPlus } = useEstaMigradoEnSgrPlus(socio?.cuit);
+
   // Vive acá (no dentro de DocumentacionTab) porque el botón se muestra en
   // la fila de tabs, junto a "Ver historial completo" de CDAs — misma
   // queryKey que ya invalida DocumentosLegajo al subir/borrar archivos.
@@ -1776,7 +1785,7 @@ export default function EmpresaDetalle() {
   );
   const estadoTono = getEstadoTono(estadoSocioLabel);
   const legajoCompleto = totalRequisitos > 0 && requisitosCompletados === totalRequisitos;
-  const estaMigrado = Number(socio.legajo) > 0 || legajoCompleto;
+  const estaMigrado = Number(socio.legajo) > 0 || !!migradoEnSgrPlus;
 
   return (
     <div className={styles.container}>

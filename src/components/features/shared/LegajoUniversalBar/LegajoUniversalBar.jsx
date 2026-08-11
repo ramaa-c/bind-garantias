@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useEstaMigradoEnSgrPlus } from "../../../../hooks/useSocios";
 import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
@@ -58,6 +59,21 @@ export function LegajoUniversalBar({
     nombreEmpresa: nombreEmpresaOverride,
     cadenaId: cadenaIdOverride,
   });
+
+  // Única fuente de verdad de si el legajo YA se migró de verdad al core:
+  // consultar directamente sgrplus/Socios?Cuit=X — si el CUIT aparece ahí es
+  // porque el socio efectivamente vive en el core (confirmado en vivo:
+  // devuelve [] para un socio recién creado que todavía no migró, y el
+  // registro completo para uno que sí). Antes acá "sincronizado" se
+  // calculaba solo con "no cambió nada desde que se abrió la pantalla"
+  // (fingerprint vs. baseline) sin chequear nada contra el backend — eso
+  // daba un falso "Sincronizado" apenas se recargaba la página después de un
+  // intento de migración que en realidad falló (confirmado en vivo el
+  // 2026-08-11: POST Socio/Migrar tiró 500, y al hacer F5 la barra igual
+  // mostró "Sincronizado" porque no había ningún cambio LOCAL pendiente).
+  const cuitActivo = adminMode ? null : empresaActiva.cuitActivo;
+  const { data: migradoEnBackend = false, isLoading: loadingMigradoEnBackend } =
+    useEstaMigradoEnSgrPlus(cuitActivo);
 
   const [isMigrating, setIsMigrating] = useState(false);
   const [lastAttemptedFingerprint, setLastAttemptedFingerprint] = useState("");
@@ -155,39 +171,52 @@ export function LegajoUniversalBar({
     return () => clearTimeout(timeoutId);
   }, [cambioPendienteRaw, fingerprint]);
 
-  // "Ya sincronizado" mide contra el cambio real (sin el debounce de arriba):
-  // no cambió nada desde que se abrió la pantalla (haya sido por una
-  // migración real en esta misma visita, o porque ya venía así). Ya no
-  // depende de ningún registro entre sesiones.
-  const isAlreadyMigrated =
-    baseline !== null && fingerprint === baseline && isValid && totalRequisitos > 0;
+  // Además de "algo cambió desde que se abrió la pantalla", también hay que
+  // reintentar si el legajo ya está completo/válido pero el backend todavía
+  // no lo tiene migrado — cubre tanto el primer intento como el caso de un
+  // intento anterior que falló silenciosamente (ver migradoEnBackend arriba):
+  // sin esto, sin un cambio LOCAL nuevo de por medio, nunca se reintentaba.
+  const faltaMigrarEnBackend =
+    !loadingMigradoEnBackend && !migradoEnBackend && isValid && totalRequisitos > 0;
 
   const [confirmMigrarOpen, setConfirmMigrarOpen] = useState(false);
 
   // Lógica compartida por el auto-migrado silencioso del cliente y el botón
   // de confirmación del admin — solo cambia QUIÉN dispara la llamada (ver
-  // autoMigrar/migrarAhora más abajo). Un éxito siempre corre la baseline al
-  // fingerprint actual: es la nueva foto "confiable".
-  const sincronizarConSgrPlus = async () => {
+  // autoMigrar/migrarAhora más abajo) y si el error se muestra (silent=true
+  // para el auto-migrado del cliente: no tiene sentido exponerle a un
+  // cliente un error 500 de una sincronización que ni sabe que existe —
+  // igual queda logueado, y un admin puede reintentarlo a mano). Un éxito
+  // siempre corre la baseline al fingerprint actual (es la nueva foto
+  // "confiable") y refresca la consulta a sgrplus/Socios para que
+  // migradoEnBackend se actualice sin esperar al próximo reload.
+  const sincronizarConSgrPlus = async (silent = false) => {
     ultimoIntentoAtRef.current = Date.now();
     setIsMigrating(true);
-    const toastId = toast.loading("Sincronizando legajo con SGR+...");
+    const toastId = silent ? null : toast.loading("Sincronizando legajo con SGR+...");
     try {
       const response = await sociosService.enviarASgrPlus(socioIdActivo);
       if (response.success) {
-        toast.dismiss(toastId);
+        if (toastId) toast.dismiss(toastId);
         setShowMigracionExitosa(true);
         setBaseline(fingerprint);
-        queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] });
-        queryClient.invalidateQueries({ queryKey: ["socioArchivos"] });
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
+          queryClient.invalidateQueries({ queryKey: ["socioArchivos"] }),
+          queryClient.invalidateQueries({ queryKey: ["sgrplus", "socios", "porCuit"] }),
+        ]);
       } else {
         throw new Error(response.message || "Error al sincronizar");
       }
     } catch (err) {
       console.error("[LegajoUniversalBar] Error al sincronizar legajo con SGR+:", err);
-      const errorMessage =
-        err.response?.data?.message || err.message || "No se pudo sincronizar con SGR+.";
-      toast.error("Error de sincronización con SGR+", { id: toastId, description: errorMessage });
+      if (silent) {
+        if (toastId) toast.dismiss(toastId);
+      } else {
+        const errorMessage =
+          err.response?.data?.message || err.message || "No se pudo sincronizar con SGR+.";
+        toast.error("Error de sincronización con SGR+", { id: toastId, description: errorMessage });
+      }
     } finally {
       setIsMigrating(false);
     }
@@ -202,13 +231,15 @@ export function LegajoUniversalBar({
   };
 
   // ── CLIENTE: auto-sincroniza en silencio apenas hay algo nuevo para
-  // mandar (comportamiento de cara al usuario sin cambios) — "algo nuevo" se
-  // mide ahora contra `baseline` (lo que había al entrar), no contra un
-  // registro en localStorage. El admin usa el flujo de confirmación de
-  // arriba en su lugar (ver el return de adminMode más abajo).
+  // mandar (comportamiento de cara al usuario sin cambios) — "algo nuevo" es
+  // un cambio local desde que se entró (`hayCambiosSinSincronizar`) O que el
+  // backend todavía no tiene el legajo migrado aunque ya esté completo
+  // (`faltaMigrarEnBackend` — cubre el primer intento Y un reintento tras un
+  // F5 si el intento anterior falló). El admin usa el flujo de confirmación
+  // de arriba en su lugar (ver el return de adminMode más abajo).
   useEffect(() => {
     if (adminMode) return;
-    if (!hayCambiosSinSincronizar || isMigrating || isLoading) return;
+    if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingMigradoEnBackend) return;
 
     // En "legajo" (a diferencia de "documentacion") completar el último
     // requisito puede pasar DENTRO de una modal propia (Representante,
@@ -241,7 +272,7 @@ export function LegajoUniversalBar({
       console.log(`[LegajoUniversalBar] Iniciando migración automática a SGR+ para el socio ${socioIdActivo}...`);
       console.log(`[LegajoUniversalBar] Huella actual:`, fingerprint);
       try {
-        await sincronizarConSgrPlus();
+        await sincronizarConSgrPlus(true);
       } finally {
         sessionStorage.removeItem(lockKey);
       }
@@ -249,7 +280,7 @@ export function LegajoUniversalBar({
 
     autoMigrar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, hayCambiosSinSincronizar, isMigrating, isLoading, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
+  }, [adminMode, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingMigradoEnBackend, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
   const hasMandatoryInContext =
     (context === "documentacion" && totalDocumentosObligatorios > 0) ||
@@ -430,7 +461,7 @@ export function LegajoUniversalBar({
               <Spinner size={13} />
               Sincronizando
             </span>
-          ) : isAlreadyMigrated ? (
+          ) : migradoEnBackend ? (
             <span className={`${styles.statusChip} ${styles.statusChipSuccess}`}>
               <FiCheckCircle size={13} />
               Sincronizado

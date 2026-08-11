@@ -5,6 +5,32 @@ import { socioArchivoService } from "./socioArchivoService";
 const cuitCache = new Map();
 const cuitWebCache = new Map();
 
+// LUFE a veces devuelve la razón social truncada, sin el sufijo societario
+// (confirmado en vivo: "JADI PRODUCTORA AGROGANADERA S" en vez de
+// "...S.A." para el CUIT 30710816480) — eso rompe tanto la Denominación
+// que termina guardándose en el Socio como la detección de tipo de
+// sociedad para los requisitos documentales (ver getSocTypeFromDenominacion
+// en requisitosService.js, que solo mira el texto del nombre): sin "SA"
+// en el string, cae en "otras" aunque la empresa sea una S.A. real.
+// `forma_juridica` sí trae esa info sin truncar, simplemente nunca se
+// usaba — se completa el nombre con eso antes de que se propague al resto
+// del sistema.
+const SUFIJOS_SOCIETARIOS_LUFE = [
+  { match: /ACCION|ANONIMA/i, sufijo: "S.A." },
+  { match: /RESPONSABILIDAD LIMITADA/i, sufijo: "S.R.L." },
+  { match: /HECHO/i, sufijo: "S.H." },
+];
+
+const tieneSufijoSocietario = (nombre) =>
+  /\bS\.?\s*A\.?\b|\bS\.?\s*R\.?\s*L\.?\b|\bS\.?\s*H\.?\b|SOCIEDAD/i.test(nombre || "");
+
+const completarRazonSocialLufe = (nombre, formaJuridica) => {
+  const nombreLimpio = (nombre || "").trim();
+  if (!nombreLimpio || tieneSufijoSocietario(nombreLimpio)) return nombreLimpio;
+  const sufijoEncontrado = SUFIJOS_SOCIETARIOS_LUFE.find((s) => s.match.test(formaJuridica || ""));
+  return sufijoEncontrado ? `${nombreLimpio} ${sufijoEncontrado.sufijo}` : nombreLimpio;
+};
+
 export const sociosService = {
   // Trae lista de socios (SGRPlus)
   obtenerSocios: async (params = {}) => {
@@ -218,6 +244,11 @@ export const sociosService = {
   normalizarLufeAEstructuraAfip: (lufeData) => {
     if (!lufeData) return null;
 
+    const razonSocialCompleta = completarRazonSocialLufe(
+      lufeData.nombre,
+      lufeData.forma_juridica,
+    );
+
     let email = "";
     let telefono = "";
     if (Array.isArray(lufeData.contactos) && lufeData.contactos.length > 0) {
@@ -252,8 +283,8 @@ export const sociosService = {
 
     return {
       datosgenerales: {
-        razonsocial: lufeData.nombre || "",
-        nombre: lufeData.nombre || "",
+        razonsocial: razonSocialCompleta,
+        nombre: razonSocialCompleta,
         apellido: "",
         email: email,
         emailfacturacion: email,
@@ -283,11 +314,20 @@ export const sociosService = {
     };
   },
 
-  // Envía todos los datos consolidados del legajo al esquema SGR+
+  // Envía todos los datos consolidados del legajo al esquema SGR+.
+  // noRetry: true porque el interceptor global reintenta automáticamente
+  // ante un 5xx (hasta 2 veces más) — para un endpoint de escritura que hoy
+  // está fallando con 500 (ver LegajoUniversalBar.jsx), eso significaba 3
+  // POSTs reales por cada intento en vez de 1. Si falla, tiene que quedar
+  // en "pendiente" de una y listo — no insistir solo en esta llamada.
   enviarASgrPlus: async (socioId) => {
-    const response = await api.post("api/Socio/Migrar", sociosAdapter.adaptarPayload4({
-      socioid: Number(socioId),
-    }));
+    const response = await api.post(
+      "api/Socio/Migrar",
+      sociosAdapter.adaptarPayload4({
+        socioid: Number(socioId),
+      }),
+      { noRetry: true },
+    );
     return {
       success: true,
       message: response.data?.message || "Legajo enviado a SGR+ exitosamente.",

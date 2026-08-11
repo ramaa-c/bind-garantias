@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink } from "react-icons/fi";
-import { useObtenerSocios, useObtenerExecuteCda } from "../../../hooks/useSocios";
+import { useObtenerSocios, useObtenerExecuteCda, useEstaMigradoEnSgrPlus } from "../../../hooks/useSocios";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
@@ -27,8 +27,6 @@ const getIniciales = (denominacion) => {
   if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
   return (palabras[0][0] + palabras[1][0]).toUpperCase();
 };
-
-import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 
 const EmpresaRowSkeleton = () => (
   <tr>
@@ -75,17 +73,16 @@ const EstadoBadge = ({ e, cadenasWeb }) => {
     return fila?.denominacion || `Cadena #${cadenaValorIdDetectada}`;
   }, [cadenasWeb, cadenaValorIdDetectada]);
 
-  const { requisitosCompletados, totalRequisitos, isLoading } = useValidacionLegajo({
-    adminMode: true,
-    socioIdActivo: e.socioid,
-    tipoPersonaId: e.tipopersonaid,
-    nombreEmpresa: e.denominacion,
-    cadenaId: cadenaValorIdDetectada,
-  });
+  // Confirmación real de migración: si el CUIT aparece en sgrplus/Socios es
+  // porque efectivamente vive en el core. Antes acá "Migrado" también se
+  // daba por tener el legajo 100% completo en la web (requisitosCompletados
+  // === totalRequisitos, vía useValidacionLegajo) sin haber migrado nunca —
+  // confirmado en vivo (2026-08-11): un socio con el legajo completo pero
+  // cuya migración había fallado con 500 igual aparecía como "Migrado" acá.
+  const { data: migradoEnSgrPlus, isLoading: isLoadingMigracion } = useEstaMigradoEnSgrPlus(e.cuit);
+  const isMigrado = Number(e.legajo) > 0 || !!migradoEnSgrPlus;
 
-  const isMigrado = Number(e.legajo) > 0 || (!isLoading && totalRequisitos > 0 && requisitosCompletados === totalRequisitos);
-
-  if (isLoading && Number(e.legajo) === 0) {
+  if (isLoadingMigracion && Number(e.legajo) === 0) {
     return (
       <span className={`${styles.estadoBadge} ${styles.estadoAzulBind}`} style={{ opacity: 0.6 }}>
         ...

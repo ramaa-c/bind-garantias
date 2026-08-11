@@ -8,6 +8,7 @@ import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/ChannelContext";
+import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 import styles from "./Sidebar.module.css";
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -100,11 +101,18 @@ export default function Sidebar({ isOpen, onClose }) {
       {isVinculado && (
         <>
           <div className={styles.companyCard}>
-            <div className={styles.companyAvatar}>
-              {nombreEmpresa.charAt(0).toUpperCase()}
+            <div
+              className={`${styles.companyAvatar} ${styles[`avatar--${obtenerVarianteAvatarEmpresa(nombreEmpresa)}`]}`}
+            >
+              {obtenerInicialesEmpresa(nombreEmpresa)}
             </div>
             <div className={styles.companyInfo}>
-              <p className={styles.companyName}>{nombreEmpresa}</p>
+              <div className={styles.companyNameWrap} tabIndex={0}>
+                <p className={styles.companyName}>{nombreEmpresa}</p>
+                <span className={styles.companyTooltip} role="tooltip">
+                  {nombreEmpresa}
+                </span>
+              </div>
               {cuitActivo && (
                 <p className={styles.companyCuit}>CUIT {cuitActivo}</p>
               )}

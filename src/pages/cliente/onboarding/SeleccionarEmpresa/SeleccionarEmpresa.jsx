@@ -12,30 +12,7 @@ import { requisitosService } from "../../../../services/requisitosService";
 import { sociosService } from "../../../../services/sociosService";
 import styles from "./SeleccionarEmpresa.module.css";
 import { useChannel } from "../../../../context/ChannelContext";
-
-/* ─── helpers ─────────────────────────────────────────────── */
-const getInitials = (nombre = "") => {
-  const palabras = nombre
-    .trim()
-    .split(/\s+/)
-    .filter(
-      (p) =>
-        p.length > 2 &&
-        !["S.A.", "S.R.L.", "S.A.S.", "DE", "DEL", "LA", "LOS", "LAS"].includes(
-          p.toUpperCase(),
-        ),
-    );
-  if (palabras.length >= 2)
-    return (palabras[0][0] + palabras[1][0]).toUpperCase();
-  if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
-  return nombre.slice(0, 2).toUpperCase();
-};
-
-const AVATAR_VARIANTS = ["azul", "verde", "amarillo", "coral"];
-const getAvatarVariant = (nombre = "") => {
-  const code = nombre.charCodeAt(0) || 0;
-  return AVATAR_VARIANTS[code % AVATAR_VARIANTS.length];
-};
+import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 
 /* ─── sub-componente: EmpresaCard ──────────────────────────── */
 
@@ -47,8 +24,8 @@ const EmpresaCard = ({ socioInitial, socioId, index, onSelect }) => {
 
   const nombre = socio?.denominacion || socio?.Denominacion || "";
   const cuit = socio?.cuit || socio?.Cuit || "";
-  const initials = getInitials(nombre);
-  const variant = getAvatarVariant(nombre);
+  const initials = obtenerInicialesEmpresa(nombre);
+  const variant = obtenerVarianteAvatarEmpresa(nombre);
 
   const handleClick = useCallback(() => {
     if (!socio) return;

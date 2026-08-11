@@ -93,6 +93,24 @@ export const useSocioWebPorId = (socioId) => {
   });
 };
 
+// Confirmación real (no inferida) de si un socio ya se migró al core: si el
+// CUIT aparece en sgrplus/Socios es porque efectivamente vive ahí — a
+// diferencia de leer Socio.Legajo (un campo sin documentar, solo
+// correlacionado empíricamente con la migración), esto consulta
+// directamente al sistema al que se supone que se migró.
+export const useEstaMigradoEnSgrPlus = (cuit) => {
+  const cuitLimpio = String(cuit || "").replace(/\D/g, "");
+  return useQuery({
+    queryKey: ["sgrplus", "socios", "porCuit", cuitLimpio],
+    queryFn: async () => {
+      const resultado = await sociosService.obtenerSociosSgrplus({ Cuit: cuitLimpio });
+      return Array.isArray(resultado) && resultado.length > 0;
+    },
+    enabled: !!cuitLimpio,
+    staleTime: 1000 * 60 * 2, // 2 minutos
+  });
+};
+
 // SocioUsuario solo devuelve { SocioID, UsuarioWebID, momentoCreacion } — no
 // alcanza para saber si esa vinculación apunta a una empresa realmente
 // registrada o a un socio "stub" (creado por cda/execute o por un intento de
