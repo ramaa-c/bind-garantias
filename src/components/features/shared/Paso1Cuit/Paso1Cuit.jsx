@@ -30,7 +30,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
   const { cadenaSlug } = useParams();
   const navigate = useNavigate();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
-  const { control, getValues, setValue, clearErrors } =
+  const { control, getValues, setValue, setError, clearErrors } =
     useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
   const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
