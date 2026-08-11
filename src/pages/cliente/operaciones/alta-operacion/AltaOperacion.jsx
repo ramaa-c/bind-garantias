@@ -574,7 +574,7 @@ export const AltaOperacion = () => {
         }
       }
 
-      const montoLimpio = Number(cleanData.monto) || 0;
+      let montoLimpio = Number(cleanData.monto) || 0;
 
       // Convertido a pesos ANTES de crear nada: si la validación de cupo de
       // la cadena (más abajo) rechaza la operación, no queremos dejar una
@@ -603,13 +603,10 @@ export const AltaOperacion = () => {
         } catch (e) {}
       }
 
-      // Requisito de Victor: la suma de lo ya utilizado en las líneas de
-      // SGRPlus de este socio para esta cadena, más la operación nueva, no
-      // puede superar el CadenaValor.MontoMaximo. Ambos datos viven en el
-      // CORE (no en la tabla Web) — PosicionConsolidada/ObtenerLimiteSocio
-      // pide el SocioID del CORE (se resuelve por CUIT, ver
-      // posicionConsolidadaService.obtenerLimiteSocioPorCuit) y cada línea
-      // trae su propio CadenaValorID para filtrar solo las de esta cadena.
+      // Requisito de Victor: dos chequeos independientes contra las líneas
+      // que este socio ya tiene en el CORE para esta cadena
+      // (PosicionConsolidada/ObtenerLimiteSocio, resuelto por CUIT vía
+      // posicionConsolidadaService.obtenerLimiteSocioPorCuit).
       try {
         const [lineasSocio, cadenaData] = await Promise.all([
           posicionConsolidadaService.obtenerLimiteSocioPorCuit(cuitLimpio),
@@ -617,21 +614,60 @@ export const AltaOperacion = () => {
         ]);
 
         const lineasArr = Array.isArray(lineasSocio) ? lineasSocio : [];
-        const utilizadoActual = lineasArr
-          .filter((l) => Number(l.cadenavalorid) === Number(cadenaSlug))
-          .reduce((acc, l) => acc + (Number(l.importeutilizado) || 0), 0);
+        const lineasCadena = lineasArr.filter(
+          (l) => Number(l.cadenavalorid) === Number(cadenaSlug),
+        );
 
         const montoMaximoCadena = Number(
           cadenaData?.montomaximo ?? cadenaData?.MontoMaximo ?? 0,
         );
+        const porcentajeMaximoCadena = Number(
+          cadenaData?.porcentajemaximo ?? cadenaData?.PorcentajeMaximo ?? 0,
+        );
 
-        if (montoMaximoCadena > 0 && utilizadoActual + importeEnPesos > montoMaximoCadena) {
-          const disponible = Math.max(0, montoMaximoCadena - utilizadoActual);
-          toast.error("No hay cupo disponible en la cadena", {
-            description: `${channelInfo?.nombre || "Esta cadena"} tiene un disponible de $${disponible.toLocaleString("es-AR")}, pero la operación pedida es de $${importeEnPesos.toLocaleString("es-AR")}.`,
+        // 1. Por línea: ninguna línea EXISTENTE del socio en esta cadena
+        // puede tener su propio Utilizado/Límite por encima de
+        // CadenaValor.PorcentajeMaximo (chequeo por línea individual, no
+        // agregado — así lo evalúa el excel de referencia). Si alguna ya lo
+        // superó, se rechaza la línea nueva directamente.
+        if (porcentajeMaximoCadena > 0) {
+          const lineaExcedida = lineasCadena.find((l) => {
+            const limiteLinea = Number(l.importelimite) || 0;
+            if (limiteLinea <= 0) return false;
+            const utilizadoLinea = Number(l.importeutilizado) || 0;
+            return (utilizadoLinea / limiteLinea) * 100 > porcentajeMaximoCadena;
           });
-          setEnviandoSolicitud(false);
-          return;
+
+          if (lineaExcedida) {
+            toast.error("No se puede crear una nueva línea", {
+              description: `El socio ya tiene una línea (${lineaExcedida.descripcion || "sin descripción"}) que superó el ${porcentajeMaximoCadena}% de utilización permitido.`,
+            });
+            setEnviandoSolicitud(false);
+            return;
+          }
+        }
+
+        // 2. Agregado: el monto de la línea nueva no puede superar el
+        // disponible de la cadena para este socio (CadenaValor.MontoMaximo -
+        // utilizado total entre todas sus líneas). Si lo supera pero entra
+        // dentro del máximo, se otorga topeado al disponible en vez de
+        // rechazar.
+        if (montoMaximoCadena > 0) {
+          const utilizadoActual = lineasCadena.reduce(
+            (acc, l) => acc + (Number(l.importeutilizado) || 0),
+            0,
+          );
+          const disponible = Math.max(0, montoMaximoCadena - utilizadoActual);
+
+          if (importeEnPesos > disponible) {
+            const factorAjuste = disponible / importeEnPesos;
+            const importeSolicitadoOriginal = importeEnPesos;
+            importeEnPesos = disponible;
+            montoLimpio = Math.round(montoLimpio * factorAjuste);
+            toast.info("Monto ajustado al disponible de la cadena", {
+              description: `Se solicitaron $${importeSolicitadoOriginal.toLocaleString("es-AR")} pero el disponible actual es $${disponible.toLocaleString("es-AR")}.`,
+            });
+          }
         }
       } catch (validacionError) {
         console.error(

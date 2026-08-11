@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheckCircle, FiChevronRight, FiArrowRight } from "react-icons/fi";
+import { FiCheckCircle, FiChevronRight, FiArrowRight, FiRefreshCw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
@@ -12,14 +12,18 @@ import { Button } from "../../../ui/Button/Button";
 import Spinner from "../../../ui/Spinner/Spinner";
 import { MigracionExitosaModal } from "../MigracionExitosaModal/MigracionExitosaModal";
 import { EstadoMigracionModal } from "../EstadoMigracionModal/EstadoMigracionModal";
+import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import styles from "./LegajoUniversalBar.module.css";
 
 // adminMode/socioIdActivo/tipoPersonaId/nombreEmpresa/cadenaId: mismos
 // overrides opcionales que ya acepta useValidacionLegajo, para poder montar
 // esta barra también en EmpresaDetalle.jsx (admin) — ahí no hay usuario
 // cliente logueado del que sacar el socio activo. En admin no se muestra la
-// tarjeta completa (navegación a pestañas de cliente no aplica ahí): solo
-// corre el efecto de auto-migración y el modal de éxito, en silencio.
+// tarjeta completa (navegación a pestañas de cliente no aplica ahí) ni se
+// auto-migra nunca: solo se ofrece sincronizar (banner + confirmación) si el
+// propio admin edita algo durante la visita — ver hayCambiosSinSincronizar.
+// En cliente, en cambio, sigue auto-sincronizando en silencio (sin pedir
+// confirmación) apenas detecta ese mismo cambio — ver el useEffect de abajo.
 export function LegajoUniversalBar({
   context,
   adminMode = false,
@@ -107,16 +111,104 @@ export function LegajoUniversalBar({
     return `${archivosKey}#${accionistasKey}#${representantesKey}#${agentesKey}`;
   }, [socioIdActivo, archivosBackend, socioLegajoData, isLoading]);
 
-  const localStorageKey = `lastMigratedFingerprint_${socioIdActivo}`;
-  const [migratedFingerprint, setMigratedFingerprint] = useState(() => localStorage.getItem(localStorageKey) || "");
-
-  const isAlreadyMigrated = useMemo(() => {
-    if (!fingerprint) return false;
-    return migratedFingerprint === fingerprint;
-  }, [fingerprint, migratedFingerprint]);
-
+  // Se confía en el dato tal como se lo trae al abrir la pantalla — nunca se
+  // migra solo por eso, ni en cliente ni en admin, sin importar si es la
+  // primera vez que se ve este socio en este navegador/dispositivo. Antes el
+  // cliente usaba localStorage para esto: cualquier motivo por el que ese
+  // registro no estuviera (otro dispositivo, caché borrada, etc.) hacía que
+  // se re-disparara la migración al entrar aunque nada hubiera cambiado —
+  // mismo síntoma que tenía admin. `baseline` guarda la huella con la que se
+  // entró (en memoria, dura lo que dure esta visita a la pantalla) y recién
+  // se considera que hay algo para sincronizar si la huella cambia DESPUÉS
+  // de esa foto inicial — es decir, si se completó/editó algo mientras la
+  // pantalla seguía montada.
+  const [baseline, setBaseline] = useState(null);
   useEffect(() => {
-    if (!socioIdActivo || !isValid || !fingerprint || isMigrating || isLoading || totalRequisitos === 0) return;
+    if (!fingerprint || baseline !== null) return;
+    setBaseline(fingerprint);
+  }, [fingerprint, baseline]);
+
+  const cambioPendienteRaw =
+    baseline !== null && fingerprint !== baseline && isValid && totalRequisitos > 0;
+
+  // Espacia los intentos de sincronización: el primer POST a /Socio/Migrar
+  // de esta visita dispara apenas se detecta un cambio real, pero cualquier
+  // intento SIGUIENTE (ej. si el fingerprint vuelve a moverse poco después
+  // del éxito del primero — el backend puede normalizar/reformatear algún
+  // dato al guardar, y eso alcanza para que el refetch post-migración calcule
+  // una huella distinta a la que se guardó como baseline) tiene que esperar
+  // al menos 1 minuto desde que arrancó el intento anterior. `ultimoIntentoAtRef`
+  // arranca en 0 (sin intentos todavía) para no demorar el primer disparo.
+  const ultimoIntentoAtRef = useRef(0);
+  const [hayCambiosSinSincronizar, setHayCambiosSinSincronizar] = useState(false);
+  useEffect(() => {
+    if (!cambioPendienteRaw) {
+      setHayCambiosSinSincronizar(false);
+      return;
+    }
+    const restante = Math.max(0, 60000 - (Date.now() - ultimoIntentoAtRef.current));
+    if (restante === 0) {
+      setHayCambiosSinSincronizar(true);
+      return;
+    }
+    const timeoutId = setTimeout(() => setHayCambiosSinSincronizar(true), restante);
+    return () => clearTimeout(timeoutId);
+  }, [cambioPendienteRaw, fingerprint]);
+
+  // "Ya sincronizado" mide contra el cambio real (sin el debounce de arriba):
+  // no cambió nada desde que se abrió la pantalla (haya sido por una
+  // migración real en esta misma visita, o porque ya venía así). Ya no
+  // depende de ningún registro entre sesiones.
+  const isAlreadyMigrated =
+    baseline !== null && fingerprint === baseline && isValid && totalRequisitos > 0;
+
+  const [confirmMigrarOpen, setConfirmMigrarOpen] = useState(false);
+
+  // Lógica compartida por el auto-migrado silencioso del cliente y el botón
+  // de confirmación del admin — solo cambia QUIÉN dispara la llamada (ver
+  // autoMigrar/migrarAhora más abajo). Un éxito siempre corre la baseline al
+  // fingerprint actual: es la nueva foto "confiable".
+  const sincronizarConSgrPlus = async () => {
+    ultimoIntentoAtRef.current = Date.now();
+    setIsMigrating(true);
+    const toastId = toast.loading("Sincronizando legajo con SGR+...");
+    try {
+      const response = await sociosService.enviarASgrPlus(socioIdActivo);
+      if (response.success) {
+        toast.dismiss(toastId);
+        setShowMigracionExitosa(true);
+        setBaseline(fingerprint);
+        queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] });
+        queryClient.invalidateQueries({ queryKey: ["socioArchivos"] });
+      } else {
+        throw new Error(response.message || "Error al sincronizar");
+      }
+    } catch (err) {
+      console.error("[LegajoUniversalBar] Error al sincronizar legajo con SGR+:", err);
+      const errorMessage =
+        err.response?.data?.message || err.message || "No se pudo sincronizar con SGR+.";
+      toast.error("Error de sincronización con SGR+", { id: toastId, description: errorMessage });
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
+  const migrarAhora = async () => {
+    try {
+      await sincronizarConSgrPlus();
+    } finally {
+      setConfirmMigrarOpen(false);
+    }
+  };
+
+  // ── CLIENTE: auto-sincroniza en silencio apenas hay algo nuevo para
+  // mandar (comportamiento de cara al usuario sin cambios) — "algo nuevo" se
+  // mide ahora contra `baseline` (lo que había al entrar), no contra un
+  // registro en localStorage. El admin usa el flujo de confirmación de
+  // arriba en su lugar (ver el return de adminMode más abajo).
+  useEffect(() => {
+    if (adminMode) return;
+    if (!hayCambiosSinSincronizar || isMigrating || isLoading) return;
 
     // En "legajo" (a diferencia de "documentacion") completar el último
     // requisito puede pasar DENTRO de una modal propia (Representante,
@@ -124,21 +216,11 @@ export function LegajoUniversalBar({
     // esa modal corre su propia validación de CDA. Si se dispara la
     // migración (y el aviso de éxito) en ese momento, el usuario lo ve
     // superpuesto a una modal que ni terminó de guardar. Se pospone hasta
-    // que no quede ninguna abierta; ver useLegajoModalStore. En admin
-    // (EmpresaDetalle) no hay concepto de "context", pero el mismo store
-    // global lo comparten los mismos modales — se aplica el mismo guard.
-    if ((context === "legajo" || adminMode) && modalesLegajoAbiertos > 0) {
+    // que no quede ninguna abierta; ver useLegajoModalStore.
+    if (context === "legajo" && modalesLegajoAbiertos > 0) {
       console.log(
         `[LegajoUniversalBar] Hay ${modalesLegajoAbiertos} modal(es) de legajo abierta(s): se pospone la migración hasta que se cierren.`,
       );
-      return;
-    }
-
-    const lastMigrated = localStorage.getItem(localStorageKey);
-    const lockKey = `migrando_sgr_${socioIdActivo}`;
-
-    if (lastMigrated === fingerprint) {
-      console.log(`[LegajoUniversalBar] El legajo del socio ${socioIdActivo} ya está migrado con la misma huella.`);
       return;
     }
 
@@ -147,52 +229,27 @@ export function LegajoUniversalBar({
       return;
     }
 
+    const lockKey = `migrando_sgr_${socioIdActivo}`;
     if (sessionStorage.getItem(lockKey) === "true") {
       console.log(`[LegajoUniversalBar] Migración en progreso en otra pestaña o instancia. Abortando duplicado.`);
       return;
     }
 
     const autoMigrar = async () => {
-      setIsMigrating(true);
       sessionStorage.setItem(lockKey, "true");
       setLastAttemptedFingerprint(fingerprint);
       console.log(`[LegajoUniversalBar] Iniciando migración automática a SGR+ para el socio ${socioIdActivo}...`);
       console.log(`[LegajoUniversalBar] Huella actual:`, fingerprint);
-      const toastId = toast.loading("Sincronizando legajo con SGR+ automáticamente...");
       try {
-        const response = await sociosService.enviarASgrPlus(socioIdActivo);
-        console.log(`[LegajoUniversalBar] Respuesta de migración:`, response);
-        if (response.success) {
-          // El toast pasaba desapercibido para un momento que el usuario
-          // necesita notar sí o sí: se reemplaza por una modal más visible.
-          toast.dismiss(toastId);
-          setShowMigracionExitosa(true);
-          localStorage.setItem(localStorageKey, fingerprint);
-          setMigratedFingerprint(fingerprint);
-          console.log(`[LegajoUniversalBar] Migración exitosa. Guardada huella:`, fingerprint);
-          queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] });
-          queryClient.invalidateQueries({ queryKey: ["socioArchivos"] });
-        } else {
-          throw new Error(response.message || "Error al sincronizar");
-        }
-      } catch (err) {
-        console.error("[LegajoUniversalBar] Error al sincronizar legajo automáticamente:", err);
-        const errorMessage =
-          err.response?.data?.message ||
-          err.message ||
-          "No se pudo sincronizar automáticamente con SGR+.";
-        toast.error("Error de sincronización con SGR+", {
-          id: toastId,
-          description: errorMessage,
-        });
+        await sincronizarConSgrPlus();
       } finally {
-        setIsMigrating(false);
         sessionStorage.removeItem(lockKey);
       }
     };
 
     autoMigrar();
-  }, [socioIdActivo, isValid, fingerprint, isMigrating, isLoading, context, adminMode, modalesLegajoAbiertos, lastAttemptedFingerprint, queryClient, localStorageKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminMode, hayCambiosSinSincronizar, isMigrating, isLoading, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
   const hasMandatoryInContext =
     (context === "documentacion" && totalDocumentosObligatorios > 0) ||
@@ -210,10 +267,45 @@ export function LegajoUniversalBar({
   );
 
   // En admin no se muestra la tarjeta completa (navegación a pestañas de
-  // cliente, botones "Ir"/"Ver qué falta") — el componente solo se monta ahí
-  // por el efecto de auto-migración de arriba; el modal de éxito sí se
-  // deja, para que el admin también vea la confirmación si dispara una.
-  if (adminMode || isLoading || totalRequisitos === 0 || !hasMandatoryInContext) {
+  // cliente, botones "Ir"/"Ver qué falta"): en su lugar, un banner que solo
+  // aparece si ESTE admin cambió algo desde que abrió la pantalla (ver
+  // hayCambiosSinSincronizar) — nunca al entrar, ni por datos que ya venían
+  // así del backend.
+  if (adminMode) {
+    return (
+      <>
+        {migracionExitosaModal}
+        {hayCambiosSinSincronizar && (
+          <div className={styles.adminSyncBanner}>
+            <FiRefreshCw className={styles.adminSyncIcon} />
+            <span className={styles.adminSyncText}>
+              Hay cambios en el legajo que todavía no se sincronizaron con SGR+.
+            </span>
+            <Button
+              variant="blue"
+              size="sm"
+              isLoading={isMigrating}
+              onClick={() => setConfirmMigrarOpen(true)}
+            >
+              Guardar y migrar
+            </Button>
+          </div>
+        )}
+        <ConfirmacionModal
+          isOpen={confirmMigrarOpen}
+          onClose={() => setConfirmMigrarOpen(false)}
+          onConfirm={migrarAhora}
+          titulo="Sincronizar con SGR+"
+          mensaje="Se van a guardar los cambios de esta empresa y sincronizarlos con el sistema core (SGR+). ¿Confirmás?"
+          confirmText="Guardar y migrar"
+          cancelText="Cancelar"
+          variant="blue"
+        />
+      </>
+    );
+  }
+
+  if (isLoading || totalRequisitos === 0 || !hasMandatoryInContext) {
     return migracionExitosaModal;
   }
 

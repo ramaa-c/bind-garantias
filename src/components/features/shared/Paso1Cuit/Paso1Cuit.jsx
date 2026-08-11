@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useFormContext, useFormState, useWatch } from "react-hook-form";
-import { toast } from "sonner";
 import { FiBriefcase, FiShield, FiZap, FiCheckCircle } from "react-icons/fi";
 import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
 import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
@@ -31,7 +30,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
   const { cadenaSlug } = useParams();
   const navigate = useNavigate();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
-  const { control, getValues, setValue, setError, clearErrors } =
+  const { control, getValues, setValue, clearErrors } =
     useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
   const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
