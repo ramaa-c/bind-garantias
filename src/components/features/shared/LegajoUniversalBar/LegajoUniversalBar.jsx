@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiCheckCircle, FiChevronRight, FiArrowRight, FiRefreshCw } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
@@ -131,23 +131,27 @@ export function LegajoUniversalBar({
   const cambioPendienteRaw =
     baseline !== null && fingerprint !== baseline && isValid && totalRequisitos > 0;
 
-  // Espera de "asentamiento" de 1 minuto antes de considerar que hay algo
-  // para sincronizar de verdad — tanto para el auto-disparo silencioso del
-  // cliente como para el banner/botón del admin. Sin esto, cada campo que se
-  // termina de completar (cliente) o cada edición suelta (admin) cuenta como
-  // un cambio propio: si el usuario sigue completando el legajo unos
-  // segundos después, se dispararía un llamado a Socio/Migrar por cada paso
-  // intermedio en vez de uno solo cuando ya terminó. `fingerprint` en las
-  // deps reinicia el timer cada vez que vuelve a cambiar dentro del minuto.
+  // Espacia los intentos de sincronización: el primer POST a /Socio/Migrar
+  // de esta visita dispara apenas se detecta un cambio real, pero cualquier
+  // intento SIGUIENTE (ej. si el fingerprint vuelve a moverse poco después
+  // del éxito del primero — el backend puede normalizar/reformatear algún
+  // dato al guardar, y eso alcanza para que el refetch post-migración calcule
+  // una huella distinta a la que se guardó como baseline) tiene que esperar
+  // al menos 1 minuto desde que arrancó el intento anterior. `ultimoIntentoAtRef`
+  // arranca en 0 (sin intentos todavía) para no demorar el primer disparo.
+  const ultimoIntentoAtRef = useRef(0);
   const [hayCambiosSinSincronizar, setHayCambiosSinSincronizar] = useState(false);
   useEffect(() => {
     if (!cambioPendienteRaw) {
       setHayCambiosSinSincronizar(false);
       return;
     }
-    const timeoutId = setTimeout(() => {
+    const restante = Math.max(0, 60000 - (Date.now() - ultimoIntentoAtRef.current));
+    if (restante === 0) {
       setHayCambiosSinSincronizar(true);
-    }, 60000);
+      return;
+    }
+    const timeoutId = setTimeout(() => setHayCambiosSinSincronizar(true), restante);
     return () => clearTimeout(timeoutId);
   }, [cambioPendienteRaw, fingerprint]);
 
@@ -165,6 +169,7 @@ export function LegajoUniversalBar({
   // autoMigrar/migrarAhora más abajo). Un éxito siempre corre la baseline al
   // fingerprint actual: es la nueva foto "confiable".
   const sincronizarConSgrPlus = async () => {
+    ultimoIntentoAtRef.current = Date.now();
     setIsMigrating(true);
     const toastId = toast.loading("Sincronizando legajo con SGR+...");
     try {

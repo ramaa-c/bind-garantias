@@ -594,6 +594,52 @@
   color: #8b949e;
 }
 
+/* Sufijo "días" superpuesto al input de vigencia: el input en sí es un
+   Number mask puro (sin texto de unidad en el patrón — ver comentario en
+   LineasCadena.jsx sobre por qué "días" no puede ir en el mask), así que la
+   unidad se agrega visualmente acá encima. */
+.unitInputWrapper {
+  position: relative;
+}
+
+.unitSuffix {
+  position: absolute;
+  top: 1.3rem;
+  right: 1rem;
+  font-size: 0.75rem;
+  color: #8b949e;
+  pointer-events: none;
+}
+
+/* Vista previa de a qué fecha equivale la vigencia en días recién tipeada:
+   compensa que el input ya no muestra un calendario, mostrando el resultado
+   concreto sin que el admin tenga que calcularlo.
+   margin-top negativo: cancela el padding-bottom de 1.875rem que InputSimple
+   reserva siempre para su mensaje de error, así el chip queda pegado al
+   input en vez de "flotar" separado al fondo del formGroup. Es seguro
+   porque error y chip son mutuamente excluyentes (el chip solo aparece con
+   un valor válido, que es justo cuando no hay error). */
+.dueDateChip {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.35rem;
+  margin-top: -1.875rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background: rgba(76, 101, 230, 0.08);
+  border: 1px solid rgba(76, 101, 230, 0.18);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #8b9bff;
+  font-variant-numeric: tabular-nums;
+}
+
+.dueDateChip svg {
+  flex-shrink: 0;
+  color: var(--color-azul-bind-400, #6b82ff);
+}
+
 /* Tarjeta de disponibilidad de la cadena, arriba de la grilla de "Línea":
    antes era un texto gris suelto debajo del input de Monto Máximo, difícil
    de notar. Ahora es visible de entrada, con barra de uso coloreada según

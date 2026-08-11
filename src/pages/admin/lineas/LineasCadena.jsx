@@ -8,6 +8,7 @@ import {
   FiCreditCard,
   FiFileText,
   FiInfo,
+  FiCalendar,
 } from "react-icons/fi";
 import { toast } from "sonner";
 
@@ -29,7 +30,6 @@ import {
   Spinner,
   Skeleton,
   InputSimple,
-  SelectFechaSimple,
 } from "../../../components/ui";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import styles from "./LineasProductos.module.css";
@@ -41,19 +41,19 @@ const MOCK_MONEDAS = [
   { monedaid: 5000, simbolo: "$ARG" },
 ];
 
-const diasAFecha = (diasStr) => {
+// El backend guarda la vigencia en días (DiasVigenciaLinea/Contrato), no
+// como fecha: el input pide directamente ese número. Esto solo se usa para
+// mostrar a qué fecha equivale, a modo de ayuda visual.
+const formatearVencimiento = (diasStr) => {
   const dias = parseInt(diasStr, 10);
-  if (isNaN(dias)) return "";
+  if (!dias || dias <= 0) return null;
   const d = new Date();
   d.setDate(d.getDate() + dias);
-  d.setHours(12, 0, 0, 0);
-  return d.toISOString();
-};
-
-const fechaADias = (fechaStr) => {
-  const diffTime = new Date(fechaStr) - new Date();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays > 0 ? diffDays : 0;
+  return d.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
 };
 
 const limpiarMonto = (val) => {
@@ -366,8 +366,8 @@ export default function LineasCadena() {
     descripcion: "",
     montomaximo: "",
     montoDefecto: "",
-    fechaVigenciaLinea: "",
-    fechaVigenciaContrato: "",
+    diasVigenciaLinea: "",
+    diasVigenciaContrato: "",
     aptanuevalinea: true,
     activa: true,
   });
@@ -400,8 +400,25 @@ export default function LineasCadena() {
   // mal calculado desde el backend (confirmado: para una cadena con
   // MontoMaximoCV=200M y Utilizado=0 devuelve Disponible=0 en vez de 200M) -
   // se recalcula acá en vez de confiar en ese campo. Reportado a Victor.
+  //
+  // El "Utilizado" tampoco sale de ese endpoint: se recalcula sumando el
+  // MontoMaximo de las líneas (TipoLimiteCadenaValor) ya configuradas para
+  // esta cadena - cada línea dada de alta compromete ese cupo contra el
+  // máximo de la cadena, aunque los socios todavía no la hayan usado. Al
+  // editar una línea existente se excluye su propio valor actual, para no
+  // restarse a sí misma contra el disponible. Ojo: hoy la cadena no tiene
+  // moneda propia, así que puede haber líneas en pesos y en dólares
+  // mezcladas en esta suma sin convertir - pendiente para cuando la cadena
+  // tenga moneda.
   const montoMaximoCV = Number(utilizadoCadena?.montomaximocv) || 0;
-  const utilizadoCV = Number(utilizadoCadena?.utilizado) || 0;
+  const utilizadoCV = listLineas.reduce((acc, l) => {
+    const esLaQueSeEstaEditando =
+      activeLinea &&
+      Number(l.tipolimitecadenavalorid) ===
+        Number(activeLinea.tipolimitecadenavalorid);
+    if (esLaQueSeEstaEditando) return acc;
+    return acc + (Number(l.montomaximo) || 0);
+  }, 0);
   const disponibleCV = Math.max(0, montoMaximoCV - utilizadoCV);
   const pctUsadoCV = montoMaximoCV > 0 ? (utilizadoCV / montoMaximoCV) * 100 : 0;
 
@@ -470,8 +487,8 @@ export default function LineasCadena() {
       descripcion: "",
       montomaximo: "",
       montoDefecto: "",
-      fechaVigenciaLinea: "",
-      fechaVigenciaContrato: "",
+      diasVigenciaLinea: "",
+      diasVigenciaContrato: "",
       aptanuevalinea: true,
       activa: true,
     });
@@ -492,8 +509,12 @@ export default function LineasCadena() {
         linea.montodefecto && Number(linea.montodefecto) > 0
           ? String(linea.montodefecto)
           : "",
-      fechaVigenciaLinea: diasAFecha(linea.diasvigencialinea),
-      fechaVigenciaContrato: diasAFecha(linea.diasvigenciacontrato),
+      diasVigenciaLinea: linea.diasvigencialinea
+        ? String(linea.diasvigencialinea)
+        : "",
+      diasVigenciaContrato: linea.diasvigenciacontrato
+        ? String(linea.diasvigenciacontrato)
+        : "",
       aptanuevalinea: String(linea.aptanuevalinea) === "1",
       activa: String(linea.activa) === "1",
     });
@@ -501,17 +522,20 @@ export default function LineasCadena() {
   };
 
   // Sin toast genérico: cada campo obligatorio muestra su propio error
-  // debajo (mismo patrón que ya usan InputSimple/SelectSimple/SelectFechaSimple),
-  // así se ve de un vistazo qué falta en vez de un mensaje flotante que
-  // desaparece solo.
+  // debajo (mismo patrón que ya usan InputSimple/SelectSimple), así se ve de
+  // un vistazo qué falta en vez de un mensaje flotante que desaparece solo.
   const validarFormulario = () => {
     const errores = {};
 
     if (!formData.tipolimiteid) errores.tipolimiteid = "Elegí un tipo de línea";
     if (!formData.monedaLineaId) errores.monedaLineaId = "Elegí una moneda";
     if (!formData.monedaContratoId) errores.monedaContratoId = "Elegí una moneda";
-    if (!formData.fechaVigenciaLinea) errores.fechaVigenciaLinea = "Elegí una fecha";
-    if (!formData.fechaVigenciaContrato) errores.fechaVigenciaContrato = "Elegí una fecha";
+    if (!formData.diasVigenciaLinea || parseInt(formData.diasVigenciaLinea, 10) <= 0) {
+      errores.diasVigenciaLinea = "Ingresá los días de vigencia";
+    }
+    if (!formData.diasVigenciaContrato || parseInt(formData.diasVigenciaContrato, 10) <= 0) {
+      errores.diasVigenciaContrato = "Ingresá los días de vigencia";
+    }
 
     if (!formData.montomaximo || montoMaximoIngresado <= 0) {
       errores.montomaximo = "Ingresá el monto máximo";
@@ -550,9 +574,9 @@ export default function LineasCadena() {
       montomaximo: montoMaximoFinal,
       montodefecto: rawMontoDefecto ? parseFloat(rawMontoDefecto) : 0,
       monedalineaid: Number(formData.monedaLineaId),
-      diasvigencialinea: fechaADias(formData.fechaVigenciaLinea),
+      diasvigencialinea: parseInt(formData.diasVigenciaLinea, 10) || 0,
       monedacontratoid: Number(formData.monedaContratoId),
-      diasvigenciacontrato: fechaADias(formData.fechaVigenciaContrato),
+      diasvigenciacontrato: parseInt(formData.diasVigenciaContrato, 10) || 0,
       aptanuevalinea: formData.aptanuevalinea ? "1" : "0",
       activa: formData.activa ? "1" : "0",
     };
@@ -762,16 +786,30 @@ export default function LineasCadena() {
             </div>
 
             <div className={styles.formGroup}>
-              <SelectFechaSimple
-                label="Vigencia de la Línea *"
-                value={formData.fechaVigenciaLinea}
-                onChange={(val) =>
-                  handleInputChange("fechaVigenciaLinea", val)
-                }
-                minDate={new Date()}
-                mostrarDiasDesdeHoy
-                error={formErrors.fechaVigenciaLinea}
-              />
+              <div className={styles.unitInputWrapper}>
+                <InputSimple
+                  label="Vigencia de la Línea (días) *"
+                  value={formData.diasVigenciaLinea}
+                  onChange={(val) =>
+                    handleInputChange("diasVigenciaLinea", val)
+                  }
+                  mask={Number}
+                  scale={0}
+                  signed={false}
+                  min={0}
+                  max={3650}
+                  thousandsSeparator="."
+                  lazy={false}
+                  error={formErrors.diasVigenciaLinea}
+                />
+                <span className={styles.unitSuffix}>días</span>
+              </div>
+              {formatearVencimiento(formData.diasVigenciaLinea) && (
+                <span className={styles.dueDateChip}>
+                  <FiCalendar size={11} />
+                  Vence el {formatearVencimiento(formData.diasVigenciaLinea)}
+                </span>
+              )}
             </div>
 
             <div className={styles.formGroup}>
@@ -843,16 +881,30 @@ export default function LineasCadena() {
             </div>
 
             <div className={styles.formGroup}>
-              <SelectFechaSimple
-                label="Vigencia del Contrato *"
-                value={formData.fechaVigenciaContrato}
-                onChange={(val) =>
-                  handleInputChange("fechaVigenciaContrato", val)
-                }
-                minDate={new Date()}
-                mostrarDiasDesdeHoy
-                error={formErrors.fechaVigenciaContrato}
-              />
+              <div className={styles.unitInputWrapper}>
+                <InputSimple
+                  label="Vigencia del Contrato (días) *"
+                  value={formData.diasVigenciaContrato}
+                  onChange={(val) =>
+                    handleInputChange("diasVigenciaContrato", val)
+                  }
+                  mask={Number}
+                  scale={0}
+                  signed={false}
+                  min={0}
+                  max={3650}
+                  thousandsSeparator="."
+                  lazy={false}
+                  error={formErrors.diasVigenciaContrato}
+                />
+                <span className={styles.unitSuffix}>días</span>
+              </div>
+              {formatearVencimiento(formData.diasVigenciaContrato) && (
+                <span className={styles.dueDateChip}>
+                  <FiCalendar size={11} />
+                  Vence el {formatearVencimiento(formData.diasVigenciaContrato)}
+                </span>
+              )}
             </div>
 
             <div className={`${styles.modalFooter} ${styles.formGroupFull}`}>
