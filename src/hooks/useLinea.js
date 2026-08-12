@@ -19,6 +19,23 @@ export const useObtenerLimitesPorSocio = (socioId) => {
     });
 };
 
+export const useObtenerLimites = (cadenavalorid) => {
+    return useQuery({
+        queryKey: ['linea', 'limites', cadenavalorid ? String(cadenavalorid) : 'todas'],
+        queryFn: () => lineaService.obtenerLimites(cadenavalorid),
+    });
+};
+
+export const useActualizarLimiteSocio = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: lineaService.actualizarLimiteSocio,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['linea', 'limites'] });
+        }
+    });
+};
+
 export const useObtenerLimitesCadenaValor = (cadenavalorid) => {
     return useQuery({
         queryKey: ['linea', 'limitesCadenaValor', String(cadenavalorid)],

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { FiUploadCloud } from "react-icons/fi";
 import { toast } from "sonner";
 import { useActualizarCadenaValor } from "../../../../hooks/useCadenaValor";
-import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato } from "../../../../hooks/useCatalogos";
+import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas } from "../../../../hooks/useCatalogos";
 import { Modal, Button, InputSimple, SelectSimple } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
@@ -18,7 +18,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     equipocomercialid: "",
     tipocontratoid: "",
     montomaximo: "",
-    porcentajemaximo: "",
+    montomaximoutilizado: "",
+    porcentajemaximoutilizado: "",
+    monedaid: "",
     activa: "1"
   });
 
@@ -50,11 +52,13 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
   const { data: contratosData } = useTipoContrato();
+  const { data: monedasData } = useMonedas();
   const actualizarMutation = useActualizarCadenaValor();
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
   const contratosOpciones = contratosData?.opciones || [];
+  const monedasOpciones = monedasData?.opciones || [];
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -69,7 +73,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
         equipocomercialid: activeItem.equipocomercialid != null ? activeItem.equipocomercialid.toString() : "",
         tipocontratoid: activeItem.tipocontratoid != null ? activeItem.tipocontratoid.toString() : "",
         montomaximo: activeItem.montomaximo != null && activeItem.montomaximo !== "" ? activeItem.montomaximo.toString() : "100",
-        porcentajemaximo: activeItem.porcentajemaximo != null && activeItem.porcentajemaximo !== "" ? activeItem.porcentajemaximo.toString() : "100",
+        montomaximoutilizado: activeItem.montomaximoutilizado != null && activeItem.montomaximoutilizado !== "" ? activeItem.montomaximoutilizado.toString() : "0",
+        porcentajemaximoutilizado: activeItem.porcentajemaximoutilizado != null && activeItem.porcentajemaximoutilizado !== "" ? activeItem.porcentajemaximoutilizado.toString() : "100",
+        monedaid: activeItem.monedaid != null ? activeItem.monedaid.toString() : "",
         activa: activeItem.activa || "1"
       });
     }
@@ -111,14 +117,23 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       return;
     }
     const montoLimpio = desenmascarar(formState.montomaximo);
-    const porcentajeLimpio = desenmascarar(formState.porcentajemaximo);
+    const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
+    const porcentajeLimpio = desenmascarar(formState.porcentajemaximoutilizado);
 
     if (montoLimpio === "" || isNaN(Number(montoLimpio)) || Number(montoLimpio) < 0) {
       toast.error("Ingrese un monto máximo válido");
       return;
     }
+    if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) < 0) {
+      toast.error("Ingrese un monto máximo utilizado válido");
+      return;
+    }
     if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) < 0 || Number(porcentajeLimpio) > 100) {
-      toast.error("Ingrese un porcentaje máximo válido (0 a 100)");
+      toast.error("Ingrese un porcentaje máximo utilizado válido (0 a 100)");
+      return;
+    }
+    if (!formState.monedaid) {
+      toast.error("Esta cadena no tiene una Moneda asignada. Contactá a soporte para configurarla.");
       return;
     }
 
@@ -135,7 +150,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       equipocomercialid: Number(formState.equipocomercialid),
       tipocontratoid: Number(formState.tipocontratoid),
       montomaximo: Number(desenmascarar(formState.montomaximo)),
-      porcentajemaximo: Number(desenmascarar(formState.porcentajemaximo)),
+      montomaximoutilizado: Number(desenmascarar(formState.montomaximoutilizado)),
+      porcentajemaximoutilizado: Number(desenmascarar(formState.porcentajemaximoutilizado)),
+      monedaid: Number(formState.monedaid),
       activa: formState.activa
     };
 
@@ -250,6 +267,17 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
           <h4 className={styles.sectionTitle}>Límites Financieros</h4>
           <div className={styles.row}>
             <div style={{ flex: 1 }}>
+              <SelectSimple
+                label="Moneda *"
+                placeholder="Sin moneda asignada"
+                options={monedasOpciones}
+                value={formState.monedaid}
+                onChange={() => {}}
+                disabled
+                className={styles.compactInput}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
               <InputSimple
                 label="Monto Máximo *"
                 value={formState.montomaximo}
@@ -260,11 +288,24 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 className={styles.compactInput}
               />
             </div>
+          </div>
+          <div className={styles.row}>
             <div style={{ flex: 1 }}>
               <InputSimple
-                label="Porcentaje Máximo (%) *"
-                value={formState.porcentajemaximo}
-                onChange={val => setFormState({ ...formState, porcentajemaximo: val })}
+                label="Monto Máximo Utilizado *"
+                value={formState.montomaximoutilizado}
+                onChange={val => setFormState({ ...formState, montomaximoutilizado: val })}
+                mask="$ num"
+                blocks={{ num: bloqueNumerico() }}
+                lazy={false}
+                className={styles.compactInput}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <InputSimple
+                label="Porcentaje Máximo Utilizado (%) *"
+                value={formState.porcentajemaximoutilizado}
+                onChange={val => setFormState({ ...formState, porcentajemaximoutilizado: val })}
                 mask="% num"
                 blocks={{ num: bloqueNumerico(100) }}
                 lazy={false}
