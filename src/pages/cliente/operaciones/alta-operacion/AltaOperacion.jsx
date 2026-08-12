@@ -14,7 +14,7 @@ import {
   useFormPersist,
   getPersistedFormData,
 } from "../../../../hooks/useFormPersist";
-import { BarraProgreso, BotonVolver } from "../../../../components/ui";
+import { BarraProgreso, BotonVolver, Button } from "../../../../components/ui";
 import {
   Paso3Simulador,
   Paso5Documentacion,
@@ -62,6 +62,15 @@ export const AltaOperacion = () => {
   const [buscandoSocios, setBuscandoSocios] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [validandoAcceso, setValidandoAcceso] = useState(true);
+  // Reemplaza el viejo patrón de toast + navigate: en vez de sacar al socio
+  // de la pantalla, se le muestra el motivo en pantalla y se bloquea el botón
+  // de continuar. Agrupa todos los motivos que impiden un alta nueva (ya
+  // tiene una solicitud en análisis, o ya superó el % de utilización
+  // permitido en alguna línea existente).
+  const [bloqueoAcceso, setBloqueoAcceso] = useState({
+    bloqueado: false,
+    motivo: "",
+  });
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -87,19 +96,77 @@ export const AltaOperacion = () => {
         const solicitudesArray = Array.isArray(solicitudes)
           ? solicitudes
           : solicitudes?.data || [];
+        // Un socio migrado puede tener solicitudes en distintas cadenas al
+        // mismo tiempo: si ya tiene una en proceso en OTRA cadena, no debería
+        // bloquearlo acá — el bloqueo es solo para no duplicar una solicitud
+        // dentro de esta misma cadena.
         const tieneSolicitudEnProceso = solicitudesArray.some(
-          (s) => s.estadosolicitud === 1 || s.estado === "En Proceso",
+          (s) =>
+            Number(s.cadenavalorid) === Number(cadenaSlug) &&
+            (s.estadosolicitud === 1 || s.estado === "En Proceso"),
         );
 
-        if (tieneSolicitudEnProceso && isMounted) {
-          toast.error("Acceso denegado", {
-            description:
-              "Ya tenés una solicitud de línea en análisis. Debés esperar a que se procese.",
-          });
-          navigate(`/${channelInfo?.id}/solicitudes`);
-        } else if (isMounted) {
-          setValidandoAcceso(false);
+        if (tieneSolicitudEnProceso) {
+          if (isMounted) {
+            setBloqueoAcceso({
+              bloqueado: true,
+              motivo:
+                "Ya tenés una solicitud de línea en análisis para esta cadena.",
+            });
+            setValidandoAcceso(false);
+          }
+          return;
         }
+
+        // Chequeo por línea: ninguna línea EXISTENTE del socio en esta
+        // cadena puede tener su propio Utilizado/Límite por encima de
+        // CadenaValor.PorcentajeMaximoUtilizado (chequeo por línea
+        // individual, no agregado - así lo evalúa el excel de referencia).
+        // Va junto con el resto de los motivos que bloquean el alta (arriba).
+        try {
+          const cuitLimpio = String(cuitActivo).replace(/\D/g, "");
+          const [lineasSocio, cadenaData] = await Promise.all([
+            posicionConsolidadaService.obtenerLimiteSocioPorCuit(cuitLimpio),
+            cadenaValorService.obtenerPorId(Number(cadenaSlug)),
+          ]);
+
+          const lineasArr = Array.isArray(lineasSocio) ? lineasSocio : [];
+          const lineasCadena = lineasArr.filter(
+            (l) => Number(l.cadenavalorid) === Number(cadenaSlug),
+          );
+          const porcentajeMaximoCadena = Number(
+            cadenaData?.porcentajemaximoutilizado ??
+              cadenaData?.PorcentajeMaximoUtilizado ??
+              0,
+          );
+
+          if (porcentajeMaximoCadena > 0) {
+            const lineaExcedida = lineasCadena.find((l) => {
+              const limiteLinea = Number(l.importelimite) || 0;
+              if (limiteLinea <= 0) return false;
+              const utilizadoLinea = Number(l.importeutilizado) || 0;
+              return (
+                (utilizadoLinea / limiteLinea) * 100 > porcentajeMaximoCadena
+              );
+            });
+
+            if (lineaExcedida && isMounted) {
+              setBloqueoAcceso({
+                bloqueado: true,
+                motivo: `Una línea existente (${lineaExcedida.descripcion || "sin descripción"}) ya superó el ${porcentajeMaximoCadena}% de utilización permitido.`,
+              });
+              setValidandoAcceso(false);
+              return;
+            }
+          }
+        } catch (validacionError) {
+          console.error(
+            "[ALTA OPERACION] Error al validar utilización por línea:",
+            validacionError,
+          );
+        }
+
+        if (isMounted) setValidandoAcceso(false);
       } catch (err) {
         if (isMounted) setValidandoAcceso(false);
       }
@@ -109,7 +176,7 @@ export const AltaOperacion = () => {
     return () => {
       isMounted = false;
     };
-  }, [cuitActivo, isLoadingEmpresa, navigate]);
+  }, [cuitActivo, isLoadingEmpresa, cadenaSlug]);
 
 
   const metodosFormulario = useForm({
@@ -603,10 +670,13 @@ export const AltaOperacion = () => {
         } catch (e) {}
       }
 
-      // Requisito de Victor: dos chequeos independientes contra las líneas
-      // que este socio ya tiene en el CORE para esta cadena
-      // (PosicionConsolidada/ObtenerLimiteSocio, resuelto por CUIT vía
-      // posicionConsolidadaService.obtenerLimiteSocioPorCuit).
+      // Requisito de Victor: el monto de la línea nueva no puede superar el
+      // disponible de la cadena para este socio (CadenaValor.MontoMaximoUtilizado
+      // - utilizado total entre todas sus líneas en el CORE, resuelto por
+      // CUIT vía posicionConsolidadaService.obtenerLimiteSocioPorCuit). El
+      // chequeo por línea individual (PorcentajeMaximoUtilizado) ya se validó
+      // al entrar a la pantalla (ver verificarAcceso) - acá solo queda topear
+      // el monto si hace falta, nunca rechazar.
       try {
         const [lineasSocio, cadenaData] = await Promise.all([
           posicionConsolidadaService.obtenerLimiteSocioPorCuit(cuitLimpio),
@@ -618,46 +688,21 @@ export const AltaOperacion = () => {
           (l) => Number(l.cadenavalorid) === Number(cadenaSlug),
         );
 
-        const montoMaximoCadena = Number(
-          cadenaData?.montomaximo ?? cadenaData?.MontoMaximo ?? 0,
+        const montoMaximoUtilizadoCadena = Number(
+          cadenaData?.montomaximoutilizado ??
+            cadenaData?.MontoMaximoUtilizado ??
+            0,
         );
-        const porcentajeMaximoCadena = Number(
-          cadenaData?.porcentajemaximo ?? cadenaData?.PorcentajeMaximo ?? 0,
-        );
 
-        // 1. Por línea: ninguna línea EXISTENTE del socio en esta cadena
-        // puede tener su propio Utilizado/Límite por encima de
-        // CadenaValor.PorcentajeMaximo (chequeo por línea individual, no
-        // agregado — así lo evalúa el excel de referencia). Si alguna ya lo
-        // superó, se rechaza la línea nueva directamente.
-        if (porcentajeMaximoCadena > 0) {
-          const lineaExcedida = lineasCadena.find((l) => {
-            const limiteLinea = Number(l.importelimite) || 0;
-            if (limiteLinea <= 0) return false;
-            const utilizadoLinea = Number(l.importeutilizado) || 0;
-            return (utilizadoLinea / limiteLinea) * 100 > porcentajeMaximoCadena;
-          });
-
-          if (lineaExcedida) {
-            toast.error("No se puede crear una nueva línea", {
-              description: `El socio ya tiene una línea (${lineaExcedida.descripcion || "sin descripción"}) que superó el ${porcentajeMaximoCadena}% de utilización permitido.`,
-            });
-            setEnviandoSolicitud(false);
-            return;
-          }
-        }
-
-        // 2. Agregado: el monto de la línea nueva no puede superar el
-        // disponible de la cadena para este socio (CadenaValor.MontoMaximo -
-        // utilizado total entre todas sus líneas). Si lo supera pero entra
-        // dentro del máximo, se otorga topeado al disponible en vez de
-        // rechazar.
-        if (montoMaximoCadena > 0) {
+        if (montoMaximoUtilizadoCadena > 0) {
           const utilizadoActual = lineasCadena.reduce(
             (acc, l) => acc + (Number(l.importeutilizado) || 0),
             0,
           );
-          const disponible = Math.max(0, montoMaximoCadena - utilizadoActual);
+          const disponible = Math.max(
+            0,
+            montoMaximoUtilizadoCadena - utilizadoActual,
+          );
 
           if (importeEnPesos > disponible) {
             const factorAjuste = disponible / importeEnPesos;
@@ -770,7 +815,11 @@ export const AltaOperacion = () => {
         monedaid: Number(cleanData.moneda) || 5000,
         importelimite: importeEnPesos,
         importeutilizado: 0,
-        tipolimiteestadoid: 9,
+        // 0 = pendiente (nuestro propio estado de aprobación, se define en
+        // el panel admin de solicitudes; no usamos el TipoLimiteEstadoID
+        // heredado de SGR+, que trae ~25 estados de un flujo de crédito que
+        // no aplica acá).
+        tipolimiteestadoid: 0,
         observaciones: "",
         sucursalid: 0,
         terceromercadoid: 400004,
@@ -1109,6 +1158,34 @@ export const AltaOperacion = () => {
         message="Obteniendo la información de la empresa..."
         absolute={true}
       />
+    );
+  }
+
+  // En vez de sacar al socio de la pantalla con un toast + navigate, se
+  // muestra el motivo en pantalla y se bloquea la acción de continuar - así
+  // no queda la sensación de un error inesperado, sino de una funcionalidad
+  // temporalmente no disponible.
+  if (bloqueoAcceso.bloqueado) {
+    return (
+      <div className={styles.operacionPage}>
+        <div className={styles.formMainContainer}>
+          <div className={styles.contentWrapper}>
+            <div className={styles.bloqueoCard}>
+              <h2 className={styles.bloqueoTitulo}>
+                Alta de operación no disponible
+              </h2>
+              <Alert variant="warning">
+                Por el momento no está disponible esta funcionalidad.
+                Comunicate con el equipo de soporte para más información.
+                {bloqueoAcceso.motivo ? ` (${bloqueoAcceso.motivo})` : ""}
+              </Alert>
+              <Button variant="primary" disabled className={styles.bloqueoBoton}>
+                Continuar
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 

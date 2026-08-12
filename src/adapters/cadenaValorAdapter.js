@@ -14,7 +14,9 @@ export const cadenaValorAdapter = {
       EquipoComercialID: d.equipocomercialid,
       TipoContratoID: d.tipocontratoid,
       MontoMaximo: d.montomaximo,
-      PorcentajeMaximo: d.porcentajemaximo,
+      MonedaID: d.monedaid,
+      PorcentajeMaximoUtilizado: d.porcentajemaximoutilizado,
+      MontoMaximoUtilizado: d.montomaximoutilizado,
       Activa: d.activa,
     };
   },
@@ -30,7 +32,9 @@ export const cadenaValorAdapter = {
       EquipoComercialID: d.equipocomercialid,
       TipoContratoID: d.tipocontratoid,
       MontoMaximo: d.montomaximo,
-      PorcentajeMaximo: d.porcentajemaximo,
+      MonedaID: d.monedaid,
+      PorcentajeMaximoUtilizado: d.porcentajemaximoutilizado,
+      MontoMaximoUtilizado: d.montomaximoutilizado,
       Activa: d.activa,
     };
   },

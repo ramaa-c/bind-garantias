@@ -59,6 +59,30 @@
   gap: 0;
 }
 
+.bloqueoCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  margin: auto;
+}
+
+.bloqueoTitulo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--white, #fffefe);
+  margin: 0;
+}
+
+.bloqueoBoton {
+  width: 100%;
+  max-width: 20rem;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ── HEADER DINÁMICO ─────────────────────────────────────────────────────────── */
 
 .bienvenidaHeader {

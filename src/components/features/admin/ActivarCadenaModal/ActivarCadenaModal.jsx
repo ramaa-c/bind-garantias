@@ -8,7 +8,7 @@ import { esCdaActivo } from "../../../../utils/cdaUtils";
 import { PANTALLAS_CDA } from "../../../../utils/pantallasCda";
 import { cdaService } from "../../../../services/cdaService";
 import { cadenaValorService } from "../../../../services/cadenaValorService";
-import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato } from "../../../../hooks/useCatalogos";
+import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas } from "../../../../hooks/useCatalogos";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
@@ -37,22 +37,47 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     logo: "",
     tipocanalcomercializacionid: "",
     equipocomercialid: "",
-    tipocontratoid: ""
+    tipocontratoid: "",
+    monedaid: "",
+    montomaximoutilizado: "0",
+    porcentajemaximoutilizado: "100"
   });
 
   const fileInputRef = useRef(null);
+
+  // Bloque numérico compartido por los inputs enmascarados de Monto/Porcentaje
+  // Máximo Utilizado: coma como separador decimal (es-AR).
+  const bloqueNumerico = (max) => ({
+    mask: Number,
+    scale: 2,
+    signed: false,
+    min: 0,
+    ...(max !== undefined ? { max } : {}),
+    thousandsSeparator: ".",
+    padFractionalZeros: true,
+    normalizeZeros: true,
+    radix: ",",
+    mapToRadix: ["."],
+  });
+
+  const desenmascarar = (val) => {
+    if (typeof val !== "string") return val;
+    return val.replace(/[^0-9,]/g, "").replace(",", ".");
+  };
 
   // Queries & Mutations
   const { data: todasCadenasData, isLoading: isLoadingTodas } = useObtenerCadenasCursanPlataforma();
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
   const { data: contratosData } = useTipoContrato();
+  const { data: monedasData } = useMonedas();
   const crearMutation = useCrearCadenaValor();
   const usuarioWebId = useUsuarioWebIdActual();
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
   const contratosOpciones = contratosData?.opciones || [];
+  const monedasOpciones = monedasData?.opciones || [];
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -73,6 +98,16 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
 
   const handleSelectChain = (chain) => {
     setSelectedChain(chain);
+
+    // La moneda de la cadena viene del CORE (SGR+) como texto ("Pesos
+    // Argentinos", "Dolares Estadounidenses"), no como MonedaID - se
+    // preselecciona matcheando ese texto contra catalogos/Moneda.Descripcion.
+    // El admin puede corregirla si no matchea.
+    const monedaCore = (chain.moneda || "").trim().toLowerCase();
+    const monedaMatch = monedasData?.raw?.find(
+      (m) => (m.descripcion || "").trim().toLowerCase() === monedaCore,
+    );
+
     setFormState({
       cadenavalorid: chain.cadenavalorid,
       denominacion: chain.denominacion,
@@ -80,7 +115,10 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       logo: chain.logo || "",
       tipocanalcomercializacionid: chain.tipocanalcomercializacionid != null ? chain.tipocanalcomercializacionid.toString() : "",
       equipocomercialid: chain.equipocomercialid != null ? chain.equipocomercialid.toString() : "",
-      tipocontratoid: chain.tipocontratoid != null ? chain.tipocontratoid.toString() : ""
+      tipocontratoid: chain.tipocontratoid != null ? chain.tipocontratoid.toString() : "",
+      monedaid: monedaMatch ? String(monedaMatch.monedaid) : "",
+      montomaximoutilizado: "0",
+      porcentajemaximoutilizado: "100"
     });
     setStep("form");
   };
@@ -120,6 +158,20 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       toast.error("Seleccione un Tipo de Contrato");
       return;
     }
+    if (!formState.monedaid) {
+      toast.error("Seleccione una Moneda");
+      return;
+    }
+    const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
+    const porcentajeLimpio = desenmascarar(formState.porcentajemaximoutilizado);
+    if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) < 0) {
+      toast.error("Ingrese un monto máximo utilizado válido");
+      return;
+    }
+    if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) < 0 || Number(porcentajeLimpio) > 100) {
+      toast.error("Ingrese un porcentaje máximo utilizado válido (0 a 100)");
+      return;
+    }
     setConfirmOpen(true);
   };
 
@@ -145,7 +197,9 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       equipocomercialid: Number(formState.equipocomercialid),
       tipocontratoid: Number(formState.tipocontratoid),
       montomaximo: parseMonto(selectedChain),
-      porcentajemaximo: 100,
+      monedaid: Number(formState.monedaid),
+      montomaximoutilizado: Number(desenmascarar(formState.montomaximoutilizado)),
+      porcentajemaximoutilizado: Number(desenmascarar(formState.porcentajemaximoutilizado)),
       activa: "1"
     };
 
@@ -378,6 +432,41 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     options={contratosOpciones}
                     value={formState.tipocontratoid}
                     onChange={val => setFormState({ ...formState, tipocontratoid: val })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.sectionGroup}>
+              <h4 className={styles.sectionTitle}>Límites Financieros</h4>
+              <div className={styles.row}>
+                <div style={{ flex: 1 }}>
+                  <SelectSimple
+                    label="Moneda *"
+                    placeholder="Seleccione moneda..."
+                    options={monedasOpciones}
+                    value={formState.monedaid}
+                    onChange={val => setFormState({ ...formState, monedaid: val })}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <InputSimple
+                    label="Monto Máximo Utilizado *"
+                    value={formState.montomaximoutilizado}
+                    onChange={val => setFormState({ ...formState, montomaximoutilizado: val })}
+                    mask="$ num"
+                    blocks={{ num: bloqueNumerico() }}
+                    lazy={false}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <InputSimple
+                    label="Porcentaje Máximo Utilizado (%) *"
+                    value={formState.porcentajemaximoutilizado}
+                    onChange={val => setFormState({ ...formState, porcentajemaximoutilizado: val })}
+                    mask="% num"
+                    blocks={{ num: bloqueNumerico(100) }}
+                    lazy={false}
                   />
                 </div>
               </div>

@@ -8,8 +8,17 @@ export const lineaService = {
     // GET api/TipoLimiteSocio?socioid={SocioID}
     obtenerLimitesPorSocio: async (socioId) => (await api.get(`api/TipoLimiteSocio?socioid=${socioId}`)).data,
 
+    // GET api/TipoLimiteSocio (todas, o filtradas por CadenaValorID si se pasa)
+    obtenerLimites: async (cadenavalorid) =>
+        (await api.get('api/TipoLimiteSocio', {
+            params: cadenavalorid ? { CadenaValorID: cadenavalorid } : {},
+        })).data,
+
     // POST api/TipoLimiteSocio
     crearLimiteSocio: async (limiteData) => (await api.post(`api/TipoLimiteSocio`, lineaAdapter.adaptarPayload1(limiteData))).data,
+
+    // PUT api/TipoLimiteSocio
+    actualizarLimiteSocio: async (limiteData) => (await api.put(`api/TipoLimiteSocio`, lineaAdapter.adaptarPayload1(limiteData))).data,
 
     // GET api/TipoLimiteCadenaValor?cadenavalorid={id}
     obtenerLimitesCadenaValor: async (cadenavalorid) => 

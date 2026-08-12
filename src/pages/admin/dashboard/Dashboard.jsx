@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList, FiGlobe, FiGrid, FiChevronRight } from "react-icons/fi";
+import React, { useMemo, useState } from "react";
+import { FiSearch, FiCheck, FiX, FiEye, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList, FiGlobe, FiGrid, FiChevronRight } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
 import { Badge } from "../../../components/ui/Badge/Badge";
@@ -11,69 +10,24 @@ import { SelectSimple } from "../../../components/ui";
 import { SkeletonTable, Skeleton } from "../../../components/ui";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
+import { useObtenerLimites, useActualizarLimiteSocio } from "../../../hooks/useLinea";
+import { useObtenerSocios } from "../../../hooks/useSocios";
 import { CriteriosAceptacionModal } from "../../../components/features";
-import api from "../../../api/axios";
 import styles from "./Dashboard.module.css";
 
-const solicitudesIniciales = [
-  {
-    id: "16557",
-    tipo: "Alta de línea en John Deere",
-    monto: "100.000.000",
-    cliente: "COMERCIALIZADORA DE BIENES DE CAPITAL SA",
-    cuit: "30-59319937-8",
-    usuario: "30593199378@yopmail.com",
-    estado: "Pendiente de validación",
-    accionPendiente: "Espera de documentación de Alta de línea",
-    creado: "14/07/2025 20:08",
-    actualizado: "14/07/2025 20:31",
-    tags: ["TyC aceptados", "Legajo validado"],
-    cadenaSlug: "canal1",
-  },
-  {
-    id: "16546",
-    tipo: "Alta de línea en John Deere",
-    monto: "12.000.400",
-    cliente: "RAPTOR.MAX S.R.L.",
-    cuit: "30-71654889-5",
-    usuario: "30716548895@yopmail.com",
-    estado: "Pendiente de validación",
-    accionPendiente: "Espera de documentación de Alta de línea",
-    creado: "05/06/2025 11:31",
-    actualizado: "05/06/2025 11:41",
-    tags: ["TyC aceptados", "Legajo validado"],
-    cadenaSlug: "canal1",
-  },
-  {
-    id: "16540",
-    tipo: "Cheque Avalado BIND",
-    monto: "5.500.000",
-    cliente: "AGROPECUARIA DEL SUR S.A.",
-    cuit: "30-65432110-1",
-    usuario: "brunetti@yopmail.com",
-    estado: "Aprobada",
-    accionPendiente: "Lista para monetizar",
-    creado: "14/05/2025 12:08",
-    actualizado: "15/05/2025 18:21",
-    tags: ["Garantía Digital"],
-    cadenaSlug: "default",
-  },
-  {
-    id: "16538",
-    tipo: "Pagaré Bursátil USD",
-    monto: "250.000",
-    moneda: "U$D",
-    cliente: "TECH INNOVA S.R.L.",
-    cuit: "30-88776655-2",
-    usuario: "finanzas@techinnova.com",
-    estado: "Rechazada",
-    accionPendiente: "Falta de cupo crediticio",
-    creado: "10/05/2025 09:15",
-    actualizado: "11/05/2025 14:00",
-    tags: ["Requiere revisión"],
-    cadenaSlug: "default",
-  },
-];
+// Estado propio de la solicitud (TipoLimiteSocio.TipoLimiteEstadoID): NO es
+// el catálogo TipoLimiteEstado heredado de SGR+ (ese trae ~25 estados de un
+// flujo de crédito bancario que no usamos). Acá solo manejamos estos tres.
+const ESTADO_RECHAZADA = -1;
+const ESTADO_PENDIENTE = 0;
+const ESTADO_APROBADA = 1;
+
+const estadoTextoDesde = (tipolimiteestadoid) => {
+  const id = Number(tipolimiteestadoid);
+  if (id === ESTADO_APROBADA) return "Aprobada";
+  if (id === ESTADO_RECHAZADA) return "Rechazada";
+  return "Pendiente de validación";
+};
 
 const opcionesEstado = [
   { value: "todos", label: "Todos los estados" },
@@ -88,8 +42,6 @@ const opcionesOrden = [
 ];
 
 export default function Dashboard() {
-  const [solicitudes, setSolicitudes] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [orden, setOrden] = useState("desc");
@@ -103,13 +55,25 @@ export default function Dashboard() {
   const { isRestricted, cadenas } = useAdminRestrictions();
   const { data: activeCadenas } = useObtenerTodasWeb();
 
+  const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
+  const { data: limitesData, isLoading: isLoadingLimites } =
+    useObtenerLimites(targetCadenaId > 0 ? targetCadenaId : undefined);
+  const { data: sociosData, isLoading: isLoadingSocios } = useObtenerSocios();
+  const actualizarEstadoMutation = useActualizarLimiteSocio();
+
+  const loading = isLoadingLimites || isLoadingSocios;
+
   const selectedChain = (activeCadenas || []).find(
     (c) => String(c.cadenavalorid || c.CadenaValorID) === String(selectedCadenaId)
   );
 
   // Normalize restricted cadenas
-  const restrictedIds = new Set(
-    (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid)
+  const restrictedIds = useMemo(
+    () =>
+      new Set(
+        (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid),
+      ),
+    [cadenas],
   );
 
   const visibleCadenas = isRestricted
@@ -119,157 +83,108 @@ export default function Dashboard() {
       })
     : (activeCadenas || []);
 
-  const selectOptions = [
-    { value: "all", label: "Todas las cadenas de valor" },
-    ...visibleCadenas.map((c) => ({
-      value: String(c.cadenavalorid || c.CadenaValorID),
-      label: c.denominacion || `ID: ${c.cadenavalorid || c.CadenaValorID}`,
-    })),
-  ];
+  const solicitudesCanal = useMemo(() => {
+    const listLimites = Array.isArray(limitesData) ? limitesData : [];
+    const listSocios = Array.isArray(sociosData) ? sociosData : [];
 
-  const cadenasKey = (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid).join(",");
+    const sociosMap = new Map();
+    listSocios.forEach((s) => {
+      const socioId = s.socioid || s.SocioID;
+      if (socioId) sociosMap.set(socioId, s);
+    });
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
-        
-        const params = {};
-        if (targetCadenaId > 0) {
-          params.CadenaValorID = targetCadenaId;
-        }
-
-        const resLimites = await api.get("api/TipoLimiteSocio", { params });
-        const listLimites = resLimites.data || [];
-
-        const resSocios = await api.get("api/Socios");
-        const listSocios = resSocios.data || [];
-
-        const sociosMap = new Map();
-        listSocios.forEach((s) => {
-          const socioId = s.socioid || s.SocioID;
-          if (socioId) sociosMap.set(socioId, s);
-        });
-
-        const matchedLimites = listLimites.filter((l) => {
-          const lCadenaId = l.cadenavalorid || l.CadenaValorID;
-          if (isRestricted && !restrictedIds.has(lCadenaId)) {
-            return false;
-          }
-          if (targetCadenaId > 0 && lCadenaId !== targetCadenaId) {
-            return false;
-          }
-          return true;
-        });
-
-        const mapped = matchedLimites.map((l) => {
-          const socioId = l.socioid || l.SocioID;
-          let socio = socioId ? sociosMap.get(socioId) : null;
-          if (!socio) {
-            socio = listSocios.find((s) => s.denominacion) || null;
-          }
-
-          const tipoLimiteEstadoId = l.tipolimiteestadoid || l.TipoLimiteEstadoID || 0;
-          const estadoText =
-            tipoLimiteEstadoId === 2
-              ? "Aprobada"
-              : tipoLimiteEstadoId === 3
-                ? "Rechazada"
-                : "Pendiente de validación";
-
-          const accionText =
-            tipoLimiteEstadoId === 2
-              ? "Aprobada por Administrador"
-              : tipoLimiteEstadoId === 3
-                ? "Rechazada por Administrador"
-                : "Espera de documentación de Alta de línea";
-
-          const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
-          const tipoText =
-            tipoLimiteId === 1
-              ? "Alta de línea (Cheque)"
-              : tipoLimiteId === 2
-                ? "Alta de línea (Préstamo)"
-                : "Alta de línea (Pagaré)";
-
-          const importeLimite = l.importelimite || l.ImporteLimite;
-          const monedaId = l.monedaid || l.MonedaID;
-          const fchVigenciaDesde = l.fchvigenciadesde || l.FchVigenciaDesde;
-          const fchVigenciaHasta = l.fchvigenciahasta || l.FchVigenciaHasta;
-          const tipoLimiteSocioId = l.tipolimitesocioid || l.TipoLimiteSocioID;
-
-          return {
-            id: tipoLimiteSocioId?.toString() || Math.random().toString(),
-            tipo: tipoText,
-            monto: importeLimite
-              ? new Intl.NumberFormat("es-AR").format(importeLimite)
-              : "0",
-            moneda: monedaId === 2 ? "U$D" : "$",
-            cliente: socio?.denominacion || "SANTA ANGELINA S.A.",
-            cuit: socio?.cuit || "30-68052476-5",
-            usuario: socio?.email || "pruebabind19@yopmail.com",
-            estado: estadoText,
-            accionPendiente: accionText,
-            creado: fchVigenciaDesde
-              ? new Date(fchVigenciaDesde).toLocaleString("es-AR")
-              : "Reciente",
-            actualizado: fchVigenciaHasta
-              ? new Date(fchVigenciaHasta).toLocaleString("es-AR")
-              : "Reciente",
-            tags: ["Canal Activo", "Legajo validado"],
-            cadenaSlug: "default",
-          };
-        });
-
-        setSolicitudes(mapped);
-      } catch (e) {
-        console.error("Error al cargar datos del dashboard de admin:", e);
-        toast.error("Error al cargar solicitudes reales.");
-        setSolicitudes(solicitudesIniciales);
-      } finally {
-        setLoading(false);
+    const matchedLimites = listLimites.filter((l) => {
+      const lCadenaId = l.cadenavalorid || l.CadenaValorID;
+      if (isRestricted && !restrictedIds.has(lCadenaId)) {
+        return false;
       }
-    }
+      if (targetCadenaId > 0 && lCadenaId !== targetCadenaId) {
+        return false;
+      }
+      return true;
+    });
 
-    loadData();
-  }, [selectedCadenaId, isRestricted, cadenasKey]);
+    return matchedLimites.map((l) => {
+      const socioId = l.socioid || l.SocioID;
+      // Sin fallback a "cualquier socio con denominación": si no lo
+      // encontramos, se muestra explícitamente como no encontrado en vez de
+      // mostrar los datos de otro cliente.
+      const socio = socioId ? sociosMap.get(socioId) : null;
 
-  const solicitudesCanal = solicitudes;
+      const tipoLimiteEstadoId = l.tipolimiteestadoid ?? l.TipoLimiteEstadoID ?? ESTADO_PENDIENTE;
+      const estadoText = estadoTextoDesde(tipoLimiteEstadoId);
 
-  const handleAceptar = (id) => {
-    setSolicitudes((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              estado: "Aprobada",
-              accionPendiente: "Aprobada por Administrador",
-            }
-          : s,
-      ),
-    );
-    toast.success(`Solicitud N°${id} Aprobada exitosamente`, {
-      description: "Los fondos o cupos han sido habilitados para el cliente.",
+      const accionText =
+        Number(tipoLimiteEstadoId) === ESTADO_APROBADA
+          ? "Aprobada por Administrador"
+          : Number(tipoLimiteEstadoId) === ESTADO_RECHAZADA
+            ? "Rechazada por Administrador"
+            : "Espera de validación del Administrador";
+
+      const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
+      const tipoText =
+        tipoLimiteId === 1
+          ? "Alta de línea (Cheque)"
+          : tipoLimiteId === 2
+            ? "Alta de línea (Préstamo)"
+            : "Alta de línea (Pagaré)";
+
+      const importeLimite = l.importelimite || l.ImporteLimite;
+      const monedaId = l.monedaid || l.MonedaID;
+      const fchVigenciaDesde = l.fchvigenciadesde || l.FchVigenciaDesde;
+      const fchVigenciaHasta = l.fchvigenciahasta || l.FchVigenciaHasta;
+      const tipoLimiteSocioId = l.tipolimitesocioid || l.TipoLimiteSocioID;
+
+      return {
+        id: tipoLimiteSocioId?.toString() || "",
+        tipoLimiteEstadoId: Number(tipoLimiteEstadoId),
+        tipo: tipoText,
+        monto: importeLimite
+          ? new Intl.NumberFormat("es-AR").format(importeLimite)
+          : "0",
+        moneda: monedaId === 2 ? "U$D" : "$",
+        cliente: socio?.denominacion || "Socio no encontrado",
+        cuit: socio?.cuit || "—",
+        usuario: socio?.email || "—",
+        socioid: socioId,
+        cadenavalorid: l.cadenavalorid || l.CadenaValorID,
+        estado: estadoText,
+        accionPendiente: accionText,
+        creado: fchVigenciaDesde
+          ? new Date(fchVigenciaDesde).toLocaleString("es-AR")
+          : "Reciente",
+        actualizado: fchVigenciaHasta
+          ? new Date(fchVigenciaHasta).toLocaleString("es-AR")
+          : "Reciente",
+        tags: ["Canal Activo", "Legajo validado"],
+        cadenaSlug: "default",
+        raw: l,
+      };
+    });
+  }, [limitesData, sociosData, isRestricted, restrictedIds, targetCadenaId]);
+
+  const handleDecision = (item, nuevoEstado) => {
+    const payload = { ...item.raw, tipolimiteestadoid: nuevoEstado };
+    actualizarEstadoMutation.mutate(payload, {
+      onSuccess: () => {
+        if (nuevoEstado === ESTADO_APROBADA) {
+          toast.success(`Solicitud N°${item.id} Aprobada exitosamente`, {
+            description: "Los fondos o cupos han sido habilitados para el cliente.",
+          });
+        } else {
+          toast.error(`Solicitud N°${item.id} Rechazada`, {
+            description: "Se ha notificado al cliente el rechazo de la operación.",
+          });
+        }
+      },
+      onError: (err) => {
+        toast.error(`No se pudo actualizar la Solicitud N°${item.id}: ` + err.message);
+      },
     });
   };
 
-  const handleRechazar = (id) => {
-    setSolicitudes((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              estado: "Rechazada",
-              accionPendiente: "Rechazada por Administrador",
-            }
-          : s,
-      ),
-    );
-    toast.error(`Solicitud N°${id} Rechazada`, {
-      description: "Se ha notificado al cliente el rechazo de la operación.",
-    });
-  };
+  const handleAceptar = (item) => handleDecision(item, ESTADO_APROBADA);
+  const handleRechazar = (item) => handleDecision(item, ESTADO_RECHAZADA);
 
   const filtradas = solicitudesCanal
     .filter((s) => {
@@ -300,10 +215,10 @@ export default function Dashboard() {
       {/* Header and top KPI widgets */}
       <div className={styles.headerTitle}>
         <div>
-          <h1>Panel General de Control</h1>
+          <h1>Gestión de Solicitudes</h1>
           <p>
-            Supervisión global de todas las líneas y solicitudes activas en el
-            sistema.
+            Procesá las solicitudes de línea de todas las cadenas de valor
+            activas en el sistema.
           </p>
         </div>
       </div>
@@ -619,38 +534,27 @@ export default function Dashboard() {
                           {isPendiente && (
                             <div className={styles.quickDecisions}>
                               <Button
-                                onClick={() => handleAceptar(item.id)}
+                                onClick={() => handleAceptar(item)}
                                 variant="success"
                                 size="xs"
                                 className={styles.btnAcceptCustom}
                                 title="Aprobar Solicitud"
+                                disabled={actualizarEstadoMutation.isPending}
                               >
                                 <FiCheck /> ACEPTAR
                               </Button>
                               <Button
-                                onClick={() => handleRechazar(item.id)}
+                                onClick={() => handleRechazar(item)}
                                 variant="danger"
                                 size="xs"
                                 className={styles.btnRejectCustom}
                                 title="Rechazar Solicitud"
+                                disabled={actualizarEstadoMutation.isPending}
                               >
                                 <FiX /> RECHAZAR
                               </Button>
                             </div>
                           )}
-
-                          <Button
-                            onClick={() => {
-                              toast.info(
-                                `Continuando flujo de gestión N°${item.id}`,
-                              );
-                            }}
-                            variant="outlineBlue"
-                            size="sm"
-                            className={styles.btnContinueCustom}
-                          >
-                            CONTINUAR <FiArrowRight />
-                          </Button>
 
                           <Button
                             onClick={() => setSolicitudDetalle(item)}

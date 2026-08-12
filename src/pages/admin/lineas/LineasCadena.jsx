@@ -223,7 +223,7 @@ const LineaCard = ({
   );
   const simboloMoneda = monedaMock ? monedaMock.simbolo : "$";
 
-  const montoDefecto = parseFloat(linea.montodefecto);
+  const montoDefecto = parseFloat(linea.valorespordefecto);
   const tieneMontoDefecto = !isNaN(montoDefecto) && montoDefecto > 0;
 
   return (
@@ -284,11 +284,20 @@ const LineaCard = ({
               {linea.diasvigenciacontrato} días
             </span>
           </div>
-          <div className={`${styles.detailItem} ${styles.fullWidthItem}`}>
-            <span className={styles.detailLabel}>MONTO MÁXIMO</span>
+          <div className={styles.detailItem}>
+            <span className={styles.detailLabel}>MONTO LÍNEA</span>
             <span className={styles.detailValueHighlight}>
               {simboloMoneda}{" "}
-              {parseFloat(linea.montomaximo).toLocaleString("es-AR", {
+              {parseFloat(linea.montolinea).toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+              })}
+            </span>
+          </div>
+          <div className={styles.detailItem}>
+            <span className={styles.detailLabel}>MONTO CONTRATO</span>
+            <span className={styles.detailValue}>
+              {simboloMoneda}{" "}
+              {parseFloat(linea.montocontrato || 0).toLocaleString("es-AR", {
                 minimumFractionDigits: 2,
               })}
             </span>
@@ -364,7 +373,8 @@ export default function LineasCadena() {
     monedaLineaId: "",
     monedaContratoId: "",
     descripcion: "",
-    montomaximo: "",
+    montoLinea: "",
+    montoContrato: "",
     montoDefecto: "",
     diasVigenciaLinea: "",
     diasVigenciaContrato: "",
@@ -387,12 +397,33 @@ export default function LineasCadena() {
   const listCadenas = cadenas || [];
   const listLineas = lineas || [];
 
+  const selectedCadena = listCadenas.find(
+    (c) => String(c.cadenavalorid) === selectedCadenaId,
+  );
+
   const selectedMonedaData = monedas?.raw?.find(
     (m) => String(m.monedaid) === String(formData.monedaLineaId),
   );
   const monedaSimbolo = selectedMonedaData?.simbolo || "$";
 
-  // Techo real de la cadena para el Monto Máximo de una línea nueva: lo que
+  // La moneda de la cadena (CadenaValor.MonedaID) acota qué monedas puede
+  // tener una línea: si la cadena es en Pesos (5000), sus líneas solo pueden
+  // ser en Pesos; si es en Dólares (2), sus líneas pueden ser en Pesos o en
+  // Dólares. Se aplica tanto a la moneda de la Línea como a la del Contrato.
+  const monedaCadenaId = selectedCadena?.monedaid
+    ? Number(selectedCadena.monedaid)
+    : null;
+  const monedasPermitidasIds =
+    monedaCadenaId === 2 ? [2, 5000] : [5000];
+  const currenciesOptionsTodas = monedas?.opciones || [];
+  const currenciesOptions = monedaCadenaId
+    ? currenciesOptionsTodas.filter((o) =>
+        monedasPermitidasIds.includes(Number(o.value)),
+      )
+    : currenciesOptionsTodas;
+  const limitTypesOptions = limitTypes?.opciones || [];
+
+  // Techo real de la cadena para el Monto de Línea de una línea nueva: lo que
   // ya se admitió y no se puede volver a comprometer (MontoMaximoCV) y lo que
   // efectivamente queda libre hoy (Disponible = MontoMaximoCV - Utilizado).
   //
@@ -402,14 +433,14 @@ export default function LineasCadena() {
   // se recalcula acá en vez de confiar en ese campo. Reportado a Victor.
   //
   // El "Utilizado" tampoco sale de ese endpoint: se recalcula sumando el
-  // MontoMaximo de las líneas (TipoLimiteCadenaValor) ya configuradas para
+  // MontoLinea de las líneas (TipoLimiteCadenaValor) ya configuradas para
   // esta cadena - cada línea dada de alta compromete ese cupo contra el
   // máximo de la cadena, aunque los socios todavía no la hayan usado. Al
   // editar una línea existente se excluye su propio valor actual, para no
-  // restarse a sí misma contra el disponible. Ojo: hoy la cadena no tiene
-  // moneda propia, así que puede haber líneas en pesos y en dólares
-  // mezcladas en esta suma sin convertir - pendiente para cuando la cadena
-  // tenga moneda.
+  // restarse a sí misma contra el disponible. Ahora que la cadena tiene su
+  // propia moneda, solo se suman las líneas cuya MonedaLineaID está entre las
+  // permitidas para esa cadena - evita mezclar líneas de otra moneda que
+  // hayan quedado de antes de esta restricción.
   const montoMaximoCV = Number(utilizadoCadena?.montomaximocv) || 0;
   const utilizadoCV = listLineas.reduce((acc, l) => {
     const esLaQueSeEstaEditando =
@@ -417,15 +448,15 @@ export default function LineasCadena() {
       Number(l.tipolimitecadenavalorid) ===
         Number(activeLinea.tipolimitecadenavalorid);
     if (esLaQueSeEstaEditando) return acc;
-    return acc + (Number(l.montomaximo) || 0);
+    if (!monedasPermitidasIds.includes(Number(l.monedalineaid))) return acc;
+    return acc + (Number(l.montolinea) || 0);
   }, 0);
   const disponibleCV = Math.max(0, montoMaximoCV - utilizadoCV);
   const pctUsadoCV = montoMaximoCV > 0 ? (utilizadoCV / montoMaximoCV) * 100 : 0;
 
-  const montoMaximoIngresado = parseFloat(limpiarMonto(formData.montomaximo)) || 0;
-
-  const currenciesOptions = monedas?.opciones || [];
-  const limitTypesOptions = limitTypes?.opciones || [];
+  const montoLineaIngresado = parseFloat(limpiarMonto(formData.montoLinea)) || 0;
+  const montoContratoIngresado =
+    parseFloat(limpiarMonto(formData.montoContrato)) || 0;
 
   useEffect(() => {
     if (listCadenas.length > 0 && !selectedCadenaId) {
@@ -485,7 +516,8 @@ export default function LineasCadena() {
       monedaLineaId: "",
       monedaContratoId: "",
       descripcion: "",
-      montomaximo: "",
+      montoLinea: "",
+      montoContrato: "",
       montoDefecto: "",
       diasVigenciaLinea: "",
       diasVigenciaContrato: "",
@@ -504,11 +536,9 @@ export default function LineasCadena() {
       monedaLineaId: String(linea.monedalineaid),
       monedaContratoId: String(linea.monedacontratoid),
       descripcion: linea.descripcion || "",
-      montomaximo: String(linea.montomaximo),
-      montoDefecto:
-        linea.montodefecto && Number(linea.montodefecto) > 0
-          ? String(linea.montodefecto)
-          : "",
+      montoLinea: String(linea.montolinea),
+      montoContrato: linea.montocontrato != null ? String(linea.montocontrato) : "",
+      montoDefecto: linea.valorespordefecto ? String(linea.valorespordefecto) : "",
       diasVigenciaLinea: linea.diasvigencialinea
         ? String(linea.diasvigencialinea)
         : "",
@@ -537,10 +567,19 @@ export default function LineasCadena() {
       errores.diasVigenciaContrato = "Ingresá los días de vigencia";
     }
 
-    if (!formData.montomaximo || montoMaximoIngresado <= 0) {
-      errores.montomaximo = "Ingresá el monto máximo";
-    } else if (montoMaximoCV > 0 && montoMaximoIngresado > montoMaximoCV) {
-      errores.montomaximo = `Supera el máximo de la cadena (${monedaSimbolo} ${montoMaximoCV.toLocaleString("es-AR")})`;
+    if (!formData.montoLinea || montoLineaIngresado <= 0) {
+      errores.montoLinea = "Ingresá el monto de la línea";
+    } else if (montoMaximoCV > 0 && montoLineaIngresado > montoMaximoCV) {
+      errores.montoLinea = `Supera el máximo de la cadena (${monedaSimbolo} ${montoMaximoCV.toLocaleString("es-AR")})`;
+    }
+
+    if (!formData.montoContrato || montoContratoIngresado <= 0) {
+      errores.montoContrato = "Ingresá el monto del contrato";
+    } else if (
+      montoLineaIngresado > 0 &&
+      montoLineaIngresado > montoContratoIngresado
+    ) {
+      errores.montoContrato = "El monto de línea no puede ser mayor al del contrato";
     }
 
     return errores;
@@ -553,15 +592,16 @@ export default function LineasCadena() {
     setFormErrors(errores);
     if (Object.keys(errores).length > 0) return;
 
-    const rawMontoMaximo = limpiarMonto(formData.montomaximo);
+    const rawMontoLinea = limpiarMonto(formData.montoLinea);
+    const rawMontoContrato = limpiarMonto(formData.montoContrato);
     const rawMontoDefecto = limpiarMonto(formData.montoDefecto);
 
     // Techo real de la cadena: si pide más de lo que la cadena admite en
     // total ya se rechazó arriba. Si entra dentro del máximo pero supera lo
     // que hoy queda libre, se acepta topeada al disponible.
-    let montoMaximoFinal = parseFloat(rawMontoMaximo);
-    if (montoMaximoCV > 0 && montoMaximoFinal > disponibleCV) {
-      montoMaximoFinal = disponibleCV;
+    let montoLineaFinal = parseFloat(rawMontoLinea);
+    if (montoMaximoCV > 0 && montoLineaFinal > disponibleCV) {
+      montoLineaFinal = disponibleCV;
     }
 
     const payload = {
@@ -571,8 +611,9 @@ export default function LineasCadena() {
       cadenavalorid: Number(selectedCadenaId),
       tipolimiteid: Number(formData.tipolimiteid),
       descripcion: formData.descripcion || "",
-      montomaximo: montoMaximoFinal,
-      montodefecto: rawMontoDefecto ? parseFloat(rawMontoDefecto) : 0,
+      montolinea: montoLineaFinal,
+      montocontrato: parseFloat(rawMontoContrato) || 0,
+      valorespordefecto: rawMontoDefecto || "",
       monedalineaid: Number(formData.monedaLineaId),
       diasvigencialinea: parseInt(formData.diasVigenciaLinea, 10) || 0,
       monedacontratoid: Number(formData.monedaContratoId),
@@ -603,10 +644,6 @@ export default function LineasCadena() {
       });
     }
   };
-
-  const selectedCadena = listCadenas.find(
-    (c) => String(c.cadenavalorid) === selectedCadenaId,
-  );
 
   const isCadenaInactiva = selectedCadena && !selectedCadena.activaOperativa;
 
@@ -814,9 +851,9 @@ export default function LineasCadena() {
 
             <div className={styles.formGroup}>
               <InputSimple
-                label="Monto Máximo *"
-                value={formData.montomaximo}
-                onChange={(val) => handleInputChange("montomaximo", val)}
+                label="Monto de la Línea *"
+                value={formData.montoLinea}
+                onChange={(val) => handleInputChange("montoLinea", val)}
                 mask={`${monedaSimbolo} num`}
                 blocks={{
                   num: {
@@ -831,7 +868,7 @@ export default function LineasCadena() {
                   },
                 }}
                 lazy={false}
-                error={formErrors.montomaximo}
+                error={formErrors.montoLinea}
               />
             </div>
 
@@ -861,7 +898,7 @@ export default function LineasCadena() {
             <span className={styles.formHint}>
               <FiInfo size={13} />
               <span className={styles.formHintText}>
-                El <strong>Monto por Defecto</strong> es opcional: si lo dejás vacío, el socio podrá pedir cualquier monto hasta el máximo; si lo completás, ese va a ser el único monto solicitable.
+                El <strong>Monto por Defecto</strong> es opcional: si lo dejás vacío, el socio podrá pedir cualquier monto hasta el de la línea; si lo completás, ese va a ser el único monto solicitable.
               </span>
             </span>
 
@@ -905,6 +942,29 @@ export default function LineasCadena() {
                   Vence el {formatearVencimiento(formData.diasVigenciaContrato)}
                 </span>
               )}
+            </div>
+
+            <div className={styles.formGroup}>
+              <InputSimple
+                label="Monto del Contrato *"
+                value={formData.montoContrato}
+                onChange={(val) => handleInputChange("montoContrato", val)}
+                mask={`${monedaSimbolo} num`}
+                blocks={{
+                  num: {
+                    mask: Number,
+                    scale: 2,
+                    signed: false,
+                    thousandsSeparator: ".",
+                    padFractionalZeros: true,
+                    normalizeZeros: true,
+                    radix: ",",
+                    mapToRadix: ["."],
+                  },
+                }}
+                lazy={false}
+                error={formErrors.montoContrato}
+              />
             </div>
 
             <div className={`${styles.modalFooter} ${styles.formGroupFull}`}>
