@@ -123,7 +123,7 @@ export default function SociosView() {
               animation: sincronizando ? "spin 1s linear infinite" : "none"
             }}
           />
-          {sincronizando ? "Sincronizando..." : "Refrescar datos LUFE"}
+          {sincronizando ? "Sincronizando..." : "Refrescar datos de accionistas"}
         </Button>
       </header>
 
@@ -143,7 +143,7 @@ export default function SociosView() {
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleRefrescarLufe}
-        titulo="Refrescar datos LUFE"
+        titulo="Refrescar datos de accionistas"
         mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y AFIP? Esta acción actualizará la composición accionaria y los representantes."
       />
     </section>

@@ -6,11 +6,10 @@ import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { useEstaMigradoEnSgrPlus } from "../../../../hooks/useSocios";
+import { useEstaMigradoEnSgrPlus, useSocioWebPorId } from "../../../../hooks/useSocios";
 import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
-import Spinner from "../../../ui/Spinner/Spinner";
 import { MigracionExitosaModal } from "../MigracionExitosaModal/MigracionExitosaModal";
 import { EstadoMigracionModal } from "../EstadoMigracionModal/EstadoMigracionModal";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
@@ -49,7 +48,6 @@ export function LegajoUniversalBar({
     isLoading,
     faltanDocumentos,
     faltanLegajo,
-    archivosBackend,
     socioLegajoData,
     tipoPersonaId,
   } = useValidacionLegajo({
@@ -59,6 +57,12 @@ export function LegajoUniversalBar({
     nombreEmpresa: nombreEmpresaOverride,
     cadenaId: cadenaIdOverride,
   });
+
+  // Datos del Socio en sí (no de sus terceros) — se usan tanto para saber si
+  // "los datos de la empresa" cambiaron (ver fingerprint) como para el CUIT
+  // que necesita el chequeo de migración real de abajo. Sirve para ambos
+  // modos: en admin, useEmpresaActiva(true) no trae nada (está "skippeado").
+  const { data: socioWeb, isLoading: loadingSocioWeb } = useSocioWebPorId(socioIdActivo);
 
   // Única fuente de verdad de si el legajo YA se migró de verdad al core:
   // consultar directamente sgrplus/Socios?Cuit=X — si el CUIT aparece ahí es
@@ -71,9 +75,8 @@ export function LegajoUniversalBar({
   // intento de migración que en realidad falló (confirmado en vivo el
   // 2026-08-11: POST Socio/Migrar tiró 500, y al hacer F5 la barra igual
   // mostró "Sincronizado" porque no había ningún cambio LOCAL pendiente).
-  const cuitActivo = adminMode ? null : empresaActiva.cuitActivo;
   const { data: migradoEnBackend = false, isLoading: loadingMigradoEnBackend } =
-    useEstaMigradoEnSgrPlus(cuitActivo);
+    useEstaMigradoEnSgrPlus(socioWeb?.cuit);
 
   const [isMigrating, setIsMigrating] = useState(false);
   const [lastAttemptedFingerprint, setLastAttemptedFingerprint] = useState("");
@@ -82,14 +85,43 @@ export function LegajoUniversalBar({
   const modalesLegajoAbiertos = useLegajoModalStore((s) => s.modalesAbiertos);
 
   const fingerprint = useMemo(() => {
-    if (!socioIdActivo || isLoading) return "";
-    const archivosKey = (archivosBackend || [])
-      .map((a) => {
-        const refDate = a.fchreferencia || a.FchReferencia || "";
-        const refText = a.referencia || a.Referencia || "";
-        return `${a.socioarchivoid || a.id}-${a.nombrearchivo || a.nombre || a.descripcion || ""}-${refDate}-${refText}`;
-      })
-      .join("|");
+    // loadingSocioWeb tiene que estar acá: si no, el primer render calcula
+    // datosEmpresaKey vacío (socioWeb todavía no llegó), eso queda grabado
+    // como baseline, y en cuanto socioWeb resuelve el fingerprint "cambia"
+    // solo — un cambio fantasma que dispara una remigración sin que nadie
+    // haya tocado nada (mismo tipo de bug que loadingEstadoCda en
+    // useValidacionLegajo.js).
+    if (!socioIdActivo || isLoading || loadingSocioWeb) return "";
+    // A propósito NO incluye documentos: se puede reemplazar/agregar/borrar
+    // los que sea sin que eso dispare una remigración — los documentos ya
+    // cuentan para el % de completitud (useValidacionLegajo) y para la
+    // PRIMERA migración (isValid ya los exige), pero una vez migrado, un
+    // socio ya se considera al día en SGR+ aunque siga tocando documentos.
+    // Solo remigra por cambios de terceros (altas/bajas/edición) o de los
+    // datos de la empresa en sí (ver datosEmpresaKey) — acordado con Victor
+    // el 2026-08-11.
+    const datosEmpresaKey = socioWeb
+      ? [
+          socioWeb.denominacion,
+          socioWeb.email,
+          socioWeb.emailfacturacion,
+          socioWeb.telefono,
+          socioWeb.telefono2,
+          socioWeb.telefono3,
+          socioWeb.calle,
+          socioWeb.numero,
+          socioWeb.piso,
+          socioWeb.departamento,
+          socioWeb.partido,
+          socioWeb.codpos,
+          socioWeb.ciudadid,
+          socioWeb.tamanioempresaid,
+          socioWeb.situacionbcraid,
+          socioWeb.tipocanalcomercializacionid,
+          socioWeb.fechainicioactividades,
+          socioWeb.fechacierreejercicio,
+        ].join("-")
+      : "";
     // Incluye TODOS los campos editables de la persona (no solo unos pocos):
     // cualquier cambio en el legajo de un accionista/representante/agente
     // (nombre, CUIT, domicilio completo, ciudad, participación, etc.) tiene
@@ -124,8 +156,8 @@ export function LegajoUniversalBar({
     const agentesKey = (socioLegajoData?.agentesBolsa || [])
       .map(personaFingerprint)
       .join("|");
-    return `${archivosKey}#${accionistasKey}#${representantesKey}#${agentesKey}`;
-  }, [socioIdActivo, archivosBackend, socioLegajoData, isLoading]);
+    return `${datosEmpresaKey}#${accionistasKey}#${representantesKey}#${agentesKey}`;
+  }, [socioIdActivo, socioWeb, socioLegajoData, isLoading, loadingSocioWeb]);
 
   // Se confía en el dato tal como se lo trae al abrir la pantalla — nunca se
   // migra solo por eso, ni en cliente ni en admin, sin importar si es la
@@ -143,6 +175,27 @@ export function LegajoUniversalBar({
     if (!fingerprint || baseline !== null) return;
     setBaseline(fingerprint);
   }, [fingerprint, baseline]);
+
+  // Aviso "¡Felicitaciones!" del CLIENTE: dispara apenas su legajo pasa a
+  // estar completo, sin importar si la migración a SGR+ (que ni sabe que
+  // existe) sale bien o mal en ese momento — acordado con Victor el
+  // 2026-08-12. isValidBaselineRef guarda si YA estaba completo al abrir la
+  // pantalla (mismo patrón que `baseline` arriba, con ref en vez de state
+  // porque acá no hace falta re-renderizar por esto): solo cuenta como
+  // "recién completado" si pasa de incompleto a completo DURANTE esta
+  // visita — si ya entraba completo, no vuelve a mostrarse.
+  const isValidBaselineRef = useRef(null);
+  useEffect(() => {
+    if (adminMode || isLoading) return;
+    if (isValidBaselineRef.current === null) {
+      isValidBaselineRef.current = isValid;
+      return;
+    }
+    if (isValid && !isValidBaselineRef.current) {
+      setShowMigracionExitosa(true);
+      isValidBaselineRef.current = true;
+    }
+  }, [adminMode, isValid, isLoading]);
 
   const cambioPendienteRaw =
     baseline !== null && fingerprint !== baseline && isValid && totalRequisitos > 0;
@@ -177,7 +230,7 @@ export function LegajoUniversalBar({
   // intento anterior que falló silenciosamente (ver migradoEnBackend arriba):
   // sin esto, sin un cambio LOCAL nuevo de por medio, nunca se reintentaba.
   const faltaMigrarEnBackend =
-    !loadingMigradoEnBackend && !migradoEnBackend && isValid && totalRequisitos > 0;
+    !loadingSocioWeb && !loadingMigradoEnBackend && !migradoEnBackend && isValid && totalRequisitos > 0;
 
   const [confirmMigrarOpen, setConfirmMigrarOpen] = useState(false);
 
@@ -198,7 +251,12 @@ export function LegajoUniversalBar({
       const response = await sociosService.enviarASgrPlus(socioIdActivo);
       if (response.success) {
         if (toastId) toast.dismiss(toastId);
-        setShowMigracionExitosa(true);
+        // Solo para admin (silent=false, ver migrarAhora): a él sí le
+        // corresponde enterarse de la migración real. El aviso del cliente
+        // NO depende de esto — se dispara aparte apenas su legajo queda
+        // completo, migre o no migre en el momento (ver el useEffect de
+        // isValid más abajo, acordado con Victor el 2026-08-12).
+        if (!silent) setShowMigracionExitosa(true);
         setBaseline(fingerprint);
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
@@ -239,7 +297,7 @@ export function LegajoUniversalBar({
   // de arriba en su lugar (ver el return de adminMode más abajo).
   useEffect(() => {
     if (adminMode) return;
-    if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingMigradoEnBackend) return;
+    if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingSocioWeb || loadingMigradoEnBackend) return;
 
     // En "legajo" (a diferencia de "documentacion") completar el último
     // requisito puede pasar DENTRO de una modal propia (Representante,
@@ -280,7 +338,7 @@ export function LegajoUniversalBar({
 
     autoMigrar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingMigradoEnBackend, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
+  }, [adminMode, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingMigradoEnBackend, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
   const hasMandatoryInContext =
     (context === "documentacion" && totalDocumentosObligatorios > 0) ||
@@ -294,6 +352,7 @@ export function LegajoUniversalBar({
     <MigracionExitosaModal
       isOpen={showMigracionExitosa}
       onClose={() => setShowMigracionExitosa(false)}
+      adminMode={adminMode}
     />
   );
 
@@ -456,18 +515,17 @@ export function LegajoUniversalBar({
                 Ir
               </Button>
             )
-          ) : isMigrating ? (
-            <span className={styles.statusChip}>
-              <Spinner size={13} />
-              Sincronizando
-            </span>
-          ) : migradoEnBackend ? (
+          ) : (
+            // La migración a SGR+ es un detalle interno — de cara al
+            // cliente alcanza con decir que ya completó todo, sin mencionar
+            // sincronización/migración ni su estado (acordado con Victor el
+            // 2026-08-12). isMigrating/migradoEnBackend se siguen calculando
+            // arriba para la lógica de reintento, solo dejaron de
+            // mostrarse acá.
             <span className={`${styles.statusChip} ${styles.statusChipSuccess}`}>
               <FiCheckCircle size={13} />
-              Sincronizado
+              Datos completos
             </span>
-          ) : (
-            <span className={styles.statusChip}>Sincronización pendiente</span>
           )}
         </div>
       </div>

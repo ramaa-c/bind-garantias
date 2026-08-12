@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   FiCheckCircle,
   FiCircle,
-  FiClock,
   FiAlertTriangle,
   FiFileText,
   FiUsers,
@@ -128,26 +127,24 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   const faltanDocumentos = documentosChecklist.some((i) => !i.done);
   const faltanLegajo = legajoChecklist.some((i) => !i.done);
 
-  const estado = estaMigrado ? "migrado" : legajoListo ? "listo" : "pendiente";
-  const tono = estado === "migrado" ? "success" : estado === "listo" ? "ready" : "pending";
+  // La migración a SGR+ es un detalle interno que solo le importa al admin
+  // (acordado con Victor el 2026-08-12) — de cara al cliente "migrado" y
+  // "listo" son el mismo estado ("ya terminé"), sin exponer el número de
+  // legajo SGR+ ni insinuar que hay una sincronización de por medio.
+  const legajoCompleto = estaMigrado || legajoListo;
+  const estado = legajoCompleto ? "completo" : "pendiente";
+  const tono = estado === "completo" ? "success" : "pending";
 
   // El estado "pendiente" ya no tiene hero propio: el título y el mensaje
   // genérico ("Legajo incompleto para SGR+" / "Te falta completar...") ya se
   // ven en LegajoUniversalBar (containerInvalid) — repetirlos acá arriba del
   // checklist no agregaba nada, solo empujaba hacia abajo el detalle
-  // puntual que es lo único que este modal aporta de más. "migrado" y
-  // "listo" sí conservan su hero porque dicen algo que la barra no dice
-  // (el número de legajo SGR+, que la migración es automática).
+  // puntual que es lo único que este modal aporta de más.
   const HERO_POR_ESTADO = {
-    migrado: {
+    completo: {
       icon: <FiCheckCircle size={22} />,
       titulo: "Legajo completo",
-      subtitulo: `Tu legajo #${legajoSgrPlus} ya está completo y al día.`,
-    },
-    listo: {
-      icon: <FiClock size={22} />,
-      titulo: "Todo listo",
-      subtitulo: "Completaste todos los requisitos. En unos instantes tu legajo va a quedar al día.",
+      subtitulo: "Ya cargaste todos los datos y documentos de tu empresa.",
     },
   };
   const hero = HERO_POR_ESTADO[estado];
@@ -210,7 +207,7 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
             items={legajoChecklist}
           />
 
-          {!estaMigrado && (faltanDocumentos || faltanLegajo) && (
+          {!legajoCompleto && (faltanDocumentos || faltanLegajo) && (
             <div className={styles.ctaRow}>
               {faltanDocumentos && (
                 <Button

@@ -172,7 +172,14 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
       const repMap = {};
       const bolsaMap = {};
 
-      const now = new Date();
+      // Comparación por fecha calendario (sin hora) contra HOY, no contra el
+      // instante exacto: una relación recién creada suele llegar con
+      // FechaHasta defaulteada al mismo día que FechaDesde (hoy a las
+      // 00:00hs) — comparada contra "ahora mismo" (con hora), "hoy a las
+      // 00:00" siempre da en el pasado, así que sin este truncado una
+      // relación recién creada desaparecería sola apenas se crea.
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
 
       // Se descartan primero las relaciones vencidas o sin tercero asociado
       // (no requieren red), y recién ahí se piden los terceros. Los pedidos
@@ -180,20 +187,26 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
       // de pool de FireDAC que obliga a serializar las escrituras) para que
       // el refetch tras guardar/editar no tarde N veces la latencia del
       // backend por cada accionista/representante/agente de bolsa.
+      //
+      // ⚠️ Antes acá había una excepción "si FechaHasta === FechaDesde, no
+      // contar como vencida" (pensada para el caso de arriba). El problema:
+      // "eliminar" un tercero pone FechaHasta = ayer (ver SociosLegajo.jsx),
+      // y si ese tercero se había creado justo el día anterior (típico en
+      // los precargados de LUFE del alta, que quedan con FechaDesde = el
+      // día del alta), FechaHasta(ayer) terminaba coincidiendo con
+      // FechaDesde — la excepción se activaba de nuevo y la "eliminación"
+      // quedaba invisible para este filtro, aunque el PUT sí se haya
+      // guardado bien en el backend (confirmado en vivo el 2026-08-12,
+      // reproducido contra SocioTerceroRelacionID 179 del socio 66: el PUT
+      // devuelve 200 y el valor queda persistido, pero seguía apareciendo
+      // en pantalla). No es un problema de LUFE en sí — pasa con cualquier
+      // tercero borrado exactamente un día después de haberse creado.
       const relacionesValidas = arr.filter((rel) => {
-        const fd = rel.fechadesde || rel.FechaDesde;
         const fh = rel.fechahasta || rel.FechaHasta;
         if (fh && fh !== "") {
           const expirationDate = new Date(fh);
-          const startDate = fd ? new Date(fd) : null;
-
-          const isSameAsStart =
-            startDate &&
-            (expirationDate.getTime() === startDate.getTime() ||
-              expirationDate.toISOString().split("T")[0] ===
-                startDate.toISOString().split("T")[0]);
-
-          if (!isSameAsStart && expirationDate < now) {
+          expirationDate.setHours(0, 0, 0, 0);
+          if (expirationDate < hoy) {
             return false;
           }
         }

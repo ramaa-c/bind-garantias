@@ -248,6 +248,8 @@ function DatosTab({ socio }) {
                   onChange={setField("denominacion")}
                   variant="admin"
                   hideErrorSpace
+                  disabled
+                  title="La razón social no se puede modificar."
                 />
               </div>
               <div className={styles.fieldFull}>
