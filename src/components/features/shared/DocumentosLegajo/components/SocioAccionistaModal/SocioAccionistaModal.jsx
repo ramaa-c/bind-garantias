@@ -379,8 +379,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       titulo: "Validando Socio",
       pasos: [
         { id: "vinculo", etiqueta: "Vinculando con el socio", estado: necesitaVinculo ? "cargando" : "completado", descripcion: "Registrando la relación en el sistema." },
-        { id: "padron", etiqueta: "Consultando padrón", estado: necesitaVinculo ? "pendiente" : "cargando", descripcion: "Obteniendo los datos de la persona desde el padrón federal/bureau en tiempo real." },
-        { id: "cda", etiqueta: "Ejecutando validaciones CDA", estado: "pendiente", descripcion: "Comprobando políticas de riesgo y negocio para el alta." },
+        { id: "padron", etiqueta: "Consultando datos de la persona", estado: necesitaVinculo ? "pendiente" : "cargando", descripcion: "Obteniendo los datos de la persona en tiempo real." },
+        { id: "cda", etiqueta: "Verificando requisitos", estado: "pendiente", descripcion: "Comprobando políticas de riesgo y negocio para el alta." },
       ],
       hasError: false,
       isSystemError: false
@@ -680,21 +680,21 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           }
         }
 
-        toast.success(socio ? "Datos actualizados desde Nosis/AFIP/LUFE." : "Datos del accionista recuperados.");
+        toast.success(socio ? "Datos actualizados correctamente." : "Datos del accionista recuperados.");
         padronOk = true;
       } else if (!padronOk) {
         // Padrón no encontrado por ningún lado (ni NOSIS/AFIP/LUFE, ni un
         // tercero local con datos completos): acá sí se bloquea, igual que
         // en RepresentanteModal — no hay nada razonable para completar a
         // mano sin al menos un nombre.
-        setError("cuit", { type: "manual", message: "CUIT no encontrado en padrón de Nosis ni AFIP." });
+        setError("cuit", { type: "manual", message: "CUIT no encontrado. Revisá que sea correcto." });
         setAfipValidado(false);
         setProcesoModal(prev => ({
           ...prev,
           hasError: true,
           isSystemError: false,
           pasos: prev.pasos.map(p =>
-            p.id === "padron" ? { ...p, estado: "error", errores: ["No se encontraron datos en Nosis ni AFIP para este CUIT."] } : p
+            p.id === "padron" ? { ...p, estado: "error", errores: ["No pudimos verificar los datos de este CUIT. Revisá que sea correcto e intentá nuevamente."] } : p
           ),
         }));
         setValidando(false);
@@ -702,14 +702,14 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       }
     } catch (err) {
       console.error("Error validando CUIT en AFIP/SGR:", err);
-      setError("cuit", { type: "manual", message: "Servicios de AFIP/LUFE caídos. Intente más tarde." });
+      setError("cuit", { type: "manual", message: "El servicio de verificación no está disponible en este momento. Intentá nuevamente más tarde." });
       setAfipValidado(false);
       setProcesoModal(prev => ({
         ...prev,
         hasError: true,
         isSystemError: true,
         pasos: prev.pasos.map(p =>
-          p.id === "padron" ? { ...p, estado: "error", errores: ["Servicio de AFIP/LUFE no disponible. No se pudieron obtener datos automáticos."] } : p
+          p.id === "padron" ? { ...p, estado: "error", errores: ["El servicio de verificación no está disponible en este momento. Intentá nuevamente en unos minutos."] } : p
         ),
       }));
       setValidando(false);
@@ -853,7 +853,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           isOpen: true,
           titulo: "Validando Accionista",
           pasos: [
-            { id: "cda", etiqueta: "Ejecutando validaciones CDA", estado: "cargando", descripcion: "Comprobando políticas de riesgo y negocio." },
+            { id: "cda", etiqueta: "Verificando requisitos", estado: "cargando", descripcion: "Comprobando políticas de riesgo y negocio." },
           ],
           hasError: false,
           isSystemError: false,
