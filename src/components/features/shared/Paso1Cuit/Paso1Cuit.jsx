@@ -36,7 +36,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
   const { cadenaSlug } = useParams();
   const navigate = useNavigate();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
-  const { control, getValues, setValue, clearErrors } =
+  const { control, getValues, setValue, setError, clearErrors } =
     useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
   const { ejecutarValidaciones, loading: isLoadingCda } = useCdaEngine();
@@ -178,7 +178,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
       if (!resultadoDatos || !resultadoDatos.encontrado) {
         setError("cuit", {
           type: "manual",
-          message: "No se encontraron datos para este CUIT en Nosis, AFIP ni LUFE.",
+          message: "No pudimos verificar los datos de este CUIT. Revisá que sea correcto e intentá nuevamente.",
         });
         return;
       }
@@ -247,7 +247,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
                 errores: resultCda.errors.map((e) => e.message),
                 error:
                   resultCda.errors.find((e) => e.isInvalidante)?.message ||
-                  "Error en validación CDA",
+                  "No pudimos completar la validación.",
               }
             : p,
         ),
@@ -295,9 +295,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
       pasos: [
         {
           id: "sgrcore",
-          etiqueta: "Validando con SGRPlus",
+          etiqueta: "Verificando la empresa",
           estado: yaCruzoUmbral ? "completado" : "cargando",
-          descripcion: "Verificando estado del socio en el sistema core.",
+          descripcion: "Comprobando el estado de la empresa en nuestro sistema.",
         },
         {
           id: "pyme",
@@ -307,14 +307,13 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
         },
         {
           id: "afip",
-          etiqueta: "Consultando padrón",
+          etiqueta: "Consultando datos de la empresa",
           estado: yaCruzoUmbral ? "completado" : "pendiente",
-          descripcion:
-            "Obteniendo los datos de la empresa desde el padrón federal/bureau en tiempo real.",
+          descripcion: "Obteniendo los datos de la empresa en tiempo real.",
         },
         {
           id: "cda",
-          etiqueta: "Ejecutando validaciones CDA",
+          etiqueta: "Verificando requisitos",
           estado: yaCruzoUmbral ? "cargando" : "pendiente",
           descripcion:
             "Comprobando políticas de riesgo y negocio para el alta.",
