@@ -11,6 +11,15 @@ export const ESTADO_APROBADA = 1;
 // columna nueva.
 export const ESTADO_CANCELADA = -2;
 
+// TerceroViaID de SolicitudEnProceso: identifica la plataforma de origen de
+// la solicitud, no la cadena de valor. La nuestra es 4000000 - otras
+// plataformas usan 2000000/3000000 (confirmado con Victor el 2026-08-13).
+// Un socio puede tener varias solicitudes en curso al mismo tiempo dentro de
+// NUESTRA plataforma (en distintas cadenas) sin problema; lo que hay que
+// evitar es dejarlo arrancar una acá si ya tiene una en curso en OTRA
+// plataforma, sobre la que no tenemos control.
+export const TERCERO_VIA_PLATAFORMA_PROPIA = 4000000;
+
 export const estadoTextoDesde = (tipolimiteestadoid) => {
   const id = Number(tipolimiteestadoid);
   if (id === ESTADO_APROBADA) return "Aprobada";

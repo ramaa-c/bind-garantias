@@ -18,6 +18,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* El modal se abre con title="" (ver DetalleSolicitudModal.jsx), así que
+     Modal.jsx pone su botón de cerrar flotante (position:absolute, ~3rem de
+     ancho total contando su offset) sobre esta esquina — sin este padding,
+     el badge de estado queda tapado por la X. */
+  padding-right: 2.25rem;
   margin-bottom: 1.125rem;
 }
 

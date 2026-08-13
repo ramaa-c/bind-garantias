@@ -230,6 +230,10 @@
   flex: 1;
   overflow-y: auto;
   padding-right: 0.5rem;
+  /* Sin esto, el "levantado" + sombra al hacer hover de la primera tarjeta
+     quedaba cortado por el borde superior del propio contenedor con scroll. */
+  padding-top: 0.4rem;
+  margin-top: -0.4rem;
 }
 
 .listContainer::-webkit-scrollbar {

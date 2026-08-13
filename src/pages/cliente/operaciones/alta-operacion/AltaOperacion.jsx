@@ -39,6 +39,7 @@ import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useTiposProducto } from "../../../../hooks/useCatalogos";
 import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
+import { TERCERO_VIA_PLATAFORMA_PROPIA } from "../../../../utils/estadoLimiteSocio";
 
 const STORAGE_KEY = "draft_alta_operacion_v2";
 
@@ -136,13 +137,16 @@ export const AltaOperacion = () => {
         const solicitudesArray = Array.isArray(solicitudes)
           ? solicitudes
           : solicitudes?.data || [];
-        // Un socio migrado puede tener solicitudes en distintas cadenas al
-        // mismo tiempo: si ya tiene una en proceso en OTRA cadena, no debería
-        // bloquearlo acá — el bloqueo es solo para no duplicar una solicitud
-        // dentro de esta misma cadena.
+        // El bloqueo es por PLATAFORMA de origen (TerceroViaID), no por
+        // cadena: un socio puede tener varias solicitudes en curso al mismo
+        // tiempo dentro de NUESTRA plataforma (4000000), en distintas
+        // cadenas o incluso en la misma — lo único que hay que evitar es
+        // dejarlo arrancar acá si ya tiene una en curso en OTRA plataforma,
+        // sobre la que no tenemos control (confirmado con Victor el
+        // 2026-08-13). Ver TERCERO_VIA_PLATAFORMA_PROPIA.
         const tieneSolicitudEnProceso = solicitudesArray.some(
           (s) =>
-            Number(s.cadenavalorid) === Number(cadenaSlug) &&
+            Number(s.terceroviaid) !== TERCERO_VIA_PLATAFORMA_PROPIA &&
             (s.estadosolicitud === 1 || s.estado === "En Proceso"),
         );
 
@@ -151,7 +155,7 @@ export const AltaOperacion = () => {
             setBloqueoAcceso({
               bloqueado: true,
               motivo:
-                "Ya tenés una solicitud de línea en análisis para esta cadena.",
+                "Ya tenés una solicitud de línea en análisis en otra plataforma.",
             });
             setValidandoAcceso(false);
           }

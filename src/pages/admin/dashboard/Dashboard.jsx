@@ -12,7 +12,7 @@ import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio } from "../../../hooks/useLinea";
 import { useObtenerSocios } from "../../../hooks/useSocios";
-import { CriteriosAceptacionModal } from "../../../components/features";
+import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import {
   ESTADO_RECHAZADA,
   ESTADO_PENDIENTE,
@@ -44,6 +44,7 @@ export default function Dashboard() {
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
   const [solicitudCda, setSolicitudCda] = useState(null);
+  const [solicitudARechazar, setSolicitudARechazar] = useState(null);
   const [isChainModalOpen, setIsChainModalOpen] = useState(false);
   const [chainSearchQuery, setChainSearchQuery] = useState("");
   const { isRestricted, cadenas } = useAdminRestrictions();
@@ -159,8 +160,9 @@ export default function Dashboard() {
     });
   }, [limitesData, sociosData, isRestricted, restrictedIds, targetCadenaId]);
 
-  const handleDecision = (item, nuevoEstado) => {
+  const handleDecision = (item, nuevoEstado, observaciones) => {
     const payload = { ...item.raw, tipolimiteestadoid: nuevoEstado };
+    if (observaciones !== undefined) payload.observaciones = observaciones;
     actualizarEstadoMutation.mutate(payload, {
       onSuccess: () => {
         if (nuevoEstado === ESTADO_APROBADA) {
@@ -171,6 +173,7 @@ export default function Dashboard() {
           toast.error(`Solicitud N°${item.id} Rechazada`, {
             description: "Se ha notificado al cliente el rechazo de la operación.",
           });
+          setSolicitudARechazar(null);
         }
       },
       onError: (err) => {
@@ -180,7 +183,14 @@ export default function Dashboard() {
   };
 
   const handleAceptar = (item) => handleDecision(item, ESTADO_APROBADA);
-  const handleRechazar = (item) => handleDecision(item, ESTADO_RECHAZADA);
+  // "Rechazar" ya no aplica el cambio directo: abre el modal que pide el
+  // motivo (queda en TipoLimiteSocio.Observaciones, lo que ya muestra
+  // DetalleSolicitudModal.jsx del lado cliente) — ver handleConfirmarRechazo.
+  const handleRechazar = (item) => setSolicitudARechazar(item);
+  const handleConfirmarRechazo = (motivo) => {
+    if (!solicitudARechazar) return;
+    handleDecision(solicitudARechazar, ESTADO_RECHAZADA, motivo);
+  };
 
   const filtradas = solicitudesCanal
     .filter((s) => {
@@ -682,6 +692,15 @@ export default function Dashboard() {
         isOpen={!!solicitudCda}
         onClose={() => setSolicitudCda(null)}
         solicitud={solicitudCda}
+      />
+
+      <RechazarSolicitudModal
+        key={solicitudARechazar?.id ?? "none"}
+        isOpen={!!solicitudARechazar}
+        onClose={() => setSolicitudARechazar(null)}
+        onConfirm={handleConfirmarRechazo}
+        solicitud={solicitudARechazar}
+        isLoading={actualizarEstadoMutation.isPending}
       />
 
       {/* Value Chain Selection Modal */}

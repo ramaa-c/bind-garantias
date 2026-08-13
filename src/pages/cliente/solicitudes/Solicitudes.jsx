@@ -26,6 +26,7 @@ import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
   estadoTextoDesde,
+  TERCERO_VIA_PLATAFORMA_PROPIA,
 } from "../../../utils/estadoLimiteSocio";
 
 import styles from "./Solicitudes.module.css";
@@ -132,7 +133,18 @@ export default function Solicitudes() {
     const hasRealPendiente = Array.isArray(solicitudesReal) && solicitudesReal.some(s =>
       Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE) === ESTADO_PENDIENTE
     );
-    const hasProcesoPendiente = Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
+    // Igual que en AltaOperacion.jsx: el bloqueo es por PLATAFORMA de origen
+    // (TerceroViaID), no por la simple existencia de una SolicitudEnProceso.
+    // Dentro de NUESTRA plataforma (4000000) un socio puede tener varias en
+    // curso a la vez; lo único que bloquea es una en curso en OTRA
+    // plataforma (confirmado con Victor el 2026-08-13).
+    const hasProcesoPendiente =
+      Array.isArray(solicitudesEnProceso) &&
+      solicitudesEnProceso.some(
+        (s) =>
+          Number(s.terceroviaid) !== TERCERO_VIA_PLATAFORMA_PROPIA &&
+          (s.estadosolicitud === 1 || s.estado === "En Proceso"),
+      );
     return hasRealPendiente || hasProcesoPendiente;
   }, [solicitudesReal, solicitudesEnProceso]);
 
@@ -336,7 +348,7 @@ export default function Solicitudes() {
                     puedeCancelar
                       ? [
                           {
-                            label: "Cancelar",
+                            label: "Cancelar solicitud",
                             variant: "danger",
                             onClick: () => setSolicitudACancelar(item),
                           },
