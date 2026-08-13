@@ -32,6 +32,11 @@ export const useActualizarLimiteSocio = () => {
         mutationFn: lineaService.actualizarLimiteSocio,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['linea', 'limites'] });
+            // useObtenerLimitesSocio (pantalla de Solicitudes del cliente) usa
+            // una queryKey distinta ('limites','socio',socioId) para el mismo
+            // recurso - sin esto, cancelar/aprobar/rechazar desde un lugar no
+            // refresca la lista del otro.
+            queryClient.invalidateQueries({ queryKey: ['limites', 'socio'] });
         }
     });
 };

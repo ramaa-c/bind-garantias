@@ -1,5 +1,4 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
 import {
   FiCheckCircle,
   FiDownload,
@@ -20,80 +19,75 @@ export default function Paso7Exito({ onVolverInicio }) {
     <div className={styles.container}>
       <div className={styles.hero}>
         <div className={styles.heroGlow}></div>
-        <div className={styles.heroContent}>
+        <div className={styles.heroIconWrap}>
           <FiCheckCircle className={styles.heroIcon} />
-          <div className={styles.heroText}>
-            <h1 className={styles.heroTitle}>
-              ¡Felicitaciones!
-              <br />
-              Tu solicitud está pre-aprobada
-            </h1>
-          </div>
+        </div>
+        <div className={styles.heroText}>
+          <h1 className={styles.heroTitle}>
+            ¡Felicitaciones! Tu solicitud está pre-aprobada
+          </h1>
+          <p className={styles.heroSubtitle}>
+            Restan estos <strong>2 pasos</strong> para activar tu línea de
+            crédito.
+          </p>
         </div>
       </div>
 
-      <h3 className={styles.subtitle}>Te contamos los pasos a seguir:</h3>
-
-      <div className={styles.stepsContainer}>
+      <div className={styles.stepsGrid}>
         <div className={styles.stepCard}>
-          <div className={styles.stepNumber}>1</div>
-          <div className={styles.stepContent}>
-            <h4 className={styles.stepTitle}>Descargá y enviá la instrucción</h4>
-            <p className={styles.stepText}>
-              Descargá este documento, firmalo y envialo escaneado vía mail a{" "}
-              <a
-                href="mailto:comerciales@bindgarantias.com.ar"
-                className={styles.textHighlight}
-              >
-                comerciales@bindgarantias.com.ar
-              </a>
-              . <br />
-              <span className={styles.textMuted}>
-                ¡Es firma simple, no hace falta certificar!
-              </span>
-            </p>
+          <div className={styles.stepHead}>
+            <span className={styles.stepNumber}>1</span>
+            <h4 className={styles.stepTitle}>
+              Descargá y enviá la instrucción
+            </h4>
+          </div>
+          <p className={styles.stepText}>
+            Descargá este documento, firmalo y envialo escaneado vía mail a{" "}
+            <a
+              href="mailto:comerciales@bindgarantias.com.ar"
+              className={styles.textHighlight}
+            >
+              comerciales@bindgarantias.com.ar
+            </a>
+            .{" "}
+            <span className={styles.textMuted}>
+              Es firma simple, no hace falta certificar.
+            </span>
+          </p>
 
-            <div className={styles.downloadBox}>
-              <div className={styles.downloadInfo}>
-                <FiFileText className={styles.downloadIcon} />
-                <span>Nota de instrucción permanente.pdf</span>
-              </div>
-              <Button type="button" variant="outline" size="sm">
-                <FiDownload className={styles.iconMarginRight} /> DESCARGAR
-              </Button>
+          <div className={styles.downloadBox}>
+            <div className={styles.downloadInfo}>
+              <FiFileText className={styles.downloadIcon} />
+              <span>Nota de instrucción permanente.pdf</span>
             </div>
+            <Button type="button" variant="outline" size="sm">
+              <FiDownload className={styles.iconMarginRight} /> Descargar
+            </Button>
           </div>
         </div>
 
         <div className={styles.stepCard}>
-          <div className={styles.stepNumber}>2</div>
-          <div className={styles.stepContent}>
-            <h4 className={styles.stepTitle}>Firmá electrónicamente el Contrato y Fianza</h4>
-            <p className={styles.stepText}>
-              Una vez validada la documentación ingresada, recibirán por mail la
-              solicitud de firma de la{" "}
-              <strong>Oferta del Contrato de Garantía Recíproca</strong> para
-              realizarla en forma electrónica.
-            </p>
-
-            <div className={styles.mtSmall}>
-              <Alert variant="default" layout="pill" icon={FiEdit3}>
-                La firma se valida a través de AFIP. Necesitarán clave fiscal
-                Nivel 2 o superior.
-              </Alert>
-            </div>
-
-            <p className={`${styles.stepText} ${styles.mtSmall}`}>
-              Una vez registradas todas las firmas, vamos a habilitarles la
-              línea en nuestros sistemas para que puedan comenzar a operar.
-            </p>
+          <div className={styles.stepHead}>
+            <span className={styles.stepNumber}>2</span>
+            <h4 className={styles.stepTitle}>
+              Firmá el Contrato y Fianza
+            </h4>
           </div>
+          <p className={styles.stepText}>
+            Una vez validada la documentación, van a recibir por mail la
+            solicitud de firma electrónica de la{" "}
+            <strong>Oferta del Contrato de Garantía Recíproca</strong>. Al
+            completarse todas las firmas, habilitamos la línea en nuestros
+            sistemas.
+          </p>
+
+          <Alert variant="default" layout="pill" icon={FiEdit3}>
+            Se valida con clave fiscal AFIP Nivel 2 o superior.
+          </Alert>
         </div>
       </div>
 
-      <hr className={styles.divider} />
-
-      <div className={styles.actionsLeft}>
+      <div className={styles.footer}>
         <BotonVolver
           texto="VOLVER A LA LISTA DE SOLICITUDES"
           onClick={handleFinalizar}

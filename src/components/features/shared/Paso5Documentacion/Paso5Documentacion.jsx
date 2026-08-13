@@ -410,10 +410,16 @@ export default function Paso5Documentacion({
   const isEmailFacturacionValido =
     !errorEmailFacturacion && emailFacturacionVal.trim() !== "";
 
-  const totalTareas = mostrarSeccionReps ? 3 : 2;
+  // La sección de representantes/apoderados se MUESTRA cada vez que
+  // mostrarSeccionReps es true (para poder cargar/corregir uno si hace
+  // falta), pero solo cuenta como una tarea pendiente del progreso cuando
+  // es realmente obligatoria (repRequerido) - si es opcional (Requerimiento
+  // = 2 en CadenaValorParametrizacion), no debe contarse como "falta" solo
+  // porque está vacía.
+  const totalTareas = repRequerido ? 3 : 2;
   const tareasCompletas =
     (docsEmpresaListos ? 1 : 0) +
-    (mostrarSeccionReps && representantes.length > 0 ? 1 : 0) +
+    (repRequerido && representantes.length > 0 ? 1 : 0) +
     (isEmailFacturacionValido ? 1 : 0);
   const progresoPct = (tareasCompletas / totalTareas) * 100;
 
@@ -490,6 +496,9 @@ export default function Paso5Documentacion({
             <div className={styles.sectionHeaderRow}>
               <span className={styles.sectionLabel}>
                 Representantes y Apoderados
+                {!repRequerido && (
+                  <span className={styles.countBadge}> · Opcional</span>
+                )}
               </span>
               {representantes.length > 0 && (
                 <div style={{ display: "flex", gap: "0.75rem" }}>
@@ -520,7 +529,7 @@ export default function Paso5Documentacion({
                 {mostrarRepLegal && (
                   <button
                     type="button"
-                    className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
+                    className={`${styles.emptySlot} ${intentoAvanzar && repRequerido ? styles.emptySlotError : ""}`}
                     style={{ flex: 1 }}
                     onClick={() => handleAbrirModalRep(null, "legal")}
                   >
@@ -531,7 +540,7 @@ export default function Paso5Documentacion({
                 {mostrarApoderado && (
                   <button
                     type="button"
-                    className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
+                    className={`${styles.emptySlot} ${intentoAvanzar && repRequerido ? styles.emptySlotError : ""}`}
                     style={{ flex: 1 }}
                     onClick={() => handleAbrirModalRep(null, "apoderado")}
                   >
