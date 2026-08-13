@@ -36,6 +36,9 @@ import { tercerosService } from "../../../../services/tercerosService";
 import { catalogosService } from "../../../../services/catalogosService";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
+import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
+import { useTiposProducto } from "../../../../hooks/useCatalogos";
+import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
 
 const STORAGE_KEY = "draft_alta_operacion_v2";
 
@@ -55,6 +58,43 @@ export const AltaOperacion = () => {
   } = useEmpresaActiva();
 
   const { requisitos } = useRequisitos(Number(cadenaSlug), tipoPersonaId ?? null, nombreEmpresa);
+
+  // Líneas reales de la cadena (TipoLimiteCadenaValor): reemplazan el viejo
+  // selector hardcodeado "Cheques propios/Préstamos/Pagaré" - el usuario
+  // elige directamente la línea configurada por el admin, con su propio
+  // MontoLinea/ValoresPorDefecto. Solo las activas y aptas para nueva línea
+  // pueden originar una solicitud nueva (así se definió AptaNuevaLinea).
+  const { data: lineasCadenaData } = useObtenerLimitesCadenaValor(
+    Number(cadenaSlug) || undefined,
+  );
+  const lineasDisponibles = useMemo(() => {
+    const arr = Array.isArray(lineasCadenaData) ? lineasCadenaData : [];
+    return arr.filter(
+      (l) => String(l.activa) === "1" && String(l.aptanuevalinea) === "1",
+    );
+  }, [lineasCadenaData]);
+
+  // Catálogo global de TipoLimite: no tiene un campo "familia" propio
+  // (cheque/préstamo/pagaré), así que se infiere por palabra clave de su
+  // Descripcion - es la única señal real disponible, y de ella dependen el
+  // paso de Sociedad de Bolsa, la documentación requerida y qué handler de
+  // submit corre.
+  const { data: tiposLimiteGlobal } = useTiposProducto();
+  const familiaDeLinea = (tipoLimiteId) => {
+    const item = tiposLimiteGlobal?.raw?.find(
+      (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
+    );
+    const desc = (item?.descripcion || "").toUpperCase();
+    if (desc.includes("CHEQUE")) return "cheque";
+    if (desc.includes("PAGARE")) return "pagare";
+    return "prestamo";
+  };
+
+  // Posición consolidada del socio (todas sus líneas, todas las cadenas):
+  // fuente del "utilizado" para las reglas de monto por línea (ver más abajo,
+  // efecto de auto-completado y enviarSolicitud).
+  const { data: limitesSocioData } = useObtenerLimiteSocioPorCuit(cuitActivo);
+
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
@@ -159,6 +199,33 @@ export const AltaOperacion = () => {
               return;
             }
           }
+
+          // Chequeo agregado: la suma de lo utilizado entre todas las líneas
+          // de esta cadena no puede superar CadenaValor.MontoMaximoUtilizado.
+          // A diferencia del chequeo por línea, este es independiente del
+          // monto que se vaya a pedir en la nueva solicitud - si ya está en
+          // el tope, se bloquea el alta directamente (no se topea el monto).
+          const montoMaximoUtilizadoCadena = Number(
+            cadenaData?.montomaximoutilizado ??
+              cadenaData?.MontoMaximoUtilizado ??
+              0,
+          );
+
+          if (montoMaximoUtilizadoCadena > 0) {
+            const utilizadoTotalCadena = lineasCadena.reduce(
+              (acc, l) => acc + (Number(l.importeutilizado) || 0),
+              0,
+            );
+
+            if (utilizadoTotalCadena > montoMaximoUtilizadoCadena && isMounted) {
+              setBloqueoAcceso({
+                bloqueado: true,
+                motivo: "Ya se alcanzó el monto máximo utilizado permitido para esta cadena.",
+              });
+              setValidandoAcceso(false);
+              return;
+            }
+          }
         } catch (validacionError) {
           console.error(
             "[ALTA OPERACION] Error al validar utilización por línea:",
@@ -193,6 +260,7 @@ export const AltaOperacion = () => {
       smsVerificado: false,
       moneda: "",
       tipoProducto: "",
+      familiaProducto: "",
       monto: "",
       plazo: "",
       sociedadBolsa: "",
@@ -228,6 +296,7 @@ export const AltaOperacion = () => {
   });
 
   const tipoProducto = useWatch({ control, name: "tipoProducto" });
+  const familiaProducto = useWatch({ control, name: "familiaProducto" });
   const moneda = useWatch({ control, name: "moneda" });
   const faseSocio = useWatch({ control, name: "faseSocio" });
   const tempSocioCuit = useWatch({ control, name: "tempSocioCuit" });
@@ -238,6 +307,57 @@ export const AltaOperacion = () => {
   });
   const tempSocioData = useWatch({ control, name: "tempSocioData" });
   const docExpandido = useWatch({ control, name: "docExpandido" });
+
+  // Línea real (TipoLimiteCadenaValor) que corresponde al tipoProducto
+  // elegido - tipoProducto ahora es el TipoLimiteCadenaValorID, no un
+  // string "cheque"/"prestamo"/"pagare".
+  const lineaSeleccionada = useMemo(
+    () =>
+      lineasDisponibles.find(
+        (l) => String(l.tipolimitecadenavalorid) === String(tipoProducto),
+      ),
+    [lineasDisponibles, tipoProducto],
+  );
+
+  useEffect(() => {
+    const familia = lineaSeleccionada
+      ? familiaDeLinea(lineaSeleccionada.tipolimiteid)
+      : "";
+    setValue("familiaProducto", familia);
+    // familiaDeLinea se recalcula cada render a partir de tiposLimiteGlobal,
+    // que sí está en las deps - no hace falta agregar la función en sí.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lineaSeleccionada, tiposLimiteGlobal, setValue]);
+
+  // Utilizado del socio para esta línea puntual (mismo TipoLimiteID, misma
+  // cadena) - sale de PosicionConsolidada/ObtenerLimiteSocio, sumando todas
+  // las TipoLimiteSocio existentes para esa combinación.
+  const utilizadoLineaSeleccionada = useMemo(() => {
+    if (!lineaSeleccionada) return 0;
+    const arr = Array.isArray(limitesSocioData) ? limitesSocioData : [];
+    return arr
+      .filter(
+        (l) =>
+          Number(l.cadenavalorid) === Number(cadenaSlug) &&
+          Number(l.tipolimiteid) === Number(lineaSeleccionada.tipolimiteid),
+      )
+      .reduce((acc, l) => acc + (Number(l.importeutilizado) || 0), 0);
+  }, [limitesSocioData, lineaSeleccionada, cadenaSlug]);
+
+  const esMontoUnico = String(lineaSeleccionada?.valorespordefecto) === "1";
+
+  // Regla: si la línea es de Monto Único, la solicitud se autocompleta con
+  // MontoLinea - utilizado y el socio no puede modificarlo (ver disableMonto
+  // en el <Paso3Simulador> más abajo).
+  useEffect(() => {
+    if (!lineaSeleccionada || !esMontoUnico) return;
+    const montoLineaNum = Number(lineaSeleccionada.montolinea) || 0;
+    const disponibleLinea = Math.max(
+      0,
+      montoLineaNum - utilizadoLineaSeleccionada,
+    );
+    setValue("monto", disponibleLinea, { shouldValidate: true });
+  }, [lineaSeleccionada, esMontoUnico, utilizadoLineaSeleccionada, setValue]);
 
   const cargarSociosDesdeDB = async (force = false) => {
     if (!socioIdActivo) return;
@@ -551,6 +671,7 @@ export const AltaOperacion = () => {
       celular: "",
       smsVerificado: false,
       tipoProducto: "",
+      familiaProducto: "",
       monto: "",
       plazo: "",
       sociedadBolsa: "",
@@ -641,7 +762,44 @@ export const AltaOperacion = () => {
         }
       }
 
+      if (!lineaSeleccionada) {
+        toast.error("Error al enviar", {
+          description: "No se pudo determinar la línea de crédito seleccionada.",
+        });
+        setEnviandoSolicitud(false);
+        return;
+      }
+      const tipoLimiteIdReal = Number(lineaSeleccionada.tipolimiteid) || 0;
+      const montoLineaReal = Number(lineaSeleccionada.montolinea) || 0;
+
       let montoLimpio = Number(cleanData.monto) || 0;
+
+      // Regla: el monto ingresado (antes de descontar lo utilizado) nunca
+      // puede superar el Monto de la Línea.
+      if (montoLineaReal > 0 && montoLimpio > montoLineaReal) {
+        toast.error("Monto no disponible", {
+          description: `El monto ingresado supera el máximo de la línea (${montoLineaReal.toLocaleString("es-AR")}).`,
+        });
+        setEnviandoSolicitud(false);
+        return;
+      }
+
+      // Si la línea NO es de Monto Único, lo que efectivamente se solicita
+      // es el monto ingresado neto de lo ya utilizado en esa línea (no el
+      // monto ingresado a secas). Si es Monto Único, montoLimpio ya llega
+      // autocompletado como MontoLinea - utilizado (ver efecto más arriba),
+      // así que no hace falta restar de nuevo.
+      if (!esMontoUnico) {
+        montoLimpio = montoLimpio - utilizadoLineaSeleccionada;
+      }
+
+      if (montoLimpio <= 0) {
+        toast.error("Monto no disponible", {
+          description: "El monto solicitado ya está cubierto por lo utilizado en esta línea.",
+        });
+        setEnviandoSolicitud(false);
+        return;
+      }
 
       // Convertido a pesos ANTES de crear nada: si la validación de cupo de
       // la cadena (más abajo) rechaza la operación, no queremos dejar una
@@ -670,56 +828,9 @@ export const AltaOperacion = () => {
         } catch (e) {}
       }
 
-      // Requisito de Victor: el monto de la línea nueva no puede superar el
-      // disponible de la cadena para este socio (CadenaValor.MontoMaximoUtilizado
-      // - utilizado total entre todas sus líneas en el CORE, resuelto por
-      // CUIT vía posicionConsolidadaService.obtenerLimiteSocioPorCuit). El
-      // chequeo por línea individual (PorcentajeMaximoUtilizado) ya se validó
-      // al entrar a la pantalla (ver verificarAcceso) - acá solo queda topear
-      // el monto si hace falta, nunca rechazar.
-      try {
-        const [lineasSocio, cadenaData] = await Promise.all([
-          posicionConsolidadaService.obtenerLimiteSocioPorCuit(cuitLimpio),
-          cadenaValorService.obtenerPorId(Number(cadenaSlug)),
-        ]);
-
-        const lineasArr = Array.isArray(lineasSocio) ? lineasSocio : [];
-        const lineasCadena = lineasArr.filter(
-          (l) => Number(l.cadenavalorid) === Number(cadenaSlug),
-        );
-
-        const montoMaximoUtilizadoCadena = Number(
-          cadenaData?.montomaximoutilizado ??
-            cadenaData?.MontoMaximoUtilizado ??
-            0,
-        );
-
-        if (montoMaximoUtilizadoCadena > 0) {
-          const utilizadoActual = lineasCadena.reduce(
-            (acc, l) => acc + (Number(l.importeutilizado) || 0),
-            0,
-          );
-          const disponible = Math.max(
-            0,
-            montoMaximoUtilizadoCadena - utilizadoActual,
-          );
-
-          if (importeEnPesos > disponible) {
-            const factorAjuste = disponible / importeEnPesos;
-            const importeSolicitadoOriginal = importeEnPesos;
-            importeEnPesos = disponible;
-            montoLimpio = Math.round(montoLimpio * factorAjuste);
-            toast.info("Monto ajustado al disponible de la cadena", {
-              description: `Se solicitaron $${importeSolicitadoOriginal.toLocaleString("es-AR")} pero el disponible actual es $${disponible.toLocaleString("es-AR")}.`,
-            });
-          }
-        }
-      } catch (validacionError) {
-        console.error(
-          "[ALTA OPERACION] Error al validar el cupo disponible de la cadena:",
-          validacionError,
-        );
-      }
+      // El chequeo del disponible agregado de la cadena (MontoMaximoUtilizado)
+      // ya se validó al entrar a la pantalla (ver verificarAcceso) - si ya
+      // estaba en el tope, el alta queda bloqueada antes de llegar acá.
 
       const unAnioMasRel = new Date();
       unAnioMasRel.setFullYear(unAnioMasRel.getFullYear() + 1);
@@ -729,12 +840,7 @@ export const AltaOperacion = () => {
         solicitudenprocesoid: 0,
         fechacarga: new Date().toISOString().split(".")[0],
         cuit: cuitLimpio,
-        tipolimiteid:
-          cleanData.tipoProducto === "cheque"
-            ? 1
-            : cleanData.tipoProducto === "prestamo"
-              ? 2
-              : 3,
+        tipolimiteid: tipoLimiteIdReal,
         cadenavalorid: Number(cadenaSlug),
         monedaid: Number(cleanData.moneda) || 5000,
         importe: montoLimpio,
@@ -804,12 +910,7 @@ export const AltaOperacion = () => {
       const payloadLimite = {
         tipolimitesocioid: 0,
         socioid: finalSocioId,
-        tipolimiteid:
-          cleanData.tipoProducto === "cheque"
-            ? 1
-            : cleanData.tipoProducto === "prestamo"
-              ? 2
-              : 3,
+        tipolimiteid: tipoLimiteIdReal,
         fchvigenciadesde: fchDesde,
         fchvigenciahasta: fchHasta,
         monedaid: Number(cleanData.moneda) || 5000,
@@ -848,7 +949,7 @@ export const AltaOperacion = () => {
 
       await lineaService.crearLimiteSocio(payloadLimite);
 
-      if (cleanData.tipoProducto === "cheque") {
+      if (cleanData.familiaProducto === "cheque") {
         setPasoActual(4);
       } else {
         setPasoActual(3);
@@ -889,9 +990,9 @@ export const AltaOperacion = () => {
     const nuevaSolicitud = {
       id: generarIdAleatorio(),
       tipo:
-        data.tipoProducto === "cheque"
+        data.familiaProducto === "cheque"
           ? "Cheque"
-          : data.tipoProducto === "pagare"
+          : data.familiaProducto === "pagare"
             ? "Pagaré"
             : "Préstamo",
       monto: montoFormateado,
@@ -916,39 +1017,28 @@ export const AltaOperacion = () => {
   // ----- RENDERIZADO DINÁMICO DE PASOS -----
   const renderPasoDinamico = () => {
     if (pasoActual === 1) {
-      const IS_DLR = String(moneda) === "2";
-
-      let opcionesProducto = [];
-      let opcionesCalculo = [];
-      let mostrarTipoCalculo = false;
-      let disableTipoProducto = false;
-      let disableTipoCalculo = false;
-      let opcionesMoneda = [
+      const opcionesMoneda = [
         { value: "5000", label: "Pesos ($)" },
         { value: "2", label: "Dólar (U$D)" },
       ];
 
-      if (IS_DLR) {
-        opcionesProducto = [{ value: "pagare", label: "Pagaré" }];
-        disableTipoProducto = true;
-        mostrarTipoCalculo = true;
-        opcionesCalculo = [
-          { value: "monto_pagare", label: "por monto de pagare" },
-        ];
-        disableTipoCalculo = true;
-      } else {
-        opcionesProducto = [
-          { value: "cheque", label: "Cheques propios" },
-          { value: "prestamo", label: "Préstamos" },
-        ];
-        if (tipoProducto === "cheque") {
-          mostrarTipoCalculo = true;
-          opcionesCalculo = [
+      // El selector "Tipo de producto" ahora lista las líneas reales de la
+      // cadena (TipoLimiteCadenaValor), acotadas a la moneda elegida - ya
+      // no es un set fijo de "cheque/prestamo/pagare".
+      const opcionesProducto = lineasDisponibles
+        .filter((l) => Number(l.monedalineaid) === Number(moneda))
+        .map((l) => ({
+          value: String(l.tipolimitecadenavalorid),
+          label: l.descripcion || `Línea #${l.tipolimitecadenavalorid}`,
+        }));
+
+      const mostrarTipoCalculo = familiaProducto === "cheque";
+      const opcionesCalculo = mostrarTipoCalculo
+        ? [
             { value: "monto_factura", label: "por monto de factura" },
             { value: "monto_cheque", label: "por monto de cheque" },
-          ];
-        }
-      }
+          ]
+        : [];
 
       return (
         <Paso3Simulador
@@ -969,8 +1059,8 @@ export const AltaOperacion = () => {
           opcionesProducto={opcionesProducto}
           opcionesCalculo={opcionesCalculo}
           mostrarTipoCalculo={mostrarTipoCalculo}
-          disableTipoProducto={disableTipoProducto}
-          disableTipoCalculo={disableTipoCalculo}
+          disableMonto={esMontoUnico}
+          montoMaximoOverride={Number(lineaSeleccionada?.montolinea) || undefined}
           labelFecha="Plazo estimado"
           labelMonto="Monto requerido"
         />
@@ -1005,9 +1095,9 @@ export const AltaOperacion = () => {
             }
 
             if (ok && canAdvanceReps) {
-              if (tipoProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
+              if (familiaProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
                 setPasoActual(3);
-              } else if (tipoProducto === "cheque") {
+              } else if (familiaProducto === "cheque") {
                 handleSubmit(onSubmitFinalCheques, (errors) => {
                   console.error("Errores de validación del schema:", errors);
                 })();
@@ -1024,7 +1114,7 @@ export const AltaOperacion = () => {
       );
     }
 
-    if (tipoProducto === "cheque") {
+    if (familiaProducto === "cheque") {
       if (pasoActual === 3) {
         return (
           <Paso6Bolsa
@@ -1047,7 +1137,7 @@ export const AltaOperacion = () => {
       }
       if (pasoActual === 4)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
-    } else if (tipoProducto === "prestamo" || tipoProducto === "pagare") {
+    } else if (familiaProducto === "prestamo" || familiaProducto === "pagare") {
       if (pasoActual === 3)
         return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
     }
@@ -1088,11 +1178,11 @@ export const AltaOperacion = () => {
 
   const stepToHitoMap = useMemo(() => {
     const map = [1, 2];
-    if (tipoProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
+    if (familiaProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
       map.push(3);
     }
     return map;
-  }, [requisitos, tipoProducto]);
+  }, [requisitos, familiaProducto]);
 
   const hitoActualMapped = useMemo(() => {
     const idx = stepToHitoMap.indexOf(pasoActual);
@@ -1120,25 +1210,25 @@ export const AltaOperacion = () => {
 
   const hitosVisuales = useMemo(() => {
     const list = ["Operación", "Documentos"];
-    if (tipoProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
+    if (familiaProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
       list.push("Bolsa");
     }
     return list;
-  }, [requisitos, tipoProducto]);
+  }, [requisitos, familiaProducto]);
 
   const showHeaderYStepper =
-    !(pasoActual === 4 && tipoProducto === "cheque") &&
+    !(pasoActual === 4 && familiaProducto === "cheque") &&
     !(
       pasoActual === 3 &&
-      (tipoProducto === "prestamo" || tipoProducto === "pagare")
+      (familiaProducto === "prestamo" || familiaProducto === "pagare")
     );
 
   const mostrarBotonVolver =
     pasoActual > 1 &&
-    !(pasoActual === 4 && tipoProducto === "cheque") &&
+    !(pasoActual === 4 && familiaProducto === "cheque") &&
     !(
       pasoActual === 3 &&
-      (tipoProducto === "prestamo" || tipoProducto === "pagare")
+      (familiaProducto === "prestamo" || familiaProducto === "pagare")
     );
 
   if (isLoadingEmpresa || validandoAcceso) {

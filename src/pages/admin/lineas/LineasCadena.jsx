@@ -7,7 +7,6 @@ import {
   FiList,
   FiCreditCard,
   FiFileText,
-  FiInfo,
   FiCalendar,
 } from "react-icons/fi";
 import { toast } from "sonner";
@@ -76,18 +75,17 @@ const LineaSkeletonCard = () => {
       </div>
 
       <div className={styles.cardBody}>
-        <div className={styles.detailsGrid}>
-          <div className={styles.detailItem}>
-            <Skeleton height="0.75rem" width="60px" />
-            <Skeleton height="1rem" width="120px" />
+        <div className={styles.moneyGrid}>
+          <div className={styles.moneyBlock}>
+            <Skeleton height="0.7rem" width="40px" />
+            <Skeleton height="1.2rem" width="110px" style={{ marginTop: "0.2rem" }} />
+            <Skeleton height="0.7rem" width="90px" style={{ marginTop: "0.2rem" }} />
           </div>
-          <div className={styles.detailItem}>
-            <Skeleton height="0.75rem" width="70px" />
-            <Skeleton height="1rem" width="90px" />
-          </div>
-          <div className={`${styles.detailItem} ${styles.fullWidthItem}`}>
-            <Skeleton height="0.75rem" width="80px" />
-            <Skeleton height="1.25rem" width="140px" />
+          <div className={styles.moneyDivider} />
+          <div className={styles.moneyBlock}>
+            <Skeleton height="0.7rem" width="55px" />
+            <Skeleton height="1.2rem" width="100px" style={{ marginTop: "0.2rem" }} />
+            <Skeleton height="0.7rem" width="90px" style={{ marginTop: "0.2rem" }} />
           </div>
         </div>
       </div>
@@ -188,7 +186,6 @@ const ProductosVinculadosModal = ({ isOpen, onClose, tipolimiteid }) => {
 // --- CHILD COMPONENT: LINE CARD ---
 const LineaCard = ({
   linea,
-  currencies,
   limitTypes,
   onEdit,
   onViewProducts,
@@ -196,20 +193,6 @@ const LineaCard = ({
   isToggling,
   isCadenaInactiva,
 }) => {
-  const monedaLinea = currencies.find(
-    (c) => String(c.value) === String(linea.monedalineaid),
-  );
-  const monedaLineaNombre = monedaLinea
-    ? monedaLinea.label
-    : `Moneda #${linea.monedalineaid}`;
-
-  const monedaContrato = currencies.find(
-    (c) => String(c.value) === String(linea.monedacontratoid),
-  );
-  const monedaContratoNombre = monedaContrato
-    ? monedaContrato.label
-    : `Moneda #${linea.monedacontratoid}`;
-
   let limitTypeDesc = "Desconocida";
   if (limitTypes) {
     const matched = limitTypes.find(
@@ -218,13 +201,35 @@ const LineaCard = ({
     if (matched) limitTypeDesc = matched.label;
   }
 
-  const monedaMock = MOCK_MONEDAS.find(
-    (m) => String(m.monedaid) === String(linea.monedalineaid),
-  );
-  const simboloMoneda = monedaMock ? monedaMock.simbolo : "$";
+  // Línea y Contrato pueden tener cada uno su propia moneda (ambos se eligen
+  // por separado en el modal, acotados a las monedas permitidas por la
+  // cadena) — se resuelve el símbolo de cada uno por separado en vez de
+  // asumir que comparten el mismo.
+  const simboloDe = (monedaId) =>
+    MOCK_MONEDAS.find((m) => String(m.monedaid) === String(monedaId))
+      ?.simbolo || "$";
+  const simboloMonedaLinea = simboloDe(linea.monedalineaid);
+  const simboloMonedaContrato = simboloDe(linea.monedacontratoid);
 
-  const montoDefecto = parseFloat(linea.valorespordefecto);
-  const tieneMontoDefecto = !isNaN(montoDefecto) && montoDefecto > 0;
+  const esMontoUnico = String(linea.valorespordefecto) === "1";
+
+  const vigenciaLineaTexto = [
+    linea.diasvigencialinea ? `${linea.diasvigencialinea} días` : null,
+    formatearVencimiento(linea.diasvigencialinea)
+      ? `vence ${formatearVencimiento(linea.diasvigencialinea)}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const vigenciaContratoTexto = [
+    linea.diasvigenciacontrato ? `${linea.diasvigenciacontrato} días` : null,
+    formatearVencimiento(linea.diasvigenciacontrato)
+      ? `vence ${formatearVencimiento(linea.diasvigenciacontrato)}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div 
@@ -263,57 +268,39 @@ const LineaCard = ({
       </div>
 
       <div className={styles.cardBody}>
-        <div className={styles.detailsGrid}>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>MONEDA LÍNEA</span>
-            <span className={styles.detailValue}>{monedaLineaNombre}</span>
-          </div>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>VIGENCIA LÍNEA</span>
-            <span className={styles.detailValue}>
-              {linea.diasvigencialinea} días
-            </span>
-          </div>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>MONEDA CONTRATO</span>
-            <span className={styles.detailValue}>{monedaContratoNombre}</span>
-          </div>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>VIGENCIA CONTRATO</span>
-            <span className={styles.detailValue}>
-              {linea.diasvigenciacontrato} días
-            </span>
-          </div>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>MONTO LÍNEA</span>
-            <span className={styles.detailValueHighlight}>
-              {simboloMoneda}{" "}
-              {parseFloat(linea.montolinea).toLocaleString("es-AR", {
+        <div className={styles.moneyGrid}>
+          <div className={styles.moneyBlock}>
+            <span className={styles.moneyLabel}>Línea</span>
+            <span className={styles.moneyAmount}>
+              {simboloMonedaLinea}{" "}
+              {parseFloat(linea.montolinea || 0).toLocaleString("es-AR", {
                 minimumFractionDigits: 2,
               })}
             </span>
+            {vigenciaLineaTexto && (
+              <span className={styles.moneyCaption}>{vigenciaLineaTexto}</span>
+            )}
+            {esMontoUnico && (
+              <span className={styles.moneyChip} title="Monto único solicitable">
+                Monto Único
+              </span>
+            )}
           </div>
-          <div className={styles.detailItem}>
-            <span className={styles.detailLabel}>MONTO CONTRATO</span>
-            <span className={styles.detailValue}>
-              {simboloMoneda}{" "}
+
+          <div className={styles.moneyDivider} />
+
+          <div className={styles.moneyBlock}>
+            <span className={styles.moneyLabel}>Contrato</span>
+            <span className={`${styles.moneyAmount} ${styles.moneyAmountMuted}`}>
+              {simboloMonedaContrato}{" "}
               {parseFloat(linea.montocontrato || 0).toLocaleString("es-AR", {
                 minimumFractionDigits: 2,
               })}
             </span>
+            {vigenciaContratoTexto && (
+              <span className={styles.moneyCaption}>{vigenciaContratoTexto}</span>
+            )}
           </div>
-          {tieneMontoDefecto && (
-            <div className={`${styles.detailItem} ${styles.fullWidthItem}`}>
-              <span className={styles.detailLabel}>MONTO POR DEFECTO</span>
-              <span className={styles.detailValue}>
-                {simboloMoneda}{" "}
-                {montoDefecto.toLocaleString("es-AR", {
-                  minimumFractionDigits: 2,
-                })}{" "}
-                — único monto solicitable
-              </span>
-            </div>
-          )}
         </div>
       </div>
 
@@ -367,6 +354,11 @@ export default function LineasCadena() {
   const [activeLineaProductosId, setActiveLineaProductosId] = useState(null);
   const [togglingLineas, setTogglingLineas] = useState(new Set());
   const [formErrors, setFormErrors] = useState({});
+  // Snapshot del formData al abrir el modal en modo edición: permite
+  // deshabilitar "GUARDAR CAMBIOS" si no se modificó nada (estándar de UX
+  // para evitar PUTs sin cambios reales). null en modo creación, donde no
+  // aplica.
+  const [formDataInicial, setFormDataInicial] = useState(null);
 
   const [formData, setFormData] = useState({
     tipolimiteid: "",
@@ -375,7 +367,7 @@ export default function LineasCadena() {
     descripcion: "",
     montoLinea: "",
     montoContrato: "",
-    montoDefecto: "",
+    montoUnico: false,
     diasVigenciaLinea: "",
     diasVigenciaContrato: "",
     aptanuevalinea: true,
@@ -458,6 +450,11 @@ export default function LineasCadena() {
   const montoContratoIngresado =
     parseFloat(limpiarMonto(formData.montoContrato)) || 0;
 
+  const sinCambios =
+    !!activeLinea &&
+    !!formDataInicial &&
+    JSON.stringify(formData) === JSON.stringify(formDataInicial);
+
   useEffect(() => {
     if (listCadenas.length > 0 && !selectedCadenaId) {
       setSelectedCadenaId(String(listCadenas[0].cadenavalorid));
@@ -511,6 +508,7 @@ export default function LineasCadena() {
   const handleOpenCreateModal = () => {
     setActiveLinea(null);
     setFormErrors({});
+    setFormDataInicial(null);
     setFormData({
       tipolimiteid: "",
       monedaLineaId: "",
@@ -518,7 +516,7 @@ export default function LineasCadena() {
       descripcion: "",
       montoLinea: "",
       montoContrato: "",
-      montoDefecto: "",
+      montoUnico: false,
       diasVigenciaLinea: "",
       diasVigenciaContrato: "",
       aptanuevalinea: true,
@@ -531,14 +529,14 @@ export default function LineasCadena() {
     setActiveLinea(linea);
     setFormErrors({});
 
-    setFormData({
+    const datosLinea = {
       tipolimiteid: String(linea.tipolimiteid),
       monedaLineaId: String(linea.monedalineaid),
       monedaContratoId: String(linea.monedacontratoid),
       descripcion: linea.descripcion || "",
       montoLinea: String(linea.montolinea),
       montoContrato: linea.montocontrato != null ? String(linea.montocontrato) : "",
-      montoDefecto: linea.valorespordefecto ? String(linea.valorespordefecto) : "",
+      montoUnico: String(linea.valorespordefecto) === "1",
       diasVigenciaLinea: linea.diasvigencialinea
         ? String(linea.diasvigencialinea)
         : "",
@@ -547,7 +545,9 @@ export default function LineasCadena() {
         : "",
       aptanuevalinea: String(linea.aptanuevalinea) === "1",
       activa: String(linea.activa) === "1",
-    });
+    };
+    setFormData(datosLinea);
+    setFormDataInicial(datosLinea);
     setIsLineaModalOpen(true);
   };
 
@@ -594,7 +594,6 @@ export default function LineasCadena() {
 
     const rawMontoLinea = limpiarMonto(formData.montoLinea);
     const rawMontoContrato = limpiarMonto(formData.montoContrato);
-    const rawMontoDefecto = limpiarMonto(formData.montoDefecto);
 
     // Techo real de la cadena: si pide más de lo que la cadena admite en
     // total ya se rechazó arriba. Si entra dentro del máximo pero supera lo
@@ -613,7 +612,7 @@ export default function LineasCadena() {
       descripcion: formData.descripcion || "",
       montolinea: montoLineaFinal,
       montocontrato: parseFloat(rawMontoContrato) || 0,
-      valorespordefecto: rawMontoDefecto || "",
+      valorespordefecto: formData.montoUnico ? "1" : "0",
       monedalineaid: Number(formData.monedaLineaId),
       diasvigencialinea: parseInt(formData.diasVigenciaLinea, 10) || 0,
       monedacontratoid: Number(formData.monedaContratoId),
@@ -701,7 +700,6 @@ export default function LineasCadena() {
             <LineaCard
               key={linea.tipolimitecadenavalorid}
               linea={linea}
-              currencies={currenciesOptions}
               limitTypes={limitTypesOptions}
               onEdit={handleOpenEditModal}
               onViewProducts={(l) => setActiveLineaProductosId(l.tipolimiteid)}
@@ -872,35 +870,31 @@ export default function LineasCadena() {
               />
             </div>
 
-            <div className={styles.formGroup}>
-              <InputSimple
-                label="Monto por Defecto"
-                value={formData.montoDefecto}
-                onChange={(val) => handleInputChange("montoDefecto", val)}
-                mask={`${monedaSimbolo} num`}
-                blocks={{
-                  num: {
-                    mask: Number,
-                    scale: 2,
-                    signed: false,
-                    thousandsSeparator: ".",
-                    padFractionalZeros: true,
-                    normalizeZeros: true,
-                    radix: ",",
-                    mapToRadix: ["."],
-                  },
-                }}
-                lazy={false}
-                hideErrorSpace
-              />
-            </div>
-
-            <span className={styles.formHint}>
-              <FiInfo size={13} />
-              <span className={styles.formHintText}>
-                El <strong>Monto por Defecto</strong> es opcional: si lo dejás vacío, el socio podrá pedir cualquier monto hasta el de la línea; si lo completás, ese va a ser el único monto solicitable.
+            <div className={styles.uniqueAmountCard}>
+              <label className={styles.uniqueAmountCardTop}>
+                <span className={styles.uniqueAmountSwitch}>
+                  <input
+                    type="checkbox"
+                    className={styles.uniqueAmountSwitchInput}
+                    checked={formData.montoUnico}
+                    onChange={(e) =>
+                      handleInputChange("montoUnico", e.target.checked)
+                    }
+                  />
+                  <span className={styles.uniqueAmountSwitchTrack}>
+                    <span className={styles.uniqueAmountSwitchThumb} />
+                  </span>
+                </span>
+                <span className={styles.uniqueAmountCardLabel}>
+                  Monto predeterminado
+                </span>
+              </label>
+              <span className={styles.uniqueAmountCardCaption}>
+                {formData.montoUnico
+                  ? "Activado: las solicitudes desde el cliente van a usar este monto como valor predeterminado."
+                  : "Desactivado: el socio va a poder solicitar cualquier monto dentro de este rango."}
               </span>
-            </span>
+            </div>
 
             <div className={styles.formSectionDivider}>
               <FiFileText size={12} />
@@ -982,8 +976,11 @@ export default function LineasCadena() {
                 type="submit"
                 variant="blue"
                 disabled={
-                  crearMutation.isPending || actualizarMutation.isPending
+                  crearMutation.isPending ||
+                  actualizarMutation.isPending ||
+                  sinCambios
                 }
+                title={sinCambios ? "No hay cambios para guardar" : undefined}
               >
                 {activeLinea ? "GUARDAR CAMBIOS" : "CREAR LÍNEA"}
               </Button>
