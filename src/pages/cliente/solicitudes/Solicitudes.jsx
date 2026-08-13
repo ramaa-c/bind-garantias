@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { FiPlus, FiSearch, FiClock } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa";
+import { toast } from "sonner";
 import { BotonVolver, Button, Select, Spinner, SkeletonTable } from "../../../components/ui";
 import {
   TarjetaSolicitud,
@@ -12,13 +13,20 @@ import {
 } from "../../../components/features";
 import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 import InformativoModal from "../../../components/features/shared/InformativoModal/InformativoModal";
+import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { HelpDrawer } from "../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../../hooks/useSolicitudes";
+import { useActualizarLimiteSocio } from "../../../hooks/useLinea";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../services/sociosService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useChannel } from "../../../context/ChannelContext";
+import {
+  ESTADO_PENDIENTE,
+  ESTADO_CANCELADA,
+  estadoTextoDesde,
+} from "../../../utils/estadoLimiteSocio";
 
 import styles from "./Solicitudes.module.css";
 
@@ -29,6 +37,7 @@ const opcionesEstado = [
   { value: "pendiente", label: "Pendiente" },
   { value: "aprobada", label: "Aprobada" },
   { value: "rechazada", label: "Rechazada" },
+  { value: "cancelada", label: "Cancelada" },
 ];
 
 const opcionesOrden = [
@@ -121,7 +130,7 @@ export default function Solicitudes() {
 
   const tieneSolicitudPendiente = useMemo(() => {
     const hasRealPendiente = Array.isArray(solicitudesReal) && solicitudesReal.some(s =>
-      !s.tipolimiteestadoid || s.tipolimiteestadoid === 0 || s.tipolimiteestadoid === 1
+      Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE) === ESTADO_PENDIENTE
     );
     const hasProcesoPendiente = Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
     return hasRealPendiente || hasProcesoPendiente;
@@ -129,18 +138,23 @@ export default function Solicitudes() {
 
   const listaSolicitudes = useMemo(() => {
     const reales = (solicitudesReal || [])
-      .map(s => ({
-        id: s.tipolimitesocioid?.toString() || Math.random().toString(),
-        tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
-        monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
-        moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
-        estado: (!s.tipolimiteestadoid || s.tipolimiteestadoid === 0 || s.tipolimiteestadoid === 1) ? "Pendiente" : s.tipolimiteestadoid === 2 ? "Aprobada" : s.tipolimiteestadoid === 3 ? "Rechazada" : "Cancelada",
-        fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
-        socioid: s.socioid || socioIdFinal,
-        cuit: cuitActivo,
-        isReal: true,
-        solicitudid: s.solicitudid,
-      }));
+      .map(s => {
+        const tipoLimiteEstadoId = Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE);
+        return {
+          id: s.tipolimitesocioid?.toString() || "",
+          tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
+          monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
+          moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
+          estado: estadoTextoDesde(tipoLimiteEstadoId),
+          tipoLimiteEstadoId,
+          fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
+          socioid: s.socioid || socioIdFinal,
+          cuit: cuitActivo,
+          isReal: true,
+          solicitudid: s.solicitudid,
+          raw: s,
+        };
+      });
 
     const pendientes = (solicitudesEnProceso || [])
       .filter(sp => !reales.some(r => Number(r.solicitudid) === sp.solicitudenprocesoid))
@@ -159,6 +173,25 @@ export default function Solicitudes() {
 
     return [...reales, ...pendientes].sort((a, b) => (Number(b.solicitudid) || 0) - (Number(a.solicitudid) || 0));
   }, [solicitudesReal, solicitudesEnProceso, socioIdFinal, cuitActivo]);
+
+  const [solicitudACancelar, setSolicitudACancelar] = useState(null);
+  const actualizarLimiteMutation = useActualizarLimiteSocio();
+
+  const handleConfirmarCancelacion = async () => {
+    if (!solicitudACancelar?.raw) return;
+    try {
+      await actualizarLimiteMutation.mutateAsync({
+        ...solicitudACancelar.raw,
+        tipolimiteestadoid: ESTADO_CANCELADA,
+      });
+      toast.success(`Solicitud N°${solicitudACancelar.id} cancelada`, {
+        description: "Ya podés iniciar una nueva operación.",
+      });
+      setSolicitudACancelar(null);
+    } catch (err) {
+      toast.error("No se pudo cancelar la solicitud: " + err.message);
+    }
+  };
 
   useEffect(() => {
     if (location.state?.nuevaSolicitud) {
@@ -288,13 +321,31 @@ export default function Solicitudes() {
           {isLoadingData ? (
             <SkeletonTable rows={3} />
           ) : listaSolicitudes.length > 0 ? (
-            listaSolicitudes.map((item) => (
-              <TarjetaSolicitud
-                key={item.id}
-                solicitud={item}
-                onVerDetalle={setSolicitudSeleccionada}
-              />
-            ))
+            listaSolicitudes.map((item) => {
+              // Solo se puede cancelar una solicitud real (ya tiene
+              // TipoLimiteSocio, no un simple borrador en proceso) que
+              // todavía esté pendiente de validación.
+              const puedeCancelar =
+                !!item.raw && item.tipoLimiteEstadoId === ESTADO_PENDIENTE;
+              return (
+                <TarjetaSolicitud
+                  key={item.id}
+                  solicitud={item}
+                  onVerDetalle={setSolicitudSeleccionada}
+                  acciones={
+                    puedeCancelar
+                      ? [
+                          {
+                            label: "Cancelar",
+                            variant: "danger",
+                            onClick: () => setSolicitudACancelar(item),
+                          },
+                        ]
+                      : undefined
+                  }
+                />
+              );
+            })
           ) : (
             <div className={styles.emptyState}>
               <p>No tenés solicitudes activas en este momento.</p>
@@ -324,6 +375,18 @@ export default function Solicitudes() {
         onClose={() => setSolicitudSeleccionada(null)}
         solicitud={solicitudSeleccionada}
         nombreEmpresa={nombreEmpresaActiva}
+      />
+
+      <ConfirmacionModal
+        isOpen={!!solicitudACancelar}
+        onClose={() => setSolicitudACancelar(null)}
+        onConfirm={handleConfirmarCancelacion}
+        isLoading={actualizarLimiteMutation.isPending}
+        tone="danger"
+        titulo="Cancelar solicitud"
+        mensaje={`¿Seguro que querés cancelar la Solicitud N°${solicitudACancelar?.id}? Vas a poder iniciar una nueva operación una vez cancelada.`}
+        confirmText="Sí, cancelar"
+        cancelText="Volver"
       />
 
       <InformativoModal

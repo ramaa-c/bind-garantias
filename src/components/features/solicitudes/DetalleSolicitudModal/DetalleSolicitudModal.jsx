@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import styles from "./DetalleSolicitudModal.module.css";
@@ -37,11 +37,10 @@ export const DetalleSolicitudModal = ({
     color: styles.badgeYellow,
     label: estadoValue,
   };
-  const esCancelada =
-    estadoValue === "Cancelada" ||
-    estadoValue === "Rechazada" ||
-    estadoValue === "Cancelado" ||
-    estadoValue === "Rechazado";
+  // El motivo solo tiene sentido para un rechazo (decisión del admin) - una
+  // solicitud Cancelada la cancela el propio socio, no hay "motivo" que
+  // mostrarle a él mismo.
+  const esRechazada = estadoValue === "Rechazada" || estadoValue === "Rechazado";
 
   const tipoLabel =
     tipoValue === "Cheque"
@@ -61,6 +60,8 @@ export const DetalleSolicitudModal = ({
   const nombreFinal = nombreEmpresa || socio?.denominacion || "Cargando...";
 
   const socioIdTarget = solicitud?.socioid || socio?.socioid;
+
+  const cacheRef = useRef({});
 
   const { data: accionistas = [], isLoading: cargandoAccionistas } = useQuery({
     queryKey: ["accionistas", socioIdTarget],
@@ -268,21 +269,23 @@ export const DetalleSolicitudModal = ({
             </div>
           </div>
 
-          {/* Alerta de rechazo */}
-          {esCancelada && (
+          {/* Alerta de rechazo: solo aplica a un rechazo real del admin (no
+              a una cancelación del propio socio), y solo muestra un motivo
+              si efectivamente se registró uno (TipoLimiteSocio.Observaciones)
+              - nunca un texto inventado. */}
+          {esRechazada && (
             <div className={styles.alertBox}>
               <span className={styles.alertTitle}>
                 <FiAlertCircle size={12} />
-                Motivos de rechazo
+                Motivo del rechazo
               </span>
               <ul className={styles.alertList}>
-                {solicitud.motivosRechazo &&
-                solicitud.motivosRechazo.length > 0 ? (
-                  solicitud.motivosRechazo.map((motivo, idx) => (
-                    <li key={motivo}>{motivo}</li>
-                  ))
+                {solicitud.raw?.observaciones ? (
+                  <li>{solicitud.raw.observaciones}</li>
                 ) : (
-                  <li>Cliente no bancarizado o posee deudas impagas.</li>
+                  <li className={styles.emptyText}>
+                    No se registró un motivo específico.
+                  </li>
                 )}
               </ul>
             </div>

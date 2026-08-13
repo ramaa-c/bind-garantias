@@ -2,7 +2,7 @@ import React from "react";
 import { FiCalendar, FiChevronRight } from "react-icons/fi";
 import styles from "./TarjetaSolicitud.module.css";
 
-export const TarjetaSolicitud = ({ solicitud, onVerDetalle }) => {
+export const TarjetaSolicitud = ({ solicitud, onVerDetalle, acciones }) => {
   const getStatusKey = (estado) => {
     const e = estado?.toLowerCase();
     if (e?.includes("aprob")) return "statusApproved";
@@ -39,15 +39,19 @@ export const TarjetaSolicitud = ({ solicitud, onVerDetalle }) => {
           </div>
 
           <div className={styles.actionsWrapper}>
-            {solicitud.acciones?.map((accion) => (
-              <button type="button" key={accion} className={styles.btnAction}>
-                {accion}
+            {acciones?.map((accion) => (
+              <button
+                type="button"
+                key={accion.label}
+                className={`${styles.btnAction} ${accion.variant === "danger" ? styles.btnActionDanger : ""}`}
+                onClick={accion.onClick}
+              >
+                {accion.label}
               </button>
-            )) || (
-                <button type="button" className={styles.btnDetalle} onClick={() => onVerDetalle && onVerDetalle(solicitud)}>
-                  VER DETALLE <FiChevronRight />
-                </button>
-              )}
+            ))}
+            <button type="button" className={styles.btnDetalle} onClick={() => onVerDetalle && onVerDetalle(solicitud)}>
+              VER DETALLE <FiChevronRight />
+            </button>
           </div>
         </div>
       </div>

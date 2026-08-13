@@ -13,27 +13,21 @@ import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio } from "../../../hooks/useLinea";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { CriteriosAceptacionModal } from "../../../components/features";
+import {
+  ESTADO_RECHAZADA,
+  ESTADO_PENDIENTE,
+  ESTADO_APROBADA,
+  ESTADO_CANCELADA,
+  estadoTextoDesde,
+} from "../../../utils/estadoLimiteSocio";
 import styles from "./Dashboard.module.css";
-
-// Estado propio de la solicitud (TipoLimiteSocio.TipoLimiteEstadoID): NO es
-// el catálogo TipoLimiteEstado heredado de SGR+ (ese trae ~25 estados de un
-// flujo de crédito bancario que no usamos). Acá solo manejamos estos tres.
-const ESTADO_RECHAZADA = -1;
-const ESTADO_PENDIENTE = 0;
-const ESTADO_APROBADA = 1;
-
-const estadoTextoDesde = (tipolimiteestadoid) => {
-  const id = Number(tipolimiteestadoid);
-  if (id === ESTADO_APROBADA) return "Aprobada";
-  if (id === ESTADO_RECHAZADA) return "Rechazada";
-  return "Pendiente de validación";
-};
 
 const opcionesEstado = [
   { value: "todos", label: "Todos los estados" },
   { value: "pendiente", label: "Pendiente" },
   { value: "aprobada", label: "Aprobada" },
   { value: "rechazada", label: "Rechazada" },
+  { value: "cancelada", label: "Cancelada" },
 ];
 
 const opcionesOrden = [
@@ -119,7 +113,9 @@ export default function Dashboard() {
           ? "Aprobada por Administrador"
           : Number(tipoLimiteEstadoId) === ESTADO_RECHAZADA
             ? "Rechazada por Administrador"
-            : "Espera de validación del Administrador";
+            : Number(tipoLimiteEstadoId) === ESTADO_CANCELADA
+              ? "Cancelada por el cliente"
+              : "Espera de validación del Administrador";
 
       const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
       const tipoText =
@@ -416,9 +412,10 @@ export default function Dashboard() {
           />
         ) : (
           filtradas.map((item) => {
-            const isAprobada = item.estado === "Aprobada";
-            const isRechazada = item.estado === "Rechazada";
-            const isPendiente = !isAprobada && !isRechazada;
+            const isAprobada = item.tipoLimiteEstadoId === ESTADO_APROBADA;
+            const isRechazada = item.tipoLimiteEstadoId === ESTADO_RECHAZADA;
+            const isCancelada = item.tipoLimiteEstadoId === ESTADO_CANCELADA;
+            const isPendiente = !isAprobada && !isRechazada && !isCancelada;
 
             return (
               <div
@@ -428,7 +425,9 @@ export default function Dashboard() {
                     ? styles.rowApproved
                     : isRechazada
                       ? styles.rowRejected
-                      : styles.rowPending
+                      : isCancelada
+                        ? styles.rowCancelled
+                        : styles.rowPending
                 }`}
               >
                 <div className={styles.rowMain}>
@@ -485,7 +484,9 @@ export default function Dashboard() {
                               ? styles.pillApproved
                               : isRechazada
                                 ? styles.pillRejected
-                                : styles.pillPending
+                                : isCancelada
+                                  ? styles.pillCancelled
+                                  : styles.pillPending
                           }`}
                         >
                           {item.estado}
@@ -595,8 +596,10 @@ export default function Dashboard() {
                   <div className={styles.solicitudMeta}>
                     <span className={styles.solicitudNumber}>SOLICITUD N°{solicitudDetalle.id}</span>
                     <span className={`${styles.solicitudStatusBadge} ${
-                      solicitudDetalle.estado === "Aprobada" ? styles.badgeAproved :
-                      solicitudDetalle.estado === "Rechazada" ? styles.badgeRejected : styles.badgePending
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_APROBADA ? styles.badgeAproved :
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_RECHAZADA ? styles.badgeRejected :
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_CANCELADA ? styles.badgeCancelled :
+                      styles.badgePending
                     }`}>
                       {solicitudDetalle.estado}
                     </span>
