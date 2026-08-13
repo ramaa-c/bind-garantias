@@ -18,6 +18,7 @@ export const AltaOperacionSchema = z
       required_error: "Selecciona un tipo de producto",
       invalid_type_error: "Selecciona un tipo de producto",
     }).min(1, { message: "Selecciona un tipo de producto" }),
+    familiaProducto: z.string().optional(),
     monto: z.coerce
       .number({
         required_error: "El monto es obligatorio",
@@ -72,7 +73,7 @@ export const AltaOperacionSchema = z
     }
 
     if (
-      data.tipoProducto === "cheque" &&
+      data.familiaProducto === "cheque" &&
       data.sociedadBolsa &&
       !data.numeroCuentaBolsa
     ) {

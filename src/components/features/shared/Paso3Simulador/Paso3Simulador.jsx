@@ -107,6 +107,8 @@ export default function Paso3Simulador({
   opcionesCalculo: propOpcionesCalculo,
   disableTipoCalculo = false,
   disableTipoProducto = false,
+  disableMonto = false,
+  montoMaximoOverride,
 }) {
   const { control, trigger, setValue, setError } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
@@ -177,22 +179,26 @@ export default function Paso3Simulador({
       // Dynamic validation based on localStorage limits
       const activeProduct = tipoProductoValue; // cheques, pagares, prestamos
       const productParams = config[activeProduct];
-      if (productParams) {
-        const montoNum = Number(montoValue);
-        if (montoNum < productParams.montoMinimo) {
-          setError("monto", {
-            type: "manual",
-            message: `El monto mínimo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(productParams.montoMinimo)}`,
-          });
-          return;
-        }
-        if (montoNum > productParams.montoMaximo) {
-          setError("monto", {
-            type: "manual",
-            message: `El monto máximo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(productParams.montoMaximo)}`,
-          });
-          return;
-        }
+      const montoNum = Number(montoValue);
+      // montoMaximoOverride es el techo real de la línea elegida
+      // (TipoLimiteCadenaValor.MontoLinea) - cuando está presente manda por
+      // sobre el montoMaximo simulado/local de config[activeProduct].
+      const montoMaximoEfectivo =
+        montoMaximoOverride > 0 ? montoMaximoOverride : productParams?.montoMaximo;
+
+      if (productParams && montoNum < productParams.montoMinimo) {
+        setError("monto", {
+          type: "manual",
+          message: `El monto mínimo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(productParams.montoMinimo)}`,
+        });
+        return;
+      }
+      if (montoMaximoEfectivo > 0 && montoNum > montoMaximoEfectivo) {
+        setError("monto", {
+          type: "manual",
+          message: `El monto máximo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(montoMaximoEfectivo)}`,
+        });
+        return;
       }
       onCalcular();
     }
@@ -449,7 +455,7 @@ export default function Paso3Simulador({
               currency={simboloActual}
               esValido={isMontoValid || montoValue > 0}
               error={errors.monto?.message}
-              disabled={mostrarResultados}
+              disabled={mostrarResultados || disableMonto}
             />
           </div>
         </div>

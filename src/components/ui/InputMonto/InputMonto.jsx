@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Controller } from "react-hook-form";
 import { IMaskInput } from "react-imask";
 import styles from "./InputMonto.module.css";
@@ -16,6 +16,7 @@ export const InputMonto = ({
 }) => {
   const inputId = id || name;
   const errorId = `${inputId}-error`;
+  const lastAcceptedRef = useRef(undefined);
 
   return (
     <Controller
@@ -54,10 +55,27 @@ export const InputMonto = ({
                 padFractionalZeros={true}
                 normalizeZeros={true}
                 unmask={true}
-                value={value?.toString() || ""}
+                // react-imask reasigna maskRef.unmaskedValue en CADA render
+                // (no solo cuando el valor cambia de verdad de afuera), y esa
+                // reasignación pasa por el setter completo del mask, que con
+                // padFractionalZeros commitea el número parcial tipeado hasta
+                // ese momento (ej: tipear "50000" queda paddeado a "5,00" en
+                // el primer dígito y los siguientes se pierden). Si lo que
+                // llega en "value" es exactamente lo último que este mismo
+                // campo emitió por onAccept, no es un cambio externo real
+                // (precarga/reset): se omite el value para que react-imask
+                // no fuerce esa reasignación y no interrumpa el tipeo.
+                value={
+                  value !== undefined &&
+                  value !== null &&
+                  String(value) === lastAcceptedRef.current
+                    ? undefined
+                    : value?.toString() || ""
+                }
                 onAccept={(unmaskedValue) => {
                   const numValue =
                     unmaskedValue === "" ? "" : Number(unmaskedValue);
+                  lastAcceptedRef.current = String(numValue);
                   onChange(numValue);
                 }}
                 inputMode="numeric"

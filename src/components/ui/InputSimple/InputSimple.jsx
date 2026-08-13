@@ -1,4 +1,4 @@
-import React, { useState, forwardRef } from "react";
+import React, { useState, useRef, forwardRef } from "react";
 import { Controller } from "react-hook-form";
 import { IMaskInput } from "react-imask";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -27,6 +27,7 @@ export const InputSimple = forwardRef(({
   const [showPassword, setShowPassword] = useState(false);
   const generatedId = React.useId();
   const inputId = props.id || name || generatedId;
+  const lastAcceptedRef = useRef(undefined);
 
   const isPasswordType = type === "password";
   const currentType = isPasswordType && showPassword ? "text" : type;
@@ -75,8 +76,27 @@ export const InputSimple = forwardRef(({
               mask={mask}
               className={styles.input}
               placeholder=" "
-              value={val ? String(val) : ""}
+              // react-imask reasigna maskRef.value en CADA render (no solo
+              // cuando "value" cambia de verdad), y esa reasignación pasa
+              // por el setter completo del mask, que con padFractionalZeros
+              // commitea el número parcial tipeado hasta ese momento (ej:
+              // tipear "50000" queda paddeado a "5,00" en el primer dígito y
+              // los siguientes se pierden). Si lo que llega en "val" es
+              // exactamente lo último que este mismo campo emitió por
+              // onAccept, no es un cambio externo real (precarga/reset):
+              // se omite el value para que react-imask no fuerce esa
+              // reasignación y no interrumpa el tipeo en curso.
+              value={
+                val !== undefined &&
+                val !== null &&
+                String(val) === lastAcceptedRef.current
+                  ? undefined
+                  : val
+                    ? String(val)
+                    : ""
+              }
               onAccept={(value, maskRef) => {
+                lastAcceptedRef.current = value;
                 if (onCh) onCh(value);
               }}
               onFocus={handleFocus}
