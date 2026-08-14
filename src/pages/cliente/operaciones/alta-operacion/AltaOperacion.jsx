@@ -997,7 +997,10 @@ export const AltaOperacion = () => {
         contratoid: null,
         cadenavalorid: Number(cadenaSlug) || 0,
         equipocomercialid: equipoComercialCadena || null,
-        solicitudid: solicitudIdCreada,
+        // Pedido explícito: TipoLimiteSocio.SolicitudID siempre en NULL, no
+        // el SolicitudEnProcesoID recién creado (ver solicitudIdCreada, que
+        // sigue usándose para el resumen y como referencia en pantalla).
+        solicitudid: null,
         tipolimiteriesgoid: 0,
         terceroviaid: 4000000,
         terceropresentanteid: null,
