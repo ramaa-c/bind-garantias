@@ -153,14 +153,14 @@ export default function AdminNavbar() {
             Empresas
           </button>
 
-          {/* Criterios de Aceptación */}
+          {/* Términos y Condiciones */}
           <button type="button"
             className={`${styles.navButton} ${
               isActive("/admin/terminos") ? styles.active : ""
             }`}
             onClick={() => handleNavigate("/admin/terminos")}
           >
-            Criterios de Aceptación
+            Términos y Condiciones
           </button>
 
           {/* Administración Dropdown */}

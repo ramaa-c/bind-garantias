@@ -1,15 +1,27 @@
+/* Sin altura fija por default: este .container es el del workbench de
+   creación/edición (3 columnas). Antes tenía height:calc(100dvh - 13rem) a
+   cualquier ancho, pero .workbench recién pasa a 3 columnas a partir de
+   1280px (ver más abajo) — por debajo de eso las 3 tarjetas se apilan y
+   necesitan mucha más altura de la que entra en un viewport. Como ese cap
+   fijo achicaba el workbench vía flex-shrink (min-height:0 en .col permite
+   que se comprima), el contenido de cada tarjeta terminaba pintándose por
+   fuera de su caja y se superponía con la tarjeta siguiente — reproducido
+   con zoom de navegador alto (130%+, reportado por BIND el 2026-08-14) pero
+   pasa en cualquier ventana angosta por debajo de 1280px de ancho efectivo.
+   Con altura libre acá, la página apilada crece y scrollea normal; el modo
+   de 3 columnas (que sí necesita el cap fijo, para que el scroll interno de
+   cada .col haga sentido) lo pone la media query de abajo. */
 .container {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
   width: 100%;
-  height: calc(100dvh - 13rem);
   min-height: 0;
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 1280px) {
   .container {
-    height: calc(100dvh - 12.5rem);
+    height: calc(100dvh - 13rem);
   }
 }
 
@@ -435,12 +447,28 @@
 
 .fieldRow {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
 .fieldRow > * {
   flex: 1;
   min-width: 0;
+}
+
+/* Antes tenía flex:"0 0 30%" inline, sin min-width: a zoom/resolución alta
+   (columna del workbench más angosta) el Operador se achicaba por debajo del
+   ancho que necesita su label + valor, y se superponían. Con min-width y
+   flex-wrap en .fieldRow, si no entra ambos en la misma fila, el Operador
+   pasa a ocupar su propia fila arriba en vez de aplastarse. */
+.fieldOperador {
+  flex: 1 1 7rem;
+  min-width: 7rem;
+}
+
+.fieldValorComparacion {
+  flex: 3 1 12rem;
+  min-width: 12rem;
 }
 
 /* Textareas de una sola línea (expresión, log): no necesitan la altura por defecto */

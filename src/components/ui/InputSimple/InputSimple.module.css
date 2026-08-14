@@ -81,11 +81,18 @@
 .label {
   position: absolute;
   left: 1rem;
+  right: 1rem;
   top: 50%;
   transform: translateY(-50%);
   font-size: 0.875rem;
   color: #555;
   pointer-events: none;
+  /* Sin esto, un contenedor angosto (ej. una columna que se achica a mayor
+     zoom/resolución) deja que el texto del label se desborde y se superponga
+     con lo que esté al lado, en vez de recortarse dentro de su propio campo. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   transition:
     top 0.22s ease,
     font-size 0.22s ease,

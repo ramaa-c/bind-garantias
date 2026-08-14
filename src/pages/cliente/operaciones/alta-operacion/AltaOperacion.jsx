@@ -38,7 +38,7 @@ import { catalogosService } from "../../../../services/catalogosService";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
-import { useObtenerPorId as useObtenerCadenaPorId } from "../../../../hooks/useCadenaValor";
+import { useObtenerTodasWeb } from "../../../../hooks/useCadenaValor";
 import { useTiposProducto } from "../../../../hooks/useCatalogos";
 import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
 import { useObtenerVariableParametrizacion } from "../../../../hooks/useVariablesParametrizacion";
@@ -83,10 +83,23 @@ export const AltaOperacion = () => {
   // línea a SGR+ eso rompe la FK_TipoLimiteSocio_Equipo contra
   // dbo.EquipoComercial). Se usa el de la cadena porque la solicitud nace
   // ahí, no de un vendedor asignado a mano.
-  const { data: cadenaInfo } = useObtenerCadenaPorId(Number(cadenaSlug) || undefined);
-  const equipoComercialCadena = Number(
-    cadenaInfo?.equipocomercialid ?? cadenaInfo?.EquipoComercialID ?? 0,
-  );
+  //
+  // ⚠️ Antes esto se leía de useObtenerCadenaPorId (GET
+  // CadenaValor/Obtener/{id}) — confirmado en vivo el 2026-08-14 que ESE
+  // endpoint no devuelve EquipoComercialID en absoluto (devuelve
+  // CadenaValorID/Denominacion/Descripcion/Moneda/MontoMaximo/Vigencia*/
+  // Estado, nada más), así que equipoComercialCadena daba siempre 0 sin
+  // importar lo que estuviera cargado en la cadena. GET api/cadenavalor
+  // (la lista completa, la misma que usa ActivarCadenaModal/Dashboard) sí
+  // lo trae, así que se resuelve desde ahí.
+  const { data: cadenasWeb } = useObtenerTodasWeb();
+  const equipoComercialCadena = useMemo(() => {
+    const cadenaIdNum = Number(cadenaSlug) || 0;
+    const cadena = (cadenasWeb || []).find(
+      (c) => Number(c.cadenavalorid ?? c.CadenaValorID) === cadenaIdNum,
+    );
+    return Number(cadena?.equipocomercialid ?? cadena?.EquipoComercialID ?? 0);
+  }, [cadenasWeb, cadenaSlug]);
   const lineasDisponibles = useMemo(() => {
     const arr = Array.isArray(lineasCadenaData) ? lineasCadenaData : [];
     return arr.filter(

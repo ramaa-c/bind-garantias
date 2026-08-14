@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { FiSearch, FiCheck, FiX, FiEye, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList, FiGlobe, FiGrid, FiChevronRight } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiEye, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList, FiGlobe, FiGrid, FiChevronRight, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
 import { Badge } from "../../../components/ui/Badge/Badge";
@@ -161,27 +161,59 @@ export default function Dashboard() {
     });
   }, [limitesData, sociosData, isRestricted, restrictedIds, targetCadenaId]);
 
+  // La migración a SGR+ es un paso aparte de la aprobación en TipoLimiteSocio
+  // (que ya quedó guardada) — si falla acá, no hay que revertir nada, solo
+  // avisar. `contexto` solo cambia el texto de los toasts: "reintento" se usa
+  // desde el botón manual (ver handleReintentarMigracion más abajo), para
+  // líneas que ya quedaron Aprobadas pero no llegaron a migrar (ej. la
+  // primera vez que se aprobó, api/Linea/Migrar falló).
+  const migrarLinea = (item, { contexto = "aprobar" } = {}) => {
+    const tipoLimiteSocioId =
+      item.raw?.tipolimitesocioid ?? item.raw?.TipoLimiteSocioID ?? item.id;
+    migrarLineaMutation.mutate(tipoLimiteSocioId, {
+      onSuccess: () => {
+        if (contexto === "reintento") {
+          toast.success(`Línea N°${item.id} migrada a SGR+ correctamente`);
+        }
+      },
+      onError: (migError) => {
+        toast.error(
+          contexto === "aprobar"
+            ? `La línea N°${item.id} se aprobó pero no se pudo migrar a SGR+`
+            : `No se pudo migrar la línea N°${item.id} a SGR+`,
+          { description: migError.message },
+        );
+      },
+    });
+  };
+
+  const handleReintentarMigracion = (item) => migrarLinea(item, { contexto: "reintento" });
+
   const handleDecision = (item, nuevoEstado, observaciones) => {
     const payload = { ...item.raw, tipolimiteestadoid: nuevoEstado };
     if (observaciones !== undefined) payload.observaciones = observaciones;
+
+    // El EquipoComercialID de la línea puede haber quedado en 0 (mismo
+    // criterio que usa AltaOperacion.jsx al crearla: no hay que confiar en
+    // lo que ya esté guardado en TipoLimiteSocio, sino resolverlo siempre
+    // desde la CadenaValor vigente). Victor detectó que ese 0 es lo que
+    // rompe api/Linea/Migrar al aprobar — reportado el 2026-08-14.
+    const cadenaId = item.cadenavalorid ?? item.raw?.cadenavalorid ?? item.raw?.CadenaValorID;
+    const cadenaDeLaLinea = (activeCadenas || []).find(
+      (c) => Number(c.cadenavalorid ?? c.CadenaValorID) === Number(cadenaId),
+    );
+    const equipoComercialId = Number(
+      cadenaDeLaLinea?.equipocomercialid ?? cadenaDeLaLinea?.EquipoComercialID ?? 0,
+    );
+    if (equipoComercialId > 0) payload.equipocomercialid = equipoComercialId;
+
     actualizarEstadoMutation.mutate(payload, {
       onSuccess: () => {
         if (nuevoEstado === ESTADO_APROBADA) {
           toast.success(`Solicitud N°${item.id} Aprobada exitosamente`, {
             description: "Los fondos o cupos han sido habilitados para el cliente.",
           });
-          // La aprobación en TipoLimiteSocio ya quedó guardada; la migración
-          // a SGR+ es un paso aparte que no la revierte si falla, así que
-          // solo se avisa para que el admin la reintente.
-          const tipoLimiteSocioId =
-            item.raw?.tipolimitesocioid ?? item.raw?.TipoLimiteSocioID ?? item.id;
-          migrarLineaMutation.mutate(tipoLimiteSocioId, {
-            onError: (migError) => {
-              toast.error(`La línea N°${item.id} se aprobó pero no se pudo migrar a SGR+`, {
-                description: migError.message,
-              });
-            },
-          });
+          migrarLinea(item);
         } else {
           toast.error(`Solicitud N°${item.id} Rechazada`, {
             description: "Se ha notificado al cliente el rechazo de la operación.",
@@ -578,6 +610,18 @@ export default function Dashboard() {
                                 <FiX /> RECHAZAR
                               </Button>
                             </div>
+                          )}
+
+                          {isAprobada && (
+                            <Button
+                              onClick={() => handleReintentarMigracion(item)}
+                              variant="outlineBlue"
+                              size="xs"
+                              title="Reintentar la migración de esta línea a SGR+"
+                              disabled={migrarLineaMutation.isPending}
+                            >
+                              <FiRefreshCw /> REINTENTAR MIGRACIÓN
+                            </Button>
                           )}
 
                           <Button

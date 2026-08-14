@@ -1109,7 +1109,7 @@ export default function CdasGlobales() {
               </div>
 
               <div className={styles.fieldRow}>
-                <div style={{ flex: "0 0 30%" }}>
+                <div className={styles.fieldOperador}>
                   <SelectSimple
                     label="Operador"
                     value={simbolocomparacion}
@@ -1127,7 +1127,7 @@ export default function CdasGlobales() {
                   />
                 </div>
 
-                <div>
+                <div className={styles.fieldValorComparacion}>
                   <InputSimple
                     label="Valor de Comparación"
                     value={valorcomparacion}
