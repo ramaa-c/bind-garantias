@@ -282,7 +282,7 @@ const LineaCard = ({
             )}
             {esMontoUnico && (
               <span className={styles.moneyChip} title="Monto único solicitable">
-                Monto Único
+                Monto por defecto
               </span>
             )}
           </div>

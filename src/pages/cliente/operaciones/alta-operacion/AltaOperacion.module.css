@@ -215,7 +215,7 @@
 
   .columnaCentrada {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     width: 100%;
   }

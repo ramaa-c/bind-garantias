@@ -659,15 +659,6 @@
   grid-column: 1 / -1;
 }
 
-/* Toggle "Monto Único": es un flag boolean (ValoresPorDefecto es un
-   varchar(1) "1"/"0" en el backend, no un monto) que modifica cómo se
-   interpreta el Monto de la Línea. Vive en la celda vacía a la derecha de
-   ese input (misma fila de la grilla) en vez de ser una fila propia a todo
-   el ancho — aprovecha un espacio que quedaba vacío. Sin align-self ni
-   max-height: se estira (default stretch) al alto real de la fila, que
-   incluye el espacio que InputSimple reserva para su mensaje de error, y
-   centra su contenido ahí adentro en vez de quedar chico arriba con hueco
-   vacío debajo. */
 .uniqueAmountCard {
   display: flex;
   flex-direction: column;

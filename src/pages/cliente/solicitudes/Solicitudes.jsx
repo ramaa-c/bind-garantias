@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { FiPlus, FiSearch, FiClock } from "react-icons/fi";
+import { useForm, useWatch } from "react-hook-form";
+import { FiPlus, FiSearch, FiClock, FiX } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa";
 import { toast } from "sonner";
-import { BotonVolver, Button, Select, Spinner, SkeletonTable } from "../../../components/ui";
+import {
+  BotonVolver,
+  Button,
+  SelectSimple,
+  SelectFechaSimple,
+  Spinner,
+  SkeletonTable,
+} from "../../../components/ui";
 import {
   TarjetaSolicitud,
   DetalleSolicitudModal,
@@ -45,6 +52,23 @@ const opcionesOrden = [
   { value: "desc", label: "Más recientes" },
   { value: "asc", label: "Más antiguas" },
 ];
+
+const FILTROS_POR_DEFECTO = {
+  busqueda: "",
+  estado: "todos",
+  orden: "desc",
+  fechaDesde: "",
+  fechaHasta: "",
+};
+
+// SelectFechaSimple entrega el valor ya como ISO completo (no un simple
+// "yyyy-mm-dd"), así que para el límite superior del rango hay que llevar la
+// hora local al final del día explícitamente en vez de asumir un formato.
+const finDelDia = (fecha) => {
+  const d = new Date(fecha);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
 
 const hasMeaningfulData = (dataString) => {
   if (!dataString) return false;
@@ -94,13 +118,22 @@ export default function Solicitudes() {
   const location = useLocation();
   const { channelInfo } = useChannel();
 
-  const { control, register } = useForm({
-    defaultValues: {
-      busqueda: "",
-      estado: "",
-      orden: "desc",
-    },
+  const { control, register, setValue, reset } = useForm({
+    defaultValues: FILTROS_POR_DEFECTO,
   });
+  const filtros = useWatch({ control });
+
+  const fechaDesdeDate = filtros.fechaDesde ? new Date(filtros.fechaDesde) : undefined;
+  const fechaHastaDate = filtros.fechaHasta ? new Date(filtros.fechaHasta) : undefined;
+
+  const hayFiltrosActivos =
+    !!filtros.busqueda ||
+    (filtros.estado && filtros.estado !== "todos") ||
+    (filtros.orden && filtros.orden !== "desc") ||
+    !!filtros.fechaDesde ||
+    !!filtros.fechaHasta;
+
+  const handleLimpiarFiltros = () => reset(FILTROS_POR_DEFECTO);
 
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
@@ -160,6 +193,7 @@ export default function Solicitudes() {
           estado: estadoTextoDesde(tipoLimiteEstadoId),
           tipoLimiteEstadoId,
           fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
+          fechaISO: s.fchvigenciadesde || null,
           socioid: s.socioid || socioIdFinal,
           cuit: cuitActivo,
           isReal: true,
@@ -177,6 +211,7 @@ export default function Solicitudes() {
         moneda: sp.monedaid === 5000 ? "$" : sp.monedaid === 2 ? "U$D" : sp.monedaid === 10 ? "UVAS" : sp.monedaid === 500 ? "€" : "$",
         estado: "Pendiente",
         fecha: sp.fechacarga ? new Date(sp.fechacarga).toLocaleDateString("es-AR") : "Hoy",
+        fechaISO: sp.fechacarga || null,
         socioid: socioIdFinal,
         cuit: cuitActivo,
         isReal: true,
@@ -185,6 +220,44 @@ export default function Solicitudes() {
 
     return [...reales, ...pendientes].sort((a, b) => (Number(b.solicitudid) || 0) - (Number(a.solicitudid) || 0));
   }, [solicitudesReal, solicitudesEnProceso, socioIdFinal, cuitActivo]);
+
+  const listaFiltrada = useMemo(() => {
+    const texto = (filtros.busqueda || "").trim().toLowerCase();
+    const estadoFiltro = filtros.estado;
+    const desde = filtros.fechaDesde ? new Date(filtros.fechaDesde) : null;
+    const hasta = filtros.fechaHasta ? finDelDia(filtros.fechaHasta) : null;
+
+    const filtradas = listaSolicitudes.filter((item) => {
+      if (texto) {
+        const matchTexto =
+          (item.cuit || "").toLowerCase().includes(texto) ||
+          (item.id || "").toLowerCase().includes(texto) ||
+          (item.tipo || "").toLowerCase().includes(texto);
+        if (!matchTexto) return false;
+      }
+
+      if (estadoFiltro && estadoFiltro !== "todos") {
+        if ((item.estado || "").toLowerCase() !== estadoFiltro) return false;
+      }
+
+      if (desde || hasta) {
+        // Sin fecha real no hay forma de ubicarla en el rango elegido, así
+        // que si están filtrando por fecha la excluimos en vez de mostrarla
+        // de todos modos.
+        if (!item.fechaISO) return false;
+        const fechaItem = new Date(item.fechaISO);
+        if (desde && fechaItem < desde) return false;
+        if (hasta && fechaItem > hasta) return false;
+      }
+
+      return true;
+    });
+
+    return filtradas.sort((a, b) => {
+      const diff = (Number(b.solicitudid) || 0) - (Number(a.solicitudid) || 0);
+      return filtros.orden === "asc" ? -diff : diff;
+    });
+  }, [listaSolicitudes, filtros.busqueda, filtros.estado, filtros.fechaDesde, filtros.fechaHasta, filtros.orden]);
 
   const [solicitudACancelar, setSolicitudACancelar] = useState(null);
   const actualizarLimiteMutation = useActualizarLimiteSocio();
@@ -292,48 +365,79 @@ export default function Solicitudes() {
       <main className={styles.main}>
         <LegajoUniversalBar />
         
-        <div className={styles.toolbar}>
-          <div className={styles.filtersWrapper}>
-            <div className={styles.searchBox}>
-              <FiSearch className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Buscar por nombre o CUIT..."
-                className={styles.searchInput}
-                {...register("busqueda")}
-              />
-            </div>
-
-            <div className={styles.selectGroup}>
-              <div className={styles.customSelectWrapper}>
-                <Select
-                  name="estado"
-                  control={control}
-                  options={opcionesEstado}
-                  placeholder="Estado"
-                  isSearchable={false}
-                  hideErrorSpace
-                />
-              </div>
-
-              <div className={styles.customSelectWrapper}>
-                <Select
-                  name="orden"
-                  control={control}
-                  options={opcionesOrden}
-                  placeholder="Orden"
-                  isSearchable={false}
-                  hideErrorSpace
-                />
-              </div>
-            </div>
+        <div className={styles.filterBar}>
+          <div className={styles.searchBox}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Buscar por N° de solicitud o CUIT..."
+              className={styles.searchInput}
+              {...register("busqueda")}
+            />
           </div>
+
+          <div className={styles.filterFieldsRow}>
+            <SelectFechaSimple
+              label="Desde"
+              value={filtros.fechaDesde}
+              onChange={(val) => setValue("fechaDesde", val, { shouldDirty: true })}
+              disableFuture
+              maxDate={fechaHastaDate}
+              variant="client"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+            <SelectFechaSimple
+              label="Hasta"
+              value={filtros.fechaHasta}
+              onChange={(val) => setValue("fechaHasta", val, { shouldDirty: true })}
+              disableFuture
+              minDate={fechaDesdeDate}
+              variant="client"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+            <SelectSimple
+              name="estado"
+              control={control}
+              label="Estado"
+              options={opcionesEstado}
+              variant="client"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+            <SelectSimple
+              name="orden"
+              control={control}
+              label="Orden"
+              options={opcionesOrden}
+              variant="client"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+          </div>
+
+          <button
+            type="button"
+            className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
+            onClick={handleLimpiarFiltros}
+            disabled={!hayFiltrosActivos}
+            tabIndex={hayFiltrosActivos ? 0 : -1}
+            title="Limpiar filtros"
+            aria-label="Limpiar filtros"
+          >
+            <FiX />
+          </button>
         </div>
         <div className={styles.listContainer}>
           {isLoadingData ? (
             <SkeletonTable rows={3} />
-          ) : listaSolicitudes.length > 0 ? (
-            listaSolicitudes.map((item) => {
+          ) : listaFiltrada.length > 0 ? (
+            listaFiltrada.map((item) => {
               // Solo se puede cancelar una solicitud real (ya tiene
               // TipoLimiteSocio, no un simple borrador en proceso) que
               // todavía esté pendiente de validación.
@@ -360,7 +464,11 @@ export default function Solicitudes() {
             })
           ) : (
             <div className={styles.emptyState}>
-              <p>No tenés solicitudes activas en este momento.</p>
+              <p>
+                {listaSolicitudes.length > 0
+                  ? "No encontramos solicitudes con esos filtros."
+                  : "No tenés solicitudes activas en este momento."}
+              </p>
             </div>
           )}
         </div>

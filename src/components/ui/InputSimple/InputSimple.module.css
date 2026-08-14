@@ -223,6 +223,26 @@
 
 .compact .inputWrapper {
   border-radius: 0.6rem;
+  /* Mismo alto fijo que el control de SelectSimple en modo compact (ver
+     SelectSimple.jsx): ahí el alto lo fija react-select vía estilos
+     inline, así que sin este valor explícito el alto de estos campos
+     (derivado del padding+line-height del input) queda desalineado en una
+     misma fila de filtros. */
+  height: 2.35rem;
+}
+
+.compact .input {
+  height: 100%;
+  padding: 0 2.25rem 0 0.75rem;
+  font-size: 0.825rem;
+}
+
+.compact .actions {
+  right: 0.5rem;
+}
+
+.compact .toggleBtn {
+  padding: 0.25rem;
 }
 
 .compact .label {

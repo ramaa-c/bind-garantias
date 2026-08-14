@@ -4,14 +4,40 @@
   position: relative;
 }
 
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
 .label {
   color: #666;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 700;
-  margin-bottom: 1.25rem;
   display: block;
+}
+
+.lockedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  background: rgba(76, 101, 230, 0.1);
+  border: 1px solid rgba(76, 101, 230, 0.28);
+  color: #7c8ff2;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lockedBadgeIcon {
+  font-size: 0.7rem;
 }
 
 .container {
@@ -19,6 +45,19 @@
   justify-content: center;
   align-items: baseline;
   gap: 10px;
+}
+
+.lockedContainer {
+  cursor: not-allowed;
+}
+
+.lockIcon {
+  align-self: flex-end;
+  padding-bottom: 0.75rem;
+  font-size: 1.35rem;
+  color: #7c8ff2;
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 
 .currency {
@@ -50,6 +89,19 @@
 
 .input:focus {
   border-bottom-color: rgba(245, 244, 0, 0.3);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.hint {
+  margin: 0.75rem auto 0;
+  max-width: 26rem;
+  color: #8b949e;
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .error {

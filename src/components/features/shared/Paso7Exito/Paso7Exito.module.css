@@ -80,6 +80,52 @@
   font-weight: 700;
 }
 
+.summaryCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.875rem;
+  padding: 1rem 1.125rem;
+}
+
+.summaryLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b949e;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem 1rem;
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.summaryItemLabel {
+  font-size: 0.7rem;
+  color: #8b949e;
+}
+
+.summaryItemValue {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--white, #fff);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .stepsGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -210,6 +256,9 @@
     grid-template-columns: 1fr 1fr;
     align-items: stretch;
     gap: 1rem;
+  }
+  .summaryGrid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

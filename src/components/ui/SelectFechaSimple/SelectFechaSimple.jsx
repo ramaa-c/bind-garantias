@@ -14,6 +14,8 @@ export const SelectFechaSimple = ({
   label = "Fecha",
   disabled = false,
   minDate,
+  maxDate,
+  disableFuture = false,
   error: errorExterno,
   value: manualValue,
   onChange: manualOnChange,
@@ -22,11 +24,33 @@ export const SelectFechaSimple = ({
   hideErrorSpace = false,
   className = "",
   mostrarDiasDesdeHoy = false,
+  compact = false,
 }) => {
   const formContext = useFormContext();
   const control = formContext?.control;
-  const effectiveMinDate = minDate || new Date();
-  
+
+  // Por defecto el picker solo permite fechas futuras (before: hoy
+  // deshabilitado) - pensado para casos como "fecha de vencimiento". Con
+  // disableFuture=true se invierte para casos históricos (ej: filtrar
+  // solicitudes ya cargadas): se deshabilita todo lo posterior a hoy (o a
+  // maxDate). minDate/maxDate además permiten acotar el rango en cualquiera
+  // de los dos modos (ej: para enlazar un "Desde"/"Hasta" entre sí).
+  const today = new Date();
+  let disabledMatchers;
+  let fromYear;
+  let toYear;
+  if (disableFuture) {
+    const upper = maxDate || today;
+    disabledMatchers = minDate ? [{ after: upper }, { before: minDate }] : [{ after: upper }];
+    fromYear = (minDate || upper).getFullYear() - 5;
+    toYear = upper.getFullYear();
+  } else {
+    const lower = minDate || today;
+    disabledMatchers = maxDate ? [{ before: lower }, { after: maxDate }] : [{ before: lower }];
+    fromYear = lower.getFullYear();
+    toYear = (maxDate || lower).getFullYear() + 10;
+  }
+
   const { errors } = control ? useFormState({ control, name }) : { errors: {} };
 
   const errorContexto = control && name
@@ -125,6 +149,7 @@ export const SelectFechaSimple = ({
       : null;
     const hasError = !!errorDisplay;
     const isAdmin = variant === "admin" || (variant !== "client" && typeof window !== "undefined" && window.location.pathname.includes("/admin"));
+    const focusColor = isAdmin ? "var(--color-azul-bind, #4c65e6)" : "var(--yellow, #f4f500)";
 
     let statusClass = inputStyles.statusDefault;
     if (hasError) {
@@ -139,6 +164,7 @@ export const SelectFechaSimple = ({
       hasValue || isCalendarOpen || isFocused ? inputStyles.hasValue : "",
       isAdmin ? inputStyles.adminVariant : "",
       hideErrorSpace ? inputStyles.noErrorSpace : "",
+      compact ? inputStyles.compact : "",
       className,
     ].filter(Boolean).join(" ");
 
@@ -188,9 +214,9 @@ export const SelectFechaSimple = ({
               type="button"
               className={inputStyles.toggleBtn}
               tabIndex="-1"
-              style={{ color: (isCalendarOpen || isFocused || hasValue) ? 'var(--color-azul-bind, #4c65e6)' : '#8b949e' }}
+              style={{ color: (isCalendarOpen || isFocused || hasValue) ? focusColor : '#8b949e' }}
             >
-              <FiCalendar size={17} />
+              <FiCalendar size={compact ? 14 : 17} />
             </button>
           </div>
         </div>
@@ -209,11 +235,11 @@ export const SelectFechaSimple = ({
                 selected={dateObj}
                 onSelect={handleDateSelect}
                 locale={es}
-                disabled={{ before: effectiveMinDate }}
+                disabled={disabledMatchers}
                 required
                 captionLayout="dropdown-years"
-                fromYear={effectiveMinDate.getFullYear()}
-                toYear={effectiveMinDate.getFullYear() + 10}
+                fromYear={fromYear}
+                toYear={toYear}
               />
             </div>,
             document.body,
