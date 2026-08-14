@@ -33,6 +33,12 @@
   padding-top: 0.75rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   margin-top: 0.125rem;
+  position: sticky;
+  bottom: 0;
+  background: #161616;
+}
+.modalFooterAdmin {
+  background: #0d1117;
 }
 .cuitSearchStep {
   display: flex;

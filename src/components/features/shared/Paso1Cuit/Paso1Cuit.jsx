@@ -13,7 +13,7 @@ import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
 import { guardarSocioPendiente } from "../../../../utils/altaEmpresaPendiente";
 import { useAuthStore } from "../../../../store/useAuthStore";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import styles from "./Paso1Cuit.module.css";
 
 import { useVendor } from "../../../../hooks/useVendor";
@@ -28,7 +28,6 @@ const formatearCuit = (cuit) => {
 
 export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }) {
   const { cadenaSlug } = useParams();
-  const navigate = useNavigate();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const { control, getValues, setValue, setError, clearErrors } =
     useFormContext();
@@ -67,10 +66,8 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
   // OnboardingGuard). thresholdCruzado bloquea el input/botón apenas el
   // socio existe de verdad; socioIdCreadoRef evita que un reintento (ej.
   // tras un error transitorio de sistema en el CDA) vuelva a crear/vincular
-  // el socio. cdaRechazoEstado guarda a qué pantalla de estado mandar al
-  // usuario al cerrar el modal de error (misma regla que OnboardingGuard).
+  // el socio.
   const [thresholdCruzado, setThresholdCruzado] = useState(false);
-  const [cdaRechazoEstado, setCdaRechazoEstado] = useState(null);
   const socioIdCreadoRef = useRef(null);
   const cuitEnProcesoRef = useRef("");
   // Datos de la empresa (Nosis/AFIP/LUFE) obtenidos al mostrar el cartel de
@@ -218,16 +215,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
     if (!resultCda.success) {
       const esErrorSistema = resultCda.errors.some((e) => e.isSystemError);
       const esPendiente = resultCda.errors.some((e) => e.isPendiente);
-
-      // Rechazo de negocio real (o pendiente por integración caída): a
-      // partir de acá NO hay vuelta atrás para este intento. El input de
-      // CUIT ya está bloqueado (thresholdCruzado), y al cerrar el modal de
-      // error lo mandamos directo a /estado-solicitud — la misma pantalla
-      // (y la misma regla) que usaría OnboardingGuard en el próximo
-      // ingreso. Nunca lo dejamos "Aceptar" hacia un Paso1 editable.
-      if (!esErrorSistema) {
-        setCdaRechazoEstado(esPendiente ? "pendiente" : "rechazado");
-      }
 
       setProcesoModal((prev) => ({
         ...prev,
@@ -624,19 +611,12 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
         isSystemError={procesoModal.isSystemError}
         onClose={() => {
           // Post-umbral no hay "Aceptar y quedarse acá": el socio ya existe
-          // (haya pasado el CDA o no) y el CUIT ya está bloqueado, así que
-          // lo mandamos a la misma pantalla de estado que usaría
-          // OnboardingGuard en el próximo ingreso. Si el error fue un
-          // hiccup transitorio de sistema (sin rechazo de negocio
-          // confirmado) usamos "pendiente" como default seguro: no hay
-          // vuelta a un Paso1 editable en ningún caso.
-          if (thresholdCruzado) {
-            navigate(`/${cadenaSlug}/estado-solicitud`, {
-              state: { estado: cdaRechazoEstado || "pendiente" },
-              replace: true,
-            });
-            return;
-          }
+          // (haya pasado el CDA o no) y el CUIT ya está bloqueado — pero el
+          // resultado del CDA ya NO bloquea el acceso a la cuenta (acordado
+          // con el equipo el 2026-08-13, mismo criterio que OnboardingGuard):
+          // se lo deja seguir al Paso 2 igual. Un CDA rechazado/pendiente
+          // sigue bloqueando la migración a SGR+ más adelante, y el socio ve
+          // un aviso permanente en el legajo — ver LegajoUniversalBar.
           setProcesoModal({
             isOpen: false,
             titulo: "",
@@ -644,6 +624,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
             hasError: false,
             isSystemError: false,
           });
+          if (thresholdCruzado && onValidar) {
+            onValidar();
+          }
         }}
         onRetry={continuarValidacionCompleta}
       />

@@ -268,13 +268,14 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
     toast.success("CDAs restablecidos a la configuración guardada");
   };
 
-  const sanearValor = (val) => {
-    let valorSaneado = String(val || "").trim();
-    if (valorSaneado === '""' || valorSaneado === "''") {
-      valorSaneado = "";
-    }
-    return valorSaneado;
-  };
+  // Solo recorta espacios: el valor ya viene con el formato definitivo
+  // desde el CDA global (p. ej. "''" para "comparar contra vacío", o
+  // "'REINA'" para un string) — ver formatValorParaLog en CdasGlobales.jsx.
+  // Antes esto además pisaba "''"/'""' a string vacío, perdiendo la
+  // semántica de "comparar contra vacío" al vincular el CDA a una cadena
+  // (quedaba guardado literalmente vacío en vez de "''"). Bug reportado por
+  // BIND el 2026-08-14.
+  const sanearValor = (val) => String(val || "").trim();
 
   const confirmSaveVinculacion = async () => {
     if (!usuarioWebId) {

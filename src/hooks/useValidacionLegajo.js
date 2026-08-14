@@ -136,6 +136,7 @@ export const useValidacionLegajo = ({
       totalRequisitos: 0,
       requisitosCompletados: 0,
       isLoading: true,
+      cadenaId,
     };
   }
 
@@ -381,6 +382,7 @@ export const useValidacionLegajo = ({
     archivosBackend,
     socioLegajoData,
     requisitos,
+    cadenaId,
   };
 };
 

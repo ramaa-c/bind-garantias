@@ -197,7 +197,13 @@ export const calcularEstadoEfectivo = ({
     String(expresionAgrupacion || "").trim() ||
     (cdasActivosIds || []).map((id) => `cda${id}`).join(" and ");
 
-  if (!expresion.trim()) return "pendiente";
+  // Expresión vacía con cdasActivosIds definido (aunque sea []) significa
+  // que la vinculación vigente no tiene ningún CDA activo: no hay nada que
+  // validar, así que no debe bloquear al socio. Si cdasActivosIds ni
+  // siquiera se pasó, no hay información de vinculación (no confundir los
+  // casos): ahí se mantiene "pendiente". Nunca se había probado el caso de
+  // cero CDAs vinculados antes de esto.
+  if (!expresion.trim()) return cdasActivosIds ? "aprobado" : "pendiente";
 
   const resultado = evaluarExpresionAgrupacion(expresion, estadoPorCda);
   if (resultado === true) return "aprobado";

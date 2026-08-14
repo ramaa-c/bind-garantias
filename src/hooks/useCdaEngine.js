@@ -172,8 +172,24 @@ export const useCdaEngine = () => {
         return { success: !hasBlockingErrors, errors: mappedErrors };
       }
 
-      // 400 / 500 / red / cualquier otra cosa: error de sistema, no un
-      // rechazo de negocio real.
+      // 400 "CDAs Inexistentes": no hay ningún CDA vinculado a esta
+      // combinación de pantalla+cadena — no es un error ni un rechazo, es
+      // que no hay nada que validar. Confirmado en vivo el 2026-08-13
+      // contra una cadena real sin CDAs activos vinculados (COMAFI/
+      // PANTALLA_INGRESO_CUIT): {"Message":"CDAs Inexistentes"}. Se trata
+      // como aprobado — nunca se había probado este caso antes.
+      const mensajeBackend =
+        (typeof responseData === "string" ? responseData : responseData?.message || responseData?.Message) || "";
+      if (status === 400 && /cdas inexistentes/i.test(mensajeBackend)) {
+        console.log(
+          `[CDA ENGINE] No hay CDAs vinculados para "${pantalla}" en esta cadena — se considera aprobado.`,
+        );
+        setLoading(false);
+        return { success: true, errors: [] };
+      }
+
+      // 400 (cualquier otro motivo) / 500 / red / cualquier otra cosa: error
+      // de sistema, no un rechazo de negocio real.
       let msg =
         responseData?.message ||
         responseData?.Message ||

@@ -9,6 +9,8 @@ import {
 import { sociosService } from "../services/sociosService";
 import { esSocioVacio } from "../utils/socioUtils";
 import { calcularEstadoDesdeHistorial } from "../utils/executeCda";
+import { esCdaActivo } from "../utils/cdaUtils";
+import { useObtenerGrupoCdaConCdas } from "./useCadenaValor";
 
 export const useObtenerSocios = (params = {}) => {
   return useQuery({
@@ -168,16 +170,44 @@ export const useEmpresasCompletas = (socioUsuarios) => {
 // para el detalle). Si en cambio se agrega un CDA nuevo al grupo sin
 // evaluarlo para este socio, el historial no sabe nada de él y el
 // resultado sigue siendo el del cierre viejo — tampoco lo afecta.
-export const useEstadoCdaSocio = (socioId) => {
+// cadenaValorId (opcional) solo se usa para desambiguar el caso de
+// historial vacío (calcularEstadoDesdeHistorial devuelve null, distinto de
+// "pendiente"): puede ser que el socio nunca haya tenido una corrida
+// registrada porque la cadena directamente no tiene NINGÚN CDA vinculado a
+// PANTALLA_INGRESO_CUIT — nunca se había contemplado ese caso, y debe
+// contar como aprobado (no hay nada que validar), no como pendiente. Se
+// resuelve con una consulta liviana a la vinculación vigente (misma que ya
+// usa el admin, ver cdasActivosIdsGrupo en EmpresaDetalle.jsx), pero SOLO
+// cuando hace falta desambiguar — en el caso común (ya hay historial) no
+// agrega ningún pedido extra.
+export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
   const { data: historial, isPending } = useObtenerExecuteCda(socioId);
+
+  const estadoHistorial = useMemo(() => {
+    if (!socioId || isPending) return undefined;
+    const lista = Array.isArray(historial) ? historial : historial ? [historial] : [];
+    return calcularEstadoDesdeHistorial(lista);
+  }, [socioId, isPending, historial]);
+
+  const necesitaChequearVinculacion = estadoHistorial === null && !!cadenaValorId;
+  const { data: grupoCdaData, isPending: isPendingGrupo } = useObtenerGrupoCdaConCdas(
+    necesitaChequearVinculacion ? cadenaValorId : null,
+    necesitaChequearVinculacion ? "PANTALLA_INGRESO_CUIT" : null,
+  );
 
   const data = useMemo(() => {
     if (!socioId || isPending) return undefined;
-    const lista = Array.isArray(historial) ? historial : historial ? [historial] : [];
-    return calcularEstadoDesdeHistorial(lista) ?? "pendiente";
-  }, [socioId, isPending, historial]);
+    if (estadoHistorial !== null) return estadoHistorial ?? "pendiente";
+    if (!necesitaChequearVinculacion) return "pendiente";
+    if (isPendingGrupo) return undefined;
+    const cdasActivos = (grupoCdaData?.cdas || []).filter(esCdaActivo);
+    return cdasActivos.length === 0 ? "aprobado" : "pendiente";
+  }, [socioId, isPending, estadoHistorial, necesitaChequearVinculacion, isPendingGrupo, grupoCdaData]);
 
-  return { data, isPending: !!socioId && isPending };
+  return {
+    data,
+    isPending: !!socioId && (isPending || (necesitaChequearVinculacion && isPendingGrupo)),
+  };
 };
 
 export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {

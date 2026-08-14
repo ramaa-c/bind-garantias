@@ -4,7 +4,6 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import {
   useObtenerSocioUsuarioPorUsuarioId,
   useEmpresasCompletas,
-  useEstadoCdaSocio,
 } from "../../../hooks/useSocios";
 import {
   useObtenerPorNombreOEmail,
@@ -104,14 +103,11 @@ export const OnboardingGuard = ({ children }) => {
   // El socio ya puede tener datos reales (esSocioVacio ya no alcanza) sin
   // que el CDA de PANTALLA_INGRESO_CUIT haya pasado — eso pasa siempre que
   // el usuario cruzó el umbral (ver Paso1Cuit) pero el CDA quedó rechazado
-  // o pendiente. Para vendors no lo chequeamos: pueden gestionar varias
-  // empresas con estados distintos, y ese flujo queda fuera de este cambio
-  // por ahora.
+  // o pendiente. Ya NO se usa para bloquear el acceso acá (acordado con el
+  // equipo el 2026-08-13): el socio puede entrar más allá del resultado del
+  // CDA — el aviso y el bloqueo real (migración a SGR+) viven en
+  // LegajoUniversalBar, que sí sigue consultando ese estado.
   const empresaActual = !isVendor && !isVendorMock ? listaEmpresas[0] : null;
-  const socioIdParaEstado =
-    empresaActual?.socioid ?? empresaActual?.SocioID ?? null;
-  const { data: estadoCda, isPending: isPendingEstadoCda } =
-    useEstadoCdaSocio(socioIdParaEstado);
   const telefonoActual = String(
     empresaActual?.telefono ?? empresaActual?.Telefono ?? "",
   ).trim();
@@ -235,7 +231,6 @@ export const OnboardingGuard = ({ children }) => {
   if (
     (usuarioWebId && isPendingSocios) ||
     (usuarioWebId && !isPendingSocios && isLoadingEmpresasCompletas) ||
-    (socioIdParaEstado && isPendingEstadoCda) ||
     (usuarioWebId && isCadenasLoading) ||
     (necesitaChequeoTerminos &&
       (isLoadingTerminosVigentes || isLoadingConfirmacionTyC)) ||
@@ -271,29 +266,16 @@ export const OnboardingGuard = ({ children }) => {
       ) {
         return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
       }
-    } else if (estadoCda === "rechazado" || estadoCda === "pendiente") {
-      // Cruzó el umbral (existe el socio, con datos reales) pero el CDA
-      // todavía no está aprobado — no lo dejamos entrar a ningún lado
-      // salvo la pantalla de estado. Si todavía debe aceptar una versión
-      // nueva de TyC, no lo sacamos de /terminos (mismo motivo que el
-      // "else if" de más abajo: sin este guard, el check de arriba lo manda
-      // a /terminos y este lo rebota a /estado-solicitud en loop infinito).
-      if (!isEstadoSolicitudPage && !debeAceptarTerminos) {
-        return (
-          <Navigate
-            to={`/${channelInfo.id}/estado-solicitud`}
-            state={{ estado: estadoCda }}
-            replace
-          />
-        );
-      }
-    } else if (estadoCda === "aprobado" && !telefonoActual) {
-      // El CDA pasó, pero nunca completó el Paso 2 (ver Paso1Cuit: el socio
-      // se crea con el "umbral", el Paso 2 es lo que termina de cargar
-      // datos como el teléfono). Lo mandamos directo a completarlo, sin
-      // pasar de nuevo por Paso1Cuit (ese paso bloquearía por "ya existe").
-      // Mismo guard que arriba: si debe aceptar TyC nuevos, que se quede en
-      // /terminos en vez de rebotar en loop hacia alta-datos-empresa.
+    } else if (!telefonoActual) {
+      // Nunca completó el Paso 2 (ver Paso1Cuit: el socio se crea con el
+      // "umbral", el Paso 2 es lo que termina de cargar datos como el
+      // teléfono). Lo mandamos directo a completarlo, sin pasar de nuevo
+      // por Paso1Cuit (ese paso bloquearía por "ya existe"). A propósito ya
+      // NO importa el resultado del CDA acá — el socio puede entrar a
+      // operar con su cuenta más allá de si el CDA de ingreso pasó o no; el
+      // aviso de "no pasaste las validaciones" vive en LegajoUniversalBar
+      // (banner permanente) y el bloqueo real está en la migración a SGR+,
+      // no en el acceso (acordado con el equipo el 2026-08-13).
       if (!isAltaDatosPage && !debeAceptarTerminos) {
         return (
           <Navigate

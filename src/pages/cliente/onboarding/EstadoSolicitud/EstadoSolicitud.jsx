@@ -41,11 +41,13 @@ export const EstadoSolicitud = () => {
   return (
     <div className={styles.container}>
       <main className={styles.content}>
-        <img
-          src={channelInfo.logo}
-          alt={`Logo ${channelInfo.nombre}`}
-          className={styles.logo}
-        />
+        {channelInfo.logo && (
+          <img
+            src={channelInfo.logo}
+            alt={`Logo ${channelInfo.nombre}`}
+            className={styles.logo}
+          />
+        )}
         {esRechazado ? (
           <FiXCircle size={72} className={styles.iconRechazado} />
         ) : (

@@ -101,7 +101,7 @@ const ConfirmarCorreo = () => {
               }
               className={styles.clickableLogo}
             />
-            {channelInfo?.id !== "default" && (
+            {channelInfo?.id !== "default" && channelInfo.logo && (
               <>
                 <div className={styles.logoSeparator} />
                 <img

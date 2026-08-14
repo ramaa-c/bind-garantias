@@ -478,7 +478,7 @@ const Login = () => {
               onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
               className={styles.clickableLogo}
             />
-            {channelInfo.id !== "default" && (
+            {channelInfo.id !== "default" && channelInfo.logo && (
               <>
                 <div className={styles.logoSeparator} />
                 <img

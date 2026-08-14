@@ -76,7 +76,7 @@ const Navbar = ({
         </button>
         <div className={styles.logoContainer} role="button" tabIndex={0} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)}>
           <img src={logoBind} alt="Bind Garantías" className={styles.logo} />
-          {channelInfo.id !== "default" && (
+          {channelInfo.id !== "default" && channelInfo.logo && (
             <>
               <div className={styles.logoSeparator} />
               <img

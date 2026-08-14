@@ -1199,7 +1199,7 @@ export function RepresentanteModal({
             </>
           )}
 
-          <div className={styles.modalFooter}>
+          <div className={`${styles.modalFooter} ${isAdmin ? styles.modalFooterAdmin : ""}`}>
             {(afipValidado || representante || representanteInicial) && (
               <Button type="submit" variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
                 {representante || representanteInicial ? "Guardar Cambios" : `Agregar ${etiquetaRol}`}

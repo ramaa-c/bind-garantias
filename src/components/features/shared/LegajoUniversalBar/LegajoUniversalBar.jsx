@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheckCircle, FiChevronRight, FiArrowRight, FiRefreshCw } from "react-icons/fi";
+import { FiCheckCircle, FiChevronRight, FiArrowRight, FiRefreshCw, FiAlertTriangle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { useEstaMigradoEnSgrPlus, useSocioWebPorId } from "../../../../hooks/useSocios";
+import { useEstaMigradoEnSgrPlus, useSocioWebPorId, useEstadoCdaSocio } from "../../../../hooks/useSocios";
 import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
@@ -50,6 +50,7 @@ export function LegajoUniversalBar({
     faltanLegajo,
     socioLegajoData,
     tipoPersonaId,
+    cadenaId,
   } = useValidacionLegajo({
     adminMode,
     socioIdActivo: socioIdOverride,
@@ -77,6 +78,23 @@ export function LegajoUniversalBar({
   // mostró "Sincronizado" porque no había ningún cambio LOCAL pendiente).
   const { data: migradoEnBackend = false, isLoading: loadingMigradoEnBackend } =
     useEstaMigradoEnSgrPlus(socioWeb?.cuit);
+
+  // Estado del CDA de PANTALLA_INGRESO_CUIT del socio en sí (no de sus
+  // terceros — ver estadoCdaMap para eso). Desde el 2026-08-13 esto ya NO
+  // bloquea el acceso a la cuenta (OnboardingGuard dejó de usarlo para
+  // eso) — el socio puede entrar y completar todo su legajo igual. Lo que
+  // sigue bloqueando es la migración a SGR+ (ver cdaSocioAprobado más
+  // abajo) y se le avisa con un banner permanente mientras no esté
+  // aprobado (acordado con el equipo el 2026-08-13).
+  // cadenaId se le pasa para el caso de "cero CDAs vinculados" (nunca se
+  // había probado antes, reportado por BIND el 2026-08-14): sin ningún CDA
+  // configurado para esta pantalla+cadena no hay nada que validar, así que
+  // cuenta como aprobado en vez de quedar en pendiente para siempre.
+  const { data: estadoCdaSocio, isPending: loadingEstadoCdaSocio } =
+    useEstadoCdaSocio(socioIdActivo, cadenaId);
+  const cdaSocioAprobado = estadoCdaSocio === "aprobado";
+  const cdaSocioNoAprobado =
+    !adminMode && !loadingEstadoCdaSocio && !!estadoCdaSocio && !cdaSocioAprobado;
 
   const [isMigrating, setIsMigrating] = useState(false);
   const [lastAttemptedFingerprint, setLastAttemptedFingerprint] = useState("");
@@ -198,7 +216,7 @@ export function LegajoUniversalBar({
   }, [adminMode, isValid, isLoading]);
 
   const cambioPendienteRaw =
-    baseline !== null && fingerprint !== baseline && isValid && totalRequisitos > 0;
+    baseline !== null && fingerprint !== baseline && isValid && totalRequisitos > 0 && cdaSocioAprobado;
 
   // Espacia los intentos de sincronización: el primer POST a /Socio/Migrar
   // de esta visita dispara apenas se detecta un cambio real, pero cualquier
@@ -230,7 +248,12 @@ export function LegajoUniversalBar({
   // intento anterior que falló silenciosamente (ver migradoEnBackend arriba):
   // sin esto, sin un cambio LOCAL nuevo de por medio, nunca se reintentaba.
   const faltaMigrarEnBackend =
-    !loadingSocioWeb && !loadingMigradoEnBackend && !migradoEnBackend && isValid && totalRequisitos > 0;
+    !loadingSocioWeb &&
+    !loadingMigradoEnBackend &&
+    !migradoEnBackend &&
+    isValid &&
+    totalRequisitos > 0 &&
+    cdaSocioAprobado;
 
   const [confirmMigrarOpen, setConfirmMigrarOpen] = useState(false);
 
@@ -297,7 +320,7 @@ export function LegajoUniversalBar({
   // de arriba en su lugar (ver el return de adminMode más abajo).
   useEffect(() => {
     if (adminMode) return;
-    if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingSocioWeb || loadingMigradoEnBackend) return;
+    if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingSocioWeb || loadingMigradoEnBackend || loadingEstadoCdaSocio) return;
 
     // En "legajo" (a diferencia de "documentacion") completar el último
     // requisito puede pasar DENTRO de una modal propia (Representante,
@@ -338,7 +361,40 @@ export function LegajoUniversalBar({
 
     autoMigrar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingMigradoEnBackend, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
+  }, [adminMode, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingMigradoEnBackend, loadingEstadoCdaSocio, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
+
+  // ── ADMIN: auto-migra (con feedback, no en silencio) SOLO por
+  // faltaMigrarEnBackend — el caso de "el legajo ya estaba completo y ahora
+  // el CDA se aprobó" (ej. un admin reejecuta/fuerza un CDA desde
+  // EmpresaDetalle sin tocar ningún dato del socio). No usa
+  // hayCambiosSinSincronizar: una edición real de datos hecha por el propio
+  // admin sigue requiriendo el banner + confirmación de abajo, porque ahí sí
+  // tiene sentido que revise antes de mandar al core. Se le pasa silent=false
+  // a sincronizarConSgrPlus a propósito: a diferencia del cliente, el admin
+  // está mirando esta pantalla en el momento, así que corresponde mostrarle
+  // el toast de carga/éxito/error igual que en el botón manual.
+  useEffect(() => {
+    if (!adminMode) return;
+    if (!faltaMigrarEnBackend || isMigrating || isLoading || loadingSocioWeb || loadingMigradoEnBackend || loadingEstadoCdaSocio) return;
+    if (modalesLegajoAbiertos > 0) return;
+    if (lastAttemptedFingerprint === fingerprint) return;
+
+    const lockKey = `migrando_sgr_${socioIdActivo}`;
+    if (sessionStorage.getItem(lockKey) === "true") return;
+
+    const autoMigrarAdmin = async () => {
+      sessionStorage.setItem(lockKey, "true");
+      setLastAttemptedFingerprint(fingerprint);
+      try {
+        await sincronizarConSgrPlus(false);
+      } finally {
+        sessionStorage.removeItem(lockKey);
+      }
+    };
+
+    autoMigrarAdmin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adminMode, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingMigradoEnBackend, loadingEstadoCdaSocio, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
   const hasMandatoryInContext =
     (context === "documentacion" && totalDocumentosObligatorios > 0) ||
@@ -355,6 +411,22 @@ export function LegajoUniversalBar({
       adminMode={adminMode}
     />
   );
+
+  // Igual que el modal de arriba: se calcula una sola vez y se incluye en
+  // TODOS los caminos de return (incluido el early-return de abajo), para
+  // que se vea sin importar si el legajo todavía está incompleto o si esta
+  // pantalla en particular no tiene requisitos configurados. El acceso a la
+  // cuenta ya no depende del CDA (ver OnboardingGuard.jsx), así que este es
+  // el único lugar donde el cliente se entera de que tiene que comunicarse
+  // con BIND.
+  const cdaWarningBanner = cdaSocioNoAprobado ? (
+    <div className={styles.cdaWarningBanner}>
+      <FiAlertTriangle className={styles.cdaWarningIcon} />
+      <span className={styles.cdaWarningText}>
+        No superaste las validaciones de aceptación correspondientes. Comunicate con BIND Garantías para que las revisemos.
+      </span>
+    </div>
+  ) : null;
 
   // En admin no se muestra la tarjeta completa (navegación a pestañas de
   // cliente, botones "Ir"/"Ver qué falta"): en su lugar, un banner que solo
@@ -396,7 +468,12 @@ export function LegajoUniversalBar({
   }
 
   if (isLoading || totalRequisitos === 0 || !hasMandatoryInContext) {
-    return migracionExitosaModal;
+    return (
+      <>
+        {migracionExitosaModal}
+        {cdaWarningBanner}
+      </>
+    );
   }
 
   const isContextInvalid =
@@ -441,6 +518,7 @@ export function LegajoUniversalBar({
   return (
     <>
       {migracionExitosaModal}
+      {cdaWarningBanner}
       <EstadoMigracionModal
         isOpen={showEstadoMigracion}
         onClose={() => setShowEstadoMigracion(false)}

@@ -180,6 +180,31 @@
   color: #ffffff;
 }
 
+.cdaWarningBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 14px;
+  padding: 0.65rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.cdaWarningIcon {
+  flex-shrink: 0;
+  color: var(--error-red, #ef4444);
+  font-size: 1.05rem;
+}
+
+.cdaWarningText {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #ffffff;
+}
+
 @media (min-width: 768px) {
   .container {
     padding: 0.7rem 1.1rem;

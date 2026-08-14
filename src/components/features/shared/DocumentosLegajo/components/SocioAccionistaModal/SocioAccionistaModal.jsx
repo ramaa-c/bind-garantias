@@ -1380,7 +1380,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             </>
           )}
 
-          <div className={styles.modalFooter}>
+          <div className={`${styles.modalFooter} ${isAdmin ? styles.modalFooterAdmin : ""}`}>
             {(afipValidado || socio) && (
               <Button type="submit" variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
                 {socio ? "Guardar Cambios" : "Agregar Accionista"}

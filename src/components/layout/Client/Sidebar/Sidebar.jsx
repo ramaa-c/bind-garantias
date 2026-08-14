@@ -82,7 +82,7 @@ export default function Sidebar({ isOpen, onClose }) {
       <div className={styles.sidebarHeader}>
         <div className={styles.logosWrapper}>
           <img src={logoBind} alt="Bind Garantías" className={styles.logo} role="button" tabIndex={0} onClick={() => isSolicitudesEnabled ? navigate(`/${channelInfo.id}/solicitudes`) : navigate(`/${channelInfo.id}/legajo`)} style={{ cursor: "pointer" }} />
-          {channelInfo.id !== "default" && (
+          {channelInfo.id !== "default" && channelInfo.logo && (
             <>
               <div className={styles.logoSeparator} />
               <img src={channelInfo.logo} alt={channelInfo.nombre} className={styles.channelLogo} />
