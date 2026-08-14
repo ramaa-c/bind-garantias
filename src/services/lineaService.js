@@ -47,6 +47,17 @@ export const lineaService = {
         (await api.put('api/TipoObligacionTipoLimite', lineaAdapter.adaptarPayload5(asocData))).data,
 
     // DELETE api/TipoObligacionTipoLimite/{id}
-    desasociarProductoLimite: async (id) => 
-        (await api.delete(`api/TipoObligacionTipoLimite/${id}`)).data
+    desasociarProductoLimite: async (id) =>
+        (await api.delete(`api/TipoObligacionTipoLimite/${id}`)).data,
+
+    // POST api/Linea/Migrar - migra la línea aprobada al core SGR+.
+    // noRetry: true porque es un endpoint de escritura; si falla, mejor que
+    // quede pendiente de un reintento manual del admin que 3 POSTs
+    // silenciosos disparados por el interceptor global.
+    migrarLinea: async (tipoLimiteSocioId) =>
+        (await api.post(
+            'api/Linea/Migrar',
+            lineaAdapter.adaptarPayload6({ tipolimitesocioid: tipoLimiteSocioId }),
+            { noRetry: true },
+        )).data,
 };

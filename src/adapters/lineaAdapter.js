@@ -95,4 +95,11 @@ export const lineaAdapter = {
       Descripcion: d.descripcion,
     };
   },
+  adaptarPayload6: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      TipoLimiteSocioID: d.tipolimitesocioid,
+    };
+  },
 };

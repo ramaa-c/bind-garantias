@@ -6,6 +6,7 @@ import {
   useFieldArray,
 } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { FiRotateCcw } from "react-icons/fi";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,9 +38,16 @@ import { catalogosService } from "../../../../services/catalogosService";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
+import { useObtenerPorId as useObtenerCadenaPorId } from "../../../../hooks/useCadenaValor";
 import { useTiposProducto } from "../../../../hooks/useCatalogos";
 import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
-import { TERCERO_VIA_PLATAFORMA_PROPIA } from "../../../../utils/estadoLimiteSocio";
+import { useObtenerVariableParametrizacion } from "../../../../hooks/useVariablesParametrizacion";
+import {
+  TERCERO_VIA_PLATAFORMA_PROPIA,
+  ESTADO_PENDIENTE,
+  ESTADO_RECHAZADA,
+  MOTIVOS_RECHAZO_AUTOMATICO,
+} from "../../../../utils/estadoLimiteSocio";
 
 const STORAGE_KEY = "draft_alta_operacion_v2";
 
@@ -47,6 +55,7 @@ const generarIdAleatorio = () => String(Math.floor(Math.random() * 9000) + 1000)
 
 export const AltaOperacion = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { channelInfo } = useChannel();
   const { cadenaSlug } = useParams();
 
@@ -67,6 +76,16 @@ export const AltaOperacion = () => {
   // pueden originar una solicitud nueva (así se definió AptaNuevaLinea).
   const { data: lineasCadenaData } = useObtenerLimitesCadenaValor(
     Number(cadenaSlug) || undefined,
+  );
+
+  // EquipoComercialID de la propia cadena: TipoLimiteSocio.EquipoComercialid
+  // no puede viajar en null/0 (el backend lo persiste como 0, y al migrar la
+  // línea a SGR+ eso rompe la FK_TipoLimiteSocio_Equipo contra
+  // dbo.EquipoComercial). Se usa el de la cadena porque la solicitud nace
+  // ahí, no de un vendedor asignado a mano.
+  const { data: cadenaInfo } = useObtenerCadenaPorId(Number(cadenaSlug) || undefined);
+  const equipoComercialCadena = Number(
+    cadenaInfo?.equipocomercialid ?? cadenaInfo?.EquipoComercialID ?? 0,
   );
   const lineasDisponibles = useMemo(() => {
     const arr = Array.isArray(lineasCadenaData) ? lineasCadenaData : [];
@@ -96,8 +115,17 @@ export const AltaOperacion = () => {
   // efecto de auto-completado y enviarSolicitud).
   const { data: limitesSocioData } = useObtenerLimiteSocioPorCuit(cuitActivo);
 
+  // Catálogo global de variables de parametrización de la plataforma (aún
+  // solo tiene esta variable). No bloquea la carga de la solicitud: si el
+  // monto pedido no llega al mínimo, se envía igual pero queda rechazada
+  // automáticamente (ver enviarSolicitud).
+  const { valor: porcentajeMinimoSolicitud } = useObtenerVariableParametrizacion(
+    "PorcentajeMinimoSolicitud",
+  );
+
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
+  const [resumenSolicitud, setResumenSolicitud] = useState(null);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [buscandoSocios, setBuscandoSocios] = useState(false);
@@ -695,6 +723,7 @@ export const AltaOperacion = () => {
     setPasoActual(1);
     setMaxPasoAlcanzado(1);
     setMostrarResultados(false);
+    setResumenSolicitud(null);
   };
 
   const confirmarReinicioOperacion = () => {
@@ -804,6 +833,16 @@ export const AltaOperacion = () => {
         setEnviandoSolicitud(false);
         return;
       }
+
+      // Regla: el monto solicitado debe representar al menos el
+      // PorcentajeMinimoSolicitud de la línea. No impide cargar la
+      // solicitud: si no lo alcanza, se guarda directamente rechazada y el
+      // motivo queda visible en DetalleSolicitudModal (no se avisa acá).
+      const porcentajeSolicitado =
+        montoLineaReal > 0 ? (montoLimpio / montoLineaReal) * 100 : 100;
+      const noAlcanzaMinimo =
+        porcentajeMinimoSolicitud > 0 &&
+        porcentajeSolicitado < porcentajeMinimoSolicitud;
 
       // Convertido a pesos ANTES de crear nada: si la validación de cupo de
       // la cadena (más abajo) rechaza la operación, no queremos dejar una
@@ -920,12 +959,13 @@ export const AltaOperacion = () => {
         monedaid: Number(cleanData.moneda) || 5000,
         importelimite: importeEnPesos,
         importeutilizado: 0,
-        // 0 = pendiente (nuestro propio estado de aprobación, se define en
-        // el panel admin de solicitudes; no usamos el TipoLimiteEstadoID
-        // heredado de SGR+, que trae ~25 estados de un flujo de crédito que
-        // no aplica acá).
-        tipolimiteestadoid: 0,
-        observaciones: "",
+        // Nuestro propio estado de aprobación (ver utils/estadoLimiteSocio),
+        // no el TipoLimiteEstadoID heredado de SGR+. Si no llegó al
+        // PorcentajeMinimoSolicitud queda rechazada automáticamente.
+        tipolimiteestadoid: noAlcanzaMinimo ? ESTADO_RECHAZADA : ESTADO_PENDIENTE,
+        observaciones: noAlcanzaMinimo
+          ? MOTIVOS_RECHAZO_AUTOMATICO.PORCENTAJE_MINIMO_SOLICITUD
+          : "",
         sucursalid: 0,
         terceromercadoid: 400004,
         destfondosid: 320,
@@ -943,7 +983,7 @@ export const AltaOperacion = () => {
         tipolibradorid: 2,
         contratoid: null,
         cadenavalorid: Number(cadenaSlug) || 0,
-        equipocomercialid: null,
+        equipocomercialid: equipoComercialCadena || null,
         solicitudid: solicitudIdCreada,
         tipolimiteriesgoid: 0,
         terceroviaid: 4000000,
@@ -952,6 +992,23 @@ export const AltaOperacion = () => {
       };
 
       await lineaService.crearLimiteSocio(payloadLimite);
+
+      // AltaOperacion crea la solicitud vía servicios directos, no
+      // mutaciones de react-query - sin esto, Solicitudes.jsx (que sí
+      // cachea con staleTime de 5min) sigue mostrando la lista vieja al
+      // volver, hasta un F5 que reinicia toda la cache. Por prefijo (sin el
+      // cuit/socioId final) para no depender de que viaje representado
+      // exactamente igual en ambos lugares.
+      queryClient.invalidateQueries({ queryKey: ["solicitudes", "en-proceso"] });
+      queryClient.invalidateQueries({ queryKey: ["limites", "socio"] });
+
+      setResumenSolicitud({
+        id: solicitudIdCreada,
+        linea: lineaSeleccionada?.descripcion || "",
+        monto: montoLimpio,
+        monedaId: Number(cleanData.moneda) || 5000,
+        plazo: cleanData.plazo,
+      });
 
       if (cleanData.familiaProducto === "cheque") {
         setPasoActual(4);
@@ -1140,10 +1197,20 @@ export const AltaOperacion = () => {
         );
       }
       if (pasoActual === 4)
-        return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
+        return (
+          <Paso7Exito
+            resumen={resumenSolicitud}
+            onVolverInicio={handleIrASolicitudes}
+          />
+        );
     } else if (familiaProducto === "prestamo" || familiaProducto === "pagare") {
       if (pasoActual === 3)
-        return <Paso7Exito onVolverInicio={handleIrASolicitudes} />;
+        return (
+          <Paso7Exito
+            resumen={resumenSolicitud}
+            onVolverInicio={handleIrASolicitudes}
+          />
+        );
     }
 
     return null;

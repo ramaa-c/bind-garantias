@@ -1,6 +1,7 @@
 import React, { useRef } from "react";
 import { Controller } from "react-hook-form";
 import { IMaskInput } from "react-imask";
+import { FiLock } from "react-icons/fi";
 import styles from "./InputMonto.module.css";
 
 export const InputMonto = ({
@@ -12,6 +13,8 @@ export const InputMonto = ({
   esValido,
   id,
   className = "",
+  locked = false,
+  lockedMessage,
   ...props
 }) => {
   const inputId = id || name;
@@ -30,16 +33,25 @@ export const InputMonto = ({
         return (
           <div className={`${styles.wrapper} ${className}`}>
             {label && (
-              <label htmlFor={inputId} className={styles.label}>
-                {label}
-              </label>
+              <div className={styles.labelRow}>
+                <label htmlFor={inputId} className={styles.label}>
+                  {label}
+                </label>
+                {locked && (
+                  <span className={styles.lockedBadge}>
+                    <FiLock className={styles.lockedBadgeIcon} aria-hidden="true" />
+                    Monto fijo
+                  </span>
+                )}
+              </div>
             )}
 
             <div
               className={`
-                ${styles.container} 
-                ${!hasError && esValido ? styles.valid : ""} 
+                ${styles.container}
+                ${!hasError && esValido ? styles.valid : ""}
                 ${hasError ? styles.invalid : ""}
+                ${locked ? styles.lockedContainer : ""}
               `}
             >
               <span className={styles.currency} aria-hidden="true">
@@ -87,12 +99,19 @@ export const InputMonto = ({
                 aria-describedby={hasError ? errorId : undefined}
                 {...props}
               />
+
+              {locked && (
+                <FiLock className={styles.lockIcon} aria-hidden="true" />
+              )}
             </div>
 
-            {hasError && (
+            {hasError ? (
               <span id={errorId} className={styles.error} role="alert">
                 {errorMessage}
               </span>
+            ) : (
+              locked &&
+              lockedMessage && <p className={styles.hint}>{lockedMessage}</p>
             )}
           </div>
         );

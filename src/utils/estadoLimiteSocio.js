@@ -20,6 +20,15 @@ export const ESTADO_CANCELADA = -2;
 // plataforma, sobre la que no tenemos control.
 export const TERCERO_VIA_PLATAFORMA_PROPIA = 4000000;
 
+// Mensajes de rechazo automático (guardados en TipoLimiteSocio.Observaciones
+// cuando el propio frontend rechaza una solicitud, sin intervención del
+// admin). Concisos a propósito: no exponen los parámetros/valores concretos
+// que se evaluaron, solo el motivo. Se muestran en DetalleSolicitudModal.
+export const MOTIVOS_RECHAZO_AUTOMATICO = {
+  PORCENTAJE_MINIMO_SOLICITUD:
+    "El monto solicitado no alcanza el porcentaje mínimo permitido para esta línea.",
+};
+
 export const estadoTextoDesde = (tipolimiteestadoid) => {
   const id = Number(tipolimiteestadoid);
   if (id === ESTADO_APROBADA) return "Aprobada";

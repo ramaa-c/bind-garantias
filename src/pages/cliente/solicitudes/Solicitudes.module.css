@@ -139,22 +139,16 @@
   overflow: hidden;
 }
 
-/* TOOLBAR & FILTROS */
-.toolbar {
+/* BARRA DE FILTROS */
+.filterBar {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
-  align-items: stretch;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.filtersWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
+  gap: 0.875rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+  padding: 1rem 1.125rem;
+  margin-bottom: 1.5rem;
 }
 
 .searchBox {
@@ -162,15 +156,16 @@
   display: flex;
   align-items: center;
   width: 100%;
+  min-width: 0;
 }
 
 .searchIcon {
   position: absolute;
-  left: 1.2rem;
+  left: 0.9rem;
   top: 50%;
   transform: translateY(-50%);
   color: #888;
-  font-size: 1.1rem;
+  font-size: 1rem;
   transition: color 0.2s ease;
 }
 
@@ -180,19 +175,17 @@
 
 .searchInput {
   width: 100%;
-  height: 3.25rem;
+  height: 2.5rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.5rem;
-  padding: 0 1rem 0 3rem;
+  border-radius: 0.625rem;
+  padding: 0 0.875rem 0 2.5rem;
   color: var(--white);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   transition: all 0.2s ease;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.searchInput:hover,
-.filterSelect:hover {
+.searchInput:hover {
   background: rgba(255, 255, 255, 0.05);
   border-color: rgba(255, 255, 255, 0.15);
 }
@@ -201,9 +194,7 @@
   outline: none;
   border-color: var(--yellow);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow:
-    0 0 0 3px rgba(244, 245, 0, 0.15),
-    inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.15);
 }
 
 .searchInput::placeholder {
@@ -211,16 +202,48 @@
   font-weight: 400;
 }
 
-.customSelectWrapper {
-  flex: 1;
-  min-width: 0;
-  width: 100%;
+.filterFieldsRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
 }
 
-.selectGroup {
-  display: flex;
-  gap: 0.75rem;
-  width: 100%;
+.filterField {
+  min-width: 0;
+}
+
+/* Ocupa siempre el mismo espacio (ancho/alto fijos) esté o no visible, así
+   la fila de filtros no se corre cuando aparece/desaparece según haya
+   filtros activos: se apaga con opacity+pointer-events, nunca con
+   display/conditional render. */
+.clearFiltersBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-end;
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.6rem;
+  color: #8b949e;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.clearFiltersBtnVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.clearFiltersBtn:hover {
+  color: var(--yellow, #f4f500);
+  border-color: rgba(244, 245, 0, 0.3);
+  background: rgba(244, 245, 0, 0.06);
 }
 
 .listContainer {
@@ -310,41 +333,41 @@
     font-size: 1.8rem;
   }
 
-  .toolbar {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.25rem;
-  }
-
   .btnNuevaOp {
     flex-shrink: 0;
     box-shadow: 0 4px 12px rgba(244, 245, 0, 0.15);
-  }
-
-  .filtersWrapper {
-    flex-direction: row;
-    width: auto;
-    flex: 1;
-    justify-content: flex-end;
-  }
-
-  .selectGroup {
-    width: auto;
-  }
-
-  .filterSelect {
-    flex: none;
-    min-width: 10rem;
   }
 
   .emptyState {
     padding: 4rem;
   }
 
-  .customSelectWrapper {
-    flex: none;
-    width: 12rem;
+  .filterBar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    /* Mismo valor que el padding horizontal: así el hueco entre "Orden" y
+       el botón de limpiar queda igual al hueco entre el botón y el borde
+       de la card, sin necesitar un margin-left:auto que se comiera todo
+       el espacio sobrante de forma asimétrica. */
+    gap: 1.25rem;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .searchBox {
+    /* Sin max-width: absorbe ella sola todo el espacio sobrante de la fila,
+       para que no quede sobrante suelto en ningún otro punto de la barra. */
+    flex: 1 1 14rem;
+    min-width: 10rem;
+  }
+
+  .filterFieldsRow {
+    grid-template-columns: repeat(4, 7rem);
+    flex-shrink: 0;
+  }
+
+  .clearFiltersBtn {
+    align-self: center;
   }
 }

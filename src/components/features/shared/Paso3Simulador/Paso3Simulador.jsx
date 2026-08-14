@@ -456,6 +456,8 @@ export default function Paso3Simulador({
               esValido={isMontoValid || montoValue > 0}
               error={errors.monto?.message}
               disabled={mostrarResultados || disableMonto}
+              locked={disableMonto}
+              lockedMessage="Este es el monto disponible de tu línea de crédito: se completa automáticamente y no se puede modificar."
             />
           </div>
         </div>

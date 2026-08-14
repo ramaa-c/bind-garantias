@@ -10,7 +10,7 @@ import { SelectSimple } from "../../../components/ui";
 import { SkeletonTable, Skeleton } from "../../../components/ui";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
-import { useObtenerLimites, useActualizarLimiteSocio } from "../../../hooks/useLinea";
+import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import {
@@ -55,6 +55,7 @@ export default function Dashboard() {
     useObtenerLimites(targetCadenaId > 0 ? targetCadenaId : undefined);
   const { data: sociosData, isLoading: isLoadingSocios } = useObtenerSocios();
   const actualizarEstadoMutation = useActualizarLimiteSocio();
+  const migrarLineaMutation = useMigrarLinea();
 
   const loading = isLoadingLimites || isLoadingSocios;
 
@@ -168,6 +169,18 @@ export default function Dashboard() {
         if (nuevoEstado === ESTADO_APROBADA) {
           toast.success(`Solicitud N°${item.id} Aprobada exitosamente`, {
             description: "Los fondos o cupos han sido habilitados para el cliente.",
+          });
+          // La aprobación en TipoLimiteSocio ya quedó guardada; la migración
+          // a SGR+ es un paso aparte que no la revierte si falla, así que
+          // solo se avisa para que el admin la reintente.
+          const tipoLimiteSocioId =
+            item.raw?.tipolimitesocioid ?? item.raw?.TipoLimiteSocioID ?? item.id;
+          migrarLineaMutation.mutate(tipoLimiteSocioId, {
+            onError: (migError) => {
+              toast.error(`La línea N°${item.id} se aprobó pero no se pudo migrar a SGR+`, {
+                description: migError.message,
+              });
+            },
           });
         } else {
           toast.error(`Solicitud N°${item.id} Rechazada`, {
