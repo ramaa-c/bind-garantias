@@ -13,6 +13,7 @@ import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
+import { solicitudesService } from "../../../services/solicitudesService";
 import {
   ESTADO_RECHAZADA,
   ESTADO_PENDIENTE,
@@ -110,6 +111,9 @@ export default function Dashboard() {
       const tipoLimiteEstadoId = l.tipolimiteestadoid ?? l.TipoLimiteEstadoID ?? ESTADO_PENDIENTE;
       const estadoText = estadoTextoDesde(tipoLimiteEstadoId);
 
+      // Rechazada (admin) y Cancelada (socio) vuelven a distinguirse con un
+      // workaround temporal: Cancelada pisa el valor de Vencido (5), que no
+      // usamos para nada más (ver ESTADO_CANCELADA en utils/estadoLimiteSocio.js).
       const accionText =
         Number(tipoLimiteEstadoId) === ESTADO_APROBADA
           ? "Aprobada por Administrador"
@@ -189,6 +193,28 @@ export default function Dashboard() {
 
   const handleReintentarMigracion = (item) => migrarLinea(item, { contexto: "reintento" });
 
+  // Cada cambio de estado en TipoLimiteSocio (aprobar/rechazar) tiene que
+  // reflejarse también en SolicitudEnProceso — desde que se unificó el
+  // catálogo de estados con Victor (2026-08-18), ambas tablas usan
+  // literalmente los mismos valores, así que no hace falta traducir nada.
+  // Se identifica la fila por TipoLimiteSocio.SolicitudID — confirmado en
+  // vivo el 2026-08-18 que sigue trayendo el SolicitudEnProcesoID real a
+  // pesar de que AltaOperacion.jsx mande null al crear la línea (el backend
+  // lo resuelve solo). No bloquea ni revierte la aprobación/rechazo si
+  // falla: solo queda logueado, es una sincronización secundaria.
+  const sincronizarSolicitudEnProceso = (item, nuevoTipoLimiteEstadoId) => {
+    const solicitudEnProcesoId = item.raw?.solicitudid ?? item.raw?.SolicitudID;
+    if (!solicitudEnProcesoId || !item.cuit || item.cuit === "—") return;
+    solicitudesService
+      .sincronizarEstadoSolicitudEnProceso(item.cuit, solicitudEnProcesoId, nuevoTipoLimiteEstadoId)
+      .catch((syncErr) => {
+        console.error(
+          `[Dashboard] No se pudo sincronizar el estado en SolicitudEnProceso para la línea N°${item.id}:`,
+          syncErr,
+        );
+      });
+  };
+
   const handleDecision = (item, nuevoEstado, observaciones) => {
     const payload = { ...item.raw, tipolimiteestadoid: nuevoEstado };
     if (observaciones !== undefined) payload.observaciones = observaciones;
@@ -209,6 +235,7 @@ export default function Dashboard() {
 
     actualizarEstadoMutation.mutate(payload, {
       onSuccess: () => {
+        sincronizarSolicitudEnProceso(item, nuevoEstado);
         if (nuevoEstado === ESTADO_APROBADA) {
           toast.success(`Solicitud N°${item.id} Aprobada exitosamente`, {
             description: "Los fondos o cupos han sido habilitados para el cliente.",

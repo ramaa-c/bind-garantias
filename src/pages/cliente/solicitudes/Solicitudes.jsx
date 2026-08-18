@@ -27,6 +27,7 @@ import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../..
 import { useActualizarLimiteSocio } from "../../../hooks/useLinea";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../services/sociosService";
+import { solicitudesService } from "../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useChannel } from "../../../context/ChannelContext";
 import {
@@ -170,13 +171,14 @@ export default function Solicitudes() {
     // (TerceroViaID), no por la simple existencia de una SolicitudEnProceso.
     // Dentro de NUESTRA plataforma (4000000) un socio puede tener varias en
     // curso a la vez; lo único que bloquea es una en curso en OTRA
-    // plataforma (confirmado con Victor el 2026-08-13).
+    // plataforma (confirmado con Victor el 2026-08-13). Ya no hace falta
+    // mirar EstadoSolicitud: el backend borra la fila apenas deja de estar
+    // en Inicial o EnProceso (confirmado el 2026-08-18), así que su sola
+    // presencia ya implica que sigue activa.
     const hasProcesoPendiente =
       Array.isArray(solicitudesEnProceso) &&
       solicitudesEnProceso.some(
-        (s) =>
-          Number(s.terceroviaid) !== TERCERO_VIA_PLATAFORMA_PROPIA &&
-          (s.estadosolicitud === 1 || s.estado === "En Proceso"),
+        (s) => Number(s.terceroviaid) !== TERCERO_VIA_PLATAFORMA_PROPIA,
       );
     return hasRealPendiente || hasProcesoPendiente;
   }, [solicitudesReal, solicitudesEnProceso]);
@@ -269,6 +271,25 @@ export default function Solicitudes() {
         ...solicitudACancelar.raw,
         tipolimiteestadoid: ESTADO_CANCELADA,
       });
+
+      // Igual que en Dashboard.jsx (admin): todo cambio de estado en
+      // TipoLimiteSocio se refleja también en SolicitudEnProceso — ambas
+      // tablas usan literalmente el mismo catálogo (2026-08-18), así que no
+      // hace falta traducir el valor. No bloquea la cancelación si falla,
+      // queda solo logueado — es una sincronización secundaria.
+      const solicitudEnProcesoId =
+        solicitudACancelar.raw?.solicitudid ?? solicitudACancelar.raw?.SolicitudID;
+      if (solicitudEnProcesoId && cuitActivo) {
+        solicitudesService
+          .sincronizarEstadoSolicitudEnProceso(cuitActivo, solicitudEnProcesoId, ESTADO_CANCELADA)
+          .catch((syncErr) => {
+            console.error(
+              `[Solicitudes] No se pudo sincronizar el estado en SolicitudEnProceso para la solicitud N°${solicitudACancelar.id}:`,
+              syncErr,
+            );
+          });
+      }
+
       toast.success(`Solicitud N°${solicitudACancelar.id} cancelada`, {
         description: "Ya podés iniciar una nueva operación.",
       });

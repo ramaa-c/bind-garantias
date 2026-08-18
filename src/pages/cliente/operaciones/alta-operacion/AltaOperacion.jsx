@@ -185,10 +185,13 @@ export const AltaOperacion = () => {
         // dejarlo arrancar acá si ya tiene una en curso en OTRA plataforma,
         // sobre la que no tenemos control (confirmado con Victor el
         // 2026-08-13). Ver TERCERO_VIA_PLATAFORMA_PROPIA.
+        //
+        // Ya no hace falta mirar EstadoSolicitud acá: el backend borra la
+        // fila de SolicitudEnProceso apenas deja de estar en Inicial o
+        // EnProceso (confirmado el 2026-08-18) — que la fila exista ya
+        // implica que sigue activa, sin importar el valor del campo.
         const tieneSolicitudEnProceso = solicitudesArray.some(
-          (s) =>
-            Number(s.terceroviaid) !== TERCERO_VIA_PLATAFORMA_PROPIA &&
-            (s.estadosolicitud === 1 || s.estado === "En Proceso"),
+          (s) => Number(s.terceroviaid) !== TERCERO_VIA_PLATAFORMA_PROPIA,
         );
 
         if (tieneSolicitudEnProceso) {
@@ -900,7 +903,13 @@ export const AltaOperacion = () => {
         cadenavalorid: Number(cadenaSlug),
         monedaid: Number(cleanData.moneda) || 5000,
         importe: montoLimpio,
-        estadosolicitud: 1,
+        // EstadoSolicitud=2 (EnProceso): la solicitud se está enviando con
+        // éxito y queda esperando la respuesta del administrador — no es
+        // un simple "Inicial" (1), que quedaría reservado para un estado
+        // previo al envío que este flujo no tiene (confirmado con el
+        // equipo el 2026-08-18). Ver mapearAEstadoSolicitudEnProceso en
+        // utils/estadoLimiteSocio.js para el resto del catálogo.
+        estadosolicitud: 2,
         idexterno: 0,
         terceroviaid: 4000000,
         terceropresentanteid: cleanData.sociedadBolsa

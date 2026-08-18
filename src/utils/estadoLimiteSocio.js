@@ -1,15 +1,33 @@
-// Estado propio de la solicitud (TipoLimiteSocio.TipoLimiteEstadoID): NO es
-// el catálogo TipoLimiteEstado heredado de SGR+ (ese trae ~25 estados de un
-// flujo de crédito bancario que no usamos). Fuente única de verdad para
-// admin (Dashboard) y cliente (Solicitudes) - antes cada pantalla tenía su
-// propia interpretación de estos números y quedaban desincronizadas.
-export const ESTADO_RECHAZADA = -1;
-export const ESTADO_PENDIENTE = 0;
-export const ESTADO_APROBADA = 1;
-// Cancelada por el propio socio (distinta de Rechazada, que es una decisión
-// del administrador) - se guarda en el mismo campo para no necesitar una
-// columna nueva.
-export const ESTADO_CANCELADA = -2;
+// Catálogo único de estados (WSSolicitudEnProceso.EstadoSolicitud), ahora
+// compartido literalmente por TipoLimiteSocio.TipoLimiteEstadoID y
+// SolicitudEnProceso.EstadoSolicitud — unificado con Victor el 2026-08-18,
+// con migración de los datos existentes de TipoLimiteSocio a esta escala a
+// cargo del backend. Antes TipoLimiteSocio tenía su propia escala
+// (-2 Cancelada / -1 Rechazada / 0 Pendiente / 1 Aprobada); ahora usa
+// exactamente los mismos 5 valores que SolicitudEnProceso, así que sincronizar
+// el estado entre las dos tablas ya no requiere traducir nada.
+//
+// NO es el catálogo TipoLimiteEstado heredado de SGR+ (ese trae ~25 estados
+// de un flujo de crédito bancario que no usamos).
+export const ESTADO_INICIAL = 1;
+export const ESTADO_EN_PROCESO = 2;
+export const ESTADO_COMPLETO = 3;
+export const ESTADO_CANCELADO = 4;
+export const ESTADO_VENCIDO = 5;
+
+// Alias con los nombres que ya usa el resto del código (Dashboard, cliente):
+// Pendiente = EnProceso, Aprobada = Completo. Rechazada (decisión del
+// admin) y Cancelada (decisión del propio socio) antes eran dos estados
+// distintos (-1 y -2); el catálogo nuevo solo tiene un estado terminal
+// negativo "real" (Cancelado). Como workaround TEMPORAL para no perder la
+// distinción, Cancelada pisa el valor de Vencido (5) — un estado que hoy no
+// usamos para nada — hasta que Victor agregue un indicador propio para
+// distinguirlas de verdad. Sacar este workaround el día que eso pase: ver
+// mensaje del 2026-08-18.
+export const ESTADO_PENDIENTE = ESTADO_EN_PROCESO;
+export const ESTADO_APROBADA = ESTADO_COMPLETO;
+export const ESTADO_RECHAZADA = ESTADO_CANCELADO;
+export const ESTADO_CANCELADA = ESTADO_VENCIDO;
 
 // TerceroViaID de SolicitudEnProceso: identifica la plataforma de origen de
 // la solicitud, no la cadena de valor. La nuestra es 4000000 - otras
@@ -31,7 +49,7 @@ export const MOTIVOS_RECHAZO_AUTOMATICO = {
 
 export const estadoTextoDesde = (tipolimiteestadoid) => {
   const id = Number(tipolimiteestadoid);
-  if (id === ESTADO_APROBADA) return "Aprobada";
+  if (id === ESTADO_COMPLETO) return "Aprobada";
   if (id === ESTADO_RECHAZADA) return "Rechazada";
   if (id === ESTADO_CANCELADA) return "Cancelada";
   return "Pendiente";
