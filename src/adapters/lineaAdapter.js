@@ -30,7 +30,12 @@ export const lineaAdapter = {
       TipoLibradorID: d.tipolibradorid,
       ContratoID: d.contratoid,
       CadenaValorID: d.cadenavalorid,
-      EquipoComercialID: d.equipocomercialid,
+      // Único campo de todo TipoLimiteSocio con "id" en minúscula en vez de
+      // "ID" (confirmado en vivo: con "EquipoComercialID" el backend acepta
+      // el PUT/POST pero descarta el valor y persiste 0 - con "EquipoComercialid"
+      // sí lo guarda). No es un error de tipeo nuestro, es el nombre real
+      // del campo en el backend.
+      EquipoComercialid: d.equipocomercialid,
       SolicitudID: d.solicitudid,
       TipoLimiteRiesgoID: d.tipolimiteriesgoid,
       TerceroViaId: d.terceroviaid,
