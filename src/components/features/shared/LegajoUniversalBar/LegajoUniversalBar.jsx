@@ -215,8 +215,23 @@ export function LegajoUniversalBar({
     }
   }, [adminMode, isValid, isLoading]);
 
+  // TODO(SocioCertificadoPYME): reemplazar por un GET real al nuevo
+  // endpoint SocioCertificadoPYME cuando exista (todavía no está publicado
+  // - ver Paso1Cuit.jsx). Regla pedida: si CertificadoVigente pasó pero el
+  // socio no tiene nada ahí (integración caída/bajada), se lo deja cargar
+  // legajo y documentación igual (ver SociosView/DocumentacionView), pero
+  // la migración a SGR+ queda bloqueada hasta que sí tenga. Por ahora
+  // siempre true (no bloquea) para no frenar las migraciones que ya
+  // funcionaban mientras el endpoint no exista.
+  const tieneCertificadoPyme = true;
+
   const cambioPendienteRaw =
-    baseline !== null && fingerprint !== baseline && isValid && totalRequisitos > 0 && cdaSocioAprobado;
+    baseline !== null &&
+    fingerprint !== baseline &&
+    isValid &&
+    totalRequisitos > 0 &&
+    cdaSocioAprobado &&
+    tieneCertificadoPyme;
 
   // Espacia los intentos de sincronización: el primer POST a /Socio/Migrar
   // de esta visita dispara apenas se detecta un cambio real, pero cualquier
@@ -253,7 +268,8 @@ export function LegajoUniversalBar({
     !migradoEnBackend &&
     isValid &&
     totalRequisitos > 0 &&
-    cdaSocioAprobado;
+    cdaSocioAprobado &&
+    tieneCertificadoPyme;
 
   const [confirmMigrarOpen, setConfirmMigrarOpen] = useState(false);
 
