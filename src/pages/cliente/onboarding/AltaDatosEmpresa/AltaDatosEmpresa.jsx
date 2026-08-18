@@ -477,26 +477,12 @@ export const AltaDatosEmpresa = () => {
     if (pasoActual === 1) {
       return (
         <Paso1Cuit
-          onValidar={async () => {
-            const isOk = await trigger("cuit");
-            if (isOk) {
-              const cuitValue = metodosFormulario
-                .getValues("cuit")
-                .replace(/\D/g, "");
-              const vendorCuitLimpio = vendorData?.vendorCuit
-                ? vendorData.vendorCuit.replace(/\D/g, "")
-                : null;
-
-              if (vendorData?.isVendor && cuitValue === vendorCuitLimpio) {
-                metodosFormulario.setError("cuit", {
-                  type: "manual",
-                  message: "Un vendor no puede gestionar su propia empresa.",
-                });
-                return;
-              }
-              handleValidarCuitSuccess();
-            }
-          }}
+          // El chequeo "vendor no puede gestionar su propia empresa" corre
+          // ahora dentro de Paso1Cuit.jsx (handleValidar), antes de pedir
+          // confirmación de vinculación - antes vivía acá, pero onValidar
+          // recién se llama al final de todo el flujo (después de crear el
+          // socio y correr el CDA), demasiado tarde para bloquear nada.
+          onValidar={handleValidarCuitSuccess}
           onSocioExistente={(socioData, reason) =>
             setSocioExistenteModal({ isOpen: true, socioData, reason })
           }

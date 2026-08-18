@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
+import { FiUsers as FiUsersIcon, FiRefreshCw, FiLock } from "react-icons/fi";
 import { SociosLegajo, LegajoUniversalBar } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { Button } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useCertificadoVigente } from "../../../../hooks/useCertificadoVigente";
 import { sociosService } from "../../../../services/sociosService";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { toast } from "sonner";
@@ -44,6 +45,10 @@ export default function SociosView() {
   const [sincronizando, setSincronizando] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // Certificado PyME no vigente (o no se pudo verificar): el legajo queda
+  // de solo lectura, se puede ver lo ya cargado pero no modificarlo.
+  const { soloLectura } = useCertificadoVigente(cuitActivo);
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -115,7 +120,7 @@ export default function SociosView() {
           size="sm"
           className={styles.submitBtn}
           onClick={() => setShowConfirmModal(true)}
-          disabled={sincronizando}
+          disabled={sincronizando || soloLectura}
         >
           <FiRefreshCw
             style={{
@@ -129,7 +134,19 @@ export default function SociosView() {
 
       <LegajoUniversalBar context="legajo" />
 
-      <div className={styles.formLayout}>
+      {soloLectura && (
+        <div className={styles.soloLecturaBanner}>
+          <FiLock className={styles.soloLecturaIcon} />
+          <span className={styles.soloLecturaText}>
+            Tu Certificado PyME no está vigente (o no pudimos verificarlo). Podés ver los datos cargados, pero no modificarlos ni agregar nuevos hasta que se regularice.
+          </span>
+        </div>
+      )}
+
+      <div
+        className={`${styles.formLayout} ${soloLectura ? styles.formLayoutSoloLectura : ""}`}
+        inert={soloLectura}
+      >
         <SociosLegajo />
       </div>
 

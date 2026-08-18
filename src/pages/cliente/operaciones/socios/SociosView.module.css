@@ -87,6 +87,31 @@
   line-height: 1.5;
 }
 
+/* SOLO LECTURA (Certificado PyME no vigente / no verificable) */
+.soloLecturaBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(244, 245, 0, 0.08);
+  border: 1px solid rgba(244, 245, 0, 0.25);
+  border-radius: 14px;
+  padding: 0.65rem 1rem;
+}
+
+.soloLecturaIcon {
+  flex-shrink: 0;
+  color: var(--yellow);
+  font-size: 1.05rem;
+}
+
+.soloLecturaText {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--white, #fff);
+}
+
 /* FORM */
 .formLayout {
   display: flex;
@@ -95,6 +120,11 @@
   width: 100%;
   flex: 1;
   min-width: 0;
+}
+
+.formLayoutSoloLectura {
+  opacity: 0.65;
+  filter: grayscale(0.15);
 }
 
 /* ACCIONES */

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { FaFileAlt, FaFileUpload } from "react-icons/fa";
 import { useQuery } from "@tanstack/react-query";
-import { FiDownload } from "react-icons/fi";
+import { FiDownload, FiLock } from "react-icons/fi";
 import { toast } from "sonner";
 import {
   DocumentosLegajo,
@@ -12,6 +12,7 @@ import { ESTRUCTURA_LEGAJO } from "../../../../components/features/shared/Docume
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useCertificadoVigente } from "../../../../hooks/useCertificadoVigente";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { descargarLegajoCompletoZip } from "../../../../utils/fileUtils";
 import { Button } from "../../../../components/ui";
@@ -43,7 +44,12 @@ export default function DocumentacionView() {
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
 
-  const { socioIdActivo, nombreEmpresa } = useEmpresaActiva();
+  const { socioIdActivo, nombreEmpresa, cuitActivo } = useEmpresaActiva();
+
+  // Certificado PyME no vigente (o no se pudo verificar): la documentación
+  // queda de solo lectura, se puede ver/descargar lo ya cargado pero no
+  // subir ni reemplazar nada.
+  const { soloLectura } = useCertificadoVigente(cuitActivo);
 
   const { data: archivosBackend = [] } = useQuery({
     queryKey: ["socioArchivos", socioIdActivo],
@@ -128,12 +134,22 @@ export default function DocumentacionView() {
 
       <LegajoUniversalBar context="documentacion" />
 
+      {soloLectura && (
+        <div className={styles.soloLecturaBanner}>
+          <FiLock className={styles.soloLecturaIcon} />
+          <span className={styles.soloLecturaText}>
+            Tu Certificado PyME no está vigente (o no pudimos verificarlo). Podés ver y descargar los documentos ya cargados, pero no subir ni reemplazar nada hasta que se regularice.
+          </span>
+        </div>
+      )}
+
       <FormProvider {...methods}>
         <form
           id="legajo-form"
-          className={styles.formLayout}
+          className={`${styles.formLayout} ${soloLectura ? styles.formLayoutSoloLectura : ""}`}
           noValidate
           onSubmit={(e) => e.preventDefault()}
+          inert={soloLectura}
         >
           <DocumentosLegajo />
         </form>

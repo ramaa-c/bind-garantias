@@ -25,6 +25,7 @@ import { HelpDrawer } from "../../../components/layout/Client/HelpDrawer/HelpDra
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../../hooks/useSolicitudes";
 import { useActualizarLimiteSocio } from "../../../hooks/useLinea";
+import { useVerificarHabilitacionNuevaOperacion } from "../../../hooks/useVerificarHabilitacionSolicitudes";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../services/sociosService";
 import { solicitudesService } from "../../../services/solicitudesService";
@@ -141,9 +142,14 @@ export default function Solicitudes() {
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [modalPendienteOpen, setModalPendienteOpen] = useState(false);
   const [modalBloqueoLegajoOpen, setModalBloqueoLegajoOpen] = useState(false);
+  const [modalNuevaOperacionBloqueada, setModalNuevaOperacionBloqueada] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const { isValid, faltanDocumentos, faltanLegajo } = useValidacionLegajo();
+  const {
+    habilitada: nuevaOperacionHabilitada,
+    motivo: motivoNuevaOperacionBloqueada,
+  } = useVerificarHabilitacionNuevaOperacion();
 
   const { cuitActivo, nombreEmpresa, socioIdActivo } = useEmpresaActiva();
   const socioIdFinal = socioIdActivo || 0;
@@ -313,6 +319,14 @@ export default function Solicitudes() {
 
     if (tieneSolicitudPendiente) {
       setModalPendienteOpen(true);
+      return;
+    }
+
+    // SGRPlusCore/ValidarUtilizacion + AptaNuevaLinea: ya no bloquean la
+    // pantalla entera (ver useVerificarHabilitacionSolicitudes), solo el
+    // inicio de una operación nueva.
+    if (!nuevaOperacionHabilitada) {
+      setModalNuevaOperacionBloqueada(true);
       return;
     }
 
@@ -537,6 +551,19 @@ export default function Solicitudes() {
         variant="warning"
         title="Solicitud en proceso"
         description="Ya tenés una solicitud de línea en análisis. Debés esperar a que se valide o cancelarla antes de crear una nueva."
+        buttonText="Entendido"
+      />
+
+      <InformativoModal
+        isOpen={modalNuevaOperacionBloqueada}
+        onClose={() => setModalNuevaOperacionBloqueada(false)}
+        icon={<FiClock style={{ color: "var(--yellow, #f4f500)" }} />}
+        variant="warning"
+        title="No podés iniciar una operación nueva"
+        description={
+          motivoNuevaOperacionBloqueada ||
+          "No podés iniciar una nueva operación en este momento."
+        }
         buttonText="Entendido"
       />
 
