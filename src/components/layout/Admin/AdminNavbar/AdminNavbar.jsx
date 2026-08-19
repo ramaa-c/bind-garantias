@@ -1,19 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FiChevronDown, FiLogOut, FiSettings } from "react-icons/fi";
 import { FaRegUserCircle } from "react-icons/fa";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./AdminNavbar.module.css";
 import { useAuthStore } from "../../../../store/useAuthStore";
-import { useChannel } from "../../../../context/ChannelContext";
 import { useAdminRestrictions } from "../../../../hooks/useAdminRestrictions";
 import { CuentaUsuarioModal } from "../../../features/admin/CuentaUsuarioModal/CuentaUsuarioModal";
 
 export default function AdminNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cadenaSlug } = useParams();
-  const { channelInfo } = useChannel();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const user = useAuthStore((state) => state.user);
   const { isRestricted } = useAdminRestrictions();

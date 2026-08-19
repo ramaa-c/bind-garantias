@@ -19,7 +19,8 @@ export const CargaArchivos = ({
   className = "",
   style = {}
 }) => {
-  
+  const [internalIsDragging, setInternalIsDragging] = useState(false);
+
   if (file) {
     return (
       <div className={`${styles.box} ${styles.loaded} ${className}`} style={style}>
@@ -53,7 +54,6 @@ export const CargaArchivos = ({
     );
   }
 
-  const [internalIsDragging, setInternalIsDragging] = useState(false);
   const activeIsDragging = isDragging !== undefined ? isDragging : internalIsDragging;
 
   const boxClass = `${styles.box} ${activeIsDragging ? styles.dragging : ""} ${hasError ? styles.error : ""} ${className}`;

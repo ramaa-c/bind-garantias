@@ -27,7 +27,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
     TipoTerceroRelacionadoID: 8,
   });
 
-  const { control, setValue, reset, trigger, getValues, formState: { errors, isDirty } } = useForm({
+  const { control, setValue, reset, trigger, getValues, formState: { isDirty } } = useForm({
     defaultValues: {
       sociedadBolsa: "",
       numeroCuentaBolsa: "",

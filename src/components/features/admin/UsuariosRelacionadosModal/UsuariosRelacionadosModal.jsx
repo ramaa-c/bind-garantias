@@ -105,7 +105,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
           ? userData[0]
           : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
         userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
-      } catch (e) {
+      } catch {
         // User not found, we will create them below
       }
 

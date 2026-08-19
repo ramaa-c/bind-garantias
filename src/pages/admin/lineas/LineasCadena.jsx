@@ -141,16 +141,16 @@ const ProductosVinculadosModal = ({ isOpen, onClose, tipolimiteid }) => {
             gap: "0.5rem",
           }}
         >
-          {listVinculados.map((v) => {
+          {listVinculados.map((v, idx) => {
             const obl = opciones.find(
               (o) => String(o.value) === String(v.tipoobligacionid)
             );
             const productoBase = obl ? obl.label : `Producto #${v.tipoobligacionid}`;
             const descripcionCustom = v.descripcion || productoBase;
-            
+
             return (
               <li
-                key={v.tipoobligaciontipolimiteid || v.tipoobligacionid || Math.random()}
+                key={v.tipoobligaciontipolimiteid || v.tipoobligacionid || idx}
                 style={{
                   padding: "0.75rem",
                   background: "var(--surface-darker, #121212)",
@@ -645,11 +645,6 @@ export default function LineasCadena() {
   };
 
   const isCadenaInactiva = selectedCadena && !selectedCadena.activaOperativa;
-
-  const chainsSelectOptions = listCadenas.map((c) => ({
-    value: String(c.cadenavalorid),
-    label: `${c.denominacion} (CUIT: ${c.cuittercero || "-"})`,
-  }));
 
   return (
     <div className={styles.container}>

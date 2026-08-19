@@ -37,22 +37,6 @@ export const useSocioPorId = (socioId) => {
   });
 };
 
-const useCrearSocio = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: sociosService.crearSocio,
-    onSuccess: () => {
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["socios", "lista"] }),
-      ]);
-    },
-    onError: (error) => {
-      console.error("Error al crear el socio:", error);
-    },
-  });
-};
-
 export const useActualizarSocio = () => {
   const queryClient = useQueryClient();
 
@@ -215,21 +199,5 @@ export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
     queryKey: ["socioUsuario", "listaPorUsuario", usuarioWebId],
     queryFn: () => sociosService.obtenerSocioUsuarioPorUsuarioId(usuarioWebId),
     enabled: !!usuarioWebId,
-  });
-};
-
-const useVincularSocioUsuario = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: sociosService.vincularSocioUsuario,
-    onSuccess: (data, variables) => {
-      return queryClient.invalidateQueries({
-        queryKey: ["socioUsuario", "listaPorUsuario", variables.usuariowebid],
-      });
-    },
-    onError: (error) => {
-      console.error("Error al vincular el socio con el usuario:", error);
-    },
   });
 };

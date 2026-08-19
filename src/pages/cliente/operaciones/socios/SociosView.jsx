@@ -72,7 +72,7 @@ export default function SociosView() {
       // 2. Vincular documentos de LUFE
       try {
         await sociosService.obtenerDocumentosLufe(cuitActivo, true);
-      } catch (lufeDocsError) {
+      } catch {
         // Silently handle error
       }
 

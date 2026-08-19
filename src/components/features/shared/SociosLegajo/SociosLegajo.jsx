@@ -147,7 +147,7 @@ export function SociosLegajo({
   const loadingSocios = loadingQuery;
 
   const [archivosBackend, setArchivosBackend] = useState([]);
-  const [dniTerceros, setDniTerceros] = useState({});
+  const [dniTerceros] = useState({});
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loadingDelete, setLoadingDelete] = useState(false);

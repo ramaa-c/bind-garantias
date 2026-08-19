@@ -25,7 +25,7 @@ export const useAuthStore = create(
           return;
         }
 
-        const { hashseguridad, ...safeUser } = userData;
+        const { hashseguridad: _hashseguridad, ...safeUser } = userData;
 
         // Marca el arranque del reloj de inactividad justo en el login -
         // así, cuando useSessionTimeout recalcule el tiempo restante (al

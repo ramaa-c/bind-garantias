@@ -8,7 +8,11 @@ import { es } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
 import styles from "./SelectFecha.module.css";
 
-export const SelectFecha = ({
+// Componente interno con toda la implementación visual/de interacción,
+// separado del componente que decide si hay que suscribirse a react-hook-form:
+// así useFormState se llama siempre (o nunca) dentro de un mismo componente
+// montado, en vez de condicionalmente según si hay `control` disponible.
+const SelectFechaBase = ({
   name,
   label = "Fecha",
   placeholder,
@@ -19,12 +23,10 @@ export const SelectFecha = ({
   onChange: manualOnChange,
   variant,
   placement = "bottom",
+  control,
+  errors,
 }) => {
-  const formContext = useFormContext();
-  const control = formContext?.control;
   const effectiveMinDate = minDate || new Date();
-  
-  const { errors } = control ? useFormState({ control, name }) : { errors: {} };
 
   const errorContexto = control && name
     ? name.split(".").reduce((obj, key) => obj?.[key], errors)
@@ -119,7 +121,6 @@ export const SelectFecha = ({
 
         const hasValue = !!dateObj;
         const hasError = !!errorDisplay;
-        const isValid = !hasError && hasValue;
 
         let statusClass = styles.statusDefault;
         if (hasError) {
@@ -237,4 +238,20 @@ export const SelectFecha = ({
   }
 
   return renderCalendar(manualValue, manualOnChange, () => {}, null);
+};
+
+const SelectFechaConectado = (props) => {
+  const { errors } = useFormState({ control: props.control, name: props.name });
+  return <SelectFechaBase {...props} errors={errors} />;
+};
+
+export const SelectFecha = (props) => {
+  const formContext = useFormContext();
+  const control = formContext?.control;
+
+  if (control) {
+    return <SelectFechaConectado {...props} control={control} />;
+  }
+
+  return <SelectFechaBase {...props} control={control} errors={{}} />;
 };

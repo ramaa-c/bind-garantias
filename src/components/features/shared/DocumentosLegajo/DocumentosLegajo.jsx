@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { useFormContext, useWatch, useForm, Controller } from "react-hook-form";
+import { useFormContext, useWatch, Controller } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import {
@@ -39,25 +39,18 @@ import {
 } from "../../../ui";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { tercerosService } from "../../../../services/tercerosService";
-import { sociosService } from "../../../../services/sociosService";
-import { usuarioService } from "../../../../services/usuarioService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
-import { afipService } from "../../../../services/afipService";
 import {
-  useProvincias,
   useTamanioEmpresa,
   useSituacionBCRA,
   useTipoCanalComercializacion,
   useEstadoSocio,
 } from "../../../../hooks/useCatalogos";
-import { useObtenerTerceros } from "../../../../hooks/useTerceros";
 import { useDiasMargenVencimientoBalance } from "../../../../hooks/useValorOperativo";
 import { calcularEstadoBalance } from "../../../../utils/balanceVigencia";
 import styles from "./DocumentosLegajo.module.css";
 import {
   procesarArchivo,
-  normalizarTexto,
   formatBase64Size,
   descargarArchivosEnZip,
 } from "../../../../utils/fileUtils";

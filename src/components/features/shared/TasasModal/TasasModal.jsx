@@ -36,7 +36,7 @@ export const TasasModal = ({ isOpen, onClose }) => {
               </tr>
             </thead>
             <tbody>
-              {TASAS_DATA.map((row, index) => (
+              {TASAS_DATA.map((row) => (
                 <tr key={row.plazo}>
                   <td>{row.plazo}</td>
                   <td>{row.tasa}</td>

@@ -9,7 +9,11 @@ import "react-day-picker/dist/style.css";
 import inputStyles from "../InputSimple/InputSimple.module.css";
 import customStyles from "./SelectFechaSimple.module.css";
 
-export const SelectFechaSimple = ({
+// Componente interno con toda la implementación visual/de interacción,
+// separado del componente que decide si hay que suscribirse a react-hook-form:
+// así useFormState se llama siempre (o nunca) dentro de un mismo componente
+// montado, en vez de condicionalmente según si hay `control` disponible.
+const SelectFechaSimpleBase = ({
   name,
   label = "Fecha",
   disabled = false,
@@ -25,10 +29,9 @@ export const SelectFechaSimple = ({
   className = "",
   mostrarDiasDesdeHoy = false,
   compact = false,
+  control,
+  errors,
 }) => {
-  const formContext = useFormContext();
-  const control = formContext?.control;
-
   // Por defecto el picker solo permite fechas futuras (before: hoy
   // deshabilitado) - pensado para casos como "fecha de vencimiento". Con
   // disableFuture=true se invierte para casos históricos (ej: filtrar
@@ -50,8 +53,6 @@ export const SelectFechaSimple = ({
     fromYear = lower.getFullYear();
     toYear = (maxDate || lower).getFullYear() + 10;
   }
-
-  const { errors } = control ? useFormState({ control, name }) : { errors: {} };
 
   const errorContexto = control && name
     ? name.split(".").reduce((obj, key) => obj?.[key], errors)
@@ -260,4 +261,20 @@ export const SelectFechaSimple = ({
   }
 
   return renderCalendar(manualValue, manualOnChange, () => {}, null);
+};
+
+const SelectFechaSimpleConectado = (props) => {
+  const { errors } = useFormState({ control: props.control, name: props.name });
+  return <SelectFechaSimpleBase {...props} errors={errors} />;
+};
+
+export const SelectFechaSimple = (props) => {
+  const formContext = useFormContext();
+  const control = formContext?.control;
+
+  if (control) {
+    return <SelectFechaSimpleConectado {...props} control={control} />;
+  }
+
+  return <SelectFechaSimpleBase {...props} control={control} errors={{}} />;
 };

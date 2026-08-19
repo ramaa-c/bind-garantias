@@ -95,7 +95,7 @@ export const InputSimple = forwardRef(({
                     ? String(val)
                     : ""
               }
-              onAccept={(value, maskRef) => {
+              onAccept={(value) => {
                 lastAcceptedRef.current = value;
                 if (onCh) onCh(value);
               }}

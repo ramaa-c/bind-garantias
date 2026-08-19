@@ -84,7 +84,7 @@ export const ProcesamientoModal = ({
                   )}
                   {isError && paso.errores && paso.errores.length > 0 && (
                     <ul className={styles.listaErroresPaso}>
-                      {paso.errores.map((err, i) => (
+                      {paso.errores.map((err) => (
                         <li key={err}>{err}</li>
                       ))}
                     </ul>
@@ -94,7 +94,7 @@ export const ProcesamientoModal = ({
                   )}
                   {isAlerta && paso.errores && paso.errores.length > 0 && (
                     <ul className={styles.listaAlertasPaso}>
-                      {paso.errores.map((err, i) => (
+                      {paso.errores.map((err) => (
                         <li key={err}>{err}</li>
                       ))}
                     </ul>

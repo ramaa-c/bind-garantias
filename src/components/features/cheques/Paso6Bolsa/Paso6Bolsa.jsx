@@ -9,7 +9,6 @@ import { useObtenerTerceros } from "../../../../hooks/useTerceros";
 
 export default function Paso6Bolsa({ avanzarConBolsa, avanzarSinBolsa, isSubmitting }) {
   const {
-    register,
     control,
     formState: { errors },
     setValue,

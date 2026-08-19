@@ -15,22 +15,6 @@ const mapAndSort = (data, idField, descField = "descripcion") => {
 
 const STALE_TIME = 1000 * 60 * 60 * 24;
 
-const useTipoActividadSEPYME = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoActividadSEPYME"],
-    queryFn: catalogosService.obtenerTipoActividadSEPYME,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipoactividadsepymeid"),
-  });
-
-const useTipoActividadBCRA = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoActividadBCRA"],
-    queryFn: catalogosService.obtenerTipoActividadBCRA,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipoactividadbcraid"),
-  });
-
 export const useSituacionBCRA = () =>
   useQuery({
     queryKey: ["catalogos", "situacionBCRA"],
@@ -63,55 +47,6 @@ export const useTamanioEmpresa = () =>
     select: (data) => mapAndSort(data, "tamanioempresaid"),
   });
 
-const useTipoComision = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoComision"],
-    queryFn: catalogosService.obtenerTipoComision,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipocomisionid"),
-  });
-
-const useTipoCotizacion = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoCotizacion"],
-    queryFn: catalogosService.obtenerTipoCotizacion,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipocotizmonid"),
-  });
-
-const useCotizacion = (moneda, fecha, tipoCotizacion) =>
-  useQuery({
-    queryKey: ["catalogos", "cotizacion", moneda, fecha, tipoCotizacion],
-    queryFn: () =>
-      catalogosService.obtenerCotizacion({ moneda, fecha, tipoCotizacion }),
-    enabled: !!moneda && !!fecha && !!tipoCotizacion,
-    staleTime: 1000 * 60 * 5, // 5 minutos de caché
-  });
-
-const useTipoReferencia = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoReferencia"],
-    queryFn: catalogosService.obtenerTipoReferencia,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tiporeferenciaid"),
-  });
-
-const useTipoTerceroRelacionado = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoTerceroRelacionado"],
-    queryFn: catalogosService.obtenerTipoTerceroRelacionado,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipotercerorelacionadoid"),
-  });
-
-const useTipoRelacionSocio = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoRelacionSocio"],
-    queryFn: catalogosService.obtenerTipoRelacionSocio,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tiporelacionsocioid"),
-  });
-
 export const useTipoContrato = () =>
   useQuery({
     queryKey: ["catalogos", "tipoContrato"],
@@ -136,46 +71,6 @@ export const useTipoCanalComercializacion = () =>
     select: (data) => mapAndSort(data, "tipocanalcomercializacionid"),
   });
 
-const useTipoActividadGlobal = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoActividadGlobal"],
-    queryFn: catalogosService.obtenerTipoActividadGlobal,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipoactividadglobalid"),
-  });
-
-const useTipoRegimenIva = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoRegimenIva"],
-    queryFn: catalogosService.obtenerTipoRegimenIva,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tiporegimenivaid"),
-  });
-
-const useTipoCondicionFianza = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoCondicionFianza"],
-    queryFn: catalogosService.obtenerTipoCondicionFianza,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipocondicionfianzaid"),
-  });
-
-const useTipoLimiteEstado = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoLimiteEstado"],
-    queryFn: catalogosService.obtenerTipoLimiteEstado,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipolimiteestadoid"),
-  });
-
-const useTipoLimiteRiesgo = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoLimiteRiesgo"],
-    queryFn: catalogosService.obtenerTipoLimiteRiesgo,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipolimiteriesgoid"),
-  });
-
 export const useTiposProducto = () =>
   useQuery({
     queryKey: ["catalogos", "tiposProducto"],
@@ -189,18 +84,6 @@ export const useTiposProducto = () =>
         String(prod.escadenavalor) === "1"
       );
       return mapAndSort(dataActiva, "tipolimiteid");
-    },
-  });
-
-const useTipoSocio = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoSocio"],
-    queryFn: catalogosService.obtenerTipoSocio,
-    staleTime: STALE_TIME,
-    select: (data) => {
-      const arrayReal = Array.isArray(data) ? data : data?.list || [];
-      const arrayLimpio = arrayReal.filter((item) => item !== null);
-      return mapAndSort(arrayLimpio, "tiposocioid");
     },
   });
 
@@ -226,30 +109,6 @@ export const usePartidos = (provinciaId) =>
     queryFn: () => catalogosService.obtenerPartidos(provinciaId),
     enabled: !!provinciaId,
     select: (data) => mapAndSort(data, "partidoid"),
-  });
-
-const useTipoPersona = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoPersona"],
-    queryFn: catalogosService.obtenerTipoPersona,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipopersonaid"),
-  });
-
-const useSectorContable = () =>
-  useQuery({
-    queryKey: ["catalogos", "sectorContable"],
-    queryFn: catalogosService.obtenerSectorContable,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "sectorcontableid"),
-  });
-
-const useTipoCartera = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoCartera"],
-    queryFn: catalogosService.obtenerTipoCartera,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipocarteraid"),
   });
 
 export const useEquipoComercial = () =>

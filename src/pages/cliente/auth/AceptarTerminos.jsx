@@ -224,7 +224,6 @@ export default function AceptarTerminos() {
                   </table>
                 ) : (
                   seccion.parrafos.map((parrafo, i) => (
-                     // eslint-disable-next-line react/no-array-index-key
                     <p key={`${seccion.id}-p-${i}`} className={styles.parrafo}>
                       {parrafo}
                     </p>

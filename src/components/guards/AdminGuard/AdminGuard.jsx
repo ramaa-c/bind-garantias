@@ -3,7 +3,6 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
-import { useChannel } from "../../../context/ChannelContext";
 import {
   useObtenerPorNombreOEmail,
   useObtenerCadenasPorUsuario,
@@ -26,8 +25,6 @@ export const AdminGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const location = useLocation();
-  const { channelInfo } = useChannel();
-  const channelSlug = channelInfo?.id || "default";
 
   const { data: usuarioDb, isPending: isUserLoading } =
     useObtenerPorNombreOEmail(user?.email || "");
