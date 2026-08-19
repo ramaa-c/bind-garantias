@@ -33,7 +33,7 @@ function encontrarContenedorScrolleable(el) {
 // lógica (AND/OR/personalizada) de UN GrupoCda puntual, identificado por la
 // combinación (pantalla, cadena). El padre (CadenasCda.jsx / CdaConfigModal.jsx)
 // decide qué pantalla mostrar (tabs); acá solo se edita una a la vez.
-export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false }) => {
+export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description, cdaIdsPermitidos }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
@@ -49,7 +49,18 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   const { mutateAsync: actualizarVinculacionCda, isPending: isActualizandoVinculacion } = useActualizarVinculacionCda();
   const { mutateAsync: actualizarGrupoCda, isPending: isActualizandoGrupo } = useActualizarGrupoCda();
   const usuarioWebId = useUsuarioWebIdActual();
-  const allCdasList = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivoEstricto);
+  const allCdasListSinAcotar = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivoEstricto);
+  // cdaIdsPermitidos (opcional): acota el checklist a un subconjunto puntual
+  // de CDAs en vez del catálogo global completo - ver LineasCda.jsx, que
+  // solo quiere mostrar los CDAs ya pensados para PANTALLA_LINEAS. Sin esta
+  // prop (CadenasCda.jsx no la pasa) el comportamiento es exactamente el de
+  // siempre: se listan todos.
+  const allCdasList = Array.isArray(cdaIdsPermitidos)
+    ? allCdasListSinAcotar.filter((c) => {
+        const id = c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
+        return cdaIdsPermitidos.includes(Number(id));
+      })
+    : allCdasListSinAcotar;
   const linkedCdasList = Array.isArray(grupoData?.cdas) ? grupoData.cdas : grupoData?.cdas?.items || grupoData?.cdas?.data || [];
 
   const getCdaId = (c) => {
@@ -453,9 +464,10 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
           />
         )}
         <p style={{ fontSize: "0.825rem", color: "#8b949e", lineHeight: "1.4" }}>
-          {isReadOnly
-            ? "Listado de los CDAs activos para esta cadena y pantalla. La regla y el mensaje de rechazo se definen en Criterios de Aceptación; el valor mostrado es el vigente para esta combinación."
-            : "Activá los CDAs que se deben ejecutar para esta cadena en esta pantalla, y definí cómo se combinan entre sí. La regla y el mensaje de rechazo son los definidos en Criterios de Aceptación: acá solo podés personalizar, por cadena, el valor límite de cada uno."}
+          {description ||
+            (isReadOnly
+              ? "Listado de los CDAs activos para esta cadena y pantalla. La regla y el mensaje de rechazo se definen en Criterios de Aceptación; el valor mostrado es el vigente para esta combinación."
+              : "Activá los CDAs que se deben ejecutar para esta cadena en esta pantalla, y definí cómo se combinan entre sí. La regla y el mensaje de rechazo son los definidos en Criterios de Aceptación: acá solo podés personalizar, por cadena, el valor límite de cada uno.")}
         </p>
 
         <div className={styles.mainLayout}>
@@ -615,7 +627,9 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {allCdasList.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
-                No hay CDAs creados en el sistema.
+                {Array.isArray(cdaIdsPermitidos)
+                  ? "Todavía no se creó ningún CDA para esta pantalla en ninguna cadena."
+                  : "No hay CDAs creados en el sistema."}
               </div>
             ) : cdasVisibles.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>

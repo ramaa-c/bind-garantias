@@ -1,0 +1,117 @@
+/* Conector visual entre el selector de cadena y la caja de "alcance": solo
+   en desktop, donde ambos quedan lado a lado en una fila. Comunica el nuevo
+   modelo (se configura por cadena, pero aplica a todas sus líneas) sin
+   necesidad de texto extra - puramente decorativo/informativo, no
+   interactivo. */
+.selectorConnector {
+  display: none;
+}
+
+@media (min-width: 992px) {
+  .selectorConnector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: rgba(255, 255, 255, 0.18);
+    font-size: 1.05rem;
+  }
+}
+
+/* Caja "alcance": reemplaza al viejo selector de línea puntual. Siempre
+   visible (con su propio estado vacío) para que el modelo cadena → líneas
+   se entienda desde el primer vistazo, en vez de aparecer recién después de
+   elegir una cadena. */
+.alcanceBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  flex: 1;
+  min-width: 0;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  backdrop-filter: blur(8px);
+  justify-content: center;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.alcanceBoxEmpty {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.alcanceHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.alcanceIcon {
+  color: #4c65e6;
+  flex-shrink: 0;
+}
+
+.alcanceLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b949e;
+}
+
+.alcancePlaceholder {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6e7681;
+  line-height: 1.45;
+}
+
+.alcanceCount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.alcanceVacio {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #dd9b20;
+  line-height: 1.45;
+}
+
+.alcanceVacioIcon {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.alcanceChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.alcanceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(59, 78, 209, 0.1);
+  border: 1px solid rgba(59, 78, 209, 0.25);
+  color: #58a6ff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 1rem;
+  white-space: nowrap;
+}
+
+.alcanceChipDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}

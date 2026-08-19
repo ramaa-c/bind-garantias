@@ -3,6 +3,7 @@ import { useQuery, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { cadenaValorService } from '../services/cadenaValorService';
 import { cdaService } from '../services/cdaService';
 import { esCadenaAprobadaYVigente, esCadenaOperativaParaWeb, obtenerCadenaValorId } from '../utils/cadenaValorUtils';
+import { esCdaActivo } from '../utils/cdaUtils';
 
 export const useObtenerTodas = (page = 1, pageSize = 10) => {
     return useQuery({
@@ -129,6 +130,46 @@ export const useObtenerTodasWebConEstado = () => {
         isLoading: webQuery.isLoading || coreQuery.isLoading,
         refetch: () => Promise.all([webQuery.refetch(), coreQuery.refetch()]),
     };
+};
+
+// IDs de todos los CDAs vinculados y activos a una pantalla, en CUALQUIER
+// cadena (a diferencia de useObtenerGrupoCdaConCdas, que es por una cadena
+// puntual). Se usa para acotar el checklist de LineasCda.jsx a los CDAs
+// "pensados para líneas" en vez de listar los ~61 CDAs globales: como no
+// existe ningún campo de "pantalla" en el CDA en sí (confirmado contra
+// swagger el 2026-08-18), la única señal real es "ya está vinculado a esta
+// pantalla en alguna cadena". El propio Pantalla filter de GrupoCda sí
+// funciona bien del lado del backend (a diferencia de CadenaValorID, que
+// hay que filtrar a mano) - acá se aprovecha eso pidiendo TODOS los grupos
+// de la pantalla de una, sin cadena.
+export const useObtenerCdaIdsPorPantalla = (pantalla) => {
+    return useQuery({
+        queryKey: ['cda', 'idsPorPantalla', pantalla],
+        queryFn: async () => {
+            const grupos = await cdaService.obtenerGrupoCda(pantalla);
+            const gruposList = Array.isArray(grupos) ? grupos : grupos?.items || grupos?.data || (grupos ? [grupos] : []);
+
+            const idsSet = new Set();
+            for (const grupo of gruposList) {
+                const grupoCdaId = grupo.grupocdaid ?? grupo.GrupoCdaID;
+                if (!grupoCdaId) continue;
+                try {
+                    const cdas = await cadenaValorService.obtenerCdasPorGrupo(grupoCdaId);
+                    const cdasList = Array.isArray(cdas) ? cdas : cdas?.items || cdas?.data || [];
+                    cdasList.forEach((c) => {
+                        if (!esCdaActivo(c)) return;
+                        const id = c.cdaid ?? c.CdaId ?? c.CdaID;
+                        if (id !== undefined) idsSet.add(Number(id));
+                    });
+                } catch (err) {
+                    console.error(`Error obteniendo CDAs vinculados al grupo ${grupoCdaId}:`, err);
+                }
+            }
+            return Array.from(idsSet);
+        },
+        enabled: !!pantalla,
+        staleTime: 1000 * 60 * 2,
+    });
 };
 
 export const useVincularCdasAGrupo = () => {
