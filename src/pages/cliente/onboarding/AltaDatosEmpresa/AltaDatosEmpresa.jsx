@@ -9,12 +9,8 @@ import { LoadingScreen } from "../../../../components/ui";
 import { Paso1Cuit, Paso2Datos } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../../../services/sociosService";
-import { afipService } from "../../../../services/afipService";
-import { tercerosService } from "../../../../services/tercerosService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { requisitosService } from "../../../../services/requisitosService";
-import { catalogosService } from "../../../../services/catalogosService";
-import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
@@ -138,7 +134,7 @@ export const AltaDatosEmpresa = () => {
   });
 
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [isNavigating] = useState(false);
 
   const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email);
   const usuariowebidReal =
@@ -189,7 +185,7 @@ export const AltaDatosEmpresa = () => {
         },
   });
 
-  const { handleSubmit, trigger, reset, getValues, register } = metodosFormulario;
+  const { handleSubmit, trigger, reset, register } = metodosFormulario;
 
   useEffect(() => {
     // Registro de todos los campos "ocultos" que se nutren en segundo plano mediante setValue

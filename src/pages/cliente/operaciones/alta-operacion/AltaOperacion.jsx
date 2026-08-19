@@ -282,7 +282,7 @@ export const AltaOperacion = () => {
         }
 
         if (isMounted) setValidandoAcceso(false);
-      } catch (err) {
+      } catch {
         if (isMounted) setValidandoAcceso(false);
       }
     };
@@ -346,14 +346,6 @@ export const AltaOperacion = () => {
   const tipoProducto = useWatch({ control, name: "tipoProducto" });
   const familiaProducto = useWatch({ control, name: "familiaProducto" });
   const moneda = useWatch({ control, name: "moneda" });
-  const faseSocio = useWatch({ control, name: "faseSocio" });
-  const tempSocioCuit = useWatch({ control, name: "tempSocioCuit" });
-  const tempSocioNombre = useWatch({ control, name: "tempSocioNombre" });
-  const tempSocioParticipacion = useWatch({
-    control,
-    name: "tempSocioParticipacion",
-  });
-  const tempSocioData = useWatch({ control, name: "tempSocioData" });
   const docExpandido = useWatch({ control, name: "docExpandido" });
 
   // Línea real (TipoLimiteCadenaValor) que corresponde al tipoProducto
@@ -532,7 +524,7 @@ export const AltaOperacion = () => {
                 tercero = terceroSGR;
               }
             }
-          } catch (apiErr) {
+          } catch {
             try {
               tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
             } catch (sgrErr) {
@@ -572,7 +564,7 @@ export const AltaOperacion = () => {
                 try {
                   afipData =
                     await afipService.obtenerConstanciaInscripcion(cuit);
-                } catch (e) {
+                } catch {
                   console.warn("No se pudo obtener AFIP extra para", cuit);
                 }
 
@@ -757,12 +749,12 @@ export const AltaOperacion = () => {
 
   const preparePayload = (data) => {
     const {
-      faseSocio,
-      tempSocioCuit,
-      tempSocioNombre,
-      tempSocioParticipacion,
-      tempSocioData,
-      docExpandido,
+      faseSocio: _faseSocio,
+      tempSocioCuit: _tempSocioCuit,
+      tempSocioNombre: _tempSocioNombre,
+      tempSocioParticipacion: _tempSocioParticipacion,
+      tempSocioData: _tempSocioData,
+      docExpandido: _docExpandido,
       ...cleanData
     } = data;
     return cleanData;
@@ -884,7 +876,9 @@ export const AltaOperacion = () => {
           if (valorCotizacion > 0) {
             importeEnPesos = Math.round(montoLimpio * valorCotizacion);
           }
-        } catch (e) {}
+        } catch {
+          // Fallback: si no se puede obtener la cotización, se omite la conversión a pesos
+        }
       }
 
       // El chequeo del disponible agregado de la cadena (MontoMaximoUtilizado)

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import {
@@ -73,10 +73,7 @@ const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
 );
 
 export default function Paso5Documentacion({
-  docExpandido,
-  toggleDoc,
   socios = [],
-  onVolverASocios,
   avanzarPaso6,
   isSubmitting,
   socioId,
@@ -104,7 +101,7 @@ export default function Paso5Documentacion({
     const configVal = requisitos?.documentos?.[key];
     return configVal !== 0; // 0 = no mostrar
   });
-  const { register, control, setValue, trigger, clearErrors, getValues } =
+  const { register, control, setValue, trigger, getValues } =
     useFormContext();
   const { errors } = useFormState({ control });
   const {
@@ -189,15 +186,10 @@ export default function Paso5Documentacion({
 
   const {
     archivos,
-    socioActivoIndex,
     repActivoIndex,
     modalDocsOpen,
     modalRepTipo,
-    draggingKey,
-    backupSocio,
     intentoAvanzar,
-    intentoGuardarSocio,
-    isGuardando,
   } = uiState;
 
   const updateState = (updates) => {

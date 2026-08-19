@@ -20,7 +20,6 @@ export const DocumentosEmpresaModal = ({
   onClose,
   archivos,
   onFileUpload,
-  onFileRemove,
   intentoAvanzar,
   socioId,
   archivosBackend = [],

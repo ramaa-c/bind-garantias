@@ -5,6 +5,7 @@ import { Button } from "../Button/Button";
 export const SinResultados = ({
   title,
   message = "No hay elementos para mostrar",
+  // eslint-disable-next-line no-unused-vars -- ESLint no rastrea el uso de este parámetro como tag JSX
   icon: Icon = FiInbox,
   actionLabel,
   onAction,

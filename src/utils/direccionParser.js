@@ -41,14 +41,14 @@ export const parseAddress = (fullAddress) => {
 
   // 1. Intentar emparejar y extraer formato "Piso" o similar
   // Usamos \b para no matchear letras dentro de palabras como "HIPOLITO"
-  const pisoRegex = /\b(?:piso|piso:)\s*([a-z0-9\-]+)\b/i;
+  const pisoRegex = /\b(?:piso|piso:)\s*([a-z0-9-]+)\b/i;
   const pisoMatch = calle.match(pisoRegex);
   if (pisoMatch) {
     piso = pisoMatch[1];
     calle = calle.replace(pisoMatch[0], "").trim();
   } else {
     // Probar formatos cortos como "P. 3" o "P:3" o "P 3" (debe ser un 'p' suelto)
-    const pisoShortRegex = /\b(?:p\.|p:|p\b)\s*([a-z0-9\-]+)\b/i;
+    const pisoShortRegex = /\b(?:p\.|p:|p\b)\s*([a-z0-9-]+)\b/i;
     const pisoShortMatch = calle.match(pisoShortRegex);
     if (pisoShortMatch) {
       piso = pisoShortMatch[1];
@@ -57,14 +57,14 @@ export const parseAddress = (fullAddress) => {
   }
 
   // 2. Intentar emparejar y extraer formato "Dpto" o similar
-  const deptoRegex = /\b(?:dpto|dpto\.|dept|dep|oficina|of\.?|dpto:)\s*([a-z0-9\-]+)\b/i;
+  const deptoRegex = /\b(?:dpto|dpto\.|dept|dep|oficina|of\.?|dpto:)\s*([a-z0-9-]+)\b/i;
   const deptoMatch = calle.match(deptoRegex);
   if (deptoMatch) {
     departamento = deptoMatch[1];
     calle = calle.replace(deptoMatch[0], "").trim();
   } else {
     // Probar formatos cortos como "D. 3" o "D:3" o "D 3" (debe ser un 'd' suelto)
-    const deptoShortRegex = /\b(?:d\.|d:|d\b)\s*([a-z0-9\-]+)\b/i;
+    const deptoShortRegex = /\b(?:d\.|d:|d\b)\s*([a-z0-9-]+)\b/i;
     const deptoShortMatch = calle.match(deptoShortRegex);
     if (deptoShortMatch) {
       departamento = deptoShortMatch[1];
@@ -73,7 +73,7 @@ export const parseAddress = (fullAddress) => {
   }
 
   // 3. Intentar emparejar y extraer Manzana/Lote, ej: "M:48" o "Mz:48"
-  const manzanaRegex = /(?:m:|m\s|mz:|mz\s)\s*([a-z0-9\-]+)/i;
+  const manzanaRegex = /(?:m:|m\s|mz:|mz\s)\s*([a-z0-9-]+)/i;
   const manzanaMatch = calle.match(manzanaRegex);
   if (manzanaMatch) {
     departamento = (departamento ? departamento + " " : "") + manzanaMatch[0];

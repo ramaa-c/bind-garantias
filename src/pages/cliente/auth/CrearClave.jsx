@@ -47,7 +47,7 @@ const passwordSchema = z
   });
 
 const CrearClave = () => {
-  const { canal, token } = useParams();
+  const { token } = useParams();
   const { channelInfo } = useChannel();
   const navigate = useNavigate();
   const [emailManual, setEmailManual] = useState("");
@@ -58,8 +58,6 @@ const CrearClave = () => {
     typeof window !== "undefined" && window.location.hash
       ? `${token || ""}${window.location.hash}`
       : token || "";
-
-  const canalIntegridad = canal;
 
   const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 

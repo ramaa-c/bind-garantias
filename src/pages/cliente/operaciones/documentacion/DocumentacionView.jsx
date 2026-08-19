@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useForm, FormProvider, useWatch } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { FaFileAlt, FaFileUpload } from "react-icons/fa";
 import { useQuery } from "@tanstack/react-query";
 import { FiDownload, FiLock } from "react-icons/fi";
@@ -95,7 +95,6 @@ export default function DocumentacionView() {
   });
 
   const { setUnsavedChanges } = useNavigationStore();
-  const formValues = useWatch({ control: methods.control });
 
   useEffect(() => {
     return () => setUnsavedChanges(false);

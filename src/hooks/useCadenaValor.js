@@ -32,24 +32,6 @@ export const useObtenerPorId = (cadenaValorId) => {
     });
 };
 
-const useObtenerLibradores = (cadenaValorId, page = 1, pageSize = 10) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'libradores', cadenaValorId, page, pageSize],
-        queryFn: () => cadenaValorService.obtenerLibradores(cadenaValorId, page, pageSize),
-        enabled: !!cadenaValorId,
-        staleTime: 1000 * 60 * 5,
-        placeholderData: keepPreviousData
-    });
-};
-
-const useObtenerLibradorPorCuit = (cadenaValorId, cuitLibrador) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'libradorCuit', cadenaValorId, cuitLibrador],
-        queryFn: () => cadenaValorService.obtenerLibradorPorCuit(cadenaValorId, cuitLibrador),
-        enabled: !!cadenaValorId && !!cuitLibrador
-    });
-};
-
 export const useObtenerLineas = (cadenaValorId, page = 1, pageSize = 10) => {
     return useQuery({
         queryKey: ['cadenaValor', 'lineas', cadenaValorId, page, pageSize],
@@ -57,31 +39,6 @@ export const useObtenerLineas = (cadenaValorId, page = 1, pageSize = 10) => {
         enabled: !!cadenaValorId,
         staleTime: 1000 * 60 * 5,
         placeholderData: keepPreviousData
-    });
-};
-
-const useVerificarAutorizacionEmail = (cadenaValorId, email) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'autorizacion', cadenaValorId, email],
-        queryFn: () => cadenaValorService.verificarAutorizacionEmail(cadenaValorId, email),
-        enabled: !!cadenaValorId && !!email,
-        retry: false
-    });
-};
-
-const useObtenerCadenasPorEmail = (email) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'porEmail', email],
-        queryFn: () => cadenaValorService.obtenerCadenasPorEmail(email),
-        enabled: !!email
-    });
-};
-
-const useObtenerRelaciones = (cadenaValorId) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'relaciones', cadenaValorId],
-        queryFn: () => cadenaValorService.obtenerRelaciones(cadenaValorId),
-        enabled: !!cadenaValorId
     });
 };
 

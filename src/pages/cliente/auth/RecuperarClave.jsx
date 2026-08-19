@@ -25,9 +25,7 @@ const RecuperarClave = () => {
 
   const {
     control,
-    register,
     handleSubmit,
-    formState: { errors },
   } = useForm({
     resolver: zodResolver(recuperarSchema),
     defaultValues: { email: "" },
@@ -66,7 +64,7 @@ const RecuperarClave = () => {
         replace: true,
         state: { emailIngresado: data.email, canal: canalId, origen: "recuperar" },
       });
-    } catch (error) {
+    } catch {
       toast.error("Error al solicitar el enlace", {
         description: "Verificá tu correo o intentá más tarde.",
       });

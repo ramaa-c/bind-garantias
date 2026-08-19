@@ -20,7 +20,6 @@ const ConfirmarCorreo = () => {
   const emailUsuario =
     location.state?.usuarioSkeletor?.email || location.state?.emailIngresado;
   const usuarioSkeletor = location.state?.usuarioSkeletor || null;
-  const canal = location.state?.canal || "";
   const origen = location.state?.origen || "registro";
 
   const { mutate: reenviarCorreo, isPending } = useResetearPassword();

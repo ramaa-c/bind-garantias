@@ -23,14 +23,14 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
 
   try {
     await sociosService.obtenerAutoridadesLufe(cuit, true);
-  } catch (lufeErr) {
+  } catch {
     // Silently handle error
   }
 
   let relacionesSocio = [];
   try {
     relacionesSocio = await tercerosService.obtenerRelacionesDeSocio(socioId);
-  } catch (err) {
+  } catch {
     // Silently handle error
   }
   const arrRelaciones = Array.isArray(relacionesSocio) ? relacionesSocio : [];
@@ -57,7 +57,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
         value: item.provinciaid.toString(),
         label: item.descripcion,
       }));
-  } catch (err) {
+  } catch {
     // Silently handle error
   }
 
@@ -83,7 +83,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
       let respAfip = null;
       try {
         respAfip = await afipService.obtenerConstanciaInscripcion(cuitSocioLimpio);
-      } catch (afipErr) {
+      } catch {
         afipFailed = true;
         try {
           const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitSocioLimpio);
@@ -91,7 +91,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
             respAfip = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
             fallbackSuccess = true;
           }
-        } catch (lufeErr) {
+        } catch {
           // Both failed
         }
       }
@@ -179,7 +179,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
         };
         await tercerosService.actualizarRelacionDeSocio(payloadRel);
       }
-    } catch (singleErr) {
+    } catch {
       // Silently catch
     }
   }

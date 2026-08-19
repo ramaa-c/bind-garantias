@@ -84,7 +84,7 @@ export const SelectSimple = ({
     indicatorSeparator: () => ({
       display: "none",
     }),
-    dropdownIndicator: (base, state) => ({
+    dropdownIndicator: (base) => ({
       ...base,
       color: isFocused ? focusColor : "#8b949e",
       padding: compact ? "6px 8px" : "8px 12px",

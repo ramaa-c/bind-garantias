@@ -30,7 +30,7 @@ export const TicketPrestamoFijo = ({
                   </td>
 
                   <td className={styles.tdDataGroups}>
-                    {fila.conceptos.map((concepto, i) => (
+                    {fila.conceptos.map((concepto) => (
                       <div className={styles.dataRow} key={concepto.label}>
                         <span className={styles.dataLabel}>
                           {concepto.label}

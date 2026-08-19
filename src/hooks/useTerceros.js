@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { tercerosService } from '../services/tercerosService';
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from '../utils/executeCda';
 
@@ -11,154 +11,7 @@ export const useObtenerTerceros = (params = {}) => {
     });
 };
 
-const useObtenerTerceroPorId = (terceroId) => {
-    return useQuery({
-        queryKey: ['terceros', 'detalle', terceroId],
-        queryFn: () => tercerosService.obtenerTerceroPorId(terceroId),
-        enabled: !!terceroId,
-        staleTime: 1000 * 60 * 5,
-        placeholderData: keepPreviousData
-    });
-};
-
-const useCrearTercero = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: tercerosService.crearTercero,
-    onSuccess: () => {
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["terceros", "lista"] }),
-        queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
-      ]);
-    },
-    onError: (error) => {
-      console.error("Error al crear el tercero:", error);
-    },
-  });
-};
-
-const useObtenerTiposHabilitados = (terceroId) => {
-  return useQuery({
-    queryKey: ["terceros", "tiposHabilitados", terceroId],
-    queryFn: () => tercerosService.obtenerTiposHabilitados(terceroId),
-    enabled: !!terceroId,
-  });
-};
-
-const useObtenerRelacionesDeSocio = (socioId) => {
-  return useQuery({
-    queryKey: ["socioTerceroRelacion", socioId],
-    queryFn: () => tercerosService.obtenerRelacionesDeSocio(socioId),
-    enabled: !!socioId,
-  });
-};
-
-const useGuardarRelacionesDeSocio = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: tercerosService.guardarRelacionesDeSocio,
-    onSuccess: (data, variables) => {
-      return Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["relacionesSocio", variables.socioid],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["socioLegajoCompleto"],
-        }),
-      ]);
-    },
-    onError: (error) => {
-      console.error("Error al guardar las relaciones del socio:", error);
-    },
-  });
-};
-
-const useBuscarTerceroPorCuit = () => {
-  return useMutation({
-    mutationFn: (cuit) => tercerosService.obtenerTerceros({ Cuit: cuit }),
-  });
-};
-
-const useActualizarTercero = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: tercerosService.actualizarTercero,
-    onSuccess: (data, variables) => {
-      return Promise.all(
-        [
-          queryClient.invalidateQueries({ queryKey: ["terceros", "lista"] }),
-          queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
-          variables.tercerorelacionadoid &&
-            queryClient
-              .invalidateQueries({
-                queryKey: [
-                  "terceros",
-                  "detalle",
-                  variables.tercerorelacionadoid,
-                ],
-              })
-              .catch(() => {}),
-        ].filter(Boolean),
-      );
-    },
-    onError: (error) => {
-      console.error("Error al actualizar el tercero:", error);
-    },
-  });
-};
-
-const useActualizarRelacionSocio = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: tercerosService.actualizarRelacionDeSocio,
-    onSuccess: (data, variables) => {
-      return Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["relacionesSocio", variables.socioid],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["socioLegajoCompleto"],
-        }),
-      ]);
-    },
-    onError: (error) => {
-      console.error("Error al actualizar la relación del socio:", error);
-    },
-  });
-};
-
 //------- TERCEROS RELACIONADOS (SGRPlus) ---------
-
-const useObtenerTercerosSGRPlus = (params = {}) => {
-    return useQuery({
-        queryKey: ['tercerosSGRPlus', 'lista', params],
-        queryFn: () => tercerosService.obtenerTercerosSGRPlus(params),
-        staleTime: 1000 * 60 * 2,
-        placeholderData: keepPreviousData
-    });
-};
-
-const useObtenerTerceroPorIdSGRPlus = (terceroId) => {
-    return useQuery({
-        queryKey: ['tercerosSGRPlus', 'detalle', terceroId],
-        queryFn: () => tercerosService.obtenerTerceroPorIdSGRPlus(terceroId),
-        enabled: !!terceroId,
-        staleTime: 1000 * 60 * 5,
-        placeholderData: keepPreviousData
-    });
-};
-
-const useObtenerRelacionesDeSocioSGRPlus = (socioId) => {
-  return useQuery({
-    queryKey: ["socioTerceroRelacionSGRPlus", socioId],
-    queryFn: () => tercerosService.obtenerRelacionesDeSocioSGRPlus(socioId),
-    enabled: !!socioId,
-  });
-};
 
 export const useObtenerDatosSocioLegajo = (socioId) => {
   return useQuery({
@@ -225,10 +78,10 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
             let t = null;
             try {
               t = await tercerosService.obtenerTerceroPorId(tid);
-            } catch (apiErr) {
+            } catch {
               try {
                 t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
-              } catch (sgrErr) {
+              } catch {
                 // Ignore error
               }
             }

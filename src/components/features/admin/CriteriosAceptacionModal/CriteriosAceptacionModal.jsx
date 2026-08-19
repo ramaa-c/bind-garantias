@@ -103,7 +103,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
               tercero = terceroSGR;
             }
           }
-        } catch (e) {
+        } catch {
           try {
             tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
           } catch (sgrErr) {
@@ -261,7 +261,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
                   </div>
                 </div>
               </div>
-              {cdasEmpresa.map((cda, idx) => {
+              {cdasEmpresa.map((cda) => {
                 const rowKey = `empresa-${cda.cdaid}`;
                 const isExpanded = !!expandedRows[rowKey];
                 const isReloading = !!reloadingRows[rowKey];

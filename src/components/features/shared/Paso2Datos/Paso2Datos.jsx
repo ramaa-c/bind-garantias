@@ -22,10 +22,6 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
   const [modalContactoOpen, setContactoModalOpen] = useState(false);
   const [modalFacturacionOpen, setFacturacionModalOpen] = useState(false);
 
-  const calle = useWatch({ control, name: "calle" });
-  const numero = useWatch({ control, name: "numero" });
-  const sinNumero = useWatch({ control, name: "sinNumero" });
-  const provincia = useWatch({ control, name: "provincia" });
   const localidad = useWatch({ control, name: "localidad" });
   const direccion = useWatch({ control, name: "direccion" }) || "";
   const celular = useWatch({ control, name: "celular" }) || "";

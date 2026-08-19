@@ -26,8 +26,6 @@ import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../../hooks/useSolicitudes";
 import { useActualizarLimiteSocio } from "../../../hooks/useLinea";
 import { useVerificarHabilitacionNuevaOperacion } from "../../../hooks/useVerificarHabilitacionSolicitudes";
-import { useQuery } from "@tanstack/react-query";
-import { sociosService } from "../../../services/sociosService";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useChannel } from "../../../context/ChannelContext";

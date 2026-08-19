@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+// eslint-disable-next-line no-unused-vars -- ESLint no rastrea el uso de "components" como tag JSX (<components.Control>)
 import Select, { components } from "react-select";
 import { useDebounce } from "use-debounce";
 import { FiSearch } from "react-icons/fi";
