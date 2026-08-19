@@ -42,6 +42,10 @@ import { useObtenerTodasWeb } from "../../../../hooks/useCadenaValor";
 import { useTiposProducto } from "../../../../hooks/useCatalogos";
 import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
 import { useObtenerVariableParametrizacion } from "../../../../hooks/useVariablesParametrizacion";
+import { useCdaEngine } from "../../../../hooks/useCdaEngine";
+import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
+import { useAuthStore } from "../../../../store/useAuthStore";
+import { PANTALLA_LINEA } from "../../../../utils/pantallasCda";
 import {
   TERCERO_VIA_PLATAFORMA_PROPIA,
   ESTADO_PENDIENTE,
@@ -135,6 +139,13 @@ export const AltaOperacion = () => {
   const { valor: porcentajeMinimoSolicitud } = useObtenerVariableParametrizacion(
     "PorcentajeMinimoSolicitud",
   );
+
+  // UsuarioID requerido por cda/execute (ver useCdaEngine) - mismo patrón
+  // que Paso1Cuit.jsx para resolver el UsuarioWebID del usuario logueado.
+  const user = useAuthStore((state) => state.user);
+  const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email);
+  const usuarioWebId = usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id;
+  const { ejecutarValidaciones } = useCdaEngine();
 
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
@@ -852,6 +863,39 @@ export const AltaOperacion = () => {
         porcentajeMinimoSolicitud > 0 &&
         porcentajeSolicitado < porcentajeMinimoSolicitud;
 
+      // Regla: CDA de PANTALLA_LINEA sobre la línea elegida. Mismo criterio
+      // que PorcentajeMinimoSolicitud: no impide cargar la solicitud, si
+      // rechaza se envía igual pero queda rechazada automáticamente. Se
+      // reusa el motor ya probado en el onboarding (useCdaEngine), pasando
+      // LineaID en vez de SocioID/TerceroID - es el mismo parámetro real
+      // que ya acepta cda/execute. Un error de sistema o "pendiente"
+      // (integración caída) NO rechaza, se deja pasar igual que en el resto
+      // de los CDAs de la app - solo un rechazo de negocio real bloquea.
+      //
+      // ⚠️ Hoy no hay forma de vincular un CDA a una línea desde el
+      // backend (la pantalla admin "CDAs por Línea" trabaja contra
+      // endpoints que todavía no existen - confirmado contra swagger el
+      // 2026-08-18), así que esto siempre cae en "CDAs Inexistentes" →
+      // aprobado. Queda funcionando solo apenas Victor publique ese
+      // backend, sin tocar este archivo de nuevo.
+      const resultCdaLinea = await ejecutarValidaciones(
+        PANTALLA_LINEA,
+        { lineaId: tipoLimiteIdReal },
+        Number(cadenaSlug),
+        usuarioWebId,
+      );
+      const rechazosCdaLinea = resultCdaLinea.success
+        ? []
+        : resultCdaLinea.errors.filter(
+            (e) => e.isInvalidante && !e.isPendiente && !e.isSystemError,
+          );
+      const cdaLineaRechazada = rechazosCdaLinea.length > 0;
+
+      const debeRechazarseAutomaticamente = noAlcanzaMinimo || cdaLineaRechazada;
+      const motivoRechazoAutomatico = noAlcanzaMinimo
+        ? MOTIVOS_RECHAZO_AUTOMATICO.PORCENTAJE_MINIMO_SOLICITUD
+        : rechazosCdaLinea.map((e) => e.message).join("; ");
+
       // Convertido a pesos ANTES de crear nada: si la validación de cupo de
       // la cadena (más abajo) rechaza la operación, no queremos dejar una
       // SolicitudEnProceso huérfana sin línea asociada.
@@ -977,11 +1021,10 @@ export const AltaOperacion = () => {
         importeutilizado: 0,
         // Nuestro propio estado de aprobación (ver utils/estadoLimiteSocio),
         // no el TipoLimiteEstadoID heredado de SGR+. Si no llegó al
-        // PorcentajeMinimoSolicitud queda rechazada automáticamente.
-        tipolimiteestadoid: noAlcanzaMinimo ? ESTADO_RECHAZADA : ESTADO_PENDIENTE,
-        observaciones: noAlcanzaMinimo
-          ? MOTIVOS_RECHAZO_AUTOMATICO.PORCENTAJE_MINIMO_SOLICITUD
-          : "",
+        // PorcentajeMinimoSolicitud o el CDA de la línea rechazó, queda
+        // rechazada automáticamente.
+        tipolimiteestadoid: debeRechazarseAutomaticamente ? ESTADO_RECHAZADA : ESTADO_PENDIENTE,
+        observaciones: debeRechazarseAutomaticamente ? motivoRechazoAutomatico : "",
         sucursalid: 0,
         terceromercadoid: 400004,
         destfondosid: 320,

@@ -61,7 +61,7 @@ export default function AdminNavbar() {
     "CDAs Globales",
     "CDAs por Cadena",
     "Líneas",
-    "CDAs por Línea",
+    "CDAs Alta de Línea",
     "Productos de Líneas",
     "Modo Offline",
   ];
@@ -182,7 +182,7 @@ export default function AdminNavbar() {
                     destPath = "/admin/cadenas-cda";
                   } else if (item === "Líneas") {
                     destPath = "/admin/lineas-cadenas";
-                  } else if (item === "CDAs por Línea") {
+                  } else if (item === "CDAs Alta de Línea") {
                     destPath = "/admin/lineas-cda";
                   } else if (item === "Productos de Líneas") {
                     destPath = "/admin/lineas-productos";
