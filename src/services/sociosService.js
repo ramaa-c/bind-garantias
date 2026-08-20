@@ -134,16 +134,22 @@ export const sociosService = {
     }
   },
 
-  // GET api/Socio/CertificadoPYME?SocioID=X - Certificado(s) PyME del socio.
-  // El backend los genera solo, al procesar la vinculación del socio (ver
-  // Paso1Cuit.jsx) — el frontend nunca escribe acá, solo lee para confirmar
-  // que ya existe alguno. Nunca da 404: devuelve [] (200) si todavía no
-  // tiene ninguno, así que alcanza con chequear si la lista viene vacía.
-  obtenerCertificadoPyme: async (socioId) => {
-    const response = await api.get("api/Socio/CertificadoPYME", {
-      params: { SocioID: socioId },
-    });
-    return response.data;
+  // GET api/Socio/ValidarCuit/{cuit} - Verifica formato/dígito verificador
+  // del CUIT. 200 = válido, 401 = inválido — mismo patrón que
+  // CertificadoVigente (el backend reutiliza el código HTTP como semántica
+  // de negocio, no es un fallo de autenticación real). Nunca tira: devuelve
+  // { valido, mensaje } para no necesitar try/catch afuera.
+  validarCuit: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    try {
+      const response = await api.get(`api/Socio/ValidarCuit/${cuitLimpio}`);
+      return { valido: true, mensaje: response.data };
+    } catch (error) {
+      if (error.response?.status === 401) {
+        return { valido: false, mensaje: error.response.data };
+      }
+      throw error;
+    }
   },
 
   // Crea nuevo socio
