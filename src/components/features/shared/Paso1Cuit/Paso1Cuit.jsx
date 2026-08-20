@@ -119,6 +119,30 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
     setIsValidatingSocio(true);
 
     try {
+      // ── Formato/dígito verificador: antes se validaba solo con el shape
+      // básico del zod (11 dígitos numéricos, ver AltaDatosEmpresaSchema),
+      // que no detecta un CUIT con dígito verificador incorrecto — eso recién
+      // se enteraba más abajo, indirectamente, cuando el padrón no
+      // encontraba nada. Ahora se valida de entrada contra el backend
+      // (api/Socio/ValidarCuit, confirmado en vivo el 2026-08-20: 200
+      // "Formato valido" / 401 "Formato invalido"), así se corta rápido sin
+      // llegar a golpear Nosis/AFIP/LUFE con un CUIT que ya se sabe inválido.
+      // Si el propio endpoint falla (caído, error de red), no bloqueamos
+      // todo el alta por eso: se deja pasar y el chequeo de padrón de más
+      // abajo sigue actuando como red de contención.
+      try {
+        const resultadoFormato = await sociosService.validarCuit(cuit);
+        if (!resultadoFormato.valido) {
+          setError("cuit", {
+            type: "manual",
+            message: "El CUIT ingresado no es válido. Revisá el número e intentá nuevamente.",
+          });
+          return;
+        }
+      } catch (errorFormato) {
+        console.warn("Error consultando ValidarCuit (se continúa sin bloquear):", errorFormato);
+      }
+
       try {
         const sociosWebEncontrados = await sociosService.obtenerSocios({
           Cuit: cuit,

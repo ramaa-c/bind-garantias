@@ -134,6 +134,24 @@ export const sociosService = {
     }
   },
 
+  // GET api/Socio/ValidarCuit/{cuit} - Verifica formato/dígito verificador
+  // del CUIT. 200 = válido, 401 = inválido — mismo patrón que
+  // CertificadoVigente (el backend reutiliza el código HTTP como semántica
+  // de negocio, no es un fallo de autenticación real). Nunca tira: devuelve
+  // { valido, mensaje } para no necesitar try/catch afuera.
+  validarCuit: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    try {
+      const response = await api.get(`api/Socio/ValidarCuit/${cuitLimpio}`);
+      return { valido: true, mensaje: response.data };
+    } catch (error) {
+      if (error.response?.status === 401) {
+        return { valido: false, mensaje: error.response.data };
+      }
+      throw error;
+    }
+  },
+
   // Crea nuevo socio
   crearSocio: async (socioData) => {
     const response = await api.post("api/Socio", sociosAdapter.adaptarPayload1(socioData));
