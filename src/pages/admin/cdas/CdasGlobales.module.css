@@ -102,8 +102,46 @@
   padding: 0.85rem 1rem;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
+}
+
+.pantallaFilterGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.pantallaFilterPill,
+.pantallaFilterPillActive {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pantallaFilterPill {
+  background: rgba(255, 255, 255, 0.03);
+  color: #8b949e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pantallaFilterPill:hover {
+  color: #c9d1d9;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.pantallaFilterPillActive {
+  background: rgba(76, 101, 230, 0.14);
+  color: #8a9fff;
+  border: 1px solid var(--color-azul-bind, #4c65e6);
 }
 
 .listCount {
@@ -269,6 +307,31 @@
   border-radius: 999px;
   font-size: 0.68rem;
   font-weight: 700;
+}
+
+.pantallaBadgeGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.pantallaBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: rgba(76, 101, 230, 0.1);
+  color: #8a9fff;
+  border: 1px solid rgba(76, 101, 230, 0.3);
+}
+
+.pantallaBadgeVacio {
+  font-size: 0.72rem;
+  color: #6b7280;
+  font-style: italic;
 }
 
 .rowChevron {

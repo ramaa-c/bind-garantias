@@ -10,10 +10,9 @@ import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import { FiCheck, FiChevronDown, FiArrowLeft, FiTrash2, FiX, FiInfo } from "react-icons/fi";
 // Reutiliza el mismo módulo de estilos que CdasGlobales.jsx: es el mismo
-// workbench de alta/edición de CDA, extraído acá para poder reusarlo desde
-// otras pantallas (ver LineasCda.jsx) sin duplicar esta lógica - buena parte
-// tiene bugs reales ya resueltos y documentados (ver comentarios abajo), y
-// duplicarla los volvería a arriesgar en el segundo lugar.
+// workbench de alta/edición de CDA, extraído acá para que la lógica delicada
+// (ver comentarios abajo, buena parte documenta bugs reales ya resueltos)
+// viva en un solo lugar en vez de en el medio de CdasGlobales.jsx.
 import styles from "../../../../pages/admin/cdas/CdasGlobales.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -307,19 +306,17 @@ const detectarIntegracion = (expr) => {
 
 // Workbench de alta/edición de un Criterio de Aceptación (CDA): 3 columnas
 // (fuente de datos → definir regla → probar y publicar). Extraído de
-// CdasGlobales.jsx para poder reusarlo desde otras pantallas que también
-// necesitan crear CDAs (ver LineasCda.jsx) sin duplicar esta lógica ni
-// arriesgar en dos lugares los bugs de motor de CDAs ya resueltos acá
-// (casing por integración, comillas según tipo de campo, NOSIS numérico).
+// CdasGlobales.jsx (único lugar donde se crean/editan CDAs - LineasCda.jsx y
+// CadenasCda.jsx solo vinculan CDAs ya existentes a una cadena) para poder
+// aislar los bugs de motor de CDAs ya resueltos acá (casing por integración,
+// comillas según tipo de campo, NOSIS numérico) en un solo componente.
 //
 // El guardado real (POST/PUT del CDA + cualquier vinculación posterior) NO
-// vive acá: `onGuardar(payloadCda, { esEdicion })` lo hace el caller, que
-// sabe mejor que este componente qué implica "guardar" en su contexto
-// (CdasGlobales.jsx vincula a cadenas existentes / propaga valores;
-// LineasCda.jsx vincula a PANTALLA_LINEAS para la cadena elegida). Debe
-// devolver true si guardó con éxito (y mostrar sus propios toasts/errores);
-// el workbench solo orquesta la prueba previa, el modal de confirmación y
-// el estado de carga.
+// vive acá: `onGuardar(payloadCda, { esEdicion })` lo hace el caller
+// (CdasGlobales.jsx vincula a cadenas existentes / propaga valores, por
+// pantalla elegida). Debe devolver true si guardó con éxito (y mostrar sus
+// propios toasts/errores); el workbench solo orquesta la prueba previa, el
+// modal de confirmación y el estado de carga.
 export function CdaWorkbench({
   cdaEditando = null,
   onCancel,
@@ -330,7 +327,6 @@ export function CdaWorkbench({
   subtitulo,
   submitLabel,
   extraToggleOptions,
-  mostrarCdaPorDefectoToggle = true,
 }) {
   const { mutateAsync: crearCdaBase } = useCrearCda();
   const { mutateAsync: actualizarCdaBase } = useActualizarCda();
@@ -346,7 +342,14 @@ export function CdaWorkbench({
   const [expresion, setExpresion] = useState(() => getCdaProp(cdaEditando, "expresion") || "");
   const [simbolocomparacion, setSimbolocomparacion] = useState(() => getCdaProp(cdaEditando, "simbolocomparacion") || ">");
   const [valorcomparacion, setValorcomparacion] = useState(() => String(getCdaProp(cdaEditando, "valorcomparacion") ?? ""));
-  const [comparaPorVacio, setComparaPorVacio] = useState(() => String(getCdaProp(cdaEditando, "valorcomparacion") ?? "").trim() === "");
+  // Ojo: getCdaProp(null, ...) devuelve "" (ver su implementación), así que
+  // sin el guard de cdaEditando esto quedaba en true también al CREAR (nada
+  // tipeado todavía "parece" vacío) y el checkbox arrancaba tildado por
+  // error. Solo tiene sentido inferirlo de lo guardado cuando SÍ hay un CDA
+  // real que editar.
+  const [comparaPorVacio, setComparaPorVacio] = useState(
+    () => !!cdaEditando && String(getCdaProp(cdaEditando, "valorcomparacion") ?? "").trim() === ""
+  );
   const [mensajerechazo, setMensajerechazo] = useState(() => getCdaProp(cdaEditando, "mensajerechazo") || "");
   const [vinculadefaultcv, setVinculadefaultcv] = useState(() => {
     const defaultCv = String(getCdaProp(cdaEditando, "vinculadefaultcv"));
@@ -952,15 +955,13 @@ export function CdaWorkbench({
           {/* Vinculación: zona scrolleable, debajo del laboratorio de pruebas */}
           <div className={styles.colScroll}>
             <div className={styles.toggleOptionsPanel}>
-              {mostrarCdaPorDefectoToggle && (
-                <ToggleOptionRow
-                  label="CDA por Defecto"
-                  description="Se vincula automáticamente a las cadenas de valor que se creen de ahora en adelante. No afecta a las cadenas ya existentes."
-                  checked={vinculadefaultcv}
-                  onToggle={() => setVinculadefaultcv(!vinculadefaultcv)}
-                  disabled={isGuardando}
-                />
-              )}
+              <ToggleOptionRow
+                label="CDA por Defecto"
+                description="Se vincula automáticamente a las cadenas de valor que se creen de ahora en adelante. No afecta a las cadenas ya existentes."
+                checked={vinculadefaultcv}
+                onToggle={() => setVinculadefaultcv(!vinculadefaultcv)}
+                disabled={isGuardando}
+              />
               {extraToggleOptions}
             </div>
           </div>

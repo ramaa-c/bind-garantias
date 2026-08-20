@@ -4,10 +4,11 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useActualizarCda, useObtenerTodosCdas } from "../../../hooks/useCda";
 import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
+import { useObtenerCdaIdsPorPantalla } from "../../../hooks/useCadenaValor";
 import { cadenaValorService } from "../../../services/cadenaValorService";
 import { esCdaActivo, esCdaActivoEstricto } from "../../../utils/cdaUtils";
 import { resolverGrupoCda } from "../../../utils/grupoCdaUtils";
-import { PANTALLAS_CDA } from "../../../utils/pantallasCda";
+import { PANTALLAS_CDA, PANTALLA_LINEAS } from "../../../utils/pantallasCda";
 import { Button } from "../../../components/ui/Button/Button";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -32,6 +33,13 @@ const INTEGRACION_COLORS = {
   SGRPLUS: { bg: "rgba(56, 161, 105, 0.12)", color: "#38a169", border: "rgba(56, 161, 105, 0.35)" },
 };
 const INTEGRACION_COLOR_DEFAULT = { bg: "rgba(139, 148, 158, 0.12)", color: "#8b949e", border: "rgba(139, 148, 158, 0.3)" };
+
+// Las 3 pantallas reales donde se agrupan CDAs, para el filtro del listado y
+// los checkboxes de vinculación masiva. PANTALLAS_CDA (Ingreso de CUIT y
+// Socios) no incluye Alta de Línea porque no es una opción del paso a paso
+// de CadenasCda.jsx - acá sí es una pantalla más, al mismo nivel que las
+// otras dos, ya que este catálogo es compartido por las 3.
+const TODAS_PANTALLAS = [...PANTALLAS_CDA, { value: PANTALLA_LINEAS, label: "Alta de Línea" }];
 
 const detectarIntegracion = (expr) => {
   const e = (expr || "").toLowerCase();
@@ -77,14 +85,27 @@ export default function CdasGlobales() {
   const [vista, setVista] = useState("lista");
   const [cdaEditando, setCdaEditando] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [pantallaFiltro, setPantallaFiltro] = useState("TODAS");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [postSaveModalOpen, setPostSaveModalOpen] = useState(false);
 
   // Opciones de vinculación extra del workbench (ver CdaWorkbench.jsx): son
   // específicas de este catálogo global, así que el estado vive acá y no
-  // dentro del componente compartido.
-  const [vincularExistentes, setVincularExistentes] = useState(false);
-  const [propagarValorATodasCadenas, setPropagarValorATodasCadenas] = useState(false);
+  // dentro del componente compartido. Un Set por pantalla (en vez de un
+  // único booleano) porque un CDA nuevo puede tener sentido para una sola
+  // pantalla (ej. un CDA de Alta de Línea no debería terminar vinculado
+  // también a Ingreso de CUIT solo porque se tildó "vincular a existentes").
+  const [vincularPantallas, setVincularPantallas] = useState(() => new Set());
+  const [propagarPantallas, setPropagarPantallas] = useState(() => new Set());
+
+  const togglePantallaEnSet = (setState, pantalla) => {
+    setState((prev) => {
+      const next = new Set(prev);
+      if (next.has(pantalla)) next.delete(pantalla);
+      else next.add(pantalla);
+      return next;
+    });
+  };
 
   // A diferencia de esCdaActivo (que tolera "" para no romper la vinculación
   // de CDAs migrados que ya estaban linkeados), esta lista es estricta:
@@ -92,7 +113,26 @@ export default function CdasGlobales() {
   // (dato migrado sin completar) no aparece. Mismo criterio que CdaPanel.
   const todosCdasList = (Array.isArray(todosCdasData) ? todosCdasData : todosCdasData?.items || todosCdasData?.data || []).filter(esCdaActivoEstricto);
 
+  // Un CDA no tiene campo de "pantalla" propio (confirmado contra swagger):
+  // la única señal real de "a qué pantalla pertenece" es estar vinculado a
+  // su GrupoCda en alguna cadena. Se pide una vez por pantalla (3 llamadas,
+  // cacheadas independientemente) y se arma un mapa cdaId -> pantallas[]
+  // para poder mostrar el badge en la tabla y filtrar el listado - así el
+  // admin ve de un vistazo qué CDAs ya existen para cada pantalla antes de
+  // crear uno nuevo, en vez de terminar con dos CDAs equivalentes.
+  const { data: idsPantalla0 } = useObtenerCdaIdsPorPantalla(TODAS_PANTALLAS[0].value);
+  const { data: idsPantalla1 } = useObtenerCdaIdsPorPantalla(TODAS_PANTALLAS[1].value);
+  const { data: idsPantalla2 } = useObtenerCdaIdsPorPantalla(TODAS_PANTALLAS[2].value);
+  const idsPorPantalla = [idsPantalla0, idsPantalla1, idsPantalla2];
+
+  const pantallasDeCda = (cdaId) =>
+    TODAS_PANTALLAS.filter((_, i) => (idsPorPantalla[i] || []).includes(Number(cdaId)));
+
   const cdasFiltrados = todosCdasList.filter((c) => {
+    if (pantallaFiltro !== "TODAS") {
+      const enPantalla = pantallasDeCda(getCdaId(c)).some((p) => p.value === pantallaFiltro);
+      if (!enPantalla) return false;
+    }
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     return (
@@ -103,15 +143,15 @@ export default function CdasGlobales() {
 
   const handleCrearNuevo = () => {
     setCdaEditando(null);
-    setVincularExistentes(false);
-    setPropagarValorATodasCadenas(false);
+    setVincularPantallas(new Set());
+    setPropagarPantallas(new Set());
     setVista("formulario");
   };
 
   const handleEditarCda = (cda) => {
     setCdaEditando(cda);
-    setVincularExistentes(false);
-    setPropagarValorATodasCadenas(false);
+    setVincularPantallas(new Set());
+    setPropagarPantallas(new Set());
     setVista("formulario");
   };
 
@@ -120,12 +160,12 @@ export default function CdasGlobales() {
     setVista("lista");
   };
 
-  // Vincula un CDA puntual a todas las cadenas de valor YA EXISTENTES, en
-  // ambas pantallas. Es una acción explícita disparada por el checkbox
-  // "vincularExistentes": el flag "vinculadefaultcv" solo controla si el
-  // backend lo suma automáticamente a las cadenas de valor que se creen de
-  // ahora en adelante, no a las actuales.
-  const vincularCdaEnCadenasExistentes = async (cdaId, valorParaVincular) => {
+  // Vincula un CDA puntual a todas las cadenas de valor YA EXISTENTES, en las
+  // pantallas elegidas por el admin (checkbox por pantalla, ver
+  // ToggleOptionRow más abajo). Es una acción explícita: el flag
+  // "vinculadefaultcv" solo controla si el backend lo suma automáticamente a
+  // las cadenas de valor que se creen de ahora en adelante, no a las actuales.
+  const vincularCdaEnCadenasExistentes = async (cdaId, valorParaVincular, pantallas) => {
     toast.info("Vinculando criterio de aceptación a las cadenas de valor existentes...");
     try {
       const todasCadenas = await cadenaValorService.obtenerTodasWeb();
@@ -136,7 +176,7 @@ export default function CdasGlobales() {
         const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
         if (!cadenaId) continue;
 
-        for (const pantalla of PANTALLAS_CDA) {
+        for (const pantalla of pantallas) {
           try {
             const grupo = await resolverGrupoCda(pantalla.value, cadenaId);
             const linkedCdas = await cadenaValorService.obtenerCdasPorGrupo(grupo.grupocdaid);
@@ -170,11 +210,12 @@ export default function CdasGlobales() {
     }
   };
 
-  // Sobrescribe el valor por cadena en TODAS las cadenas y pantallas donde
-  // este CDA ya está vinculado y activo (no toca las que no lo tienen
-  // vinculado: para eso está "vincularExistentes"). Es la acción disparada
-  // por el checkbox "propagarValorATodasCadenas" al editar un CDA global.
-  const propagarValorATodasLasCadenasActivas = async (cdaId, valorNuevo) => {
+  // Sobrescribe el valor por cadena en TODAS las cadenas donde este CDA ya
+  // está vinculado y activo, en las pantallas elegidas por el admin (no toca
+  // las que no lo tienen vinculado: para eso está "vincularPantallas"). Es
+  // la acción disparada por los checkboxes de "aplicar valor" al editar un
+  // CDA global.
+  const propagarValorATodasLasCadenasActivas = async (cdaId, valorNuevo, pantallas) => {
     toast.info("Aplicando el nuevo valor en las cadenas donde este criterio está activo...");
     try {
       const todasCadenas = await cadenaValorService.obtenerTodasWeb();
@@ -185,7 +226,7 @@ export default function CdasGlobales() {
         const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
         if (!cadenaId) continue;
 
-        for (const pantalla of PANTALLAS_CDA) {
+        for (const pantalla of pantallas) {
           try {
             const grupo = await resolverGrupoCda(pantalla.value, cadenaId);
             const linkedCdas = await cadenaValorService.obtenerCdasPorGrupo(grupo.grupocdaid);
@@ -231,8 +272,9 @@ export default function CdasGlobales() {
   const handleGuardarWorkbench = async (_payloadCda, { esEdicion, cdaId, valorParaLog }) => {
     try {
       if (esEdicion) {
-        if (propagarValorATodasCadenas && cdaId) {
-          await propagarValorATodasLasCadenasActivas(cdaId, valorParaLog);
+        if (propagarPantallas.size > 0 && cdaId) {
+          const pantallas = TODAS_PANTALLAS.filter((p) => propagarPantallas.has(p.value));
+          await propagarValorATodasLasCadenasActivas(cdaId, valorParaLog, pantallas);
         }
         await queryClient.invalidateQueries({ queryKey: ['cda'] });
         await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
@@ -241,19 +283,21 @@ export default function CdasGlobales() {
         return true;
       }
 
-      if (vincularExistentes && cdaId) {
-        await vincularCdaEnCadenasExistentes(cdaId, valorParaLog);
+      if (vincularPantallas.size > 0 && cdaId) {
+        const pantallas = TODAS_PANTALLAS.filter((p) => vincularPantallas.has(p.value));
+        await vincularCdaEnCadenasExistentes(cdaId, valorParaLog, pantallas);
       }
 
       await queryClient.invalidateQueries({ queryKey: ['cda'] });
       await queryClient.invalidateQueries({ queryKey: ["cda", "pantallaGrupo"] });
+      await queryClient.invalidateQueries({ queryKey: ["cda", "idsPorPantalla"] });
       await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
       toast.success("Criterio de Aceptación Global creado exitosamente.");
-      // El atajo a "CDAs por Cadena" solo tiene sentido si el CDA quedó SIN
-      // vincular a ninguna cadena. Si se tildó "vincular a cadenas
-      // existentes", ya se vinculó a todas más arriba - mostrarlo acá
+      // El atajo del modal solo tiene sentido si el CDA quedó SIN vincular a
+      // ninguna pantalla. Si se tildó al menos una, ya se vinculó a todas
+      // las cadenas existentes en esa pantalla más arriba - mostrarlo acá
       // empujaba a vincularlo otra vez a mano y duplicaba la fila.
-      if (!vincularExistentes) {
+      if (vincularPantallas.size === 0) {
         setPostSaveModalOpen(true);
       }
       return true;
@@ -311,7 +355,7 @@ export default function CdasGlobales() {
       onClose={() => setPostSaveModalOpen(false)}
       onConfirm={() => { setPostSaveModalOpen(false); navigate("/admin/cadenas-cda"); }}
       titulo="Vincular a una Cadena"
-      mensaje='El criterio se guardó correctamente, pero todavía no está activo. ¿Querés ir ahora a "CDAs por Cadena" para vincularlo?'
+      mensaje='El criterio se guardó correctamente, pero todavía no está vinculado a ninguna cadena. ¿Querés ir ahora a "CDAs por Cadena" para vincularlo? (Si es para Alta de Línea, se vincula en cambio desde "CDAs Alta de Línea".)'
       variant="blue"
       confirmText="IR AHORA"
       cancelText="MÁS TARDE"
@@ -345,6 +389,25 @@ export default function CdasGlobales() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
+          <div className={styles.pantallaFilterGroup} role="group" aria-label="Filtrar por pantalla">
+            <button
+              type="button"
+              className={pantallaFiltro === "TODAS" ? styles.pantallaFilterPillActive : styles.pantallaFilterPill}
+              onClick={() => setPantallaFiltro("TODAS")}
+            >
+              Todas
+            </button>
+            {TODAS_PANTALLAS.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                className={pantallaFiltro === p.value ? styles.pantallaFilterPillActive : styles.pantallaFilterPill}
+                onClick={() => setPantallaFiltro(p.value)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
           {!isLoadingLista && (
             <span className={styles.listCount}>
               {cdasFiltrados.length} criterio{cdasFiltrados.length !== 1 ? "s" : ""}
@@ -359,6 +422,7 @@ export default function CdasGlobales() {
                 <tr>
                   <th>Descripción</th>
                   <th>Integración</th>
+                  <th>Pantallas</th>
                   <th>Expresión</th>
                   <th>Mensaje de Rechazo</th>
                   <th style={{ textAlign: "center", width: "160px" }}>Vinculación Default</th>
@@ -370,7 +434,7 @@ export default function CdasGlobales() {
                   Array.from({ length: 6 }).map((_, i) => <CdaRowSkeleton key={i} />)
                 ) : cdasFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: 0 }}>
+                    <td colSpan={7} style={{ padding: 0 }}>
                       <div className={styles.emptyState}>
                         <FiInbox className={styles.emptyStateIcon} />
                         <span>No hay criterios de aceptación cargados todavía.</span>
@@ -384,6 +448,7 @@ export default function CdasGlobales() {
                     const esDefault = defaultCv === "1" || defaultCv.toUpperCase() === "S";
                     const integ = detectarIntegracion(getCdaProp(cda, "expresion"));
                     const integColor = INTEGRACION_COLORS[integ] || INTEGRACION_COLOR_DEFAULT;
+                    const pantallasCda = pantallasDeCda(id);
                     return (
                       <tr key={id} className={styles.clickableRow} onClick={() => handleEditarCda(cda)}>
                         <td>
@@ -397,6 +462,17 @@ export default function CdasGlobales() {
                           >
                             {integ || "—"}
                           </span>
+                        </td>
+                        <td>
+                          {pantallasCda.length === 0 ? (
+                            <span className={styles.pantallaBadgeVacio}>Sin vincular</span>
+                          ) : (
+                            <div className={styles.pantallaBadgeGroup}>
+                              {pantallasCda.map((p) => (
+                                <span key={p.value} className={styles.pantallaBadge}>{p.label}</span>
+                              ))}
+                            </div>
+                          )}
                         </td>
                         <td><code className={styles.tableCode}>{getCdaProp(cda, "expresion") || "-"}</code></td>
                         <td>{getCdaProp(cda, "mensajerechazo") || "-"}</td>
@@ -430,19 +506,29 @@ export default function CdasGlobales() {
         isEliminando={isEliminando}
         extraToggleOptions={
           !cdaEditando ? (
-            <ToggleOptionRow
-              label="Vincular a todas las cadenas existentes"
-              description="Al guardar, este criterio va a pasar a estar activo en todas las cadenas de valor que ya existen, en sus dos pantallas (Ingreso de CUIT y Socios)."
-              checked={vincularExistentes}
-              onToggle={() => setVincularExistentes((v) => !v)}
-            />
+            <>
+              {TODAS_PANTALLAS.map((p) => (
+                <ToggleOptionRow
+                  key={p.value}
+                  label={`Vincular a existentes — ${p.label}`}
+                  description={`Al guardar, este criterio va a pasar a estar activo en todas las cadenas de valor que ya existen, para la pantalla "${p.label}".`}
+                  checked={vincularPantallas.has(p.value)}
+                  onToggle={() => togglePantallaEnSet(setVincularPantallas, p.value)}
+                />
+              ))}
+            </>
           ) : (
-            <ToggleOptionRow
-              label="Aplicar valor en cadenas activas"
-              description='Sobrescribe el valor de comparación en cada combinación de cadena y pantalla donde este criterio ya está vinculado y activo (por ejemplo, si en Ingreso de CUIT el score debía ser mayor a 500 y en Socios mayor a 600, en ambas va a quedar el nuevo valor). Después se puede volver a personalizar por cadena y pantalla desde CDAs por Cadena.'
-              checked={propagarValorATodasCadenas}
-              onToggle={() => setPropagarValorATodasCadenas((v) => !v)}
-            />
+            <>
+              {TODAS_PANTALLAS.map((p) => (
+                <ToggleOptionRow
+                  key={p.value}
+                  label={`Aplicar valor — ${p.label}`}
+                  description={`Sobrescribe el valor de comparación en cada cadena donde este criterio ya está vinculado y activo para la pantalla "${p.label}". Después se puede volver a personalizar por cadena desde CDAs por Cadena / CDAs Alta de Línea.`}
+                  checked={propagarPantallas.has(p.value)}
+                  onToggle={() => togglePantallaEnSet(setPropagarPantallas, p.value)}
+                />
+              ))}
+            </>
           )
         }
       />

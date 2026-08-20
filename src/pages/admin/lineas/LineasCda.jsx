@@ -1,30 +1,20 @@
 import React, { useState } from "react";
-import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
-import { FiArrowRight, FiLayers, FiAlertTriangle, FiPlus } from "react-icons/fi";
+import { FiArrowRight, FiLayers, FiAlertTriangle } from "react-icons/fi";
 import styles from "../../../pages/admin/cadenas-valor/CadenasCda.module.css";
 import lineaStyles from "./LineasCda.module.css";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
-import { Button } from "../../../components/ui/Button/Button";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import { CdaPanel } from "../../../components/features/admin/CdaPanel/CdaPanel";
-import { CdaWorkbench } from "../../../components/features/admin/CdaWorkbench/CdaWorkbench";
-import { PANTALLA_LINEA } from "../../../utils/pantallasCda";
-import { resolverGrupoCda } from "../../../utils/grupoCdaUtils";
-import { cadenaValorService } from "../../../services/cadenaValorService";
-import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
-import { useObtenerTodasWebConEstado, useObtenerCdaIdsPorPantalla } from "../../../hooks/useCadenaValor";
+import { PANTALLA_LINEAS } from "../../../utils/pantallasCda";
+import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimitesCadenaValor } from "../../../hooks/useLinea";
 import { useTiposProducto } from "../../../hooks/useCatalogos";
 
 const DESCRIPCION_PANEL =
-  "Activá los CDAs que se deben validar al pedir una línea de crédito nueva en esta cadena, y definí cómo se combinan entre sí. La regla y el mensaje de rechazo son los definidos en Criterios de Aceptación: acá solo podés personalizar, para esta cadena, el valor límite de cada uno.";
+  "Activá los CDAs a validar y cómo se combinan. La regla se define en Criterios de Aceptación Globales; acá solo el valor por cadena.";
 
 export default function LineasCda() {
-  const queryClient = useQueryClient();
-  const usuarioWebId = useUsuarioWebIdActual();
   const [selectedCadenaId, setSelectedCadenaId] = useState("");
-  const [creandoCda, setCreandoCda] = useState(false);
 
   const { data: cadenas, isLoading: isLoadingCadenas } = useObtenerTodasWebConEstado();
 
@@ -36,7 +26,7 @@ export default function LineasCda() {
   );
 
   // El backend no tiene ningún concepto de "CDA por línea" (WSGrupoCda solo
-  // admite CadenaValorID) - los CDAs de PANTALLA_LINEA se vinculan a la
+  // admite CadenaValorID) - los CDAs de PANTALLA_LINEAS se vinculan a la
   // cadena entera y aplican por igual a todas sus líneas activas. La caja de
   // "alcance" de abajo es solo para mostrar ese alcance real, no para elegir
   // nada - por eso queda siempre visible (con su propio estado vacío) en vez
@@ -53,77 +43,15 @@ export default function LineasCda() {
       return l.descripcion || tipo?.descripcion || `Línea #${l.tipolimiteid}`;
     });
 
-  // Los CDAs no tienen un campo de "pantalla" propio: un CDA solo "es de
-  // líneas" en el sentido de que ya está vinculado a PANTALLA_LINEA en
-  // alguna cadena. Por eso el checklist no lista los ~61 CDAs globales
-  // (eso quedó para CadenasCda.jsx) sino solo este subconjunto - que arranca
-  // vacío hasta que se cree el primero con el botón de arriba.
-  const { data: cdaIdsPermitidos, isLoading: isLoadingCdaIds } =
-    useObtenerCdaIdsPorPantalla(PANTALLA_LINEA);
-
-  // El CDA en sí ya se guardó (CdaWorkbench lo hizo antes de llamar acá) -
-  // acá solo falta vincularlo a PANTALLA_LINEA para la cadena elegida, igual
-  // que hace CdasGlobales.jsx con "vincular a cadenas existentes" pero
-  // acotado a una sola cadena y sin toggle: siempre se vincula, es lo único
-  // que tiene sentido en este flujo.
-  const handleGuardarCdaLinea = async (_payloadCda, { cdaId, valorParaLog }) => {
-    if (!cdaId || !activeItem) {
-      toast.error("No se pudo determinar el CDA recién creado o la cadena elegida.");
-      return true;
-    }
-    try {
-      const grupo = await resolverGrupoCda(PANTALLA_LINEA, activeItem.cadenavalorid);
-      await cadenaValorService.vincularCdasAGrupo({
-        grupocdaid: grupo.grupocdaid,
-        listacda: [{ cdaid: cdaId, valorcomparacion: valorParaLog, usuariowebid: usuarioWebId }],
-      });
-      await queryClient.invalidateQueries({ queryKey: ["cda"] });
-      await queryClient.invalidateQueries({
-        queryKey: ["cadenaValor", "grupoCdaConCdas", PANTALLA_LINEA, activeItem.cadenavalorid],
-      });
-      toast.success(`Criterio creado y vinculado a ${activeItem.denominacion}.`);
-      return true;
-    } catch (err) {
-      console.error("[LineasCda] Error al vincular el CDA nuevo a la cadena:", err);
-      toast.error(
-        "El CDA se guardó, pero no se pudo vincular automáticamente a esta cadena. Podés reintentarlo desde el checklist.",
-      );
-      return true;
-    }
-  };
-
-  if (creandoCda) {
-    return (
-      <CdaWorkbench
-        titulo={`Nuevo CDA para Alta de Línea${activeItem ? ` — ${activeItem.denominacion}` : ""}`}
-        subtitulo="Se crea como un Criterio de Aceptación global (va a aparecer también en Criterios de Aceptación Globales) y se vincula automáticamente a esta cadena, en la pantalla de Alta de Línea."
-        onCancel={() => setCreandoCda(false)}
-        onGuardar={handleGuardarCdaLinea}
-        submitLabel="Crear y vincular a esta cadena"
-        mostrarCdaPorDefectoToggle={false}
-      />
-    );
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.titleBox}>
           <h1>CDAs de Alta de Línea</h1>
           <p>
-            Configurá qué Criterios de Aceptación se validan al pedir una línea de crédito nueva. Se aplican a todas las líneas activas de la cadena elegida.
+            Configurá qué CDAs se validan al pedir una línea de crédito, por cadena.
           </p>
         </div>
-        <Button
-          type="button"
-          variant="blue"
-          size="md"
-          onClick={() => setCreandoCda(true)}
-          disabled={!activeItem}
-          title={!activeItem ? "Elegí una cadena primero" : undefined}
-        >
-          <FiPlus /> Crear CDA para esta cadena
-        </Button>
       </div>
 
       <div className={styles.selectorSection}>
@@ -193,19 +121,14 @@ export default function LineasCda() {
           <div className={styles.emptyMsg}>
             Cadena de valor no encontrada.
           </div>
-        ) : isLoadingCdaIds ? (
-          <div className={styles.emptyMsg}>
-            Cargando configuración de esta pantalla...
-          </div>
         ) : (
           <div className={styles.panelWrap}>
             <CdaPanel
               activeItem={activeItem}
-              pantalla={PANTALLA_LINEA}
+              pantalla={PANTALLA_LINEAS}
               hideHeader={true}
               hideUnchecked={false}
               description={DESCRIPCION_PANEL}
-              cdaIdsPermitidos={cdaIdsPermitidos || []}
               key={activeItem.cadenavalorid}
             />
           </div>
