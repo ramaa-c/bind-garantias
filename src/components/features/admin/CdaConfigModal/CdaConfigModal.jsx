@@ -11,8 +11,8 @@ export const CdaConfigModal = ({ isOpen, onClose, activeItem, isReadOnly = false
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="CONFIGURACIÓN DE CDAs"
-      maxWidth="850px"
+      title={isReadOnly ? "CDAs CONFIGURADOS" : "CONFIGURACIÓN DE CDAs"}
+      maxWidth={isReadOnly ? "1000px" : "850px"}
       variant="blue"
     >
       <div style={{ marginBottom: "1rem" }}>
@@ -24,6 +24,7 @@ export const CdaConfigModal = ({ isOpen, onClose, activeItem, isReadOnly = false
         onClose={onClose}
         isReadOnly={isReadOnly}
         hideCheckboxes={isReadOnly}
+        hideHeader={isReadOnly}
         key={`${activeItem?.cadenavalorid}-${selectedPantalla}`}
       />
     </Modal>

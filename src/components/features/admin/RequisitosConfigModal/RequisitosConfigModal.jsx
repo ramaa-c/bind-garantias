@@ -64,6 +64,13 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
     }
   }, [requisitos, isOpen]);
 
+  // localConfig arranca como copia exacta de requisitos (lo último guardado)
+  // y solo se aparta de eso vía handleUpdate/handleReset: comparar contra
+  // requisitos alcanza para saber si el usuario cambió algo de verdad antes
+  // de disparar el ConfirmacionModal de guardado.
+  const sinCambios =
+    !!requisitos && !!localConfig && JSON.stringify(localConfig) === JSON.stringify(requisitos);
+
   const handleUpdate = (type, key, value) => {
     setLocalConfig(prev => {
       if (!prev) return prev;
@@ -261,11 +268,25 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
       </div>
 
       <div className={styles.modalFooter}>
-        <Button variant="outlineBlue" size="sm" onClick={handleReset} disabled={isUpdating}>
+        <Button
+          variant="outlineBlue"
+          size="sm"
+          onClick={handleReset}
+          disabled={isUpdating || sinCambios}
+          title={sinCambios ? "No hay cambios para restablecer" : undefined}
+        >
           <FiRotateCcw style={{ marginRight: "0.5rem" }} />
           REESTABLECER
         </Button>
-        <Button variant="blue" size="sm" onClick={handleSave} className={styles.saveBtn} isLoading={isUpdating} disabled={isUpdating}>
+        <Button
+          variant="blue"
+          size="sm"
+          onClick={handleSave}
+          className={styles.saveBtn}
+          isLoading={isUpdating}
+          disabled={isUpdating || sinCambios}
+          title={sinCambios ? "No hay cambios para guardar" : undefined}
+        >
           <FiSave style={{ marginRight: "0.5rem" }} />
           GUARDAR CONFIGURACIÓN
         </Button>

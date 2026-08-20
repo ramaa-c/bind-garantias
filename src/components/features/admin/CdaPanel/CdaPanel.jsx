@@ -65,7 +65,16 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   // antes de guardar. cdasEnPantalla es solo un recorte para MOSTRAR (qué
   // tarjetas se listan), nunca para decidir qué se guarda.
   const allCdasListSinAcotar = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivoEstricto);
-  const cdasEnPantalla = mostrarTodosLosCdas
+  // El recorte por cdaIdsDePantalla es un filtro cruzado entre cadenas
+  // (agrega qué CDAs se vincularon a esta pantalla en CUALQUIER cadena),
+  // pensado solo para acotar el checklist de "qué puedo agregar" en modo
+  // edición. En modo solo-lectura no hace falta ese cruce - lo que hay que
+  // mostrar es exactamente lo vinculado a ESTA cadena (linkedCdasList, vía
+  // grupoData), y aplicar ese filtro igual podía terminar OCULTANDO un CDA
+  // realmente activo para esta cadena si por algún motivo no aparecía en el
+  // agregado cruzado (ver hideUnchecked más abajo, que ya se encarga de
+  // dejar solo los activos).
+  const cdasEnPantalla = mostrarTodosLosCdas || isReadOnly
     ? allCdasListSinAcotar
     : allCdasListSinAcotar.filter((c) => {
         const id = c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
@@ -496,7 +505,30 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
               : "Activá los CDAs a ejecutar y cómo se combinan. La regla se define en Criterios de Aceptación; acá solo el valor por cadena.")}
         </p>
 
+        {/* En modo solo-lectura el selector AND/OR/personalizada (leftCol)
+            queda deshabilitado y no aporta nada interactivo - ocupa espacio
+            para mostrar un dato que cabe en una línea. Se reemplaza por este
+            badge compacto con la misma información. */}
+        {isReadOnly && (
+          <div className={styles.readOnlyRuleBadge}>
+            <FiLock size={11} className={styles.lockIcon} />
+            {agrupacionType === "and" && (
+              <span>Se deben cumplir <strong>todos</strong> los criterios activos (AND)</span>
+            )}
+            {agrupacionType === "or" && (
+              <span>Alcanza con <strong>cualquiera</strong> de los criterios activos (OR)</span>
+            )}
+            {agrupacionType === "custom" && (
+              <span>
+                Expresión personalizada:{" "}
+                <code className={styles.readOnlyRuleCode}>{expresionAgrupacion || "(vacía)"}</code>
+              </span>
+            )}
+          </div>
+        )}
+
         <div className={styles.mainLayout}>
+        {!isReadOnly && (
         <div className={styles.leftCol}>
           <div className={styles.agrupacionSection}>
             <span className={styles.customTextareaLabel}>Agrupación lógica de esta cadena y pantalla</span>
@@ -615,6 +647,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
             )}
           </div>
         </div>
+        )}
 
         <div className={styles.rightCol}>
         {/* Se gatea por el catálogo SIN acotar (no por cdasEnPantalla): si el
@@ -672,7 +705,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         )}
 
         <div className={`${styles.cdasSection} ${isReadOnly ? styles.readOnly : ""}`}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div className={styles.cdasList}>
             {cdasEnPantalla.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
                 {allCdasListSinAcotar.length === 0
@@ -754,26 +787,36 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
 
                       <div className={styles.controlPanel}>
                         <span className={styles.controlPanelLabel}>Valor en esta cadena</span>
-                        <div className={styles.controlValueWrap}>
-                          <input
-                            type="text"
-                            value={valComparacion}
-                            onChange={(e) => handleValueChange(id, e.target.value)}
-                            className={styles.controlValueInput}
-                            placeholder="Valor"
-                            disabled={!isChecked || isReadOnly}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          {!isReadOnly && <FiEdit3 className={styles.controlPencilIcon} size={12} />}
-                        </div>
+                        {isReadOnly ? (
+                          <span className={styles.controlValueReadOnly}>{valComparacion || "—"}</span>
+                        ) : (
+                          <div className={styles.controlValueWrap}>
+                            <input
+                              type="text"
+                              value={valComparacion}
+                              onChange={(e) => handleValueChange(id, e.target.value)}
+                              className={styles.controlValueInput}
+                              placeholder="Valor"
+                              disabled={!isChecked}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <FiEdit3 className={styles.controlPencilIcon} size={12} />
+                          </div>
+                        )}
                         {esValorPersonalizado && (
                           <span className={styles.overrideHint} title={`El valor definido en Criterios de Aceptación es "${valorGlobal || "(vacío)"}"`}>
                             ≠ global: {valorGlobal || "(vacío)"}
                           </span>
                         )}
-                        <span className={`${styles.cdaStatusBadge} ${isChecked ? styles.badgeActive : styles.badgeInactive}`}>
-                          {isChecked ? "Activo" : "Inactivo"}
-                        </span>
+                        {/* En solo-lectura todas las tarjetas visibles son
+                            activas por definición del filtro (hideUnchecked) -
+                            el badge "Activo" repetido en cada una no aporta
+                            nada, solo ruido. */}
+                        {!isReadOnly && (
+                          <span className={`${styles.cdaStatusBadge} ${isChecked ? styles.badgeActive : styles.badgeInactive}`}>
+                            {isChecked ? "Activo" : "Inactivo"}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );

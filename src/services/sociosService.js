@@ -134,6 +134,18 @@ export const sociosService = {
     }
   },
 
+  // GET api/Socio/CertificadoPYME?SocioID=X - Certificado(s) PyME del socio.
+  // El backend los genera solo, al procesar la vinculación del socio (ver
+  // Paso1Cuit.jsx) — el frontend nunca escribe acá, solo lee para confirmar
+  // que ya existe alguno. Nunca da 404: devuelve [] (200) si todavía no
+  // tiene ninguno, así que alcanza con chequear si la lista viene vacía.
+  obtenerCertificadoPyme: async (socioId) => {
+    const response = await api.get("api/Socio/CertificadoPYME", {
+      params: { SocioID: socioId },
+    });
+    return response.data;
+  },
+
   // Crea nuevo socio
   crearSocio: async (socioData) => {
     const response = await api.post("api/Socio", sociosAdapter.adaptarPayload1(socioData));
