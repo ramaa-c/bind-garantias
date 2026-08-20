@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiCheck, FiRotateCcw, FiSave, FiLock, FiEdit3, FiSearch, FiInfo } from "react-icons/fi";
 import { toast } from "sonner";
-import { useObtenerGrupoCdaConCdas, useVincularCdasAGrupo, useActualizarVinculacionCda } from "../../../../hooks/useCadenaValor";
+import { useObtenerGrupoCdaConCdas, useVincularCdasAGrupo, useActualizarVinculacionCda, useObtenerCdaIdsPorPantalla } from "../../../../hooks/useCadenaValor";
 import { useObtenerTodosCdas, useActualizarGrupoCda } from "../../../../hooks/useCda";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { esCdaActivo, esCdaActivoEstricto } from "../../../../utils/cdaUtils";
@@ -33,7 +33,7 @@ function encontrarContenedorScrolleable(el) {
 // lógica (AND/OR/personalizada) de UN GrupoCda puntual, identificado por la
 // combinación (pantalla, cadena). El padre (CadenasCda.jsx / CdaConfigModal.jsx)
 // decide qué pantalla mostrar (tabs); acá solo se edita una a la vez.
-export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description, cdaIdsPermitidos }) => {
+export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
@@ -45,22 +45,32 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   // al guardar, vía resolverGrupoCda).
   const { data: grupoData, isLoading: isLoadingGrupo, isError: isErrorGrupo, refetch: refetchGrupo } = useObtenerGrupoCdaConCdas(cadenaId, pantalla);
 
+  // IDs de los CDAs ya vinculados a ESTA pantalla en cualquier cadena (no
+  // solo la actual): sirve para acotar el checklist por default a "los CDAs
+  // pensados para esta pantalla" en vez de listar el catálogo global entero
+  // (~61 CDAs, la mayoría de otra pantalla). El toggle "Ver todos los CDA
+  // globales" lo desactiva a pedido, para el caso de un CDA recién creado en
+  // Criterios de Aceptación Globales que todavía no se vinculó a ninguna
+  // pantalla (si no, nunca aparecería acá para poder vincularlo).
+  const { data: cdaIdsDePantalla, isLoading: isLoadingCdaIdsPantalla } = useObtenerCdaIdsPorPantalla(pantalla);
+  const [mostrarTodosLosCdas, setMostrarTodosLosCdas] = useState(false);
+
   const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdasAGrupo();
   const { mutateAsync: actualizarVinculacionCda, isPending: isActualizandoVinculacion } = useActualizarVinculacionCda();
   const { mutateAsync: actualizarGrupoCda, isPending: isActualizandoGrupo } = useActualizarGrupoCda();
   const usuarioWebId = useUsuarioWebIdActual();
+  // allCdasListSinAcotar (catálogo global completo) es la fuente de verdad
+  // para cdaConfigs/guardado/reset - así un CDA marcado vía "Ver todos" no
+  // pierde su estado si el admin vuelve a tildar el filtro por pantalla
+  // antes de guardar. cdasEnPantalla es solo un recorte para MOSTRAR (qué
+  // tarjetas se listan), nunca para decidir qué se guarda.
   const allCdasListSinAcotar = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivoEstricto);
-  // cdaIdsPermitidos (opcional): acota el checklist a un subconjunto puntual
-  // de CDAs en vez del catálogo global completo - ver LineasCda.jsx, que
-  // solo quiere mostrar los CDAs ya pensados para PANTALLA_LINEAS. Sin esta
-  // prop (CadenasCda.jsx no la pasa) el comportamiento es exactamente el de
-  // siempre: se listan todos.
-  const allCdasList = Array.isArray(cdaIdsPermitidos)
-    ? allCdasListSinAcotar.filter((c) => {
+  const cdasEnPantalla = mostrarTodosLosCdas
+    ? allCdasListSinAcotar
+    : allCdasListSinAcotar.filter((c) => {
         const id = c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
-        return cdaIdsPermitidos.includes(Number(id));
-      })
-    : allCdasListSinAcotar;
+        return (cdaIdsDePantalla || []).includes(Number(id));
+      });
   const linkedCdasList = Array.isArray(grupoData?.cdas) ? grupoData.cdas : grupoData?.cdas?.items || grupoData?.cdas?.data || [];
 
   const getCdaId = (c) => {
@@ -128,9 +138,11 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
     return configs;
   };
 
-  // Inicializar estado local a partir de los datos cargados
+  // Inicializar estado local a partir de los datos cargados. Se seedea con
+  // el catálogo COMPLETO (allCdasListSinAcotar), no con el recorte visible
+  // por el filtro de pantalla - ver comentario en su declaración más arriba.
   useEffect(() => {
-    setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
+    setCdaConfigs(buildCdaConfigs(allCdasListSinAcotar, linkedCdasList));
   }, [todosCdas, grupoData]);
 
   // Detectar el tipo de agrupación a partir de la expresión guardada
@@ -163,14 +175,31 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   const [recienTogglado, setRecienTogglado] = useState(null);
   const cardRefs = useRef({});
 
+  // El toggle "Ver todos los CDA globales" puede revelar CDAs que el efecto
+  // de arriba nunca sembró en cdaConfigs (solo corre cuando cambian
+  // todosCdas/grupoData, no cuando cambia el filtro de pantalla - a
+  // propósito, para no perder ediciones sin guardar si el admin prende y
+  // apaga el toggle a mitad de una edición). Sin este fallback, tildar un
+  // CDA recién revelado perdía su valorcomparacion/expresion/etc. al armar
+  // el objeto desde un `prev[cdaId]` inexistente.
+  const getDefaultConfigFor = (cdaId) => {
+    const cda = allCdasListSinAcotar.find((c) => getCdaId(c) === cdaId);
+    return {
+      checked: false,
+      valorcomparacion: getCdaProperty(cda, "valorcomparacion") || "",
+      simbolocomparacion: getCdaProperty(cda, "simbolocomparacion") || "=",
+      expresion: getCdaProperty(cda, "expresion") || "",
+      mensajerechazo: getCdaProperty(cda, "mensajerechazo") || "",
+      cdacadenavalorid: undefined,
+      initiallyChecked: false
+    };
+  };
+
   const handleToggleCda = (cdaId) => {
-    setCdaConfigs(prev => ({
-      ...prev,
-      [cdaId]: {
-        ...prev[cdaId],
-        checked: !prev[cdaId]?.checked
-      }
-    }));
+    setCdaConfigs(prev => {
+      const base = prev[cdaId] || getDefaultConfigFor(cdaId);
+      return { ...prev, [cdaId]: { ...base, checked: !base.checked } };
+    });
     setRecienTogglado(cdaId);
   };
 
@@ -199,13 +228,10 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   }, [recienTogglado, cdaConfigs]);
 
   const handleValueChange = (cdaId, val) => {
-    setCdaConfigs(prev => ({
-      ...prev,
-      [cdaId]: {
-        ...prev[cdaId],
-        valorcomparacion: val
-      }
-    }));
+    setCdaConfigs(prev => {
+      const base = prev[cdaId] || getDefaultConfigFor(cdaId);
+      return { ...prev, [cdaId]: { ...base, valorcomparacion: val } };
+    });
   };
 
   const checkedIds = Object.entries(cdaConfigs)
@@ -242,7 +268,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
 
   // Comparar estado actual vs inicial para habilitar el botón de Guardar
   const hasChanges = () => {
-    const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
+    const baseConfigs = buildCdaConfigs(allCdasListSinAcotar, linkedCdasList);
     const baseExpr = grupoData?.grupo?.expresionagrupacion || "";
 
     const checklistChanged = Object.entries(cdaConfigs).some(([idStr, config]) => {
@@ -274,7 +300,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   };
 
   const handleReset = () => {
-    setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
+    setCdaConfigs(buildCdaConfigs(allCdasListSinAcotar, linkedCdasList));
     setExpresionAgrupacion(grupoData?.grupo?.expresionagrupacion || "");
     toast.success("CDAs restablecidos a la configuración guardada");
   };
@@ -300,7 +326,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
       const grupoActual = grupoData?.grupo || (await resolverGrupoCda(pantalla, cadenaId));
       const grupoCdaId = grupoActual.grupocdaid;
 
-      const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
+      const baseConfigs = buildCdaConfigs(allCdasListSinAcotar, linkedCdasList);
 
       const nuevos = [];
       const modificados = [];
@@ -372,10 +398,10 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
     }
   };
 
-  const isLoading = isLoadingTodos || isLoadingGrupo;
+  const isLoading = isLoadingTodos || isLoadingGrupo || isLoadingCdaIdsPantalla;
   const isSaving = isVinculandoCda || isActualizandoVinculacion || isActualizandoGrupo;
 
-  const cdasVisibles = allCdasList
+  const cdasVisibles = cdasEnPantalla
     .filter(cda => !hideUnchecked || (cdaConfigs[getCdaId(cda)]?.checked))
     .filter(cda => !soloActivos || (cdaConfigs[getCdaId(cda)]?.checked))
     .filter(cda => {
@@ -466,8 +492,8 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         <p style={{ fontSize: "0.825rem", color: "#8b949e", lineHeight: "1.4" }}>
           {description ||
             (isReadOnly
-              ? "Listado de los CDAs activos para esta cadena y pantalla. La regla y el mensaje de rechazo se definen en Criterios de Aceptación; el valor mostrado es el vigente para esta combinación."
-              : "Activá los CDAs que se deben ejecutar para esta cadena en esta pantalla, y definí cómo se combinan entre sí. La regla y el mensaje de rechazo son los definidos en Criterios de Aceptación: acá solo podés personalizar, por cadena, el valor límite de cada uno.")}
+              ? "CDAs activos para esta cadena y pantalla. La regla se define en Criterios de Aceptación."
+              : "Activá los CDAs a ejecutar y cómo se combinan. La regla se define en Criterios de Aceptación; acá solo el valor por cadena.")}
         </p>
 
         <div className={styles.mainLayout}>
@@ -554,7 +580,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
                         </span>
                       ) : (
                         checkedIds.map(id => {
-                          const found = allCdasList.find(c => getCdaId(c) === id);
+                          const found = allCdasListSinAcotar.find(c => getCdaId(c) === id);
                           const label = found ? getCdaProperty(found, "descripcion") : `Criterio ${id}`;
                           return (
                             <button
@@ -591,7 +617,13 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
         </div>
 
         <div className={styles.rightCol}>
-        {!hideUnchecked && allCdasList.length > 0 && (
+        {/* Se gatea por el catálogo SIN acotar (no por cdasEnPantalla): si el
+            filtro por pantalla deja la vista en 0 pero el catálogo global
+            tiene CDAs, igual hace falta mostrar el toggle "Ver todos" para
+            poder salir de ese estado - si se gatea por cdasEnPantalla, el
+            toggle que saca del filtro queda escondido justo cuando más
+            falta hace. */}
+        {!hideUnchecked && allCdasListSinAcotar.length > 0 && (
           <div className={styles.searchRow}>
             <div className={styles.searchWrap}>
               <FiSearch className={styles.iconSearch} />
@@ -614,22 +646,40 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
               </span>
               <span className={styles.activosToggleText}>Solo activos</span>
             </label>
+            <label className={styles.activosToggle} title="Por defecto solo se muestran los CDAs ya vinculados a esta pantalla en alguna cadena. Activá esto para ver también los que todavía no se vincularon a ninguna.">
+              <input
+                type="checkbox"
+                className={styles.activosToggleInput}
+                checked={mostrarTodosLosCdas}
+                onChange={(e) => setMostrarTodosLosCdas(e.target.checked)}
+              />
+              <span className={styles.activosToggleTrack}>
+                <span className={styles.activosToggleThumb} />
+              </span>
+              <span className={styles.activosToggleText}>Ver todos</span>
+            </label>
           </div>
         )}
 
-        {!hideUnchecked && allCdasList.length > 0 && (
+        {!hideUnchecked && allCdasListSinAcotar.length > 0 && (
           <div className={styles.checklistHeader}>
-            <span>{checkedIds.length} de {allCdasList.length} CDA{allCdasList.length !== 1 ? "s" : ""} activo{checkedIds.length !== 1 ? "s" : ""}</span>
+            {/* Cuenta relativa a lo VISIBLE (cdasEnPantalla), no al total
+                global marcado (checkedIds): si se cuenta contra el total,
+                un CDA tildado vía "Ver todos" y luego ocultado por el
+                filtro de pantalla podía mostrar algo como "5 de 3". */}
+            <span>{cdasEnPantalla.filter((cda) => cdaConfigs[getCdaId(cda)]?.checked).length} de {cdasEnPantalla.length} CDA{cdasEnPantalla.length !== 1 ? "s" : ""} activo{cdasEnPantalla.length !== 1 ? "s" : ""}</span>
           </div>
         )}
 
         <div className={`${styles.cdasSection} ${isReadOnly ? styles.readOnly : ""}`}>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {allCdasList.length === 0 ? (
+            {cdasEnPantalla.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
-                {Array.isArray(cdaIdsPermitidos)
-                  ? "Todavía no se creó ningún CDA para esta pantalla en ninguna cadena."
-                  : "No hay CDAs creados en el sistema."}
+                {allCdasListSinAcotar.length === 0
+                  ? "No hay CDAs creados en el sistema."
+                  : mostrarTodosLosCdas
+                    ? "No se encontró ningún CDA."
+                    : 'Sin CDAs vinculados a esta pantalla. Probá "Ver todos" arriba, o creá uno en Criterios de Aceptación Globales.'}
               </div>
             ) : cdasVisibles.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>

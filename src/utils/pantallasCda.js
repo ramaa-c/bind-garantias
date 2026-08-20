@@ -10,8 +10,10 @@ export const PANTALLAS_CDA = [
 // Las Líneas de crédito no tienen "pantallas" elegibles como el onboarding
 // (Paso1Cuit, modales de socios): se evalúan en un único punto, al enviar la
 // solicitud de alta. Por eso no está en PANTALLAS_CDA (no es una opción para
-// el selector admin) - es un literal fijo, usado tanto por la config
-// (LineasCda.jsx, con el mismo CdaPanel.jsx que usa CadenasCda.jsx: los CDAs
-// de línea se vinculan por cadena entera, no existe un "GrupoCda por línea"
-// en el backend) como por la ejecución (AltaOperacion.jsx).
-export const PANTALLA_LINEA = "PANTALLA_LINEA";
+// el selector paso a paso de CadenasCda.jsx) - es un literal fijo, usado
+// tanto por la config (LineasCda.jsx, con el mismo CdaPanel.jsx que usa
+// CadenasCda.jsx: los CDAs de línea se vinculan por cadena entera, no existe
+// un "GrupoCda por línea" en el backend) como por la ejecución
+// (AltaOperacion.jsx). Valor confirmado contra el catálogo real de
+// PantallaGrupoCda del backend el 2026-08-18 (PantallaGrupoCdaID: 4).
+export const PANTALLA_LINEAS = "PANTALLA_LINEAS";

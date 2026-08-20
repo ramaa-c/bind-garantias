@@ -6,7 +6,7 @@ import { cdaService } from "../services/cdaService";
 // vacío, para no bloquear a un admin que entra a configurar una cadena que
 // ya estaba activa antes de este cambio de modelo.
 //
-// También es el resolver usado para PANTALLA_LINEA (CDAs de alta de línea,
+// También es el resolver usado para PANTALLA_LINEAS (CDAs de alta de línea,
 // ver LineasCda.jsx/CdaPanel.jsx): el backend no tiene ningún concepto de
 // "GrupoCda por línea" (WSGrupoCda solo tiene CadenaValorID, confirmado
 // contra swagger el 2026-08-18) - los CDAs de línea se vinculan por
