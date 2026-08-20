@@ -14,6 +14,7 @@ export * from './SelectSocio/SelectSocio';
 
 export * from './InputPasswordSeguro/InputPasswordSeguro';
 export * from './InputSimple/InputSimple';
+export * from './MontoEnPalabras/MontoEnPalabras';
 
 export * from './Modal/Modal';
 export * from './Select/Select';

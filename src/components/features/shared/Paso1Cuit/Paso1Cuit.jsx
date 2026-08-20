@@ -366,12 +366,49 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
       ),
     }));
 
-    // TODO(SocioCertificadoPYME): acá va el GET al nuevo endpoint
-    // SocioCertificadoPYME cuando exista (todavía no está publicado). La
-    // regla pedida es que "Completa el Legajo" (avanzar a Paso 2) solo
-    // debería seguir si esa consulta devuelve algo - reemplaza por completo
-    // al viejo GET Socio/CertificadoVigente/{Cuit}, que ya no se usa acá.
-    // Hasta que el endpoint exista, este paso no bloquea.
+    // "Completa el Legajo" (avanzar a Paso 2) solo sigue si el backend ya
+    // generó el Certificado PyME del socio (lo genera solo al procesar la
+    // vinculación — ver comentario más abajo, en continuarValidacionCompleta).
+    // Reemplaza por completo al viejo GET Socio/CertificadoVigente/{Cuit},
+    // que ya no se usa acá. El GET nunca da 404: devuelve [] cuando todavía
+    // no tiene ninguno, por eso alcanza con chequear que la lista no esté vacía.
+    try {
+      const certificados = await sociosService.obtenerCertificadoPyme(socioIdCreadoRef.current);
+      if (!Array.isArray(certificados) || certificados.length === 0) {
+        ultimoPasoFallidoRef.current = "pyme";
+        setProcesoModal((prev) => ({
+          ...prev,
+          hasError: true,
+          isSystemError: false,
+          pasos: prev.pasos.map((p) =>
+            p.id === "pyme"
+              ? {
+                  ...p,
+                  estado: "error",
+                  error: "La empresa todavía no tiene un Certificado PyME generado.",
+                }
+              : p,
+          ),
+        }));
+        return;
+      }
+    } catch (pymeError) {
+      console.error("[Paso1Cuit] Error consultando Socio/CertificadoPYME:", pymeError);
+      ultimoPasoFallidoRef.current = "pyme";
+      setProcesoModal((prev) => ({
+        ...prev,
+        hasError: true,
+        isSystemError: true,
+        pasos: prev.pasos.map((p) =>
+          p.id === "pyme"
+            ? { ...p, estado: "error", error: "No pudimos verificar el Certificado PyME. Intentá nuevamente." }
+            : p,
+        ),
+      }));
+      return;
+    }
+
+    ultimoPasoFallidoRef.current = null;
     setProcesoModal((prev) => ({
       ...prev,
       pasos: prev.pasos.map((p) =>

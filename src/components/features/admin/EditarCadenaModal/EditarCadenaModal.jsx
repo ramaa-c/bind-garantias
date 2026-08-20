@@ -3,7 +3,7 @@ import { FiUploadCloud } from "react-icons/fi";
 import { toast } from "sonner";
 import { useActualizarCadenaValor } from "../../../../hooks/useCadenaValor";
 import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas } from "../../../../hooks/useCatalogos";
-import { Modal, Button, InputSimple, SelectSimple } from "../../../ui";
+import { Modal, Button, InputSimple, SelectSimple, MontoEnPalabras } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./EditarCadenaModal.module.css";
@@ -61,10 +61,15 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
   const monedasOpciones = monedasData?.opciones || [];
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Snapshot del formState al abrir el modal: permite saber si el usuario
+  // realmente modificó algo antes de disparar el ConfirmacionModal de
+  // "¿guardar cambios?" - evita el falso positivo de confirmar un guardado
+  // que no cambia nada (mismo criterio que LineasCadena).
+  const [formStateInicial, setFormStateInicial] = useState(null);
 
   useEffect(() => {
     if (activeItem && isOpen) {
-      setFormState({
+      const datos = {
         cadenavalorid: activeItem.cadenavalorid,
         denominacion: activeItem.denominacion,
         referencia: activeItem.referencia || "",
@@ -77,9 +82,29 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
         porcentajemaximoutilizado: activeItem.porcentajemaximoutilizado != null && activeItem.porcentajemaximoutilizado !== "" ? activeItem.porcentajemaximoutilizado.toString() : "100",
         monedaid: activeItem.monedaid != null ? activeItem.monedaid.toString() : "",
         activa: activeItem.activa || "1"
-      });
+      };
+      setFormState(datos);
+      setFormStateInicial(datos);
     }
   }, [activeItem, isOpen]);
+
+  // Los inputs enmascarados de Monto/Porcentaje reformatean su valor (padding
+  // de decimales, separador de miles) apenas montan, disparando su propio
+  // onAccept - eso pisa formState con el string ya formateado sin que el
+  // usuario haya tocado nada. Comparar los strings crudos contra el snapshot
+  // sin formatear daba un falso "hay cambios" permanente; se normalizan a
+  // número (mismo criterio que al armar el payload) antes de comparar.
+  const normalizarParaComparar = (fs) => ({
+    ...fs,
+    montomaximo: Number(desenmascarar(fs.montomaximo)) || 0,
+    montomaximoutilizado: Number(desenmascarar(fs.montomaximoutilizado)) || 0,
+    porcentajemaximoutilizado: Number(desenmascarar(fs.porcentajemaximoutilizado)) || 0,
+  });
+
+  const sinCambios =
+    !!formStateInicial &&
+    JSON.stringify(normalizarParaComparar(formState)) ===
+      JSON.stringify(normalizarParaComparar(formStateInicial));
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -287,6 +312,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 lazy={false}
                 className={styles.compactInput}
               />
+              <MontoEnPalabras value={desenmascarar(formState.montomaximo)} />
             </div>
           </div>
           <div className={styles.row}>
@@ -300,6 +326,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 lazy={false}
                 className={styles.compactInput}
               />
+              <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
             </div>
             <div style={{ flex: 1 }}>
               <InputSimple
@@ -367,6 +394,8 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
           variant="blue"
           onClick={handleSave}
           isLoading={actualizarMutation.isPending}
+          disabled={sinCambios}
+          title={sinCambios ? "No hay cambios para guardar" : undefined}
         >
           GUARDAR
         </Button>

@@ -97,6 +97,21 @@ export const useEstaMigradoEnSgrPlus = (cuit) => {
   });
 };
 
+// GET Socio/CertificadoPYME?SocioID=X nunca da 404: devuelve [] cuando el
+// socio todavía no tiene ninguno generado (el backend los genera solo al
+// procesar la vinculación — ver Paso1Cuit.jsx), o la lista si ya tiene.
+export const useTieneCertificadoPyme = (socioId) => {
+  return useQuery({
+    queryKey: ["socios", "certificadoPyme", Number(socioId) || null],
+    queryFn: async () => {
+      const resultado = await sociosService.obtenerCertificadoPyme(socioId);
+      return Array.isArray(resultado) && resultado.length > 0;
+    },
+    enabled: !!socioId,
+    staleTime: 1000 * 60 * 2, // 2 minutos
+  });
+};
+
 // SocioUsuario solo devuelve { SocioID, UsuarioWebID, momentoCreacion } — no
 // alcanza para saber si esa vinculación apunta a una empresa realmente
 // registrada o a un socio "stub" (creado por cda/execute o por un intento de

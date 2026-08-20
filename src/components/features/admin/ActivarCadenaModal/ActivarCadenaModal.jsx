@@ -13,6 +13,7 @@ import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
+import { MontoEnPalabras } from "../../../ui/MontoEnPalabras/MontoEnPalabras";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
@@ -458,6 +459,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     blocks={{ num: bloqueNumerico() }}
                     lazy={false}
                   />
+                  <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} pullUp />
                 </div>
                 <div style={{ flex: 1 }}>
                   <InputSimple

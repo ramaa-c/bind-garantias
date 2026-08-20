@@ -1,112 +1,72 @@
 /* =========================================================
-   DASHBOARD — Bind Fintech · Blue-dominant redesign
+   DASHBOARD — Gestión de Solicitudes (panel admin)
    ========================================================= */
 
-.dashboardContainer {
+/* Ocupa toda la altura que .containerInner le deja (ver AdminLayout.module.css)
+   en vez de crecer según el contenido: así el scroll de "página completa" se
+   reemplaza por el scroll interno de .listWrapper únicamente - el resto
+   (header, franja de contexto, filtros, paginación) queda siempre visible. */
+.container {
   display: flex;
   flex-direction: column;
-  gap: 1.75rem;
+  gap: 1.25rem;
   width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 /* ── HEADER ─────────────────────────────────────────────── */
-.headerTitle {
+.header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-  position: relative;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 1rem;
 }
 
-.headerTitle::after {
-  content: "";
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 3.5rem;
-  height: 2px;
-  background: var(--color-azul-bind, #4c65e6);
-  border-radius: 2px;
-}
-
-.headerTitle h1 {
-  font-size: 1.75rem;
+.header h1 {
+  font-size: 1.5rem;
   font-weight: 800;
   margin: 0;
   color: #ffffff;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
 }
 
-.headerTitle p {
-  color: rgba(255, 255, 255, 0.4);
-  margin: 0.35rem 0 0 0;
+.header p {
+  color: #8b949e;
+  margin: 0;
   font-size: 0.875rem;
-  font-weight: 400;
 }
 
-/* ── TOP SECTION SPLIT ──────────────────────────────────── */
-.topSectionSplit {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  width: 100%;
-}
-
-@media (min-width: 1024px) {
-  .topSectionSplit {
-    grid-template-columns: 1.3fr 0.7fr;
-  }
-}
-
-/* ── CHAIN SELECTOR CARD ────────────────────────────────── */
-.selectedChainCardContainer {
-  height: 100%;
-}
-
-.chainSelectorCard {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.875rem;
-  padding: 1.5rem;
+/* ── BARRA DE CONTEXTO: cadena + métricas en una sola franja ─
+   Reemplaza la vieja grilla de 2 columnas (card de cadena +
+   grilla 2x2 de KPIs), que por sí solas ya ocupaban más alto
+   que el header. Acá va todo en una sola franja horizontal. ── */
+.contextBar {
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 1rem;
-  height: 100%;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  position: relative;
-  overflow: hidden;
-  transition:
-    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.875rem;
+  padding: 0.875rem 1.125rem;
 }
 
-.chainSelectorCard:hover {
-  transform: translateY(-2px);
-  border-color: rgba(76, 101, 230, 0.25);
-  box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(76, 101, 230, 0.1);
-}
-
-/* Removed globalConsolidatedCard to unify styles */
-
-.chainCardHeader {
+.contextChain {
   display: flex;
   align-items: center;
-  gap: 1.125rem;
+  gap: 0.75rem;
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
-.globalIconWrapper {
-  width: 48px;
-  height: 48px;
+.contextChainIcon {
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 0.625rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(76, 101, 230, 0.3);
+  background: rgba(76, 101, 230, 0.08);
   color: var(--color-azul-bind, #4c65e6);
   display: flex;
   align-items: center;
@@ -114,582 +74,556 @@
   flex-shrink: 0;
 }
 
-.selectedChainLogoWrapper {
-  width: 48px;
-  height: 48px;
+.contextChainLogo {
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 0.625rem;
   background: #ffffff;
-  padding: 0.25rem;
+  padding: 0.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.selectedChainLogo {
+.contextChainLogo img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
 
-.chainCardTitle {
-  font-size: 1.1875rem;
-  font-weight: 800;
-  color: #ffffff;
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-.chainCardSubtitle {
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin: 0.15rem 0 0 0;
-}
-
-.chainCardDescription {
-  font-size: 0.8375rem;
-  color: rgba(255, 255, 255, 0.55);
-  line-height: 1.55;
-  margin: 0;
-}
-
-.btnRow {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.changeChainBtn {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-weight: 600;
-}
-
-.viewAllBtn {
-  font-weight: 600;
-}
-
-/* ── COMPACT KPI GRID (2×2) ──────────────────────────────── */
-.compactMetricsGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.875rem;
-}
-
-/* These override TarjetaMetrica's className props */
-.kpiCardCompact {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.875rem;
-  padding: 1.125rem 1.25rem 1rem;
+.contextChainInfo {
   display: flex;
   flex-direction: column;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  transition:
-    transform 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.kpiCardCompact::before {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.3) 0%,
-    transparent 70%
-  );
-}
-
-.kpiCardCompact:hover {
-  transform: translateY(-2px);
-  border-color: rgba(76, 101, 230, 0.25);
-  box-shadow:
-    0 12px 24px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(76, 101, 230, 0.1);
-}
-
-/* Icon override inside TarjetaMetrica */
-.kpiCardCompact svg {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 0.9rem;
-  color: var(--color-azul-bind, #4c65e6);
-  background: rgba(76, 101, 230, 0.12);
-  border: 1px solid rgba(76, 101, 230, 0.2);
-  padding: 0.35rem;
-  box-sizing: content-box;
-  border-radius: 50%;
-  transition: all 0.22s ease;
-}
-
-.kpiCardCompact:hover svg {
-  color: #ffffff;
-  background: var(--color-azul-bind, #4c65e6);
-  border-color: rgba(76, 101, 230, 0.6);
-  box-shadow: 0 0 12px rgba(76, 101, 230, 0.4);
-}
-
-.kpiLabelCompact {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: rgba(255, 255, 255, 0.55);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.25rem;
-}
-
-.kpiValueCompact {
-  font-size: 1.5rem;
-  font-weight: 850;
-  color: #ffffff;
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-.kpiValueWarningCompact {
-  font-size: 1.5rem;
-  font-weight: 850;
-  color: var(--color-azul-bind, #4c65e6);
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-.kpiValueSuccessCompact {
-  font-size: 1.5rem;
-  font-weight: 850;
-  color: #3ecf8e;
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-/* ── TOOLBAR ─────────────────────────────────────────────── */
-.toolbarCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
-  padding: 0.875rem 1.125rem;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.875rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  position: relative;
-  z-index: 10;
-}
-
-.searchWrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(10, 12, 20, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.5625rem 0.875rem;
-  flex: 1;
-  min-width: 18rem;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.searchWrap:focus-within {
-  border-color: rgba(76, 101, 230, 0.5);
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.2),
-    0 0 0 3px rgba(76, 101, 230, 0.15);
-}
-
-.iconSearch {
-  color: rgba(255, 255, 255, 0.3);
-  flex-shrink: 0;
-}
-
-.inputSearch {
-  background: none;
-  border: none;
-  color: #ffffff;
-  font-size: 0.875rem;
-  width: 100%;
-  outline: none;
-}
-
-.inputSearch::placeholder {
-  color: rgba(255, 255, 255, 0.2);
-}
-
-.filtersGroup {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  flex-wrap: wrap;
-}
-
-.customSelectWrapper {
-  width: 100%;
-  flex: 1;
-  min-width: 13rem;
-}
-
-@media (min-width: 768px) {
-  .customSelectWrapper {
-    width: 14rem;
-    flex: none;
-  }
-}
-
-/* ── LIST WRAPPER ────────────────────────────────────────── */
-.listWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-}
-
-.emptyState {
-  padding: 4rem 2rem;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  border-radius: 0.875rem;
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 0.9375rem;
-}
-
-/* ── ITEM ROW ────────────────────────────────────────────── */
-.itemRow {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.875rem;
-  padding: 1.375rem 1.5rem;
-  transition:
-    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
-  position: relative;
-  overflow: hidden;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.itemRow:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
-}
-
-/* Left border accent — the Bind signature */
-.rowPending {
-  box-shadow: inset 3px 0 0 0 var(--color-amarillo-bind, #f5f400);
-}
-
-.rowPending:hover {
-  box-shadow:
-    inset 3px 0 0 0 var(--color-azul-bind, #4c65e6),
-    0 12px 32px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(76, 101, 230, 0.1);
-}
-
-.rowApproved {
-  box-shadow: inset 3px 0 0 0 var(--success-green, #3ddc84);
-  background: rgba(61, 220, 132, 0.025);
-}
-
-.rowApproved:hover {
-  border-color: rgba(61, 220, 132, 0.2);
-  box-shadow:
-    inset 3px 0 0 0 var(--success-green, #3ddc84),
-    0 12px 32px rgba(0, 0, 0, 0.22),
-    0 0 0 1px rgba(61, 220, 132, 0.06);
-}
-
-.rowRejected {
-  box-shadow: inset 3px 0 0 0 var(--error-red, #ef4444);
-  background: rgba(239, 68, 68, 0.015);
-}
-
-.rowRejected:hover {
-  border-color: rgba(239, 68, 68, 0.15);
-  box-shadow:
-    inset 3px 0 0 0 var(--error-red, #ef4444),
-    0 12px 32px rgba(0, 0, 0, 0.22),
-    0 0 0 1px rgba(239, 68, 68, 0.06);
-}
-
-.rowCancelled {
-  box-shadow: inset 3px 0 0 0 rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.01);
-  opacity: 0.75;
-}
-
-.rowCancelled:hover {
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow:
-    inset 3px 0 0 0 rgba(255, 255, 255, 0.3),
-    0 12px 32px rgba(0, 0, 0, 0.22),
-    0 0 0 1px rgba(255, 255, 255, 0.04);
-}
-
-.rowMain {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 1.25rem;
-}
-
-@media (min-width: 1024px) {
-  .rowMain {
-    flex-direction: row;
-    align-items: center;
-  }
-}
-
-/* ── INFO COLUMN ─────────────────────────────────────────── */
-.infoCol {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  flex: 1;
+  gap: 0.1rem;
   min-width: 0;
 }
 
-.rowHeaderInfo {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.tipoText {
-  color: rgba(255, 255, 255, 0.35);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-}
-
-.tagsWrap {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.tagBadge {
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0.15rem 0.6rem;
-  border-radius: 1rem;
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-}
-
-.tagSuccess {
-  background: rgba(61, 220, 132, 0.1);
-  color: #3ddc84;
-  border: 1px solid rgba(61, 220, 132, 0.25);
-  box-shadow: 0 2px 6px rgba(61, 220, 132, 0.1);
-}
-
-.tagWarning {
-  background: rgba(245, 244, 0, 0.1);
-  color: var(--color-amarillo-bind, #f5f400);
-  border: 1px solid rgba(245, 244, 0, 0.25);
-  box-shadow: 0 2px 6px rgba(245, 244, 0, 0.1);
-}
-
-.tagInfo {
-  background: rgba(76, 101, 230, 0.1);
-  color: #96aaff;
-  border: 1px solid rgba(76, 101, 230, 0.25);
-  box-shadow: 0 2px 6px rgba(76, 101, 230, 0.1);
-}
-
-.solicitudHeading {
-  font-size: 1.1875rem;
+.contextChainName {
+  font-size: 0.9375rem;
   font-weight: 700;
   color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contextChainMeta {
+  font-size: 0.75rem;
+  color: #8b949e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contextChainActions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.contextChainBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: 1px solid rgba(76, 101, 230, 0.3);
+  color: var(--color-azul-bind-300, #8a9fff);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
+}
+
+.contextChainBtn:hover {
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.5);
+  color: #ffffff;
+}
+
+.contextChainBtnGhost {
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #8b949e;
+}
+
+.contextChainBtnGhost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.contextDivider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+@media (max-width: 56rem) {
+  .contextDivider {
+    display: none;
+  }
+}
+
+/* ── ESTADÍSTICAS COMPACTAS: sin cards, sin blur, solo
+   label/valor separados por un divisor fino ─────────────── */
+.contextStats {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-shrink: 0;
+}
+
+.statBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 3.5rem;
+}
+
+.statLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #6e7681;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   margin: 0;
-  line-height: 1.3;
+}
+
+.statValue {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
   letter-spacing: -0.01em;
 }
 
-.montoHighlight {
-  color: #ffffff;
-  font-weight: 800;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-  letter-spacing: 0.02em;
+.statValueWarning {
+  color: #f5a623;
 }
 
-.detailsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 0.5rem 1rem;
-  font-size: 0.8rem;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.statValueSuccess {
+  color: var(--success-green, #3ddc84);
 }
 
-.fullSpan {
-  grid-column: 1 / -1;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  padding-top: 0.35rem;
-  margin-top: 0.1rem;
+.statDivider {
+  width: 1px;
+  height: 1.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
 }
 
-.detailLabel {
-  color: rgba(255, 255, 255, 0.35);
-  font-weight: 500;
+/* ── BARRA DE FILTROS — mismo patrón que Solicitudes.jsx del
+   lado cliente, en tema azul admin ──────────────────────── */
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.875rem;
+  padding: 0.875rem 1.125rem;
 }
 
-.detailStrong {
-  color: #ffffff;
-  font-weight: 600;
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
 }
 
-.detailText {
-  color: rgba(255, 255, 255, 0.65);
+.searchIcon {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6e7681;
+  font-size: 1rem;
+  transition: color 0.2s ease;
 }
 
-.actionHighlight {
+.searchBox:focus-within .searchIcon {
   color: var(--color-azul-bind, #4c65e6);
-  font-weight: 600;
 }
 
-/* ── STATUS PILLS ────────────────────────────────────────── */
-.statusPill {
+.searchInput {
+  width: 100%;
+  height: 2.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.625rem;
+  padding: 0 0.875rem 0 2.5rem;
+  color: #ffffff;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.searchInput:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-azul-bind, #4c65e6);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(76, 101, 230, 0.18);
+}
+
+.searchInput::placeholder {
+  color: #666;
+  font-weight: 400;
+}
+
+.filterFieldsRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+}
+
+.filterField {
+  min-width: 0;
+}
+
+.clearFiltersBtn {
   display: inline-flex;
   align-items: center;
-  padding: 0.2rem 0.65rem;
-  border-radius: 9999px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  justify-content: center;
+  align-self: flex-end;
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.6rem;
+  color: #8b949e;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
-.pillApproved {
-  background: rgba(61, 220, 132, 0.1);
-  color: var(--success-green, #3ddc84);
-  border: 1px solid rgba(61, 220, 132, 0.25);
-  box-shadow: 0 2px 8px rgba(61, 220, 132, 0.12);
+.clearFiltersBtnVisible {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.pillRejected {
-  background: rgba(239, 68, 68, 0.08);
-  color: var(--error-red, #ef4444);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
+.clearFiltersBtn:hover {
+  color: var(--color-azul-bind-300, #8a9fff);
+  border-color: rgba(76, 101, 230, 0.4);
+  background: rgba(76, 101, 230, 0.08);
 }
 
-.pillPending {
-  background: rgba(245, 244, 0, 0.12);
-  color: var(--color-amarillo-bind, #f5f400);
-  border: 1px solid rgba(245, 244, 0, 0.3);
-  box-shadow: 0 2px 8px rgba(245, 244, 0, 0.15);
+@media (min-width: 64rem) {
+  .filterBar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.875rem;
+  }
+
+  .searchBox {
+    flex: 1 1 14rem;
+    min-width: 10rem;
+  }
+
+  .filterFieldsRow {
+    grid-template-columns: repeat(4, minmax(9rem, 12rem));
+    flex: 0 1 auto;
+  }
+
+  .clearFiltersBtn {
+    align-self: center;
+    margin-left: auto;
+  }
 }
 
-.pillCancelled {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+/* ── LISTA ───────────────────────────────────────────────── */
+.listWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.375rem;
+  margin-right: -0.375rem;
 }
 
-/* ── ACTION COLUMN ───────────────────────────────────────── */
-.actionCol {
+.listWrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.listWrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.listWrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.listWrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.emptyState {
+  padding: 3rem 2rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 0.875rem;
+  color: #6e7681;
+  font-size: 0.9rem;
+}
+
+/* ── FILA DE SOLICITUD ───────────────────────────────────────
+   Sin borde-acento lateral de color (ver statusDot/statusPill/
+   avatar como los indicadores de estado), sin blur ni lift al
+   hover. Avatar + nombre real como protagonista (igual criterio
+   que Empresas.jsx), monto con jerarquía propia, acciones con
+   tamaño real de botón - no una fila de spreadsheet. ───────── */
+.row {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.875rem;
+  padding: 0.85rem 1.25rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.875rem;
-  min-width: 14rem;
+  gap: 0.6rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-@media (min-width: 1024px) {
-  .actionCol {
-    align-items: flex-end;
-    height: 100%;
+/* Grilla de columnas fijas: cada fila es su propio contenedor, así que la
+   única forma de que el estado y el monto queden alineados entre filas -
+   sin importar si el texto de la pill es más largo ("Rechazada") o si hay
+   1 o 2 botones de acción - es reservarle a cada columna un ancho fijo en
+   vez de dejar que cada una mida "lo que su contenido necesite". La
+   identidad es la columna elástica (1fr): crece para ocupar el espacio
+   libre y arrastra con ella al estado y al monto, que quedan pegados a
+   su derecha en vez de flotar lejos con un hueco vacío en el medio. El
+   .rowSpacer sólo deja un respiro fijo antes del bloque de acciones,
+   que junto con la flecha quedan ancladas al borde derecho. */
+@media (min-width: 64rem) {
+  .row {
+    display: grid;
+    grid-template-columns: auto minmax(12rem, 1fr) 7.5rem 8rem 2rem 17rem 1.25rem;
+    align-items: center;
+    gap: 1rem;
   }
 }
 
-.timestamps {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.25);
-  text-align: left;
-  line-height: 1.6;
+.rowSpacer {
+  min-width: 0;
 }
 
-@media (min-width: 1024px) {
-  .timestamps {
-    text-align: right;
-  }
+.rowClickable {
+  cursor: pointer;
 }
 
-.buttonsWrap {
+.row:hover {
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Señaliza "toda la fila abre el detalle" sin agregar un botón de más:
+   aparece y se desliza apenas al pasar el mouse, como en Empresas.jsx. */
+.rowChevron {
+  color: #6e7681;
+  flex-shrink: 0;
+  opacity: 0;
+  transform: translateX(-3px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.row:hover .rowChevron {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.rowPendiente {
+  border-color: rgba(245, 166, 35, 0.16);
+}
+
+.rowAprobada {
+  background: rgba(61, 220, 132, 0.03);
+  border-color: rgba(61, 220, 132, 0.16);
+}
+
+.rowRechazada {
+  background: rgba(239, 68, 68, 0.025);
+  border-color: rgba(239, 68, 68, 0.14);
+}
+
+.rowCancelada {
+  opacity: 0.68;
+}
+
+.rowAvatar {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--color-azul-bind-200, #b8c6ff);
+  background: linear-gradient(155deg, rgba(76, 101, 230, 0.28), rgba(76, 101, 230, 0.08));
+  border: 1px solid rgba(76, 101, 230, 0.3);
+}
+
+.avatarPendiente {
+  border-color: rgba(245, 166, 35, 0.4);
+}
+
+.avatarAprobada {
+  border-color: rgba(61, 220, 132, 0.4);
+}
+
+.avatarRechazada {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+.rowIdentity {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 0.4rem;
-  width: 100%;
+  gap: 0.2rem;
+  min-width: 12rem;
+  flex: 1 1 16rem;
 }
 
-.quickDecisions {
+.rowClientName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rowMeta {
+  font-size: 0.75rem;
+  color: #8b949e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* El estado ahora se lee en tres lugares a la vez (borde sutil del avatar,
+   punto de color y texto de la pill) - nunca depende de un solo indicador. */
+.rowPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+
+@media (min-width: 64rem) {
+  .rowPill {
+    /* Ocupa el ancho fijo de su columna (ver .row) y centra el texto
+       adentro, en vez de medir según el largo de la palabra del estado. */
+    width: 100%;
+  }
+}
+
+.statusDot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+}
+
+.pillPendiente {
+  background: rgba(245, 166, 35, 0.12);
+  color: #f5a623;
+  border: 1px solid rgba(245, 166, 35, 0.3);
+}
+
+.pillAprobada {
+  background: rgba(61, 220, 132, 0.1);
+  color: var(--success-green, #3ddc84);
+  border: 1px solid rgba(61, 220, 132, 0.25);
+}
+
+.pillRechazada {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--error-red, #ef4444);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.pillCancelada {
+  background: rgba(255, 255, 255, 0.05);
+  color: #8b949e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.rowAmountBlock {
   display: flex;
-  gap: 0.4rem;
-  width: 100%;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+  flex-shrink: 0;
+  min-width: 6.5rem;
 }
 
-.btnAcceptCustom,
-.btnRejectCustom {
-  flex: 1;
+.rowAmountLabel {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #6e7681;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-.btnAcceptCustom svg,
-.btnRejectCustom svg {
-  font-size: 1.1rem;
-  stroke-width: 2.5px;
+.rowAmount {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
-.btnContinueCustom {
-  width: 100%;
+.rowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.btnDetailCustom {
-  width: 100%;
+/* En la grilla de escritorio la columna de acciones ya tiene ancho fijo
+   de sobra para Aceptar+Rechazar: forzamos una sola línea para que no
+   quede un botón arriba del otro. En mobile (.row en columna) se
+   mantiene el wrap como red de seguridad ante pantallas angostas. */
+@media (min-width: 64rem) {
+  .rowActions {
+    flex-wrap: nowrap;
+  }
+
+  .rowActions button {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
 }
 
-.btnCdaCustom {
-  width: 100%;
-}
-
-/* ── MODAL — DETAIL ──────────────────────────────────────── */
+/* ── MODAL — DETALLE ──────────────────────────────────────── */
 .modalBodyCustom {
   display: flex;
   flex-direction: column;
@@ -701,30 +635,17 @@
   align-items: center;
   gap: 1.25rem;
   padding: 1.125rem 1.25rem;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.75rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  position: relative;
-  overflow: hidden;
-}
-
-.solicitudHeroCard::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 3px;
-  height: 100%;
-  background: var(--color-azul-bind, #4c65e6);
 }
 
 .solicitudAvatar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(76, 101, 230, 0.1);
+  border: 1px solid rgba(76, 101, 230, 0.25);
   color: var(--color-azul-bind, #4c65e6);
   display: flex;
   align-items: center;
@@ -749,7 +670,7 @@
 .solicitudNumber {
   font-size: 0.6875rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.35);
+  color: #6e7681;
   letter-spacing: 0.06em;
 }
 
@@ -767,21 +688,21 @@
 }
 
 .badgeRejected {
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--error-red, #ef4444);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
 .badgeCancelled {
   background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.55);
+  color: #8b949e;
   border: 1px dashed rgba(255, 255, 255, 0.2);
 }
 
 .badgePending {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(130, 153, 255, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(245, 166, 35, 0.12);
+  color: #f5a623;
+  border: 1px solid rgba(245, 166, 35, 0.3);
 }
 
 .solicitudProduct {
@@ -805,7 +726,7 @@
 
 .amountLabel {
   font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: #6e7681;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -813,10 +734,9 @@
 .amountValue {
   font-size: 1.125rem;
   font-weight: 800;
-  color: var(--color-azul-bind, #4c65e6);
+  color: var(--color-azul-bind-300, #8a9fff);
 }
 
-/* ── MODAL — DETAILS GRID ────────────────────────────────── */
 .detailsGridSplit {
   display: grid;
   grid-template-columns: 1fr;
@@ -830,8 +750,8 @@
 }
 
 .detailsBlock {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.75rem;
   padding: 1rem 1.125rem;
   display: flex;
@@ -842,10 +762,10 @@
 .detailsBlockTitle {
   font-size: 0.6875rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.35);
+  color: #6e7681;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   padding-bottom: 0.35rem;
   margin: 0;
 }
@@ -865,7 +785,7 @@
 .fieldLabel {
   font-size: 0.65rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.3);
+  color: #6e7681;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -879,13 +799,12 @@
 .fieldValueHighlight {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: rgba(130, 153, 255, 0.9);
+  color: var(--color-azul-bind-300, #8a9fff);
 }
 
-/* ── TRAZABILIDAD BANNER ─────────────────────────────────── */
 .trazabilidadBanner {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.75rem;
   padding: 0.75rem 1.125rem;
   display: flex;
@@ -910,25 +829,24 @@
 }
 
 .trazabilidadLabel {
-  color: rgba(255, 255, 255, 0.3);
+  color: #6e7681;
 }
 
 .trazabilidadValue {
-  color: rgba(255, 255, 255, 0.75);
+  color: #c9d1d9;
   font-weight: 500;
 }
 
-/* ── MODAL FOOTER ────────────────────────────────────────── */
 .modalFootCustom {
   display: flex;
   justify-content: flex-end;
   padding: 1rem 1.5rem;
   margin: 1rem -1.5rem -1.5rem -1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(0, 0, 0, 0.15);
 }
 
-/* ── MODAL CHAIN SELECTION ───────────────────────────────── */
+/* ── MODAL — SELECCIÓN DE CADENA ─────────────────────────── */
 .modalChainContent {
   display: flex;
   flex-direction: column;
@@ -940,23 +858,21 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0.5rem;
   padding: 0.5rem 0.875rem;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
 }
 
 .modalSearchWrap:focus-within {
   border-color: rgba(76, 101, 230, 0.45);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(76, 101, 230, 0.12);
 }
 
 .iconSearchModal {
-  color: rgba(255, 255, 255, 0.3);
+  color: #6e7681;
 }
 
 .modalSearchInput {
@@ -969,7 +885,7 @@
 }
 
 .modalSearchInput::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: #555;
 }
 
 .chainGridModal {
@@ -985,32 +901,26 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 0.625rem;
-  padding: 0.875rem 1.125rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
-  transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
   user-select: none;
 }
 
 .chainCardModal:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.12);
-  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .chainCardLogo {
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 0.375rem;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1021,8 +931,7 @@
 
 .chainCardModal:hover .chainCardLogo {
   color: var(--color-azul-bind, #4c65e6);
-  border-color: rgba(255, 255, 255, 0.3);
-  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(76, 101, 230, 0.3);
 }
 
 .chainCardLogo img {
@@ -1052,7 +961,7 @@
 
 .chainCardModalInfo p {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.35);
+  color: #6e7681;
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -1060,52 +969,17 @@
 }
 
 .chainCardActive {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(76, 101, 230, 0.4);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+  background: rgba(76, 101, 230, 0.08);
+  border-color: rgba(76, 101, 230, 0.35);
 }
 
 .chainCardActive .chainCardLogo {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(76, 101, 230, 0.14);
   border-color: rgba(76, 101, 230, 0.4);
   color: var(--color-azul-bind, #4c65e6);
 }
 
 .chainCardActive:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(76, 101, 230, 0.12);
   border-color: rgba(76, 101, 230, 0.5);
-}
-
-/* ── UNUSED LEGACY — kept for safety ───────────────────── */
-.kpiGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: 1.25rem;
-}
-.kpiCard {
-  display: flex;
-  flex-direction: column;
-}
-.kpiLabel {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
-}
-.kpiValue {
-  font-size: 1.875rem;
-  font-weight: 800;
-  color: #fff;
-}
-.kpiValueWarning {
-  font-size: 1.875rem;
-  font-weight: 800;
-  color: var(--color-azul-bind, #4c65e6);
-}
-.kpiValueSuccess {
-  font-size: 1.875rem;
-  font-weight: 800;
-  color: #3ecf8e;
-}
-.kpiFooter {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.25);
 }

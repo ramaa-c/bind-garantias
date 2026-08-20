@@ -68,6 +68,15 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  /* flex:1 + min-height:0 acotan la altura disponible real (en vez de
+     "lo que el contenido necesite"): así una página puede optar por
+     scrollear solo una sección interna suya (ej. Dashboard.jsx con su
+     lista) en vez de que .adminContent scrollee la página entera. Con
+     overflow:visible por defecto, las páginas que no usan ese patrón
+     siguen exactamente igual que antes (el overflow-y:auto de
+     .adminContent las sigue scrolleando completas como hasta ahora). */
+  flex: 1;
+  min-height: 0;
 }
 
 @media (max-width: 1024px) {

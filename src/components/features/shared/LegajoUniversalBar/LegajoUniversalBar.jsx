@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { useEstaMigradoEnSgrPlus, useSocioWebPorId, useEstadoCdaSocio } from "../../../../hooks/useSocios";
+import { useEstaMigradoEnSgrPlus, useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme } from "../../../../hooks/useSocios";
 import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
@@ -215,15 +215,13 @@ export function LegajoUniversalBar({
     }
   }, [adminMode, isValid, isLoading]);
 
-  // TODO(SocioCertificadoPYME): reemplazar por un GET real al nuevo
-  // endpoint SocioCertificadoPYME cuando exista (todavía no está publicado
-  // - ver Paso1Cuit.jsx). Regla pedida: si CertificadoVigente pasó pero el
-  // socio no tiene nada ahí (integración caída/bajada), se lo deja cargar
-  // legajo y documentación igual (ver SociosView/DocumentacionView), pero
-  // la migración a SGR+ queda bloqueada hasta que sí tenga. Por ahora
-  // siempre true (no bloquea) para no frenar las migraciones que ya
-  // funcionaban mientras el endpoint no exista.
-  const tieneCertificadoPyme = true;
+  // Regla pedida: si CertificadoVigente pasó pero el socio no tiene ningún
+  // Socio/CertificadoPYME generado (integración caída/bajada del lado del
+  // backend), se lo deja cargar legajo y documentación igual (ver
+  // SociosView/DocumentacionView, que no dependen de esto), pero la
+  // migración a SGR+ queda bloqueada hasta que sí tenga uno.
+  const { data: tieneCertificadoPyme = false, isLoading: loadingCertificadoPyme } =
+    useTieneCertificadoPyme(socioIdActivo);
 
   const cambioPendienteRaw =
     baseline !== null &&
@@ -265,6 +263,7 @@ export function LegajoUniversalBar({
   const faltaMigrarEnBackend =
     !loadingSocioWeb &&
     !loadingMigradoEnBackend &&
+    !loadingCertificadoPyme &&
     !migradoEnBackend &&
     isValid &&
     totalRequisitos > 0 &&

@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { FiSearch, FiCheck, FiX, FiEye, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList, FiGlobe, FiGrid, FiChevronRight, FiRefreshCw } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
-import { Badge } from "../../../components/ui/Badge/Badge";
 import { Modal } from "../../../components/ui/Modal/Modal";
 import { SinResultados } from "../../../components/ui/SinResultados/SinResultados";
-import { TarjetaMetrica } from "../../../components/ui/TarjetaMetrica/TarjetaMetrica";
-import { SelectSimple } from "../../../components/ui";
-import { SkeletonTable, Skeleton } from "../../../components/ui";
+import { SelectSimple, SelectFechaSimple } from "../../../components/ui";
+import { Skeleton } from "../../../components/ui";
+import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
@@ -32,15 +31,71 @@ const opcionesEstado = [
 ];
 
 const opcionesOrden = [
-  { value: "desc", label: "Más Recientes (N° Desc)" },
-  { value: "asc", label: "Más Antiguas (N° Asc)" },
+  { value: "desc", label: "Más recientes" },
+  { value: "asc", label: "Más antiguas" },
 ];
 
+const FILTROS_POR_DEFECTO = {
+  busqueda: "",
+  filtroEstado: "todos",
+  orden: "desc",
+  fechaDesde: "",
+  fechaHasta: "",
+};
+
+// SelectFechaSimple entrega el valor ya como ISO completo, así que el límite
+// superior del rango se lleva a las 23:59:59 locales en vez de asumir un
+// formato "yyyy-mm-dd" (mismo criterio que la pantalla de Solicitudes del
+// cliente).
+const finDelDia = (fecha) => {
+  const d = new Date(fecha);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
+const dotYPillClaseDesde = (isAprobada, isRechazada, isCancelada) => {
+  if (isAprobada) return "Aprobada";
+  if (isRechazada) return "Rechazada";
+  if (isCancelada) return "Cancelada";
+  return "Pendiente";
+};
+
+const getIniciales = (denominacion) => {
+  if (!denominacion) return "?";
+  const palabras = denominacion.trim().split(/\s+/).filter(Boolean);
+  if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
+  return (palabras[0][0] + palabras[1][0]).toUpperCase();
+};
+
+// Filas con avatar (mismo criterio visual que Empresas.jsx): entran menos
+// por página que la vieja grilla ultra-compacta, pero se leen de un vistazo.
+const ELEMENTOS_POR_PAGINA = 8;
+
+// Misma forma que una fila real, para que el loading no "salte" de tamaño
+// cuando llegan los datos.
+const SolicitudRowSkeleton = () => (
+  <div className={styles.row}>
+    <Skeleton width="2.35rem" height="2.35rem" radius="50%" />
+    <div className={styles.rowIdentity}>
+      <Skeleton height="0.9rem" width="55%" />
+      <Skeleton height="0.75rem" width="75%" style={{ marginTop: "0.35rem" }} />
+    </div>
+    <Skeleton width="6rem" height="1.4rem" radius="9999px" />
+    <Skeleton width="7rem" height="1.1rem" />
+    <div className={styles.rowSpacer} />
+    <Skeleton width="10rem" height="1.9rem" radius="0.5rem" />
+    <Skeleton width="1rem" height="1rem" />
+  </div>
+);
+
 export default function Dashboard() {
-  const [busqueda, setBusqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("todos");
-  const [orden, setOrden] = useState("desc");
+  const [busqueda, setBusqueda] = useState(FILTROS_POR_DEFECTO.busqueda);
+  const [filtroEstado, setFiltroEstado] = useState(FILTROS_POR_DEFECTO.filtroEstado);
+  const [orden, setOrden] = useState(FILTROS_POR_DEFECTO.orden);
+  const [fechaDesde, setFechaDesde] = useState(FILTROS_POR_DEFECTO.fechaDesde);
+  const [fechaHasta, setFechaHasta] = useState(FILTROS_POR_DEFECTO.fechaHasta);
   const [selectedCadenaId, setSelectedCadenaId] = useState("all");
+  const [pagina, setPagina] = useState(1);
 
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
@@ -155,10 +210,10 @@ export default function Dashboard() {
         creado: fchVigenciaDesde
           ? new Date(fchVigenciaDesde).toLocaleString("es-AR")
           : "Reciente",
+        creadoISO: fchVigenciaDesde || null,
         actualizado: fchVigenciaHasta
           ? new Date(fchVigenciaHasta).toLocaleString("es-AR")
           : "Reciente",
-        tags: ["Canal Activo", "Legajo validado"],
         cadenaSlug: "default",
         raw: l,
       };
@@ -264,6 +319,54 @@ export default function Dashboard() {
     handleDecision(solicitudARechazar, ESTADO_RECHAZADA, motivo);
   };
 
+  const fechaDesdeDate = fechaDesde ? new Date(fechaDesde) : undefined;
+  const fechaHastaDate = fechaHasta ? new Date(fechaHasta) : undefined;
+
+  const hayFiltrosActivos =
+    !!busqueda ||
+    filtroEstado !== FILTROS_POR_DEFECTO.filtroEstado ||
+    orden !== FILTROS_POR_DEFECTO.orden ||
+    !!fechaDesde ||
+    !!fechaHasta;
+
+  // Cambiar de cadena o tocar cualquier filtro vuelve a la página 1 -
+  // si no, se puede quedar viendo una página vacía (ej. estabas en la
+  // página 3 y el nuevo filtro solo da 1 resultado). Se resetea acá, junto
+  // con el cambio real, en vez de "derivarlo" con un efecto aparte.
+  const handleBusqueda = (val) => {
+    setBusqueda(val);
+    setPagina(1);
+  };
+  const handleFiltroEstado = (val) => {
+    setFiltroEstado(val);
+    setPagina(1);
+  };
+  const handleOrden = (val) => {
+    setOrden(val);
+    setPagina(1);
+  };
+  const handleFechaDesde = (val) => {
+    setFechaDesde(val);
+    setPagina(1);
+  };
+  const handleFechaHasta = (val) => {
+    setFechaHasta(val);
+    setPagina(1);
+  };
+  const handleSelectCadena = (id) => {
+    setSelectedCadenaId(id);
+    setPagina(1);
+  };
+
+  const handleLimpiarFiltros = () => {
+    setBusqueda(FILTROS_POR_DEFECTO.busqueda);
+    setFiltroEstado(FILTROS_POR_DEFECTO.filtroEstado);
+    setOrden(FILTROS_POR_DEFECTO.orden);
+    setFechaDesde(FILTROS_POR_DEFECTO.fechaDesde);
+    setFechaHasta(FILTROS_POR_DEFECTO.fechaHasta);
+    setPagina(1);
+  };
+
   const filtradas = solicitudesCanal
     .filter((s) => {
       const matchTexto =
@@ -271,12 +374,20 @@ export default function Dashboard() {
         s.cuit.includes(busqueda) ||
         s.id.includes(busqueda) ||
         s.usuario.toLowerCase().includes(busqueda.toLowerCase());
+      if (!matchTexto) return false;
 
-      if (filtroEstado === "todos") return matchTexto;
-      return (
-        matchTexto &&
-        s.estado.toLowerCase().includes(filtroEstado.toLowerCase())
-      );
+      if (filtroEstado !== "todos" && !s.estado.toLowerCase().includes(filtroEstado.toLowerCase())) {
+        return false;
+      }
+
+      if (fechaDesde || fechaHasta) {
+        if (!s.creadoISO) return false;
+        const fechaItem = new Date(s.creadoISO);
+        if (fechaDesde && fechaItem < new Date(fechaDesde)) return false;
+        if (fechaHasta && fechaItem > finDelDia(fechaHasta)) return false;
+      }
+
+      return true;
     })
     .sort((a, b) => {
       if (orden === "desc") return b.id.localeCompare(a.id);
@@ -288,387 +399,316 @@ export default function Dashboard() {
     return acc + (curr.moneda === "U$D" ? val * 1500 : val);
   }, 0);
 
+  const totalPendientes = solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length;
+  const totalAprobadas = solicitudesCanal.filter((s) => s.estado === "Aprobada").length;
+
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ELEMENTOS_POR_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const filtradasPagina = filtradas.slice(
+    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
+    paginaActual * ELEMENTOS_POR_PAGINA,
+  );
+
   return (
-    <div className={styles.dashboardContainer}>
-      {/* Header and top KPI widgets */}
-      <div className={styles.headerTitle}>
-        <div>
-          <h1>Gestión de Solicitudes</h1>
-          <p>
-            Procesá las solicitudes de línea de todas las cadenas de valor
-            activas en el sistema.
-          </p>
-        </div>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1>Gestión de Solicitudes</h1>
+        <p>Procesá las solicitudes de línea de todas las cadenas de valor activas en el sistema.</p>
       </div>
 
-      <div className={styles.topSectionSplit}>
-        {/* Left Column: Selected Chain Card */}
-        <div className={styles.selectedChainCardContainer}>
-          {loading ? (
-            <div className={styles.chainSelectorCard}>
-              <div className={styles.chainCardHeader}>
-                <Skeleton width="48px" height="48px" radius="0.625rem" />
-                <div style={{ flex: 1 }}>
-                  <Skeleton height="1.1875rem" width="60%" style={{ marginBottom: '0.15rem' }} />
-                  <Skeleton height="0.8rem" width="40%" style={{ marginTop: '0.2rem' }} />
-                </div>
-              </div>
-              <div>
-                <Skeleton height="0.8375rem" width="90%" style={{ marginBottom: '0.4rem' }} />
-                <Skeleton height="0.8375rem" width="70%" />
-              </div>
-              <div className={styles.btnRow}>
-                <Skeleton height="32px" width="120px" radius="6px" />
+      {/* Franja de contexto: cadena seleccionada + métricas, en una sola línea */}
+      <div className={styles.contextBar}>
+        {loading ? (
+          <>
+            <div className={styles.contextChain}>
+              <Skeleton width="2.5rem" height="2.5rem" radius="0.625rem" />
+              <div style={{ flex: 1 }}>
+                <Skeleton height="0.9rem" width="55%" />
+                <Skeleton height="0.7rem" width="35%" style={{ marginTop: "0.3rem" }} />
               </div>
             </div>
-          ) : selectedCadenaId === "all" ? (
-            <div className={`${styles.chainSelectorCard} ${styles.globalConsolidatedCard}`}>
-              <div className={styles.chainCardHeader}>
-                <div className={styles.globalIconWrapper}>
-                  <FiGlobe size={24} />
+            <Skeleton width="9rem" height="1.5rem" />
+          </>
+        ) : (
+          <>
+            <div className={styles.contextChain}>
+              {selectedCadenaId === "all" ? (
+                <div className={styles.contextChainIcon}>
+                  <FiGlobe size={20} />
                 </div>
-                <div>
-                  <h2 className={styles.chainCardTitle}>Consolidado General</h2>
-                  <p className={styles.chainCardSubtitle}>Todas las Cadenas de Valor</p>
+              ) : selectedChain?.logo ? (
+                <div className={styles.contextChainLogo}>
+                  <img
+                    src={
+                      selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
+                        ? selectedChain.logo
+                        : `data:image/png;base64,${selectedChain.logo}`
+                    }
+                    alt={selectedChain.denominacion}
+                  />
                 </div>
+              ) : (
+                <div className={styles.contextChainIcon}>
+                  <FiGrid size={20} />
+                </div>
+              )}
+              <div className={styles.contextChainInfo}>
+                <span className={styles.contextChainName}>
+                  {selectedCadenaId === "all"
+                    ? "Consolidado General"
+                    : selectedChain?.denominacion || "Cargando..."}
+                </span>
+                <span className={styles.contextChainMeta}>
+                  {selectedCadenaId === "all"
+                    ? "Todas las cadenas de valor"
+                    : `Ref: ${selectedChain?.referencia || "Sin ref"} · #${selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}`}
+                </span>
               </div>
-              <p className={styles.chainCardDescription}>
-                Supervisando solicitudes de todas las cadenas comerciales activas en el portal.
-              </p>
-              <Button
-                onClick={() => {
-                  setChainSearchQuery("");
-                  setIsChainModalOpen(true);
-                }}
-                variant="blue"
-                size="sm"
-                className={styles.changeChainBtn}
-              >
-                Seleccionar Cadena <FiChevronRight />
-              </Button>
-            </div>
-          ) : (
-            <div className={styles.chainSelectorCard}>
-              <div className={styles.chainCardHeader}>
-                {selectedChain?.logo ? (
-                  <div className={styles.selectedChainLogoWrapper}>
-                    <img
-                      src={
-                        selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
-                          ? selectedChain.logo
-                          : `data:image/png;base64,${selectedChain.logo}`
-                      }
-                      alt={selectedChain.denominacion}
-                      className={styles.selectedChainLogo}
-                    />
-                  </div>
-                ) : (
-                  <div className={styles.globalIconWrapper}>
-                    <FiGrid size={24} />
-                  </div>
-                )}
-                <div>
-                  <h2 className={styles.chainCardTitle}>{selectedChain?.denominacion || "Cargando..."}</h2>
-                  <p className={styles.chainCardSubtitle}>Referencia: {selectedChain?.referencia || "Sin Ref"}</p>
-                </div>
-              </div>
-              <p className={styles.chainCardDescription}>
-                Visualizando solicitudes de la cadena comercial seleccionada. ID: #{selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}.
-              </p>
-              <div className={styles.btnRow}>
-                <Button
+              <div className={styles.contextChainActions}>
+                <button
+                  type="button"
+                  className={styles.contextChainBtn}
                   onClick={() => {
                     setChainSearchQuery("");
                     setIsChainModalOpen(true);
                   }}
-                  variant="outlineBlue"
-                  size="sm"
-                  className={styles.changeChainBtn}
                 >
-                  Cambiar Cadena <FiChevronRight />
-                </Button>
-                <Button
-                  onClick={() => setSelectedCadenaId("all")}
-                  variant="ghost"
-                  size="sm"
-                  className={styles.viewAllBtn}
-                >
-                  Ver Todas
-                </Button>
+                  {selectedCadenaId === "all" ? "Seleccionar cadena" : "Cambiar"} <FiChevronRight size={13} />
+                </button>
+                {selectedCadenaId !== "all" && (
+                  <button
+                    type="button"
+                    className={`${styles.contextChainBtn} ${styles.contextChainBtnGhost}`}
+                    onClick={() => handleSelectCadena("all")}
+                  >
+                    Ver todas
+                  </button>
+                )}
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Right Column: Compact Metrics Grid (2x2) */}
-        <div className={styles.compactMetricsGrid}>
-          <TarjetaMetrica
-            className={styles.kpiCardCompact}
-            labelClassName={styles.kpiLabelCompact}
-            valueClassName={styles.kpiValueCompact}
-            icon={FiBriefcase}
-            label="Líneas"
-            value={solicitudesCanal.length}
-            isLoading={loading}
-          />
-          <TarjetaMetrica
-            className={styles.kpiCardCompact}
-            labelClassName={styles.kpiLabelCompact}
-            valueClassName={styles.kpiValueCompact}
-            icon={FiTrendingUp}
-            label="Volumen"
-            value={`$ ${(totalMonto / 1000000).toFixed(1)}M`}
-            isLoading={loading}
-          />
-          <TarjetaMetrica
-            className={styles.kpiCardCompact}
-            labelClassName={styles.kpiLabelCompact}
-            valueClassName={styles.kpiValueWarningCompact}
-            icon={FiClock}
-            label="Pendientes"
-            value={solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length}
-            isLoading={loading}
-          />
-          <TarjetaMetrica
-            className={styles.kpiCardCompact}
-            labelClassName={styles.kpiLabelCompact}
-            valueClassName={styles.kpiValueSuccessCompact}
-            icon={FiCheckCircle}
-            label="Aprobadas"
-            value={solicitudesCanal.filter((s) => s.estado === "Aprobada").length}
-            isLoading={loading}
-          />
-        </div>
+            <div className={styles.contextDivider} />
+
+            <div className={styles.contextStats}>
+              <div className={styles.statBlock}>
+                <span className={styles.statLabel}>Líneas</span>
+                <span className={styles.statValue}>{solicitudesCanal.length}</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statBlock}>
+                <span className={styles.statLabel}>Volumen</span>
+                <span className={styles.statValue}>$ {(totalMonto / 1000000).toFixed(1)}M</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statBlock}>
+                <span className={styles.statLabel}>Pendientes</span>
+                <span className={`${styles.statValue} ${styles.statValueWarning}`}>{totalPendientes}</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statBlock}>
+                <span className={styles.statLabel}>Aprobadas</span>
+                <span className={`${styles.statValue} ${styles.statValueSuccess}`}>{totalAprobadas}</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Controls & Filter toolbar */}
-      <div className={styles.toolbarCard}>
-        <div className={styles.searchWrap}>
-          <FiSearch className={styles.iconSearch} />
+      {/* Barra de filtros — mismo patrón que Solicitudes.jsx del cliente */}
+      <div className={styles.filterBar}>
+        <div className={styles.searchBox}>
+          <FiSearch className={styles.searchIcon} />
           <input
             type="text"
             placeholder="Buscar por Cliente, CUIT, Usuario o N° Solicitud..."
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className={styles.inputSearch}
+            onChange={(e) => handleBusqueda(e.target.value)}
+            className={styles.searchInput}
           />
         </div>
 
-        <div className={styles.filtersGroup}>
-          <div className={styles.customSelectWrapper}>
-            <SelectSimple
-              label="Estado"
-              value={filtroEstado}
-              onChange={setFiltroEstado}
-              options={opcionesEstado}
-              placeholder="Estado"
-              isSearchable={false}
-              hideErrorSpace
-              size="sm"
-            />
-          </div>
-
-          <div className={styles.customSelectWrapper}>
-            <SelectSimple
-              label="Orden"
-              value={orden}
-              onChange={setOrden}
-              options={opcionesOrden}
-              placeholder="Orden"
-              isSearchable={false}
-              hideErrorSpace
-              size="sm"
-            />
-          </div>
+        <div className={styles.filterFieldsRow}>
+          <SelectFechaSimple
+            label="Desde"
+            value={fechaDesde}
+            onChange={handleFechaDesde}
+            disableFuture
+            maxDate={fechaHastaDate}
+            variant="admin"
+            compact
+            hideErrorSpace
+            className={styles.filterField}
+          />
+          <SelectFechaSimple
+            label="Hasta"
+            value={fechaHasta}
+            onChange={handleFechaHasta}
+            disableFuture
+            minDate={fechaDesdeDate}
+            variant="admin"
+            compact
+            hideErrorSpace
+            className={styles.filterField}
+          />
+          <SelectSimple
+            label="Estado"
+            value={filtroEstado}
+            onChange={handleFiltroEstado}
+            options={opcionesEstado}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
+          <SelectSimple
+            label="Orden"
+            value={orden}
+            onChange={handleOrden}
+            options={opcionesOrden}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
         </div>
+
+        <button
+          type="button"
+          className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
+          onClick={handleLimpiarFiltros}
+          disabled={!hayFiltrosActivos}
+          tabIndex={hayFiltrosActivos ? 0 : -1}
+          title="Limpiar filtros"
+          aria-label="Limpiar filtros"
+        >
+          <FiX />
+        </button>
       </div>
 
-      {/* Main Operations List mimicking user screenshot */}
+      {/* Lista de solicitudes */}
       <div className={styles.listWrapper}>
         {loading ? (
-          <SkeletonTable rows={4} />
+          Array.from({ length: 5 }).map((_, i) => <SolicitudRowSkeleton key={i} />)
         ) : filtradas.length === 0 ? (
           <SinResultados
             className={styles.emptyState}
             message="No se encontraron solicitudes que coincidan con los criterios de búsqueda."
           />
         ) : (
-          filtradas.map((item) => {
+          filtradasPagina.map((item) => {
             const isAprobada = item.tipoLimiteEstadoId === ESTADO_APROBADA;
             const isRechazada = item.tipoLimiteEstadoId === ESTADO_RECHAZADA;
             const isCancelada = item.tipoLimiteEstadoId === ESTADO_CANCELADA;
             const isPendiente = !isAprobada && !isRechazada && !isCancelada;
+            const estadoKey = dotYPillClaseDesde(isAprobada, isRechazada, isCancelada);
 
             return (
               <div
                 key={item.id}
-                className={`${styles.itemRow} ${
-                  isAprobada
-                    ? styles.rowApproved
-                    : isRechazada
-                      ? styles.rowRejected
-                      : isCancelada
-                        ? styles.rowCancelled
-                        : styles.rowPending
-                }`}
+                className={`${styles.row} ${styles.rowClickable} ${styles[`row${estadoKey}`]}`}
+                onClick={() => setSolicitudDetalle(item)}
+                title="Ver detalle de la solicitud"
               >
-                <div className={styles.rowMain}>
-                  {/* Left Column: Data Info */}
-                  <div className={styles.infoCol}>
-                    <div className={styles.rowHeaderInfo}>
-                      <span className={styles.tipoText}>{item.tipo}</span>
-                      <div className={styles.tagsWrap}>
-                        {item.tags?.map((t) => {
-                          const lowerT = t.toLowerCase();
-                          let tagStyle = styles.tagBadge;
-                          if (lowerT.includes("activo") || lowerT.includes("validado") || lowerT.includes("aceptados")) {
-                            tagStyle = `${styles.tagBadge} ${styles.tagSuccess}`;
-                          } else if (lowerT.includes("pendiente") || lowerT.includes("revisión")) {
-                            tagStyle = `${styles.tagBadge} ${styles.tagWarning}`;
-                          } else if (lowerT.includes("nuevo")) {
-                            tagStyle = `${styles.tagBadge} ${styles.tagInfo}`;
-                          }
-                          
-                          return (
-                            <Badge key={t} className={tagStyle}>
-                              {t}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    </div>
+                <div className={`${styles.rowAvatar} ${styles[`avatar${estadoKey}`] || ""}`}>
+                  {getIniciales(item.cliente)}
+                </div>
 
-                    <h2 className={styles.solicitudHeading}>
-                      Solicitud N°{item.id} por{" "}
-                      <span className={styles.montoHighlight}>
-                        {item.moneda || "$"} {item.monto}
-                      </span>
-                    </h2>
+                <div className={styles.rowIdentity}>
+                  <span className={styles.rowClientName}>{item.cliente}</span>
+                  <span className={styles.rowMeta}>
+                    N°{item.id} · {item.creado} · {item.tipo} · CUIT {item.cuit} · {item.usuario}
+                  </span>
+                </div>
 
-                    <div className={styles.detailsGrid}>
-                      <div>
-                        <span className={styles.detailLabel}>Cliente:</span>{" "}
-                        <span className={styles.detailStrong}>
-                          {item.cliente} ({item.cuit})
-                        </span>
-                      </div>
-                      <div>
-                        <span className={styles.detailLabel}>Usuario:</span>{" "}
-                        <span className={styles.detailText}>
-                          {item.usuario}
-                        </span>
-                      </div>
-                      <div>
-                        <span className={styles.detailLabel}>Estado:</span>{" "}
-                        <Badge
-                          className={`${styles.statusPill} ${
-                            isAprobada
-                              ? styles.pillApproved
-                              : isRechazada
-                                ? styles.pillRejected
-                                : isCancelada
-                                  ? styles.pillCancelled
-                                  : styles.pillPending
-                          }`}
-                        >
-                          {item.estado}
-                        </Badge>
-                      </div>
-                      <div className={styles.fullSpan}>
-                        <span className={styles.detailLabel}>
-                          Acción pendiente:
-                        </span>{" "}
-                        <span className={styles.actionHighlight}>
-                          {item.accionPendiente}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                <span className={`${styles.rowPill} ${styles[`pill${estadoKey}`]}`}>
+                  <span className={styles.statusDot} />
+                  {item.estado}
+                </span>
 
-                  {/* Right Column: Actions & Timestamps */}
-                  <div className={styles.actionCol}>
-                    <div className={styles.timestamps}>
-                      <div>Creado: {item.creado}</div>
-                      <div>Actualizado: {item.actualizado}</div>
-                    </div>
+                <div className={styles.rowAmountBlock}>
+                  <span className={styles.rowAmountLabel}>Monto</span>
+                  <span className={styles.rowAmount}>
+                    {item.moneda || "$"} {item.monto}
+                  </span>
+                </div>
 
-                    <div className={styles.buttonsWrap}>
-                      {isRestricted ? (
+                <div className={styles.rowSpacer} />
+
+                {/* "Ver detalle" ya no es un botón acá: toda la fila lo abre
+                    (ver onClick arriba) - el chevron solo la señaliza. Los
+                    botones que quedan son decisiones reales, por eso cortan
+                    la propagación del click para no disparar el detalle
+                    encima. */}
+                <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
+                  {isRestricted ? (
+                    <Button
+                      onClick={() => setSolicitudCda(item)}
+                      variant="outlineBlue"
+                      size="sm"
+                    >
+                      <FiList /> CRITERIOS
+                    </Button>
+                  ) : (
+                    <>
+                      {isPendiente && (
                         <>
                           <Button
-                            onClick={() => setSolicitudCda(item)}
-                            variant="outlineBlue"
+                            onClick={() => handleAceptar(item)}
+                            variant="success"
                             size="sm"
-                            className={styles.btnCdaCustom}
+                            title="Aprobar Solicitud"
+                            disabled={actualizarEstadoMutation.isPending}
                           >
-                            <FiList /> CRITERIOS
+                            <FiCheck /> ACEPTAR
                           </Button>
                           <Button
-                            onClick={() => setSolicitudDetalle(item)}
-                            variant="ghost"
+                            onClick={() => handleRechazar(item)}
+                            variant="danger"
                             size="sm"
-                            className={styles.btnDetailCustom}
+                            title="Rechazar Solicitud"
+                            disabled={actualizarEstadoMutation.isPending}
                           >
-                            <FiEye /> VER DETALLE
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          {isPendiente && (
-                            <div className={styles.quickDecisions}>
-                              <Button
-                                onClick={() => handleAceptar(item)}
-                                variant="success"
-                                size="xs"
-                                className={styles.btnAcceptCustom}
-                                title="Aprobar Solicitud"
-                                disabled={actualizarEstadoMutation.isPending}
-                              >
-                                <FiCheck /> ACEPTAR
-                              </Button>
-                              <Button
-                                onClick={() => handleRechazar(item)}
-                                variant="danger"
-                                size="xs"
-                                className={styles.btnRejectCustom}
-                                title="Rechazar Solicitud"
-                                disabled={actualizarEstadoMutation.isPending}
-                              >
-                                <FiX /> RECHAZAR
-                              </Button>
-                            </div>
-                          )}
-
-                          {isAprobada && (
-                            <Button
-                              onClick={() => handleReintentarMigracion(item)}
-                              variant="outlineBlue"
-                              size="xs"
-                              title="Reintentar la migración de esta línea a SGR+"
-                              disabled={migrarLineaMutation.isPending}
-                            >
-                              <FiRefreshCw /> REINTENTAR MIGRACIÓN
-                            </Button>
-                          )}
-
-                          <Button
-                            onClick={() => setSolicitudDetalle(item)}
-                            variant="ghost"
-                            size="sm"
-                            className={styles.btnDetailCustom}
-                          >
-                            <FiEye /> VER DETALLE
+                            <FiX /> RECHAZAR
                           </Button>
                         </>
                       )}
-                    </div>
-                  </div>
+
+                      {isAprobada && (
+                        <Button
+                          onClick={() => handleReintentarMigracion(item)}
+                          variant="outlineBlue"
+                          size="sm"
+                          title="Reintentar la migración de esta línea a SGR+"
+                          disabled={migrarLineaMutation.isPending}
+                        >
+                          <FiRefreshCw /> MIGRAR
+                        </Button>
+                      )}
+                    </>
+                  )}
                 </div>
+
+                <FiChevronRight className={styles.rowChevron} />
               </div>
             );
           })
         )}
       </div>
+
+      {!loading && filtradas.length > 0 && (
+        <Paginacion
+          page={paginaActual}
+          onPageChange={setPagina}
+          hasMoreData={paginaActual < totalPaginas}
+          knownEndPage={totalPaginas}
+          variant="admin"
+          totalItems={filtradas.length}
+          pageSize={ELEMENTOS_POR_PAGINA}
+          itemLabel="solicitudes"
+        />
+      )}
 
       {/* Mock Detail Modal */}
       <Modal
@@ -812,7 +852,7 @@ export default function Dashboard() {
             <div
               className={`${styles.chainCardModal} ${selectedCadenaId === "all" ? styles.chainCardActive : ""}`}
               onClick={() => {
-                setSelectedCadenaId("all");
+                handleSelectCadena("all");
                 setIsChainModalOpen(false);
               }}
             >
@@ -841,7 +881,7 @@ export default function Dashboard() {
                     key={id}
                     className={`${styles.chainCardModal} ${isSelected ? styles.chainCardActive : ""}`}
                     onClick={() => {
-                      setSelectedCadenaId(id);
+                      handleSelectCadena(id);
                       setIsChainModalOpen(false);
                     }}
                   >

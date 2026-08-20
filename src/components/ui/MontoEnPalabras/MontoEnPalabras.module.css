@@ -1,0 +1,26 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 9999px;
+  background: rgba(76, 101, 230, 0.06);
+  border: 1px solid rgba(76, 101, 230, 0.16);
+  color: #8fa3f3;
+  font-size: 0.68rem;
+  font-style: italic;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Para inputs con el padding-bottom reservado a error sin recortar: en vez
+   de sumar altura extra debajo de ese hueco (quedando "flotando" lejos del
+   input), el chip se corre hacia arriba para ocupar ese espacio que de
+   otro modo queda vacío. Solo se usa en inputs sin mensaje de error propio
+   (ver usos), así nunca tapa una validación real. */
+.pullUp {
+  margin-top: -1.5rem;
+}

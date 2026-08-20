@@ -29,6 +29,7 @@ import {
   Spinner,
   Skeleton,
   InputSimple,
+  MontoEnPalabras,
 } from "../../../components/ui";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import styles from "./LineasProductos.module.css";
@@ -450,10 +451,24 @@ export default function LineasCadena() {
   const montoContratoIngresado =
     parseFloat(limpiarMonto(formData.montoContrato)) || 0;
 
+  // Los inputs enmascarados de Monto (Línea/Contrato) reformatean su valor
+  // (padding de decimales, separador de miles) apenas montan, disparando su
+  // propio onAccept - eso pisa formData con el string ya formateado sin que
+  // el usuario haya tocado nada. Comparar los strings crudos contra el
+  // snapshot sin formatear daba un falso "hay cambios" permanente en modo
+  // edición; se normalizan a número (mismo criterio que al armar el
+  // payload) antes de comparar.
+  const normalizarParaComparar = (fd) => ({
+    ...fd,
+    montoLinea: Number(limpiarMonto(fd.montoLinea)) || 0,
+    montoContrato: Number(limpiarMonto(fd.montoContrato)) || 0,
+  });
+
   const sinCambios =
     !!activeLinea &&
     !!formDataInicial &&
-    JSON.stringify(formData) === JSON.stringify(formDataInicial);
+    JSON.stringify(normalizarParaComparar(formData)) ===
+      JSON.stringify(normalizarParaComparar(formDataInicial));
 
   useEffect(() => {
     if (listCadenas.length > 0 && !selectedCadenaId) {
@@ -863,6 +878,11 @@ export default function LineasCadena() {
                 lazy={false}
                 error={formErrors.montoLinea}
               />
+              <MontoEnPalabras
+                value={limpiarMonto(formData.montoLinea)}
+                pullUp={!formErrors.montoLinea}
+                style={!formErrors.montoLinea ? { marginTop: "-1.875rem" } : undefined}
+              />
             </div>
 
             <div className={styles.uniqueAmountCard}>
@@ -953,6 +973,11 @@ export default function LineasCadena() {
                 }}
                 lazy={false}
                 error={formErrors.montoContrato}
+              />
+              <MontoEnPalabras
+                value={limpiarMonto(formData.montoContrato)}
+                pullUp={!formErrors.montoContrato}
+                style={!formErrors.montoContrato ? { marginTop: "-1.875rem" } : undefined}
               />
             </div>
 
