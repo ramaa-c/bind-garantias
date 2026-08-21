@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
-import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink } from "react-icons/fi";
+import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
 import { useObtenerSocios, useObtenerExecuteCda, useEstaMigradoEnSgrPlus } from "../../../hooks/useSocios";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
+import { ActividadSocioModal } from "../../../components/features/admin/ActividadSocioModal/ActividadSocioModal";
 import { detectarCadenaValorId } from "../../../utils/executeCda";
 import styles from "./Empresas.module.css";
 
@@ -45,6 +46,7 @@ const EmpresaRowSkeleton = () => (
     </td>
     <td><Skeleton width="5.5rem" height="1.4rem" radius="pill" /></td>
     <td><Skeleton width="5.5rem" height="1.4rem" radius="pill" /></td>
+    <td></td>
     <td></td>
   </tr>
 );
@@ -115,6 +117,7 @@ export default function Empresas() {
   const [busqueda, setBusqueda] = useState("");
   const [debouncedBusqueda] = useDebounce(busqueda, 400);
   const [pagina, setPagina] = useState(1);
+  const [empresaActividad, setEmpresaActividad] = useState(null);
 
   // El backend solo permite filtrar la lista de socios por Cuit o por
   // Denominacion (nunca ambos a la vez: el Cuit es único, así que combinarlos
@@ -185,10 +188,11 @@ export default function Empresas() {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th style={{ width: "38%" }}>Empresa</th>
-                <th style={{ width: "32%" }}>Contacto</th>
-                <th style={{ width: "14%" }}>Tipo</th>
-                <th style={{ width: "14%" }}>Estado</th>
+                <th style={{ width: "36%" }}>Empresa</th>
+                <th style={{ width: "30%" }}>Contacto</th>
+                <th style={{ width: "13%" }}>Tipo</th>
+                <th style={{ width: "13%" }}>Estado</th>
+                <th style={{ width: "2.5rem" }}></th>
                 <th style={{ width: "2.5rem" }}></th>
               </tr>
             </thead>
@@ -197,7 +201,7 @@ export default function Empresas() {
                 Array.from({ length: 6 }).map((_, i) => <EmpresaRowSkeleton key={i} />)
               ) : empresasPagina.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: 0 }}>
+                  <td colSpan={6} style={{ padding: 0 }}>
                     <div className={styles.emptyState}>
                       <FiInbox className={styles.emptyStateIcon} />
                       <span>No se encontraron empresas que coincidan con los criterios de búsqueda.</span>
@@ -243,6 +247,19 @@ export default function Empresas() {
                         <EstadoBadge e={e} cadenasWeb={cadenasWeb} />
                       </td>
                       <td style={{ textAlign: "center" }}>
+                        <button
+                          type="button"
+                          className={styles.activityButton}
+                          title="Ver actividad"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            setEmpresaActividad(e);
+                          }}
+                        >
+                          <FiActivity size={14} />
+                        </button>
+                      </td>
+                      <td style={{ textAlign: "center" }}>
                         <FiChevronRight className={styles.rowChevron} />
                       </td>
                     </tr>
@@ -267,6 +284,13 @@ export default function Empresas() {
           itemLabel="empresas"
         />
       )}
+
+      <ActividadSocioModal
+        isOpen={!!empresaActividad}
+        onClose={() => setEmpresaActividad(null)}
+        cuit={empresaActividad?.cuit}
+        denominacion={empresaActividad?.denominacion}
+      />
     </div>
   );
 }

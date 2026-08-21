@@ -209,6 +209,20 @@ export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
   };
 };
 
+// GET api/Socio/Actividad/{cuit} - Log de actividad del socio. Se pide
+// `habilitado` aparte de `!!cuit` para que la pantalla de listado pueda
+// abrir esto como modal on-demand (recién al abrirlo) en vez de traer el
+// log de las 8 empresas visibles en cada página.
+export const useActividadSocio = (cuit, habilitado = true) => {
+  const cuitLimpio = String(cuit || "").replace(/\D/g, "");
+  return useQuery({
+    queryKey: ["socios", "actividad", cuitLimpio],
+    queryFn: () => sociosService.obtenerActividadSocio(cuitLimpio),
+    enabled: !!cuitLimpio && habilitado,
+    staleTime: 1000 * 60 * 2, // 2 minutos
+  });
+};
+
 export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
   return useQuery({
     queryKey: ["socioUsuario", "listaPorUsuario", usuarioWebId],

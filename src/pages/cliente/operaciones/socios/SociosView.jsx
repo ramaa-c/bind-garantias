@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FiUsers as FiUsersIcon, FiRefreshCw, FiLock } from "react-icons/fi";
 import { SociosLegajo, LegajoUniversalBar } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { Button } from "../../../../components/ui";
+import { Button, LoadingScreen } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useCertificadoVigente } from "../../../../hooks/useCertificadoVigente";
@@ -48,7 +48,7 @@ export default function SociosView() {
 
   // Certificado PyME no vigente (o no se pudo verificar): el legajo queda
   // de solo lectura, se puede ver lo ya cargado pero no modificarlo.
-  const { soloLectura } = useCertificadoVigente(cuitActivo);
+  const { soloLectura, verificando } = useCertificadoVigente(cuitActivo);
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -97,6 +97,20 @@ export default function SociosView() {
       setShowConfirmModal(false);
     }
   };
+
+  // Se espera a confirmar la vigencia del Certificado PyME ANTES de mostrar
+  // la pantalla: si no, mientras la consulta todavía está en vuelo
+  // `soloLectura` da true a propósito (falla cerrado, ver useCertificadoVigente)
+  // y el banner "no vigente" aparece un instante aunque en realidad sí esté
+  // vigente — confirmado en vivo. Mejor una carga corta que un aviso falso.
+  if (verificando) {
+    return (
+      <LoadingScreen
+        title="Verificando tu cuenta"
+        message="Comprobando el estado del Certificado PyME..."
+      />
+    );
+  }
 
   return (
     <section className={styles.pageContainer}>

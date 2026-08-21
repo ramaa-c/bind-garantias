@@ -930,6 +930,11 @@ export function RepresentanteModal({
         });
       }
 
+      // No se espera a onSuccess (cargarSocios en SociosLegajo.jsx puede
+      // tardar unos segundos en refetchear todo de verdad) — la modal se
+      // cierra ya mismo y la sección de representantes/apoderados queda en
+      // su propio estado de carga ("actualizando") hasta que el refresh
+      // termine, en vez de retener la modal abierta esperando.
       if (onSuccess) onSuccess();
       setShowConfirm(false);
       onClose();

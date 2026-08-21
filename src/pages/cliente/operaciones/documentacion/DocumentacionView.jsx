@@ -15,7 +15,7 @@ import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useCertificadoVigente } from "../../../../hooks/useCertificadoVigente";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { descargarLegajoCompletoZip } from "../../../../utils/fileUtils";
-import { Button } from "../../../../components/ui";
+import { Button, LoadingScreen } from "../../../../components/ui";
 import styles from "./DocumentacionView.module.css";
 
 const DOC_TITLES = {
@@ -49,7 +49,7 @@ export default function DocumentacionView() {
   // Certificado PyME no vigente (o no se pudo verificar): la documentación
   // queda de solo lectura, se puede ver/descargar lo ya cargado pero no
   // subir ni reemplazar nada.
-  const { soloLectura } = useCertificadoVigente(cuitActivo);
+  const { soloLectura, verificando } = useCertificadoVigente(cuitActivo);
 
   const { data: archivosBackend = [] } = useQuery({
     queryKey: ["socioArchivos", socioIdActivo],
@@ -99,6 +99,20 @@ export default function DocumentacionView() {
   useEffect(() => {
     return () => setUnsavedChanges(false);
   }, [setUnsavedChanges]);
+
+  // Se espera a confirmar la vigencia del Certificado PyME ANTES de mostrar
+  // la pantalla: si no, mientras la consulta todavía está en vuelo
+  // `soloLectura` da true a propósito (falla cerrado, ver useCertificadoVigente)
+  // y el banner "no vigente" aparece un instante aunque en realidad sí esté
+  // vigente — confirmado en vivo. Mejor una carga corta que un aviso falso.
+  if (verificando) {
+    return (
+      <LoadingScreen
+        title="Verificando tu cuenta"
+        message="Comprobando el estado del Certificado PyME..."
+      />
+    );
+  }
 
   return (
     <section className={styles.pageContainer}>

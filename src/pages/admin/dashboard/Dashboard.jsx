@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiRefreshCw } from "react-icons/fi";
+import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
 import { Modal } from "../../../components/ui/Modal/Modal";
@@ -96,6 +96,7 @@ export default function Dashboard() {
   const [fechaHasta, setFechaHasta] = useState(FILTROS_POR_DEFECTO.fechaHasta);
   const [selectedCadenaId, setSelectedCadenaId] = useState("all");
   const [pagina, setPagina] = useState(1);
+  const [panelesVisibles, setPanelesVisibles] = useState(true);
 
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
@@ -413,11 +414,28 @@ export default function Dashboard() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1>Gestión de Solicitudes</h1>
-        <p>Procesá las solicitudes de línea de todas las cadenas de valor activas en el sistema.</p>
+        <button
+          type="button"
+          className={styles.toggleFiltersBtn}
+          onClick={() => setPanelesVisibles((v) => !v)}
+          aria-expanded={panelesVisibles}
+          title={panelesVisibles ? "Ocultar cadena y filtros" : "Mostrar cadena y filtros"}
+        >
+          {panelesVisibles ? <FiChevronUp /> : <FiChevronDown />}
+          {panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
+        </button>
       </div>
 
-      {/* Franja de contexto: cadena seleccionada + métricas, en una sola línea */}
-      <div className={styles.contextBar}>
+      {/* Colapsable: subtítulo + franja de contexto + filtros. En pantallas
+          chicas (no full HD) este bloque es el que más espacio vertical le
+          come a la lista, así que se puede ocultar entero con un clic y
+          ver más solicitudes sin scrollear. */}
+      <div className={`${styles.collapsiblePanel} ${!panelesVisibles ? styles.collapsiblePanelClosed : ""}`}>
+        <div className={styles.collapsiblePanelInner}>
+        <p className={styles.subtitle}>Procesá las solicitudes de línea de todas las cadenas de valor activas en el sistema.</p>
+
+        {/* Franja de contexto: cadena seleccionada + métricas, en una sola línea */}
+        <div className={styles.contextBar}>
         {loading ? (
           <>
             <div className={styles.contextChain}>
@@ -585,6 +603,8 @@ export default function Dashboard() {
         >
           <FiX />
         </button>
+        </div>
+        </div>
       </div>
 
       {/* Lista de solicitudes */}

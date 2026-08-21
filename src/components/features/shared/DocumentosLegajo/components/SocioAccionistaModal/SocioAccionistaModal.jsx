@@ -1043,6 +1043,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
       toast.success(relacionId ? "Accionista actualizado correctamente." : "Accionista guardado correctamente.", { id: mainToastId });
 
+      // No se espera a onSuccess (cargarSocios en SociosLegajo.jsx puede
+      // tardar unos segundos en refetchear todo de verdad) — la modal se
+      // cierra ya mismo y la sección de accionistas queda en su propio
+      // estado de carga ("actualizando") hasta que el refresh termine, en
+      // vez de retener la modal abierta esperando.
       if (onSuccess) onSuccess();
       setShowConfirm(false);
       onClose();
