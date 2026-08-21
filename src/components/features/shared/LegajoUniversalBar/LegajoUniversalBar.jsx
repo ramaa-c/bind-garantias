@@ -302,10 +302,15 @@ export function LegajoUniversalBar({
       try {
         const certificados = await sociosService.obtenerCertificadoPyme(socioIdActivo);
         tieneCertificadoFresco = Array.isArray(certificados) && certificados.length > 0;
-        queryClient.setQueryData(
-          ["socios", "certificadoPyme", Number(socioIdActivo) || null],
-          tieneCertificadoFresco,
-        );
+        // invalidateQueries (no setQueryData): useCertificadoPyme cachea acá
+        // mismo el ARRAY crudo (lo lee CertificadoPymeAdmin.jsx) — pisarlo
+        // con un booleano rompía esa forma para cualquiera que lo mirara
+        // después, aunque no afectaba a esta migración en sí (que usa
+        // tieneCertificadoFresco, calculado acá arriba, no lo que quede en
+        // cache).
+        queryClient.invalidateQueries({
+          queryKey: ["socios", "certificadoPyme", Number(socioIdActivo) || null],
+        });
       } catch (certError) {
         console.error("[LegajoUniversalBar] Error consultando Socio/CertificadoPYME antes de migrar:", certError);
       }
@@ -343,8 +348,17 @@ export function LegajoUniversalBar({
       if (silent) {
         if (toastId) toast.dismiss(toastId);
       } else {
+        // El body de un 500 de este endpoint no siempre es { message }: a
+        // veces el backend devuelve directamente un string plano (mismo
+        // patrón que ValidarCuit/CertificadoVigente) — sin esto, ese caso
+        // caía siempre al genérico "Request failed with status code 500"
+        // de axios, sin mostrar el motivo real que sí manda el backend
+        // (confirmado en vivo el 2026-08-21).
+        const responseData = err.response?.data;
         const errorMessage =
-          err.response?.data?.message || err.message || "No se pudo sincronizar con SGR+.";
+          (typeof responseData === "string" ? responseData : responseData?.message || responseData?.Message) ||
+          err.message ||
+          "No se pudo sincronizar con SGR+.";
         toast.error("Error de sincronización con SGR+", { id: toastId, description: errorMessage });
       }
     } finally {

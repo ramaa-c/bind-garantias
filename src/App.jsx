@@ -15,7 +15,6 @@ import GuestGuard from "./components/guards/GuestGuard/GuestGuard";
 import SessionTimeoutManager from "./components/guards/SessionTimeoutManager/SessionTimeoutManager";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
-import RootRedirect from "./components/layout/RootRedirect/RootRedirect";
 import LoadingScreen from "./components/ui/LoadingScreen/LoadingScreen";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
@@ -103,7 +102,15 @@ function App() {
         <SessionTimeoutManager />
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
-            <Route path="/" element={<RootRedirect />} />
+            {/* Antes acá se auto-seleccionaba la primera cadena activa y se
+                redirigía a /{cadenaId}/login (ver RootRedirect, ya
+                eliminado) — pedido explícito de sacarlo: la URL de cada
+                cadena se arma siempre a mano, nunca automática. Además, un
+                redirect acá (aunque sea client-side) rompe el enmascarado
+                de la URL que hacen en el entorno del banco (Victor,
+                2026-08-21) — por eso esto renderiza el contenido directo,
+                sin ningún navigate()/<Navigate> de por medio. */}
+            <Route path="/" element={<NotFound />} />
             <Route path="/login" element={<LoginAdmin />} />
             <Route path="/not-found" element={<NotFound />} />
             <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
