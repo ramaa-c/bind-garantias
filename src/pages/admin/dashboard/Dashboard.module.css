@@ -2,15 +2,6 @@
    DASHBOARD — Gestión de Solicitudes (panel admin)
    ========================================================= */
 
-/* Ocupa toda la altura que .containerInner le deja (ver AdminLayout.module.css)
-   en vez de crecer según el contenido: así el scroll de "página completa" se
-   reemplaza por el scroll interno de .listWrapper únicamente - el resto
-   (header, franja de contexto, filtros, paginación) queda siempre visible. */
-/* Sin `gap` acá: el espaciado entre header / panel colapsable / lista /
-   paginación lo maneja cada uno con su propio margin (ver .header y
-   .collapsiblePanel), porque el panel colapsable necesita poder llevar su
-   propio margen a 0 cuando está cerrado — con `gap` en el padre ese hueco
-   quedaría fijo sin importar el estado, y no se ganaría espacio real. */
 .container {
   display: flex;
   flex-direction: column;
@@ -44,9 +35,6 @@
   font-size: 0.875rem;
 }
 
-/* Botón fintech estándar: ghost outline + chevron, mismo lenguaje visual
-   que .contextChainBtn. Sólo texto + ícono, sin color de "alerta": ocultar
-   filtros no es una acción destructiva ni de estado. */
 .toggleFiltersBtn {
   display: inline-flex;
   align-items: center;
@@ -61,7 +49,10 @@
   cursor: pointer;
   flex-shrink: 0;
   white-space: nowrap;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
 }
 
 .toggleFiltersBtn:hover {
@@ -74,16 +65,12 @@
   font-size: 0.9rem;
 }
 
-/* Colapso vía grid-template-rows (1fr → 0fr): a diferencia de max-height,
-   no depende de adivinar una altura límite y anima cualquier contenido de
-   alto variable (loading vs. datos, con o sin cadena seleccionada) sin
-   saltos. El margen también se anima a 0 para no dejar un hueco fantasma
-   cuando está cerrado. */
 .collapsiblePanel {
   display: grid;
   grid-template-rows: 1fr;
   margin-bottom: 1.25rem;
-  transition: grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+  transition:
+    grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1),
     margin-bottom 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -106,10 +93,6 @@
   }
 }
 
-/* ── BARRA DE CONTEXTO: cadena + métricas en una sola franja ─
-   Reemplaza la vieja grilla de 2 columnas (card de cadena +
-   grilla 2x2 de KPIs), que por sí solas ya ocupaban más alto
-   que el header. Acá va todo en una sola franja horizontal. ── */
 .contextBar {
   display: flex;
   flex-wrap: wrap;
@@ -204,7 +187,10 @@
   padding: 0.35rem 0.7rem;
   border-radius: 0.5rem;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
   white-space: nowrap;
 }
 
@@ -375,7 +361,11 @@
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
 }
 
 .clearFiltersBtnVisible {
@@ -417,7 +407,7 @@
 .listWrapper {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -453,12 +443,7 @@
   font-size: 0.9rem;
 }
 
-/* ── FILA DE SOLICITUD ───────────────────────────────────────
-   Sin borde-acento lateral de color (ver statusDot/statusPill/
-   avatar como los indicadores de estado), sin blur ni lift al
-   hover. Avatar + nombre real como protagonista (igual criterio
-   que Empresas.jsx), monto con jerarquía propia, acciones con
-   tamaño real de botón - no una fila de spreadsheet. ───────── */
+/* ── FILA DE SOLICITUD ───────────────────────────────────────*/
 .row {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -468,23 +453,19 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 0.6rem;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
-/* Grilla de columnas fijas: cada fila es su propio contenedor, así que la
-   única forma de que el estado y el monto queden alineados entre filas -
-   sin importar si el texto de la pill es más largo ("Rechazada") o si hay
-   1 o 2 botones de acción - es reservarle a cada columna un ancho fijo en
-   vez de dejar que cada una mida "lo que su contenido necesite". La
-   identidad es la columna elástica (1fr): crece para ocupar el espacio
-   libre y arrastra con ella al estado y al monto, que quedan pegados a
-   su derecha en vez de flotar lejos con un hueco vacío en el medio. El
-   .rowSpacer sólo deja un respiro fijo antes del bloque de acciones,
-   que junto con la flecha quedan ancladas al borde derecho. */
+/* Grilla de columnas fijas*/
 @media (min-width: 64rem) {
   .row {
     display: grid;
-    grid-template-columns: auto minmax(12rem, 1fr) 7.5rem 8rem 2rem 17rem 1.25rem;
+    grid-template-columns: auto minmax(
+        12rem,
+        1fr
+      ) 7.5rem 8rem 2rem 17rem 1.25rem;
     align-items: center;
     gap: 1rem;
   }
@@ -503,14 +484,14 @@
   border-color: rgba(255, 255, 255, 0.18);
 }
 
-/* Señaliza "toda la fila abre el detalle" sin agregar un botón de más:
-   aparece y se desliza apenas al pasar el mouse, como en Empresas.jsx. */
 .rowChevron {
   color: #6e7681;
   flex-shrink: 0;
   opacity: 0;
   transform: translateX(-3px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
 
 .row:hover .rowChevron {
@@ -538,8 +519,8 @@
 
 .rowAvatar {
   flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.35rem;
+  height: 2.35rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -548,7 +529,11 @@
   font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--color-azul-bind-200, #b8c6ff);
-  background: linear-gradient(155deg, rgba(76, 101, 230, 0.28), rgba(76, 101, 230, 0.08));
+  background: linear-gradient(
+    155deg,
+    rgba(76, 101, 230, 0.28),
+    rgba(76, 101, 230, 0.08)
+  );
   border: 1px solid rgba(76, 101, 230, 0.3);
 }
 
@@ -589,8 +574,6 @@
   text-overflow: ellipsis;
 }
 
-/* El estado ahora se lee en tres lugares a la vez (borde sutil del avatar,
-   punto de color y texto de la pill) - nunca depende de un solo indicador. */
 .rowPill {
   display: inline-flex;
   align-items: center;
@@ -606,8 +589,6 @@
 
 @media (min-width: 64rem) {
   .rowPill {
-    /* Ocupa el ancho fijo de su columna (ver .row) y centra el texto
-       adentro, en vez de medir según el largo de la palabra del estado. */
     width: 100%;
   }
 }
@@ -677,10 +658,6 @@
   flex-wrap: wrap;
 }
 
-/* En la grilla de escritorio la columna de acciones ya tiene ancho fijo
-   de sobra para Aceptar+Rechazar: forzamos una sola línea para que no
-   quede un botón arriba del otro. En mobile (.row en columna) se
-   mantiene el wrap como red de seguridad ante pantallas angostas. */
 @media (min-width: 64rem) {
   .rowActions {
     flex-wrap: nowrap;
@@ -931,7 +908,9 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 0.5rem;
   padding: 0.5rem 0.875rem;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
   width: 100%;
 }
 
@@ -975,7 +954,9 @@
   border-radius: 0.625rem;
   padding: 0.75rem 1rem;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
   user-select: none;
 }
 

@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
-import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
-import { useObtenerSocios, useObtenerExecuteCda, useEstaMigradoEnSgrPlus } from "../../../hooks/useSocios";
+import { FiInbox, FiSearch, FiX, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
+import { useObtenerSocios, useObtenerExecuteCda, useEstaMigradoEnSgrPlus, useMigracionSgrPlusDeSocios } from "../../../hooks/useSocios";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
+import { SelectSimple } from "../../../components/ui";
 import { ActividadSocioModal } from "../../../components/features/admin/ActividadSocioModal/ActividadSocioModal";
 import { detectarCadenaValorId } from "../../../utils/executeCda";
 import styles from "./Empresas.module.css";
@@ -21,6 +22,31 @@ const TIPO_PERSONA = {
 
 const getTipoPersona = (tipoPersonaId) =>
   TIPO_PERSONA[Number(tipoPersonaId)] || { label: "Sin definir", tono: "indefinido" };
+
+const FILTROS_POR_DEFECTO = {
+  tipoPersona: "todos",
+  estado: "todos",
+  orden: "recientes",
+};
+
+const OPCIONES_TIPO_PERSONA = [
+  { value: "todos", label: "Todos los tipos" },
+  { value: "fisica", label: "Persona Física" },
+  { value: "juridica", label: "Persona Jurídica" },
+];
+
+const OPCIONES_ESTADO = [
+  { value: "todos", label: "Todos los estados" },
+  { value: "migrado", label: "Migrado a SGR+" },
+  { value: "postulante", label: "Postulante" },
+];
+
+const OPCIONES_ORDEN = [
+  { value: "recientes", label: "Más recientes" },
+  { value: "antiguas", label: "Más antiguas" },
+  { value: "az", label: "Nombre A-Z" },
+  { value: "za", label: "Nombre Z-A" },
+];
 
 const getIniciales = (denominacion) => {
   if (!denominacion) return "?";
@@ -81,6 +107,10 @@ const EstadoBadge = ({ e, cadenasWeb }) => {
   // === totalRequisitos, vía useValidacionLegajo) sin haber migrado nunca —
   // confirmado en vivo (2026-08-11): un socio con el legajo completo pero
   // cuya migración había fallado con 500 igual aparecía como "Migrado" acá.
+  // Vuelve a resolverse por fila (useEstaMigradoEnSgrPlus/Cuit): el intento
+  // de traer esto en bloque (sgrplus/Socios sin Cuit) para el filtro de
+  // Estado rompió los badges — hay que confirmar primero contra el backend
+  // real qué devuelve esa consulta sin filtro antes de reusarla acá.
   const { data: migradoEnSgrPlus, isLoading: isLoadingMigracion } = useEstaMigradoEnSgrPlus(e.cuit);
   const isMigrado = Number(e.legajo) > 0 || !!migradoEnSgrPlus;
 
@@ -116,6 +146,9 @@ export default function Empresas() {
   const navigate = useNavigate();
   const [busqueda, setBusqueda] = useState("");
   const [debouncedBusqueda] = useDebounce(busqueda, 400);
+  const [tipoPersona, setTipoPersona] = useState(FILTROS_POR_DEFECTO.tipoPersona);
+  const [estado, setEstado] = useState(FILTROS_POR_DEFECTO.estado);
+  const [orden, setOrden] = useState(FILTROS_POR_DEFECTO.orden);
   const [pagina, setPagina] = useState(1);
   const [empresaActividad, setEmpresaActividad] = useState(null);
 
@@ -135,13 +168,36 @@ export default function Empresas() {
 
   const { data, isLoading, isFetching } = useObtenerSocios(params);
   const { data: cadenasWeb } = useObtenerTodasWebConEstado();
+  // Confirmación real de migración, una consulta por CUIT (igual que el
+  // badge de cada fila) pero solo se prende cuando el filtro de Estado
+  // realmente está en uso — ver useMigracionSgrPlusDeSocios.
+  const estadoFiltroActivo = estado !== FILTROS_POR_DEFECTO.estado;
+  const { migradosSet: migradosSgrPlus } = useMigracionSgrPlusDeSocios(data, estadoFiltroActivo);
 
-  // Más nuevas primero: el backend no garantiza un orden particular en la
-  // respuesta de Socios.
-  const empresas = useMemo(
-    () => [...(data || [])].sort((a, b) => Number(b.socioid) - Number(a.socioid)),
-    [data],
-  );
+  const empresas = useMemo(() => {
+    let lista = [...(data || [])];
+
+    if (tipoPersona !== FILTROS_POR_DEFECTO.tipoPersona) {
+      lista = lista.filter((e) => getTipoPersona(e.tipopersonaid).tono === tipoPersona);
+    }
+
+    if (estado !== FILTROS_POR_DEFECTO.estado) {
+      lista = lista.filter((e) => {
+        const cuitLimpio = String(e.cuit || "").replace(/\D/g, "");
+        const migrado = Number(e.legajo) > 0 || !!migradosSgrPlus?.has(cuitLimpio);
+        return estado === "migrado" ? migrado : !migrado;
+      });
+    }
+
+    lista.sort((a, b) => {
+      if (orden === "az") return (a.denominacion || "").localeCompare(b.denominacion || "");
+      if (orden === "za") return (b.denominacion || "").localeCompare(a.denominacion || "");
+      if (orden === "antiguas") return Number(a.socioid) - Number(b.socioid);
+      return Number(b.socioid) - Number(a.socioid); // recientes (default): el backend no garantiza orden
+    });
+
+    return lista;
+  }, [data, tipoPersona, estado, orden, migradosSgrPlus]);
 
   const totalPaginas = Math.max(1, Math.ceil(empresas.length / ELEMENTOS_POR_PAGINA));
   const paginaActual = Math.min(pagina, totalPaginas);
@@ -152,6 +208,35 @@ export default function Empresas() {
 
   const handleBusqueda = (value) => {
     setBusqueda(value);
+    setPagina(1);
+  };
+
+  const handleTipoPersona = (value) => {
+    setTipoPersona(value);
+    setPagina(1);
+  };
+
+  const handleEstado = (value) => {
+    setEstado(value);
+    setPagina(1);
+  };
+
+  const handleOrden = (value) => {
+    setOrden(value);
+    setPagina(1);
+  };
+
+  const hayFiltrosActivos =
+    !!busqueda ||
+    tipoPersona !== FILTROS_POR_DEFECTO.tipoPersona ||
+    estado !== FILTROS_POR_DEFECTO.estado ||
+    orden !== FILTROS_POR_DEFECTO.orden;
+
+  const handleLimpiarFiltros = () => {
+    setBusqueda("");
+    setTipoPersona(FILTROS_POR_DEFECTO.tipoPersona);
+    setEstado(FILTROS_POR_DEFECTO.estado);
+    setOrden(FILTROS_POR_DEFECTO.orden);
     setPagina(1);
   };
 
@@ -175,6 +260,55 @@ export default function Empresas() {
             className={styles.inputSearch}
           />
         </div>
+
+        <div className={styles.filterFieldsRow}>
+          <SelectSimple
+            label="Tipo"
+            value={tipoPersona}
+            onChange={handleTipoPersona}
+            options={OPCIONES_TIPO_PERSONA}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
+          <SelectSimple
+            label="Estado"
+            value={estado}
+            onChange={handleEstado}
+            options={OPCIONES_ESTADO}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
+          <SelectSimple
+            label="Orden"
+            value={orden}
+            onChange={handleOrden}
+            options={OPCIONES_ORDEN}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
+        </div>
+
+        <button
+          type="button"
+          className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
+          onClick={handleLimpiarFiltros}
+          disabled={!hayFiltrosActivos}
+          tabIndex={hayFiltrosActivos ? 0 : -1}
+          title="Limpiar filtros"
+          aria-label="Limpiar filtros"
+        >
+          <FiX />
+        </button>
+
         {!isLoading && (
           <span className={styles.listCount}>
             <FiBriefcase />

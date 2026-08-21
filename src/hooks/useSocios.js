@@ -97,6 +97,57 @@ export const useEstaMigradoEnSgrPlus = (cuit) => {
   });
 };
 
+// Confirma migración real para una lista de socios web a la vez (ej. el
+// filtro de Estado de Empresas.jsx), sin depender de `legajo` (poco
+// confiable) ni de traer sgrplus/Socios sin filtro: esa consulta en bloque
+// devuelve datos del CORE que no necesariamente corresponden a un socio
+// migrado desde la web (el CORE es un sistema histórico con su propia base
+// de clientes previa) - usarla como set de "migrados" mostraba empresas que
+// no debían contar como tales. En cambio, esto hace la MISMA consulta
+// puntual por CUIT que ya usa el badge de cada fila
+// (useEstaMigradoEnSgrPlus) para cada socio de la lista, vía useQueries: el
+// CORE solo se usa para comparar/confirmar, nunca para listar nada. Comparte
+// queryKey (y por lo tanto caché) con useEstaMigradoEnSgrPlus, así que no
+// duplica la consulta de una fila que el badge ya pidió.
+// `habilitado` mantiene las queries apagadas hasta que el filtro de Estado
+// realmente se usa, para no lanzar una consulta por socio en cada carga de
+// la pantalla contra un backend que además es propenso a fallar en frío.
+export const useMigracionSgrPlusDeSocios = (socios, habilitado) => {
+  const cuits = useMemo(
+    () =>
+      [...new Set(
+        (socios || [])
+          .map((s) => String(s.cuit || "").replace(/\D/g, ""))
+          .filter(Boolean),
+      )],
+    [socios],
+  );
+
+  const resultados = useQueries({
+    queries: cuits.map((cuit) => ({
+      queryKey: ["sgrplus", "socios", "porCuit", cuit],
+      queryFn: async () => {
+        const resultado = await sociosService.obtenerSociosSgrplus({ Cuit: cuit });
+        return Array.isArray(resultado) && resultado.length > 0;
+      },
+      enabled: !!habilitado,
+      staleTime: 1000 * 60 * 2, // 2 minutos
+    })),
+  });
+
+  const migradosSet = useMemo(() => {
+    const set = new Set();
+    cuits.forEach((cuit, i) => {
+      if (resultados[i]?.data) set.add(cuit);
+    });
+    return set;
+  }, [cuits, resultados]);
+
+  const isLoading = !!habilitado && resultados.some((r) => r.isPending);
+
+  return { migradosSet, isLoading };
+};
+
 // GET Socio/CertificadoPYME?SocioID=X nunca da 404: devuelve [] cuando el
 // socio todavía no tiene ninguno generado (el backend los genera solo al
 // procesar la vinculación — ver Paso1Cuit.jsx), o la lista si ya tiene.

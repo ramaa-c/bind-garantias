@@ -2,43 +2,153 @@
    ACTIVIDAD SOCIO MODAL — Log de actividad (panel admin)
    ========================================================= */
 
-/* ── FILTROS ─────────────────────────────────────────────── */
-.filtros {
+/* ── BARRA DE FILTROS ─────────────────────────────────────────
+   Compacta y pensada para el ancho real del modal (~37rem de
+   contenido): buscador arriba, y una sola fila abajo con los 4
+   selects + el botón de limpiar - no la grilla 2x2 con el botón de
+   limpiar solo en su propia línea que tenía antes. El contador de
+   resultados queda como pie de la misma tarjeta en vez de una franja
+   aparte, para no sumar una línea más de alto. ──────────────────── */
+.filterBar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  margin-bottom: 0.875rem;
+}
+
+.searchBox {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 1rem;
+  width: 100%;
+  min-width: 0;
 }
 
-.filtroChip {
+.searchIcon {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6e7681;
+  font-size: 0.9rem;
+  transition: color 0.2s ease;
+}
+
+.searchBox:focus-within .searchIcon {
+  color: var(--color-azul-bind, #4c65e6);
+}
+
+.searchInput {
+  width: 100%;
+  height: 2.35rem;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.filtroChip:hover {
-  border-color: rgba(59, 78, 209, 0.35);
+  border-radius: 0.6rem;
+  padding: 0 0.8rem 0 2.3rem;
   color: #ffffff;
+  font-size: 0.825rem;
+  transition: all 0.2s ease;
 }
 
-.filtroChipActivo {
-  background: rgba(59, 78, 209, 0.18);
-  border-color: rgba(59, 78, 209, 0.5);
-  color: var(--color-azul-bind-200, #adbaf9);
+.searchInput:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-azul-bind, #4c65e6);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(76, 101, 230, 0.18);
+}
+
+.searchInput::placeholder {
+  color: #666;
+  font-weight: 400;
+}
+
+/* Los 4 selects y el botón de limpiar comparten una única fila: el botón
+   ya no queda "huérfano" en una línea propia como antes. */
+.filterControlsRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filterFieldsRow {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.filterField {
+  flex: 1 1 7rem;
+  min-width: 6.5rem;
+}
+
+.clearFiltersBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.6rem;
+  color: #8b949e;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.clearFiltersBtnVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.clearFiltersBtn:hover {
+  color: var(--color-azul-bind-300, #8a9fff);
+  border-color: rgba(76, 101, 230, 0.4);
+  background: rgba(76, 101, 230, 0.08);
+}
+
+/* ── RESULTADOS ──────────────────────────────────────────── */
+.resultsBar {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.4rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .contador {
-  margin-left: auto;
   font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.35);
   white-space: nowrap;
+}
+
+.limpiarFiltrosInline {
+  background: rgba(59, 78, 209, 0.12);
+  border: 1px solid rgba(59, 78, 209, 0.35);
+  color: var(--color-azul-bind-200, #adbaf9);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.4rem 0.9rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.limpiarFiltrosInline:hover {
+  background: rgba(59, 78, 209, 0.2);
 }
 
 /* ── LISTA ───────────────────────────────────────────────── */
@@ -128,6 +238,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
 }
 
 .itemRight {

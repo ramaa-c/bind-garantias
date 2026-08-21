@@ -39,19 +39,26 @@ const convertirGrupo = (n) => {
 };
 
 // Convierte la parte entera de un número a su forma en palabras, en español,
-// hasta 999.999.999 (los "millones" se arman con convertirGrupo, que solo
-// resuelve 0-999 - un monto de "mil millones" o más queda fuera de rango a
-// propósito en vez de armar un texto roto). Devuelve null para 0 o fuera de
-// rango, así el llamador decide no mostrar nada en vez de un texto confuso.
+// hasta 999.999.999.999 (cada grupo de "miles de millones"/"millones"/"mil"
+// se arma con convertirGrupo, que solo resuelve 0-999). El tope original era
+// 999.999.999: se quedaba corto para líneas de crédito reales de algunas
+// cadenas (ej. montos de miles de millones de pesos en bancos grandes), que
+// silenciosamente no mostraban nada por caer "fuera de rango" acá. Devuelve
+// null para 0 o fuera de rango, así el llamador decide no mostrar nada en
+// vez de un texto confuso.
 export const numeroALetras = (numero) => {
   const n = Math.floor(Math.abs(Number(numero) || 0));
-  if (n <= 0 || n >= 1_000_000_000) return null;
+  if (n <= 0 || n >= 1_000_000_000_000) return null;
 
-  const millones = Math.floor(n / 1_000_000);
+  const milesDeMillones = Math.floor(n / 1_000_000_000);
+  const millones = Math.floor((n % 1_000_000_000) / 1_000_000);
   const miles = Math.floor((n % 1_000_000) / 1000);
   const resto = n % 1000;
 
   const partes = [];
+
+  if (milesDeMillones === 1) partes.push("mil millones");
+  else if (milesDeMillones > 1) partes.push(`${apocope(convertirGrupo(milesDeMillones))} mil millones`);
 
   if (millones === 1) partes.push("un millón");
   else if (millones > 1) partes.push(`${apocope(convertirGrupo(millones))} millones`);
