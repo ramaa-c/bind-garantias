@@ -113,4 +113,22 @@ export const sociosAdapter = {
       SocioID: d.socioid,
     };
   },
+  // WSSocioCertificadoPYME (api/Socio/CertificadoPYME) — ojo, fchDesde y
+  // fchHasta van en camelCase, no PascalCase (confirmado en el swagger,
+  // mismo tipo de inconsistencia que momentoCreacion en adaptarPayload3).
+  adaptarPayload5: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      SocioCertificadoPYMEID: d.sociocertificadopymeid,
+      SocioID: d.socioid,
+      fchDesde: d.fchdesde,
+      fchHasta: d.fchhasta,
+      TipoActividadGlobalId: d.tipoactividadglobalid,
+      TamanioEmpresaId: d.tamanioempresaid,
+      Numero: d.numero,
+      Observaciones: d.observaciones,
+      UsuarioID: d.usuarioid,
+    };
+  },
 };

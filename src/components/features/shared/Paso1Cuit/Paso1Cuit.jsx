@@ -366,56 +366,46 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
       ),
     }));
 
-    // "Completa el Legajo" (avanzar a Paso 2) solo sigue si el backend ya
-    // generó el Certificado PyME del socio (lo genera solo al procesar la
-    // vinculación — ver comentario más abajo, en continuarValidacionCompleta).
-    // Reemplaza por completo al viejo GET Socio/CertificadoVigente/{Cuit},
-    // que ya no se usa acá. El GET nunca da 404: devuelve [] cuando todavía
-    // no tiene ninguno, por eso alcanza con chequear que la lista no esté vacía.
+    // Certificado PyME: se verifica contra CASFOG/LUFE llamando a
+    // CertificadoVigente con Vincular=true — ese flag es justo lo que hace
+    // que el backend cargue/actualice la fila en SocioCertificadoPYME
+    // (confirmado con el equipo el 2026-08-21; esa tabla no se completa de
+    // ninguna otra forma, ni sola ni al vincular el socio). YA NO bloquea
+    // nada acá — ni la ejecución del CDA ni el avance a Paso 2: un socio
+    // sin certificado puede completar todo su legajo igual. Lo único que
+    // el certificado condiciona es la migración a SGR+ más adelante, y ESE
+    // chequeo se hace en fresco justo antes de migrar (ver
+    // sincronizarConSgrPlus en LegajoUniversalBar.jsx), no acá. Un admin
+    // puede reintentar esta misma verificación, o cargar/editar el
+    // certificado a mano, desde EmpresaDetalle.jsx.
     try {
-      const certificados = await sociosService.obtenerCertificadoPyme(socioIdCreadoRef.current);
-      if (!Array.isArray(certificados) || certificados.length === 0) {
-        ultimoPasoFallidoRef.current = "pyme";
-        setProcesoModal((prev) => ({
-          ...prev,
-          hasError: true,
-          isSystemError: false,
-          pasos: prev.pasos.map((p) =>
-            p.id === "pyme"
-              ? {
-                  ...p,
-                  estado: "error",
-                  error: "La empresa todavía no tiene un Certificado PyME generado.",
-                }
-              : p,
-          ),
-        }));
-        return;
-      }
-    } catch (pymeError) {
-      console.error("[Paso1Cuit] Error consultando Socio/CertificadoPYME:", pymeError);
-      ultimoPasoFallidoRef.current = "pyme";
+      const resultadoVigente = await sociosService.obtenerCertificadoVigente(cuit, true);
+      const tieneCertificadoVigente = resultadoVigente.status === 200;
       setProcesoModal((prev) => ({
         ...prev,
-        hasError: true,
-        isSystemError: true,
         pasos: prev.pasos.map((p) =>
           p.id === "pyme"
-            ? { ...p, estado: "error", error: "No pudimos verificar el Certificado PyME. Intentá nuevamente." }
+            ? {
+                ...p,
+                estado: tieneCertificadoVigente ? "completado" : "alerta",
+                error: tieneCertificadoVigente ? undefined : "No tiene certificado PyME habilitado.",
+              }
             : p,
         ),
       }));
-      return;
+    } catch (pymeError) {
+      console.warn("[Paso1Cuit] Error consultando Socio/CertificadoVigente (no bloquea el avance):", pymeError);
+      setProcesoModal((prev) => ({
+        ...prev,
+        pasos: prev.pasos.map((p) =>
+          p.id === "pyme"
+            ? { ...p, estado: "alerta", error: "No pudimos verificar el Certificado PyME en este momento." }
+            : p,
+        ),
+      }));
     }
 
     ultimoPasoFallidoRef.current = null;
-    setProcesoModal((prev) => ({
-      ...prev,
-      pasos: prev.pasos.map((p) =>
-        p.id === "pyme" ? { ...p, estado: "completado" } : p,
-      ),
-    }));
-
     await ejecutarCdaYFinalizar();
   };
 

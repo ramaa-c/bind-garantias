@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser, FiShield, FiMapPin, FiMap } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../ui/Button/Button";
@@ -57,6 +58,13 @@ export function RepresentanteModal({
 
   const { ejecutarValidaciones } = useCdaEngine();
   const usuarioWebIdActual = useUsuarioWebIdActual();
+  const queryClient = useQueryClient();
+  // Cuando el CDA rechaza en el guardado de una edición, en vez de un
+  // timeout fijo se espera a que el usuario apriete "Continuar" en el
+  // ProcesamientoModal antes de seguir con el guardado real — así tiene
+  // tiempo de leer el motivo del rechazo (reportado el 2026-08-21). Solo se
+  // usa acá; en null no hace nada.
+  const cdaContinuarResolveRef = useRef(null);
   // Guarda el TerceroID del stub creado para poder validar el CDA contra él
   // más abajo — `stubTerceroId` (ver más abajo) vive dentro de un try{} que
   // sale de scope antes de llegar a ejecutarValidaciones.
@@ -603,9 +611,25 @@ export function RepresentanteModal({
 
     const result = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam, usuarioWebIdActual);
 
+    // Sin esto, la card de la lista (RepresentantesSection/ApoderadosSection,
+    // vía useEstadoCdaTerceros) y el badge de TerceroCdaEstado siguen
+    // mostrando el estado viejo hasta que algo más los refresque (ej.
+    // "Volver a ejecutar", o que venza el staleTime) — el CDA sí quedó bien
+    // registrado en el backend, pero la UI no se enteraba solo con esto.
+    queryClient.invalidateQueries({ queryKey: ["terceros", "executeCda", terceroIdValidacion] });
+    queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
+
     if (!result.success) {
+      // hasError:true acá muestra el botón "Continuar" del ProcesamientoModal
+      // y NO se auto-cierra (a diferencia del caso exitoso, más abajo): sin
+      // esto, el aviso de que el CDA no se cumplió pasaba de largo en
+      // 1200ms y el usuario se quedaba sin poder leerlo (reportado el
+      // 2026-08-21). El resto del formulario ya quedó habilitado igual
+      // (setAfipValidado(true) corre siempre) — cerrar este modal no
+      // bloquea nada, solo le da tiempo al usuario a leer antes de seguir.
       setProcesoModal(prev => ({
         ...prev,
+        hasError: true,
         pasos: prev.pasos.map(p =>
           p.id === "cda" ? { ...p, estado: "alerta", errores: result.errors.map(e => e.message) } : p
         ),
@@ -615,12 +639,12 @@ export function RepresentanteModal({
         ...prev,
         pasos: prev.pasos.map(p => (p.id === "cda" ? { ...p, estado: "completado" } : p)),
       }));
+      setTimeout(() => {
+        setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+      }, 600);
     }
 
     setAfipValidado(true);
-    setTimeout(() => {
-      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
-    }, result.success ? 600 : 1200);
     setValidando(false);
   };
 
@@ -705,20 +729,34 @@ export function RepresentanteModal({
             isSystemError: false,
           });
           const resultCda = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam, usuarioWebIdActual);
-          setProcesoModal((prev) => ({
-            ...prev,
-            pasos: prev.pasos.map((p) =>
-              p.id === "cda"
-                ? {
-                    ...p,
-                    estado: resultCda.success ? "completado" : "alerta",
-                    errores: resultCda.success ? undefined : resultCda.errors.map((e) => e.message),
-                  }
-                : p
-            ),
-          }));
-          await new Promise((resolve) => setTimeout(resolve, resultCda.success ? 500 : 1400));
-          setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+          // Ver comentario equivalente en handleAfipLookup: sin esto la
+          // card de la lista y el badge de TerceroCdaEstado quedan
+          // mostrando el estado viejo hasta que algo más los refresque.
+          queryClient.invalidateQueries({ queryKey: ["terceros", "executeCda", terceroIdValidacion] });
+          queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
+          if (resultCda.success) {
+            setProcesoModal((prev) => ({
+              ...prev,
+              pasos: prev.pasos.map((p) => (p.id === "cda" ? { ...p, estado: "completado" } : p)),
+            }));
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+          } else {
+            // hasError:true muestra el botón "Continuar" y no hay timeout:
+            // se espera a que el usuario lo apriete (ver onClose del
+            // ProcesamientoModal más abajo, que resuelve esta promesa)
+            // antes de seguir con el guardado real de más abajo.
+            setProcesoModal((prev) => ({
+              ...prev,
+              hasError: true,
+              pasos: prev.pasos.map((p) =>
+                p.id === "cda" ? { ...p, estado: "alerta", errores: resultCda.errors.map((e) => e.message) } : p
+              ),
+            }));
+            await new Promise((resolve) => {
+              cdaContinuarResolveRef.current = resolve;
+            });
+          }
         }
       }
     }
@@ -1224,7 +1262,13 @@ export function RepresentanteModal({
 
       <ProcesamientoModal
         isOpen={procesoModal.isOpen}
-        onClose={() => setProcesoModal(prev => ({ ...prev, isOpen: false }))}
+        onClose={() => {
+          setProcesoModal(prev => ({ ...prev, isOpen: false }));
+          if (cdaContinuarResolveRef.current) {
+            cdaContinuarResolveRef.current();
+            cdaContinuarResolveRef.current = null;
+          }
+        }}
         titulo={procesoModal.titulo}
         pasos={procesoModal.pasos}
         hasError={procesoModal.hasError}

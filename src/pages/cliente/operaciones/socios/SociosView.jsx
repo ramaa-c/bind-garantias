@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiUsers as FiUsersIcon, FiRefreshCw, FiLock } from "react-icons/fi";
+import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
 import { SociosLegajo, LegajoUniversalBar } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { Button, LoadingScreen } from "../../../../components/ui";
+import { Button } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { useCertificadoVigente } from "../../../../hooks/useCertificadoVigente";
 import { sociosService } from "../../../../services/sociosService";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { toast } from "sonner";
@@ -45,10 +44,6 @@ export default function SociosView() {
   const [sincronizando, setSincronizando] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-
-  // Certificado PyME no vigente (o no se pudo verificar): el legajo queda
-  // de solo lectura, se puede ver lo ya cargado pero no modificarlo.
-  const { soloLectura, verificando } = useCertificadoVigente(cuitActivo);
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -98,20 +93,6 @@ export default function SociosView() {
     }
   };
 
-  // Se espera a confirmar la vigencia del Certificado PyME ANTES de mostrar
-  // la pantalla: si no, mientras la consulta todavía está en vuelo
-  // `soloLectura` da true a propósito (falla cerrado, ver useCertificadoVigente)
-  // y el banner "no vigente" aparece un instante aunque en realidad sí esté
-  // vigente — confirmado en vivo. Mejor una carga corta que un aviso falso.
-  if (verificando) {
-    return (
-      <LoadingScreen
-        title="Verificando tu cuenta"
-        message="Comprobando el estado del Certificado PyME..."
-      />
-    );
-  }
-
   return (
     <section className={styles.pageContainer}>
       <header className={styles.pageHeader}>
@@ -134,7 +115,7 @@ export default function SociosView() {
           size="sm"
           className={styles.submitBtn}
           onClick={() => setShowConfirmModal(true)}
-          disabled={sincronizando || soloLectura}
+          disabled={sincronizando}
         >
           <FiRefreshCw
             style={{
@@ -148,19 +129,7 @@ export default function SociosView() {
 
       <LegajoUniversalBar context="legajo" />
 
-      {soloLectura && (
-        <div className={styles.soloLecturaBanner}>
-          <FiLock className={styles.soloLecturaIcon} />
-          <span className={styles.soloLecturaText}>
-            Tu Certificado PyME no está vigente (o no pudimos verificarlo). Podés ver los datos cargados, pero no modificarlos ni agregar nuevos hasta que se regularice.
-          </span>
-        </div>
-      )}
-
-      <div
-        className={`${styles.formLayout} ${soloLectura ? styles.formLayoutSoloLectura : ""}`}
-        inert={soloLectura}
-      >
+      <div className={styles.formLayout}>
         <SociosLegajo />
       </div>
 

@@ -215,21 +215,26 @@ export function LegajoUniversalBar({
     }
   }, [adminMode, isValid, isLoading]);
 
-  // Regla pedida: si CertificadoVigente pasó pero el socio no tiene ningún
-  // Socio/CertificadoPYME generado (integración caída/bajada del lado del
-  // backend), se lo deja cargar legajo y documentación igual (ver
-  // SociosView/DocumentacionView, que no dependen de esto), pero la
-  // migración a SGR+ queda bloqueada hasta que sí tenga uno.
+  // Un socio sin Socio/CertificadoPYME generado puede cargar legajo y
+  // documentación igual (ver SociosView/DocumentacionView, que no dependen
+  // de esto) — lo único que el certificado condiciona es la migración a
+  // SGR+. Acá solo se usa para el banner informativo del cliente; el
+  // chequeo que de verdad decide si se migra es uno FRESCO (sin cache),
+  // hecho justo antes de llamar a Socio/Migrar (ver sincronizarConSgrPlus
+  // más abajo) — depender acá de este valor cacheado (hasta 2 minutos)
+  // para bloquear el intento dejaba la migración pegada en "no" aunque el
+  // certificado ya se hubiera generado, sobre todo en admin, que no
+  // refresca esta pantalla tan seguido. Acordado con el equipo el 2026-08-20.
   const { data: tieneCertificadoPyme = false, isLoading: loadingCertificadoPyme } =
     useTieneCertificadoPyme(socioIdActivo);
+  const pymeSinCertificado = !adminMode && !loadingCertificadoPyme && !tieneCertificadoPyme;
 
   const cambioPendienteRaw =
     baseline !== null &&
     fingerprint !== baseline &&
     isValid &&
     totalRequisitos > 0 &&
-    cdaSocioAprobado &&
-    tieneCertificadoPyme;
+    cdaSocioAprobado;
 
   // Espacia los intentos de sincronización: el primer POST a /Socio/Migrar
   // de esta visita dispara apenas se detecta un cambio real, pero cualquier
@@ -263,12 +268,10 @@ export function LegajoUniversalBar({
   const faltaMigrarEnBackend =
     !loadingSocioWeb &&
     !loadingMigradoEnBackend &&
-    !loadingCertificadoPyme &&
     !migradoEnBackend &&
     isValid &&
     totalRequisitos > 0 &&
-    cdaSocioAprobado &&
-    tieneCertificadoPyme;
+    cdaSocioAprobado;
 
   const [confirmMigrarOpen, setConfirmMigrarOpen] = useState(false);
 
@@ -286,6 +289,37 @@ export function LegajoUniversalBar({
     setIsMigrating(true);
     const toastId = silent ? null : toast.loading("Sincronizando legajo con SGR+...");
     try {
+      // Chequeo FRESCO (sin cache) de Socio/CertificadoPYME justo antes de
+      // migrar de verdad — no alcanza con el valor cacheado de
+      // useTieneCertificadoPyme (hasta 2 minutos de antigüedad, y nada lo
+      // invalida cuando el backend genera el certificado por su cuenta): un
+      // admin puede estar mirando esta pantalla bastante después de que se
+      // generó, y el cliente puede completar su legajo bastante después de
+      // que se creó el socio. Sin certificado (o si esta consulta falla),
+      // no se migra — se corta acá mismo, sin llegar a pegarle a
+      // Socio/Migrar. Acordado con el equipo el 2026-08-20.
+      let tieneCertificadoFresco = false;
+      try {
+        const certificados = await sociosService.obtenerCertificadoPyme(socioIdActivo);
+        tieneCertificadoFresco = Array.isArray(certificados) && certificados.length > 0;
+        queryClient.setQueryData(
+          ["socios", "certificadoPyme", Number(socioIdActivo) || null],
+          tieneCertificadoFresco,
+        );
+      } catch (certError) {
+        console.error("[LegajoUniversalBar] Error consultando Socio/CertificadoPYME antes de migrar:", certError);
+      }
+
+      if (!tieneCertificadoFresco) {
+        if (toastId) toast.dismiss(toastId);
+        if (!silent) {
+          toast.error("No se pudo migrar a SGR+", {
+            description: "El socio todavía no tiene un Certificado PyME generado.",
+          });
+        }
+        return;
+      }
+
       const response = await sociosService.enviarASgrPlus(socioIdActivo);
       if (response.success) {
         if (toastId) toast.dismiss(toastId);
@@ -443,20 +477,40 @@ export function LegajoUniversalBar({
     </div>
   ) : null;
 
+  // Mismo criterio que cdaWarningBanner: el certificado PyME no bloquea
+  // completar el legajo, pero sin él no se puede migrar a SGR+ — se le
+  // avisa acá para que no quede preguntándose por qué nunca se sincroniza.
+  const pymeWarningBanner = pymeSinCertificado ? (
+    <div className={styles.cdaWarningBanner}>
+      <FiAlertTriangle className={styles.cdaWarningIcon} />
+      <span className={styles.cdaWarningText}>
+        Todavía no tenés un Certificado PyME generado. Podés completar tu legajo igual, pero no vamos a poder migrarlo hasta que lo tengas.
+      </span>
+    </div>
+  ) : null;
+
   // En admin no se muestra la tarjeta completa (navegación a pestañas de
-  // cliente, botones "Ir"/"Ver qué falta"): en su lugar, un banner que solo
-  // aparece si ESTE admin cambió algo desde que abrió la pantalla (ver
-  // hayCambiosSinSincronizar) — nunca al entrar, ni por datos que ya venían
-  // así del backend.
+  // cliente, botones "Ir"/"Ver qué falta"): en su lugar, un banner con el
+  // botón manual de migración. Aparece si ESTE admin cambió algo desde que
+  // abrió la pantalla (hayCambiosSinSincronizar) O si el legajo ya está
+  // completo pero todavía no migró por cualquier otro motivo
+  // (faltaMigrarEnBackend — p. ej. recién se cargó el Certificado PyME
+  // desde la sección de abajo, y el auto-migrado de admin ya agotó su
+  // único intento automático para esta huella). El botón siempre dispara
+  // sincronizarConSgrPlus de cero, así que sirve como "reintentar" sin
+  // depender de que algo más cambie.
   if (adminMode) {
+    const mostrarBannerMigracion = hayCambiosSinSincronizar || faltaMigrarEnBackend;
     return (
       <>
         {migracionExitosaModal}
-        {hayCambiosSinSincronizar && (
+        {mostrarBannerMigracion && (
           <div className={styles.adminSyncBanner}>
             <FiRefreshCw className={styles.adminSyncIcon} />
             <span className={styles.adminSyncText}>
-              Hay cambios en el legajo que todavía no se sincronizaron con SGR+.
+              {hayCambiosSinSincronizar
+                ? "Hay cambios en el legajo que todavía no se sincronizaron con SGR+."
+                : "El legajo está completo pero todavía no se migró a SGR+."}
             </span>
             <Button
               variant="blue"
@@ -487,6 +541,7 @@ export function LegajoUniversalBar({
       <>
         {migracionExitosaModal}
         {cdaWarningBanner}
+        {pymeWarningBanner}
       </>
     );
   }
@@ -534,6 +589,7 @@ export function LegajoUniversalBar({
     <>
       {migracionExitosaModal}
       {cdaWarningBanner}
+      {pymeWarningBanner}
       <EstadoMigracionModal
         isOpen={showEstadoMigracion}
         onClose={() => setShowEstadoMigracion(false)}

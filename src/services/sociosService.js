@@ -112,18 +112,28 @@ export const sociosService = {
     return response.data;
   },
 
-  // GET api/Socio/CertificadoVigente/{Cuit} - Valida si la empresa tiene un
-  // certificado PyME vigente. 200 = vigente, 401 = no vigente — el backend
-  // reutiliza el código HTTP como semántica de negocio (mismo patrón que
-  // cda/execute con 202/406/409), no es un fallo de autenticación real: no
-  // hay ningún header de auth en esta app. Nunca tira: devuelve
-  // { status, data } para diferenciar sin try/catch afuera (mismo patrón
-  // que probarCda/reejecutarCda).
-  obtenerCertificadoVigente: async (cuit) => {
+  // GET api/Socio/CertificadoVigente/{Cuit}?Vincular=X - Verifica contra
+  // CASFOG/LUFE si la empresa tiene un certificado PyME vigente. 200 =
+  // vigente, 401 = no vigente — el backend reutiliza el código HTTP como
+  // semántica de negocio (mismo patrón que cda/execute con 202/406/409), no
+  // es un fallo de autenticación real: no hay ningún header de auth en esta
+  // app. Nunca tira: devuelve { status, data } para diferenciar sin
+  // try/catch afuera (mismo patrón que probarCda/reejecutarCda).
+  //
+  // ⚠️ Vincular=true (confirmado con Victor el 2026-08-21) es lo que hace
+  // que el backend cargue/actualice la fila correspondiente en
+  // SocioCertificadoPYME (ver obtenerCertificadoPyme/crearCertificadoPyme
+  // más abajo) — esa tabla NO se completa sola, ni al vincular el socio, ni
+  // de ninguna otra forma: solo se llena llamando a ESTE endpoint con
+  // Vincular=true, o cargándola a mano vía el CRUD de CertificadoPYME. El
+  // GET de esa tabla (obtenerCertificadoPyme) es de solo lectura: nunca
+  // consulta CASFOG/LUFE por su cuenta.
+  obtenerCertificadoVigente: async (cuit, vincular = true) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
     try {
       const response = await api.get(
         `api/Socio/CertificadoVigente/${cuitLimpio}`,
+        { params: { Vincular: vincular } },
       );
       return { status: response.status, data: response.data };
     } catch (error) {
@@ -152,14 +162,40 @@ export const sociosService = {
     }
   },
 
-  // GET api/Socio/CertificadoPYME?SocioID=X - Certificado(s) PyME del socio.
-  // El backend los genera solo, al procesar la vinculación del socio (ver
-  // Paso1Cuit.jsx) — el frontend nunca escribe acá, solo lee para confirmar
-  // que ya existe alguno. Nunca da 404: devuelve [] (200) si todavía no
-  // tiene ninguno, así que alcanza con chequear si la lista viene vacía.
+  // GET api/Socio/CertificadoPYME?SocioID=X - Certificado(s) PyME ya
+  // cargados del socio. NO es una verificación en vivo (esa es
+  // CertificadoVigente, arriba) — es de solo lectura sobre lo que ya está
+  // guardado: se completa llamando a CertificadoVigente con Vincular=true,
+  // o a mano con crearCertificadoPyme/actualizarCertificadoPyme abajo.
+  // Nunca da 404: devuelve [] (200) si todavía no tiene ninguno, así que
+  // alcanza con chequear si la lista viene vacía.
   obtenerCertificadoPyme: async (socioId) => {
     const response = await api.get("api/Socio/CertificadoPYME", {
       params: { SocioID: socioId },
+    });
+    return response.data;
+  },
+
+  // POST api/Socio/CertificadoPYME - Alta manual de un Certificado PYME
+  // (panel admin: cuando el resultado de CertificadoVigente no refleja la
+  // realidad, o para cargar uno sin depender de CASFOG/LUFE).
+  crearCertificadoPyme: async (certificadoData) => {
+    const response = await api.post("api/Socio/CertificadoPYME", sociosAdapter.adaptarPayload5(certificadoData));
+    return response.data;
+  },
+
+  // PUT api/Socio/CertificadoPYME - Edición manual de un Certificado PYME
+  // ya cargado.
+  actualizarCertificadoPyme: async (certificadoData) => {
+    const response = await api.put("api/Socio/CertificadoPYME", sociosAdapter.adaptarPayload5(certificadoData));
+    return response.data;
+  },
+
+  // DELETE api/Socio/CertificadoPYME?SocioCertificadoPYMEID=X - Elimina un
+  // Certificado PYME cargado (revoca la habilitación para migrar).
+  eliminarCertificadoPyme: async (socioCertificadoPymeId) => {
+    const response = await api.delete("api/Socio/CertificadoPYME", {
+      params: { SocioCertificadoPYMEID: socioCertificadoPymeId },
     });
     return response.data;
   },

@@ -23,6 +23,7 @@ import {
   FiCheckCircle,
   FiDownload,
   FiLink,
+  FiAward,
 } from "react-icons/fi";
 import {
   useSocioPorId,
@@ -67,6 +68,7 @@ import { ConfirmacionModal } from "../../../components/features/shared/Confirmac
 import { DocumentosLegajo, ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
 import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
 import { LegajoUniversalBar } from "../../../components/features/shared/LegajoUniversalBar/LegajoUniversalBar";
+import { CertificadoPymeAdmin } from "../../../components/features/admin/CertificadoPymeAdmin/CertificadoPymeAdmin";
 import styles from "./EmpresaDetalle.module.css";
 
 const getTipoPersonaLabel = (tipoPersonaId) => {
@@ -116,6 +118,7 @@ const TABS = [
   { key: "documentacion", label: "Documentación", icon: FiFileText },
   { key: "terceros", label: "Terceros Relacionados", icon: FiUsers },
   { key: "cdas", label: "CDAs", icon: FiShield },
+  { key: "pyme", label: "Certificado PyME", icon: FiAward },
 ];
 
 // Filas fantasma con la forma real del panel de CDAs (barra de resultado
@@ -1923,6 +1926,9 @@ export default function EmpresaDetalle() {
             cadenaValorIdDetectada={cadenaValorIdDetectada}
             nombreCadenaDetectada={nombreCadenaDetectada}
           />
+        )}
+        {activeTab === "pyme" && (
+          <CertificadoPymeAdmin socioId={socio?.socioid} cuit={socio?.cuit} />
         )}
       </div>
 

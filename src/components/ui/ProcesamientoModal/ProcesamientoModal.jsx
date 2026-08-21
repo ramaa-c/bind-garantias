@@ -111,7 +111,7 @@ export const ProcesamientoModal = ({
         {hasError && (
           <div className={styles.footerAcciones}>
             <Button variant={isSystemError ? "secondary" : "primary"} onClick={onClose}>
-              Aceptar
+              Continuar
             </Button>
             {isSystemError && onRetry && (
               <Button variant="outline" onClick={onRetry}>

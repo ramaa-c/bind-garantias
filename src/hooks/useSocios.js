@@ -98,18 +98,32 @@ export const useEstaMigradoEnSgrPlus = (cuit) => {
 };
 
 // GET Socio/CertificadoPYME?SocioID=X nunca da 404: devuelve [] cuando el
-// socio todavía no tiene ninguno generado (el backend los genera solo al
-// procesar la vinculación — ver Paso1Cuit.jsx), o la lista si ya tiene.
-export const useTieneCertificadoPyme = (socioId) => {
+// socio todavía no tiene ninguno cargado, o la lista si ya tiene. ⚠️ Esta
+// tabla NO se completa sola en ningún momento (ni al vincular el socio, ni
+// de ninguna otra forma) — solo se carga llamando a
+// Socio/CertificadoVigente con Vincular=true (ver obtenerCertificadoVigente
+// en sociosService.js), o a mano desde CertificadoPymeAdmin.jsx
+// (crearCertificadoPyme/actualizarCertificadoPyme). Confirmado con el
+// equipo el 2026-08-21.
+export const useCertificadoPyme = (socioId) => {
   return useQuery({
     queryKey: ["socios", "certificadoPyme", Number(socioId) || null],
-    queryFn: async () => {
-      const resultado = await sociosService.obtenerCertificadoPyme(socioId);
-      return Array.isArray(resultado) && resultado.length > 0;
-    },
+    queryFn: () => sociosService.obtenerCertificadoPyme(socioId),
     enabled: !!socioId,
     staleTime: 1000 * 60 * 2, // 2 minutos
   });
+};
+
+// Igual que useCertificadoPyme, pero reducido a un booleano — usado por
+// LegajoUniversalBar (banner informativo) y sincronizarConSgrPlus (que de
+// todas formas hace su propio chequeo fresco antes de migrar de verdad, ver
+// LegajoUniversalBar.jsx).
+export const useTieneCertificadoPyme = (socioId) => {
+  const { data, isLoading } = useCertificadoPyme(socioId);
+  return {
+    data: Array.isArray(data) && data.length > 0,
+    isLoading,
+  };
 };
 
 // SocioUsuario solo devuelve { SocioID, UsuarioWebID, momentoCreacion } — no
