@@ -164,6 +164,16 @@ export const sociosService = {
     return response.data;
   },
 
+  // GET api/Socio/Actividad/{cuit} - Log de actividad del socio: una fila
+  // por cada consulta/alta/modificación hecha sobre ese CUIT en la
+  // plataforma (usado por el panel admin para auditoría). Nunca da 404: si
+  // el CUIT no tiene actividad registrada devuelve un array vacío.
+  obtenerActividadSocio: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    const response = await api.get(`api/Socio/Actividad/${cuitLimpio}`);
+    return response.data;
+  },
+
   // Crea nuevo socio
   crearSocio: async (socioData) => {
     const response = await api.post("api/Socio", sociosAdapter.adaptarPayload1(socioData));

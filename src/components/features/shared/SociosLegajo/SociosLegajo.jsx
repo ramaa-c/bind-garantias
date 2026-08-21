@@ -144,7 +144,19 @@ export function SociosLegajo({
   const representantes = representantesYApoderados.filter((r) => Number(r.rolId) === 230);
   const apoderados = representantesYApoderados.filter((r) => Number(r.rolId) === 210);
   const agentesBolsa = socioLegajoData?.agentesBolsa || [];
-  const loadingSocios = loadingQuery;
+
+  // `actualizando` cubre la ventana entre "se guardó algo" y "las queries ya
+  // refetchearon de verdad" — antes, la modal (SocioAccionistaModal/
+  // RepresentanteModal) cerraba apenas terminaba el guardado y la card de la
+  // persona seguía mostrando el estado viejo un instante (ej. recién
+  // guardado seguía en "incompleto", o el DNI recién subido no aparecía al
+  // reabrir "Editar") hasta que algo más disparara otro refetch. Se
+  // reutiliza el mismo loader de "Cargando composición accionaria/etc." que
+  // ya usan las secciones (ver loadingSocios más abajo) en vez de bloquear
+  // el cierre de la modal — así, aunque el refresh tarde, siempre queda
+  // claro para el usuario que algo sigue en curso.
+  const [actualizando, setActualizando] = useState(false);
+  const loadingSocios = loadingQuery || actualizando;
 
   const [archivosBackend, setArchivosBackend] = useState([]);
   const [dniTerceros] = useState({});
@@ -152,16 +164,27 @@ export function SociosLegajo({
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
-  const cargarSocios = () => {
-    queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto", socioIdActivo] });
-    queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] });
-    // Sin esto, la card de accionistas/representantes/apoderados (y el gate
-    // de isValid de useValidacionLegajo) siguen mostrando el estado CDA
-    // viejo hasta que algo más invalide esta query a mano — ver
-    // useEstadoCdaTerceros. Coincide con el prefijo de TODAS las variantes
-    // de idsKey (invalidateQueries matchea por prefijo).
-    queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
-    cargarArchivosExistentes();
+  // Se espera (await) a que las 3 invalidaciones Y el refetch local de
+  // archivos terminen de verdad, no solo a que arranquen: invalidateQueries
+  // devuelve una promesa que resuelve recién cuando el refetch en curso
+  // completa.
+  const cargarSocios = async () => {
+    setActualizando(true);
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto", socioIdActivo] }),
+        queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioIdActivo] }),
+        // Sin esto, la card de accionistas/representantes/apoderados (y el
+        // gate de isValid de useValidacionLegajo) siguen mostrando el estado
+        // CDA viejo hasta que algo más invalide esta query a mano — ver
+        // useEstadoCdaTerceros. Coincide con el prefijo de TODAS las
+        // variantes de idsKey (invalidateQueries matchea por prefijo).
+        queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] }),
+        cargarArchivosExistentes(),
+      ]);
+    } finally {
+      setActualizando(false);
+    }
   };
 
   const cargarArchivosExistentes = async () => {
@@ -221,7 +244,7 @@ export function SociosLegajo({
           ? "Agente de bolsa desvinculado exitosamente."
           : "Registro eliminado exitosamente del legajo.",
       );
-      cargarSocios();
+      await cargarSocios();
       setDeleteTarget(null);
     } catch (err) {
       console.error("[LEGAJO] Error al eliminar relación:", err);

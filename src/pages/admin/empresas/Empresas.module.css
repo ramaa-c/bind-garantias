@@ -206,6 +206,27 @@
   transform: translateX(0);
 }
 
+/* ── BOTÓN DE ACTIVIDAD ──────────────────────────────────── */
+.activityButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8b949e;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.activityButton:hover {
+  background: rgba(76, 101, 230, 0.12);
+  border-color: rgba(76, 101, 230, 0.4);
+  color: var(--color-azul-bind-300, #8a9fff);
+}
+
 /* ── EMPRESA (avatar + nombre + cuit) ───────────────────────── */
 .empresaCell {
   display: flex;
