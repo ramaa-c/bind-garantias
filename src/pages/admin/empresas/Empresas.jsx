@@ -9,6 +9,7 @@ import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { SelectSimple } from "../../../components/ui";
 import { ActividadSocioModal } from "../../../components/features/admin/ActividadSocioModal/ActividadSocioModal";
 import { detectarCadenaValorId } from "../../../utils/executeCda";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./Empresas.module.css";
 
 // Filas más altas que antes (avatar + contacto en dos líneas): con 10
@@ -144,6 +145,11 @@ const EstadoBadge = ({ e, cadenasWeb }) => {
 
 export default function Empresas() {
   const navigate = useNavigate();
+  // Defensa en profundidad: ver useBloqueoAdminRestringido — no confía
+  // únicamente en AdminGuard para mantener afuera a un usuario vinculado
+  // solo por UsuarioCadenaValor (esta pantalla muestra empresas de TODAS
+  // las cadenas, sin ningún filtro propio).
+  const bloqueado = useBloqueoAdminRestringido();
   const [busqueda, setBusqueda] = useState("");
   const [debouncedBusqueda] = useDebounce(busqueda, 400);
   const [tipoPersona, setTipoPersona] = useState(FILTROS_POR_DEFECTO.tipoPersona);
@@ -239,6 +245,8 @@ export default function Empresas() {
     setOrden(FILTROS_POR_DEFECTO.orden);
     setPagina(1);
   };
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>

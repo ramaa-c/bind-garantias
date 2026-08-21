@@ -42,6 +42,7 @@ import {
 import { useObtenerTodosCdas, useReejecutarCda, useProbarCda } from "../../../hooks/useCda";
 import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { esCdaActivo } from "../../../utils/cdaUtils";
 import { socioArchivoService } from "../../../services/socioArchivoService";
@@ -1668,6 +1669,11 @@ export default function EmpresaDetalle() {
   const [activeTab, setActiveTab] = useState("datos");
   const [historialOpen, setHistorialOpen] = useState(false);
 
+  // Defensa en profundidad: ver useBloqueoAdminRestringido — un usuario
+  // vinculado solo por UsuarioCadenaValor no debería poder ver el detalle de
+  // NINGUNA empresa (esta pantalla no filtra por cadena propia).
+  const bloqueado = useBloqueoAdminRestringido();
+
   const { data: socio, isLoading } = useSocioPorId(id);
   const { data: estadosSocio } = useEstadoSocio();
 
@@ -1733,6 +1739,8 @@ export default function EmpresaDetalle() {
       zipName,
     );
   };
+
+  if (bloqueado) return null;
 
   // Skeleton con la forma real del detalle (hero + tabs + contenido) en vez
   // de un spinner de página completa.

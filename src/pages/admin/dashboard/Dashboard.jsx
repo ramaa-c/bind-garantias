@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
@@ -129,12 +129,30 @@ export default function Dashboard() {
     [cadenas],
   );
 
-  const visibleCadenas = isRestricted
-    ? (activeCadenas || []).filter((c) => {
-        const id = c.cadenavalorid || c.CadenaValorID;
-        return restrictedIds.has(id);
-      })
-    : (activeCadenas || []);
+  const visibleCadenas = useMemo(
+    () =>
+      isRestricted
+        ? (activeCadenas || []).filter((c) => {
+            const id = c.cadenavalorid || c.CadenaValorID;
+            return restrictedIds.has(id);
+          })
+        : (activeCadenas || []),
+    [isRestricted, activeCadenas, restrictedIds],
+  );
+
+  // Un usuario restringido (solo UsuarioCadenaValor, ver useAdminRestrictions)
+  // únicamente puede ver solicitudes de las cadenas que tiene vinculadas ahí
+  // — con exactamente una, no hay ninguna elección real que ofrecerle: se la
+  // fija directamente en vez de arrancar en "all" y mostrar un selector que
+  // solo tendría una opción posible.
+  const unicaCadenaRestringida = isRestricted && visibleCadenas.length === 1;
+
+  useEffect(() => {
+    if (!unicaCadenaRestringida || selectedCadenaId !== "all") return;
+    const unica = visibleCadenas[0];
+    const id = unica?.cadenavalorid || unica?.CadenaValorID;
+    if (id) setSelectedCadenaId(String(id));
+  }, [unicaCadenaRestringida, visibleCadenas, selectedCadenaId]);
 
   const solicitudesCanal = useMemo(() => {
     const listLimites = Array.isArray(limitesData) ? limitesData : [];
@@ -482,27 +500,32 @@ export default function Dashboard() {
                     : `Ref: ${selectedChain?.referencia || "Sin ref"} · #${selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}`}
                 </span>
               </div>
-              <div className={styles.contextChainActions}>
-                <button
-                  type="button"
-                  className={styles.contextChainBtn}
-                  onClick={() => {
-                    setChainSearchQuery("");
-                    setIsChainModalOpen(true);
-                  }}
-                >
-                  {selectedCadenaId === "all" ? "Seleccionar cadena" : "Cambiar"} <FiChevronRight size={13} />
-                </button>
-                {selectedCadenaId !== "all" && (
+              {/* Con una sola cadena vinculada (unicaCadenaRestringida) no hay
+                  nada para elegir ni para "ver todas" — ambos botones
+                  implican una alternativa que no existe. */}
+              {!unicaCadenaRestringida && (
+                <div className={styles.contextChainActions}>
                   <button
                     type="button"
-                    className={`${styles.contextChainBtn} ${styles.contextChainBtnGhost}`}
-                    onClick={() => handleSelectCadena("all")}
+                    className={styles.contextChainBtn}
+                    onClick={() => {
+                      setChainSearchQuery("");
+                      setIsChainModalOpen(true);
+                    }}
                   >
-                    Ver todas
+                    {selectedCadenaId === "all" ? "Seleccionar cadena" : "Cambiar"} <FiChevronRight size={13} />
                   </button>
-                )}
-              </div>
+                  {selectedCadenaId !== "all" && (
+                    <button
+                      type="button"
+                      className={`${styles.contextChainBtn} ${styles.contextChainBtnGhost}`}
+                      onClick={() => handleSelectCadena("all")}
+                    >
+                      Ver todas
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className={styles.contextDivider} />

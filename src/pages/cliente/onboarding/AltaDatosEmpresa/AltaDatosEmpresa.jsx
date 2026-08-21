@@ -140,7 +140,18 @@ export const AltaDatosEmpresa = () => {
   const usuariowebidReal =
     usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id;
 
-  const { data: vendorData } = useVendor();
+  // ⚠️ Única fuente de verdad del estado vendor para todo el wizard: se
+  // resuelve ACÁ, se espera (isPendingVendor, ver el gate de carga más abajo)
+  // ANTES de renderizar Paso1/Paso2, y se pasa ya resuelto como prop a
+  // Paso1Cuit — que ya no llama a useVendor() por su cuenta. Antes cada uno
+  // tenía su propio useQuery independiente: mismo cache (mismo queryKey), pero
+  // nada garantizaba que Paso1Cuit ya lo tuviera resuelto al momento en que el
+  // usuario clickeaba "VALIDAR CUIT" (isVendor podía leerse en false por una
+  // carrera, justo el escenario que se pidió eliminar — el chequeo debe
+  // resolverse siempre ANTES de Paso 1, nunca durante ni después).
+  const { data: vendorData, isPending: isPendingVendor } = useVendor();
+  const isVendor = vendorData?.isVendor || false;
+  const vendorCuit = vendorData?.vendorCuit || null;
 
   const { data: provinciasData, isPending: isPendingProvincias } =
     useProvincias();
@@ -478,6 +489,10 @@ export const AltaDatosEmpresa = () => {
           // confirmación de vinculación - antes vivía acá, pero onValidar
           // recién se llama al final de todo el flujo (después de crear el
           // socio y correr el CDA), demasiado tarde para bloquear nada.
+          // isVendor/vendorCuit se resuelven acá arriba (ver useVendor) y se
+          // pasan ya resueltos — Paso1Cuit no vuelve a consultarlo.
+          isVendor={isVendor}
+          vendorCuit={vendorCuit}
           onValidar={handleValidarCuitSuccess}
           onSocioExistente={(socioData, reason) =>
             setSocioExistenteModal({ isOpen: true, socioData, reason })
@@ -507,6 +522,19 @@ export const AltaDatosEmpresa = () => {
     }
     return null;
   };
+
+  // Se espera a que el estado vendor esté resuelto ANTES de mostrar Paso 1:
+  // sin este gate, el usuario podía llegar a interactuar con el wizard (y
+  // Paso1Cuit a evaluar isVendor) mientras la consulta todavía estaba en
+  // vuelo — ver comentario junto a useVendor() más arriba.
+  if (isPendingVendor) {
+    return (
+      <LoadingScreen
+        title="Preparando entorno"
+        message="Verificando tu cuenta..."
+      />
+    );
+  }
 
   if (isNavigating) {
     return (
@@ -544,15 +572,29 @@ export const AltaDatosEmpresa = () => {
                 // completar los datos y avanzar.
                 onStepClick={pasoActual === 2 ? undefined : setPasoActual}
                 onVolver={null}
-                // Sin botón de "Inicio"/"Volver": el CUIT queda comprometido
-                // apenas se llega a Paso 2 (ver comentario de onStepClick
-                // arriba) y en Paso 1 tampoco tiene sentido — no hay nada
-                // reversible desde ahí que amerite un atajo de salida.
-                onVolverInicio={null}
+                // Sin botón de "Inicio"/"Volver" en el caso general: el CUIT
+                // queda comprometido apenas se llega a Paso 2 (ver comentario
+                // de onStepClick arriba) y en Paso 1 tampoco tiene sentido —
+                // no hay nada reversible desde ahí que amerite un atajo de
+                // salida. Excepción: un vendor que todavía está en Paso 1 y
+                // no cruzó el umbral (!socioId — Paso1Cuit todavía no llamó a
+                // onSocioCreado) puede haber entrado por error desde
+                // "Agregar nueva empresa" en SeleccionarEmpresa — se le
+                // ofrece volver ahí. Deja de ofrecerse en cuanto socioId se
+                // setea (el socio ya existe en el backend, mismo criterio de
+                // "irreversible" que el resto de este comentario).
+                onVolverInicio={
+                  pasoActual === 1 && isVendor && !socioId
+                    ? () => navigate(`/${channelInfo?.id}/seleccionar-empresa`)
+                    : null
+                }
                 onReiniciar={null}
               />
 
               <div className={styles.bienvenidaHeader}>
+                {/* La identidad de vendor (usuario/correo/plataforma) se
+                    muestra en el Sidebar (ver Sidebar.jsx) — visible ahí
+                    durante todo el wizard sin duplicarla acá. */}
                 {obtenerTextosCabecera().badge && (
                   <span className={styles.bienvenidaBadge}>
                     {obtenerTextosCabecera().badge}

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, FiTrendingUp, FiUser } from "react-icons/fi";
+import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, FiTrendingUp, FiUser, FiBriefcase, FiRepeat } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useVendor } from "../../../../hooks/useVendor";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
@@ -24,9 +25,12 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const cambiarEmpresaStore = useAuthStore((state) => state.cambiarEmpresa);
   const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
   const emailUsuario = typeof user === "string" ? user : user?.email ? String(user.email) : "Usuario";
   const { channelInfo } = useChannel();
+  const { data: vendorData } = useVendor();
+  const isVendor = vendorData?.isVendor || false;
 
   const [isTasasModalOpen, setIsTasasModalOpen] = useState(false);
 
@@ -70,6 +74,13 @@ export default function Sidebar({ isOpen, onClose }) {
     navigate(`/${channelInfo.id}/login`);
   };
 
+  // Mismo criterio que Navbar.jsx: logout "suave", solo para vendors.
+  const handleCambiarEmpresa = () => {
+    cambiarEmpresaStore();
+    navigate(`/${channelInfo.id}/seleccionar-empresa`);
+    onClose();
+  };
+
   const toggleSection = (section) => {
     setExpandedSections((prev) => ({
       ...prev,
@@ -97,6 +108,19 @@ export default function Sidebar({ isOpen, onClose }) {
           <FiX className={styles.closeIcon} />
         </button>
       </div>
+
+      {isVendor && (
+        <div className={styles.vendorCard}>
+          <div className={styles.vendorAvatar}>
+            <FiBriefcase size={18} />
+          </div>
+          <div className={styles.vendorInfo}>
+            <p className={styles.vendorName}>Usuario Vendor</p>
+            <p className={styles.vendorMeta}>{emailUsuario}</p>
+            <p className={styles.vendorMeta}>{channelInfo?.nombre || "Cadena"}</p>
+          </div>
+        </div>
+      )}
 
       {isVinculado && (
         <>
@@ -184,8 +208,16 @@ export default function Sidebar({ isOpen, onClose }) {
               </p>
             </div>
           </div>
+          {/* Mismo criterio que Navbar.jsx: solo tiene sentido si ya hay una
+              empresa activa para "cambiar" — sin eso, ya existe el botón
+              "Volver a Inicio" en Paso1Cuit/BarraProgreso. */}
+          {isVendor && isVinculado && (
+            <button type="button" className={styles.changeCompanyBtn} onClick={handleCambiarEmpresa}>
+              <FiRepeat size={14} /> Cambiar empresa
+            </button>
+          )}
           <button type="button" className={styles.logoutLargeBtn} onClick={handleLogout}>
-            Cerrar sesión
+            <FiLogOut size={14} /> Cerrar sesión
           </button>
         </div>
         <p className={styles.versionText}>Versión 1.0.0</p>

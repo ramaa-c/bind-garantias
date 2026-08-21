@@ -235,11 +235,40 @@
 }
 
 .dropdownFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
   padding: 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+.changeCompanyBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  background-color: rgba(76, 101, 230, 0.1);
+  color: var(--color-azul-bind-300, #8a9fff);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.changeCompanyBtn:hover {
+  background-color: rgba(76, 101, 230, 0.18);
+}
+
 .logoutBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   width: 100%;
   background-color: rgba(255, 82, 82, 0.08);
   color: #ff5252;
@@ -251,7 +280,6 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-family: inherit;
-  text-align: center; /* Extra: centramos el texto de cerrar sesión */
 }
 
 .logoutBtn:hover {

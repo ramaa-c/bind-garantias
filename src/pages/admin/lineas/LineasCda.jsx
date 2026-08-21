@@ -9,11 +9,14 @@ import { PANTALLA_LINEAS } from "../../../utils/pantallasCda";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimitesCadenaValor } from "../../../hooks/useLinea";
 import { useTiposProducto } from "../../../hooks/useCatalogos";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 
 const DESCRIPCION_PANEL =
   "Activá los CDAs a validar y cómo se combinan. La regla se define en Criterios de Aceptación Globales; acá solo el valor por cadena.";
 
 export default function LineasCda() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const [selectedCadenaId, setSelectedCadenaId] = useState("");
 
   const { data: cadenas, isLoading: isLoadingCadenas } = useObtenerTodasWebConEstado();
@@ -42,6 +45,8 @@ export default function LineasCda() {
       );
       return l.descripcion || tipo?.descripcion || `Línea #${l.tipolimiteid}`;
     });
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>

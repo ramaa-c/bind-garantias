@@ -22,6 +22,7 @@ import {
   useActualizarLimiteCadenaValor,
   useObtenerProductosPorLimite,
 } from "../../../hooks/useLinea";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import {
   SelectSimple,
   Modal,
@@ -349,6 +350,8 @@ const LineaCard = ({
 
 // --- MAIN PAGE COMPONENT ---
 export default function LineasCadena() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const [selectedCadenaId, setSelectedCadenaId] = useState("");
   const [isLineaModalOpen, setIsLineaModalOpen] = useState(false);
   const [activeLinea, setActiveLinea] = useState(null);
@@ -660,6 +663,8 @@ export default function LineasCadena() {
   };
 
   const isCadenaInactiva = selectedCadena && !selectedCadena.activaOperativa;
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>
