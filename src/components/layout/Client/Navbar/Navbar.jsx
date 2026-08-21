@@ -6,12 +6,15 @@ import {
   FiChevronDown,
   FiTrendingUp,
   FiHelpCircle,
+  FiRepeat,
+  FiLogOut,
 } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/ChannelContext";
 
 const Navbar = ({
@@ -28,7 +31,10 @@ const Navbar = ({
 
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
+  const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
   const { channelInfo } = useChannel();
+  const { data: vendorData } = useVendor();
+  const isVendor = vendorData?.isVendor || false;
 
   const { nombreEmpresa, onboardingCompleto } = useEmpresaActiva();
   // Ver mismo criterio en Sidebar.jsx: en alta-datos-empresa no hay una
@@ -57,6 +63,16 @@ const Navbar = ({
   const handleLogout = () => {
     clearAuth();
     navigate(`/${channelInfo.id}/login`);
+  };
+
+  // Logout "suave": tira formularios/empresa activa/verificación de
+  // términos de la sesión anterior (ver cambiarEmpresa en useAuthStore) pero
+  // conserva user/isAuthenticated — no hace falta reingresar credenciales.
+  // Solo para vendors: son los únicos con más de una empresa para elegir.
+  const handleCambiarEmpresa = () => {
+    setIsDropdownOpen(false);
+    cambiarEmpresa();
+    navigate(`/${channelInfo.id}/seleccionar-empresa`);
   };
 
   const handleOpenHelp = () => {
@@ -140,8 +156,18 @@ const Navbar = ({
                   )}
 
                   <div className={styles.dropdownFooter}>
+                    {/* Solo tiene sentido si ya hay una empresa activa para
+                        "cambiar" — sin eso (vendor recién entrando, sin
+                        elegir ninguna todavía) no hay nada que cambiar; para
+                        ese caso ya existe el botón "Volver a Inicio" en
+                        Paso1Cuit/BarraProgreso. */}
+                    {isVendor && isVinculado && (
+                      <button type="button" className={styles.changeCompanyBtn} onClick={handleCambiarEmpresa}>
+                        <FiRepeat size={14} /> Cambiar empresa
+                      </button>
+                    )}
                     <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
-                      Cerrar sesión
+                      <FiLogOut size={14} /> Cerrar sesión
                     </button>
                   </div>
                 </div>

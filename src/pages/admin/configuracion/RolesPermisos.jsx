@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FiShield, FiUserPlus, FiLock, FiCheck, FiX, FiToggleLeft, FiToggleRight } from "react-icons/fi";
 import { toast } from "sonner";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./RolesPermisos.module.css";
 
 const administradoresBase = [
@@ -67,6 +68,8 @@ const administradoresBase = [
 ];
 
 export default function RolesPermisos() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const [administradores, setAdministradores] = useState(administradoresBase);
   const [selectedAdmin, setSelectedAdmin] = useState(administradoresBase[0]);
 
@@ -120,6 +123,8 @@ export default function RolesPermisos() {
     );
     toast.info("Estado de acceso del administrador modificado");
   };
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>

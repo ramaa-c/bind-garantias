@@ -23,6 +23,7 @@ import {
   CdaConfigModal,
 } from "../../../components/features";
 import { toast } from "sonner";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 
 // Mientras carga la lista se muestran filas fantasma con la misma forma que
 // las reales (el header, buscador y tabla quedan visibles al instante), en
@@ -51,6 +52,8 @@ const CadenaRowSkeleton = () => (
 );
 
 export default function CadenasValor() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const [searchTerm, setSearchTerm] = useState("");
 
   // Modals state
@@ -198,6 +201,8 @@ export default function CadenasValor() {
       c.denominacion?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.referencia?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>

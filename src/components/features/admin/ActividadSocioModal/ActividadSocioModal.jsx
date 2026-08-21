@@ -9,13 +9,33 @@ import {
   FiUser,
   FiChevronDown,
   FiChevronRight,
+  FiSearch,
+  FiX,
 } from "react-icons/fi";
-import { Modal } from "../../../ui/Modal/Modal";
+import { Modal, SelectSimple, SelectFechaSimple } from "../../../ui";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { useActividadSocio } from "../../../../hooks/useSocios";
+import { useObtenerUsuarioPorId } from "../../../../hooks/useUsuario";
 import styles from "./ActividadSocioModal.module.css";
 
 const ELEMENTOS_POR_TANDA = 12;
+
+const OPCIONES_ORDEN = [
+  { value: "desc", label: "Más recientes" },
+  { value: "asc", label: "Más antiguas" },
+];
+
+// SelectFechaSimple entrega el valor ya como ISO completo (mismo criterio
+// que Dashboard.jsx/Solicitudes.jsx) — el límite superior del rango se lleva
+// a las 23:59:59 locales en vez de asumir un formato "yyyy-mm-dd".
+const finDelDia = (fecha) => {
+  const d = new Date(fecha);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
+// Orden en el que se muestran los chips de verbo cuando están presentes.
+const ORDEN_VERBOS = ["get", "post", "put", "patch", "delete"];
 
 const VERBOS = {
   get: { label: "Consulta", tono: "get", Icon: FiEye },
@@ -29,7 +49,7 @@ const VERBOS = {
 // "putTerceroRelacionado", etc. (verbo HTTP + entidad, casing inconsistente
 // entre GET y put/post) — no es la ruta real del endpoint, así que no
 // alcanza con mostrar el string tal cual: se separa el verbo (define
-// color/ícono) de la entidad (define el texto legible).
+// color/ícono/filtro) de la entidad (define el texto legible).
 const ENTIDAD_LABELS = {
   coleccionsocio: "Listado de empresas",
   socio: "Datos de la empresa",
@@ -90,18 +110,19 @@ const parseDetalle = (detalle) => {
   }
 };
 
-const FILTROS = [
-  { key: "todas", label: "Todas" },
-  { key: "lectura", label: "Consultas" },
-  { key: "cambios", label: "Cambios" },
-];
-
 const ActividadItem = ({ item }) => {
   const [expandido, setExpandido] = useState(false);
   const { verbo, label } = useMemo(() => parseActividad(item.descripcion), [item.descripcion]);
   const meta = VERBOS[verbo] || VERBOS.get;
   const detalle = useMemo(() => parseDetalle(item.detalleactividad), [item.detalleactividad]);
   const usuarioWebId = item.usuariowebid;
+
+  // Solo se pide el email cuando la fila efectivamente se renderiza (queda
+  // dentro de la tanda visible) — react-query dedupea automáticamente las
+  // filas que comparten el mismo UsuarioWebID (ej. el usuario "sistema" que
+  // dispara la mayoría de las consultas de CDAs).
+  const { data: usuarioData, isLoading: cargandoUsuario } = useObtenerUsuarioPorId(usuarioWebId);
+  const emailUsuario = usuarioData?.email;
 
   return (
     <li className={styles.item}>
@@ -119,8 +140,9 @@ const ActividadItem = ({ item }) => {
           <span className={styles.itemMeta}>
             <span className={`${styles.verboPill} ${styles[`tono-${meta.tono}`]}`}>{meta.label}</span>
             {!!usuarioWebId && (
-              <span className={styles.itemUsuario}>
-                <FiUser size={10} /> Usuario #{usuarioWebId}
+              <span className={styles.itemUsuario} title={emailUsuario || ""}>
+                <FiUser size={10} />
+                {emailUsuario || (cargandoUsuario ? "Cargando usuario…" : `Usuario #${usuarioWebId}`)}
               </span>
             )}
           </span>
@@ -145,34 +167,129 @@ const ActividadItem = ({ item }) => {
   );
 };
 
+const FILTROS_DEFECTO = {
+  verbo: "todas",
+  busqueda: "",
+  fechaDesde: "",
+  fechaHasta: "",
+  orden: "desc",
+};
+
 export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => {
-  const [filtro, setFiltro] = useState("todas");
+  const [verbo, setVerbo] = useState(FILTROS_DEFECTO.verbo);
+  const [busqueda, setBusqueda] = useState(FILTROS_DEFECTO.busqueda);
+  const [fechaDesde, setFechaDesde] = useState(FILTROS_DEFECTO.fechaDesde);
+  const [fechaHasta, setFechaHasta] = useState(FILTROS_DEFECTO.fechaHasta);
+  const [orden, setOrden] = useState(FILTROS_DEFECTO.orden);
   const [visibles, setVisibles] = useState(ELEMENTOS_POR_TANDA);
 
   const { data, isLoading, isError } = useActividadSocio(cuit, isOpen);
 
   const actividad = useMemo(() => {
     const lista = Array.isArray(data) ? data : [];
-    return [...lista].sort((a, b) => new Date(b.momento) - new Date(a.momento));
-  }, [data]);
+    return [...lista].sort((a, b) =>
+      orden === "desc"
+        ? new Date(b.momento) - new Date(a.momento)
+        : new Date(a.momento) - new Date(b.momento),
+    );
+  }, [data, orden]);
+
+  // Tipos de operación realmente presentes en el log de esta empresa (no
+  // tiene sentido ofrecer "DELETE" en el desplegable si nunca hubo una baja)
+  // — se calcula sobre el total sin filtrar para que las opciones no
+  // aparezcan/desaparezcan al jugar con los otros filtros.
+  const opcionesVerbo = useMemo(() => {
+    const conteos = {};
+    actividad.forEach((item) => {
+      const { verbo: v } = parseActividad(item.descripcion);
+      conteos[v] = (conteos[v] || 0) + 1;
+    });
+    const dinamicas = ORDEN_VERBOS.filter((v) => conteos[v] > 0).map((v) => ({
+      value: v,
+      label: `${v.toUpperCase()} (${conteos[v]})`,
+    }));
+    return [{ value: "todas", label: "Todos los tipos" }, ...dinamicas];
+  }, [actividad]);
+
+  const fechaDesdeDate = fechaDesde ? new Date(fechaDesde) : undefined;
+  const fechaHastaDate = fechaHasta ? new Date(fechaHasta) : undefined;
 
   const actividadFiltrada = useMemo(() => {
-    if (filtro === "todas") return actividad;
-    return actividad.filter((item) => {
-      const { verbo } = parseActividad(item.descripcion);
-      const esLectura = verbo === "get";
-      return filtro === "lectura" ? esLectura : !esLectura;
-    });
-  }, [actividad, filtro]);
+    let lista = actividad;
 
-  const handleFiltro = (key) => {
-    setFiltro(key);
-    setVisibles(ELEMENTOS_POR_TANDA);
+    if (verbo !== "todas") {
+      lista = lista.filter((item) => parseActividad(item.descripcion).verbo === verbo);
+    }
+
+    if (fechaDesde) {
+      const desde = new Date(fechaDesde);
+      lista = lista.filter((item) => new Date(item.momento) >= desde);
+    }
+
+    if (fechaHasta) {
+      const hasta = finDelDia(fechaHasta);
+      lista = lista.filter((item) => new Date(item.momento) <= hasta);
+    }
+
+    const busquedaLimpia = busqueda.trim().toLowerCase();
+    if (busquedaLimpia) {
+      lista = lista.filter((item) => {
+        const { label } = parseActividad(item.descripcion);
+        return (
+          label.toLowerCase().includes(busquedaLimpia) ||
+          String(item.descripcion || "").toLowerCase().includes(busquedaLimpia)
+        );
+      });
+    }
+
+    return lista;
+  }, [actividad, verbo, fechaDesde, fechaHasta, busqueda]);
+
+  const hayFiltrosActivos =
+    verbo !== FILTROS_DEFECTO.verbo ||
+    !!busqueda ||
+    !!fechaDesde ||
+    !!fechaHasta ||
+    orden !== FILTROS_DEFECTO.orden;
+
+  const resetVisibles = () => setVisibles(ELEMENTOS_POR_TANDA);
+
+  const handleVerbo = (key) => {
+    setVerbo(key);
+    resetVisibles();
+  };
+
+  const handleBusqueda = (value) => {
+    setBusqueda(value);
+    resetVisibles();
+  };
+
+  const handleFechaDesde = (value) => {
+    setFechaDesde(value);
+    resetVisibles();
+  };
+
+  const handleFechaHasta = (value) => {
+    setFechaHasta(value);
+    resetVisibles();
+  };
+
+  const handleOrden = (value) => {
+    setOrden(value);
+    resetVisibles();
+  };
+
+  const limpiarFiltros = () => {
+    setVerbo(FILTROS_DEFECTO.verbo);
+    setBusqueda(FILTROS_DEFECTO.busqueda);
+    setFechaDesde(FILTROS_DEFECTO.fechaDesde);
+    setFechaHasta(FILTROS_DEFECTO.fechaHasta);
+    setOrden(FILTROS_DEFECTO.orden);
+    resetVisibles();
   };
 
   const handleClose = () => {
-    setFiltro("todas");
-    setVisibles(ELEMENTOS_POR_TANDA);
+    limpiarFiltros();
     onClose();
   };
 
@@ -182,24 +299,96 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
       onClose={handleClose}
       title="Actividad de la empresa"
       subtitle={denominacion ? `${denominacion} · CUIT ${cuit}` : `CUIT ${cuit}`}
-      maxWidth="560px"
+      maxWidth="640px"
       variant="blue"
     >
-      <div className={styles.filtros}>
-        {FILTROS.map((f) => (
+      {/* Barra de filtros compacta: buscador + una sola fila con los 4
+          selects y el botón de limpiar, en vez de la grilla 2x2 con el
+          botón de limpiar huérfano en su propia línea de la versión
+          anterior. Pensada para el ancho real del modal, no calcada de
+          Dashboard.jsx/Solicitudes.jsx (esas tienen todo el ancho de la
+          pantalla disponible). */}
+      <div className={styles.filterBar}>
+        <div className={styles.searchBox}>
+          <FiSearch className={styles.searchIcon} />
+          <input
+            type="text"
+            placeholder="Buscar en el log..."
+            value={busqueda}
+            onChange={(e) => handleBusqueda(e.target.value)}
+            className={styles.searchInput}
+          />
+        </div>
+
+        <div className={styles.filterControlsRow}>
+          <div className={styles.filterFieldsRow}>
+            <SelectFechaSimple
+              label="Desde"
+              value={fechaDesde}
+              onChange={handleFechaDesde}
+              disableFuture
+              maxDate={fechaHastaDate}
+              variant="admin"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+            <SelectFechaSimple
+              label="Hasta"
+              value={fechaHasta}
+              onChange={handleFechaHasta}
+              disableFuture
+              minDate={fechaDesdeDate}
+              variant="admin"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+            <SelectSimple
+              label="Tipo"
+              value={verbo}
+              onChange={handleVerbo}
+              options={opcionesVerbo}
+              isSearchable={false}
+              hideErrorSpace
+              compact
+              variant="admin"
+              className={styles.filterField}
+            />
+            <SelectSimple
+              label="Orden"
+              value={orden}
+              onChange={handleOrden}
+              options={OPCIONES_ORDEN}
+              isSearchable={false}
+              hideErrorSpace
+              compact
+              variant="admin"
+              className={styles.filterField}
+            />
+          </div>
+
           <button
-            key={f.key}
             type="button"
-            className={`${styles.filtroChip} ${filtro === f.key ? styles.filtroChipActivo : ""}`}
-            onClick={() => handleFiltro(f.key)}
+            className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
+            onClick={limpiarFiltros}
+            disabled={!hayFiltrosActivos}
+            tabIndex={hayFiltrosActivos ? 0 : -1}
+            title="Limpiar filtros"
+            aria-label="Limpiar filtros"
           >
-            {f.label}
+            <FiX />
           </button>
-        ))}
-        {!isLoading && (
-          <span className={styles.contador}>
-            {actividadFiltrada.length} registro{actividadFiltrada.length !== 1 ? "s" : ""}
-          </span>
+        </div>
+
+        {!isLoading && actividad.length > 0 && (
+          <div className={styles.resultsBar}>
+            <span className={styles.contador}>
+              {actividadFiltrada.length}
+              {actividadFiltrada.length !== actividad.length ? ` de ${actividad.length}` : ""} registro
+              {actividadFiltrada.length !== 1 ? "s" : ""}
+            </span>
+          </div>
         )}
       </div>
 
@@ -215,7 +404,7 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
             </div>
           ))}
         </div>
-      ) : isError || actividadFiltrada.length === 0 ? (
+      ) : isError || actividad.length === 0 ? (
         <div className={styles.emptyState}>
           <FiInbox className={styles.emptyStateIcon} />
           <span>
@@ -223,6 +412,14 @@ export const ActividadSocioModal = ({ isOpen, onClose, cuit, denominacion }) => 
               ? "No se pudo obtener el log de actividad."
               : "Sin actividad registrada para esta empresa."}
           </span>
+        </div>
+      ) : actividadFiltrada.length === 0 ? (
+        <div className={styles.emptyState}>
+          <FiInbox className={styles.emptyStateIcon} />
+          <span>No hay actividad que coincida con los filtros aplicados.</span>
+          <button type="button" className={styles.limpiarFiltrosInline} onClick={limpiarFiltros}>
+            Limpiar filtros
+          </button>
         </div>
       ) : (
         <>

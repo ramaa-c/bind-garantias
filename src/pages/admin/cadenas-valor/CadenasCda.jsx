@@ -7,6 +7,7 @@ import { PantallaTabs } from "../../../components/features/admin/PantallaTabs/Pa
 import { PANTALLAS_CDA } from "../../../utils/pantallasCda";
 import { useObtenerTodasWebConEstado, useObtenerGrupoCdaConCdas } from "../../../hooks/useCadenaValor";
 import { esCdaActivo } from "../../../utils/cdaUtils";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 
 const contarCdasActivos = (data) => {
   const cdas = Array.isArray(data?.cdas) ? data.cdas : data?.cdas?.items || data?.cdas?.data || [];
@@ -14,6 +15,8 @@ const contarCdasActivos = (data) => {
 };
 
 export default function CadenasCda() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const [selectedCadenaId, setSelectedCadenaId] = useState("");
   const [selectedPantalla, setSelectedPantalla] = useState(PANTALLAS_CDA[0].value);
 
@@ -39,6 +42,8 @@ export default function CadenasCda() {
     [PANTALLAS_CDA[0].value]: { cantidad: contarCdasActivos(grupoIngresoCuit.data), cargando: grupoIngresoCuit.isLoading, error: grupoIngresoCuit.isError },
     [PANTALLAS_CDA[1].value]: { cantidad: contarCdasActivos(grupoSocios.data), cargando: grupoSocios.isLoading, error: grupoSocios.isError },
   };
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>

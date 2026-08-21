@@ -16,8 +16,6 @@ import { useAuthStore } from "../../../../store/useAuthStore";
 import { useParams } from "react-router-dom";
 import styles from "./Paso1Cuit.module.css";
 
-import { useVendor } from "../../../../hooks/useVendor";
-
 const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
 
 const formatearCuit = (cuit) => {
@@ -26,7 +24,13 @@ const formatearCuit = (cuit) => {
   return `${limpio.slice(0, 2)}-${limpio.slice(2, 10)}-${limpio.slice(10)}`;
 };
 
-export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }) {
+// isVendor/vendorCuit llegan ya resueltos desde AltaDatosEmpresa.jsx (única
+// fuente de verdad del estado vendor para todo el wizard, resuelto y
+// esperado ANTES de que este componente se monte) — este componente ya no
+// llama a useVendor() por su cuenta, para que el chequeo nunca corra
+// "durante" (en el click de handleValidar, con datos potencialmente todavía
+// en vuelo) ni tenga forma de desincronizarse de lo que ve el resto del wizard.
+export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, isVendor = false, vendorCuit = null }) {
   const { cadenaSlug } = useParams();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const { control, getValues, setValue, setError, clearErrors } =
@@ -40,9 +44,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
   const usuarioWebId = usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id;
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorIdParam);
   const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
-
-  const { data: vendorData } = useVendor();
-  const isVendor = vendorData?.isVendor || false;
 
   const { data: provinciasData } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
@@ -210,8 +211,8 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado }
       // Un vendor no puede gestionar su propia empresa. Se chequea acá (antes
       // de pedir confirmación de vinculación) y no después del alta - antes
       // corría recién al final de todo el flujo, en AltaDatosEmpresa.jsx.
-      const vendorCuitLimpio = vendorData?.vendorCuit
-        ? vendorData.vendorCuit.replace(/\D/g, "")
+      const vendorCuitLimpio = vendorCuit
+        ? vendorCuit.replace(/\D/g, "")
         : null;
       if (isVendor && vendorCuitLimpio && cuit.replace(/\D/g, "") === vendorCuitLimpio) {
         setError("cuit", {

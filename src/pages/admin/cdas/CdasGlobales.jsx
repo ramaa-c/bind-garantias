@@ -14,6 +14,7 @@ import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { CdaWorkbench, ToggleOptionRow } from "../../../components/features/admin/CdaWorkbench/CdaWorkbench";
 import { FiPlus, FiChevronRight, FiSearch, FiInbox } from "react-icons/fi";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./CdasGlobales.module.css";
 
 // Colores distintivos por integración, usados como badges en el listado
@@ -74,6 +75,8 @@ const CdaRowSkeleton = () => (
 );
 
 export default function CdasGlobales() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { mutateAsync: actualizarCda } = useActualizarCda();
@@ -363,6 +366,8 @@ export default function CdasGlobales() {
       cancelVariant="outlineBlue"
     />
   );
+
+  if (bloqueado) return null;
 
   if (vista === "lista") {
     return (

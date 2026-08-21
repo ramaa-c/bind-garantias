@@ -6,6 +6,7 @@ import { ConfirmacionModal } from "../../../components/features/shared/Confirmac
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { useObtenerTerminosVigentes, usePublicarTerminos } from "../../../hooks/useTerminos";
 import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./Terminos.module.css";
 
 const formatearMomento = (momento) => {
@@ -18,6 +19,8 @@ const formatearMomento = (momento) => {
 const TITULO_TERMINOS = "Términos y Condiciones Generales";
 
 export default function Terminos() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const usuarioWebId = useUsuarioWebIdActual();
   const { data: terminosVigentes, isLoading: isLoadingTerminos } = useObtenerTerminosVigentes();
   const { mutateAsync: publicarTerminos, isPending: isPublicando } = usePublicarTerminos();
@@ -60,6 +63,8 @@ export default function Terminos() {
       toast.error("No se pudo publicar la nueva versión. Intentá nuevamente.");
     }
   };
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>
