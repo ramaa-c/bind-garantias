@@ -33,6 +33,12 @@ const RELATION_METADATA = [
   { key: "usuarios", title: "Vincular Usuarios", desc: "Autorización y otorgamiento de accesos a otros usuarios en la plataforma." }
 ];
 
+const esRelacionVisible = (key, tab) => {
+  if (tab === "fisica" && key === "accionistas") return false;
+  if (tab === "fisica" && key === "representanteLegal") return false;
+  return true;
+};
+
 const TABS = [
   { id: "sa", label: "S.A.", icon: FiBriefcase },
   { id: "srl", label: "S.R.L.", icon: FiBriefcase },
@@ -83,6 +89,27 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
             [key]: value
           }
         }
+      };
+    });
+  };
+
+  const handleSetTodos = (type, value) => {
+    setLocalConfig(prev => {
+      if (!prev) return prev;
+      const metadata = type === "documentos" ? DOCUMENT_METADATA : RELATION_METADATA;
+      const claves = metadata
+        .map(({ key }) => key)
+        .filter((key) => type === "documentos" || esRelacionVisible(key, activeTab));
+      const actualizado = { ...prev[activeTab][type] };
+      claves.forEach((key) => {
+        actualizado[key] = value;
+      });
+      return {
+        ...prev,
+        [activeTab]: {
+          ...prev[activeTab],
+          [type]: actualizado,
+        },
       };
     });
   };
@@ -169,7 +196,32 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
 
         {/* SECTION 1: DOCUMENTACION */}
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Documentación Requerida</h3>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Documentación Requerida</h3>
+            <div className={styles.bulkActions}>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnNone}`}
+                onClick={() => handleSetTodos("documentos", 0)}
+              >
+                Todo No mostrar
+              </button>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnOptional}`}
+                onClick={() => handleSetTodos("documentos", 2)}
+              >
+                Todo Opcional
+              </button>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnRequired}`}
+                onClick={() => handleSetTodos("documentos", 1)}
+              >
+                Todo Obligatorio
+              </button>
+            </div>
+          </div>
           <div className={styles.list}>
             {DOCUMENT_METADATA.map(({ key, title, desc }) => {
               const val = localConfig[activeTab]?.documentos?.[key] !== undefined
@@ -216,7 +268,32 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
 
         {/* SECTION 2: RELACIONES */}
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Relaciones y Secciones</h3>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Relaciones y Secciones</h3>
+            <div className={styles.bulkActions}>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnNone}`}
+                onClick={() => handleSetTodos("relaciones", 0)}
+              >
+                Todo No mostrar
+              </button>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnOptional}`}
+                onClick={() => handleSetTodos("relaciones", 2)}
+              >
+                Todo Opcional
+              </button>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnRequired}`}
+                onClick={() => handleSetTodos("relaciones", 1)}
+              >
+                Todo Obligatorio
+              </button>
+            </div>
+          </div>
           <div className={styles.list}>
             {RELATION_METADATA.map(({ key, title, desc }) => {
               if (activeTab === "fisica" && key === "accionistas") return null;
