@@ -27,6 +27,11 @@ export const INTEGRACIONES = [
     nombre: "SGR+",
     descripcion: "Sistema core legacy (migración de legajos aprobados)",
   },
+  {
+    campo: "IntegracionSMS",
+    nombre: "SMS",
+    descripcion: "Validación de celular por código SMS (Paso 2 del onboarding)",
+  },
 ];
 
 export const STATUS_POR_DEFECTO = {
@@ -36,6 +41,7 @@ export const STATUS_POR_DEFECTO = {
   integracionlufe: "1",
   integracionarca: "1",
   integracionnosis: "1",
+  integracionsms: "1",
 };
 
 const idDe = (item) => Number(item?.statusplataformaid ?? item?.StatusPlataformaID) || 0;
