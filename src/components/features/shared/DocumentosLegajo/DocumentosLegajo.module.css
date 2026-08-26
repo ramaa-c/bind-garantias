@@ -1741,6 +1741,15 @@
   color: var(--color-azul-bind-300, #8a9fff);
 }
 
+.subTabTextGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  min-width: 0;
+  flex: 1;
+}
+
 .subTabText {
   max-width: 12rem;
   white-space: nowrap;
@@ -1748,19 +1757,41 @@
   text-overflow: ellipsis;
 }
 
+/* Con dos archivos del mismo nombre, esta es la única pista que los
+   distingue - ver formatFechaCorta en el JSX. */
+.subTabDate {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: #666;
+  letter-spacing: 0.01em;
+}
+
+.subTabActive .subTabDate {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* Antes era casi invisible (0.125rem de padding, gris oscuro #666 sobre
+   fondo oscuro): en pruebas de usuario nadie la notaba sin que se las
+   señalara. Ahora tiene su propio círculo de fondo siempre visible, no
+   solo al hacer hover. */
 .subTabClose {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   margin-left: 0.375rem;
-  padding: 0.125rem;
+  width: 1.4rem;
+  height: 1.4rem;
   border-radius: 50%;
-  color: #666;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #aaa;
   transition: all 0.15s ease;
 }
 
 .subTabClose:hover {
-  background: rgba(255, 82, 82, 0.15);
+  background: rgba(255, 82, 82, 0.18);
+  border-color: rgba(255, 82, 82, 0.4);
   color: #ff5252;
 }
 

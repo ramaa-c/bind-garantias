@@ -71,6 +71,8 @@ const mapearSocioAValoresFormulario = (socio) => {
       socio.fechainicioactividades || socio.FechaInicioActividades || null,
     tiporegimenivaid:
       Number(socio.tiporegimenivaid ?? socio.TipoRegimenIvaId) || 0,
+    tipoactividadsepymeid:
+      socio.tipoactividadsepymeid || socio.TipoActividadSEPYMEID || null,
   };
 };
 
@@ -193,6 +195,7 @@ export const AltaDatosEmpresa = () => {
           mescierre: null,
           fechainicioactividades: null,
           tiporegimenivaid: 0,
+          tipoactividadsepymeid: null,
         },
   });
 
@@ -205,6 +208,7 @@ export const AltaDatosEmpresa = () => {
     register("mescierre");
     register("fechainicioactividades");
     register("tiporegimenivaid");
+    register("tipoactividadsepymeid");
     register("codpos");
     register("provinciaid");
     register("localidad");
@@ -297,7 +301,7 @@ export const AltaDatosEmpresa = () => {
         tipocarteraid: 2,
         sectorcontableid: 700,
         tipoactividadbcraid: 0,
-        tipoactividadsepymeid: null,
+        tipoactividadsepymeid: data.tipoactividadsepymeid || null,
         marcavinculacion: "",
         situacionbcraid: 1,
         fechabaja: null,

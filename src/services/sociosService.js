@@ -367,6 +367,7 @@ export const sociosService = {
         telefono: telefono,
         tipopersona: lufeData.personeria || "",
         mescierre: lufeData.mes_cierre || null,
+        tipoactividadsepymeid: lufeData.actividad_principal ?? null,
         domiciliofiscal: {
           direccion: direccion,
           localidad: localidad,

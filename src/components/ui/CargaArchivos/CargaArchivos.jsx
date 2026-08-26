@@ -15,6 +15,7 @@ export const CargaArchivos = ({
   onEdit,
   onView,
   onDownload,
+  onDelete,
   hasError = false,
   className = "",
   style = {}
@@ -48,6 +49,9 @@ export const CargaArchivos = ({
           )}
           {onEdit && (
             <BotonIcono icon={FiEdit2} onClick={onEdit} title="Modificar archivo" />
+          )}
+          {onDelete && (
+            <BotonIcono icon={FiTrash2} onClick={onDelete} variant="danger" title="Eliminar archivo" />
           )}
         </div>
       </div>

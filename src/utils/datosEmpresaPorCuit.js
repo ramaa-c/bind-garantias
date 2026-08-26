@@ -51,6 +51,28 @@ export const obtenerDatosEmpresaPorCuit = async (
     };
   }
 
+  // Cascada Nosis -> LUFE -> AFIP, mismo orden que el resto de esta
+  // función. LUFE ya llega con tipoactividadsepymeid embebido en
+  // datosgenerales (ver normalizarLufeAEstructuraAfip en sociosService.js);
+  // para AFIP real hay que buscar la actividad de Orden 1 dentro del
+  // arreglo (siempre es la principal).
+  const deducirTipoActividadSepymeId = () => {
+    if (nosisData?.VI_Act01_Cod) {
+      return String(nosisData.VI_Act01_Cod);
+    }
+    if (afipData?.datosgenerales?.tipoactividadsepymeid != null) {
+      return String(afipData.datosgenerales.tipoactividadsepymeid);
+    }
+    const actividades = afipData?.datosregimengeneral?.actividad;
+    if (Array.isArray(actividades)) {
+      const principal = actividades.find((act) => Number(act.orden) === 1);
+      if (principal?.idactividad != null) {
+        return String(principal.idactividad);
+      }
+    }
+    return null;
+  };
+
   const cuitLimpio = String(cuit).replace(/\D/g, "");
   const deducirTipoPersonaPorPrefijo = () => {
     const prefix = cuitLimpio.substring(0, 2);
@@ -148,6 +170,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       mescierre: mesCierre,
       fechainicioactividades: fechaInicioActividades,
       tiporegimenivaid: tipoRegimenIvaId,
+      tipoactividadsepymeid: deducirTipoActividadSepymeId(),
     };
   } else {
     const dg = afipData.datosgenerales;
@@ -240,6 +263,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       mescierre: mesCierre,
       fechainicioactividades: fechaInicioActividades,
       tiporegimenivaid: tipoRegimenIvaId,
+      tipoactividadsepymeid: deducirTipoActividadSepymeId(),
     };
   }
 
