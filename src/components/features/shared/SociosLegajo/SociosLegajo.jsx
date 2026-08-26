@@ -7,13 +7,24 @@ import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import {
   FiExternalLink,
   FiUsers,
-  FiUser,
-  FiPercent,
   FiBriefcase,
   FiChevronDown,
+  FiMail,
+  FiPhone,
+  FiFileText,
+  FiMapPin,
+  FiActivity,
+  FiShare2,
+  FiCalendar,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import {
+  useTamanioEmpresa,
+  useSituacionBCRA,
+  useTipoCanalComercializacion,
+  useEstadoSocio,
+} from "../../../../hooks/useCatalogos";
 import { tercerosService } from "../../../../services/tercerosService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import styles from "./SociosLegajo.module.css";
@@ -25,6 +36,12 @@ import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsa
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
 
 export const ESTRUCTURA_SOCIOS = [
+  {
+    category: "Empresa",
+    key: "perfil",
+    title: "Perfil corporativo",
+    info: "Datos identificatorios registrados en la plataforma.",
+  },
   {
     category: "Legajo",
     key: "accionistas",
@@ -74,6 +91,31 @@ export function SociosLegajo({
       }
     : empresaActiva;
 
+  // Datos de la pestaña "Perfil corporativo" (ver más abajo): siempre en
+  // false/null en adminMode porque esa pestaña no se muestra ahí (ver
+  // exclusión en tabsDisponibles) - useEmpresaActiva(true) ya devuelve estos
+  // campos vacíos de por sí, así que no hace falta un ternario como el de
+  // arriba.
+  const {
+    cuitActivo,
+    direccion,
+    numero,
+    piso,
+    departamento,
+    partido,
+    codigoPostal,
+    email,
+    emailFacturacion,
+    telefono,
+    telefono2,
+    fechaCierreEjercicio,
+    fechaInicioActividades,
+    tamanioEmpresaId,
+    situacionBcraId,
+    tipoCanalComercializacionId,
+    socioEstadoId,
+  } = empresaActiva;
+
   // No hay un campo CadenaValorID en Socio: en modo admin la cadena llega ya
   // detectada desde afuera (EmpresaDetalle.jsx la infiere del historial de
   // CDAs del socio, ver detectarCadenaValorId). Sin detección, useRequisitos
@@ -105,20 +147,78 @@ export function SociosLegajo({
   const tituloTab = (doc) => doc.title;
   const infoTab = (doc) => doc.info;
 
+  // Datos para el panel de "Perfil corporativo" (ver render más abajo) -
+  // mismos catálogos/helpers que antes vivían en DocumentosLegajo.jsx,
+  // trasladados acá junto con la pestaña.
+  const { data: tamaniosEmpresa } = useTamanioEmpresa();
+  const { data: situacionesBcra } = useSituacionBCRA();
+  const { data: canalesComercializacion } = useTipoCanalComercializacion();
+  const { data: estadosSocio } = useEstadoSocio();
+
+  const resolverLabel = (opciones, id) => {
+    if (id === undefined || id === null || Number(id) === 0) return null;
+    const encontrada = (opciones || []).find((o) => o.value === String(id));
+    return encontrada?.label || null;
+  };
+
+  const formatCuit = (cuit) => {
+    const digitos = String(cuit || "").replace(/\D/g, "");
+    if (digitos.length !== 11) return cuit || null;
+    return `${digitos.slice(0, 2)}-${digitos.slice(2, 10)}-${digitos.slice(10)}`;
+  };
+
+  const formatFecha = (fecha) => {
+    if (!fecha) return null;
+    const d = new Date(fecha);
+    if (Number.isNaN(d.getTime())) return null;
+    return new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(d);
+  };
+
+  const tamanioEmpresaLabel = resolverLabel(tamaniosEmpresa?.opciones, tamanioEmpresaId);
+  const situacionBcraLabel = resolverLabel(situacionesBcra?.opciones, situacionBcraId);
+  const canalComercializacionLabel = resolverLabel(
+    canalesComercializacion?.opciones,
+    tipoCanalComercializacionId,
+  );
+  const estadoSocioLabel = resolverLabel(estadosSocio?.opciones, socioEstadoId);
+
+  const tipoPersonaLabel = esPersonaFisica
+    ? "Persona Física"
+    : Number(tipoPersonaId) === 10
+      ? "Persona Jurídica"
+      : null;
+
+  const domicilioCompleto = useMemo(() => {
+    const calleNumero = [direccion, numero].filter(Boolean).join(" ");
+    const pisoDepto = [piso && `Piso ${piso}`, departamento && `Depto ${departamento}`]
+      .filter(Boolean)
+      .join(" ");
+    return (
+      [calleNumero, pisoDepto, partido, codigoPostal && `CP ${codigoPostal}`]
+        .filter(Boolean)
+        .join(", ") || null
+    );
+  }, [direccion, numero, piso, departamento, partido, codigoPostal]);
+
   const tabsDisponibles = useMemo(() => {
     let baseTabs = ESTRUCTURA_SOCIOS;
+    // "Perfil corporativo" es solo informativo para el cliente: en el panel
+    // admin esos mismos datos ya se editan desde EmpresaDetalle.jsx.
+    if (adminMode) {
+      baseTabs = baseTabs.filter(t => t.key !== "perfil");
+    }
     if (esPersonaFisica) {
       // Persona Física no tiene Representante Legal (230) - solo Apoderado
       // (210, ver tab "apoderados" más abajo), ni Accionistas (no puede ser
       // accionista de sí misma).
-      baseTabs = ESTRUCTURA_SOCIOS.filter(t => t.key !== "accionistas" && t.key !== "representanteLegal");
+      baseTabs = baseTabs.filter(t => t.key !== "accionistas" && t.key !== "representanteLegal");
     }
     // Filtrar según los requisitos configurados
     return baseTabs.filter(t => {
       const configVal = requisitos?.relaciones?.[t.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [esPersonaFisica, requisitos]);
+  }, [esPersonaFisica, requisitos, adminMode]);
 
   const [activeTab, setActiveTab] = useState(null);
 
@@ -263,6 +363,7 @@ export function SociosLegajo({
           doc.category !== tabsDisponibles[index - 1].category;
         const isActive = activeTab === doc.key;
 
+        const isPerfil = doc.key === "perfil";
         const isAccionistas = doc.key === "accionistas";
         const isRepresentantes = doc.key === "representanteLegal";
         const isApoderados = doc.key === "apoderados";
@@ -288,16 +389,17 @@ export function SociosLegajo({
               {isActive && <span className={styles.activeBar} />}
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{tituloTab(doc)}</span>
-                {(requisitos?.relaciones?.[doc.key] === 1 ? (
-                  <span className={`${styles.reqBadge} ${completitudPorTab[doc.key] ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
-                    Obligatorio
-                  </span>
-                ) : (
-                  <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
-                ))}
+                {!isPerfil &&
+                  (requisitos?.relaciones?.[doc.key] === 1 ? (
+                    <span className={`${styles.reqBadge} ${completitudPorTab[doc.key] ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
+                      Obligatorio
+                    </span>
+                  ) : (
+                    <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
+                  ))}
               </div>
               <span
-                className={`${styles.statusDot} ${loadingSocios ? styles.dotLoading : completitudPorTab[doc.key] ? styles.dotGreen : requisitos?.relaciones?.[doc.key] === 1 ? styles.dotYellow : styles.dotGray}`}
+                className={`${styles.statusDot} ${isPerfil ? styles.dotGreen : loadingSocios ? styles.dotLoading : completitudPorTab[doc.key] ? styles.dotGreen : requisitos?.relaciones?.[doc.key] === 1 ? styles.dotYellow : styles.dotGray}`}
               />
               <FiChevronDown
                 className={styles.mobileChevron}
@@ -312,34 +414,131 @@ export function SociosLegajo({
 
             {isActive && (
               <section className={styles.viewer}>
+                {/* La categoría ("Legajo") y el nombre de la pestaña ya se ven
+                    resaltados en el botón activo del sidebar, a centímetros de
+                    acá: repetirlos como badge + título aparte era puro relleno
+                    visual. Se deja solo el título (con la acción propia de la
+                    pestaña, si la tiene, a la derecha) y la descripción. */}
                 <header className={styles.viewerHeader}>
-                  <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem" }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", flex: "1 1 200px" }}>
-                      <div className={styles.viewerMeta}>
-                        <span className={`${styles.viewerBadge} ${adminMode ? styles.viewerBadgeAdmin : ""}`}>
-                          {doc.category}
-                        </span>
-                      </div>
-                      <h4 className={styles.viewerTitle}>{tituloTab(doc)}</h4>
-                      <p className={styles.viewerInfo}>
-                        {infoTab(doc)}
-                        {doc.url && (
-                          <a
-                            href={doc.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`${styles.helperLink} ${adminMode ? styles.helperLinkAdmin : ""}`}
-                          >
-                            {doc.linkText} <FiExternalLink size={11} />
-                          </a>
-                        )}
-                      </p>
-                    </div>
+                  <div className={styles.viewerMeta}>
+                    <h4 className={styles.viewerTitle}>{tituloTab(doc)}</h4>
                     <div id="socios-header-action-portal" className={styles.headerActionPortal} />
                   </div>
+                  <p className={styles.viewerInfo}>
+                    {infoTab(doc)}
+                    {doc.url && (
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${styles.helperLink} ${adminMode ? styles.helperLinkAdmin : ""}`}
+                      >
+                        {doc.linkText} <FiExternalLink size={11} />
+                      </a>
+                    )}
+                  </p>
                 </header>
 
-                {isUsuarios ? (
+                {isPerfil ? (
+                  <div className={styles.perfilPanel}>
+                    <div className={`${styles.perfilHero} ${styles.glassCard} ${adminMode ? styles.perfilHeroAdmin : ""}`}>
+                      <div className={`${styles.perfilAvatar} ${adminMode ? styles.perfilAvatarAdmin : ""}`}>
+                        {(nombreEmpresa || "?").trim().charAt(0).toUpperCase()}
+                      </div>
+                      <div className={styles.perfilHeroInfo}>
+                        <span className={styles.perfilHeroName}>{nombreEmpresa || "—"}</span>
+                        <span className={styles.perfilHeroMeta}>
+                          <span className={styles.perfilCuitChip}>
+                            {formatCuit(cuitActivo) || "CUIT no disponible"}
+                          </span>
+                          {tipoPersonaLabel && (
+                            <span className={styles.perfilHeroTipo}>{tipoPersonaLabel}</span>
+                          )}
+                        </span>
+                      </div>
+                      {estadoSocioLabel && (
+                        <span className={`${styles.perfilEstadoBadge} ${adminMode ? styles.perfilEstadoBadgeAdmin : ""}`}>
+                          {estadoSocioLabel}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Antes eran 3 cards separadas (Contacto/Domicilio/Datos
+                        comerciales), cada una con su propio padding y título -
+                        en full HD eso forzaba scroll dentro del panel. Una
+                        sola card con los 8 campos en grilla ocupa menos de la
+                        mitad de alto y sigue siendo igual de escaneable
+                        (cada campo ya tiene su propia etiqueta). */}
+                    <section className={`${styles.perfilSection} ${styles.glassCard}`}>
+                      <h5 className={styles.perfilSectionTitle}>
+                        <span className={`${styles.perfilSectionIcon} ${adminMode ? styles.perfilSectionIconAdmin : ""}`}>
+                          <FiBriefcase size={13} />
+                        </span>
+                        Información de la empresa
+                      </h5>
+                      <div className={styles.perfilGroup}>
+                        <dl className={styles.perfilRowsGrid}>
+                          <div className={styles.perfilCelda}>
+                            <dt className={styles.dtContacto}><FiMail size={12} /> Email</dt>
+                            <dd className={email ? "" : styles.perfilVacio}>{email || "—"}</dd>
+                          </div>
+                          <div className={styles.perfilCelda}>
+                            <dt className={styles.dtContacto}><FiPhone size={12} /> Teléfono</dt>
+                            <dd className={[telefono, telefono2].filter(Boolean).length ? "" : styles.perfilVacio}>
+                              {[telefono, telefono2].filter(Boolean).join(" / ") || "—"}
+                            </dd>
+                          </div>
+                          <div className={styles.perfilCelda}>
+                            <dt className={styles.dtContacto}><FiFileText size={12} /> Email de facturación</dt>
+                            <dd className={emailFacturacion ? "" : styles.perfilVacio}>{emailFacturacion || "—"}</dd>
+                          </div>
+                        </dl>
+                      </div>
+
+                      {/* Sola en su propio grupo: al ser el único ítem de su
+                          grilla (auto-fit colapsa las columnas vacías),
+                          ocupa el ancho completo sin necesitar un override
+                          aparte. */}
+                      <div className={styles.perfilGroup}>
+                        <dl className={styles.perfilRowsGrid}>
+                          <div className={styles.perfilCelda}>
+                            <dt className={styles.dtUbicacion}><FiMapPin size={12} /> Dirección</dt>
+                            <dd className={domicilioCompleto ? "" : styles.perfilVacio}>{domicilioCompleto || "—"}</dd>
+                          </div>
+                        </dl>
+                      </div>
+
+                      <div className={styles.perfilGroup}>
+                        <dl className={styles.perfilRowsGrid}>
+                          <div className={styles.perfilCelda}>
+                            <dt className={styles.dtComercial}><FiUsers size={12} /> Tamaño de empresa</dt>
+                            <dd className={tamanioEmpresaLabel ? "" : styles.perfilVacio}>{tamanioEmpresaLabel || "—"}</dd>
+                          </div>
+                          <div className={styles.perfilCelda}>
+                            <dt className={styles.dtComercial}><FiActivity size={12} /> Situación BCRA</dt>
+                            <dd className={situacionBcraLabel ? "" : styles.perfilVacio}>{situacionBcraLabel || "—"}</dd>
+                          </div>
+                          <div className={styles.perfilCelda}>
+                            <dt className={styles.dtComercial}><FiShare2 size={12} /> Canal de comercialización</dt>
+                            <dd className={canalComercializacionLabel ? "" : styles.perfilVacio}>{canalComercializacionLabel || "—"}</dd>
+                          </div>
+                          <div className={styles.perfilCelda}>
+                            <dt className={styles.dtComercial}><FiCalendar size={12} /> Inicio de actividades</dt>
+                            <dd className={formatFecha(fechaInicioActividades) ? "" : styles.perfilVacio}>
+                              {formatFecha(fechaInicioActividades) || "—"}
+                            </dd>
+                          </div>
+                          <div className={styles.perfilCelda}>
+                            <dt className={styles.dtComercial}><FiCalendar size={12} /> Cierre de ejercicio</dt>
+                            <dd className={formatFecha(fechaCierreEjercicio) ? "" : styles.perfilVacio}>
+                              {formatFecha(fechaCierreEjercicio) || "—"}
+                            </dd>
+                          </div>
+                        </dl>
+                      </div>
+                    </section>
+                  </div>
+                ) : isUsuarios ? (
                   <VincularUsuarioSection socioIdActivo={socioIdActivo} />
                 ) : isAccionistas ? (
                   <AccionistasSection

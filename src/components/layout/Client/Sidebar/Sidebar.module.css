@@ -85,6 +85,17 @@
   gap: 0.85rem;
 }
 
+/* Se acorta la distancia hasta companyCard solo en mobile (ver escritorio
+   más abajo, donde esta tarjeta se oculta y vive en Navbar en su lugar):
+   1.5rem de margin-top en companyCard + 0.5rem de margin-bottom acá
+   sumaban 2rem — mucho, dos tarjetas casi idénticas (vendorCard/companyCard)
+   pegadas de más se leían como si fueran una sola cosa partida en dos. */
+@media (max-width: 63.9375rem) {
+  .vendorCard + .companyCard {
+    margin-top: 0.5rem;
+  }
+}
+
 .vendorAvatar {
   width: 2.5rem;
   height: 2.5rem;
@@ -470,6 +481,14 @@
 
 /* ── ESCRITORIO ── */
 @media (min-width: 64rem) {
+  /* Se muda a Navbar (ver .vendorBadge ahí) para no confundirse con
+     companyCard: en el sidebar de escritorio quedaban una arriba de la
+     otra, casi con la misma forma (avatar + nombre + meta), y quedaba
+     ambiguo cuál era la empresa activa y cuál el vendor. */
+  .vendorCard {
+    display: none;
+  }
+
   .container {
     position: relative;
     transform: translateX(0);

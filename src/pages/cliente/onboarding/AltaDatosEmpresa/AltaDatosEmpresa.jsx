@@ -436,14 +436,13 @@ export const AltaDatosEmpresa = () => {
         limpiarSocioPendiente(cadenaSlug, user?.email);
         toast.success("Empresa creada y vinculada correctamente");
 
-        if (vendorData?.isVendor) {
-          navigate(`/${channelInfo?.id}/seleccionar-empresa`, {
-            replace: true,
-          });
-        } else {
-          setActiveSocioId(socioId);
-          navigate(`/${channelInfo?.id}/legajo`, { replace: true });
-        }
+        // Vendor o no: la empresa recién creada/vinculada queda como activa
+        // y se entra directo a su legajo — es una elección tan explícita
+        // como cuando el vendor la elige desde SeleccionarEmpresa.jsx (que
+        // también llama a setActiveSocioId), no tiene sentido mandarlo a
+        // "elegir" algo que acaba de crear él mismo.
+        setActiveSocioId(socioId);
+        navigate(`/${channelInfo?.id}/legajo`, { replace: true });
       } else {
         throw new Error(
           "No pudimos identificar tu usuario para vincular la empresa.",

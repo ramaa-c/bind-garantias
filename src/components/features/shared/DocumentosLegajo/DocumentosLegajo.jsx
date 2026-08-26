@@ -7,9 +7,6 @@ import {
   FiCheckCircle,
   FiClock,
   FiAlertCircle,
-  FiBriefcase,
-  FiMapPin,
-  FiPhone,
   FiExternalLink,
   FiUsers,
   FiUser,
@@ -36,16 +33,11 @@ import {
   InputSocioMasked,
   BuscadorCuit,
   SelectFecha,
+  InfoTooltip,
 } from "../../../ui";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
-import {
-  useTamanioEmpresa,
-  useSituacionBCRA,
-  useTipoCanalComercializacion,
-  useEstadoSocio,
-} from "../../../../hooks/useCatalogos";
 import { useDiasMargenVencimientoBalance } from "../../../../hooks/useValorOperativo";
 import { calcularEstadoBalance } from "../../../../utils/balanceVigencia";
 import styles from "./DocumentosLegajo.module.css";
@@ -53,15 +45,10 @@ import {
   procesarArchivo,
   formatBase64Size,
   descargarArchivosEnZip,
+  descargarLegajoCompletoZip,
 } from "../../../../utils/fileUtils";
 
 export const ESTRUCTURA_LEGAJO = [
-  {
-    category: "Empresa",
-    key: "perfil",
-    title: "Perfil corporativo",
-    info: "Datos identificatorios registrados en la plataforma.",
-  },
   {
     category: "Documentación",
     key: "estatuto",
@@ -186,23 +173,8 @@ export function DocumentosLegajo({
   const {
     socioIdActivo,
     nombreEmpresa,
-    cuitActivo,
-    direccion,
-    numero,
-    piso,
-    departamento,
-    partido,
-    codigoPostal,
-    email,
-    telefono,
-    telefono2,
     tipoPersonaId,
     fechaCierreEjercicio,
-    fechaInicioActividades,
-    tamanioEmpresaId,
-    situacionBcraId,
-    tipoCanalComercializacionId,
-    socioEstadoId,
   } = adminMode
     ? { socioIdActivo: socioIdOverride, ...empresaOverride }
     : empresaActiva;
@@ -221,57 +193,6 @@ export function DocumentosLegajo({
     });
   };
 
-  const { data: tamaniosEmpresa } = useTamanioEmpresa();
-  const { data: situacionesBcra } = useSituacionBCRA();
-  const { data: canalesComercializacion } = useTipoCanalComercializacion();
-  const { data: estadosSocio } = useEstadoSocio();
-
-  const resolverLabel = (opciones, id) => {
-    if (id === undefined || id === null || Number(id) === 0) return null;
-    const encontrada = (opciones || []).find((o) => o.value === String(id));
-    return encontrada?.label || null;
-  };
-
-  const formatCuit = (cuit) => {
-    const digitos = String(cuit || "").replace(/\D/g, "");
-    if (digitos.length !== 11) return cuit || null;
-    return `${digitos.slice(0, 2)}-${digitos.slice(2, 10)}-${digitos.slice(10)}`;
-  };
-
-  const formatFecha = (fecha) => {
-    if (!fecha) return null;
-    const d = new Date(fecha);
-    if (Number.isNaN(d.getTime())) return null;
-    return new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(d);
-  };
-
-  const tamanioEmpresaLabel = resolverLabel(tamaniosEmpresa?.opciones, tamanioEmpresaId);
-  const situacionBcraLabel = resolverLabel(situacionesBcra?.opciones, situacionBcraId);
-  const canalComercializacionLabel = resolverLabel(
-    canalesComercializacion?.opciones,
-    tipoCanalComercializacionId,
-  );
-  const estadoSocioLabel = resolverLabel(estadosSocio?.opciones, socioEstadoId);
-
-  const tipoPersonaLabel =
-    Number(tipoPersonaId) === 1
-      ? "Persona Física"
-      : Number(tipoPersonaId) === 10
-        ? "Persona Jurídica"
-        : null;
-
-  const domicilioCompleto = useMemo(() => {
-    const calleNumero = [direccion, numero].filter(Boolean).join(" ");
-    const pisoDepto = [piso && `Piso ${piso}`, departamento && `Depto ${departamento}`]
-      .filter(Boolean)
-      .join(" ");
-    return (
-      [calleNumero, pisoDepto, partido, codigoPostal && `CP ${codigoPostal}`]
-        .filter(Boolean)
-        .join(", ") || null
-    );
-  }, [direccion, numero, piso, departamento, partido, codigoPostal]);
-
   // No hay un campo CadenaValorID en Socio, así que en modo admin la cadena
   // llega ya detectada desde afuera (EmpresaDetalle.jsx la infiere del
   // historial de CDAs del socio, ver detectarCadenaValorId). Si no se pudo
@@ -284,12 +205,10 @@ export function DocumentosLegajo({
 
   const estructuraFiltrada = useMemo(() => {
     return ESTRUCTURA_LEGAJO.filter((item) => {
-      if (adminMode && item.key === "perfil") return false;
-      
       const configVal = requisitos?.documentos?.[item.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [requisitos, adminMode]);
+  }, [requisitos]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -422,14 +341,17 @@ export function DocumentosLegajo({
 
   // Obtener archivos de la categoría activa ordenados de más nuevo a más viejo
   const categoryFiles = useMemo(() => {
-    if (!activeDoc || activeDoc.key === "perfil") return [];
+    if (!activeDoc) return [];
     const tipoId = socioArchivoService.TIPO_DOCUMENTO_MAP[activeDoc.key];
     const files = archivosBackend.filter((a) => a.tipodocumentoarchivoid === tipoId);
     return files.sort((a, b) => b.socioarchivoid - a.socioarchivoid);
   }, [archivosBackend, activeDoc]);
 
-  // Subpestaña activa para la categoría
-  const currentSubTab = activeSubTabs[activeDoc.key] !== undefined
+  // Subpestaña activa para la categoría. activeDoc puede ser undefined
+  // (estructuraFiltrada vacía, ver el early-return de más abajo): esto se
+  // evalúa en CADA render, antes de llegar a ese return, así que necesita
+  // su propio guard en vez de asumir que activeDoc siempre existe.
+  const currentSubTab = activeDoc && activeSubTabs[activeDoc.key] !== undefined
     ? activeSubTabs[activeDoc.key]
     : (categoryFiles.length > 0 ? 0 : "nuevo");
 
@@ -690,10 +612,9 @@ export function DocumentosLegajo({
 
   const renderViewer = (doc) => {
     if (!doc) return null;
-    const isPerfil = doc.key === "perfil";
     const files = categoryFiles;
     const isRequired = requisitos?.documentos?.[doc.key] === 1;
-    const showSubTabs = !isPerfil && files.length > 0;
+    const showSubTabs = files.length > 0;
     const isBalance = doc.key === "balance";
     const estadoBalance = isBalance ? calcularEstadoBalanceDoc(files) : null;
     const isVencidoBalance = estadoBalance?.estado === "vencido";
@@ -705,24 +626,26 @@ export function DocumentosLegajo({
     } : null;
 
     const hasError =
-      intentoAvanzar && !isPerfil && isRequired && (files.length === 0 || isVencidoBalance);
+      intentoAvanzar && isRequired && (files.length === 0 || isVencidoBalance);
     const isLufe = files.some((a) => String(a.vialufe || a.Vialufe) === "1");
 
     return (
       <section className={styles.viewer}>
+        {/* La categoría ("Documentación") y el nombre del documento ya se ven
+            resaltados en la pestaña activa del sidebar, a centímetros de acá:
+            repetirlos como badge + título aparte era puro relleno visual.
+            Se unifican en una sola fila (título + estado + acción), lo que
+            además libera una fila entera de alto. */}
         <header className={styles.viewerHeader}>
           <div className={styles.viewerMeta}>
-            <span className={`${styles.viewerBadge} ${adminMode ? styles.viewerBadgeAdmin : ""}`}>
-              {doc.category}
-            </span>
-            {isLufe && (
-              <span className={`${styles.viewerBadge} ${styles.viewerBadgeLufe}`}>
-                Vía LUFE
-              </span>
-            )}
-          </div>
-          <div className={styles.viewerHeaderTitleRow}>
-            <h4 className={styles.viewerTitle}>{doc.title}</h4>
+            <div className={styles.viewerMetaLeft}>
+              <h4 className={styles.viewerTitle}>{doc.title}</h4>
+              {isLufe && (
+                <span className={`${styles.viewerBadge} ${styles.viewerBadgeLufe}`}>
+                  Vía LUFE
+                </span>
+              )}
+            </div>
             {files.length > 1 && (
               <button
                 type="button"
@@ -749,105 +672,7 @@ export function DocumentosLegajo({
           </p>
         </header>
 
-        {isPerfil ? (
-          <div className={styles.perfilPanel}>
-            <div className={`${styles.perfilHero} ${styles.glassCard} ${adminMode ? styles.perfilHeroAdmin : ""}`}>
-              <div className={`${styles.perfilAvatar} ${adminMode ? styles.perfilAvatarAdmin : ""}`}>
-                {(nombreEmpresa || "?").trim().charAt(0).toUpperCase()}
-              </div>
-              <div className={styles.perfilHeroInfo}>
-                <span className={styles.perfilHeroName}>{nombreEmpresa || "—"}</span>
-                <span className={styles.perfilHeroMeta}>
-                  <span className={styles.perfilCuitChip}>
-                    {formatCuit(cuitActivo) || "CUIT no disponible"}
-                  </span>
-                  {tipoPersonaLabel && (
-                    <span className={styles.perfilHeroTipo}>{tipoPersonaLabel}</span>
-                  )}
-                </span>
-              </div>
-              {estadoSocioLabel && (
-                <span className={`${styles.perfilEstadoBadge} ${adminMode ? styles.perfilEstadoBadgeAdmin : ""}`}>
-                  {estadoSocioLabel}
-                </span>
-              )}
-            </div>
-
-            <div className={styles.perfilSections}>
-              <section className={`${styles.perfilSection} ${styles.glassCard}`}>
-                <h5 className={styles.perfilSectionTitle}>
-                  <span className={`${styles.perfilSectionIcon} ${adminMode ? styles.perfilSectionIconAdmin : ""}`}>
-                    <FiPhone size={13} />
-                  </span>
-                  Contacto
-                </h5>
-                <dl className={styles.perfilRows}>
-                  <div className={styles.perfilRow}>
-                    <dt>Email</dt>
-                    <dd className={email ? "" : styles.perfilVacio}>{email || "—"}</dd>
-                  </div>
-                  <div className={styles.perfilRow}>
-                    <dt>Teléfono</dt>
-                    <dd className={[telefono, telefono2].filter(Boolean).length ? "" : styles.perfilVacio}>
-                      {[telefono, telefono2].filter(Boolean).join(" / ") || "—"}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-
-              <section className={`${styles.perfilSection} ${styles.glassCard}`}>
-                <h5 className={styles.perfilSectionTitle}>
-                  <span className={`${styles.perfilSectionIcon} ${adminMode ? styles.perfilSectionIconAdmin : ""}`}>
-                    <FiMapPin size={13} />
-                  </span>
-                  Domicilio
-                </h5>
-                <dl className={styles.perfilRows}>
-                  <div className={styles.perfilRow}>
-                    <dt>Dirección</dt>
-                    <dd className={domicilioCompleto ? "" : styles.perfilVacio}>{domicilioCompleto || "—"}</dd>
-                  </div>
-                </dl>
-              </section>
-
-              <section className={`${styles.perfilSection} ${styles.perfilSectionWide} ${styles.glassCard}`}>
-                <h5 className={styles.perfilSectionTitle}>
-                  <span className={`${styles.perfilSectionIcon} ${adminMode ? styles.perfilSectionIconAdmin : ""}`}>
-                    <FiBriefcase size={13} />
-                  </span>
-                  Datos comerciales
-                </h5>
-                <dl className={styles.perfilRowsGrid}>
-                  <div className={styles.perfilCelda}>
-                    <dt>Tamaño de empresa</dt>
-                    <dd className={tamanioEmpresaLabel ? "" : styles.perfilVacio}>{tamanioEmpresaLabel || "—"}</dd>
-                  </div>
-                  <div className={styles.perfilCelda}>
-                    <dt>Situación BCRA</dt>
-                    <dd className={situacionBcraLabel ? "" : styles.perfilVacio}>{situacionBcraLabel || "—"}</dd>
-                  </div>
-                  <div className={styles.perfilCelda}>
-                    <dt>Canal de comercialización</dt>
-                    <dd className={canalComercializacionLabel ? "" : styles.perfilVacio}>{canalComercializacionLabel || "—"}</dd>
-                  </div>
-                  <div className={styles.perfilCelda}>
-                    <dt>Inicio de actividades</dt>
-                    <dd className={formatFecha(fechaInicioActividades) ? "" : styles.perfilVacio}>
-                      {formatFecha(fechaInicioActividades) || "—"}
-                    </dd>
-                  </div>
-                  <div className={styles.perfilCelda}>
-                    <dt>Cierre de ejercicio</dt>
-                    <dd className={formatFecha(fechaCierreEjercicio) ? "" : styles.perfilVacio}>
-                      {formatFecha(fechaCierreEjercicio) || "—"}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-            </div>
-          </div>
-        ) : (
-          (() => {
+        {(() => {
             const bloqueSubTabs = showSubTabs && (
               <div className={styles.subTabsContainer}>
                 {files.map((file, idx) => {
@@ -1069,8 +894,7 @@ export function DocumentosLegajo({
                 {bloqueMetadatos}
               </div>
             );
-          })()
-        )}
+          })()}
       </section>
     );
   };
@@ -1133,18 +957,89 @@ export function DocumentosLegajo({
     />
   );
 
+  // Antes vivía como botón del header de DocumentacionView.jsx, junto al de
+  // "Actualizar datos vía LUFE": con dos botones ahí, Legajo (un solo botón)
+  // y Documentación (dos) quedaban visualmente inconsistentes. Bajarlo acá,
+  // adentro del propio listado de documentos, lo deja como una acción
+  // secundaria y contextual (solo aparece si hay algo para descargar) sin
+  // competir con la acción principal del header en ninguna de las dos
+  // pantallas.
+  // "Descargar todo" baja el legajo COMPLETO del socio (descargarLegajoCompletoZip
+  // recorre archivosBackend entero, no lo filtra por estructuraFiltrada): el
+  // socio comparte la misma documentación entre todas las cadenas por las
+  // que opera, así que el conteo de acá puede ser mayor a lo que se ve
+  // arriba filtrado para ESTA cadena. Aclarado con "en total" + tooltip para
+  // que no se lea como "esto es lo que pide/tiene esta cadena".
+  const legajoToolbar = archivosBackend.length > 0 && (
+    <div className={styles.legajoToolbar}>
+      <div className={styles.legajoToolbarInfoRow}>
+        <span className={styles.legajoToolbarInfo}>
+          {archivosBackend.length} documento{archivosBackend.length !== 1 ? "s" : ""} cargado
+          {archivosBackend.length !== 1 ? "s" : ""} en total
+        </span>
+        <InfoTooltip
+          label="¿Qué significa 'en total'?"
+          texto="Incluye todos los documentos cargados por esta empresa, no solo los que pide esta cadena — la documentación se comparte entre todas las cadenas por las que opera."
+          size="sm"
+        />
+      </div>
+      <button
+        type="button"
+        className={`${styles.downloadCategoryBtn} ${styles.legajoToolbarBtn} ${adminMode ? styles.downloadCategoryBtnAdmin : ""}`}
+        onClick={() => {
+          const cleanRazonSocial = (nombreEmpresa || "Empresa").replace(/\s+/g, "_");
+          descargarLegajoCompletoZip(
+            archivosBackend,
+            ESTRUCTURA_LEGAJO,
+            socioArchivoService.TIPO_DOCUMENTO_MAP,
+            `Legajo_Completo_${cleanRazonSocial}.zip`,
+          );
+        }}
+        title="Descargar legajo de documentos completo en un archivo ZIP"
+      >
+        <FiDownload size={13} /> Descargar todo
+      </button>
+    </div>
+  );
+
+  // Antes esto quedaba en blanco (sidebar y viewer vacíos, sin ningún
+  // mensaje): pasa de verdad cuando la parametrización de la cadena oculta
+  // los 14 documentos de ESTRUCTURA_LEGAJO (Requerimiento=0 en todos), no
+  // solo mientras carga — useRequisitos ya resuelve a un objeto vacío en
+  // ese caso, nunca a undefined. Sin legajoToolbar acá a propósito: son
+  // documentos de un tipo que ya no está habilitado (quedaron de una
+  // parametrización anterior) — no tiene sentido ofrecer "descargar todo"
+  // ni contarlos como si la cadena todavía pidiera algo.
+  if (estructuraFiltrada.length === 0) {
+    return (
+      <>
+        {fechaBalanceModal}
+        {confirmarEliminarArchivoModal}
+        <div className={styles.emptyState}>
+          <div className={styles.emptyStateIconWrap}>
+            <FiCheckCircle className={styles.emptyStateIcon} />
+          </div>
+          <h3 className={styles.emptyStateTitle}>Sin documentación requerida</h3>
+          <p className={styles.emptyStateText}>
+            Por el momento no necesitás subir ningún documento para esta cadena.
+          </p>
+        </div>
+      </>
+    );
+  }
+
   if (!isMobile) {
     return (
       <>
       {fechaBalanceModal}
       {confirmarEliminarArchivoModal}
+      {legajoToolbar}
       <div className={styles.workspace}>
         <div className={styles.sidebar}>
           {estructuraFiltrada.map((doc, index) => {
             const isNewCategory =
               index === 0 ||
               doc.category !== estructuraFiltrada[index - 1].category;
-            const isPerfil = doc.key === "perfil";
             const currentFile = formValues[doc.key];
             const isRequired = requisitos?.documentos?.[doc.key] === 1;
             const isActive = activeTab === doc.key;
@@ -1155,9 +1050,9 @@ export function DocumentosLegajo({
             const isLufe = docFiles.some((a) => String(a.vialufe || a.Vialufe) === "1");
             const estadoBalance = doc.key === "balance" ? calcularEstadoBalanceDoc(docFiles) : null;
             const isVencidoBalance = estadoBalance?.estado === "vencido";
-            const isComplete = isPerfil || (!!currentFile && !isVencidoBalance);
+            const isComplete = !!currentFile && !isVencidoBalance;
             const hasError =
-              !cargandoArchivos && intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
+              !cargandoArchivos && intentoAvanzar && isRequired && (!currentFile || isVencidoBalance);
 
             return (
               <React.Fragment key={doc.key}>
@@ -1173,8 +1068,7 @@ export function DocumentosLegajo({
                   <div className={styles.tabTitleGroup}>
                     <span className={styles.tabTitle}>{doc.title}</span>
                     <div className={styles.badgeRow}>
-                      {!isPerfil &&
-                        (isRequired ? (
+                      {(isRequired ? (
                           <span
                             className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
                           >
@@ -1222,12 +1116,12 @@ export function DocumentosLegajo({
     <>
     {fechaBalanceModal}
     {confirmarEliminarArchivoModal}
+    {legajoToolbar}
     <div className={styles.workspaceMobile}>
       {estructuraFiltrada.map((doc, index) => {
         const isNewCategory =
           index === 0 ||
           doc.category !== estructuraFiltrada[index - 1].category;
-        const isPerfil = doc.key === "perfil";
         const currentFile = formValues[doc.key];
         const isRequired = requisitos?.documentos?.[doc.key] === 1;
         const isActive = activeTab === doc.key;
@@ -1238,9 +1132,9 @@ export function DocumentosLegajo({
         const isLufe = docFiles.some((a) => String(a.vialufe || a.Vialufe) === "1");
         const estadoBalance = doc.key === "balance" ? calcularEstadoBalanceDoc(docFiles) : null;
         const isVencidoBalance = estadoBalance?.estado === "vencido";
-        const isComplete = isPerfil || (!!currentFile && !isVencidoBalance);
+        const isComplete = !!currentFile && !isVencidoBalance;
         const hasError =
-          !cargandoArchivos && intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
+          !cargandoArchivos && intentoAvanzar && isRequired && (!currentFile || isVencidoBalance);
 
         return (
           <React.Fragment key={doc.key}>
@@ -1258,8 +1152,7 @@ export function DocumentosLegajo({
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
                 <div className={styles.badgeRow}>
-                  {!isPerfil &&
-                    (isRequired ? (
+                  {(isRequired ? (
                       <span
                         className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
                       >

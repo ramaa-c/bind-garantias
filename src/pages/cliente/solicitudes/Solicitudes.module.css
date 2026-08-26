@@ -139,10 +139,18 @@
   overflow: hidden;
 }
 
-/* BARRA DE FILTROS */
+/* BARRA DE FILTROS — mobile: buscador + botón de limpiar comparten la
+   primera fila (con flex-wrap, no en su propia línea suelta como antes -
+   se veía huérfano, con todo el ancho vacío a la izquierda) y los 4 campos
+   pasan a una fila propia debajo. El orden visual (search, limpiar, campos)
+   no coincide con el orden real del DOM (search, campos, limpiar) porque
+   ese es el orden que necesita el layout de escritorio (ver
+   @media min-width:56.25rem, sin tocar); `order` los reacomoda solo acá,
+   y se resetea ahí abajo para que el desktop quede exactamente como estaba. */
 .filterBar {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.875rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -155,8 +163,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  width: 100%;
-  min-width: 0;
+  order: 1;
+  flex: 1 1 auto;
+  min-width: 8rem;
 }
 
 .searchIcon {
@@ -203,6 +212,8 @@
 }
 
 .filterFieldsRow {
+  order: 3;
+  flex-basis: 100%;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.6rem;
@@ -220,7 +231,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: flex-end;
+  order: 2;
+  align-self: center;
   flex-shrink: 0;
   width: 2.35rem;
   height: 2.35rem;
@@ -355,6 +367,16 @@
     margin-bottom: 1.5rem;
   }
 
+  /* El orden visual mobile (search, limpiar, campos) se resuelve con
+     `order` porque el DOM real es search → campos → limpiar (lo que este
+     layout de escritorio necesita); acá se resetea a 0 en los tres para
+     que floteen en el orden natural del DOM otra vez, como siempre. */
+  .searchBox,
+  .filterFieldsRow,
+  .clearFiltersBtn {
+    order: 0;
+  }
+
   .searchBox {
     /* Sin max-width: absorbe ella sola todo el espacio sobrante de la fila,
        para que no quede sobrante suelto en ningún otro punto de la barra. */
@@ -363,6 +385,7 @@
   }
 
   .filterFieldsRow {
+    flex-basis: auto;
     grid-template-columns: repeat(4, 7rem);
     flex-shrink: 0;
   }

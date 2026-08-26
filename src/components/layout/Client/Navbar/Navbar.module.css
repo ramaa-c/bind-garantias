@@ -66,6 +66,43 @@
   object-fit: contain;
 }
 
+/* --- BADGE DE VENDOR (solo escritorio, ver media query al final) --- */
+.vendorBadge {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(76, 101, 230, 0.1), rgba(255, 255, 255, 0.02));
+  border: 1px solid rgba(76, 101, 230, 0.22);
+  white-space: nowrap;
+}
+
+.vendorBadgeIcon {
+  color: #7b93ff;
+  flex-shrink: 0;
+}
+
+.vendorBadgeLabel {
+  color: #7b93ff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.vendorBadgeSep {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 0.78rem;
+}
+
+.vendorBadgeChain {
+  color: var(--white, #fff);
+  font-size: 0.78rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 10rem;
+}
+
 /* --- BOTÓN DE AYUDA --- */
 .helpButton {
   background: rgba(255, 255, 255, 0.05);
@@ -306,6 +343,10 @@
 
   .logoContainer {
     display: none;
+  }
+
+  .vendorBadge {
+    display: inline-flex;
   }
 
   .userName,

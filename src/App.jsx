@@ -10,6 +10,7 @@ import { ChannelProvider } from "./context/ChannelContext";
 import { Toaster } from "sonner";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
+import LegajoDataGuard from "./components/guards/LegajoDataGuard/LegajoDataGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
 import GuestGuard from "./components/guards/GuestGuard/GuestGuard";
 import SessionTimeoutManager from "./components/guards/SessionTimeoutManager/SessionTimeoutManager";
@@ -157,9 +158,11 @@ function App() {
                 path="legajo"
                 element={
                   <OnboardingGuard>
-                    <DashboardLayout>
-                      <SociosView />
-                    </DashboardLayout>
+                    <LegajoDataGuard>
+                      <DashboardLayout>
+                        <SociosView />
+                      </DashboardLayout>
+                    </LegajoDataGuard>
                   </OnboardingGuard>
                 }
               />
@@ -182,9 +185,11 @@ function App() {
                 path="documentacion"
                 element={
                   <OnboardingGuard>
-                    <DashboardLayout>
-                      <DocumentacionView />
-                    </DashboardLayout>
+                    <LegajoDataGuard>
+                      <DashboardLayout>
+                        <DocumentacionView />
+                      </DashboardLayout>
+                    </LegajoDataGuard>
                   </OnboardingGuard>
                 }
               />
@@ -197,9 +202,11 @@ function App() {
                 path="solicitudes"
                 element={
                   <OnboardingGuard>
-                    <DashboardLayout>
-                      <Solicitudes />
-                    </DashboardLayout>
+                    <LegajoDataGuard>
+                      <DashboardLayout>
+                        <Solicitudes />
+                      </DashboardLayout>
+                    </LegajoDataGuard>
                   </OnboardingGuard>
                 }
               />
@@ -226,7 +233,7 @@ function App() {
                 path="seleccionar-empresa"
                 element={
                   <OnboardingGuard>
-                    <DashboardLayout>
+                    <DashboardLayout hideHelpButton>
                       <SeleccionarEmpresa />
                     </DashboardLayout>
                   </OnboardingGuard>
