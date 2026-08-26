@@ -28,6 +28,7 @@ export const AltaDatosEmpresaSchema = z.object({
   mescierre: z.coerce.number().nullable().optional(),
   fechainicioactividades: z.string().nullable().optional(),
   tiporegimenivaid: z.coerce.number().optional(),
+  tipoactividadsepymeid: z.string().nullable().optional(),
   codpos: z.string().optional(),
 }).superRefine((data, ctx) => {
   if (!data.sinNumero && (!data.numero || data.numero < 1)) {

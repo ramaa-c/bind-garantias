@@ -157,6 +157,18 @@ const getDownloadCategoryText = (key, title) => {
   return `Descargar ${plurals[key] || `todos: ${title}`}`;
 };
 
+// Cuando hay 2+ archivos del mismo tipo con el mismo nombre (ej. varias
+// "Presentación Única de Balances" subidas en distintas fechas), el nombre
+// truncado en la sub-pestaña no alcanza para distinguir cuál es cuál - ver
+// la fecha del archivo alcanza para eso sin necesitar mostrar el nombre
+// completo.
+const formatFechaCorta = (fecha) => {
+  if (!fecha) return null;
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short" }).format(d);
+};
+
 export function DocumentosLegajo({
   socioIdOverride,
   empresaOverride,
@@ -546,16 +558,19 @@ export function DocumentosLegajo({
       toast.error("No se pudo identificar la empresa activa.");
       return;
     }
+    const archivoExistente = archivosBackend.find((a) => a.socioarchivoid === fileId);
+    if (!archivoExistente) {
+      toast.error("No se encontró el archivo a eliminar.");
+      return;
+    }
     const toastId = toast.loading(`Eliminando ${docTitle}...`);
     try {
-      // Intentar llamada al backend (por si implementan el endpoint)
-      try {
-        await socioArchivoService.eliminarArchivo(socioIdActivo, fileId);
-      } catch (apiError) {
-        console.warn("El backend no soporta DELETE para SocioArchivo aún. Aplicando simulación local.", apiError);
-      }
+      // SocioArchivo no tiene DELETE: esto hace un PUT real que pisa
+      // fchArchivo con la fecha centinela (ver socioArchivoService), no una
+      // simulación local — si falla, el archivo sigue existiendo de verdad
+      // y por eso se corta acá (catch de abajo) en vez de seguir de largo.
+      await socioArchivoService.marcarArchivoEliminado(archivoExistente);
 
-      // Filtrar el archivo eliminado del estado local para el maquetado visual
       setArchivosBackend((prev) => {
         const actualizados = prev.filter((a) => a.socioarchivoid !== fileId);
         
@@ -677,6 +692,7 @@ export function DocumentosLegajo({
               <div className={styles.subTabsContainer}>
                 {files.map((file, idx) => {
                   const isActive = currentSubTab === idx;
+                  const fechaCorta = formatFechaCorta(file.fcharchivo || file.FchArchivo);
                   return (
                     <button
                       key={file.socioarchivoid}
@@ -686,13 +702,22 @@ export function DocumentosLegajo({
                       title={file.nombrearchivo}
                     >
                       <FiFile
-                        size={12}
+                        size={13}
                         className={`${styles.subTabIcon} ${isActive && adminMode ? styles.subTabIconAdminActive : ""}`}
                       />
-                      <span className={styles.subTabText}>
-                        {file.nombrearchivo.length > 25
-                          ? `${file.nombrearchivo.substring(0, 22)}...`
-                          : file.nombrearchivo}
+                      <span className={styles.subTabTextGroup}>
+                        <span className={styles.subTabText}>
+                          {file.nombrearchivo.length > 25
+                            ? `${file.nombrearchivo.substring(0, 22)}...`
+                            : file.nombrearchivo}
+                        </span>
+                        {/* Con dos archivos del mismo tipo y mismo nombre, el
+                            nombre solo no alcanza para distinguirlos - la
+                            fecha sí (y el orden de los chips ya es del más
+                            nuevo al más viejo, ver categoryFiles). */}
+                        {fechaCorta && (
+                          <span className={styles.subTabDate}>{fechaCorta}</span>
+                        )}
                       </span>
                       <span
                         role="button"
@@ -709,7 +734,7 @@ export function DocumentosLegajo({
                         className={styles.subTabClose}
                         title="Eliminar archivo"
                       >
-                        <FiX size={10} />
+                        <FiX size={13} />
                       </span>
                     </button>
                   );
@@ -765,6 +790,17 @@ export function DocumentosLegajo({
                       procesarArchivo(activeFile, archivosBackend, "download");
                     }
                   }}
+                  onDelete={
+                    activeFile
+                      ? () =>
+                          setArchivoAEliminar({
+                            key: doc.key,
+                            fileId: activeFile.socioarchivoid,
+                            docTitle: doc.title,
+                            nombreArchivo: activeFile.nombrearchivo,
+                          })
+                      : undefined
+                  }
                 />
                 <input
                   id={`file-input-${doc.key}`}
