@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { FiMapPin, FiMap, FiX } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
@@ -36,6 +36,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     () => ciudadesData?.opciones || [],
     [ciudadesData],
   );
+  const ciudadesRaw = useMemo(() => ciudadesData?.raw || [], [ciudadesData]);
 
   const { data: partidosData, isLoading: cargandoPartidos } =
     usePartidos(currentProvincia);
@@ -46,12 +47,12 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
 
   const currentCiudad = watch("ciudad");
   const currentCiudadId = watch("ciudadid");
-  const currentLocalidad = watch("localidad");
   const currentLocalidadId = watch("localidadid");
 
-  // Ciudad y Localidad se filtran por la provincia elegida (useCiudades /
-  // usePartidos reciben currentProvincia) - ver useSincronizarCatalogoPorTexto
-  // para el detalle de como se resuelven/limpian ciudadid y localidadid.
+  // Ciudad se filtra por la provincia elegida (useCiudades recibe
+  // currentProvincia) - ver useSincronizarCatalogoPorTexto para el detalle
+  // de como se resuelve/limpia ciudadid a partir del texto que puede venir
+  // de AFIP/Nosis.
   useSincronizarCatalogoPorTexto({
     cargando: cargandoCiudades,
     opciones: opcionesCiudades,
@@ -62,15 +63,42 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     setValue,
   });
 
-  useSincronizarCatalogoPorTexto({
-    cargando: cargandoPartidos,
-    opciones: opcionesLocalidades,
-    valorTexto: currentLocalidad,
-    valorId: currentLocalidadId,
-    campoTexto: "localidad",
-    campoId: "localidadid",
+  // Localidad (Partido) ya NO se elige a mano ni se matchea por texto: cada
+  // Ciudad trae su propio PartidoID (confirmado en vivo contra
+  // catalogos/Ciudad - viene poblado), así que se deriva directo apenas se
+  // resuelve la Ciudad. El select queda deshabilitado (ver más abajo).
+  useEffect(() => {
+    if (cargandoCiudades || cargandoPartidos || !currentCiudadId) return;
+
+    const ciudadElegida = ciudadesRaw.find(
+      (c) => String(c.ciudadid) === String(currentCiudadId),
+    );
+    if (!ciudadElegida) return;
+
+    const partidoIdDerivado = Number(ciudadElegida.partidoid) || 0;
+    if (Number(currentLocalidadId) === partidoIdDerivado) return;
+
+    const partidoMatch = opcionesLocalidades.find(
+      (p) => Number(p.value) === partidoIdDerivado,
+    );
+
+    setValue("localidadid", partidoIdDerivado, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    setValue("localidad", partidoMatch?.label || "", {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [
+    cargandoCiudades,
+    cargandoPartidos,
+    currentCiudadId,
+    currentLocalidadId,
+    ciudadesRaw,
+    opcionesLocalidades,
     setValue,
-  });
+  ]);
 
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
@@ -269,6 +297,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
                 icon={<FiMap />}
                 options={opcionesLocalidades}
                 isLoading={cargandoPartidos}
+                disabled
                 error={getError("localidadid")}
                 esValido={getEsValido("localidadid")}
               />
