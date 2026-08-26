@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
+import { useParams } from "react-router-dom";
 import { FaFileAlt, FaFileUpload } from "react-icons/fa";
-import { useQuery } from "@tanstack/react-query";
-import { FiDownload } from "react-icons/fi";
+import { useQueryClient } from "@tanstack/react-query";
+import { FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import {
   DocumentosLegajo,
   LegajoUniversalBar,
 } from "../../../../components/features";
 import { ESTRUCTURA_LEGAJO } from "../../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
+import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { socioArchivoService } from "../../../../services/socioArchivoService";
-import { descargarLegajoCompletoZip } from "../../../../utils/fileUtils";
-import { Button } from "../../../../components/ui";
+import { useRequisitos } from "../../../../hooks/useRequisitos";
+import { sociosService } from "../../../../services/sociosService";
+import { obtenerMensajeAmigable } from "../../../../utils/mensajesError";
+import { Button, InfoTooltip } from "../../../../components/ui";
 import styles from "./DocumentacionView.module.css";
 
 const DOC_TITLES = {
@@ -35,7 +38,10 @@ const DOC_TITLES = {
 };
 
 export default function DocumentacionView() {
+  const queryClient = useQueryClient();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [sincronizando, setSincronizando] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
     const handler = () => setIsHelpOpen((prev) => !prev);
@@ -43,28 +49,51 @@ export default function DocumentacionView() {
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
 
-  const { socioIdActivo, nombreEmpresa } = useEmpresaActiva();
+  const { socioIdActivo, cuitActivo, tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
 
-  const { data: archivosBackend = [] } = useQuery({
-    queryKey: ["socioArchivos", socioIdActivo],
-    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo),
-    enabled: !!socioIdActivo,
-    staleTime: 1000 * 60 * 5,
-  });
+  // Determina si hay algo por lo que valga la pena mostrar "Consultar a
+  // LUFE" en el header: mismo criterio que estructuraFiltrada en
+  // DocumentosLegajo.jsx (ESTRUCTURA_LEGAJO filtrado por
+  // requisitos.documentos), pero calculado acá aparte porque el botón vive
+  // en este header, no adentro de <DocumentosLegajo/>. useRequisitos cachea
+  // por queryKey (cadenaId, tipoPersonaId, sociedad), así que llamarlo acá
+  // y de nuevo adentro de DocumentosLegajo no duplica el pedido de red.
+  // Mientras requisitos todavía no cargó, se asume que sí hay documentación
+  // (default más seguro que ocultar el botón y hacerlo aparecer después).
+  const { cadenaSlug } = useParams();
+  const cadenaId = Number(cadenaSlug) || 1;
+  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
+  const hayDocumentacionRequerida = ESTRUCTURA_LEGAJO.some(
+    (item) => requisitos?.documentos?.[item.key] !== 0,
+  );
 
-  const handleDownloadAllZip = () => {
-    if (archivosBackend.length === 0) {
-      toast.error("No hay archivos cargados para descargar.");
+  // Mismo botón/lógica que "Actualizar datos vía LUFE" en SociosView.jsx,
+  // pero acotado a documentos: acá no corresponde re-consultar autoridades
+  // (accionistas/representantes) ni enriquecimiento AFIP, solo
+  // api/lufe/documentos — que además de traer el listado, vincula (crea el
+  // SocioArchivo) los que todavía no estén cargados.
+  const handleActualizarLufe = async () => {
+    if (!socioIdActivo || !cuitActivo) {
+      toast.error("No se pudo identificar la empresa activa.");
       return;
     }
-    const cleanRazonSocial = (nombreEmpresa || "Empresa").replace(/\s+/g, "_");
-    const zipName = `Legajo_Completo_${cleanRazonSocial}.zip`;
-    descargarLegajoCompletoZip(
-      archivosBackend,
-      ESTRUCTURA_LEGAJO,
-      socioArchivoService.TIPO_DOCUMENTO_MAP,
-      zipName
-    );
+
+    setSincronizando(true);
+    setShowConfirmModal(false);
+    const toastId = toast.loading("Actualizando documentos desde LUFE...");
+    try {
+      await sociosService.obtenerDocumentosLufe(cuitActivo, true);
+      await queryClient.invalidateQueries({
+        queryKey: ["socioArchivos", socioIdActivo],
+      });
+      toast.success("Documentos actualizados correctamente desde LUFE", { id: toastId });
+    } catch (err) {
+      const errorMsg = obtenerMensajeAmigable(err, "Error al actualizar documentos desde LUFE.");
+      toast.error(errorMsg, { id: toastId });
+    } finally {
+      setSincronizando(false);
+      setShowConfirmModal(false);
+    }
   };
 
   const methods = useForm({
@@ -102,26 +131,37 @@ export default function DocumentacionView() {
             <FaFileUpload />
           </div>
           <div className={styles.titleWrapper}>
-            <h1 className={styles.title}>Tu perfil digital</h1>
+            <h1 className={styles.title}>Documentación</h1>
             <p className={styles.subtitle}>
-              Gestioná y mantené actualizados los datos corporativos y
-              documentos operativos.
+              Cargá y mantené actualizada la documentación de tu
+              empresa.
             </p>
           </div>
         </div>
 
-        {archivosBackend.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={styles.downloadBtn}
-            onClick={handleDownloadAllZip}
-            title="Descargar legajo de documentos completo en un archivo ZIP"
-          >
-            <FiDownload style={{ marginRight: "0.5rem" }} />
-            Descargar Legajo Completo
-          </Button>
+        {hayDocumentacionRequerida && (
+          <div className={styles.lufeAction}>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              className={styles.submitBtn}
+              onClick={() => setShowConfirmModal(true)}
+              disabled={sincronizando}
+            >
+              <FiRefreshCw
+                style={{
+                  marginRight: "0.5rem",
+                  animation: sincronizando ? "spin 1s linear infinite" : "none",
+                }}
+              />
+              {sincronizando ? "Sincronizando..." : "Consultar a LUFE"}
+            </Button>
+            <InfoTooltip
+              label="¿Qué es LUFE?"
+              texto="LUFE es una fuente de datos externa que usamos para completar automáticamente la información de tu empresa (socios, representantes y documentación)."
+            />
+          </div>
         )}
       </header>
 
@@ -142,6 +182,14 @@ export default function DocumentacionView() {
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
         contexto="inicio"
+      />
+
+      <ConfirmacionModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleActualizarLufe}
+        titulo="Consultar a LUFE"
+        mensaje="¿Estás seguro de que deseas actualizar los documentos de esta empresa desde LUFE? Esta acción puede agregar documentos nuevos al legajo."
       />
     </section>
   );

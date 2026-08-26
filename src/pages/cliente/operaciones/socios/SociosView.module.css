@@ -128,8 +128,15 @@
 }
 
 /* ACCIONES */
+.lufeAction {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
 .submitBtn {
-  flex-shrink: 0;
+  flex: 1;
   width: 100%;
 }
 
@@ -197,8 +204,13 @@
     margin-top: 0;
   }
 
+  .lufeAction {
+    width: auto;
+  }
+
   .submitBtn {
     min-width: 12rem;
     width: auto;
+    flex: initial;
   }
 }

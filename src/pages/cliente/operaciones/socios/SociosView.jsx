@@ -3,44 +3,29 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
 import { SociosLegajo, LegajoUniversalBar } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { Button } from "../../../../components/ui";
+import { Button, InfoTooltip } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { sociosService } from "../../../../services/sociosService";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
+import { obtenerMensajeAmigable } from "../../../../utils/mensajesError";
 import { toast } from "sonner";
 import styles from "./SociosView.module.css";
-
-const obtenerMensajeAmigable = (err, defaultMsg) => {
-  if (err?.code === "ECONNABORTED" || err?.message?.toLowerCase().includes("timeout")) {
-    return "El servicio externo está demorando en responder. Por favor, intentá nuevamente en unos momentos.";
-  }
-  if (err?.message?.toLowerCase().includes("network error") || !err?.response) {
-    return "No se pudo conectar con el servidor. Verificá tu conexión a internet o reintentá más tarde.";
-  }
-  const status = err.response?.status;
-  if (status >= 500) {
-    return "Hubo un inconveniente en el sistema al procesar los datos. Por favor, reintentá más tarde.";
-  }
-  if (status === 404) {
-    return "No se encontraron los datos correspondientes en el padrón.";
-  }
-  if (status === 403 || status === 401) {
-    return "No tenés permisos para realizar esta consulta.";
-  }
-  if (status === 400) {
-    const backendMessage = err.response?.data?.message || err.response?.data || err.response?.data?.title;
-    if (typeof backendMessage === "string" && backendMessage.length < 150) {
-      return backendMessage;
-    }
-    return "Los datos de la empresa no pudieron ser validados. Revisá el CUIT y reintentá.";
-  }
-  return defaultMsg;
-};
 
 export default function SociosView() {
   const queryClient = useQueryClient();
   const { socioIdActivo, cuitActivo } = useEmpresaActiva();
+
+  // Mismo criterio que hayDocumentacionRequerida en DocumentacionView.jsx:
+  // sin ningún requisito obligatorio en legajo (accionistas/apoderados/
+  // representante legal/agentes de bolsa, según useValidacionLegajo), no
+  // tiene sentido ofrecer "Consultar a LUFE" acá. Mientras isLoading, se
+  // asume que sí hay algo (default más seguro que ocultar el botón y
+  // hacerlo aparecer después).
+  const { totalLegajoObligatorios, isLoading: isLoadingValidacion } = useValidacionLegajo();
+  const hayLegajoRequerido = isLoadingValidacion || totalLegajoObligatorios > 0;
+
   const [sincronizando, setSincronizando] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -103,28 +88,36 @@ export default function SociosView() {
           <div className={styles.titleWrapper}>
             <h1 className={styles.title}>Legajo</h1>
             <p className={styles.subtitle}>
-              Gestioná la composición accionaria, representantes y
-              vinculaciones.
+              Completá los datos de tu empresa y de las personas
+              vinculadas a ella.
             </p>
           </div>
         </div>
 
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          className={styles.submitBtn}
-          onClick={() => setShowConfirmModal(true)}
-          disabled={sincronizando}
-        >
-          <FiRefreshCw
-            style={{
-              marginRight: "0.5rem",
-              animation: sincronizando ? "spin 1s linear infinite" : "none"
-            }}
-          />
-          {sincronizando ? "Sincronizando..." : "Refrescar datos de accionistas"}
-        </Button>
+        {hayLegajoRequerido && (
+          <div className={styles.lufeAction}>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              className={styles.submitBtn}
+              onClick={() => setShowConfirmModal(true)}
+              disabled={sincronizando}
+            >
+              <FiRefreshCw
+                style={{
+                  marginRight: "0.5rem",
+                  animation: sincronizando ? "spin 1s linear infinite" : "none"
+                }}
+              />
+              {sincronizando ? "Sincronizando..." : "Consultar a LUFE"}
+            </Button>
+            <InfoTooltip
+              label="¿Qué es LUFE?"
+              texto="LUFE es una fuente de datos externa que usamos para completar automáticamente la información de tu empresa (socios, representantes y documentación)."
+            />
+          </div>
+        )}
       </header>
 
       <LegajoUniversalBar context="legajo" />
@@ -143,8 +136,8 @@ export default function SociosView() {
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleRefrescarLufe}
-        titulo="Refrescar datos de accionistas"
-        mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y AFIP? Esta acción actualizará la composición accionaria y los representantes."
+        titulo="Consultar a LUFE"
+        mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y AFIP? Esta acción actualizará la información de las personas vinculadas a tu empresa."
       />
     </section>
   );

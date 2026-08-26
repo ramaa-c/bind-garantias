@@ -20,10 +20,6 @@ import { ESTRUCTURA_LEGAJO } from "../DocumentosLegajo/DocumentosLegajo";
 import { ESTRUCTURA_SOCIOS } from "../SociosLegajo/SociosLegajo";
 import styles from "./EstadoMigracionModal.module.css";
 
-// Cada item lleva su propio ícono de sección (Documentación / Legajo) y una
-// leyenda de "X de Y" — nada de porcentajes ni acordeones acá adentro: el
-// resumen global ya lo da la barra de progreso de arriba, esto es el
-// detalle de qué falta puntualmente.
 function ChecklistSection({ icon, title, items }) {
   if (items.length === 0) return null;
   const completados = items.filter((item) => item.done).length;
@@ -56,12 +52,6 @@ function ChecklistSection({ icon, title, items }) {
   );
 }
 
-// Reemplaza a EmpresaPerfilModal: en vez de un perfil genérico de la empresa
-// (dirección, teléfono, tipo de persona...), esto es pura foto del estado de
-// migración a SGR+ — lo mismo que ya calculaba LegajoUniversalBar, pero con
-// el detalle de qué documento/dato puntual falta. Se abre desde ahí (ver
-// LegajoUniversalBar.jsx, el contenedor con la clase containerValid/
-// containerInvalid) y también desde la card de empresa del Sidebar.
 export function EstadoMigracionModal({ isOpen, onClose }) {
   const navigate = useNavigate();
   const { channelInfo } = useChannel();
@@ -82,9 +72,6 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   const legajoSgrPlus = Number(socioWeb?.legajo) > 0 ? socioWeb.legajo : null;
   const estaMigrado = !!legajoSgrPlus;
 
-  // Mismos nombres que ve el usuario en la pestaña Documentación: se filtra
-  // por lo que la cadena realmente exige (requisitos.documentos) y se marca
-  // hecho/pendiente contra los archivos ya subidos.
   const documentosChecklist = ESTRUCTURA_LEGAJO.filter(
     (doc) => doc.category === "Documentación" && requisitos?.documentos?.[doc.key] === 1,
   ).map((doc) => ({
@@ -95,10 +82,6 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
     ),
   }));
 
-  // Mismos nombres que las pestañas de Legajo (Composición accionaria,
-  // Representantes legales/Apoderado, Agentes de bolsa), filtrados por lo
-  // que la cadena exige y por tipo de persona (accionistas no aplica a
-  // Persona Física, ver SociosLegajo).
   const completitudPorTab = {
     accionistas: accionistasCompletos,
     representanteLegal: representanteLegalCompletos,
@@ -121,30 +104,29 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   const itemsCompletados =
     documentosChecklist.filter((i) => i.done).length +
     legajoChecklist.filter((i) => i.done).length;
-  const legajoListo = totalItems > 0 && itemsCompletados === totalItems;
+
+  const legajoListo = itemsCompletados === totalItems;
   const porcentaje = totalItems > 0 ? Math.round((itemsCompletados / totalItems) * 100) : 0;
 
   const faltanDocumentos = documentosChecklist.some((i) => !i.done);
   const faltanLegajo = legajoChecklist.some((i) => !i.done);
 
-  // La migración a SGR+ es un detalle interno que solo le importa al admin
-  // (acordado con Victor el 2026-08-12) — de cara al cliente "migrado" y
-  // "listo" son el mismo estado ("ya terminé"), sin exponer el número de
-  // legajo SGR+ ni insinuar que hay una sincronización de por medio.
   const legajoCompleto = estaMigrado || legajoListo;
   const estado = legajoCompleto ? "completo" : "pendiente";
   const tono = estado === "completo" ? "success" : "pending";
 
-  // El estado "pendiente" ya no tiene hero propio: el título y el mensaje
-  // genérico ("Legajo incompleto para SGR+" / "Te falta completar...") ya se
-  // ven en LegajoUniversalBar (containerInvalid) — repetirlos acá arriba del
-  // checklist no agregaba nada, solo empujaba hacia abajo el detalle
-  // puntual que es lo único que este modal aporta de más.
+  // Con totalItems=0 (cadena sin ningún requisito obligatorio) "Ya cargaste
+  // todos los datos..." se puede malinterpretar como que sí se subió algo:
+  // en ese caso no se cargó nada porque no había nada para cargar, no
+  // porque ya esté todo hecho.
   const HERO_POR_ESTADO = {
     completo: {
       icon: <FiCheckCircle size={22} />,
       titulo: "Legajo completo",
-      subtitulo: "Ya cargaste todos los datos y documentos de tu empresa.",
+      subtitulo:
+        totalItems === 0
+          ? "Esta cadena no requiere documentos ni datos adicionales."
+          : "Ya cargaste todos los datos y documentos de tu empresa.",
     },
   };
   const hero = HERO_POR_ESTADO[estado];

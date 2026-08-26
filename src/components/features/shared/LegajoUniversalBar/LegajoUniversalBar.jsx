@@ -42,8 +42,6 @@ export function LegajoUniversalBar({
     isValid,
     errores,
     totalRequisitos,
-    totalDocumentosObligatorios,
-    totalLegajoObligatorios,
     requisitosCompletados,
     isLoading,
     faltanDocumentos,
@@ -229,11 +227,20 @@ export function LegajoUniversalBar({
     useTieneCertificadoPyme(socioIdActivo);
   const pymeSinCertificado = !adminMode && !loadingCertificadoPyme && !tieneCertificadoPyme;
 
+  // OJO: a propósito NO exige totalRequisitos > 0. Antes sí lo hacía, y eso
+  // dejaba a una cadena cuya parametrización no tiene NINGÚN documento u
+  // obligación configurada (caso real de migración, no un error de carga:
+  // useValidacionLegajo ya devuelve isLoading=true / isValid=false mientras
+  // todavía no se resolvió la parametrización) sin forma de migrar nunca —
+  // isValid ya es trivialmente true cuando no hay nada que validar, así que
+  // no hace falta ese requisito extra. El Certificado PyME sigue
+  // controlándose siempre, sin excepción, más abajo en sincronizarConSgrPlus
+  // (chequeo fresco antes de todo POST a Socio/Migrar) — eso no depende de
+  // esta condición. Acordado con el equipo el 2026-08-26.
   const cambioPendienteRaw =
     baseline !== null &&
     fingerprint !== baseline &&
     isValid &&
-    totalRequisitos > 0 &&
     cdaSocioAprobado;
 
   // Espacia los intentos de sincronización: el primer POST a /Socio/Migrar
@@ -265,12 +272,14 @@ export function LegajoUniversalBar({
   // no lo tiene migrado — cubre tanto el primer intento como el caso de un
   // intento anterior que falló silenciosamente (ver migradoEnBackend arriba):
   // sin esto, sin un cambio LOCAL nuevo de por medio, nunca se reintentaba.
+  // Mismo criterio que cambioPendienteRaw arriba: sin totalRequisitos > 0,
+  // para que una cadena sin ningún requisito obligatorio también pueda
+  // migrar (isValid ya alcanza).
   const faltaMigrarEnBackend =
     !loadingSocioWeb &&
     !loadingMigradoEnBackend &&
     !migradoEnBackend &&
     isValid &&
-    totalRequisitos > 0 &&
     cdaSocioAprobado;
 
   const [confirmMigrarOpen, setConfirmMigrarOpen] = useState(false);
@@ -459,11 +468,6 @@ export function LegajoUniversalBar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adminMode, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingMigradoEnBackend, loadingEstadoCdaSocio, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
-  const hasMandatoryInContext =
-    (context === "documentacion" && totalDocumentosObligatorios > 0) ||
-    (context === "legajo" && totalLegajoObligatorios > 0) ||
-    !context;
-
   // Se renderiza sin importar si la barra decide ocultarse en este contexto:
   // la migración puede completarse en cualquier momento y el aviso tiene que
   // verse sí o sí, no solo cuando la barra también está visible.
@@ -550,7 +554,17 @@ export function LegajoUniversalBar({
     );
   }
 
-  if (isLoading || totalRequisitos === 0 || !hasMandatoryInContext) {
+  // Solo se oculta mientras carga: la barra tiene que verse siempre
+  // (mismo criterio en cliente y admin), incluso si esta pantalla puntual
+  // (o la cadena entera) no tiene ningún requisito obligatorio — antes acá
+  // se cortaba con totalRequisitos===0 (o si el contexto actual no tenía
+  // nada obligatorio propio, ver hasMandatoryInContext), y eso escondía la
+  // tarjeta de "Legajo" en Documentación y viceversa aunque el OTRO
+  // hubiera algo pendiente ahí. Con totalRequisitos===0 el legajo ya está
+  // trivialmente completo (isValid, ver useValidacionLegajo), así que la
+  // tarjeta simplemente muestra 100% / "Datos completos" en vez de
+  // desaparecer.
+  if (isLoading) {
     return (
       <>
         {migracionExitosaModal}
@@ -565,7 +579,7 @@ export function LegajoUniversalBar({
     (context === "legajo" && faltanLegajo) ||
     (!context && !isValid);
 
-  const porcentaje = Math.round((requisitosCompletados / totalRequisitos) * 100);
+  const porcentaje = totalRequisitos > 0 ? Math.round((requisitosCompletados / totalRequisitos) * 100) : 100;
 
   const getMissingActionMessage = () => {
     if (isValid) return "Todos los requisitos han sido completados correctamente.";

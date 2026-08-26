@@ -3,7 +3,7 @@ import Navbar from "../Client/Navbar/Navbar";
 import Sidebar from "../Client/Sidebar/Sidebar";
 import styles from "./DashboardLayout.module.css";
 
-export default function DashboardLayout({ children }) {
+export default function DashboardLayout({ children, hideHelpButton = false }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
@@ -23,6 +23,7 @@ export default function DashboardLayout({ children }) {
         <Navbar
           usuario="asesoramiento@mailinator.com"
           onToggleSidebar={toggleSidebar}
+          hideHelpButton={hideHelpButton}
         />
         <main className={styles.content}>{children}</main>
       </div>

@@ -8,6 +8,7 @@ import {
   FiHelpCircle,
   FiRepeat,
   FiLogOut,
+  FiBriefcase,
 } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
@@ -22,6 +23,7 @@ const Navbar = ({
   textoEnlace = "Registrate",
   rutaDestino = "/registro",
   onToggleSidebar,
+  hideHelpButton = false,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -103,20 +105,37 @@ const Navbar = ({
             </>
           )}
         </div>
+
+        {/* Versión de escritorio de vendorCard (ver Sidebar.jsx): en mobile
+            sigue viviendo en el sidebar, tal cual. Acá va compacta - sin
+            repetir el email, que ya se ve al lado en el menú de usuario -
+            para no volver a parecerse a companyCard. */}
+        {isVendor && (
+          <div className={styles.vendorBadge}>
+            <FiBriefcase size={14} className={styles.vendorBadgeIcon} />
+            <span className={styles.vendorBadgeLabel}>Vendor</span>
+            <span className={styles.vendorBadgeSep}>·</span>
+            <span className={styles.vendorBadgeChain}>{channelInfo?.nombre || "Cadena"}</span>
+          </div>
+        )}
       </div>
 
       <div className={styles.rightSection}>
         {user ? (
           <>
-            {/* Botón de Ayuda Restaurado */}
-            <button type="button"
-              className={styles.helpButton}
-              onClick={handleOpenHelp}
-              aria-label="Abrir ayuda"
-              title="Centro de Ayuda"
-            >
-              <FiHelpCircle className={styles.helpIcon} />
-            </button>
+            {/* Sin contenido de ayuda escrito todavía para algunas pantallas
+                (ej. Seleccionar Empresa) - mejor ocultar el botón ahí que
+                abrir un drawer vacío. */}
+            {!hideHelpButton && (
+              <button type="button"
+                className={styles.helpButton}
+                onClick={handleOpenHelp}
+                aria-label="Abrir ayuda"
+                title="Centro de Ayuda"
+              >
+                <FiHelpCircle className={styles.helpIcon} />
+              </button>
+            )}
 
             <div className={styles.userMenuContainer} ref={dropdownRef}>
               <div

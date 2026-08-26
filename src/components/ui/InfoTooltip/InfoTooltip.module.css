@@ -1,0 +1,148 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Tintado con el color de marca (amarillo cliente / azul admin) en vez de
+   gris neutro: así se lee como "info sobre la acción de al lado" y no se
+   pierde contra el fondo oscuro - el gris anterior tenía muy poco
+   contraste y pasaba desapercibido. El tamaño real del botón (1.75rem) ya
+   cumple el mínimo táctil recomendado para mobile. */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(244, 245, 0, 0.12);
+  border: 1px solid rgba(244, 245, 0, 0.4);
+  color: var(--color-amarillo-bind, #f5f400);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  background: rgba(244, 245, 0, 0.22);
+  border-color: rgba(244, 245, 0, 0.65);
+  transform: scale(1.06);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid rgba(244, 245, 0, 0.6);
+  outline-offset: 2px;
+}
+
+.triggerAdmin {
+  background: rgba(76, 101, 230, 0.12);
+  border-color: rgba(76, 101, 230, 0.4);
+  color: var(--color-azul-bind-300, #8a9fff);
+}
+
+.triggerAdmin:hover,
+.triggerAdmin[aria-expanded="true"] {
+  background: rgba(76, 101, 230, 0.22);
+  border-color: rgba(76, 101, 230, 0.65);
+}
+
+.triggerAdmin:focus-visible {
+  outline-color: rgba(76, 101, 230, 0.6);
+}
+
+/* Versión discreta: para cuando el ícono acompaña un dato de texto suelto
+   (ej. "N documentos cargados en total") en vez de una acción/CTA — sin
+   círculo de fondo ni borde, solo el ícono. El tinte de marca + fondo de
+   .trigger está pensado para no perderse al lado de un botón grande, pero
+   ahí mismo terminaba pesando más que el texto que acompaña. */
+.triggerSm {
+  width: 1.5rem;
+  height: 1.5rem;
+  background: none;
+  border: none;
+  color: #8b949e;
+}
+
+.triggerSm:hover,
+.triggerSm[aria-expanded="true"] {
+  background: none;
+  color: #c9d1d9;
+  transform: none;
+}
+
+/* position:fixed + portal a document.body (ver InfoTooltip.jsx): la
+   posición real (top/left) la calcula JS, midiendo el ícono y la burbuja
+   ya renderizada, y siempre queda "clampeada" adentro del viewport. Arranca
+   invisible (sin .bubbleVisible) hasta que esa medición está lista, para no
+   mostrar un instante en la posición default (0,0) antes de reubicarse. */
+.bubble {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 2000;
+  visibility: hidden;
+  width: max-content;
+  max-width: min(17rem, calc(100vw - 1.5rem));
+  padding: 0.6rem 0.75rem;
+  background: #14161c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.55rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: #d5d8dd;
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  animation: fadeInTooltip 0.15s ease-out;
+}
+
+.bubbleVisible {
+  visibility: visible;
+}
+
+/* Flechita que conecta visualmente la burbuja con el ícono que la abrió -
+   sin esto, en una fila con varios elementos, no queda claro de dónde
+   "salió" el tooltip. --arrow-left (seteada desde JS) sigue apuntando al
+   centro real del ícono aunque la burbuja se haya desplazado por el clamp
+   del borde de la pantalla. */
+.bubble::after {
+  content: "";
+  position: absolute;
+  left: var(--arrow-left, 50%);
+  transform: translateX(-50%) rotate(45deg);
+  width: 0.6rem;
+  height: 0.6rem;
+  background: #14161c;
+}
+
+.bottom::after {
+  top: -0.3rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.top::after {
+  bottom: -0.3rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+@keyframes fadeInTooltip {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    animation: none;
+  }
+}

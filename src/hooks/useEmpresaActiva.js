@@ -47,6 +47,8 @@ export const useEmpresaActiva = (skip = false) => {
   const partido = socioWeb?.partido || socioWeb?.Partido || "";
   const codigoPostal = socioWeb?.codpos || socioWeb?.CodPos || "";
   const email = socioWeb?.email || socioWeb?.Email || "";
+  const emailFacturacion =
+    socioWeb?.emailfacturacion || socioWeb?.EmailFacturacion || "";
   const telefono = socioWeb?.telefono || socioWeb?.Telefono || "";
   const telefono2 = socioWeb?.telefono2 || socioWeb?.Telefono2 || "";
   const fechaCierreEjercicio =
@@ -107,6 +109,7 @@ export const useEmpresaActiva = (skip = false) => {
     partido,
     codigoPostal,
     email,
+    emailFacturacion,
     telefono,
     telefono2,
     fechaCierreEjercicio,

@@ -37,3 +37,4 @@ export * from './Skeleton/Skeleton';
 export * from './Paginacion/Paginacion';
 export * from './BuscadorListado/BuscadorListado';
 export * from './InputOtp/InputOtp';
+export * from './InfoTooltip/InfoTooltip';
