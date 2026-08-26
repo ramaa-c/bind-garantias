@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
 import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
 import { SociosLegajo, LegajoUniversalBar } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+import { AvisoBloqueoLegajoModal } from "../../../../components/features/shared/AvisoBloqueoLegajoModal/AvisoBloqueoLegajoModal";
 import { Button, InfoTooltip } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
+import { useBloqueoLegajo, useTieneCertificadoPyme } from "../../../../hooks/useSocios";
 import { sociosService } from "../../../../services/sociosService";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { obtenerMensajeAmigable } from "../../../../utils/mensajesError";
@@ -15,7 +18,38 @@ import styles from "./SociosView.module.css";
 
 export default function SociosView() {
   const queryClient = useQueryClient();
+  const { cadenaSlug } = useParams();
+  const cadenaId = Number(cadenaSlug) || 1;
   const { socioIdActivo, cuitActivo } = useEmpresaActiva();
+
+  // Único caso que NO bloquea la carga (ver useBloqueoLegajo): sin
+  // Certificado PyME vigente se puede completar el legajo igual, solo
+  // queda pendiente la migración a SGR+. Cualquier otra validación inicial
+  // (CDA de PANTALLA_INGRESO_CUIT no aprobado - ej. mora) sí bloquea: se
+  // puede seguir navegando entre Legajo/Documentación, pero no cargar ni
+  // modificar nada (acordado con el equipo el 2026-08-26).
+  const { bloqueado, cargando: cargandoBloqueo } = useBloqueoLegajo(socioIdActivo, cadenaId);
+  const { data: tieneCertificadoPyme, isLoading: cargandoCertificadoPyme } =
+    useTieneCertificadoPyme(socioIdActivo);
+
+  const [avisoBloqueoOpen, setAvisoBloqueoOpen] = useState(false);
+  const avisoMostradoRef = useRef(false);
+  useEffect(() => {
+    if (bloqueado && !cargandoBloqueo && !avisoMostradoRef.current) {
+      avisoMostradoRef.current = true;
+      setAvisoBloqueoOpen(true);
+    }
+  }, [bloqueado, cargandoBloqueo]);
+
+  const motivosBloqueo = [];
+  if (bloqueado) {
+    motivosBloqueo.push(
+      "No superaste las validaciones de aceptación correspondientes. Comunicate con BIND Garantías para que las revisemos.",
+    );
+  }
+  if (!cargandoCertificadoPyme && !tieneCertificadoPyme) {
+    motivosBloqueo.push("Todavía no tenés un Certificado PyME generado.");
+  }
 
   // Mismo criterio que hayDocumentacionRequerida en DocumentacionView.jsx:
   // sin ningún requisito obligatorio en legajo (accionistas/apoderados/
@@ -102,7 +136,7 @@ export default function SociosView() {
               size="sm"
               className={styles.submitBtn}
               onClick={() => setShowConfirmModal(true)}
-              disabled={sincronizando}
+              disabled={sincronizando || bloqueado}
             >
               <FiRefreshCw
                 style={{
@@ -122,7 +156,7 @@ export default function SociosView() {
 
       <LegajoUniversalBar context="legajo" />
 
-      <div className={styles.formLayout}>
+      <div className={`${styles.formLayout} ${bloqueado ? styles.formLayoutBloqueado : ""}`}>
         <SociosLegajo />
       </div>
 
@@ -138,6 +172,12 @@ export default function SociosView() {
         onConfirm={handleRefrescarLufe}
         titulo="Consultar a LUFE"
         mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y AFIP? Esta acción actualizará la información de las personas vinculadas a tu empresa."
+      />
+
+      <AvisoBloqueoLegajoModal
+        isOpen={avisoBloqueoOpen}
+        onClose={() => setAvisoBloqueoOpen(false)}
+        motivos={motivosBloqueo}
       />
     </section>
   );

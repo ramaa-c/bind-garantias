@@ -486,24 +486,26 @@ export function LegajoUniversalBar({
   // cuenta ya no depende del CDA (ver OnboardingGuard.jsx), así que este es
   // el único lugar donde el cliente se entera de que tiene que comunicarse
   // con BIND.
-  const cdaWarningBanner = cdaSocioNoAprobado ? (
+  // Un solo banner para ambos avisos (antes eran dos cajas rojas apiladas,
+  // confuso cuando coincidían los dos a la vez). El de CDA es el único que
+  // además bloquea la carga de datos (ver useBloqueoLegajo, consumido en
+  // SociosView/DocumentacionView) — el de Certificado PyME solo informa que
+  // no se va a poder migrar, nunca bloquea completar el legajo.
+  const avisoBanner = cdaSocioNoAprobado || pymeSinCertificado ? (
     <div className={styles.cdaWarningBanner}>
       <FiAlertTriangle className={styles.cdaWarningIcon} />
-      <span className={styles.cdaWarningText}>
-        No superaste las validaciones de aceptación correspondientes. Comunicate con BIND Garantías para que las revisemos.
-      </span>
-    </div>
-  ) : null;
-
-  // Mismo criterio que cdaWarningBanner: el certificado PyME no bloquea
-  // completar el legajo, pero sin él no se puede migrar a SGR+ — se le
-  // avisa acá para que no quede preguntándose por qué nunca se sincroniza.
-  const pymeWarningBanner = pymeSinCertificado ? (
-    <div className={styles.cdaWarningBanner}>
-      <FiAlertTriangle className={styles.cdaWarningIcon} />
-      <span className={styles.cdaWarningText}>
-        Todavía no tenés un Certificado PyME generado. Podés completar tu legajo igual, pero no vamos a poder migrarlo hasta que lo tengas.
-      </span>
+      <div className={styles.cdaWarningTextGroup}>
+        {cdaSocioNoAprobado && (
+          <span className={styles.cdaWarningText}>
+            No superaste las validaciones de aceptación correspondientes. Comunicate con BIND Garantías para que las revisemos.
+          </span>
+        )}
+        {pymeSinCertificado && (
+          <span className={styles.cdaWarningText}>
+            Todavía no tenés un Certificado PyME generado. Podés completar tu legajo igual, pero no vamos a poder migrarlo hasta que lo tengas.
+          </span>
+        )}
+      </div>
     </div>
   ) : null;
 
@@ -568,8 +570,7 @@ export function LegajoUniversalBar({
     return (
       <>
         {migracionExitosaModal}
-        {cdaWarningBanner}
-        {pymeWarningBanner}
+        {avisoBanner}
       </>
     );
   }
@@ -616,8 +617,7 @@ export function LegajoUniversalBar({
   return (
     <>
       {migracionExitosaModal}
-      {cdaWarningBanner}
-      {pymeWarningBanner}
+      {avisoBanner}
       <EstadoMigracionModal
         isOpen={showEstadoMigracion}
         onClose={() => setShowEstadoMigracion(false)}

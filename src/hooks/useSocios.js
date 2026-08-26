@@ -274,6 +274,20 @@ export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
   };
 };
 
+// Determina si hay que bloquear la carga de legajo/documentación: el socio
+// no pasó el CDA de PANTALLA_INGRESO_CUIT (ej. mora u otra validación de
+// aceptación inicial). Distinto del Certificado PyME, que NUNCA bloquea -
+// solo impide la migración a SGR+ (ver LegajoUniversalBar). Mientras no se
+// sepa el estado (isPending) no se bloquea: mejor dejar completar de más
+// por unos segundos que trabar la pantalla por un falso positivo de carga.
+export const useBloqueoLegajo = (socioId, cadenaValorId) => {
+  const { data: estadoCdaSocio, isPending } = useEstadoCdaSocio(socioId, cadenaValorId);
+  return {
+    bloqueado: !isPending && !!estadoCdaSocio && estadoCdaSocio !== "aprobado",
+    cargando: isPending,
+  };
+};
+
 // GET api/Socio/Actividad/{cuit} - Log de actividad del socio. Se pide
 // `habilitado` aparte de `!!cuit` para que la pantalla de listado pueda
 // abrir esto como modal on-demand (recién al abrirlo) en vez de traer el

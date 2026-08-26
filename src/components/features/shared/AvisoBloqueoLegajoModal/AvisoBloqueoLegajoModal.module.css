@@ -1,0 +1,74 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1rem 0.5rem 0.25rem;
+}
+
+.iconWrap {
+  position: relative;
+  width: 5.5rem;
+  height: 5.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.badge {
+  position: relative;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2a0a0a;
+  background: radial-gradient(circle at 30% 25%, #ff8080, #ea4a5a);
+  box-shadow:
+    0 0 0 6px rgba(234, 74, 90, 0.14),
+    0 8px 24px rgba(234, 74, 90, 0.35);
+}
+
+.title {
+  color: var(--white, #fffefe);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.6rem;
+  line-height: 1.3;
+}
+
+.mensaje {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: #9aa1af;
+  margin: 0 0 0.875rem;
+  max-width: 30rem;
+}
+
+.listaMotivos {
+  width: 100%;
+  text-align: left;
+  list-style: none;
+  margin: 0 0 1.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.listaMotivos li {
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: #ea9aa3;
+  background: rgba(234, 74, 90, 0.08);
+  border: 1px solid rgba(234, 74, 90, 0.2);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.btnAceptar {
+  width: 100%;
+}

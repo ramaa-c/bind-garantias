@@ -15,6 +15,7 @@ import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
+import { useBloqueoLegajo } from "../../../../hooks/useSocios";
 import { sociosService } from "../../../../services/sociosService";
 import { obtenerMensajeAmigable } from "../../../../utils/mensajesError";
 import { Button, InfoTooltip } from "../../../../components/ui";
@@ -66,6 +67,11 @@ export default function DocumentacionView() {
   const hayDocumentacionRequerida = ESTRUCTURA_LEGAJO.some(
     (item) => requisitos?.documentos?.[item.key] !== 0,
   );
+
+  // Ver useBloqueoLegajo: el Certificado PyME nunca bloquea, cualquier otra
+  // validación inicial (CDA de PANTALLA_INGRESO_CUIT no aprobado) sí - se
+  // puede seguir navegando, pero no cargar/modificar documentos.
+  const { bloqueado } = useBloqueoLegajo(socioIdActivo, cadenaId);
 
   // Mismo botón/lógica que "Actualizar datos vía LUFE" en SociosView.jsx,
   // pero acotado a documentos: acá no corresponde re-consultar autoridades
@@ -147,7 +153,7 @@ export default function DocumentacionView() {
               size="sm"
               className={styles.submitBtn}
               onClick={() => setShowConfirmModal(true)}
-              disabled={sincronizando}
+              disabled={sincronizando || bloqueado}
             >
               <FiRefreshCw
                 style={{
@@ -170,7 +176,7 @@ export default function DocumentacionView() {
       <FormProvider {...methods}>
         <form
           id="legajo-form"
-          className={styles.formLayout}
+          className={`${styles.formLayout} ${bloqueado ? styles.formLayoutBloqueado : ""}`}
           noValidate
           onSubmit={(e) => e.preventDefault()}
         >
