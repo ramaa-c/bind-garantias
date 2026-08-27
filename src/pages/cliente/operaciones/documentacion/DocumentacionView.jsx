@@ -71,7 +71,7 @@ export default function DocumentacionView() {
   // Ver useBloqueoLegajo: el Certificado PyME nunca bloquea, cualquier otra
   // validación inicial (CDA de PANTALLA_INGRESO_CUIT no aprobado) sí - se
   // puede seguir navegando, pero no cargar/modificar documentos.
-  const { bloqueado } = useBloqueoLegajo(socioIdActivo, cadenaId);
+  const { bloqueado } = useBloqueoLegajo(socioIdActivo, cadenaId, cuitActivo);
 
   // Mismo botón/lógica que "Actualizar datos vía LUFE" en SociosView.jsx,
   // pero acotado a documentos: acá no corresponde re-consultar autoridades

@@ -11,6 +11,7 @@ import { esSocioVacio } from "../utils/socioUtils";
 import { calcularEstadoDesdeHistorial } from "../utils/executeCda";
 import { esCdaActivo } from "../utils/cdaUtils";
 import { useObtenerGrupoCdaConCdas } from "./useCadenaValor";
+import { useEstadoValidarSocio } from "./useSgrPlusCore";
 
 export const useObtenerSocios = (params = {}) => {
   return useQuery({
@@ -274,17 +275,30 @@ export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
   };
 };
 
-// Determina si hay que bloquear la carga de legajo/documentación: el socio
-// no pasó el CDA de PANTALLA_INGRESO_CUIT (ej. mora u otra validación de
-// aceptación inicial). Distinto del Certificado PyME, que NUNCA bloquea -
-// solo impide la migración a SGR+ (ver LegajoUniversalBar). Mientras no se
-// sepa el estado (isPending) no se bloquea: mejor dejar completar de más
-// por unos segundos que trabar la pantalla por un falso positivo de carga.
-export const useBloqueoLegajo = (socioId, cadenaValorId) => {
-  const { data: estadoCdaSocio, isPending } = useEstadoCdaSocio(socioId, cadenaValorId);
+// Determina si hay que bloquear la carga de legajo/documentación: o bien el
+// socio no pasó el CDA de PANTALLA_INGRESO_CUIT, o bien lo rechazó
+// SGRPlusCore/ValidarSocio (mora, Protector/Postulante a Protector, etc. -
+// ver Paso1Cuit.jsx, ejecutarValidarSocioYSiguientes). Distinto del
+// Certificado PyME, que NUNCA bloquea - solo impide la migración a SGR+
+// (ver LegajoUniversalBar). Mientras no se sepa el estado (isPending) no se
+// bloquea: mejor dejar completar de más por unos segundos que trabar la
+// pantalla por un falso positivo de carga.
+export const useBloqueoLegajo = (socioId, cadenaValorId, cuit) => {
+  const { data: estadoCdaSocio, isPending: pendingCda } = useEstadoCdaSocio(socioId, cadenaValorId);
+  const { data: resultValidarSocio, isPending: pendingValidarSocio } =
+    useEstadoValidarSocio(cuit, cadenaValorId);
+
+  const cdaNoAprobado = !!estadoCdaSocio && estadoCdaSocio !== "aprobado";
+  const rechazadoPorSgrCore = !!cuit && resultValidarSocio?.data?.success === false;
+  const cargando = pendingCda || (!!cuit && pendingValidarSocio);
+
   return {
-    bloqueado: !isPending && !!estadoCdaSocio && estadoCdaSocio !== "aprobado",
-    cargando: isPending,
+    bloqueado: !cargando && (cdaNoAprobado || rechazadoPorSgrCore),
+    cargando,
+    motivoSgrCore: rechazadoPorSgrCore
+      ? resultValidarSocio?.data?.message ||
+        "No superaste las validaciones de aceptación correspondientes."
+      : null,
   };
 };
 

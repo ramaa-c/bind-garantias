@@ -7,6 +7,7 @@ import { useChannel } from "../../../../context/ChannelContext";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useEstaMigradoEnSgrPlus, useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme } from "../../../../hooks/useSocios";
+import { useEstadoValidarSocio } from "../../../../hooks/useSgrPlusCore";
 import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
@@ -93,6 +94,22 @@ export function LegajoUniversalBar({
   const cdaSocioAprobado = estadoCdaSocio === "aprobado";
   const cdaSocioNoAprobado =
     !adminMode && !loadingEstadoCdaSocio && !!estadoCdaSocio && !cdaSocioAprobado;
+
+  // Rechazo de SGRPlusCore/ValidarSocio (mora, Protector/Postulante a
+  // Protector, etc. - ver Paso1Cuit.jsx). Distinto de cdaSocioAprobado: no
+  // interviene en el gate de auto-migración de abajo (esa sigue dependiendo
+  // solo del CDA), es puramente informativo/bloqueante acá — mismo criterio
+  // que useBloqueoLegajo (SociosView/DocumentacionView), consultado aparte
+  // porque este chequeo no queda persistido en ningún historial: hay que
+  // volver a preguntarle al endpoint.
+  const { data: resultValidarSocio, isPending: loadingValidarSocio } =
+    useEstadoValidarSocio(socioWeb?.cuit, cadenaId);
+  const sgrCoreNoAprobado =
+    !adminMode && !!socioWeb?.cuit && !loadingValidarSocio && resultValidarSocio?.data?.success === false;
+  const sgrCoreMensaje = sgrCoreNoAprobado
+    ? resultValidarSocio?.data?.message ||
+      "No superaste las validaciones de aceptación correspondientes."
+    : null;
 
   const [isMigrating, setIsMigrating] = useState(false);
   const [lastAttemptedFingerprint, setLastAttemptedFingerprint] = useState("");
@@ -486,18 +503,24 @@ export function LegajoUniversalBar({
   // cuenta ya no depende del CDA (ver OnboardingGuard.jsx), así que este es
   // el único lugar donde el cliente se entera de que tiene que comunicarse
   // con BIND.
-  // Un solo banner para ambos avisos (antes eran dos cajas rojas apiladas,
-  // confuso cuando coincidían los dos a la vez). El de CDA es el único que
-  // además bloquea la carga de datos (ver useBloqueoLegajo, consumido en
-  // SociosView/DocumentacionView) — el de Certificado PyME solo informa que
-  // no se va a poder migrar, nunca bloquea completar el legajo.
-  const avisoBanner = cdaSocioNoAprobado || pymeSinCertificado ? (
+  // Un solo banner para todos los avisos (antes eran dos cajas rojas
+  // apiladas, confuso cuando coincidían dos a la vez). CDA y SGRPlusCore
+  // (ValidarSocio) son los únicos que además bloquean la carga de datos
+  // (ver useBloqueoLegajo, consumido en SociosView/DocumentacionView) — el
+  // de Certificado PyME solo informa que no se va a poder migrar, nunca
+  // bloquea completar el legajo. Si coinciden CDA y SGRPlusCore, se prioriza
+  // el mensaje de SGRPlusCore (más específico) para no repetir la misma idea
+  // dos veces.
+  const avisoBanner = cdaSocioNoAprobado || sgrCoreNoAprobado || pymeSinCertificado ? (
     <div className={styles.cdaWarningBanner}>
       <FiAlertTriangle className={styles.cdaWarningIcon} />
       <div className={styles.cdaWarningTextGroup}>
-        {cdaSocioNoAprobado && (
+        {(cdaSocioNoAprobado || sgrCoreNoAprobado) && (
           <span className={styles.cdaWarningText}>
-            No superaste las validaciones de aceptación correspondientes. Comunicate con BIND Garantías para que las revisemos.
+            {sgrCoreNoAprobado
+              ? sgrCoreMensaje
+              : "No superaste las validaciones de aceptación correspondientes."}{" "}
+            Comunicate con BIND Garantías para que las revisemos.
           </span>
         )}
         {pymeSinCertificado && (

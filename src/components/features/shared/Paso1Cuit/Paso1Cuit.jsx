@@ -80,6 +80,17 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
   // crearSocio/vincularSocioUsuario: "validarSocio" o "cda".
   const puedeAvanzarRef = useRef(false);
   const ultimoPasoFallidoRef = useRef(null);
+  // Un rechazo de Validar Socio (mora, Protector/Postulante a Protector,
+  // etc.) YA NO corta las validaciones siguientes (ver
+  // ejecutarValidarSocioYSiguientes) - Certificado PyME y CDA corren
+  // siempre igual, y el usuario avanza siempre a Paso 2 (el legajo va a
+  // quedar bloqueado allá, ver useBloqueoLegajo/AvisoBloqueoLegajoModal en
+  // SociosView.jsx). Esta ref recuerda ese rechazo across un posible
+  // reintento manual acotado solo al CDA (pasoQueFallo === "cda"), para que
+  // ejecutarCdaYFinalizar no apague el aviso ni avance solo si ese reintento
+  // puntual termina bien pero Validar Socio había rechazado en esta misma
+  // vuelta.
+  const sgrCoreRechazadoRef = useRef(false);
   // Datos de la empresa (Nosis/AFIP/LUFE) obtenidos al mostrar el cartel de
   // confirmación de vinculación (ver handleValidar) — se guardan acá en
   // "limbo" para poder precargarlos en continuarValidacionCompleta sin
@@ -244,9 +255,17 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
     // bloquea el acceso, solo queda registrado (ver onClose más abajo).
     puedeAvanzarRef.current = true;
 
+    // OJO: a propósito NO resetea hasError acá. Esta función también corre
+    // encadenada después de un rechazo de Validar Socio (ver
+    // ejecutarValidarSocioYSiguientes, que ya no corta ahí) - resetear
+    // hasError a false apagaría el aviso de ESE rechazo mientras el CDA
+    // todavía está cargando, aunque el legajo vaya a seguir bloqueado igual
+    // por SGRPlusCore. Si en cambio esto corre como reintento manual desde
+    // el paso "cda" (pasoQueFallo === "cda"), hasError ya viene en true por
+    // el intento anterior - se apaga solo si este intento nuevo termina bien
+    // (ver más abajo).
     setProcesoModal((prev) => ({
       ...prev,
-      hasError: false,
       isSystemError: false,
       pasos: prev.pasos.map((p) =>
         p.id === "cda" ? { ...p, estado: "cargando" } : p,
@@ -292,13 +311,22 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
 
     ultimoPasoFallidoRef.current = null;
 
-    // Todo exitoso! Marcamos CDA como completado
+    // Todo exitoso! Marcamos CDA como completado. Si Validar Socio había
+    // rechazado en esta misma vuelta, el aviso tiene que seguir en pie: no
+    // se apaga hasError ni se avanza solo, el usuario cierra con
+    // "Continuar" (ver onClose de ProcesamientoModal más abajo, que ya sabe
+    // avanzar porque puedeAvanzarRef quedó en true).
+    const sigueBloqueadoPorSgrCore = sgrCoreRechazadoRef.current;
+
     setProcesoModal((prev) => ({
       ...prev,
+      hasError: sigueBloqueadoPorSgrCore,
       pasos: prev.pasos.map((p) =>
         p.id === "cda" ? { ...p, estado: "completado" } : p,
       ),
     }));
+
+    if (sigueBloqueadoPorSgrCore) return;
 
     setTimeout(() => {
       setProcesoModal({
@@ -312,55 +340,53 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
     }, 800);
   };
 
-  // ── Validar Socio (SGRPlus Core - mora, etc.) + placeholder de Certificado
-  // PyME + CDA. Corre DESPUÉS de crear y vincular el socio (ver
-  // continuarValidacionCompleta): si "Validar Socio" rechaza, queda todo
-  // bloqueado con el socio ya guardado (no hay rollback, es el
-  // comportamiento pedido) - el usuario no puede reintentar con otro CUIT,
-  // solo reintentar esta misma verificación u ver el rechazo.
+  // ── Validar Socio (SGRPlus Core - mora, Protector/Postulante a Protector,
+  // etc.) + Certificado PyME + CDA. Corre DESPUÉS de crear y vincular el
+  // socio (ver continuarValidacionCompleta). Un rechazo de Validar Socio ya
+  // NO corta acá: Certificado PyME y CDA corren siempre igual, y el cierre
+  // del modal (vía "Continuar") siempre avanza a Paso 2 — el legajo queda
+  // bloqueado más adelante en Legajo/Documentación (ver useBloqueoLegajo),
+  // no congelado en esta pantalla (antes quedaba "frizado" acá hasta
+  // recargar la página, reportado por BIND el 2026-08-27).
   const ejecutarValidarSocioYSiguientes = async () => {
     const cuit = cuitEnProcesoRef.current;
 
     // ── VALIDACIÓN SGRPlus Core (mora, etc.)
+    let sgrCoreRechazado = false;
+    let sgrCoreMensaje = "";
     try {
       const resultSgrCore = await validarSocioCore({
         cuit,
         cadenaValorId: cadenaValorIdParam,
       });
       if (resultSgrCore?.data && resultSgrCore.data.success === false) {
-        ultimoPasoFallidoRef.current = "validarSocio";
-        setProcesoModal((prev) => ({
-          ...prev,
-          hasError: true,
-          isSystemError: false,
-          pasos: prev.pasos.map((p) =>
-            p.id === "sgrcore"
-              ? {
-                  ...p,
-                  estado: "error",
-                  errores: [
-                    resultSgrCore.data.message ||
-                      "El socio no cumple con los requisitos del sistema.",
-                  ],
-                  error: "Rechazado por SGRPlus",
-                }
-              : p,
-          ),
-        }));
-        return;
+        sgrCoreRechazado = true;
+        sgrCoreMensaje =
+          resultSgrCore.data.message ||
+          "El socio no cumple con los requisitos del sistema.";
       }
     } catch (sgrError) {
       if (sgrError?.response?.status !== 404) {
         console.warn("Error consultando sgrcore ValidarSocio:", sgrError);
       }
     }
+    sgrCoreRechazadoRef.current = sgrCoreRechazado;
 
     ultimoPasoFallidoRef.current = null;
     setProcesoModal((prev) => ({
       ...prev,
+      hasError: sgrCoreRechazado,
+      isSystemError: false,
       pasos: prev.pasos.map((p) =>
         p.id === "sgrcore"
-          ? { ...p, estado: "completado" }
+          ? sgrCoreRechazado
+            ? {
+                ...p,
+                estado: "error",
+                errores: [sgrCoreMensaje],
+                error: "Rechazado por SGRPlus",
+              }
+            : { ...p, estado: "completado" }
           : p.id === "pyme"
             ? { ...p, estado: "cargando" }
             : p,

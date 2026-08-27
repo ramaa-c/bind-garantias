@@ -28,7 +28,11 @@ export default function SociosView() {
   // (CDA de PANTALLA_INGRESO_CUIT no aprobado - ej. mora) sí bloquea: se
   // puede seguir navegando entre Legajo/Documentación, pero no cargar ni
   // modificar nada (acordado con el equipo el 2026-08-26).
-  const { bloqueado, cargando: cargandoBloqueo } = useBloqueoLegajo(socioIdActivo, cadenaId);
+  const { bloqueado, cargando: cargandoBloqueo, motivoSgrCore } = useBloqueoLegajo(
+    socioIdActivo,
+    cadenaId,
+    cuitActivo,
+  );
   const { data: tieneCertificadoPyme, isLoading: cargandoCertificadoPyme } =
     useTieneCertificadoPyme(socioIdActivo);
 
@@ -44,7 +48,8 @@ export default function SociosView() {
   const motivosBloqueo = [];
   if (bloqueado) {
     motivosBloqueo.push(
-      "No superaste las validaciones de aceptación correspondientes. Comunicate con BIND Garantías para que las revisemos.",
+      motivoSgrCore ||
+        "No superaste las validaciones de aceptación correspondientes. Comunicate con BIND Garantías para que las revisemos.",
     );
   }
   if (!cargandoCertificadoPyme && !tieneCertificadoPyme) {
