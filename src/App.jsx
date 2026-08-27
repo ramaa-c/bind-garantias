@@ -69,9 +69,6 @@ const SeleccionarEmpresa = lazy(
   () =>
     import("./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa"),
 );
-const EstadoSolicitud = lazy(
-  () => import("./pages/cliente/onboarding/EstadoSolicitud/EstadoSolicitud"),
-);
 const Dashboard = lazy(() => import("./pages/admin/dashboard/Dashboard"));
 const Empresas = lazy(() => import("./pages/admin/empresas/Empresas"));
 const EmpresaDetalle = lazy(
@@ -236,14 +233,6 @@ function App() {
                     <DashboardLayout hideHelpButton>
                       <SeleccionarEmpresa />
                     </DashboardLayout>
-                  </OnboardingGuard>
-                }
-              />
-              <Route
-                path="estado-solicitud"
-                element={
-                  <OnboardingGuard>
-                    <EstadoSolicitud />
                   </OnboardingGuard>
                 }
               />

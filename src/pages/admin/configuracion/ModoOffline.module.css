@@ -5,7 +5,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.15rem;
   width: 100%;
 }
 
@@ -15,7 +15,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding-bottom: 0.85rem;
+  padding-bottom: 0.65rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   position: relative;
 }
@@ -230,12 +230,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1.25rem;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.875rem;
-  padding: 1rem 1.5rem;
+  padding: 0.8rem 1.5rem;
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(12px);
@@ -287,8 +287,8 @@
 }
 
 .statusIconWrap {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 0.7rem;
   display: flex;
   align-items: center;
@@ -425,7 +425,7 @@
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.25rem;
+  gap: 1rem;
   align-items: start;
 }
 
@@ -440,10 +440,10 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0.875rem;
-  padding: 1.5rem;
+  padding: 1.15rem 1.25rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.6rem;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -464,8 +464,8 @@
 }
 
 .cardIconWrap {
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 0.625rem;
   display: flex;
   align-items: center;
@@ -501,17 +501,17 @@
 .warnCallout {
   display: flex;
   align-items: flex-start;
-  gap: 0.65rem;
+  gap: 0.55rem;
   background: linear-gradient(135deg, rgba(245, 244, 0, 0.07) 0%, rgba(245, 244, 0, 0.015) 100%);
   border: 1px solid rgba(245, 244, 0, 0.2);
-  border-radius: 0.7rem;
-  padding: 0.7rem 0.85rem;
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.7rem;
 }
 
 .warnIconWrap {
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.45rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -522,8 +522,8 @@
 
 .warnText {
   margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.45;
+  font-size: 0.75rem;
+  line-height: 1.4;
   color: rgba(255, 255, 255, 0.6);
 }
 
@@ -537,7 +537,7 @@
 .integracionesList {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.45rem;
 }
 
 .integracionRow {
@@ -548,7 +548,7 @@
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.625rem;
-  padding: 0.75rem 1rem;
+  padding: 0.55rem 0.9rem;
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
@@ -587,7 +587,7 @@
 .historialList {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.4rem;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -602,11 +602,11 @@
 .historialItem {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.65rem;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.625rem;
-  padding: 0.6rem 0.85rem;
+  padding: 0.5rem 0.75rem;
 }
 
 .historialInfo {

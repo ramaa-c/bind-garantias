@@ -42,10 +42,10 @@ export const InputSimple = forwardRef(({
     let statusClass = styles.statusDefault;
     if (hasError) {
       statusClass = styles.statusError;
-    } else if (isFocused) {
-      statusClass = styles.statusFocus;
     } else if (esValido) {
       statusClass = styles.statusSuccess;
+    } else if (isFocused) {
+      statusClass = styles.statusFocus;
     }
 
     const containerClasses = [

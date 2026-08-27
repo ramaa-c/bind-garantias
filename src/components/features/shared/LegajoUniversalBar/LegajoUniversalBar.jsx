@@ -575,15 +575,31 @@ export function LegajoUniversalBar({
     );
   }
 
+  // "solicitudes" (Solicitudes.jsx, sin secciones propias que navegar) y el
+  // caso legado sin context (nadie lo usa hoy, pero se preserva el
+  // comportamiento) comparten el mismo tratamiento genérico: ninguno de los
+  // dos tiene una pestaña propia con "lo que falta" para desglosar.
+  const esVistaGenerica = context !== "legajo" && context !== "documentacion";
+
   const isContextInvalid =
     (context === "documentacion" && faltanDocumentos) ||
     (context === "legajo" && faltanLegajo) ||
-    (!context && !isValid);
+    (esVistaGenerica && !isValid);
 
   const porcentaje = totalRequisitos > 0 ? Math.round((requisitosCompletados / totalRequisitos) * 100) : 100;
 
   const getMissingActionMessage = () => {
     if (isValid) return "Todos los requisitos han sido completados correctamente.";
+
+    // En Solicitudes no tiene sentido explicar el detalle línea por línea
+    // (esta pantalla no navega a ninguna sección propia de legajo/
+    // documentación, ver el botón "Ir" más abajo) — alcanza con dejar claro
+    // que "Nueva Operación" está bloqueada hasta el 100%, sin mencionar
+    // migración/sincronización (eso es un detalle interno, ver el resto de
+    // este archivo). Acordado con el equipo el 2026-08-27.
+    if (context === "solicitudes") {
+      return "Bloqueado hasta completar el 100% de tu legajo y documentación.";
+    }
 
     if (context === "documentacion" && !faltanDocumentos && faltanLegajo) {
       return "¡Documentos listos! Te falta completar información en la pestaña Legajo.";
@@ -662,7 +678,7 @@ export function LegajoUniversalBar({
 
         <div className={styles.cta}>
           {!isValid ? (
-            context ? (
+            !esVistaGenerica ? (
               <Button
                 type="button"
                 variant="outline"

@@ -8,7 +8,7 @@ export const AltaDatosEmpresaSchema = z.object({
     .regex(/^\d+$/, "El CUIT solo debe contener números"),
   razonSocial: z.string().min(1, "La Razón Social es requerida"),
   direccion: z.string().min(5, "La dirección debe ser válida"),
-  calle: z.string().min(3, "La calle debe tener al menos 3 caracteres"),
+  calle: z.string().trim().min(1, "La calle es requerida"),
   sinNumero: z.boolean().optional(),
   numero: z.coerce.number().optional(),
   piso: z.string().optional().or(z.literal("")),

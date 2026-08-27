@@ -33,9 +33,6 @@ export const OnboardingGuard = ({ children }) => {
   );
   const isSolicitudesPage = location.pathname.endsWith("/solicitudes");
   const isInicioPage = location.pathname.endsWith("/inicio");
-  const isEstadoSolicitudPage = location.pathname.endsWith(
-    "/estado-solicitud",
-  );
 
   const isSolicitudesEnabled = useAuthStore(
     (state) => state.isSolicitudesEnabled,
@@ -289,8 +286,7 @@ export const OnboardingGuard = ({ children }) => {
       (isTerminosPage && !debeAceptarTerminos) ||
       isAltaDatosPage ||
       isSeleccionarEmpresaPage ||
-      isInicioPage ||
-      isEstadoSolicitudPage
+      isInicioPage
     ) {
       return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
     }

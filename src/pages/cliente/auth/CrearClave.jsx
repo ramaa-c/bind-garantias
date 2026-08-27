@@ -27,7 +27,7 @@ import {
   useReactivarUsuario,
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/ChannelContext";
-import styles from "./Login.module.css";
+import styles from "./CrearClave.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 
 const passwordSchema = z
@@ -184,6 +184,7 @@ const CrearClave = () => {
     control,
     handleSubmit,
     watch,
+    trigger,
     formState: { isValid, errors },
     setError,
   } = useForm({
@@ -193,6 +194,25 @@ const CrearClave = () => {
 
   const passwordValue = watch("password") || "";
   const confirmPasswordValue = watch("confirmPassword") || "";
+
+  // React Hook Form, con resolver, solo actualiza el estado de error del
+  // campo que efectivamente cambió — aunque zod ya revalidó el objeto
+  // completo y sabe que ahora coinciden (o no), RHF no propaga esa
+  // corrección a "confirmPassword" solo porque el que cambió fue
+  // "password". Sin este trigger manual, si "confirmPassword" ya tenía el
+  // error "no coinciden" (path del .refine() del schema) y el usuario
+  // corrige "password" — no "confirmPassword" — para que vuelvan a
+  // coincidir, el mensaje queda pegado para siempre; incluso vaciando los
+  // dos campos de nuevo. Se dispara solo si "confirmPassword" ya tiene
+  // valor o ya tiene un error viejo (no ambos en false): si no, tipear la
+  // primera letra de "password" ya marcaría "no coinciden" contra un
+  // "confirmPassword" que el usuario todavía ni tocó.
+  useEffect(() => {
+    if (confirmPasswordValue || errors.confirmPassword) {
+      trigger("confirmPassword");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passwordValue, trigger]);
 
   const onSubmit = (formData) => {
     const payload = {
@@ -230,8 +250,13 @@ const CrearClave = () => {
   const mostrarErrorFaltaUsuario =
     !usuario && tokenExpirado && !verificandoToken;
 
+  // String(estado) !== "1", no !== 1: el backend puede devolver "estado" como
+  // string ("1") en vez de number (ver la misma comparación, ya defensiva,
+  // en usuarioService.js/esCuentaPendienteActivacion). Con el !== 1 estricto
+  // anterior, una cuenta activa con estado:"1" caía siempre en la rama de
+  // "pendiente de activación" acá — nunca en la de "restablecer contraseña".
   const cuentaPendienteActivacion =
-    !tokenInvalidoDeOrigen && !!usuario && usuario.estado !== 1;
+    !tokenInvalidoDeOrigen && !!usuario && String(usuario.estado) !== "1";
 
   useEffect(() => {
     if (!cuentaPendienteActivacion) return;
@@ -308,13 +333,27 @@ const CrearClave = () => {
                 >
                   <FiCheckCircle className={styles.calloutIcon} />
                   <div className={styles.calloutContent}>
-                    {usuario.estado === 1 ? (
+                    {/* usuario.estado === 1 ya significa "cuenta activa"
+                        (ver esCuentaPendienteActivacion en usuarioService.js
+                        y cuentaPendienteActivacion acá abajo, que dependen
+                        de esta misma comparación) — este link es el único
+                        lugar del sistema que activa cuentas nuevas, así que
+                        si la cuenta YA está activa es porque estamos acá por
+                        "Recuperar clave", no por una activación. Antes el
+                        texto de las dos ramas estaba invertido: le decía
+                        "¡Email verificado con éxito! ... opcional" a una
+                        cuenta sin activar, mientras más abajo el cartel de
+                        "Activación pendiente" advertía lo contrario en el
+                        mismo render. */}
+                    {!cuentaPendienteActivacion ? (
                       <>
                         <h2 className={styles.calloutTitle}>
-                          Creación de nueva contraseña
+                          Restablecé tu contraseña
                         </h2>
                         <p>
-                          Ingresá tu nueva contraseña para acceder a la plataforma.
+                          Ingresá tu nueva contraseña a continuación. Recordá
+                          que siempre podés seguir ingresando con un código a
+                          tu correo si lo preferís.
                         </p>
                       </>
                     ) : (
@@ -323,10 +362,10 @@ const CrearClave = () => {
                           ¡Email verificado con éxito!
                         </h2>
                         <p>
-                          Tu cuenta ya está activa. Crear una contraseña es{" "}
-                          <strong>opcional</strong>. Podés configurarla ahora o
-                          saltar este paso para ingresar siempre con un código a tu
-                          correo.
+                          Para activar tu cuenta, creá tu contraseña o elegí
+                          ingresar con un código a tu correo. Si creás una
+                          contraseña, después también vas a poder seguir
+                          usando el código de acceso cuando prefieras.
                         </p>
                       </>
                     )}
@@ -462,14 +501,25 @@ const CrearClave = () => {
                         type="password"
                         esValido={
                           !!confirmPasswordValue &&
-                          passwordValue === confirmPasswordValue
+                          passwordValue === confirmPasswordValue &&
+                          !errors.confirmPassword
                         }
                         error={errors.confirmPassword}
                         disabled={guardandoClave}
                       />
 
+                      {/* !errors.confirmPassword es necesario acá, no solo
+                          decorativo: al editar el PRIMER campo (password) en
+                          vez de este, `watch()` ya refleja el match en este
+                          mismo render, pero errors.confirmPassword (lo
+                          resuelve el .refine() del schema vía zodResolver,
+                          async) todavía no se actualizó - sin este guard,
+                          el mensaje de éxito aparecía superpuesto arriba del
+                          error rojo todavía vigente en vez de esperar a que
+                          se termine de limpiar. */}
                       {confirmPasswordValue.length > 0 &&
-                        passwordValue === confirmPasswordValue && (
+                        passwordValue === confirmPasswordValue &&
+                        !errors.confirmPassword && (
                           <span className={styles.successMsgMatch}>
                             Las contraseñas coinciden
                           </span>
@@ -497,7 +547,7 @@ const CrearClave = () => {
                       >
                         {guardandoClave ? "PROCESANDO..." : "GUARDAR"}
                       </Button>
-                      {usuario.estado !== 1 && (
+                      {cuentaPendienteActivacion && (
                         <>
                           <div className={styles.divider}>
                             <span>o</span>
@@ -524,20 +574,6 @@ const CrearClave = () => {
                 )}
               </div>
 
-              {cuentaPendienteActivacion && (
-                <div className={styles.warningCallout}>
-                  <FiAlertTriangle className={styles.warningCalloutIcon} />
-                  <div className={styles.calloutContent}>
-                    <h2 className={styles.warningCalloutTitle}>
-                      Activación pendiente
-                    </h2>
-                    <p>
-                      Si salís sin crear una contraseña o usar "Omitir e
-                      ingresar con código", vas a necesitar un nuevo enlace.
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           </section>
 
@@ -557,6 +593,35 @@ const CrearClave = () => {
                 <br />
                 <em className={styles.brandEm}>seguro.</em>
               </h2>
+
+              {/* Reemplaza al viejo warningCallout que vivía pegado abajo
+                  del todo en la columna izquierda (con el formulario largo,
+                  no entraba en una pantalla de full HD sin scroll). Acá
+                  siempre está a la vista, sin pelear espacio con el
+                  formulario, y cambia de tono según por qué se llegó a esta
+                  pantalla en vez de ser un mensaje genérico fijo. */}
+              {!tokenInvalidoDeOrigen && usuario && (
+                <div
+                  className={styles.brandStatusCard}
+                  data-tone={cuentaPendienteActivacion ? "warning" : "neutral"}
+                >
+                  <div className={styles.brandStatusIconWrap}>
+                    {cuentaPendienteActivacion ? <FiAlertTriangle /> : <FiLock />}
+                  </div>
+                  <div>
+                    <h3 className={styles.brandStatusTitle}>
+                      {cuentaPendienteActivacion
+                        ? "Activación pendiente"
+                        : "Actualizando tu acceso"}
+                    </h3>
+                    <p className={styles.brandStatusText}>
+                      {cuentaPendienteActivacion
+                        ? 'Si salís sin crear una contraseña o usar "Omitir e ingresar con código", vas a necesitar un nuevo enlace.'
+                        : "Tu cuenta sigue activa mientras hacés este cambio. Podés seguir usando tus accesos actuales hasta confirmar la nueva contraseña."}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </div>

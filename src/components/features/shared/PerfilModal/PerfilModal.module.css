@@ -1,0 +1,217 @@
+.modalBody {
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.identityCard {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1.25rem;
+  background: rgba(245, 244, 0, 0.04);
+  border: 1px solid rgba(245, 244, 0, 0.14);
+  border-radius: 0.9rem;
+}
+
+.identityAvatarSize {
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: 1rem;
+  border-radius: 0.9rem;
+}
+
+.identityAvatarUser {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(245, 244, 0, 0.1);
+  color: var(--yellow, #f5f400);
+  border: 1px solid rgba(245, 244, 0, 0.25);
+  font-size: 1.25rem;
+}
+
+.identityInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.identityName {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.identityMeta {
+  margin: 0.15rem 0 0 0;
+  color: #8b949e;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── TABS ─────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.3rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.85rem;
+}
+
+.tabBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.65rem;
+  color: #8b949e;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.tabBtn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tabBtnActive {
+  background: rgba(245, 244, 0, 0.1);
+  color: var(--yellow, #f5f400);
+}
+
+.tabBtnActive:hover {
+  color: var(--yellow, #f5f400);
+  background: rgba(245, 244, 0, 0.14);
+}
+
+/* ── CUENTA (usuario/contraseña) ─────────────────────────────────────── */
+
+.columnsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid rgba(245, 244, 0, 0.12);
+  border-radius: 0.85rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 1.25rem;
+}
+
+.sectionGroup + .sectionGroup {
+  border-left: 1px solid rgba(245, 244, 0, 0.12);
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.sectionTitle svg {
+  color: var(--yellow, #f5f400);
+  font-size: 0.95rem;
+}
+
+.sectionHint {
+  margin: -0.35rem 0 0.15rem 0;
+  color: #8b949e;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  min-height: 2.1rem;
+}
+
+.sectionActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 0.65rem;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.skeletonStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.avisoNoDisponible {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  color: #8b949e;
+}
+
+.avisoNoDisponible svg {
+  font-size: 2rem;
+  color: #ea4a5a;
+}
+
+.avisoNoDisponible p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.modalFoot {
+  margin: 1.25rem -1.5rem -1.5rem -1.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(245, 244, 0, 0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 720px) {
+  .tabBtn span {
+    display: none;
+  }
+
+  .columnsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionGroup + .sectionGroup {
+    border-left: none;
+    border-top: 1px solid rgba(245, 244, 0, 0.12);
+  }
+}
