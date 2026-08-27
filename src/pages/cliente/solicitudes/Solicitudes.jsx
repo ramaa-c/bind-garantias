@@ -16,7 +16,6 @@ import {
   TarjetaSolicitud,
   DetalleSolicitudModal,
   LegajoUniversalBar,
-  BloqueoLegajoModal
 } from "../../../components/features";
 import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 import InformativoModal from "../../../components/features/shared/InformativoModal/InformativoModal";
@@ -139,11 +138,10 @@ export default function Solicitudes() {
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [modalPendienteOpen, setModalPendienteOpen] = useState(false);
-  const [modalBloqueoLegajoOpen, setModalBloqueoLegajoOpen] = useState(false);
   const [modalNuevaOperacionBloqueada, setModalNuevaOperacionBloqueada] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  const { isValid, faltanDocumentos, faltanLegajo } = useValidacionLegajo();
+  const { isValid } = useValidacionLegajo();
   const {
     habilitada: nuevaOperacionHabilitada,
     motivo: motivoNuevaOperacionBloqueada,
@@ -310,10 +308,12 @@ export default function Solicitudes() {
   }, [location.state]);
 
   const handleNuevaOperacion = async (ruta, draftKey) => {
-    if (!isValid) {
-      setModalBloqueoLegajoOpen(true);
-      return;
-    }
+    // El botón ya queda disabled mientras !isValid (ver más abajo) - esto
+    // es solo una guarda defensiva por si isValid cambia justo entre el
+    // último render y el click. Antes acá se abría BloqueoLegajoModal;
+    // ahora el botón bloqueado ya deja claro que no se puede, así que no
+    // hace falta explicarlo de nuevo con una modal.
+    if (!isValid) return;
 
     if (tieneSolicitudPendiente) {
       setModalPendienteOpen(true);
@@ -389,6 +389,8 @@ export default function Solicitudes() {
             handleNuevaOperacion(`/${channelInfo?.id || "default"}/alta-operacion`, "draft_alta_operacion")
           }
           className={styles.btnNuevaOp}
+          disabled={!isValid}
+          title={!isValid ? "Completá tu legajo y documentación al 100% para poder operar." : undefined}
         >
           <><FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN</>
         </Button>
@@ -396,7 +398,7 @@ export default function Solicitudes() {
 
       {/* CUERPO PRINCIPAL */}
       <main className={styles.main}>
-        <LegajoUniversalBar />
+        <LegajoUniversalBar context="solicitudes" />
         
         <div className={styles.filterBar}>
           <div className={styles.searchBox}>
@@ -512,15 +514,6 @@ export default function Solicitudes() {
         onClose={handleCloseModalOnly}
         onConfirm={handleConfirmStartNew}
         onContinueBorrador={handleCloseContinueDraft}
-      />
-
-      <BloqueoLegajoModal
-        isOpen={modalBloqueoLegajoOpen}
-        onClose={() => setModalBloqueoLegajoOpen(false)}
-        faltanDocumentos={faltanDocumentos}
-        faltanLegajo={faltanLegajo}
-        onGoToSocios={() => navigate(`/${channelInfo?.id || "default"}/legajo`)}
-        onGoToDocumentacion={() => navigate(`/${channelInfo?.id || "default"}/documentacion`)}
       />
 
       <DetalleSolicitudModal

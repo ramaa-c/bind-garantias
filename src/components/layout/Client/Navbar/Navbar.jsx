@@ -9,10 +9,12 @@ import {
   FiRepeat,
   FiLogOut,
   FiBriefcase,
+  FiUser,
 } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
+import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useVendor } from "../../../../hooks/useVendor";
@@ -29,6 +31,7 @@ const Navbar = ({
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isTasasModalOpen, setIsTasasModalOpen] = useState(false);
+  const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const user = useAuthStore((state) => state.user);
@@ -160,8 +163,17 @@ const Navbar = ({
                     </p>
                   </div>
 
-                  {onboardingCompletoEfectivo && (
-                    <div className={styles.dropdownBody}>
+                  <div className={styles.dropdownBody}>
+                    <button type="button"
+                      className={styles.dropdownItem}
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        setIsPerfilModalOpen(true);
+                      }}
+                    >
+                      <FiUser className={styles.itemIcon} /> Mi perfil
+                    </button>
+                    {onboardingCompletoEfectivo && (
                       <button type="button"
                         className={styles.dropdownItem}
                         onClick={() => {
@@ -171,8 +183,8 @@ const Navbar = ({
                       >
                         <FiTrendingUp className={styles.itemIcon} /> Tasas vigentes
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
 
                   <div className={styles.dropdownFooter}>
                     {/* Solo tiene sentido si ya hay una empresa activa para
@@ -207,6 +219,11 @@ const Navbar = ({
       <TasasModal
         isOpen={isTasasModalOpen}
         onClose={() => setIsTasasModalOpen(false)}
+      />
+
+      <PerfilModal
+        isOpen={isPerfilModalOpen}
+        onClose={() => setIsPerfilModalOpen(false)}
       />
     </header>
   );

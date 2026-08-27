@@ -12,18 +12,9 @@
   color: var(--white, #fffefe);
 }
 
-.loginContainer {
-  display: grid;
-  grid-template-columns: 1fr;
-  min-height: 100vh;
-  background-color: var(--carbon-black, #1a1a1a);
-  color: var(--white, #fffefe);
-}
-
 /* ── COLUMNA FORMULARIO ── */
 
-.sideForm,
-.loginFormSection {
+.sideForm {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,15 +26,7 @@
   background-color: var(--carbon-black, #1a1a1a);
 }
 
-/* Modificador puntual: el estado "enlace expirado o inválido" en CrearClave
-   no tiene el bloque de éxito ni el formulario largo, por lo que queda
-   pegado arriba en vez de centrado. Solo se aplica a ese estado. */
-.loginFormSectionCentered {
-  justify-content: center;
-}
-
-.sideForm::before,
-.loginFormSection::before {
+.sideForm::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -110,25 +93,6 @@
   box-shadow:
     inset 3px 0 0 0 rgba(245, 244, 0, 0.4),
     0 24px 64px rgba(0, 0, 0, 0.45);
-}
-
-/* Misma estética para CrearClave */
-.formWrapper {
-  margin: auto;
-  width: 100%;
-  max-width: 26rem;
-  background: rgba(255, 255, 255, 0.028);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 1.25rem;
-  padding: 2.25rem 2rem;
-  box-shadow:
-    inset 3px 0 0 0 rgba(245, 244, 0, 0.4),
-    0 24px 64px rgba(0, 0, 0, 0.45);
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  position: relative;
-  z-index: 1;
 }
 
 /* ── HEADER TEXTO ── */
@@ -212,11 +176,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-}
-
-.inputGroup {
-  display: flex;
-  flex-direction: column;
 }
 
 /* ── OTP PHASE ── */
@@ -516,9 +475,8 @@
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
 }
 
-/* ── CREAR CLAVE: brand content ── */
+/* ── CONFIRMAR CORREO: brand content ── */
 
-.crearClaveBrandContent,
 .confirmarCorreoBrandContent {
   position: relative;
   z-index: 1;
@@ -528,47 +486,6 @@
   align-items: center;
   gap: 1.25rem;
   max-width: 22rem;
-}
-
-/* ── MATCH PASSWORD ── */
-
-.successMsgMatch {
-  position: absolute;
-  bottom: 0.375rem;
-  left: 0.25rem;
-  font-size: 0.72rem;
-  color: var(--success-green, #3ddc84);
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  line-height: 1.4;
-  animation: phaseIn 0.25s ease both;
-}
-
-/* ── TOKEN EXPIRADO ── */
-
-.expiredTokenContainer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.75rem;
-  padding: 0.75rem 0;
-}
-
-.expiredTokenContainer h3 {
-  color: var(--white, #fffefe);
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.expiredTokenContainer p {
-  color: #555;
-  font-size: 0.875rem;
-  margin: 0;
-  line-height: 1.5;
 }
 
 /* ── CONFIRMAR CORREO ── */
@@ -657,109 +574,19 @@
   line-height: 1.2;
 }
 
-/* Banner de éxito / información */
-.successCallout {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
-  background: rgba(61, 220, 132, 0.08);
-  border: 1px solid rgba(61, 220, 132, 0.25);
-  padding: 1.25rem;
-  border-radius: 0.75rem;
-  margin-bottom: 1.25rem;
-  width: 100%;
-  max-width: 26rem;
-}
-
-.calloutIcon {
-  color: #3ddc84;
-  font-size: 1.5rem;
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-
-.calloutContent {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.calloutTitle {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #3ddc84;
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-.successCallout p {
-  margin: 0;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: #d1d1d1;
-}
-
-.successCallout strong {
-  color: #ffffff;
-  font-weight: 600;
-}
-
-/* Banner de advertencia (cuenta pendiente de activar): mismo layout que
-   .successCallout, en ámbar en vez de verde. Vive fuera de la card del
-   formulario, igual que el banner de bienvenida arriba. */
-.warningCallout {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
-  background: rgba(245, 166, 35, 0.08);
-  border: 1px solid rgba(245, 166, 35, 0.25);
-  padding: 1.25rem;
-  border-radius: 0.75rem;
-  width: 100%;
-  max-width: 26rem;
-}
-
-.warningCalloutIcon {
-  color: #f5a623;
-  font-size: 1.5rem;
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-
-.warningCalloutTitle {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #f5a623;
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-.warningCallout p {
-  margin: 0;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  color: #d1d1d1;
-}
-
 /* ── DESKTOP ── */
 
 @media (min-width: 56.25rem) {
-  .layoutSplit,
-  .loginContainer {
+  .layoutSplit {
     grid-template-columns: 58% 42%;
     grid-template-areas: "brand form";
   }
 
-  .sideForm,
-  .loginFormSection {
+  .sideForm {
     grid-area: form;
     padding: 7rem 2rem 3rem 2rem;
     justify-content: flex-start;
     box-shadow: -1px 0 0 0 rgba(255, 255, 255, 0.04);
-  }
-
-  .loginFormSection {
-    padding: 7rem 2rem 8vh 2rem;
   }
 
   .globalLogo {
@@ -771,12 +598,6 @@
   .cardModern {
     padding: 2.75rem 2.25rem;
     gap: 2rem;
-    max-width: 28rem;
-  }
-
-  .formWrapper,
-  .successCallout,
-  .warningCallout {
     max-width: 28rem;
   }
 

@@ -479,6 +479,28 @@
   background: rgba(76, 101, 230, 0.2);
 }
 
+.perfilBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: rgba(245, 244, 0, 0.08);
+  color: var(--yellow, #f5f400);
+  border: 1px solid rgba(245, 244, 0, 0.22);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.perfilBtn:hover {
+  background: rgba(245, 244, 0, 0.16);
+}
+
 /* ── ESCRITORIO ── */
 @media (min-width: 64rem) {
   /* Se muda a Navbar (ver .vendorBadge ahí) para no confundirse con

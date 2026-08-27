@@ -63,13 +63,23 @@
   pointer-events: none;
 }
 
-/* --- ESTADO: ARCHIVO CARGADO --- */
+/* --- ESTADO: ARCHIVO CARGADO ---
+   .loaded y .actionsGroup se resuelven con flex-wrap en vez de un media
+   query: la caja se usa tanto sola en una columna angosta como dentro de
+   .dropzoneGrid a 2 columnas (ver DocumentosLegajo.module.css), así que el
+   ancho real disponible no depende solo del viewport. Con
+   .loadedInfo con flex-basis grande, apenas no entran los 4 botones de
+   acción al lado del nombre+badge, el grupo de acciones baja solo a su
+   propia fila (margin-left: auto lo alinea a la derecha ahí también) en vez
+   de amontonarse todo en una sola línea. */
 .loaded {
   border: 2px solid rgba(61, 220, 132, 0.3);
   background-color: rgba(61, 220, 132, 0.05);
   flex-direction: row;
-  justify-content: space-between;
-  padding: 25px 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 0.75rem;
+  padding: 20px;
 }
 
 .loaded:hover {
@@ -82,7 +92,7 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  flex: 1 1 0%;
+  flex: 1 1 12rem;
   min-width: 0;
   overflow: hidden;
 }
@@ -116,6 +126,8 @@
 .filesize {
   color: #888;
   font-size: 0.8rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* --- ESTADO: ERROR --- */
@@ -140,13 +152,16 @@
 .actionsGroup {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .metaRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 6px 12px;
   margin-top: 4px;
 }
 
@@ -162,6 +177,8 @@
   align-items: center;
   gap: 4px;
   line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .lufeBadgeIcon {

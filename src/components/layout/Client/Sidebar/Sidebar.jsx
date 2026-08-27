@@ -7,6 +7,7 @@ import { useVendor } from "../../../../hooks/useVendor";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
+import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/ChannelContext";
 import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
@@ -33,6 +34,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const isVendor = vendorData?.isVendor || false;
 
   const [isTasasModalOpen, setIsTasasModalOpen] = useState(false);
+  const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
 
   const [expandedSections, setExpandedSections] = useState({
     general: true,
@@ -208,6 +210,9 @@ export default function Sidebar({ isOpen, onClose }) {
               </p>
             </div>
           </div>
+          <button type="button" className={styles.perfilBtn} onClick={() => setIsPerfilModalOpen(true)}>
+            <FiUser size={14} /> Mi perfil
+          </button>
           {/* Mismo criterio que Navbar.jsx: solo tiene sentido si ya hay una
               empresa activa para "cambiar" — sin eso, ya existe el botón
               "Volver a Inicio" en Paso1Cuit/BarraProgreso. */}
@@ -226,6 +231,11 @@ export default function Sidebar({ isOpen, onClose }) {
       <TasasModal
         isOpen={isTasasModalOpen}
         onClose={() => setIsTasasModalOpen(false)}
+      />
+
+      <PerfilModal
+        isOpen={isPerfilModalOpen}
+        onClose={() => setIsPerfilModalOpen(false)}
       />
 
       <ConfirmacionModal
