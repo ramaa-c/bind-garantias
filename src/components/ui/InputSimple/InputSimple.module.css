@@ -31,7 +31,7 @@
 }
 
 .statusFocus .inputWrapper {
-  border-color: var(--yellow, #f4f500);
+  border-color: var(--amarillo-bind-accent);
   background-color: rgba(244, 245, 0, 0.025);
   box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.06);
 }
@@ -117,7 +117,7 @@
 }
 
 .statusFocus .label {
-  color: var(--yellow, #f5f400);
+  color: var(--amarillo-bind-accent);
 }
 
 .statusSuccess .label {
@@ -157,7 +157,7 @@
 }
 
 .toggleBtn:hover {
-  color: var(--yellow, #f5f400);
+  color: var(--amarillo-bind-accent);
   background: rgba(245, 244, 0, 0.06);
 }
 

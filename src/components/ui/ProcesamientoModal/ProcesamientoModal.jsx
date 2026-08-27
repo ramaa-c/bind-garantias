@@ -1,6 +1,6 @@
 import React from "react";
-import { createPortal } from "react-dom";
 import { FiCheck, FiX, FiAlertCircle } from "react-icons/fi";
+import { Modal } from "../Modal/Modal";
 import Spinner from "../Spinner/Spinner";
 import { Button } from "../Button/Button";
 import styles from "./ProcesamientoModal.module.css";
@@ -22,11 +22,8 @@ export const ProcesamientoModal = ({
   onClose,
   onRetry,
 }) => {
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="36rem" preventClose hideCloseButton>
         {titulo && (
           <div className={styles.header}>
             <h3 className={styles.titulo}>{titulo}</h3>
@@ -120,9 +117,7 @@ export const ProcesamientoModal = ({
             )}
           </div>
         )}
-      </div>
-    </div>,
-    document.body
+    </Modal>
   );
 };
 

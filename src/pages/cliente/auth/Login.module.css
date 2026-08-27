@@ -340,7 +340,7 @@
 
 .inlineLink {
   cursor: pointer;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--amarillo-bind-accent);
   font-weight: 600;
   transition: all 0.2s ease;
 }
@@ -363,7 +363,7 @@
 }
 
 .linkYellow {
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--amarillo-bind-accent);
   cursor: pointer;
   font-weight: 600;
   text-decoration: none;
@@ -424,7 +424,7 @@
 .brandTitle em,
 .brandEm {
   font-style: normal;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--amarillo-bind-accent);
 }
 
 .brandSubtitle {
@@ -471,7 +471,7 @@
 .heroIcon {
   position: relative;
   z-index: 2;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--amarillo-bind-accent);
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
 }
 
@@ -506,7 +506,7 @@
 
 .emailDestacado svg {
   flex-shrink: 0;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--amarillo-bind-accent);
 }
 
 .instrucciones {

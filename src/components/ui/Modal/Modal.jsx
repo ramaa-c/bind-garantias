@@ -18,6 +18,12 @@ export const Modal = ({
   // poder cerrarse haciendo click afuera, con ESC o con la X: solo los
   // botones internos (que ya se deshabilitan con isLoading) pueden decidir.
   preventClose = false,
+  // Para modales sin ninguna vía de cierre propia (ej. ProcesamientoModal):
+  // ni X, ni ESC, ni click afuera - solo los botones de acción del propio
+  // contenido (que reciben onClose directo) pueden cerrarlo. Sin esto,
+  // el botón flotante quedaría visible pero inerte bajo preventClose, lo
+  // cual confunde más que no tener botón.
+  hideCloseButton = false,
 }) => {
   const handleClose = () => {
     if (preventClose) return;
@@ -63,24 +69,28 @@ export const Modal = ({
               )}
               {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
             </div>
+            {!hideCloseButton && (
+              <button
+                type="button"
+                className={styles.closeButton}
+                onClick={handleClose}
+                aria-label="Cerrar modal"
+              >
+                <FiX size={18} />
+              </button>
+            )}
+          </div>
+        ) : (
+          !hideCloseButton && (
             <button
               type="button"
-              className={styles.closeButton}
+              className={styles.closeButtonFloating}
               onClick={handleClose}
               aria-label="Cerrar modal"
             >
               <FiX size={18} />
             </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className={styles.closeButtonFloating}
-            onClick={handleClose}
-            aria-label="Cerrar modal"
-          >
-            <FiX size={18} />
-          </button>
+          )
         )}
 
         {/* ── BODY ── */}

@@ -353,14 +353,14 @@ export const PerfilModal = ({ isOpen, onClose }) => {
               className={`${styles.tabBtn} ${tab === "empresa" ? styles.tabBtnActive : ""}`}
               onClick={() => setTab("empresa")}
             >
-              <FiBriefcase /> Datos de la empresa
+              <FiBriefcase /> <span>Datos de la empresa</span>
             </button>
             <button
               type="button"
               className={`${styles.tabBtn} ${tab === "cuenta" ? styles.tabBtnActive : ""}`}
               onClick={() => setTab("cuenta")}
             >
-              <FiUser /> Mi cuenta
+              <FiUser /> <span>Mi cuenta</span>
             </button>
           </div>
         )}

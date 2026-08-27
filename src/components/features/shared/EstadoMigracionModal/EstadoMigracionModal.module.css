@@ -43,8 +43,8 @@
 }
 
 .hero-ready .heroIcon {
-  background: rgba(245, 244, 0, 0.14);
-  color: var(--yellow, #f5f400);
+  background: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
 }
 
 .heroText {

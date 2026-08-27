@@ -22,8 +22,8 @@
 
 .btnVolver:hover {
   background-color: rgba(var(--overlay-rgb), 0.08);
-  color: var(--yellow); 
-  border-color: var(--yellow); 
+  color: var(--amarillo-bind-accent); 
+  border-color: var(--amarillo-bind-accent); 
   box-shadow: 0 0 10px rgba(253, 252, 1, 0.2); 
   transform: translateX(-4px); 
   text-decoration: none;

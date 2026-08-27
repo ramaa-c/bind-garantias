@@ -178,7 +178,7 @@
 
 .avatar--amarillo {
   background: rgba(245, 244, 0, 0.1);
-  color: var(--yellow, #f5f400);
+  color: var(--amarillo-bind-accent);
   border: 1px solid rgba(245, 244, 0, 0.2);
 }
 
@@ -222,7 +222,7 @@
   width: max-content;
   max-width: 14rem;
   padding: 0.5rem 0.7rem;
-  background: var(--border);
+  background: var(--bg-modal);
   border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 0.6rem;
   color: var(--white);
@@ -243,7 +243,7 @@
   left: 1rem;
   width: 9px;
   height: 9px;
-  background: var(--border);
+  background: var(--bg-modal);
   border-left: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-top: 1px solid rgba(var(--overlay-rgb), 0.08);
   transform: rotate(45deg);
@@ -484,9 +484,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  background: rgba(245, 244, 0, 0.08);
-  color: var(--yellow, #f5f400);
-  border: 1px solid rgba(245, 244, 0, 0.22);
+  background: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+  border: none;
   border-radius: 1rem;
   padding: 0.75rem 1rem;
   font-size: 0.85rem;
@@ -498,7 +498,7 @@
 }
 
 .perfilBtn:hover {
-  background: rgba(245, 244, 0, 0.16);
+  filter: brightness(1.06);
 }
 
 /* ── ESCRITORIO ── */

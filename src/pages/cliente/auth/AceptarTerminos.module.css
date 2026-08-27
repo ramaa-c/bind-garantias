@@ -55,10 +55,10 @@
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.625rem;
-  background: rgba(244, 245, 0, 0.08);
-  border: 1px solid rgba(244, 245, 0, 0.2);
+  background: var(--color-amarillo-bind);
+  border: none;
   border-radius: 999px;
-  color: var(--yellow, #f4f500);
+  color: var(--on-amarillo-bind);
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -161,7 +161,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--yellow, #f4f500);
+  color: var(--amarillo-bind-accent);
   margin: 0 0 0.875rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid rgba(244, 245, 0, 0.1);
@@ -271,7 +271,7 @@
 
 .checkmarkActive {
   background: var(--yellow, #f4f500);
-  border-color: var(--yellow, #f4f500);
+  border-color: var(--amarillo-bind-accent);
 }
 
 .checkboxLabel {
@@ -361,8 +361,8 @@
   }
 
   .tocItemActive {
-    color: var(--yellow, #f4f500);
-    border-left-color: var(--yellow, #f4f500);
+    color: var(--amarillo-bind-accent);
+    border-left-color: var(--amarillo-bind-accent);
     background: rgba(244, 245, 0, 0.04);
   }
 

@@ -105,7 +105,7 @@
 .mobileCount {
   font-size: 0.75rem;
   font-weight: 700;
-  color: var(--yellow, #f4f500);
+  color: var(--amarillo-bind-accent);
   white-space: nowrap;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
@@ -176,17 +176,17 @@
 
 .done .circle {
   background: var(--yellow, #f4f500);
-  border-color: var(--yellow, #f4f500);
-  color: #000;
+  border-color: var(--amarillo-bind-accent);
+  color: var(--on-amarillo-bind, #000);
 }
 .done .label {
   color: rgba(var(--overlay-rgb), 0.3);
 }
 
 .active .circle {
-  background: rgba(244, 245, 0, 0.07);
-  border-color: var(--yellow, #f4f500);
-  color: var(--yellow, #f4f500);
+  background: var(--color-amarillo-bind);
+  border-color: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
 }
 .active .label {
   color: var(--white, #fff);
@@ -219,11 +219,11 @@
 .stepClickable:hover .circle {
   transform: scale(1.1);
   box-shadow: 0 0 10px rgba(244, 245, 0, 0.25);
-  border-color: var(--yellow, #f4f500);
+  border-color: var(--amarillo-bind-accent);
 }
 
 .stepClickable:hover .label {
-  color: var(--yellow, #f4f500);
+  color: var(--amarillo-bind-accent);
 }
 
 .stepDisabled {

@@ -31,7 +31,7 @@
 }
 
 .headerTitles {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.08);
   padding-bottom: 1rem;
   position: relative;
 }
@@ -68,7 +68,7 @@
   gap: 1.5rem;
   background: rgba(30, 30, 30, 0.85);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   padding: 1.5rem;
   border-radius: 1rem;
 }
@@ -99,8 +99,8 @@
 }
 
 .input, .inputShort {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
   color: var(--white-muted);
   padding: 0.6rem 2.5rem 0.6rem 1rem;
   border-radius: 0.5rem;
@@ -111,7 +111,7 @@
 
 .input:focus, .inputShort:focus {
   outline: none;
-  border-color: var(--color-amarillo-bind);
+  border-color: var(--amarillo-bind-accent);
 }
 
 .input {
@@ -133,7 +133,7 @@
 }
 
 .checkbox {
-  accent-color: var(--color-amarillo-bind);
+  accent-color: var(--amarillo-bind-accent);
   width: 1rem;
   height: 1rem;
 }
@@ -149,8 +149,8 @@
 }
 
 .badge {
-  background: rgba(245, 244, 0, 0.15);
-  color: var(--color-amarillo-bind);
+  background: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
   padding: 0.2rem 0.6rem;
   border-radius: 0.25rem;
   font-size: 0.7rem;
@@ -174,7 +174,7 @@
 }
 
 .separator {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(var(--overlay-rgb), 0.2);
 }
 
 .textHighlight {
@@ -190,7 +190,7 @@
 
 .card {
   background: rgba(30, 30, 30, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 1rem;
   overflow: hidden;
   display: flex;
@@ -198,13 +198,13 @@
 }
 
 .cardHeader {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
   padding: 0.75rem 1.25rem;
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
-  color: var(--color-amarillo-bind);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--amarillo-bind-accent);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.08);
   font-family: var(--font-secundaria);
   letter-spacing: 0.05em;
 }
@@ -234,7 +234,7 @@
 
 .divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   margin: 0.5rem 0;
 }
 
@@ -258,7 +258,7 @@
 .table th, .table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
 }
 
 .table th {
@@ -266,7 +266,7 @@
   font-weight: 500;
   text-transform: uppercase;
   font-size: 0.7rem;
-  background: rgba(255, 255, 255, 0.01);
+  background: rgba(var(--overlay-rgb), 0.01);
 }
 
 .table td {
@@ -274,15 +274,15 @@
 }
 
 .table tbody tr:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .table tfoot td {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.1);
   border-bottom: none;
   font-weight: 600;
-  color: var(--color-amarillo-bind);
-  background: rgba(255, 255, 255, 0.01);
+  color: var(--amarillo-bind-accent);
+  background: rgba(var(--overlay-rgb), 0.01);
 }
 
 .textRight {

@@ -3,7 +3,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  color: #fff;
+  color: var(--white, #fff);
   margin: -0.5rem;
 }
 
@@ -11,7 +11,7 @@
 
 .hero {
   padding: 1rem 1.75rem;
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 0.5px solid rgba(var(--overlay-rgb), 0.06);
 }
 
 .heroTop {
@@ -35,7 +35,7 @@
 .tagSolicitud {
   background: rgba(244, 245, 0, 0.1);
   border: 0.5px solid rgba(244, 245, 0, 0.25);
-  color: #e8e900;
+  color: var(--warning);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -46,7 +46,7 @@
 
 .tagId {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(var(--overlay-rgb), 0.25);
   font-family: var(--font-mono, monospace);
   letter-spacing: 0.03em;
 }
@@ -67,26 +67,26 @@
 
 .badgeGreen {
   background: rgba(76, 175, 80, 0.1);
-  color: #66bb6a;
+  color: var(--success-bright);
   border-color: rgba(76, 175, 80, 0.25);
 }
 
 .badgeYellow {
   background: rgba(244, 245, 0, 0.08);
-  color: #e8e900;
+  color: var(--warning);
   border-color: rgba(244, 245, 0, 0.2);
 }
 
 .badgeRed {
   background: rgba(239, 83, 80, 0.1);
-  color: #ef5350;
+  color: var(--danger-bright);
   border-color: rgba(239, 83, 80, 0.25);
 }
 
 .badgeGrey {
-  background: rgba(255, 255, 255, 0.06);
-  color: #888;
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--overlay-rgb), 0.06);
+  color: var(--text-muted);
+  border-color: rgba(var(--overlay-rgb), 0.15);
 }
 
 /* NOMBRE Y CUIT */
@@ -94,7 +94,7 @@
 .empresaNombre {
   font-size: 1.3rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--white, #fff);
   letter-spacing: -0.03em;
   line-height: 1.2;
   margin: 0 0 0.25rem;
@@ -102,7 +102,7 @@
 
 .empresaCuit {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(var(--overlay-rgb), 0.25);
   font-family: var(--font-mono, monospace);
   margin: 0 0 1.25rem;
 }
@@ -116,8 +116,8 @@
 }
 
 .metric {
-  background: rgba(255, 255, 255, 0.03);
-  border: 0.5px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 0.5px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 10px;
   padding: 10px 14px;
 }
@@ -127,7 +127,7 @@
   align-items: center;
   gap: 5px;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(var(--overlay-rgb), 0.28);
   text-transform: uppercase;
   letter-spacing: 0.09em;
   font-weight: 700;
@@ -137,14 +137,14 @@
 .metricValue {
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(var(--overlay-rgb), 0.75);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .metricHighlight {
-  color: #e8e900;
+  color: var(--warning);
   font-size: 14px;
 }
 
@@ -167,7 +167,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #ef5350;
+  color: var(--danger-bright);
   margin-bottom: 6px;
 }
 
@@ -189,7 +189,7 @@
 
 .section {
   padding: 1.25rem 1.75rem;
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 0.5px solid rgba(var(--overlay-rgb), 0.05);
 }
 
 .sectionHeader {
@@ -207,14 +207,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(var(--overlay-rgb), 0.3);
 }
 
 .countPill {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.05);
-  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  color: rgba(var(--overlay-rgb), 0.25);
+  background: rgba(var(--overlay-rgb), 0.05);
+  border: 0.5px solid rgba(var(--overlay-rgb), 0.07);
   border-radius: 999px;
   padding: 2px 9px;
 }
@@ -228,8 +228,8 @@
 }
 
 .fiadorCard {
-  background: rgba(255, 255, 255, 0.025);
-  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  background: rgba(var(--overlay-rgb), 0.025);
+  border: 0.5px solid rgba(var(--overlay-rgb), 0.07);
   border-radius: 12px;
   padding: 12px 14px;
   display: flex;
@@ -239,7 +239,7 @@
 }
 
 .fiadorCard:hover {
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(var(--overlay-rgb), 0.14);
 }
 
 .fiadorAvatar {
@@ -253,7 +253,7 @@
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
-  color: #e8e900;
+  color: var(--warning);
   flex-shrink: 0;
 }
 
@@ -268,7 +268,7 @@
   margin: 0;
   font-size: 12.5px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(var(--overlay-rgb), 0.82);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -279,13 +279,13 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(var(--overlay-rgb), 0.28);
 }
 
 .partBar {
   height: 3px;
   width: 40px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -299,7 +299,7 @@
 
 .emptyText {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.25);
+  color: rgba(var(--overlay-rgb), 0.25);
   margin: 0;
 }
 
@@ -315,12 +315,12 @@
 
 .footerHint {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(var(--overlay-rgb), 0.2);
 }
 
 .btnClose {
   background: rgba(244, 245, 0, 0.9) !important;
-  color: #0e0e0e !important;
+  color: var(--on-amarillo-bind, #0e0e0e) !important;
   border: none !important;
   border-radius: 999px !important;
   padding: 9px 28px !important;

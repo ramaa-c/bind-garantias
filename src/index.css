@@ -46,7 +46,30 @@
   --color-amarillo-bind: #F5F400;
   --color-gris-bind: #2E2E2E;
   --color-azul-bind: #4C65E6;
-  
+
+  /* El amarillo de marca tiene luminosidad muy alta en los dos modos (es
+     literalmente el mismo valor #F5F400 siempre) - el texto/ícono que va
+     ENCIMA de un fondo amarillo necesita ser oscuro sí o sí, sin importar
+     el tema. No es --carbon-black: ese token cambia de "casi negro" (modo
+     oscuro) a "casi blanco" (modo claro, es el canvas de página) y usarlo
+     acá rompía el contraste del botón primario en modo claro (texto
+     blanco sobre amarillo, invisible). Token separado, fijo en los dos
+     modos, para no repetir ese error. */
+  --on-amarillo-bind: #1a1a1a;
+
+  /* El problema simétrico al de --on-amarillo-bind: usar el amarillo de
+     marca COMO color de texto/ícono (no como fondo) - íconos de contacto,
+     links, badges de "vía LUFE", el "$" de montos, etc. En oscuro
+     #F5F400 puro se lee perfecto sobre el canvas casi negro. En claro, el
+     mismo amarillo sobre el canvas casi blanco es casi invisible (yellow
+     y white tienen luminosidad muy parecida) - el mismo problema del
+     botón primario, pero en texto suelto en vez de en un fill sólido.
+     Este token SÍ cambia con el tema (a diferencia de on-amarillo-bind):
+     en oscuro es el amarillo real; en claro es un ámbar bien oscuro,
+     mismo hue, igual que --warning pero como token aparte porque el rol
+     acá es "acento decorativo de marca", no "estado de advertencia". */
+  --amarillo-bind-accent: #F5F400;
+
   /* Tonos complementarios de azul bind */
   --color-azul-bind-50: #eff2ff;
   --color-azul-bind-100: #dbe2ff;
@@ -100,6 +123,15 @@
   --bg-surface: #0d1117;
   --bg-elevado: #1e1e1e;
 
+  /* 4to rol, agregado después de la migración inicial: superficies
+     flotantes (modal box, tooltips, popovers) tenían su propio negro
+     -#161616/#14151a/#181818/#12141a según el archivo- notablemente más
+     oscuro que --bg-elevado (#1e1e1e). La primera pasada los había hecho
+     caer en --bg-elevado o, peor, en --border (#252525, pensado para
+     bordes, no fondos) por error - un color-picker sobre una captura de
+     antes de la migración confirmó el valor real. */
+  --bg-modal: #161616;
+
   /* Tripletas RGB (sin rgba() alrededor) para poder seguir usando
      rgba(var(--overlay-rgb), 0.08) con la opacidad que ya tenía cada lugar -
      así los bordes/glows sutiles translúcidos (hoy hardcodeados como
@@ -115,34 +147,98 @@
    MODO CLARO - solo zona cliente (ver ThemeManager.jsx, el toggle vive en
    Navbar.jsx). El panel admin nunca recibe data-theme="light" a propósito.
    Colores de marca (amarillo/azul) se mantienen iguales en los dos modos -
-   funcionan bien sobre fondo claro y oscuro tal cual están. Todo lo demás
-   (fondos, textos, bordes, estados) se redefine acá; son los únicos ~18
-   tokens que hacen falta tocar gracias a la migración a variables. */
+   funcionan bien sobre fondo claro y oscuro tal cual están.
+
+   Esto NO es una inversión mecánica de los valores de modo oscuro: cada
+   token se pensó como equivalente FUNCIONAL, conservando su rol semántico
+   pero adaptando luminosidad/saturación a lo que ese rol necesita en un
+   fondo claro (por ejemplo texto secundario en oscuro se aclara para
+   destacar sobre el negro; en claro se oscurece para destacar sobre
+   blanco - misma función, dirección de luminosidad opuesta).
+
+   Los grises están todos levemente teñidos hacia el azul de marca (~264°
+   en OKLCH, el hue de --color-azul-bind) en vez de un gris neutro
+   genérico: reconocible como "de la marca" sin ser un color plano, y
+   consistente con cómo ya se usa el azul en toda la app. */
 :root[data-theme="light"] {
-  --color-gris-bind: #f4f5f7;
-  --white: #1c1c1e;
-  --carbon-black: #f4f5f7;
-  --graphite: #e4e6eb;
+  /* ── CANVAS DE PÁGINA Y CHROME ──
+     carbon-black es el fondo de pantallas full-bleed (Login, Sidebar,
+     DashboardLayout, etc.) - en oscuro es el tono MÁS oscuro de la
+     familia; acá es el tono MÁS presente/teñido de la familia de blancos
+     (todavía muy claro, pero con la saturación suficiente para no
+     confundirse con las superficies elevadas - antes estaba en #f4f5f7,
+     a un paso de blanco puro, y ahí es donde se perdía la separación
+     entre sidebar/canvas y las cards de la captura). color-gris-bind
+     (fondo de html/body/#root) y graphite comparten el mismo valor: en
+     oscuro las tres son literalmente el mismo #2E2E2E/#1A1A1A - se
+     mantiene esa equivalencia acá en vez de inventarles roles distintos
+     que no tenían. */
+  --color-gris-bind: oklch(91% 0.012 264);
+  --carbon-black: oklch(91% 0.012 264);
+  --graphite: oklch(91% 0.012 264);
   --soft-gray: #ffffff;
 
-  --border: #e4e6eb;
-  --border-hover: #cbd0d8;
-  --text-muted: #52525b;
-  --text-dim: #71717a;
-  --white-muted: #3f3f46;
+  /* Texto: --white sigue siendo el token que usa casi toda la app para
+     "texto principal" (nombre heredado de cuando solo existía modo
+     oscuro) - acá es tinta casi negra, no blanco. Los otros tres bajan en
+     prominencia en este orden: white-muted > text-muted > text-dim,
+     igual que en oscuro pero invertidos en dirección de luminosidad
+     (ahí más claro = menos prominente porque se acerca al negro de
+     fondo; acá más claro = menos prominente porque se acerca al blanco
+     de fondo). Las cuatro se verificaron con conversión OKLCH→sRGB real
+     (no a ojo): white 17.3:1, white-muted 12.7:1, text-muted 8.5:1,
+     text-dim 6.0:1 contra --bg-elevado - todas con margen cómodo sobre
+     el mínimo de texto de la skill de diseño (4.5:1). */
+  --white: oklch(22% 0.012 264);
+  --white-muted: oklch(32% 0.012 264);
+  --text-muted: oklch(42% 0.014 264);
+  --text-dim: oklch(50% 0.012 264);
 
-  --success-green: #1fa968;
-  --error-red: #dc2626;
-  --warning: #d97706;
-  --danger-bright: #e53935;
-  --success-bright: #2e7d32;
-  --warning-orange: #e65100;
+  --border: oklch(85% 0.012 264);
+  --border-hover: oklch(76% 0.016 264);
 
-  --bg-primario: #f4f5f7;
-  --bg-surface: #ffffff;
+  /* Mismo valor que --warning: incidentalmente terminan iguales, pero es
+     un token aparte porque acá significa "esto es un acento de marca",
+     no "atención, hay un problema". */
+  --amarillo-bind-accent: oklch(52% 0.15 60);
+
+  /* Estados: mismo criterio que ya traía esta primera versión (acertado,
+     se mantiene) - los tonos "brillantes" de oscuro (success-green
+     #3ddc84, error-red #ef4444, warning #ffc107, ...) fallan contraste de
+     texto sobre blanco tal cual están, así que la versión clara de cada
+     uno es una versión más oscura/saturada del mismo hue, no un color
+     distinto. Todas verificadas ≥4.5:1 sobre --bg-elevado. */
+  --success-green: oklch(50% 0.15 152);
+  --error-red: oklch(55% 0.21 29);
+  --warning: oklch(52% 0.15 60);
+  --danger-bright: oklch(53% 0.20 24);
+  --success-bright: oklch(46% 0.13 148);
+  --warning-orange: oklch(50% 0.16 42);
+
+  /* ── ESCALERA DE ELEVACIÓN (4 roles, mismo criterio que oscuro) ──
+     surface = la superficie más "hundida" (tracks de scroll, headers de
+     tabla, fondos de <option>, tabs inactivas) → la más gris de toda la
+     familia, para que se lea como recesada contra el blanco de las cards
+     (verificado: 1.53:1 contra elevado, bien perceptible a simple vista
+     aunque el ratio WCAG parezca chico - es una escala de grises cercana
+     a blanco, no de texto).
+     primario = el canvas (= carbon-black, 1.31:1 contra elevado).
+     elevado y modal = blanco puro (#ffffff): en oscuro son dos negros
+     ligeramente distintos porque hay margen para matizar cerca del 0%;
+     cerca del 100% ese margen no existe, así que los dos rebotan contra
+     el mismo techo. La distinción entre "card" y "modal" la sigue dando
+     el z-index/la sombra, no el color. */
+  --bg-surface: oklch(86% 0.014 264);
+  --bg-primario: var(--carbon-black);
   --bg-elevado: #ffffff;
+  --bg-modal: #ffffff;
 
-  --overlay-rgb: 27, 27, 30;
+  /* Tripletas RGB para rgba(var(--x-rgb), alpha): overlay-rgb ≈ el mismo
+     tono de --white (tinta), así los bordes/glows sutiles que hoy usan
+     rgba(255,255,255,X) en oscuro pasan a oscurecer en vez de aclarar.
+     glass-rgb queda blanco: es el blur "vidrio" de barras de acciones
+     sticky, tiene que seguir siendo la superficie más clara ahí también. */
+  --overlay-rgb: 27, 27, 32;
   --glass-rgb: 255, 255, 255;
 }
 

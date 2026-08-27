@@ -76,7 +76,7 @@
 
 /* ── Client (amarillo) ────────────────────────────────────── */
 .client.pageButton:hover:not(:disabled) {
-  border-color: var(--yellow, #f5f400);
+  border-color: var(--amarillo-bind-accent);
   color: var(--white);
   transform: translateY(-1px);
   box-shadow: 0 4px 14px rgba(245, 244, 0, 0.15);
@@ -84,7 +84,7 @@
 
 .client.pageButtonActive {
   background: var(--yellow, #f5f400);
-  border-color: var(--yellow, #f5f400);
+  border-color: var(--amarillo-bind-accent);
   color: #000000;
 }
 

@@ -56,8 +56,8 @@
 .iconCircleSmall {
   width: 2.25rem;
   height: 2.25rem;
-  background-color: rgba(244, 245, 0, 0.1);
-  color: var(--yellow);
+  background-color: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
   border-radius: 50%;
   display: flex;
   justify-content: center;

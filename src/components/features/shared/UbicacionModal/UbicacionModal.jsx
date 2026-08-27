@@ -1,12 +1,11 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { FiMapPin, FiMap, FiX } from "react-icons/fi";
+import { FiMapPin, FiMap } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
+import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSocioMasked } from "../../../ui/InputSocioMasked/InputSocioMasked";
 import { SelectSocio } from "../../../ui/SelectSocio/SelectSocio";
 import styles from "./UbicacionModal.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
 import { useProvincias, useCiudades, usePartidos } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
 
@@ -107,8 +106,6 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     }
   }
 
-  useEscape(onClose, isOpen);
-
   if (!isOpen) return null;
 
   // `ciudadid`/`localidadid` usan 0 como "sin seleccionar" - sin el
@@ -197,21 +194,9 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     }
   };
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  return createPortal(
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div
-        className={styles.modalContainer}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <button type="button" className={styles.btnClose} onClick={onClose}>
-          <FiX size={20} />
-        </button>
-
-        <form className={styles.body} onSubmit={handleGuardar}>
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="45rem">
+      <form className={styles.body} onSubmit={handleGuardar}>
           <div className={styles.iconWrapper}>
             <FiMapPin size={30} />
           </div>
@@ -335,8 +320,6 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
             </Button>
           </div>
         </form>
-      </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 }

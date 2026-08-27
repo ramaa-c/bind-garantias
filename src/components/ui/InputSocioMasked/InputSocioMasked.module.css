@@ -104,18 +104,18 @@
 
 /* FOCUS */
 .statusFocus .innerGroup {
-  border-color: var(--yellow, #f4f500);
+  border-color: var(--amarillo-bind-accent);
   background-color: rgba(244, 245, 0, 0.025);
   box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.06);
 }
 
 .statusFocus .icon {
-  color: var(--yellow, #f4f500);
+  color: var(--amarillo-bind-accent);
   border-right-color: rgba(244, 245, 0, 0.2);
 }
 
 .statusFocus .label {
-  color: var(--yellow, #f4f500);
+  color: var(--amarillo-bind-accent);
 }
 
 /* SUCCESS (VÁLIDO) */
@@ -209,7 +209,7 @@
 }
 
 .helpIconContainer:hover {
-  color: var(--yellow, #f4f500);
+  color: var(--amarillo-bind-accent);
 }
 
 .helpIcon {

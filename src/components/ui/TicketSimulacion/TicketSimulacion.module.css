@@ -30,7 +30,7 @@
 }
 
 .resultsAmount {
-  color: var(--yellow);
+  color: var(--amarillo-bind-accent);
   font-size: 2rem;
   font-weight: bold;
   margin: 0;
@@ -110,7 +110,7 @@
 }
 
 .textYellow {
-  color: var(--yellow);
+  color: var(--amarillo-bind-accent);
 }
 .textMuted {
   color: var(--text-muted);

@@ -8,7 +8,7 @@
 }
 
 :global(::-webkit-scrollbar-thumb) {
-  background-color: var(--yellow, #f4f500);
+  background-color: var(--yellow, #f5f400);
   border-radius: 10px;
   border: 2px solid transparent;
   background-clip: padding-box;

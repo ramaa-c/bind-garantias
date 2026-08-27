@@ -110,18 +110,18 @@
 
 /* FOCUS */
 .statusFocus .innerGroup {
-  border-color: var(--yellow, #f4f500);
+  border-color: var(--amarillo-bind-accent);
   background-color: rgba(244, 245, 0, 0.025);
   box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.06);
 }
 
 .statusFocus .icon {
-  color: var(--yellow, #f4f500);
+  color: var(--amarillo-bind-accent);
   border-right-color: rgba(244, 245, 0, 0.2);
 }
 
 .statusFocus .label {
-  color: var(--yellow, #f4f500);
+  color: var(--amarillo-bind-accent);
 }
 
 /* SUCCESS (VÁLIDO) */
@@ -185,7 +185,7 @@
   top: calc(100% - 1rem);
   left: 0;
   z-index: 50;
-  background-color: var(--border);
+  background-color: var(--bg-modal);
   border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 0.875rem;
   padding: 1rem;
@@ -211,9 +211,9 @@
 /* ── REACT-DAY-PICKER ────────────────────────────────────────────────────────── */
 
 :global(.rdp-root) {
-  --rdp-accent-color: var(--yellow, #f4f500);
+  --rdp-accent-color: var(--amarillo-bind-accent);
   --rdp-accent-background-color: rgba(244, 245, 0, 0.1);
-  --rdp-today-color: var(--yellow, #f4f500);
+  --rdp-today-color: var(--amarillo-bind-accent);
   --rdp-selected-border: 2px solid var(--yellow, #f4f500);
   --rdp-day-height: 38px;
   --rdp-day-width: 38px;
@@ -241,7 +241,7 @@
 }
 
 :global(.rdp-today:not(.rdp-selected)) {
-  color: var(--yellow, #f4f500);
+  color: var(--amarillo-bind-accent);
   font-weight: 700;
 }
 
@@ -276,7 +276,7 @@
 }
 
 :global(.rdp-dropdown option) {
-  background-color: var(--border);
+  background-color: var(--bg-modal);
   color: var(--white, #fff);
   font-weight: 500;
 }

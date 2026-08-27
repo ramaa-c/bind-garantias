@@ -147,9 +147,9 @@
 }
 
 .themeButton:hover {
-  background: rgba(245, 244, 0, 0.12);
-  border-color: rgba(245, 244, 0, 0.3);
-  color: var(--yellow);
+  background: var(--color-amarillo-bind);
+  border-color: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
 }
 
 .themeIcon {

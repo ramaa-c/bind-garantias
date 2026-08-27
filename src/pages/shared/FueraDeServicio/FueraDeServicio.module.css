@@ -36,13 +36,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(245, 217, 0, 0.08);
+  background: var(--color-amarillo-bind);
   margin-bottom: 1.5rem;
   animation: pulseIcon 2.4s ease-in-out infinite;
 }
 
 .icon {
-  color: var(--yellow, #ffd900);
+  color: var(--on-amarillo-bind);
   filter: drop-shadow(0 0.5rem 1.5rem rgba(255, 200, 0, 0.15));
 }
 
@@ -57,14 +57,14 @@
 .message {
   font-size: 1rem;
   line-height: 1.6;
-  color: var(--text-secondary, #a1a1aa);
+  color: var(--text-muted, #a1a1aa);
   margin-bottom: 1.5rem;
   max-width: 25rem;
 }
 
 .hint {
   font-size: 0.8rem;
-  color: #6b7280;
+  color: var(--text-dim, #6b7280);
 }
 
 @keyframes fadeIn {

@@ -307,7 +307,7 @@
 .heroIcon {
   position: relative;
   z-index: 2;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--amarillo-bind-accent);
   filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.45));
 }
 
@@ -333,7 +333,7 @@
 
 .brandEm {
   font-style: normal;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--amarillo-bind-accent);
 }
 
 /* ── TARJETA DE ESTADO (reemplaza al viejo warningCallout, que vivía

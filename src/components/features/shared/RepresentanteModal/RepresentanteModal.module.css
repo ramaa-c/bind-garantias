@@ -3,14 +3,14 @@
 .modalRow2 { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
 .modalRow3 { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
 @media (min-width: 36rem) { .modalRow2 { grid-template-columns: repeat(2, 1fr); } .modalRow3 { grid-template-columns: repeat(3, 1fr); } }
-.modalFooter { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.75rem; border-top: 1px solid rgba(var(--overlay-rgb), 0.05); margin-top: 0.125rem; position: sticky; bottom: 0; background: var(--border); }
+.modalFooter { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.75rem; border-top: 1px solid rgba(var(--overlay-rgb), 0.05); margin-top: 0.125rem; position: sticky; bottom: 0; background: var(--bg-modal); }
 .modalFooterAdmin { background: var(--bg-surface); }
 .cuitSearchStep { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; padding: 0.5rem 0 0.25rem; width: 100%; animation: cuitFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
 .cuitSearchBanner { display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.125rem; border-radius: 0.875rem; background: rgba(245, 244, 0, 0.025); border: 1px solid rgba(245, 244, 0, 0.1); width: 100%; max-width: 28rem; transition: border-color 0.2s; }
 .cuitSearchBanner:hover { border-color: rgba(245, 244, 0, 0.18); }
 .cuitSearchBannerAdmin { background: rgba(76, 101, 230, 0.05); border-color: rgba(76, 101, 230, 0.15); }
 .cuitSearchBannerAdmin:hover { border-color: rgba(76, 101, 230, 0.3); }
-.cuitSearchBannerIcon { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: rgba(245, 244, 0, 0.06); border: 1px solid rgba(245, 244, 0, 0.15); display: flex; align-items: center; justify-content: center; color: var(--color-amarillo-bind, #f5f400); flex-shrink: 0; }
+.cuitSearchBannerIcon { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--color-amarillo-bind); border: none; display: flex; align-items: center; justify-content: center; color: var(--on-amarillo-bind); flex-shrink: 0; }
 .cuitSearchBannerIconAdmin { background: rgba(76, 101, 230, 0.1); border-color: rgba(76, 101, 230, 0.25); color: var(--color-azul-bind, #4c65e6); }
 .cuitSearchBannerText { display: flex; flex-direction: column; gap: 0.2rem; }
 .cuitSearchBannerTitle { color: var(--white-muted, #f0f0f0); font-size: 0.8125rem; font-weight: 600; margin: 0; }
@@ -33,7 +33,7 @@
 .customInputWrapper:focus-within { border-color: rgba(245, 244, 0, 0.35); box-shadow: 0 0 0 3px rgba(245, 244, 0, 0.06); }
 .wrapperError { border-color: rgba(255, 82, 82, 0.4) !important; box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.05) !important; }
 .customInput { background: transparent; border: none; color: var(--white, #fffefe); font-size: 1.375rem; font-weight: 700; width: 100%; text-align: center; outline: none; font-family: inherit; letter-spacing: -0.02em; }
-.percentageSymbol { color: var(--color-amarillo-bind, #f5f400); font-size: 1.125rem; font-weight: 700; opacity: 0.6; flex-shrink: 0; }
+.percentageSymbol { color: var(--amarillo-bind-accent); font-size: 1.125rem; font-weight: 700; opacity: 0.6; flex-shrink: 0; }
 .errorContainer { min-height: 1.125rem; display: flex; align-items: flex-start; justify-content: center; width: 100%; }
 .errorText { color: var(--danger-bright); font-size: 0.72rem; margin: 0; display: flex; align-items: center; gap: 0.25rem; }
 @media (min-width: 48rem) { .summaryCard { flex-direction: row; align-items: stretch; } .summaryTop { flex: 1; justify-content: center; } .summaryLeft { justify-content: center; } .editLink { position: absolute; top: 0.75rem; right: 0.75rem; margin-top: 0; align-self: flex-start; } .summaryDivider { width: 1px; height: auto; flex-shrink: 0; } .summaryBottom { width: 13rem; flex-shrink: 0; justify-content: center; border-left: none; } }

@@ -61,7 +61,7 @@
   inset: 0;
   border-radius: 50%;
   border: 1.5px solid transparent;
-  border-top-color: var(--color-amarillo-bind, #f5f400);
+  border-top-color: var(--amarillo-bind-accent);
   animation: spin 0.9s linear infinite;
 }
 

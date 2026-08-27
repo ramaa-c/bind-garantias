@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import {
   FiFileText,
-  FiX,
   FiCheckCircle,
   FiAlertCircle,
   FiClock,
   FiLoader,
 } from "react-icons/fi";
+import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { CargaArchivos } from "../../../ui/CargaArchivos/CargaArchivos";
 import styles from "./DocumentosEmpresaModal.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { toast } from "sonner";
 
@@ -118,12 +116,6 @@ export const DocumentosEmpresaModal = ({
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingKeys, setUploadingKeys] = useState({});
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  useEscape(onClose, isOpen);
-
   const handleGuardarYCerrar = async () => {
     if (!socioId) {
       onClose();
@@ -185,23 +177,8 @@ export const DocumentosEmpresaModal = ({
     onClose();
   };
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div
-        className={styles.modalContainer}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          className={styles.btnClose}
-          onClick={onClose}
-          aria-label="Cerrar"
-        >
-          <FiX size={20} />
-        </button>
-
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="56rem">
         <div className={styles.body}>
           <div className={styles.iconWrapper}>
             <FiFileText size={30} />
@@ -322,8 +299,6 @@ export const DocumentosEmpresaModal = ({
             </Button>
           </div>
         </div>
-      </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 };
