@@ -69,7 +69,7 @@
 .triggerSm:hover,
 .triggerSm[aria-expanded="true"] {
   background: none;
-  color: #c9d1d9;
+  color: var(--white-muted);
   transform: none;
 }
 
@@ -87,11 +87,11 @@
   width: max-content;
   max-width: min(17rem, calc(100vw - 1.5rem));
   padding: 0.6rem 0.75rem;
-  background: #14161c;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--border);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 0.55rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  color: #d5d8dd;
+  color: var(--white-muted);
   font-size: 0.78rem;
   font-weight: 400;
   line-height: 1.45;
@@ -115,19 +115,19 @@
   transform: translateX(-50%) rotate(45deg);
   width: 0.6rem;
   height: 0.6rem;
-  background: #14161c;
+  background: var(--border);
 }
 
 .bottom::after {
   top: -0.3rem;
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 1px solid rgba(var(--overlay-rgb), 0.12);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.12);
 }
 
 .top::after {
   bottom: -0.3rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(var(--overlay-rgb), 0.12);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.12);
 }
 
 @keyframes fadeInTooltip {

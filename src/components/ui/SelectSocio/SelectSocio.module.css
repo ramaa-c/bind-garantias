@@ -11,9 +11,9 @@
   height: 3.2rem;
   display: flex;
   align-items: center;
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(var(--overlay-rgb), 0.1);
   border-radius: 0.6rem;
-  background-color: rgba(255, 255, 255, 0.02);
+  background-color: rgba(var(--overlay-rgb), 0.02);
   transition:
     border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
     background-color 0.2s ease,
@@ -29,8 +29,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #555;
-  border-right: 1.5px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-dim);
+  border-right: 1.5px solid rgba(var(--overlay-rgb), 0.08);
   transition:
     color 0.2s ease,
     border-color 0.2s ease;
@@ -55,7 +55,7 @@
   top: 1.1rem;
   left: 1rem;
   font-size: 1rem;
-  color: #555;
+  color: var(--text-dim);
   pointer-events: none;
   transition:
     top 0.2s cubic-bezier(0.4, 0, 0.2, 1),
@@ -70,28 +70,28 @@
 .container.hasValue .label {
   top: -0.6rem;
   font-size: 0.72rem;
-  background-color: #1e1e1e; /* Color sólido similar al fondo del contenedor */
+  background-color: var(--bg-elevado); /* Color sólido similar al fondo del contenedor */
 }
 
 .statusFocus .label {
-  background-color: #1e1e1e;
+  background-color: var(--bg-elevado);
 }
 
 /* ── MÁQUINA DE ESTADOS VISUALES ─────────────────────────────────────────────── */
 
 /* DEFAULT */
 .statusDefault:hover .innerGroup {
-  border-color: rgba(255, 255, 255, 0.22);
-  background-color: rgba(255, 255, 255, 0.035);
+  border-color: rgba(var(--overlay-rgb), 0.22);
+  background-color: rgba(var(--overlay-rgb), 0.035);
 }
 
 .statusDefault:hover .icon {
-  color: #aaa;
-  border-right-color: rgba(255, 255, 255, 0.15);
+  color: var(--text-muted);
+  border-right-color: rgba(var(--overlay-rgb), 0.15);
 }
 
 .statusDefault.hasValue .label {
-  color: #666;
+  color: var(--text-dim);
 }
 
 /* FOCUS */
@@ -118,12 +118,12 @@
 }
 
 .statusSuccess .icon {
-  color: #4caf50;
+  color: var(--success-bright);
   border-right-color: rgba(76, 175, 80, 0.2);
 }
 
 .statusSuccess .label {
-  color: #4caf50;
+  color: var(--success-bright);
 }
 
 /* ERROR */
@@ -138,12 +138,12 @@
 }
 
 .statusError .icon {
-  color: #ff5252;
+  color: var(--danger-bright);
   border-right-color: rgba(255, 82, 82, 0.25);
 }
 
 .statusError .label {
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 
 /* ERROR MSG */
@@ -152,7 +152,7 @@
   bottom: 0.1rem;
   left: 1rem;
   font-size: 0.72rem;
-  color: #ff5252;
+  color: var(--danger-bright);
   white-space: nowrap;
   animation: slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -172,7 +172,7 @@
 .spinner {
   width: 1.1rem;
   height: 1.1rem;
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(var(--overlay-rgb), 0.15);
   border-top-color: var(--yellow, #f4f500);
   border-radius: 50%;
   animation: spin 0.85s linear infinite;
@@ -187,12 +187,12 @@
 
 /* SHIMMER EFFECT DURING LOADING */
 .container.isLoading .innerGroup {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(var(--overlay-rgb), 0.08);
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.02) 25%,
-    rgba(255, 255, 255, 0.07) 50%,
-    rgba(255, 255, 255, 0.02) 75%
+    rgba(var(--overlay-rgb), 0.02) 25%,
+    rgba(var(--overlay-rgb), 0.07) 50%,
+    rgba(var(--overlay-rgb), 0.02) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.6s infinite linear;
@@ -212,23 +212,23 @@
 .container.isLoading .label {
   top: -0.6rem;
   font-size: 0.72rem;
-  background-color: #1e1e1e;
+  background-color: var(--bg-elevado);
 }
 
 /* DISABLED STATE */
 .container.isDisabled .innerGroup {
-  border-color: rgba(255, 255, 255, 0.05);
-  background-color: rgba(255, 255, 255, 0.01);
+  border-color: rgba(var(--overlay-rgb), 0.05);
+  background-color: rgba(var(--overlay-rgb), 0.01);
   cursor: not-allowed;
   pointer-events: none;
 }
 
 .container.isDisabled .icon {
-  color: #333;
-  border-right-color: rgba(255, 255, 255, 0.04);
+  color: var(--border-hover);
+  border-right-color: rgba(var(--overlay-rgb), 0.04);
 }
 
 .container.isDisabled .label {
-  color: #444;
+  color: var(--text-dim);
 }
 

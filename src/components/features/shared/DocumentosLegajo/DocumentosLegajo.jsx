@@ -946,7 +946,7 @@ export function DocumentosLegajo({
       maxWidth="420px"
       preventClose={confirmandoFechaBalance}
     >
-      <p style={{ color: "#9aa1af", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+      <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
         Para subir este balance necesitamos saber a qué período corresponde.
       </p>
       <SelectFecha
@@ -1225,7 +1225,7 @@ export function DocumentosLegajo({
                 style={{
                   transform: isActive ? "rotate(180deg)" : "rotate(0deg)",
                   transition: "transform 0.3s ease",
-                  color: isActive ? "#fff" : "#aaa",
+                  color: isActive ? "var(--white)" : "var(--text-muted)",
                   fontSize: "1.1rem",
                 }}
               />

@@ -125,7 +125,7 @@ export default function Paso4Socios({
 
           <div className={styles.warningsContainer}>
             {totalGuardado !== 100 && (
-              <span className={styles.warningText} style={{ display: "flex", alignItems: "center", gap: "0.25rem", color: "#ff9800" }}>
+              <span className={styles.warningText} style={{ display: "flex", alignItems: "center", gap: "0.25rem", color: "var(--warning-orange)" }}>
                 <FiAlertCircle size={14} />
                 {totalGuardado < 100
                   ? `La sumatoria debe ser exactamente 100% para continuar (actual: ${totalGuardado}%)`
@@ -133,7 +133,7 @@ export default function Paso4Socios({
               </span>
             )}
             {!todosCompletos && socios.length > 0 && (
-              <span className={styles.warningText} style={{ display: "flex", alignItems: "center", gap: "0.25rem", color: "#ff9800" }}>
+              <span className={styles.warningText} style={{ display: "flex", alignItems: "center", gap: "0.25rem", color: "var(--warning-orange)" }}>
                 <FiAlertCircle size={14} />
                 Completá los datos de contacto y cargá el DNI de todos los socios para continuar.
               </span>
@@ -149,19 +149,19 @@ export default function Paso4Socios({
               alignItems: "center",
               justifyContent: "center",
               padding: "3rem 1.5rem",
-              background: "rgba(255, 255, 255, 0.02)",
-              border: "1px dashed rgba(255, 255, 255, 0.1)",
+              background: "rgba(var(--overlay-rgb), 0.02)",
+              border: "1px dashed rgba(var(--overlay-rgb), 0.1)",
               borderRadius: "0.75rem",
               textAlign: "center",
               gap: "0.5rem",
               marginBottom: "1.25rem",
             }}
           >
-            <FiAlertCircle size={32} style={{ color: "rgba(255, 255, 255, 0.3)" }} />
-            <p style={{ color: "#fff", fontWeight: 600, margin: 0, fontSize: "0.9375rem" }}>
+            <FiAlertCircle size={32} style={{ color: "rgba(var(--overlay-rgb), 0.3)" }} />
+            <p style={{ color: "var(--white)", fontWeight: 600, margin: 0, fontSize: "0.9375rem" }}>
               Sin socios registrados
             </p>
-            <span style={{ color: "rgba(255, 255, 255, 0.5)", fontSize: "0.78rem" }}>
+            <span style={{ color: "rgba(var(--overlay-rgb), 0.5)", fontSize: "0.78rem" }}>
               Haga click en "Agregar Socio" para dar de alta.
             </span>
           </div>

@@ -12,20 +12,20 @@
     justify-content: center;
     padding: 4rem 0;
     gap: 1.5rem;
-    color: #888;
+    color: var(--text-muted);
 }
 
 .emptyState {
     text-align: center;
     padding: 4rem 2rem;
-    color: #888;
+    color: var(--text-muted);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
-    background-color: #1a1a1a;
+    background-color: var(--bg-elevado);
     border-radius: 0.5rem;
-    border: 1px dashed #333;
+    border: 1px dashed var(--border-hover);
 }
 
 .emptyState span {
@@ -57,7 +57,7 @@
 
 .timelineIcon svg {
     font-size: 1.75rem;
-    background: #111;
+    background: var(--border);
     z-index: 2;
     border-radius: 50%;
     padding: 2px;
@@ -68,23 +68,23 @@
     top: 2rem;
     bottom: -2rem;
     width: 2px;
-    background: #333;
+    background: var(--border-hover);
     z-index: 1;
 }
 
 .timelineContent {
     flex: 1;
-    background: #1a1a1a;
+    background: var(--bg-elevado);
     padding: 1.25rem;
     border-radius: 12px;
-    border: 1px solid #333;
+    border: 1px solid var(--border-hover);
     transition: transform 0.2s, border-color 0.2s;
 }
 
 .timelineContent:hover {
     transform: translateX(5px);
-    border-color: #555;
-    background: #1f1f1f;
+    border-color: var(--text-dim);
+    background: var(--border);
 }
 
 .timelineHeader {
@@ -103,11 +103,11 @@
 
 .date {
     font-size: 0.75rem;
-    color: #aaa;
-    background: #222;
+    color: var(--text-muted);
+    background: var(--border);
     padding: 0.25rem 0.6rem;
     border-radius: 4px;
-    border: 1px solid #333;
+    border: 1px solid var(--border-hover);
 }
 
 .timelineBody {
@@ -118,22 +118,22 @@
 
 .observation {
     font-size: 0.875rem;
-    color: #ccc;
+    color: var(--white-muted);
     line-height: 1.5;
     margin: 0;
 }
 
 .user {
     font-size: 0.75rem;
-    color: #888;
-    border-top: 1px inset #333;
+    color: var(--text-muted);
+    border-top: 1px inset var(--border-hover);
     padding-top: 0.75rem;
     margin-top: 0.25rem;
 }
 
 .iconSuccess { color: #28a745; }
 .iconDanger { color: #dc3545; }
-.iconWarning { color: #ffc107; }
+.iconWarning { color: var(--warning); }
 .iconInfo { color: #007bff; }
 
 /* Custom scroll */
@@ -142,14 +142,14 @@
 }
 
 .container::-webkit-scrollbar-track {
-    background: #111;
+    background: var(--border);
 }
 
 .container::-webkit-scrollbar-thumb {
-    background: #444;
+    background: var(--text-dim);
     border-radius: 10px;
 }
 
 .container::-webkit-scrollbar-thumb:hover {
-    background: #666;
+    background: var(--text-dim);
 }

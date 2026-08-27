@@ -45,7 +45,7 @@
   align-items: stretch;
   gap: 1.25rem;
   padding-bottom: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
   margin-bottom: 1.25rem;
 }
 
@@ -82,7 +82,7 @@
 }
 
 .subtitle {
-  color: #888;
+  color: var(--text-muted);
   margin: 0.15rem 0 0 0;
   font-size: 0.85rem;
 }
@@ -90,11 +90,11 @@
 /* CAJA DE CRÉDITO */
 .creditInfo {
   text-align: left;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   backdrop-filter: blur(12px);
   padding: 1rem 1.25rem;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   width: 100%;
   transition:
     transform 0.2s ease,
@@ -102,12 +102,12 @@
 }
 
 .creditInfo:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .creditLabel {
   display: block;
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -124,7 +124,7 @@
 }
 
 .creditExpiry {
-  color: #666;
+  color: var(--text-dim);
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -152,8 +152,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.875rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 1rem;
   padding: 1rem 1.125rem;
   margin-bottom: 1.5rem;
@@ -173,7 +173,7 @@
   left: 0.9rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #888;
+  color: var(--text-muted);
   font-size: 1rem;
   transition: color 0.2s ease;
 }
@@ -185,8 +185,8 @@
 .searchInput {
   width: 100%;
   height: 2.5rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 0.625rem;
   padding: 0 0.875rem 0 2.5rem;
   color: var(--white);
@@ -195,19 +195,19 @@
 }
 
 .searchInput:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--overlay-rgb), 0.05);
+  border-color: rgba(var(--overlay-rgb), 0.15);
 }
 
 .searchInput:focus {
   outline: none;
   border-color: var(--yellow);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.15);
 }
 
 .searchInput::placeholder {
-  color: #666;
+  color: var(--text-dim);
   font-weight: 400;
 }
 
@@ -237,7 +237,7 @@
   width: 2.35rem;
   height: 2.35rem;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 0.6rem;
   color: #8b949e;
   font-size: 1rem;
@@ -275,24 +275,24 @@
   width: 6px;
 }
 .listContainer::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   border-radius: 4px;
 }
 .listContainer::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--overlay-rgb), 0.1);
   border-radius: 4px;
 }
 .listContainer::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--overlay-rgb), 0.2);
 }
 
 .emptyState,
 .loadingContainer {
   text-align: center;
   padding: 3rem 1.5rem;
-  color: #666;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+  color: var(--text-dim);
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px dashed rgba(var(--overlay-rgb), 0.1);
   border-radius: 1rem;
   display: flex;
   flex-direction: column;

@@ -79,7 +79,71 @@
   --white-muted: #f0f0f0;
   --success-green: #3ddc84;
   --error-red: #ef4444;
+  --warning: #ffc107;
+
+  /* Variantes "brillantes" ya muy establecidas en badges/estados (más usos
+     que las de arriba en varios archivos) - se mantienen separadas a
+     propósito en vez de forzarlas a fundirse con --error-red/--success-green
+     (visualmente son tonos distintos); un pase de diseño futuro puede
+     unificarlas si corresponde. */
+  --danger-bright: #ff5252;
+  --success-bright: #4caf50;
+  --warning-orange: #ff9800;
+
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Fondos - primer paso hacia modo claro: agrupa la decena de negros
+     casi-iguales que había sueltos por los .module.css en 3 roles, sin
+     cambiar ningún valor todavía (mismo look actual). Cuando exista modo
+     claro, estos 3 son los únicos que hace falta redefinir. */
+  --bg-primario: var(--carbon-black);
+  --bg-surface: #0d1117;
+  --bg-elevado: #1e1e1e;
+
+  /* Tripletas RGB (sin rgba() alrededor) para poder seguir usando
+     rgba(var(--overlay-rgb), 0.08) con la opacidad que ya tenía cada lugar -
+     así los bordes/glows sutiles translúcidos (hoy hardcodeados como
+     rgba(255,255,255,X) o rgba(30,30,30,X) en decenas de .module.css)
+     también se pueden invertir en modo claro sin tocar la opacidad de cada
+     uno. Arrancamos usándolos en LegajoUniversalBar (el componente que más
+     se ve); el resto se puede ir migrando con el mismo criterio. */
+  --overlay-rgb: 255, 255, 255;
+  --glass-rgb: 30, 30, 30;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MODO CLARO - solo zona cliente (ver ThemeManager.jsx, el toggle vive en
+   Navbar.jsx). El panel admin nunca recibe data-theme="light" a propósito.
+   Colores de marca (amarillo/azul) se mantienen iguales en los dos modos -
+   funcionan bien sobre fondo claro y oscuro tal cual están. Todo lo demás
+   (fondos, textos, bordes, estados) se redefine acá; son los únicos ~18
+   tokens que hacen falta tocar gracias a la migración a variables. */
+:root[data-theme="light"] {
+  --color-gris-bind: #f4f5f7;
+  --white: #1c1c1e;
+  --carbon-black: #f4f5f7;
+  --graphite: #e4e6eb;
+  --soft-gray: #ffffff;
+
+  --border: #e4e6eb;
+  --border-hover: #cbd0d8;
+  --text-muted: #52525b;
+  --text-dim: #71717a;
+  --white-muted: #3f3f46;
+
+  --success-green: #1fa968;
+  --error-red: #dc2626;
+  --warning: #d97706;
+  --danger-bright: #e53935;
+  --success-bright: #2e7d32;
+  --warning-orange: #e65100;
+
+  --bg-primario: #f4f5f7;
+  --bg-surface: #ffffff;
+  --bg-elevado: #ffffff;
+
+  --overlay-rgb: 27, 27, 30;
+  --glass-rgb: 255, 255, 255;
 }
 
 * {

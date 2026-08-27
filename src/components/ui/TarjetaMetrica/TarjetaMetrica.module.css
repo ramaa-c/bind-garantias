@@ -1,6 +1,6 @@
 .card {
   background-color: var(--graphite);
-  border: 1px solid #333;
+  border: 1px solid var(--border-hover);
   border-radius: 12px;
   padding: 1.5rem;
   display: flex;
@@ -10,7 +10,7 @@
 
 .card:hover {
   transform: translateY(-3px);
-  border-color: #555;
+  border-color: var(--text-dim);
 }
 
 .icon {
@@ -20,7 +20,7 @@
 }
 
 .label {
-  color: #aaa;
+  color: var(--text-muted);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -42,7 +42,7 @@
 }
 
 .skeletonBlock {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   border-radius: 4px;
   animation: pulse 1.5s infinite ease-in-out;
 }

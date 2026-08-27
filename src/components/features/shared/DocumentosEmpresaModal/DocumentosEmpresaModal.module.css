@@ -11,13 +11,13 @@
 }
 
 .modalContainer {
-  background-color: #1a1a1a;
+  background-color: var(--bg-elevado);
   width: 92%;
   max-width: 40.625rem;
   max-height: 92vh;
   overflow-y: auto;
   border-radius: 1.25rem;
-  border: 1px solid #333;
+  border: 1px solid var(--border-hover);
   padding: 1.5625rem 1.25rem;
   position: relative;
   box-shadow: 0 1.25rem 2.5rem rgba(0, 0, 0, 0.5);
@@ -27,7 +27,7 @@
   width: 0.375rem;
 }
 .modalContainer::-webkit-scrollbar-thumb {
-  background-color: #444;
+  background-color: var(--text-dim);
   border-radius: 0.625rem;
 }
 
@@ -37,7 +37,7 @@
   right: 1.25rem;
   background: none;
   border: none;
-  color: #666;
+  color: var(--text-dim);
   cursor: pointer;
   z-index: 10;
   padding: 0.3125rem;
@@ -71,7 +71,7 @@
 }
 
 .description {
-  color: #888;
+  color: var(--text-muted);
   margin-top: 0.25rem;
   margin-bottom: 1.25rem;
   font-size: 0.875rem;
@@ -80,8 +80,8 @@
 .workspace {
   display: flex;
   flex-direction: column;
-  background-color: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: rgba(var(--overlay-rgb), 0.02);
+  border: 1px solid rgba(var(--overlay-rgb), 0.05);
   border-radius: 0.75rem;
   overflow: hidden;
   width: 100%;
@@ -97,7 +97,7 @@
   margin: 0;
   font-weight: 600;
   background-color: rgba(0, 0, 0, 0.2);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
 }
 
 .docItem {
@@ -108,7 +108,7 @@
 .tabBtn {
   background: transparent;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
   padding: 1rem 1.25rem;
   cursor: pointer;
   position: relative;
@@ -118,10 +118,10 @@
 }
 
 .tabBtn:hover {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(var(--overlay-rgb), 0.03);
 }
 .tabActive {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(var(--overlay-rgb), 0.05);
 }
 
 .tabContent {
@@ -155,7 +155,7 @@
   flex-shrink: 0;
 }
 .iconPending {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(var(--overlay-rgb), 0.2);
   flex-shrink: 0;
 }
 
@@ -165,7 +165,7 @@
   flex-direction: column;
   gap: 1.25rem;
   background-color: rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
 }
 
 .viewerHeader {
@@ -173,7 +173,7 @@
   flex-direction: column;
   gap: 0.25rem;
   padding-bottom: 1rem;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+  border-bottom: 1px dashed rgba(var(--overlay-rgb), 0.1);
 }
 
 .viewerTitle {
@@ -190,7 +190,7 @@
 }
 
 .viewerInfo strong {
-  color: #cccccc;
+  color: var(--white-muted);
 }
 
 .dropzoneContainer {
@@ -259,7 +259,7 @@
     left: 0;
     width: 16rem;
     background-color: rgba(0, 0, 0, 0.2);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(var(--overlay-rgb), 0.05);
     z-index: 0;
   }
 

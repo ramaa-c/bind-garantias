@@ -14,7 +14,7 @@
 .track {
   position: relative;
   border-radius: 999px;
-  background: #30363d;
+  background: var(--border-hover);
   border: 1px solid #444c56;
   padding: 0;
   cursor: pointer;
@@ -31,13 +31,13 @@
   top: 50%;
   transform: translateY(-50%);
   border-radius: 50%;
-  background: #c9d1d9;
+  background: var(--white-muted);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   transition: transform 0.25s var(--ease-out, ease), background-color 0.25s ease;
 }
 
 .checked .thumb {
-  background: #ffffff;
+  background: var(--white);
 }
 
 /* ── Sizes ────────────────────────────────────────────────── */
@@ -85,5 +85,5 @@
 .label {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #c9d1d9;
+  color: var(--white-muted);
 }

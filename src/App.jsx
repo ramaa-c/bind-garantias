@@ -14,6 +14,7 @@ import LegajoDataGuard from "./components/guards/LegajoDataGuard/LegajoDataGuard
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
 import GuestGuard from "./components/guards/GuestGuard/GuestGuard";
 import SessionTimeoutManager from "./components/guards/SessionTimeoutManager/SessionTimeoutManager";
+import ThemeManager from "./components/guards/ThemeManager/ThemeManager";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
 import LoadingScreen from "./components/ui/LoadingScreen/LoadingScreen";
@@ -98,6 +99,7 @@ function App() {
       <ChannelProvider>
         <Toaster position="top-right" richColors closeButton theme="dark" />
         <SessionTimeoutManager />
+        <ThemeManager />
         <Suspense fallback={<LoadingScreen />}>
           <Routes>
             {/* Antes acá se auto-seleccionaba la primera cadena activa y se

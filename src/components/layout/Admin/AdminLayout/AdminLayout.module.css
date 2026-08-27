@@ -6,7 +6,7 @@
   background-image: 
     radial-gradient(ellipse at 50% -20%, rgba(76, 101, 230, 0.1) 0%, transparent 60%),
     radial-gradient(ellipse at 0% 100%, rgba(76, 101, 230, 0.05) 0%, transparent 50%);
-  color: #f0f6fc;
+  color: var(--white-muted);
   font-family:
     "Inter",
     system-ui,

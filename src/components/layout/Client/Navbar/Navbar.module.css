@@ -3,10 +3,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 1.5rem;
-  background: rgba(26, 26, 26, 0.75);
+  background: rgba(var(--glass-rgb), 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.08);
   min-height: 4.5rem;
   position: sticky;
   top: 0;
@@ -55,7 +55,7 @@
 .logoSeparator {
   width: 1px;
   height: 1.5rem;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(var(--overlay-rgb), 0.2);
   margin: 0 1rem;
 }
 
@@ -73,7 +73,7 @@
   gap: 0.4rem;
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(76, 101, 230, 0.1), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(135deg, rgba(76, 101, 230, 0.1), rgba(var(--overlay-rgb), 0.02));
   border: 1px solid rgba(76, 101, 230, 0.22);
   white-space: nowrap;
 }
@@ -90,7 +90,7 @@
 }
 
 .vendorBadgeSep {
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(var(--overlay-rgb), 0.2);
   font-size: 0.78rem;
 }
 
@@ -105,8 +105,8 @@
 
 /* --- BOTÓN DE AYUDA --- */
 .helpButton {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(var(--overlay-rgb), 0.05);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 50%;
   width: 2.75rem;
   height: 2.75rem;
@@ -129,6 +129,33 @@
   font-size: 1.3rem;
 }
 
+/* --- BOTÓN DE TEMA --- */
+.themeButton {
+  background: rgba(var(--overlay-rgb), 0.05);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
+  border-radius: 50%;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--white);
+  transition: all 0.2s ease;
+  margin-right: 0.25rem;
+  flex-shrink: 0;
+}
+
+.themeButton:hover {
+  background: rgba(245, 244, 0, 0.12);
+  border-color: rgba(245, 244, 0, 0.3);
+  color: var(--yellow);
+}
+
+.themeIcon {
+  font-size: 1.2rem;
+}
+
 .userMenuContainer {
   display: none;
 }
@@ -144,7 +171,7 @@
 }
 
 .userTrigger:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(var(--overlay-rgb), 0.05);
 }
 
 .avatarWrapper {
@@ -186,11 +213,11 @@
   left: 0;
   right: 0;
   width: 100%;
-  background: rgba(26, 26, 26, 0.85);
+  background: rgba(var(--glass-rgb), 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.04);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 0 0 1.5rem 1.5rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -210,7 +237,7 @@
 
 .dropdownHeader {
   padding: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
   background: transparent;
   text-align: center;
 }
@@ -262,7 +289,7 @@
 }
 
 .dropdownItem:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   color: var(--white);
 }
 
@@ -276,7 +303,7 @@
   flex-direction: column;
   gap: 0.4rem;
   padding: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.05);
 }
 
 .changeCompanyBtn {
@@ -308,7 +335,7 @@
   gap: 0.4rem;
   width: 100%;
   background-color: rgba(255, 82, 82, 0.08);
-  color: #ff5252;
+  color: var(--danger-bright);
   font-size: 0.8rem;
   font-weight: 700;
   padding: 0.75rem;
@@ -328,7 +355,7 @@
   .header {
     margin: 0.75rem 1.25rem 0 0;
     border-radius: 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(var(--overlay-rgb), 0.06);
     min-height: 5rem;
     padding: 0 2.5rem;
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
@@ -366,10 +393,10 @@
     right: 0;
     left: auto;
     width: 17rem;
-    background: #1e1e1e;
+    background: var(--bg-elevado);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(var(--overlay-rgb), 0.08);
     border-radius: 1.25rem;
   }
 

@@ -9,10 +9,10 @@
 .ticketBox {
   background: linear-gradient(
     145deg,
-    rgba(255, 255, 255, 0.03) 0%,
+    rgba(var(--overlay-rgb), 0.03) 0%,
     rgba(0, 0, 0, 0.2) 100%
   );
-  border: 1px solid #333;
+  border: 1px solid var(--border-hover);
   border-radius: 0.75rem;
   padding: 1.5rem;
   display: flex;
@@ -24,7 +24,7 @@
 
 .ticketHeader {
   text-align: left;
-  border-bottom: 1px dashed #444;
+  border-bottom: 1px dashed var(--text-dim);
   padding-bottom: 1.5rem;
 }
 
@@ -52,7 +52,7 @@
   display: block;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #aaa;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.75rem;
@@ -62,7 +62,7 @@
   vertical-align: top;
   width: 40%;
   padding-right: 2rem;
-  border-right: 1px solid #444;
+  border-right: 1px solid var(--text-dim);
 }
 
 .cellContent {
@@ -83,12 +83,12 @@
 .dataRow {
   display: flex;
   justify-content: space-between;
-  color: #ccc;
+  color: var(--white-muted);
   font-size: 0.95rem;
 }
 
 .dataLabel {
-  color: #ccc;
+  color: var(--white-muted);
 }
 
 .dataValue {
@@ -99,7 +99,7 @@
 }
 
 .dataUnidad {
-  color: #aaa;
+  color: var(--text-muted);
   font-size: 0.85rem;
   font-weight: 400;
   margin-left: 0.3rem;
@@ -121,7 +121,7 @@
 }
 
 .textoAlerta {
-  color: #aaa;
+  color: var(--text-muted);
   font-size: 0.85rem;
   line-height: 1.5;
   text-align: center;
@@ -147,7 +147,7 @@
     width: 100%;
     padding-right: 0;
     border-right: none;
-    border-bottom: 1px solid #444;
+    border-bottom: 1px solid var(--text-dim);
     padding-bottom: 1rem;
     margin-bottom: 1rem;
   }

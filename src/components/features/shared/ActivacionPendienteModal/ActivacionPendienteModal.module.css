@@ -93,7 +93,7 @@
 .mensaje {
   font-size: 0.925rem;
   line-height: 1.65;
-  color: #9aa1af;
+  color: var(--text-muted);
   margin: 0;
 }
 

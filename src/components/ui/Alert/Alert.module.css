@@ -8,7 +8,7 @@
 
 /* Formato Caja (Ancho completo) */
 .box {
-  background-color: rgba(255, 255, 255, 0.03);
+  background-color: rgba(var(--overlay-rgb), 0.03);
   padding: 15px 20px;
   gap: 15px;
   width: 100%;
@@ -18,7 +18,7 @@
 /* Formato Píldora (Se adapta al contenido) */
 .pill {
   display: inline-flex;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(var(--overlay-rgb), 0.05);
   padding: 10px 15px;
   gap: 10px;
   width: auto;
@@ -27,33 +27,33 @@
 /* --- VARIANTES DE COLOR (Bordes e Íconos) --- */
 /* Info / Default (Gris) */
 .default {
-  border-left: 3px solid #888;
+  border-left: 3px solid var(--text-muted);
 }
-.default .icon { color: #888; }
-.default .text { color: #bbb; }
+.default .icon { color: var(--text-muted); }
+.default .text { color: var(--text-muted); }
 
 /* Destacado / Atención (Amarillo) */
 .warning {
   border-left: 3px solid var(--yellow);
 }
 .warning .icon { color: var(--yellow); }
-.warning .text { color: #ccc; }
+.warning .text { color: var(--white-muted); }
 
 /* Éxito (Verde) */
 .success {
-  border-left: 3px solid #4caf50;
+  border-left: 3px solid var(--success-bright);
   background-color: rgba(76, 175, 80, 0.05);
 }
-.success .icon { color: #4caf50; }
-.success .text { color: #ccc; }
+.success .icon { color: var(--success-bright); }
+.success .text { color: var(--white-muted); }
 
 /* Error (Rojo) */
 .error {
-  border-left: 3px solid #ff5252;
+  border-left: 3px solid var(--danger-bright);
   background-color: rgba(255, 82, 82, 0.05);
 }
-.error .icon { color: #ff5252; }
-.error .text { color: #ff5252; }
+.error .icon { color: var(--danger-bright); }
+.error .text { color: var(--danger-bright); }
 
 /* --- TEXTOS E ÍCONOS --- */
 .icon {

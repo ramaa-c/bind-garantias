@@ -19,8 +19,8 @@
 .cellWrapper {
   position: relative;
   aspect-ratio: 1;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 0.875rem;
   transition:
     border-color 0.25s ease,
@@ -32,13 +32,13 @@
 /* ── ESTADOS VISUALES (espejo de InputSimple) ── */
 
 .statusDefault:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background-color: rgba(255, 255, 255, 0.035);
+  border-color: rgba(var(--overlay-rgb), 0.22);
+  background-color: rgba(var(--overlay-rgb), 0.035);
 }
 
 .statusFilled {
-  border-color: rgba(255, 255, 255, 0.18);
-  background-color: rgba(255, 255, 255, 0.045);
+  border-color: rgba(var(--overlay-rgb), 0.18);
+  background-color: rgba(var(--overlay-rgb), 0.045);
 }
 
 .statusFocus {
@@ -96,7 +96,7 @@
 
 .errorMsg {
   font-size: 0.7rem;
-  color: #ff5252;
+  color: var(--danger-bright);
   padding-left: 0.25rem;
   display: flex;
   align-items: center;

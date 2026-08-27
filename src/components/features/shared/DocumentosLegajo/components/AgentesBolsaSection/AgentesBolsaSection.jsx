@@ -81,7 +81,7 @@ export function AgentesBolsaSection({
                         </span>
                         <span className={styles.socioCuit} style={{ marginTop: "0.15rem" }}>
                           Comitente:{" "}
-                          <strong style={{ color: "#fff" }}>
+                          <strong style={{ color: "var(--white)" }}>
                             {bolsa.nrosubcuentacaja || "—"}
                           </strong>
                         </span>

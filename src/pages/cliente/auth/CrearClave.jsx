@@ -280,7 +280,7 @@ const CrearClave = () => {
             justifyContent: "center",
             alignItems: "center",
             minHeight: "100vh",
-            backgroundColor: "var(--color-background, #121212)",
+            backgroundColor: "var(--bg-primario)",
           }}
         >
           <Spinner />
@@ -376,7 +376,7 @@ const CrearClave = () => {
               <div className={styles.formWrapper}>
                 {tokenInvalidoDeOrigen && (
                   <div className={styles.expiredTokenContainer}>
-                    <FiAlertCircle size={48} color="var(--red)" />
+                    <FiAlertCircle size={48} color="var(--error-red)" />
                     <h3>Enlace corrupto o ausente</h3>
                     <p>El enlace de seguridad está incompleto o mal formado.</p>
 
@@ -421,7 +421,7 @@ const CrearClave = () => {
 
                 {mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen && (
                   <div className={styles.expiredTokenContainer}>
-                    <FiAlertCircle size={48} color="var(--red)" />
+                    <FiAlertCircle size={48} color="var(--error-red)" />
                     <h3>El enlace ha expirado o es inválido</h3>
                     <p>
                       Por seguridad, los enlaces tienen un tiempo de validez

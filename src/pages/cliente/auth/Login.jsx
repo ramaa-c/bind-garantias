@@ -192,7 +192,7 @@ const CredentialsPhase = ({
         alignItems: "center",
         gap: "0.5rem",
         fontSize: "0.875rem",
-        color: "var(--gray-text, #a0a0a0)",
+        color: "var(--text-muted)",
       }}
     >
       <span>
@@ -229,7 +229,7 @@ const CredentialsPhase = ({
         marginTop: "1.5rem",
         textAlign: "center",
         fontSize: "0.875rem",
-        color: "var(--gray-text, #a0a0a0)",
+        color: "var(--text-muted)",
       }}
     >
       ¿No tenés una cuenta?{" "}

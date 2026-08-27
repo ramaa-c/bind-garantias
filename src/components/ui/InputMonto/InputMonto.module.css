@@ -13,7 +13,7 @@
 }
 
 .label {
-  color: #666;
+  color: var(--text-dim);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -73,7 +73,7 @@
 .input {
   background: transparent;
   border: none;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 2px solid rgba(var(--overlay-rgb), 0.08);
   color: var(--white);
   font-size: 3.5rem;
   font-weight: 700;
@@ -110,7 +110,7 @@
   margin-top: 0.5rem;
   left: 50%;
   transform: translateX(-50%);
-  color: var(--color-danger, #ef4444);
+  color: var(--error-red);
   font-size: 0.875rem;
   white-space: nowrap;
   pointer-events: none;

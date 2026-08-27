@@ -23,7 +23,7 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, rgba(var(--overlay-rgb), 0.1), transparent);
 }
 
 .faqList {
@@ -42,7 +42,7 @@
 }
 
 :global(.duda-item:hover) {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(var(--overlay-rgb), 0.03);
   border-left-color: var(--yellow, #f4f500);
 }
 
@@ -73,7 +73,7 @@
 }
 
 .respuesta {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--overlay-rgb), 0.5);
   font-size: 0.875rem;
   line-height: 1.6;
   margin: 0.75rem 0 0 2.125rem;

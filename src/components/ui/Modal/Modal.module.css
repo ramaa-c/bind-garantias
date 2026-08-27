@@ -17,8 +17,8 @@
 /* ── BOX ─────────────────────────────────────────────────────────────────────── */
 
 .modalBox {
-  background-color: #161616;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background-color: var(--border);
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
   border-radius: 1.125rem;
   width: 100%;
   max-height: 90vh;
@@ -28,7 +28,7 @@
   position: relative;
   box-shadow:
     inset 3px 0 0 rgba(245, 244, 0, 0.28),
-    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(var(--overlay-rgb), 0.04),
     0 24px 64px rgba(0, 0, 0, 0.55),
     0 8px 24px rgba(0, 0, 0, 0.35);
   animation: modalIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
@@ -42,7 +42,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 1.375rem 1.5rem 1.125rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.055);
   background: linear-gradient(180deg,
       rgba(245, 244, 0, 0.025) 0%,
       transparent 100%);
@@ -75,9 +75,9 @@
 /* ── CLOSE BUTTON ────────────────────────────────────────────────────────────── */
 
 .closeButton {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  color: #555;
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
+  color: var(--text-dim);
   width: 2rem;
   height: 2rem;
   border-radius: 0.5rem;
@@ -112,9 +112,9 @@
   top: 1rem;
   right: 1rem;
   z-index: 2;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  color: #555;
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
+  color: var(--text-dim);
   width: 2rem;
   height: 2rem;
   border-radius: 0.5rem;
@@ -133,7 +133,7 @@
 
 .closeButtonFloating:hover {
   color: var(--white, #fffefe);
-  border-color: rgba(255, 255, 255, 0.18);
+  border-color: rgba(var(--overlay-rgb), 0.18);
   transform: scale(1.05);
 }
 
@@ -164,7 +164,7 @@
 }
 
 .body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   border-radius: 999px;
 }
 
@@ -181,7 +181,7 @@
      hijos, ej. CdaPanel) hereden el azul en vez de caer al amarillo default. */
   --scrollbar-thumb: rgba(59, 78, 209, 0.25);
   --scrollbar-thumb-hover: rgba(59, 78, 209, 0.5);
-  background-color: #0d1117;
+  background-color: var(--bg-surface);
   border-color: rgba(59, 78, 209, 0.2);
   box-shadow:
     inset 3px 0 0 rgba(59, 78, 209, 0.5),
@@ -216,9 +216,9 @@
    aporta el propio contenido (sello, líneas, botón), no el contenedor. */
 
 .confirmVariant {
-  background-color: #12141a;
+  background-color: var(--border);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(var(--overlay-rgb), 0.05),
     0 24px 64px rgba(0, 0, 0, 0.55),
     0 8px 24px rgba(0, 0, 0, 0.35);
 }

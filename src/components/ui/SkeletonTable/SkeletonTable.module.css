@@ -1,7 +1,7 @@
 .skeletonCard {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid #333;
-  border-left: 0.25rem solid #444;
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px solid var(--border-hover);
+  border-left: 0.25rem solid var(--text-dim);
   border-radius: 0.75rem;
   padding: 1.25rem;
   display: flex;
@@ -28,12 +28,12 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.05);
   width: 100%;
 }
 
 .skeletonBlock {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   border-radius: 4px;
   animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

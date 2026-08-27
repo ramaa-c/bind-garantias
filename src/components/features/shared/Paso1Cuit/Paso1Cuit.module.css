@@ -84,8 +84,8 @@
   gap: 0.4rem;
   padding: 0.4rem 0.75rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   color: #8b949e;
   font-size: 0.7rem;
   font-weight: 600;
@@ -103,7 +103,7 @@
 .trustChip:hover {
   border-color: rgba(245, 244, 0, 0.22);
   background: rgba(245, 244, 0, 0.04);
-  color: #c9d1d9;
+  color: var(--white-muted);
 }
 
 @media (max-width: 26rem) {

@@ -10,12 +10,15 @@ import {
   FiLogOut,
   FiBriefcase,
   FiUser,
+  FiSun,
+  FiMoon,
 } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./Navbar.module.css";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
+import { useThemeStore } from "../../../../store/useThemeStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/ChannelContext";
@@ -40,6 +43,8 @@ const Navbar = ({
   const { channelInfo } = useChannel();
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
+  const theme = useThemeStore((state) => state.theme);
+  const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
   const { nombreEmpresa, onboardingCompleto } = useEmpresaActiva();
   // Ver mismo criterio en Sidebar.jsx: en alta-datos-empresa no hay una
@@ -93,7 +98,7 @@ const Navbar = ({
           onClick={onToggleSidebar}
           aria-label="Menú"
         >
-          <FiMenu size={24} color="#fff" />
+          <FiMenu size={24} color="var(--white)" />
         </button>
         <div className={styles.logoContainer} role="button" tabIndex={0} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)}>
           <img src={logoBind} alt="Bind Garantías" className={styles.logo} />
@@ -124,6 +129,16 @@ const Navbar = ({
       </div>
 
       <div className={styles.rightSection}>
+        <button
+          type="button"
+          className={styles.themeButton}
+          onClick={toggleTheme}
+          aria-label={theme === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro"}
+          title={theme === "light" ? "Modo oscuro" : "Modo claro"}
+        >
+          {theme === "light" ? <FiMoon className={styles.themeIcon} /> : <FiSun className={styles.themeIcon} />}
+        </button>
+
         {user ? (
           <>
             {/* Sin contenido de ayuda escrito todavía para algunas pantallas

@@ -112,7 +112,7 @@
 
 .icono_completado {
   background-color: var(--success-green, #3ddc84);
-  color: #111;
+  color: var(--border);
   box-shadow: 0 0 0 4px rgba(61, 220, 132, 0.1);
 }
 
@@ -142,7 +142,7 @@
 .icono_alerta {
   background-color: rgba(255, 193, 7, 0.12);
   border: 1.5px solid rgba(255, 193, 7, 0.45);
-  color: #ffc107;
+  color: var(--warning);
 }
 
 /* Pending dot */
@@ -216,7 +216,7 @@
 .label_cargando   { color: var(--color-azul-bind, #4c65e6); }
 .label_pendiente  { color: var(--text-muted, #666); }
 .label_error      { color: #e05260; }
-.label_alerta     { color: #ffc107; }
+.label_alerta     { color: var(--warning); }
 
 .descripcionPaso {
   color: var(--text-muted, #666666);
@@ -259,7 +259,7 @@
 
 .badge_alerta {
   background-color: rgba(255, 193, 7, 0.1);
-  color: #ffc107;
+  color: var(--warning);
 }
 
 /* --- Footer --- */
@@ -293,7 +293,7 @@
 }
 
 .alertaPaso {
-  color: #ffc107;
+  color: var(--warning);
   font-size: 0.875rem;
   margin: 0.5rem 0 0 0;
   line-height: 1.4;
@@ -302,7 +302,7 @@
 .listaAlertasPaso {
   margin: 0.5rem 0 0 0;
   padding: 0 0 0 1.25rem;
-  color: #ffc107;
+  color: var(--warning);
   font-size: 0.875rem;
   line-height: 1.4;
   list-style-type: disc;

@@ -11,11 +11,11 @@
 }
 
 .modalContainer {
-    background-color: #1a1a1a;
+    background-color: var(--bg-elevado);
     width: 92%;
     max-width: 31.25rem;
     border-radius: 1.25rem;
-    border: 1px solid #333;
+    border: 1px solid var(--border-hover);
     padding: 1.5rem;
     position: relative;
     max-height: 92vh;
@@ -30,7 +30,7 @@
     right: 1.25rem;
     background: none;
     border: none;
-    color: #666;
+    color: var(--text-dim);
     cursor: pointer;
     padding: 0.3125rem;
     z-index: 10;
@@ -64,7 +64,7 @@
 }
 
 .description {
-    color: #888;
+    color: var(--text-muted);
     margin-top: 0.5rem;
     margin-bottom: 1.5rem;
     font-size: 0.875rem;
@@ -96,7 +96,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: #ccc;
+    color: var(--white-muted);
     font-size: 0.875rem;
     cursor: pointer;
     margin-top: -0.5rem;
@@ -109,7 +109,7 @@
     -webkit-appearance: none;
     width: 1.25rem;
     height: 1.25rem;
-    border: 2px solid #555;
+    border: 2px solid var(--text-dim);
     border-radius: 0.25rem;
     background-color: transparent;
     cursor: pointer;
@@ -131,7 +131,7 @@
     position: absolute;
     width: 0.3125rem;
     height: 0.625rem;
-    border: solid #1a1a1a;
+    border: solid var(--carbon-black);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
     margin-bottom: 0.125rem;

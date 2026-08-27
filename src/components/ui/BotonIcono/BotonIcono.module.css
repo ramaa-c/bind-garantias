@@ -1,7 +1,7 @@
 .btnIcon {
   background: transparent;
   border: none;
-  color: #888;
+  color: var(--text-muted);
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -13,11 +13,11 @@
 }
 
 .btnIcon:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(var(--overlay-rgb), 0.05);
   color: var(--white);
 }
 
 .danger:hover {
   background-color: rgba(255, 82, 82, 0.1);
-  color: #ff5252;
+  color: var(--danger-bright);
 }

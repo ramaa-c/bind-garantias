@@ -7,7 +7,7 @@
   background: rgba(22, 27, 34, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 1.25rem;
   position: absolute;
   top: 1.25rem;
@@ -47,7 +47,7 @@
 .logoSeparator {
   width: 1px;
   height: 1.25rem;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(var(--overlay-rgb), 0.2);
   margin: 0 0.5rem;
 }
 
@@ -61,14 +61,14 @@
 /* Etiqueta Admin con el nuevo branding amarillo y negro corporativo */
 .adminTag {
   background: var(--color-azul-bind, #4c65e6);
-  color: #ffffff;
+  color: var(--white);
   font-size: 0.6875rem;
   font-weight: 800;
   padding: 0.2rem 0.5rem;
   border-radius: 0.25rem;
   letter-spacing: 0.05rem;
   box-shadow: 0 2px 4px rgba(76, 101, 230, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(var(--overlay-rgb), 0.2);
 }
 
 .userMenuContainer {
@@ -86,14 +86,14 @@
   padding: 0.25rem 0.5rem 0.25rem 0.75rem;
   border-radius: 2rem;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   min-width: 220px;
 }
 
 .userTrigger:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(var(--overlay-rgb), 0.08);
+  border-color: rgba(var(--overlay-rgb), 0.15);
 }
 
 .avatarWrapper {
@@ -115,7 +115,7 @@
 }
 
 .userName {
-  color: #ffffff;
+  color: var(--white);
   font-size: 0.85rem;
   font-weight: 700;
   flex: 1;
@@ -142,8 +142,8 @@
   top: calc(100% + 0.75rem);
   right: 0;
   width: 100%;
-  background: #161b22;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--border);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 1rem;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -154,7 +154,7 @@
 .userDropdownHeader {
   background: rgba(0, 0, 0, 0.2);
   padding: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -162,7 +162,7 @@
 }
 
 .userDropdownEmail {
-  color: #ffffff;
+  color: var(--white);
   font-size: 0.875rem;
   font-weight: 600;
   margin: 0;
@@ -250,7 +250,7 @@
 /* Main navigation links bar con fondo negro/carbon y acentos amarillos */
 .mainNav {
   background: transparent;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
   padding: 0 1.5rem;
   position: relative;
 }
@@ -265,7 +265,7 @@
 .navButton {
   background: none;
   border: none;
-  color: #c9d1d9;
+  color: var(--white-muted);
   font-size: 0.925rem;
   font-weight: 600;
   padding: 0.875rem 1rem;
@@ -280,7 +280,7 @@
 
 .navButton:hover,
 .dropdownActive {
-  color: #ffffff;
+  color: var(--white);
   background: rgba(76, 101, 230, 0.05);
   border-bottom: 3px solid rgba(76, 101, 230, 0.4);
 }
@@ -316,13 +316,13 @@
   position: absolute;
   top: 100%;
   left: 0;
-  background: #161b22;
+  background: var(--border);
   border-radius: 0.75rem;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   padding: 0.5rem 0;
   min-width: 17rem;
   z-index: 200;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -336,11 +336,11 @@
   width: 6px;
 }
 .scrollableMenu::-webkit-scrollbar-track {
-  background: #0d1117;
+  background: var(--bg-surface);
   border-radius: 4px;
 }
 .scrollableMenu::-webkit-scrollbar-thumb {
-  background: #30363d;
+  background: var(--border-hover);
   border-radius: 4px;
 }
 .scrollableMenu::-webkit-scrollbar-thumb:hover {
@@ -357,7 +357,7 @@
   padding: 0.625rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #c9d1d9;
+  color: var(--white-muted);
   cursor: pointer;
   transition: all 0.2s ease;
   border-left: 3px solid transparent;
@@ -366,7 +366,7 @@
 
 .dropdownItem:hover {
   background-color: rgba(76, 101, 230, 0.06);
-  color: #ffffff;
+  color: var(--white);
   border-left: 3px solid var(--color-azul-bind, #4c65e6);
   padding-left: 1.25rem;
   font-weight: 600;

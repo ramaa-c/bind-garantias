@@ -26,7 +26,7 @@
   position: relative;
   height: 0.375rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.06);
   overflow: hidden;
 }
 
@@ -40,7 +40,7 @@
 }
 
 .progressFillDone {
-  background: linear-gradient(90deg, rgba(76, 175, 80, 0.7), #4caf50);
+  background: linear-gradient(90deg, rgba(76, 175, 80, 0.7), var(--success-bright));
 }
 
 /* GRID 2 COLUMNAS */
@@ -66,7 +66,7 @@
   }
 
   .borderLeft {
-    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 1px solid rgba(var(--overlay-rgb), 0.05);
     padding-left: 3.5rem;
   }
 }
@@ -113,7 +113,7 @@
 }
 
 .actionLinkEdit {
-  color: #4caf50;
+  color: var(--success-bright);
 }
 
 .actionLinkEdit:hover {
@@ -121,7 +121,7 @@
 }
 
 .actionLinkError {
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 
 /* DOC CHIPS 2×2 */
@@ -147,23 +147,23 @@
 
 .docChipDone {
   background: rgba(76, 175, 80, 0.05);
-  color: #4caf50;
+  color: var(--success-bright);
   border-color: rgba(76, 175, 80, 0.2);
 }
 .docChipPending {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   color: var(--text-muted, #8e8e93);
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(var(--overlay-rgb), 0.08);
 }
 .docChipError {
   background: rgba(255, 82, 82, 0.04);
-  color: #ff5252;
+  color: var(--danger-bright);
   border-color: rgba(255, 82, 82, 0.2);
 }
 
 .docGrid:hover .docChipPending,
 .docGrid:hover .docChipError {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(var(--overlay-rgb), 0.12);
 }
 
 /* LISTA COMPACTA */
@@ -174,7 +174,7 @@
   max-height: 14rem;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+  scrollbar-color: rgba(var(--overlay-rgb), 0.08) transparent;
 }
 
 .compactList::-webkit-scrollbar {
@@ -186,7 +186,7 @@
 }
 
 .compactList::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   border-radius: 0.5rem;
 }
 
@@ -197,14 +197,14 @@
   gap: 0.625rem;
   padding: 0.625rem 0.875rem;
   border-radius: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(var(--overlay-rgb), 0.05);
+  background: rgba(var(--overlay-rgb), 0.02);
   transition: all 0.18s;
 }
 
 .compactRow:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.09);
+  background: rgba(var(--overlay-rgb), 0.04);
+  border-color: rgba(var(--overlay-rgb), 0.09);
 }
 .compactRowSuccess {
   border-color: rgba(76, 175, 80, 0.16);
@@ -221,15 +221,15 @@
   flex-shrink: 0;
 }
 .dotGreen {
-  background: #4caf50;
+  background: var(--success-bright);
 }
 
 .dotYellow {
-  background: #ffc107;
+  background: var(--warning);
 }
 
 .dotRed {
-  background: #ff5252;
+  background: var(--danger-bright);
 }
 
 .rowInfo {
@@ -276,11 +276,11 @@
 
 .iconBtn:hover {
   color: var(--white, #fff);
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(var(--overlay-rgb), 0.14);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 .iconBtnDanger:hover {
-  color: #ff5252;
+  color: var(--danger-bright);
   border-color: rgba(255, 82, 82, 0.28);
   background: rgba(255, 82, 82, 0.07);
 }
@@ -293,7 +293,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.875rem 1.25rem;
-  border: 1.5px dashed rgba(255, 255, 255, 0.16);
+  border: 1.5px dashed rgba(var(--overlay-rgb), 0.16);
   border-radius: 0.625rem;
   background: none;
   color: var(--text-dim, #8e8e93);
@@ -303,13 +303,13 @@
 }
 
 .emptySlot:hover {
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: rgba(var(--overlay-rgb), 0.35);
   color: var(--white, #fff);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 .emptySlotError {
   border-color: rgba(255, 82, 82, 0.22);
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 .emptySlotError:hover {
   border-color: rgba(255, 82, 82, 0.4);
@@ -326,7 +326,7 @@
   align-items: center;
   gap: 0.2rem;
   font-size: 0.68rem;
-  color: #4caf50;
+  color: var(--success-bright);
   font-weight: 700;
 }
 
@@ -337,7 +337,7 @@
   gap: 0.625rem;
   margin-top: 1.5rem;
   padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.05);
 }
 
 .continueBtn {
@@ -349,11 +349,11 @@
     position: sticky;
     bottom: 0;
     z-index: 40;
-    background: rgba(26, 26, 26, 0.95);
+    background: rgba(var(--glass-rgb), 0.95);
     backdrop-filter: blur(14px);
     padding: 0.875rem 0;
     margin-top: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
     justify-content: center;
   }
 

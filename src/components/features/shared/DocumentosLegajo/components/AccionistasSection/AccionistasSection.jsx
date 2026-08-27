@@ -68,7 +68,7 @@ export function AccionistasSection({
               <span>Total Participación</span>
               <span
                 style={{
-                  color: totalParticipacion === 100 ? "#4caf50" : "#ff9800",
+                  color: totalParticipacion === 100 ? "var(--success-bright)" : "var(--warning-orange)",
                 }}
               >
                 {totalParticipacion}% / 100%
@@ -80,7 +80,7 @@ export function AccionistasSection({
                 style={{
                   width: `${Math.min(totalParticipacion, 100)}%`,
                   backgroundColor:
-                    totalParticipacion === 100 ? "#4caf50" : "#ff9800",
+                    totalParticipacion === 100 ? "var(--success-bright)" : "var(--warning-orange)",
                 }}
               />
             </div>

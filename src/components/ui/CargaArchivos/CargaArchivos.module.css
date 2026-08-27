@@ -1,6 +1,6 @@
 .box {
-  background: rgba(255, 255, 255, 0.015);
-  border: 2px dashed rgba(255, 255, 255, 0.15);
+  background: rgba(var(--overlay-rgb), 0.015);
+  border: 2px dashed rgba(var(--overlay-rgb), 0.15);
   border-radius: 1rem;
   padding: 25px 20px;
   display: flex;
@@ -35,7 +35,7 @@
 
 .icon {
   font-size: 2.5rem;
-  color: #888;
+  color: var(--text-muted);
   margin-bottom: 10px;
   transition: color 0.3s;
   pointer-events: none;
@@ -58,7 +58,7 @@
 }
 
 .subtext {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.85rem;
   pointer-events: none;
 }
@@ -124,7 +124,7 @@
 }
 
 .filesize {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.8rem;
   white-space: nowrap;
   flex-shrink: 0;
@@ -132,21 +132,21 @@
 
 /* --- ESTADO: ERROR --- */
 .error {
-  border-color: #ff5252;
+  border-color: var(--danger-bright);
   background-color: rgba(255, 82, 82, 0.05);
 }
 
 .error .icon {
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 
 .error:hover {
-  border-color: #ff5252;
+  border-color: var(--danger-bright);
   background-color: rgba(255, 82, 82, 0.08);
 }
 
 .error:hover .icon {
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 
 .actionsGroup {

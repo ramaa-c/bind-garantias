@@ -27,7 +27,7 @@ export const SelectSimple = ({
 
   const focusColor = isAdmin ? "var(--color-azul-bind, #4c65e6)" : "var(--yellow, #f4f500)";
   const bgSelected = isAdmin ? "var(--color-azul-bind, #4c65e6)" : "var(--yellow, #f4f500)";
-  const textSelected = isAdmin ? "#ffffff" : "#000";
+  const textSelected = isAdmin ? "var(--white)" : "#000";
   const bgOptionFocused = isAdmin ? "rgba(76, 101, 230, 0.15)" : "rgba(244, 245, 0, 0.1)";
   const textOptionFocused = isAdmin ? "var(--color-azul-bind-300, #8a9fff)" : "var(--yellow, #f4f500)";
 
@@ -69,7 +69,7 @@ export const SelectSimple = ({
     }),
     placeholder: (base) => ({
       ...base,
-      color: "#555",
+      color: "var(--text-dim)",
       fontSize: compact ? "0.825rem" : "1rem",
       fontFamily: "var(--font-principal, inherit)",
       maxWidth: "100%",
@@ -94,8 +94,8 @@ export const SelectSimple = ({
     }),
     menu: (base) => ({
       ...base,
-      backgroundColor: "#0d1117",
-      border: "1px solid #30363d",
+      backgroundColor: "var(--bg-surface)",
+      border: "1px solid var(--border-hover)",
       borderRadius: "0.5rem",
       zIndex: 99999,
       padding: "0.5rem 0",

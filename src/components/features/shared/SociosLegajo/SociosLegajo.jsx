@@ -406,7 +406,7 @@ export function SociosLegajo({
                 style={{
                   transform: isActive ? "rotate(180deg)" : "rotate(0deg)",
                   transition: "transform 0.3s ease",
-                  color: isActive ? "#fff" : "#aaa",
+                  color: isActive ? "var(--white)" : "var(--text-muted)",
                   fontSize: "1.1rem"
                 }}
               />

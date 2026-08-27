@@ -1,7 +1,7 @@
 .container {
   width: 18rem;
   background: var(--carbon-black, #1a1a1a);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(var(--overlay-rgb), 0.06);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -24,7 +24,7 @@
   justify-content: flex-start;
   padding: 0 1.25rem;
   min-height: 4.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.04);
 }
 
 .logosWrapper {
@@ -39,7 +39,7 @@
 }
 
 .closeButton {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   border: none;
   border-radius: 50%;
   display: flex;
@@ -54,7 +54,7 @@
 }
 
 .closeButton:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--overlay-rgb), 0.1);
 }
 
 .closeIcon {
@@ -77,7 +77,7 @@
 .vendorCard {
   margin: 1.5rem 1.25rem 0.5rem;
   padding: 1rem 1.1rem;
-  background: linear-gradient(135deg, rgba(76, 101, 230, 0.08), rgba(255, 255, 255, 0.02));
+  background: linear-gradient(135deg, rgba(76, 101, 230, 0.08), rgba(var(--overlay-rgb), 0.02));
   border: 1px solid rgba(76, 101, 230, 0.18);
   border-radius: 1.1rem;
   display: flex;
@@ -136,8 +136,8 @@
 .companyCard {
   margin: 1.5rem 1.25rem 0.5rem;
   padding: 1rem 1.1rem;
-  background: linear-gradient(135deg, rgba(245, 244, 0, 0.05), rgba(255, 255, 255, 0.02));
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: linear-gradient(135deg, rgba(245, 244, 0, 0.05), rgba(var(--overlay-rgb), 0.02));
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 1.1rem;
   display: flex;
   align-items: center;
@@ -222,8 +222,8 @@
   width: max-content;
   max-width: 14rem;
   padding: 0.5rem 0.7rem;
-  background: #14151a;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--border);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 0.6rem;
   color: var(--white);
   font-size: 0.72rem;
@@ -243,9 +243,9 @@
   left: 1rem;
   width: 9px;
   height: 9px;
-  background: #14151a;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--border);
+  border-left: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.08);
   transform: rotate(45deg);
 }
 
@@ -281,11 +281,11 @@
   transition: background 0.2s;
 }
 .sectionHeader:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .heading {
-  color: #888888;
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -336,7 +336,7 @@
 }
 
 .link:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--white);
 }
 
@@ -376,7 +376,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.04);
   padding-top: 1.25rem;
 }
 
@@ -440,7 +440,7 @@
   justify-content: center;
   gap: 0.4rem;
   background: rgba(255, 82, 82, 0.1);
-  color: #ff5252;
+  color: var(--danger-bright);
   border: 1px solid rgba(255, 82, 82, 0.15);
   border-radius: 1rem;
   padding: 0.75rem 1rem;
@@ -517,7 +517,7 @@
     margin: 0.75rem 0 1.25rem 1.25rem;
     height: calc(100dvh - 2rem);
     border-radius: 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(var(--overlay-rgb), 0.06);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
     z-index: 10;
   }
@@ -538,7 +538,7 @@
   .logoSeparator {
     width: 1px;
     height: 2rem;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(var(--overlay-rgb), 0.2);
     flex-shrink: 0;
   }
 
@@ -568,7 +568,7 @@
   
   .footer {
     padding: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid rgba(var(--overlay-rgb), 0.04);
   }
 
   .closeButton {

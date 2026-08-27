@@ -230,7 +230,7 @@ const Registro = () => {
               </div>
 
               {/* Navegación secundaria como enlace (Estándar UX) */}
-              <div style={{ marginTop: "1.5rem", textAlign: "center", fontSize: "0.875rem", color: "var(--gray-text, #a0a0a0)" }}>
+              <div style={{ marginTop: "1.5rem", textAlign: "center", fontSize: "0.875rem", color: "var(--text-muted)" }}>
                 ¿Ya tenés una cuenta?{" "}
                 <span 
                   className={styles.inlineLink}
