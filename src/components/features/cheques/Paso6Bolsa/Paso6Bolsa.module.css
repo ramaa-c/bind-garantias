@@ -42,7 +42,7 @@
 .altText {
   margin: 0;
   font-size: 0.875rem;
-  color: var(--text-dim, #444);
+  color: var(--text-muted, #444);
 }
 .altButtonWrapper {
   width: 100%;

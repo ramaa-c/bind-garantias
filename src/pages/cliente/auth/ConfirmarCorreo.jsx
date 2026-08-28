@@ -5,8 +5,10 @@ import { FiMail } from "react-icons/fi";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/ChannelContext";
+import { useThemeStore } from "../../../store/useThemeStore";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 const RESEND_SECONDS = 60;
 const pad = (n) => String(n).padStart(2, "0");
@@ -16,6 +18,7 @@ const ConfirmarCorreo = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { channelInfo } = useChannel();
+  const theme = useThemeStore((state) => state.theme);
 
   const emailUsuario =
     location.state?.usuarioSkeletor?.email || location.state?.emailIngresado;
@@ -89,7 +92,7 @@ const ConfirmarCorreo = () => {
         <div className={styles.globalLogo}>
           <div className={styles.logosWrapper}>
             <img
-              src={logoBind}
+              src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
               onClick={() =>
                 navigate(

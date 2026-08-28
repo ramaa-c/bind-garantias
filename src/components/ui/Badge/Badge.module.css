@@ -1,6 +1,6 @@
 .badge {
-  background-color: var(--color-amarillo-bind);
-  color: var(--on-amarillo-bind);
+  background-color: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.8rem;

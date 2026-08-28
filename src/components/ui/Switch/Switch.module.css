@@ -79,7 +79,7 @@
 
 .track.client.checked {
   background: var(--yellow, #f5f400);
-  border-color: var(--amarillo-bind-accent);
+  border-color: var(--color-amarillo-bind);
 }
 
 .label {

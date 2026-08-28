@@ -75,12 +75,12 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 50%;
-  background: var(--color-amarillo-bind);
-  border: none;
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--on-amarillo-bind);
+  color: var(--badge-amarillo-text);
   flex-shrink: 0;
 }
 .cuitSearchBannerIconAdmin {
@@ -349,7 +349,7 @@
 }
 .availableText {
   font-size: 0.7rem;
-  color: var(--text-dim, #666);
+  color: var(--text-muted, #666);
 }
 .availableTextError {
   color: var(--danger-bright);

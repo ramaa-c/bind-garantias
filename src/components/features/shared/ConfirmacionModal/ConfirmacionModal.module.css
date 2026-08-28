@@ -2,12 +2,12 @@
    punteadas y el botón de confirmar — no el contenedor del modal. */
 
 .dialog {
-  --tone-color: var(--amarillo-bind-accent);
+  --tone-color: var(--color-amarillo-bind);
   position: relative;
 }
 
 .dialog.yellow {
-  --tone-color: var(--amarillo-bind-accent);
+  --tone-color: var(--color-amarillo-bind);
 }
 
 .dialog.blue {

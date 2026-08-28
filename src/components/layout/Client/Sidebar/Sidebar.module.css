@@ -178,7 +178,7 @@
 
 .avatar--amarillo {
   background: rgba(245, 244, 0, 0.1);
-  color: var(--amarillo-bind-accent);
+  color: var(--color-amarillo-bind);
   border: 1px solid rgba(245, 244, 0, 0.2);
 }
 
@@ -293,7 +293,7 @@
 }
 
 .chevron {
-  color: var(--text-dim);
+  color: var(--text-muted);
   transition: transform 0.3s ease;
 }
 .chevronOpen {
@@ -365,7 +365,7 @@
 }
 
 .versionText {
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.7rem;
   text-align: center;
   margin: 0;
@@ -431,7 +431,7 @@
 }
 
 .roleNoVinculado {
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .logoutLargeBtn {
@@ -484,9 +484,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  background: var(--color-amarillo-bind);
-  color: var(--on-amarillo-bind);
-  border: none;
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+  border: 1px solid var(--badge-amarillo-border);
   border-radius: 1rem;
   padding: 0.75rem 1rem;
   font-size: 0.85rem;
@@ -498,7 +498,7 @@
 }
 
 .perfilBtn:hover {
-  filter: brightness(1.06);
+  filter: brightness(1.15);
 }
 
 /* ── ESCRITORIO ── */

@@ -90,7 +90,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: var(--text-dim, #8e8e93);
+  color: var(--text-muted, #8e8e93);
 }
 
 /* ACTION LINKS */
@@ -251,7 +251,7 @@
 }
 
 .rowSub {
-  color: var(--text-dim, #8e8e93);
+  color: var(--text-muted, #8e8e93);
   font-size: 0.7rem;
 }
 
@@ -267,7 +267,7 @@
   border-radius: 0.35rem;
   cursor: pointer;
   padding: 0.3rem;
-  color: var(--text-dim, #a0a0a0);
+  color: var(--text-muted, #a0a0a0);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -296,7 +296,7 @@
   border: 1.5px dashed rgba(var(--overlay-rgb), 0.16);
   border-radius: 0.625rem;
   background: none;
-  color: var(--text-dim, #8e8e93);
+  color: var(--text-muted, #8e8e93);
   font-size: 0.8125rem;
   cursor: pointer;
   transition: all 0.18s;
@@ -319,7 +319,7 @@
 /* BADGES */
 .countBadge {
   font-size: 0.68rem;
-  color: var(--text-dim, #8e8e93);
+  color: var(--text-muted, #8e8e93);
 }
 .validBadge {
   display: inline-flex;

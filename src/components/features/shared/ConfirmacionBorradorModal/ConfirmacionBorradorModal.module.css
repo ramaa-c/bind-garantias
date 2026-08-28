@@ -8,12 +8,12 @@
 .iconWrapper {
   width: 70px;
   height: 70px;
-  background-color: var(--color-amarillo-bind);
+  background-color: var(--badge-amarillo-bg);
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  color: var(--on-amarillo-bind);
+  color: var(--badge-amarillo-text);
   margin-bottom: 20px;
 }
 

@@ -18,8 +18,8 @@
 }
 
 .iconWrapper {
-  background-color: var(--color-amarillo-bind);
-  color: var(--on-amarillo-bind);
+  background-color: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
 }
 
 .iconWrapperSuccess {
@@ -82,7 +82,7 @@
 .resendBtn {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--amarillo-bind-accent);
+  color: var(--color-amarillo-bind);
   background: none;
   border: none;
   padding: 0;
@@ -139,7 +139,7 @@
 
 /* --- UTILIDADES Y ANIMACIONES --- */
 .linkEdit {
-  color: var(--amarillo-bind-accent);
+  color: var(--color-amarillo-bind);
   cursor: pointer;
   text-decoration: underline;
   font-size: 0.85rem;

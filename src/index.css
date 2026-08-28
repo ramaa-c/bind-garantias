@@ -57,18 +57,20 @@
      modos, para no repetir ese error. */
   --on-amarillo-bind: #1a1a1a;
 
-  /* El problema simétrico al de --on-amarillo-bind: usar el amarillo de
-     marca COMO color de texto/ícono (no como fondo) - íconos de contacto,
-     links, badges de "vía LUFE", el "$" de montos, etc. En oscuro
-     #F5F400 puro se lee perfecto sobre el canvas casi negro. En claro, el
-     mismo amarillo sobre el canvas casi blanco es casi invisible (yellow
-     y white tienen luminosidad muy parecida) - el mismo problema del
-     botón primario, pero en texto suelto en vez de en un fill sólido.
-     Este token SÍ cambia con el tema (a diferencia de on-amarillo-bind):
-     en oscuro es el amarillo real; en claro es un ámbar bien oscuro,
-     mismo hue, igual que --warning pero como token aparte porque el rol
-     acá es "acento decorativo de marca", no "estado de advertencia". */
-  --amarillo-bind-accent: #F5F400;
+  /* Superficie de "badge" con acento amarillo (íconos en círculo, tags tipo
+     OBLIGATORIO/VÍA LUFE, botones tipo "Descargar todo", tabs activas,
+     etc.): en oscuro es como era antes de esta sesión - fondo/borde
+     traslúcidos con el ícono/texto en amarillo puro. En claro (redefinido
+     más abajo) pasa a fondo sólido con texto negro, porque el traslúcido
+     de acá compuesto sobre un canvas claro queda demasiado pálido para leer
+     el texto amarillo encima (mismo problema que --on-amarillo-bind, pero
+     para superficies chicas en vez del botón). No es un promedio exacto de
+     cada instancia (los valores originales iban de 0.06 a 0.15 de opacidad
+     según el componente) sino un valor representativo típico, para no
+     tener un token por componente. */
+  --badge-amarillo-bg: rgba(244, 245, 0, 0.1);
+  --badge-amarillo-border: rgba(244, 245, 0, 0.25);
+  --badge-amarillo-text: var(--yellow);
 
   /* Tonos complementarios de azul bind */
   --color-azul-bind-50: #eff2ff;
@@ -97,7 +99,14 @@
   /* Globales de estados */
   --border: #252525;
   --border-hover: #3a3a3a;
-  --text-muted: #a3a3a3;
+  /* Aclarado de #a3a3a3 (6.6:1 contra --bg-elevado) a #bdbdbd (~9.2:1):
+     pedido explícito de reemplazar grises por blancos para mejorar
+     legibilidad de texto secundario (labels, descripciones), aplicado a
+     cliente y admin. --text-dim NO se tocó: sus usos reales de texto
+     (subtítulos, labels, placeholders) se migraron a --text-muted; lo que
+     queda en --text-dim es decorativo a propósito (bordes, separadores,
+     estados :disabled). */
+  --text-muted: #bdbdbd;
   --text-dim: #444444;
   --white-muted: #f0f0f0;
   --success-green: #3ddc84;
@@ -197,10 +206,11 @@
   --border: oklch(85% 0.012 264);
   --border-hover: oklch(76% 0.016 264);
 
-  /* Mismo valor que --warning: incidentalmente terminan iguales, pero es
-     un token aparte porque acá significa "esto es un acento de marca",
-     no "atención, hay un problema". */
-  --amarillo-bind-accent: oklch(52% 0.15 60);
+  /* Ver --badge-amarillo-* en :root: acá pasan a fondo sólido + texto
+     negro, sin borde (no hace falta con el fondo sólido). */
+  --badge-amarillo-bg: var(--color-amarillo-bind);
+  --badge-amarillo-border: transparent;
+  --badge-amarillo-text: var(--on-amarillo-bind);
 
   /* Estados: mismo criterio que ya traía esta primera versión (acertado,
      se mantiene) - los tonos "brillantes" de oscuro (success-green

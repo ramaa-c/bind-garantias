@@ -55,10 +55,10 @@
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.625rem;
-  background: var(--color-amarillo-bind);
-  border: none;
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   border-radius: 999px;
-  color: var(--on-amarillo-bind);
+  color: var(--badge-amarillo-text);
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -67,7 +67,7 @@
 
 .docVersion {
   font-size: 0.75rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .docTitle {
@@ -80,7 +80,7 @@
 }
 
 .docSubtitle {
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.875rem;
   margin: 0 0 1.25rem;
   line-height: 1.5;
@@ -109,7 +109,7 @@
 
 .progressLabel {
   font-size: 0.68rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -161,7 +161,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--amarillo-bind-accent);
+  color: var(--color-amarillo-bind);
   margin: 0 0 0.875rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid rgba(244, 245, 0, 0.1);
@@ -271,7 +271,7 @@
 
 .checkmarkActive {
   background: var(--yellow, #f4f500);
-  border-color: var(--amarillo-bind-accent);
+  border-color: var(--color-amarillo-bind);
 }
 
 .checkboxLabel {
@@ -348,7 +348,7 @@
     text-align: left;
     padding: 0.5rem 1.25rem;
     font-size: 0.75rem;
-    color: var(--text-dim);
+    color: var(--text-muted);
     cursor: pointer;
     line-height: 1.4;
     transition: all 0.15s;
@@ -361,8 +361,8 @@
   }
 
   .tocItemActive {
-    color: var(--amarillo-bind-accent);
-    border-left-color: var(--amarillo-bind-accent);
+    color: var(--color-amarillo-bind);
+    border-left-color: var(--color-amarillo-bind);
     background: rgba(244, 245, 0, 0.04);
   }
 

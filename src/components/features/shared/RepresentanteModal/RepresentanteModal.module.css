@@ -10,7 +10,7 @@
 .cuitSearchBanner:hover { border-color: rgba(245, 244, 0, 0.18); }
 .cuitSearchBannerAdmin { background: rgba(76, 101, 230, 0.05); border-color: rgba(76, 101, 230, 0.15); }
 .cuitSearchBannerAdmin:hover { border-color: rgba(76, 101, 230, 0.3); }
-.cuitSearchBannerIcon { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--color-amarillo-bind); border: none; display: flex; align-items: center; justify-content: center; color: var(--on-amarillo-bind); flex-shrink: 0; }
+.cuitSearchBannerIcon { width: 2.25rem; height: 2.25rem; border-radius: 50%; background: var(--badge-amarillo-bg); border: 1px solid var(--badge-amarillo-border); display: flex; align-items: center; justify-content: center; color: var(--badge-amarillo-text); flex-shrink: 0; }
 .cuitSearchBannerIconAdmin { background: rgba(76, 101, 230, 0.1); border-color: rgba(76, 101, 230, 0.25); color: var(--color-azul-bind, #4c65e6); }
 .cuitSearchBannerText { display: flex; flex-direction: column; gap: 0.2rem; }
 .cuitSearchBannerTitle { color: var(--white-muted, #f0f0f0); font-size: 0.8125rem; font-weight: 600; margin: 0; }
@@ -23,7 +23,7 @@
 .summaryStatus { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--success-green, #3ddc84); font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
 .summaryName { color: var(--white, #fffefe); font-size: 1rem; font-weight: 700; margin: 0; letter-spacing: -0.02em; line-height: 1.25; }
 .summaryCuit { color: var(--text-muted, #666); font-size: 0.775rem; margin: 0; font-variant-numeric: tabular-nums; }
-.editLink { background: rgba(var(--overlay-rgb), 0.03); border: 1px solid rgba(var(--overlay-rgb), 0.07); border-radius: 0.4rem; cursor: pointer; padding: 0.3rem 0.6rem; color: var(--text-dim); font-size: 0.7rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem; transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease; white-space: nowrap; align-self: flex-start; margin-top: 0.5rem; font-family: inherit; }
+.editLink { background: rgba(var(--overlay-rgb), 0.03); border: 1px solid rgba(var(--overlay-rgb), 0.07); border-radius: 0.4rem; cursor: pointer; padding: 0.3rem 0.6rem; color: var(--text-muted); font-size: 0.7rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.3rem; transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease; white-space: nowrap; align-self: flex-start; margin-top: 0.5rem; font-family: inherit; }
 .editLink:hover { color: var(--white-muted, #f0f0f0); border-color: rgba(var(--overlay-rgb), 0.15); background: rgba(var(--overlay-rgb), 0.05); }
 .summaryDivider { width: 100%; height: 1px; background: rgba(var(--overlay-rgb), 0.05); flex-shrink: 0; }
 .summaryBottom { padding: 1.125rem 1.25rem; display: flex; flex-direction: column; align-items: center; gap: 0.625rem; }
@@ -33,7 +33,7 @@
 .customInputWrapper:focus-within { border-color: rgba(245, 244, 0, 0.35); box-shadow: 0 0 0 3px rgba(245, 244, 0, 0.06); }
 .wrapperError { border-color: rgba(255, 82, 82, 0.4) !important; box-shadow: 0 0 0 3px rgba(255, 82, 82, 0.05) !important; }
 .customInput { background: transparent; border: none; color: var(--white, #fffefe); font-size: 1.375rem; font-weight: 700; width: 100%; text-align: center; outline: none; font-family: inherit; letter-spacing: -0.02em; }
-.percentageSymbol { color: var(--amarillo-bind-accent); font-size: 1.125rem; font-weight: 700; opacity: 0.6; flex-shrink: 0; }
+.percentageSymbol { color: var(--color-amarillo-bind); font-size: 1.125rem; font-weight: 700; opacity: 0.6; flex-shrink: 0; }
 .errorContainer { min-height: 1.125rem; display: flex; align-items: flex-start; justify-content: center; width: 100%; }
 .errorText { color: var(--danger-bright); font-size: 0.72rem; margin: 0; display: flex; align-items: center; gap: 0.25rem; }
 @media (min-width: 48rem) { .summaryCard { flex-direction: row; align-items: stretch; } .summaryTop { flex: 1; justify-content: center; } .summaryLeft { justify-content: center; } .editLink { position: absolute; top: 0.75rem; right: 0.75rem; margin-top: 0; align-self: flex-start; } .summaryDivider { width: 1px; height: auto; flex-shrink: 0; } .summaryBottom { width: 13rem; flex-shrink: 0; justify-content: center; border-left: none; } }

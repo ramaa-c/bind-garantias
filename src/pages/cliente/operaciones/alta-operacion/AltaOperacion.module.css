@@ -99,10 +99,10 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem 0.75rem;
-  background: var(--color-amarillo-bind);
-  border: none;
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   border-radius: 999px;
-  color: var(--on-amarillo-bind);
+  color: var(--badge-amarillo-text);
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;

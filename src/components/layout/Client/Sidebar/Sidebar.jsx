@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, FiTrendingUp, FiUser, FiBriefcase, FiRepeat } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
+import { useThemeStore } from "../../../../store/useThemeStore";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -23,6 +25,7 @@ export default function Sidebar({ isOpen, onClose }) {
   // otra empresa es confuso y directamente incorrecto, sin importar cuál sea.
   const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
   const isVinculado = !!nombreEmpresa && !enAltaDatosEmpresa;
+  const theme = useThemeStore((state) => state.theme);
 
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
@@ -94,7 +97,7 @@ export default function Sidebar({ isOpen, onClose }) {
     <aside className={`${styles.container} ${isOpen ? styles.open : ""}`}>
       <div className={styles.sidebarHeader}>
         <div className={styles.logosWrapper}>
-          <img src={logoBind} alt="Bind Garantías" className={styles.logo} role="button" tabIndex={0} onClick={() => isSolicitudesEnabled ? navigate(`/${channelInfo.id}/solicitudes`) : navigate(`/${channelInfo.id}/legajo`)} style={{ cursor: "pointer" }} />
+          <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} role="button" tabIndex={0} onClick={() => isSolicitudesEnabled ? navigate(`/${channelInfo.id}/solicitudes`) : navigate(`/${channelInfo.id}/legajo`)} style={{ cursor: "pointer" }} />
           {channelInfo.id !== "default" && channelInfo.logo && (
             <>
               <div className={styles.logoSeparator} />

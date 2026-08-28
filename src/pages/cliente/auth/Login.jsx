@@ -11,9 +11,11 @@ import { ActivacionPendienteModal } from "../../../components/features/shared/Ac
 import { useLogin, useLoginByCode, useResetearPassword } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { useThemeStore } from "../../../store/useThemeStore";
 import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 const emailSchema = z.object({
   email: z
@@ -255,6 +257,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const setUser = useAuthStore((state) => state.setUser);
+  const theme = useThemeStore((state) => state.theme);
   const { channelInfo } = useChannel();
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
   const { mutate: loginByCode, isPending: solicitandoCodigo } =
@@ -473,7 +476,7 @@ const Login = () => {
         <div className={styles.globalLogo}>
           <div className={styles.logosWrapper}>
             <img
-              src={logoBind}
+              src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
               onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
               className={styles.clickableLogo}

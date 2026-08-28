@@ -36,14 +36,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-amarillo-bind);
+  background: rgba(245, 217, 0, 0.08);
   margin-bottom: 1.5rem;
   animation: pulseIcon 2.4s ease-in-out infinite;
 }
 
 .icon {
-  color: var(--on-amarillo-bind);
+  color: var(--yellow);
   filter: drop-shadow(0 0.5rem 1.5rem rgba(255, 200, 0, 0.15));
+}
+
+:global([data-theme="light"]) .iconWrap {
+  background: var(--color-amarillo-bind);
+}
+
+:global([data-theme="light"]) .icon {
+  color: var(--on-amarillo-bind);
 }
 
 .title {
@@ -64,7 +72,7 @@
 
 .hint {
   font-size: 0.8rem;
-  color: var(--text-dim, #6b7280);
+  color: var(--text-muted, #6b7280);
 }
 
 @keyframes fadeIn {

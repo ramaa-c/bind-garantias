@@ -13,7 +13,7 @@
 }
 
 .label {
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -62,7 +62,7 @@
 
 .currency {
   font-size: 1.5rem;
-  color: var(--amarillo-bind-accent, var(--yellow));
+  color: var(--color-amarillo-bind);
   font-weight: 400;
   opacity: 0.75;
   letter-spacing: 0.02em;

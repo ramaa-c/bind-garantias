@@ -225,7 +225,7 @@
 .emptyIcon {
   font-size: 3rem;
   margin-bottom: 1rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .emptyText {

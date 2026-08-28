@@ -238,7 +238,7 @@
 }
 
 .textMuted {
-  color: var(--text-dim, #777);
+  color: var(--text-muted, #777);
 }
 
 .iconMarginRight {

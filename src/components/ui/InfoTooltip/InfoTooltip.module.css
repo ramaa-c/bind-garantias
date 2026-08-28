@@ -18,9 +18,9 @@
   height: 1.75rem;
   flex-shrink: 0;
   border-radius: 50%;
-  background: var(--color-amarillo-bind);
-  border: none;
-  color: var(--on-amarillo-bind);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
+  color: var(--badge-amarillo-text);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }

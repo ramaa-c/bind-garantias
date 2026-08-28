@@ -31,9 +31,9 @@
   height: 2.35rem;
   flex-shrink: 0;
   border-radius: 50%;
-  background: var(--color-amarillo-bind);
-  color: var(--on-amarillo-bind);
-  border: none;
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+  border: 1px solid var(--badge-amarillo-border);
   font-size: 1.1rem;
 }
 
@@ -96,13 +96,13 @@
 }
 
 .tabBtnActive {
-  background: var(--color-amarillo-bind);
-  color: var(--on-amarillo-bind);
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
 }
 
 .tabBtnActive:hover {
-  color: var(--on-amarillo-bind);
-  filter: brightness(1.06);
+  color: var(--badge-amarillo-text);
+  filter: brightness(1.15);
 }
 
 /* ── CUENTA (usuario/contraseña) ─────────────────────────────────────── */
@@ -133,7 +133,7 @@
 }
 
 .sectionTitle svg {
-  color: var(--amarillo-bind-accent);
+  color: var(--color-amarillo-bind);
   font-size: 0.95rem;
 }
 

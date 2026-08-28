@@ -27,7 +27,7 @@
 }
 
 .dragging {
-  border-color: var(--amarillo-bind-accent);
+  border-color: var(--color-amarillo-bind);
   background-color: rgba(244, 245, 0, 0.05);
   transform: scale(1.02);
   box-shadow: 0 0 20px rgba(244, 245, 0, 0.1);
@@ -42,11 +42,11 @@
 }
 
 .box:hover .icon {
-  color: var(--amarillo-bind-accent);
+  color: var(--color-amarillo-bind);
 }
 
 .dragging .icon {
-  color: var(--amarillo-bind-accent);
+  color: var(--color-amarillo-bind);
 }
 
 .text {

@@ -73,7 +73,7 @@
 
 .statusCheck { color: var(--success-bright); }
 .statusAlert { color: var(--danger-bright); }
-.statusWarn { color: var(--amarillo-bind-accent); }
+.statusWarn { color: var(--color-amarillo-bind); }
 .statusDefault { color: var(--text-muted); }
 
 /* --- CUERPO DEL ACORDEÓN --- */
