@@ -27,8 +27,10 @@ import {
   useReactivarUsuario,
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/ChannelContext";
+import { useThemeStore } from "../../../store/useThemeStore";
 import styles from "./CrearClave.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 const passwordSchema = z
   .object({
@@ -49,6 +51,7 @@ const passwordSchema = z
 const CrearClave = () => {
   const { token } = useParams();
   const { channelInfo } = useChannel();
+  const theme = useThemeStore((state) => state.theme);
   const navigate = useNavigate();
   const [emailManual, setEmailManual] = useState("");
   const [emailManualTouched, setEmailManualTouched] = useState(false);
@@ -298,7 +301,7 @@ const CrearClave = () => {
             <div className={styles.globalLogo}>
               <div className={styles.logosWrapper}>
                 <img
-                  src={logoBind}
+                  src={theme === "light" ? logoBindBlack : logoBind}
                   alt="Logo BIND"
                   onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
                   className={styles.clickableLogo}

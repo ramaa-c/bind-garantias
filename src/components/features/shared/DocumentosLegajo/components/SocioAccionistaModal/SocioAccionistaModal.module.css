@@ -35,7 +35,7 @@
   margin-top: 0.125rem;
   position: sticky;
   bottom: 0;
-  background: var(--border);
+  background: var(--bg-modal);
 }
 .modalFooterAdmin {
   background: var(--bg-surface);
@@ -75,12 +75,12 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 50%;
-  background: rgba(245, 244, 0, 0.06);
-  border: 1px solid rgba(245, 244, 0, 0.15);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--badge-amarillo-text);
   flex-shrink: 0;
 }
 .cuitSearchBannerIconAdmin {
@@ -349,7 +349,7 @@
 }
 .availableText {
   font-size: 0.7rem;
-  color: var(--text-dim, #666);
+  color: var(--text-muted, #666);
 }
 .availableTextError {
   color: var(--danger-bright);

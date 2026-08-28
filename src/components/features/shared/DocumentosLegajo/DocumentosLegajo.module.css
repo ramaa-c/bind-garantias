@@ -145,9 +145,9 @@
 }
 
 .reqBadgeMandatory {
-  background: rgba(244, 245, 0, 0.12);
-  color: var(--yellow, #f4f500);
-  border: 1px solid rgba(244, 245, 0, 0.2);
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+  border: 1px solid var(--badge-amarillo-border);
 }
 
 /* Obligatorio + ya cargado: mismo verde que el statusDot (.dotGreen) */
@@ -307,7 +307,7 @@
 }
 
 .helperLink {
-  color: var(--yellow, #f4f500);
+  color: var(--color-amarillo-bind);
   text-decoration: none;
   font-weight: 600;
   display: inline-flex;
@@ -385,7 +385,7 @@
 .vincularInput:focus {
   outline: none;
   background: rgba(0, 0, 0, 0.4);
-  border-color: var(--yellow, #f4f500);
+  border-color: var(--color-amarillo-bind);
 }
 
 .vincularInputAdmin:focus {
@@ -461,7 +461,7 @@
   margin: 0;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .emptyText {
@@ -496,7 +496,7 @@
 
 .statBadge {
   background: rgba(245, 244, 0, 0.08);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.7rem;
   font-weight: 700;
   padding: 0.25rem 0.65rem;
@@ -583,7 +583,7 @@
 }
 
 .socioWarningIcon {
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 1.15rem;
   cursor: help;
   transition: transform 0.2s, filter 0.2s;
@@ -636,7 +636,7 @@
 
 .socioWarningTooltip strong {
   font-size: 0.75rem;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -662,7 +662,7 @@
 
 .socioWarningTooltip li::before {
   content: "•";
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 1rem;
   line-height: 0.5;
 }
@@ -737,14 +737,14 @@
   border: 1px solid rgba(245, 244, 0, 0.12);
   border-radius: 0.375rem;
   padding: 0.2rem 0.5rem;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.75rem;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .socioChevron {
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.9rem;
   transition: transform 0.3s ease;
   flex-shrink: 0;
@@ -949,7 +949,7 @@
 }
 
 .sectionIcon {
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   display: flex;
   align-items: center;
 }
@@ -967,7 +967,7 @@
   gap: 0.375rem;
   background: rgba(245, 244, 0, 0.08);
   border: 1px solid rgba(245, 244, 0, 0.25);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.35rem 0.75rem;
@@ -1103,7 +1103,7 @@
 .roleBolsa {
   background: rgba(245, 244, 0, 0.08);
   border: 1px solid rgba(245, 244, 0, 0.25);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
 }
 
 /* CONTROLES DE TARJETA (EDITAR/ELIMINAR) */
@@ -1136,7 +1136,7 @@
 .actionBtnEdit:hover {
   border-color: rgba(245, 244, 0, 0.3);
   background: rgba(245, 244, 0, 0.08);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
 }
 
 .actionBtnEditAdmin:hover {
@@ -1264,7 +1264,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   flex-shrink: 0;
 }
 
@@ -1372,7 +1372,7 @@
   border-radius: 0.4rem;
   cursor: pointer;
   padding: 0.3rem 0.6rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 600;
   display: inline-flex;
@@ -1466,7 +1466,7 @@
 }
 
 .percentageSymbol {
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 1.125rem;
   font-weight: 700;
   opacity: 0.6;
@@ -1616,9 +1616,9 @@
   gap: 0.375rem;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--yellow, #f4f500);
-  background: rgba(244, 245, 0, 0.08);
-  border: 1px solid rgba(244, 245, 0, 0.2);
+  color: var(--badge-amarillo-text);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   padding: 0.35rem 0.75rem;
   border-radius: 0.375rem;
   cursor: pointer;
@@ -1627,7 +1627,7 @@
 }
 
 .downloadCategoryBtn:hover {
-  background: rgba(244, 245, 0, 0.15);
+  filter: brightness(1.15);
   transform: translateY(-1px);
 }
 
@@ -1660,7 +1660,7 @@
 
 .legajoToolbarInfo {
   font-size: 0.78rem;
-  color: #8b949e;
+  color: var(--text-muted, #8b949e);
 }
 
 .legajoToolbarBtn {
@@ -1734,7 +1734,7 @@
 }
 
 .subTabActive .subTabIcon {
-  color: var(--yellow, #f4f500);
+  color: var(--color-amarillo-bind);
 }
 
 .subTabIcon.subTabIconAdminActive {
@@ -1762,7 +1762,7 @@
 .subTabDate {
   font-size: 0.62rem;
   font-weight: 500;
-  color: var(--text-dim);
+  color: var(--text-muted);
   letter-spacing: 0.01em;
 }
 
@@ -1796,7 +1796,7 @@
 }
 
 .subTabAdd {
-  color: var(--yellow, #f4f500);
+  color: var(--color-amarillo-bind);
   font-weight: 600;
   flex-basis: 100%;
   justify-content: center;
@@ -1946,7 +1946,7 @@
   border: 1px dashed rgba(244, 245, 0, 0.3);
   border-radius: 0.625rem;
   padding: 0.55rem 0.8rem;
-  color: var(--yellow, #f4f500);
+  color: var(--color-amarillo-bind);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -2041,7 +2041,7 @@
 }
 
 .metaInput::placeholder {
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .metaInput:focus {

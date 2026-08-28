@@ -18,7 +18,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: var(--text-dim, #444);
+  color: var(--text-muted, #444);
 }
 
 .topGrid {

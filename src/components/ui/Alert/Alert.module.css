@@ -36,7 +36,7 @@
 .warning {
   border-left: 3px solid var(--yellow);
 }
-.warning .icon { color: var(--yellow); }
+.warning .icon { color: var(--color-amarillo-bind); }
 .warning .text { color: var(--white-muted); }
 
 /* Éxito (Verde) */

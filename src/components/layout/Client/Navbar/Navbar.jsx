@@ -14,6 +14,7 @@ import {
   FiMoon,
 } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
 import styles from "./Navbar.module.css";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
@@ -101,7 +102,7 @@ const Navbar = ({
           <FiMenu size={24} color="var(--white)" />
         </button>
         <div className={styles.logoContainer} role="button" tabIndex={0} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)}>
-          <img src={logoBind} alt="Bind Garantías" className={styles.logo} />
+          <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} />
           {channelInfo.id !== "default" && channelInfo.logo && (
             <>
               <div className={styles.logoSeparator} />

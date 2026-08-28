@@ -18,17 +18,16 @@
   height: 1.75rem;
   flex-shrink: 0;
   border-radius: 50%;
-  background: rgba(244, 245, 0, 0.12);
-  border: 1px solid rgba(244, 245, 0, 0.4);
-  color: var(--color-amarillo-bind, #f5f400);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
+  color: var(--badge-amarillo-text);
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .trigger:hover,
 .trigger[aria-expanded="true"] {
-  background: rgba(244, 245, 0, 0.22);
-  border-color: rgba(244, 245, 0, 0.65);
+  filter: brightness(1.08);
   transform: scale(1.06);
 }
 
@@ -63,7 +62,7 @@
   height: 1.5rem;
   background: none;
   border: none;
-  color: #8b949e;
+  color: var(--text-muted, #8b949e);
 }
 
 .triggerSm:hover,
@@ -87,7 +86,7 @@
   width: max-content;
   max-width: min(17rem, calc(100vw - 1.5rem));
   padding: 0.6rem 0.75rem;
-  background: var(--border);
+  background: var(--bg-modal);
   border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 0.55rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
@@ -115,7 +114,7 @@
   transform: translateX(-50%) rotate(45deg);
   width: 0.6rem;
   height: 0.6rem;
-  background: var(--border);
+  background: var(--bg-modal);
 }
 
 .bottom::after {

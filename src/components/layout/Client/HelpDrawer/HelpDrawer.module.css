@@ -51,9 +51,9 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: var(--yellow, #f4f500);
-  background: rgba(244, 245, 0, 0.08);
-  border: 1px solid rgba(244, 245, 0, 0.2);
+  color: var(--badge-amarillo-text);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   border-radius: 4px;
   padding: 0.35rem 0.75rem;
 }

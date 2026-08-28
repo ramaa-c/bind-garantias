@@ -17,9 +17,9 @@
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 1.15rem;
-  background: rgba(245, 244, 0, 0.08);
-  border: 1px solid rgba(245, 244, 0, 0.22);
-  color: var(--yellow, #f5f400);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
+  color: var(--badge-amarillo-text);
   font-size: 1.5rem;
   box-shadow: 0 8px 24px rgba(245, 244, 0, 0.08);
   animation: badgeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -96,7 +96,7 @@
 
 .trustChip svg {
   font-size: 0.8rem;
-  color: var(--yellow, #f5f400);
+  color: var(--color-amarillo-bind);
   flex-shrink: 0;
 }
 

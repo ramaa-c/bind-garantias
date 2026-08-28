@@ -27,7 +27,7 @@
 }
 
 .dragging {
-  border-color: var(--yellow);
+  border-color: var(--color-amarillo-bind);
   background-color: rgba(244, 245, 0, 0.05);
   transform: scale(1.02);
   box-shadow: 0 0 20px rgba(244, 245, 0, 0.1);
@@ -42,11 +42,11 @@
 }
 
 .box:hover .icon {
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
 }
 
 .dragging .icon {
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
 }
 
 .text {
@@ -168,7 +168,7 @@
 .lufeBadge {
   background: rgba(76, 101, 230, 0.15);
   border: 1px solid rgba(76, 101, 230, 0.3);
-  color: #a3b2f7;
+  color: var(--color-azul-bind);
   padding: 2px 8px;
   border-radius: 9999px;
   font-size: 0.72rem;
@@ -183,5 +183,5 @@
 
 .lufeBadgeIcon {
   font-size: 0.78rem;
-  color: #a3b2f7;
+  color: var(--color-azul-bind);
 }

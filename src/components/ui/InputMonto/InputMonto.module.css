@@ -13,7 +13,7 @@
 }
 
 .label {
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -62,7 +62,7 @@
 
 .currency {
   font-size: 1.5rem;
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
   font-weight: 400;
   opacity: 0.75;
   letter-spacing: 0.02em;
@@ -99,7 +99,7 @@
 .hint {
   margin: 0.75rem auto 0;
   max-width: 26rem;
-  color: #8b949e;
+  color: var(--text-muted, #8b949e);
   font-size: 0.8rem;
   line-height: 1.45;
 }

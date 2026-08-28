@@ -13,3 +13,9 @@
   text-transform: uppercase;
   flex-shrink: 0;
 }
+
+:global([data-theme="light"]) .avatar {
+  background: var(--color-amarillo-bind);
+  border: none;
+  color: var(--on-amarillo-bind);
+}

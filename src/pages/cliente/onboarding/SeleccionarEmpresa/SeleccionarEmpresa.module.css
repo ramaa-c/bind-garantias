@@ -60,10 +60,10 @@
   align-items: center;
   gap: 7px;
   padding: 4px 12px;
-  background: rgba(245, 244, 0, 0.07);
-  border: 1px solid rgba(245, 244, 0, 0.2);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   border-radius: 999px;
-  color: var(--yellow);
+  color: var(--badge-amarillo-text);
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -258,7 +258,7 @@
 
 .avatar--amarillo {
   background: rgba(245, 244, 0, 0.1);
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
   border: 1px solid rgba(245, 244, 0, 0.2);
 }
 
@@ -345,7 +345,7 @@
 .empresaCard:hover .iconArrow,
 .empresaCard:focus-visible .iconArrow,
 .empresaCardPressed .iconArrow {
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
 }
 
 /* ── acciones (CTA secundario) ───────────────────────────── */

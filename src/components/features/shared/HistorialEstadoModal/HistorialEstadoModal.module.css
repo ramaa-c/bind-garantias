@@ -57,7 +57,7 @@
 
 .timelineIcon svg {
     font-size: 1.75rem;
-    background: var(--border);
+    background: var(--bg-surface);
     z-index: 2;
     border-radius: 50%;
     padding: 2px;
@@ -142,7 +142,7 @@
 }
 
 .container::-webkit-scrollbar-track {
-    background: var(--border);
+    background: var(--bg-surface);
 }
 
 .container::-webkit-scrollbar-thumb {

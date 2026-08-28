@@ -9,8 +9,10 @@ import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
 import { Alert } from "../../../components/ui/Alert/Alert";
 import { useChannel } from "../../../context/ChannelContext";
+import { useThemeStore } from "../../../store/useThemeStore";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 const recuperarSchema = z.object({
   email: z
@@ -22,6 +24,7 @@ const recuperarSchema = z.object({
 const RecuperarClave = () => {
   const navigate = useNavigate();
   const { channelInfo } = useChannel();
+  const theme = useThemeStore((state) => state.theme);
 
   const {
     control,
@@ -78,7 +81,7 @@ const RecuperarClave = () => {
         <div className={styles.globalLogo}>
           <div className={styles.logosWrapper}>
             <img
-              src={logoBind}
+              src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
               onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
               className={styles.clickableLogo}

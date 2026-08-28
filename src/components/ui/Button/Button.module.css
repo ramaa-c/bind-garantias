@@ -115,7 +115,7 @@
 .primary {
   composes: base;
   background-color: var(--yellow);
-  color: var(--carbon-black);
+  color: var(--on-amarillo-bind);
   border: 2px solid var(--yellow);
   box-shadow:
     0 1px 2px rgba(253, 252, 1, 0.15),
@@ -152,7 +152,7 @@
 }
 
 .dark:not(:disabled):hover {
-  background-color: var(--border);
+  background-color: var(--bg-surface);
   border-color: var(--border-hover);
   transform: translateY(-2px);
   box-shadow:
@@ -175,14 +175,14 @@
 .outline {
   composes: base;
   background-color: transparent;
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
   border: 1.5px solid var(--yellow);
   box-shadow: inset 0 0 0 0px rgba(253, 252, 1, 0.15);
 }
 
 .outline:not(:disabled):hover {
   background-color: rgba(253, 252, 1, 0.08);
-  border-color: var(--yellow);
+  border-color: var(--color-amarillo-bind);
   transform: translateY(-2px);
   box-shadow:
     0 6px 18px rgba(253, 252, 1, 0.2),
@@ -240,7 +240,7 @@
 
 .back:not(:disabled):hover {
   background-color: rgba(var(--overlay-rgb), 0.09);
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
   border-color: rgba(253, 252, 1, 0.25);
   transform: translateX(-4px);
   box-shadow: 0 0 14px rgba(253, 252, 1, 0.08);

@@ -147,9 +147,9 @@
 }
 
 .themeButton:hover {
-  background: rgba(245, 244, 0, 0.12);
-  border-color: rgba(245, 244, 0, 0.3);
-  color: var(--yellow);
+  background: var(--badge-amarillo-bg);
+  border-color: var(--badge-amarillo-border, rgba(245, 244, 0, 0.3));
+  color: var(--badge-amarillo-text);
 }
 
 .themeIcon {
@@ -265,7 +265,7 @@
 }
 
 .roleNoVinculado {
-  color: var(--text-dim, #666);
+  color: var(--text-muted, #666);
 }
 
 .dropdownBody {
@@ -295,7 +295,7 @@
 
 .itemIcon {
   font-size: 1.1rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .dropdownFooter {

@@ -10,8 +10,10 @@ import { ActivacionPendienteModal } from "../../../components/features/shared/Ac
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
 import { useChannel } from "../../../context/ChannelContext";
+import { useThemeStore } from "../../../store/useThemeStore";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 // --- SCHEMA ---
 const registroSchema = z.object({
@@ -25,6 +27,7 @@ const registroSchema = z.object({
 
 const Registro = () => {
   const navigate = useNavigate();
+  const theme = useThemeStore((state) => state.theme);
   const { mutateAsync: crearUsuario, isPending: registrando } =
     useCrearUsuario();
   const { mutateAsync: reenviarCorreo, isPending: reenviando } =
@@ -179,7 +182,7 @@ const Registro = () => {
           <div className={styles.globalLogo}>
             <div className={styles.logosWrapper}>
               <img
-                src={logoBind}
+                src={theme === "light" ? logoBindBlack : logoBind}
                 alt="Logo BIND"
                 onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
                 className={styles.clickableLogo}

@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import {
   FiSmartphone,
-  FiX,
   FiCheckCircle,
   FiMessageSquare,
 } from "react-icons/fi";
 import { useFormContext, useWatch } from "react-hook-form";
 import { toast } from "sonner";
+import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSocioMasked } from "../../../ui/InputSocioMasked/InputSocioMasked";
 import { InputOTP } from "../../../ui/InputOtp/InputOtp";
 import styles from "./ContactoModal.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
 import { useValidarNumero } from "../../../../hooks/useSms";
 
 const COOLDOWN_SEGUNDOS = 60;
@@ -58,13 +56,10 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
   }, [segundosRestantes]);
 
   const handleClose = () => {
-    if (procesando || enviandoSms) return;
     setFase("ingresar");
     setCodigoSms("");
     onClose();
   };
-
-  useEscape(handleClose, isOpen);
 
   if (!isOpen) return null;
 
@@ -160,33 +155,16 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
     }, 1200);
   };
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) handleClose();
-  };
-
   const mm = String(Math.floor(segundosRestantes / 60)).padStart(2, "0");
   const ss = String(segundosRestantes % 60).padStart(2, "0");
 
-  return createPortal(
-    <div
-      className={styles.overlay}
-      onMouseDown={handleOverlayMouseDown}
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      maxWidth="28.125rem"
+      preventClose={procesando || enviandoSms}
     >
-      <div
-        className={styles.modalContainer}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        {!procesando && (
-          <button
-            type="button"
-            className={styles.btnClose}
-            onClick={handleClose}
-            aria-label="Cerrar"
-          >
-            <FiX size={20} />
-          </button>
-        )}
-
         <form className={styles.body} onSubmit={(e) => {
           e.preventDefault();
           if (fase === "ingresar") {
@@ -328,8 +306,6 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
             </div>
           )}
         </form>
-      </div>
-    </div>,
-    document.body
+    </Modal>
   );
 }

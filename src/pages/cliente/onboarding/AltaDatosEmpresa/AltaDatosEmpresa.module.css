@@ -75,10 +75,10 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.25rem 0.75rem;
-  background: rgba(244, 245, 0, 0.07);
-  border: 1px solid rgba(244, 245, 0, 0.18);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   border-radius: 999px;
-  color: var(--yellow, #f4f500);
+  color: var(--badge-amarillo-text);
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -268,10 +268,10 @@
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.625rem;
-  background: rgba(244, 245, 0, 0.07);
-  border: 1px solid rgba(244, 245, 0, 0.18);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   border-radius: 999px;
-  color: var(--yellow, #f4f500);
+  color: var(--badge-amarillo-text);
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -289,14 +289,14 @@
 
 .modalText {
   margin: 0;
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.875rem;
   line-height: 1.65;
 }
 
 .modalHighlightSubtitle {
   margin-left: 0.75rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.78rem;
   font-family: var(--font-mono, monospace);
 }

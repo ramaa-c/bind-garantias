@@ -42,7 +42,7 @@
 }
 
 .statusFocus {
-  border-color: var(--color-amarillo-bind, #f5f400);
+  border-color: var(--color-amarillo-bind);
   background-color: rgba(245, 244, 0, 0.035);
   box-shadow: 0 0 0 3px rgba(245, 244, 0, 0.07);
 }

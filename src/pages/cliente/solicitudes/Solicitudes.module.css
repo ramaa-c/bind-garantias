@@ -58,8 +58,8 @@
 .iconCircleSmall {
   width: 2.25rem;
   height: 2.25rem;
-  background-color: rgba(244, 245, 0, 0.1);
-  color: var(--yellow);
+  background-color: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -116,7 +116,7 @@
 
 .creditAmount {
   display: block;
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0.25rem 0;
@@ -124,7 +124,7 @@
 }
 
 .creditExpiry {
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -179,7 +179,7 @@
 }
 
 .searchBox:focus-within .searchIcon {
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
 }
 
 .searchInput {
@@ -201,13 +201,13 @@
 
 .searchInput:focus {
   outline: none;
-  border-color: var(--yellow);
+  border-color: var(--color-amarillo-bind);
   background: rgba(var(--overlay-rgb), 0.05);
   box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.15);
 }
 
 .searchInput::placeholder {
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-weight: 400;
 }
 
@@ -253,7 +253,7 @@
 }
 
 .clearFiltersBtn:hover {
-  color: var(--yellow, #f4f500);
+  color: var(--color-amarillo-bind);
   border-color: rgba(244, 245, 0, 0.3);
   background: rgba(244, 245, 0, 0.06);
 }
@@ -290,7 +290,7 @@
 .loadingContainer {
   text-align: center;
   padding: 3rem 1.5rem;
-  color: var(--text-dim);
+  color: var(--text-muted);
   background: rgba(var(--overlay-rgb), 0.02);
   border: 1px dashed rgba(var(--overlay-rgb), 0.1);
   border-radius: 1rem;

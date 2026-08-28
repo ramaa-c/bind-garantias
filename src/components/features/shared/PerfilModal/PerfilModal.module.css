@@ -3,38 +3,38 @@
   overflow: visible;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.85rem;
 }
 
 .identityCard {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0.875rem 1.25rem;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
   background: rgba(245, 244, 0, 0.04);
   border: 1px solid rgba(245, 244, 0, 0.14);
   border-radius: 0.9rem;
 }
 
 .identityAvatarSize {
-  width: 2.75rem;
-  height: 2.75rem;
-  font-size: 1rem;
-  border-radius: 0.9rem;
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: 0.875rem;
+  border-radius: 0.75rem;
 }
 
 .identityAvatarUser {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.35rem;
+  height: 2.35rem;
   flex-shrink: 0;
   border-radius: 50%;
-  background: rgba(245, 244, 0, 0.1);
-  color: var(--yellow, #f5f400);
-  border: 1px solid rgba(245, 244, 0, 0.25);
-  font-size: 1.25rem;
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+  border: 1px solid var(--badge-amarillo-border);
+  font-size: 1.1rem;
 }
 
 .identityInfo {
@@ -78,7 +78,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.65rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   background: transparent;
   border: none;
   border-radius: 0.65rem;
@@ -96,20 +96,19 @@
 }
 
 .tabBtnActive {
-  background: rgba(245, 244, 0, 0.1);
-  color: var(--yellow, #f5f400);
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
 }
 
 .tabBtnActive:hover {
-  color: var(--yellow, #f5f400);
-  background: rgba(245, 244, 0, 0.14);
+  color: var(--badge-amarillo-text);
+  filter: brightness(1.15);
 }
 
 /* ── CUENTA (usuario/contraseña) ─────────────────────────────────────── */
 
 .columnsGrid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
   border: 1px solid rgba(245, 244, 0, 0.12);
   border-radius: 0.85rem;
   overflow: hidden;
@@ -119,12 +118,8 @@
 .sectionGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  padding: 1.25rem;
-}
-
-.sectionGroup + .sectionGroup {
-  border-left: 1px solid rgba(245, 244, 0, 0.12);
+  gap: 0.5rem;
+  padding: 1rem 1.125rem;
 }
 
 .sectionTitle {
@@ -138,23 +133,23 @@
 }
 
 .sectionTitle svg {
-  color: var(--yellow, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.95rem;
 }
 
 .sectionHint {
-  margin: -0.35rem 0 0.15rem 0;
+  margin: -0.2rem 0 0.1rem 0;
   color: #8b949e;
   font-size: 0.75rem;
   line-height: 1.4;
-  min-height: 2.1rem;
+  min-height: 1.05rem;
 }
 
 .sectionActions {
   display: flex;
   justify-content: flex-end;
   margin-top: auto;
-  padding-top: 0.65rem;
+  padding-top: 0.5rem;
 }
 
 .sectionBody {
@@ -192,8 +187,8 @@
 }
 
 .modalFoot {
-  margin: 1.25rem -1.5rem -1.5rem -1.5rem;
-  padding: 1rem 1.5rem;
+  margin: 1rem -1.5rem -1.5rem -1.5rem;
+  padding: 0.85rem 1.5rem;
   border-top: 1px solid rgba(245, 244, 0, 0.1);
   display: flex;
   justify-content: flex-end;
@@ -201,17 +196,34 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
-@media (max-width: 720px) {
+/* Mobile-first: por defecto una sola columna (el celular es la mayoría del
+   tráfico de la app cliente, ver CLAUDE.md). Recién a partir de ~720px hay
+   ancho real para separar "Datos de la empresa"/"Mi cuenta" en dos
+   columnas lado a lado. */
+.tabBtn span {
+  display: none;
+}
+
+.columnsGrid {
+  grid-template-columns: 1fr;
+}
+
+.sectionGroup + .sectionGroup {
+  border-left: none;
+  border-top: 1px solid rgba(245, 244, 0, 0.12);
+}
+
+@media (min-width: 45rem) {
   .tabBtn span {
-    display: none;
+    display: inline;
   }
 
   .columnsGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .sectionGroup + .sectionGroup {
-    border-left: none;
-    border-top: 1px solid rgba(245, 244, 0, 0.12);
+    border-top: none;
+    border-left: 1px solid rgba(245, 244, 0, 0.12);
   }
 }

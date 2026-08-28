@@ -142,7 +142,7 @@
   top: calc(100% + 0.75rem);
   right: 0;
   width: 100%;
-  background: var(--border);
+  background: #161b22;
   border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 1rem;
   box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
@@ -316,7 +316,7 @@
   position: absolute;
   top: 100%;
   left: 0;
-  background: var(--border);
+  background: #161b22;
   border-radius: 0.75rem;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   padding: 0.5rem 0;
