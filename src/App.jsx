@@ -17,6 +17,7 @@ import SessionTimeoutManager from "./components/guards/SessionTimeoutManager/Ses
 import ThemeManager from "./components/guards/ThemeManager/ThemeManager";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
+import HostAwareRoot from "./components/layout/HostAwareRoot/HostAwareRoot";
 import LoadingScreen from "./components/ui/LoadingScreen/LoadingScreen";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
@@ -109,8 +110,12 @@ function App() {
                 redirect acá (aunque sea client-side) rompe el enmascarado
                 de la URL que hacen en el entorno del banco (Victor,
                 2026-08-21) — por eso esto renderiza el contenido directo,
-                sin ningún navigate()/<Navigate> de por medio. */}
-            <Route path="/" element={<NotFound />} />
+                sin ningún navigate()/<Navigate> de por medio.
+                HostAwareRoot mantiene esa regla: para los hosts enmascarados
+                (admin / cadena puntual) matchea contra una location interna
+                vía <Routes location=...> sin navegar nunca; para cualquier
+                otro host cae en NotFound, igual que antes. */}
+            <Route path="/" element={<HostAwareRoot />} />
             <Route path="/login" element={<LoginAdmin />} />
             <Route path="/not-found" element={<NotFound />} />
             <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
