@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider, Controller, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +25,10 @@ import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSche
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId, useActualizarSocio } from "../../../../hooks/useSocios";
+import { useVendor } from "../../../../hooks/useVendor";
+import { useProvincias } from "../../../../hooks/useCatalogos";
+import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
+import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
 import {
   useObtenerPorNombreOEmail,
   useActualizarUsuario,
@@ -69,21 +73,16 @@ const passwordSchema = z
     path: ["newPassword"],
   });
 
-const extraerRegistroUsuario = (db) => {
-  if (!db) return null;
-  if (Array.isArray(db)) return db[0] || null;
-  if (db.items) return db.items[0] || null;
-  if (db.data) return db.data[0] || null;
-  return db;
-};
-
 // Provincia no se persiste en el Socio (ver comentario en AltaDatosEmpresa.jsx)
-// - arranca vacía y el usuario la vuelve a elegir dentro de UbicacionModal, tal
-// como ya ocurre al retomar un onboarding incompleto.
+// - arranca vacía/con lo que haya en ciudadid/partidoid y se corrige apenas
+// abre el modal con la misma re-consulta por CUIT que usa el Paso 2 (ver
+// efecto de triangulación más abajo), en vez de forzar al usuario a elegir
+// todo de cero como pasaba antes.
 const construirValoresEmpresa = (socio) => {
   const calle = socio?.calle || "";
   const numero = Number(socio?.numero) || 0;
   const celular = socio?.telefono || "";
+  const localidad = socio?.partido || "";
   return {
     cuit: socio?.cuit || "",
     razonSocial: socio?.denominacion || "",
@@ -94,11 +93,11 @@ const construirValoresEmpresa = (socio) => {
     departamento: socio?.departamento || "",
     direccion: `${calle} ${numero || ""}`.trim(),
     provincia: "",
-    provinciaid: 0,
-    ciudad: "",
-    ciudadid: 0,
-    localidad: socio?.partido || "",
-    localidadid: 0,
+    provinciaid: Number(socio?.provinciaid) || 0,
+    ciudad: localidad,
+    ciudadid: Number(socio?.ciudadid) || 0,
+    localidad,
+    localidadid: Number(socio?.partidoid) || 0,
     codpos: socio?.codpos || "",
     celular,
     // Asumimos validado el número ya guardado: si el usuario no lo toca,
@@ -127,6 +126,16 @@ export const PerfilModal = ({ isOpen, onClose }) => {
   } = useEmpresaActiva(!isOpen);
   const hayEmpresa = !!socioIdActivo;
 
+  // Un vendor sin empresa activa (ej. abrió "Mi perfil" desde Seleccionar
+  // Empresa antes de elegir una) no necesariamente "no tiene empresa
+  // vinculada" - puede tener varias y todavía no eligió ninguna en esta
+  // sesión. Mostrar esa leyenda ahí sería engañoso, así que la identityCard
+  // completa (avatar + "Sin empresa vinculada") se oculta solo para ese
+  // caso puntual; el resto de la modal (Mi cuenta) ya se comporta bien.
+  const { data: vendorData } = useVendor();
+  const isVendor = vendorData?.isVendor || false;
+  const ocultarIdentityCard = isVendor && !hayEmpresa;
+
   const { data: socioWeb, isPending: isPendingSocioWeb } = useSocioWebPorId(
     isOpen ? socioIdActivo : undefined,
   );
@@ -149,6 +158,59 @@ export const PerfilModal = ({ isOpen, onClose }) => {
       resetEmpresa(construirValoresEmpresa(socioWeb));
     }
   }, [isOpen, socioWeb, resetEmpresa]);
+
+  // Triangulación de Provincia/Ciudad/Localidad: igual mecanismo que usa
+  // AltaDatosEmpresa.jsx (Paso 2) al retomar un onboarding incompleto.
+  // Provincia nunca se persiste en el Socio, y ciudadid/localidadid
+  // guardados no son confiables contra el catálogo actual - se resuelven
+  // de nuevo consultando Nosis/AFIP por CUIT (mismo utilitario que Paso1) y
+  // matcheando el nombre de provincia contra el catálogo; Ciudad se
+  // termina de resolver sola dentro de UbicacionModal a partir del texto
+  // (useSincronizarCatalogoPorTexto), igual que en el wizard. Sin
+  // shouldDirty: es una corrección automática, no una edición del usuario -
+  // no debe habilitar por sí sola el botón de Guardar (ver
+  // bloquearSinCambios en UbicacionModal).
+  const { data: provinciasData, isPending: isPendingProvincias } = useProvincias();
+  const opcionesProvincias = provinciasData?.opciones || [];
+  const resueltoParaCuitRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) {
+      resueltoParaCuitRef.current = null;
+      return;
+    }
+    if (!socioWeb || !cuitActivo || isPendingProvincias) return;
+    if (resueltoParaCuitRef.current === cuitActivo) return;
+    let cancelado = false;
+
+    (async () => {
+      try {
+        const resultado = await obtenerDatosEmpresaPorCuit(cuitActivo, opcionesProvincias);
+        if (cancelado || !resultado.encontrado) return;
+        const camposUbicacion = [
+          "provincia",
+          "provinciaid",
+          "ciudad",
+          "ciudadid",
+          "localidad",
+          "localidadid",
+        ];
+        camposUbicacion.forEach((campo) => {
+          const shouldValidate = campo !== "ciudadid" && campo !== "localidadid";
+          metodosEmpresa.setValue(campo, resultado.valores[campo], { shouldValidate });
+        });
+      } catch (e) {
+        console.error("[PerfilModal] Error resolviendo ubicación por CUIT:", e);
+      } finally {
+        if (!cancelado) resueltoParaCuitRef.current = cuitActivo;
+      }
+    })();
+
+    return () => {
+      cancelado = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, socioWeb, cuitActivo, isPendingProvincias]);
 
   const direccion = useWatch({ control: controlEmpresa, name: "direccion" }) || "";
   const localidadTexto = useWatch({ control: controlEmpresa, name: "localidad" }) || "";
@@ -238,6 +300,7 @@ export const PerfilModal = ({ isOpen, onClose }) => {
     control: passwordControl,
     handleSubmit: handlePasswordSubmit,
     watch: watchPassword,
+    trigger: triggerPassword,
     reset: resetPasswordForm,
     setError: setPasswordError,
     formState: { errors: passwordErrors, isValid: isPasswordValid },
@@ -249,6 +312,20 @@ export const PerfilModal = ({ isOpen, onClose }) => {
 
   const newPasswordValue = watchPassword("newPassword") || "";
   const confirmPasswordValue = watchPassword("confirmPassword") || "";
+
+  // Mismo fix que CrearClave.jsx: con resolver, RHF solo revalida el campo
+  // que cambió - si "confirmPassword" ya tenía el error "no coinciden" (del
+  // .refine() cruzado del schema) y el usuario corrige "newPassword" en vez
+  // de "confirmPassword" para que vuelvan a coincidir, el mensaje queda
+  // pegado para siempre sin este trigger manual. Solo dispara si
+  // confirmPassword ya tiene valor o error viejo, para no marcar "no
+  // coinciden" contra un campo que el usuario todavía ni tocó.
+  useEffect(() => {
+    if (confirmPasswordValue || passwordErrors.confirmPassword) {
+      triggerPassword("confirmPassword");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newPasswordValue, triggerPassword]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -320,31 +397,37 @@ export const PerfilModal = ({ isOpen, onClose }) => {
       isOpen={isOpen}
       onClose={onClose}
       title="MI PERFIL"
-      subtitle="Gestioná los datos de tu empresa y el acceso a tu cuenta."
+      subtitle={
+        ocultarIdentityCard
+          ? "Gestioná el acceso a tu cuenta."
+          : "Gestioná los datos de tu empresa y el acceso a tu cuenta."
+      }
       maxWidth="46rem"
     >
       <div className={styles.modalBody}>
-        <div className={styles.identityCard}>
-          {hayEmpresa ? (
-            <div
-              className={`${sidebarStyles.companyAvatar} ${sidebarStyles[`avatar--${obtenerVarianteAvatarEmpresa(nombreEmpresa || "")}`]} ${styles.identityAvatarSize}`}
-            >
-              {obtenerInicialesEmpresa(nombreEmpresa || "")}
+        {!ocultarIdentityCard && (
+          <div className={styles.identityCard}>
+            {hayEmpresa ? (
+              <div
+                className={`${sidebarStyles.companyAvatar} ${sidebarStyles[`avatar--${obtenerVarianteAvatarEmpresa(nombreEmpresa || "")}`]} ${styles.identityAvatarSize}`}
+              >
+                {obtenerInicialesEmpresa(nombreEmpresa || "")}
+              </div>
+            ) : (
+              <div className={styles.identityAvatarUser}>
+                <FaRegUserCircle />
+              </div>
+            )}
+            <div className={styles.identityInfo}>
+              <p className={styles.identityName}>
+                {hayEmpresa ? nombreEmpresa : emailUsuario}
+              </p>
+              <p className={styles.identityMeta}>
+                {hayEmpresa ? `CUIT ${cuitActivo} · ${emailUsuario}` : "Sin empresa vinculada"}
+              </p>
             </div>
-          ) : (
-            <div className={styles.identityAvatarUser}>
-              <FaRegUserCircle />
-            </div>
-          )}
-          <div className={styles.identityInfo}>
-            <p className={styles.identityName}>
-              {hayEmpresa ? nombreEmpresa : emailUsuario}
-            </p>
-            <p className={styles.identityMeta}>
-              {hayEmpresa ? `CUIT ${cuitActivo} · ${emailUsuario}` : "Sin empresa vinculada"}
-            </p>
           </div>
-        </div>
+        )}
 
         {hayEmpresa && (
           <div className={styles.tabs}>
@@ -497,6 +580,7 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                   isOpen={modalUbicacionOpen}
                   onClose={() => setUbicacionModalOpen(false)}
                   onGuardar={handleGuardarUbicacion}
+                  bloquearSinCambios
                 />
                 <ContactoModal
                   isOpen={modalContactoOpen}

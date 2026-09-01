@@ -16,6 +16,7 @@ import {
   FiActivity,
   FiShare2,
   FiCalendar,
+  FiEdit2,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -29,6 +30,7 @@ import { tercerosService } from "../../../../services/tercerosService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import styles from "./SociosLegajo.module.css";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
+import { PerfilModal } from "../PerfilModal/PerfilModal";
 import { AccionistasSection } from "../DocumentosLegajo/components/AccionistasSection/AccionistasSection";
 import { RepresentantesSection } from "../DocumentosLegajo/components/RepresentantesSection/RepresentantesSection";
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
@@ -221,6 +223,7 @@ export function SociosLegajo({
   }, [esPersonaFisica, requisitos, adminMode]);
 
   const [activeTab, setActiveTab] = useState(null);
+  const [perfilModalOpen, setPerfilModalOpen] = useState(false);
 
   useEffect(() => {
     if (tabsDisponibles.length > 0) {
@@ -422,7 +425,17 @@ export function SociosLegajo({
                 <header className={styles.viewerHeader}>
                   <div className={styles.viewerMeta}>
                     <h4 className={styles.viewerTitle}>{tituloTab(doc)}</h4>
-                    <div id="socios-header-action-portal" className={styles.headerActionPortal} />
+                    <div id="socios-header-action-portal" className={styles.headerActionPortal}>
+                      {isPerfil && (
+                        <button
+                          type="button"
+                          className={styles.addButton}
+                          onClick={() => setPerfilModalOpen(true)}
+                        >
+                          <FiEdit2 size={14} /> Editar mi perfil
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <p className={styles.viewerInfo}>
                     {infoTab(doc)}
@@ -598,6 +611,10 @@ export function SociosLegajo({
         tone="danger"
         confirmText={deleteTarget?.rolId === 21 ? "Desvincular" : "Eliminar"}
         isLoading={loadingDelete}
+      />
+      <PerfilModal
+        isOpen={perfilModalOpen}
+        onClose={() => setPerfilModalOpen(false)}
       />
     </div>
   );

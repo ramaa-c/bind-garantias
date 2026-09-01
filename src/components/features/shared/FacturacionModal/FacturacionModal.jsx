@@ -11,7 +11,7 @@ export default function FacturacionModal({ isOpen, onClose, onGuardar }) {
     control,
     trigger,
     watch,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useFormContext();
 
   const emailValue = watch("emailfacturacion") || "";
@@ -58,7 +58,12 @@ export default function FacturacionModal({ isOpen, onClose, onGuardar }) {
         </div>
 
         <div className={styles.btnSave}>
-          <Button type="submit" variant="primary" style={{ width: "100%", minHeight: "3rem" }}>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={!dirtyFields?.emailfacturacion}
+            style={{ width: "100%", minHeight: "3rem" }}
+          >
             GUARDAR EMAIL
           </Button>
         </div>

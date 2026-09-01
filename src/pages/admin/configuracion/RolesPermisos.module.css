@@ -347,7 +347,7 @@
 }
 
 .switchOff {
-  color: #484f58;
+  color: var(--text-muted);
 }
 
 /* Footer block */

@@ -75,14 +75,10 @@ export const useEstablecerClave = () => {
 };
 
 export const useObtenerPorNombreOEmail = (identificador) => {
-  const isMock =
-    identificador === "admin" ||
-    identificador === "admin_restricto" ||
-    identificador === "admin restricto";
   return useQuery({
     queryKey: ["usuarios", "porNombreOEmail", identificador],
     queryFn: () => usuarioService.obtenerPorNombreOEmail(identificador),
-    enabled: !!identificador && !isMock,
+    enabled: !!identificador,
   });
 };
 

@@ -110,7 +110,7 @@
   flex-shrink: 0;
 }
 .iconPending {
-  color: rgba(var(--overlay-rgb), 0.2);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 

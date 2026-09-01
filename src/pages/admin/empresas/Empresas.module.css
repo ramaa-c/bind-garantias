@@ -40,7 +40,7 @@
 }
 
 .headerTitle p {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   margin: 0.35rem 0 0 0;
   font-size: 0.875rem;
   font-weight: 400;
@@ -82,7 +82,7 @@
 }
 
 .iconSearch {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -96,7 +96,7 @@
 }
 
 .inputSearch::placeholder {
-  color: rgba(255, 255, 255, 0.2);
+  color: var(--text-muted);
 }
 
 .listCount {
@@ -370,7 +370,7 @@
 }
 
 .tipo-indefinido {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--text-muted);
   background: transparent;
   border: 1px dashed rgba(255, 255, 255, 0.15);
 }
@@ -412,7 +412,7 @@
   align-items: center;
   gap: 0.3rem;
   font-size: 0.65rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;

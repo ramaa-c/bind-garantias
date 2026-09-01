@@ -243,7 +243,7 @@
 .statLabel {
   font-size: 0.65rem;
   font-weight: 700;
-  color: #6e7681;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin: 0;
@@ -297,7 +297,7 @@
   left: 0.9rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #6e7681;
+  color: var(--text-muted);
   font-size: 1rem;
   transition: color 0.2s ease;
 }
@@ -331,7 +331,7 @@
 }
 
 .searchInput::placeholder {
-  color: #666;
+  color: var(--text-muted);
   font-weight: 400;
 }
 
@@ -439,7 +439,7 @@
   background: rgba(255, 255, 255, 0.02);
   border: 1px dashed rgba(255, 255, 255, 0.12);
   border-radius: 0.875rem;
-  color: #6e7681;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -485,7 +485,7 @@
 }
 
 .rowChevron {
-  color: #6e7681;
+  color: var(--text-muted);
   flex-shrink: 0;
   opacity: 0;
   transform: translateX(-3px);
@@ -637,7 +637,7 @@
 .rowAmountLabel {
   font-size: 0.6rem;
   font-weight: 700;
-  color: #6e7681;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -716,7 +716,7 @@
 .solicitudNumber {
   font-size: 0.6875rem;
   font-weight: 700;
-  color: #6e7681;
+  color: var(--text-muted);
   letter-spacing: 0.06em;
 }
 
@@ -772,7 +772,7 @@
 
 .amountLabel {
   font-size: 0.65rem;
-  color: #6e7681;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -808,7 +808,7 @@
 .detailsBlockTitle {
   font-size: 0.6875rem;
   font-weight: 700;
-  color: #6e7681;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -831,7 +831,7 @@
 .fieldLabel {
   font-size: 0.65rem;
   font-weight: 600;
-  color: #6e7681;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -875,7 +875,7 @@
 }
 
 .trazabilidadLabel {
-  color: #6e7681;
+  color: var(--text-muted);
 }
 
 .trazabilidadValue {
@@ -920,7 +920,7 @@
 }
 
 .iconSearchModal {
-  color: #6e7681;
+  color: var(--text-muted);
 }
 
 .modalSearchInput {
@@ -933,7 +933,7 @@
 }
 
 .modalSearchInput::placeholder {
-  color: #555;
+  color: var(--text-muted);
 }
 
 .chainGridModal {
@@ -1011,7 +1011,7 @@
 
 .chainCardModalInfo p {
   font-size: 0.75rem;
-  color: #6e7681;
+  color: var(--text-muted);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;

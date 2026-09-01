@@ -66,7 +66,7 @@ export const AdminGuard = ({ children }) => {
 
   const { isRestricted, isPending } = useAdminRestrictions();
 
-  const isBasicAdmin = user?.role === "admin" || user?.email === "admin";
+  const isBasicAdmin = user?.role === "admin";
   const tieneSesion = !!user?.email;
 
   // Sin sesión, `useObtenerPorNombreOEmail` queda deshabilitado (email vacío)

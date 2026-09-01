@@ -927,37 +927,52 @@ export const AltaOperacion = () => {
       unAnioMasRel.setFullYear(unAnioMasRel.getFullYear() + 1);
       const unAnioMasStr = unAnioMasRel.toISOString().split(".")[0];
 
-      const payload = {
-        solicitudenprocesoid: 0,
-        fechacarga: new Date().toISOString().split(".")[0],
-        cuit: cuitLimpio,
-        tipolimiteid: tipoLimiteIdReal,
-        cadenavalorid: Number(cadenaSlug),
-        monedaid: Number(cleanData.moneda) || 5000,
-        importe: montoLimpio,
-        // EstadoSolicitud=2 (EnProceso): la solicitud se está enviando con
-        // éxito y queda esperando la respuesta del administrador — no es
-        // un simple "Inicial" (1), que quedaría reservado para un estado
-        // previo al envío que este flujo no tiene (confirmado con el
-        // equipo el 2026-08-18). Ver mapearAEstadoSolicitudEnProceso en
-        // utils/estadoLimiteSocio.js para el resto del catálogo.
-        estadosolicitud: 2,
-        idexterno: 0,
-        terceroviaid: 4000000,
-        terceropresentanteid: cleanData.sociedadBolsa
-          ? Number(cleanData.sociedadBolsa)
-          : 0,
-      };
+      // Si ya sabemos que se rechaza (CDA de línea / PorcentajeMinimoSolicitud,
+      // ver debeRechazarseAutomaticamente más arriba), directamente no se crea
+      // la SolicitudEnProceso: no tiene sentido mandarla "EnProceso" al core
+      // para un pedido que el propio frontend ya rechazó, y hacerlo dejaba una
+      // fila fantasma que nada volvía a actualizar — "Mis Solicitudes"
+      // terminaba mostrando la misma solicitud dos veces con estados
+      // contradictorios (una "Pendiente" huérfana, otra "Rechazada" real).
+      // Reportado y decidido con el equipo el 2026-08-27. solicitudIdCreada
+      // queda en 0 acá y se completa más abajo con el ID del TipoLimiteSocio
+      // real una vez creado, para seguir teniendo un "N° de solicitud" que
+      // mostrar en el resumen de éxito.
+      let solicitudIdCreada = 0;
 
-      console.log(
-        "[ALTA OPERACION] Payload enviado a crearSolicitudEnProceso:",
-        JSON.stringify(payload, null, 2),
-      );
+      if (!debeRechazarseAutomaticamente) {
+        const payload = {
+          solicitudenprocesoid: 0,
+          fechacarga: new Date().toISOString().split(".")[0],
+          cuit: cuitLimpio,
+          tipolimiteid: tipoLimiteIdReal,
+          cadenavalorid: Number(cadenaSlug),
+          monedaid: Number(cleanData.moneda) || 5000,
+          importe: montoLimpio,
+          // EstadoSolicitud=2 (EnProceso): la solicitud se está enviando con
+          // éxito y queda esperando la respuesta del administrador — no es
+          // un simple "Inicial" (1), que quedaría reservado para un estado
+          // previo al envío que este flujo no tiene (confirmado con el
+          // equipo el 2026-08-18). Ver mapearAEstadoSolicitudEnProceso en
+          // utils/estadoLimiteSocio.js para el resto del catálogo.
+          estadosolicitud: 2,
+          idexterno: 0,
+          terceroviaid: 4000000,
+          terceropresentanteid: cleanData.sociedadBolsa
+            ? Number(cleanData.sociedadBolsa)
+            : 0,
+        };
 
-      const resSolicitud =
-        await solicitudesService.crearSolicitudEnProceso(payload);
-      const solicitudIdCreada =
-        resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
+        console.log(
+          "[ALTA OPERACION] Payload enviado a crearSolicitudEnProceso:",
+          JSON.stringify(payload, null, 2),
+        );
+
+        const resSolicitud =
+          await solicitudesService.crearSolicitudEnProceso(payload);
+        solicitudIdCreada =
+          resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
+      }
 
       if (finalSocioId && cleanData.sociedadBolsa) {
         const ahoraRel = new Date().toISOString().split(".")[0];
@@ -1047,7 +1062,15 @@ export const AltaOperacion = () => {
         tercerogeneradorid: 0,
       };
 
-      await lineaService.crearLimiteSocio(payloadLimite);
+      const resLimite = await lineaService.crearLimiteSocio(payloadLimite);
+
+      // No hay SolicitudEnProceso de la cual sacar un ID (ver más arriba):
+      // se usa el ID del TipoLimiteSocio recién creado, que es exactamente
+      // el mismo tipo de número que ya se muestra como "N° de solicitud"
+      // para las solicitudes reales en Solicitudes.jsx.
+      if (debeRechazarseAutomaticamente) {
+        solicitudIdCreada = resLimite?.tipolimitesocioid || resLimite?.id || 0;
+      }
 
       // AltaOperacion crea la solicitud vía servicios directos, no
       // mutaciones de react-query - sin esto, Solicitudes.jsx (que sí

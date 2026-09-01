@@ -66,7 +66,7 @@
   border-radius: 0.875rem;
   padding: 2rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -139,7 +139,7 @@
   position: relative;
   z-index: 1;
   max-width: 30rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
   font-size: 0.85rem;
   line-height: 1.55;
   margin: 0;
@@ -218,7 +218,7 @@
 }
 
 .header p {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   margin: 0.25rem 0 0 0;
   font-size: 0.825rem;
   max-width: 45rem;
@@ -323,7 +323,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
 }
 
 .pulseDot {
@@ -365,7 +365,7 @@
   align-items: center;
   gap: 0.35rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--text-muted);
 }
 
 .durationBadge {
@@ -490,7 +490,7 @@
 
 .cardHeader p {
   font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   margin: 0.2rem 0 0 0;
   line-height: 1.4;
 }
@@ -579,7 +579,7 @@
 
 .integracionDescripcion {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
 }
 
 /* ── HISTORIAL ────────────────────────────────────────────── */
@@ -596,7 +596,7 @@
 
 .historialVacio {
   font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
 }
 
 .historialItem {
@@ -625,7 +625,7 @@
 
 .historialMeta {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
 }
 
 /* ── Indicador de estado (dot) compartido ─────────────────── */
