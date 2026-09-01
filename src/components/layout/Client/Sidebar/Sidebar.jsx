@@ -8,6 +8,7 @@ import { useVendor } from "../../../../hooks/useVendor";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { useThemeStore } from "../../../../store/useThemeStore";
+import { useVersionApi } from "../../../../hooks/useSistema";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -26,6 +27,11 @@ export default function Sidebar({ isOpen, onClose }) {
   const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
   const isVinculado = !!nombreEmpresa && !enAltaDatosEmpresa;
   const theme = useThemeStore((state) => state.theme);
+  const { data: versionApiRaw } = useVersionApi();
+  // El backend devuelve un string suelto (ej. "SGRPlus API Web Version
+  // 1.0"), no un objeto - se le extrae solo el número para no repetir la
+  // frase completa al lado de nuestra propia versión.
+  const versionApi = versionApiRaw?.match(/[\d]+(?:\.[\d]+)*\s*$/)?.[0]?.trim();
 
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
@@ -228,7 +234,10 @@ export default function Sidebar({ isOpen, onClose }) {
             <FiLogOut size={14} /> Cerrar sesión
           </button>
         </div>
-        <p className={styles.versionText}>Versión 1.0.0</p>
+        <p className={styles.versionText}>
+          Versión {__APP_VERSION__}
+          {versionApi && <> · API {versionApi}</>}
+        </p>
       </div>
 
       <TasasModal
