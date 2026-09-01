@@ -18,6 +18,7 @@ const SelectFechaBase = ({
   placeholder,
   disabled = false,
   minDate,
+  maxDate,
   error: errorExterno,
   value: manualValue,
   onChange: manualOnChange,
@@ -213,11 +214,15 @@ const SelectFechaBase = ({
                     selected={dateObj}
                     onSelect={handleDateSelect}
                     locale={es}
-                    disabled={{ before: effectiveMinDate }}
+                    disabled={
+                      maxDate
+                        ? [{ before: effectiveMinDate }, { after: maxDate }]
+                        : { before: effectiveMinDate }
+                    }
                     required
                     captionLayout="dropdown-years"
                     fromYear={effectiveMinDate.getFullYear()}
-                    toYear={effectiveMinDate.getFullYear() + 10}
+                    toYear={maxDate ? maxDate.getFullYear() : effectiveMinDate.getFullYear() + 10}
                   />
                 </div>,
                 document.body,

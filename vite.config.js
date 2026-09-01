@@ -1,8 +1,20 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
+const pkg = JSON.parse(
+  readFileSync(fileURLToPath(new URL("./package.json", import.meta.url)), "utf-8"),
+);
+
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // Versión del front que le pasamos a Victor para cada build - se
+    // trabaja de acá en más por versiones (ver package.json). Se muestra
+    // en el pie del Sidebar junto a la versión de la API.
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   server: {
     proxy: {
       "/proxy-backend": {

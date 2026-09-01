@@ -169,6 +169,19 @@ const formatFechaCorta = (fecha) => {
   return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short" }).format(d);
 };
 
+// No se puede presentar un balance de un período que todavía no concluyó -
+// el calendario de SelectFecha ya bloquea elegir una fecha futura (ver
+// maxDate en los 3 usos de "Fecha del período del balance" más abajo), esto
+// es el respaldo por si `fechaStr` llega seteado de otra forma.
+const esFechaFutura = (fechaStr) => {
+  if (!fechaStr) return false;
+  const fecha = new Date(`${fechaStr.split("T")[0]}T00:00:00`);
+  if (Number.isNaN(fecha.getTime())) return false;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return fecha > hoy;
+};
+
 export function DocumentosLegajo({
   socioIdOverride,
   empresaOverride,
@@ -407,6 +420,10 @@ export function DocumentosLegajo({
       toast.error("Ingresá la fecha del período del balance.");
       return;
     }
+    if (activeDoc?.key === "balance" && esFechaFutura(metaFechaPeriodo)) {
+      toast.error("La fecha del período del balance no puede ser futura.");
+      return;
+    }
     setIsSavingMeta(true);
     const toastId = toast.loading("Guardando metadatos del archivo...");
     try {
@@ -460,6 +477,11 @@ export function DocumentosLegajo({
         // fecha directo.
         setPendingBalanceUpload({ key, file, docTitle, specificId });
         setFechaModalValue("");
+        return;
+      }
+
+      if (key === "balance" && esFechaFutura(fechaPeriodoEfectiva)) {
+        toast.error("La fecha del período del balance no puede ser futura.");
         return;
       }
 
@@ -533,6 +555,10 @@ export function DocumentosLegajo({
     if (confirmandoFechaBalanceRef.current) return;
     if (!fechaModalValue) {
       toast.error("Seleccioná la fecha del período del balance.");
+      return;
+    }
+    if (esFechaFutura(fechaModalValue)) {
+      toast.error("La fecha del período del balance no puede ser futura.");
       return;
     }
     confirmandoFechaBalanceRef.current = true;
@@ -836,6 +862,7 @@ export function DocumentosLegajo({
                         variant="compact"
                         placement="top"
                         minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+                        maxDate={new Date()}
                       />
                     </div>
                   </div>
@@ -956,6 +983,7 @@ export function DocumentosLegajo({
         onChange={setFechaModalValue}
         variant="compact"
         minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+        maxDate={new Date()}
       />
       <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
         <Button variant="outline" onClick={cancelarFechaBalanceModal} disabled={confirmandoFechaBalance}>
