@@ -9,14 +9,24 @@ import styles from "./UbicacionModal.module.css";
 import { useProvincias, useCiudades, usePartidos } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
 
-export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
+export default function UbicacionModal({
+  isOpen,
+  onClose,
+  onGuardar,
+  // El wizard de onboarding (Paso2Datos) reutiliza este mismo "Guardar"
+  // para marcar ubicacionConfirmada=true, incluso cuando reanuda con datos
+  // ya completos y nada para cambiar - ahí el botón debe seguir siempre
+  // habilitado. Fuera de ese flujo (ej. PerfilModal, edición de datos ya
+  // guardados) si no se tocó nada no hay nada que guardar.
+  bloquearSinCambios = false,
+}) {
   const {
     control,
     trigger,
     watch,
     setValue,
     clearErrors,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useFormContext();
 
   const [intentoGuardar, setIntentoGuardar] = useState(false);
@@ -107,6 +117,24 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
   }
 
   if (!isOpen) return null;
+
+  // Campos propios de este modal: los auto-completados por la triangulación
+  // de provincia/ciudad (ver PerfilModal.jsx) no marcan dirty a propósito
+  // (no llevan shouldDirty), así que no habilitan el botón por sí solos -
+  // solo un cambio real del usuario lo hace.
+  const CAMPOS_PROPIOS = [
+    "calle",
+    "numero",
+    "sinNumero",
+    "piso",
+    "departamento",
+    "provincia",
+    "ciudadid",
+    "localidadid",
+    "codpos",
+  ];
+  const hayCambios = CAMPOS_PROPIOS.some((campo) => dirtyFields?.[campo]);
+  const guardarDeshabilitado = bloquearSinCambios && !hayCambios;
 
   // `ciudadid`/`localidadid` usan 0 como "sin seleccionar" - sin el
   // `val !== 0`, ese 0 pasaba `hasValue` igual (Number(0).toString() es
@@ -314,6 +342,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
             <Button
               type="submit"
               variant="primary"
+              disabled={guardarDeshabilitado}
               style={{ width: "100%", minHeight: "3rem" }}
             >
               GUARDAR DATOS

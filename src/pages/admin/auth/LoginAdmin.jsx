@@ -196,8 +196,6 @@ const CredentialsPhase = ({
 
 const checkAccesoAdmin = async (email) => {
   const cleanEmail = String(email || "").toLowerCase().trim();
-  if (cleanEmail === "admin") return true;
-  if (cleanEmail === "admin_restricto" || cleanEmail === "admin restricto") return true;
 
   try {
     const userDb = await usuarioService.obtenerPorNombreOEmail(cleanEmail);
@@ -372,7 +370,7 @@ const LoginAdmin = () => {
           return;
         }
 
-        setUser({ email: formData.email, role: "admin" });
+        setUser({ email: formData.email, role: "admin" }, { esNuevoLogin: true });
         navigate("/admin", { replace: true });
       } else {
         setError("otp", { type: "server", message: "Código incorrecto" });
@@ -398,7 +396,7 @@ const LoginAdmin = () => {
             }
 
             // Se asume que el back devuelve los permisos necesarios.
-            setUser({ email: formData.email, role: "admin" });
+            setUser({ email: formData.email, role: "admin" }, { esNuevoLogin: true });
             navigate("/admin", { replace: true });
           },
           onError: (error) => {

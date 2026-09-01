@@ -561,11 +561,7 @@
   .mobileOnlyFooter {
     display: none;
   }
-  
-  .mobileOnlyLink {
-    display: none;
-  }
-  
+
   .footer {
     padding: 1.5rem;
     border-top: 1px solid rgba(var(--overlay-rgb), 0.04);

@@ -45,13 +45,25 @@ export const useAuthStore = create(
       setSolicitudesEnabled: (enabled) => set({ isSolicitudesEnabled: enabled }),
       setTerminosVerificado: (verificado) => set({ terminosVerificado: verificado }),
 
-      setUser: (userData) => {
+      // esNuevoLogin distingue un login real de los usos "de parche" que
+      // reescriben el user ya logueado (AdminGuard corrigiendo el nombre
+      // mostrado, CuentaUsuarioModal tras renombrarse) - solo el primero
+      // debe arrancar de cero: sin el flag, activeSocioId/sessionStorage de
+      // una sesión anterior en el mismo navegador (propia o de otro
+      // usuario) sobrevivían al login y el OnboardingGuard mandaba a un
+      // vendor directo a /legajo con esa empresa vieja, salteando
+      // /seleccionar-empresa.
+      setUser: (userData, { esNuevoLogin = false } = {}) => {
         if (!userData) {
           set({ user: null, isAuthenticated: false, activeSocioId: null, terminosVerificado: false });
           return;
         }
 
         const { hashseguridad: _hashseguridad, ...safeUser } = userData;
+
+        if (esNuevoLogin) {
+          limpiarStorageEfimero();
+        }
 
         // Marca el arranque del reloj de inactividad justo en el login -
         // así, cuando useSessionTimeout recalcule el tiempo restante (al
@@ -62,6 +74,7 @@ export const useAuthStore = create(
         set({
           user: safeUser,
           isAuthenticated: true,
+          ...(esNuevoLogin ? { activeSocioId: null } : {}),
           terminosVerificado: false,
         });
       },

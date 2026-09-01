@@ -14,6 +14,7 @@ import {
   useObtenerConfirmacionTyC,
 } from "../../../hooks/useTerminos";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
+import ErrorServicio from "../../../pages/shared/ErrorServicio/ErrorServicio";
 import { useChannel } from "../../../context/ChannelContext";
 import { useVendor } from "../../../hooks/useVendor";
 import { useVerificarHabilitacionSolicitudes } from "../../../hooks/useVerificarHabilitacionSolicitudes";
@@ -24,7 +25,13 @@ export const OnboardingGuard = ({ children }) => {
   const { channelInfo } = useChannel();
 
   const { activeSocioId } = useAuthStore((state) => state);
-  const { data: vendorData, isPending: isLoadingVendor } = useVendor();
+  const {
+    data: vendorData,
+    isPending: isLoadingVendor,
+    isError: isErrorVendor,
+    isFetching: isFetchingVendor,
+    refetch: refetchVendor,
+  } = useVendor();
 
   const isTerminosPage = location.pathname.endsWith("/terminos");
   const isAltaDatosPage = location.pathname.endsWith("/alta-datos-empresa");
@@ -153,14 +160,23 @@ export const OnboardingGuard = ({ children }) => {
   ]);
 
   React.useEffect(() => {
-    if (tieneEmpresas && !activeSocioId && !isVendor) {
+    // isVendor vale false por default mientras useVendor no resolvió con
+    // éxito (vendorData es undefined) — eso pasa durante la carga inicial,
+    // mientras está en error, y también durante el refetch de un
+    // "Reintentar" (una query que ya falló queda en status "error", no
+    // vuelve a "pending", así que isLoadingVendor/isPending no alcanza acá).
+    // Por eso este efecto solo debe correr con vendorData ya resuelto:
+    // si tieneEmpresas resuelve antes, le fijaría un activeSocioId a un
+    // vendor real antes de saber que lo es, y el guard de abajo ya no lo
+    // manda a /seleccionar-empresa.
+    if (tieneEmpresas && !activeSocioId && vendorData && !vendorData.isVendor) {
       const firstSocioId =
         listaEmpresas[0]?.socioid || listaEmpresas[0]?.SocioID;
       if (firstSocioId) {
         setActiveSocioId(firstSocioId);
       }
     }
-  }, [tieneEmpresas, activeSocioId, isVendor, listaEmpresas, setActiveSocioId]);
+  }, [tieneEmpresas, activeSocioId, vendorData, listaEmpresas, setActiveSocioId]);
 
   React.useEffect(() => {
     if (isVendor && !isLoadingVendor && user && !isVendorMock) {
@@ -202,11 +218,7 @@ export const OnboardingGuard = ({ children }) => {
     return <Navigate to={`/${channelInfo.id}/login`} replace />;
   }
 
-  const isBasicAdmin =
-    user?.role === "admin" ||
-    user?.email === "admin" ||
-    user?.email === "admin_restricto" ||
-    user?.email === "admin restricto";
+  const isBasicAdmin = user?.role === "admin";
 
   if (isBasicAdmin) {
     return <Navigate to="/admin" replace />;
@@ -239,6 +251,15 @@ export const OnboardingGuard = ({ children }) => {
         title="Cargando tu perfil"
         message="Estamos obteniendo tu información y empresas vinculadas..."
       />
+    );
+  }
+
+  // Si falló CadenaValor/RelacionesPorEmail no podemos saber si el usuario
+  // es vendor: seguir de largo lo trataría como "no vendor" y lo mandaría
+  // directo a /legajo salteando /seleccionar-empresa (ver useVendor).
+  if (isErrorVendor) {
+    return (
+      <ErrorServicio onReintentar={refetchVendor} reintentando={isFetchingVendor} />
     );
   }
 

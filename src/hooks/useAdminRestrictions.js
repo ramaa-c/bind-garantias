@@ -20,11 +20,7 @@ export const useAdminRestrictions = () => {
   const user = useAuthStore((state) => state.user);
   const email = user?.email || "";
 
-  const isMockAdmin = email === "admin";
-  const isMock = isMockAdmin;
-
-  const emailToFetch = isMock ? "" : email;
-  const { data: usuarioDb, isPending: isLoadingUser } = useObtenerPorNombreOEmail(emailToFetch);
+  const { data: usuarioDb, isPending: isLoadingUser } = useObtenerPorNombreOEmail(email);
   const registroUsuario = parsearRegistroUsuario(usuarioDb);
   const usuarioWebId =
     registroUsuario?.usuariowebid ??
@@ -43,7 +39,7 @@ export const useAdminRestrictions = () => {
   // parámetro que ya usa correctamente useObtenerCadenasPorUsuario
   // (useUsuario.js), que nunca tuvo este bug.
   const { data: adminCadenas, isPending: isLoadingCadenas } = useQuery({
-    queryKey: ["admin", "cadenas", usuarioWebId || "mock"],
+    queryKey: ["admin", "cadenas", usuarioWebId || "sin-usuario"],
     queryFn: () => {
       return usuarioService.obtenerUsuariosRelacionados({ usuarioid: usuarioWebId });
     },
@@ -61,14 +57,6 @@ export const useAdminRestrictions = () => {
   };
 
   const listaCadenas = parsearCadenas(adminCadenas);
-  
-  if (isMock) {
-    return {
-      isRestricted: false,
-      isPending: false,
-      cadenas: []
-    };
-  }
 
   // Un administrador general (EsAdministrador=1) ve todo el panel aunque
   // además tenga cadenas de valor vinculadas; la restricción de navegación

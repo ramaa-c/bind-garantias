@@ -14,31 +14,30 @@ export const useVendor = (skip = false) => {
     queryFn: async () => {
       if (!email) return { isVendor: false, vendorCuit: null, vendorId: null, cadenas: [] };
 
-      try {
-        const data = await cadenaValorService.obtenerCadenasPorEmail(email);
+      // No atajar errores acá: si CadenaValor/RelacionesPorEmail falla
+      // (red, 5xx), la query debe quedar en estado de error para que
+      // OnboardingGuard lo bloquee — devolver isVendor:false en ese caso
+      // hacía pasar a un vendor real como si no lo fuera (y con
+      // staleTime de 30min, el falso negativo quedaba cacheado ese rato).
+      const data = await cadenaValorService.obtenerCadenasPorEmail(email);
 
-        // Asegurarse de que data sea un array
-        const items = Array.isArray(data) ? data : data?.items || data?.data || [];
+      // Asegurarse de que data sea un array
+      const items = Array.isArray(data) ? data : data?.items || data?.data || [];
 
-        if (items && items.length > 0) {
-          if (!isNaN(currentCadenaId)) {
-            // Buscamos si el vendor está autorizado para la cadena actual en la URL
-            const matchedCadena = items.find(
-              (c) => Number(c.cadenavalorid || c.CadenaValorID || c.id) === currentCadenaId
-            );
+      if (items && items.length > 0 && !isNaN(currentCadenaId)) {
+        // Buscamos si el vendor está autorizado para la cadena actual en la URL
+        const matchedCadena = items.find(
+          (c) => Number(c.cadenavalorid || c.CadenaValorID || c.id) === currentCadenaId
+        );
 
-            if (matchedCadena) {
-              return {
-                isVendor: true,
-                vendorCuit: matchedCadena.cuittercero || null,
-                vendorId: null, // Si necesitamos el vendorId luego, lo agregaremos
-                cadenas: items
-              };
-            }
-          }
+        if (matchedCadena) {
+          return {
+            isVendor: true,
+            vendorCuit: matchedCadena.cuittercero || null,
+            vendorId: null, // Si necesitamos el vendorId luego, lo agregaremos
+            cadenas: items
+          };
         }
-      } catch (error) {
-        console.error("Error al verificar si es vendor (CadenaValor):", error);
       }
 
       return { isVendor: false, vendorCuit: null, vendorId: null, cadenas: [] };

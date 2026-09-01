@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaRegUserCircle } from "react-icons/fa";
 import {
   FiMenu,
   FiChevronDown,
-  FiTrendingUp,
   FiHelpCircle,
   FiRepeat,
   FiLogOut,
@@ -16,13 +14,15 @@ import {
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
 import styles from "./Navbar.module.css";
-import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
-import { useThemeStore } from "../../../../store/useThemeStore";
+import { useThemeStore, LIGHT_MODE_ENABLED } from "../../../../store/useThemeStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useVendor } from "../../../../hooks/useVendor";
+import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useChannel } from "../../../../context/ChannelContext";
+import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
+import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 
 const Navbar = ({
   texto = "¿No tenés cuenta?",
@@ -34,7 +34,6 @@ const Navbar = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isTasasModalOpen, setIsTasasModalOpen] = useState(false);
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -47,12 +46,11 @@ const Navbar = ({
   const theme = useThemeStore((state) => state.theme);
   const toggleTheme = useThemeStore((state) => state.toggleTheme);
 
-  const { nombreEmpresa, onboardingCompleto } = useEmpresaActiva();
+  const { nombreEmpresa } = useEmpresaActiva();
   // Ver mismo criterio en Sidebar.jsx: en alta-datos-empresa no hay una
   // empresa "activa" real que mostrar todavía.
   const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
   const isVinculado = !!nombreEmpresa && !enAltaDatosEmpresa;
-  const onboardingCompletoEfectivo = onboardingCompleto && !enAltaDatosEmpresa;
 
   const emailUsuario =
     typeof user === "string"
@@ -60,6 +58,23 @@ const Navbar = ({
       : user?.email
         ? String(user.email)
         : "Usuario";
+
+  // La denominación (nombre visible elegido por el usuario, ver "Mi cuenta"
+  // en PerfilModal) pasa a ser el dato principal del menú; el email queda
+  // como secundario. Mismo query que ya usa PerfilModal (misma queryKey),
+  // así que no duplica el pedido si esa modal ya lo cacheó.
+  const { data: usuarioDb } = useObtenerPorNombreOEmail(
+    user ? emailUsuario : "",
+  );
+  const denominacion = (
+    extraerRegistroUsuario(usuarioDb)?.denominacion ||
+    extraerRegistroUsuario(usuarioDb)?.Denominacion ||
+    ""
+  ).trim();
+  const nombrePrincipal = denominacion || emailUsuario;
+  const inicialesUsuario = obtenerInicialesEmpresa(
+    denominacion || emailUsuario.split("@")[0],
+  );
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -130,15 +145,17 @@ const Navbar = ({
       </div>
 
       <div className={styles.rightSection}>
-        <button
-          type="button"
-          className={styles.themeButton}
-          onClick={toggleTheme}
-          aria-label={theme === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro"}
-          title={theme === "light" ? "Modo oscuro" : "Modo claro"}
-        >
-          {theme === "light" ? <FiMoon className={styles.themeIcon} /> : <FiSun className={styles.themeIcon} />}
-        </button>
+        {LIGHT_MODE_ENABLED && (
+          <button
+            type="button"
+            className={styles.themeButton}
+            onClick={toggleTheme}
+            aria-label={theme === "light" ? "Cambiar a modo oscuro" : "Cambiar a modo claro"}
+            title={theme === "light" ? "Modo oscuro" : "Modo claro"}
+          >
+            {theme === "light" ? <FiMoon className={styles.themeIcon} /> : <FiSun className={styles.themeIcon} />}
+          </button>
+        )}
 
         {user ? (
           <>
@@ -161,10 +178,15 @@ const Navbar = ({
                 className={styles.userTrigger}
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
-                <div className={styles.avatarWrapper}>
-                  <FaRegUserCircle className={styles.userIcon} />
+                <div className={styles.avatarWrapper} aria-hidden="true">
+                  {inicialesUsuario}
                 </div>
-                <span className={styles.userName}>{emailUsuario}</span>
+                <span className={styles.userTextStack}>
+                  <span className={styles.userPrimary}>{nombrePrincipal}</span>
+                  {!!denominacion && (
+                    <span className={styles.userSecondary}>{emailUsuario}</span>
+                  )}
+                </span>
                 <FiChevronDown
                   className={`${styles.chevron} ${isDropdownOpen ? styles.chevronOpen : ""}`}
                 />
@@ -172,11 +194,17 @@ const Navbar = ({
 
               {isDropdownOpen && (
                 <div className={styles.dropdownMenu}>
-                  <div className={styles.dropdownHeader}>
-                    <p className={styles.dropdownEmail}>{emailUsuario}</p>
-                    <p className={`${styles.dropdownRole} ${!isVinculado ? styles.roleNoVinculado : ""}`}>
-                      {isVinculado ? "Socio vinculado" : "No vinculado"}
-                    </p>
+                  {/* La identidad (avatar + nombre + email) ya se ve arriba,
+                      en el trigger siempre visible - repetirla acá era
+                      redundante y además con proporciones distintas (avatar
+                      más grande, card centrada) que no calzaban con el
+                      trigger. El estado es el único dato que el trigger no
+                      muestra, así que es lo único que se agrega acá, como
+                      una fila angosta en vez de una segunda tarjeta. */}
+                  <div className={styles.dropdownStatusRow}>
+                    <span className={`${styles.rolePill} ${isVendor ? styles.rolePillVendor : isVinculado ? styles.rolePillVinculado : styles.rolePillNeutro}`}>
+                      {isVendor ? "Vendor" : isVinculado ? "Socio vinculado" : "No vinculado"}
+                    </span>
                   </div>
 
                   <div className={styles.dropdownBody}>
@@ -189,17 +217,6 @@ const Navbar = ({
                     >
                       <FiUser className={styles.itemIcon} /> Mi perfil
                     </button>
-                    {onboardingCompletoEfectivo && (
-                      <button type="button"
-                        className={styles.dropdownItem}
-                        onClick={() => {
-                          setIsDropdownOpen(false);
-                          setIsTasasModalOpen(true);
-                        }}
-                      >
-                        <FiTrendingUp className={styles.itemIcon} /> Tasas vigentes
-                      </button>
-                    )}
                   </div>
 
                   <div className={styles.dropdownFooter}>
@@ -231,11 +248,6 @@ const Navbar = ({
           </div>
         )}
       </div>
-
-      <TasasModal
-        isOpen={isTasasModalOpen}
-        onClose={() => setIsTasasModalOpen(false)}
-      />
 
       <PerfilModal
         isOpen={isPerfilModalOpen}

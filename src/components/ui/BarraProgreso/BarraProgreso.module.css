@@ -180,7 +180,7 @@
   color: var(--on-amarillo-bind, #000);
 }
 .done .label {
-  color: rgba(var(--overlay-rgb), 0.3);
+  color: var(--text-muted);
 }
 
 .active .circle {

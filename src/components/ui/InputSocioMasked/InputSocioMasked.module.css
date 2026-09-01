@@ -200,7 +200,7 @@
   justify-content: center;
   width: 2.5rem;
   height: 100%;
-  color: rgba(var(--overlay-rgb), 0.25);
+  color: var(--text-muted);
   cursor: help;
   transition: color 0.2s ease;
   position: relative;

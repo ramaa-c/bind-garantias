@@ -46,7 +46,7 @@
 
 .tagId {
   font-size: 11px;
-  color: rgba(var(--overlay-rgb), 0.25);
+  color: var(--text-muted);
   font-family: var(--font-mono, monospace);
   letter-spacing: 0.03em;
 }
@@ -102,7 +102,7 @@
 
 .empresaCuit {
   font-size: 12px;
-  color: rgba(var(--overlay-rgb), 0.25);
+  color: var(--text-muted);
   font-family: var(--font-mono, monospace);
   margin: 0 0 1.25rem;
 }
@@ -127,7 +127,7 @@
   align-items: center;
   gap: 5px;
   font-size: 10px;
-  color: rgba(var(--overlay-rgb), 0.28);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.09em;
   font-weight: 700;
@@ -207,12 +207,12 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(var(--overlay-rgb), 0.3);
+  color: var(--text-muted);
 }
 
 .countPill {
   font-size: 11px;
-  color: rgba(var(--overlay-rgb), 0.25);
+  color: var(--text-muted);
   background: rgba(var(--overlay-rgb), 0.05);
   border: 0.5px solid rgba(var(--overlay-rgb), 0.07);
   border-radius: 999px;
@@ -279,7 +279,7 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
-  color: rgba(var(--overlay-rgb), 0.28);
+  color: var(--text-muted);
 }
 
 .partBar {
@@ -299,7 +299,7 @@
 
 .emptyText {
   font-size: 12px;
-  color: rgba(var(--overlay-rgb), 0.25);
+  color: var(--text-muted);
   margin: 0;
 }
 
@@ -315,7 +315,7 @@
 
 .footerHint {
   font-size: 11px;
-  color: rgba(var(--overlay-rgb), 0.2);
+  color: var(--text-muted);
 }
 
 .btnClose {

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, FiTrendingUp, FiUser, FiBriefcase, FiRepeat } from "react-icons/fi";
+import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, FiUser, FiBriefcase, FiRepeat } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -8,7 +8,6 @@ import { useVendor } from "../../../../hooks/useVendor";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { useThemeStore } from "../../../../store/useThemeStore";
-import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/ChannelContext";
@@ -36,7 +35,6 @@ export default function Sidebar({ isOpen, onClose }) {
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
 
-  const [isTasasModalOpen, setIsTasasModalOpen] = useState(false);
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
 
   const [expandedSections, setExpandedSections] = useState({
@@ -187,12 +185,6 @@ export default function Sidebar({ isOpen, onClose }) {
                   >
                     <FiArchive className={styles.icon} /> Documentación
                   </button>
-                  <button type="button"
-                    className={`${styles.link} ${styles.mobileOnlyLink}`}
-                    onClick={() => setIsTasasModalOpen(true)}
-                  >
-                    <FiTrendingUp className={styles.icon} /> Tasas vigentes
-                  </button>
                 </div>
               </nav>
             </div>
@@ -208,8 +200,8 @@ export default function Sidebar({ isOpen, onClose }) {
             </div>
             <div className={styles.userCardInfo}>
               <p className={styles.userCardEmail}>{emailUsuario}</p>
-              <p className={`${styles.userCardRole} ${!isVinculado ? styles.roleNoVinculado : ""}`}>
-                {isVinculado ? "SOCIO VINCULADO" : "NO VINCULADO"}
+              <p className={`${styles.userCardRole} ${!isVinculado && !isVendor ? styles.roleNoVinculado : ""}`}>
+                {isVendor ? "VENDOR" : isVinculado ? "SOCIO VINCULADO" : "NO VINCULADO"}
               </p>
             </div>
           </div>
@@ -230,11 +222,6 @@ export default function Sidebar({ isOpen, onClose }) {
         </div>
         <p className={styles.versionText}>Versión 1.0.0</p>
       </div>
-
-      <TasasModal
-        isOpen={isTasasModalOpen}
-        onClose={() => setIsTasasModalOpen(false)}
-      />
 
       <PerfilModal
         isOpen={isPerfilModalOpen}

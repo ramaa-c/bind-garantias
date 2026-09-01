@@ -628,7 +628,7 @@
 }
 
 .perfilVacio {
-  color: #565d68 !important;
+  color: var(--text-muted) !important;
   font-weight: 500 !important;
 }
 
