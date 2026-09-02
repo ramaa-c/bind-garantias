@@ -10,7 +10,16 @@ export const AltaDatosEmpresaSchema = z.object({
   direccion: z.string().min(5, "La dirección debe ser válida"),
   calle: z.string().trim().min(1, "La calle es requerida"),
   sinNumero: z.boolean().optional(),
-  numero: z.coerce.number().optional(),
+  // Existen calles con altura 0 en Argentina (ver AFIP/Nosis), así que 0 es
+  // un número de calle válido, no equivalente a "vacío" - z.coerce.number()
+  // solo por sí mismo convierte "" a 0 (Number("") === 0), lo que confundía
+  // "el usuario no completó nada" con "la calle tiene altura 0" y rechazaba
+  // este último caso como si faltara. El preprocess deja "" como undefined
+  // para que solo eso dispare el error de "requerido" más abajo.
+  numero: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.coerce.number().optional(),
+  ),
   piso: z.string().optional().or(z.literal("")),
   departamento: z.string().optional().or(z.literal("")),
   localidad: z.string().min(1, "La localidad es requerida"),
@@ -31,7 +40,12 @@ export const AltaDatosEmpresaSchema = z.object({
   tipoactividadsepymeid: z.string().nullable().optional(),
   codpos: z.string().optional(),
 }).superRefine((data, ctx) => {
-  if (!data.sinNumero && (!data.numero || data.numero < 1)) {
+  const numeroInvalido =
+    data.numero === undefined ||
+    data.numero === null ||
+    Number.isNaN(data.numero) ||
+    data.numero < 0;
+  if (!data.sinNumero && numeroInvalido) {
     ctx.addIssue({
       path: ["numero"],
       message: "El número es requerido",

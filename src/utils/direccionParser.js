@@ -32,10 +32,13 @@ export const decodeHtmlEntities = (text) => {
 };
 
 export const parseAddress = (fullAddress) => {
-  if (!fullAddress) return { calle: "", numero: 0, piso: "", departamento: "" };
+  if (!fullAddress) return { calle: "", numero: null, piso: "", departamento: "" };
 
   let calle = decodeHtmlEntities(fullAddress).trim();
-  let numero = 0;
+  // null = "no se encontró número en el texto" (equivale a "sin número");
+  // 0 es una altura de calle válida en Argentina, no puede compartir el
+  // mismo valor que "no encontrado" o quedaba tratada como si faltara.
+  let numero = null;
   let piso = "";
   let departamento = "";
 

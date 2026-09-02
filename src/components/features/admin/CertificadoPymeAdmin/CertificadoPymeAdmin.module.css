@@ -7,6 +7,11 @@
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.9rem;
   overflow: hidden;
+  /* El footer reacciona al ancho de ESTE panel (container query), no al
+     del viewport - el admin es desktop-first, pero este panel puede vivir
+     angosto igual (sidebar/paneles vecinos, zoom, ventana chica). */
+  container-type: inline-size;
+  container-name: certPymeTab;
 }
 
 .scroll {
@@ -14,66 +19,66 @@
   min-height: 0;
   overflow-y: auto;
   padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.sectionCard {
-  max-width: 42rem;
-  margin: 0 auto;
+.hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.01) 100%);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 0.9rem;
   padding: 1.1rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-.sectionCardHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding-bottom: 0.6rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.sectionCardHeader h3 {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: -0.01em;
-  flex: 1;
-}
-
-.sectionCardIcon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.85rem;
-  height: 1.85rem;
-  border-radius: 0.55rem;
-  background: rgba(76, 101, 230, 0.16);
-  color: #8a9fff;
   flex-shrink: 0;
 }
 
-.sectionCardHint {
+.heroIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: rgba(76, 101, 230, 0.16);
+  color: #8a9fff;
+}
+
+.heroInfo {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.heroInfo h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+}
+
+.heroHint {
   margin: 0;
-  font-size: 0.78rem;
-  color: #8b949e;
-  line-height: 1.5;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 44rem;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  padding: 0.22rem 0.65rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 999px;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
+  margin-top: 0.1rem;
 }
 
 .badgeOk {
@@ -88,25 +93,177 @@
   border: 1px solid rgba(248, 81, 73, 0.3);
 }
 
-.detalle {
+/* Tarjeta destacada de ancho completo: la vigencia es el dato que más
+   importa acá (condiciona si el socio puede migrar), por eso va aparte en
+   vez de una ficha más entre las demás. Sin barra de progreso: la primera
+   versión (barra de color que se vacía hacia rojo) leía como alarma en vez
+   de información — un pill discreto con los días restantes alcanza. */
+.vigenciaCard {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.9rem;
+  padding: 1.1rem 1.25rem;
+  flex-shrink: 0;
+}
+
+.vigenciaCard > div {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.8rem;
+  gap: 0.35rem;
+}
+
+.vigenciaFechas {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.vigenciaPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vigenciaPill-ok {
+  background: rgba(56, 161, 105, 0.12);
+  color: #38a169;
+  border: 1px solid rgba(56, 161, 105, 0.3);
+}
+
+.vigenciaPill-porVencer {
+  background: rgba(255, 179, 0, 0.12);
+  color: #ffb300;
+  border: 1px solid rgba(255, 179, 0, 0.3);
+}
+
+.vigenciaPill-vencido {
+  background: rgba(248, 81, 73, 0.1);
+  color: #ff7b72;
+  border: 1px solid rgba(248, 81, 73, 0.3);
+}
+
+.factsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem;
+}
+
+.factCell {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.factLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.factValue {
+  font-size: 0.85rem;
+  font-weight: 600;
   color: #c9d1d9;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
-.sinCertificadoText {
-  font-size: 0.8rem;
-  color: #8b949e;
+/* Ocupa el resto del alto disponible (en vez de un párrafo suelto) para
+   que la ausencia de certificado se sienta tan "resuelta" visualmente como
+   el estado con datos, no como un hueco vacío con una frase adentro. */
+.emptyState {
+  flex: 1 1 auto;
+  min-height: 12rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 0.9rem;
+}
+
+.emptyIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  background: rgba(248, 81, 73, 0.1);
+  color: #ff7b72;
+}
+
+.emptyState h4 {
   margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
 }
 
-.acciones {
+.emptyState p {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex: 0 0 auto;
+  padding: 0.9rem 1.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.footerGroup {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  padding-top: 0.35rem;
+}
+
+/* Panel angosto: los dos grupos pasan a apilarse, y cada botón ocupa el
+   ancho completo en vez de amontonarse en un wrap desordenado. */
+@container certPymeTab (max-width: 30rem) {
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .footerGroup {
+    flex-direction: column;
+  }
+
+  .footerGroup > * {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .form {

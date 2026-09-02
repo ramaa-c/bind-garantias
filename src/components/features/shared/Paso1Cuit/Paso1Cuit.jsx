@@ -541,7 +541,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         sectorcontableid: 700,
         tipoactividadbcraid: 0,
         tipoactividadsepymeid: valores.tipoactividadsepymeid || null,
-        marcavinculacion: "",
+        // "0" = todavía no migró a SGR+; recién pasa a "1" cuando
+        // LegajoUniversalBar confirma una migración exitosa (ver
+        // sincronizarConSgrPlus) - nunca se escribe acá con otro valor.
+        marcavinculacion: "0",
         situacionbcraid: 1,
         fechabaja: null,
         motivobajaid: null,

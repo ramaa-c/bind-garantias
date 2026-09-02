@@ -249,8 +249,12 @@ export const obtenerDatosEmpresaPorCuit = async (
       direccion: fullDireccion,
       codpos: dom.codpostal || "",
       calle: parsedDir.calle,
-      sinNumero: parsedDir.numero === 0,
-      numero: parsedDir.numero || "",
+      // parsedDir.numero es null cuando no se encontró número en el texto
+      // (equivale a "sin número"); una altura 0 real (numero: 0) es válida
+      // y no debe marcarse como si faltara - ver mismo criterio en
+      // hasNumber para la rama de Nosis, unas líneas más abajo.
+      sinNumero: parsedDir.numero === null,
+      numero: parsedDir.numero ?? "",
       piso: parsedDir.piso,
       departamento: parsedDir.departamento,
       localidad: localidadStr,
