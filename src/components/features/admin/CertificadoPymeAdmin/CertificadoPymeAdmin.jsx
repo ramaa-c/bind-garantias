@@ -29,6 +29,21 @@ const aFechaBackend = (isoCompleto) => {
   return isoCompleto.split(".")[0];
 };
 
+const MS_POR_DIA = 1000 * 60 * 60 * 24;
+
+// Días restantes de vigencia (o vencidos) + un tono para el pill. Sin fecha
+// de vencimiento válida no hay nada que mostrar - el llamador decide si
+// renderiza el pill o no.
+const calcularVigencia = (hasta) => {
+  const hastaDate = hasta ? new Date(hasta) : null;
+  if (!hastaDate || Number.isNaN(hastaDate.getTime())) return null;
+  const diasRestantes = Math.ceil((hastaDate.getTime() - Date.now()) / MS_POR_DIA);
+  let tono = "ok";
+  if (diasRestantes < 0) tono = "vencido";
+  else if (diasRestantes <= 30) tono = "porVencer";
+  return { diasRestantes, tono };
+};
+
 // Panel admin para el Certificado PyME de un socio: NO es el documento
 // (eso sigue siendo un SocioArchivo común, vía la precarga de LUFE), es la
 // fila de SocioCertificadoPYME que condiciona si el socio puede migrar a
@@ -144,62 +159,111 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
     }
   };
 
+  const numeroActual = certificadoActual?.numero ?? certificadoActual?.Numero;
+  const observacionesActuales = certificadoActual?.observaciones ?? certificadoActual?.Observaciones;
+  const fchDesdeActual = certificadoActual?.fchdesde ?? certificadoActual?.fchDesde;
+  const fchHastaActual = certificadoActual?.fchhasta ?? certificadoActual?.fchHasta;
+  const vigencia = tieneCertificado ? calcularVigencia(fchHastaActual) : null;
+
   return (
     <div className={styles.tabPage}>
       <div className={styles.scroll}>
-        <section className={styles.sectionCard}>
-          <header className={styles.sectionCardHeader}>
-            <span className={styles.sectionCardIcon}>
-              <FiAward size={15} />
-            </span>
+        {/* Antes esto era una tarjeta angosta (max-width 42rem) centrada
+            sobre un contenedor mucho más ancho, dejando aire vacío a los
+            costados sin motivo — un solo registro (no una lista) igual
+            necesita usar el ancho real para no verse como que "falta
+            contenido". El hero ocupa todo el ancho, y los datos pasan de
+            líneas sueltas a una grilla de fichas (mismo lenguaje que ya usa
+            la pestaña "Datos" de esta misma página). */}
+        <section className={styles.hero}>
+          <span className={styles.heroIcon}>
+            <FiAward size={20} />
+          </span>
+          <div className={styles.heroInfo}>
             <h3>Certificado PyME</h3>
-            <span className={`${styles.badge} ${tieneCertificado ? styles.badgeOk : styles.badgeFalta}`}>
-              {isLoading ? "Verificando..." : tieneCertificado ? <><FiCheckCircle size={12} /> Habilitado</> : <><FiXCircle size={12} /> No habilitado</>}
-            </span>
-          </header>
-
-          <p className={styles.sectionCardHint}>
-            Condiciona si este socio puede migrar a SGR+. No es el documento del legajo (ese sigue siendo el archivo
-            precargado desde LUFE) — es el registro que confirma que tiene un certificado vigente habilitado.
-          </p>
-
-          {!isLoading && tieneCertificado && (
-            <div className={styles.detalle}>
-              <span>Vigencia: {formatearFecha(certificadoActual.fchdesde ?? certificadoActual.fchDesde)} — {formatearFecha(certificadoActual.fchhasta ?? certificadoActual.fchHasta)}</span>
-              {(certificadoActual.numero ?? certificadoActual.Numero) && (
-                <span>N°: {certificadoActual.numero ?? certificadoActual.Numero}</span>
-              )}
-              {(certificadoActual.observaciones ?? certificadoActual.Observaciones) && (
-                <span>Obs: {certificadoActual.observaciones ?? certificadoActual.Observaciones}</span>
-              )}
-            </div>
-          )}
-          {!isLoading && !tieneCertificado && (
-            <p className={styles.sinCertificadoText}>
-              El socio no va a poder migrar a SGR+ hasta que tenga uno cargado.
+            <p className={styles.heroHint}>
+              Condiciona si este socio puede migrar a SGR+. No es el documento del legajo (ese sigue siendo el
+              archivo precargado desde LUFE) — es el registro que confirma que tiene un certificado vigente
+              habilitado.
             </p>
-          )}
-
-          <div className={styles.acciones}>
-            <Button variant="outlineBlue" size="sm" onClick={handleReverificar} isLoading={reverificando}>
-              <FiRefreshCw size={12} /> Reverificar (CASFOG/LUFE)
-            </Button>
-            {tieneCertificado ? (
-              <>
-                <Button variant="outlineBlue" size="sm" onClick={abrirEdicion}>
-                  <FiEdit2 size={12} /> Editar
-                </Button>
-                <Button variant="danger" size="sm" onClick={() => setConfirmEliminarOpen(true)}>
-                  <FiTrash2 size={12} /> Eliminar
-                </Button>
-              </>
-            ) : (
-              <Button variant="outlineBlue" size="sm" onClick={abrirAlta}>
-                <FiPlus size={12} /> Cargar a mano
-              </Button>
-            )}
           </div>
+          <span className={`${styles.badge} ${tieneCertificado ? styles.badgeOk : styles.badgeFalta}`}>
+            {isLoading ? "Verificando..." : tieneCertificado ? <><FiCheckCircle size={13} /> Habilitado</> : <><FiXCircle size={13} /> No habilitado</>}
+          </span>
         </section>
+
+        {!isLoading && tieneCertificado && (
+          <>
+            <section className={styles.vigenciaCard}>
+              <div>
+                <span className={styles.factLabel}>Vigencia</span>
+                <span className={styles.vigenciaFechas}>
+                  {formatearFecha(fchDesdeActual)} — {formatearFecha(fchHastaActual)}
+                </span>
+              </div>
+              {vigencia && (
+                <span className={`${styles.vigenciaPill} ${styles[`vigenciaPill-${vigencia.tono}`]}`}>
+                  {vigencia.tono === "vencido"
+                    ? `Venció hace ${Math.abs(vigencia.diasRestantes)} días`
+                    : `Vence en ${vigencia.diasRestantes} días`}
+                </span>
+              )}
+            </section>
+
+            <section className={styles.factsGrid}>
+              <div className={styles.factCell}>
+                <span className={styles.factLabel}>N° de certificado</span>
+                <span className={styles.factValue}>{numeroActual || "—"}</span>
+              </div>
+              <div className={styles.factCell}>
+                <span className={styles.factLabel}>Observaciones</span>
+                <span className={styles.factValue}>{observacionesActuales || "—"}</span>
+              </div>
+            </section>
+          </>
+        )}
+
+        {!isLoading && !tieneCertificado && (
+          <section className={styles.emptyState}>
+            <span className={styles.emptyIcon}>
+              <FiXCircle size={26} />
+            </span>
+            <h4>Sin Certificado PyME cargado</h4>
+            <p>
+              El socio no va a poder migrar a SGR+ hasta que tenga uno cargado. Reverificá contra CASFOG/LUFE o
+              cargalo a mano con los botones de abajo.
+            </p>
+          </section>
+        )}
+      </div>
+
+      {/* Dos grupos (reverificar vs. editar/eliminar) en vez de todos los
+          botones sueltos en una fila: con espacio, quedan separados
+          (space-between); en un contenedor angosto, la @container query de
+          abajo los apila cada uno a ancho completo - se adapta al ancho
+          real del panel, no al del viewport. */}
+      <div className={styles.footer}>
+        <div className={styles.footerGroup}>
+          <Button variant="outlineBlue" size="sm" onClick={handleReverificar} isLoading={reverificando}>
+            <FiRefreshCw size={12} /> Reverificar (CASFOG/LUFE)
+          </Button>
+        </div>
+        <div className={styles.footerGroup}>
+          {tieneCertificado ? (
+            <>
+              <Button variant="outlineBlue" size="sm" onClick={abrirEdicion}>
+                <FiEdit2 size={12} /> Editar
+              </Button>
+              <Button variant="danger" size="sm" onClick={() => setConfirmEliminarOpen(true)}>
+                <FiTrash2 size={12} /> Eliminar
+              </Button>
+            </>
+          ) : (
+            <Button variant="outlineBlue" size="sm" onClick={abrirAlta}>
+              <FiPlus size={12} /> Cargar a mano
+            </Button>
+          )}
+        </div>
       </div>
 
       <Modal

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { FiInbox, FiSearch, FiX, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
-import { useObtenerSocios, useObtenerExecuteCda, useEstaMigradoEnSgrPlus, useMigracionSgrPlusDeSocios } from "../../../hooks/useSocios";
+import { useObtenerSocios, useObtenerExecuteCda } from "../../../hooks/useSocios";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
@@ -23,6 +23,13 @@ const TIPO_PERSONA = {
 
 const getTipoPersona = (tipoPersonaId) =>
   TIPO_PERSONA[Number(tipoPersonaId)] || { label: "Sin definir", tono: "indefinido" };
+
+// Única fuente de verdad de si un socio migró a SGR+: el propio
+// MarcaVinculacion del Socio ("1" = migró con éxito), que LegajoUniversalBar
+// escribe recién después de confirmar la migración (ver ese archivo). Antes
+// acá se comparaba contra sgrplus/Socios por CUIT (una consulta extra por
+// fila) — ya no hace falta, el dato viene directo en la lista de Socios.
+const esMigrado = (socio) => String(socio?.marcavinculacion ?? "") === "1";
 
 const FILTROS_POR_DEFECTO = {
   tipoPersona: "todos",
@@ -102,26 +109,7 @@ const EstadoBadge = ({ e, cadenasWeb }) => {
     return fila?.denominacion || `Cadena #${cadenaValorIdDetectada}`;
   }, [cadenasWeb, cadenaValorIdDetectada]);
 
-  // Confirmación real de migración: si el CUIT aparece en sgrplus/Socios es
-  // porque efectivamente vive en el core. Antes acá "Migrado" también se
-  // daba por tener el legajo 100% completo en la web (requisitosCompletados
-  // === totalRequisitos, vía useValidacionLegajo) sin haber migrado nunca —
-  // confirmado en vivo (2026-08-11): un socio con el legajo completo pero
-  // cuya migración había fallado con 500 igual aparecía como "Migrado" acá.
-  // Vuelve a resolverse por fila (useEstaMigradoEnSgrPlus/Cuit): el intento
-  // de traer esto en bloque (sgrplus/Socios sin Cuit) para el filtro de
-  // Estado rompió los badges — hay que confirmar primero contra el backend
-  // real qué devuelve esa consulta sin filtro antes de reusarla acá.
-  const { data: migradoEnSgrPlus, isLoading: isLoadingMigracion } = useEstaMigradoEnSgrPlus(e.cuit);
-  const isMigrado = Number(e.legajo) > 0 || !!migradoEnSgrPlus;
-
-  if (isLoadingMigracion && Number(e.legajo) === 0) {
-    return (
-      <span className={`${styles.estadoBadge} ${styles.estadoAzulBind}`} style={{ opacity: 0.6 }}>
-        ...
-      </span>
-    );
-  }
+  const isMigrado = esMigrado(e);
 
   return (
     <div className={styles.estadoCell}>
@@ -174,11 +162,6 @@ export default function Empresas() {
 
   const { data, isLoading, isFetching } = useObtenerSocios(params);
   const { data: cadenasWeb } = useObtenerTodasWebConEstado();
-  // Confirmación real de migración, una consulta por CUIT (igual que el
-  // badge de cada fila) pero solo se prende cuando el filtro de Estado
-  // realmente está en uso — ver useMigracionSgrPlusDeSocios.
-  const estadoFiltroActivo = estado !== FILTROS_POR_DEFECTO.estado;
-  const { migradosSet: migradosSgrPlus } = useMigracionSgrPlusDeSocios(data, estadoFiltroActivo);
 
   const empresas = useMemo(() => {
     let lista = [...(data || [])];
@@ -188,11 +171,7 @@ export default function Empresas() {
     }
 
     if (estado !== FILTROS_POR_DEFECTO.estado) {
-      lista = lista.filter((e) => {
-        const cuitLimpio = String(e.cuit || "").replace(/\D/g, "");
-        const migrado = Number(e.legajo) > 0 || !!migradosSgrPlus?.has(cuitLimpio);
-        return estado === "migrado" ? migrado : !migrado;
-      });
+      lista = lista.filter((e) => (estado === "migrado" ? esMigrado(e) : !esMigrado(e)));
     }
 
     lista.sort((a, b) => {
@@ -203,7 +182,7 @@ export default function Empresas() {
     });
 
     return lista;
-  }, [data, tipoPersona, estado, orden, migradosSgrPlus]);
+  }, [data, tipoPersona, estado, orden]);
 
   const totalPaginas = Math.max(1, Math.ceil(empresas.length / ELEMENTOS_POR_PAGINA));
   const paginaActual = Math.min(pagina, totalPaginas);

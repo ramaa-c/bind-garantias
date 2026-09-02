@@ -302,7 +302,17 @@ export const AltaDatosEmpresa = () => {
         sectorcontableid: 700,
         tipoactividadbcraid: 0,
         tipoactividadsepymeid: data.tipoactividadsepymeid || null,
-        marcavinculacion: "",
+        // Este PUT reescribe el registro completo (no es parcial), así que
+        // no se puede hardcodear "0" a ciegas: en "modo completar" el socio
+        // ya existe desde antes (ver socioParaCompletar más arriba) y, aunque
+        // en la práctica no debería poder haber migrado sin haber pasado por
+        // acá, se preserva lo que ya tenía en vez de arriesgarse a pisarle
+        // un "1" real. Recién nace en "0" cuando de verdad es la primera vez
+        // (mismo default que ya pone Paso1Cuit al crear el socio).
+        marcavinculacion:
+          socioParaCompletar?.marcavinculacion ??
+          socioParaCompletar?.MarcaVinculacion ??
+          "0",
         situacionbcraid: 1,
         fechabaja: null,
         motivobajaid: null,

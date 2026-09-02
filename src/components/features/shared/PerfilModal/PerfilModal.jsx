@@ -159,16 +159,19 @@ export const PerfilModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen, socioWeb, resetEmpresa]);
 
-  // Triangulación de Provincia/Ciudad/Localidad: igual mecanismo que usa
-  // AltaDatosEmpresa.jsx (Paso 2) al retomar un onboarding incompleto.
-  // Provincia nunca se persiste en el Socio, y ciudadid/localidadid
-  // guardados no son confiables contra el catálogo actual - se resuelven
-  // de nuevo consultando Nosis/AFIP por CUIT (mismo utilitario que Paso1) y
-  // matcheando el nombre de provincia contra el catálogo; Ciudad se
-  // termina de resolver sola dentro de UbicacionModal a partir del texto
-  // (useSincronizarCatalogoPorTexto), igual que en el wizard. Sin
-  // shouldDirty: es una corrección automática, no una edición del usuario -
-  // no debe habilitar por sí sola el botón de Guardar (ver
+  // Triangulación de Provincia (ver AltaDatosEmpresa.jsx/Paso 2): es el
+  // único campo de ubicación que el backend nunca persiste en el Socio, así
+  // que se resuelve consultando Nosis/AFIP por CUIT (mismo utilitario que
+  // Paso1) y matcheando el nombre contra el catálogo. A diferencia del
+  // Paso 2 (onboarding, sin datos previos confiables), acá Ciudad/Localidad
+  // SÍ vienen persistidas y ya se seedearon bien desde el propio socio en
+  // construirValoresEmpresa (ciudadid/partidoid) - pisarlas con lo que
+  // devuelva Nosis/AFIP (que ni siquiera trae esos IDs, ver
+  // datosEmpresaPorCuit.js) las dejaba en null y por eso no aparecía la
+  // ciudad. UbicacionModal deriva Localidad sola a partir de la Ciudad ya
+  // seedeada (mismo mecanismo que el wizard), sin necesitar este re-fetch.
+  // Sin shouldDirty: es una corrección automática, no una edición del
+  // usuario - no debe habilitar por sí sola el botón de Guardar (ver
   // bloquearSinCambios en UbicacionModal).
   const { data: provinciasData, isPending: isPendingProvincias } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
@@ -187,17 +190,11 @@ export const PerfilModal = ({ isOpen, onClose }) => {
       try {
         const resultado = await obtenerDatosEmpresaPorCuit(cuitActivo, opcionesProvincias);
         if (cancelado || !resultado.encontrado) return;
-        const camposUbicacion = [
-          "provincia",
-          "provinciaid",
-          "ciudad",
-          "ciudadid",
-          "localidad",
-          "localidadid",
-        ];
-        camposUbicacion.forEach((campo) => {
-          const shouldValidate = campo !== "ciudadid" && campo !== "localidadid";
-          metodosEmpresa.setValue(campo, resultado.valores[campo], { shouldValidate });
+        metodosEmpresa.setValue("provincia", resultado.valores.provincia, {
+          shouldValidate: true,
+        });
+        metodosEmpresa.setValue("provinciaid", resultado.valores.provinciaid, {
+          shouldValidate: true,
         });
       } catch (e) {
         console.error("[PerfilModal] Error resolviendo ubicación por CUIT:", e);

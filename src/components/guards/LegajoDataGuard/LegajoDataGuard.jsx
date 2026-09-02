@@ -3,7 +3,6 @@ import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import {
   useSocioWebPorId,
-  useEstaMigradoEnSgrPlus,
   useEstadoCdaSocio,
   useTieneCertificadoPyme,
 } from "../../../hooks/useSocios";
@@ -13,11 +12,7 @@ export function LegajoDataGuard({ children }) {
   const { socioIdActivo } = useEmpresaActiva();
 
   const { isLoading: cargandoValidacion, cadenaId } = useValidacionLegajo();
-  const { data: socioWeb, isLoading: cargandoSocioWeb } =
-    useSocioWebPorId(socioIdActivo);
-  const { isLoading: cargandoMigrado } = useEstaMigradoEnSgrPlus(
-    socioWeb?.cuit,
-  );
+  const { isLoading: cargandoSocioWeb } = useSocioWebPorId(socioIdActivo);
   const { isPending: cargandoEstadoCda } = useEstadoCdaSocio(
     socioIdActivo,
     cadenaId,
@@ -28,7 +23,6 @@ export function LegajoDataGuard({ children }) {
   const listo =
     !cargandoValidacion &&
     !cargandoSocioWeb &&
-    !cargandoMigrado &&
     !cargandoEstadoCda &&
     !cargandoCertificado;
 

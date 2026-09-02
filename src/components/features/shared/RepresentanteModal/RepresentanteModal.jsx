@@ -479,7 +479,7 @@ export function RepresentanteModal({
         setValue("telefono", telVal, { shouldValidate: true, shouldDirty: true });
         setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
         setValue("calle", parsedDir.calle, { shouldValidate: true, shouldDirty: true });
-        setValue("numero", parsedDir.numero, { shouldValidate: true, shouldDirty: true });
+        setValue("numero", parsedDir.numero ?? "", { shouldValidate: true, shouldDirty: true });
         setValue("piso", parsedDir.piso, { shouldValidate: true, shouldDirty: true });
         setValue("departamento", deptoVal, { shouldValidate: true, shouldDirty: true });
         setValue("ciudad", ciudadVal, { shouldValidate: true, shouldDirty: true });

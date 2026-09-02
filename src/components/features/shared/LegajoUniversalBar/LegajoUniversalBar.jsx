@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { useEstaMigradoEnSgrPlus, useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme } from "../../../../hooks/useSocios";
+import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme, useActualizarSocio } from "../../../../hooks/useSocios";
 import { useEstadoValidarSocio } from "../../../../hooks/useSgrPlusCore";
 import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
@@ -63,20 +63,17 @@ export function LegajoUniversalBar({
   // que necesita el chequeo de migración real de abajo. Sirve para ambos
   // modos: en admin, useEmpresaActiva(true) no trae nada (está "skippeado").
   const { data: socioWeb, isLoading: loadingSocioWeb } = useSocioWebPorId(socioIdActivo);
+  const actualizarSocioMutation = useActualizarSocio();
 
   // Única fuente de verdad de si el legajo YA se migró de verdad al core:
-  // consultar directamente sgrplus/Socios?Cuit=X — si el CUIT aparece ahí es
-  // porque el socio efectivamente vive en el core (confirmado en vivo:
-  // devuelve [] para un socio recién creado que todavía no migró, y el
-  // registro completo para uno que sí). Antes acá "sincronizado" se
-  // calculaba solo con "no cambió nada desde que se abrió la pantalla"
-  // (fingerprint vs. baseline) sin chequear nada contra el backend — eso
-  // daba un falso "Sincronizado" apenas se recargaba la página después de un
-  // intento de migración que en realidad falló (confirmado en vivo el
-  // 2026-08-11: POST Socio/Migrar tiró 500, y al hacer F5 la barra igual
-  // mostró "Sincronizado" porque no había ningún cambio LOCAL pendiente).
-  const { data: migradoEnBackend = false, isLoading: loadingMigradoEnBackend } =
-    useEstaMigradoEnSgrPlus(socioWeb?.cuit);
+  // el propio campo MarcaVinculacion del Socio ("0" = no migró, "1" = migró
+  // con éxito). Antes esto se inferían comparando contra sgrplus/Socios por
+  // CUIT; ahora el backend lo persiste directo en el Socio y esta barra es
+  // la única que lo escribe, y solo después de una migración confirmada
+  // (ver sincronizarConSgrPlus más abajo) — nunca en base a un cambio local
+  // sin confirmar, así que no hay riesgo del falso "Sincronizado" que daba
+  // el cálculo viejo con solo el fingerprint.
+  const migradoEnBackend = String(socioWeb?.marcavinculacion ?? "") === "1";
 
   // Estado del CDA de PANTALLA_INGRESO_CUIT del socio en sí (no de sus
   // terceros — ver estadoCdaMap para eso). Desde el 2026-08-13 esto ya NO
@@ -294,7 +291,6 @@ export function LegajoUniversalBar({
   // migrar (isValid ya alcanza).
   const faltaMigrarEnBackend =
     !loadingSocioWeb &&
-    !loadingMigradoEnBackend &&
     !migradoEnBackend &&
     isValid &&
     cdaSocioAprobado;
@@ -353,6 +349,20 @@ export function LegajoUniversalBar({
 
       const response = await sociosService.enviarASgrPlus(socioIdActivo);
       if (response.success) {
+        // Recién ACÁ, con la migración ya confirmada por el backend, se
+        // marca MarcaVinculacion="1" sobre el propio Socio — nunca antes,
+        // nunca en optimista. Si este PUT en sí falla (ej. se corta la red
+        // justo acá), se deja que el catch de abajo lo trate como un fallo
+        // de la sincronización completa: no se corre nada del bloque de
+        // éxito (ni el aviso, ni la nueva baseline), así que la próxima
+        // visita vuelve a intentarlo solo (confirmado que reintentar
+        // Socio/Migrar sobre un socio ya migrado es seguro).
+        await actualizarSocioMutation.mutateAsync({
+          ...socioWeb,
+          socioid: socioIdActivo,
+          marcavinculacion: "1",
+        });
+
         if (toastId) toast.dismiss(toastId);
         // Solo para admin (silent=false, ver migrarAhora): a él sí le
         // corresponde enterarse de la migración real. El aviso del cliente
@@ -364,7 +374,7 @@ export function LegajoUniversalBar({
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
           queryClient.invalidateQueries({ queryKey: ["socioArchivos"] }),
-          queryClient.invalidateQueries({ queryKey: ["sgrplus", "socios", "porCuit"] }),
+          queryClient.invalidateQueries({ queryKey: ["sociosWeb", "detalle", Number(socioIdActivo)] }),
         ]);
       } else {
         throw new Error(response.message || "Error al sincronizar");
@@ -409,7 +419,7 @@ export function LegajoUniversalBar({
   // de arriba en su lugar (ver el return de adminMode más abajo).
   useEffect(() => {
     if (adminMode) return;
-    if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingSocioWeb || loadingMigradoEnBackend || loadingEstadoCdaSocio) return;
+    if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingSocioWeb || loadingEstadoCdaSocio) return;
 
     // En "legajo" (a diferencia de "documentacion") completar el último
     // requisito puede pasar DENTRO de una modal propia (Representante,
@@ -450,7 +460,7 @@ export function LegajoUniversalBar({
 
     autoMigrar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingMigradoEnBackend, loadingEstadoCdaSocio, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
+  }, [adminMode, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingEstadoCdaSocio, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
   // ── ADMIN: auto-migra (con feedback, no en silencio) SOLO por
   // faltaMigrarEnBackend — el caso de "el legajo ya estaba completo y ahora
@@ -464,7 +474,7 @@ export function LegajoUniversalBar({
   // el toast de carga/éxito/error igual que en el botón manual.
   useEffect(() => {
     if (!adminMode) return;
-    if (!faltaMigrarEnBackend || isMigrating || isLoading || loadingSocioWeb || loadingMigradoEnBackend || loadingEstadoCdaSocio) return;
+    if (!faltaMigrarEnBackend || isMigrating || isLoading || loadingSocioWeb || loadingEstadoCdaSocio) return;
     if (modalesLegajoAbiertos > 0) return;
     if (lastAttemptedFingerprint === fingerprint) return;
 
@@ -483,7 +493,7 @@ export function LegajoUniversalBar({
 
     autoMigrarAdmin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingMigradoEnBackend, loadingEstadoCdaSocio, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
+  }, [adminMode, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingEstadoCdaSocio, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
   // Se renderiza sin importar si la barra decide ocultarse en este contexto:
   // la migración puede completarse en cualquier momento y el aviso tiene que

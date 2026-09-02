@@ -10,15 +10,12 @@ const pkg = JSON.parse(
 export default defineConfig({
   plugins: [react()],
   define: {
-    // Versión del front que le pasamos a Victor para cada build - se
-    // trabaja de acá en más por versiones (ver package.json). Se muestra
-    // en el pie del Sidebar junto a la versión de la API.
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
   server: {
     proxy: {
       "/proxy-backend": {
-        target: "http://192.168.2.103:9988",
+        target: "http://192.168.2.102:9987",
         changeOrigin: true,
         secure: false,
         rewrite: (path) => {

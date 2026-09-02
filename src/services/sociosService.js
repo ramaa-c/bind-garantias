@@ -306,14 +306,35 @@ export const sociosService = {
     return response.data;
   },
 
-  // GET api/lufe/entidad/{cuit} - Obtener entidad de LUFE
+  // GET api/lufe/entidad/{cuit} - Obtener entidad de LUFE. Un solo
+  // reintento (con una espera corta) ante un timeout/error puntual — mismo
+  // patrón que nosisService.obtenerDatosNormalizados para su propio
+  // "arranque en frío": confirmado en vivo el 2026-09-02 que Nosis Y LUFE
+  // pueden fallar juntos justo en la misma consulta (CUIT 27131917800),
+  // dejando tipoactividadsepymeid en null aunque el dato exista en ambas
+  // fuentes. noRetry:true sigue puesto en cada intento porque el reintento
+  // automático del interceptor global (ante 5xx) multiplicaría los pedidos
+  // igual que ya se evita en el resto de las llamadas a LUFE.
   obtenerEntidadLufe: async (cuit) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
-    const response = await api.get(`api/lufe/entidad/${cuitLimpio}`, {
-      timeout: 8000,
-      noRetry: true,
-    });
-    return response.data;
+    const pedir = () =>
+      api.get(`api/lufe/entidad/${cuitLimpio}`, {
+        timeout: 8000,
+        noRetry: true,
+      });
+
+    try {
+      const response = await pedir();
+      return response.data;
+    } catch (error) {
+      console.warn(
+        "[sociosService] Primer intento contra LUFE falló, reintentando una vez (posible arranque en frío)...",
+        error,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await pedir();
+      return response.data;
+    }
   },
 
   // Helper para normalizar la respuesta de LUFE Entidad al formato de AFIP datosgenerales
