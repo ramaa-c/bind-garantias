@@ -82,7 +82,7 @@ export const AltaDatosEmpresa = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorId = Number(cadenaSlug);
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
@@ -458,7 +458,7 @@ export const AltaDatosEmpresa = () => {
         // también llama a setActiveSocioId), no tiene sentido mandarlo a
         // "elegir" algo que acaba de crear él mismo.
         setActiveSocioId(socioId);
-        navigate(`/${channelInfo?.id}/legajo`, { replace: true });
+        navigate(`${basePath}/legajo`, { replace: true });
       } else {
         throw new Error(
           "No pudimos identificar tu usuario para vincular la empresa.",
@@ -600,7 +600,7 @@ export const AltaDatosEmpresa = () => {
                 // "irreversible" que el resto de este comentario).
                 onVolverInicio={
                   pasoActual === 1 && isVendor && !socioId
-                    ? () => navigate(`/${channelInfo?.id}/seleccionar-empresa`)
+                    ? () => navigate(`${basePath}/seleccionar-empresa`)
                     : null
                 }
                 onReiniciar={null}

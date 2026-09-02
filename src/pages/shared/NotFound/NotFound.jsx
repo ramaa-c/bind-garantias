@@ -10,14 +10,14 @@ import { useChannel } from "../../../context/ChannelContext";
 const NotFound = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
 
   const handleGoHome = () => {
     if (user) {
       if (user.role === "admin") {
         navigate("/admin", { replace: true });
       } else {
-        navigate(`/${channelInfo.id}/legajo`, { replace: true });
+        navigate(`${basePath}/legajo`, { replace: true });
       }
     } else {
       navigate("/", { replace: true });
