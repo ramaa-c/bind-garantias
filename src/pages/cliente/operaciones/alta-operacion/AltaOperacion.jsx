@@ -5,7 +5,7 @@ import {
   useWatch,
   useFieldArray,
 } from "react-hook-form";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiRotateCcw } from "react-icons/fi";
 import { toast } from "sonner";
@@ -46,6 +46,8 @@ import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { PANTALLA_LINEAS } from "../../../../utils/pantallasCda";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 import {
   TERCERO_VIA_PLATAFORMA_PROPIA,
   ESTADO_PENDIENTE,
@@ -61,7 +63,7 @@ export const AltaOperacion = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { channelInfo } = useChannel();
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
 
   const {
     cuitActivo,

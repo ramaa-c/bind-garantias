@@ -23,7 +23,7 @@ const recuperarSchema = z.object({
 
 const RecuperarClave = () => {
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
   const theme = useThemeStore((state) => state.theme);
 
   const {
@@ -63,7 +63,7 @@ const RecuperarClave = () => {
 
     try {
       await enviarCorreoAsync(payloadReset);
-      navigate(`/${channelInfo.id}/confirmar-correo`, {
+      navigate(`${basePath}/confirmar-correo`, {
         replace: true,
         state: { emailIngresado: data.email, canal: canalId, origen: "recuperar" },
       });
@@ -83,7 +83,7 @@ const RecuperarClave = () => {
             <img
               src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
-              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
               className={styles.clickableLogo}
             />
             {channelInfo.id !== "default" && channelInfo.logo && (

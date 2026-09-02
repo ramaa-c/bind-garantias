@@ -6,7 +6,7 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
-import { ChannelProvider } from "./context/ChannelContext";
+import { ChannelProvider, useChannel } from "./context/ChannelContext";
 import { Toaster } from "sonner";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
@@ -93,33 +93,14 @@ const ModoOffline = lazy(
   () => import("./pages/admin/configuracion/ModoOffline"),
 );
 
-function App() {
-  return (
-    <BrowserRouter>
-      <ChannelProvider>
-        <Toaster position="top-right" richColors closeButton theme="dark" />
-        <SessionTimeoutManager />
-        <ThemeManager />
-        <Suspense fallback={<LoadingScreen />}>
-          <Routes>
-            {/* Antes acá se auto-seleccionaba la primera cadena activa y se
-                redirigía a /{cadenaId}/login (ver RootRedirect, ya
-                eliminado) — pedido explícito de sacarlo: la URL de cada
-                cadena se arma siempre a mano, nunca automática. Además, un
-                redirect acá (aunque sea client-side) rompe el enmascarado
-                de la URL que hacen en el entorno del banco (Victor,
-                2026-08-21) — por eso esto renderiza el contenido directo,
-                sin ningún navigate()/<Navigate> de por medio. */}
-            <Route path="/" element={<NotFound />} />
-            <Route path="/login" element={<LoginAdmin />} />
-            <Route path="/not-found" element={<NotFound />} />
-            <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
-            <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
-
-            <Route path="/0/:token" element={<CrearClave />} />
-
-            <Route path="/:cadenaSlug" element={<TenantLayout />}>
-              <Route index element={<Navigate to="login" replace />} />
+// Rutas de la zona cliente, compartidas por los dos modos de ruteo (ver
+// utils/tenantConfig.js): cuelgan de "/" cuando la cadena se resuelve por
+// hostname, y de "/:cadenaSlug" en el modo legacy. Van todas con path
+// relativo justamente para poder montarse igual en los dos lugares (los
+// <Navigate to="../algo"> resuelven bien en ambos casos).
+const rutasCliente = (
+  <>
+    <Route index element={<Navigate to="login" replace />} />
               <Route
                 path="login"
                 element={
@@ -282,7 +263,34 @@ function App() {
                 path="admin/lineas-productos"
                 element={<Navigate to="/admin/lineas-productos" replace />}
               />
-            </Route>
+  </>
+);
+
+// Rutas del panel admin + las de cliente con el ID en el path. Es el árbol
+// que se sirve cuando el hostname NO corresponde a ninguna cadena de
+// /tenants.json: exactamente lo mismo que había antes de introducir el
+// ruteo por hostname, para no romper links viejos ya circulando (mails de
+// creación de clave, favoritos) ni el acceso al admin.
+const rutasLegacy = (
+  <>
+    {/* Antes acá se auto-seleccionaba la primera cadena activa y se
+        redirigía a /{cadenaId}/login (ver RootRedirect, ya eliminado) —
+        pedido explícito de sacarlo: la URL de cada cadena se arma siempre a
+        mano, nunca automática. Además, un redirect acá (aunque sea
+        client-side) rompe el enmascarado de la URL que hacen en el entorno
+        del banco (Victor, 2026-08-21) — por eso esto renderiza el contenido
+        directo, sin ningún navigate()/<Navigate> de por medio. */}
+    <Route path="/" element={<NotFound />} />
+    <Route path="/login" element={<LoginAdmin />} />
+    <Route path="/not-found" element={<NotFound />} />
+    <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
+    <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
+
+    <Route path="/0/:token" element={<CrearClave />} />
+
+    <Route path="/:cadenaSlug" element={<TenantLayout />}>
+      {rutasCliente}
+    </Route>
 
             {/* Rutas de Administración Globales */}
             <Route
@@ -413,10 +421,49 @@ function App() {
               path="/admin/dashboard"
               element={<Navigate to="/admin" replace />}
             />
+  </>
+);
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+// El árbol de rutas se elige según cómo se haya resuelto la cadena de valor
+// (ver utils/tenantConfig.js). Va en un componente aparte de App porque
+// necesita leer el ChannelContext, y App es justamente quien monta el
+// provider.
+const RutasApp = () => {
+  const { modoPorHost } = useChannel();
+
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
+        {modoPorHost ? (
+          <>
+            {/* El hostname ya identifica la cadena: las pantallas de cliente
+                cuelgan de la raíz, sin ID en la URL. Acá no se montan las
+                rutas de admin a propósito — ese dominio es de un banco. */}
+            <Route path="/not-found" element={<NotFound />} />
+            <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
+            <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
+            <Route path="/" element={<TenantLayout />}>
+              {rutasCliente}
+            </Route>
+          </>
+        ) : (
+          rutasLegacy
+        )}
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <ChannelProvider>
+        <Toaster position="top-right" richColors closeButton theme="dark" />
+        <SessionTimeoutManager />
+        <ThemeManager />
+        <RutasApp />
       </ChannelProvider>
     </BrowserRouter>
   );

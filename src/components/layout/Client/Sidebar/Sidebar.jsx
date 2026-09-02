@@ -38,7 +38,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const cambiarEmpresaStore = useAuthStore((state) => state.cambiarEmpresa);
   const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
   const emailUsuario = typeof user === "string" ? user : user?.email ? String(user.email) : "Usuario";
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
 
@@ -54,10 +54,10 @@ export default function Sidebar({ isOpen, onClose }) {
   const { hasUnsavedChanges, setUnsavedChanges } = useNavigationStore();
   const [pendingPath, setPendingPath] = useState(null);
 
-  const isActive = (path) => location.pathname.startsWith(`/${channelInfo.id}${path}`);
+  const isActive = (path) => location.pathname.startsWith(`${basePath}${path}`);
 
   const handleNavigate = (path) => {
-    const fullPath = `/${channelInfo.id}${path.startsWith('/') ? path : '/' + path}`;
+    const fullPath = `${basePath}${path.startsWith('/') ? path : '/' + path}`;
     if (hasUnsavedChanges && location.pathname !== fullPath) {
       setPendingPath(fullPath);
       return;
@@ -81,13 +81,13 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const handleLogout = () => {
     clearAuth();
-    navigate(`/${channelInfo.id}/login`);
+    navigate(`${basePath}/login`);
   };
 
   // Mismo criterio que Navbar.jsx: logout "suave", solo para vendors.
   const handleCambiarEmpresa = () => {
     cambiarEmpresaStore();
-    navigate(`/${channelInfo.id}/seleccionar-empresa`);
+    navigate(`${basePath}/seleccionar-empresa`);
     onClose();
   };
 
@@ -102,7 +102,7 @@ export default function Sidebar({ isOpen, onClose }) {
     <aside className={`${styles.container} ${isOpen ? styles.open : ""}`}>
       <div className={styles.sidebarHeader}>
         <div className={styles.logosWrapper}>
-          <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} role="button" tabIndex={0} onClick={() => isSolicitudesEnabled ? navigate(`/${channelInfo.id}/solicitudes`) : navigate(`/${channelInfo.id}/legajo`)} style={{ cursor: "pointer" }} />
+          <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} role="button" tabIndex={0} onClick={() => isSolicitudesEnabled ? navigate(`${basePath}/solicitudes`) : navigate(`${basePath}/legajo`)} style={{ cursor: "pointer" }} />
           {channelInfo.id !== "default" && channelInfo.logo && (
             <>
               <div className={styles.logoSeparator} />

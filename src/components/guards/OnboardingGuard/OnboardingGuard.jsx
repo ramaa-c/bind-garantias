@@ -22,7 +22,7 @@ import { useVerificarHabilitacionSolicitudes } from "../../../hooks/useVerificar
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
 
   const { activeSocioId } = useAuthStore((state) => state);
   const {
@@ -215,7 +215,7 @@ export const OnboardingGuard = ({ children }) => {
   ]);
 
   if (!user || !user.email) {
-    return <Navigate to={`/${channelInfo.id}/login`} replace />;
+    return <Navigate to={`${basePath}/login`} replace />;
   }
 
   const isBasicAdmin = user?.role === "admin";
@@ -264,14 +264,14 @@ export const OnboardingGuard = ({ children }) => {
   }
 
   if (debeAceptarTerminos && !isTerminosPage) {
-    return <Navigate to={`/${channelInfo.id}/terminos`} replace />;
+    return <Navigate to={`${basePath}/terminos`} replace />;
   }
 
   if (usuarioWebId && tieneEmpresas) {
     if (isVendor) {
       if (!activeSocioId && !isSeleccionarEmpresaPage && !isAltaDatosPage) {
         return (
-          <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />
+          <Navigate to={`${basePath}/seleccionar-empresa`} replace />
         );
       }
 
@@ -282,7 +282,7 @@ export const OnboardingGuard = ({ children }) => {
           isAltaDatosPage ||
           isInicioPage)
       ) {
-        return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+        return <Navigate to={`${basePath}/legajo`} replace />;
       }
     } else if (!telefonoActual) {
       // Nunca completó el Paso 2 (ver Paso1Cuit: el socio se crea con el
@@ -297,7 +297,7 @@ export const OnboardingGuard = ({ children }) => {
       if (!isAltaDatosPage && !debeAceptarTerminos) {
         return (
           <Navigate
-            to={`/${channelInfo.id}/alta-datos-empresa`}
+            to={`${basePath}/alta-datos-empresa`}
             state={{ socioParaCompletar: empresaActual }}
             replace
           />
@@ -309,23 +309,23 @@ export const OnboardingGuard = ({ children }) => {
       isSeleccionarEmpresaPage ||
       isInicioPage
     ) {
-      return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+      return <Navigate to={`${basePath}/legajo`} replace />;
     }
 
     if (!isSolicitudesEnabled && isSolicitudesPage) {
-      return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+      return <Navigate to={`${basePath}/legajo`} replace />;
     }
   } else if (usuarioWebId && !tieneEmpresas) {
     if (isVendor) {
       if (!isSeleccionarEmpresaPage && !isAltaDatosPage) {
-        return <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />;
+        return <Navigate to={`${basePath}/seleccionar-empresa`} replace />;
       }
     } else if (!debeAceptarTerminos && !isAltaDatosPage) {
       // El chequeo de arriba ya lo mandó a /terminos si todavía le faltaba
       // aceptar. Si llegó hasta acá sin necesitarlo (o ya lo aceptó en un
       // intento de alta anterior que abandonó antes de crear la empresa),
       // lo mandamos directo al alta — no hace falta mostrarle /terminos de nuevo.
-      return <Navigate to={`/${channelInfo.id}/alta-datos-empresa`} replace />;
+      return <Navigate to={`${basePath}/alta-datos-empresa`} replace />;
     }
   }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import { useParams } from "react-router-dom";
+
 import { FaFileAlt, FaFileUpload } from "react-icons/fa";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiRefreshCw } from "react-icons/fi";
@@ -20,6 +20,8 @@ import { sociosService } from "../../../../services/sociosService";
 import { obtenerMensajeAmigable } from "../../../../utils/mensajesError";
 import { Button, InfoTooltip } from "../../../../components/ui";
 import styles from "./DocumentacionView.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 const DOC_TITLES = {
   estatuto: "Estatuto Social",
@@ -61,7 +63,7 @@ export default function DocumentacionView() {
   // y de nuevo adentro de DocumentosLegajo no duplica el pedido de red.
   // Mientras requisitos todavía no cargó, se asume que sí hay documentación
   // (default más seguro que ocultar el botón y hacerlo aparecer después).
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaId = Number(cadenaSlug) || 1;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
   const hayDocumentacionRequerida = ESTRUCTURA_LEGAJO.some(

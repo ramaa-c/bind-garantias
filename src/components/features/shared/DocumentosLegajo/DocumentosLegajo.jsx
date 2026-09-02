@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { useParams } from "react-router-dom";
+
 import { useFormContext, useWatch, Controller } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
@@ -41,6 +41,8 @@ import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { useDiasMargenVencimientoBalance } from "../../../../hooks/useValorOperativo";
 import { calcularEstadoBalance } from "../../../../utils/balanceVigencia";
 import styles from "./DocumentosLegajo.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 import {
   procesarArchivo,
   formatBase64Size,
@@ -224,7 +226,7 @@ export function DocumentosLegajo({
   // detectar (historial viejo o inexistente), useRequisitos cae solo al
   // fallback por tipo de persona/sociedad — sigue siendo mejor que mostrar
   // el legajo completo sin ningún criterio.
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 

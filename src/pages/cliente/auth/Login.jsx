@@ -258,7 +258,7 @@ const Login = () => {
   const location = useLocation();
   const setUser = useAuthStore((state) => state.setUser);
   const theme = useThemeStore((state) => state.theme);
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
   const { mutate: loginByCode, isPending: solicitandoCodigo } =
     useLoginByCode();
@@ -291,7 +291,7 @@ const Login = () => {
     try {
       await reenviarCorreo(payloadReset);
       setModalPendiente(false);
-      navigate(`/${channelInfo.id}/confirmar-correo`, {
+      navigate(`${basePath}/confirmar-correo`, {
         state: {
           emailIngresado: emailPendiente,
           canal: canalId,
@@ -397,7 +397,7 @@ const Login = () => {
     if (fase === "validacion_otp") {
       if (formData.otp === generatedOtp) {
         setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
-        navigate(`/${channelInfo.id}/legajo`, { replace: true });
+        navigate(`${basePath}/legajo`, { replace: true });
       } else {
         setError("otp", { type: "server", message: "Código incorrecto" });
       }
@@ -410,7 +410,7 @@ const Login = () => {
         {
           onSuccess: () => {
             setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
-            navigate(`/${channelInfo.id}/legajo`, { replace: true });
+            navigate(`${basePath}/legajo`, { replace: true });
           },
           onError: async (error) => {
             const status = error?.response?.status;
@@ -478,7 +478,7 @@ const Login = () => {
             <img
               src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
-              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
               className={styles.clickableLogo}
             />
             {channelInfo.id !== "default" && channelInfo.logo && (
@@ -535,8 +535,8 @@ const Login = () => {
               <CredentialsPhase
                 control={control}
                 isPending={isPending}
-                onRegister={() => navigate(`/${channelInfo.id}/registro`)}
-                onRecoverPassword={() => navigate(`/${channelInfo.id}/recuperar-clave`)}
+                onRegister={() => navigate(`${basePath}/registro`)}
+                onRecoverPassword={() => navigate(`${basePath}/recuperar-clave`)}
                 onLoginWithCode={() => {
                   clearErrors();
                   setFase("solicitar_codigo");

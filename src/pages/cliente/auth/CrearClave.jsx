@@ -50,7 +50,7 @@ const passwordSchema = z
 
 const CrearClave = () => {
   const { token } = useParams();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
   const theme = useThemeStore((state) => state.theme);
   const navigate = useNavigate();
   const [emailManual, setEmailManual] = useState("");
@@ -93,7 +93,7 @@ const CrearClave = () => {
               toast.success("Código enviado", {
                 description: "Revisá tu correo para ingresar.",
               });
-              navigate(`/${channelInfo.id}/login`, {
+              navigate(`${basePath}/login`, {
                 state: {
                   emailIngresado: usuario.email,
                   generatedOtp: data.password,
@@ -158,7 +158,7 @@ const CrearClave = () => {
 
     resetearPassword(payloadReset, {
       onSuccess: () => {
-        navigate(`/${channelInfo.id}/confirmar-correo`, {
+        navigate(`${basePath}/confirmar-correo`, {
           state: {
             emailIngresado: emailManual,
             canal: canalId,
@@ -177,7 +177,7 @@ const CrearClave = () => {
           },
         );
         if (!isServerError) {
-          navigate(`/${channelInfo.id}/registro`);
+          navigate(`${basePath}/registro`);
         }
       },
     });
@@ -232,7 +232,7 @@ const CrearClave = () => {
           description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
           duration: 5000,
         });
-        navigate(`/${channelInfo.id}/login`, { replace: true });
+        navigate(`${basePath}/login`, { replace: true });
       },
       onError: (error) => {
         const isServerError = error?.response?.status >= 500;
@@ -303,7 +303,7 @@ const CrearClave = () => {
                 <img
                   src={theme === "light" ? logoBindBlack : logoBind}
                   alt="Logo BIND"
-                  onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+                  onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
                   className={styles.clickableLogo}
                 />
                 {channelInfo.id !== "default" && channelInfo.logo && (

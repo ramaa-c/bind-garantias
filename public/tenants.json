@@ -1,0 +1,11 @@
+{
+  "_comentario_1": "Mapeo hostname -> CadenaValorID. Lo lee la app al arrancar (fetch a /tenants.json) para saber a que cadena de valor corresponde el dominio por el que entro el usuario, sin necesidad de llevar el ID en la URL.",
+  "_comentario_2": "Se puede editar directamente en la carpeta del sitio en IIS: NO hace falta un build nuevo del frontend para dar de alta una cadena. Alcanza con agregar la linea y refrescar.",
+  "_comentario_3": "El hostname va en minusculas y SIN protocolo ni puerto (ej: 'jhondeere.bindgarantias.com.ar'). El valor es el CadenaValorID numerico.",
+  "_comentario_4": "Un hostname que NO figure aca (ej. el dominio del panel admin) se resuelve como admin, igual que hoy funciona la URL sin ID de cadena.",
+  "_ejemplo": {
+    "jhondeere.bindgarantias.com.ar": 950225,
+    "comafi.bindgarantias.com.ar": 950230
+  },
+  "cadenas": {}
+}

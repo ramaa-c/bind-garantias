@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import {
   useFormContext,
@@ -30,6 +30,8 @@ import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { formatBase64Size } from "../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 const DOC_ITEMS = [
   { key: "estatuto", label: "Estatuto Social" },
@@ -78,7 +80,7 @@ export default function Paso5Documentacion({
   isSubmitting,
   socioId,
 }) {
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaId = Number(cadenaSlug) || 1;
 
   const { tipoPersonaId, nombreEmpresa } = useEmpresaActiva();

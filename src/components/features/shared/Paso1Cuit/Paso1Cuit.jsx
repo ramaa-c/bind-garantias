@@ -13,8 +13,10 @@ import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
 import { guardarSocioPendiente } from "../../../../utils/altaEmpresaPendiente";
 import { useAuthStore } from "../../../../store/useAuthStore";
-import { useParams } from "react-router-dom";
+
 import styles from "./Paso1Cuit.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
 
@@ -31,7 +33,7 @@ const formatearCuit = (cuit) => {
 // "durante" (en el click de handleValidar, con datos potencialmente todavía
 // en vuelo) ni tenga forma de desincronizarse de lo que ve el resto del wizard.
 export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, isVendor = false, vendorCuit = null }) {
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const { control, getValues, setValue, setError, clearErrors } =
     useFormContext();

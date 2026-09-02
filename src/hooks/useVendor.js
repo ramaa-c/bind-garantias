@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { cadenaValorService } from "../services/cadenaValorService";
 import { useAuthStore } from "../store/useAuthStore";
-import { useParams } from "react-router-dom";
+
+import { useCadenaActiva } from "./useCadenaActiva";
+
 
 export const useVendor = (skip = false) => {
   const user = useAuthStore((state) => state.user);
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const currentCadenaId = Number(cadenaSlug);
   const email = skip ? "" : user?.email || "";
 

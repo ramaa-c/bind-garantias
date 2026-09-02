@@ -32,7 +32,7 @@ const Registro = () => {
     useCrearUsuario();
   const { mutateAsync: reenviarCorreo, isPending: reenviando } =
     useResetearPassword();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
 
   const [modalUsuarioExistente, setModalUsuarioExistente] = useState(false);
   const [emailPendiente, setEmailPendiente] = useState("");
@@ -82,7 +82,7 @@ const Registro = () => {
     try {
       await crearUsuario(payloadSkeletor);
 
-      navigate(`/${channelInfo.id}/confirmar-correo`, {
+      navigate(`${basePath}/confirmar-correo`, {
         replace: true,
         state: {
           usuarioSkeletor: payloadSkeletor,
@@ -149,7 +149,7 @@ const Registro = () => {
 
       setModalUsuarioExistente(false);
 
-      navigate(`/${channelInfo.id}/confirmar-correo`, {
+      navigate(`${basePath}/confirmar-correo`, {
         replace: true,
         state: {
           emailIngresado: emailPendiente,
@@ -184,7 +184,7 @@ const Registro = () => {
               <img
                 src={theme === "light" ? logoBindBlack : logoBind}
                 alt="Logo BIND"
-                onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+                onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
                 className={styles.clickableLogo}
               />
               {channelInfo.id !== "default" && channelInfo.logo && (
@@ -237,7 +237,7 @@ const Registro = () => {
                 ¿Ya tenés una cuenta?{" "}
                 <span 
                   className={styles.inlineLink}
-                  onClick={!isFormDisabled ? () => navigate(`/${channelInfo.id}/login`) : undefined} 
+                  onClick={!isFormDisabled ? () => navigate(`${basePath}/login`) : undefined} 
                   style={{ 
                     cursor: isFormDisabled ? "not-allowed" : "pointer", 
                     opacity: isFormDisabled ? 0.6 : undefined

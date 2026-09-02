@@ -12,6 +12,7 @@ import { requisitosService } from "../../../../services/requisitosService";
 import { sociosService } from "../../../../services/sociosService";
 import styles from "./SeleccionarEmpresa.module.css";
 import { useChannel } from "../../../../context/ChannelContext";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 
 /* ─── sub-componente: EmpresaCard ──────────────────────────── */
@@ -73,7 +74,8 @@ const EmpresaCard = ({ socioInitial, socioId, index, onSelect }) => {
 
 export const SeleccionarEmpresa = () => {
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
+  const { cadenaId: cadenaIdActiva } = useCadenaActiva();
   const user = useAuthStore((state) => state.user);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
   const queryClient = useQueryClient();
@@ -148,7 +150,7 @@ export const SeleccionarEmpresa = () => {
 
       const tipoPersonaId = socio.tipopersonaid || socio.TipoPersonaID;
       const nombreEmpresa = socio.denominacion || socio.Denominacion;
-      const cadenaId = Number(channelInfo.id) || 1;
+      const cadenaId = cadenaIdActiva || 1;
 
       try {
         await Promise.all([
@@ -173,13 +175,13 @@ export const SeleccionarEmpresa = () => {
         console.error("Prefetch error", e);
       }
 
-      navigate(`/${channelInfo.id}/legajo`, { replace: true });
+      navigate(`${basePath}/legajo`, { replace: true });
     },
-    [setActiveSocioId, navigate, channelInfo.id, queryClient],
+    [setActiveSocioId, navigate, basePath, queryClient, cadenaIdActiva],
   );
 
   const handleAltaEmpresa = () => {
-    navigate(`/${channelInfo.id}/alta-datos-empresa`);
+    navigate(`${basePath}/alta-datos-empresa`);
   };
 
   /* — loading state — */

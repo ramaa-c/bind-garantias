@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
+
 import { useQueryClient } from "@tanstack/react-query";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useObtenerDatosSocioLegajo } from "../../../../hooks/useTerceros";
@@ -36,6 +36,8 @@ import { RepresentantesSection } from "../DocumentosLegajo/components/Representa
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 export const ESTRUCTURA_SOCIOS = [
   {
@@ -123,7 +125,7 @@ export function SociosLegajo({
   // CDAs del socio, ver detectarCadenaValorId). Sin detección, useRequisitos
   // cae solo al fallback por tipo de persona/sociedad (ver mismo criterio en
   // DocumentosLegajo).
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 

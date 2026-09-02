@@ -27,8 +27,10 @@ import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincr
 import { useValidarDomicilioRequerido } from "../../../../../../hooks/useValidarDomicilioRequerido";
 import { parseAddress } from "../../../../../../utils/direccionParser";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
-import { useParams } from "react-router-dom";
+
 import styles from "./SocioAccionistaModal.module.css";
+import { useCadenaActiva } from "../../../../../../hooks/useCadenaActiva";
+
 
 const normalizarTexto = (str) =>
   String(str || "")
@@ -91,7 +93,7 @@ const DEFAULT_DNI_TERCEROS = {};
 const DEFAULT_ACCIONISTAS = [];
 
 export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");

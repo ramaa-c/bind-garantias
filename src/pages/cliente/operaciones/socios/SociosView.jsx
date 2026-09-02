@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+
 import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
 import { SociosLegajo, LegajoUniversalBar } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -15,10 +15,12 @@ import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { obtenerMensajeAmigable } from "../../../../utils/mensajesError";
 import { toast } from "sonner";
 import styles from "./SociosView.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 export default function SociosView() {
   const queryClient = useQueryClient();
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaId = Number(cadenaSlug) || 1;
   const { socioIdActivo, cuitActivo } = useEmpresaActiva();
 

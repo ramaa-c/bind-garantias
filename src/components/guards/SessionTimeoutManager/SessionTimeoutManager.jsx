@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "../../../store/useAuthStore";
+import { useChannel } from "../../../context/ChannelContext";
 import { useSessionTimeout } from "../../../hooks/useSessionTimeout";
 import { ConfirmacionModal } from "../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { SessionExpiryNotice } from "./SessionExpiryNotice";
@@ -13,9 +14,12 @@ const IDLE_TIMEOUT_MS = 20 * 60 * 1000;
 const WARNING_MS = 60 * 1000;
 
 // Fuera de TenantLayout, useChannel().id siempre vale "default" (ver
-// ChannelContext) - no sirve para reconstruir el login del cliente. El slug
-// real de la cadena se saca directo de la URL, igual que hace cada guard.
-const resolverLoginPath = (pathname) => {
+// ChannelContext) - no sirve para reconstruir el login del cliente. En modo
+// legacy el slug real se saca directo de la URL, igual que hace cada guard;
+// en modo por host no hay slug en el path y el login del cliente es
+// directamente "/login" (ver utils/tenantConfig.js).
+const resolverLoginPath = (pathname, modoPorHost) => {
+  if (modoPorHost) return "/login";
   if (pathname === "/login" || pathname.startsWith("/admin")) return "/login";
   const cadenaSlug = pathname.split("/")[1];
   return cadenaSlug ? `/${cadenaSlug}/login` : "/login";
@@ -26,11 +30,12 @@ export const SessionTimeoutManager = () => {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const navigate = useNavigate();
   const location = useLocation();
+  const { modoPorHost } = useChannel();
 
   const handleTimeout = () => {
     clearAuth();
     toast.info("Tu sesión se cerró por inactividad.");
-    navigate(resolverLoginPath(location.pathname), { replace: true });
+    navigate(resolverLoginPath(location.pathname, modoPorHost), { replace: true });
   };
 
   const { showWarning, secondsLeft, extenderSesion } = useSessionTimeout({

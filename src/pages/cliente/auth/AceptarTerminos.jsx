@@ -27,7 +27,7 @@ export default function AceptarTerminos() {
   const [isGenerandoPdf, setIsGenerandoPdf] = useState(false);
   const scrollRef = useRef(null);
 
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
   const user = useAuthStore((state) => state.user);
   const setTerminosVerificado = useAuthStore(
     (state) => state.setTerminosVerificado,
@@ -88,7 +88,7 @@ export default function AceptarTerminos() {
 
       setTerminosVerificado(true);
       navigate(
-        `/${channelInfo.id}/${tieneEmpresas ? "legajo" : "alta-datos-empresa"}`,
+        `${basePath}/${tieneEmpresas ? "legajo" : "alta-datos-empresa"}`,
       );
     } catch (err) {
       console.error("[AceptarTerminos] Error al registrar la aceptación:", err);

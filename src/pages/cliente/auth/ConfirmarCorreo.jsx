@@ -17,7 +17,7 @@ const fmt = (t) => `${pad(Math.floor(t / 60))}:${pad(t % 60)}`;
 const ConfirmarCorreo = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
   const theme = useThemeStore((state) => state.theme);
 
   const emailUsuario =
@@ -82,7 +82,7 @@ const ConfirmarCorreo = () => {
           "No se encontró información del registro. Volvé a intentarlo.",
       });
     }, 0);
-    return <Navigate to={`/${channelInfo.id}/registro`} replace />;
+    return <Navigate to={`${basePath}/registro`} replace />;
   }
 
   return (
@@ -97,7 +97,7 @@ const ConfirmarCorreo = () => {
               onClick={() =>
                 navigate(
                   channelInfo?.id && channelInfo.id !== "default"
-                    ? `/${channelInfo.id}/login`
+                    ? `${basePath}/login`
                     : "/login",
                 )
               }
@@ -182,14 +182,14 @@ const ConfirmarCorreo = () => {
                 tabIndex={0}
                 onClick={() =>
                   navigate(
-                    `/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                    `${basePath}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
                   )
                 }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     navigate(
-                      `/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                      `${basePath}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
                     );
                   }
                 }}

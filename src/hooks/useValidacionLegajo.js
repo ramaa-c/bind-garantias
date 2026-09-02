@@ -1,9 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+
 import { useEmpresaActiva } from "./useEmpresaActiva";
 import { useRequisitos } from "./useRequisitos";
 import { useObtenerDatosSocioLegajo, useEstadoCdaTerceros } from "./useTerceros";
 import { socioArchivoService } from "../services/socioArchivoService";
+import { useCadenaActiva } from "./useCadenaActiva";
+
 
 const DOCUMENT_TITLES = {
   estatuto: "Estatuto Social",
@@ -89,7 +91,7 @@ export const useValidacionLegajo = ({
   cadenaId: cadenaIdOverride,
 } = {}) => {
   const empresaActiva = useEmpresaActiva(adminMode);
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
 
   const socioIdActivo = adminMode ? socioIdOverride : empresaActiva.socioIdActivo;
   const tipoPersonaId = adminMode ? tipoPersonaIdOverride : empresaActiva.tipoPersonaId;

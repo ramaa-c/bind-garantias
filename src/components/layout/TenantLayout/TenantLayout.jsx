@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
-import { useParams, Outlet, Navigate, useNavigate } from "react-router-dom";
+import { Outlet, Navigate, useNavigate } from "react-router-dom";
 import { useChannel } from "../../../context/ChannelContext";
+import { useCadenaActiva } from "../../../hooks/useCadenaActiva";
 import { useObtenerPorCadenaValorIdWeb, useObtenerPorId } from "../../../hooks/useCadenaValor";
 import { useObtenerStatusPlataforma } from "../../../hooks/useStatusPlataforma";
 import { esCadenaOperativaParaWeb } from "../../../utils/cadenaValorUtils";
@@ -9,7 +10,10 @@ import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 import ErrorServicio from "../../../pages/shared/ErrorServicio/ErrorServicio";
 
 const TenantLayout = () => {
-  const { cadenaSlug } = useParams();
+  // El ID puede venir del path (/:cadenaSlug/...) o del hostname vía
+  // /tenants.json — useCadenaActiva resuelve cuál corresponde, así este
+  // layout es el mismo para los dos modos de ruteo (ver utils/tenantConfig).
+  const { cadenaSlug } = useCadenaActiva();
   const { setChannelInfo } = useChannel();
   const navigate = useNavigate();
   const { data: statusPlataformaData, isLoading: isLoadingStatus } = useObtenerStatusPlataforma();

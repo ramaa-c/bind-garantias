@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSchema";
 import { BarraProgreso, Button, Modal } from "../../../../components/ui";
@@ -25,6 +25,8 @@ import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/ChannelContext";
 import styles from "./AltaDatosEmpresa.module.css";
 import { toast } from "sonner";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 const getCSharpIsoDate = () => {
   const date = new Date();
@@ -81,7 +83,7 @@ export const AltaDatosEmpresa = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { channelInfo } = useChannel();
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaValorId = Number(cadenaSlug);
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
   const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;

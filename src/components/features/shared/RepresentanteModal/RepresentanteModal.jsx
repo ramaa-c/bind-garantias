@@ -24,8 +24,10 @@ import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { tercerosService } from "../../../../services/tercerosService";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import { parseAddress } from "../../../../utils/direccionParser";
-import { useParams } from "react-router-dom";
+
 import styles from "./RepresentanteModal.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 // Motor interno compartido por RepresentanteLegalModal y ApoderadoModal —
 // no se usa directo desde ningún otro lado. `rolFijo` reemplaza al viejo
@@ -44,7 +46,7 @@ export function RepresentanteModal({
   onGuardar,              // Form mode: callback to update parent React Hook Form state
   rolFijo,                // "Representante Legal" | "Apoderado" - lo fija el wrapper, no el usuario.
 }) {
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");

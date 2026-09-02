@@ -40,7 +40,7 @@ const Navbar = ({
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
   const theme = useThemeStore((state) => state.theme);
@@ -88,7 +88,7 @@ const Navbar = ({
 
   const handleLogout = () => {
     clearAuth();
-    navigate(`/${channelInfo.id}/login`);
+    navigate(`${basePath}/login`);
   };
 
   // Logout "suave": tira formularios/empresa activa/verificación de
@@ -98,7 +98,7 @@ const Navbar = ({
   const handleCambiarEmpresa = () => {
     setIsDropdownOpen(false);
     cambiarEmpresa();
-    navigate(`/${channelInfo.id}/seleccionar-empresa`);
+    navigate(`${basePath}/seleccionar-empresa`);
   };
 
   const handleOpenHelp = () => {
@@ -116,7 +116,7 @@ const Navbar = ({
         >
           <FiMenu size={24} color="var(--white)" />
         </button>
-        <div className={styles.logoContainer} role="button" tabIndex={0} onClick={() => navigate(`/${channelInfo.id}/solicitudes`)}>
+        <div className={styles.logoContainer} role="button" tabIndex={0} onClick={() => navigate(`${basePath}/solicitudes`)}>
           <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} />
           {channelInfo.id !== "default" && channelInfo.logo && (
             <>
@@ -241,7 +241,7 @@ const Navbar = ({
         ) : (
           <div className={styles.loginContainer}>
             {texto}
-            <span className={styles.link} role="button" tabIndex={0} onClick={() => navigate(`/${channelInfo.id}${rutaDestino.startsWith('/') ? rutaDestino : '/' + rutaDestino}`)}>
+            <span className={styles.link} role="button" tabIndex={0} onClick={() => navigate(`${basePath}${rutaDestino.startsWith('/') ? rutaDestino : '/' + rutaDestino}`)}>
               {" "}
               {textoEnlace}
             </span>

@@ -17,7 +17,7 @@ export const GuestGuard = ({ children }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const activeSocioId = useAuthStore((state) => state.activeSocioId);
   const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
 
   // Volver a /login con una sesión que nunca se cerró (activeSocioId de la
   // última empresa usada todavía en el store) no debe reanudar en
@@ -39,7 +39,7 @@ export const GuestGuard = ({ children }) => {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+    return <Navigate to={`${basePath}/legajo`} replace />;
   }
 
   return <>{children}</>;
