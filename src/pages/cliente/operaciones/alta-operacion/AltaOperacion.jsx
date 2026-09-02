@@ -62,7 +62,7 @@ const generarIdAleatorio = () => String(Math.floor(Math.random() * 9000) + 1000)
 export const AltaOperacion = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
   const { cadenaSlug } = useCadenaActiva();
 
   const {
@@ -1149,7 +1149,7 @@ export const AltaOperacion = () => {
 
     handleResetFlujoCompleto();
     sessionStorage.setItem("last_used_cuit", data.cuit);
-    navigate(`/${channelInfo?.id}/solicitudes`, { state: { nuevaSolicitud } });
+    navigate(`${basePath}/solicitudes`, { state: { nuevaSolicitud } });
   };
 
   const toggleDoc = (seccion) => {
@@ -1450,7 +1450,7 @@ export const AltaOperacion = () => {
                   onVolver={mostrarBotonVolver ? handleVolverMapped : null}
                   onVolverInicio={
                     pasoActual === 1
-                      ? () => navigate(`/${channelInfo?.id}/solicitudes`)
+                      ? () => navigate(`${basePath}/solicitudes`)
                       : null
                   }
                   onReiniciar={handleClickReiniciar}

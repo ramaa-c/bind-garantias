@@ -115,7 +115,7 @@ const hasMeaningfulData = (dataString) => {
 export default function Solicitudes() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
 
   const { control, register, setValue, reset } = useForm({
     defaultValues: FILTROS_POR_DEFECTO,
@@ -386,7 +386,7 @@ export default function Solicitudes() {
           variant="primary"
           size="sm"
           onClick={() =>
-            handleNuevaOperacion(`/${channelInfo?.id || "default"}/alta-operacion`, "draft_alta_operacion")
+            handleNuevaOperacion(`${basePath}/alta-operacion`, "draft_alta_operacion")
           }
           className={styles.btnNuevaOp}
           disabled={!isValid}

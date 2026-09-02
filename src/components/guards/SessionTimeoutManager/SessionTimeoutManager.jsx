@@ -61,13 +61,13 @@ export const SessionTimeoutManager = () => {
       const sigueAutenticado = useAuthStore.getState().isAuthenticated;
       if (estabaAutenticado && !sigueAutenticado) {
         toast.info("Tu sesión se cerró en otra pestaña.");
-        navigate(resolverLoginPath(location.pathname), { replace: true });
+        navigate(resolverLoginPath(location.pathname, modoPorHost), { replace: true });
       }
     };
 
     window.addEventListener("storage", handleAuthStorage);
     return () => window.removeEventListener("storage", handleAuthStorage);
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, modoPorHost]);
 
   const esAdmin =
     location.pathname.startsWith("/admin") || location.pathname === "/login";

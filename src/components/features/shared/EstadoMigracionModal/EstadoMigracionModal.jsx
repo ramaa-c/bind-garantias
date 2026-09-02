@@ -54,7 +54,7 @@ function ChecklistSection({ icon, title, items }) {
 
 export function EstadoMigracionModal({ isOpen, onClose }) {
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
   const { socioIdActivo, nombreEmpresa, tipoPersonaId } = useEmpresaActiva();
   const { data: socioWeb, isLoading: cargandoSocio } = useSocioWebPorId(socioIdActivo);
   const {
@@ -132,7 +132,7 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   const hero = HERO_POR_ESTADO[estado];
 
   const irA = (path) => {
-    navigate(`/${channelInfo?.id || "default"}${path}`);
+    navigate(`${basePath}${path}`);
     onClose();
   };
 

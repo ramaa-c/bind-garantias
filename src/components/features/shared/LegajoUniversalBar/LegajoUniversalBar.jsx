@@ -37,7 +37,7 @@ export function LegajoUniversalBar({
   const socioIdActivo = adminMode ? socioIdOverride : empresaActiva.socioIdActivo;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
 
   const {
     isValid,
@@ -728,7 +728,6 @@ export function LegajoUniversalBar({
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  const basePath = `/${channelInfo?.id || "default"}`;
                   if (faltanLegajo) {
                     navigate(`${basePath}/legajo`);
                   } else if (faltanDocumentos) {
