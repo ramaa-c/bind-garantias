@@ -20,6 +20,17 @@ import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
 const getCSharpIsoDate = () => new Date().toISOString().split(".")[0];
 
+// Mensaje único para cualquier rechazo de negocio (SGRPlus Core o CDA) - a
+// pedido de BIND (SGRPLUSPLA-174), sin exponer el detalle de qué validación
+// falló ni por qué. El usuario igual puede avanzar (ninguna validación de
+// esta pantalla bloquea el acceso, ver ejecutarCdaYFinalizar más abajo); el
+// motivo real queda registrado para que lo vea un admin, acá solo se avisa
+// que quedó pendiente de revisión. No aplica a errores de sistema (caída de
+// un servicio, red, etc.) - esos sí necesitan su propio mensaje porque
+// ofrecen "Reintentar".
+const MENSAJE_VALIDACION_RECHAZADA =
+  "Registramos algunas observaciones sobre tu empresa. Vas a poder continuar con la carga, pero tu legajo va a quedar pendiente de revisión — nos vamos a poner en contacto si hace falta algo más.";
+
 const formatearCuit = (cuit) => {
   const limpio = String(cuit || "").replace(/\D/g, "");
   if (limpio.length !== 11) return cuit || "";
@@ -291,6 +302,13 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
       const esPendiente = resultCda.errors.some((e) => e.isPendiente);
       ultimoPasoFallidoRef.current = "cda";
 
+      // El detalle real (qué CDA rechazó y por qué) solo se loguea para
+      // debug - al usuario, si es un rechazo/pendiente de negocio, se le
+      // muestra el mensaje genérico (SGRPLUSPLA-174); si en cambio es un
+      // error de sistema (isSystemError) sí se le explica qué pasó, porque
+      // ahí tiene sentido ofrecerle "Reintentar".
+      console.log("[Paso1Cuit] CDA no superado:", resultCda.errors);
+
       setProcesoModal((prev) => ({
         ...prev,
         hasError: true,
@@ -300,10 +318,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
             ? {
                 ...p,
                 estado: esPendiente ? "alerta" : "error",
-                errores: resultCda.errors.map((e) => e.message),
-                error:
-                  resultCda.errors.find((e) => e.isInvalidante)?.message ||
-                  "No pudimos completar la validación.",
+                error: esErrorSistema
+                  ? resultCda.errors.find((e) => e.isInvalidante)?.message ||
+                    "No pudimos completar la validación."
+                  : MENSAJE_VALIDACION_RECHAZADA,
               }
             : p,
         ),
@@ -366,6 +384,10 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         sgrCoreMensaje =
           resultSgrCore.data.message ||
           "El socio no cumple con los requisitos del sistema.";
+        // El motivo real solo se loguea (para debug) - a partir de acá se le
+        // muestra al usuario el mensaje genérico (MENSAJE_VALIDACION_RECHAZADA,
+        // ver más abajo), no este detalle (SGRPLUSPLA-174).
+        console.log("[Paso1Cuit] SGRPlus Core rechazó al socio:", sgrCoreMensaje);
       }
     } catch (sgrError) {
       if (sgrError?.response?.status !== 404) {
@@ -385,8 +407,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
             ? {
                 ...p,
                 estado: "error",
-                errores: [sgrCoreMensaje],
-                error: "Rechazado por SGRPlus",
+                error: MENSAJE_VALIDACION_RECHAZADA,
               }
             : { ...p, estado: "completado" }
           : p.id === "pyme"
@@ -459,32 +480,31 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
       pasos: [
         {
           id: "socio",
-          etiqueta: "Registrando la empresa",
+          etiqueta: "Registro Inicial",
           estado: yaCruzoUmbral ? "completado" : "cargando",
-          descripcion: "Guardando los datos de tu empresa en el sistema.",
+          descripcion: "Datos iniciales registrados con éxito.",
         },
         {
           id: "sgrcore",
-          etiqueta: "Verificando la empresa",
+          etiqueta: "Validación de Información",
           estado: !yaCruzoUmbral
             ? "pendiente"
             : pasoQueFallo === "cda"
               ? "completado"
               : "cargando",
-          descripcion: "Comprobando el estado de la empresa en nuestro sistema.",
+          descripcion: "Verificación de información básica completada.",
         },
         {
           id: "pyme",
-          etiqueta: "Verificando Certificado PyME",
+          etiqueta: "Revisión Detallada y Complementaria",
           estado: yaCruzoUmbral && pasoQueFallo === "cda" ? "completado" : "pendiente",
-          descripcion: "Comprobando la vigencia del certificado PyME.",
+          descripcion: "Estamos procesando verificaciones detalladas en curso.",
         },
         {
           id: "cda",
-          etiqueta: "Verificando requisitos",
+          etiqueta: "Finalización de la Solicitud",
           estado: yaCruzoUmbral && pasoQueFallo === "cda" ? "cargando" : "pendiente",
-          descripcion:
-            "Comprobando políticas de riesgo y negocio para el alta.",
+          descripcion: "Últimos chequeos antes de la decisión final.",
         },
       ],
       hasError: false,

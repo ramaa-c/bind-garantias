@@ -8,7 +8,7 @@ import { SelectSimple, SelectFechaSimple } from "../../../components/ui";
 import { Skeleton } from "../../../components/ui";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
-import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
+import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
 import { useObtenerSocios } from "../../../hooks/useSocios";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
@@ -105,7 +105,16 @@ export default function Dashboard() {
   const [isChainModalOpen, setIsChainModalOpen] = useState(false);
   const [chainSearchQuery, setChainSearchQuery] = useState("");
   const { isRestricted, cadenas } = useAdminRestrictions();
-  const { data: activeCadenas } = useObtenerTodasWeb();
+  // useObtenerTodasWeb trae TODAS las cadenas configuradas en la web, estén
+  // activas o no - useObtenerTodasWebConEstado suma "activaOperativa"
+  // (mismo criterio que usa TenantLayout para decidir si una cadena es
+  // navegable), así el filtro de acá solo ofrece las que realmente están
+  // operativas.
+  const { data: todasCadenasConEstado } = useObtenerTodasWebConEstado();
+  const activeCadenas = useMemo(
+    () => (todasCadenasConEstado || []).filter((c) => c.activaOperativa),
+    [todasCadenasConEstado],
+  );
 
   const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
   const { data: limitesData, isLoading: isLoadingLimites } =

@@ -9,7 +9,7 @@ import {
   useCrearUsuario
 } from "../../../../hooks/useUsuario";
 import { usuarioService } from "../../../../services/usuarioService";
-import { useChannel } from "../../../../context/ChannelContext";
+import { resolverUrlPublicaCadena } from "../../../../utils/tenantConfig";
 import styles from "./UsuariosRelacionadosModal.module.css";
 import { FiPlus, FiX, FiUserPlus } from "react-icons/fi";
 
@@ -21,7 +21,6 @@ const esAdministradorActivo = (registro) => {
 };
 
 export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
-  const { channelInfo } = useChannel();
   const [showForm, setShowForm] = useState(false);
   const [searchEmail, setSearchEmail] = useState("");
   const [isCreatingUser, setIsCreatingUser] = useState(false);
@@ -81,20 +80,21 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
 
     setIsCreatingUser(true);
 
-    const canalId = (channelInfo?.id && channelInfo.id !== "default" && channelInfo.id !== "bind") ? channelInfo.id : "canal1";
-
-    const payloadNuevoUsuario = {
-      email: trimmedEmail,
-      fchalta: getCSharpIsoDate(),
-      fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: canalId,
-      estado: "",
-      debecambiarclave: "",
-      esadministrador: "",
-      denominacion: canalId,
-    };
-
     try {
+      const frontUrl = await resolverUrlPublicaCadena(activeItem.cadenavalorid);
+
+      const payloadNuevoUsuario = {
+        email: trimmedEmail,
+        fchalta: getCSharpIsoDate(),
+        fchvencimiento: getCSharpIsoDate(1),
+        hashseguridad: "",
+        estado: "",
+        debecambiarclave: "",
+        esadministrador: "",
+        denominacion: trimmedEmail,
+        fronturl: frontUrl,
+      };
+
       let userId = null;
       let targetUser = null;
 

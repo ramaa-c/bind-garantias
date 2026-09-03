@@ -45,19 +45,18 @@ const ConfirmarCorreo = () => {
       return date.toISOString().split(".")[0];
     };
 
-    const canalId = channelInfo.id;
-
     reenviarCorreo(
       {
         email: emailUsuario,
         usuariowebid: 0,
         fchalta: usuarioSkeletor?.fchalta || getCSharpIsoDate(),
         fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(1),
-        hashseguridad: canalId,
+        hashseguridad: "",
         estado: "",
         debecambiarclave: "",
         esadministrador: "",
-        denominacion: canalId,
+        denominacion: emailUsuario,
+        fronturl: window.location.origin + basePath,
       },
       {
         onSuccess: () => {

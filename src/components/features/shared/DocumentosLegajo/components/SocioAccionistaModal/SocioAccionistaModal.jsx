@@ -1261,7 +1261,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       label="Email"
                       icon={<FiMail />}
                       error={fieldState.error?.message}
-                      tooltip="Email que se utilizará para el envío de notificaciones societarias y comunicaciones de negocio."
+                      tooltip="Email personal del accionista, utilizado para el envío de notificaciones societarias y comunicaciones de negocio. No usar casillas genéricas (ej. administración@...)."
                     />
                   )}
                 />

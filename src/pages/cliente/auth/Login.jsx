@@ -281,11 +281,12 @@ const Login = () => {
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: canalId,
+      hashseguridad: "",
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: canalId,
+      denominacion: emailPendiente,
+      fronturl: window.location.origin + basePath,
     };
 
     try {

@@ -1,6 +1,8 @@
 {
-  "_comentario": "Mapeo hostname (minusculas, sin protocolo ni puerto) -> CadenaValorID numerico. Editable aca mismo en IIS, sin rebuild. Ej: \"jhondeere.bindgarantias.com.ar\": 950225. Un hostname que no figure aca cae en modo legacy (admin + /:cadenaSlug/* de siempre).",
+  "_comentario": "Mapeo hostname (minusculas, sin protocolo ni puerto) -> CadenaValorID numerico. Editable aca mismo en IIS, sin rebuild. Un hostname que no figure aca cae en modo legacy (admin + /:cadenaSlug/* de siempre).",
+  "_comentario_admin": "El admin (admin.bindgarantias.com.ar) no necesita entrada aca: al no figurar en \"cadenas\", cae directo en modo legacy, donde vive /admin y /login.",
   "cadenas": {
-    "jhondeere.bindgarantias.com.ar": 950225
+    "comafi.bindgarantias.com.ar": 950225,
+    "banconacion.bindgarantias.com.ar": 950274
   }
 }

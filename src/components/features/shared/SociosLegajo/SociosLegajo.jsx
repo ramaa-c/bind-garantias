@@ -483,7 +483,16 @@ export function SociosLegajo({
                         en full HD eso forzaba scroll dentro del panel. Una
                         sola card con los 8 campos en grilla ocupa menos de la
                         mitad de alto y sigue siendo igual de escaneable
-                        (cada campo ya tiene su propia etiqueta). */}
+                        (cada campo ya tiene su propia etiqueta).
+                        Los 3 grupos comparten una única grilla (antes cada
+                        uno tenía su propio <dl> con auto-fit, así que el
+                        ancho de columna se recalculaba por separado y las
+                        filas no quedaban alineadas entre sí - un grupo de 3
+                        campos se veía más "ancho" que uno de 5). Con una
+                        sola grilla, el ancho de columna es el mismo para
+                        toda la card; el rótulo de cada grupo ocupa la fila
+                        completa y fuerza el corte de línea, sin perder la
+                        alineación. */}
                     <section className={`${styles.perfilSection} ${styles.glassCard}`}>
                       <h5 className={styles.perfilSectionTitle}>
                         <span className={`${styles.perfilSectionIcon} ${adminMode ? styles.perfilSectionIconAdmin : ""}`}>
@@ -491,8 +500,9 @@ export function SociosLegajo({
                         </span>
                         Información de la empresa
                       </h5>
-                      <div className={styles.perfilGroup}>
-                        <dl className={styles.perfilRowsGrid}>
+                      <dl className={styles.perfilRowsGrid}>
+                        <div className={styles.perfilGroupLabel}>Contacto</div>
+                        <div className={styles.perfilContactoRow}>
                           <div className={styles.perfilCelda}>
                             <dt className={styles.dtContacto}><FiMail size={12} /> Email</dt>
                             <dd className={email ? "" : styles.perfilVacio}>{email || "—"}</dd>
@@ -507,50 +517,40 @@ export function SociosLegajo({
                             <dt className={styles.dtContacto}><FiFileText size={12} /> Email de facturación</dt>
                             <dd className={emailFacturacion ? "" : styles.perfilVacio}>{emailFacturacion || "—"}</dd>
                           </div>
-                        </dl>
-                      </div>
+                        </div>
 
-                      {/* Sola en su propio grupo: al ser el único ítem de su
-                          grilla (auto-fit colapsa las columnas vacías),
-                          ocupa el ancho completo sin necesitar un override
-                          aparte. */}
-                      <div className={styles.perfilGroup}>
-                        <dl className={styles.perfilRowsGrid}>
-                          <div className={styles.perfilCelda}>
-                            <dt className={styles.dtUbicacion}><FiMapPin size={12} /> Dirección</dt>
-                            <dd className={domicilioCompleto ? "" : styles.perfilVacio}>{domicilioCompleto || "—"}</dd>
-                          </div>
-                        </dl>
-                      </div>
+                        <div className={styles.perfilGroupLabel}>Ubicación</div>
+                        <div className={`${styles.perfilCelda} ${styles.perfilCeldaFull}`}>
+                          <dt className={styles.dtUbicacion}><FiMapPin size={12} /> Dirección</dt>
+                          <dd className={domicilioCompleto ? "" : styles.perfilVacio}>{domicilioCompleto || "—"}</dd>
+                        </div>
 
-                      <div className={styles.perfilGroup}>
-                        <dl className={styles.perfilRowsGrid}>
-                          <div className={styles.perfilCelda}>
-                            <dt className={styles.dtComercial}><FiUsers size={12} /> Tamaño de empresa</dt>
-                            <dd className={tamanioEmpresaLabel ? "" : styles.perfilVacio}>{tamanioEmpresaLabel || "—"}</dd>
-                          </div>
-                          <div className={styles.perfilCelda}>
-                            <dt className={styles.dtComercial}><FiActivity size={12} /> Situación BCRA</dt>
-                            <dd className={situacionBcraLabel ? "" : styles.perfilVacio}>{situacionBcraLabel || "—"}</dd>
-                          </div>
-                          <div className={styles.perfilCelda}>
-                            <dt className={styles.dtComercial}><FiShare2 size={12} /> Canal de comercialización</dt>
-                            <dd className={canalComercializacionLabel ? "" : styles.perfilVacio}>{canalComercializacionLabel || "—"}</dd>
-                          </div>
-                          <div className={styles.perfilCelda}>
-                            <dt className={styles.dtComercial}><FiCalendar size={12} /> Inicio de actividades</dt>
-                            <dd className={formatFecha(fechaInicioActividades) ? "" : styles.perfilVacio}>
-                              {formatFecha(fechaInicioActividades) || "—"}
-                            </dd>
-                          </div>
-                          <div className={styles.perfilCelda}>
-                            <dt className={styles.dtComercial}><FiCalendar size={12} /> Cierre de ejercicio</dt>
-                            <dd className={formatFecha(fechaCierreEjercicio) ? "" : styles.perfilVacio}>
-                              {formatFecha(fechaCierreEjercicio) || "—"}
-                            </dd>
-                          </div>
-                        </dl>
-                      </div>
+                        <div className={styles.perfilGroupLabel}>Datos comerciales</div>
+                        <div className={styles.perfilCelda}>
+                          <dt className={styles.dtComercial}><FiUsers size={12} /> Tamaño de empresa</dt>
+                          <dd className={tamanioEmpresaLabel ? "" : styles.perfilVacio}>{tamanioEmpresaLabel || "—"}</dd>
+                        </div>
+                        <div className={styles.perfilCelda}>
+                          <dt className={styles.dtComercial}><FiActivity size={12} /> Situación BCRA</dt>
+                          <dd className={situacionBcraLabel ? "" : styles.perfilVacio}>{situacionBcraLabel || "—"}</dd>
+                        </div>
+                        <div className={styles.perfilCelda}>
+                          <dt className={styles.dtComercial}><FiShare2 size={12} /> Canal de comercialización</dt>
+                          <dd className={canalComercializacionLabel ? "" : styles.perfilVacio}>{canalComercializacionLabel || "—"}</dd>
+                        </div>
+                        <div className={styles.perfilCelda}>
+                          <dt className={styles.dtComercial}><FiCalendar size={12} /> Inicio de actividades</dt>
+                          <dd className={formatFecha(fechaInicioActividades) ? "" : styles.perfilVacio}>
+                            {formatFecha(fechaInicioActividades) || "—"}
+                          </dd>
+                        </div>
+                        <div className={styles.perfilCelda}>
+                          <dt className={styles.dtComercial}><FiCalendar size={12} /> Cierre de ejercicio</dt>
+                          <dd className={formatFecha(fechaCierreEjercicio) ? "" : styles.perfilVacio}>
+                            {formatFecha(fechaCierreEjercicio) || "—"}
+                          </dd>
+                        </div>
+                      </dl>
                     </section>
                   </div>
                 ) : isUsuarios ? (

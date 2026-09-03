@@ -1104,7 +1104,7 @@ export function RepresentanteModal({
                       label="Correo Electrónico"
                       icon={<FiMail />}
                       error={fieldState.error?.message}
-                      tooltip="Email personal del representante. Se utilizará para el envío y firma digital de contratos y documentos legales."
+                      tooltip="Email personal del representante. Se utilizará para el envío y firma digital de contratos y documentos legales. No usar casillas genéricas (ej. administración@...)."
                     />
                   )}
                 />

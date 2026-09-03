@@ -542,24 +542,64 @@
   color: #8a9fff;
 }
 
-/* Un solo card (no 3 separadas, eso forzaba scroll en full HD - ver el
-   comentario en el JSX) pero con los 3 grupos de color divididos por una
-   línea sutil, no por bordes/sombras propias: separa sin sumar el peso
-   visual ni el alto de una card completa por grupo. */
-.perfilGroup + .perfilGroup {
-  border-top: 1px solid rgba(var(--overlay-rgb), 0.07);
-  padding-top: 0.85rem;
-}
-
-/* Grilla densa de campos label/valor dentro de cada grupo: con columnas
-   angostas entran 3-4 por fila en vez de 2. auto-fit colapsa las columnas
-   vacías, así que un grupo con un solo campo (Dirección) ya ocupa el
-   ancho completo sin necesitar un override aparte. */
+/* Grilla densa de campos label/valor: los 3 grupos (Contacto/Ubicación/
+   Datos comerciales) comparten UNA sola grilla en vez de tener cada uno la
+   suya - con columnas angostas entran 3-5 por fila en vez de 2, y al ser
+   una sola grilla el ancho de columna es el mismo en todas las filas (con
+   grillas separadas por grupo, auto-fit recalculaba el ancho según la
+   cantidad de campos de CADA grupo, y un grupo de 3 quedaba con columnas
+   más anchas que uno de 5 - se perdía la alineación vertical entre filas,
+   que es lo que hacía sentir la card "desordenada"). */
 .perfilRowsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
   gap: 0.85rem 1.5rem;
   margin: 0;
+}
+
+/* Rótulo de grupo: ocupa la fila completa (grid-column 1/-1), así corta la
+   grilla en una fila nueva sin romper la alineación de columnas de las
+   filas de arriba/abajo. Es la única pista textual de a qué grupo
+   pertenece cada campo - antes esa info salía solo del color del dt y de
+   una línea divisoria, sin ningún rótulo. */
+.perfilGroupLabel {
+  grid-column: 1 / -1;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.perfilGroupLabel:not(:first-child) {
+  margin-top: 0.15rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.07);
+}
+
+/* Fila de Contacto con proporciones propias en vez de columnas parejas:
+   Email suele ser el valor más largo del grupo (a diferencia de Teléfono/
+   Email de facturación) y con el mismo ancho que sus vecinos no le entraba
+   el texto. 44/23/33% le da a Email un poco más de aire sin comerse toda
+   la fila (grid-column: span dejaba a Teléfono solo en su propia fila
+   cuando el contenedor era angosto - esto es más predecible). */
+.perfilContactoRow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1.4fr 0.7fr 1fr;
+  gap: 0.85rem 1.5rem;
+}
+
+@media (max-width: 48rem) {
+  .perfilContactoRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dirección es el único campo de su grupo: sin esto quedaría del ancho de
+   una sola columna en vez de aprovechar la fila entera. */
+.perfilCeldaFull {
+  grid-column: 1 / -1;
 }
 
 .perfilCelda {

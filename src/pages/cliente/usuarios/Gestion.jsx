@@ -17,9 +17,11 @@ import {
 import { BuscadorListado } from "../../../components/ui/BuscadorListado/BuscadorListado";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import Spinner from "../../../components/ui/Spinner/Spinner";
+import { useChannel } from "../../../context/ChannelContext";
 import styles from "./Gestion.module.css";
 
 export const Gestion = () => {
+  const { basePath } = useChannel();
   const [terminoBusqueda, setTerminoBusqueda] = useState("");
   const [debouncedBusqueda] = useDebounce(terminoBusqueda, 400);
   const [paginaActual, setPaginaActual] = useState(1);
@@ -64,13 +66,31 @@ export const Gestion = () => {
     }
   };
 
-  const handleResetPassword = async (identificador) => {
+  const getCSharpIsoDate = (addYears = 0) => {
+    const date = new Date();
+    if (addYears) date.setFullYear(date.getFullYear() + addYears);
+    return date.toISOString().split(".")[0];
+  };
+
+  const handleResetPassword = async (usuario) => {
     if (
       window.confirm(
         "Se enviará un correo de reseteo a este usuario. ¿Continuar?",
       )
     ) {
-      await mutationReset.mutateAsync(identificador);
+      const payloadReset = {
+        email: usuario.email,
+        usuariowebid: usuario.usuariowebid || usuario.usuarioid || usuario.id,
+        fchalta: getCSharpIsoDate(),
+        fchvencimiento: getCSharpIsoDate(1),
+        hashseguridad: "",
+        estado: "",
+        debecambiarclave: "",
+        esadministrador: "",
+        denominacion: usuario.email,
+        fronturl: window.location.origin + basePath,
+      };
+      await mutationReset.mutateAsync(payloadReset);
       alert("Solicitud de reseteo enviada con éxito.");
     }
   };
@@ -194,9 +214,7 @@ export const Gestion = () => {
                         <button type="button"
                           className={styles.actionButton}
                           title="Reinicio de Contraseña"
-                          onClick={() =>
-                            handleResetPassword(u.email || u.usuarioid || u.id)
-                          }
+                          onClick={() => handleResetPassword(u)}
                           disabled={mutationReset.isPending}
                         >
                           <FiRotateCcw />
