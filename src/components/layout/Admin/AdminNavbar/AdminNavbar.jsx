@@ -6,6 +6,7 @@ import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./AdminNavbar.module.css";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useAdminRestrictions } from "../../../../hooks/useAdminRestrictions";
+import { useChannel } from "../../../../context/ChannelContext";
 import { CuentaUsuarioModal } from "../../../features/admin/CuentaUsuarioModal/CuentaUsuarioModal";
 
 export default function AdminNavbar() {
@@ -13,7 +14,8 @@ export default function AdminNavbar() {
   const location = useLocation();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const user = useAuthStore((state) => state.user);
-  const { isRestricted } = useAdminRestrictions();
+  const { isRestricted, cadenas } = useAdminRestrictions();
+  const { modoPorHost } = useChannel();
 
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -39,8 +41,24 @@ export default function AdminNavbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Un UsuarioCadenaValor (admin restringido a su/s cadena/s, ver
+  // Login.jsx → resolverDestinoPostLogin) entró por el login de cliente de
+  // su banco, no por el de admin — al desloguearse tiene que volver ahí, no
+  // a /login (que es el ingreso de un Administrador General). En
+  // modo-por-host ya estamos en el dominio correcto de ese banco, así que
+  // "/login" ahí adentro ES el login de cliente — solo en modo legacy hace
+  // falta reconstruir /{cadenaId}/login a mano.
   const handleLogout = () => {
     if (clearAuth) clearAuth();
+
+    if (!modoPorHost && isRestricted && cadenas.length > 0) {
+      const cadenaId = cadenas[0]?.cadenavalorid ?? cadenas[0]?.CadenaValorID;
+      if (cadenaId) {
+        navigate(`/${cadenaId}/login`);
+        return;
+      }
+    }
+
     navigate("/login");
   };
 

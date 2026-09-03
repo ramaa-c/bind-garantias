@@ -3,6 +3,6 @@
   "_comentario_admin": "El admin (admin.bindgarantias.com.ar) no necesita entrada aca: al no figurar en \"cadenas\", cae directo en modo legacy, donde vive /admin y /login.",
   "cadenas": {
     "comafi.bindgarantias.com.ar": 950225,
-    "banconacion.bindgarantias.com.ar": 950274
+    "bna.bindgarantias.com.ar": 950274
   }
 }

@@ -17,6 +17,53 @@ import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
+const parsearRegistroUsuario = (db) => {
+  if (!db) return null;
+  if (Array.isArray(db)) return db[0] || null;
+  if (db.items) return db.items[0] || null;
+  if (db.data) return db.data[0] || null;
+  return db;
+};
+
+const parsearCadenas = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (data.items) return data.items;
+  if (data.data) return data.data;
+  if (typeof data === "object" && Object.keys(data).length > 0) return [data];
+  return [];
+};
+
+// Un usuario vinculado a una o más cadenas de valor (UsuarioCadenaValor) es
+// un admin restringido (ve el panel admin acotado a sus propias cadenas —
+// ver useAdminRestrictions) aunque nunca haya entrado por /login de admin:
+// entra por el login normal de SU banco, como cualquier cliente, y de acá
+// hay que mandarlo al admin en vez de a su legajo (que ni siquiera tiene,
+// porque no es dueño de ningún Socio). AdminGuard no valida el "role" que
+// se setea al loguear, así que no hace falta nada especial del lado del
+// guard — solo decidir bien el destino acá.
+const resolverDestinoPostLogin = async (email, basePath) => {
+  try {
+    const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
+    const registro = parsearRegistroUsuario(usuarioDb);
+    const usuarioWebId =
+      registro?.usuariowebid ?? registro?.UsuarioWebID ?? registro?.id ?? null;
+    if (!usuarioWebId) return `${basePath}/legajo`;
+
+    // ⚠️ El backend filtra por el param "usuarioid" (no "usuariowebid") —
+    // ver el mismo aviso en useAdminRestrictions.js.
+    const cadenasData = await usuarioService.obtenerUsuariosRelacionados({
+      usuarioid: usuarioWebId,
+    });
+    const tieneCadenas = parsearCadenas(cadenasData).length > 0;
+    return tieneCadenas ? "/admin" : `${basePath}/legajo`;
+  } catch {
+    // Ante cualquier falla de esta verificación extra, seguir el camino
+    // normal en vez de bloquear el login por completo.
+    return `${basePath}/legajo`;
+  }
+};
+
 const emailSchema = z.object({
   email: z
     .string()
@@ -398,7 +445,8 @@ const Login = () => {
     if (fase === "validacion_otp") {
       if (formData.otp === generatedOtp) {
         setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
-        navigate(`${basePath}/legajo`, { replace: true });
+        const destino = await resolverDestinoPostLogin(formData.email, basePath);
+        navigate(destino, { replace: true });
       } else {
         setError("otp", { type: "server", message: "Código incorrecto" });
       }
@@ -409,9 +457,10 @@ const Login = () => {
       iniciarSesion(
         { email: formData.email, password: formData.password },
         {
-          onSuccess: () => {
+          onSuccess: async () => {
             setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
-            navigate(`${basePath}/legajo`, { replace: true });
+            const destino = await resolverDestinoPostLogin(formData.email, basePath);
+            navigate(destino, { replace: true });
           },
           onError: async (error) => {
             const status = error?.response?.status;

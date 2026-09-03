@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useChannel } from "../../../context/ChannelContext";
+import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useSessionTimeout } from "../../../hooks/useSessionTimeout";
 import { ConfirmacionModal } from "../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { SessionExpiryNotice } from "./SessionExpiryNotice";
@@ -18,9 +19,21 @@ const WARNING_MS = 60 * 1000;
 // legacy el slug real se saca directo de la URL, igual que hace cada guard;
 // en modo por host no hay slug en el path y el login del cliente es
 // directamente "/login" (ver utils/tenantConfig.js).
-const resolverLoginPath = (pathname, modoPorHost) => {
+//
+// Un UsuarioCadenaValor (admin restringido a su/s cadena/s) entró por el
+// login de cliente de su banco, no por el de admin — si el timeout lo agarra
+// en /admin/*, tiene que volver ahí, no al login de Administrador General
+// (mismo criterio que AdminNavbar.jsx → handleLogout). En modo-por-host
+// "/login" ya es el correcto sin hacer nada más.
+const resolverLoginPath = (pathname, modoPorHost, isRestricted, cadenas) => {
   if (modoPorHost) return "/login";
-  if (pathname === "/login" || pathname.startsWith("/admin")) return "/login";
+  if (pathname === "/login" || pathname.startsWith("/admin")) {
+    if (isRestricted && cadenas?.length > 0) {
+      const cadenaId = cadenas[0]?.cadenavalorid ?? cadenas[0]?.CadenaValorID;
+      if (cadenaId) return `/${cadenaId}/login`;
+    }
+    return "/login";
+  }
   const cadenaSlug = pathname.split("/")[1];
   return cadenaSlug ? `/${cadenaSlug}/login` : "/login";
 };
@@ -31,11 +44,12 @@ export const SessionTimeoutManager = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { modoPorHost } = useChannel();
+  const { isRestricted, cadenas } = useAdminRestrictions();
 
   const handleTimeout = () => {
     clearAuth();
     toast.info("Tu sesión se cerró por inactividad.");
-    navigate(resolverLoginPath(location.pathname, modoPorHost), { replace: true });
+    navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
   };
 
   const { showWarning, secondsLeft, extenderSesion } = useSessionTimeout({
@@ -61,13 +75,13 @@ export const SessionTimeoutManager = () => {
       const sigueAutenticado = useAuthStore.getState().isAuthenticated;
       if (estabaAutenticado && !sigueAutenticado) {
         toast.info("Tu sesión se cerró en otra pestaña.");
-        navigate(resolverLoginPath(location.pathname, modoPorHost), { replace: true });
+        navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
       }
     };
 
     window.addEventListener("storage", handleAuthStorage);
     return () => window.removeEventListener("storage", handleAuthStorage);
-  }, [navigate, location.pathname, modoPorHost]);
+  }, [navigate, location.pathname, modoPorHost, isRestricted, cadenas]);
 
   const esAdmin =
     location.pathname.startsWith("/admin") || location.pathname === "/login";

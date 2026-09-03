@@ -6,10 +6,8 @@ import {
   useObtenerUsuariosRelacionados,
   useCrearUsuarioCadenaValor,
   useActualizarUsuarioCadenaValor,
-  useCrearUsuario
 } from "../../../../hooks/useUsuario";
 import { usuarioService } from "../../../../services/usuarioService";
-import { resolverUrlPublicaCadena } from "../../../../utils/tenantConfig";
 import styles from "./UsuariosRelacionadosModal.module.css";
 import { FiPlus, FiX, FiUserPlus } from "react-icons/fi";
 
@@ -23,7 +21,7 @@ const esAdministradorActivo = (registro) => {
 export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
   const [showForm, setShowForm] = useState(false);
   const [searchEmail, setSearchEmail] = useState("");
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isVinculando, setIsVinculando] = useState(false);
 
   // Queries & Mutations
   const { data: relationsData, isLoading: loadingRelations, error: errorRelations } =
@@ -31,7 +29,6 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
 
   const linkMutation = useCrearUsuarioCadenaValor();
   const updateMutation = useActualizarUsuarioCadenaValor();
-  const createUserMutation = useCrearUsuario();
 
   const relationsList = relationsData || EMPTY_ARRAY;
 
@@ -68,90 +65,40 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
     fetchEmails();
   }, [relationsList]);
 
-  const getCSharpIsoDate = (addYears = 0) => {
-    const date = new Date();
-    if (addYears) date.setFullYear(date.getFullYear() + addYears);
-    return date.toISOString().split(".")[0];
-  };
-
-  const handleCreateAndLink = async () => {
+  // Los usuarios se autoregistran desde el login de su banco (ver
+  // Registro.jsx) — el admin nunca los da de alta, solo busca y vincula a
+  // uno que ya existe. Si no lo encuentra, hay que avisarle a la persona
+  // que todavía no se registró en vez de crearle la cuenta desde acá.
+  const handleVincular = async () => {
     const trimmedEmail = searchEmail.trim().toLowerCase();
     if (!trimmedEmail) return;
 
-    setIsCreatingUser(true);
+    setIsVinculando(true);
 
     try {
-      const frontUrl = await resolverUrlPublicaCadena(activeItem.cadenavalorid);
-
-      const payloadNuevoUsuario = {
-        email: trimmedEmail,
-        fchalta: getCSharpIsoDate(),
-        fchvencimiento: getCSharpIsoDate(1),
-        hashseguridad: "",
-        estado: "",
-        debecambiarclave: "",
-        esadministrador: "",
-        denominacion: trimmedEmail,
-        fronturl: frontUrl,
-      };
-
-      let userId = null;
       let targetUser = null;
-
-      // 1. Check if user already exists
       try {
         const userData = await usuarioService.obtenerPorNombreOEmail(trimmedEmail);
         targetUser = Array.isArray(userData)
           ? userData[0]
           : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
-        userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
       } catch {
-        // User not found, we will create them below
+        targetUser = null;
       }
 
-      if (!userId) {
-        // 2. Call create endpoint only if user doesn't exist
-        try {
-          const createdUser = await createUserMutation.mutateAsync(payloadNuevoUsuario);
-          userId = createdUser?.usuariowebid || createdUser?.usuarioid || createdUser?.id || createdUser?.data?.usuariowebid || createdUser?.data?.usuarioid || createdUser?.data?.id || createdUser?.UsuarioWebID;
-        } catch (createErr) {
-          const errMsg = createErr.response?.data?.message || createErr.response?.data || createErr.message || "";
-          const isAlreadyExists =
-            createErr.response?.status === 409 ||
-            createErr.response?.status === 400 ||
-            errMsg.toLowerCase().includes("existe") ||
-            errMsg.toLowerCase().includes("vinculado");
-
-          if (isAlreadyExists) {
-            // User already exists, retrieve ID to proceed with linking
-            const userData = await usuarioService.obtenerPorNombreOEmail(trimmedEmail);
-            targetUser = Array.isArray(userData)
-              ? userData[0]
-              : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
-            userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
-          } else {
-            throw createErr;
-          }
-        }
-        
-        if (!userId) {
-          // Fallback query
-          const userData = await usuarioService.obtenerPorNombreOEmail(trimmedEmail);
-          targetUser = Array.isArray(userData)
-            ? userData[0]
-            : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
-          userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
-        }
-      }
+      const userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
 
       if (!userId) {
-        throw new Error("No se pudo obtener el ID del usuario.");
+        toast.error("Usuario no encontrado", {
+          description: "Todavía no se registró. Pedile que entre al login de esta cadena y se registre primero.",
+        });
+        return;
       }
 
       // Un Administrador General ya tiene acceso a todas las cadenas de
       // valor: no tiene sentido (ni corresponde) vincularlo a una en
       // particular como usuario de cadena.
-      if (targetUser && esAdministradorActivo(targetUser)) {
+      if (esAdministradorActivo(targetUser)) {
         toast.error("No se puede vincular este usuario", {
           description:
             "Es Administrador General y ya tiene acceso a todas las cadenas de valor.",
@@ -159,7 +106,6 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
         return;
       }
 
-      // 3. Link user to value chain
       const payloadLink = {
         usuariocadenavalorid: 0,
         cadenavalorid: Number(activeItem.cadenavalorid),
@@ -188,10 +134,10 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       setSearchEmail("");
       setShowForm(false);
     } catch (err) {
-      console.error("Error creating and linking user:", err);
+      console.error("Error linking user:", err);
       toast.error(err.response?.data?.message || err.message || "Ocurrió un error al vincular el usuario.");
     } finally {
-      setIsCreatingUser(false);
+      setIsVinculando(false);
     }
   };
 
@@ -248,10 +194,10 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
           </button>
         </div>
 
-        {/* Inline Registration and Link Form */}
+        {/* Inline Link Form */}
         {showForm && (
           <div className={styles.formContainer}>
-            <h4 className={styles.formTitle}>Registrar y Vincular Nuevo Usuario</h4>
+            <h4 className={styles.formTitle}>Vincular Usuario Existente</h4>
             <div className={styles.formRow}>
               <div className={styles.inputWrap}>
                 <InputSimple
@@ -261,13 +207,13 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
                   onChange={(val) => {
                     setSearchEmail(val);
                   }}
-                  disabled={isCreatingUser}
+                  disabled={isVinculando}
                 />
               </div>
               <Button
                 variant="blue"
-                onClick={handleCreateAndLink}
-                isLoading={isCreatingUser}
+                onClick={handleVincular}
+                isLoading={isVinculando}
                 disabled={!searchEmail.trim()}
               >
                 <FiUserPlus style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> VINCULAR
