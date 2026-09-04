@@ -8,3 +8,15 @@ export const extraerRegistroUsuario = (db) => {
   if (db.data) return db.data[0] || null;
   return db;
 };
+
+// Nombre de usuario legible a partir del email, para precargar Denominacion
+// al dar de alta la cuenta (el usuario puede cambiarlo después desde "Mi
+// cuenta") - toma la parte antes del @ y reemplaza separadores comunes por
+// espacios: "ramiro_gabriel@..." -> "ramiro gabriel".
+export const denominacionDesdeEmail = (email) => {
+  const local = String(email || "").split("@")[0] || "";
+  return local
+    .replace(/[._\-+]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};

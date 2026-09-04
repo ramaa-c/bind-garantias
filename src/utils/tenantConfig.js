@@ -23,23 +23,29 @@ const CLAVE_OVERRIDE = "bind-cadena-override";
 
 // Override para desarrollo: en localhost no hay DNS de cada banco, así que
 // se puede forzar la cadena con ?cadena=950274. Queda guardado en
-// sessionStorage porque el query param se pierde en la primera navegación
-// interna de react-router (y sería insufrible tener que reponerlo a mano en
-// cada pantalla). Se limpia solo al cerrar la pestaña.
+// localStorage (no sessionStorage) porque el query param se pierde en la
+// primera navegación interna de react-router (y sería insufrible tener que
+// reponerlo a mano en cada pantalla) - y porque "Cerrar sesión" limpia TODO
+// sessionStorage (ver limpiarStorageEfimero en useAuthStore), lo que borraba
+// también este override: al perderlo, un F5 o pestaña nueva después de
+// cerrar sesión en una cadena de prueba caía a MODO_LEGACY y mandaba a
+// /login de admin en vez del login de esa cadena. Nunca afecta a
+// producción: ahí la cadena siempre se resuelve por el hostname real, antes
+// de que este override llegue a mirarse.
 const leerOverrideDesarrollo = () => {
   if (typeof window === "undefined") return null;
 
   try {
     const enUrl = new URLSearchParams(window.location.search).get(PARAM_OVERRIDE);
     if (enUrl) {
-      window.sessionStorage?.setItem(CLAVE_OVERRIDE, enUrl);
+      window.localStorage?.setItem(CLAVE_OVERRIDE, enUrl);
       return Number(enUrl) || null;
     }
-    const guardado = window.sessionStorage?.getItem(CLAVE_OVERRIDE);
+    const guardado = window.localStorage?.getItem(CLAVE_OVERRIDE);
     return guardado ? Number(guardado) || null : null;
   } catch {
-    // sessionStorage bloqueado (modo privado con cookies restringidas):
-    // el override simplemente no persiste entre navegaciones.
+    // localStorage bloqueado (modo privado con cookies restringidas): el
+    // override simplemente no persiste entre navegaciones.
     return null;
   }
 };

@@ -10,6 +10,7 @@ import { Button } from "../../../components/ui/Button/Button";
 import { Alert } from "../../../components/ui/Alert/Alert";
 import { useChannel } from "../../../context/ChannelContext";
 import { useThemeStore } from "../../../store/useThemeStore";
+import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -58,7 +59,7 @@ const RecuperarClave = () => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: data.email,
+      denominacion: denominacionDesdeEmail(data.email),
       fronturl: window.location.origin + basePath,
     };
 

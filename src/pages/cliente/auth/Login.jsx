@@ -13,6 +13,7 @@ import { usuarioService } from "../../../services/usuarioService";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useThemeStore } from "../../../store/useThemeStore";
 import { useChannel } from "../../../context/ChannelContext";
+import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -332,7 +333,7 @@ const Login = () => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: emailPendiente,
+      denominacion: denominacionDesdeEmail(emailPendiente),
       fronturl: window.location.origin + basePath,
     };
 

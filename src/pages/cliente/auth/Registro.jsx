@@ -9,6 +9,7 @@ import { Button } from "../../../components/ui/Button/Button";
 import { ActivacionPendienteModal } from "../../../components/features/shared/ActivacionPendienteModal/ActivacionPendienteModal";
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
+import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import { useChannel } from "../../../context/ChannelContext";
 import { useThemeStore } from "../../../store/useThemeStore";
 import styles from "./Login.module.css";
@@ -76,7 +77,7 @@ const Registro = () => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: data.email,
+      denominacion: denominacionDesdeEmail(data.email),
       fronturl: window.location.origin + basePath,
     };
 
@@ -142,7 +143,7 @@ const Registro = () => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: emailPendiente,
+      denominacion: denominacionDesdeEmail(emailPendiente),
       fronturl: window.location.origin + basePath,
     };
 
