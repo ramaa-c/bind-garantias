@@ -44,6 +44,11 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     porcentajemaximoutilizado: "100"
   });
 
+  // Mismo patrón que LineasCadena.jsx: cada campo obligatorio muestra su
+  // propio error debajo (InputSimple/SelectSimple ya lo soportan) en vez de
+  // un toast que desaparece solo y no señala qué campo hay que corregir.
+  const [formErrors, setFormErrors] = useState({});
+
   const fileInputRef = useRef(null);
 
   // Bloque numérico compartido por los inputs enmascarados de Monto/Porcentaje
@@ -64,6 +69,19 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
   const desenmascarar = (val) => {
     if (typeof val !== "string") return val;
     return val.replace(/[^0-9,]/g, "").replace(",", ".");
+  };
+
+  // Actualiza el campo y, si ya tenía un error marcado, lo limpia apenas el
+  // usuario empieza a corregirlo - mismo criterio que handleInputChange en
+  // LineasCadena.jsx.
+  const handleInputChange = (field, val) => {
+    setFormState((prev) => ({ ...prev, [field]: val }));
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
   // Queries & Mutations
@@ -121,6 +139,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       montomaximoutilizado: "0",
       porcentajemaximoutilizado: "100"
     });
+    setFormErrors({});
     setStep("form");
   };
 
@@ -146,33 +165,42 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     }
   };
 
-  const handleSave = async () => {
+  // Sin toast genérico: cada campo obligatorio muestra su propio error
+  // debajo (mismo patrón que ya usa LineasCadena.jsx), así se ve de un
+  // vistazo qué falta en vez de un mensaje flotante que desaparece solo.
+  const validarFormulario = () => {
+    const errores = {};
+
     if (!formState.tipocanalcomercializacionid) {
-      toast.error("Seleccione un Canal de Comercialización");
-      return;
+      errores.tipocanalcomercializacionid = "Seleccioná un canal";
     }
     if (!formState.equipocomercialid) {
-      toast.error("Seleccione un Equipo Comercial");
-      return;
+      errores.equipocomercialid = "Seleccioná un equipo comercial";
     }
     if (!formState.tipocontratoid) {
-      toast.error("Seleccione un Tipo de Contrato");
-      return;
+      errores.tipocontratoid = "Seleccioná un tipo de contrato";
     }
     if (!formState.monedaid) {
-      toast.error("Seleccione una Moneda");
-      return;
+      errores.monedaid = "Seleccioná una moneda";
     }
+
     const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
+    if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) <= 0) {
+      errores.montomaximoutilizado = "Ingresá un monto válido";
+    }
+
     const porcentajeLimpio = desenmascarar(formState.porcentajemaximoutilizado);
-    if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) < 0) {
-      toast.error("Ingrese un monto máximo utilizado válido");
-      return;
+    if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) <= 0 || Number(porcentajeLimpio) > 100) {
+      errores.porcentajemaximoutilizado = "Ingresá un porcentaje válido (0 a 100)";
     }
-    if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) < 0 || Number(porcentajeLimpio) > 100) {
-      toast.error("Ingrese un porcentaje máximo utilizado válido (0 a 100)");
-      return;
-    }
+
+    return errores;
+  };
+
+  const handleSave = () => {
+    const errores = validarFormulario();
+    setFormErrors(errores);
+    if (Object.keys(errores).length > 0) return;
     setConfirmOpen(true);
   };
 
@@ -414,7 +442,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     placeholder="Seleccione canal comercial..."
                     options={canalesOpciones}
                     value={formState.tipocanalcomercializacionid}
-                    onChange={val => setFormState({ ...formState, tipocanalcomercializacionid: val })}
+                    onChange={val => handleInputChange("tipocanalcomercializacionid", val)}
+                    error={formErrors.tipocanalcomercializacionid}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -423,7 +452,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     placeholder="Seleccione equipo comercial..."
                     options={equiposOpciones}
                     value={formState.equipocomercialid}
-                    onChange={val => setFormState({ ...formState, equipocomercialid: val })}
+                    onChange={val => handleInputChange("equipocomercialid", val)}
+                    error={formErrors.equipocomercialid}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -432,7 +462,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     placeholder="Seleccione tipo de contrato..."
                     options={contratosOpciones}
                     value={formState.tipocontratoid}
-                    onChange={val => setFormState({ ...formState, tipocontratoid: val })}
+                    onChange={val => handleInputChange("tipocontratoid", val)}
+                    error={formErrors.tipocontratoid}
                   />
                 </div>
               </div>
@@ -447,28 +478,34 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     placeholder="Seleccione moneda..."
                     options={monedasOpciones}
                     value={formState.monedaid}
-                    onChange={val => setFormState({ ...formState, monedaid: val })}
+                    onChange={val => handleInputChange("monedaid", val)}
+                    error={formErrors.monedaid}
                   />
                 </div>
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
                   <InputSimple
                     label="Monto Máximo Utilizado *"
                     value={formState.montomaximoutilizado}
-                    onChange={val => setFormState({ ...formState, montomaximoutilizado: val })}
+                    onChange={val => handleInputChange("montomaximoutilizado", val)}
                     mask="$ num"
                     blocks={{ num: bloqueNumerico() }}
                     lazy={false}
+                    sinIconos
+                    error={formErrors.montomaximoutilizado}
                   />
-                  <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} pullUp />
+                  {!formErrors.montomaximoutilizado && (
+                    <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
+                  )}
                 </div>
                 <div style={{ flex: 1 }}>
                   <InputSimple
                     label="Porcentaje Máximo Utilizado (%) *"
                     value={formState.porcentajemaximoutilizado}
-                    onChange={val => setFormState({ ...formState, porcentajemaximoutilizado: val })}
+                    onChange={val => handleInputChange("porcentajemaximoutilizado", val)}
                     mask="% num"
                     blocks={{ num: bloqueNumerico(100) }}
                     lazy={false}
+                    error={formErrors.porcentajemaximoutilizado}
                   />
                 </div>
               </div>

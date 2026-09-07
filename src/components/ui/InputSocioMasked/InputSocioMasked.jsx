@@ -77,6 +77,7 @@ export const InputSocioMasked = forwardRef(({
                 onBlur={handleBlur}
                 className={styles.input}
                 placeholder=" "
+                autoComplete="off"
                 inputRef={inputRef}
                 disabled={disabled}
                 {...props}
@@ -91,6 +92,7 @@ export const InputSocioMasked = forwardRef(({
                 onBlur={handleBlur}
                 className={styles.input}
                 placeholder=" "
+                autoComplete="off"
                 ref={inputRef}
                 disabled={disabled}
                 {...props}

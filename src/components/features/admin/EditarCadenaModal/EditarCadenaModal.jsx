@@ -24,6 +24,11 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     activa: "1"
   });
 
+  // Mismo patrón que LineasCadena.jsx/ActivarCadenaModal.jsx: cada campo
+  // obligatorio muestra su propio error debajo en vez de un toast que
+  // desaparece solo y no señala qué campo hay que corregir.
+  const [formErrors, setFormErrors] = useState({});
+
   const fileInputRef = useRef(null);
 
   // Bloque numérico compartido por los inputs enmascarados de Monto/Porcentaje
@@ -85,6 +90,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       };
       setFormState(datos);
       setFormStateInicial(datos);
+      setFormErrors({});
     }
   }, [activeItem, isOpen]);
 
@@ -105,6 +111,19 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     !!formStateInicial &&
     JSON.stringify(normalizarParaComparar(formState)) ===
       JSON.stringify(normalizarParaComparar(formStateInicial));
+
+  // Actualiza el campo y, si ya tenía un error marcado, lo limpia apenas el
+  // usuario empieza a corregirlo - mismo criterio que handleInputChange en
+  // LineasCadena.jsx/ActivarCadenaModal.jsx.
+  const handleInputChange = (field, val) => {
+    setFormState((prev) => ({ ...prev, [field]: val }));
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -128,40 +147,50 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     }
   };
 
-  const handleSave = async () => {
+  // Sin toast genérico: cada campo obligatorio muestra su propio error
+  // debajo (mismo patrón que ya usan LineasCadena.jsx/ActivarCadenaModal.jsx).
+  const validarFormulario = () => {
+    const errores = {};
+
     if (!formState.tipocanalcomercializacionid) {
-      toast.error("Seleccione un Canal de Comercialización");
-      return;
+      errores.tipocanalcomercializacionid = "Seleccioná un canal";
     }
     if (!formState.equipocomercialid) {
-      toast.error("Seleccione un Equipo Comercial");
-      return;
+      errores.equipocomercialid = "Seleccioná un equipo comercial";
     }
     if (!formState.tipocontratoid) {
-      toast.error("Seleccione un Tipo de Contrato");
-      return;
+      errores.tipocontratoid = "Seleccioná un tipo de contrato";
     }
+
     const montoLimpio = desenmascarar(formState.montomaximo);
+    if (montoLimpio === "" || isNaN(Number(montoLimpio)) || Number(montoLimpio) <= 0) {
+      errores.montomaximo = "Ingresá un monto válido";
+    }
+
     const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
+    if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) <= 0) {
+      errores.montomaximoutilizado = "Ingresá un monto válido";
+    }
+
     const porcentajeLimpio = desenmascarar(formState.porcentajemaximoutilizado);
+    if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) <= 0 || Number(porcentajeLimpio) > 100) {
+      errores.porcentajemaximoutilizado = "Ingresá un porcentaje válido (0 a 100)";
+    }
 
-    if (montoLimpio === "" || isNaN(Number(montoLimpio)) || Number(montoLimpio) < 0) {
-      toast.error("Ingrese un monto máximo válido");
-      return;
-    }
-    if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) < 0) {
-      toast.error("Ingrese un monto máximo utilizado válido");
-      return;
-    }
-    if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) < 0 || Number(porcentajeLimpio) > 100) {
-      toast.error("Ingrese un porcentaje máximo utilizado válido (0 a 100)");
-      return;
-    }
+    // Campo deshabilitado (no editable acá) - el mensaje queda igual, solo
+    // cambia de toast a texto debajo del select para ser consistente con el
+    // resto, aunque no se limpie solo (no hay onChange que lo dispare).
     if (!formState.monedaid) {
-      toast.error("Esta cadena no tiene una Moneda asignada. Contactá a soporte para configurarla.");
-      return;
+      errores.monedaid = "Esta cadena no tiene una moneda asignada. Contactá a soporte para configurarla.";
     }
 
+    return errores;
+  };
+
+  const handleSave = () => {
+    const errores = validarFormulario();
+    setFormErrors(errores);
+    if (Object.keys(errores).length > 0) return;
     setConfirmOpen(true);
   };
 
@@ -261,8 +290,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 placeholder="Seleccione canal comercial..."
                 options={canalesOpciones}
                 value={formState.tipocanalcomercializacionid}
-                onChange={val => setFormState({ ...formState, tipocanalcomercializacionid: val })}
+                onChange={val => handleInputChange("tipocanalcomercializacionid", val)}
                 className={styles.compactInput}
+                error={formErrors.tipocanalcomercializacionid}
               />
             </div>
             <div style={{ flex: 1 }}>
@@ -271,8 +301,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 placeholder="Seleccione equipo comercial..."
                 options={equiposOpciones}
                 value={formState.equipocomercialid}
-                onChange={val => setFormState({ ...formState, equipocomercialid: val })}
+                onChange={val => handleInputChange("equipocomercialid", val)}
                 className={styles.compactInput}
+                error={formErrors.equipocomercialid}
               />
             </div>
             <div style={{ flex: 1 }}>
@@ -281,8 +312,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 placeholder="Seleccione tipo de contrato..."
                 options={contratosOpciones}
                 value={formState.tipocontratoid}
-                onChange={val => setFormState({ ...formState, tipocontratoid: val })}
+                onChange={val => handleInputChange("tipocontratoid", val)}
                 className={styles.compactInput}
+                error={formErrors.tipocontratoid}
               />
             </div>
           </div>
@@ -300,43 +332,53 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 onChange={() => {}}
                 disabled
                 className={styles.compactInput}
+                error={formErrors.monedaid}
               />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
               <InputSimple
                 label="Monto Máximo *"
                 value={formState.montomaximo}
-                onChange={val => setFormState({ ...formState, montomaximo: val })}
+                onChange={val => handleInputChange("montomaximo", val)}
                 mask="$ num"
                 blocks={{ num: bloqueNumerico() }}
                 lazy={false}
                 className={styles.compactInput}
+                sinIconos
+                error={formErrors.montomaximo}
               />
-              <MontoEnPalabras value={desenmascarar(formState.montomaximo)} />
+              {!formErrors.montomaximo && (
+                <MontoEnPalabras value={desenmascarar(formState.montomaximo)} />
+              )}
             </div>
           </div>
           <div className={styles.row}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
               <InputSimple
                 label="Monto Máximo Utilizado *"
                 value={formState.montomaximoutilizado}
-                onChange={val => setFormState({ ...formState, montomaximoutilizado: val })}
+                onChange={val => handleInputChange("montomaximoutilizado", val)}
                 mask="$ num"
                 blocks={{ num: bloqueNumerico() }}
                 lazy={false}
                 className={styles.compactInput}
+                sinIconos
+                error={formErrors.montomaximoutilizado}
               />
-              <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
+              {!formErrors.montomaximoutilizado && (
+                <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <InputSimple
                 label="Porcentaje Máximo Utilizado (%) *"
                 value={formState.porcentajemaximoutilizado}
-                onChange={val => setFormState({ ...formState, porcentajemaximoutilizado: val })}
+                onChange={val => handleInputChange("porcentajemaximoutilizado", val)}
                 mask="% num"
                 blocks={{ num: bloqueNumerico(100) }}
                 lazy={false}
                 className={styles.compactInput}
+                error={formErrors.porcentajemaximoutilizado}
               />
             </div>
           </div>

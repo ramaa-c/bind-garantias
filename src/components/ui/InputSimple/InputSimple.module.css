@@ -61,6 +61,17 @@
   font-family: var(--font-principal, inherit);
 }
 
+/* Opt-in explícito (no auto-detectado): el padding-right de 1.375rem-5.5rem
+   de arriba reserva espacio para .actions (check de válido / toggle de
+   contraseña), aunque ese campo puntual nunca vaya a mostrar ninguno de
+   los dos (ej. un monto con máscara propia) - se pierde espacio real donde
+   el usuario necesita ver el número completo. Cambiar el padding para
+   TODOS los inputs sin verificarlo visualmente uno por uno era más riesgo
+   del que vale la pena, así que queda atrás de este flag por campo. */
+.sinIconos .input {
+  padding-right: 1rem;
+}
+
 .input[type="password"] {
   letter-spacing: 0.18em;
   font-size: 1.05rem;

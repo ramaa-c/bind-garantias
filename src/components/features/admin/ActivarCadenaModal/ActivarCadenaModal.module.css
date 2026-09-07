@@ -3,7 +3,10 @@
   overflow: visible;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  /* Mismo valor que EditarCadenaModal (0.5rem) - acá estaba en 1.25rem sin
+     motivo real, dejando huecos de más entre secciones que no aportan
+     nada (las secciones ya se distinguen por su propio título). */
+  gap: 0.5rem;
 }
 
 .searchWrap {
@@ -172,7 +175,7 @@
 .sectionGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.4rem;
 }
 
 .sectionTitle {
@@ -189,7 +192,7 @@
 .inputsGrid {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
+  gap: 0.4rem;
 }
 
 .row {
