@@ -1,26 +1,117 @@
-.badge {
-  display: inline-flex;
-  align-items: center;
+/* Ocupa el mismo espacio reservado que .errorMsg de InputSimple (mismo
+   "bottom" que ese, ver InputSimple.module.css) - el contenedor que lo
+   aloja necesita position:relative (ver usos) para que este quede anclado
+   ahí en vez de agregar alto propio. Es un position:absolute deliberado,
+   no un margin negativo "pegando" un elemento a otro por transparencia -
+   con eso el área de click queda bien definida en su propio rectángulo,
+   sin depender del orden de pintado para no quedar tapado. Solo se
+   muestra cuando el input no tiene error (ver los call sites); nunca
+   compiten por el mismo lugar al mismo tiempo. */
+.trigger {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0.375rem;
+  width: 100%;
   max-width: 100%;
-  margin-top: 0.3rem;
-  padding: 0.1rem 0.55rem;
-  border-radius: 9999px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.6rem;
   background: rgba(76, 101, 230, 0.06);
   border: 1px solid rgba(76, 101, 230, 0.16);
   color: #8fa3f3;
   font-size: 0.68rem;
   font-style: italic;
+  font-family: inherit;
   line-height: 1.4;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
 
-/* Para inputs con el padding-bottom reservado a error sin recortar: en vez
-   de sumar altura extra debajo de ese hueco (quedando "flotando" lejos del
-   input), el chip se corre hacia arriba para ocupar ese espacio que de
-   otro modo queda vacío. Solo se usa en inputs sin mensaje de error propio
-   (ver usos), así nunca tapa una validación real. */
-.pullUp {
-  margin-top: -1.5rem;
+.trigger:hover {
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.28);
+}
+
+/* Cuando está abierto, el borde que da contra el popover se "abre" (pierde
+   el redondeado) para que las dos piezas lean como una sola forma continua
+   en vez de dos cajas apenas superpuestas. */
+.triggerAbierto-abajo {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.triggerAbierto-arriba {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.triggerText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.chevronAbierto {
+  transform: rotate(180deg);
+}
+
+/* Portal a document.body (ver MontoEnPalabras.jsx): arranca invisible
+   (visibility, no display, para poder medir offsetHeight/offsetWidth antes
+   de mostrarlo) y con position:fixed aplicado inline - el layout effect
+   mide y posiciona con top/left/width reales. z-index por sobre el de
+   Modal (9999), mismo criterio que el calendario de SelectFecha. Pegado al
+   trigger (GAP:0 en el componente) y con el mismo tono de borde/esquina
+   partida del lado que lo toca, para leer como su extensión en vez de un
+   popover suelto. */
+.popover {
+  visibility: hidden;
+  z-index: 10000;
+  background-color: var(--bg-modal);
+  border: 1px solid rgba(76, 101, 230, 0.28);
+  border-radius: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  color: #c9d4ff;
+  font-size: 0.78rem;
+  font-style: italic;
+  line-height: 1.55;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.65),
+    0 4px 16px rgba(0, 0, 0, 0.4);
+  animation: popoverIn 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.popover-abajo {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.popover-arriba {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+@keyframes popoverIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

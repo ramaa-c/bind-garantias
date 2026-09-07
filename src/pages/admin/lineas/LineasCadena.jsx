@@ -882,12 +882,11 @@ export default function LineasCadena() {
                 }}
                 lazy={false}
                 error={formErrors.montoLinea}
+                sinIconos
               />
-              <MontoEnPalabras
-                value={limpiarMonto(formData.montoLinea)}
-                pullUp={!formErrors.montoLinea}
-                style={!formErrors.montoLinea ? { marginTop: "-1.875rem" } : undefined}
-              />
+              {!formErrors.montoLinea && (
+                <MontoEnPalabras value={limpiarMonto(formData.montoLinea)} />
+              )}
             </div>
 
             <div className={styles.uniqueAmountCard}>
@@ -978,12 +977,11 @@ export default function LineasCadena() {
                 }}
                 lazy={false}
                 error={formErrors.montoContrato}
+                sinIconos
               />
-              <MontoEnPalabras
-                value={limpiarMonto(formData.montoContrato)}
-                pullUp={!formErrors.montoContrato}
-                style={!formErrors.montoContrato ? { marginTop: "-1.875rem" } : undefined}
-              />
+              {!formErrors.montoContrato && (
+                <MontoEnPalabras value={limpiarMonto(formData.montoContrato)} />
+              )}
             </div>
 
             <div className={`${styles.modalFooter} ${styles.formGroupFull}`}>

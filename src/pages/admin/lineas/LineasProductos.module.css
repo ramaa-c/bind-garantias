@@ -653,6 +653,15 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  /* Sin esto, un hijo con contenido largo (ej. MontoEnPalabras con un monto
+     grande) empuja el ancho de la columna del grid más allá de 1fr en vez
+     de respetarlo - los ítems de grid/flex no encogen por debajo del ancho
+     de su contenido por default. */
+  min-width: 0;
+  /* Ancla para MontoEnPalabras, que se posiciona absolute dentro del
+     campo de monto que corresponda, ocupando el mismo lugar reservado
+     para el mensaje de error del input (ver MontoEnPalabras.module.css). */
+  position: relative;
 }
 
 .formGroupFull {

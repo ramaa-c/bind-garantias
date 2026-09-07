@@ -21,6 +21,7 @@ export const InputSimple = forwardRef(({
   variant,
   mask,
   hideErrorSpace = false,
+  sinIconos = false,
   ...props
 }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -54,6 +55,7 @@ export const InputSimple = forwardRef(({
       hasValue || isFocused ? styles.hasValue : "",
       isAdmin ? styles.adminVariant : "",
       hideErrorSpace ? styles.noErrorSpace : "",
+      sinIconos ? styles.sinIconos : "",
       className,
     ].filter(Boolean).join(" ");
 
@@ -76,6 +78,7 @@ export const InputSimple = forwardRef(({
               mask={mask}
               className={styles.input}
               placeholder=" "
+              autoComplete="off"
               // react-imask reasigna maskRef.value en CADA render (no solo
               // cuando "value" cambia de verdad), y esa reasignación pasa
               // por el setter completo del mask, que con padFractionalZeros
@@ -109,6 +112,7 @@ export const InputSimple = forwardRef(({
               id={inputId}
               className={`${styles.input} ${styles.textarea}`}
               placeholder=" "
+              autoComplete="off"
               value={val || ""}
               onChange={(e) => {
                 if (onCh) onCh(e.target.value);
@@ -124,6 +128,7 @@ export const InputSimple = forwardRef(({
               type={currentType}
               className={styles.input}
               placeholder=" "
+              autoComplete="off"
               value={val || ""}
               onChange={(e) => {
                 if (onCh) onCh(e.target.value);
