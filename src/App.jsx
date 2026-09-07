@@ -266,6 +266,143 @@ const rutasCliente = (
   </>
 );
 
+// Rutas de /admin/*: se montan tanto en modo legacy como en modo-por-host.
+// Un usuario común de un banco jamás llega acá (AdminGuard lo filtra), pero
+// un UsuarioCadenaValor (admin restringido a su propia cadena, ver
+// Login.jsx → resolverDestinoPostLogin) entra desde el login normal de SU
+// banco y necesita que /admin exista en ESE mismo árbol de rutas — si solo
+// viviera en rutasLegacy, entrar por el dominio enmascarado del banco lo
+// mandaría a un 404 después de loguearse.
+const rutasAdmin = (
+  <>
+    <Route
+      path="/admin"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <Dashboard />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+
+    <Route
+      path="/admin/empresas"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <Empresas />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/empresas/:id"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <EmpresaDetalle />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/roles-permisos"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <RolesPermisos />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/terminos"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <Terminos />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/cadenas-valor"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CadenasValor />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/cadenas-cda"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CadenasCda />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+
+    <Route
+      path="/admin/cdas"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CdasGlobales />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/lineas-productos"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <LineasProducto />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/lineas-cda"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <LineasCda />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/lineas-cadenas"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <LineasCadena />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/modo-offline"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <ModoOffline />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+
+    {/* Redirecciones de compatibilidad para rutas legacy de admin */}
+    <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+  </>
+);
+
 // Rutas del panel admin + las de cliente con el ID en el path. Es el árbol
 // que se sirve cuando el hostname NO corresponde a ninguna cadena de
 // /tenants.json: exactamente lo mismo que había antes de introducir el
@@ -276,11 +413,15 @@ const rutasLegacy = (
     {/* Antes acá se auto-seleccionaba la primera cadena activa y se
         redirigía a /{cadenaId}/login (ver RootRedirect, ya eliminado) —
         pedido explícito de sacarlo: la URL de cada cadena se arma siempre a
-        mano, nunca automática. Además, un redirect acá (aunque sea
-        client-side) rompe el enmascarado de la URL que hacen en el entorno
-        del banco (Victor, 2026-08-21) — por eso esto renderiza el contenido
-        directo, sin ningún navigate()/<Navigate> de por medio. */}
-    <Route path="/" element={<NotFound />} />
+        mano, nunca automática, y un redirect acá (aunque sea client-side)
+        rompe el enmascarado de la URL en el entorno del banco (Victor,
+        2026-08-21). Ese riesgo no aplica al admin: nunca estuvo enmascarado
+        (su URL siempre mostró /login o /admin), así que no hay nada que
+        proteger acá. Con el deploy por carpeta (una por banco + una para
+        admin, con tenants.json vacío) llegar a "/" en modo legacy significa
+        "este hostname no es de ningún banco" — se interpreta como el
+        entrypoint de admin y se manda directo a /login en vez de 404. */}
+    <Route path="/" element={<Navigate to="/login" replace />} />
     <Route path="/login" element={<LoginAdmin />} />
     <Route path="/not-found" element={<NotFound />} />
     <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
@@ -292,135 +433,7 @@ const rutasLegacy = (
       {rutasCliente}
     </Route>
 
-            {/* Rutas de Administración Globales */}
-            <Route
-              path="/admin"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <Dashboard />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-
-            <Route
-              path="/admin/empresas"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <Empresas />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-            <Route
-              path="/admin/empresas/:id"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <EmpresaDetalle />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-            <Route
-              path="/admin/roles-permisos"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <RolesPermisos />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-            <Route
-              path="/admin/terminos"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <Terminos />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-            <Route
-              path="/admin/cadenas-valor"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <CadenasValor />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-            <Route
-              path="/admin/cadenas-cda"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <CadenasCda />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-
-            <Route
-              path="/admin/cdas"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <CdasGlobales />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-            <Route
-              path="/admin/lineas-productos"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <LineasProducto />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-            <Route
-              path="/admin/lineas-cda"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <LineasCda />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-            <Route
-              path="/admin/lineas-cadenas"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <LineasCadena />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-            <Route
-              path="/admin/modo-offline"
-              element={
-                <AdminGuard>
-                  <AdminLayout>
-                    <ModoOffline />
-                  </AdminLayout>
-                </AdminGuard>
-              }
-            />
-
-            {/* Redirecciones de compatibilidad para rutas legacy de admin */}
-            <Route
-              path="/admin/dashboard"
-              element={<Navigate to="/admin" replace />}
-            />
+    {rutasAdmin}
   </>
 );
 
@@ -437,14 +450,18 @@ const RutasApp = () => {
         {modoPorHost ? (
           <>
             {/* El hostname ya identifica la cadena: las pantallas de cliente
-                cuelgan de la raíz, sin ID en la URL. Acá no se montan las
-                rutas de admin a propósito — ese dominio es de un banco. */}
+                cuelgan de la raíz, sin ID en la URL. /admin también vive
+                acá (rutasAdmin) porque un UsuarioCadenaValor de ESTE banco
+                entra por el login normal de este mismo dominio y necesita
+                que /admin exista en este árbol — no es un acceso "cruzado"
+                a otro banco, AdminGuard igual lo deja ver solo lo suyo. */}
             <Route path="/not-found" element={<NotFound />} />
             <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
             <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
             <Route path="/" element={<TenantLayout />}>
               {rutasCliente}
             </Route>
+            {rutasAdmin}
           </>
         ) : (
           rutasLegacy

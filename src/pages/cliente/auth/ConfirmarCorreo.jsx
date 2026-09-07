@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/ChannelContext";
 import { useThemeStore } from "../../../store/useThemeStore";
+import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -55,7 +56,7 @@ const ConfirmarCorreo = () => {
         estado: "",
         debecambiarclave: "",
         esadministrador: "",
-        denominacion: emailUsuario,
+        denominacion: denominacionDesdeEmail(emailUsuario),
         fronturl: window.location.origin + basePath,
       },
       {

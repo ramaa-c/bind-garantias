@@ -28,6 +28,7 @@ import {
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/ChannelContext";
 import { useThemeStore } from "../../../store/useThemeStore";
+import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./CrearClave.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -153,7 +154,7 @@ const CrearClave = () => {
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: emailManual,
+      denominacion: denominacionDesdeEmail(emailManual),
       fronturl: window.location.origin + basePath,
     };
 
