@@ -33,6 +33,22 @@
   box-shadow: 0 4px 24px rgba(61, 220, 132, 0.08);
 }
 
+/* rgba(61,220,132,X) es el verde brillante de modo oscuro, tan claro que
+   sobre blanco casi no tiñe nada incluso al 25% de opacidad - se usa acá
+   una versión bien más saturada/oscura del mismo verde (el mismo hue que
+   --success-green en modo claro) para que la card "completado" realmente
+   se note. */
+:global([data-theme="light"]) .containerValid {
+  border-color: rgba(15, 122, 66, 0.35);
+  box-shadow: 0 4px 16px rgba(15, 122, 66, 0.12);
+  background: linear-gradient(135deg, var(--bg-elevado) 0%, rgba(15, 122, 66, 0.07) 100%);
+}
+
+:global([data-theme="light"]) .containerValid:hover {
+  border-color: rgba(15, 122, 66, 0.5);
+  box-shadow: 0 4px 16px rgba(15, 122, 66, 0.15);
+}
+
 .containerInvalid {
   border-color: rgba(245, 244, 0, 0.15);
   box-shadow: 0 4px 24px rgba(245, 244, 0, 0.03);
@@ -57,6 +73,10 @@
 
 .ringGlowSuccess {
   box-shadow: 0 0 14px 1px rgba(61, 220, 132, 0.35);
+}
+
+:global([data-theme="light"]) .ringGlowSuccess {
+  box-shadow: 0 0 10px 1px rgba(15, 122, 66, 0.3);
 }
 
 .ringGlowWarning {
@@ -152,6 +172,11 @@
   background: rgba(61, 220, 132, 0.1);
   border-color: rgba(61, 220, 132, 0.25);
   color: var(--success-green, #3ddc84);
+}
+
+:global([data-theme="light"]) .statusChipSuccess {
+  background: rgba(15, 122, 66, 0.1);
+  border-color: rgba(15, 122, 66, 0.3);
 }
 
 .adminSyncBanner {

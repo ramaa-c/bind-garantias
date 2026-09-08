@@ -228,6 +228,15 @@
   background: rgba(var(--overlay-rgb), 0.08);
 }
 
+/* rgba(var(--overlay-rgb), 0.55) en modo claro es un gris medio sobre
+   blanco - técnicamente legible pero se lee "apagado"/poco interactivo
+   comparado con el mismo tono sobre fondo oscuro. Un escalón más oscuro
+   en reposo, sin tocar el estado hover (que ya se distingue bien). */
+:global([data-theme="light"]) .ghost {
+  color: rgba(var(--overlay-rgb), 0.75);
+  border-color: rgba(var(--overlay-rgb), 0.2);
+}
+
 /* ── BACK ──────────────────────────────────────────────── */
 .back {
   composes: base;
@@ -255,6 +264,11 @@
   background: rgba(253, 252, 1, 0.1);
 }
 
+:global([data-theme="light"]) .back {
+  background-color: rgba(var(--overlay-rgb), 0.06);
+  color: rgba(var(--overlay-rgb), 0.7);
+}
+
 /* ── LINK ──────────────────────────────────────────────── */
 .link {
   composes: base;
@@ -276,6 +290,10 @@
 
 .link .ripple {
   display: none;
+}
+
+:global([data-theme="light"]) .link {
+  color: rgba(var(--overlay-rgb), 0.75);
 }
 
 /* =========================================================

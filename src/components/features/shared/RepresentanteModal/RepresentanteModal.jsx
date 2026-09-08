@@ -17,16 +17,18 @@ import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../
 import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../hooks/useValidarDomicilioRequerido";
-import { afipService } from "../../../../services/afipService";
-import { sociosService } from "../../../../services/sociosService";
-import { nosisService } from "../../../../services/nosisService";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { tercerosService } from "../../../../services/tercerosService";
-import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
-import { parseAddress } from "../../../../utils/direccionParser";
+import { parseAddress, armarDireccion } from "../../../../utils/direccionParser";
+import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
 
 import styles from "./RepresentanteModal.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
+// El botón de submit vive en el footer del Modal (ver prop `footer`), fuera
+// del <form> en el DOM - se asocian por este id vía el atributo HTML
+// `form` del botón (ver SGRPLUSPLA-183).
+const REPRESENTANTE_FORM_ID = "representante-modal-form";
 
 
 // Motor interno compartido por RepresentanteLegalModal y ApoderadoModal —
@@ -71,6 +73,13 @@ export function RepresentanteModal({
   // más abajo — `stubTerceroId` (ver más abajo) vive dentro de un try{} que
   // sale de scope antes de llegar a ejecutarValidaciones.
   const stubTerceroIdRef = useRef(null);
+  // Relación creada por ESTA sesión del modal y todavía sin confirmar. El
+  // vínculo tiene que existir antes de validar el CDA (si no, el backend
+  // responde 500), pero si el usuario cierra sin aceptar no corresponde que
+  // el representante quede cargado: al cerrar se le da de baja. Queda en
+  // null cuando la relación ya existía de antes o cuando el alta se
+  // confirmó, que son los dos casos en los que no hay que tocar nada.
+  const stubRelacionRef = useRef(null);
   useRegistrarModalLegajo(isOpen);
 
   const { control, reset, setValue, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
@@ -103,6 +112,7 @@ export function RepresentanteModal({
     if (isOpen) {
       setAfipValidado(!!(representante || representanteInicial));
       setShowConfirm(false);
+      stubRelacionRef.current = null;
 
       if (representante) {
         // Legajo mode edit — ver useObtenerDatosSocioLegajo (useTerceros.js):
@@ -330,12 +340,24 @@ export function RepresentanteModal({
               },
             ],
           });
+
+          // Se relee para quedarse con la relación completa (con su ID), que
+          // es lo que hace falta para poder darla de baja si el usuario
+          // cierra sin confirmar.
+          const relacionesPost = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
+          const arrPost = Array.isArray(relacionesPost) ? relacionesPost : relacionesPost?.data || [];
+          stubRelacionRef.current = arrPost.find(
+            (r) =>
+              Number(r.terceroid ?? r.tercerorelacionadoid ?? r.TerceroRelacionadoID) === Number(stubTerceroId) &&
+              [210, 230].includes(Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId)),
+          ) || null;
         }
-        // La relación ya quedó creada en la base en este punto (aunque
-        // todavía falte completar el formulario y guardar) — se avisa ya
-        // para que la lista de representantes/apoderados se refresque y lo
-        // muestre, en vez de esperar a que se cierre/guarde la modal.
-        if (onSuccess) onSuccess();
+        // A propósito NO se llama a onSuccess acá (mismo criterio que
+        // SocioAccionistaModal): refrescar la lista en este punto hace que
+        // el representante aparezca como ya cargado apenas termina la
+        // validación, sin darle al usuario la chance de revisar/corregir
+        // los datos antes de guardar. La lista se entera recién en el
+        // guardado definitivo (ver onConfirmSave).
       } catch (stubErr) {
         // No bloqueamos la validación por esto: si falla, seguimos igual
         // (en el peor caso, el CDA va a fallar con el mismo error que ya
@@ -364,9 +386,14 @@ export function RepresentanteModal({
         console.warn("[RepresentanteModal] Error buscando tercero en base de datos local:", dbErr);
       }
 
-      // Si existe en la BD y tiene los datos mínimos, los usamos directamente si no estamos editando
+      // Mismo criterio que SocioAccionistaModal: un tercero local solo se
+      // considera "completo" si tiene mail Y domicilio. Con solo el mail
+      // alcanzaba para cortar acá, y como el registro local no siempre
+      // trae ciudad/provincia, esos dos campos quedaban vacíos sin llegar
+      // nunca a consultar el padrón (SGRPLUSPLA-186).
       const tieneDatosCompletos = terceroEncontrado &&
-        (terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail);
+        (terceroEncontrado.mail || terceroEncontrado.email || terceroEncontrado.Mail) &&
+        (terceroEncontrado.calle || terceroEncontrado.Calle || terceroEncontrado.direccion);
 
       // El CDA corre AL FINAL (ver más abajo), después de que el padrón
       // haya terminado por cualquiera de los dos caminos posibles —
@@ -399,82 +426,38 @@ export function RepresentanteModal({
         padronOk = true;
       }
 
-      // 2. Si no tiene datos completos o es modo edición, consultamos NOSIS/AFIP/LUFE
-      // (solo si el camino anterior no alcanzó ya)
-      let nosisData = null;
-      let res = null;
-      if (!padronOk)
-      try {
-        nosisData = await nosisService.obtenerDatosNormalizados(cuitLimpio);
-      } catch (nosisErr) {
-        console.warn("[RepresentanteModal] Nosis no disponible, probando fallback a AFIP:", nosisErr);
-      }
-
-      if (!padronOk && !nosisData) {
+      // 2. Si no tiene datos completos o es modo edición, se consulta el
+      // padrón con la MISMA función que usa el Paso 1 del onboarding: misma
+      // cascada (Nosis → LUFE → AFIP) y, sobre todo, el mismo
+      // decodeHtmlEntities antes de resolver la provincia. Sin eso, un valor
+      // como "C&oacute;rdoba" no matchea nunca contra el catálogo y
+      // provincia/ciudad quedan vacías (SGRPLUSPLA-186).
+      let datosPadron = null;
+      if (!padronOk) {
         try {
-          res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
-        } catch (afipErr) {
-          console.warn("[RepresentanteModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
-          try {
-            const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
-            if (lufeEntidad && lufeEntidad.success) {
-              res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
-            }
-          } catch (lufeErr) {
-            console.error("[RepresentanteModal] LUFE Entidad también falló:", lufeErr);
-          }
+          datosPadron = await obtenerDatosEmpresaPorCuit(cuitLimpio, opcionesProvincias);
+        } catch (padronErr) {
+          console.warn("[RepresentanteModal] Error consultando el padrón:", padronErr);
         }
       }
 
-      if (!padronOk && (nosisData || (res && res.datosgenerales))) {
-        let nombreRep = "";
-        let emailVal = "";
-        let telVal = "";
-        let direccionVal = "";
-        let parsedDir = { calle: "", numero: 0, piso: "" };
-        let deptoVal = "";
-        let ciudadVal = "";
-        let codposVal = "";
-        let provIdVal = 0;
+      if (!padronOk && datosPadron?.encontrado) {
+        const { valores, afipData } = datosPadron;
+        const dg = afipData?.datosgenerales;
 
-        if (nosisData) {
-          nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
-                      nosisData.VI_RazonSocial || `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim() || "Representante";
-          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || "";
-          telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || "";
-          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) ||
-                         `${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim() || "";
-          parsedDir = parseAddress(direccionVal);
-          deptoVal = terceroEncontrado?.departamento || nosisData.VI_DomAF_Dto || "";
-          ciudadVal = nosisData.VI_DomAF_Loc || "";
-          codposVal = terceroEncontrado?.codpos || nosisData.VI_DomAF_CP || "";
-          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
-          if (!provIdVal && nosisData.VI_DomAF_Prov) {
-            const match = matchProvinciaAfip(nosisData.VI_DomAF_Prov, opcionesProvincias);
-            if (match) provIdVal = match.value;
-          }
-        } else {
-          const dg = res.datosgenerales;
-          nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
-                      dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Representante AFIP";
-          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
-          telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
-          const dom = dg.domiciliofiscal || dg.domicilio;
-          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) ||
-                         (dom ? (dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "")) : "") || "";
-          parsedDir = parseAddress(direccionVal);
-          deptoVal = dom?.departamento || terceroEncontrado?.departamento || "";
-          ciudadVal = dom?.localidad || "";
-          codposVal = dom?.codpostal || terceroEncontrado?.codpos || "";
-          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
-          if (!provIdVal && dom) {
-            const provNombre = dom.descripcionprovincia || dom.provincia || "";
-            if (provNombre) {
-              const match = matchProvinciaAfip(provNombre, opcionesProvincias);
-              if (match) provIdVal = match.value;
-            }
-          }
-        }
+        const nombreRep = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                          valores.razonSocial || "Representante";
+        const emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg?.email || dg?.emailfacturacion || "";
+        const telVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg?.telefono || "";
+        const direccionVal = armarDireccion(
+          terceroEncontrado,
+          valores.direccion || `${valores.calle || ""} ${valores.numero || ""}`.trim(),
+        );
+        const parsedDir = parseAddress(direccionVal);
+        const deptoVal = terceroEncontrado?.departamento || valores.departamento || "";
+        const ciudadVal = valores.localidad || valores.ciudad || "";
+        const codposVal = terceroEncontrado?.codpos || valores.codpos || "";
+        const provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || valores.provinciaid || 0;
 
         setValue("nombre", nombreRep, { shouldValidate: true, shouldDirty: true });
         setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
@@ -531,10 +514,6 @@ export function RepresentanteModal({
               descripcionreducida: nombreRep.substring(0, 20),
               mail: emailVal,
             });
-            // La tarjeta ya se mostraba "sin nombre" desde que se creó el
-            // stub — se refresca de nuevo para que pase a mostrar el
-            // nombre real sin esperar al guardado final.
-            if (onSuccess) onSuccess();
           } catch (persistErr) {
             console.warn("[RepresentanteModal] No se pudo persistir la precarga de AFIP/NOSIS:", persistErr);
           }
@@ -650,6 +629,24 @@ export function RepresentanteModal({
     setValidando(false);
   };
 
+  const descartarAltaSinConfirmar = async () => {
+    const relacion = stubRelacionRef.current;
+    if (!relacion) return;
+    stubRelacionRef.current = null;
+
+    try {
+      await tercerosService.darDeBajaRelacionDeSocio(relacion);
+      if (onSuccess) onSuccess();
+    } catch (bajaErr) {
+      console.warn("[RepresentanteModal] No se pudo descartar el alta sin confirmar:", bajaErr);
+    }
+  };
+
+  const handleCerrar = async () => {
+    await descartarAltaSinConfirmar();
+    onClose();
+  };
+
   const handlePreSubmit = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -679,7 +676,7 @@ export function RepresentanteModal({
     if (!isValid || !domicilioValido) return;
 
     if (!isDirty) {
-      onClose();
+      await handleCerrar();
       return;
     }
 
@@ -970,6 +967,10 @@ export function RepresentanteModal({
         });
       }
 
+      // El alta quedó confirmada: la relación ya no es un stub pendiente y
+      // no hay que darla de baja al cerrar.
+      stubRelacionRef.current = null;
+
       // No se espera a onSuccess (cargarSocios en SociosLegajo.jsx puede
       // tardar unos segundos en refetchear todo de verdad) — la modal se
       // cierra ya mismo y la sección de representantes/apoderados queda en
@@ -996,12 +997,20 @@ export function RepresentanteModal({
     <>
       <Modal
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={handleCerrar}
         title={representante || representanteInicial ? `Editar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
         maxWidth="800px"
         variant={isAdmin ? "blue" : "default"}
+        footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
+        footer={
+          (afipValidado || representante || representanteInicial) && (
+            <Button type="submit" form={REPRESENTANTE_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
+              {representante || representanteInicial ? "Guardar Cambios" : `Agregar ${etiquetaRol}`}
+            </Button>
+          )
+        }
       >
-        <form onSubmit={handlePreSubmit} className={styles.modalForm}>
+        <form id={REPRESENTANTE_FORM_ID} onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !representante && !representanteInicial ? (
             <div className={styles.cuitSearchStep}>
               <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
@@ -1243,14 +1252,6 @@ export function RepresentanteModal({
               </div>
             </>
           )}
-
-          <div className={`${styles.modalFooter} ${isAdmin ? styles.modalFooterAdmin : ""}`}>
-            {(afipValidado || representante || representanteInicial) && (
-              <Button type="submit" variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
-                {representante || representanteInicial ? "Guardar Cambios" : `Agregar ${etiquetaRol}`}
-              </Button>
-            )}
-          </div>
         </form>
       </Modal>
 

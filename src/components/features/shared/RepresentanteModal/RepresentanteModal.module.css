@@ -3,8 +3,17 @@
 .modalRow2 { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
 .modalRow3 { display: grid; grid-template-columns: 1fr; gap: 0.5rem; }
 @media (min-width: 36rem) { .modalRow2 { grid-template-columns: repeat(2, 1fr); } .modalRow3 { grid-template-columns: repeat(3, 1fr); } }
-.modalFooter { display: flex; justify-content: flex-end; gap: 0.5rem; padding-top: 0.75rem; border-top: 1px solid rgba(var(--overlay-rgb), 0.05); margin-top: 0.125rem; position: sticky; bottom: 0; background: var(--bg-modal); }
-.modalFooterAdmin { background: var(--bg-surface); }
+/* El botón de submit ahora vive en el footer del Modal (fuera del área con
+   scroll, ver prop `footer` de Modal.jsx) - SGRPLUSPLA-183: el viejo
+   footer "sticky" adentro de .modalForm se desprendía en ciertos zooms/
+   resoluciones (bug de Chromium con position:sticky dentro de un
+   contenedor scrolleable que a su vez es flex:1 de un padre con
+   overflow:hidden), dejando ver contenido del formulario "de más" debajo
+   del botón. Acá solo queda el override de color para el panel admin -
+   se pasa como `footerClassName` a <Modal>.  */
+.modalFooterAdmin {
+  background: var(--bg-surface);
+}
 .cuitSearchStep { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; padding: 0.5rem 0 0.25rem; width: 100%; animation: cuitFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
 .cuitSearchBanner { display: flex; align-items: center; gap: 1rem; padding: 0.875rem 1.125rem; border-radius: 0.875rem; background: rgba(245, 244, 0, 0.025); border: 1px solid rgba(245, 244, 0, 0.1); width: 100%; max-width: 28rem; transition: border-color 0.2s; }
 .cuitSearchBanner:hover { border-color: rgba(245, 244, 0, 0.18); }

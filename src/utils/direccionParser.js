@@ -31,6 +31,20 @@ export const decodeHtmlEntities = (text) => {
   });
 };
 
+// El domicilio guardado de un tercero puede estar incompleto: la calle vive
+// en `Calle` y la altura en `Numero`, y hay registros con calle cargada pero
+// Numero en 0. Priorizar el dato local a ciegas hacía que esa calle sin
+// altura le ganara a la del padrón (que sí trae las dos partes) y el número
+// se perdía (SGRPLUSPLA-186). Solo gana lo local cuando está completo.
+export const armarDireccion = (terceroLocal, direccionPadron) => {
+  const calleLocal =
+    terceroLocal?.calle || terceroLocal?.Calle || terceroLocal?.direccion || "";
+  const numeroLocal = Number(terceroLocal?.numero ?? terceroLocal?.Numero) || 0;
+
+  if (calleLocal && numeroLocal) return `${calleLocal} ${numeroLocal}`;
+  return direccionPadron || calleLocal || "";
+};
+
 export const parseAddress = (fullAddress) => {
   if (!fullAddress) return { calle: "", numero: null, piso: "", departamento: "" };
 

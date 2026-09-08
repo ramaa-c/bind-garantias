@@ -10,6 +10,20 @@ export const Modal = ({
   title,
   subtitle,
   children,
+  // Contenido de acciones (ej. "Guardar"/"Cancelar") que queda FUERA del
+  // área con scroll (.body), como hermano de éste en vez de su último
+  // hijo. Antes cada modal con este patrón armaba su propio footer
+  // "sticky" adentro de .body - position:sticky ahí es frágil (rompe en
+  // ciertos zooms/resoluciones, ver SGRPLUSPLA-183: .body es scrolleable
+  // Y a la vez flex:1 dentro de .modalBox con overflow:hidden, una
+  // combinación con bugs de cálculo de sticky conocidos en Chromium).
+  // Pasar `footer` evita el problema de raíz: no depende de sticky, es
+  // simplemente un elemento que nunca formó parte del contenido
+  // scrolleable. El botón de submit dentro de `footer` tiene que usar el
+  // atributo HTML `form="<id>"` para seguir asociado al <form> de más
+  // arriba, ya que ahora queda fuera de él en el DOM.
+  footer,
+  footerClassName = "",
   maxWidth = "600px",
   className = "",
   variant = "default",
@@ -95,6 +109,9 @@ export const Modal = ({
 
         {/* ── BODY ── */}
         <div className={`${styles.body} ${allowOverflow ? styles.allowOverflow : ""}`}>{children}</div>
+
+        {/* ── FOOTER (fuera del área con scroll, ver comentario arriba) ── */}
+        {footer && <div className={`${styles.footer} ${footerClassName}`}>{footer}</div>}
       </div>
     </div>,
     document.body,

@@ -15,21 +15,23 @@ import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../../../utils/executeCda";
-import { afipService } from "../../../../../../services/afipService";
-import { sociosService } from "../../../../../../services/sociosService";
-import { nosisService } from "../../../../../../services/nosisService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { formatBase64Size, procesarArchivo } from "../../../../../../utils/fileUtils";
-import { matchProvinciaAfip } from "../../../../../../utils/provinciaUtils";
 import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../../../hooks/useValidarDomicilioRequerido";
-import { parseAddress } from "../../../../../../utils/direccionParser";
+import { parseAddress, armarDireccion } from "../../../../../../utils/direccionParser";
+import { obtenerDatosEmpresaPorCuit } from "../../../../../../utils/datosEmpresaPorCuit";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 
 import styles from "./SocioAccionistaModal.module.css";
 import { useCadenaActiva } from "../../../../../../hooks/useCadenaActiva";
+
+// El botón de submit vive en el footer del Modal (ver prop `footer`), fuera
+// del <form> en el DOM - se asocian por este id vía el atributo HTML
+// `form` del botón (ver SGRPLUSPLA-183).
+const ACCIONISTA_FORM_ID = "accionista-modal-form";
 
 
 const normalizarTexto = (str) =>
@@ -124,6 +126,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   // rechaza, este registro queda igual (no se revierte). Se guarda el ID
   // acá para que onConfirmSave lo actualice en vez de crear uno nuevo.
   const stubIdsRef = useRef({ terceroId: null, relacionId: null });
+  // Relación creada por ESTA sesión del modal y todavía sin confirmar: si el
+  // usuario cierra sin aceptar, se le da de baja para que el alta no quede
+  // hecha a medias (la lista ya la ocultaba por tener 0% de participación,
+  // pero el vínculo quedaba igual en la base).
+  const stubRelacionRef = useRef(null);
 
   const relacionId = socio?.relacionId || 
                      socio?.relacion?.sociotercerorelacionid || 
@@ -248,6 +255,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setErrorDniDorso(false);
       setShowConfirm(false);
       stubIdsRef.current = { terceroId: null, relacionId: null };
+      stubRelacionRef.current = null;
       if (socio) {
         setAfipValidado(true);
       } else {
@@ -479,6 +487,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             (r) => Number(r.terceroid ?? r.TerceroID) === Number(stubTerceroId),
           );
           stubRelacionId = nuevaRelacion?.sociotercerorelacionid ?? nuevaRelacion?.SocioTerceroRelacionID ?? null;
+          stubRelacionRef.current = nuevaRelacion || null;
         }
 
         stubIdsRef.current = { terceroId: stubTerceroId, relacionId: stubRelacionId };
@@ -551,93 +560,44 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       // haya terminado por cualquiera de los caminos posibles — `padronOk`
       // es lo que permite saltar el resto de este bloque cuando el primero
       // (datos locales) ya alcanzó.
-      let nosisData = null;
-      let res = null;
-      if (!padronOk)
-      try {
-        nosisData = await nosisService.obtenerDatosNormalizados(cuitLimpio);
-      } catch (nosisErr) {
-        console.warn("[SocioAccionistaModal] Nosis no disponible, probando fallback a AFIP:", nosisErr);
-      }
-
-      if (!padronOk && !nosisData) {
+      // Se consulta el padrón con la MISMA función que usa el Paso 1 del
+      // onboarding: misma cascada (Nosis → LUFE → AFIP) y el mismo
+      // decodeHtmlEntities antes de resolver la provincia. Sin eso, un valor
+      // como "C&oacute;rdoba" no matchea nunca contra el catálogo y
+      // provincia/ciudad quedan vacías (SGRPLUSPLA-186).
+      let datosPadron = null;
+      if (!padronOk) {
         try {
-          res = await afipService.obtenerConstanciaInscripcion(cuitLimpio);
-        } catch (afipErr) {
-          console.warn("[SocioAccionistaModal] AFIP no disponible, probando fallback a LUFE Entidad:", afipErr);
-          try {
-            const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitLimpio);
-            if (lufeEntidad && lufeEntidad.success) {
-              res = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
-            }
-          } catch (lufeErr) {
-            console.error("[SocioAccionistaModal] LUFE Entidad también falló:", lufeErr);
-          }
+          datosPadron = await obtenerDatosEmpresaPorCuit(cuitLimpio, opcionesProvincias);
+        } catch (padronErr) {
+          console.warn("[SocioAccionistaModal] Error consultando el padrón:", padronErr);
         }
       }
 
-      if (!padronOk && (nosisData || (res && res.datosgenerales))) {
-        let nombreSocio = "";
-        let emailVal = "";
-        let celularVal = "";
-        let direccionVal = "";
-        let parsedDir = { calle: "", numero: 0, piso: "" };
-        let deptoVal = "";
-        let ciudadVal = "";
-        let codposVal = "";
-        let provIdVal = 0;
+      if (!padronOk && datosPadron?.encontrado) {
+        const { valores, afipData } = datosPadron;
+        const dg = afipData?.datosgenerales;
 
-        if (nosisData) {
-          nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
-                        nosisData.VI_RazonSocial || `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim() || "Socio";
-          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || "";
-          celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || "";
-          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) || 
-                         `${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim() || "";
-          parsedDir = parseAddress(direccionVal);
-          deptoVal = terceroEncontrado?.departamento || nosisData.VI_DomAF_Dto || "";
-          ciudadVal = nosisData.VI_DomAF_Loc || "";
-          codposVal = terceroEncontrado?.codpos || nosisData.VI_DomAF_CP || "";
-          
-          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
-          if (!provIdVal && nosisData.VI_DomAF_Prov) {
-            const match = matchProvinciaAfip(nosisData.VI_DomAF_Prov, opcionesProvincias);
-            if (match) {
-              provIdVal = match.value;
-            }
-          }
-        } else {
-          const dg = res.datosgenerales;
-          nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
-                        dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim() || "Socio AFIP";
-          emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg.email || dg.emailfacturacion || "";
-          celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg.telefono || "";
-          const dom = dg.domiciliofiscal || dg.domicilio;
-          direccionVal = (terceroEncontrado?.calle || terceroEncontrado?.Calle || terceroEncontrado?.direccion) || 
-                         (dom ? (dom.direccion || (dom.calle ? `${dom.calle} ${dom.numero || ""}`.trim() : "")) : "") || "";
-          parsedDir = parseAddress(direccionVal);
-          deptoVal = dom?.departamento || terceroEncontrado?.departamento || "";
-          ciudadVal = dom?.localidad || "";
-          codposVal = dom?.codpostal || terceroEncontrado?.codpos || "";
-          
-          provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || 0;
-          if (!provIdVal && dom) {
-            const provNombre = dom.descripcionprovincia || dom.provincia || "";
-            if (provNombre) {
-              const match = matchProvinciaAfip(provNombre, opcionesProvincias);
-              if (match) {
-                provIdVal = match.value;
-              }
-            }
-          }
-        }
+        const nombreSocio = terceroEncontrado?.denominacion || terceroEncontrado?.razonsocial || terceroEncontrado?.nombre ||
+                            valores.razonSocial || "Socio";
+        const emailVal = (terceroEncontrado?.mail || terceroEncontrado?.email || terceroEncontrado?.Mail) || dg?.email || dg?.emailfacturacion || "";
+        const celularVal = (terceroEncontrado?.telefono || terceroEncontrado?.Telefono) || dg?.telefono || "";
+        const direccionVal = armarDireccion(
+          terceroEncontrado,
+          valores.direccion || `${valores.calle || ""} ${valores.numero || ""}`.trim(),
+        );
+        const parsedDir = parseAddress(direccionVal);
+        const deptoVal = terceroEncontrado?.departamento || valores.departamento || "";
+        const ciudadVal = valores.localidad || valores.ciudad || "";
+        const codposVal = terceroEncontrado?.codpos || valores.codpos || "";
+        const provIdVal = terceroEncontrado?.provinciaid || terceroEncontrado?.ProvinciaID || valores.provinciaid || 0;
 
         setValue("nombre", nombreSocio, { shouldValidate: true, shouldDirty: true });
         setValue("email", emailVal, { shouldValidate: true, shouldDirty: true });
         setValue("celular", celularVal, { shouldValidate: true, shouldDirty: true });
         setValue("direccion", direccionVal, { shouldValidate: true, shouldDirty: true });
         setValue("calle", parsedDir.calle, { shouldValidate: true, shouldDirty: true });
-        setValue("numero", parsedDir.numero, { shouldValidate: true, shouldDirty: true });
+        setValue("numero", parsedDir.numero ?? "", { shouldValidate: true, shouldDirty: true });
         setValue("piso", parsedDir.piso, { shouldValidate: true, shouldDirty: true });
         setValue("departamento", deptoVal, { shouldValidate: true, shouldDirty: true });
         setValue("ciudad", ciudadVal, { shouldValidate: true, shouldDirty: true });
@@ -798,6 +758,24 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     setValidando(false);
   };
 
+  const descartarAltaSinConfirmar = async () => {
+    const relacion = stubRelacionRef.current;
+    if (!relacion) return;
+    stubRelacionRef.current = null;
+
+    try {
+      await tercerosService.darDeBajaRelacionDeSocio(relacion);
+      if (onSuccess) onSuccess();
+    } catch (bajaErr) {
+      console.warn("[SocioAccionistaModal] No se pudo descartar el alta sin confirmar:", bajaErr);
+    }
+  };
+
+  const handleCerrar = async () => {
+    await descartarAltaSinConfirmar();
+    onClose();
+  };
+
   const handlePreSubmit = async (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -840,7 +818,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     if (!isValid || hasDropzoneErrors || !domicilioValido) return;
 
     if (!isDirty && !filesChanged) {
-      onClose();
+      await handleCerrar();
       return;
     }
 
@@ -1083,6 +1061,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
       toast.success(relacionId ? "Accionista actualizado correctamente." : "Accionista guardado correctamente.", { id: mainToastId });
 
+      // El alta quedó confirmada: la relación ya no es un stub pendiente y
+      // no hay que darla de baja al cerrar.
+      stubRelacionRef.current = null;
+
       // No se espera a onSuccess (cargarSocios en SociosLegajo.jsx puede
       // tardar unos segundos en refetchear todo de verdad) — la modal se
       // cierra ya mismo y la sección de accionistas queda en su propio
@@ -1111,12 +1093,20 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     <>
       <Modal
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={handleCerrar}
         title={socio ? "Editar Accionista" : "Agregar Accionista"}
         maxWidth="800px"
         variant={isAdmin ? "blue" : "default"}
+        footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
+        footer={
+          (afipValidado || socio) && (
+            <Button type="submit" form={ACCIONISTA_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
+              {socio ? "Guardar Cambios" : "Agregar Accionista"}
+            </Button>
+          )
+        }
       >
-        <form onSubmit={handlePreSubmit} className={styles.modalForm}>
+        <form id={ACCIONISTA_FORM_ID} onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !socio ? (
             <div className={styles.cuitSearchStep}>
               <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
@@ -1424,14 +1414,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               </div>
             </>
           )}
-
-          <div className={`${styles.modalFooter} ${isAdmin ? styles.modalFooterAdmin : ""}`}>
-            {(afipValidado || socio) && (
-              <Button type="submit" variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
-                {socio ? "Guardar Cambios" : "Agregar Accionista"}
-              </Button>
-            )}
-          </div>
         </form>
       </Modal>
 
