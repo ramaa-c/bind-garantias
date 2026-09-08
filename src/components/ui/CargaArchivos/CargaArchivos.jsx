@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import styles from './CargaArchivos.module.css';
 import { FiUploadCloud, FiFile, FiTrash2, FiEye, FiDownload, FiEdit2, FiShield } from 'react-icons/fi';
 import { BotonIcono } from "..//BotonIcono/BotonIcono";
+import { Spinner } from "../Spinner/Spinner";
 import { TAMANIO_MAXIMO_ARCHIVO_MB } from "../../../utils/fileUtils";
 
-export const CargaArchivos = ({ 
-  title = "Arrastrá tu archivo acá", 
-  subtitle = "o hacé click para buscar", 
+export const CargaArchivos = ({
+  title = "Arrastrá tu archivo acá",
+  subtitle = "o hacé click para buscar",
   file,
-  isDragging, 
-  onDrop, 
-  onDragOver, 
+  isDragging,
+  onDrop,
+  onDragOver,
   onDragLeave,
   onClick,
   onEdit,
@@ -18,10 +19,21 @@ export const CargaArchivos = ({
   onDownload,
   onDelete,
   hasError = false,
+  isUploading = false,
   className = "",
   style = {}
 }) => {
   const [internalIsDragging, setInternalIsDragging] = useState(false);
+
+  if (isUploading) {
+    return (
+      <div className={`${styles.box} ${styles.uploading} ${className}`} style={style}>
+        <Spinner size={36} />
+        <h4 className={styles.text}>Subiendo archivo...</h4>
+        <p className={styles.subtext}>Puede tardar unos segundos si el archivo es grande.</p>
+      </div>
+    );
+  }
 
   if (file) {
     return (

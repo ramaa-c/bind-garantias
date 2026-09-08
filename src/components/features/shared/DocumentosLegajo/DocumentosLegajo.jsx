@@ -294,6 +294,7 @@ export function DocumentosLegajo({
   const confirmandoFechaBalanceRef = useRef(false);
   const [confirmandoFechaBalance, setConfirmandoFechaBalance] = useState(false);
   const [archivoAEliminar, setArchivoAEliminar] = useState(null);
+  const [uploadingKey, setUploadingKey] = useState(null);
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
@@ -502,7 +503,7 @@ export function DocumentosLegajo({
           ? `${fechaPeriodoEfectiva.split("T")[0]}T00:00:00`
           : null;
 
-      const toastId = toast.loading(`Subiendo ${docTitle}...`);
+      setUploadingKey(key);
       try {
         let resultado;
         if (specificId) {
@@ -546,12 +547,14 @@ export function DocumentosLegajo({
             queryKey: ["socioLegajoCompleto", socioIdActivo],
           });
 
-          toast.success("Documento subido exitosamente", { id: toastId });
+          toast.success("Documento subido exitosamente");
           selectSubTab(key, 0);
         }
       } catch (error) {
         console.error("Fallo al subir el archivo:", error);
-        toast.error("Error al subir el documento. Por favor, reintente.", { id: toastId });
+        toast.error("Error al subir el documento. Por favor, reintente.");
+      } finally {
+        setUploadingKey(null);
       }
     }
   };
@@ -798,6 +801,7 @@ export function DocumentosLegajo({
                   title={currentSubTab === "nuevo" ? "Arrastrá tu nuevo archivo acá" : doc.title}
                   subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
                   hasError={hasError}
+                  isUploading={uploadingKey === doc.key}
                   file={fileProp}
                   onClick={() =>
                     document.getElementById(`file-input-${doc.key}`).click()
@@ -837,6 +841,7 @@ export function DocumentosLegajo({
                   id={`file-input-${doc.key}`}
                   type="file"
                   style={{ display: "none" }}
+                  disabled={uploadingKey === doc.key}
                   onChange={(e) => {
                     if (e.target.files?.[0]) {
                       const specificId = activeFile ? activeFile.socioarchivoid : null;

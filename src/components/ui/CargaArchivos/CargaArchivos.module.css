@@ -33,6 +33,14 @@
   box-shadow: 0 0 20px rgba(244, 245, 0, 0.1);
 }
 
+.uploading {
+  border-style: solid;
+  border-color: var(--color-azul-bind, #4c65e6);
+  background: rgba(76, 101, 230, 0.04);
+  cursor: default;
+  gap: 4px;
+}
+
 .icon {
   font-size: 2.5rem;
   color: var(--text-muted);
