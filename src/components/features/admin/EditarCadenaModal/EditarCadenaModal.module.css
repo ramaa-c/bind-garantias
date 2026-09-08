@@ -34,6 +34,19 @@
   gap: 1rem;
 }
 
+/* Mismo lugar que ocuparía MontoEnPalabras/el error del input de monto
+   (ver MontoEnPalabras.module.css .trigger) - se muestra ahí mientras el
+   input de monto está deshabilitado por falta de moneda asignada. */
+.fieldHint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.375rem;
+  font-size: 0.7rem;
+  color: #8b949e;
+  padding-left: 0.25rem;
+}
+
 .logoSection {
   margin-top: 0.75rem;
 }
@@ -131,4 +144,13 @@
 
 .compactInput {
   padding-bottom: 0.2rem !important;
+}
+
+/* Los campos de Monto Máximo/Monto Máximo Utilizado necesitan el mismo
+   espacio reservado de InputSimple por defecto (1.875rem): ahí vive tanto
+   el fieldHint como el chip de MontoEnPalabras (position:absolute, ver
+   MontoEnPalabras.module.css), y con el padding-bottom de compactInput
+   (0.2rem) no entraba - quedaba superpuesto sobre el valor del input. */
+.compactInputMonto {
+  padding-bottom: 1.875rem !important;
 }

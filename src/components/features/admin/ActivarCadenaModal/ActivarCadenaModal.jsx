@@ -184,9 +184,14 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       errores.monedaid = "Seleccioná una moneda";
     }
 
-    const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
-    if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) <= 0) {
-      errores.montomaximoutilizado = "Ingresá un monto válido";
+    // Si todavía no hay moneda elegida, el input de monto está deshabilitado
+    // (ver el hint que se muestra en su lugar) - no tiene sentido duplicar el
+    // reclamo con un error superpuesto en el mismo espacio reservado.
+    if (formState.monedaid) {
+      const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
+      if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) <= 0) {
+        errores.montomaximoutilizado = "Ingresá un monto válido";
+      }
     }
 
     const porcentajeLimpio = desenmascarar(formState.porcentajemaximoutilizado);
@@ -491,9 +496,13 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     blocks={{ num: bloqueNumerico() }}
                     lazy={false}
                     sinIconos
+                    disabled={!formState.monedaid}
                     error={formErrors.montomaximoutilizado}
                   />
-                  {!formErrors.montomaximoutilizado && (
+                  {!formState.monedaid && (
+                    <span className={styles.fieldHint}>Elegí primero una moneda</span>
+                  )}
+                  {formState.monedaid && !formErrors.montomaximoutilizado && (
                     <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
                   )}
                 </div>

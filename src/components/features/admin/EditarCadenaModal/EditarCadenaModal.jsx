@@ -162,14 +162,20 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       errores.tipocontratoid = "Seleccioná un tipo de contrato";
     }
 
-    const montoLimpio = desenmascarar(formState.montomaximo);
-    if (montoLimpio === "" || isNaN(Number(montoLimpio)) || Number(montoLimpio) <= 0) {
-      errores.montomaximo = "Ingresá un monto válido";
-    }
+    // Si no hay moneda asignada, los inputs de monto están deshabilitados
+    // (ver el hint que se muestra en su lugar) - no tiene sentido duplicar el
+    // reclamo con un error superpuesto en el mismo espacio reservado (el
+    // error de "monedaid" de más abajo ya cubre este caso).
+    if (formState.monedaid) {
+      const montoLimpio = desenmascarar(formState.montomaximo);
+      if (montoLimpio === "" || isNaN(Number(montoLimpio)) || Number(montoLimpio) <= 0) {
+        errores.montomaximo = "Ingresá un monto válido";
+      }
 
-    const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
-    if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) <= 0) {
-      errores.montomaximoutilizado = "Ingresá un monto válido";
+      const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
+      if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) <= 0) {
+        errores.montomaximoutilizado = "Ingresá un monto válido";
+      }
     }
 
     const porcentajeLimpio = desenmascarar(formState.porcentajemaximoutilizado);
@@ -343,11 +349,15 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 mask="$ num"
                 blocks={{ num: bloqueNumerico() }}
                 lazy={false}
-                className={styles.compactInput}
+                className={`${styles.compactInput} ${styles.compactInputMonto}`}
                 sinIconos
+                disabled={!formState.monedaid}
                 error={formErrors.montomaximo}
               />
-              {!formErrors.montomaximo && (
+              {!formState.monedaid && (
+                <span className={styles.fieldHint}>Sin moneda asignada</span>
+              )}
+              {formState.monedaid && !formErrors.montomaximo && (
                 <MontoEnPalabras value={desenmascarar(formState.montomaximo)} />
               )}
             </div>
@@ -361,11 +371,15 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 mask="$ num"
                 blocks={{ num: bloqueNumerico() }}
                 lazy={false}
-                className={styles.compactInput}
+                className={`${styles.compactInput} ${styles.compactInputMonto}`}
                 sinIconos
+                disabled={!formState.monedaid}
                 error={formErrors.montomaximoutilizado}
               />
-              {!formErrors.montomaximoutilizado && (
+              {!formState.monedaid && (
+                <span className={styles.fieldHint}>Sin moneda asignada</span>
+              )}
+              {formState.monedaid && !formErrors.montomaximoutilizado && (
                 <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
               )}
             </div>

@@ -20,7 +20,7 @@ import { sociosService } from "../../../../../../services/sociosService";
 import { nosisService } from "../../../../../../services/nosisService";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
-import { formatBase64Size, procesarArchivo } from "../../../../../../utils/fileUtils";
+import { formatBase64Size, procesarArchivo, validarTamanioArchivo } from "../../../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../../../utils/provinciaUtils";
 import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincronizarCatalogoPorTexto";
@@ -49,7 +49,8 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
         style={{ display: "none" }}
         accept="image/*,application/pdf"
         onChange={(e) => {
-          if (e.target.files?.[0]) onChange(e.target.files[0]);
+          const selected = e.target.files?.[0];
+          if (selected && validarTamanioArchivo(selected)) onChange(selected);
           e.target.value = null;
         }}
       />
@@ -80,7 +81,7 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
           e.preventDefault();
           setIsDragging(false);
           const droppedFile = e.dataTransfer.files?.[0];
-          if (droppedFile) {
+          if (droppedFile && validarTamanioArchivo(droppedFile)) {
             onChange(droppedFile);
           }
         }}

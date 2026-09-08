@@ -48,6 +48,7 @@ import {
   formatBase64Size,
   descargarArchivosEnZip,
   descargarLegajoCompletoZip,
+  validarTamanioArchivo,
 } from "../../../../utils/fileUtils";
 
 export const ESTRUCTURA_LEGAJO = [
@@ -470,6 +471,8 @@ export function DocumentosLegajo({
   // este mismo tick (los setState de React son asincrónicos).
   const handleFileUpload = async (key, file, docTitle, specificId = null, fechaPeriodoOverride = null) => {
     if (file instanceof File) {
+      if (!validarTamanioArchivo(file)) return;
+
       const fechaPeriodoEfectiva = fechaPeriodoOverride || metaFechaPeriodo;
 
       if (key === "balance" && !fechaPeriodoEfectiva) {

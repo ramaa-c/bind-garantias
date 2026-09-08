@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styles from './CargaArchivos.module.css';
 import { FiUploadCloud, FiFile, FiTrash2, FiEye, FiDownload, FiEdit2, FiShield } from 'react-icons/fi';
 import { BotonIcono } from "..//BotonIcono/BotonIcono";
+import { TAMANIO_MAXIMO_ARCHIVO_MB } from "../../../utils/fileUtils";
 
 export const CargaArchivos = ({ 
   title = "Arrastrá tu archivo acá", 
@@ -102,6 +103,7 @@ export const CargaArchivos = ({
       <FiUploadCloud className={styles.icon} />
       <h4 className={styles.text}>{title}</h4>
       <p className={styles.subtext}>{subtitle}</p>
+      <p className={styles.maxSizeHint}>Tamaño máximo: {TAMANIO_MAXIMO_ARCHIVO_MB} MB</p>
     </div>
   );
 };

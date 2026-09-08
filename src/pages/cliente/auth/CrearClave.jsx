@@ -398,6 +398,7 @@ const CrearClave = () => {
                         value={emailManual}
                         onChange={setEmailManual}
                         type="email"
+                        autoComplete="email"
                         disabled={solicitandoNuevo}
                         esValido={
                           emailManual.length > 0 && isValidEmail(emailManual)
@@ -447,6 +448,7 @@ const CrearClave = () => {
                         onChange={setEmailManual}
                         onBlur={() => setEmailManualTouched(true)}
                         type="email"
+                        autoComplete="email"
                         disabled={solicitandoNuevo}
                         esValido={
                           emailManual.length > 0 && isValidEmail(emailManual)
@@ -490,6 +492,7 @@ const CrearClave = () => {
                             email={usuario?.email || ""}
                             esValido={!errors.password && !!passwordValue}
                             disabled={guardandoClave}
+                            autoComplete="new-password"
                           />
                         )}
                       />
@@ -504,6 +507,7 @@ const CrearClave = () => {
                         control={control}
                         label="Confirmar Contraseña"
                         type="password"
+                        autoComplete="new-password"
                         esValido={
                           !!confirmPasswordValue &&
                           passwordValue === confirmPasswordValue &&

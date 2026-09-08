@@ -27,7 +27,7 @@ import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { formatBase64Size } from "../../../../utils/fileUtils";
+import { formatBase64Size, validarTamanioArchivo } from "../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
@@ -278,6 +278,8 @@ export default function Paso5Documentacion({
   // ── handlers  ──────────────────────────────────────────────────
   const handleFileUpload = (key, file) => {
     if (file) {
+      if (!validarTamanioArchivo(file)) return;
+
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
       updateState((prev) => ({
         archivos: {
