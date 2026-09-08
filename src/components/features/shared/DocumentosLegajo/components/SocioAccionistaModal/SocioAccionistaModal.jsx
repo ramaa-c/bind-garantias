@@ -51,7 +51,8 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
         style={{ display: "none" }}
         accept="image/*,application/pdf"
         onChange={(e) => {
-          if (e.target.files?.[0]) onChange(e.target.files[0]);
+          const selected = e.target.files?.[0];
+          if (selected && validarTamanioArchivo(selected)) onChange(selected);
           e.target.value = null;
         }}
       />
@@ -82,7 +83,7 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
           e.preventDefault();
           setIsDragging(false);
           const droppedFile = e.dataTransfer.files?.[0];
-          if (droppedFile) {
+          if (droppedFile && validarTamanioArchivo(droppedFile)) {
             onChange(droppedFile);
           }
         }}

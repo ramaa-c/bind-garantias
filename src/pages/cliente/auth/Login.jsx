@@ -189,6 +189,7 @@ const EmailForCodePhase = ({ control, isPending, onFallback }) => (
       control={control}
       label="Email"
       type="text"
+      autoComplete="username"
       disabled={isPending}
     />
     <Button type="submit" variant="primary" isLoading={isPending}>
@@ -222,6 +223,7 @@ const CredentialsPhase = ({
       control={control}
       label="Email"
       type="text"
+      autoComplete="username"
       disabled={isPending}
     />
     <InputSimple
@@ -229,6 +231,7 @@ const CredentialsPhase = ({
       control={control}
       label="Contraseña"
       type="password"
+      autoComplete="current-password"
       disabled={isPending}
     />
     <Button type="submit" variant="primary" isLoading={isPending}>

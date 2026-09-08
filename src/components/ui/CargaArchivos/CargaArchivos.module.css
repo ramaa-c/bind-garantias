@@ -63,6 +63,14 @@
   pointer-events: none;
 }
 
+.maxSizeHint {
+  color: var(--text-muted);
+  opacity: 0.7;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  pointer-events: none;
+}
+
 /* --- ESTADO: ARCHIVO CARGADO ---
    .loaded y .actionsGroup se resuelven con flex-wrap en vez de un media
    query: la caja se usa tanto sola en una columna angosta como dentro de

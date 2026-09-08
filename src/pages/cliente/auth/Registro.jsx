@@ -219,6 +219,7 @@ const Registro = () => {
                 control={control}
                 label="Correo Electrónico"
                 type="email"
+                autoComplete="email"
                 disabled={isFormDisabled}
               />
 

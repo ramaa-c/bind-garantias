@@ -54,6 +54,8 @@ const getTipoDocumentoId = (key) => {
 
 const archivosCache = {};
 
+const TIMEOUT_ARCHIVO_MS = 120000;
+
 // SocioArchivo no tiene DELETE (solo GET/POST/PUT — confirmado con Victor,
 // 2026-08-26): "eliminar" un archivo es en realidad un PUT que pisa
 // fchArchivo con esta fecha centinela. obtenerArchivos filtra cualquier
@@ -90,6 +92,7 @@ export const socioArchivoService = {
     try {
       const response = await api.get("api/SocioArchivo", {
         params: { socioid: socioId },
+        timeout: TIMEOUT_ARCHIVO_MS,
       });
       const archivos = (response.data || []).filter((a) => !esArchivoEliminado(a));
       archivosCache[socioId] = archivos;
@@ -130,7 +133,11 @@ export const socioArchivoService = {
       referencia: referencia || "",
     };
 
-    const response = await api.post("api/SocioArchivo", socioArchivoAdapter.adaptarPayload1(payload));
+    const response = await api.post(
+      "api/SocioArchivo",
+      socioArchivoAdapter.adaptarPayload1(payload),
+      { timeout: TIMEOUT_ARCHIVO_MS },
+    );
     return response.data;
   },
 
@@ -169,7 +176,11 @@ export const socioArchivoService = {
       contenido: `(base64, ${contenidoBase64.length} chars)`,
     });
 
-    const response = await api.put("api/SocioArchivo", socioArchivoAdapter.adaptarPayload2(payload));
+    const response = await api.put(
+      "api/SocioArchivo",
+      socioArchivoAdapter.adaptarPayload2(payload),
+      { timeout: TIMEOUT_ARCHIVO_MS },
+    );
     return response.data;
   },
 

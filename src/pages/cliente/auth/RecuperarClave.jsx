@@ -119,6 +119,7 @@ const RecuperarClave = () => {
               control={control}
               label="Email"
               type="text"
+              autoComplete="email"
               disabled={isPending}
               error={isError ? "Usuario no encontrado." : undefined}
             />

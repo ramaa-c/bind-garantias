@@ -42,11 +42,18 @@ const MOCK_MONEDAS = [
   { monedaid: 5000, simbolo: "$ARG" },
 ];
 
+// El input de días usa thousandsSeparator "." (ej: "3.000"), y ese punto
+// hace que parseInt corte en el primer separador (parseInt("3.000", 10) da
+// 3, no 3000): sin este limpiado tanto el chip de vencimiento como el
+// payload guardado quedaban mal para cualquier vigencia de 4+ cifras.
+const parsearDias = (diasStr) =>
+  parseInt(String(diasStr ?? "").replace(/[^0-9]/g, ""), 10) || 0;
+
 // El backend guarda la vigencia en días (DiasVigenciaLinea/Contrato), no
 // como fecha: el input pide directamente ese número. Esto solo se usa para
 // mostrar a qué fecha equivale, a modo de ayuda visual.
 const formatearVencimiento = (diasStr) => {
-  const dias = parseInt(diasStr, 10);
+  const dias = parsearDias(diasStr);
   if (!dias || dias <= 0) return null;
   const d = new Date();
   d.setDate(d.getDate() + dias);
@@ -402,6 +409,11 @@ export default function LineasCadena() {
   );
   const monedaSimbolo = selectedMonedaData?.simbolo || "$";
 
+  const selectedMonedaContratoData = monedas?.raw?.find(
+    (m) => String(m.monedaid) === String(formData.monedaContratoId),
+  );
+  const monedaContratoSimbolo = selectedMonedaContratoData?.simbolo || "$";
+
   // La moneda de la cadena (CadenaValor.MonedaID) acota qué monedas puede
   // tener una línea: si la cadena es en Pesos (5000), sus líneas solo pueden
   // ser en Pesos; si es en Dólares (2), sus líneas pueden ser en Pesos o en
@@ -578,26 +590,34 @@ export default function LineasCadena() {
     if (!formData.tipolimiteid) errores.tipolimiteid = "Elegí un tipo de línea";
     if (!formData.monedaLineaId) errores.monedaLineaId = "Elegí una moneda";
     if (!formData.monedaContratoId) errores.monedaContratoId = "Elegí una moneda";
-    if (!formData.diasVigenciaLinea || parseInt(formData.diasVigenciaLinea, 10) <= 0) {
+    if (!formData.diasVigenciaLinea || parsearDias(formData.diasVigenciaLinea) <= 0) {
       errores.diasVigenciaLinea = "Ingresá los días de vigencia";
     }
-    if (!formData.diasVigenciaContrato || parseInt(formData.diasVigenciaContrato, 10) <= 0) {
+    if (!formData.diasVigenciaContrato || parsearDias(formData.diasVigenciaContrato) <= 0) {
       errores.diasVigenciaContrato = "Ingresá los días de vigencia";
     }
 
-    if (!formData.montoLinea || montoLineaIngresado <= 0) {
-      errores.montoLinea = "Ingresá el monto de la línea";
-    } else if (montoMaximoCV > 0 && montoLineaIngresado > montoMaximoCV) {
-      errores.montoLinea = `Supera el máximo de la cadena (${monedaSimbolo} ${montoMaximoCV.toLocaleString("es-AR")})`;
+    // Si todavía no hay moneda elegida, el input de monto está deshabilitado
+    // (ver el hint que se muestra en su lugar) - no tiene sentido duplicar el
+    // reclamo con un error de "ingresá el monto" superpuesto en el mismo
+    // espacio reservado.
+    if (formData.monedaLineaId) {
+      if (!formData.montoLinea || montoLineaIngresado <= 0) {
+        errores.montoLinea = "Ingresá el monto de la línea";
+      } else if (montoMaximoCV > 0 && montoLineaIngresado > montoMaximoCV) {
+        errores.montoLinea = `Supera el máximo de la cadena (${monedaSimbolo} ${montoMaximoCV.toLocaleString("es-AR")})`;
+      }
     }
 
-    if (!formData.montoContrato || montoContratoIngresado <= 0) {
-      errores.montoContrato = "Ingresá el monto del contrato";
-    } else if (
-      montoLineaIngresado > 0 &&
-      montoLineaIngresado > montoContratoIngresado
-    ) {
-      errores.montoContrato = "El monto de línea no puede ser mayor al del contrato";
+    if (formData.monedaContratoId) {
+      if (!formData.montoContrato || montoContratoIngresado <= 0) {
+        errores.montoContrato = "Ingresá el monto del contrato";
+      } else if (
+        montoLineaIngresado > 0 &&
+        montoLineaIngresado > montoContratoIngresado
+      ) {
+        errores.montoContrato = "El monto de línea no puede ser mayor al del contrato";
+      }
     }
 
     return errores;
@@ -632,9 +652,9 @@ export default function LineasCadena() {
       montocontrato: parseFloat(rawMontoContrato) || 0,
       valorespordefecto: formData.montoUnico ? "1" : "0",
       monedalineaid: Number(formData.monedaLineaId),
-      diasvigencialinea: parseInt(formData.diasVigenciaLinea, 10) || 0,
+      diasvigencialinea: parsearDias(formData.diasVigenciaLinea),
       monedacontratoid: Number(formData.monedaContratoId),
-      diasvigenciacontrato: parseInt(formData.diasVigenciaContrato, 10) || 0,
+      diasvigenciacontrato: parsearDias(formData.diasVigenciaContrato),
       aptanuevalinea: formData.aptanuevalinea ? "1" : "0",
       activa: formData.activa ? "1" : "0",
     };
@@ -882,8 +902,14 @@ export default function LineasCadena() {
                 }}
                 lazy={false}
                 error={formErrors.montoLinea}
+                disabled={!formData.monedaLineaId}
                 sinIconos
               />
+              {!formData.monedaLineaId && (
+                <span className={styles.fieldHint}>
+                  Elegí primero la moneda de la línea
+                </span>
+              )}
               {!formErrors.montoLinea && (
                 <MontoEnPalabras value={limpiarMonto(formData.montoLinea)} />
               )}
@@ -962,7 +988,7 @@ export default function LineasCadena() {
                 label="Monto del Contrato *"
                 value={formData.montoContrato}
                 onChange={(val) => handleInputChange("montoContrato", val)}
-                mask={`${monedaSimbolo} num`}
+                mask={`${monedaContratoSimbolo} num`}
                 blocks={{
                   num: {
                     mask: Number,
@@ -977,8 +1003,14 @@ export default function LineasCadena() {
                 }}
                 lazy={false}
                 error={formErrors.montoContrato}
+                disabled={!formData.monedaContratoId}
                 sinIconos
               />
+              {!formData.monedaContratoId && (
+                <span className={styles.fieldHint}>
+                  Elegí primero la moneda del contrato
+                </span>
+              )}
               {!formErrors.montoContrato && (
                 <MontoEnPalabras value={limpiarMonto(formData.montoContrato)} />
               )}

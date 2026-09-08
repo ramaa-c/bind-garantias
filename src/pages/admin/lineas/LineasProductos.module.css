@@ -339,6 +339,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Debajo de un input de monto deshabilitado (ej: falta elegir moneda),
+   ocupando el mismo lugar donde iría MontoEnPalabras/el mensaje de error
+   una vez habilitado. */
+.fieldHint {
+  margin-top: -1.875rem;
+  font-size: 0.7rem;
+  color: #8b949e;
+  padding-left: 0.25rem;
+}
+
 .moneyChip {
   align-self: flex-start;
   margin-top: 0.15rem;
