@@ -149,6 +149,20 @@
   border-color: rgba(245, 244, 0, 0.18);
 }
 
+/* El degradado casi transparente se apoya en el sidebar oscuro para
+   notarse - contra el gris claro del sidebar en modo claro queda
+   indistinguible del fondo. Elevación real (superficie sólida + sombra)
+   en vez de transparencia, mismo criterio que .glassCard en SociosLegajo. */
+:global([data-theme="light"]) .companyCard {
+  background: linear-gradient(135deg, rgba(245, 244, 0, 0.14), var(--bg-elevado) 55%);
+  border-color: var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme="light"]) .companyCard:hover {
+  border-color: rgba(196, 176, 8, 0.4);
+}
+
 .companyAvatar {
   width: 2.5rem;
   height: 2.5rem;
@@ -338,6 +352,25 @@
 .link:hover {
   background: rgba(var(--overlay-rgb), 0.04);
   color: var(--white);
+}
+
+/* En reposo, .link/.icon usan --text-muted a propósito (ver más abajo) -
+   en modo claro ese gris se lee como "deshabilitado" en vez de "opción
+   disponible sin seleccionar" (el mismo gris sobre un fondo casi negro no
+   da esa lectura). Se sube un escalón a --white-muted, reservando
+   --text-muted para texto realmente secundario (el heading "GENERAL",
+   etc.) - y el hover, que dependía del mismo --overlay-rgb al 4% ya débil
+   de por sí, se refuerza para que la animación se note. */
+:global([data-theme="light"]) .link:not(.active) {
+  color: var(--white-muted);
+}
+
+:global([data-theme="light"]) .link:hover {
+  background: rgba(var(--overlay-rgb), 0.06);
+}
+
+:global([data-theme="light"]) .icon {
+  color: var(--white-muted);
 }
 
 .active {

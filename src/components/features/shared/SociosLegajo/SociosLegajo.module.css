@@ -36,6 +36,16 @@
   border-bottom: 0.5px solid rgba(var(--overlay-rgb), 0.04);
 }
 
+/* rgba(0,0,0,0.15) es un negro fijo, no un token de tema: en oscuro apenas
+   se nota (ya era casi negro de por sí), pero en claro ese mismo 15% de
+   negro tiñe la franja de un gris visiblemente más oscuro que el resto de
+   la card - es la "capa gris" que hace parecer inactiva toda esta zona
+   (reportado). Se reemplaza por un tinte sutil con el mismo --overlay-rgb
+   que ya usa el resto del componente para diferenciar superficies. */
+[data-theme="light"] .categoryLabel {
+  background: rgba(var(--overlay-rgb), 0.04);
+}
+
 .tabBtn {
   position: relative;
   background: rgba(var(--overlay-rgb), 0.025);
@@ -92,6 +102,14 @@
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
+}
+
+/* Mismo criterio que los links del Sidebar principal: --text-muted como
+   color de reposo permanente (no solo del hover) hace que toda pestaña no
+   seleccionada se lea como deshabilitada, más todavía en claro. Un
+   escalón más oscuro/legible para el estado de reposo. */
+[data-theme="light"] .tabTitle {
+  color: var(--white-muted);
 }
 
 .tabActive .tabTitle {
@@ -431,6 +449,17 @@
   font-weight: 800;
 }
 
+/* El amarillo tenue sobre negro (fondo traslúcido + letra amarilla) se
+   apoya en que el amarillo brilla contra un fondo oscuro - sobre blanco
+   ningún nivel de opacidad baja alcanza. Se invierte la relación: relleno
+   sólido de marca + letra oscura encima (mismo recurso que ya usan los
+   badges "Obligatorio", --badge-amarillo-*). */
+[data-theme="light"] .perfilAvatar {
+  background: var(--color-amarillo-bind);
+  border-color: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+}
+
 .perfilAvatarAdmin {
   background: linear-gradient(135deg, rgba(76, 101, 230, 0.3), rgba(76, 101, 230, 0.06));
   border-color: rgba(76, 101, 230, 0.4);
@@ -469,7 +498,7 @@
   font-variant-numeric: tabular-nums;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #b9bec7;
+  color: var(--white);
   background: rgba(var(--overlay-rgb), 0.05);
   border: 1px solid rgba(var(--overlay-rgb), 0.09);
   border-radius: 0.4rem;
@@ -534,6 +563,14 @@
   background: rgba(244, 245, 0, 0.09);
   border: 1px solid rgba(244, 245, 0, 0.18);
   color: var(--color-amarillo-bind);
+}
+
+/* Mismo criterio que .perfilAvatar más arriba: relleno sólido + ícono
+   oscuro en vez de fondo traslúcido + ícono amarillo. */
+[data-theme="light"] .perfilSectionIcon {
+  background: var(--color-amarillo-bind);
+  border-color: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
 }
 
 .perfilSectionIconAdmin {
@@ -954,6 +991,16 @@
     background: rgba(0, 0, 0, 0.12);
     z-index: 0;
     pointer-events: none;
+  }
+
+  /* rgba(0,0,0,0.12) es negro fijo, no un token de tema - en escritorio
+     este panel cubre TODA la columna de pestañas (por eso "toda la zona
+     se ve gris/inactiva", no solo un renglón). En claro se reemplaza por
+     el mismo criterio de superficie recesada que ya usa .workspace más
+     arriba (--bg-surface, un gris apenas perceptible contra el blanco de
+     .viewer, no un velo oscuro encima). */
+  [data-theme="light"] .sidebarBg {
+    background: var(--bg-surface);
   }
 
   .categoryLabel, .tabBtn {

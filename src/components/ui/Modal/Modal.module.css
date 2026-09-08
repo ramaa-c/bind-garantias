@@ -154,6 +154,23 @@
   overflow: visible !important;
 }
 
+/* ── FOOTER (opcional, ver prop `footer` más arriba) ────────────────────────── */
+/* Hermano de .body, no su hijo: nunca scrollea, así que no depende de
+   position:sticky (ver comentario en Modal.jsx). flex-shrink:0 para que
+   .body sea quien se achique/scrollee si el modal no entra en 90vh, nunca
+   el footer. El redondeo de las esquinas inferiores lo hereda gratis del
+   overflow:hidden + border-radius de .modalBox, no hace falta repetirlo acá. */
+.footer {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.07);
+  background: var(--bg-modal);
+}
+
 /* Scrollbar refinado */
 .body::-webkit-scrollbar {
   width: 5px;
