@@ -241,6 +241,7 @@ export const DocumentosEmpresaModal = ({
                           className={styles.dropzoneTaller}
                           title={doc.title}
                           hasError={hasError}
+                          isUploading={isUploading}
                           file={
                             currentFile
                               ? {
@@ -272,6 +273,7 @@ export const DocumentosEmpresaModal = ({
                           type="file"
                           id={`modal-file-${doc.key}`}
                           style={{ display: "none" }}
+                          disabled={isUploading}
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
                               onFileUpload(doc.key, e.target.files[0]);

@@ -17,7 +17,7 @@ import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../../../utils/executeCda";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
-import { formatBase64Size, procesarArchivo } from "../../../../../../utils/fileUtils";
+import { formatBase64Size, procesarArchivo, validarTamanioArchivo } from "../../../../../../utils/fileUtils";
 import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../../../hooks/useValidarDomicilioRequerido";
