@@ -9,12 +9,19 @@
   min-height: 20rem;
 }
 
+/* height:100% (no calc(100dvh - Nrem)): .containerInner, el padre real
+   (ver AdminLayout.module.css), ya es flex:1/min-height:0 dentro de
+   .adminContent - 100% de esa altura resuelta es siempre la disponible de
+   verdad, sin duplicar a mano el padding de .adminContent en un número
+   mágico separado que puede desincronizarse (pasó una vez, ver el mismo
+   comentario en CdasGlobales.module.css). El fallback a "auto" por poco
+   ancho/alto está en la media query de abajo. */
 .container {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
   width: 100%;
-  height: calc(100dvh - 13rem);
+  height: 100%;
 }
 
 /* ── HEADER ─────────────────────────────────────────────── */
@@ -1154,20 +1161,35 @@
   box-shadow: 0 0 6px rgba(76, 101, 230, 0.6);
 }
 
-@media (max-width: 900px) {
+/* El alto fijo de .container (y de .embeddedLegajo/.datosTab/etc, que
+   scrollean adentro de él) solo tiene sentido cuando hay ancho Y alto de
+   sobra - por eso el fallback a "auto" también entra por poco alto
+   efectivo (zoom de navegador alto), no solo por poco ancho. Sin esto, el
+   footer de Guardar/Revertir de .datosTab quedaba sandwicheado entre el
+   contenido y el footer con el mismo bug ya visto y resuelto en el
+   workbench de CDAs (ver CdasGlobales.module.css) - la única zona con
+   min-height:0 (.datosScroll) se comprimía a una franja inusable en vez de
+   que la página entera empiece a scrollear. */
+@media (max-width: 900px), (max-height: 749px) {
   .container {
     height: auto;
   }
 
-  .heroIdentity h1 {
-    max-width: 100%;
-  }
-
+  /* margin-bottom simple: .adminContent no es flex (ver AdminLayout.module.css),
+     así que un margin-bottom común y corriente alcanza para que .versionText
+     (fixed) no termine pisando lo último de la página. */
   .embeddedLegajo,
   .datosTab,
   .cdasPlaceholderWrap,
   .cdasScroll {
     height: auto;
+    margin-bottom: 3rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .heroIdentity h1 {
+    max-width: 100%;
   }
 
   .sectionsGrid {

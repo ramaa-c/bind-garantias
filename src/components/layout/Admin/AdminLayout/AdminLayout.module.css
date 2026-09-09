@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100dvh;
   background-color: #070a11;
-  background-image: 
+  background-image:
     radial-gradient(ellipse at 50% -20%, rgba(76, 101, 230, 0.1) 0%, transparent 60%),
     radial-gradient(ellipse at 0% 100%, rgba(76, 101, 230, 0.05) 0%, transparent 50%);
   color: var(--white-muted);
@@ -52,8 +52,6 @@
 
 .adminContent {
   height: 100dvh;
-  display: flex;
-  flex-direction: column;
   padding: 11rem 4.5rem 2rem 4.5rem;
   position: relative;
   z-index: 1;
@@ -61,22 +59,27 @@
   overflow-x: hidden;
 }
 
+/* A propósito NO display:flex: .adminContent es el contenedor con
+   overflow-y:auto, y flex + overflow en el mismo elemento hace que
+   Chromium ignore tanto su propio padding-bottom como el margin-bottom de
+   sus hijos al calcular el scroll real (confirmado en vivo con
+   scrollHeight/clientHeight, 2026-09-09) - un dolor de cabeza de varias
+   vueltas para conseguir que lo último de una página no quedara pisado
+   por .versionText (fixed, ver abajo). En un contexto de bloque normal
+   (sin flex en ningún lado de esta cadena) el padding-bottom del
+   contenedor y el margin-bottom del contenido SÍ cuentan siempre - es el
+   comportamiento de toda la vida de "overflow:auto", nada especial.
+   height:100% en .containerInner resuelve igual de bien contra un padre
+   de bloque con altura definida que contra uno flex; cada página (ver
+   .container en CdasGlobales.module.css/EmpresaDetalle.module.css/etc.)
+   sigue pudiendo pedir height:100% para su propio modo "sin scroll", o
+   quedarse en su alto natural + un margin-bottom simple cuando cae al modo
+   apilado - eso ya funciona solo, sin necesitar nada especial acá. */
 .containerInner {
   max-width: 85rem;
   width: 100%;
+  height: 100%;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  /* flex:1 + min-height:0 acotan la altura disponible real (en vez de
-     "lo que el contenido necesite"): así una página puede optar por
-     scrollear solo una sección interna suya (ej. Dashboard.jsx con su
-     lista) en vez de que .adminContent scrollee la página entera. Con
-     overflow:visible por defecto, las páginas que no usan ese patrón
-     siguen exactamente igual que antes (el overflow-y:auto de
-     .adminContent las sigue scrolleando completas como hasta ahora). */
-  flex: 1;
-  min-height: 0;
 }
 
 @media (max-width: 1024px) {
@@ -91,12 +94,24 @@
   }
 }
 
+/* Fondo propio (no solo texto suelto): al estar fijo en una esquina sobre
+   una página que puede scrollear, en algún punto intermedio del scroll
+   siempre va a terminar superpuesto a lo que sea que haya ahí en ese
+   momento (es lo esperable de cualquier elemento fixed en una esquina, no
+   un bug de posicionamiento - confirmado con Computed en DevTools,
+   2026-09-09: position:fixed se calcula bien, ningún ancestro rompe eso).
+   Con un fondo semi-opaco propio se lee igual sin importar qué pase por
+   detrás, en vez de mezclarse visualmente con el contenido. */
 .versionText {
   position: fixed;
   left: 1.25rem;
   bottom: 1rem;
   z-index: 5;
   margin: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(7, 10, 17, 0.75);
+  backdrop-filter: blur(4px);
   color: var(--text-muted);
   font-size: 0.7rem;
   pointer-events: none;

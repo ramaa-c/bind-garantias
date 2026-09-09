@@ -13,3 +13,18 @@ export const esCdaActivo = (cda) => {
 // CdaPanel) — no en los chequeos de vinculación existente, que siguen
 // usando esCdaActivo.
 export const esCdaActivoEstricto = (cda) => String(cda?.activo ?? cda?.Activo ?? "") === "1";
+
+// Compartidos entre CdasGlobales.jsx (listado) y CdaFormPage.jsx (alta/
+// edición) - antes vivían duplicados en un solo archivo que hacía las dos
+// cosas; separados en dos páginas/rutas, necesitan un lugar común.
+export const getCdaId = (c) => {
+  if (!c) return undefined;
+  return c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
+};
+
+export const getCdaProp = (c, propName) => {
+  if (!c) return "";
+  const pascal = propName.charAt(0).toUpperCase() + propName.slice(1);
+  const val = c[propName] !== undefined ? c[propName] : c[pascal];
+  return val !== undefined && val !== null ? val : "";
+};

@@ -8,6 +8,19 @@
   gap: 0.5rem;
 }
 
+/* Fuera del modo de columnas con scroll propio (ver el mismo umbral en
+   .mainLayout/.leftCol/.rightCol más abajo), la página entera pasa a
+   scrollear - pero una lista de CDAs puede tener muchos ítems, y no tiene
+   sentido que estire el scroll de toda la página hasta mostrarlos todos.
+   Mismo criterio que otras listas largas del panel admin (ej. el picker de
+   variables NOSIS en CdasGlobales): un tope propio con scroll interno. */
+@media (max-width: 991px), (max-height: 749px) {
+  .cdasList {
+    max-height: 24rem;
+    overflow-y: auto;
+  }
+}
+
 .cdasTitle {
   font-size: 0.9375rem;
   font-weight: 600;
@@ -756,7 +769,12 @@
   gap: 1.25rem;
 }
 
-@media (min-width: 992px) {
+/* Mismo umbral (ancho Y alto) que .container/.panelWrap en
+   CadenasCda.module.css: el scroll independiente por columna solo tiene
+   sentido cuando el panel de afuera tiene una altura fija que respetar. Sin
+   alto de sobra, .leftCol/.rightCol vuelven a su alto natural (apiladas,
+   sin overflow propio) y la página entera pasa a scrollear. */
+@media (min-width: 992px) and (min-height: 750px) {
   .mainLayout {
     flex-direction: row;
     align-items: stretch;
@@ -781,6 +799,15 @@
   .rightCol {
     flex: 1;
     min-width: 0;
+  }
+}
+
+/* Fuera de ese modo, .mainFooter (Guardar/Cancelar) queda como lo último
+   de la página - margin-bottom simple para que .versionText (fixed) no
+   termine pisándolo (.adminContent no es flex, ver AdminLayout.module.css). */
+@media (max-width: 991px), (max-height: 749px) {
+  .mainFooter {
+    margin-bottom: 3rem;
   }
 }
 

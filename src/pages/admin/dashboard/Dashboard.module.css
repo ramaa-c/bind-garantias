@@ -10,6 +10,30 @@
   min-height: 0;
 }
 
+/* Sin esto, con poco alto efectivo (zoom de navegador alto o pantalla
+   chica) .listWrapper (la única zona con min-height:0) se comprimía contra
+   <Paginacion> en vez de que la página entera empiece a scrollear - mismo
+   bug ya visto y resuelto en CdasGlobales.module.css/EmpresaDetalle.module.css.
+   height:auto alcanza (sin gatear min-height:0 en .listWrapper aparte): al
+   quedar .container sin un alto fijo que respetar, no hay ningún déficit
+   contra el que .listWrapper se achique. */
+@media (max-height: 749px) {
+  .container {
+    height: auto;
+    min-height: auto;
+  }
+
+  /* Los <Modal> (CriteriosAceptacionModal, RechazarSolicitudModal, etc.) se
+     portalean a document.body (ver Modal.jsx) - nunca son hijos reales de
+     .container, así que este selector siempre cae en .listWrapper o en
+     <Paginacion>, lo que efectivamente sea lo último de la lista. Un
+     margin-bottom común alcanza (.adminContent no es flex, ver
+     AdminLayout.module.css) para que .versionText no lo pise. */
+  .container > *:last-child {
+    margin-bottom: 3rem;
+  }
+}
+
 /* ── HEADER ─────────────────────────────────────────────── */
 .header {
   display: flex;
