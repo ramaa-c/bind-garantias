@@ -13,18 +13,13 @@ import { usuarioService } from "../../../services/usuarioService";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useThemeStore } from "../../../store/useThemeStore";
 import { useChannel } from "../../../context/ChannelContext";
-import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
+import { denominacionDesdeEmail, extraerRegistroUsuario, esAdministradorActivo } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
-const parsearRegistroUsuario = (db) => {
-  if (!db) return null;
-  if (Array.isArray(db)) return db[0] || null;
-  if (db.items) return db.items[0] || null;
-  if (db.data) return db.data[0] || null;
-  return db;
-};
+const MENSAJE_ADMIN_EN_CLIENTE =
+  "Esta cuenta es de administración y no puede operar como cliente. Registrate con un correo distinto para acceder desde acá.";
 
 const parsearCadenas = (data) => {
   if (!data) return [];
@@ -43,13 +38,36 @@ const parsearCadenas = (data) => {
 // porque no es dueño de ningún Socio). AdminGuard no valida el "role" que
 // se setea al loguear, así que no hace falta nada especial del lado del
 // guard — solo decidir bien el destino acá.
-const resolverDestinoPostLogin = async (email, basePath) => {
+// Chequeo suelto, para cortar ANTES de pedir el código por mail (así una
+// cuenta de administración ni siquiera lo recibe). En el resto de los
+// caminos no hace falta: resolverAccesoPostLogin ya trae el registro y
+// decide con eso, sin pagar un request extra.
+const esCuentaDeAdministracion = async (email) => {
   try {
     const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
-    const registro = parsearRegistroUsuario(usuarioDb);
+    return esAdministradorActivo(extraerRegistroUsuario(usuarioDb));
+  } catch {
+    return false;
+  }
+};
+
+const resolverAccesoPostLogin = async (email, basePath) => {
+  try {
+    const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
+    const registro = extraerRegistroUsuario(usuarioDb);
+
+    // Un Administrador General no tiene Socio ni legajo propio: su cuenta es
+    // exclusivamente del panel admin y no corresponde que entre por el login
+    // de un banco, aunque el backend valide bien sus credenciales
+    // (SGRPLUSPLA-195). OJO: esto NO alcanza a los admin restringidos, que
+    // no llevan esta marca y sí entran por acá (ver más abajo).
+    if (esAdministradorActivo(registro)) {
+      return { permitido: false, destino: null };
+    }
+
     const usuarioWebId =
       registro?.usuariowebid ?? registro?.UsuarioWebID ?? registro?.id ?? null;
-    if (!usuarioWebId) return `${basePath}/legajo`;
+    if (!usuarioWebId) return { permitido: true, destino: `${basePath}/legajo` };
 
     // ⚠️ El backend filtra por el param "usuarioid" (no "usuariowebid") —
     // ver el mismo aviso en useAdminRestrictions.js.
@@ -57,11 +75,14 @@ const resolverDestinoPostLogin = async (email, basePath) => {
       usuarioid: usuarioWebId,
     });
     const tieneCadenas = parsearCadenas(cadenasData).length > 0;
-    return tieneCadenas ? "/admin" : `${basePath}/legajo`;
+    return {
+      permitido: true,
+      destino: tieneCadenas ? "/admin" : `${basePath}/legajo`,
+    };
   } catch {
     // Ante cualquier falla de esta verificación extra, seguir el camino
     // normal en vez de bloquear el login por completo.
-    return `${basePath}/legajo`;
+    return { permitido: true, destino: `${basePath}/legajo` };
   }
 };
 
@@ -408,6 +429,11 @@ const Login = () => {
       const isValid = await trigger("email");
       if (!isValid) return;
 
+      if (await esCuentaDeAdministracion(formData.email)) {
+        setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+        return;
+      }
+
       loginByCode(
         { email: formData.email, password: "" },
         {
@@ -448,9 +474,13 @@ const Login = () => {
 
     if (fase === "validacion_otp") {
       if (formData.otp === generatedOtp) {
+        const acceso = await resolverAccesoPostLogin(formData.email, basePath);
+        if (!acceso.permitido) {
+          setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+          return;
+        }
         setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
-        const destino = await resolverDestinoPostLogin(formData.email, basePath);
-        navigate(destino, { replace: true });
+        navigate(acceso.destino, { replace: true });
       } else {
         setError("otp", { type: "server", message: "Código incorrecto" });
       }
@@ -462,9 +492,13 @@ const Login = () => {
         { email: formData.email, password: formData.password },
         {
           onSuccess: async () => {
+            const acceso = await resolverAccesoPostLogin(formData.email, basePath);
+            if (!acceso.permitido) {
+              setError("password", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+              return;
+            }
             setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
-            const destino = await resolverDestinoPostLogin(formData.email, basePath);
-            navigate(destino, { replace: true });
+            navigate(acceso.destino, { replace: true });
           },
           onError: async (error) => {
             const status = error?.response?.status;

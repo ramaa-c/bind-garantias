@@ -9,6 +9,15 @@ export const extraerRegistroUsuario = (db) => {
   return db;
 };
 
+// Administrador General (EsAdministrador=1): ve todo el panel admin, no
+// tiene Socio ni legajo propio. Distinto del "admin restringido", que no
+// tiene esta marca y solo está vinculado a cadenas por UsuarioCadenaValor
+// (ver useAdminRestrictions). El backend devuelve el flag como string.
+export const esAdministradorActivo = (registro) => {
+  const valor = registro?.esadministrador ?? registro?.EsAdministrador;
+  return valor === "1" || valor === 1 || valor === true;
+};
+
 // Nombre de usuario legible a partir del email, para precargar Denominacion
 // al dar de alta la cuenta (el usuario puede cambiarlo después desde "Mi
 // cuenta") - toma la parte antes del @ y reemplaza separadores comunes por
