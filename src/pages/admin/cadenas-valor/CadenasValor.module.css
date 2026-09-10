@@ -34,6 +34,14 @@
   font-size: 0.875rem;
 }
 
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en Dashboard.module.css). */
+@media (max-height: 716px) {
+  .titleBox p {
+    display: none;
+  }
+}
+
 .actionsTop {
   display: flex;
   align-items: center;
@@ -95,30 +103,22 @@
   flex-direction: column;
 }
 
+/* Sin max-height/overflow-y propio (a diferencia de antes): con
+   ELEMENTOS_POR_PAGINA (CadenasValor.jsx) la cantidad de filas ya está
+   acotada, así que la tarjeta mide lo que su contenido necesita y
+   <Paginacion/> queda pegada justo después de la tabla - mismo estándar
+   que Empresas.module.css/CdasGlobales.module.css/Dashboard.module.css. */
 .tableWrapper {
   overflow-x: auto;
-  overflow-y: auto;
-  max-height: calc(100vh - 260px);
 }
 
-.tableWrapper::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.tableWrapper::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-.tableWrapper::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 4px;
-}
-.tableWrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
-}
-
+/* table-layout:fixed + un ancho por columna (JSX) + .truncateCell: mismo
+   criterio que CdasGlobales.module.css - sin esto, una denominación o
+   referencia larga estira la fila entera y el alto por fila deja de ser
+   predecible (justo lo que la paginación necesita para no desbordar). */
 .table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   text-align: left;
 }
@@ -126,6 +126,19 @@
 .table th, .table td {
   padding: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.truncateCell {
+  max-width: 0;
+  overflow: hidden;
+}
+
+.truncateCell strong,
+.truncateCell span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table th {

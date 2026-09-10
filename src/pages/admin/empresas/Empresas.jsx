@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
-import { FiInbox, FiSearch, FiX, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
+import { FiInbox, FiSearch, FiX, FiChevronRight, FiChevronUp, FiChevronDown, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
 import { useObtenerSocios, useObtenerExecuteCda } from "../../../hooks/useSocios";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
@@ -145,6 +145,12 @@ export default function Empresas() {
   const [orden, setOrden] = useState(FILTROS_POR_DEFECTO.orden);
   const [pagina, setPagina] = useState(1);
   const [empresaActividad, setEmpresaActividad] = useState(null);
+  // Colapsado por defecto solo en Rango 2 (mismo umbral y mismo criterio
+  // que Dashboard.jsx - ahí es donde el espacio es crítico; en Rango 1
+  // arranca abierto porque sobra aire).
+  const [panelesVisibles, setPanelesVisibles] = useState(
+    () => typeof window === "undefined" || !window.matchMedia("(max-height: 716px)").matches
+  );
 
   // El backend solo permite filtrar la lista de socios por Cuit o por
   // Denominacion (nunca ambos a la vez: el Cuit es único, así que combinarlos
@@ -234,8 +240,28 @@ export default function Empresas() {
           <h1>Empresas</h1>
           <p>Listado de empresas registradas en la plataforma.</p>
         </div>
+        <button
+          type="button"
+          className={styles.toggleFiltersBtn}
+          onClick={() => setPanelesVisibles((v) => !v)}
+          aria-expanded={panelesVisibles}
+          title={panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
+        >
+          {panelesVisibles ? <FiChevronUp /> : <FiChevronDown />}
+          {panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
+          {/* Con el panel colapsado, esta es la única señal de que la lista
+              de abajo está filtrada y no es el total real. */}
+          {!panelesVisibles && hayFiltrosActivos && (
+            <span className={styles.toggleFiltersActiveDot} title="Hay filtros activos" />
+          )}
+        </button>
       </div>
 
+      {/* Colapsable en Rango 2 (mismo patrón que Dashboard.jsx): entra por
+          panelesVisibles, con grid-template-rows 1fr→0fr (ver
+          .collapsiblePanel en Empresas.module.css). */}
+      <div className={`${styles.collapsiblePanel} ${!panelesVisibles ? styles.collapsiblePanelClosed : ""}`}>
+        <div className={styles.collapsiblePanelInner}>
       <div className={styles.filtersCard}>
         <div className={styles.searchWrap}>
           <FiSearch className={styles.iconSearch} />
@@ -302,6 +328,8 @@ export default function Empresas() {
             {empresas.length} empresa{empresas.length !== 1 ? "s" : ""}
           </span>
         )}
+      </div>
+      </div>
       </div>
 
       <div className={styles.tableCard}>

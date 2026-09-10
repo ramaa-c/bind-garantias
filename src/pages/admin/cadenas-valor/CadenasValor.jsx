@@ -15,6 +15,7 @@ import {
   useEquipoComercial,
 } from "../../../hooks/useCatalogos";
 import { Spinner, Button, Alert, Skeleton } from "../../../components/ui";
+import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import {
   ActivarCadenaModal,
   EditarCadenaModal,
@@ -24,6 +25,14 @@ import {
 } from "../../../components/features";
 import { toast } from "sonner";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
+
+// Mismo criterio que Empresas.jsx/CdasGlobales.jsx: con el alto de fila
+// blindado a una sola línea (table-layout:fixed + truncado, ver
+// CadenasValor.module.css/el render de la tabla más abajo), 8 es el mismo
+// tamaño de página ya probado en el resto del panel. Hoy hay pocas cadenas
+// (no se nota), pero paginar desde ahora evita que el día que haya muchas
+// la tabla vuelva a crecer sin límite.
+const ELEMENTOS_POR_PAGINA = 8;
 
 // Mientras carga la lista se muestran filas fantasma con la misma forma que
 // las reales (el header, buscador y tabla quedan visibles al instante), en
@@ -55,6 +64,7 @@ export default function CadenasValor() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
   const bloqueado = useBloqueoAdminRestringido();
   const [searchTerm, setSearchTerm] = useState("");
+  const [pagina, setPagina] = useState(1);
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -202,6 +212,18 @@ export default function CadenasValor() {
       c.referencia?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const totalPaginas = Math.max(1, Math.ceil(filteredCadenas.length / ELEMENTOS_POR_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const cadenasPagina = filteredCadenas.slice(
+    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
+    paginaActual * ELEMENTOS_POR_PAGINA
+  );
+
+  const handleBusqueda = (value) => {
+    setSearchTerm(value);
+    setPagina(1);
+  };
+
   if (bloqueado) return null;
 
   return (
@@ -230,7 +252,7 @@ export default function CadenasValor() {
             type="text"
             placeholder="Filtrar activas por denominación o referencia..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleBusqueda(e.target.value)}
           />
         </div>
       </div>
@@ -242,10 +264,10 @@ export default function CadenasValor() {
             <thead>
               <tr>
                 <th style={{ width: "80px" }}>Logo</th>
-                <th>Denominación</th>
-                <th>Referencia</th>
-                <th>Canal Comercialización</th>
-                <th>Equipo Comercial</th>
+                <th style={{ width: "24%" }}>Denominación</th>
+                <th style={{ width: "16%" }}>Referencia</th>
+                <th style={{ width: "20%" }}>Canal Comercialización</th>
+                <th style={{ width: "18%" }}>Equipo Comercial</th>
                 <th style={{ textAlign: "center", width: "80px" }}>Activa</th>
                 <th style={{ textAlign: "center", width: "200px" }}>Acciones</th>
               </tr>
@@ -253,7 +275,7 @@ export default function CadenasValor() {
             <tbody>
               {isLoadingActive &&
                 Array.from({ length: 6 }).map((_, i) => <CadenaRowSkeleton key={i} />)}
-              {!isLoadingActive && filteredCadenas.map((item) => {
+              {!isLoadingActive && cadenasPagina.map((item) => {
                 const puedeActivarse = item.aprobadaVigente;
                 const manualStatus = toggledStates[item.cadenavalorid] !== undefined
                   ? toggledStates[item.cadenavalorid]
@@ -289,8 +311,8 @@ export default function CadenasValor() {
                         </div>
                       )}
                     </td>
-                    <td>
-                      <strong>{item.denominacion}</strong>
+                    <td className={styles.truncateCell}>
+                      <strong title={item.denominacion}>{item.denominacion}</strong>
                       <span
                         style={{
                           display: "block",
@@ -301,15 +323,19 @@ export default function CadenasValor() {
                         ID: #{item.cadenavalorid}
                       </span>
                     </td>
-                    <td>{item.referencia || "-"}</td>
-                    <td>
-                      {getCatalogLabel(
-                        canalesOpciones,
-                        item.tipocanalcomercializacionid,
-                      )}
+                    <td className={styles.truncateCell}>
+                      <span title={item.referencia}>{item.referencia || "-"}</span>
                     </td>
-                    <td>
-                      {getCatalogLabel(equiposOpciones, item.equipocomercialid)}
+                    <td className={styles.truncateCell}>
+                      <span>
+                        {getCatalogLabel(
+                          canalesOpciones,
+                          item.tipocanalcomercializacionid,
+                        )}
+                      </span>
+                    </td>
+                    <td className={styles.truncateCell}>
+                      <span>{getCatalogLabel(equiposOpciones, item.equipocomercialid)}</span>
                     </td>
                     <td style={{ textAlign: "center" }} className={styles.switchCell}>
                       {isUpdating ? (
@@ -398,6 +424,20 @@ export default function CadenasValor() {
           </table>
         </div>
       </div>
+
+      {!isLoadingActive && filteredCadenas.length > 0 && (
+        <Paginacion
+          page={paginaActual}
+          onPageChange={setPagina}
+          hasMoreData={paginaActual < totalPaginas}
+          isLoading={isLoadingActive}
+          knownEndPage={totalPaginas}
+          variant="admin"
+          totalItems={filteredCadenas.length}
+          pageSize={ELEMENTOS_POR_PAGINA}
+          itemLabel="cadenas"
+        />
+      )}
 
       {/* Modals */}
       <ActivarCadenaModal

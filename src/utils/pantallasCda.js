@@ -17,3 +17,14 @@ export const PANTALLAS_CDA = [
 // (AltaOperacion.jsx). Valor confirmado contra el catálogo real de
 // PantallaGrupoCda del backend el 2026-08-18 (PantallaGrupoCdaID: 4).
 export const PANTALLA_LINEAS = "PANTALLA_LINEAS";
+
+// Las 3 pantallas reales donde se agrupan CDAs, para el filtro del listado
+// global y los checkboxes de vinculación masiva (CdasGlobales.jsx /
+// CdaFormPage.jsx). PANTALLAS_CDA no incluye Alta de Línea porque no es una
+// opción del paso a paso de CadenasCda.jsx - acá sí es una pantalla más, al
+// mismo nivel que las otras dos, ya que este catálogo es compartido por
+// las 3.
+export const TODAS_PANTALLAS_CDA_GLOBAL = [
+  ...PANTALLAS_CDA,
+  { value: PANTALLA_LINEAS, label: "Alta de Línea" },
+];

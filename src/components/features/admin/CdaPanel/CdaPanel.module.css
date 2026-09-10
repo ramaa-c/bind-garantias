@@ -8,6 +8,20 @@
   gap: 0.5rem;
 }
 
+/* Fuera del modo de columnas con scroll propio (ver el mismo umbral único
+   del panel admin en .mainLayout/.leftCol/.rightCol más abajo - 1440px de
+   ancho u 716px de alto, ver AdminLayout.module.css), la página entera pasa
+   a scrollear - pero una lista de CDAs puede tener muchos ítems, y no tiene
+   sentido que estire el scroll de toda la página hasta mostrarlos todos.
+   Mismo criterio que otras listas largas del panel admin (ej. el picker de
+   variables NOSIS en CdaWorkbench): un tope propio con scroll interno. */
+@media (max-width: 1440px), (max-height: 716px) {
+  .cdasList {
+    max-height: 24rem;
+    overflow-y: auto;
+  }
+}
+
 .cdasTitle {
   font-size: 0.9375rem;
   font-weight: 600;
@@ -749,38 +763,60 @@
 }
 
 /* --- Layout de 2 columnas: agrupación a la izquierda, checklist a la
-   derecha (mismo espíritu que la vieja pantalla "CDAs por Pantalla") --- */
+   derecha (mismo espíritu que la vieja pantalla "CDAs por Pantalla") ---
+   Rango 1 (base): fila con 2 columnas, cada una con su propio scroll
+   independiente - la de agrupación queda siempre a la vista sin importar
+   cuán larga sea la lista de CDAs. Mismo umbral único (ancho Y alto, 1440px
+   / 716px) que .container/.panelWrap en CadenasCda.module.css: el scroll
+   independiente por columna solo tiene sentido cuando el panel de afuera
+   tiene una altura fija que respetar. Rango 2 (más abajo): sin alto de
+   sobra, .leftCol/.rightCol vuelven a su alto natural (apiladas, sin
+   overflow propio) y la página entera pasa a scrollear. */
 .mainLayout {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
 }
 
-@media (min-width: 992px) {
+@media (max-width: 1440px), (max-height: 716px) {
   .mainLayout {
-    flex-direction: row;
-    align-items: stretch;
-    flex: 1;
-    min-height: 0;
+    flex-direction: column;
+    min-height: auto;
+    gap: 0.85rem;
   }
+}
 
-  /* Cada columna scrollea de forma independiente: la de agrupación queda
-     siempre a la vista sin importar cuán larga sea la lista de CDAs. */
+.leftCol,
+.rightCol {
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 0.5rem;
+  margin-right: -0.5rem;
+}
+
+.leftCol {
+  flex: 0 0 320px;
+}
+
+.rightCol {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
   .leftCol,
   .rightCol {
-    overflow-y: auto;
-    min-height: 0;
-    padding-right: 0.5rem;
-    margin-right: -0.5rem;
+    overflow-y: visible;
+    min-height: auto;
+    padding-right: 0;
+    margin-right: 0;
   }
 
   .leftCol {
-    flex: 0 0 320px;
-  }
-
-  .rightCol {
-    flex: 1;
-    min-width: 0;
+    flex: 0 0 auto;
   }
 }
 

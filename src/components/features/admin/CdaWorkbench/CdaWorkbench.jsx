@@ -9,11 +9,7 @@ import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import { FiCheck, FiChevronDown, FiArrowLeft, FiTrash2, FiX, FiInfo } from "react-icons/fi";
-// Reutiliza el mismo módulo de estilos que CdasGlobales.jsx: es el mismo
-// workbench de alta/edición de CDA, extraído acá para que la lógica delicada
-// (ver comentarios abajo, buena parte documenta bugs reales ya resueltos)
-// viva en un solo lugar en vez de en el medio de CdasGlobales.jsx.
-import styles from "../../../../pages/admin/cdas/CdasGlobales.module.css";
+import styles from "./CdaWorkbench.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
 const INTEGRACION_PREFIXES = {
@@ -305,15 +301,15 @@ const detectarIntegracion = (expr) => {
 };
 
 // Workbench de alta/edición de un Criterio de Aceptación (CDA): 3 columnas
-// (fuente de datos → definir regla → probar y publicar). Extraído de
-// CdasGlobales.jsx (único lugar donde se crean/editan CDAs - LineasCda.jsx y
+// (fuente de datos → definir regla → probar y publicar). Usado por
+// CdaFormPage.jsx (único lugar donde se crean/editan CDAs - LineasCda.jsx y
 // CadenasCda.jsx solo vinculan CDAs ya existentes a una cadena) para poder
 // aislar los bugs de motor de CDAs ya resueltos acá (casing por integración,
 // comillas según tipo de campo, NOSIS numérico) en un solo componente.
 //
 // El guardado real (POST/PUT del CDA + cualquier vinculación posterior) NO
 // vive acá: `onGuardar(payloadCda, { esEdicion })` lo hace el caller
-// (CdasGlobales.jsx vincula a cadenas existentes / propaga valores, por
+// (CdaFormPage.jsx vincula a cadenas existentes / propaga valores, por
 // pantalla elegida). Debe devolver true si guardó con éxito (y mostrar sus
 // propios toasts/errores); el workbench solo orquesta la prueba previa, el
 // modal de confirmación y el estado de carga.
@@ -861,7 +857,7 @@ export function CdaWorkbench({
         </div>
 
         {/* COLUMNA 3: Probar y Publicar */}
-        <div className={styles.col}>
+        <div className={`${styles.col} ${styles.colAcciones}`}>
           <div className={styles.colHeader}>
             <span className={styles.colStepBadge}>3</span>
             <div>
@@ -952,8 +948,11 @@ export function CdaWorkbench({
 
           <div className={styles.colDivider} />
 
-          {/* Vinculación: zona scrolleable, debajo del laboratorio de pruebas */}
-          <div className={styles.colScroll}>
+          {/* Vinculación: alto natural, debajo del laboratorio de pruebas.
+              Si no entra, scrollea la columna entera (.colAcciones), no esta
+              franja - así los switches nunca quedan comprimidos a un
+              tamaño inusable. */}
+          <div className={styles.colVinculacion}>
             <div className={styles.toggleOptionsPanel}>
               <ToggleOptionRow
                 label="CDA por Defecto"

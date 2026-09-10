@@ -84,6 +84,7 @@ const CadenasValor = lazy(
 );
 const CadenasCda = lazy(() => import("./pages/admin/cadenas-valor/CadenasCda"));
 const CdasGlobales = lazy(() => import("./pages/admin/cdas/CdasGlobales"));
+const CdaFormPage = lazy(() => import("./pages/admin/cdas/CdaFormPage"));
 const LineasCadena = lazy(() => import("./pages/admin/lineas/LineasCadena"));
 const LineasProducto = lazy(
   () => import("./pages/admin/lineas/LineasProducto"),
@@ -353,6 +354,26 @@ const rutasAdmin = (
         <AdminGuard>
           <AdminLayout>
             <CdasGlobales />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/cdas/nuevo"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CdaFormPage />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/cdas/:cdaId"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CdaFormPage />
           </AdminLayout>
         </AdminGuard>
       }

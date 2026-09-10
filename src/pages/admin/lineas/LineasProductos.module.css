@@ -34,6 +34,14 @@
   font-size: 0.875rem;
 }
 
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en Dashboard.module.css). */
+@media (max-height: 716px) {
+  .titleBox p {
+    display: none;
+  }
+}
+
 .actionsTop {
   display: flex;
   align-items: center;

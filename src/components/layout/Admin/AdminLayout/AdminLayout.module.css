@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100dvh;
   background-color: #070a11;
-  background-image: 
+  background-image:
     radial-gradient(ellipse at 50% -20%, rgba(76, 101, 230, 0.1) 0%, transparent 60%),
     radial-gradient(ellipse at 0% 100%, rgba(76, 101, 230, 0.05) 0%, transparent 50%);
   color: var(--white-muted);
@@ -50,11 +50,37 @@
   filter: blur(60px);
 }
 
+/* .versionText es hermano de .containerInner, ambos hijos de .adminContent
+   (no un position:fixed) - así se resuelve GLOBALMENTE para cualquier
+   página admin, sin que cada una tenga que reservarle margen a mano.
+
+   Umbral único de todo el panel admin: Rango 1 (1440px de ancho y 716px de
+   alto para arriba) es alto fijo, sin scroll de página - "encaja todo en
+   la pantalla visible". Rango 2 (por debajo de cualquiera de los dos) es
+   fluido - la página entera scrollea. Cada página admin con esta necesidad
+   (CdasGlobales, Dashboard, EmpresaDetalle, CadenasCda, Terminos,
+   CdaWorkbench, CdaPanel...) usa exactamente el mismo
+   `@media (max-width: 1440px), (max-height: 716px)` para pasar de
+   height:100% a height:auto en su propio root.
+
+   .containerInner necesita seguir ese mismo estado acá: en Rango 1 una
+   altura DEFINIDA (no derivada de su contenido), porque esas páginas hacen
+   height:100% contra ella para acotar su propio alto y scrollear una
+   lista/tabla internamente (por eso NO se usa flex:1 0 auto: un flex item
+   con flex-basis:auto mide su alto según su contenido, y un descendiente
+   pidiendo height:100% de vuelta es circular - el navegador lo trata como
+   indefinido y las listas dejan de acotarse, se prueban solas). Se le
+   resta a mano el alto exacto de .versionText (altura fija más abajo) -
+   así el resto sigue siendo 100% real y definido.
+
+   En Rango 2, .containerInner pasa a height:auto (mide igual que su
+   contenido real, que en ese estado la página que esté montada ya dejó sin
+   ningún alto fijo que respetar) - así .versionText, su hermana, queda
+   correctamente después del final verdadero del contenido en vez de
+   quedar pegada cerca del principio con una caja artificialmente chica
+   por debajo del contenido real. */
 .adminContent {
   height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  padding: 11rem 4.5rem 2rem 4.5rem;
   position: relative;
   z-index: 1;
   overflow-y: auto;
@@ -65,39 +91,82 @@
   max-width: 85rem;
   width: 100%;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  /* flex:1 + min-height:0 acotan la altura disponible real (en vez de
-     "lo que el contenido necesite"): así una página puede optar por
-     scrollear solo una sección interna suya (ej. Dashboard.jsx con su
-     lista) en vez de que .adminContent scrollee la página entera. Con
-     overflow:visible por defecto, las páginas que no usan ese patrón
-     siguen exactamente igual que antes (el overflow-y:auto de
-     .adminContent las sigue scrolleando completas como hasta ahora). */
-  flex: 1;
-  min-height: 0;
+  height: calc(100% - 2.75rem);
+  padding: 11rem 4.5rem 0 4.5rem;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .containerInner {
+    height: auto;
+  }
+}
+
+/* Red de seguridad además de la media query de arriba: el umbral de
+   Rango 2 es un presupuesto COMPARTIDO por todo el panel, calibrado contra
+   el caso general - no garantiza que el contenido puntual de CADA página
+   (que varía con la cantidad de filas, filtros abiertos, etc.) entre
+   siempre ahí. AdminLayout.jsx mide en runtime (ResizeObserver) si el
+   contenido real (containerInner.scrollHeight) excede lo disponible
+   aunque el viewport siga técnicamente en Rango 1 por la media query, y
+   en ese caso agrega esta clase (reportado en vivo con Empresas a 125%
+   zoom, 2026-09-10: el viewport medía Rango 1 pero las 8 filas paginadas +
+   filtros + paginación se pasaban por poco, dejando a .containerInner con
+   su alto fijo mientras el contenido real seguía creciendo por encima -
+   .versionText quedaba pegada a esa caja chica en vez del final real). */
+.containerInnerDesborda {
+  height: auto;
 }
 
 @media (max-width: 1024px) {
-  .adminContent {
-    padding: 10.5rem 3rem 2rem 3rem;
+  .containerInner {
+    padding: 10.5rem 3rem 0 3rem;
   }
 }
 
 @media (max-width: 768px) {
-  .adminContent {
-    padding: 10rem 1rem 1.25rem 1rem;
+  .containerInner {
+    padding: 10rem 1rem 0 1rem;
   }
 }
 
+/* El padding-top de acá arriba solo se achica por ANCHO (1024px/768px),
+   nunca por ALTO - pero Rango 2 casi siempre se dispara por zoom en una
+   pantalla ancha (a 133% sobre 1920px el ancho efectivo sigue ~1443px, muy
+   por encima de 1024px), así que en el escenario donde el alto es más
+   crítico este padding se queda en su valor máximo (11rem = 176px, ~25%
+   del viewport a 716px de alto). Va DESPUÉS de las reglas por ancho para
+   ganarles cuando ambas aplican a la vez (pantalla angosta Y baja) - achica
+   solo el padding-top, deja el horizontal como haya quedado resuelto por
+   ancho.
+
+   10rem, no menos: el Navbar flotante (.navWrapper en
+   AdminNavbar.module.css, position:absolute con top:1.25rem) mide en la
+   práctica topBrandBar(~4.3rem) + mainNav(~3.1rem) + su propio
+   top(1.25rem) ≈ 8.7rem hasta su borde inferior - un primer intento con
+   8.5rem quedó por DEBAJO de esa cuenta y el título terminaba pegado al
+   navbar (reportado en vivo, 2026-09-10). 10rem deja ~1.3rem de aire real
+   debajo del navbar, no solo lo justo para no solaparse. */
+@media (max-height: 716px) {
+  .containerInner {
+    padding-top: 10rem;
+  }
+}
+
+/* position:relative (no sticky/fixed): es el último elemento del flujo
+   normal, hermano de .containerInner - en Rango 1 (contenido acotado que
+   nunca desborda) queda pegado al pie real sin más; en Rango 2 (la página
+   entera scrollea) aparece recién al final del scroll, nunca flotando
+   sobre el contenido de arriba. sticky no hacía falta acá (es el último
+   hijo, no hay nada después de lo que "protegerse" al engancharse abajo) y
+   sumaba una variable de más si algún día el contenido de una página
+   desborda su propio alto fijo declarado (ver CdasGlobales.module.css). */
 .versionText {
-  position: fixed;
-  left: 1.25rem;
-  bottom: 1rem;
-  z-index: 5;
+  position: relative;
+  height: 2.75rem;
+  display: flex;
+  align-items: center;
   margin: 0;
+  padding: 0 1.25rem;
   color: var(--text-muted);
   font-size: 0.7rem;
-  pointer-events: none;
 }
