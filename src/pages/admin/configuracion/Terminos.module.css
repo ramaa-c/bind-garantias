@@ -1,7 +1,24 @@
+/* Rango 1 (alto fijo, sin scroll) por default: height:100% (no
+   calc(100dvh - Nrem) - ver el mismo criterio documentado en
+   CdasGlobales.module.css). Sin esto, .editorBody/.textareaWrapper (flex:1,
+   min-height:0) se comprimían contra .editorFooter en vez de que la
+   página entera empiece a scrollear - por eso Rango 2 (mismo umbral único
+   que el resto del panel admin, 1440px de ancho u 716px de alto - ver
+   AdminLayout.module.css) vuelve a height:auto. */
 .container {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  height: 100%;
+  min-height: 0;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .container {
+    height: auto;
+    min-height: auto;
+    gap: 1.25rem;
+  }
 }
 
 .header {
@@ -22,7 +39,7 @@
 }
 
 .header h1 {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 800;
   margin: 0;
   color: #ffffff;
@@ -33,6 +50,14 @@
   margin: 0.4rem 0 0 0;
   font-size: 0.95rem;
   max-width: 45rem;
+}
+
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en Dashboard.module.css). */
+@media (max-height: 716px) {
+  .header p {
+    display: none;
+  }
 }
 
 .btnPublish {
@@ -89,24 +114,9 @@
   gap: 1.5rem;
 }
 
-/* height:100% (no calc(100dvh - Nrem) - ver el mismo criterio documentado
-   en CdasGlobales.module.css) y solo con ancho Y alto de sobra: sin eso,
-   .editorBody/.textareaWrapper (flex:1, min-height:0) se comprimían contra
-   .editorFooter en vez de que la página entera empiece a scrollear. */
-@media (min-width: 1024px) and (min-height: 750px) {
-  .container {
-    height: 100%;
-    min-height: 0;
-  }
-}
-
-/* Fuera de ese modo, .editorWorkspace (con .mainEditorPanel adentro) queda
-   como lo último de la página - margin-bottom simple para que
-   .versionText (fixed) no termine pisándolo (.adminContent no es flex, ver
-   AdminLayout.module.css, así que esto alcanza sin nada especial). */
-@media (max-width: 1023px), (max-height: 749px) {
+@media (max-width: 1440px), (max-height: 716px) {
   .editorWorkspace {
-    margin-bottom: 3rem;
+    gap: 1rem;
   }
 }
 

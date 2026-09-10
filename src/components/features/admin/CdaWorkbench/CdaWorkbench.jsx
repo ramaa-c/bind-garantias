@@ -857,7 +857,7 @@ export function CdaWorkbench({
         </div>
 
         {/* COLUMNA 3: Probar y Publicar */}
-        <div className={`${styles.col} ${styles.colAcciones} ${styles.marginColaFinal}`}>
+        <div className={`${styles.col} ${styles.colAcciones}`}>
           <div className={styles.colHeader}>
             <span className={styles.colStepBadge}>3</span>
             <div>

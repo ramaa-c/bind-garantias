@@ -6,9 +6,19 @@ import { esCdaActivoEstricto, getCdaId, getCdaProp } from "../../../utils/cdaUti
 import { TODAS_PANTALLAS_CDA_GLOBAL } from "../../../utils/pantallasCda";
 import { Button } from "../../../components/ui/Button/Button";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
-import { FiPlus, FiChevronRight, FiSearch, FiInbox } from "react-icons/fi";
+import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
+import { FiPlus, FiChevronRight, FiSearch, FiInbox, FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./CdasGlobales.module.css";
+
+// Mismo criterio que Empresas.jsx: con el alto de fila blindado a una sola
+// línea (table-layout:fixed + truncado con elipsis + tope de 2 badges de
+// pantalla, ver CdasGlobales.module.css/el render de la tabla más abajo),
+// el alto por fila es predecible y entra en 8 sin desbordar el punto más
+// ajustado de Rango 1 - por eso .tableCard ya no necesita su propio scroll
+// interno de emergencia (ver el mismo comentario en
+// CdasGlobales.module.css).
+const ELEMENTOS_POR_PAGINA = 8;
 
 // Colores distintivos por integración, usados como badges en el listado
 const INTEGRACION_PREFIXES = {
@@ -52,14 +62,11 @@ const CdaRowSkeleton = () => (
 // propia ruta (CdaFormPage.jsx, /admin/cdas/nuevo o /admin/cdas/:cdaId) en
 // vez de alternar como una segunda "vista" acá mismo: antes las dos
 // convivían en un solo componente con un estado "vista" (lista/formulario),
-// lo que obligaba a que esta pantalla (con su propio scroll interno de
-// tabla, que nunca necesita hacer scrollear la página entera) y el
-// workbench (que si cae a poco ancho/alto SÍ necesita que la página
-// scrollee) compartieran el mismo layout en runtime - cada una con
-// necesidades opuestas. Con rutas separadas cada una tiene su propio ciclo
-// de vida y layout, sin tener que coordinar nada entre sí; de paso, el
-// alta/edición queda con URL propia (compartible, con "atrás" del
-// navegador funcionando como se espera).
+// lo que obligaba a que esta pantalla y el workbench (con necesidades de
+// layout muy distintas) compartieran el mismo layout en runtime. Con rutas
+// separadas cada una tiene su propio ciclo de vida y layout, sin tener que
+// coordinar nada entre sí; de paso, el alta/edición queda con URL propia
+// (compartible, con "atrás" del navegador funcionando como se espera).
 export default function CdasGlobales() {
   // Defensa en profundidad: ver useBloqueoAdminRestringido.
   const bloqueado = useBloqueoAdminRestringido();
@@ -67,6 +74,12 @@ export default function CdasGlobales() {
   const { data: todosCdasData, isLoading: isLoadingLista } = useObtenerTodosCdas();
   const [searchTerm, setSearchTerm] = useState("");
   const [pantallaFiltro, setPantallaFiltro] = useState("TODAS");
+  const [pagina, setPagina] = useState(1);
+  // Colapsado por defecto solo en Rango 2 (mismo umbral y mismo criterio
+  // que Dashboard.jsx/Empresas.jsx).
+  const [panelesVisibles, setPanelesVisibles] = useState(
+    () => typeof window === "undefined" || !window.matchMedia("(max-height: 716px)").matches
+  );
 
   // A diferencia de esCdaActivo (que tolera "" para no romper la vinculación
   // de CDAs migrados que ya estaban linkeados), esta lista es estricta:
@@ -102,6 +115,25 @@ export default function CdasGlobales() {
     );
   });
 
+  const totalPaginas = Math.max(1, Math.ceil(cdasFiltrados.length / ELEMENTOS_POR_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const cdasPagina = cdasFiltrados.slice(
+    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
+    paginaActual * ELEMENTOS_POR_PAGINA
+  );
+
+  const handleBusqueda = (value) => {
+    setSearchTerm(value);
+    setPagina(1);
+  };
+
+  const handlePantallaFiltro = (value) => {
+    setPantallaFiltro(value);
+    setPagina(1);
+  };
+
+  const hayFiltrosActivos = !!searchTerm.trim() || pantallaFiltro !== "TODAS";
+
   if (bloqueado) return null;
 
   return (
@@ -112,12 +144,30 @@ export default function CdasGlobales() {
           <p>Gestioná los criterios de aceptación (CDA) existentes o creá uno nuevo.</p>
         </div>
         <div className={styles.actionsTop}>
+          <button
+            type="button"
+            className={styles.toggleFiltersBtn}
+            onClick={() => setPanelesVisibles((v) => !v)}
+            aria-expanded={panelesVisibles}
+            title={panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
+          >
+            {panelesVisibles ? <FiChevronUp /> : <FiChevronDown />}
+            {panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
+            {/* Con el panel colapsado, esta es la única señal de que la
+                lista de abajo está filtrada y no es el total real. */}
+            {!panelesVisibles && hayFiltrosActivos && (
+              <span className={styles.toggleFiltersActiveDot} title="Hay filtros activos" />
+            )}
+          </button>
           <Button type="button" variant="blue" size="md" onClick={() => navigate("/admin/cdas/nuevo")}>
             <FiPlus /> Crear nuevo CDA
           </Button>
         </div>
       </div>
 
+      {/* Colapsable en Rango 2 (mismo patrón que Dashboard.jsx/Empresas.jsx) */}
+      <div className={`${styles.collapsiblePanel} ${!panelesVisibles ? styles.collapsiblePanelClosed : ""}`}>
+        <div className={styles.collapsiblePanelInner}>
       <div className={styles.filtersCard}>
         <div className={styles.searchWrap}>
           <FiSearch className={styles.iconSearch} />
@@ -125,14 +175,14 @@ export default function CdasGlobales() {
             type="text"
             placeholder="Buscar por descripción o expresión..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleBusqueda(e.target.value)}
           />
         </div>
         <div className={styles.pantallaFilterGroup} role="group" aria-label="Filtrar por pantalla">
           <button
             type="button"
             className={pantallaFiltro === "TODAS" ? styles.pantallaFilterPillActive : styles.pantallaFilterPill}
-            onClick={() => setPantallaFiltro("TODAS")}
+            onClick={() => handlePantallaFiltro("TODAS")}
           >
             Todas
           </button>
@@ -141,7 +191,7 @@ export default function CdasGlobales() {
               key={p.value}
               type="button"
               className={pantallaFiltro === p.value ? styles.pantallaFilterPillActive : styles.pantallaFilterPill}
-              onClick={() => setPantallaFiltro(p.value)}
+              onClick={() => handlePantallaFiltro(p.value)}
             >
               {p.label}
             </button>
@@ -153,17 +203,19 @@ export default function CdasGlobales() {
           </span>
         )}
       </div>
+      </div>
+      </div>
 
       <div className={styles.tableCard}>
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Descripción</th>
-                <th>Integración</th>
-                <th>Pantallas</th>
-                <th>Expresión</th>
-                <th>Mensaje de Rechazo</th>
+                <th style={{ width: "20%" }}>Descripción</th>
+                <th style={{ width: "8%" }}>Integración</th>
+                <th style={{ width: "16%" }}>Pantallas</th>
+                <th style={{ width: "18%" }}>Expresión</th>
+                <th style={{ width: "18%" }}>Mensaje de Rechazo</th>
                 <th style={{ textAlign: "center", width: "160px" }}>Vinculación Default</th>
                 <th style={{ width: "2.5rem" }}></th>
               </tr>
@@ -181,17 +233,22 @@ export default function CdasGlobales() {
                   </td>
                 </tr>
               ) : (
-                cdasFiltrados.map((cda) => {
+                cdasPagina.map((cda) => {
                   const id = getCdaId(cda);
                   const defaultCv = String(getCdaProp(cda, "vinculadefaultcv"));
                   const esDefault = defaultCv === "1" || defaultCv.toUpperCase() === "S";
                   const integ = detectarIntegracion(getCdaProp(cda, "expresion"));
                   const integColor = INTEGRACION_COLORS[integ] || INTEGRACION_COLOR_DEFAULT;
                   const pantallasCda = pantallasDeCda(id);
+                  const descripcion = getCdaProp(cda, "descripcion") || "-";
+                  const expresion = getCdaProp(cda, "expresion") || "-";
+                  const mensajeRechazo = getCdaProp(cda, "mensajerechazo") || "-";
+                  const pantallasVisibles = pantallasCda.slice(0, 2);
+                  const pantallasOcultas = pantallasCda.slice(2);
                   return (
                     <tr key={id} className={styles.clickableRow} onClick={() => navigate(`/admin/cdas/${id}`)}>
-                      <td>
-                        <strong>{getCdaProp(cda, "descripcion") || "-"}</strong>
+                      <td className={styles.truncateCell}>
+                        <strong title={descripcion}>{descripcion}</strong>
                         <span className={styles.rowIdTag}>ID #{id}</span>
                       </td>
                       <td>
@@ -207,14 +264,26 @@ export default function CdasGlobales() {
                           <span className={styles.pantallaBadgeVacio}>Sin vincular</span>
                         ) : (
                           <div className={styles.pantallaBadgeGroup}>
-                            {pantallasCda.map((p) => (
+                            {pantallasVisibles.map((p) => (
                               <span key={p.value} className={styles.pantallaBadge}>{p.label}</span>
                             ))}
+                            {pantallasOcultas.length > 0 && (
+                              <span
+                                className={styles.pantallaBadgeMore}
+                                title={pantallasOcultas.map((p) => p.label).join(", ")}
+                              >
+                                +{pantallasOcultas.length}
+                              </span>
+                            )}
                           </div>
                         )}
                       </td>
-                      <td><code className={styles.tableCode}>{getCdaProp(cda, "expresion") || "-"}</code></td>
-                      <td>{getCdaProp(cda, "mensajerechazo") || "-"}</td>
+                      <td className={styles.truncateCell}>
+                        <code className={styles.tableCode} title={expresion}>{expresion}</code>
+                      </td>
+                      <td className={styles.truncateCell}>
+                        <span title={mensajeRechazo}>{mensajeRechazo}</span>
+                      </td>
                       <td style={{ textAlign: "center" }}>
                         <span className={esDefault ? styles.pillYes : styles.pillNo}>{esDefault ? "Sí" : "No"}</span>
                       </td>
@@ -229,6 +298,20 @@ export default function CdasGlobales() {
           </table>
         </div>
       </div>
+
+      {!isLoadingLista && cdasFiltrados.length > 0 && (
+        <Paginacion
+          page={paginaActual}
+          onPageChange={setPagina}
+          hasMoreData={paginaActual < totalPaginas}
+          isLoading={isLoadingLista}
+          knownEndPage={totalPaginas}
+          variant="admin"
+          totalItems={cdasFiltrados.length}
+          pageSize={ELEMENTOS_POR_PAGINA}
+          itemLabel="criterios"
+        />
+      )}
     </div>
   );
 }

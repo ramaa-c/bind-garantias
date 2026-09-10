@@ -2,46 +2,38 @@
    lista/workbench); separado en su propio módulo junto con la ruta propia
    de CdaFormPage.jsx, que es la única que lo usa. */
 
-/* Sin altura fija por default: .container recién pasa a 3 columnas con
-   altura fija cuando entra CÓMODO tanto en ancho como en alto (media query
-   de abajo) - por eso pide las dos cosas, no solo ancho.
+/* Rango 1 (alto fijo, sin scroll) por default: .container arma sus 3
+   columnas con altura fija - height:100%, no un cálculo propio en base a
+   100dvh: .containerInner (el padre real, ver AdminLayout.module.css) ya
+   tiene una altura definida, 100% de esa altura es siempre la disponible
+   de verdad, sin duplicar a mano el padding de .adminContent en un número
+   mágico separado que se puede desincronizar.
+
+   Rango 2 (fluido) más abajo, en el mismo umbral único que el resto del
+   panel admin (1440px de ancho u 716px de alto - ver AdminLayout.module.css).
    Reproducido primero con zoom de navegador alto (130%+, BIND 2026-08-14),
    de nuevo a 175% y a 150% (2026-09-09, esta vez ya con ancho "de sobra"
    pero alto insuficiente - lo que confirmó que el ancho solo no alcanza
    como condición): el zoom no solo achica el ancho efectivo, achica el
-   alto también.
-
-   Por debajo del umbral (ancho O alto insuficiente) no se fija ninguna
-   altura: cada tarjeta apilada ocupa lo que su contenido necesita y
-   .adminContent (ver AdminLayout.module.css, overflow-y:auto sobre un
-   contexto de bloque normal - sin flex) scrollea la página entera con
-   normalidad. .marginColaFinal le da lugar a .versionText (fixed) para no
-   quedar pisado - un margin-bottom simple alcanza siempre acá, ya que
-   .adminContent no es flex (ver el comentario de AdminLayout.module.css
-   sobre por qué esto importa).
-
-   Cuando SÍ se fija una altura, es height:100% - no un cálculo propio en
-   base a 100dvh: .containerInner (el padre real, ver AdminLayout.module.css)
-   ya tiene una altura definida - 100% de esa altura es siempre la
-   disponible de verdad, sin duplicar a mano el padding de .adminContent
-   en un número mágico separado que se puede desincronizar. */
+   alto también. Ahí ninguna altura queda fija: cada tarjeta apilada ocupa
+   lo que su contenido necesita y .adminContent scrollea la página entera
+   con normalidad - .versionText (ver ese comentario) aparece después, como
+   parte normal de ese mismo scroll, sin que haya que reservarle lugar a
+   mano. */
 .container {
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
   width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
-@media (min-width: 1280px) and (min-height: 750px) {
+@media (max-width: 1440px), (max-height: 716px) {
   .container {
-    height: 100%;
-    min-height: 0;
-  }
-}
-
-@media (max-width: 1279px), (max-height: 749px) {
-  .marginColaFinal {
-    margin-bottom: 2rem;
+    height: auto;
+    min-height: auto;
+    gap: 0.85rem;
   }
 }
 
@@ -53,7 +45,7 @@
 }
 
 .titleBox h1 {
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   font-weight: 800;
   margin: 0;
   color: #ffffff;
@@ -63,6 +55,15 @@
   color: #8b949e;
   margin: 0.2rem 0 0 0;
   font-size: 0.8rem;
+}
+
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en
+   CdasGlobales.module.css/Dashboard.module.css). */
+@media (max-height: 716px) {
+  .titleBox p {
+    display: none;
+  }
 }
 
 .backButton {
@@ -86,16 +87,18 @@
 /* ============ WORKBENCH: layout de 3 columnas ============ */
 .workbench {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(340px, 1.15fr) minmax(300px, 1fr);
   gap: 1.1rem;
   flex: 1 1 auto;
   margin-bottom: 0.75rem;
+  min-height: 0;
 }
 
-@media (min-width: 1280px) and (min-height: 750px) {
+@media (max-width: 1440px), (max-height: 716px) {
   .workbench {
-    grid-template-columns: minmax(260px, 0.85fr) minmax(340px, 1.15fr) minmax(300px, 1fr);
-    min-height: 0;
+    grid-template-columns: 1fr;
+    min-height: auto;
+    gap: 0.85rem;
   }
 }
 
@@ -108,29 +111,39 @@
   border-radius: 1rem;
   padding: 1.1rem;
   min-width: 0;
+  overflow: hidden;
+  min-height: 0;
 }
 
-@media (min-width: 1280px) and (min-height: 750px) {
+@media (max-width: 1440px), (max-height: 716px) {
   .col {
-    overflow: hidden;
-    min-height: 0;
+    overflow: visible;
+    min-height: auto;
+    gap: 0.85rem;
+    padding: 0.85rem;
   }
 }
 
 /* Columna 3 ("Probá y Publicá"): a diferencia de las otras 2, tiene 4
    piezas apiladas (sandbox fijo, divisor, switches de vinculación, botón
    de guardar) y las 2 fijas de los extremos siempre exigen su espacio. Con
-   overflow:hidden (igual que las otras columnas) toda la presión de achique
-   caía sobre los switches del medio (la única zona con min-height:0) hasta
-   comprimirlos a una franja de pocos px - técnicamente seguían ahí y
-   scrolleables, pero invisibles/imposibles de usar en la práctica (reportado
-   con zoom 150%/175%, 2026-09-09). Acá se scrollea la COLUMNA entera en vez
-   de una franja interna: nada se comprime por debajo de su alto natural, así
-   que en el peor caso hay que scrollear la tarjeta - nunca se pierde nada. */
-@media (min-width: 1280px) and (min-height: 750px) {
+   overflow:hidden (igual que las otras columnas, heredado de .col) toda la
+   presión de achique caía sobre los switches del medio (la única zona con
+   min-height:0) hasta comprimirlos a una franja de pocos px - técnicamente
+   seguían ahí y scrolleables, pero invisibles/imposibles de usar en la
+   práctica (reportado con zoom 150%/175%, 2026-09-09). Por eso en Rango 1
+   esta columna en particular scrollea ENTERA en vez de una franja interna:
+   nada se comprime por debajo de su alto natural, así que en el peor caso
+   hay que scrollear la tarjeta - nunca se pierde nada. En Rango 2 no hace
+   falta (la página entera ya scrollea, ver .col). */
+.colAcciones {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
   .colAcciones {
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: visible;
   }
 }
 
@@ -176,13 +189,16 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+  margin-right: -0.35rem;
 }
 
-@media (min-width: 1280px) and (min-height: 750px) {
+@media (max-width: 1440px), (max-height: 716px) {
   .colScroll {
-    overflow-y: auto;
-    padding-right: 0.35rem;
-    margin-right: -0.35rem;
+    overflow-y: visible;
+    padding-right: 0;
+    margin-right: 0;
   }
 }
 

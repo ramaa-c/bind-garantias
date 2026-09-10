@@ -1161,29 +1161,27 @@
   box-shadow: 0 0 6px rgba(76, 101, 230, 0.6);
 }
 
-/* El alto fijo de .container (y de .embeddedLegajo/.datosTab/etc, que
-   scrollean adentro de él) solo tiene sentido cuando hay ancho Y alto de
-   sobra - por eso el fallback a "auto" también entra por poco alto
-   efectivo (zoom de navegador alto), no solo por poco ancho. Sin esto, el
-   footer de Guardar/Revertir de .datosTab quedaba sandwicheado entre el
-   contenido y el footer con el mismo bug ya visto y resuelto en el
-   workbench de CDAs (ver CdasGlobales.module.css) - la única zona con
-   min-height:0 (.datosScroll) se comprimía a una franja inusable en vez de
-   que la página entera empiece a scrollear. */
-@media (max-width: 900px), (max-height: 749px) {
+/* Mismo umbral único que el resto del panel admin (1440px de ancho u
+   716px de alto - ver AdminLayout.module.css). El alto fijo de .container
+   (y de .embeddedLegajo/.datosTab/etc, que scrollean adentro de él) solo
+   tiene sentido cuando hay ancho Y alto de sobra - por eso el fallback a
+   "auto" también entra por poco alto efectivo (zoom de navegador alto), no
+   solo por poco ancho. Sin esto, el footer de Guardar/Revertir de
+   .datosTab quedaba sandwicheado entre el contenido y el footer con el
+   mismo bug ya visto y resuelto en el workbench de CDAs (ver
+   CdaWorkbench.module.css) - la única zona con min-height:0 (.datosScroll)
+   se comprimía a una franja inusable en vez de que la página entera
+   empiece a scrollear. */
+@media (max-width: 1440px), (max-height: 716px) {
   .container {
     height: auto;
   }
 
-  /* margin-bottom simple: .adminContent no es flex (ver AdminLayout.module.css),
-     así que un margin-bottom común y corriente alcanza para que .versionText
-     (fixed) no termine pisando lo último de la página. */
   .embeddedLegajo,
   .datosTab,
   .cdasPlaceholderWrap,
   .cdasScroll {
     height: auto;
-    margin-bottom: 3rem;
   }
 }
 

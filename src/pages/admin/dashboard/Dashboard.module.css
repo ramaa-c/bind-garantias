@@ -10,27 +10,13 @@
   min-height: 0;
 }
 
-/* Sin esto, con poco alto efectivo (zoom de navegador alto o pantalla
-   chica) .listWrapper (la única zona con min-height:0) se comprimía contra
-   <Paginacion> en vez de que la página entera empiece a scrollear - mismo
-   bug ya visto y resuelto en CdasGlobales.module.css/EmpresaDetalle.module.css.
-   height:auto alcanza (sin gatear min-height:0 en .listWrapper aparte): al
-   quedar .container sin un alto fijo que respetar, no hay ningún déficit
-   contra el que .listWrapper se achique. */
-@media (max-height: 749px) {
+/* Mismo umbral único que el resto del panel admin (1440px de ancho u
+   716px de alto - ver AdminLayout.module.css): Rango 1 (alto fijo, sin
+   scroll) por default, Rango 2 (fluido, la página entera scrollea) acá. */
+@media (max-width: 1440px), (max-height: 716px) {
   .container {
     height: auto;
     min-height: auto;
-  }
-
-  /* Los <Modal> (CriteriosAceptacionModal, RechazarSolicitudModal, etc.) se
-     portalean a document.body (ver Modal.jsx) - nunca son hijos reales de
-     .container, así que este selector siempre cae en .listWrapper o en
-     <Paginacion>, lo que efectivamente sea lo último de la lista. Un
-     margin-bottom común alcanza (.adminContent no es flex, ver
-     AdminLayout.module.css) para que .versionText no lo pise. */
-  .container > *:last-child {
-    margin-bottom: 3rem;
   }
 }
 
@@ -45,6 +31,16 @@
   margin-bottom: 1.25rem;
 }
 
+/* Rango 2: aire decorativo entre bloques, sin función de lectura - se
+   achica junto con el resto de los ajustes de densidad (ver el mismo
+   umbral en AdminLayout.module.css). */
+@media (max-width: 1440px), (max-height: 716px) {
+  .header {
+    padding-bottom: 0.65rem;
+    margin-bottom: 0.85rem;
+  }
+}
+
 .header h1 {
   font-size: 1.5rem;
   font-weight: 800;
@@ -57,6 +53,17 @@
   color: #8b949e;
   margin: 0;
   font-size: 0.875rem;
+}
+
+/* Rango 2: el subtítulo es texto de onboarding (útil la primera semana,
+   ruido para el uso diario) - se oculta, no se achica, para recuperar el
+   aire vertical completo en vez de dejar un texto ilegible a medio
+   camino. Mismo umbral único que el resto del panel (ver
+   AdminLayout.module.css). */
+@media (max-height: 716px) {
+  .subtitle {
+    display: none;
+  }
 }
 
 .toggleFiltersBtn {
@@ -89,6 +96,14 @@
   font-size: 0.9rem;
 }
 
+.toggleFiltersActiveDot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--color-azul-bind, #4c65e6);
+  flex-shrink: 0;
+}
+
 .collapsiblePanel {
   display: grid;
   grid-template-rows: 1fr;
@@ -101,6 +116,12 @@
 .collapsiblePanelClosed {
   grid-template-rows: 0fr;
   margin-bottom: 0;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .collapsiblePanel {
+    margin-bottom: 0.85rem;
+  }
 }
 
 .collapsiblePanelInner {
@@ -428,33 +449,26 @@
 }
 
 /* ── LISTA ───────────────────────────────────────────────── */
+/* flex:0 0 auto implícito (sin flex:1/overflow-y propio): la lista mide lo
+   que sus filas necesitan, no lo que sobra de .container - así <Paginacion/>
+   (después de esto en el flujo, ver Dashboard.jsx) queda pegada justo
+   después de la última fila en vez de empujada al fondo con un hueco
+   vacío cuando hay menos de ELEMENTOS_POR_PAGINA filas. Mismo estándar que
+   Empresas.module.css/CdasGlobales.module.css - las filas ya tenían alto
+   de una sola línea garantizado (.rowClientName/.rowMeta con
+   text-overflow:ellipsis), así que tampoco hacía falta el scroll interno
+   de emergencia que tenía antes. */
 .listWrapper {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 0.375rem;
-  margin-right: -0.375rem;
   margin-bottom: 1.25rem;
 }
 
-.listWrapper::-webkit-scrollbar {
-  width: 6px;
-}
-
-.listWrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.listWrapper::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 4px;
-}
-
-.listWrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+@media (max-width: 1440px), (max-height: 716px) {
+  .listWrapper {
+    margin-bottom: 0.85rem;
+  }
 }
 
 .emptyState {

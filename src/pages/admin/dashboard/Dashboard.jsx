@@ -96,7 +96,15 @@ export default function Dashboard() {
   const [fechaHasta, setFechaHasta] = useState(FILTROS_POR_DEFECTO.fechaHasta);
   const [selectedCadenaId, setSelectedCadenaId] = useState("all");
   const [pagina, setPagina] = useState(1);
-  const [panelesVisibles, setPanelesVisibles] = useState(true);
+  // Colapsado por defecto solo en Rango 2 (pantalla chica/zoom alto, mismo
+  // umbral que AdminLayout.module.css): ahí es donde el espacio es
+  // crítico. En Rango 1 sobra aire, así que arranca abierto - cerrarlo ahí
+  // sería un clic gratis en contra. Es solo el estado INICIAL (no
+  // reacciona en vivo a un cambio de zoom con la pantalla montada): el
+  // operador lo puede abrir/cerrar con el botón en cualquier momento.
+  const [panelesVisibles, setPanelesVisibles] = useState(
+    () => typeof window === "undefined" || !window.matchMedia("(max-height: 716px)").matches
+  );
 
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
@@ -450,6 +458,12 @@ export default function Dashboard() {
         >
           {panelesVisibles ? <FiChevronUp /> : <FiChevronDown />}
           {panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
+          {/* Con el panel colapsado, esta es la única señal de que la lista
+              de abajo está filtrada y no es el total real - sin esto el
+              operador puede leerla como completa por error. */}
+          {!panelesVisibles && hayFiltrosActivos && (
+            <span className={styles.toggleFiltersActiveDot} title="Hay filtros activos" />
+          )}
         </button>
       </div>
 

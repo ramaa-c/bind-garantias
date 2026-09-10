@@ -1,20 +1,23 @@
-/* Altura fija (height:100%, no calc(100dvh - Nrem) - ver el mismo criterio
-   documentado en CdasGlobales.module.css) solo cuando hay ancho Y alto de
-   sobra; si no, .container queda en su alto natural y .adminContent
-   (overflow-y:auto) scrollea la página entera. Mismo umbral de ancho que
-   .panelWrap/.mainLayout (992px, ver abajo y CdaPanel.module.css) para que
-   los 3 cambien de modo juntos. */
+/* Rango 1 (alto fijo, sin scroll) por default: altura fija (height:100%,
+   no calc(100dvh - Nrem) - ver el mismo criterio documentado en
+   CdasGlobales.module.css). Rango 2 (fluido) más abajo, en el mismo umbral
+   único que el resto del panel admin (1440px de ancho u 716px de alto -
+   ver AdminLayout.module.css) que .panelWrap/.mainLayout (ver abajo y
+   CdaPanel.module.css) para que los 3 cambien de modo juntos. */
 .container {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
-@media (min-width: 992px) and (min-height: 750px) {
+@media (max-width: 1440px), (max-height: 716px) {
   .container {
-    height: 100%;
-    min-height: 0;
+    height: auto;
+    min-height: auto;
+    gap: 0.85rem;
   }
 }
 
@@ -46,6 +49,14 @@
   color: #8b949e;
   margin: 0.25rem 0 0 0;
   font-size: 0.875rem;
+}
+
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en Dashboard.module.css). */
+@media (max-height: 716px) {
+  .titleBox p {
+    display: none;
+  }
 }
 
 /* Selector Section Layout */
@@ -81,6 +92,13 @@
   }
 }
 
+/* En Rango 1 (base) el scroll vive adentro del CdaPanel (columna de la
+   lista), no acá: si el panel deja de encajar en 1px por redondeo, mostrar
+   acá también un scrollbar duplica la barra y se ve como si "todo"
+   scrolleara. En Rango 2 (mismo umbral que .container arriba), sin alto de
+   sobra, .panelWrap vuelve a su propio overflow-y:auto en vez de delegar
+   el scroll a columnas internas que podrían terminar comprimiendo el
+   footer de CdaPanel (.mainFooter) contra su contenido. */
 .panelWrap {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -92,20 +110,14 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
-/* En desktop el scroll vive adentro del CdaPanel (columna de la lista), no
-   acá: si el panel deja de encajar en 1px por redondeo, mostrar acá también
-   un scrollbar duplica la barra y se ve como si "todo" scrolleara. Atada al
-   mismo umbral ancho+alto que .container: sin alto de sobra, .panelWrap
-   vuelve a su overflow-y:auto de base en vez de delegar el scroll a
-   columnas internas que podrían terminar comprimiendo el footer de
-   CdaPanel (.mainFooter) contra su contenido. */
-@media (min-width: 992px) and (min-height: 750px) {
+@media (max-width: 1440px), (max-height: 716px) {
   .panelWrap {
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.85rem;
   }
 }
 

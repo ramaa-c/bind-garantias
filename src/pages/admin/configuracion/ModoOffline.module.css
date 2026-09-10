@@ -224,6 +224,14 @@
   max-width: 45rem;
 }
 
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en Dashboard.module.css). */
+@media (max-height: 716px) {
+  .header p {
+    display: none;
+  }
+}
+
 /* ── STATUS HERO ─────────────────────────────────────────── */
 
 .statusHero {
