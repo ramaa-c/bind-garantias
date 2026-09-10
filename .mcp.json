@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "plane": {
+      "command": "node",
+      "args": [".claude/mcp-servers/plane/server.mjs"],
+      "env": {
+        "PLANE_API_TOKEN": "${PLANE_API_TOKEN}"
+      }
+    }
+  }
+}
