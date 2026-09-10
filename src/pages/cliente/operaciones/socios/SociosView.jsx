@@ -85,7 +85,7 @@ export default function SociosView() {
 
     setSincronizando(true);
     setShowConfirmModal(false);
-    const toastId = toast.loading("Sincronizando legajo con LUFE y AFIP...");
+    const toastId = toast.loading("Sincronizando legajo con LUFE y ARCA...");
     try {
       // 1. Ejecutar la precarga LUFE + enriquecimiento síncrono AFIP + PUTs de accionistas y representantes/apoderados
       const resEnriquecimiento = await enriquecerSociosLufeAfip(socioIdActivo, cuitActivo);
@@ -104,14 +104,14 @@ export default function SociosView() {
 
       if (resEnriquecimiento?.afipFailed) {
         toast.warning(
-          "Legajo sincronizado, pero no se pudieron obtener todos los datos de AFIP (se utilizaron datos de LUFE o locales como fallback).",
+          "Legajo sincronizado, pero no se pudieron obtener todos los datos de ARCA (se utilizaron datos de LUFE o locales como fallback).",
           { id: toastId, duration: 6000 }
         );
       } else {
-        toast.success("Legajo sincronizado correctamente desde LUFE/AFIP", { id: toastId });
+        toast.success("Legajo sincronizado correctamente desde LUFE/ARCA", { id: toastId });
       }
     } catch (err) {
-      const errorMsg = obtenerMensajeAmigable(err, "Error al sincronizar datos desde LUFE/AFIP.");
+      const errorMsg = obtenerMensajeAmigable(err, "Error al sincronizar datos desde LUFE/ARCA.");
       toast.error(errorMsg, { id: toastId });
     } finally {
       setSincronizando(false);
@@ -178,7 +178,7 @@ export default function SociosView() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleRefrescarLufe}
         titulo="Consultar a LUFE"
-        mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y AFIP? Esta acción actualizará la información de las personas vinculadas a tu empresa."
+        mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y ARCA? Esta acción actualizará la información de las personas vinculadas a tu empresa."
       />
 
       <AvisoBloqueoLegajoModal

@@ -53,7 +53,7 @@ export const DocumentosEmpresaModal = ({
     {
       key: "certificadoPyme",
       title: "Certificado PyME",
-      info: "Certificado oficial emitido por el Ministerio de Producción / AFIP.",
+      info: "Certificado oficial emitido por el Ministerio de Producción / ARCA.",
     },
     {
       key: "actaDesignacion",
@@ -68,12 +68,12 @@ export const DocumentosEmpresaModal = ({
     {
       key: "f1272",
       title: "Formulario F1272",
-      info: "Formulario de declaración de PyME ante la AFIP.",
+      info: "Formulario de declaración de PyME ante la ARCA.",
     },
     {
       key: "ddjjGanancias",
       title: "DDJJ de Ganancias",
-      info: "Declaración jurada de Ganancias presentada ante AFIP.",
+      info: "Declaración jurada de Ganancias presentada ante ARCA.",
     },
     {
       key: "manifestacionBienes",
@@ -83,7 +83,7 @@ export const DocumentosEmpresaModal = ({
     {
       key: "constanciaMonotributo",
       title: "Constancia de Monotributo",
-      info: "Constancia de opción al Monotributo de AFIP.",
+      info: "Constancia de opción al Monotributo de ARCA.",
     },
     {
       key: "cartasDocumento",

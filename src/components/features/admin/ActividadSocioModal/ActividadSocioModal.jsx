@@ -56,7 +56,7 @@ const ENTIDAD_LABELS = {
   socioexecutecda: "Evaluación de criterios (empresa)",
   tercerorelacionado: "Datos de accionista/representante",
   terceroexecutecda: "Evaluación de criterios (accionista/representante)",
-  afipempresaporcuit: "Consulta a AFIP",
+  afipempresaporcuit: "Consulta a ARCA",
   socioarchivo: "Documento del legajo",
   sociousuario: "Usuario vinculado",
   certificadovigente: "Certificado PyME",

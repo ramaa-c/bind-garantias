@@ -146,7 +146,7 @@ export default function Paso7Exito({ onVolverInicio, resumen }) {
           </p>
 
           <Alert variant="default" layout="pill" icon={FiEdit3}>
-            Se valida con clave fiscal AFIP Nivel 2 o superior.
+            Se valida con clave fiscal ARCA Nivel 2 o superior.
           </Alert>
         </div>
       </div>

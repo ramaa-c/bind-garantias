@@ -9,7 +9,7 @@ export const INTEGRACIONES = [
   },
   {
     campo: "IntegracionArca",
-    nombre: "ARCA / AFIP",
+    nombre: "ARCA",
     descripcion: "Constancia de inscripción y datos fiscales",
   },
   {
