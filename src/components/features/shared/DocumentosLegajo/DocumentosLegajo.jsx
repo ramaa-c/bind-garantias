@@ -86,7 +86,7 @@ export const ESTRUCTURA_LEGAJO = [
     category: "Documentación",
     key: "certificadoPyme",
     title: "Certificado de PyME",
-    info: "Acredita tu condición ante la AFIP y organismos. Si no lo tenés, podés ",
+    info: "Acredita tu condición ante la ARCA y organismos. Si no lo tenés, podés ",
     linkText: "obtenerlo aquí.",
     url: "https://pyme.produccion.gob.ar/certificado/",
   },
@@ -106,13 +106,13 @@ export const ESTRUCTURA_LEGAJO = [
     category: "Documentación",
     key: "f1272",
     title: "Formulario F1272",
-    info: "Formulario de declaración de PyME ante la AFIP.",
+    info: "Formulario de declaración de PyME ante la ARCA.",
   },
   {
     category: "Documentación",
     key: "ddjjGanancias",
     title: "DDJJ de Ganancias",
-    info: "Declaración jurada de Ganancias presentada ante AFIP.",
+    info: "Declaración jurada de Ganancias presentada ante ARCA.",
   },
   {
     category: "Documentación",
@@ -124,7 +124,7 @@ export const ESTRUCTURA_LEGAJO = [
     category: "Documentación",
     key: "constanciaMonotributo",
     title: "Constancia de Monotributo",
-    info: "Constancia de opción al Monotributo de AFIP.",
+    info: "Constancia de opción al Monotributo de ARCA.",
   },
   {
     category: "Documentación",

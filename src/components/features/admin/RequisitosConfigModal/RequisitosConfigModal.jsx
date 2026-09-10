@@ -14,13 +14,13 @@ const DOCUMENT_METADATA = [
   { key: "balance", title: "Balance de Sumas y Saldos", desc: "Estado de sumas y saldos firmado por contador público." },
   { key: "ddjjIva", title: "Declaración Jurada de IVA", desc: "Últimas declaraciones juradas de IVA presentadas." },
   { key: "poderes", title: "Poderes", desc: "Copia de representación legal para firmantes." },
-  { key: "certificadoPyme", title: "Certificado PyME", desc: "Certificado oficial emitido por el Ministerio de Producción / AFIP." },
+  { key: "certificadoPyme", title: "Certificado PyME", desc: "Certificado oficial emitido por el Ministerio de Producción / ARCA." },
   { key: "actaDesignacion", title: "Acta de Designación de Autoridades", desc: "Acta de designación de autoridades vigente." },
   { key: "actaSocios", title: "Acta de Reunión de Socios", desc: "Acta de última reunión de socios o asamblea de la sociedad." },
-  { key: "f1272", title: "Formulario F1272", desc: "Formulario de declaración de PyME ante la AFIP." },
+  { key: "f1272", title: "Formulario F1272", desc: "Formulario de declaración de PyME ante la ARCA." },
   { key: "ddjjGanancias", title: "DDJJ de Ganancias", desc: "Última declaración jurada de Ganancias presentada (Física)." },
   { key: "manifestacionBienes", title: "Manifestación de Bienes", desc: "Manifestación de bienes o DDJJ de Bienes Personales (Física)." },
-  { key: "constanciaMonotributo", title: "Constancia de Monotributo", desc: "Constancia de opción al Monotributo de AFIP (Física)." },
+  { key: "constanciaMonotributo", title: "Constancia de Monotributo", desc: "Constancia de opción al Monotributo de ARCA (Física)." },
   { key: "cartasDocumento", title: "Cartas Documento", desc: "Cartas documento operativas relacionadas." },
   { key: "otrosDocumentos", title: "Otros Documentos", desc: "Cualquier otra documentación de respaldo del legajo." }
 ];

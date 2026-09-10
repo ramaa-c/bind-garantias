@@ -1115,7 +1115,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   <FiShield />
                 </div>
                 <div className={styles.cuitSearchBannerText}>
-                  <p className={styles.cuitSearchBannerTitle}>Validación segura con AFIP</p>
+                  <p className={styles.cuitSearchBannerTitle}>Validación segura con ARCA</p>
                   <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del accionista</p>
                 </div>
               </div>
@@ -1144,7 +1144,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       </>
                     ) : (
                       <>
-                        <FiCheckCircle size={12} /> Validado AFIP
+                        <FiCheckCircle size={12} /> Validado ARCA
                       </>
                     )}
                   </span>

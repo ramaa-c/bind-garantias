@@ -1018,7 +1018,7 @@ export function RepresentanteModal({
                   <FiShield />
                 </div>
                 <div className={styles.cuitSearchBannerText}>
-                  <p className={styles.cuitSearchBannerTitle}>Validación segura con AFIP</p>
+                  <p className={styles.cuitSearchBannerTitle}>Validación segura con ARCA</p>
                   <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del {etiquetaRol.toLowerCase()}</p>
                 </div>
               </div>
@@ -1048,7 +1048,7 @@ export function RepresentanteModal({
                         </>
                       ) : (
                         <>
-                          <FiCheckCircle size={11} /> {etiquetaRol} validado con AFIP
+                          <FiCheckCircle size={11} /> {etiquetaRol} validado con ARCA
                         </>
                       )}
                     </span>
@@ -1061,7 +1061,7 @@ export function RepresentanteModal({
                         onClick={handleAfipLookup}
                         disabled={validando || enriqueciendoAuto}
                       >
-                        <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar AFIP"}
+                        <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar ARCA"}
                       </button>
                     ) : (
                       <button
