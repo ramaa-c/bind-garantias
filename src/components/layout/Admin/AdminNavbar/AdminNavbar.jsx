@@ -81,6 +81,7 @@ export default function AdminNavbar() {
     "Líneas",
     "CDAs Alta de Línea",
     "Productos de Líneas",
+    "Relaciones de Terceros",
     "Modo Offline",
   ];
 
@@ -204,6 +205,8 @@ export default function AdminNavbar() {
                     destPath = "/admin/lineas-cda";
                   } else if (item === "Productos de Líneas") {
                     destPath = "/admin/lineas-productos";
+                  } else if (item === "Relaciones de Terceros") {
+                    destPath = "/admin/tipos-relacion-socio";
                   } else if (item === "Modo Offline") {
                     destPath = "/admin/modo-offline";
                   }

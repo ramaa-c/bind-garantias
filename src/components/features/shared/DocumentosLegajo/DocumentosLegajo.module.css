@@ -974,6 +974,34 @@
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Las secciones de siempre tienen una etiqueta corta y fija ("Agregar
+   Accionista"), pero TerceroRelacionSection arma la suya con el nombre que
+   el admin haya cargado en /admin/tipos-relacion-socio - sin tope, un
+   nombre largo estira el botón a lo ancho de todo el header. En mobile no
+   aplica: ahí .headerActionPortal ya lo pone al 100% a propósito. */
+@media (min-width: 48rem) {
+  .addButton {
+    max-width: 13rem;
+  }
+}
+
+/* El texto va en su propio span (ver TerceroRelacionSection) porque
+   text-overflow no funciona sobre el contenedor flex del botón: el nodo de
+   texto suelto queda como item anónimo y no hereda el recorte. */
+.addButtonLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* El "+" no se achica cuando la etiqueta se trunca. */
+.addButton svg {
+  flex-shrink: 0;
 }
 
 .addButton:hover {
@@ -1104,6 +1132,15 @@
   background: rgba(245, 244, 0, 0.08);
   border: 1px solid rgba(245, 244, 0, 0.25);
   color: var(--color-amarillo-bind);
+}
+
+/* Relaciones de terceros parametrizadas dinámicamente (ver
+   TerceroRelacionSection) - sin color temático propio como las 4 de
+   siempre, un tono neutro genérico. */
+.roleGenerico {
+  background: rgba(139, 148, 158, 0.1);
+  border: 1px solid rgba(139, 148, 158, 0.28);
+  color: #8b949e;
 }
 
 /* CONTROLES DE TARJETA (EDITAR/ELIMINAR) */

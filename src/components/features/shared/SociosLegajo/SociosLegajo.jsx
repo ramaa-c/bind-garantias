@@ -36,7 +36,24 @@ import { RepresentantesSection } from "../DocumentosLegajo/components/Representa
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
 import { AgentesBolsaSection } from "../DocumentosLegajo/components/AgentesBolsaSection/AgentesBolsaSection";
 import { VincularUsuarioSection } from "../DocumentosLegajo/components/VincularUsuarioSection/VincularUsuarioSection";
+import { TerceroRelacionSection } from "../DocumentosLegajo/components/TerceroRelacionSection/TerceroRelacionSection";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+import { useTiposRelacionSocioActivos } from "../../../../hooks/useTipoRelacionSocio";
+import {
+  RELACION_APODERADO_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+  RELACION_AGENTE_BOLSA_ID,
+  IDS_RELACIONES_TERCEROS_BASE,
+  RELACIONES_TERCEROS_BASE,
+} from "../../../../constants/tiposRelacionSocio";
+import {
+  normalizarCatalogoActivo,
+  resolverRelacionesBaseActivas,
+} from "../../../../utils/relacionesTercerosUtils";
+
+const ID_POR_CLAVE_BASE = Object.fromEntries(
+  RELACIONES_TERCEROS_BASE.map((r) => [r.clave, r.tipoRelacionSocioId]),
+);
 
 
 export const ESTRUCTURA_SOCIOS = [
@@ -132,7 +149,13 @@ export function SociosLegajo({
   // Reutiliza la misma validación que ya decide si el legajo está completo,
   // para no duplicar el criterio (ver useValidacionLegajo para el manejo de
   // adminMode).
-  const { accionistasCompletos, apoderadosCompletos, representanteLegalCompletos, agentesBolsaCompletos } = useValidacionLegajo({
+  const {
+    accionistasCompletos,
+    apoderadosCompletos,
+    representanteLegalCompletos,
+    agentesBolsaCompletos,
+    completitudPorRelacionExtra,
+  } = useValidacionLegajo({
     adminMode,
     socioIdActivo,
     tipoPersonaId,
@@ -145,6 +168,7 @@ export function SociosLegajo({
     representanteLegal: representanteLegalCompletos,
     apoderados: apoderadosCompletos,
     agentesBolsa: agentesBolsaCompletos,
+    ...completitudPorRelacionExtra,
   };
 
   const esPersonaFisica = Number(tipoPersonaId) === 1;
@@ -204,8 +228,68 @@ export function SociosLegajo({
     );
   }, [direccion, numero, piso, departamento, partido, codigoPostal]);
 
+  // Ninguna de las 4 relaciones con pestaña propia de siempre (accionista/
+  // representante legal/apoderado/agente de bolsa) se asume disponible: se
+  // arman acá desde lo que el admin efectivamente activó en
+  // /admin/tipos-relacion-socio (ver resolverRelacionesBaseActivas). Un
+  // ambiente que todavía no cargó ninguna (ej. desa recién levantado) no
+  // muestra esas pestañas - quedan vacías, no rotas. Mientras el catálogo
+  // no terminó de cargar se las deja ver con el título estático de siempre
+  // en vez de ocultarlas de golpe (evita el parpadeo típico de "aparece y
+  // después desaparece" en el caso normal, donde sí están activadas).
+  const { data: catalogoActivosData, isLoading: isLoadingCatalogoActivo } =
+    useTiposRelacionSocioActivos();
+
+  const catalogoActivo = useMemo(
+    () => normalizarCatalogoActivo(catalogoActivosData),
+    [catalogoActivosData],
+  );
+
+  const relacionesBaseActivas = useMemo(
+    () => resolverRelacionesBaseActivas(catalogoActivo),
+    [catalogoActivo],
+  );
+  // Ojo: `descripcionBasePorClave[clave]` puede ser `undefined` con la
+  // clave igual presente (ej. Accionista sin activar en el catálogo, pero
+  // siempre disponible - ver resolverRelacionesBaseActivas) - por eso la
+  // disponibilidad se chequea contra este Set, nunca contra la verdad de la
+  // descripción.
+  const clavesBaseActivas = useMemo(
+    () => new Set(relacionesBaseActivas.map((r) => r.clave)),
+    [relacionesBaseActivas],
+  );
+  const descripcionBasePorClave = useMemo(
+    () => Object.fromEntries(relacionesBaseActivas.map((r) => [r.clave, r.descripcion])),
+    [relacionesBaseActivas],
+  );
+
+  // Cualquier relación que el admin haya activado más allá de las 4 de
+  // siempre se agrega acá como pestaña extra con TerceroRelacionSection -
+  // siempre ANTES de "Vincular usuarios" (ver el splice más abajo), que
+  // tiene que quedar última pase lo que pase.
+  const tabsExtra = useMemo(() => {
+    return catalogoActivo
+      .filter((item) => !IDS_RELACIONES_TERCEROS_BASE.includes(item.id))
+      .map((item) => ({
+        category: "Legajo",
+        key: String(item.id),
+        title: item.descripcion || `Relación #${item.id}`,
+        info: `Administración de "${item.descripcion || `Relación #${item.id}`}" habilitados para esta empresa.`,
+      }));
+  }, [catalogoActivo]);
+
   const tabsDisponibles = useMemo(() => {
-    let baseTabs = ESTRUCTURA_SOCIOS;
+    const usuariosTab = ESTRUCTURA_SOCIOS.find((t) => t.key === "usuarios");
+    let baseTabs = [
+      ...ESTRUCTURA_SOCIOS.filter((t) => t.key !== "usuarios").map((t) => {
+        const idConocido = ID_POR_CLAVE_BASE[t.key];
+        if (!idConocido) return t; // "perfil" - no es una relación de terceros
+        const tituloVivo = descripcionBasePorClave[t.key];
+        return tituloVivo ? { ...t, title: tituloVivo } : t;
+      }),
+      ...tabsExtra,
+      ...(usuariosTab ? [usuariosTab] : []),
+    ];
     // "Perfil corporativo" es solo informativo para el cliente: en el panel
     // admin esos mismos datos ya se editan desde EmpresaDetalle.jsx.
     if (adminMode) {
@@ -217,12 +301,21 @@ export function SociosLegajo({
       // accionista de sí misma).
       baseTabs = baseTabs.filter(t => t.key !== "accionistas" && t.key !== "representanteLegal");
     }
+    // Solo se muestra una relación base si el admin la activó en el
+    // catálogo curado - mientras esa consulta sigue en curso se la deja
+    // pasar (ver comentario más arriba).
+    if (!isLoadingCatalogoActivo) {
+      baseTabs = baseTabs.filter((t) => {
+        const idConocido = ID_POR_CLAVE_BASE[t.key];
+        return !idConocido || clavesBaseActivas.has(t.key);
+      });
+    }
     // Filtrar según los requisitos configurados
     return baseTabs.filter(t => {
       const configVal = requisitos?.relaciones?.[t.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [esPersonaFisica, requisitos, adminMode]);
+  }, [esPersonaFisica, requisitos, adminMode, tabsExtra, descripcionBasePorClave, clavesBaseActivas, isLoadingCatalogoActivo]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [perfilModalOpen, setPerfilModalOpen] = useState(false);
@@ -246,8 +339,8 @@ export function SociosLegajo({
   // Apoderado (210, ver useObtenerDatosSocioLegajo) - cada pestaña se
   // queda solo con lo suyo.
   const representantesYApoderados = socioLegajoData?.representantes || [];
-  const representantes = representantesYApoderados.filter((r) => Number(r.rolId) === 230);
-  const apoderados = representantesYApoderados.filter((r) => Number(r.rolId) === 210);
+  const representantes = representantesYApoderados.filter((r) => Number(r.rolId) === RELACION_REPRESENTANTE_LEGAL_ID);
+  const apoderados = representantesYApoderados.filter((r) => Number(r.rolId) === RELACION_APODERADO_ID);
   const agentesBolsa = socioLegajoData?.agentesBolsa || [];
 
   // `actualizando` cubre la ventana entre "se guardó algo" y "las queries ya
@@ -331,7 +424,7 @@ export function SociosLegajo({
     if (!deleteTarget) return;
     setLoadingDelete(true);
     const item = deleteTarget;
-    const isBolsa = item.rolId === 21;
+    const isBolsa = item.rolId === RELACION_AGENTE_BOLSA_ID;
 
     try {
       const ayer = new Date();
@@ -374,6 +467,10 @@ export function SociosLegajo({
         const isApoderados = doc.key === "apoderados";
         const isAgentesBolsa = doc.key === "agentesBolsa";
         const isUsuarios = doc.key === "usuarios";
+        // Cualquier otra clave es un TipoRelacionSocioID activado
+        // dinámicamente (ver tabsExtra más arriba).
+        const idRelacionExtra = Number(doc.key);
+        const isExtra = Number.isInteger(idRelacionExtra) && idRelacionExtra > 0;
 
         return (
           <React.Fragment key={doc.key}>
@@ -393,7 +490,7 @@ export function SociosLegajo({
             >
               {isActive && <span className={styles.activeBar} />}
               <div className={styles.tabTitleGroup}>
-                <span className={styles.tabTitle}>{tituloTab(doc)}</span>
+                <span className={styles.tabTitle} title={tituloTab(doc)}>{tituloTab(doc)}</span>
                 {!isPerfil &&
                   (requisitos?.relaciones?.[doc.key] === 1 ? (
                     <span className={`${styles.reqBadge} ${completitudPorTab[doc.key] ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
@@ -426,7 +523,7 @@ export function SociosLegajo({
                     pestaña, si la tiene, a la derecha) y la descripción. */}
                 <header className={styles.viewerHeader}>
                   <div className={styles.viewerMeta}>
-                    <h4 className={styles.viewerTitle}>{tituloTab(doc)}</h4>
+                    <h4 className={styles.viewerTitle} title={tituloTab(doc)}>{tituloTab(doc)}</h4>
                     <div id="socios-header-action-portal" className={styles.headerActionPortal}>
                       {isPerfil && (
                         <button
@@ -590,6 +687,16 @@ export function SociosLegajo({
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
                   />
+                ) : isExtra ? (
+                  <TerceroRelacionSection
+                    loadingSocios={loadingSocios}
+                    items={socioLegajoData?.porTipoRelacion?.[doc.key] || []}
+                    titulo={doc.title}
+                    tipoRelacionSocioId={idRelacionExtra}
+                    handleEliminarRelacion={handleEliminarRelacion}
+                    cargarSocios={cargarSocios}
+                    socioIdActivo={socioIdActivo}
+                  />
                 ) : null}
               </section>
             )}
@@ -601,17 +708,17 @@ export function SociosLegajo({
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmEliminar}
         titulo={
-          deleteTarget?.rolId === 21
+          deleteTarget?.rolId === RELACION_AGENTE_BOLSA_ID
             ? "Desvincular Agente"
             : "Eliminar del legajo"
         }
         mensaje={
-          deleteTarget?.rolId === 21
+          deleteTarget?.rolId === RELACION_AGENTE_BOLSA_ID
             ? `¿Está seguro de que desea desvincular al Agente de Bolsa ${deleteTarget?.nombre}?`
             : `¿Está seguro de que desea eliminar a ${deleteTarget?.nombre} del legajo?`
         }
         tone="danger"
-        confirmText={deleteTarget?.rolId === 21 ? "Desvincular" : "Eliminar"}
+        confirmText={deleteTarget?.rolId === RELACION_AGENTE_BOLSA_ID ? "Desvincular" : "Eliminar"}
         isLoading={loadingDelete}
       />
       <PerfilModal

@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import {
+  RELACION_APODERADO_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+} from "../../../../constants/tiposRelacionSocio";
+import {
   useFormContext,
   useFormState,
   useWatch,
@@ -341,7 +345,7 @@ export default function Paso5Documentacion({
               Number(
                 r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID,
               ) === Number(terceroId) &&
-              [210, 230].includes(
+              [RELACION_APODERADO_ID, RELACION_REPRESENTANTE_LEGAL_ID].includes(
                 Number(
                   r.tiporelacionsocioid ||
                     r.TipoRelacionSocioID ||

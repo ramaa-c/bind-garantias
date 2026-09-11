@@ -18,6 +18,7 @@ import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { formatBase64Size, procesarArchivo, validarTamanioArchivo } from "../../../../../../utils/fileUtils";
+import { RELACION_ACCIONISTA_ID } from "../../../../../../constants/tiposRelacionSocio";
 import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../../../hooks/useValidarDomicilioRequerido";
@@ -467,7 +468,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 sociotercerorelacionid: 0,
                 socioid: socioIdActivo,
                 terceroid: stubTerceroId,
-                tiporelacionsocioid: 25,
+                tiporelacionsocioid: RELACION_ACCIONISTA_ID,
                 fechadesde: ahoraStub,
                 fechahasta: unAnioMasStub.toISOString().split(".")[0],
                 porcacciones: 0,
@@ -980,7 +981,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           sociotercerorelacionid: relacionIdEfectivo,
           socioid: socioIdActivo,
           terceroid: terceroId,
-          tiporelacionsocioid: 25,
+          tiporelacionsocioid: RELACION_ACCIONISTA_ID,
           porcacciones: Number(formData.participacion),
           telefono: formData.celular || "",
           provinciaid: Number(formData.provinciaid) || 0,
@@ -996,7 +997,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               sociotercerorelacionid: 0,
               socioid: socioIdActivo,
               terceroid: terceroId,
-              tiporelacionsocioid: 25,
+              tiporelacionsocioid: RELACION_ACCIONISTA_ID,
               fechadesde: ahora,
               fechahasta: unAnioMasStr,
               porcacciones: Number(formData.participacion),

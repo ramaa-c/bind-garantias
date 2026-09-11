@@ -3,8 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useEmpresaActiva } from "./useEmpresaActiva";
 import { useRequisitos } from "./useRequisitos";
 import { useObtenerDatosSocioLegajo, useEstadoCdaTerceros } from "./useTerceros";
+import { useTiposRelacionSocioActivos } from "./useTipoRelacionSocio";
 import { socioArchivoService } from "../services/socioArchivoService";
 import { useCadenaActiva } from "./useCadenaActiva";
+import {
+  RELACION_APODERADO_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+  IDS_RELACIONES_TERCEROS_BASE,
+} from "../constants/tiposRelacionSocio";
+import {
+  normalizarCatalogoActivo,
+  resolverRelacionesBaseActivas,
+} from "../utils/relacionesTercerosUtils";
 
 
 const DOCUMENT_TITLES = {
@@ -107,12 +117,29 @@ export const useValidacionLegajo = ({
   const { data: socioLegajoData, isLoading: loadingLegajo } =
     useObtenerDatosSocioLegajo(socioIdActivo);
 
+  // Catálogo curado (api/TipoRelacionSocio): ninguna de las 4 relaciones
+  // con sección propia de siempre se asume disponible - si el admin no la
+  // activó para este ambiente, su bloque de validación de más abajo se
+  // salta entero (no cuenta como requisito, aunque la parametrización de la
+  // cadena diga "Obligatorio" con un dato viejo). Cualquier ID que no sea
+  // uno de esos 4 se valida con la misma lógica en el loop genérico.
+  const { data: catalogoActivosData, isLoading: loadingCatalogoActivo } =
+    useTiposRelacionSocioActivos();
+  const catalogoActivo = normalizarCatalogoActivo(catalogoActivosData);
+  const relacionesBaseActivas = resolverRelacionesBaseActivas(catalogoActivo);
+  const clavesBaseActivas = new Set(relacionesBaseActivas.map((r) => r.clave));
+  const catalogoExtra = catalogoActivo.filter(
+    (it) => !IDS_RELACIONES_TERCEROS_BASE.includes(it.id),
+  );
+  const porTipoRelacion = socioLegajoData?.porTipoRelacion || {};
+
   // Un accionista/representante/apoderado con el CDA rechazado no cuenta
   // como completo (ver más abajo) — el legajo queda inválido hasta que se
   // reejecute y pase, momento en el cual LegajoUniversalBar migra solo.
   const { data: estadoCdaMap, isLoading: loadingEstadoCda } = useEstadoCdaTerceros([
     ...(socioLegajoData?.accionistas || []).map((a) => a.id),
     ...(socioLegajoData?.representantes || []).map((r) => r.id),
+    ...Object.values(porTipoRelacion).flat().map((r) => r.id),
   ]);
 
   const { data: archivosBackend = [], isLoading: loadingArchivos } = useQuery({
@@ -129,7 +156,7 @@ export const useValidacionLegajo = ({
   // todavía no se sabe nada de él) — eso alcanzó a disparar la migración
   // automática de LegajoUniversalBar antes de que la card se pintara de
   // rojo. Confirmado en vivo (2026-08-07).
-  const isLoading = loadingRequisitos || loadingLegajo || loadingArchivos || loadingEstadoCda;
+  const isLoading = loadingRequisitos || loadingLegajo || loadingArchivos || loadingEstadoCda || loadingCatalogoActivo;
 
   if (isLoading || !requisitos) {
     return {
@@ -137,6 +164,7 @@ export const useValidacionLegajo = ({
       errores: [],
       totalRequisitos: 0,
       requisitosCompletados: 0,
+      completitudPorRelacionExtra: {},
       isLoading: true,
       cadenaId,
     };
@@ -180,6 +208,7 @@ export const useValidacionLegajo = ({
   let apoderadosCompletos = false;
   let representanteLegalCompletos = false;
   let agentesBolsaCompletos = false;
+  const completitudPorRelacionExtra = {};
 
   // 2. Validar relaciones obligatorias (valor === 1)
   if (requisitos.relaciones) {
@@ -194,7 +223,7 @@ export const useValidacionLegajo = ({
     // TipoPersonaID=1) deje a una persona física bloqueada pidiendo un dato
     // que ni siquiera tiene dónde completar (la pestaña de accionistas no
     // se muestra para física, ver tabsDisponibles en SociosLegajo).
-    if (requisitos.relaciones.accionistas === 1 && Number(tipoPersonaId) !== 1) {
+    if (requisitos.relaciones.accionistas === 1 && Number(tipoPersonaId) !== 1 && clavesBaseActivas.has("accionistas")) {
       totalRequisitos++;
       totalLegajoObligatorios++;
       let accionistasValidos = true;
@@ -259,8 +288,8 @@ export const useValidacionLegajo = ({
     // una sola clave "representantes"; ahora son requisitos independientes
     // (ver requisitosService.js).
     const esFisica = Number(tipoPersonaId) === 1;
-    const apoderados = representantes.filter((r) => Number(r.rolId) === 210);
-    if (requisitos.relaciones.apoderados === 1) {
+    const apoderados = representantes.filter((r) => Number(r.rolId) === RELACION_APODERADO_ID);
+    if (requisitos.relaciones.apoderados === 1 && clavesBaseActivas.has("apoderados")) {
       totalRequisitos++;
       totalLegajoObligatorios++;
       let apoderadosValidos = true;
@@ -298,8 +327,8 @@ export const useValidacionLegajo = ({
     // Física (no tiene "representante legal", solo apoderado). Se ignora
     // este requisito para tipoPersonaId=1 sin importar lo que diga la
     // configuración, mismo criterio que ya se usa para Accionistas.
-    const representantesLegales = representantes.filter((r) => Number(r.rolId) === 230);
-    if (requisitos.relaciones.representanteLegal === 1 && !esFisica) {
+    const representantesLegales = representantes.filter((r) => Number(r.rolId) === RELACION_REPRESENTANTE_LEGAL_ID);
+    if (requisitos.relaciones.representanteLegal === 1 && !esFisica && clavesBaseActivas.has("representanteLegal")) {
       totalRequisitos++;
       totalLegajoObligatorios++;
       let repLegalValidos = true;
@@ -334,7 +363,7 @@ export const useValidacionLegajo = ({
     }
 
     // Agentes de Bolsa
-    if (requisitos.relaciones.agentesBolsa === 1) {
+    if (requisitos.relaciones.agentesBolsa === 1 && clavesBaseActivas.has("agentesBolsa")) {
       totalRequisitos++;
       totalLegajoObligatorios++;
       let agentesBolsaValidos = true;
@@ -362,6 +391,50 @@ export const useValidacionLegajo = ({
         erroresLegajo.push(...erroresAgentes);
       }
     }
+
+    // Relaciones activadas dinámicamente desde /admin/tipos-relacion-socio
+    // (ver TerceroRelacionSection) - misma lógica de validación que
+    // Apoderado/Representante Legal: contacto + domicilio + CUIT, sin DNI, y
+    // CDA no rechazado.
+    catalogoExtra.forEach((item) => {
+      const etiqueta = item.descripcion || `relación #${item.id}`;
+      const idKey = String(item.id);
+      const personas = porTipoRelacion[idKey] || [];
+
+      if (requisitos.relaciones[idKey] !== 1) return;
+
+      totalRequisitos++;
+      totalLegajoObligatorios++;
+      let extraValidos = true;
+      const erroresExtra = [];
+
+      if (personas.length === 0) {
+        extraValidos = false;
+        erroresExtra.push(`Debe registrar al menos un/a ${etiqueta}.`);
+      } else {
+        personas.forEach((persona) => {
+          const erroresPersona = validarContactoDomicilioYDni(persona, archivosBackend, etiqueta, { requiereDni: false });
+          if (erroresPersona.length > 0) {
+            extraValidos = false;
+            erroresExtra.push(...erroresPersona);
+          }
+          if (estadoCdaMap?.get(Number(persona.id)) === "rechazado") {
+            extraValidos = false;
+            erroresExtra.push(
+              `${etiqueta} ${persona.nombre} no pasó los Criterios de Aceptación — un administrador debe reintentarlo.`,
+            );
+          }
+        });
+      }
+
+      completitudPorRelacionExtra[idKey] = extraValidos;
+      if (extraValidos) {
+        requisitosCompletados++;
+      } else {
+        errores.push(...erroresExtra);
+        erroresLegajo.push(...erroresExtra);
+      }
+    });
   }
 
   const isValid = errores.length === 0;
@@ -378,6 +451,7 @@ export const useValidacionLegajo = ({
     apoderadosCompletos,
     representanteLegalCompletos,
     agentesBolsaCompletos,
+    completitudPorRelacionExtra,
     isLoading: false,
     faltanDocumentos: erroresDocumentos.length > 0,
     faltanLegajo: erroresLegajo.length > 0,

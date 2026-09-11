@@ -1,6 +1,12 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { tercerosService } from '../services/tercerosService';
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from '../utils/executeCda';
+import {
+  RELACION_ACCIONISTA_ID,
+  RELACION_APODERADO_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+  RELACION_AGENTE_BOLSA_ID,
+} from '../constants/tiposRelacionSocio';
 
 export const useObtenerTerceros = (params = {}) => {
     return useQuery({
@@ -17,13 +23,19 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
   return useQuery({
     queryKey: ["socioLegajoCompleto", socioId],
     queryFn: async () => {
-      if (!socioId) return { accionistas: [], representantes: [], agentesBolsa: [] };
+      if (!socioId) return { accionistas: [], representantes: [], agentesBolsa: [], porTipoRelacion: {} };
       const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioId);
       const arr = Array.isArray(relaciones) ? relaciones : [];
 
       const accMap = {};
       const repMap = {};
       const bolsaMap = {};
+      // Cualquier TipoRelacionSocioID que el admin haya activado en
+      // /admin/tipos-relacion-socio más allá de los 4 con flujo propio (ver
+      // constants/tiposRelacionSocio.js) cae acá, agrupado por ID - así
+      // TerceroRelacionSection puede mostrar cualquier relación nueva sin
+      // que este hook tenga que conocerla de antemano.
+      const extraMapPorId = {};
 
       // Comparación por fecha calendario (sin hora) contra HOY, no contra el
       // instante exacto: una relación recién creada suele llegar con
@@ -153,7 +165,7 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
         const identifier =
           item.cuit && item.cuit !== "—" ? item.cuit : item.id;
 
-        if (tiporelNum === 25) {
+        if (tiporelNum === RELACION_ACCIONISTA_ID) {
           // LUFE puede traer accionistas con 0% de participación que no
           // sirven de nada acá — se omiten. Nuestra propia modal nunca
           // puede guardar uno en 0% (el form valida min=0.01), así que el
@@ -175,22 +187,35 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
               accMap[identifier] = item;
             }
           }
-        } else if (tiporelNum === 210 || tiporelNum === 230) {
+        } else if (tiporelNum === RELACION_APODERADO_ID || tiporelNum === RELACION_REPRESENTANTE_LEGAL_ID) {
           const existing = repMap[identifier];
           if (!existing) {
             repMap[identifier] = item;
           } else {
-            if (item.rolId === 230 && existing.rolId !== 230) {
+            if (item.rolId === RELACION_REPRESENTANTE_LEGAL_ID && existing.rolId !== RELACION_REPRESENTANTE_LEGAL_ID) {
               repMap[identifier] = item;
             }
           }
-        } else if (tiporelNum === 21) {
+        } else if (tiporelNum === RELACION_AGENTE_BOLSA_ID) {
           const existing = bolsaMap[identifier];
           if (!existing) {
             bolsaMap[identifier] = item;
           } else {
             if (item.nrosubcuentacaja && !existing.nrosubcuentacaja) {
               bolsaMap[identifier] = item;
+            }
+          }
+        } else if (tiporelNum > 0) {
+          const idKey = String(tiporelNum);
+          const bucket = (extraMapPorId[idKey] = extraMapPorId[idKey] || {});
+          const existing = bucket[identifier];
+          if (!existing) {
+            bucket[identifier] = item;
+          } else {
+            const existingMomento = new Date(existing.relacion?.momento || existing.relacion?.Momento || 0).getTime();
+            const currentMomento = new Date(rel.momento || rel.Momento || 0).getTime();
+            if (currentMomento >= existingMomento) {
+              bucket[identifier] = item;
             }
           }
         }
@@ -200,6 +225,9 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
         accionistas: Object.values(accMap),
         representantes: Object.values(repMap),
         agentesBolsa: Object.values(bolsaMap),
+        porTipoRelacion: Object.fromEntries(
+          Object.entries(extraMapPorId).map(([id, bucket]) => [id, Object.values(bucket)]),
+        ),
       };
     },
     enabled: !!socioId,

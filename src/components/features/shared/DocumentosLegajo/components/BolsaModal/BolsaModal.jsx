@@ -9,6 +9,7 @@ import { InputSocioMasked } from "../../../../../ui/InputSocioMasked/InputSocioM
 import { useObtenerTerceros } from "../../../../../../hooks/useTerceros";
 import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { tercerosService } from "../../../../../../services/tercerosService";
+import { RELACION_AGENTE_BOLSA_ID } from "../../../../../../constants/tiposRelacionSocio";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./BolsaModal.module.css";
 
@@ -91,7 +92,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
               sociotercerorelacionid: 0,
               socioid: socioIdActivo,
               terceroid: Number(formData.sociedadBolsa),
-              tiporelacionsocioid: 21,
+              tiporelacionsocioid: RELACION_AGENTE_BOLSA_ID,
               fechadesde: ahora,
               fechahasta: unAnioMasStr,
               porcacciones: 0,

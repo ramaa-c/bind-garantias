@@ -119,6 +119,18 @@ export const useEquipoComercial = () =>
     select: (data) => mapAndSort(data, "equipocomercialid"),
   });
 
+// Catálogo real de SGR+ (los vínculos legales posibles entre un tercero y un
+// socio, con la Descripcion tal cual vive en SGR+). Es la fuente de la que
+// el admin elige qué relaciones activar y renombrar para la web (ver
+// useTipoRelacionSocio.js).
+export const useTipoRelacionSocioReal = () =>
+  useQuery({
+    queryKey: ["catalogos", "tipoRelacionSocioReal"],
+    queryFn: catalogosService.obtenerTipoRelacionSocio,
+    staleTime: STALE_TIME,
+    select: (data) => mapAndSort(data, "tiporelacionsocioid"),
+  });
+
 export const useObligaciones = () =>
   useQuery({
     queryKey: ["catalogos", "obligaciones"],

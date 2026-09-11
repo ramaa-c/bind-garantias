@@ -31,13 +31,15 @@ import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 const REPRESENTANTE_FORM_ID = "representante-modal-form";
 
 
-// Motor interno compartido por RepresentanteLegalModal y ApoderadoModal —
-// no se usa directo desde ningún otro lado. `rolFijo` reemplaza al viejo
-// select "Rol / Tipo Relación": antes el mismo modal dejaba elegir
-// Representante Legal o Apoderado sin importar el tipo de persona del
-// socio (una persona física podía terminar con "Representante Legal", que
-// no aplica). Ahora cada wrapper fija su propio rol y el modal no ofrece
-// la opción de cambiarlo.
+// Motor genérico de carga de un tercero "tipo persona" (contacto + domicilio,
+// sin campos propios de accionista ni de agente de bolsa) - lo usan
+// RepresentanteLegalModal y ApoderadoModal (con su ID fijo de siempre) y
+// TerceroRelacionSection para cualquier relación que el admin dé de alta en
+// /admin/tipos-relacion-socio. `tipoRelacionSocioId` + `etiquetaRol` los fija
+// el caller, el modal no ofrece forma de cambiarlos - antes el mismo modal
+// dejaba elegir Representante Legal o Apoderado sin importar el tipo de
+// persona del socio (una persona física podía terminar con "Representante
+// Legal", que no aplica).
 export function RepresentanteModal({
   isOpen,
   onClose,
@@ -46,13 +48,13 @@ export function RepresentanteModal({
   socioIdActivo,          // Both: active partner ID to link the relation
   representanteInicial,   // Form mode: initial representative data for edit
   onGuardar,              // Form mode: callback to update parent React Hook Form state
-  rolFijo,                // "Representante Legal" | "Apoderado" - lo fija el wrapper, no el usuario.
+  tipoRelacionSocioId,    // TipoRelacionSocioID a usar para la relación (fijo, no editable)
+  etiquetaRol,            // Nombre a mostrar (viene de api/TipoRelacionSocio para relaciones dinámicas)
 }) {
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
-  const etiquetaRol = rolFijo;
   const [validando, setValidando] = useState(false);
   const [enriqueciendoAuto] = useState(false);
   const [afipValidado, setAfipValidado] = useState(false);
@@ -86,7 +88,7 @@ export function RepresentanteModal({
     defaultValues: {
       cuit: "",
       nombre: "",
-      rol: rolFijo,
+      rol: etiquetaRol,
       email: "",
       telefono: "",
       direccion: "",
@@ -123,7 +125,7 @@ export function RepresentanteModal({
         reset({
           cuit: representante.cuit || "",
           nombre: representante.nombre || "",
-          rol: rolFijo,
+          rol: etiquetaRol,
           email: representante.email || "",
           telefono: representante.telefono || "",
           direccion: representante.direccion || "",
@@ -142,7 +144,7 @@ export function RepresentanteModal({
         reset({
           cuit: representanteInicial.cuit || "",
           nombre: representanteInicial.nombre || "",
-          rol: rolFijo,
+          rol: etiquetaRol,
           email: representanteInicial.email || "",
           telefono: representanteInicial.celular || representanteInicial.telefono || "",
           direccion: representanteInicial.direccion || "",
@@ -160,7 +162,7 @@ export function RepresentanteModal({
         reset({
           cuit: "",
           nombre: "",
-          rol: rolFijo,
+          rol: etiquetaRol,
           email: "",
           telefono: "",
           direccion: "",
@@ -309,14 +311,14 @@ export function RepresentanteModal({
         const relacionExistente = arrRel.find(
           (r) =>
             Number(r.terceroid ?? r.tercerorelacionadoid ?? r.TerceroRelacionadoID) === Number(stubTerceroId) &&
-            [210, 230].includes(Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId)),
+            Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId) === Number(tipoRelacionSocioId),
         );
 
         if (!relacionExistente) {
           const ahoraStub = new Date().toISOString().split(".")[0];
           const unAnioMasStub = new Date();
           unAnioMasStub.setFullYear(unAnioMasStub.getFullYear() + 1);
-          const targetRolIdStub = rolFijo === "Apoderado" ? 210 : 230;
+          const targetRolIdStub = tipoRelacionSocioId;
           await tercerosService.guardarRelacionesDeSocio({
             socioid: socioIdActivo,
             tercerosrelacionados: [
@@ -349,7 +351,7 @@ export function RepresentanteModal({
           stubRelacionRef.current = arrPost.find(
             (r) =>
               Number(r.terceroid ?? r.tercerorelacionadoid ?? r.TerceroRelacionadoID) === Number(stubTerceroId) &&
-              [210, 230].includes(Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId)),
+              Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId) === Number(tipoRelacionSocioId),
           ) || null;
         }
         // A propósito NO se llama a onSuccess acá (mismo criterio que
@@ -859,7 +861,7 @@ export function RepresentanteModal({
       const unAnioMas = new Date();
       unAnioMas.setFullYear(unAnioMas.getFullYear() + 1);
       const unAnioMasStr = unAnioMas.toISOString().split(".")[0];
-      const targetRolId = rolFijo === "Apoderado" ? 210 : 230;
+      const targetRolId = tipoRelacionSocioId;
       let relacionGuardada = null;
 
       // Direct Save to DB if socioIdActivo is present
@@ -872,7 +874,7 @@ export function RepresentanteModal({
           relacionExistente = arrRel.find(
             (r) =>
               Number(r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID) === Number(terceroId) &&
-              [210, 230].includes(Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId))
+              Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId) === Number(tipoRelacionSocioId)
           );
         } catch (relErr) {
           console.warn("[RepresentanteModal] Error consultando relaciones del socio:", relErr);
@@ -929,7 +931,7 @@ export function RepresentanteModal({
             relacionGuardada = arrRelPost.find(
               (r) =>
                 Number(r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID) === Number(terceroId) &&
-                [210, 230].includes(Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId)),
+                Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId) === Number(tipoRelacionSocioId),
             );
           } catch (postRelErr) {
             console.warn("[RepresentanteModal] No se pudo refrescar la relación recién creada:", postRelErr);

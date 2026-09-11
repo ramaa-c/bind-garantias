@@ -93,6 +93,9 @@ const LineasCda = lazy(() => import("./pages/admin/lineas/LineasCda"));
 const ModoOffline = lazy(
   () => import("./pages/admin/configuracion/ModoOffline"),
 );
+const TiposRelacionSocio = lazy(
+  () => import("./pages/admin/configuracion/TiposRelacionSocio"),
+);
 
 // Rutas de la zona cliente, compartidas por los dos modos de ruteo (ver
 // utils/tenantConfig.js): cuelgan de "/" cuando la cadena se resuelve por
@@ -414,6 +417,16 @@ const rutasAdmin = (
         <AdminGuard>
           <AdminLayout>
             <ModoOffline />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/tipos-relacion-socio"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <TiposRelacionSocio />
           </AdminLayout>
         </AdminGuard>
       }

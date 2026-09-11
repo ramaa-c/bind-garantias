@@ -35,6 +35,14 @@ const ConfirmarCorreo = () => {
     return () => clearTimeout(id);
   }, [timeLeft, emailUsuario]);
 
+  useEffect(() => {
+    if (emailUsuario) return;
+    toast.error("Sesión inválida", {
+      description:
+        "No se encontró información del registro. Volvé a intentarlo.",
+    });
+  }, [emailUsuario]);
+
   const canResend = timeLeft === 0 && !isPending;
 
   const handleReenviar = () => {
@@ -76,12 +84,6 @@ const ConfirmarCorreo = () => {
   };
 
   if (!emailUsuario) {
-    setTimeout(() => {
-      toast.error("Sesión inválida", {
-        description:
-          "No se encontró información del registro. Volvé a intentarlo.",
-      });
-    }, 0);
     return <Navigate to={`${basePath}/registro`} replace />;
   }
 

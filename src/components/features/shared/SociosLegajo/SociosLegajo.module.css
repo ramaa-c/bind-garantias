@@ -62,6 +62,12 @@
   transition: background 0.15s;
   overflow: hidden;
   flex-shrink: 0;
+  /* En desktop este botón es un ítem de grid, columna fija de 14rem (ver
+     grid-template-columns más abajo) - un ítem de grid por default no se
+     achica por debajo del ancho de su contenido ("min-width: auto"), así
+     que con un nombre largo el botón entero se estira más allá de la
+     columna en vez de dejar que el ellipsis de .tabTitle haga su trabajo. */
+  min-width: 0;
 }
 
 .tabBtn:hover {
@@ -102,6 +108,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
+  /* Los dos hacen falta para que el ellipsis de arriba realmente corte un
+     nombre largo (ej. una relación de terceros con descripción larga
+     cargada desde /admin/tipos-relacion-socio):
+     - min-width: 0 para el layout de fila (mobile), donde como item de flex
+       el mínimo por default es "auto" (el ancho del contenido sin cortar).
+     - max-width: 100% para el layout de columna (desktop, ver
+       .tabTitleGroup en el media query de 48rem): ahí el ancho es el eje
+       CRUZADO del flex y con align-items:flex-start el span toma el ancho
+       de su contenido sin que lo limite el contenedor, así que min-width no
+       lo frena - se desbordaba y lo terminaba recortando el overflow:hidden
+       del botón, sin puntos suspensivos. */
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* Mismo criterio que los links del Sidebar principal: --text-muted como
@@ -1031,6 +1050,19 @@
 
   .tabActive {
     background: rgba(var(--overlay-rgb), 0.04);
+  }
+
+  /* Con un nombre largo (una relación de terceros cargada desde
+     /admin/tipos-relacion-socio) el título tomaba todo su ancho natural y
+     empujaba el botón de acción a una segunda línea. Truncándolo, los dos
+     entran en la misma fila como en el resto de las pantallas. En mobile
+     no aplica: ahí el botón va al 100% en su propia línea a propósito (ver
+     .headerActionPortal), así que conviene que el título envuelva. */
+  .viewerTitle {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .mobileChevron {

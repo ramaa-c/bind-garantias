@@ -4,6 +4,11 @@ import { tercerosService } from "../services/tercerosService";
 import { catalogosService } from "../services/catalogosService";
 import { matchProvinciaAfip } from "./provinciaUtils";
 import { parseAddress } from "./direccionParser";
+import {
+  RELACION_ACCIONISTA_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+  RELACION_APODERADO_ID,
+} from "../constants/tiposRelacionSocio";
 
 const getCSharpIsoDate = () => {
   const date = new Date();
@@ -41,7 +46,11 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
   const relacionAccionistas = arrRelaciones.filter((r) => {
     const rid =
       r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId;
-    return [25, 210, 230].includes(Number(rid));
+    return [
+      RELACION_ACCIONISTA_ID,
+      RELACION_APODERADO_ID,
+      RELACION_REPRESENTANTE_LEGAL_ID,
+    ].includes(Number(rid));
   });
 
   if (relacionAccionistas.length === 0) {

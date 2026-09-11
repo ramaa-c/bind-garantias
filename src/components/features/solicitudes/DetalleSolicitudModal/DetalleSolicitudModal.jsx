@@ -5,6 +5,7 @@ import styles from "./DetalleSolicitudModal.module.css";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../../services/sociosService";
 import { tercerosService } from "../../../../services/tercerosService";
+import { RELACION_ACCIONISTA_ID } from "../../../../constants/tiposRelacionSocio";
 import {
   FiFileText,
   FiDollarSign,
@@ -109,7 +110,7 @@ export const DetalleSolicitudModal = ({
           rel.TipoRelacionSocioID ||
           rel.tiporelacionsocioId;
         const tiporelNum = Number(tiporel);
-        if (tiporel && tiporelNum !== 25) return false;
+        if (tiporel && tiporelNum !== RELACION_ACCIONISTA_ID) return false;
 
         // 2. Validar expiración de fecha (fechahasta)
         const fd = rel.fechadesde || rel.FechaDesde;

@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
+import { useTiposRelacionSocioActivos } from "../../../../hooks/useTipoRelacionSocio";
+import { IDS_RELACIONES_TERCEROS_BASE } from "../../../../constants/tiposRelacionSocio";
+import {
+  normalizarCatalogoActivo,
+  resolverRelacionesBaseActivas,
+} from "../../../../utils/relacionesTercerosUtils";
 import { FiSave, FiHelpCircle, FiRotateCcw, FiUser, FiBriefcase } from "react-icons/fi";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./RequisitosConfigModal.module.css";
@@ -25,13 +31,22 @@ const DOCUMENT_METADATA = [
   { key: "otrosDocumentos", title: "Otros Documentos", desc: "Cualquier otra documentación de respaldo del legajo." }
 ];
 
-const RELATION_METADATA = [
+// Título/descripción de arranque para los 4 tipos con flujo de carga propio
+// en el legajo - se usan mientras carga el catálogo curado (ver
+// relationMetadata más abajo, dentro del componente) o si por algún motivo
+// esa relación todavía no está activada en /admin/tipos-relacion-socio. Una
+// vez que el catálogo responde, el título real sale de ahí (renombrar una
+// relación en esa pantalla se refleja acá solo).
+const RELATION_METADATA_BASE = [
   { key: "accionistas", title: "Composición Accionaria", desc: "Declaración del cuadro accionario y participaciones societarias (Socio/Fiador)." },
   { key: "representanteLegal", title: "Representantes Legales", desc: "Administración de representantes legales habilitados." },
   { key: "apoderados", title: "Apoderados", desc: "Administración de apoderados habilitados para operar en nombre del titular." },
   { key: "agentesBolsa", title: "Agentes de Bolsa", desc: "Vinculación y administración de cuentas comitentes con agentes de bolsa." },
   { key: "usuarios", title: "Vincular Usuarios", desc: "Autorización y otorgamiento de accesos a otros usuarios en la plataforma." }
 ];
+
+const DESC_RELACION_EXTRA =
+  "Relación de terceros activada desde \"Relaciones de Terceros\" - misma lógica de carga que Representante Legal/Apoderado (contacto, domicilio y CUIT).";
 
 const esRelacionVisible = (key, tab) => {
   if (tab === "fisica" && key === "accionistas") return false;
@@ -50,6 +65,58 @@ const TABS = [
 export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   const cadenaId = activeItem?.cadenavalorid;
   const { requisitos, updateRequisitos, isUpdating, refetch } = useRequisitos(cadenaId);
+
+  // Fuente de verdad para qué relaciones se pueden parametrizar y cómo se
+  // llaman: lo que el admin activó en /admin/tipos-relacion-socio (ver
+  // SGRPLUSPLA, pedido de Victor). Un ambiente que todavía no activó
+  // ninguna de las 4 relaciones de siempre (ej. desa recién levantado) no
+  // muestra esas filas acá - no se asume que existan (ver
+  // resolverRelacionesBaseActivas). Mientras la consulta sigue en curso se
+  // las deja ver con el texto estático de RELATION_METADATA_BASE, para no
+  // parpadear en el caso normal (donde sí están activadas). Cualquier otra
+  // relación que el admin haya agregado en esa pantalla aparece como fila
+  // extra, con el TipoRelacionSocioID como clave (ver resolverClaveRelacion
+  // en requisitosService.js) - se carga en el legajo con la misma lógica
+  // que Representante Legal/Apoderado (ver TerceroRelacionSection).
+  const { data: catalogoActivosData, isLoading: isLoadingCatalogoActivo } =
+    useTiposRelacionSocioActivos();
+
+  const catalogoActivo = useMemo(
+    () => normalizarCatalogoActivo(catalogoActivosData),
+    [catalogoActivosData],
+  );
+
+  const relationMetadata = useMemo(() => {
+    const relacionesBaseActivas = resolverRelacionesBaseActivas(catalogoActivo);
+    const descripcionPorClave = Object.fromEntries(
+      relacionesBaseActivas.map((r) => [r.clave, r.descripcion]),
+    );
+    const clavesActivas = new Set(relacionesBaseActivas.map((r) => r.clave));
+
+    // "Vincular Usuarios" no es una relación de terceros real (ver
+    // RELACION_USUARIOS_ID) - se separa acá para poder reinsertarla siempre
+    // al final, después de cualquier relación extra que el admin haya
+    // agregado (ver más abajo), y porque no está gateada por el catálogo.
+    const baseSinUsuarios = RELATION_METADATA_BASE.filter((meta) => meta.key !== "usuarios");
+    const metaUsuarios = RELATION_METADATA_BASE.find((meta) => meta.key === "usuarios");
+
+    const base = baseSinUsuarios
+      .filter((meta) => isLoadingCatalogoActivo || clavesActivas.has(meta.key))
+      .map((meta) => {
+        const tituloVivo = descripcionPorClave[meta.key];
+        return tituloVivo ? { ...meta, title: tituloVivo } : meta;
+      });
+
+    const extras = catalogoActivo
+      .filter((item) => !IDS_RELACIONES_TERCEROS_BASE.includes(item.id))
+      .map((item) => ({
+        key: String(item.id),
+        title: item.descripcion || `Relación #${item.id}`,
+        desc: DESC_RELACION_EXTRA,
+      }));
+
+    return [...base, ...extras, ...(metaUsuarios ? [metaUsuarios] : [])];
+  }, [catalogoActivo, isLoadingCatalogoActivo]);
 
   // Solapa activa actual
   const [activeTab, setActiveTab] = useState("sa");
@@ -96,7 +163,7 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   const handleSetTodos = (type, value) => {
     setLocalConfig(prev => {
       if (!prev) return prev;
-      const metadata = type === "documentos" ? DOCUMENT_METADATA : RELATION_METADATA;
+      const metadata = type === "documentos" ? DOCUMENT_METADATA : relationMetadata;
       const claves = metadata
         .map(({ key }) => key)
         .filter((key) => type === "documentos" || esRelacionVisible(key, activeTab));
@@ -295,7 +362,7 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
             </div>
           </div>
           <div className={styles.list}>
-            {RELATION_METADATA.map(({ key, title, desc }) => {
+            {relationMetadata.map(({ key, title, desc }) => {
               if (activeTab === "fisica" && key === "accionistas") return null;
               // Persona Física no tiene Representante Legal (230) - solo
               // Apoderado (210), que sí aplica a ambos tipos de persona.

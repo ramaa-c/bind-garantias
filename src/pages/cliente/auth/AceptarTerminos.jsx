@@ -24,6 +24,7 @@ export default function AceptarTerminos() {
   const [aceptado, setAceptado] = useState(false);
   const [seccionActiva, setSeccionActiva] = useState(null);
   const [progreso, setProgreso] = useState(0);
+  const [lecturaCompleta, setLecturaCompleta] = useState(false);
   const [isGenerandoPdf, setIsGenerandoPdf] = useState(false);
   const scrollRef = useRef(null);
 
@@ -61,7 +62,8 @@ export default function AceptarTerminos() {
   }, [terminos]);
 
   const handleAceptarTerminos = async () => {
-    if (!aceptado || isConfirmando || isEnviandoRef.current) return;
+    if (!aceptado || !lecturaCompleta || isConfirmando || isEnviandoRef.current)
+      return;
 
     if (!usuarioWebId || !terminosVigentes?.terminosycondicionesid) {
       toast.error(
@@ -105,11 +107,16 @@ export default function AceptarTerminos() {
 
     const onScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = el;
-      const pct = Math.min(
-        100,
-        Math.round((scrollTop / (scrollHeight - clientHeight)) * 100),
-      );
+      const scrolleable = scrollHeight - clientHeight;
+      const pct =
+        scrolleable <= 0
+          ? 100
+          : Math.min(100, Math.round((scrollTop / scrolleable) * 100));
       setProgreso(pct);
+
+      if (scrolleable <= 0 || scrollTop + clientHeight >= scrollHeight - 4) {
+        setLecturaCompleta(true);
+      }
 
       const secciones = el.querySelectorAll("[data-section-id]");
       let activa = null;
@@ -122,6 +129,7 @@ export default function AceptarTerminos() {
     };
 
     el.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     return () => el.removeEventListener("scroll", onScroll);
   }, [terminos]);
 
@@ -238,29 +246,44 @@ export default function AceptarTerminos() {
 
         {/* FOOTER DE ACEPTACIÓN */}
         <footer className={styles.docFooter}>
-          <label className={styles.checkboxRow}>
-            <span className={styles.checkboxWrapper}>
-              <input
-                type="checkbox"
-                className={styles.hiddenCheckbox}
-                checked={aceptado}
-                onChange={() => setAceptado(!aceptado)}
-              />
-              <span
-                className={`${styles.checkmark} ${aceptado ? styles.checkmarkActive : ""}`}
-              >
-                {aceptado && <FiCheck size={12} color="#000" strokeWidth={3} />}
+          <div className={styles.checkboxCol}>
+            <label
+              className={`${styles.checkboxRow} ${!lecturaCompleta ? styles.checkboxRowDisabled : ""}`}
+            >
+              <span className={styles.checkboxWrapper}>
+                <input
+                  type="checkbox"
+                  className={styles.hiddenCheckbox}
+                  checked={aceptado}
+                  disabled={!lecturaCompleta}
+                  onChange={() => setAceptado(!aceptado)}
+                />
+                <span
+                  className={`${styles.checkmark} ${aceptado ? styles.checkmarkActive : ""}`}
+                >
+                  {aceptado && (
+                    <FiCheck size={12} color="#000" strokeWidth={3} />
+                  )}
+                </span>
               </span>
-            </span>
-            <span className={styles.checkboxLabel}>
-              He leído y acepto los términos y condiciones de uso de la
-              plataforma
-            </span>
-          </label>
+              <span className={styles.checkboxLabel}>
+                He leído y acepto los términos y condiciones de uso de la
+                plataforma
+              </span>
+            </label>
+            {!lecturaCompleta && (
+              <span className={styles.lecturaHint}>
+                Desplazá el documento hasta el final para habilitar la
+                aceptación.
+              </span>
+            )}
+          </div>
 
           <Button
             variant="primary"
-            disabled={!aceptado || isConfirmando || isGenerandoPdf}
+            disabled={
+              !aceptado || !lecturaCompleta || isConfirmando || isGenerandoPdf
+            }
             isLoading={isConfirmando || isGenerandoPdf}
             onClick={handleAceptarTerminos}
             className={styles.btnAceptar}

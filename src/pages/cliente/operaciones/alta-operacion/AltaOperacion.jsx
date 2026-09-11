@@ -23,6 +23,12 @@ import {
   Paso7Exito,
   ConfirmacionBorradorModal,
 } from "../../../../components/features";
+import {
+  RELACION_ACCIONISTA_ID,
+  RELACION_APODERADO_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+  RELACION_AGENTE_BOLSA_ID,
+} from "../../../../constants/tiposRelacionSocio";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { Alert, Spinner, LoadingScreen } from "../../../../components/ui";
 import styles from "./AltaOperacion.module.css";
@@ -560,7 +566,7 @@ export const AltaOperacion = () => {
               rel.tiporelacionsocioId;
             const tiporelNum = Number(tiporel);
 
-            if (tiporelNum === 25) {
+            if (tiporelNum === RELACION_ACCIONISTA_ID) {
               const cuitLimpioSocio = String(cuit).replace(/\D/g, "");
               const cuitLimpioEmpresa = cuitActivo
                 ? String(cuitActivo).replace(/\D/g, "")
@@ -637,7 +643,7 @@ export const AltaOperacion = () => {
                   relacion: rel,
                 });
               }
-            } else if (tiporelNum === 210 || tiporelNum === 230) {
+            } else if (tiporelNum === RELACION_APODERADO_ID || tiporelNum === RELACION_REPRESENTANTE_LEGAL_ID) {
               if (cuit && (!cuitsRepsYaCargados.has(cuit) || force)) {
                 cuitsRepsYaCargados.add(cuit);
 
@@ -653,7 +659,7 @@ export const AltaOperacion = () => {
                     tercero.razonsocial ||
                     "Sin nombre",
                   rol:
-                    tiporelNum === 230 ? "Representante Legal" : "Apoderado",
+                    tiporelNum === RELACION_REPRESENTANTE_LEGAL_ID ? "Representante Legal" : "Apoderado",
                   email: tercero.mail || tercero.Mail || "",
                   celular:
                     tercero.telefono || tercero.Telefono || rel.telefono || "",
@@ -670,7 +676,7 @@ export const AltaOperacion = () => {
                   relacion: rel,
                 });
               }
-            } else if (tiporelNum === 21) {
+            } else if (tiporelNum === RELACION_AGENTE_BOLSA_ID) {
               setValue("sociedadBolsa", String(terceroId));
               setValue(
                 "numeroCuentaBolsa",
@@ -985,7 +991,7 @@ export const AltaOperacion = () => {
               sociotercerorelacionid: 0,
               socioid: finalSocioId,
               terceroid: Number(cleanData.sociedadBolsa),
-              tiporelacionsocioid: 21,
+              tiporelacionsocioid: RELACION_AGENTE_BOLSA_ID,
               fechadesde: ahoraRel,
               fechahasta: unAnioMasStr,
               porcacciones: 0,
