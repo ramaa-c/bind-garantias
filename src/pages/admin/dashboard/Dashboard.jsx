@@ -10,9 +10,10 @@ import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
-import { useObtenerSocios } from "../../../hooks/useSocios";
+import { useObtenerSocios, useActualizarSocio } from "../../../hooks/useSocios";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import { solicitudesService } from "../../../services/solicitudesService";
+import { sociosService } from "../../../services/sociosService";
 import {
   ESTADO_RECHAZADA,
   ESTADO_PENDIENTE,
@@ -138,8 +139,22 @@ export default function Dashboard() {
   const { data: sociosData, isLoading: isLoadingSocios } = useObtenerSocios();
   const actualizarEstadoMutation = useActualizarLimiteSocio();
   const migrarLineaMutation = useMigrarLinea();
+  const actualizarSocioMutation = useActualizarSocio();
 
   const loading = isLoadingLimites || isLoadingSocios;
+
+  // Mismo mapeo que arma solicitudesCanal más abajo, expuesto acá aparte
+  // porque migrarSocioSiCorresponde necesita el registro completo del
+  // Socio (no solo los 3 campos que solicitudesCanal deja en `item`) para
+  // el PUT api/Socio que marca MarcaVinculacion.
+  const sociosPorId = useMemo(() => {
+    const map = new Map();
+    (Array.isArray(sociosData) ? sociosData : []).forEach((s) => {
+      const socioId = s.socioid || s.SocioID;
+      if (socioId) map.set(socioId, s);
+    });
+    return map;
+  }, [sociosData]);
 
   const selectedChain = (activeCadenas || []).find(
     (c) => String(c.cadenavalorid || c.CadenaValorID) === String(selectedCadenaId)
@@ -290,7 +305,73 @@ export default function Dashboard() {
     });
   };
 
-  const handleReintentarMigracion = (item) => migrarLinea(item, { contexto: "reintento" });
+  // Nuevo flujo de migración del Socio (cambio de negocio pedido en llamada
+  // el 2026-09-14, todavía sin ticket propio en Plane): antes el Socio se
+  // migraba solo apenas el legajo quedaba completo (ver LegajoUniversalBar,
+  // que ahora deja de auto-migrar cuando la cadena tiene líneas habilitadas
+  // - ver useObtenerLimitesCadenaValor ahí). Para esas cadenas la migración
+  // del Socio pasa a depender de esto: se dispara junto con la de la línea,
+  // en el mismo botón de Aceptar. Para una cadena SIN líneas habilitadas el
+  // flujo sigue exactamente igual que siempre (auto-migración en
+  // LegajoUniversalBar) - este código ni se ejecuta ahí porque no hay
+  // solicitud de línea que aprobar.
+  //
+  // Mismo criterio de precondición que LegajoUniversalBar.jsx
+  // (sincronizarConSgrPlus): sin Certificado PyME fresco no se llega a
+  // pegarle a Socio/Migrar. A diferencia de esa barra, acá NO se vuelve a
+  // validar CDA/completitud del legajo - la aprobación manual del admin ES
+  // el gate ahora.
+  const migrarSocioSiCorresponde = async (item, { contexto = "aprobar" } = {}) => {
+    const socioId = item.socioid;
+    const socio = socioId ? sociosPorId.get(socioId) : null;
+    if (!socioId || !socio) return;
+
+    // Ya migrado - no hay nada para hacer (reintentar Socio/Migrar sobre un
+    // socio ya migrado es seguro, pero evita un PUT/POST de más en el caso
+    // normal de aprobar una segunda línea del mismo socio).
+    if (String(socio.marcavinculacion ?? "") === "1") return;
+
+    let tieneCertificadoFresco = false;
+    try {
+      const certificados = await sociosService.obtenerCertificadoPyme(socioId);
+      tieneCertificadoFresco = Array.isArray(certificados) && certificados.length > 0;
+    } catch (certError) {
+      console.error("[Dashboard] Error consultando Socio/CertificadoPYME antes de migrar:", certError);
+    }
+
+    if (!tieneCertificadoFresco) {
+      toast.warning(
+        contexto === "aprobar"
+          ? `La línea N°${item.id} se aprobó, pero el socio todavía no tiene Certificado PyME generado`
+          : `El socio de la línea N°${item.id} todavía no tiene Certificado PyME generado`,
+        { description: "El socio va a quedar sin migrar a SGR+ hasta que lo tenga." },
+      );
+      return;
+    }
+
+    try {
+      const response = await sociosService.enviarASgrPlus(socioId);
+      if (!response.success) throw new Error(response.message || "Error al migrar el socio");
+
+      await actualizarSocioMutation.mutateAsync({
+        ...socio,
+        socioid: socioId,
+        marcavinculacion: "1",
+      });
+    } catch (socioMigError) {
+      toast.error(
+        contexto === "aprobar"
+          ? `La línea N°${item.id} se aprobó, pero no se pudo migrar el socio a SGR+`
+          : `No se pudo migrar el socio de la línea N°${item.id} a SGR+`,
+        { description: socioMigError.message },
+      );
+    }
+  };
+
+  const handleReintentarMigracion = (item) => {
+    migrarLinea(item, { contexto: "reintento" });
+    migrarSocioSiCorresponde(item, { contexto: "reintento" });
+  };
 
   // Cada cambio de estado en TipoLimiteSocio (aprobar/rechazar) tiene que
   // reflejarse también en SolicitudEnProceso — desde que se unificó el
@@ -340,6 +421,7 @@ export default function Dashboard() {
             description: "Los fondos o cupos han sido habilitados para el cliente.",
           });
           migrarLinea(item);
+          migrarSocioSiCorresponde(item);
         } else {
           toast.error(`Solicitud N°${item.id} Rechazada`, {
             description: "Se ha notificado al cliente el rechazo de la operación.",

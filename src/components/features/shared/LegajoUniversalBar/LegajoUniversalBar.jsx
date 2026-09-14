@@ -9,6 +9,7 @@ import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme, useActualizarSocio } from "../../../../hooks/useSocios";
 import { useEstadoValidarSocio } from "../../../../hooks/useSgrPlusCore";
+import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
@@ -68,6 +69,24 @@ export function LegajoUniversalBar({
     cadenaId: cadenaIdOverride,
   });
 
+  // Cambio de flujo pedido en llamada el 2026-09-14 (todavía sin ticket
+  // propio en Plane): si la cadena tiene líneas habilitadas, esta barra deja
+  // de disparar la PRIMERA migración sola (ni en silencio del lado cliente,
+  // ni con el banner manual del admin) - esa primera migración pasa a
+  // dispararse desde Dashboard.jsx cuando el admin aprueba la solicitud de
+  // línea del socio (ver migrarSocioSiCorresponde ahí). Una cadena SIN
+  // líneas habilitadas sigue exactamente igual que siempre: auto-migra
+  // apenas el legajo queda completo, sin pasar por acá.
+  const { data: limitesCadenaData, isLoading: loadingLimitesCadena } =
+    useObtenerLimitesCadenaValor(cadenaId);
+  const tieneLineasHabilitadas = (
+    Array.isArray(limitesCadenaData)
+      ? limitesCadenaData
+      : limitesCadenaData
+        ? [limitesCadenaData]
+        : []
+  ).some((l) => String(l.activa ?? l.Activa) === "1");
+
   // Datos del Socio en sí (no de sus terceros) — se usan tanto para saber si
   // "los datos de la empresa" cambiaron (ver fingerprint) como para el CUIT
   // que necesita el chequeo de migración real de abajo. Sirve para ambos
@@ -85,6 +104,16 @@ export function LegajoUniversalBar({
   // el cálculo viejo con solo el fingerprint.
   const migradoEnBackend = String(socioWeb?.marcavinculacion ?? "") === "1";
 
+  // El bloqueo por líneas SOLO aplica a la primera migración - un socio ya
+  // migrado (por Dashboard.jsx, al aprobarle la línea) tiene que poder
+  // volver a resincronizarse normalmente ante cualquier cambio posterior
+  // (ej. el mail de un accionista), tanto en el auto-sync silencioso del
+  // cliente como en el banner manual del admin - pedido explícito: no se
+  // quiere perder esa reconciliación por tener líneas habilitadas. Por eso
+  // el corto circuito de !migradoEnBackend va primero: una vez migrado, ni
+  // siquiera se evalúa si hay líneas o si la consulta sigue cargando.
+  const migracionBloqueadaPorLineas =
+    !migradoEnBackend && (!cadenaId || loadingLimitesCadena || tieneLineasHabilitadas);
   // Estado del CDA de PANTALLA_INGRESO_CUIT del socio en sí (no de sus
   // terceros — ver estadoCdaMap para eso). Desde el 2026-08-13 esto ya NO
   // bloquea el acceso a la cuenta (OnboardingGuard dejó de usarlo para
@@ -433,6 +462,7 @@ export function LegajoUniversalBar({
     // admin (ver comentario en isSolicitudesEnabled más arriba), no acá.
     if (isSolicitudesEnabled) return;
     if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingSocioWeb || loadingEstadoCdaSocio) return;
+    if (migracionBloqueadaPorLineas) return;
 
     // En "legajo" (a diferencia de "documentacion") completar el último
     // requisito puede pasar DENTRO de una modal propia (Representante,
@@ -488,6 +518,7 @@ export function LegajoUniversalBar({
   useEffect(() => {
     if (!adminMode) return;
     if (!faltaMigrarEnBackend || isMigrating || isLoading || loadingSocioWeb || loadingEstadoCdaSocio) return;
+    if (migracionBloqueadaPorLineas) return;
     if (modalesLegajoAbiertos > 0) return;
     if (lastAttemptedFingerprint === fingerprint) return;
 
@@ -506,7 +537,7 @@ export function LegajoUniversalBar({
 
     autoMigrarAdmin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingEstadoCdaSocio, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
+  }, [adminMode, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingEstadoCdaSocio, migracionBloqueadaPorLineas, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
   // Se renderiza sin importar si la barra decide ocultarse en este contexto:
   // la migración puede completarse en cualquier momento y el aviso tiene que
@@ -566,7 +597,14 @@ export function LegajoUniversalBar({
   // sincronizarConSgrPlus de cero, así que sirve como "reintentar" sin
   // depender de que algo más cambie.
   if (adminMode) {
-    const mostrarBannerMigracion = hayCambiosSinSincronizar || faltaMigrarEnBackend;
+    const mostrarBannerMigracion = !migracionBloqueadaPorLineas && (hayCambiosSinSincronizar || faltaMigrarEnBackend);
+    // La cadena tiene líneas habilitadas: acá no se ofrece ni se dispara la
+    // migración (ver migracionBloqueadaPorLineas más arriba) - se avisa en
+    // vez de desaparecer en silencio, para que no parezca un bug la falta
+    // del banner de siempre. Mismas condiciones que mostrarBannerMigracion
+    // hubiera usado, solo que acá SÍ hay líneas habilitadas.
+    const mostrarAvisoBloqueoPorLineas =
+      tieneLineasHabilitadas && !migradoEnBackend && (hayCambiosSinSincronizar || faltaMigrarEnBackend);
     return (
       <>
         {migracionExitosaModal}
@@ -586,6 +624,14 @@ export function LegajoUniversalBar({
             >
               Guardar y migrar
             </Button>
+          </div>
+        )}
+        {mostrarAvisoBloqueoPorLineas && (
+          <div className={styles.adminSyncBanner}>
+            <FiRefreshCw className={styles.adminSyncIcon} />
+            <span className={styles.adminSyncText}>
+              El legajo está completo, pero esta cadena tiene líneas habilitadas: la migración a SGR+ va a hacerse al aprobar la solicitud de línea del socio, no automáticamente acá.
+            </span>
           </div>
         )}
         <ConfirmacionModal
