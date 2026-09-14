@@ -109,6 +109,7 @@ export default function Paso3Simulador({
   disableTipoProducto = false,
   disableMonto = false,
   montoMaximoOverride,
+  isSubmitting = false,
 }) {
   const { control, trigger, setValue, setError } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
@@ -485,6 +486,7 @@ export default function Paso3Simulador({
             datosTabla={datosTablaPrestamo}
             onContinuar={onContinuar}
             onRecalcular={onCancelar}
+            isSubmitting={isSubmitting}
           />
         ) : (
           <TicketSimulacion
@@ -497,6 +499,7 @@ export default function Paso3Simulador({
             onRecalcular={onCancelar}
             onContinuar={onContinuar}
             textoBotonSecundario="Desisto de avanzar"
+            isSubmitting={isSubmitting}
           />
         )}
       </Modal>

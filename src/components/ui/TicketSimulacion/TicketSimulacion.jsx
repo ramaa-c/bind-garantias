@@ -16,6 +16,7 @@ export const TicketSimulacion = ({
   onRecalcular,
   textoBotonPrimario = "Continuar",
   textoBotonSecundario = "Recalcular",
+  isSubmitting = false,
 }) => {
   return (
     <div className={styles.resultsBox}>
@@ -73,10 +74,12 @@ export const TicketSimulacion = ({
         <Button
           variant="primary"
           onClick={onContinuar}
+          isLoading={isSubmitting}
+          disabled={isSubmitting}
         >
           {textoBotonPrimario}
         </Button>
-        <Button variant="link" onClick={onRecalcular}>
+        <Button variant="link" onClick={onRecalcular} disabled={isSubmitting}>
           {textoBotonSecundario}
         </Button>
       </div>

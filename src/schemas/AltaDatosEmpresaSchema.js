@@ -29,10 +29,20 @@ export const AltaDatosEmpresaSchema = z.object({
   provincia: z.string().min(1, "La provincia es requerida").optional(),
   provinciaid: z.coerce.number().optional(),
   celular: z.string().min(8, "El número de contacto es inválido"),
+  // Paso2Datos.jsx ya no tiene ningún campo/modal para cargar esto (sacado
+  // en el rediseño de flujo del 2026-09-14, SGRPLUSPLA-192 - la idea es
+  // pedirlo más adelante, en el legajo) - onSubmitFinal (AltaDatosEmpresa.jsx)
+  // ya cae solo al email del usuario si viene vacío. Exigirlo acá bloqueaba
+  // "Continuar" en silencio: handleSubmit corre este schema entero antes de
+  // llamar a onSubmitFinal, y sin un input que lo complete nunca pasaba la
+  // validación. Se mantiene el chequeo de formato para cuando SÍ venga
+  // cargado (ej. un socio existente que ya lo tenía, vía
+  // mapearSocioAValoresFormulario) - solo se relaja el "requerido".
   emailfacturacion: z
     .string()
-    .min(1, "El email de facturación es requerido")
-    .email("Ingresá un email válido"),
+    .email("Ingresá un email válido")
+    .optional()
+    .or(z.literal("")),
   tipopersonaid: z.coerce.number().optional(),
   mescierre: z.coerce.number().nullable().optional(),
   fechainicioactividades: z.string().nullable().optional(),

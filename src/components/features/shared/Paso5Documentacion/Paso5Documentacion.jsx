@@ -56,7 +56,6 @@ const DOC_ITEMS = [
 
 const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
   <div style={{ display: "none" }}>
-    <input {...register("emailFacturacion")} />
     {socios.map((socio, i) => (
       <React.Fragment key={socio?.cuit || i}>
         <input {...register(`socios.${i}.email`)} />

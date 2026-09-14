@@ -9,6 +9,7 @@ export const TicketPrestamoFijo = ({
   onRecalcular,
   textoBotonPrimario = "Continuar",
   textoBotonSecundario = "Desisto de avanzar",
+  isSubmitting = false,
 }) => {
   return (
     <div className={styles.ticketContainer}>
@@ -53,10 +54,15 @@ export const TicketPrestamoFijo = ({
         </div>
 
         <div className={styles.actionsFlex}>
-          <Button variant="primary" onClick={onContinuar}>
+          <Button
+            variant="primary"
+            onClick={onContinuar}
+            isLoading={isSubmitting}
+            disabled={isSubmitting}
+          >
             {textoBotonPrimario}
           </Button>
-          <Button variant="link" onClick={onRecalcular}>
+          <Button variant="link" onClick={onRecalcular} disabled={isSubmitting}>
             {textoBotonSecundario}
           </Button>
         </div>

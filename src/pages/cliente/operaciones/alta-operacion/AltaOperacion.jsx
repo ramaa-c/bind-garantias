@@ -1,10 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import {
-  useForm,
-  FormProvider,
-  useWatch,
-  useFieldArray,
-} from "react-hook-form";
+import React, { useState, useEffect, useMemo } from "react";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiRotateCcw } from "react-icons/fi";
@@ -18,31 +13,19 @@ import {
 import { BarraProgreso, BotonVolver, Button } from "../../../../components/ui";
 import {
   Paso3Simulador,
-  Paso5Documentacion,
-  Paso6Bolsa,
   Paso7Exito,
   ConfirmacionBorradorModal,
 } from "../../../../components/features";
-import {
-  RELACION_ACCIONISTA_ID,
-  RELACION_APODERADO_ID,
-  RELACION_REPRESENTANTE_LEGAL_ID,
-  RELACION_AGENTE_BOLSA_ID,
-} from "../../../../constants/tiposRelacionSocio";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { Alert, Spinner, LoadingScreen } from "../../../../components/ui";
 import styles from "./AltaOperacion.module.css";
 import { solicitudesService } from "../../../../services/solicitudesService";
-import { sociosService } from "../../../../services/sociosService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { lineaService } from "../../../../services/lineaService";
 import { cadenaValorService } from "../../../../services/cadenaValorService";
 import { posicionConsolidadaService } from "../../../../services/posicionConsolidadaService";
-import { afipService } from "../../../../services/afipService";
-import { tercerosService } from "../../../../services/tercerosService";
 import { catalogosService } from "../../../../services/catalogosService";
 import { useChannel } from "../../../../context/ChannelContext";
-import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useObtenerTodasWeb } from "../../../../hooks/useCadenaValor";
 import { useTiposProducto } from "../../../../hooks/useCatalogos";
@@ -74,12 +57,8 @@ export const AltaOperacion = () => {
   const {
     cuitActivo,
     socioIdActivo,
-    tipoPersonaId,
-    nombreEmpresa,
     isLoading: isLoadingEmpresa,
   } = useEmpresaActiva();
-
-  const { requisitos } = useRequisitos(Number(cadenaSlug), tipoPersonaId ?? null, nombreEmpresa);
 
   // Líneas reales de la cadena (TipoLimiteCadenaValor): reemplazan el viejo
   // selector hardcodeado "Cheques propios/Préstamos/Pagaré" - el usuario
@@ -160,8 +139,6 @@ export const AltaOperacion = () => {
   const [resumenSolicitud, setResumenSolicitud] = useState(null);
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [buscandoSocios, setBuscandoSocios] = useState(false);
-  const [resetKey, setResetKey] = useState(0);
   const [validandoAcceso, setValidandoAcceso] = useState(true);
   // Reemplaza el viejo patrón de toast + navigate: en vez de sacar al socio
   // de la pantalla, se le muestra el motivo en pantalla y se bloquea el botón
@@ -178,8 +155,6 @@ export const AltaOperacion = () => {
     document.addEventListener("bindHelp:toggle", handler);
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
-
-  const sociosPrecargadosRef = useRef(false);
 
   useEffect(() => {
     if (isLoadingEmpresa) return;
@@ -330,17 +305,6 @@ export const AltaOperacion = () => {
       familiaProducto: "",
       monto: "",
       plazo: "",
-      sociedadBolsa: "",
-      numeroCuentaBolsa: "",
-      representantes: [],
-      emailFacturacion: "",
-      faseSocio: "ingresar_cuit",
-      tempSocioCuit: "",
-      tempSocioNombre: "",
-      tempSocioParticipacion: "",
-      tempSocioData: null,
-      docExpandido: "estatuto",
-      socios: [],
     }),
   });
 
@@ -352,20 +316,9 @@ export const AltaOperacion = () => {
     watch,
   });
 
-  const [maxPasoAlcanzado, setMaxPasoAlcanzado] = useState(pasoActual);
-  useEffect(() => {
-    setMaxPasoAlcanzado((m) => Math.max(m, pasoActual));
-  }, [pasoActual]);
-
-  const { fields: socios } = useFieldArray({
-    control,
-    name: "socios",
-  });
-
   const tipoProducto = useWatch({ control, name: "tipoProducto" });
   const familiaProducto = useWatch({ control, name: "familiaProducto" });
   const moneda = useWatch({ control, name: "moneda" });
-  const docExpandido = useWatch({ control, name: "docExpandido" });
 
   // Línea real (TipoLimiteCadenaValor) que corresponde al tipoProducto
   // elegido - tipoProducto ahora es el TipoLimiteCadenaValorID, no un
@@ -418,306 +371,6 @@ export const AltaOperacion = () => {
     setValue("monto", disponibleLinea, { shouldValidate: true });
   }, [lineaSeleccionada, esMontoUnico, utilizadoLineaSeleccionada, setValue]);
 
-  const cargarSociosDesdeDB = async (force = false) => {
-    if (!socioIdActivo) return;
-    if (!force && sociosPrecargadosRef.current) return;
-
-    sociosPrecargadosRef.current = true;
-    setBuscandoSocios(true);
-
-    if (force) {
-      setValue("socios", []);
-      setValue("representantes", []);
-    }
-
-    try {
-      try {
-        const socioActual = await sociosService.obtenerSocioPorId(socioIdActivo);
-        const emailFact = socioActual?.emailfacturacion || "";
-        if (emailFact && !getValues("emailFacturacion")) {
-          setValue("emailFacturacion", emailFact);
-        }
-      } catch (err) {
-        console.warn("No se pudo obtener el email de facturación del socio:", err);
-      }
-
-      let relacionesSGR = [];
-      let relacionesLocal = [];
-
-      try {
-        relacionesSGR =
-          await tercerosService.obtenerRelacionesDeSocioSGRPlus(
-            socioIdActivo,
-          );
-      } catch (e) {
-        console.warn("No se pudo obtener relaciones de SGRPlus", e);
-      }
-
-      try {
-        relacionesLocal =
-          await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
-      } catch (e) {
-        console.warn("No se pudo obtener relaciones locales", e);
-      }
-
-      const arrSgr = Array.isArray(relacionesSGR) ? relacionesSGR : [];
-      const arrLocal = Array.isArray(relacionesLocal) ? relacionesLocal : [];
-
-      const mapaRel = new Map();
-      [...arrSgr, ...arrLocal].forEach((r) => {
-        const tid =
-          r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID;
-        const rid =
-          r.tiporelacionsocioid ||
-          r.TipoRelacionSocioID ||
-          r.tiporelacionsocioId;
-        if (tid && rid) {
-          const key = `${tid}-${rid}`;
-          const existing = mapaRel.get(key);
-          if (existing) {
-            const existingMomento = new Date(existing.momento || existing.Momento || 0).getTime();
-            const currentMomento = new Date(r.momento || r.Momento || 0).getTime();
-            const existingId = Number(existing.sociotercerorelacionid || existing.SocioTerceroRelacionID || 0);
-            const currentId = Number(r.sociotercerorelacionid || r.SocioTerceroRelacionID || 0);
-            
-            if (currentMomento > existingMomento || (currentMomento === existingMomento && currentId > existingId)) {
-              mapaRel.set(key, r);
-            }
-          } else {
-            mapaRel.set(key, r);
-          }
-        }
-      });
-
-      const relacionesArray = Array.from(mapaRel.values());
-      if (relacionesArray.length === 0) {
-        if (force) {
-          setValue("socios", []);
-          setValue("faseSocio", "ingresar_cuit");
-        }
-        return;
-      }
-
-      const sociosCargados = [];
-      const representantesCargados = [];
-      const cuitsAccionistasYaCargados = new Set(
-        force ? [] : (getValues("socios") || []).map((s) => s.cuit),
-      );
-      const cuitsRepsYaCargados = new Set(
-        force ? [] : (getValues("representantes") || []).map((r) => r.cuit),
-      );
-
-      const now = new Date();
-
-      for (const rel of relacionesArray) {
-        const fd = rel.fechadesde || rel.FechaDesde;
-        const fh = rel.fechahasta || rel.FechaHasta;
-        if (fh && fh !== "") {
-          const expirationDate = new Date(fh);
-          const startDate = fd ? new Date(fd) : null;
-
-          const isSameAsStart =
-            startDate &&
-            (expirationDate.getTime() === startDate.getTime() ||
-              expirationDate.toISOString().split("T")[0] ===
-                startDate.toISOString().split("T")[0]);
-
-          if (!isSameAsStart && expirationDate < now) {
-            continue;
-          }
-        }
-
-        const terceroId =
-          rel.terceroid ||
-          rel.tercerorelacionadoid ||
-          rel.TerceroRelacionadoID;
-        if (!terceroId) continue;
-
-        try {
-          let tercero = null;
-          try {
-            tercero = await tercerosService.obtenerTerceroPorId(terceroId);
-            if (!tercero || !tercero.denominacion || !tercero.cuit) {
-              const terceroSGR = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
-              if (terceroSGR && (terceroSGR.denominacion || terceroSGR.cuit)) {
-                tercero = terceroSGR;
-              }
-            }
-          } catch {
-            try {
-              tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
-            } catch (sgrErr) {
-              console.warn("No se pudo obtener tercero de SGRPlus", sgrErr);
-            }
-          }
-
-          if (tercero) {
-            const cuit =
-              tercero.cuit ||
-              tercero.Cuit ||
-              tercero.nrodocumento ||
-              tercero.numerodocumento ||
-              tercero.NumeroDocumento ||
-              tercero.documento ||
-              "";
-            const tiporel =
-              rel.tiporelacionsocioid ||
-              rel.TipoRelacionSocioID ||
-              rel.tiporelacionsocioId;
-            const tiporelNum = Number(tiporel);
-
-            if (tiporelNum === RELACION_ACCIONISTA_ID) {
-              const cuitLimpioSocio = String(cuit).replace(/\D/g, "");
-              const cuitLimpioEmpresa = cuitActivo
-                ? String(cuitActivo).replace(/\D/g, "")
-                 : "";
-
-              if (
-                cuit &&
-                cuitLimpioSocio !== cuitLimpioEmpresa &&
-                (!cuitsAccionistasYaCargados.has(cuit) || force)
-              ) {
-                cuitsAccionistasYaCargados.add(cuit);
-
-                let afipData = null;
-                try {
-                  afipData =
-                    await afipService.obtenerConstanciaInscripcion(cuit);
-                } catch {
-                  console.warn("No se pudo obtener AFIP extra para", cuit);
-                }
-
-                const terceroMergeado = {
-                  ...tercero,
-                  datosgenerales: afipData ? afipData.datosgenerales : null,
-                };
-
-                const email =
-                  tercero.mail ||
-                  tercero.Mail ||
-                  terceroMergeado.datosgenerales?.email ||
-                  "";
-                const celular =
-                  tercero.telefono ||
-                  tercero.Telefono ||
-                  rel.telefono ||
-                  "";
-                const direccion =
-                  tercero.calle ||
-                  tercero.Calle ||
-                  tercero.direccion ||
-                  terceroMergeado.datosgenerales?.domiciliofiscal?.direccion ||
-                  "";
-                const localidad =
-                  tercero.contacto ||
-                  terceroMergeado.datosgenerales?.domiciliofiscal?.localidad ||
-                  "";
-                const provinciaid =
-                  rel.provinciaid ||
-                  terceroMergeado.datosgenerales?.domiciliofiscal?.descripcionprovincia ||
-                  "";
-
-                sociosCargados.push({
-                  cuit,
-                  nombre:
-                    tercero.denominacion ||
-                    tercero.Denominacion ||
-                    tercero.nombre ||
-                    tercero.Nombre ||
-                    tercero.razonsocial ||
-                    "Sin nombre",
-                  participacion: String(
-                    rel.porcacciones ||
-                      rel.participacion ||
-                      rel.Participacion ||
-                      "0",
-                  ),
-                  email,
-                  celular,
-                  direccion,
-                  localidad,
-                  provinciaid: String(provinciaid),
-                  dataOriginal: terceroMergeado,
-                  tercerorelacionadoid: terceroId,
-                  preloadedFromDb: true,
-                  relacion: rel,
-                });
-              }
-            } else if (tiporelNum === RELACION_APODERADO_ID || tiporelNum === RELACION_REPRESENTANTE_LEGAL_ID) {
-              if (cuit && (!cuitsRepsYaCargados.has(cuit) || force)) {
-                cuitsRepsYaCargados.add(cuit);
-
-                const calleRep = tercero.calle || tercero.Calle || "";
-                representantesCargados.push({
-                  id: terceroId,
-                  cuit,
-                  nombre:
-                    tercero.denominacion ||
-                    tercero.Denominacion ||
-                    tercero.nombre ||
-                    tercero.Nombre ||
-                    tercero.razonsocial ||
-                    "Sin nombre",
-                  rol:
-                    tiporelNum === RELACION_REPRESENTANTE_LEGAL_ID ? "Representante Legal" : "Apoderado",
-                  email: tercero.mail || tercero.Mail || "",
-                  celular:
-                    tercero.telefono || tercero.Telefono || rel.telefono || "",
-                  direccion: calleRep || tercero.direccion || "",
-                  calle: calleRep,
-                  numero: tercero.numero || 0,
-                  piso: tercero.piso || "",
-                  departamento: tercero.departamento || "",
-                  ciudad: tercero.ciudad || "",
-                  ciudadid: tercero.ciudadid || 0,
-                  codpos: tercero.codpos || "",
-                  provinciaid: rel.provinciaid || tercero.provinciaid || "",
-                  preloadedFromDb: true,
-                  relacion: rel,
-                });
-              }
-            } else if (tiporelNum === RELACION_AGENTE_BOLSA_ID) {
-              setValue("sociedadBolsa", String(terceroId));
-              setValue(
-                "numeroCuentaBolsa",
-                rel.nrosubcuentacaja || rel.NroSubcuentaCaja || "",
-              );
-            }
-          }
-        } catch (err) {
-          console.error(
-            "Error loading specific relation detail:",
-            terceroId,
-            err,
-          );
-        }
-      }
-
-      if (sociosCargados.length > 0) {
-        setValue("socios", sociosCargados);
-        setValue("faseSocio", "lista");
-      } else {
-        if (force) {
-          setValue("socios", []);
-          setValue("faseSocio", "ingresar_cuit");
-        }
-      }
-      if (representantesCargados.length > 0) {
-        setValue("representantes", representantesCargados);
-      }
-    } catch (error) {
-      console.error("Error in precargarSocios flow:", error);
-    } finally {
-      setBuscandoSocios(false);
-    }
-  };
-
-  useEffect(() => {
-    if (socioIdActivo) {
-      cargarSociosDesdeDB();
-    }
-  }, [socioIdActivo, resetKey]);
-
   const handleResetFlujoCompleto = () => {
     clearStorage();
     metodosFormulario.reset({
@@ -733,22 +386,8 @@ export const AltaOperacion = () => {
       familiaProducto: "",
       monto: "",
       plazo: "",
-      sociedadBolsa: "",
-      numeroCuentaBolsa: "",
-      representantes: [],
-      emailFacturacion: "",
-      faseSocio: "ingresar_cuit",
-      tempSocioCuit: "",
-      tempSocioNombre: "",
-      tempSocioParticipacion: "",
-      tempSocioData: null,
-      docExpandido: "estatuto",
-      socios: [],
     });
-    sociosPrecargadosRef.current = false;
-    setResetKey((prev) => prev + 1);
     setPasoActual(1);
-    setMaxPasoAlcanzado(1);
     setMostrarResultados(false);
     setResumenSolicitud(null);
   };
@@ -766,23 +405,10 @@ export const AltaOperacion = () => {
     setIsModalBorradorAbierto(true);
   };
 
-  const preparePayload = (data) => {
-    const {
-      faseSocio: _faseSocio,
-      tempSocioCuit: _tempSocioCuit,
-      tempSocioNombre: _tempSocioNombre,
-      tempSocioParticipacion: _tempSocioParticipacion,
-      tempSocioData: _tempSocioData,
-      docExpandido: _docExpandido,
-      ...cleanData
-    } = data;
-    return cleanData;
-  };
-
   const enviarSolicitud = async (data) => {
     setEnviandoSolicitud(true);
     try {
-      const cleanData = preparePayload(data);
+      const cleanData = data;
       const cuitLimpio = cuitActivo
         ? String(cuitActivo).replace(/\D/g, "")
         : "33711316839";
@@ -798,29 +424,10 @@ export const AltaOperacion = () => {
         return;
       }
 
-      // El email de facturación se pide y valida como obligatorio en el
-      // Paso 5 (ver Paso5Documentacion), pero nunca se persistía en
-      // ningún lado - se descartaba apenas se enviaba la solicitud. El PUT
-      // a /Socio reemplaza el registro entero, así que hay que partir del
-      // socio ya guardado (no solo de `cleanData`) para no pisarle el
-      // resto de los campos con vacíos.
-      if (cleanData.emailFacturacion) {
-        try {
-          const socioActual = await sociosService.obtenerSocioPorId(finalSocioId);
-          if (socioActual && socioActual.emailfacturacion !== cleanData.emailFacturacion) {
-            await sociosService.actualizarSocio({
-              ...socioActual,
-              socioid: finalSocioId,
-              emailfacturacion: cleanData.emailFacturacion,
-            });
-          }
-        } catch (emailError) {
-          console.error(
-            "[ALTA OPERACION] Error al actualizar el email de facturación:",
-            emailError,
-          );
-        }
-      }
+      // El email de facturación del socio ya se carga y valida desde el
+      // Legajo (ver PerfilModal) - este wizard dejó de pedirlo/persistirlo
+      // (cambio de flujo 2026-09-14, junto con sacar Documentos/Sociedad de
+      // Bolsa de acá, ver Paso3Simulador más abajo).
 
       if (!lineaSeleccionada) {
         toast.error("Error al enviar", {
@@ -931,10 +538,6 @@ export const AltaOperacion = () => {
       // ya se validó al entrar a la pantalla (ver verificarAcceso) - si ya
       // estaba en el tope, el alta queda bloqueada antes de llegar acá.
 
-      const unAnioMasRel = new Date();
-      unAnioMasRel.setFullYear(unAnioMasRel.getFullYear() + 1);
-      const unAnioMasStr = unAnioMasRel.toISOString().split(".")[0];
-
       // Si ya sabemos que se rechaza (CDA de línea / PorcentajeMinimoSolicitud,
       // ver debeRechazarseAutomaticamente más arriba), directamente no se crea
       // la SolicitudEnProceso: no tiene sentido mandarla "EnProceso" al core
@@ -966,9 +569,7 @@ export const AltaOperacion = () => {
           estadosolicitud: 2,
           idexterno: 0,
           terceroviaid: 4000000,
-          terceropresentanteid: cleanData.sociedadBolsa
-            ? Number(cleanData.sociedadBolsa)
-            : 0,
+          terceropresentanteid: 0,
         };
 
         console.log(
@@ -982,45 +583,10 @@ export const AltaOperacion = () => {
           resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
       }
 
-      if (finalSocioId && cleanData.sociedadBolsa) {
-        const ahoraRel = new Date().toISOString().split(".")[0];
-        const payloadRelacionBolsa = {
-          socioid: finalSocioId,
-          tercerosrelacionados: [
-            {
-              sociotercerorelacionid: 0,
-              socioid: finalSocioId,
-              terceroid: Number(cleanData.sociedadBolsa),
-              tiporelacionsocioid: RELACION_AGENTE_BOLSA_ID,
-              fechadesde: ahoraRel,
-              fechahasta: unAnioMasStr,
-              porcacciones: 0,
-              nroinscripcion: "",
-              condicionescomerciales: "",
-              cbu: "",
-              nrosubcuentacaja: String(cleanData.numeroCuentaBolsa || ""),
-              sucursalid: 0,
-              default: "1",
-              subtiporelacionsocioid: 0,
-              telefono: "",
-              momento: ahoraRel,
-            },
-          ],
-        };
-        try {
-          await tercerosService.guardarRelacionesDeSocio(payloadRelacionBolsa);
-        } catch (relError) {
-          console.error(
-            "[ALTA OPERACION] Error al guardar relación de agente de bolsa:",
-            relError,
-          );
-        }
-      }
-
-      // Los representantes/apoderados ya se persisten (tercero + SocioTerceroRelacion)
-      // desde RepresentanteModal.onConfirmSave al momento de agregarlos/editarlos en el
-      // Paso5 (o ya venían precargados de la DB vía cargarSociosDesdeDB). Volver a
-      // guardarlos acá duplicaba la relación en cada envío de solicitud.
+      // Agente de bolsa, apoderados/representantes y accionistas ya no se
+      // gestionan desde este wizard (cambio de flujo 2026-09-14) - se cargan
+      // y persisten enteramente desde el Legajo (SociosLegajo), antes de
+      // llegar acá.
 
       const fchDesde = new Date().toISOString().split(".")[0];
       const unAnioMas = new Date();
@@ -1097,11 +663,7 @@ export const AltaOperacion = () => {
         plazo: cleanData.plazo,
       });
 
-      if (cleanData.familiaProducto === "cheque") {
-        setPasoActual(4);
-      } else {
-        setPasoActual(3);
-      }
+      setPasoActual(2);
     } catch (error) {
       console.error("[ALTA OPERACION] Error en enviarSolicitud:", error);
       toast.error("Error al enviar", {
@@ -1113,11 +675,7 @@ export const AltaOperacion = () => {
     }
   };
 
-  const onSubmitFinalCheques = () => {
-    enviarSolicitud(getValues());
-  };
-
-  const onSubmitFinalPrestamos = () => {
+  const onSubmitFinal = () => {
     enviarSolicitud(getValues());
   };
 
@@ -1156,10 +714,6 @@ export const AltaOperacion = () => {
     handleResetFlujoCompleto();
     sessionStorage.setItem("last_used_cuit", data.cuit);
     navigate(`${basePath}/solicitudes`, { state: { nuevaSolicitud } });
-  };
-
-  const toggleDoc = (seccion) => {
-    setValue("docExpandido", docExpandido === seccion ? "" : seccion);
   };
 
   // ----- RENDERIZADO DINÁMICO DE PASOS -----
@@ -1201,7 +755,11 @@ export const AltaOperacion = () => {
               setMostrarResultados(true);
             }
           }}
-          onContinuar={() => setPasoActual(2)}
+          onContinuar={async () => {
+            handleSubmit(onSubmitFinal, (errors) => {
+              console.error("Errores de validación del schema:", errors);
+            })();
+          }}
           onCancelar={() => setMostrarResultados(false)}
           opcionesMoneda={opcionesMoneda}
           opcionesProducto={opcionesProducto}
@@ -1211,93 +769,23 @@ export const AltaOperacion = () => {
           montoMaximoOverride={Number(lineaSeleccionada?.montolinea) || undefined}
           labelFecha="Plazo estimado"
           labelMonto="Monto requerido"
+          isSubmitting={enviandoSolicitud}
         />
       );
     }
 
+    // Documentación, Representantes/Apoderados y Sociedad de Bolsa ya no
+    // son pasos propios de este wizard (cambio de flujo 2026-09-14): se
+    // gestionan enteramente en el Legajo, antes de llegar a pedir la línea.
+    // "Continuar" en Paso3Simulador (arriba) ya crea la solicitud
+    // directamente - acá solo queda mostrar el resultado.
     if (pasoActual === 2) {
       return (
-        <Paso5Documentacion
-          docExpandido={docExpandido}
-          toggleDoc={toggleDoc}
-          socios={socios}
-          onVolverASocios={() => setPasoActual(1)}
-          avanzarPaso6={async () => {
-            const ok = await trigger("emailFacturacion");
-            const reps = getValues("representantes");
-            
-            // Apoderado (210) y Representante Legal (230) son requisitos
-            // independientes desde la parametrización - acá se combinan
-            // porque este paso todavía junta la carga de ambos roles en
-            // un solo bloque (ver Paso5Documentacion).
-            const repLegalAplica = Number(tipoPersonaId) !== 1;
-            const isRepRequired =
-              requisitos?.relaciones?.apoderados === 1 ||
-              (repLegalAplica && requisitos?.relaciones?.representanteLegal === 1);
-            const tieneRepresentantes = reps?.length > 0;
-            const canAdvanceReps = !isRepRequired || tieneRepresentantes;
-
-            if (!canAdvanceReps && isRepRequired) {
-              toast.error("Debe declarar al menos un representante legal o apoderado.");
-              return;
-            }
-
-            if (ok && canAdvanceReps) {
-              if (familiaProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
-                setPasoActual(3);
-              } else if (familiaProducto === "cheque") {
-                handleSubmit(onSubmitFinalCheques, (errors) => {
-                  console.error("Errores de validación del schema:", errors);
-                })();
-              } else {
-                handleSubmit(onSubmitFinalPrestamos, (errors) => {
-                  console.error("Errores de validación del schema:", errors);
-                })();
-              }
-            }
-          }}
-          isSubmitting={enviandoSolicitud}
-          socioId={socioIdActivo}
+        <Paso7Exito
+          resumen={resumenSolicitud}
+          onVolverInicio={handleIrASolicitudes}
         />
       );
-    }
-
-    if (familiaProducto === "cheque") {
-      if (pasoActual === 3) {
-        return (
-          <Paso6Bolsa
-            avanzarConBolsa={async () => {
-              if (await trigger(["sociedadBolsa", "numeroCuentaBolsa"]))
-                handleSubmit(onSubmitFinalCheques, (errors) => {
-                  console.error("Errores de validación del schema:", errors);
-                })();
-            }}
-            avanzarSinBolsa={() => {
-              setValue("sociedadBolsa", "");
-              setValue("numeroCuentaBolsa", "");
-              handleSubmit(onSubmitFinalCheques, (errors) => {
-                console.error("Errores de validación del schema:", errors);
-              })();
-            }}
-            isSubmitting={enviandoSolicitud}
-          />
-        );
-      }
-      if (pasoActual === 4)
-        return (
-          <Paso7Exito
-            resumen={resumenSolicitud}
-            onVolverInicio={handleIrASolicitudes}
-          />
-        );
-    } else if (familiaProducto === "prestamo" || familiaProducto === "pagare") {
-      if (pasoActual === 3)
-        return (
-          <Paso7Exito
-            resumen={resumenSolicitud}
-            onVolverInicio={handleIrASolicitudes}
-          />
-        );
     }
 
     return null;
@@ -1311,99 +799,26 @@ export const AltaOperacion = () => {
           t: "Alta de Operación",
           s: "Seleccioná el tipo de operación y las condiciones.",
         };
-      case 2:
-        return {
-          badge: "Alta de Línea",
-          t: "Documentación Requerida",
-          s: "Adjuntá los respaldos de la operación.",
-        };
-      case 3:
-        return {
-          badge: "Alta de Línea",
-          t: "Sociedad de Bolsa",
-          s: "Confirmá tu cuenta comitente.",
-        };
-      case 4:
-        return {
-          badge: "Alta de Línea",
-          t: "Operación Confirmada",
-          s: "La solicitud fue enviada con éxito.",
-        };
       default:
         return { badge: "Alta de Línea", t: "Alta de Operación", s: "" };
     }
   };
 
-  const stepToHitoMap = useMemo(() => {
-    const map = [1, 2];
-    if (familiaProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
-      map.push(3);
-    }
-    return map;
-  }, [requisitos, familiaProducto]);
+  // Un solo paso visible (Operación) - Documentos/Bolsa ya no existen acá
+  // (ver renderPasoDinamico) y Éxito nunca se muestra en el stepper, igual
+  // que antes (showHeaderYStepper lo oculta).
+  const hitosVisuales = ["Operación"];
+  const hitoActualMapped = 1;
+  const maxHitoAlcanzadoMapped = 1;
+  const handleStepClickMapped = () => {};
 
-  const hitoActualMapped = useMemo(() => {
-    const idx = stepToHitoMap.indexOf(pasoActual);
-    return idx !== -1 ? idx + 1 : 1;
-  }, [stepToHitoMap, pasoActual]);
-
-  const maxHitoAlcanzadoMapped = useMemo(() => {
-    const idx = stepToHitoMap.indexOf(maxPasoAlcanzado);
-    return idx !== -1 ? idx + 1 : 1;
-  }, [stepToHitoMap, maxPasoAlcanzado]);
-
-  const handleStepClickMapped = (hitoNum) => {
-    const targetStep = stepToHitoMap[hitoNum - 1];
-    if (targetStep) {
-      setPasoActual(targetStep);
-    }
-  };
-
-  const handleVolverMapped = () => {
-    const currentIdx = stepToHitoMap.indexOf(pasoActual);
-    if (currentIdx > 0) {
-      setPasoActual(stepToHitoMap[currentIdx - 1]);
-    }
-  };
-
-  const hitosVisuales = useMemo(() => {
-    const list = ["Operación", "Documentos"];
-    if (familiaProducto === "cheque" && requisitos?.relaciones?.agentesBolsa !== 0) {
-      list.push("Bolsa");
-    }
-    return list;
-  }, [requisitos, familiaProducto]);
-
-  const showHeaderYStepper =
-    !(pasoActual === 4 && familiaProducto === "cheque") &&
-    !(
-      pasoActual === 3 &&
-      (familiaProducto === "prestamo" || familiaProducto === "pagare")
-    );
-
-  const mostrarBotonVolver =
-    pasoActual > 1 &&
-    !(pasoActual === 4 && familiaProducto === "cheque") &&
-    !(
-      pasoActual === 3 &&
-      (familiaProducto === "prestamo" || familiaProducto === "pagare")
-    );
+  const showHeaderYStepper = pasoActual === 1;
 
   if (isLoadingEmpresa || validandoAcceso) {
     return (
       <LoadingScreen
         title="Verificando acceso"
         message="Aguardá un momento mientras validamos tu sesión..."
-        absolute={true}
-      />
-    );
-  }
-
-  if (buscandoSocios) {
-    return (
-      <LoadingScreen
-        title="Buscando socios"
-        message="Obteniendo la información de la empresa..."
         absolute={true}
       />
     );
@@ -1453,7 +868,7 @@ export const AltaOperacion = () => {
                   hitoActual={hitoActualMapped}
                   maxHitoAlcanzado={maxHitoAlcanzadoMapped}
                   onStepClick={handleStepClickMapped}
-                  onVolver={mostrarBotonVolver ? handleVolverMapped : null}
+                  onVolver={null}
                   onVolverInicio={
                     pasoActual === 1
                       ? () => navigate(`${basePath}/solicitudes`)
