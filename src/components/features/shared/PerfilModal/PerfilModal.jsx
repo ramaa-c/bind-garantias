@@ -10,7 +10,6 @@ import {
   FiBriefcase,
   FiMapPin,
   FiPhone,
-  FiMail,
   FiCheckCircle,
   FiEdit2,
   FiChevronRight,
@@ -20,7 +19,6 @@ import { FaRegUserCircle } from "react-icons/fa";
 import { Modal, Button, InputSimple, InputPasswordSeguro, Skeleton } from "../../../ui";
 import UbicacionModal from "../UbicacionModal/UbicacionModal";
 import ContactoModal from "../ContactoModal/ContactoModal";
-import FacturacionModal from "../FacturacionModal/FacturacionModal";
 import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSchema";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -41,8 +39,6 @@ import {
 import sidebarStyles from "../../../layout/Client/Sidebar/Sidebar.module.css";
 import paso2Styles from "../Paso2Datos/Paso2Datos.module.css";
 import styles from "./PerfilModal.module.css";
-
-const EMAIL_REGEX = /^\S+@\S+\.\S+$/;
 
 const usernameSchema = z.object({
   denominacion: z
@@ -103,7 +99,6 @@ const construirValoresEmpresa = (socio) => {
     // Asumimos validado el número ya guardado: si el usuario no lo toca,
     // ContactoModal deja pasar directo sin re-pedir el SMS.
     celularVerificado: celular,
-    emailfacturacion: socio?.emailfacturacion || "",
   };
 };
 
@@ -116,7 +111,6 @@ export const PerfilModal = ({ isOpen, onClose }) => {
   const [tab, setTab] = useState("empresa");
   const [modalUbicacionOpen, setUbicacionModalOpen] = useState(false);
   const [modalContactoOpen, setContactoModalOpen] = useState(false);
-  const [modalFacturacionOpen, setFacturacionModalOpen] = useState(false);
 
   const {
     socioIdActivo,
@@ -212,12 +206,9 @@ export const PerfilModal = ({ isOpen, onClose }) => {
   const direccion = useWatch({ control: controlEmpresa, name: "direccion" }) || "";
   const localidadTexto = useWatch({ control: controlEmpresa, name: "localidad" }) || "";
   const celular = useWatch({ control: controlEmpresa, name: "celular" }) || "";
-  const emailFacturacion =
-    useWatch({ control: controlEmpresa, name: "emailfacturacion" }) || "";
 
   const ubicacionOk = direccion.trim().length >= 5;
   const contactoOk = celular.trim().length >= 8;
-  const facturacionOk = EMAIL_REGEX.test(emailFacturacion.trim());
 
   const guardarCambiosSocio = (overrides) => {
     if (!socioWeb || !socioIdActivo) return;
@@ -258,12 +249,6 @@ export const PerfilModal = ({ isOpen, onClose }) => {
     const data = getValoresEmpresa();
     guardarCambiosSocio({ telefono: data.celular });
     setContactoModalOpen(false);
-  };
-
-  const handleGuardarFacturacion = () => {
-    const data = getValoresEmpresa();
-    guardarCambiosSocio({ emailfacturacion: data.emailfacturacion });
-    setFacturacionModalOpen(false);
   };
 
   const { data: usuarioDb, isPending: isLoadingUsuario } = useObtenerPorNombreOEmail(
@@ -533,44 +518,6 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                       )}
                     </span>
                   </div>
-
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setFacturacionModalOpen(true);
-                      }
-                    }}
-                    className={`${paso2Styles.taskRow} ${facturacionOk ? paso2Styles.rowSuccess : ""}`}
-                    onClick={() => setFacturacionModalOpen(true)}
-                  >
-                    <span
-                      className={`${paso2Styles.taskIcon} ${facturacionOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
-                    >
-                      {facturacionOk ? <FiCheckCircle size={17} /> : <FiMail size={17} />}
-                    </span>
-                    <div className={paso2Styles.taskInfo}>
-                      <strong className={paso2Styles.taskTitle}>Email de Facturación</strong>
-                      <span className={paso2Styles.taskSub}>
-                        {facturacionOk ? emailFacturacion : "Ingresar email para tus facturas"}
-                      </span>
-                    </div>
-                    <span
-                      className={`${paso2Styles.taskAction} ${facturacionOk ? paso2Styles.taskActionEdit : ""}`}
-                    >
-                      {facturacionOk ? (
-                        <>
-                          <FiEdit2 size={12} /> Modificar
-                        </>
-                      ) : (
-                        <>
-                          Completar <FiChevronRight size={13} />
-                        </>
-                      )}
-                    </span>
-                  </div>
                 </div>
 
                 <UbicacionModal
@@ -583,11 +530,6 @@ export const PerfilModal = ({ isOpen, onClose }) => {
                   isOpen={modalContactoOpen}
                   onClose={() => setContactoModalOpen(false)}
                   onGuardar={handleGuardarContacto}
-                />
-                <FacturacionModal
-                  isOpen={modalFacturacionOpen}
-                  onClose={() => setFacturacionModalOpen(false)}
-                  onGuardar={handleGuardarFacturacion}
                 />
               </FormProvider>
             )}

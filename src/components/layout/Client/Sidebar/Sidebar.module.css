@@ -380,6 +380,21 @@
   box-shadow: inset 3px 0 0 var(--color-azul-bind, #4c65e6);
 }
 
+.linkBloqueado {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.linkBloqueado:hover {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.lockIcon {
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+
 .icon {
   font-size: 1.1rem;
   color: var(--text-muted);

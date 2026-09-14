@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 
 import { useQueryClient } from "@tanstack/react-query";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import { useObtenerDatosSocioLegajo } from "../../../../hooks/useTerceros";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
+import { useSocioWebPorId, useActualizarSocio } from "../../../../hooks/useSocios";
+import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSchema";
 import {
   FiExternalLink,
   FiUsers,
@@ -31,6 +35,7 @@ import { socioArchivoService } from "../../../../services/socioArchivoService";
 import styles from "./SociosLegajo.module.css";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { PerfilModal } from "../PerfilModal/PerfilModal";
+import FacturacionModal from "../FacturacionModal/FacturacionModal";
 import { AccionistasSection } from "../DocumentosLegajo/components/AccionistasSection/AccionistasSection";
 import { RepresentantesSection } from "../DocumentosLegajo/components/RepresentantesSection/RepresentantesSection";
 import { ApoderadosSection } from "../DocumentosLegajo/components/ApoderadosSection/ApoderadosSection";
@@ -319,6 +324,56 @@ export function SociosLegajo({
 
   const [activeTab, setActiveTab] = useState(null);
   const [perfilModalOpen, setPerfilModalOpen] = useState(false);
+  const [facturacionModalOpen, setFacturacionModalOpen] = useState(false);
+
+  // El email de facturación se edita acá directo (antes vivía en el Paso 2
+  // del alta y en "Mi Perfil" — se sacó de los dos, ver Paso2Datos.jsx y
+  // PerfilModal.jsx): reutiliza el mismo FacturacionModal, con un form
+  // propio y acotado a este único campo. Nunca se monta en adminMode (la
+  // pestaña "perfil" ya se filtra para admin más arriba), así que no hace
+  // falta pasarle socioIdOverride acá.
+  const { data: socioWebParaFacturacion } = useSocioWebPorId(
+    !adminMode ? socioIdActivo : undefined,
+  );
+  const actualizarSocioMutation = useActualizarSocio();
+  const metodosFacturacion = useForm({
+    resolver: zodResolver(AltaDatosEmpresaSchema),
+    mode: "onTouched",
+    defaultValues: { emailfacturacion: emailFacturacion || "" },
+  });
+
+  useEffect(() => {
+    metodosFacturacion.reset({ emailfacturacion: emailFacturacion || "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailFacturacion]);
+
+  const handleGuardarFacturacion = () => {
+    const nuevoEmail = metodosFacturacion.getValues("emailfacturacion");
+    if (socioWebParaFacturacion && socioIdActivo) {
+      actualizarSocioMutation.mutate(
+        {
+          ...socioWebParaFacturacion,
+          socioid: Number(socioIdActivo),
+          emailfacturacion: nuevoEmail,
+        },
+        {
+          onSuccess: () => {
+            toast.success("Email de facturación actualizado correctamente");
+            queryClient.invalidateQueries({
+              queryKey: ["sociosWeb", "detalle", Number(socioIdActivo)],
+            });
+          },
+          onError: () => {
+            toast.error("No se pudo actualizar", {
+              description:
+                "Ocurrió un error al guardar el email de facturación. Intentá nuevamente.",
+            });
+          },
+        },
+      );
+    }
+    setFacturacionModalOpen(false);
+  };
 
   useEffect(() => {
     if (tabsDisponibles.length > 0) {
@@ -612,7 +667,20 @@ export function SociosLegajo({
                           </div>
                           <div className={styles.perfilCelda}>
                             <dt className={styles.dtContacto}><FiFileText size={12} /> Email de facturación</dt>
-                            <dd className={emailFacturacion ? "" : styles.perfilVacio}>{emailFacturacion || "—"}</dd>
+                            <dd className={styles.perfilCampoConAccion}>
+                              <span className={emailFacturacion ? "" : styles.perfilVacio}>
+                                {emailFacturacion || "—"}
+                              </span>
+                              <button
+                                type="button"
+                                className={styles.perfilCampoEditarBtn}
+                                onClick={() => setFacturacionModalOpen(true)}
+                                title="Editar email de facturación"
+                                aria-label="Editar email de facturación"
+                              >
+                                <FiEdit2 size={12} />
+                              </button>
+                            </dd>
                           </div>
                         </div>
 
@@ -725,6 +793,13 @@ export function SociosLegajo({
         isOpen={perfilModalOpen}
         onClose={() => setPerfilModalOpen(false)}
       />
+      <FormProvider {...metodosFacturacion}>
+        <FacturacionModal
+          isOpen={facturacionModalOpen}
+          onClose={() => setFacturacionModalOpen(false)}
+          onGuardar={handleGuardarFacturacion}
+        />
+      </FormProvider>
     </div>
   );
 }

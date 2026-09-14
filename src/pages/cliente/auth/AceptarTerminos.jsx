@@ -112,7 +112,10 @@ export default function AceptarTerminos() {
         scrolleable <= 0
           ? 100
           : Math.min(100, Math.round((scrollTop / scrolleable) * 100));
-      setProgreso(pct);
+      // Solo puede subir: representa "cuánto se llegó a leer", no la
+      // posición actual del scroll - si el usuario vuelve arriba a
+      // releer algo, no tiene sentido que el progreso baje.
+      setProgreso((prev) => Math.max(prev, pct));
 
       if (scrolleable <= 0 || scrollTop + clientHeight >= scrollHeight - 4) {
         setLecturaCompleta(true);
@@ -183,7 +186,7 @@ export default function AceptarTerminos() {
           <div className={styles.progressBar}>
             <div
               className={styles.progressFill}
-              style={{ width: `${progreso}%` }}
+              style={{ transform: `scaleX(${progreso / 100})` }}
             />
           </div>
           <span className={styles.progressLabel}>{progreso}% leído</span>

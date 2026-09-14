@@ -7,6 +7,8 @@ import {
   FiFileText,
   FiUsers,
   FiArrowRight,
+  FiLock,
+  FiPlusCircle,
 } from "react-icons/fi";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Spinner } from "../../../ui/Spinner/Spinner";
@@ -14,35 +16,50 @@ import { Button } from "../../../ui/Button/Button";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId } from "../../../../hooks/useSocios";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
+import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import { useChannel } from "../../../../context/ChannelContext";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { ESTRUCTURA_LEGAJO } from "../DocumentosLegajo/DocumentosLegajo";
 import { ESTRUCTURA_SOCIOS } from "../SociosLegajo/SociosLegajo";
 import styles from "./EstadoMigracionModal.module.css";
 
-function ChecklistSection({ icon, title, items }) {
+function ChecklistSection({ icon, title, items, bloqueado, notaBloqueo, numero }) {
   if (items.length === 0) return null;
   const completados = items.filter((item) => item.done).length;
 
   return (
-    <div className={styles.section}>
+    <div className={`${styles.section} ${bloqueado ? styles.sectionBloqueada : ""}`}>
       <div className={styles.sectionHeader}>
         <span className={styles.sectionTitle}>
-          {icon} {title}
+          {icon} {numero != null ? `${numero}. ` : ""}{title}
+          {bloqueado && <FiLock className={styles.lockIcon} />}
         </span>
         <span className={styles.sectionTally}>
           {completados}/{items.length}
         </span>
       </div>
+      {bloqueado && notaBloqueo && (
+        <p className={styles.notaBloqueo}>{notaBloqueo}</p>
+      )}
       <ul className={styles.checklist}>
         {items.map((item) => (
           <li key={item.key} className={styles.checklistItem}>
-            {item.done ? (
+            {bloqueado ? (
+              <FiCircle className={styles.iconBloqueado} />
+            ) : item.done ? (
               <FiCheckCircle className={styles.iconDone} />
             ) : (
               <FiCircle className={styles.iconPending} />
             )}
-            <span className={item.done ? styles.labelDone : styles.labelPending}>
+            <span
+              className={
+                bloqueado
+                  ? styles.labelBloqueado
+                  : item.done
+                    ? styles.labelDone
+                    : styles.labelPending
+              }
+            >
               {item.label}
             </span>
           </li>
@@ -66,6 +83,17 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
     agentesBolsaCompletos,
     isLoading: cargandoValidacion,
   } = useValidacionLegajo();
+  const { hayLineaActiva, legajoDesbloqueado, documentacionDesbloqueada } =
+    useAccesoDashboardCliente();
+
+  // Numeración de pasos: solo tiene sentido con línea activa (sin línea el
+  // flujo sigue siendo el de siempre, sin pasos). "Solicitar línea" se
+  // cuenta como paso 1 únicamente mientras siga siendo lo que falta - una
+  // vez que ya hay una solicitud en curso, no tiene sentido seguir
+  // mostrándolo como un paso pendiente en esta modal.
+  const mostrarPasoSolicitud = hayLineaActiva && !legajoDesbloqueado;
+  const numeroLegajo = hayLineaActiva ? (mostrarPasoSolicitud ? 2 : 1) : null;
+  const numeroDocumentacion = hayLineaActiva ? (mostrarPasoSolicitud ? 3 : 2) : null;
 
   const cargando = cargandoSocio || cargandoValidacion;
   const esPersonaFisica = Number(tipoPersonaId) === 1;
@@ -178,20 +206,38 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
             </div>
           )}
 
-          <ChecklistSection
-            icon={<FiFileText size={13} />}
-            title="Documentación"
-            items={documentosChecklist}
-          />
+          {mostrarPasoSolicitud && (
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <span className={styles.sectionTitle}>
+                  <FiPlusCircle size={13} /> 1. Solicitar línea
+                </span>
+              </div>
+              <p className={styles.notaBloqueo}>
+                Cargá tu primera solicitud para poder continuar.
+              </p>
+            </div>
+          )}
           <ChecklistSection
             icon={<FiUsers size={13} />}
             title="Legajo"
             items={legajoChecklist}
+            bloqueado={!legajoDesbloqueado}
+            notaBloqueo="Se habilita cuando tengas una solicitud en curso."
+            numero={numeroLegajo}
+          />
+          <ChecklistSection
+            icon={<FiFileText size={13} />}
+            title="Documentación"
+            items={documentosChecklist}
+            bloqueado={!documentacionDesbloqueada}
+            notaBloqueo="Se habilita cuando completes el Legajo al 100%."
+            numero={numeroDocumentacion}
           />
 
           {!legajoCompleto && (faltanDocumentos || faltanLegajo) && (
             <div className={styles.ctaRow}>
-              {faltanDocumentos && (
+              {faltanDocumentos && documentacionDesbloqueada && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -201,7 +247,7 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
                   Completar documentación
                 </Button>
               )}
-              {faltanLegajo && (
+              {faltanLegajo && legajoDesbloqueado && (
                 <Button
                   variant="outline"
                   size="sm"

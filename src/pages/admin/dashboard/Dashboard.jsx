@@ -69,6 +69,14 @@ const getIniciales = (denominacion) => {
 
 // Filas con avatar (mismo criterio visual que Empresas.jsx): entran menos
 // por página que la vieja grilla ultra-compacta, pero se leen de un vistazo.
+// 8 generaba scroll de página incluso en Full HD a 100% zoom (reportado en
+// vivo, 2026-09-14): a diferencia de Empresas/CdasGlobales, acá arriba de
+// la lista hay header + franja de contexto (cadena + métricas) + barra de
+// filtros, y cada fila es más alta (2 líneas de identidad + avatar de
+// 2.35rem + 2 botones de acción) - el presupuesto de Rango 1 no llegaba a
+// cubrir 8 filas con ese overhead adicional. En vez de bajar la cantidad,
+// .listWrapper quedó con su propio tope de alto + scroll interno (ver
+// Dashboard.module.css) para no perder densidad.
 const ELEMENTOS_POR_PAGINA = 8;
 
 // Misma forma que una fila real, para que el loading no "salte" de tamaño

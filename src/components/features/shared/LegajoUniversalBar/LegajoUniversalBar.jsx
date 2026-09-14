@@ -4,6 +4,7 @@ import { FiCheckCircle, FiChevronRight, FiArrowRight, FiRefreshCw, FiAlertTriang
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
+import { useAuthStore } from "../../../../store/useAuthStore";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme, useActualizarSocio } from "../../../../hooks/useSocios";
@@ -38,6 +39,15 @@ export function LegajoUniversalBar({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { basePath } = useChannel();
+  // Con línea activa, el socio y su línea migran juntos desde admin
+  // (Dashboard.jsx, api/Linea/Migrar al aprobar la solicitud) - el
+  // auto-migrado silencioso del cliente (Socio/Migrar, más abajo) se apaga
+  // en ese caso para no migrar el socio por su cuenta antes de que la línea
+  // se apruebe. Solo aplica al lado cliente: en adminMode el valor de este
+  // store no es confiable (isSolicitudesEnabled lo mantiene fresco
+  // OnboardingGuard, que no corre en rutas de admin), así que no se usa acá
+  // para nada del lado admin.
+  const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
 
   const {
     isValid,
@@ -419,6 +429,9 @@ export function LegajoUniversalBar({
   // de arriba en su lugar (ver el return de adminMode más abajo).
   useEffect(() => {
     if (adminMode) return;
+    // Cadena con línea activa: el socio migra junto con la línea desde
+    // admin (ver comentario en isSolicitudesEnabled más arriba), no acá.
+    if (isSolicitudesEnabled) return;
     if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingSocioWeb || loadingEstadoCdaSocio) return;
 
     // En "legajo" (a diferencia de "documentacion") completar el último
@@ -460,7 +473,7 @@ export function LegajoUniversalBar({
 
     autoMigrar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingEstadoCdaSocio, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
+  }, [adminMode, isSolicitudesEnabled, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingEstadoCdaSocio, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
   // ── ADMIN: auto-migra (con feedback, no en silencio) SOLO por
   // faltaMigrarEnBackend — el caso de "el legajo ya estaba completo y ahora
@@ -624,14 +637,15 @@ export function LegajoUniversalBar({
   const getMissingActionMessage = () => {
     if (isValid) return "Todos los requisitos han sido completados correctamente.";
 
-    // En Solicitudes no tiene sentido explicar el detalle línea por línea
-    // (esta pantalla no navega a ninguna sección propia de legajo/
-    // documentación, ver el botón "Ir" más abajo) — alcanza con dejar claro
-    // que "Nueva Operación" está bloqueada hasta el 100%, sin mencionar
-    // migración/sincronización (eso es un detalle interno, ver el resto de
-    // este archivo). Acordado con el equipo el 2026-08-27.
+    // En Solicitudes, cargar una nueva operación NO depende de esto (ver
+    // Solicitudes.jsx) — el mensaje no debe dar a entender que el legajo es
+    // un requisito para eso. Sigue siendo información real: el legajo hay
+    // que completarlo igual para terminar de cargar los datos del socio,
+    // solo que no bloquea la carga de una solicitud. Sin detalle línea por
+    // línea acá (esta pantalla no navega a ninguna sección propia de
+    // legajo/documentación).
     if (context === "solicitudes") {
-      return "Bloqueado hasta completar el 100% de tu legajo y documentación.";
+      return "Todavía tenés que completar el legajo de tu empresa.";
     }
 
     if (context === "documentacion" && !faltanDocumentos && faltanLegajo) {
@@ -721,7 +735,7 @@ export function LegajoUniversalBar({
               >
                 Ver qué falta
               </Button>
-            ) : (
+            ) : context === "solicitudes" ? null : (
               <Button
                 type="button"
                 variant="outline"
