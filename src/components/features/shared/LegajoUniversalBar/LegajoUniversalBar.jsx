@@ -4,7 +4,6 @@ import { FiCheckCircle, FiChevronRight, FiArrowRight, FiRefreshCw, FiAlertTriang
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useChannel } from "../../../../context/ChannelContext";
-import { useAuthStore } from "../../../../store/useAuthStore";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme, useActualizarSocio } from "../../../../hooks/useSocios";
@@ -40,15 +39,6 @@ export function LegajoUniversalBar({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { basePath } = useChannel();
-  // Con línea activa, el socio y su línea migran juntos desde admin
-  // (Dashboard.jsx, api/Linea/Migrar al aprobar la solicitud) - el
-  // auto-migrado silencioso del cliente (Socio/Migrar, más abajo) se apaga
-  // en ese caso para no migrar el socio por su cuenta antes de que la línea
-  // se apruebe. Solo aplica al lado cliente: en adminMode el valor de este
-  // store no es confiable (isSolicitudesEnabled lo mantiene fresco
-  // OnboardingGuard, que no corre en rutas de admin), así que no se usa acá
-  // para nada del lado admin.
-  const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
 
   const {
     isValid,
@@ -458,9 +448,6 @@ export function LegajoUniversalBar({
   // de arriba en su lugar (ver el return de adminMode más abajo).
   useEffect(() => {
     if (adminMode) return;
-    // Cadena con línea activa: el socio migra junto con la línea desde
-    // admin (ver comentario en isSolicitudesEnabled más arriba), no acá.
-    if (isSolicitudesEnabled) return;
     if (!(hayCambiosSinSincronizar || faltaMigrarEnBackend) || isMigrating || isLoading || loadingSocioWeb || loadingEstadoCdaSocio) return;
     if (migracionBloqueadaPorLineas) return;
 
@@ -503,7 +490,7 @@ export function LegajoUniversalBar({
 
     autoMigrar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adminMode, isSolicitudesEnabled, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingEstadoCdaSocio, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
+  }, [adminMode, migracionBloqueadaPorLineas, hayCambiosSinSincronizar, faltaMigrarEnBackend, isMigrating, isLoading, loadingSocioWeb, loadingEstadoCdaSocio, context, modalesLegajoAbiertos, lastAttemptedFingerprint, fingerprint, socioIdActivo]);
 
   // ── ADMIN: auto-migra (con feedback, no en silencio) SOLO por
   // faltaMigrarEnBackend — el caso de "el legajo ya estaba completo y ahora

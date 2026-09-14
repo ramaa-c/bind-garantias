@@ -11,16 +11,15 @@ import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSche
 import {
   FiExternalLink,
   FiUsers,
-  FiBriefcase,
   FiChevronDown,
+  FiActivity,
+  FiEdit2,
   FiMail,
   FiPhone,
   FiFileText,
   FiMapPin,
-  FiActivity,
   FiShare2,
   FiCalendar,
-  FiEdit2,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -575,12 +574,57 @@ export function SociosLegajo({
                     resaltados en el botón activo del sidebar, a centímetros de
                     acá: repetirlos como badge + título aparte era puro relleno
                     visual. Se deja solo el título (con la acción propia de la
-                    pestaña, si la tiene, a la derecha) y la descripción. */}
-                <header className={styles.viewerHeader}>
-                  <div className={styles.viewerMeta}>
-                    <h4 className={styles.viewerTitle} title={tituloTab(doc)}>{tituloTab(doc)}</h4>
-                    <div id="socios-header-action-portal" className={styles.headerActionPortal}>
-                      {isPerfil && (
+                    pestaña, si la tiene, a la derecha) y la descripción.
+                    Perfil corporativo es la excepción: su título y botón de
+                    Editar viven DENTRO de la tarjeta (.perfilTopBar, más
+                    abajo) en vez de en este header genérico compartido con
+                    el resto de las pestañas - separarlos en 2 piezas
+                    (header flotando arriba + tarjeta abajo, con su propia
+                    descripción repetida) era la pieza que más "plano y
+                    desarmado" hacía sentir al panel entero. */}
+                {!isPerfil && (
+                  <header className={styles.viewerHeader}>
+                    <div className={styles.viewerMeta}>
+                      <h4 className={styles.viewerTitle} title={tituloTab(doc)}>{tituloTab(doc)}</h4>
+                      <div id="socios-header-action-portal" className={styles.headerActionPortal} />
+                    </div>
+                    <p className={styles.viewerInfo}>
+                      {infoTab(doc)}
+                      {doc.url && (
+                        <a
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`${styles.helperLink} ${adminMode ? styles.helperLinkAdmin : ""}`}
+                        >
+                          {doc.linkText} <FiExternalLink size={11} />
+                        </a>
+                      )}
+                    </p>
+                  </header>
+                )}
+
+                {isPerfil ? (
+                  <div className={styles.perfilPanel}>
+                    {/* Rediseño completo (2026-09-14): antes era el header
+                        genérico (título+descripción, común a todas las
+                        pestañas) flotando arriba + una tarjeta abajo con
+                        hero/grilla de campos con un color de etiqueta por
+                        grupo (amarillo/celeste/azul) - se leía "plano y
+                        sobrecargado de colores". Ahora es UNA sola pieza:
+                        título+botón de Editar fusionados como cabecera de
+                        la tarjeta (.perfilTopBar), identidad, un bloque de
+                        2 datos clave en tiles con valor grande (mismo
+                        recurso que un resumen tipo "cliente" de cualquier
+                        dashboard fintech: no todo el contenido al mismo
+                        peso visual) y una lista de filas simples
+                        etiqueta/valor con una sola tonalidad de gris para
+                        las etiquetas - el amarillo de marca queda
+                        reservado para el avatar y el botón de Editar, no
+                        repartido por toda la tarjeta. */}
+                    <div className={styles.perfilCard}>
+                      <div className={styles.perfilTopBar}>
+                        <h4 className={styles.perfilCardTitle}>{tituloTab(doc)}</h4>
                         <button
                           type="button"
                           className={styles.addButton}
@@ -588,135 +632,112 @@ export function SociosLegajo({
                         >
                           <FiEdit2 size={14} /> Editar mi perfil
                         </button>
-                      )}
-                    </div>
-                  </div>
-                  <p className={styles.viewerInfo}>
-                    {infoTab(doc)}
-                    {doc.url && (
-                      <a
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`${styles.helperLink} ${adminMode ? styles.helperLinkAdmin : ""}`}
-                      >
-                        {doc.linkText} <FiExternalLink size={11} />
-                      </a>
-                    )}
-                  </p>
-                </header>
-
-                {isPerfil ? (
-                  <div className={styles.perfilPanel}>
-                    <div className={`${styles.perfilHero} ${styles.glassCard} ${adminMode ? styles.perfilHeroAdmin : ""}`}>
-                      <div className={`${styles.perfilAvatar} ${adminMode ? styles.perfilAvatarAdmin : ""}`}>
-                        {(nombreEmpresa || "?").trim().charAt(0).toUpperCase()}
                       </div>
-                      <div className={styles.perfilHeroInfo}>
-                        <span className={styles.perfilHeroName}>{nombreEmpresa || "—"}</span>
-                        <span className={styles.perfilHeroMeta}>
-                          <span className={styles.perfilCuitChip}>
+
+                      <div className={styles.perfilIdentity}>
+                        <div className={styles.perfilAvatar}>
+                          {(nombreEmpresa || "?").trim().charAt(0).toUpperCase()}
+                        </div>
+                        <div className={styles.perfilIdentityInfo}>
+                          <span className={styles.perfilHeroName}>{nombreEmpresa || "—"}</span>
+                          <span className={styles.perfilHeroMeta}>
                             {formatCuit(cuitActivo) || "CUIT no disponible"}
+                            {tipoPersonaLabel && <> · {tipoPersonaLabel}</>}
                           </span>
-                          {tipoPersonaLabel && (
-                            <span className={styles.perfilHeroTipo}>{tipoPersonaLabel}</span>
-                          )}
-                        </span>
+                        </div>
+                        {estadoSocioLabel && (
+                          <span className={styles.perfilEstadoBadge}>{estadoSocioLabel}</span>
+                        )}
                       </div>
-                      {estadoSocioLabel && (
-                        <span className={`${styles.perfilEstadoBadge} ${adminMode ? styles.perfilEstadoBadgeAdmin : ""}`}>
-                          {estadoSocioLabel}
-                        </span>
-                      )}
-                    </div>
 
-                    {/* Antes eran 3 cards separadas (Contacto/Domicilio/Datos
-                        comerciales), cada una con su propio padding y título -
-                        en full HD eso forzaba scroll dentro del panel. Una
-                        sola card con los 8 campos en grilla ocupa menos de la
-                        mitad de alto y sigue siendo igual de escaneable
-                        (cada campo ya tiene su propia etiqueta).
-                        Los 3 grupos comparten una única grilla (antes cada
-                        uno tenía su propio <dl> con auto-fit, así que el
-                        ancho de columna se recalculaba por separado y las
-                        filas no quedaban alineadas entre sí - un grupo de 3
-                        campos se veía más "ancho" que uno de 5). Con una
-                        sola grilla, el ancho de columna es el mismo para
-                        toda la card; el rótulo de cada grupo ocupa la fila
-                        completa y fuerza el corte de línea, sin perder la
-                        alineación. */}
-                    <section className={`${styles.perfilSection} ${styles.glassCard}`}>
-                      <h5 className={styles.perfilSectionTitle}>
-                        <span className={`${styles.perfilSectionIcon} ${adminMode ? styles.perfilSectionIconAdmin : ""}`}>
-                          <FiBriefcase size={13} />
-                        </span>
-                        Información de la empresa
-                      </h5>
-                      <dl className={styles.perfilRowsGrid}>
-                        <div className={styles.perfilGroupLabel}>Contacto</div>
-                        <div className={styles.perfilContactoRow}>
-                          <div className={styles.perfilCelda}>
-                            <dt className={styles.dtContacto}><FiMail size={12} /> Email</dt>
-                            <dd className={email ? "" : styles.perfilVacio}>{email || "—"}</dd>
+                      {/* Los 2 datos de contacto más importantes en tiles con
+                          valor grande - el resto (teléfono, ubicación,
+                          datos comerciales) baja a la lista simple de
+                          abajo. El chip de Editar es una acción de esquina
+                          del bloque entero (ver .perfilEditarChip en el
+                          CSS), no pegado al valor de facturación - y solo
+                          vive acá, no se repite en la lista de abajo. */}
+                      <div className={styles.perfilStatGroup}>
+                        <span className={styles.perfilStatGroupLabel}>Contacto</span>
+                        <div className={styles.perfilStatTiles}>
+                          {/* Acción de esquina del contenedor entero (no
+                              pegada al valor adentro del tile): mismo
+                              patrón que un botón de editar/menú en la
+                              esquina de una card de datos - .perfilStatTiles
+                              tiene el padding-top de sobra para que no
+                              choque con las etiquetas de los tiles. */}
+                          <button
+                            type="button"
+                            className={styles.perfilEditarChip}
+                            onClick={() => setFacturacionModalOpen(true)}
+                            aria-label="Editar email de facturación"
+                          >
+                            <FiEdit2 size={11} /> Editar
+                          </button>
+                          <div className={styles.perfilStatTile}>
+                            <span className={styles.perfilStatLabel}><FiMail size={11} /> Email</span>
+                            <span
+                              className={`${styles.perfilStatValue} ${email ? "" : styles.perfilVacio}`}
+                              title={email || undefined}
+                            >
+                              {email || "—"}
+                            </span>
                           </div>
-                          <div className={styles.perfilCelda}>
-                            <dt className={styles.dtContacto}><FiPhone size={12} /> Teléfono</dt>
-                            <dd className={[telefono, telefono2].filter(Boolean).length ? "" : styles.perfilVacio}>
-                              {[telefono, telefono2].filter(Boolean).join(" / ") || "—"}
-                            </dd>
-                          </div>
-                          <div className={styles.perfilCelda}>
-                            <dt className={styles.dtContacto}><FiFileText size={12} /> Email de facturación</dt>
-                            <dd className={styles.perfilCampoConAccion}>
-                              <span className={emailFacturacion ? "" : styles.perfilVacio}>
-                                {emailFacturacion || "—"}
-                              </span>
-                              <button
-                                type="button"
-                                className={styles.perfilCampoEditarBtn}
-                                onClick={() => setFacturacionModalOpen(true)}
-                                title="Editar email de facturación"
-                                aria-label="Editar email de facturación"
-                              >
-                                <FiEdit2 size={12} />
-                              </button>
-                            </dd>
+                          <div className={styles.perfilStatTileDivider} />
+                          <div className={styles.perfilStatTile}>
+                            <span className={styles.perfilStatLabel}><FiFileText size={11} /> Email de facturación</span>
+                            <span
+                              className={`${styles.perfilStatValue} ${emailFacturacion ? "" : styles.perfilVacio}`}
+                              title={emailFacturacion || undefined}
+                            >
+                              {emailFacturacion || "—"}
+                            </span>
                           </div>
                         </div>
+                      </div>
 
-                        <div className={styles.perfilGroupLabel}>Ubicación</div>
-                        <div className={`${styles.perfilCelda} ${styles.perfilCeldaFull}`}>
-                          <dt className={styles.dtUbicacion}><FiMapPin size={12} /> Dirección</dt>
-                          <dd className={domicilioCompleto ? "" : styles.perfilVacio}>{domicilioCompleto || "—"}</dd>
+                      <div className={styles.perfilRowsList}>
+                        <span className={styles.perfilRowsGroupLabel}>Contacto</span>
+                        <div className={styles.perfilRow}>
+                          <span className={styles.perfilRowLabel}><FiPhone size={11} /> Teléfono</span>
+                          <span className={`${styles.perfilRowValue} ${[telefono, telefono2].filter(Boolean).length ? "" : styles.perfilVacio}`}>
+                            {[telefono, telefono2].filter(Boolean).join(" / ") || "—"}
+                          </span>
                         </div>
 
-                        <div className={styles.perfilGroupLabel}>Datos comerciales</div>
-                        <div className={styles.perfilCelda}>
-                          <dt className={styles.dtComercial}><FiUsers size={12} /> Tamaño de empresa</dt>
-                          <dd className={tamanioEmpresaLabel ? "" : styles.perfilVacio}>{tamanioEmpresaLabel || "—"}</dd>
+                        <span className={styles.perfilRowsGroupLabel}>Ubicación</span>
+                        <div className={styles.perfilRow}>
+                          <span className={styles.perfilRowLabel}><FiMapPin size={11} /> Dirección</span>
+                          <span className={`${styles.perfilRowValue} ${domicilioCompleto ? "" : styles.perfilVacio}`}>{domicilioCompleto || "—"}</span>
                         </div>
-                        <div className={styles.perfilCelda}>
-                          <dt className={styles.dtComercial}><FiActivity size={12} /> Situación BCRA</dt>
-                          <dd className={situacionBcraLabel ? "" : styles.perfilVacio}>{situacionBcraLabel || "—"}</dd>
+
+                        <span className={styles.perfilRowsGroupLabel}>Datos comerciales</span>
+                        <div className={styles.perfilRow}>
+                          <span className={styles.perfilRowLabel}><FiUsers size={11} /> Tamaño de empresa</span>
+                          <span className={`${styles.perfilRowValue} ${tamanioEmpresaLabel ? "" : styles.perfilVacio}`}>{tamanioEmpresaLabel || "—"}</span>
                         </div>
-                        <div className={styles.perfilCelda}>
-                          <dt className={styles.dtComercial}><FiShare2 size={12} /> Canal de comercialización</dt>
-                          <dd className={canalComercializacionLabel ? "" : styles.perfilVacio}>{canalComercializacionLabel || "—"}</dd>
+                        <div className={styles.perfilRow}>
+                          <span className={styles.perfilRowLabel}><FiActivity size={11} /> Situación BCRA</span>
+                          <span className={`${styles.perfilRowValue} ${situacionBcraLabel ? "" : styles.perfilVacio}`}>{situacionBcraLabel || "—"}</span>
                         </div>
-                        <div className={styles.perfilCelda}>
-                          <dt className={styles.dtComercial}><FiCalendar size={12} /> Inicio de actividades</dt>
-                          <dd className={formatFecha(fechaInicioActividades) ? "" : styles.perfilVacio}>
+                        <div className={styles.perfilRow}>
+                          <span className={styles.perfilRowLabel}><FiShare2 size={11} /> Canal de comercialización</span>
+                          <span className={`${styles.perfilRowValue} ${canalComercializacionLabel ? "" : styles.perfilVacio}`}>{canalComercializacionLabel || "—"}</span>
+                        </div>
+                        <div className={styles.perfilRow}>
+                          <span className={styles.perfilRowLabel}><FiCalendar size={11} /> Inicio de actividades</span>
+                          <span className={`${styles.perfilRowValue} ${formatFecha(fechaInicioActividades) ? "" : styles.perfilVacio}`}>
                             {formatFecha(fechaInicioActividades) || "—"}
-                          </dd>
+                          </span>
                         </div>
-                        <div className={styles.perfilCelda}>
-                          <dt className={styles.dtComercial}><FiCalendar size={12} /> Cierre de ejercicio</dt>
-                          <dd className={formatFecha(fechaCierreEjercicio) ? "" : styles.perfilVacio}>
+                        <div className={styles.perfilRow}>
+                          <span className={styles.perfilRowLabel}><FiCalendar size={11} /> Cierre de ejercicio</span>
+                          <span className={`${styles.perfilRowValue} ${formatFecha(fechaCierreEjercicio) ? "" : styles.perfilVacio}`}>
                             {formatFecha(fechaCierreEjercicio) || "—"}
-                          </dd>
+                          </span>
                         </div>
-                      </dl>
-                    </section>
+                      </div>
+                    </div>
                   </div>
                 ) : isUsuarios ? (
                   <VincularUsuarioSection socioIdActivo={socioIdActivo} />
