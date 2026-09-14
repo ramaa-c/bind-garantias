@@ -28,7 +28,7 @@ import { catalogosService } from "../../../../services/catalogosService";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useObtenerTodasWeb } from "../../../../hooks/useCadenaValor";
-import { useTiposProducto } from "../../../../hooks/useCatalogos";
+import { useTiposProducto, useMonedas } from "../../../../hooks/useCatalogos";
 import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
 import { useObtenerVariableParametrizacion } from "../../../../hooks/useVariablesParametrizacion";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
@@ -104,6 +104,7 @@ export const AltaOperacion = () => {
   // paso de Sociedad de Bolsa, la documentación requerida y qué handler de
   // submit corre.
   const { data: tiposLimiteGlobal } = useTiposProducto();
+  const { data: monedasCatalogo } = useMonedas();
   const familiaDeLinea = (tipoLimiteId) => {
     const item = tiposLimiteGlobal?.raw?.find(
       (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
@@ -406,6 +407,17 @@ export const AltaOperacion = () => {
   };
 
   const enviarSolicitud = async (data) => {
+    // Guarda de reentrada: el botón de "Continuar" recién queda disabled
+    // (isSubmitting, ver TicketPrestamoFijo/TicketSimulacion) cuando React
+    // termina de re-renderizar con enviandoSolicitud=true — pero antes de
+    // eso, handleSubmit(onSubmitFinal) ya corrió la validación (async) y
+    // llegó hasta acá. Un segundo click en esa ventana (usuario impaciente,
+    // doble click, doble tap en mobile) disparaba esta misma función de
+    // nuevo mientras la primera seguía en curso, y las dos terminaban
+    // posteando la misma solicitud por separado — confirmado en vivo con
+    // dos TipoLimiteSocio idénticos para el mismo alta (CUIT 30708216263,
+    // 2026-09-14).
+    if (enviandoSolicitud) return;
     setEnviandoSolicitud(true);
     try {
       const cleanData = data;
@@ -719,10 +731,19 @@ export const AltaOperacion = () => {
   // ----- RENDERIZADO DINÁMICO DE PASOS -----
   const renderPasoDinamico = () => {
     if (pasoActual === 1) {
-      const opcionesMoneda = [
-        { value: "5000", label: "Pesos ($)" },
-        { value: "2", label: "Dólar (U$D)" },
-      ];
+      // Antes esto era un par fijo (Pesos/Dólar) sin importar qué líneas
+      // tuviera activas la cadena — un socio con una sola línea en pesos
+      // igual podía elegir Dólar y se quedaba con "Tipo de producto" vacío
+      // (opcionesProducto, más abajo, filtra por moneda y no encontraba
+      // nada). Ahora se arma con el catálogo real de monedas, acotado a las
+      // que de verdad tienen alguna línea activa y apta para alta nueva en
+      // esta cadena (reportado el 2026-09-14, caso Banco Nación).
+      const monedasConLineaActiva = new Set(
+        lineasDisponibles.map((l) => Number(l.monedalineaid)),
+      );
+      const opcionesMoneda = (monedasCatalogo?.opciones || []).filter((o) =>
+        monedasConLineaActiva.has(Number(o.value)),
+      );
 
       // El selector "Tipo de producto" ahora lista las líneas reales de la
       // cadena (TipoLimiteCadenaValor), acotadas a la moneda elegida - ya
