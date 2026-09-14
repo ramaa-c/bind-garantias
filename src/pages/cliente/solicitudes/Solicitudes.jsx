@@ -21,7 +21,6 @@ import ConfirmacionBorradorModal from "../../../components/features/shared/Confi
 import InformativoModal from "../../../components/features/shared/InformativoModal/InformativoModal";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { HelpDrawer } from "../../../components/layout/Client/HelpDrawer/HelpDrawer";
-import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../../hooks/useSolicitudes";
 import { useActualizarLimiteSocio } from "../../../hooks/useLinea";
 import { useVerificarHabilitacionNuevaOperacion } from "../../../hooks/useVerificarHabilitacionSolicitudes";
@@ -141,7 +140,6 @@ export default function Solicitudes() {
   const [modalNuevaOperacionBloqueada, setModalNuevaOperacionBloqueada] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  const { isValid } = useValidacionLegajo();
   const {
     habilitada: nuevaOperacionHabilitada,
     motivo: motivoNuevaOperacionBloqueada,
@@ -308,13 +306,11 @@ export default function Solicitudes() {
   }, [location.state]);
 
   const handleNuevaOperacion = async (ruta, draftKey) => {
-    // El botón ya queda disabled mientras !isValid (ver más abajo) - esto
-    // es solo una guarda defensiva por si isValid cambia justo entre el
-    // último render y el click. Antes acá se abría BloqueoLegajoModal;
-    // ahora el botón bloqueado ya deja claro que no se puede, así que no
-    // hace falta explicarlo de nuevo con una modal.
-    if (!isValid) return;
-
+    // Esta pantalla solo es alcanzable cuando la cadena tiene línea activa
+    // (ver OnboardingGuard/useAccesoDashboardCliente) — en ese caso, cargar
+    // una solicitud no depende de tener legajo/documentación completos: es
+    // justamente el primer paso del flujo, antes de pedirle al cliente más
+    // datos que capaz no hacían falta si el CDA de la línea rechaza.
     if (tieneSolicitudPendiente) {
       setModalPendienteOpen(true);
       return;
@@ -389,8 +385,6 @@ export default function Solicitudes() {
             handleNuevaOperacion(`${basePath}/alta-operacion`, "draft_alta_operacion")
           }
           className={styles.btnNuevaOp}
-          disabled={!isValid}
-          title={!isValid ? "Completá tu legajo y documentación al 100% para poder operar." : undefined}
         >
           <><FiPlus style={{ marginRight: "0.5rem" }} /> NUEVA OPERACIÓN</>
         </Button>

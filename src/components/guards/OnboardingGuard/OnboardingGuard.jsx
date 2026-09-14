@@ -18,6 +18,7 @@ import ErrorServicio from "../../../pages/shared/ErrorServicio/ErrorServicio";
 import { useChannel } from "../../../context/ChannelContext";
 import { useVendor } from "../../../hooks/useVendor";
 import { useVerificarHabilitacionSolicitudes } from "../../../hooks/useVerificarHabilitacionSolicitudes";
+import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";
 
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
@@ -39,12 +40,25 @@ export const OnboardingGuard = ({ children }) => {
     "/seleccionar-empresa",
   );
   const isSolicitudesPage = location.pathname.endsWith("/solicitudes");
+  const isLegajoPage = location.pathname.endsWith("/legajo");
+  const isDocumentacionPage = location.pathname.endsWith("/documentacion");
   const isInicioPage = location.pathname.endsWith("/inicio");
 
   const isSolicitudesEnabled = useAuthStore(
     (state) => state.isSolicitudesEnabled,
   );
   const { isVerifying } = useVerificarHabilitacionSolicitudes();
+  const {
+    hayLineaActiva,
+    legajoDesbloqueado,
+    documentacionDesbloqueada,
+    cargando: cargandoAccesoDashboard,
+  } = useAccesoDashboardCliente();
+  // Con línea activa, el punto de entrada al dashboard es Solicitudes (ahí
+  // se carga la primera solicitud sin pedirle antes datos que capaz no
+  // hacían falta si el CDA de la línea rechaza) — sin línea, sigue siendo
+  // Legajo como siempre.
+  const homePath = `${basePath}${hayLineaActiva ? "/solicitudes" : "/legajo"}`;
 
   const email = user?.email || "";
 
@@ -244,7 +258,8 @@ export const OnboardingGuard = ({ children }) => {
     (necesitaChequeoTerminos &&
       (isLoadingTerminosVigentes || isLoadingConfirmacionTyC)) ||
     isLoadingVendor ||
-    isVerifying
+    isVerifying ||
+    cargandoAccesoDashboard
   ) {
     return (
       <LoadingScreen
@@ -282,7 +297,7 @@ export const OnboardingGuard = ({ children }) => {
           isAltaDatosPage ||
           isInicioPage)
       ) {
-        return <Navigate to={`${basePath}/legajo`} replace />;
+        return <Navigate to={homePath} replace />;
       }
     } else if (!telefonoActual) {
       // Nunca completó el Paso 2 (ver Paso1Cuit: el socio se crea con el
@@ -309,11 +324,30 @@ export const OnboardingGuard = ({ children }) => {
       isSeleccionarEmpresaPage ||
       isInicioPage
     ) {
-      return <Navigate to={`${basePath}/legajo`} replace />;
+      return <Navigate to={homePath} replace />;
     }
 
     if (!isSolicitudesEnabled && isSolicitudesPage) {
-      return <Navigate to={`${basePath}/legajo`} replace />;
+      return <Navigate to={homePath} replace />;
+    }
+
+    // Con línea activa, Legajo queda bloqueado hasta que exista al menos
+    // una solicitud que el CDA de PANTALLA_LINEAS no haya rechazado (ver
+    // useAccesoDashboardCliente) — evita pedir datos de legajo antes de
+    // saber si la línea siquiera se va a aprobar. Documentación, a su vez,
+    // sigue exigiendo Legajo 100% completo en los dos escenarios (con y sin
+    // línea) — antes eso solo bloqueaba el botón "Nueva Operación", nunca
+    // la navegación en sí.
+    if (!legajoDesbloqueado && isLegajoPage) {
+      return <Navigate to={`${basePath}/solicitudes`} replace />;
+    }
+    if (!documentacionDesbloqueada && isDocumentacionPage) {
+      return (
+        <Navigate
+          to={`${basePath}${legajoDesbloqueado ? "/legajo" : "/solicitudes"}`}
+          replace
+        />
+      );
     }
   } else if (usuarioWebId && !tieneEmpresas) {
     if (isVendor) {

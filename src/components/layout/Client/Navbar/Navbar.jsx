@@ -40,6 +40,7 @@ const Navbar = ({
   const user = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
+  const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
   const { channelInfo, basePath } = useChannel();
   const { data: vendorData } = useVendor();
   const isVendor = vendorData?.isVendor || false;
@@ -116,7 +117,7 @@ const Navbar = ({
         >
           <FiMenu size={24} color="var(--white)" />
         </button>
-        <div className={styles.logoContainer} role="button" tabIndex={0} onClick={() => navigate(`${basePath}/solicitudes`)}>
+        <div className={styles.logoContainer} role="button" tabIndex={0} onClick={() => navigate(`${basePath}${isSolicitudesEnabled ? "/solicitudes" : "/legajo"}`)}>
           <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} />
           {channelInfo.id !== "default" && channelInfo.logo && (
             <>

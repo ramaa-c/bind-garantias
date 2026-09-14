@@ -594,12 +594,11 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
           cadenaObj?.tipocanalcomercializacionid ||
           cadenaObj?.TipoCanalComercializacionID ||
           0,
-        // Vacío a propósito: EmailFacturacion es obligatorio recién en el
-        // Paso 2 (ver FacturacionModal/AltaDatosEmpresaSchema) — dejarlo
-        // sin cargar acá permite usarlo como señal de "onboarding
-        // incompleto", igual que ya se hace con `telefono` (ver
-        // OnboardingGuard.jsx). Si mandáramos el email de login acá, un
-        // socio recién creado ya parecería tener el Paso 2 completo.
+        // Vacío a propósito: EmailFacturacion ya no se pide durante el
+        // onboarding (se sacó del Paso 2, ver Paso2Datos.jsx) — se
+        // completa después desde Legajo (ver SociosLegajo.jsx), cuando el
+        // socio quiera. AltaDatosEmpresa.jsx (Paso 2) igual manda el email
+        // de login como fallback si sigue vacío al momento del alta.
         emailfacturacion: "",
         minapoderadosrequeridos: 0,
         tipocondicionfianzaid: 0,

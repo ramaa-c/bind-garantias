@@ -197,6 +197,32 @@
   font-weight: 600;
 }
 
+.sectionBloqueada {
+  opacity: 0.55;
+}
+
+.lockIcon {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.iconBloqueado {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.labelBloqueado {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.notaBloqueo {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0;
+}
+
 /* ── CTA ─────────────────────────────────────────────────────────────────── */
 .ctaRow {
   display: flex;

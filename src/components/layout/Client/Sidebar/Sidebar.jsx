@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, FiUser, FiBriefcase, FiRepeat } from "react-icons/fi";
+import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, FiUser, FiBriefcase, FiRepeat, FiLock } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -13,6 +13,7 @@ import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/ChannelContext";
+import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 import styles from "./Sidebar.module.css";
 
@@ -37,6 +38,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const cambiarEmpresaStore = useAuthStore((state) => state.cambiarEmpresa);
   const isSolicitudesEnabled = useAuthStore((state) => state.isSolicitudesEnabled);
+  const { legajoDesbloqueado, documentacionDesbloqueada } = useAccesoDashboardCliente();
   const emailUsuario = typeof user === "string" ? user : user?.email ? String(user.email) : "Usuario";
   const { channelInfo, basePath } = useChannel();
   const { data: vendorData } = useVendor();
@@ -181,16 +183,22 @@ export default function Sidebar({ isOpen, onClose }) {
                     </button>
                   )}
                   <button type="button"
-                    className={`${styles.link} ${isActive("/legajo") ? styles.active : ""}`}
-                    onClick={() => handleNavigate("/legajo")}
+                    className={`${styles.link} ${isActive("/legajo") ? styles.active : ""} ${!legajoDesbloqueado ? styles.linkBloqueado : ""}`}
+                    onClick={() => legajoDesbloqueado && handleNavigate("/legajo")}
+                    disabled={!legajoDesbloqueado}
+                    title={!legajoDesbloqueado ? "Se habilita cuando tengas una solicitud en curso." : undefined}
                   >
                     <FiUsers className={styles.icon} /> Legajo
+                    {!legajoDesbloqueado && <FiLock className={styles.lockIcon} />}
                   </button>
                   <button type="button"
-                    className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""}`}
-                    onClick={() => handleNavigate("/documentacion")}
+                    className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""} ${!documentacionDesbloqueada ? styles.linkBloqueado : ""}`}
+                    onClick={() => documentacionDesbloqueada && handleNavigate("/documentacion")}
+                    disabled={!documentacionDesbloqueada}
+                    title={!documentacionDesbloqueada ? "Se habilita cuando completes el Legajo al 100%." : undefined}
                   >
                     <FiArchive className={styles.icon} /> Documentación
+                    {!documentacionDesbloqueada && <FiLock className={styles.lockIcon} />}
                   </button>
                 </div>
               </nav>

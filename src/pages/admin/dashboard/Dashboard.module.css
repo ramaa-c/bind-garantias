@@ -449,25 +449,65 @@
 }
 
 /* ── LISTA ───────────────────────────────────────────────── */
-/* flex:0 0 auto implícito (sin flex:1/overflow-y propio): la lista mide lo
-   que sus filas necesitan, no lo que sobra de .container - así <Paginacion/>
-   (después de esto en el flujo, ver Dashboard.jsx) queda pegada justo
-   después de la última fila en vez de empujada al fondo con un hueco
-   vacío cuando hay menos de ELEMENTOS_POR_PAGINA filas. Mismo estándar que
-   Empresas.module.css/CdasGlobales.module.css - las filas ya tenían alto
-   de una sola línea garantizado (.rowClientName/.rowMeta con
-   text-overflow:ellipsis), así que tampoco hacía falta el scroll interno
-   de emergencia que tenía antes. */
+/* flex:0 1 auto (flex-shrink SIN flex-grow) + min-height:0 + overflow-y:auto,
+   en vez de un max-height fijo o de flex:1: acá ELEMENTOS_POR_PAGINA=8 no
+   entra siempre en el presupuesto de Rango 1 junto con el header + franja
+   de contexto + barra de filtros (reportado en vivo, 2026-09-14 - ver el
+   mismo comentario en Dashboard.jsx), y ese presupuesto cambia según si
+   los filtros están abiertos o colapsados (reportado en vivo otra vez el
+   mismo día: con un max-height fijo, ocultar los filtros liberaba alto
+   real pero la lista se quedaba topeada igual, sin aprovecharlo).
+
+   flex-shrink (sin flex-grow) resuelve ambos casos a la vez, sin número
+   mágico que reajustar a mano si el header o los filtros cambian de alto:
+   - Con espacio de sobra (filtros colapsados, u 8 filas que ya entran
+     solas): no hay espacio negativo que "empuje" el achique, así que
+     listWrapper mide lo que sus filas necesitan y nada más - ni se estira
+     de más (evita el hueco vacío antes de <Paginacion/> que tenía el viejo
+     flex:1) ni queda topeada por debajo de lo que hace falta.
+   - Con menos espacio del que las filas piden (filtros abiertos): ahí sí
+     hay espacio negativo, flex-shrink achica listWrapper hasta lo
+     disponible, y overflow-y:auto scrollea internamente lo que no entra -
+     la página en sí nunca desborda.
+
+   En Rango 2 no aplica nada de esto porque ahí ya scrollea la página
+   entera (ver el media query de acá abajo) y un scroll interno adicional
+   sería redundante. */
 .listWrapper {
   display: flex;
   flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
   gap: 0.4rem;
   margin-bottom: 1.25rem;
+  overflow-y: auto;
+  padding-right: 0.375rem;
+  margin-right: -0.375rem;
+}
+
+.listWrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.listWrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.listWrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+}
+
+.listWrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
 }
 
 @media (max-width: 1440px), (max-height: 716px) {
   .listWrapper {
     margin-bottom: 0.85rem;
+    overflow-y: visible;
+    padding-right: 0;
+    margin-right: 0;
   }
 }
 

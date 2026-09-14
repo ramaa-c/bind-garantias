@@ -521,12 +521,7 @@ export const AltaDatosEmpresa = () => {
         <Paso2Datos
           onContinuar={async () => {
             if (
-              await trigger([
-                "direccion",
-                "localidad",
-                "celular",
-                "emailfacturacion",
-              ])
+              await trigger(["direccion", "localidad", "celular"])
             ) {
               handleSubmit(onSubmitFinal)();
             }
