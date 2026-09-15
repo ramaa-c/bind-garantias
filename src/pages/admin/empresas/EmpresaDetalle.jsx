@@ -24,6 +24,7 @@ import {
   FiDownload,
   FiLink,
   FiAward,
+  FiBell,
 } from "react-icons/fi";
 import {
   useSocioPorId,
@@ -65,6 +66,7 @@ import {
   Skeleton,
 } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+import { NotificarSocioModal } from "../../../components/features/admin/NotificarSocioModal/NotificarSocioModal";
 import { DocumentosLegajo, ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
 import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
 import { LegajoUniversalBar } from "../../../components/features/shared/LegajoUniversalBar/LegajoUniversalBar";
@@ -1670,6 +1672,8 @@ export default function EmpresaDetalle() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("datos");
   const [historialOpen, setHistorialOpen] = useState(false);
+  const [notificarOpen, setNotificarOpen] = useState(false);
+  const usuarioWebAdminId = useAuthStore((state) => state.user?.usuarioWebId) || 0;
 
   // Defensa en profundidad: ver useBloqueoAdminRestringido — un usuario
   // vinculado solo por UsuarioCadenaValor no debería poder ver el detalle de
@@ -1828,8 +1832,17 @@ export default function EmpresaDetalle() {
               </p>
             </div>
           </div>
-          <div className={styles.headerBadges}>
-            {estaMigrado ? (
+          <div className={styles.heroActions}>
+            <Button
+              type="button"
+              variant="outlineBlue"
+              size="sm"
+              onClick={() => setNotificarOpen(true)}
+            >
+              <FiBell size={13} /> Notificar
+            </Button>
+            <div className={styles.headerBadges}>
+              {estaMigrado ? (
               <span
                 className={`${styles.badge} ${styles["badge-success"]}`}
                 title="El legajo ya se migró al sistema core (SGR+)."
@@ -1862,6 +1875,7 @@ export default function EmpresaDetalle() {
                 <FiLink size={12} /> {nombreCadenaDetectada}
               </span>
             )}
+            </div>
           </div>
         </div>
       </header>
@@ -1938,6 +1952,14 @@ export default function EmpresaDetalle() {
         isOpen={historialOpen}
         onClose={() => setHistorialOpen(false)}
         socio={socio}
+      />
+
+      <NotificarSocioModal
+        key={socio?.socioid ?? "none"}
+        isOpen={notificarOpen}
+        onClose={() => setNotificarOpen(false)}
+        socio={socio}
+        usuarioWebAdminId={usuarioWebAdminId}
       />
     </div>
   );

@@ -155,5 +155,9 @@ export const usuarioService = {
   // PUT api/usuario/actualizar
   actualizarUsuario: async (data) =>
     (await api.put("api/usuario/actualizar", usuarioAdapter.adaptarPayload9(data))).data,
+
+  // POST api/usuario/notificar
+  notificarUsuario: async (data) =>
+    (await api.post("api/usuario/notificar", usuarioAdapter.adaptarPayload10(data))).data,
 };
 

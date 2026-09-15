@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
@@ -11,6 +11,7 @@ import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
 import { useObtenerSocios, useActualizarSocio } from "../../../hooks/useSocios";
+import { useTiposProducto } from "../../../hooks/useCatalogos";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { sociosService } from "../../../services/sociosService";
@@ -141,6 +142,29 @@ export default function Dashboard() {
   const migrarLineaMutation = useMigrarLinea();
   const actualizarSocioMutation = useActualizarSocio();
 
+  // Catálogo global de TipoLimite: desde que las líneas dejaron de ser un
+  // set fijo "cheque/préstamo/pagaré" y pasaron a ser las reales de cada
+  // cadena (mismo criterio que familiaDeLinea en AltaOperacion.jsx), el
+  // TipoLimiteID real casi nunca es literalmente 1 o 2 - comparar contra
+  // esos valores hardcodeados hacía caer CUALQUIER línea real en "Pagaré"
+  // por descarte, sin importar cuál fuera en verdad (reportado en vivo,
+  // Banco Nación: una línea de "Préstamos" con TipoLimiteID 1010 se
+  // mostraba como Pagaré). Se infiere por palabra clave de la Descripcion
+  // global, igual que del lado cliente.
+  const { data: tiposLimiteGlobal } = useTiposProducto();
+  const familiaDeLinea = useCallback(
+    (tipoLimiteId) => {
+      const item = tiposLimiteGlobal?.raw?.find(
+        (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
+      );
+      const desc = (item?.descripcion || "").toUpperCase();
+      if (desc.includes("CHEQUE")) return "Alta de línea (Cheque)";
+      if (desc.includes("PAGARE")) return "Alta de línea (Pagaré)";
+      return "Alta de línea (Préstamo)";
+    },
+    [tiposLimiteGlobal],
+  );
+
   const loading = isLoadingLimites || isLoadingSocios;
 
   // Mismo mapeo que arma solicitudesCanal más abajo, expuesto acá aparte
@@ -238,12 +262,7 @@ export default function Dashboard() {
               : "Espera de validación del Administrador";
 
       const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
-      const tipoText =
-        tipoLimiteId === 1
-          ? "Alta de línea (Cheque)"
-          : tipoLimiteId === 2
-            ? "Alta de línea (Préstamo)"
-            : "Alta de línea (Pagaré)";
+      const tipoText = familiaDeLinea(tipoLimiteId);
 
       const importeLimite = l.importelimite || l.ImporteLimite;
       const monedaId = l.monedaid || l.MonedaID;
@@ -277,7 +296,7 @@ export default function Dashboard() {
         raw: l,
       };
     });
-  }, [limitesData, sociosData, isRestricted, restrictedIds, targetCadenaId]);
+  }, [limitesData, sociosData, isRestricted, restrictedIds, targetCadenaId, familiaDeLinea]);
 
   // La migración a SGR+ es un paso aparte de la aprobación en TipoLimiteSocio
   // (que ya quedó guardada) — si falla acá, no hay que revertir nada, solo

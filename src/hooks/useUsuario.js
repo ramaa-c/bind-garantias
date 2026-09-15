@@ -166,3 +166,9 @@ export const useActualizarUsuario = () => {
     },
   });
 };
+
+export const useNotificarUsuario = () => {
+  return useMutation({
+    mutationFn: (data) => usuarioService.notificarUsuario(data),
+  });
+};

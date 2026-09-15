@@ -104,4 +104,14 @@ export const usuarioAdapter = {
       Denominacion: d.denominacion,
     };
   },
+  adaptarPayload10: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      Email: d.email,
+      Cuit: d.cuit,
+      Mensaje: d.mensaje,
+      UsuarioWebAdminID: d.usuariowebadminid,
+    };
+  },
 };

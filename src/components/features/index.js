@@ -43,6 +43,7 @@ export * from "./admin/UsuariosRelacionadosModal/UsuariosRelacionadosModal";
 export * from "./admin/CriteriosAceptacionModal/CriteriosAceptacionModal";
 export * from "./admin/RequisitosConfigModal/RequisitosConfigModal";
 export * from "./admin/RechazarSolicitudModal/RechazarSolicitudModal";
+export * from "./admin/NotificarSocioModal/NotificarSocioModal";
 export * from "./shared/LegajoUniversalBar/LegajoUniversalBar";
 
 
