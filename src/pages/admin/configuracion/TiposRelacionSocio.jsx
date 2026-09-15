@@ -1,9 +1,14 @@
-import React, { useState } from "react";
-import { FiPlus, FiEdit2, FiSearch, FiInbox, FiHelpCircle } from "react-icons/fi";
+import React, { useEffect, useState } from "react";
+import { FiPlus, FiEdit2, FiSearch, FiInbox, FiHelpCircle, FiSave, FiRotateCcw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button, Skeleton } from "../../../components/ui";
 import { TipoRelacionSocioModal } from "../../../components/features/admin/TipoRelacionSocioModal/TipoRelacionSocioModal";
-import { useTiposRelacionSocioActivos } from "../../../hooks/useTipoRelacionSocio";
+import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
+import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+import { useTiposRelacionSocioActivos, useRelationMetadata } from "../../../hooks/useTipoRelacionSocio";
+import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
+import { useRequisitos } from "../../../hooks/useRequisitos";
+import { TABS_TIPO_PERSONA, esRelacionVisible } from "../../../utils/relacionesTercerosUtils";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./TiposRelacionSocio.module.css";
 
@@ -32,6 +37,98 @@ export default function TiposRelacionSocio() {
   const activos = Array.isArray(activosData)
     ? activosData
     : activosData?.items || activosData?.data || [];
+
+  // Mini parametrización de terceros por cadena (mismo dato que edita
+  // RequisitosConfigModal, sección "Relaciones y Secciones" - ver
+  // useRelationMetadata) - un atajo para no tener que ir a Cadenas de
+  // Valor y abrir el modal completo solo para tocar terceros.
+  const [selectedCadenaId, setSelectedCadenaId] = useState("");
+  const [activeParamTab, setActiveParamTab] = useState("sa");
+  const [localConfig, setLocalConfig] = useState(null);
+  const [confirmParamOpen, setConfirmParamOpen] = useState(false);
+
+  const { data: cadenasWebData, isLoading: isLoadingCadenas } =
+    useObtenerTodasWebConEstado();
+  const cadenasWeb = Array.isArray(cadenasWebData)
+    ? cadenasWebData
+    : cadenasWebData?.items || cadenasWebData?.data || [];
+
+  const { relationMetadata } = useRelationMetadata();
+  const { requisitos, updateRequisitos, isUpdating } =
+    useRequisitos(selectedCadenaId);
+
+  useEffect(() => {
+    if (selectedCadenaId && requisitos) {
+      setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
+    }
+  }, [selectedCadenaId, requisitos]);
+
+  const sinCambiosParam =
+    !!requisitos &&
+    !!localConfig &&
+    JSON.stringify(localConfig) === JSON.stringify(requisitos);
+
+  const handleUpdateParam = (key, value) => {
+    setLocalConfig((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        [activeParamTab]: {
+          ...prev[activeParamTab],
+          relaciones: {
+            ...prev[activeParamTab].relaciones,
+            [key]: value,
+          },
+        },
+      };
+    });
+  };
+
+  const handleSetTodosParam = (value) => {
+    setLocalConfig((prev) => {
+      if (!prev) return prev;
+      const claves = relationMetadata
+        .map(({ key }) => key)
+        .filter((key) => esRelacionVisible(key, activeParamTab));
+      const actualizado = { ...prev[activeParamTab].relaciones };
+      claves.forEach((key) => {
+        actualizado[key] = value;
+      });
+      return {
+        ...prev,
+        [activeParamTab]: {
+          ...prev[activeParamTab],
+          relaciones: actualizado,
+        },
+      };
+    });
+  };
+
+  const handleResetParam = () => {
+    if (requisitos) {
+      setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
+      toast.success("Configuración restablecida a la última guardada");
+    }
+  };
+
+  const handleGuardarParam = () => {
+    if (!selectedCadenaId || !localConfig) return;
+    setConfirmParamOpen(true);
+  };
+
+  const confirmarGuardarParam = () => {
+    updateRequisitos(localConfig, {
+      onSuccess: () => {
+        toast.success("Configuración de terceros guardada correctamente");
+        setConfirmParamOpen(false);
+      },
+      onError: (error) => {
+        console.error(error);
+        toast.error("Ocurrió un error al guardar la configuración");
+        setConfirmParamOpen(false);
+      },
+    });
+  };
 
   const activosNormalizados = activos.map((item) => ({
     tiporelacionsocioid: item.tiporelacionsocioid ?? item.TipoRelacionSocioID,
@@ -80,77 +177,239 @@ export default function TiposRelacionSocio() {
             }
             title="Ayuda"
           >
-            <FiHelpCircle size={18} />
+            <FiHelpCircle size={20} />
           </button>
-          <Button type="button" variant="blue" size="md" onClick={handleAgregar}>
+          <Button type="button" variant="blue" size="lg" onClick={handleAgregar}>
             <FiPlus /> Agregar relación
           </Button>
         </div>
       </div>
 
-      <div className={styles.filtersCard}>
-        <div className={styles.searchWrap}>
-          <FiSearch className={styles.iconSearch} />
-          <input
-            type="text"
-            placeholder="Buscar por descripción o ID..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        {!isLoading && (
-          <span className={styles.listCount}>
-            {listaFiltrada.length} relación{listaFiltrada.length !== 1 ? "es" : ""}
-          </span>
-        )}
-      </div>
+      <div className={styles.contentRow}>
+        <div className={styles.listColumn}>
+          <div className={styles.filtersCard}>
+            <div className={styles.searchWrap}>
+              <FiSearch className={styles.iconSearch} />
+              <input
+                type="text"
+                placeholder="Buscar por descripción o ID..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            {!isLoading && (
+              <span className={styles.listCount}>
+                {listaFiltrada.length} relación{listaFiltrada.length !== 1 ? "es" : ""}
+              </span>
+            )}
+          </div>
 
-      <div className={styles.tableCard}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th style={{ width: "20%" }}>ID</th>
-                <th>Descripción (web)</th>
-                <th style={{ textAlign: "center", width: "4rem" }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => <RowSkeleton key={i} />)
-              ) : listaFiltrada.length === 0 ? (
-                <tr>
-                  <td colSpan={3} style={{ padding: 0 }}>
-                    <div className={styles.emptyState}>
-                      <FiInbox className={styles.emptyStateIcon} />
-                      <span>Todavía no hay relaciones activadas para la web.</span>
+          <div className={styles.tableCard}>
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={{ width: "5.5rem" }}>ID</th>
+                    <th>Descripción (web)</th>
+                    <th style={{ textAlign: "center", width: "4.5rem" }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    Array.from({ length: 4 }).map((_, i) => <RowSkeleton key={i} />)
+                  ) : listaFiltrada.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} style={{ padding: 0 }}>
+                        <div className={styles.emptyState}>
+                          <FiInbox className={styles.emptyStateIcon} />
+                          <span>Todavía no hay relaciones activadas para la web.</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    listaFiltrada.map((item) => (
+                      <tr key={item.tiporelacionsocioid}>
+                        <td>
+                          <span className={styles.idTag}>#{item.tiporelacionsocioid}</span>
+                        </td>
+                        <td>{item.descripcion || "-"}</td>
+                        <td style={{ textAlign: "center" }}>
+                          <button
+                            type="button"
+                            className={styles.editBtn}
+                            onClick={() => handleEditar(item)}
+                            title="Editar descripción"
+                          >
+                            <FiEdit2 size={14} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.paramCard}>
+        <div className={styles.paramHeader}>
+          <h2>Parametrización por cadena</h2>
+          <p>
+            Elegí una cadena de valor para definir cómo se piden estas
+            relaciones en su legajo, por tipo de persona/sociedad.
+          </p>
+        </div>
+
+        {isLoadingCadenas ? (
+          <Skeleton height="82px" width="100%" radius="0.75rem" />
+        ) : (
+          <CadenaSelectCard
+            options={cadenasWeb}
+            value={selectedCadenaId}
+            onChange={(val) => setSelectedCadenaId(String(val))}
+            placeholder="Seleccionar cadena de valor..."
+          />
+        )}
+
+        {selectedCadenaId && localConfig && (
+          <>
+            <div className={styles.tabContainer}>
+              {TABS_TIPO_PERSONA.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    className={`${styles.tabBtn} ${activeParamTab === tab.id ? styles.tabActive : ""}`}
+                    onClick={() => setActiveParamTab(tab.id)}
+                  >
+                    <Icon style={{ marginRight: "0.4rem" }} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className={styles.paramListHeader}>
+              <span className={styles.listCount}>
+                Configurando para{" "}
+                <strong>
+                  {TABS_TIPO_PERSONA.find((t) => t.id === activeParamTab)?.label}
+                </strong>
+              </span>
+              <div className={styles.bulkActions}>
+                <button
+                  type="button"
+                  className={`${styles.bulkBtn} ${styles.bulkBtnNone}`}
+                  onClick={() => handleSetTodosParam(0)}
+                >
+                  Todo No mostrar
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.bulkBtn} ${styles.bulkBtnOptional}`}
+                  onClick={() => handleSetTodosParam(2)}
+                >
+                  Todo Opcional
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.bulkBtn} ${styles.bulkBtnRequired}`}
+                  onClick={() => handleSetTodosParam(1)}
+                >
+                  Todo Obligatorio
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.paramList}>
+              {relationMetadata.map(({ key, title, desc }) => {
+                if (!esRelacionVisible(key, activeParamTab)) return null;
+
+                const val =
+                  localConfig[activeParamTab]?.relaciones?.[key] !== undefined
+                    ? localConfig[activeParamTab].relaciones[key]
+                    : 0;
+
+                return (
+                  <div key={key} className={styles.paramRow}>
+                    <div className={styles.paramInfo}>
+                      <strong>{title}</strong>
+                      <span>{desc}</span>
                     </div>
-                  </td>
-                </tr>
-              ) : (
-                listaFiltrada.map((item) => (
-                  <tr key={item.tiporelacionsocioid}>
-                    <td>
-                      <span className={styles.idTag}>#{item.tiporelacionsocioid}</span>
-                    </td>
-                    <td>{item.descripcion || "-"}</td>
-                    <td style={{ textAlign: "center" }}>
+                    <div className={styles.segmentedControl}>
                       <button
                         type="button"
-                        className={styles.editBtn}
-                        onClick={() => handleEditar(item)}
-                        title="Editar descripción"
+                        className={`${styles.segmentBtn} ${val === 0 ? styles.activeNone : ""}`}
+                        onClick={() => handleUpdateParam(key, 0)}
+                        title="Se ocultará esta pestaña/paso completamente"
                       >
-                        <FiEdit2 size={14} />
+                        No mostrar
                       </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                      <button
+                        type="button"
+                        className={`${styles.segmentBtn} ${val === 2 ? styles.activeOptional : ""}`}
+                        onClick={() => handleUpdateParam(key, 2)}
+                        title="Se mostrará pero el cliente puede no declarar registros"
+                      >
+                        Opcional
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.segmentBtn} ${val === 1 ? styles.activeRequired : ""}`}
+                        onClick={() => handleUpdateParam(key, 1)}
+                        title="El cliente debe obligatoriamente declarar al menos un registro para continuar"
+                      >
+                        Obligatorio
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className={styles.paramFooter}>
+              <Button
+                variant="outlineBlue"
+                size="sm"
+                onClick={handleResetParam}
+                disabled={isUpdating || sinCambiosParam}
+                title={sinCambiosParam ? "No hay cambios para restablecer" : undefined}
+              >
+                <FiRotateCcw style={{ marginRight: "0.5rem" }} />
+                Reestablecer
+              </Button>
+              <Button
+                variant="blue"
+                size="sm"
+                onClick={handleGuardarParam}
+                isLoading={isUpdating}
+                disabled={isUpdating || sinCambiosParam}
+                title={sinCambiosParam ? "No hay cambios para guardar" : undefined}
+              >
+                <FiSave style={{ marginRight: "0.5rem" }} />
+                Guardar configuración
+              </Button>
+            </div>
+          </>
+        )}
         </div>
       </div>
+
+      <ConfirmacionModal
+        isOpen={confirmParamOpen}
+        onClose={() => setConfirmParamOpen(false)}
+        onConfirm={confirmarGuardarParam}
+        titulo="Guardar configuración"
+        mensaje="¿Estás seguro de que deseás guardar la nueva parametrización de terceros (para todos los tipos de persona/sociedad) en esta cadena de valor?"
+        variant="blue"
+        confirmText="GUARDAR"
+        cancelText="CANCELAR"
+        confirmVariant="blue"
+        cancelVariant="outlineBlue"
+        isLoading={isUpdating}
+      />
 
       <TipoRelacionSocioModal
         isOpen={modalAbierto}

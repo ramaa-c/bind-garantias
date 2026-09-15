@@ -31,6 +31,60 @@
   color: #ffffff;
 }
 
+.sinDestinatarios {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.destinatariosLista {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 9.5rem;
+  overflow-y: auto;
+}
+
+.destinatarioRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.6rem;
+  font-size: 0.82rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.destinatarioRow:hover {
+  border-color: rgba(76, 101, 230, 0.35);
+  background: rgba(76, 101, 230, 0.06);
+}
+
+.destinatarioInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.destinatarioEmail {
+  color: #ffffff;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.destinatarioEtiqueta {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
 .toolbar {
   display: flex;
   gap: 0.5rem;
@@ -72,6 +126,28 @@
   background: rgba(76, 101, 230, 0.24);
 }
 
+.editorWrapper {
+  position: relative;
+}
+
+/* "Caja gemela" del .editor: mismo padding/border (transparente) en vez de
+   un offset en px calculado a mano, para que el texto del placeholder
+   arranque siempre exactamente donde arrancaría el texto real, sin
+   depender de que nadie mantenga sincronizados los números si el padding
+   del editor cambia. */
+.placeholder {
+  position: absolute;
+  inset: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid transparent;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .editor {
   min-height: 130px;
   max-height: 320px;
@@ -103,12 +179,6 @@
 .editor strong {
   font-weight: 700;
   color: #ffffff;
-}
-
-.editorVacio::before {
-  content: attr(data-placeholder);
-  color: var(--text-muted);
-  pointer-events: none;
 }
 
 .actions {

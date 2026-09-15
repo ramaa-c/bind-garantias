@@ -7,6 +7,7 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { sociosService } from "../services/sociosService";
+import { usuarioService } from "../services/usuarioService";
 import { esSocioVacio } from "../utils/socioUtils";
 import { calcularEstadoDesdeHistorial } from "../utils/executeCda";
 import { esCdaActivo } from "../utils/cdaUtils";
@@ -263,4 +264,51 @@ export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
     enabled: !!usuarioWebId,
     staleTime: 1000 * 60 * 5,
   });
+};
+
+// Sección "Usuarios Vinculados" del panel admin (EmpresaDetalle.jsx).
+// api/SocioUsuario/{SocioID}:PorSocio solo trae { SocioID, UsuarioWebID,
+// momentoCreacion } - sin email ni estado de la cuenta - así que hay que
+// resolver cada UsuarioWebID aparte contra api/usuario/{id} (mismo patrón
+// que useEmpresasCompletas, arriba, pero en el sentido socio → usuarios en
+// vez de usuario → socios).
+export const useUsuariosVinculadosASocio = (socioId) => {
+  const { data: vinculos, isPending: isPendingVinculos } = useQuery({
+    queryKey: ["socioUsuario", "listaPorSocio", socioId],
+    queryFn: () => sociosService.obtenerSocioUsuarioPorSocioId(socioId),
+    enabled: !!socioId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const lista = Array.isArray(vinculos) ? vinculos : [];
+  const usuarioIds = lista
+    .map((v) => Number(v.usuariowebid ?? v.UsuarioWebID))
+    .filter((id) => !Number.isNaN(id));
+
+  const resultados = useQueries({
+    queries: usuarioIds.map((usuarioWebId) => ({
+      queryKey: ["usuarios", "detalle", usuarioWebId],
+      queryFn: () => usuarioService.obtenerUsuarioPorId(usuarioWebId),
+      staleTime: 1000 * 60 * 5,
+    })),
+  });
+
+  const usuariosVinculados = lista
+    .map((v, i) => {
+      const detalle = resultados[i]?.data;
+      const usuarioWebId = Number(v.usuariowebid ?? v.UsuarioWebID);
+      if (Number.isNaN(usuarioWebId)) return null;
+      return {
+        usuarioWebId,
+        momentoCreacion: v.momentocreacion ?? v.momentoCreacion ?? v.MomentoCreacion,
+        email: detalle?.email || detalle?.Email || "",
+        estado: detalle?.estado ?? detalle?.Estado ?? "",
+      };
+    })
+    .filter(Boolean);
+
+  return {
+    usuariosVinculados,
+    isLoading: isPendingVinculos || resultados.some((r) => r.isPending),
+  };
 };
