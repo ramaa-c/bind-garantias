@@ -47,6 +47,28 @@ export const MOTIVOS_RECHAZO_AUTOMATICO = {
     "El monto solicitado no alcanza el porcentaje mínimo permitido para esta línea.",
 };
 
+// TipoLimiteEstadoID=Cancelado (4) se usa tanto para un rechazo automático
+// (CDA de línea / PorcentajeMinimoSolicitud, al momento de crear la
+// solicitud, ver AltaOperacion.jsx) como para un rechazo manual del admin
+// (RechazarSolicitudModal) - no hay un campo aparte que distinga cuál fue.
+// Este prefijo en Observaciones es la única forma de diferenciarlos en
+// Dashboard.jsx sin inventar un estado nuevo; se muestra tal cual (no se
+// oculta) porque es información real y sirve también del lado cliente.
+export const PREFIJO_RECHAZO_AUTOMATICO = "Rechazo automático:";
+
+export const construirMotivoRechazoAutomatico = (motivo) =>
+  `${PREFIJO_RECHAZO_AUTOMATICO} ${motivo}`;
+
+export const esRechazoAutomatico = (observaciones) =>
+  String(observaciones || "").startsWith(PREFIJO_RECHAZO_AUTOMATICO);
+
+// TipoLimiteEstadoID=5 (Vencido) también se usa hoy como Cancelada (ver
+// ESTADO_CANCELADA arriba) - cuando el backend active el vencimiento
+// automático real, ambas van a compartir el mismo valor numérico. Dejar esta
+// marca en Observaciones al cancelar es la única forma de distinguir después
+// "lo canceló el socio" de "se venció solo".
+export const MOTIVO_CANCELACION_SOCIO = "Cancelada por el socio desde la plataforma.";
+
 export const estadoTextoDesde = (tipolimiteestadoid) => {
   const id = Number(tipolimiteestadoid);
   if (id === ESTADO_COMPLETO) return "Aprobada";

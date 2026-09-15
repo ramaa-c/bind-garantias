@@ -21,6 +21,7 @@ import {
   ESTADO_APROBADA,
   ESTADO_CANCELADA,
   estadoTextoDesde,
+  esRechazoAutomatico,
 } from "../../../utils/estadoLimiteSocio";
 import styles from "./Dashboard.module.css";
 
@@ -252,11 +253,21 @@ export default function Dashboard() {
       // Rechazada (admin) y Cancelada (socio) vuelven a distinguirse con un
       // workaround temporal: Cancelada pisa el valor de Vencido (5), que no
       // usamos para nada más (ver ESTADO_CANCELADA en utils/estadoLimiteSocio.js).
+      // Dentro de Rechazada hay además dos orígenes distintos que comparten
+      // el mismo TipoLimiteEstadoID (4): un rechazo automático al crear la
+      // solicitud (CDA de línea / PorcentajeMinimoSolicitud, ver
+      // AltaOperacion.jsx) y un rechazo manual del admin - se distinguen por
+      // el prefijo que AltaOperacion.jsx deja en Observaciones.
+      const fueRechazoAutomatico = esRechazoAutomatico(
+        l.observaciones ?? l.Observaciones,
+      );
       const accionText =
         Number(tipoLimiteEstadoId) === ESTADO_APROBADA
           ? "Aprobada por Administrador"
           : Number(tipoLimiteEstadoId) === ESTADO_RECHAZADA
-            ? "Rechazada por Administrador"
+            ? fueRechazoAutomatico
+              ? "Rechazada automáticamente por Criterios de Aceptación"
+              : "Rechazada por Administrador"
             : Number(tipoLimiteEstadoId) === ESTADO_CANCELADA
               ? "Cancelada por el cliente"
               : "Espera de validación del Administrador";
@@ -396,16 +407,19 @@ export default function Dashboard() {
   // reflejarse también en SolicitudEnProceso — desde que se unificó el
   // catálogo de estados con Victor (2026-08-18), ambas tablas usan
   // literalmente los mismos valores, así que no hace falta traducir nada.
-  // Se identifica la fila por TipoLimiteSocio.SolicitudID — confirmado en
-  // vivo el 2026-08-18 que sigue trayendo el SolicitudEnProcesoID real a
-  // pesar de que AltaOperacion.jsx mande null al crear la línea (el backend
-  // lo resuelve solo). No bloquea ni revierte la aprobación/rechazo si
-  // falla: solo queda logueado, es una sincronización secundaria.
+  // TipoLimiteSocio.SolicitudID viaja siempre en null (pedido del backend, no
+  // se resuelve nunca del lado de ellos - confirmado en vivo el 2026-09-15),
+  // así que la fila no se ubica por ID sino por (Cuit, TipoLimiteID,
+  // CadenaValorID) — el backend garantiza que nunca hay más de una
+  // SolicitudEnProceso vigente con esa misma combinación. No bloquea ni
+  // revierte la aprobación/rechazo si falla: solo queda logueado, es una
+  // sincronización secundaria.
   const sincronizarSolicitudEnProceso = (item, nuevoTipoLimiteEstadoId) => {
-    const solicitudEnProcesoId = item.raw?.solicitudid ?? item.raw?.SolicitudID;
-    if (!solicitudEnProcesoId || !item.cuit || item.cuit === "—") return;
+    const tipoLimiteId = item.raw?.tipolimiteid ?? item.raw?.TipoLimiteID;
+    const cadenaValorId = item.cadenavalorid ?? item.raw?.cadenavalorid ?? item.raw?.CadenaValorID;
+    if (!tipoLimiteId || !cadenaValorId || !item.cuit || item.cuit === "—") return;
     solicitudesService
-      .sincronizarEstadoSolicitudEnProceso(item.cuit, solicitudEnProcesoId, nuevoTipoLimiteEstadoId)
+      .sincronizarEstadoSolicitudEnProcesoPorClave(item.cuit, tipoLimiteId, cadenaValorId, nuevoTipoLimiteEstadoId)
       .catch((syncErr) => {
         console.error(
           `[Dashboard] No se pudo sincronizar el estado en SolicitudEnProceso para la línea N°${item.id}:`,
@@ -535,13 +549,17 @@ export default function Dashboard() {
       return true;
     })
     .sort((a, b) => {
-      // Por fecha real (creadoISO), no por id: comparar el id como string
-      // (localeCompare) ordenaba alfabéticamente en vez de cronológicamente
-      // ("9" quedaba después de "89"), mostrando solicitudes viejas antes
-      // que otras más recientes.
-      const fechaA = a.creadoISO ? new Date(a.creadoISO).getTime() : 0;
-      const fechaB = b.creadoISO ? new Date(b.creadoISO).getTime() : 0;
-      return orden === "desc" ? fechaB - fechaA : fechaA - fechaB;
+      // Por ID numérico, no por fecha ni por id como string: fchVigenciaDesde
+      // viaja sin hora (siempre 00:00:00, confirmado en vivo el 2026-09-15),
+      // así que varias solicitudes del mismo día quedan empatadas y el sort
+      // termina devolviendo el orden crudo de la API (más vieja primero,
+      // sin importar el filtro elegido). Comparar el id como string
+      // (localeCompare) tampoco sirve - ordena alfabéticamente en vez de
+      // numéricamente ("9" queda después de "89"). El ID autoincremental sí
+      // crece con cada alta, así que es el único criterio confiable acá.
+      const idA = Number(a.id) || 0;
+      const idB = Number(b.id) || 0;
+      return orden === "desc" ? idB - idA : idA - idB;
     });
 
   const totalMonto = solicitudesCanal.reduce((acc, curr) => {
