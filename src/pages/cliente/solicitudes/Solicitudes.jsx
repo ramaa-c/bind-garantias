@@ -32,6 +32,7 @@ import {
   ESTADO_CANCELADA,
   estadoTextoDesde,
   TERCERO_VIA_PLATAFORMA_PROPIA,
+  MOTIVO_CANCELACION_SOCIO,
 } from "../../../utils/estadoLimiteSocio";
 
 import styles from "./Solicitudes.module.css";
@@ -68,10 +69,9 @@ const finDelDia = (fecha) => {
   return d;
 };
 
-// Extrae la parte numérica del id propio del item para ordenar (las
-// "pendientes" - SolicitudEnProceso, todavía sin migrar a TipoLimiteSocio -
-// llevan el prefijo "sp-", ver listaSolicitudes más abajo).
-const idNumerico = (item) => parseInt(String(item.id).replace(/^sp-/, ""), 10) || 0;
+// Extrae la parte numérica del id propio del item para ordenar: id más
+// grande = más reciente.
+const idNumerico = (item) => parseInt(String(item.id), 10) || 0;
 
 const hasMeaningfulData = (dataString) => {
   if (!dataString) return false;
@@ -188,83 +188,28 @@ export default function Solicitudes() {
     return hasRealPendiente || hasProcesoPendiente;
   }, [solicitudesReal, solicitudesEnProceso]);
 
+  // SolicitudEnProceso ya no se muestra acá: pasó a ser una tabla de control
+  // interno entre plataformas, sin ninguna fila propia en pantalla (decisión
+  // confirmada el 2026-09-15) - lo que el socio ve es directamente
+  // TipoLimiteSocio, la única fuente real de sus solicitudes.
   const listaSolicitudes = useMemo(() => {
-    const reales = (solicitudesReal || [])
-      .map(s => {
-        const tipoLimiteEstadoId = Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE);
-        return {
-          id: s.tipolimitesocioid?.toString() || "",
-          tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
-          monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
-          moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
-          estado: estadoTextoDesde(tipoLimiteEstadoId),
-          tipoLimiteEstadoId,
-          fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
-          fechaISO: s.fchvigenciadesde || null,
-          socioid: s.socioid || socioIdFinal,
-          cuit: cuitActivo,
-          isReal: true,
-          solicitudid: s.solicitudid,
-          raw: s,
-        };
-      });
-
-    // TipoLimiteSocio.SolicitudID viaja siempre en null (pedido explícito
-    // del backend, no se puede usar para unir las dos filas de una misma
-    // solicitud - ver AltaOperacion.jsx). Se fusiona en cambio por los datos
-    // que SÍ comparten: misma línea, cadena y moneda, contra las `reales`
-    // que estén en estado Pendiente (única posibilidad real: un rechazo
-    // automático nunca llega a crear una SolicitudEnProceso, ver
-    // AltaOperacion.jsx). El socio puede tener más de una solicitud
-    // pendiente en curso a la vez dentro de nuestra plataforma (ver
-    // tieneSolicitudPendiente más arriba), así que ante varias candidatas se
-    // toma la de importe más parecido y cada real se "reclama" una sola vez
-    // - para no perder de la lista una segunda pendiente genuina.
-    const realesPendientesDisponibles = reales.filter(
-      (r) => r.tipoLimiteEstadoId === ESTADO_PENDIENTE,
-    );
-    const realesYaFusionadas = new Set();
-
-    const pendientes = (solicitudesEnProceso || [])
-      .filter((sp) => {
-        const candidatas = realesPendientesDisponibles.filter(
-          (r) =>
-            !realesYaFusionadas.has(r.id) &&
-            Number(r.raw?.tipolimiteid) === Number(sp.tipolimiteid) &&
-            Number(r.raw?.cadenavalorid) === Number(sp.cadenavalorid) &&
-            Number(r.raw?.monedaid) === Number(sp.monedaid),
-        );
-        if (candidatas.length === 0) return true;
-
-        const masParecida = candidatas.reduce((mejor, actual) => {
-          const diffActual = Math.abs(Number(actual.raw?.importelimite) - Number(sp.importe));
-          const diffMejor = Math.abs(Number(mejor.raw?.importelimite) - Number(sp.importe));
-          return diffActual < diffMejor ? actual : mejor;
-        });
-        realesYaFusionadas.add(masParecida.id);
-        return false;
-      })
-      .map(sp => ({
-        id: `sp-${sp.solicitudenprocesoid}`,
-        tipo: sp.tipolimiteid === 1 ? "Cheque" : sp.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
-        monto: sp.importe ? new Intl.NumberFormat("es-AR").format(sp.importe) : "0",
-        moneda: sp.monedaid === 5000 ? "$" : sp.monedaid === 2 ? "U$D" : sp.monedaid === 10 ? "UVAS" : sp.monedaid === 500 ? "€" : "$",
-        estado: "Pendiente",
-        fecha: sp.fechacarga ? new Date(sp.fechacarga).toLocaleDateString("es-AR") : "Hoy",
-        fechaISO: sp.fechacarga || null,
-        socioid: socioIdFinal,
+    return (solicitudesReal || []).map((s) => {
+      const tipoLimiteEstadoId = Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE);
+      return {
+        id: s.tipolimitesocioid?.toString() || "",
+        tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
+        monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
+        moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
+        estado: estadoTextoDesde(tipoLimiteEstadoId),
+        tipoLimiteEstadoId,
+        fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
+        fechaISO: s.fchvigenciadesde || null,
+        socioid: s.socioid || socioIdFinal,
         cuit: cuitActivo,
-        isReal: true,
-        solicitudid: sp.solicitudenprocesoid,
-      }));
-
-    // Por el id propio del item (no por solicitudid, esa FK casi siempre
-    // queda en 0 en las "reales" - ver adaptarPayload en AltaOperacion.jsx),
-    // de mayor a menor: id más grande = más reciente. listaFiltrada, más
-    // abajo, vuelve a ordenar según el filtro "Orden" elegido por el
-    // usuario - este orden acá es solo el default antes de filtrar.
-    return [...reales, ...pendientes].sort((a, b) => idNumerico(b) - idNumerico(a));
-  }, [solicitudesReal, solicitudesEnProceso, socioIdFinal, cuitActivo]);
+        raw: s,
+      };
+    });
+  }, [solicitudesReal, socioIdFinal, cuitActivo]);
 
   const listaFiltrada = useMemo(() => {
     const texto = (filtros.busqueda || "").trim().toLowerCase();
@@ -313,18 +258,23 @@ export default function Solicitudes() {
       await actualizarLimiteMutation.mutateAsync({
         ...solicitudACancelar.raw,
         tipolimiteestadoid: ESTADO_CANCELADA,
+        observaciones: MOTIVO_CANCELACION_SOCIO,
       });
 
       // Igual que en Dashboard.jsx (admin): todo cambio de estado en
       // TipoLimiteSocio se refleja también en SolicitudEnProceso — ambas
       // tablas usan literalmente el mismo catálogo (2026-08-18), así que no
-      // hace falta traducir el valor. No bloquea la cancelación si falla,
+      // hace falta traducir el valor. TipoLimiteSocio.SolicitudID viaja
+      // siempre en null, así que la fila se ubica por (Cuit, TipoLimiteID,
+      // CadenaValorID) en vez de por ID. No bloquea la cancelación si falla,
       // queda solo logueado — es una sincronización secundaria.
-      const solicitudEnProcesoId =
-        solicitudACancelar.raw?.solicitudid ?? solicitudACancelar.raw?.SolicitudID;
-      if (solicitudEnProcesoId && cuitActivo) {
+      const tipoLimiteId =
+        solicitudACancelar.raw?.tipolimiteid ?? solicitudACancelar.raw?.TipoLimiteID;
+      const cadenaValorId =
+        solicitudACancelar.raw?.cadenavalorid ?? solicitudACancelar.raw?.CadenaValorID;
+      if (tipoLimiteId && cadenaValorId && cuitActivo) {
         solicitudesService
-          .sincronizarEstadoSolicitudEnProceso(cuitActivo, solicitudEnProcesoId, ESTADO_CANCELADA)
+          .sincronizarEstadoSolicitudEnProcesoPorClave(cuitActivo, tipoLimiteId, cadenaValorId, ESTADO_CANCELADA)
           .catch((syncErr) => {
             console.error(
               `[Solicitudes] No se pudo sincronizar el estado en SolicitudEnProceso para la solicitud N°${solicitudACancelar.id}:`,

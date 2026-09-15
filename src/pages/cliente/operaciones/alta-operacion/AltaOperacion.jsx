@@ -173,13 +173,18 @@ export const AltaOperacion = () => {
         const solicitudesArray = Array.isArray(solicitudes)
           ? solicitudes
           : solicitudes?.data || [];
-        // El bloqueo es por PLATAFORMA de origen (TerceroViaID), no por
-        // cadena: un socio puede tener varias solicitudes en curso al mismo
-        // tiempo dentro de NUESTRA plataforma (4000000), en distintas
-        // cadenas o incluso en la misma — lo único que hay que evitar es
-        // dejarlo arrancar acá si ya tiene una en curso en OTRA plataforma,
-        // sobre la que no tenemos control (confirmado con Victor el
-        // 2026-08-13). Ver TERCERO_VIA_PLATAFORMA_PROPIA.
+        // Este gate inicial solo bloquea por PLATAFORMA de origen
+        // (TerceroViaID) ajena a la nuestra (4000000), sobre la que no
+        // tenemos control (confirmado con Victor el 2026-08-13, ver
+        // TERCERO_VIA_PLATAFORMA_PROPIA) — acá todavía no se sabe qué línea
+        // ni qué cadena va a elegir el socio, así que no se puede aplicar
+        // todavía la regla más fina de "mismo TipoLimiteID + misma
+        // CadenaValorID" (esa se chequea más abajo, en enviarSolicitud, una
+        // vez elegida la línea). Un socio SÍ puede tener en curso, al mismo
+        // tiempo, solicitudes de tipos distintos, o el mismo tipo en otra
+        // cadena — lo que no puede es repetir la misma combinación
+        // (TipoLimiteID, CadenaValorID) vigente a la vez (confirmado por
+        // Victor, 2026-09-15).
         //
         // Ya no hace falta mirar EstadoSolicitud acá: el backend borra la
         // fila de SolicitudEnProceso apenas deja de estar en Inicial o
@@ -451,6 +456,43 @@ export const AltaOperacion = () => {
       const tipoLimiteIdReal = Number(lineaSeleccionada.tipolimiteid) || 0;
       const montoLineaReal = Number(lineaSeleccionada.montolinea) || 0;
 
+      // Confirmado por Victor (2026-09-15, ya no es un problema del backend
+      // sino nuestra propia lógica de identificación): un mismo CUIT no
+      // puede tener dos SolicitudEnProceso vigentes con la misma combinación
+      // (TipoLimiteID, CadenaValorID) — sí puede tener varias de tipos
+      // distintos, o el mismo tipo en otra cadena. Si ya hay una en curso
+      // para esta línea+cadena, hay que esperar a que se resuelva (o
+      // cancelarla) antes de poder cargar otra. El POST a
+      // sgrplus/SolicitudEnProceso ya la rechaza con 404 "Solicitud
+      // preexistente" si se intenta igual (ver el catch más abajo), pero sin
+      // este chequeo acá el usuario completaba todo el formulario para
+      // enterarse recién al final.
+      try {
+        const solicitudesExistentes =
+          await solicitudesService.obtenerSolicitudesEnProceso(cuitLimpio);
+        const solicitudesExistentesArray = Array.isArray(solicitudesExistentes)
+          ? solicitudesExistentes
+          : solicitudesExistentes?.data || [];
+        const yaTieneSolicitudDeEstaLinea = solicitudesExistentesArray.some(
+          (s) =>
+            Number(s.tipolimiteid) === tipoLimiteIdReal &&
+            Number(s.cadenavalorid) === Number(cadenaSlug),
+        );
+        if (yaTieneSolicitudDeEstaLinea) {
+          toast.error("Ya tenés una solicitud en curso", {
+            description:
+              "Este CUIT ya tiene una solicitud pendiente para esta línea. Esperá a que se resuelva antes de enviar una nueva.",
+          });
+          setEnviandoSolicitud(false);
+          return;
+        }
+      } catch (checkError) {
+        console.error(
+          "[ALTA OPERACION] Error al chequear solicitudes en proceso existentes:",
+          checkError,
+        );
+      }
+
       let montoLimpio = Number(cleanData.monto) || 0;
 
       // Regla: el monto ingresado (antes de descontar lo utilizado) nunca
@@ -550,49 +592,61 @@ export const AltaOperacion = () => {
       // ya se validó al entrar a la pantalla (ver verificarAcceso) - si ya
       // estaba en el tope, el alta queda bloqueada antes de llegar acá.
 
-      // Si ya sabemos que se rechaza (CDA de línea / PorcentajeMinimoSolicitud,
-      // ver debeRechazarseAutomaticamente más arriba), directamente no se crea
-      // la SolicitudEnProceso: no tiene sentido mandarla "EnProceso" al core
-      // para un pedido que el propio frontend ya rechazó, y hacerlo dejaba una
-      // fila fantasma que nada volvía a actualizar — "Mis Solicitudes"
-      // terminaba mostrando la misma solicitud dos veces con estados
-      // contradictorios (una "Pendiente" huérfana, otra "Rechazada" real).
-      // Reportado y decidido con el equipo el 2026-08-27. solicitudIdCreada
-      // queda en 0 acá y se completa más abajo con el ID del TipoLimiteSocio
-      // real una vez creado, para seguir teniendo un "N° de solicitud" que
-      // mostrar en el resumen de éxito.
-      let solicitudIdCreada = 0;
+      // Criterio confirmado por Victor (14/8/2026): el POST a
+      // SolicitudEnProceso se hace SIEMPRE al dar de alta, sin importar si
+      // el propio frontend ya sabe que la va a rechazar (CDA de línea /
+      // PorcentajeMinimoSolicitud, ver debeRechazarseAutomaticamente más
+      // arriba) — es lo que le avisa al resto del sistema que algo entró.
+      // Lo que hay que hacer con un rechazo automático es informarlo con un
+      // PUT a Cancelado (4) apenas se crea (ver más abajo): "el PUT mismo
+      // cuando recibe un estado 3, 4 o 5 lo elimina de la tabla" de
+      // SolicitudEnProceso — en TipoLimiteSocio (el registro real, creado
+      // más abajo) siempre queda. Antes se saltaba directamente el POST para
+      // este caso; evitaba el síntoma (fila fantasma en "Mis Solicitudes")
+      // pero no seguía el flujo real esperado por el backend.
+      const payload = {
+        solicitudenprocesoid: 0,
+        fechacarga: new Date().toISOString().split(".")[0],
+        cuit: cuitLimpio,
+        tipolimiteid: tipoLimiteIdReal,
+        cadenavalorid: Number(cadenaSlug),
+        monedaid: Number(cleanData.moneda) || 5000,
+        importe: montoLimpio,
+        // EstadoSolicitud=2 (EnProceso): la solicitud se está enviando con
+        // éxito y queda esperando la respuesta del administrador — no es
+        // un simple "Inicial" (1), que quedaría reservado para un estado
+        // previo al envío que este flujo no tiene (confirmado con el
+        // equipo el 2026-08-18). Ver mapearAEstadoSolicitudEnProceso en
+        // utils/estadoLimiteSocio.js para el resto del catálogo.
+        estadosolicitud: 2,
+        idexterno: 0,
+        terceroviaid: 4000000,
+        terceropresentanteid: 0,
+      };
 
-      if (!debeRechazarseAutomaticamente) {
-        const payload = {
-          solicitudenprocesoid: 0,
-          fechacarga: new Date().toISOString().split(".")[0],
-          cuit: cuitLimpio,
-          tipolimiteid: tipoLimiteIdReal,
-          cadenavalorid: Number(cadenaSlug),
-          monedaid: Number(cleanData.moneda) || 5000,
-          importe: montoLimpio,
-          // EstadoSolicitud=2 (EnProceso): la solicitud se está enviando con
-          // éxito y queda esperando la respuesta del administrador — no es
-          // un simple "Inicial" (1), que quedaría reservado para un estado
-          // previo al envío que este flujo no tiene (confirmado con el
-          // equipo el 2026-08-18). Ver mapearAEstadoSolicitudEnProceso en
-          // utils/estadoLimiteSocio.js para el resto del catálogo.
-          estadosolicitud: 2,
-          idexterno: 0,
-          terceroviaid: 4000000,
-          terceropresentanteid: 0,
-        };
+      console.log(
+        "[ALTA OPERACION] Payload enviado a crearSolicitudEnProceso:",
+        JSON.stringify(payload, null, 2),
+      );
 
-        console.log(
-          "[ALTA OPERACION] Payload enviado a crearSolicitudEnProceso:",
-          JSON.stringify(payload, null, 2),
-        );
+      const resSolicitud =
+        await solicitudesService.crearSolicitudEnProceso(payload);
+      const solicitudIdCreada =
+        resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
 
-        const resSolicitud =
-          await solicitudesService.crearSolicitudEnProceso(payload);
-        solicitudIdCreada =
-          resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
+      if (debeRechazarseAutomaticamente && solicitudIdCreada) {
+        try {
+          await solicitudesService.actualizarSolicitudEnProceso({
+            ...payload,
+            solicitudenprocesoid: solicitudIdCreada,
+            estadosolicitud: ESTADO_RECHAZADA,
+          });
+        } catch (putError) {
+          console.error(
+            "[ALTA OPERACION] No se pudo informar el rechazo automático en SolicitudEnProceso:",
+            putError,
+          );
+        }
       }
 
       // Agente de bolsa, apoderados/representantes y accionistas ya no se
@@ -648,15 +702,7 @@ export const AltaOperacion = () => {
         tercerogeneradorid: 0,
       };
 
-      const resLimite = await lineaService.crearLimiteSocio(payloadLimite);
-
-      // No hay SolicitudEnProceso de la cual sacar un ID (ver más arriba):
-      // se usa el ID del TipoLimiteSocio recién creado, que es exactamente
-      // el mismo tipo de número que ya se muestra como "N° de solicitud"
-      // para las solicitudes reales en Solicitudes.jsx.
-      if (debeRechazarseAutomaticamente) {
-        solicitudIdCreada = resLimite?.tipolimitesocioid || resLimite?.id || 0;
-      }
+      await lineaService.crearLimiteSocio(payloadLimite);
 
       // AltaOperacion crea la solicitud vía servicios directos, no
       // mutaciones de react-query - sin esto, Solicitudes.jsx (que sí

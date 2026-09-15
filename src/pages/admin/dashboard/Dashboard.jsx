@@ -396,16 +396,19 @@ export default function Dashboard() {
   // reflejarse también en SolicitudEnProceso — desde que se unificó el
   // catálogo de estados con Victor (2026-08-18), ambas tablas usan
   // literalmente los mismos valores, así que no hace falta traducir nada.
-  // Se identifica la fila por TipoLimiteSocio.SolicitudID — confirmado en
-  // vivo el 2026-08-18 que sigue trayendo el SolicitudEnProcesoID real a
-  // pesar de que AltaOperacion.jsx mande null al crear la línea (el backend
-  // lo resuelve solo). No bloquea ni revierte la aprobación/rechazo si
-  // falla: solo queda logueado, es una sincronización secundaria.
+  // TipoLimiteSocio.SolicitudID viaja siempre en null (pedido del backend, no
+  // se resuelve nunca del lado de ellos - confirmado en vivo el 2026-09-15),
+  // así que la fila no se ubica por ID sino por (Cuit, TipoLimiteID,
+  // CadenaValorID) — el backend garantiza que nunca hay más de una
+  // SolicitudEnProceso vigente con esa misma combinación. No bloquea ni
+  // revierte la aprobación/rechazo si falla: solo queda logueado, es una
+  // sincronización secundaria.
   const sincronizarSolicitudEnProceso = (item, nuevoTipoLimiteEstadoId) => {
-    const solicitudEnProcesoId = item.raw?.solicitudid ?? item.raw?.SolicitudID;
-    if (!solicitudEnProcesoId || !item.cuit || item.cuit === "—") return;
+    const tipoLimiteId = item.raw?.tipolimiteid ?? item.raw?.TipoLimiteID;
+    const cadenaValorId = item.cadenavalorid ?? item.raw?.cadenavalorid ?? item.raw?.CadenaValorID;
+    if (!tipoLimiteId || !cadenaValorId || !item.cuit || item.cuit === "—") return;
     solicitudesService
-      .sincronizarEstadoSolicitudEnProceso(item.cuit, solicitudEnProcesoId, nuevoTipoLimiteEstadoId)
+      .sincronizarEstadoSolicitudEnProcesoPorClave(item.cuit, tipoLimiteId, cadenaValorId, nuevoTipoLimiteEstadoId)
       .catch((syncErr) => {
         console.error(
           `[Dashboard] No se pudo sincronizar el estado en SolicitudEnProceso para la línea N°${item.id}:`,

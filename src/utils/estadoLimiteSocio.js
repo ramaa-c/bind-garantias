@@ -47,6 +47,13 @@ export const MOTIVOS_RECHAZO_AUTOMATICO = {
     "El monto solicitado no alcanza el porcentaje mínimo permitido para esta línea.",
 };
 
+// TipoLimiteEstadoID=5 (Vencido) también se usa hoy como Cancelada (ver
+// ESTADO_CANCELADA arriba) - cuando el backend active el vencimiento
+// automático real, ambas van a compartir el mismo valor numérico. Dejar esta
+// marca en Observaciones al cancelar es la única forma de distinguir después
+// "lo canceló el socio" de "se venció solo".
+export const MOTIVO_CANCELACION_SOCIO = "Cancelada por el socio desde la plataforma.";
+
 export const estadoTextoDesde = (tipolimiteestadoid) => {
   const id = Number(tipolimiteestadoid);
   if (id === ESTADO_COMPLETO) return "Aprobada";
