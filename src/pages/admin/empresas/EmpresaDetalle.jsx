@@ -25,11 +25,13 @@ import {
   FiLink,
   FiAward,
   FiBell,
+  FiUserCheck,
 } from "react-icons/fi";
 import {
   useSocioPorId,
   useActualizarSocio,
   useObtenerExecuteCda,
+  useUsuariosVinculadosASocio,
 } from "../../../hooks/useSocios";
 import { cdaService } from "../../../services/cdaService";
 import { useObtenerTodasWebConEstado, useObtenerGrupoCdaConCdas } from "../../../hooks/useCadenaValor";
@@ -121,6 +123,7 @@ const TABS = [
   { key: "terceros", label: "Terceros Relacionados", icon: FiUsers },
   { key: "cdas", label: "CDAs", icon: FiShield },
   { key: "pyme", label: "Certificado PyME", icon: FiAward },
+  { key: "usuarios", label: "Usuarios Vinculados", icon: FiUserCheck },
 ];
 
 // Filas fantasma con la forma real del panel de CDAs (barra de resultado
@@ -170,6 +173,60 @@ const construirEstadoInicial = (socio) => ({
   fechainicioactividades: socio.fechainicioactividades || "",
   fechacierreejercicio: socio.fechacierreejercicio || "",
 });
+
+// Pestaña de solo lectura - muestra qué usuarios tienen acceso a esta
+// empresa, algo que hasta SGRPLUSPLA-201/mejora de api/SocioUsuario no se
+// podía ver desde ningún lado del panel admin. Hoy solo trae email/fecha de
+// vinculación/estado de la cuenta (lo único que expone
+// api/SocioUsuario/{SocioID}:PorSocio + api/usuario/{id}) - a futuro se
+// puede sumar más info propia de cada usuario si hace falta.
+function UsuariosVinculadosTab({ socioId }) {
+  const { usuariosVinculados, isLoading } = useUsuariosVinculadosASocio(socioId);
+
+  return (
+    <div className={styles.usuariosVinculadosTab}>
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionCardHeader}>
+          <span className={styles.sectionCardIcon}>
+            <FiUserCheck size={15} />
+          </span>
+          <h3>Usuarios vinculados</h3>
+        </header>
+
+        {isLoading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+            <Skeleton width="100%" height="2.3rem" radius="0.6rem" />
+            <Skeleton width="100%" height="2.3rem" radius="0.6rem" />
+          </div>
+        ) : usuariosVinculados.length === 0 ? (
+          <p className={styles.usuariosVinculadosVacio}>
+            Todavía no hay ningún usuario vinculado a esta empresa.
+          </p>
+        ) : (
+          <ul className={styles.usuariosVinculadosLista}>
+            {usuariosVinculados.map((u) => (
+              <li key={u.usuarioWebId} className={styles.usuarioVinculadoRow}>
+                <span className={styles.usuarioVinculadoEmail}>
+                  {u.email || `Usuario #${u.usuarioWebId}`}
+                </span>
+                <span className={styles.usuarioVinculadoMeta}>
+                  {String(u.estado) !== "1" && (
+                    <span className={`${styles.badge} ${styles["badge-warning"]}`}>
+                      Inactivo
+                    </span>
+                  )}
+                  {u.momentoCreacion
+                    ? new Date(u.momentoCreacion).toLocaleDateString("es-AR")
+                    : "—"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
 
 function DatosTab({ socio }) {
   const estadoInicial = useMemo(() => construirEstadoInicial(socio), [socio]);
@@ -1681,6 +1738,12 @@ export default function EmpresaDetalle() {
   const bloqueado = useBloqueoAdminRestringido();
 
   const { data: socio, isLoading } = useSocioPorId(id);
+  // Mismo hook/queryKey que ya usa UsuariosVinculadosSection (ver DatosTab
+  // más abajo) - react-query lo dedupea, así que esto no duplica el
+  // request, solo expone la lista acá arriba para pasársela a
+  // NotificarSocioModal (permitir elegir a qué usuario vinculado avisar,
+  // no solo al email de la empresa).
+  const { usuariosVinculados } = useUsuariosVinculadosASocio(socio?.socioid);
   const { data: estadosSocio } = useEstadoSocio();
 
   // Se calcula una sola vez acá (no hay CadenaValorID en Socio, se infiere
@@ -1946,6 +2009,9 @@ export default function EmpresaDetalle() {
         {activeTab === "pyme" && (
           <CertificadoPymeAdmin socioId={socio?.socioid} cuit={socio?.cuit} />
         )}
+        {activeTab === "usuarios" && (
+          <UsuariosVinculadosTab socioId={socio?.socioid} />
+        )}
       </div>
 
       <HistorialCdaModal
@@ -1959,6 +2025,7 @@ export default function EmpresaDetalle() {
         isOpen={notificarOpen}
         onClose={() => setNotificarOpen(false)}
         socio={socio}
+        usuariosVinculados={usuariosVinculados}
         usuarioWebAdminId={usuarioWebAdminId}
       />
     </div>

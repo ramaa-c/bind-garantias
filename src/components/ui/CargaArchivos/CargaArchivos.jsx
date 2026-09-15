@@ -20,6 +20,7 @@ export const CargaArchivos = ({
   onDelete,
   hasError = false,
   isUploading = false,
+  isDownloading = false,
   className = "",
   style = {}
 }) => {
@@ -58,7 +59,12 @@ export const CargaArchivos = ({
             <BotonIcono icon={FiEye} onClick={onView} title="Ver archivo" />
           )}
           {onDownload && (
-            <BotonIcono icon={FiDownload} onClick={onDownload} title="Descargar archivo" />
+            <BotonIcono
+              icon={FiDownload}
+              onClick={onDownload}
+              title="Descargar archivo"
+              isLoading={isDownloading}
+            />
           )}
           {onEdit && (
             <BotonIcono icon={FiEdit2} onClick={onEdit} title="Modificar archivo" />

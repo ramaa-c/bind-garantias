@@ -295,6 +295,12 @@ export function DocumentosLegajo({
   const [confirmandoFechaBalance, setConfirmandoFechaBalance] = useState(false);
   const [archivoAEliminar, setArchivoAEliminar] = useState(null);
   const [uploadingKey, setUploadingKey] = useState(null);
+  // Descargar un documento ya cargado es casi instantáneo (el contenido
+  // base64 ya está en memoria, no hay espera de red real) - sin este
+  // estado el click no tenía ningún feedback visual ni se bloqueaba,
+  // así que un click doble/triple terminaba disparando la misma descarga
+  // varias veces (SGRPLUSPLA-199).
+  const [downloadingKey, setDownloadingKey] = useState(null);
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
@@ -802,6 +808,7 @@ export function DocumentosLegajo({
                   subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
                   hasError={hasError}
                   isUploading={uploadingKey === doc.key}
+                  isDownloading={downloadingKey === doc.key}
                   file={fileProp}
                   onClick={() =>
                     document.getElementById(`file-input-${doc.key}`).click()
@@ -822,7 +829,10 @@ export function DocumentosLegajo({
                   }}
                   onDownload={() => {
                     if (activeFile) {
-                      procesarArchivo(activeFile, archivosBackend, "download");
+                      setDownloadingKey(doc.key);
+                      procesarArchivo(activeFile, archivosBackend, "download").finally(
+                        () => setDownloadingKey(null),
+                      );
                     }
                   }}
                   onDelete={
