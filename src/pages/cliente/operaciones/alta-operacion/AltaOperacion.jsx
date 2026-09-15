@@ -42,6 +42,7 @@ import {
   ESTADO_PENDIENTE,
   ESTADO_RECHAZADA,
   MOTIVOS_RECHAZO_AUTOMATICO,
+  construirMotivoRechazoAutomatico,
 } from "../../../../utils/estadoLimiteSocio";
 
 const STORAGE_KEY = "draft_alta_operacion_v2";
@@ -456,43 +457,12 @@ export const AltaOperacion = () => {
       const tipoLimiteIdReal = Number(lineaSeleccionada.tipolimiteid) || 0;
       const montoLineaReal = Number(lineaSeleccionada.montolinea) || 0;
 
-      // Confirmado por Victor (2026-09-15, ya no es un problema del backend
-      // sino nuestra propia lógica de identificación): un mismo CUIT no
-      // puede tener dos SolicitudEnProceso vigentes con la misma combinación
-      // (TipoLimiteID, CadenaValorID) — sí puede tener varias de tipos
-      // distintos, o el mismo tipo en otra cadena. Si ya hay una en curso
-      // para esta línea+cadena, hay que esperar a que se resuelva (o
-      // cancelarla) antes de poder cargar otra. El POST a
-      // sgrplus/SolicitudEnProceso ya la rechaza con 404 "Solicitud
-      // preexistente" si se intenta igual (ver el catch más abajo), pero sin
-      // este chequeo acá el usuario completaba todo el formulario para
-      // enterarse recién al final.
-      try {
-        const solicitudesExistentes =
-          await solicitudesService.obtenerSolicitudesEnProceso(cuitLimpio);
-        const solicitudesExistentesArray = Array.isArray(solicitudesExistentes)
-          ? solicitudesExistentes
-          : solicitudesExistentes?.data || [];
-        const yaTieneSolicitudDeEstaLinea = solicitudesExistentesArray.some(
-          (s) =>
-            Number(s.tipolimiteid) === tipoLimiteIdReal &&
-            Number(s.cadenavalorid) === Number(cadenaSlug),
-        );
-        if (yaTieneSolicitudDeEstaLinea) {
-          toast.error("Ya tenés una solicitud en curso", {
-            description:
-              "Este CUIT ya tiene una solicitud pendiente para esta línea. Esperá a que se resuelva antes de enviar una nueva.",
-          });
-          setEnviandoSolicitud(false);
-          return;
-        }
-      } catch (checkError) {
-        console.error(
-          "[ALTA OPERACION] Error al chequear solicitudes en proceso existentes:",
-          checkError,
-        );
-      }
-
+      // El chequeo de "ya tenés una solicitud en curso para esta línea"
+      // (mismo TipoLimiteID + CadenaValorID, confirmado por Victor el
+      // 2026-09-15) ya no se hace acá: se controla antes, en el botón
+      // "Nueva Operación" de Solicitudes.jsx, para no dejar completar todo
+      // el wizard y enterarse recién al final (ver tieneSolicitudPendiente
+      // ahí).
       let montoLimpio = Number(cleanData.monto) || 0;
 
       // Regla: el monto ingresado (antes de descontar lo utilizado) nunca
@@ -555,9 +525,11 @@ export const AltaOperacion = () => {
       const cdaLineaRechazada = rechazosCdaLinea.length > 0;
 
       const debeRechazarseAutomaticamente = noAlcanzaMinimo || cdaLineaRechazada;
-      const motivoRechazoAutomatico = noAlcanzaMinimo
-        ? MOTIVOS_RECHAZO_AUTOMATICO.PORCENTAJE_MINIMO_SOLICITUD
-        : rechazosCdaLinea.map((e) => e.message).join("; ");
+      const motivoRechazoAutomatico = construirMotivoRechazoAutomatico(
+        noAlcanzaMinimo
+          ? MOTIVOS_RECHAZO_AUTOMATICO.PORCENTAJE_MINIMO_SOLICITUD
+          : rechazosCdaLinea.map((e) => e.message).join("; "),
+      );
 
       // Convertido a pesos ANTES de crear nada: si la validación de cupo de
       // la cadena (más abajo) rechaza la operación, no queremos dejar una
@@ -629,18 +601,23 @@ export const AltaOperacion = () => {
         JSON.stringify(payload, null, 2),
       );
 
-      const resSolicitud =
-        await solicitudesService.crearSolicitudEnProceso(payload);
-      const solicitudIdCreada =
-        resSolicitud?.solicitudenprocesoid || resSolicitud?.id || 0;
+      // sgrplus/SolicitudEnProceso no devuelve el ID creado en el body del
+      // POST - devuelve el string plano "Solicitud guardada con exito"
+      // (confirmado en vivo el 2026-09-15), así que el rechazo automático no
+      // puede depender de un ID recién creado (nunca llegaba a dispararse,
+      // dejando la fila fantasma "en proceso" para siempre - reportado en
+      // vivo, CUIT 30711422753). Se ubica la fila igual que en
+      // Dashboard.jsx/Solicitudes.jsx: por (Cuit, TipoLimiteID, CadenaValorID).
+      await solicitudesService.crearSolicitudEnProceso(payload);
 
-      if (debeRechazarseAutomaticamente && solicitudIdCreada) {
+      if (debeRechazarseAutomaticamente) {
         try {
-          await solicitudesService.actualizarSolicitudEnProceso({
-            ...payload,
-            solicitudenprocesoid: solicitudIdCreada,
-            estadosolicitud: ESTADO_RECHAZADA,
-          });
+          await solicitudesService.sincronizarEstadoSolicitudEnProcesoPorClave(
+            cuitLimpio,
+            tipoLimiteIdReal,
+            Number(cadenaSlug),
+            ESTADO_RECHAZADA,
+          );
         } catch (putError) {
           console.error(
             "[ALTA OPERACION] No se pudo informar el rechazo automático en SolicitudEnProceso:",
@@ -692,9 +669,7 @@ export const AltaOperacion = () => {
         contratoid: null,
         cadenavalorid: Number(cadenaSlug) || 0,
         equipocomercialid: equipoComercialCadena || null,
-        // Pedido explícito: TipoLimiteSocio.SolicitudID siempre en NULL, no
-        // el SolicitudEnProcesoID recién creado (ver solicitudIdCreada, que
-        // sigue usándose para el resumen y como referencia en pantalla).
+        // Pedido explícito: TipoLimiteSocio.SolicitudID siempre en NULL.
         solicitudid: null,
         tipolimiteriesgoid: 0,
         terceroviaid: 4000000,
@@ -702,7 +677,9 @@ export const AltaOperacion = () => {
         tercerogeneradorid: 0,
       };
 
-      await lineaService.crearLimiteSocio(payloadLimite);
+      const resLimite = await lineaService.crearLimiteSocio(payloadLimite);
+      const tipoLimiteSocioIdCreado =
+        resLimite?.tipolimitesocioid || resLimite?.id || 0;
 
       // AltaOperacion crea la solicitud vía servicios directos, no
       // mutaciones de react-query - sin esto, Solicitudes.jsx (que sí
@@ -714,7 +691,7 @@ export const AltaOperacion = () => {
       queryClient.invalidateQueries({ queryKey: ["limites", "socio"] });
 
       setResumenSolicitud({
-        id: solicitudIdCreada,
+        id: tipoLimiteSocioIdCreado,
         linea: lineaSeleccionada?.descripcion || "",
         monto: montoLimpio,
         monedaId: Number(cleanData.moneda) || 5000,
@@ -724,26 +701,10 @@ export const AltaOperacion = () => {
       setPasoActual(2);
     } catch (error) {
       console.error("[ALTA OPERACION] Error en enviarSolicitud:", error);
-      // sgrplus/SolicitudEnProceso devuelve 404 con el body plano
-      // "Solicitud preexistente" (no un objeto {message}, ni un código de
-      // estado más semántico como 409) cuando el CUIT ya tiene una
-      // SolicitudEnProceso en curso — confirmado en vivo el 2026-09-15. Sin
-      // este caso especial, el usuario solo veía el toast genérico de abajo
-      // sin ninguna pista de qué pasó en realidad.
-      const backendData = error.response?.data;
-      const backendMessage =
-        typeof backendData === "string" ? backendData : backendData?.message || backendData?.Message;
-      if (error.response?.status === 404 && backendMessage?.toLowerCase().includes("preexistente")) {
-        toast.error("Ya tenés una solicitud en curso", {
-          description:
-            "Este CUIT ya tiene una solicitud pendiente para esta línea. Esperá a que se resuelva antes de enviar una nueva.",
-        });
-      } else {
-        toast.error("Error al enviar", {
-          description:
-            "Ocurrió un error al enviar la solicitud. Intentá nuevamente en unos minutos.",
-        });
-      }
+      toast.error("Error al enviar", {
+        description:
+          "Ocurrió un error al enviar la solicitud. Intentá nuevamente en unos minutos.",
+      });
     } finally {
       setEnviandoSolicitud(false);
     }

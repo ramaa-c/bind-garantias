@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
 import { FiPlus, FiSearch, FiClock, FiX } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa";
@@ -31,7 +32,6 @@ import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
   estadoTextoDesde,
-  TERCERO_VIA_PLATAFORMA_PROPIA,
   MOTIVO_CANCELACION_SOCIO,
 } from "../../../utils/estadoLimiteSocio";
 
@@ -119,6 +119,7 @@ const hasMeaningfulData = (dataString) => {
 export default function Solicitudes() {
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { basePath } = useChannel();
 
   const { control, register, setValue, reset } = useForm({
@@ -168,23 +169,22 @@ export default function Solicitudes() {
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
 
+  // Se bloquea el botón "Nueva Operación" (no el submit al final del
+  // wizard) apenas exista CUALQUIER solicitud en curso — de cualquier línea,
+  // cadena o plataforma. Es más estricto que la regla real del backend (que
+  // permite convivir varias siempre que no repitan TipoLimiteID+CadenaValorID,
+  // ver AltaOperacion.jsx), pero evita que el socio entre a todo el wizard
+  // para recién enterarse al final de que esa línea puntual ya tenía una
+  // pendiente. mirar solicitudesEnProceso (no solo TipoLimiteSocio) cubre
+  // además el caso borde de una SolicitudEnProceso que ya se creó pero cuyo
+  // TipoLimiteSocio todavía no llegó a persistirse (falla parcial en
+  // AltaOperacion.jsx).
   const tieneSolicitudPendiente = useMemo(() => {
     const hasRealPendiente = Array.isArray(solicitudesReal) && solicitudesReal.some(s =>
       Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE) === ESTADO_PENDIENTE
     );
-    // Igual que en AltaOperacion.jsx: el bloqueo es por PLATAFORMA de origen
-    // (TerceroViaID), no por la simple existencia de una SolicitudEnProceso.
-    // Dentro de NUESTRA plataforma (4000000) un socio puede tener varias en
-    // curso a la vez; lo único que bloquea es una en curso en OTRA
-    // plataforma (confirmado con Victor el 2026-08-13). Ya no hace falta
-    // mirar EstadoSolicitud: el backend borra la fila apenas deja de estar
-    // en Inicial o EnProceso (confirmado el 2026-08-18), así que su sola
-    // presencia ya implica que sigue activa.
     const hasProcesoPendiente =
-      Array.isArray(solicitudesEnProceso) &&
-      solicitudesEnProceso.some(
-        (s) => Number(s.terceroviaid) !== TERCERO_VIA_PLATAFORMA_PROPIA,
-      );
+      Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
     return hasRealPendiente || hasProcesoPendiente;
   }, [solicitudesReal, solicitudesEnProceso]);
 
@@ -280,6 +280,14 @@ export default function Solicitudes() {
               `[Solicitudes] No se pudo sincronizar el estado en SolicitudEnProceso para la solicitud N°${solicitudACancelar.id}:`,
               syncErr,
             );
+          })
+          .finally(() => {
+            // Sin esto, useObtenerSolicitudesEnProceso (staleTime 5min) sigue
+            // devolviendo la fila ya sincronizada/borrada del lado del
+            // backend, y tieneSolicitudPendiente sigue bloqueando "Nueva
+            // Operación" aunque la cancelación haya funcionado (reportado en
+            // vivo, 2026-09-15).
+            queryClient.invalidateQueries({ queryKey: ["solicitudes", "en-proceso"] });
           });
       }
 
