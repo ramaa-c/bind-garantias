@@ -28,6 +28,7 @@ import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal"
 
 import styles from "./SocioAccionistaModal.module.css";
 import { useCadenaActiva } from "../../../../../../hooks/useCadenaActiva";
+import { useDescargaConFeedback } from "../../../../../../hooks/useDescargaConFeedback";
 
 // El botón de submit vive en el footer del Modal (ver prop `footer`), fuera
 // del <form> en el DOM - se asocian por este id vía el atributo HTML
@@ -42,7 +43,7 @@ const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDownload, isDownloading, fileKey, hasError }) => {
+const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError }) => {
   const [isDragging, setIsDragging] = useState(false);
   return (
     <div className={styles.dropzoneWrapper}>
@@ -74,7 +75,7 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
         onEdit={onEdit}
         onView={onView}
         onDownload={onDownload}
-        isDownloading={isDownloading}
+        faseDescarga={faseDescarga}
         isDragging={isDragging}
         onDragOver={(e) => {
           e.preventDefault();
@@ -107,9 +108,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [afipValidado, setAfipValidado] = useState(false);
   const [dniFrenteFile, setDniFrenteFile] = useState(null);
   const [dniDorsoFile, setDniDorsoFile] = useState(null);
-  // Ver mismo comentario en DocumentosLegajo.jsx (SGRPLUSPLA-199): sin esto
-  // el click en "Descargar" del DNI no tenía ningún feedback.
-  const [downloadingKey, setDownloadingKey] = useState(null);
+  // Feedback del botón de descarga del DNI (SGRPLUSPLA-199) - ver
+  // useDescargaConFeedback.
+  const { descargar, faseDe } = useDescargaConFeedback();
   const [guardando, setGuardando] = useState(false);
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
@@ -1404,13 +1405,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   onChange={(f) => { setDniFrenteFile(f); setFilesChanged(true); setErrorDniFrente(false); }}
                   onEdit={() => document.getElementById(`file-input-frente`).click()}
                   onView={() => procesarArchivo(dniFrenteFile, archivosBackend, 'view', 'DNI')}
-                  onDownload={() => {
-                    setDownloadingKey('frente');
-                    procesarArchivo(dniFrenteFile, archivosBackend, 'download', 'DNI').finally(
-                      () => setDownloadingKey(null),
-                    );
-                  }}
-                  isDownloading={downloadingKey === 'frente'}
+                  onDownload={() =>
+                    descargar('frente', () =>
+                      procesarArchivo(dniFrenteFile, archivosBackend, 'download', 'DNI'),
+                    )
+                  }
+                  faseDescarga={faseDe('frente')}
                 />
                 <DropzoneField
                   file={dniDorsoFile}
@@ -1421,13 +1421,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   onChange={(f) => { setDniDorsoFile(f); setFilesChanged(true); setErrorDniDorso(false); }}
                   onEdit={() => document.getElementById(`file-input-dorso`).click()}
                   onView={() => procesarArchivo(dniDorsoFile, archivosBackend, 'view', 'DNI')}
-                  onDownload={() => {
-                    setDownloadingKey('dorso');
-                    procesarArchivo(dniDorsoFile, archivosBackend, 'download', 'DNI').finally(
-                      () => setDownloadingKey(null),
-                    );
-                  }}
-                  isDownloading={downloadingKey === 'dorso'}
+                  onDownload={() =>
+                    descargar('dorso', () =>
+                      procesarArchivo(dniDorsoFile, archivosBackend, 'download', 'DNI'),
+                    )
+                  }
+                  faseDescarga={faseDe('dorso')}
                 />
               </div>
             </>

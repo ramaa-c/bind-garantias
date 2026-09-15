@@ -21,6 +21,7 @@ import {
   FiSmartphone,
   FiMap,
   FiDownload,
+  FiCheck,
   FiFile,
   FiX,
 } from "react-icons/fi";
@@ -34,6 +35,7 @@ import {
   BuscadorCuit,
   SelectFecha,
   InfoTooltip,
+  Spinner,
 } from "../../../ui";
 import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -42,6 +44,7 @@ import { useDiasMargenVencimientoBalance } from "../../../../hooks/useValorOpera
 import { calcularEstadoBalance } from "../../../../utils/balanceVigencia";
 import styles from "./DocumentosLegajo.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+import { useDescargaConFeedback } from "../../../../hooks/useDescargaConFeedback";
 
 import {
   procesarArchivo,
@@ -50,6 +53,16 @@ import {
   descargarLegajoCompletoZip,
   validarTamanioArchivo,
 } from "../../../../utils/fileUtils";
+
+// Ícono de los botones de descarga en ZIP según en qué fase esté
+// (ver useDescargaConFeedback). A diferencia de la descarga de un archivo
+// suelto, estos ZIP sí tardan de verdad (jszip comprime todo el legajo),
+// así que el spinner acá refleja trabajo real.
+const IconoDescarga = ({ fase }) => {
+  if (fase === "cargando") return <Spinner size={14} />;
+  if (fase === "listo") return <FiCheck size={13} />;
+  return <FiDownload size={13} />;
+};
 
 export const ESTRUCTURA_LEGAJO = [
   {
@@ -295,12 +308,11 @@ export function DocumentosLegajo({
   const [confirmandoFechaBalance, setConfirmandoFechaBalance] = useState(false);
   const [archivoAEliminar, setArchivoAEliminar] = useState(null);
   const [uploadingKey, setUploadingKey] = useState(null);
-  // Descargar un documento ya cargado es casi instantáneo (el contenido
-  // base64 ya está en memoria, no hay espera de red real) - sin este
-  // estado el click no tenía ningún feedback visual ni se bloqueaba,
-  // así que un click doble/triple terminaba disparando la misma descarga
-  // varias veces (SGRPLUSPLA-199).
-  const [downloadingKey, setDownloadingKey] = useState(null);
+  // Feedback del botón de descarga (spinner y después tilde) - ver
+  // useDescargaConFeedback: la descarga es instantánea, sin la espera
+  // artificial de ese hook no se ve nada ni se frena el doble click
+  // (SGRPLUSPLA-199).
+  const { descargar, faseDe } = useDescargaConFeedback();
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
@@ -662,7 +674,9 @@ export function DocumentosLegajo({
     const cleanDocTitle = activeDoc.title.replace(/\s+/g, "_");
     const cleanRazonSocial = (nombreEmpresa || "Empresa").replace(/\s+/g, "_");
     const zipName = `Documentos_${cleanRazonSocial}_${cleanDocTitle}.zip`;
-    descargarArchivosEnZip(categoryFiles, zipName);
+    descargar("zip-categoria", () =>
+      descargarArchivosEnZip(categoryFiles, zipName),
+    );
   };
 
   const renderViewer = (doc) => {
@@ -706,9 +720,15 @@ export function DocumentosLegajo({
                 type="button"
                 className={`${styles.downloadCategoryBtn} ${adminMode ? styles.downloadCategoryBtnAdmin : ""}`}
                 onClick={handleDownloadCategoryZip}
+                disabled={faseDe("zip-categoria") !== null}
                 title={`Descargar todos los archivos de tipo ${doc.title}`}
               >
-                <FiDownload size={13} /> {getDownloadCategoryText(doc.key, doc.title)} ({files.length})
+                <IconoDescarga fase={faseDe("zip-categoria")} />{" "}
+                {faseDe("zip-categoria") === "cargando"
+                  ? "Generando ZIP..."
+                  : faseDe("zip-categoria") === "listo"
+                    ? "Descargado"
+                    : `${getDownloadCategoryText(doc.key, doc.title)} (${files.length})`}
               </button>
             )}
           </div>
@@ -808,7 +828,7 @@ export function DocumentosLegajo({
                   subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
                   hasError={hasError}
                   isUploading={uploadingKey === doc.key}
-                  isDownloading={downloadingKey === doc.key}
+                  faseDescarga={faseDe(doc.key)}
                   file={fileProp}
                   onClick={() =>
                     document.getElementById(`file-input-${doc.key}`).click()
@@ -829,9 +849,8 @@ export function DocumentosLegajo({
                   }}
                   onDownload={() => {
                     if (activeFile) {
-                      setDownloadingKey(doc.key);
-                      procesarArchivo(activeFile, archivosBackend, "download").finally(
-                        () => setDownloadingKey(null),
+                      descargar(doc.key, () =>
+                        procesarArchivo(activeFile, archivosBackend, "download"),
                       );
                     }
                   }}
@@ -1072,16 +1091,24 @@ export function DocumentosLegajo({
         className={`${styles.downloadCategoryBtn} ${styles.legajoToolbarBtn} ${adminMode ? styles.downloadCategoryBtnAdmin : ""}`}
         onClick={() => {
           const cleanRazonSocial = (nombreEmpresa || "Empresa").replace(/\s+/g, "_");
-          descargarLegajoCompletoZip(
-            archivosBackend,
-            ESTRUCTURA_LEGAJO,
-            socioArchivoService.TIPO_DOCUMENTO_MAP,
-            `Legajo_Completo_${cleanRazonSocial}.zip`,
+          descargar("zip-legajo", () =>
+            descargarLegajoCompletoZip(
+              archivosBackend,
+              ESTRUCTURA_LEGAJO,
+              socioArchivoService.TIPO_DOCUMENTO_MAP,
+              `Legajo_Completo_${cleanRazonSocial}.zip`,
+            ),
           );
         }}
+        disabled={faseDe("zip-legajo") !== null}
         title="Descargar legajo de documentos completo en un archivo ZIP"
       >
-        <FiDownload size={13} /> Descargar todo
+        <IconoDescarga fase={faseDe("zip-legajo")} />{" "}
+        {faseDe("zip-legajo") === "cargando"
+          ? "Generando ZIP..."
+          : faseDe("zip-legajo") === "listo"
+            ? "Descargado"
+            : "Descargar todo"}
       </button>
     </div>
   );

@@ -31,3 +31,12 @@
   background-color: transparent;
   color: var(--text-muted);
 }
+
+/* Confirmación: no se atenúa como el resto de los deshabilitados - el punto
+   es que se vea que la acción salió bien. */
+.btnIcon.done,
+.btnIcon.done:disabled {
+  opacity: 1;
+  color: var(--success-green, #3ddc84);
+  background-color: rgba(61, 220, 132, 0.12);
+}

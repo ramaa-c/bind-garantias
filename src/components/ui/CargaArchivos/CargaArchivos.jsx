@@ -20,7 +20,8 @@ export const CargaArchivos = ({
   onDelete,
   hasError = false,
   isUploading = false,
-  isDownloading = false,
+  // "cargando" | "listo" | null - ver useDescargaConFeedback.
+  faseDescarga = null,
   className = "",
   style = {}
 }) => {
@@ -63,7 +64,8 @@ export const CargaArchivos = ({
               icon={FiDownload}
               onClick={onDownload}
               title="Descargar archivo"
-              isLoading={isDownloading}
+              isLoading={faseDescarga === "cargando"}
+              isDone={faseDescarga === "listo"}
             />
           )}
           {onEdit && (

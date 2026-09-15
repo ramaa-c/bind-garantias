@@ -50,6 +50,7 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import { esCdaActivo } from "../../../utils/cdaUtils";
 import { socioArchivoService } from "../../../services/socioArchivoService";
 import { descargarLegajoCompletoZip } from "../../../utils/fileUtils";
+import { useDescargaConFeedback } from "../../../hooks/useDescargaConFeedback";
 import {
   ultimaEjecucionPorCda,
   ordenarEjecucionesCda,
@@ -1731,6 +1732,8 @@ export default function EmpresaDetalle() {
   const [historialOpen, setHistorialOpen] = useState(false);
   const [notificarOpen, setNotificarOpen] = useState(false);
   const usuarioWebAdminId = useAuthStore((state) => state.user?.usuarioWebId) || 0;
+  // Feedback del botón de descarga del legajo completo (SGRPLUSPLA-199).
+  const { descargar, faseDe } = useDescargaConFeedback();
 
   // Defensa en profundidad: ver useBloqueoAdminRestringido — un usuario
   // vinculado solo por UsuarioCadenaValor no debería poder ver el detalle de
@@ -1793,11 +1796,13 @@ export default function EmpresaDetalle() {
     }
     const cleanRazonSocial = (socio?.denominacion || "Empresa").replace(/\s+/g, "_");
     const zipName = `Legajo_Completo_${cleanRazonSocial}.zip`;
-    descargarLegajoCompletoZip(
-      archivosBackend,
-      ESTRUCTURA_LEGAJO,
-      socioArchivoService.TIPO_DOCUMENTO_MAP,
-      zipName,
+    descargar("zip-legajo", () =>
+      descargarLegajoCompletoZip(
+        archivosBackend,
+        ESTRUCTURA_LEGAJO,
+        socioArchivoService.TIPO_DOCUMENTO_MAP,
+        zipName,
+      ),
     );
   };
 
@@ -1976,9 +1981,19 @@ export default function EmpresaDetalle() {
             variant="outlineBlue"
             size="sm"
             onClick={handleDownloadLegajoCompleto}
+            isLoading={faseDe("zip-legajo") === "cargando"}
+            disabled={faseDe("zip-legajo") !== null}
             title="Descargar legajo de documentos completo en un archivo ZIP"
           >
-            <FiDownload size={13} /> Descargar Legajo Completo
+            {faseDe("zip-legajo") === "listo" ? (
+              <>
+                <FiCheckCircle size={13} /> Descargado
+              </>
+            ) : (
+              <>
+                <FiDownload size={13} /> Descargar Legajo Completo
+              </>
+            )}
           </Button>
         )}
       </div>
