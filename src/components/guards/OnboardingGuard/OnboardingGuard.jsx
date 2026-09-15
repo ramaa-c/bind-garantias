@@ -84,8 +84,13 @@ export const OnboardingGuard = ({ children }) => {
 
   const usuarioWebId = parsearUsuarioWebId(usuarioDb);
 
-  const { data: socioUsuarios, isPending: isPendingSocios } =
-    useObtenerSocioUsuarioPorUsuarioId(usuarioWebId || 0);
+  const {
+    data: socioUsuarios,
+    isPending: isPendingSocios,
+    isError: isErrorSocios,
+    isFetching: isFetchingSocios,
+    refetch: refetchSocios,
+  } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId || 0);
 
   const { data: cadenasData, isPending: isCadenasLoading } =
     useObtenerCadenasPorUsuario(usuarioWebId);
@@ -275,6 +280,21 @@ export const OnboardingGuard = ({ children }) => {
   if (isErrorVendor) {
     return (
       <ErrorServicio onReintentar={refetchVendor} reintentando={isFetchingVendor} />
+    );
+  }
+
+  // ⚠️ Un 404 acá no es distinguible entre "el usuario realmente no tiene
+  // ninguna empresa vinculada" y "el endpoint SocioUsuario está caído"
+  // (confirmado en vivo el 2026-09-15: un usuario CON vinculación real
+  // recibía 404 por una falla del backend, no por falta de datos) - ver
+  // sociosService.obtenerSocioUsuarioPorUsuarioId. Tratar ese error como
+  // "sin empresas" mandaría a un usuario existente de vuelta a
+  // alta-datos-empresa como si fuera nuevo, un error grave. Se corta acá con
+  // reintento manual, nunca se cae al branch de "no tiene empresas" de más
+  // abajo.
+  if (usuarioWebId && isErrorSocios) {
+    return (
+      <ErrorServicio onReintentar={refetchSocios} reintentando={isFetchingSocios} />
     );
   }
 

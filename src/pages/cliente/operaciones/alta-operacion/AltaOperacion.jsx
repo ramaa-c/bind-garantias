@@ -678,10 +678,26 @@ export const AltaOperacion = () => {
       setPasoActual(2);
     } catch (error) {
       console.error("[ALTA OPERACION] Error en enviarSolicitud:", error);
-      toast.error("Error al enviar", {
-        description:
-          "Hubo un error al enviar la solicitud. Revisá la consola para más detalles.",
-      });
+      // sgrplus/SolicitudEnProceso devuelve 404 con el body plano
+      // "Solicitud preexistente" (no un objeto {message}, ni un código de
+      // estado más semántico como 409) cuando el CUIT ya tiene una
+      // SolicitudEnProceso en curso — confirmado en vivo el 2026-09-15. Sin
+      // este caso especial, el usuario solo veía el toast genérico de abajo
+      // sin ninguna pista de qué pasó en realidad.
+      const backendData = error.response?.data;
+      const backendMessage =
+        typeof backendData === "string" ? backendData : backendData?.message || backendData?.Message;
+      if (error.response?.status === 404 && backendMessage?.toLowerCase().includes("preexistente")) {
+        toast.error("Ya tenés una solicitud en curso", {
+          description:
+            "Este CUIT ya tiene una solicitud pendiente para esta línea. Esperá a que se resuelva antes de enviar una nueva.",
+        });
+      } else {
+        toast.error("Error al enviar", {
+          description:
+            "Ocurrió un error al enviar la solicitud. Intentá nuevamente en unos minutos.",
+        });
+      }
     } finally {
       setEnviandoSolicitud(false);
     }
