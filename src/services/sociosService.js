@@ -228,9 +228,29 @@ export const sociosService = {
     return response.data;
   },
 
-  // GET api/SocioUsuario/{UsuarioWebID} - Listado de relaciones por UsuarioWebID
+  // GET api/SocioUsuario/{UsuarioWebID}:PorUsuario - Listado de relaciones
+  // por UsuarioWebID (endpoint renombrado por el backend el 2026-09-15; ver
+  // el rewrite de /porusuario en vite.config.js).
+  // ⚠️ A propósito NO atrapa el 404 acá: a diferencia de obtenerSocios/
+  // obtenerSociosWeb/obtenerSociosSgrplus, un 404 en este endpoint puntual no
+  // es distinguible entre "el usuario realmente no tiene ninguna empresa
+  // vinculada" y "el endpoint está caído/fallando" (confirmado en vivo el
+  // 2026-09-15: un usuario CON vinculación real recibía 404 acá por una
+  // falla del backend, resultó ser el cambio de endpoint de este comentario).
+  // Tratarlo como lista vacía mandaba a un usuario existente de vuelta a
+  // alta-datos-empresa como si fuera nuevo - un error grave. Se deja
+  // propagar como error y OnboardingGuard lo trata como falla real (pantalla
+  // de reintento manual, ver isErrorVendor ahí), nunca como "sin empresas".
   obtenerSocioUsuarioPorUsuarioId: async (usuarioWebId) => {
-    const response = await api.get(`api/SocioUsuario/${usuarioWebId}`);
+    const response = await api.get(`api/SocioUsuario/${usuarioWebId}/porusuario`);
+    return response.data;
+  },
+
+  // GET api/SocioUsuario/{SocioID}:PorSocio - Listado de relaciones por
+  // SocioID (agregado por el backend el 2026-09-15, ver rewrite de
+  // /porsocio en vite.config.js).
+  obtenerSocioUsuarioPorSocioId: async (socioId) => {
+    const response = await api.get(`api/SocioUsuario/${socioId}/porsocio`);
     return response.data;
   },
 

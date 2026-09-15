@@ -22,6 +22,11 @@ export default defineConfig({
           let rewritten = path.replace(/^\/proxy-backend/, "");
 
           rewritten = rewritten.replace(/\/(byencrypt|pornombre)$/, "/:$1");
+          // Sin barra antes de los dos puntos acá (a diferencia de
+          // byencrypt/pornombre arriba) - confirmado en vivo el 2026-09-15:
+          // .../{id}/:PorUsuario da 404, .../{id}:PorUsuario da 200.
+          rewritten = rewritten.replace(/\/porusuario$/, ":PorUsuario");
+          rewritten = rewritten.replace(/\/porsocio$/, ":PorSocio");
 
           rewritten = rewritten.replace(
             /\/(status|password|login)-(block|release|reset|change|new|bycode)$/,

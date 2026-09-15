@@ -68,6 +68,11 @@ const finDelDia = (fecha) => {
   return d;
 };
 
+// Extrae la parte numérica del id propio del item para ordenar (las
+// "pendientes" - SolicitudEnProceso, todavía sin migrar a TipoLimiteSocio -
+// llevan el prefijo "sp-", ver listaSolicitudes más abajo).
+const idNumerico = (item) => parseInt(String(item.id).replace(/^sp-/, ""), 10) || 0;
+
 const hasMeaningfulData = (dataString) => {
   if (!dataString) return false;
   try {
@@ -204,8 +209,41 @@ export default function Solicitudes() {
         };
       });
 
+    // TipoLimiteSocio.SolicitudID viaja siempre en null (pedido explícito
+    // del backend, no se puede usar para unir las dos filas de una misma
+    // solicitud - ver AltaOperacion.jsx). Se fusiona en cambio por los datos
+    // que SÍ comparten: misma línea, cadena y moneda, contra las `reales`
+    // que estén en estado Pendiente (única posibilidad real: un rechazo
+    // automático nunca llega a crear una SolicitudEnProceso, ver
+    // AltaOperacion.jsx). El socio puede tener más de una solicitud
+    // pendiente en curso a la vez dentro de nuestra plataforma (ver
+    // tieneSolicitudPendiente más arriba), así que ante varias candidatas se
+    // toma la de importe más parecido y cada real se "reclama" una sola vez
+    // - para no perder de la lista una segunda pendiente genuina.
+    const realesPendientesDisponibles = reales.filter(
+      (r) => r.tipoLimiteEstadoId === ESTADO_PENDIENTE,
+    );
+    const realesYaFusionadas = new Set();
+
     const pendientes = (solicitudesEnProceso || [])
-      .filter(sp => !reales.some(r => Number(r.solicitudid) === sp.solicitudenprocesoid))
+      .filter((sp) => {
+        const candidatas = realesPendientesDisponibles.filter(
+          (r) =>
+            !realesYaFusionadas.has(r.id) &&
+            Number(r.raw?.tipolimiteid) === Number(sp.tipolimiteid) &&
+            Number(r.raw?.cadenavalorid) === Number(sp.cadenavalorid) &&
+            Number(r.raw?.monedaid) === Number(sp.monedaid),
+        );
+        if (candidatas.length === 0) return true;
+
+        const masParecida = candidatas.reduce((mejor, actual) => {
+          const diffActual = Math.abs(Number(actual.raw?.importelimite) - Number(sp.importe));
+          const diffMejor = Math.abs(Number(mejor.raw?.importelimite) - Number(sp.importe));
+          return diffActual < diffMejor ? actual : mejor;
+        });
+        realesYaFusionadas.add(masParecida.id);
+        return false;
+      })
       .map(sp => ({
         id: `sp-${sp.solicitudenprocesoid}`,
         tipo: sp.tipolimiteid === 1 ? "Cheque" : sp.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
@@ -220,7 +258,12 @@ export default function Solicitudes() {
         solicitudid: sp.solicitudenprocesoid,
       }));
 
-    return [...reales, ...pendientes].sort((a, b) => (Number(b.solicitudid) || 0) - (Number(a.solicitudid) || 0));
+    // Por el id propio del item (no por solicitudid, esa FK casi siempre
+    // queda en 0 en las "reales" - ver adaptarPayload en AltaOperacion.jsx),
+    // de mayor a menor: id más grande = más reciente. listaFiltrada, más
+    // abajo, vuelve a ordenar según el filtro "Orden" elegido por el
+    // usuario - este orden acá es solo el default antes de filtrar.
+    return [...reales, ...pendientes].sort((a, b) => idNumerico(b) - idNumerico(a));
   }, [solicitudesReal, solicitudesEnProceso, socioIdFinal, cuitActivo]);
 
   const listaFiltrada = useMemo(() => {
@@ -256,7 +299,7 @@ export default function Solicitudes() {
     });
 
     return filtradas.sort((a, b) => {
-      const diff = (Number(b.solicitudid) || 0) - (Number(a.solicitudid) || 0);
+      const diff = idNumerico(b) - idNumerico(a);
       return filtros.orden === "asc" ? -diff : diff;
     });
   }, [listaSolicitudes, filtros.busqueda, filtros.estado, filtros.fechaDesde, filtros.fechaHasta, filtros.orden]);

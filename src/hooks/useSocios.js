@@ -247,10 +247,20 @@ export const useActividadSocio = (cuit, habilitado = true) => {
   });
 };
 
+// Sin staleTime esto se re-pedía en cada navegación entre rutas del
+// cliente: OnboardingGuard (el principal consumidor) se remonta en cada
+// cambio de ruta (es un wrapper por-ruta, no un layout persistente), y sin
+// caché fresca cada remount volvía a golpear el backend de cero - visible
+// en la consola como el mismo GET repitiéndose muchas veces seguidas
+// durante la navegación normal, no por reintentos del interceptor (ese solo
+// reintenta ante 5xx/red, nunca 404). La vinculación socio-usuario no
+// cambia de un momento a otro dentro de la misma sesión, así que 5 minutos
+// alcanza de sobra.
 export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
   return useQuery({
     queryKey: ["socioUsuario", "listaPorUsuario", usuarioWebId],
     queryFn: () => sociosService.obtenerSocioUsuarioPorUsuarioId(usuarioWebId),
     enabled: !!usuarioWebId,
+    staleTime: 1000 * 60 * 5,
   });
 };

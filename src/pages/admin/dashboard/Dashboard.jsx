@@ -535,8 +535,13 @@ export default function Dashboard() {
       return true;
     })
     .sort((a, b) => {
-      if (orden === "desc") return b.id.localeCompare(a.id);
-      return a.id.localeCompare(b.id);
+      // Por fecha real (creadoISO), no por id: comparar el id como string
+      // (localeCompare) ordenaba alfabéticamente en vez de cronológicamente
+      // ("9" quedaba después de "89"), mostrando solicitudes viejas antes
+      // que otras más recientes.
+      const fechaA = a.creadoISO ? new Date(a.creadoISO).getTime() : 0;
+      const fechaB = b.creadoISO ? new Date(b.creadoISO).getTime() : 0;
+      return orden === "desc" ? fechaB - fechaA : fechaA - fechaB;
     });
 
   const totalMonto = solicitudesCanal.reduce((acc, curr) => {
