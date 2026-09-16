@@ -83,6 +83,7 @@ export default function AdminNavbar() {
     "Productos de Líneas",
     "Relaciones de Terceros",
     "Modo Offline",
+    "Variables Parametrizables",
   ];
 
   return (
@@ -209,6 +210,8 @@ export default function AdminNavbar() {
                     destPath = "/admin/tipos-relacion-socio";
                   } else if (item === "Modo Offline") {
                     destPath = "/admin/modo-offline";
+                  } else if (item === "Variables Parametrizables") {
+                    destPath = "/admin/variables-parametrizacion";
                   }
                   return (
                     <button type="button"

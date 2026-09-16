@@ -96,6 +96,9 @@ const ModoOffline = lazy(
 const TiposRelacionSocio = lazy(
   () => import("./pages/admin/configuracion/TiposRelacionSocio"),
 );
+const VariablesParametrizacion = lazy(
+  () => import("./pages/admin/configuracion/VariablesParametrizacion"),
+);
 
 // Rutas de la zona cliente, compartidas por los dos modos de ruteo (ver
 // utils/tenantConfig.js): cuelgan de "/" cuando la cadena se resuelve por
@@ -427,6 +430,16 @@ const rutasAdmin = (
         <AdminGuard>
           <AdminLayout>
             <TiposRelacionSocio />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/variables-parametrizacion"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <VariablesParametrizacion />
           </AdminLayout>
         </AdminGuard>
       }

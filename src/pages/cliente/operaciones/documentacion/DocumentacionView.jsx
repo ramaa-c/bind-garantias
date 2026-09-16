@@ -167,7 +167,7 @@ export default function DocumentacionView() {
             </Button>
             <InfoTooltip
               label="¿Qué es LUFE?"
-              texto="LUFE es una fuente de datos externa que usamos para completar automáticamente la información de tu empresa (socios, representantes y documentación)."
+              texto="LUFE es tu Legajo Único Financiero y Económico, una plataforma digital oficial que centraliza los datos contables y financieros de las MiPyMEs. Si autorizaste a compartir tus datos, vas a ver tu información ya precargada."
             />
           </div>
         )}
