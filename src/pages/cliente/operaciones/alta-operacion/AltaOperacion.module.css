@@ -183,6 +183,16 @@
     padding: 2.5rem 4.5rem;
   }
 
+  /* El paso de Éxito (.columnaCentrada, ver más abajo) es mucho más corto
+     que el formulario con stepper - con el mismo padding "de aire" pensado
+     para ese paso más largo, terminaba necesitando scroll en una pantalla
+     Full HD normal aunque el contenido en sí entrara de sobra. Se reduce
+     solo para este caso (:has() ya cubre los navegadores que usa el
+     equipo), no para el formulario. */
+  .formMainContainer:has(.columnaCentrada) {
+    padding: 1.5rem 4.5rem;
+  }
+
   .contentWrapper {
     max-width: 74rem;
   }
@@ -193,6 +203,11 @@
     justify-content: flex-start;
     padding-top: 3rem;
     padding-bottom: 3rem;
+  }
+
+  .contenedorPrincipal:has(.columnaCentrada) {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
   }
 
   .columnaFormulario {
@@ -224,6 +239,7 @@
     width: 100%;
     max-width: 50rem;
     margin: 0 auto;
+    padding: 1.5rem 3.5rem;
   }
 
   .bienvenidaHeader {

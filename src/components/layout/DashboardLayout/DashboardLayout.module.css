@@ -60,4 +60,14 @@
   .overlay {
     display: none;
   }
+
+  /* Reserva el espacio de la scrollbar aunque el contenido no llegue a
+     necesitarla: sin esto, pasar de un paso alto (que sí scrollea) a uno
+     más corto (que no) angosta/ensancha .mainColumn de golpe, y todo lo
+     centrado adentro (ej. la tarjeta de AltaOperacion) salta unos px de
+     lugar en la misma transición - se ve como si "se deformara" la
+     pantalla justo al cambiar de paso. */
+  .mainColumn {
+    scrollbar-gutter: stable;
+  }
 }

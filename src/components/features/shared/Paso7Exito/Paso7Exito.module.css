@@ -3,7 +3,7 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
   animation: fadeIn 0.3s ease;
 }
 
@@ -80,14 +80,25 @@
   font-weight: 700;
 }
 
+/* Estilo "recibo": el monto es el dato que de verdad importa en esta
+   tarjeta, así que se lo trata como tal (grande, sin truncar nunca un
+   número de plata) en vez de quedar al mismo nivel que línea/plazo/N° de
+   solicitud, que son contexto secundario. */
 .summaryCard {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.9rem;
   background: rgba(var(--overlay-rgb), 0.02);
   border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 0.875rem;
-  padding: 1rem 1.125rem;
+  padding: 1.125rem 1.25rem;
+}
+
+.summaryHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .summaryLabel {
@@ -98,105 +109,66 @@
   color: #8b949e;
 }
 
-.summaryGrid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.85rem 1rem;
+.summaryIdTag {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(76, 101, 230, 0.1);
+  color: #8a9fff;
+  border: 1px solid rgba(76, 101, 230, 0.28);
 }
 
-.summaryItem {
+.summaryAmountBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.summaryAmountLabel {
+  font-size: 0.72rem;
+  color: #8b949e;
+}
+
+.summaryAmountValue {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--white, #fff);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryFootRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
+}
+
+.summaryFootItem {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
   min-width: 0;
 }
 
-.summaryItemLabel {
+.summaryFootLabel {
   font-size: 0.7rem;
   color: #8b949e;
 }
 
-.summaryItemValue {
-  font-size: 0.95rem;
+.summaryFootValue {
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--white, #fff);
   font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
-/* Acción disponible YA, adentro de la app - distinta del resto de la
-   pantalla (que depende de que BIND procese algo externo): azul, mismo
-   acento que .stepNumber/.downloadIcon más abajo (ya establecido acá como
-   "esto se hace en la plataforma"), no el verde del hero (que es
-   "confirmación/éxito", no una acción pendiente). */
-.legajoCta {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  background: rgba(76, 101, 230, 0.06);
-  border: 1px solid rgba(76, 101, 230, 0.2);
-  border-radius: 0.875rem;
-  padding: 1rem 1.125rem;
-}
-
-.legajoCtaIconWrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: rgba(76, 101, 230, 0.12);
-  border: 1px solid rgba(76, 101, 230, 0.28);
-}
-
-.legajoCtaIcon {
-  color: #6b7ee8;
-  font-size: 1.15rem;
-}
-
-.legajoCtaText {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.legajoCtaTitle {
-  margin: 0;
-  color: var(--white, #fff);
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.legajoCtaSubtitle {
-  margin: 0;
-  color: var(--text-muted, #999);
-  font-size: 0.78rem;
-  line-height: 1.45;
-}
-
-.legajoCtaBtn {
-  flex-shrink: 0;
-}
-
-@media (max-width: 40rem) {
-  .legajoCta {
-    flex-wrap: wrap;
-  }
-  .legajoCtaBtn {
-    width: 100%;
-    margin-left: calc(2.5rem + 1rem);
-  }
-}
-
-/* Rótulo del grupo de pasos externos, para que contraste con .legajoCta de
-   arriba ("esto lo hacés vos, ahora" vs. "esto depende de BIND, después"). */
 .stepsGridLabel {
   font-size: 0.68rem;
   font-weight: 700;
@@ -205,98 +177,104 @@
   color: var(--text-muted);
 }
 
-.stepsGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.875rem;
-}
-
-.stepCard {
+/* Timeline vertical de activación: en vez de dos tarjetas sueltas (una con
+   contenido, otra casi vacía mientras Documentación sigue bloqueada, lo que
+   se leía como un error de layout), los pasos quedan conectados por una
+   línea y un tercer nodo final ("Línea activa") cierra la secuencia con el
+   objetivo real, en vez de terminar en el paso 2 sin mostrar a dónde lleva. */
+.timeline {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  background: rgba(var(--overlay-rgb), 0.02);
-  border: 1px solid rgba(var(--overlay-rgb), 0.05);
-  border-radius: 0.75rem;
-  padding: 0.9rem 1rem;
 }
 
-.stepHead {
+.timelineItem {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
+  gap: 0.9rem;
 }
 
-.stepNumber {
+.timelineRail {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  background: rgba(76, 101, 230, 0.08);
-  border: 1px solid rgba(76, 101, 230, 0.22);
-  color: #6b7ee8;
-  font-weight: 700;
-  font-size: 0.75rem;
-  border-radius: 50%;
   flex-shrink: 0;
 }
 
-.stepTitle {
-  color: var(--white, #fff);
-  font-size: 0.85rem;
-  margin: 0;
-  font-weight: 600;
-  line-height: 1.3;
+.timelineDot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.8rem;
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
+  color: var(--badge-amarillo-text);
 }
 
-.stepText {
+.dotDone {
+  background: rgba(76, 175, 80, 0.14);
+  border-color: rgba(76, 175, 80, 0.35);
+  color: var(--success-bright);
+}
+
+.dotActive {
+  background: rgba(76, 101, 230, 0.1);
+  border-color: rgba(76, 101, 230, 0.32);
+  color: #6b7ee8;
+}
+
+.dotLocked {
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px dashed rgba(var(--overlay-rgb), 0.18);
+  color: var(--text-muted);
+}
+
+.timelineLine {
+  width: 2px;
+  flex: 1;
+  min-height: 1.75rem;
+  margin: 0.3rem 0;
+  background: rgba(var(--overlay-rgb), 0.12);
+}
+
+.lineDone {
+  background: rgba(76, 175, 80, 0.35);
+}
+
+.timelineContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.timelineItem:not(:last-child) .timelineContent {
+  padding-bottom: 1.375rem;
+}
+
+.timelineTitle {
+  color: var(--white, #fff);
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 700;
+  line-height: 1.3;
+  padding-top: 0.2rem;
+}
+
+.timelineText {
   color: var(--text-muted, #888);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   margin: 0;
   line-height: 1.55;
 }
 
-.downloadBox {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.75rem;
-  background: rgba(76, 101, 230, 0.05);
-  border: 1px solid rgba(76, 101, 230, 0.14);
-  border-radius: 0.5rem;
-  padding: 0.55rem 0.7rem;
-}
-
-.downloadInfo {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--text-muted);
-  font-size: 0.75rem;
-  min-width: 0;
-  flex: 1;
-}
-
-.downloadInfo span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.downloadIcon {
-  color: #6b7ee8;
-  flex-shrink: 0;
-}
-
-.downloadBox :global(button) {
-  flex-shrink: 0;
-  border-color: rgba(76, 101, 230, 0.35) !important;
-  color: #6b7ee8 !important;
-}
-
-.downloadBox :global(button):hover {
-  background: rgba(76, 101, 230, 0.08) !important;
+.timelineBtn {
+  align-self: flex-start;
+  margin-top: 0.3rem;
 }
 
 .footer {
@@ -306,24 +284,6 @@
   border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
 }
 
-.textHighlight {
-  color: #6b7ee8;
-  text-decoration: none;
-  font-weight: 500;
-  transition: opacity 0.2s;
-}
-.textHighlight:hover {
-  opacity: 0.8;
-}
-
-.textMuted {
-  color: var(--text-muted, #777);
-}
-
-.iconMarginRight {
-  margin-right: 0.375rem;
-}
-
 @media (min-width: 64rem) {
   .hero {
     padding: 1.25rem 1.5rem;
@@ -331,13 +291,8 @@
   .heroTitle {
     font-size: 1.15rem;
   }
-  .stepsGrid {
-    grid-template-columns: 1fr 1fr;
-    align-items: stretch;
-    gap: 1rem;
-  }
-  .summaryGrid {
-    grid-template-columns: repeat(4, 1fr);
+  .summaryAmountValue {
+    font-size: 1.85rem;
   }
 }
 

@@ -2,14 +2,12 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiCheckCircle,
-  FiDownload,
-  FiEdit3,
-  FiFileText,
-  FiUsers,
+  FiCheck,
   FiArrowRight,
+  FiLock,
+  FiZap,
 } from "react-icons/fi";
 import { Button } from "../../../ui/Button/Button";
-import { Alert } from "../../../ui/Alert/Alert";
 import { BotonVolver } from "../../../ui/BotonVolver/BotonVolver";
 import { useChannel } from "../../../../context/ChannelContext";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
@@ -40,7 +38,8 @@ export default function Paso7Exito({ onVolverInicio, resumen }) {
   // activa" del lado de useAccesoDashboardCliente, así que Legajo debería
   // estar desbloqueado en este mismo momento - el chequeo es solo defensivo
   // (no mostrar una acción que todavía llevaría a un candado).
-  const { legajoDesbloqueado } = useAccesoDashboardCliente();
+  const { legajoDesbloqueado, documentacionDesbloqueada } =
+    useAccesoDashboardCliente();
 
   const handleFinalizar = () => {
     onVolverInicio();
@@ -49,6 +48,16 @@ export default function Paso7Exito({ onVolverInicio, resumen }) {
   const handleIrALegajo = () => {
     navigate(`${basePath}/legajo`);
   };
+
+  const handleIrADocumentacion = () => {
+    navigate(`${basePath}/documentacion`);
+  };
+
+  // documentacionDesbloqueada ya implica Legajo 100% completo (ver
+  // useAccesoDashboardCliente) - se reusa esa misma derivación en vez de
+  // pedir faltanLegajo de nuevo, así el nodo 1 del timeline pasa a "hecho"
+  // apenas deja de ser el paso pendiente real.
+  const legajoCompleto = documentacionDesbloqueada;
 
   const montoFormateado =
     resumen && Number.isFinite(resumen.monto)
@@ -76,130 +85,146 @@ export default function Paso7Exito({ onVolverInicio, resumen }) {
 
       {resumen && (
         <div className={styles.summaryCard}>
-          <span className={styles.summaryLabel}>Resumen de tu solicitud</span>
-          <div className={styles.summaryGrid}>
-            {resumen.linea && (
-              <div className={styles.summaryItem}>
-                <span className={styles.summaryItemLabel}>Línea</span>
-                <span className={styles.summaryItemValue}>
-                  {resumen.linea}
-                </span>
-              </div>
-            )}
-            {montoFormateado && (
-              <div className={styles.summaryItem}>
-                <span className={styles.summaryItemLabel}>
-                  Monto solicitado
-                </span>
-                <span className={styles.summaryItemValue}>
-                  {montoFormateado}
-                </span>
-              </div>
-            )}
-            {plazoFormateado && (
-              <div className={styles.summaryItem}>
-                <span className={styles.summaryItemLabel}>Plazo</span>
-                <span className={styles.summaryItemValue}>
-                  {plazoFormateado}
-                </span>
-              </div>
-            )}
+          <div className={styles.summaryHead}>
+            <span className={styles.summaryLabel}>Resumen de tu solicitud</span>
             {!!resumen.id && (
-              <div className={styles.summaryItem}>
-                <span className={styles.summaryItemLabel}>N° de solicitud</span>
-                <span className={styles.summaryItemValue}>#{resumen.id}</span>
-              </div>
+              <span className={styles.summaryIdTag}>N° {resumen.id}</span>
             )}
           </div>
+
+          {montoFormateado && (
+            <div className={styles.summaryAmountBlock}>
+              <span className={styles.summaryAmountLabel}>
+                Monto solicitado
+              </span>
+              <span className={styles.summaryAmountValue}>
+                {montoFormateado}
+              </span>
+            </div>
+          )}
+
+          {(resumen.linea || plazoFormateado) && (
+            <div className={styles.summaryFootRow}>
+              {resumen.linea && (
+                <div className={styles.summaryFootItem}>
+                  <span className={styles.summaryFootLabel}>Línea</span>
+                  <span className={styles.summaryFootValue}>
+                    {resumen.linea}
+                  </span>
+                </div>
+              )}
+              {plazoFormateado && (
+                <div className={styles.summaryFootItem}>
+                  <span className={styles.summaryFootLabel}>
+                    Plazo estimado
+                  </span>
+                  <span className={styles.summaryFootValue}>
+                    {plazoFormateado}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Los 2 pasos de abajo dependen de BIND (firma, validación) y pueden
-          tardar días - separado de eso, hay algo que el usuario SÍ puede
-          hacer ahora mismo, adentro de la app: completar su Legajo. Antes
-          esta pantalla terminaba directo en los pasos externos, sin decirle
-          a dónde ir mientras tanto (Legajo/Documentación recién se
-          desbloquearon con esta misma solicitud) - quedaba a la deriva
-          hasta encontrar el candado abierto por su cuenta en el sidebar. */}
-      {legajoDesbloqueado && (
-        <div className={styles.legajoCta}>
-          <div className={styles.legajoCtaIconWrap}>
-            <FiUsers className={styles.legajoCtaIcon} />
+      {/* Estos pasos son de la plataforma actual, no la anterior: ya no hay
+          que descargar/firmar/enviar por mail una nota de instrucción ni
+          esperar una firma electrónica externa del contrato - lo que activa
+          la línea hoy es completar el Legajo y cargar la Documentación,
+          ambos acá mismo (reemplazado el 2026-09-17, quedaban del flujo
+          viejo). El tercer nodo (Línea activa) no es un paso propio: es el
+          destino, para que la secuencia cierre con el objetivo en vez de
+          terminar en el paso 2 sin mostrar a dónde lleva todo esto. */}
+      <span className={styles.stepsGridLabel}>Para activar tu línea</span>
+      <div className={styles.timeline}>
+        <div className={styles.timelineItem}>
+          <div className={styles.timelineRail}>
+            <span
+              className={`${styles.timelineDot} ${legajoCompleto ? styles.dotDone : styles.dotActive}`}
+            >
+              {legajoCompleto ? <FiCheck size={14} /> : "1"}
+            </span>
+            <span
+              className={`${styles.timelineLine} ${legajoCompleto ? styles.lineDone : ""}`}
+            />
           </div>
-          <div className={styles.legajoCtaText}>
-            <h4 className={styles.legajoCtaTitle}>
-              Mientras tanto, completá tu Legajo
-            </h4>
-            <p className={styles.legajoCtaSubtitle}>
-              No hace falta esperar a que se active la línea: ya podés cargar
-              los datos de tu empresa y de las personas vinculadas.
+          <div className={styles.timelineContent}>
+            <h4 className={styles.timelineTitle}>Completá tu Legajo</h4>
+            {legajoCompleto ? (
+              <p className={styles.timelineText}>
+                Datos de tu empresa completos.
+              </p>
+            ) : (
+              <>
+                <p className={styles.timelineText}>
+                  Cargá los datos de tu empresa y de las personas vinculadas
+                  a ella. No hace falta esperar: ya podés hacerlo.
+                </p>
+                {legajoDesbloqueado && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleIrALegajo}
+                    className={styles.timelineBtn}
+                    iconRight={<FiArrowRight size={14} />}
+                  >
+                    Ir al Legajo
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.timelineItem}>
+          <div className={styles.timelineRail}>
+            <span
+              className={`${styles.timelineDot} ${documentacionDesbloqueada ? styles.dotActive : styles.dotLocked}`}
+            >
+              {documentacionDesbloqueada ? "2" : <FiLock size={12} />}
+            </span>
+            <span className={styles.timelineLine} />
+          </div>
+          <div className={styles.timelineContent}>
+            <h4 className={styles.timelineTitle}>Cargá la Documentación</h4>
+            {documentacionDesbloqueada ? (
+              <>
+                <p className={styles.timelineText}>
+                  Subí la documentación requerida de tu empresa.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleIrADocumentacion}
+                  className={styles.timelineBtn}
+                  iconRight={<FiArrowRight size={14} />}
+                >
+                  Ir a Documentación
+                </Button>
+              </>
+            ) : (
+              <p className={styles.timelineText}>
+                Se habilita cuando completes el Legajo al 100%.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className={styles.timelineItem}>
+          <div className={styles.timelineRail}>
+            <span className={styles.timelineDot}>
+              <FiZap size={13} />
+            </span>
+          </div>
+          <div className={styles.timelineContent}>
+            <h4 className={styles.timelineTitle}>Línea activa</h4>
+            <p className={styles.timelineText}>
+              Te avisamos apenas quede todo listo para operar.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={handleIrALegajo}
-            className={styles.legajoCtaBtn}
-            iconRight={<FiArrowRight size={14} />}
-          >
-            Ir al Legajo
-          </Button>
-        </div>
-      )}
-
-      <span className={styles.stepsGridLabel}>Para activar tu línea</span>
-      <div className={styles.stepsGrid}>
-        <div className={styles.stepCard}>
-          <div className={styles.stepHead}>
-            <span className={styles.stepNumber}>1</span>
-            <h4 className={styles.stepTitle}>
-              Descargá y enviá la instrucción
-            </h4>
-          </div>
-          <p className={styles.stepText}>
-            Descargá este documento, firmalo y envialo escaneado vía mail a{" "}
-            <a
-              href="mailto:comerciales@bindgarantias.com.ar"
-              className={styles.textHighlight}
-            >
-              comerciales@bindgarantias.com.ar
-            </a>
-            .{" "}
-            <span className={styles.textMuted}>
-              Es firma simple, no hace falta certificar.
-            </span>
-          </p>
-
-          <div className={styles.downloadBox}>
-            <div className={styles.downloadInfo}>
-              <FiFileText className={styles.downloadIcon} />
-              <span>Nota de instrucción permanente.pdf</span>
-            </div>
-            <Button type="button" variant="outline" size="sm">
-              <FiDownload className={styles.iconMarginRight} /> Descargar
-            </Button>
-          </div>
-        </div>
-
-        <div className={styles.stepCard}>
-          <div className={styles.stepHead}>
-            <span className={styles.stepNumber}>2</span>
-            <h4 className={styles.stepTitle}>
-              Firmá el Contrato y Fianza
-            </h4>
-          </div>
-          <p className={styles.stepText}>
-            Una vez validada la documentación, van a recibir por mail la
-            solicitud de firma electrónica de la{" "}
-            <strong>Oferta del Contrato de Garantía Recíproca</strong>. Al
-            completarse todas las firmas, habilitamos la línea en nuestros
-            sistemas.
-          </p>
-
-          <Alert variant="default" layout="pill" icon={FiEdit3}>
-            Se valida con clave fiscal ARCA Nivel 2 o superior.
-          </Alert>
         </div>
       </div>
 
