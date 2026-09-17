@@ -60,7 +60,13 @@
   background-color: rgba(var(--overlay-rgb), 0.12);
 }
 
-.globalLogo img,
+/* Solo el logo de BIND: antes esta regla arrancaba con `.globalLogo img`,
+   que también matcheaba el logo de la cadena (está adentro de .globalLogo)
+   y le ganaba por especificidad (0,1,1 contra el 0,1,0 de .channelLogo) -
+   el logo de la cadena terminaba con width:7.5rem/height:auto en vez de su
+   alto fijo, y según la proporción de la imagen subida quedaba enorme al
+   lado del de BIND (SGRPLUSPLA-132). El <img> de BIND ya lleva
+   .clickableLogo, así que el selector por elemento no hacía falta. */
 .clickableLogo {
   cursor: pointer;
   width: 7.5rem;
@@ -68,11 +74,16 @@
   display: block;
 }
 
+/* Alto fijo + tope de ancho + contain: sea cual sea la proporción del logo
+   que suba el admin (apaisado, cuadrado o vertical), entra en esta caja sin
+   deformarse ni desbordar. */
 .channelLogo {
   width: auto;
-  max-width: 12rem;
+  max-width: 10rem;
   height: 2.5rem;
+  max-height: 2.5rem;
   object-fit: contain;
+  display: block;
 }
 
 /* ── CARD PRINCIPAL ── */
