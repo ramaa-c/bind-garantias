@@ -126,6 +126,85 @@
   white-space: nowrap;
 }
 
+/* Acción disponible YA, adentro de la app - distinta del resto de la
+   pantalla (que depende de que BIND procese algo externo): azul, mismo
+   acento que .stepNumber/.downloadIcon más abajo (ya establecido acá como
+   "esto se hace en la plataforma"), no el verde del hero (que es
+   "confirmación/éxito", no una acción pendiente). */
+.legajoCta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(76, 101, 230, 0.06);
+  border: 1px solid rgba(76, 101, 230, 0.2);
+  border-radius: 0.875rem;
+  padding: 1rem 1.125rem;
+}
+
+.legajoCtaIconWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(76, 101, 230, 0.12);
+  border: 1px solid rgba(76, 101, 230, 0.28);
+}
+
+.legajoCtaIcon {
+  color: #6b7ee8;
+  font-size: 1.15rem;
+}
+
+.legajoCtaText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.legajoCtaTitle {
+  margin: 0;
+  color: var(--white, #fff);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.legajoCtaSubtitle {
+  margin: 0;
+  color: var(--text-muted, #999);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.legajoCtaBtn {
+  flex-shrink: 0;
+}
+
+@media (max-width: 40rem) {
+  .legajoCta {
+    flex-wrap: wrap;
+  }
+  .legajoCtaBtn {
+    width: 100%;
+    margin-left: calc(2.5rem + 1rem);
+  }
+}
+
+/* Rótulo del grupo de pasos externos, para que contraste con .legajoCta de
+   arriba ("esto lo hacés vos, ahora" vs. "esto depende de BIND, después"). */
+.stepsGridLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
 .stepsGrid {
   display: grid;
   grid-template-columns: 1fr;

@@ -395,6 +395,49 @@
   font-size: 0.9rem;
 }
 
+/* Punto de atención cuando Legajo/Documentación se acaban de desbloquear
+   (ver Sidebar.jsx) - mismo lugar que .lockIcon (nunca coinciden: uno
+   implica bloqueado, el otro desbloqueado). El pulso es la señal real (algo
+   cambió, andá a mirar); el anillo expandiéndose es lo que lo hace notorio
+   sin depender de que el usuario tenga la vista puesta justo ahí en el
+   momento exacto. */
+.novedadDot {
+  position: relative;
+  margin-left: auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--color-amarillo-bind, #f5f400);
+  flex-shrink: 0;
+}
+
+.novedadDot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-amarillo-bind, #f5f400);
+  animation: novedadPulse 1.8s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
+}
+
+@keyframes novedadPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .novedadDot::before {
+    animation: none;
+    opacity: 0;
+  }
+}
+
 .icon {
   font-size: 1.1rem;
   color: var(--text-muted);

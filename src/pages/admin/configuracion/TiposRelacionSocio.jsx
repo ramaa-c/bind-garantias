@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { FiPlus, FiEdit2, FiSearch, FiInbox, FiHelpCircle, FiSave, FiRotateCcw } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiSearch, FiInbox, FiSave, FiRotateCcw } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, Skeleton } from "../../../components/ui";
+import { Button, InfoTooltip, Skeleton } from "../../../components/ui";
 import { TipoRelacionSocioModal } from "../../../components/features/admin/TipoRelacionSocioModal/TipoRelacionSocioModal";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -54,14 +54,32 @@ export default function TiposRelacionSocio() {
     : cadenasWebData?.items || cadenasWebData?.data || [];
 
   const { relationMetadata } = useRelationMetadata();
-  const { requisitos, updateRequisitos, isUpdating } =
-    useRequisitos(selectedCadenaId);
+  const {
+    requisitos,
+    updateRequisitos,
+    isUpdating,
+    isLoading: isLoadingRequisitos,
+  } = useRequisitos(selectedCadenaId);
 
+  // Se espera a que termine de cargar (isLoadingRequisitos) antes de copiar
+  // requisitos a localConfig: mientras carga, el hook ya devuelve un
+  // fallback de valores por defecto (ver useRequisitos.js) que no es el de
+  // esta cadena - sincronizar antes de tiempo hacía que, al cambiar de
+  // cadena, se vieran por un instante los valores por defecto en vez de los
+  // reales, quedando la sensación de que se habían perdido cambios guardados.
   useEffect(() => {
-    if (selectedCadenaId && requisitos) {
+    if (selectedCadenaId && requisitos && !isLoadingRequisitos) {
       setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
     }
-  }, [selectedCadenaId, requisitos]);
+  }, [selectedCadenaId, requisitos, isLoadingRequisitos]);
+
+  // Al cambiar de cadena se limpia localConfig de una: si no, mientras
+  // carga la nueva, se seguían viendo en pantalla las filas de la cadena
+  // anterior (con sus valores) como si ya fueran las de la nueva selección.
+  const handleSeleccionarCadena = (val) => {
+    setSelectedCadenaId(String(val));
+    setLocalConfig(null);
+  };
 
   const sinCambiosParam =
     !!requisitos &&
@@ -167,18 +185,11 @@ export default function TiposRelacionSocio() {
           </p>
         </div>
         <div className={styles.actionsTop}>
-          <button
-            type="button"
-            className={styles.helpButton}
-            onClick={() =>
-              toast.info(
-                "El ID siempre es el del catálogo real de SGR+ - acá solo se define cómo se llama esa relación para la web. Una vez activada, no se puede desactivar (pedile a Victor un borrado manual si hace falta).",
-              )
-            }
-            title="Ayuda"
-          >
-            <FiHelpCircle size={20} />
-          </button>
+          <InfoTooltip
+            variant="admin"
+            label="¿Cómo funciona el ID?"
+            texto="El ID siempre es el del catálogo real de SGR+ - acá solo se define cómo se llama esa relación para la web. Una vez activada, no se puede desactivar."
+          />
           <Button type="button" variant="blue" size="lg" onClick={handleAgregar}>
             <FiPlus /> Agregar relación
           </Button>
@@ -253,147 +264,159 @@ export default function TiposRelacionSocio() {
         </div>
 
         <div className={styles.paramCard}>
-        <div className={styles.paramHeader}>
-          <h2>Parametrización por cadena</h2>
-          <p>
-            Elegí una cadena de valor para definir cómo se piden estas
-            relaciones en su legajo, por tipo de persona/sociedad.
-          </p>
-        </div>
+          <div className={styles.paramHeader}>
+            <h2>Parametrización por cadena</h2>
+            <p>
+              Elegí una cadena de valor para definir cómo se piden estas
+              relaciones en su legajo, por tipo de persona/sociedad.
+            </p>
+          </div>
 
-        {isLoadingCadenas ? (
-          <Skeleton height="82px" width="100%" radius="0.75rem" />
-        ) : (
-          <CadenaSelectCard
-            options={cadenasWeb}
-            value={selectedCadenaId}
-            onChange={(val) => setSelectedCadenaId(String(val))}
-            placeholder="Seleccionar cadena de valor..."
-          />
-        )}
+          {isLoadingCadenas ? (
+            <Skeleton height="82px" width="100%" radius="0.75rem" />
+          ) : (
+            <CadenaSelectCard
+              options={cadenasWeb}
+              value={selectedCadenaId}
+              onChange={handleSeleccionarCadena}
+              placeholder="Seleccionar cadena de valor..."
+            />
+          )}
 
-        {selectedCadenaId && localConfig && (
-          <>
-            <div className={styles.tabContainer}>
-              {TABS_TIPO_PERSONA.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    className={`${styles.tabBtn} ${activeParamTab === tab.id ? styles.tabActive : ""}`}
-                    onClick={() => setActiveParamTab(tab.id)}
-                  >
-                    <Icon style={{ marginRight: "0.4rem" }} />
-                    {tab.label}
-                  </button>
-                );
-              })}
+          {!selectedCadenaId ? (
+            <div className={styles.emptySelection}>
+              Seleccioná una cadena de valor para configurar cómo pide sus
+              relaciones de terceros.
             </div>
-
-            <div className={styles.paramListHeader}>
-              <span className={styles.listCount}>
-                Configurando para{" "}
-                <strong>
-                  {TABS_TIPO_PERSONA.find((t) => t.id === activeParamTab)?.label}
-                </strong>
-              </span>
-              <div className={styles.bulkActions}>
-                <button
-                  type="button"
-                  className={`${styles.bulkBtn} ${styles.bulkBtnNone}`}
-                  onClick={() => handleSetTodosParam(0)}
-                >
-                  Todo No mostrar
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.bulkBtn} ${styles.bulkBtnOptional}`}
-                  onClick={() => handleSetTodosParam(2)}
-                >
-                  Todo Opcional
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.bulkBtn} ${styles.bulkBtnRequired}`}
-                  onClick={() => handleSetTodosParam(1)}
-                >
-                  Todo Obligatorio
-                </button>
+          ) : isLoadingRequisitos || !localConfig ? (
+            <div className={styles.paramSkeleton}>
+              <Skeleton height="2.75rem" width="100%" radius="0.75rem" />
+              <Skeleton height="3.5rem" width="100%" radius="0.625rem" />
+              <Skeleton height="3.5rem" width="100%" radius="0.625rem" />
+              <Skeleton height="3.5rem" width="100%" radius="0.625rem" />
+            </div>
+          ) : (
+            <>
+              <div className={styles.tabContainer}>
+                {TABS_TIPO_PERSONA.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`${styles.tabBtn} ${activeParamTab === tab.id ? styles.tabActive : ""}`}
+                      onClick={() => setActiveParamTab(tab.id)}
+                    >
+                      <Icon style={{ marginRight: "0.4rem" }} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
-            </div>
 
-            <div className={styles.paramList}>
-              {relationMetadata.map(({ key, title, desc }) => {
-                if (!esRelacionVisible(key, activeParamTab)) return null;
+              <div className={styles.paramListHeader}>
+                <span className={styles.listCount}>
+                  Configurando para{" "}
+                  <strong>
+                    {TABS_TIPO_PERSONA.find((t) => t.id === activeParamTab)?.label}
+                  </strong>
+                </span>
+                <div className={styles.bulkActions}>
+                  <button
+                    type="button"
+                    className={`${styles.bulkBtn} ${styles.bulkBtnNone}`}
+                    onClick={() => handleSetTodosParam(0)}
+                  >
+                    Todo No mostrar
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.bulkBtn} ${styles.bulkBtnOptional}`}
+                    onClick={() => handleSetTodosParam(2)}
+                  >
+                    Todo Opcional
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.bulkBtn} ${styles.bulkBtnRequired}`}
+                    onClick={() => handleSetTodosParam(1)}
+                  >
+                    Todo Obligatorio
+                  </button>
+                </div>
+              </div>
 
-                const val =
-                  localConfig[activeParamTab]?.relaciones?.[key] !== undefined
-                    ? localConfig[activeParamTab].relaciones[key]
-                    : 0;
+              <div className={styles.paramList}>
+                {relationMetadata.map(({ key, title, desc }) => {
+                  if (!esRelacionVisible(key, activeParamTab)) return null;
 
-                return (
-                  <div key={key} className={styles.paramRow}>
-                    <div className={styles.paramInfo}>
-                      <strong>{title}</strong>
-                      <span>{desc}</span>
+                  const val =
+                    localConfig[activeParamTab]?.relaciones?.[key] !== undefined
+                      ? localConfig[activeParamTab].relaciones[key]
+                      : 0;
+
+                  return (
+                    <div key={key} className={styles.paramRow}>
+                      <div className={styles.paramInfo}>
+                        <strong>{title}</strong>
+                        <span>{desc}</span>
+                      </div>
+                      <div className={styles.segmentedControl}>
+                        <button
+                          type="button"
+                          className={`${styles.segmentBtn} ${val === 0 ? styles.activeNone : ""}`}
+                          onClick={() => handleUpdateParam(key, 0)}
+                          title="Se ocultará esta pestaña/paso completamente"
+                        >
+                          No mostrar
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.segmentBtn} ${val === 2 ? styles.activeOptional : ""}`}
+                          onClick={() => handleUpdateParam(key, 2)}
+                          title="Se mostrará pero el cliente puede no declarar registros"
+                        >
+                          Opcional
+                        </button>
+                        <button
+                          type="button"
+                          className={`${styles.segmentBtn} ${val === 1 ? styles.activeRequired : ""}`}
+                          onClick={() => handleUpdateParam(key, 1)}
+                          title="El cliente debe obligatoriamente declarar al menos un registro para continuar"
+                        >
+                          Obligatorio
+                        </button>
+                      </div>
                     </div>
-                    <div className={styles.segmentedControl}>
-                      <button
-                        type="button"
-                        className={`${styles.segmentBtn} ${val === 0 ? styles.activeNone : ""}`}
-                        onClick={() => handleUpdateParam(key, 0)}
-                        title="Se ocultará esta pestaña/paso completamente"
-                      >
-                        No mostrar
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.segmentBtn} ${val === 2 ? styles.activeOptional : ""}`}
-                        onClick={() => handleUpdateParam(key, 2)}
-                        title="Se mostrará pero el cliente puede no declarar registros"
-                      >
-                        Opcional
-                      </button>
-                      <button
-                        type="button"
-                        className={`${styles.segmentBtn} ${val === 1 ? styles.activeRequired : ""}`}
-                        onClick={() => handleUpdateParam(key, 1)}
-                        title="El cliente debe obligatoriamente declarar al menos un registro para continuar"
-                      >
-                        Obligatorio
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            <div className={styles.paramFooter}>
-              <Button
-                variant="outlineBlue"
-                size="sm"
-                onClick={handleResetParam}
-                disabled={isUpdating || sinCambiosParam}
-                title={sinCambiosParam ? "No hay cambios para restablecer" : undefined}
-              >
-                <FiRotateCcw style={{ marginRight: "0.5rem" }} />
-                Reestablecer
-              </Button>
-              <Button
-                variant="blue"
-                size="sm"
-                onClick={handleGuardarParam}
-                isLoading={isUpdating}
-                disabled={isUpdating || sinCambiosParam}
-                title={sinCambiosParam ? "No hay cambios para guardar" : undefined}
-              >
-                <FiSave style={{ marginRight: "0.5rem" }} />
-                Guardar configuración
-              </Button>
-            </div>
-          </>
-        )}
+              <div className={styles.paramFooter}>
+                <Button
+                  variant="outlineBlue"
+                  size="sm"
+                  onClick={handleResetParam}
+                  disabled={isUpdating || sinCambiosParam}
+                  title={sinCambiosParam ? "No hay cambios para restablecer" : undefined}
+                >
+                  <FiRotateCcw style={{ marginRight: "0.5rem" }} />
+                  Reestablecer
+                </Button>
+                <Button
+                  variant="blue"
+                  size="sm"
+                  onClick={handleGuardarParam}
+                  isLoading={isUpdating}
+                  disabled={isUpdating || sinCambiosParam}
+                  title={sinCambiosParam ? "No hay cambios para guardar" : undefined}
+                >
+                  <FiSave style={{ marginRight: "0.5rem" }} />
+                  Guardar configuración
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

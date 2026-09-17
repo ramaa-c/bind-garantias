@@ -1,13 +1,18 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FiCheckCircle,
   FiDownload,
   FiEdit3,
   FiFileText,
+  FiUsers,
+  FiArrowRight,
 } from "react-icons/fi";
 import { Button } from "../../../ui/Button/Button";
 import { Alert } from "../../../ui/Alert/Alert";
 import { BotonVolver } from "../../../ui/BotonVolver/BotonVolver";
+import { useChannel } from "../../../../context/ChannelContext";
+import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import styles from "./Paso7Exito.module.css";
 
 const SIMBOLOS_MONEDA = {
@@ -29,8 +34,20 @@ const formatearPlazo = (plazo) => {
 };
 
 export default function Paso7Exito({ onVolverInicio, resumen }) {
+  const navigate = useNavigate();
+  const { basePath } = useChannel();
+  // Crear la solicitud (para llegar hasta acá) ya cuenta como "solicitud
+  // activa" del lado de useAccesoDashboardCliente, así que Legajo debería
+  // estar desbloqueado en este mismo momento - el chequeo es solo defensivo
+  // (no mostrar una acción que todavía llevaría a un candado).
+  const { legajoDesbloqueado } = useAccesoDashboardCliente();
+
   const handleFinalizar = () => {
     onVolverInicio();
+  };
+
+  const handleIrALegajo = () => {
+    navigate(`${basePath}/legajo`);
   };
 
   const montoFormateado =
@@ -97,6 +114,41 @@ export default function Paso7Exito({ onVolverInicio, resumen }) {
         </div>
       )}
 
+      {/* Los 2 pasos de abajo dependen de BIND (firma, validación) y pueden
+          tardar días - separado de eso, hay algo que el usuario SÍ puede
+          hacer ahora mismo, adentro de la app: completar su Legajo. Antes
+          esta pantalla terminaba directo en los pasos externos, sin decirle
+          a dónde ir mientras tanto (Legajo/Documentación recién se
+          desbloquearon con esta misma solicitud) - quedaba a la deriva
+          hasta encontrar el candado abierto por su cuenta en el sidebar. */}
+      {legajoDesbloqueado && (
+        <div className={styles.legajoCta}>
+          <div className={styles.legajoCtaIconWrap}>
+            <FiUsers className={styles.legajoCtaIcon} />
+          </div>
+          <div className={styles.legajoCtaText}>
+            <h4 className={styles.legajoCtaTitle}>
+              Mientras tanto, completá tu Legajo
+            </h4>
+            <p className={styles.legajoCtaSubtitle}>
+              No hace falta esperar a que se active la línea: ya podés cargar
+              los datos de tu empresa y de las personas vinculadas.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={handleIrALegajo}
+            className={styles.legajoCtaBtn}
+            iconRight={<FiArrowRight size={14} />}
+          >
+            Ir al Legajo
+          </Button>
+        </div>
+      )}
+
+      <span className={styles.stepsGridLabel}>Para activar tu línea</span>
       <div className={styles.stepsGrid}>
         <div className={styles.stepCard}>
           <div className={styles.stepHead}>

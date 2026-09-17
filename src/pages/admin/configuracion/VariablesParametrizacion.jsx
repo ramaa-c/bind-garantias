@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { FiPlus, FiEdit2, FiSearch, FiInbox, FiHelpCircle } from "react-icons/fi";
-import { toast } from "sonner";
-import { Button, Skeleton } from "../../../components/ui";
+import { FiPlus, FiEdit2, FiSearch, FiInbox } from "react-icons/fi";
+import { Button, InfoTooltip, Skeleton } from "../../../components/ui";
 import { VariableParametrizacionModal } from "../../../components/features/admin/VariableParametrizacionModal/VariableParametrizacionModal";
 import { useVariablesParametrizacion } from "../../../hooks/useVariablesParametrizacion";
 import styles from "./VariablesParametrizacion.module.css";
@@ -56,18 +55,11 @@ export default function VariablesParametrizacion() {
           </p>
         </div>
         <div className={styles.actionsTop}>
-          <button
-            type="button"
-            className={styles.helpButton}
-            onClick={() =>
-              toast.info(
-                "Dar de alta una variable nueva acá no alcanza para que tenga efecto: el código todavía tiene que leerla explícitamente en algún lugar de la plataforma.",
-              )
-            }
-            title="Ayuda"
-          >
-            <FiHelpCircle size={20} />
-          </button>
+          <InfoTooltip
+            variant="admin"
+            label="¿Cómo funciona esto?"
+            texto="Dar de alta una variable nueva acá no alcanza para que tenga efecto: el código todavía tiene que leerla explícitamente en algún lugar de la plataforma."
+          />
           <Button type="button" variant="blue" size="lg" onClick={handleAgregar}>
             <FiPlus /> Agregar variable
           </Button>
