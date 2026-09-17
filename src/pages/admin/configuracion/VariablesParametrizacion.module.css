@@ -43,26 +43,6 @@
   flex-shrink: 0;
 }
 
-.helpButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.85rem;
-  height: 2.85rem;
-  border-radius: 0.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
-  color: #8b949e;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.helpButton:hover {
-  color: #ffffff;
-  border-color: rgba(76, 101, 230, 0.4);
-  background: rgba(76, 101, 230, 0.1);
-}
-
 .filtersCard {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);

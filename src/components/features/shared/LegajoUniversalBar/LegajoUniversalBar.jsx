@@ -9,6 +9,7 @@ import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme, useActualizarSocio } from "../../../../hooks/useSocios";
 import { useEstadoValidarSocio } from "../../../../hooks/useSgrPlusCore";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
+import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import { useLegajoModalStore } from "../../../../store/useLegajoModalStore";
 import { sociosService } from "../../../../services/sociosService";
 import { Button } from "../../../ui/Button/Button";
@@ -39,6 +40,14 @@ export function LegajoUniversalBar({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { basePath } = useChannel();
+
+  // Solo para el mensaje/CTA de context==="solicitudes" (ver
+  // getMissingActionMessage y el botón más abajo): sin datos de socio
+  // cliente (caso admin) sus queries internas quedan deshabilitadas solas
+  // (mismo patrón enabled:!!id que el resto del proyecto), así que llamarlo
+  // siempre acá (sin condicionarlo a !adminMode) no agrega pedidos de más.
+  const { hayLineaActiva, legajoDesbloqueado: legajoDesbloqueadoPorLinea } =
+    useAccesoDashboardCliente();
 
   const {
     isValid,
@@ -678,6 +687,16 @@ export function LegajoUniversalBar({
     // línea acá (esta pantalla no navega a ninguna sección propia de
     // legajo/documentación).
     if (context === "solicitudes") {
+      // Flujo "con línea activa" (ver useAccesoDashboardCliente): si
+      // Legajo está desbloqueado por tener una solicitud activa, es porque
+      // el usuario acaba de aterrizar acá desde Paso7Exito - el mensaje
+      // genérico de abajo ("todavía tenés que completar...") suena a una
+      // tarea pendiente de siempre, no a que algo recién se habilitó. Acá
+      // sí tiene sentido guiarlo con el botón (ver más abajo, a diferencia
+      // del resto de este context que nunca muestra CTA).
+      if (hayLineaActiva && legajoDesbloqueadoPorLinea) {
+        return "¡Buenas noticias! Mientras evaluamos tu solicitud, ya podés completar el Legajo de tu empresa.";
+      }
       return "Todavía tenés que completar el legajo de tu empresa.";
     }
 
@@ -768,7 +787,23 @@ export function LegajoUniversalBar({
               >
                 Ver qué falta
               </Button>
-            ) : context === "solicitudes" ? null : (
+            ) : context === "solicitudes" ? (
+              hayLineaActiva && legajoDesbloqueadoPorLinea ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`${basePath}/legajo`);
+                  }}
+                  className={styles.ctaBtn}
+                  iconRight={<FiArrowRight size={14} />}
+                >
+                  Completar Legajo
+                </Button>
+              ) : null
+            ) : (
               <Button
                 type="button"
                 variant="outline"

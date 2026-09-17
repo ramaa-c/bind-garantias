@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -138,7 +138,20 @@ export const AltaOperacion = () => {
 
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
   const [mostrarResultados, setMostrarResultados] = useState(false);
-  const [resumenSolicitud, setResumenSolicitud] = useState(null);
+  // pasoActual queda en sessionStorage (ver useFormPersist), así que un
+  // refresh en el paso de Éxito lo restaura en 2 - pero resumenSolicitud es
+  // un useState aparte, nunca persistido, y volvía a null en ese refresh:
+  // la tarjeta de "Resumen de tu solicitud" desaparecía sin que nada la
+  // reemplazara (reportado el 2026-09-17). Se persiste con la misma
+  // STORAGE_KEY del resto del borrador.
+  const [resumenSolicitud, setResumenSolicitud] = useState(() => {
+    try {
+      const guardado = sessionStorage.getItem(`${STORAGE_KEY}_resumen`);
+      return guardado ? JSON.parse(guardado) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isModalBorradorAbierto, setIsModalBorradorAbierto] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [validandoAcceso, setValidandoAcceso] = useState(true);
@@ -157,6 +170,17 @@ export const AltaOperacion = () => {
     document.addEventListener("bindHelp:toggle", handler);
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
+
+  useEffect(() => {
+    if (resumenSolicitud) {
+      sessionStorage.setItem(
+        `${STORAGE_KEY}_resumen`,
+        JSON.stringify(resumenSolicitud),
+      );
+    } else {
+      sessionStorage.removeItem(`${STORAGE_KEY}_resumen`);
+    }
+  }, [resumenSolicitud]);
 
   useEffect(() => {
     if (isLoadingEmpresa) return;
@@ -398,6 +422,26 @@ export const AltaOperacion = () => {
     setMostrarResultados(false);
     setResumenSolicitud(null);
   };
+
+  // El paso 2 (Éxito) es terminal: no hay nada para "retomar" ahí, a
+  // diferencia del paso 1 (un formulario a medio llenar, donde sí tiene
+  // sentido el draft). Si sessionStorage quedó con pasoActual=2 de una
+  // solicitud ya enviada - por haber salido del wizard sin tocar "Volver a
+  // la lista de solicitudes" (ej. navegando por el Sidebar) - la próxima
+  // vez que se entra a este flujo (ej. "Nueva Operación" desde
+  // Solicitudes.jsx) mostraba de nuevo esa pantalla de éxito vieja, con el
+  // resumen de la solicitud anterior, en vez de arrancar un alta nueva
+  // (reportado el 2026-09-17, justo después de cancelar una solicitud).
+  // useLayoutEffect (no useEffect) para que el reset corra antes del primer
+  // paint y no llegue a mostrarse ese resumen viejo ni un instante.
+  useLayoutEffect(() => {
+    if (pasoActual === 2) {
+      handleResetFlujoCompleto();
+    }
+    // Solo al montar: es una corrección de un estado heredado de
+    // sessionStorage, no algo que deba repetirse en cada cambio de paso.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const confirmarReinicioOperacion = () => {
     handleResetFlujoCompleto();

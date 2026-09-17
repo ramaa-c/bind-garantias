@@ -43,26 +43,6 @@
   flex-shrink: 0;
 }
 
-.helpButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.85rem;
-  height: 2.85rem;
-  border-radius: 0.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
-  color: #8b949e;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.helpButton:hover {
-  color: #ffffff;
-  border-color: rgba(76, 101, 230, 0.4);
-  background: rgba(76, 101, 230, 0.1);
-}
-
 /* Búsqueda + tabla van en una columna angosta (.listColumn, ver más abajo)
    al lado de la parametrización, no una debajo de la otra - el contenido
    real (IDs cortos, descripciones de una línea) nunca necesita más ancho
@@ -257,6 +237,22 @@
   font-size: 0.8rem;
   color: #8b949e;
   max-width: 38rem;
+}
+
+.emptySelection {
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #8b949e;
+  background: rgba(22, 27, 34, 0.3);
+  border: 1px dashed #30363d;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.paramSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .tabContainer {

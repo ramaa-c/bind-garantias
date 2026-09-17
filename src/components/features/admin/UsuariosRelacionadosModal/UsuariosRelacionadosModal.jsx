@@ -90,7 +90,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
 
       if (!userId) {
         toast.error("Usuario no encontrado", {
-          description: "Todavía no se registró. Pedile que entre al login de esta cadena y se registre primero.",
+          description: "Todavía no se registró. Debe entrar al login y registrarse primero.",
         });
         return;
       }
