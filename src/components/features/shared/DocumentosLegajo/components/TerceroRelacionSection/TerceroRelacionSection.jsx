@@ -33,6 +33,7 @@ export function TerceroRelacionSection({
   handleEliminarRelacion,
   cargarSocios,
   socioIdActivo,
+  evitarCoincidenciaCon,
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -251,6 +252,8 @@ export function TerceroRelacionSection({
         socioIdActivo={socioIdActivo}
         tipoRelacionSocioId={tipoRelacionSocioId}
         etiquetaRol={titulo}
+        evitarCoincidenciaCon={evitarCoincidenciaCon}
+        itemsExistentes={items}
       />
     </div>
   );

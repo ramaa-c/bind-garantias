@@ -47,6 +47,7 @@ import {
   RELACION_APODERADO_ID,
   RELACION_REPRESENTANTE_LEGAL_ID,
   RELACION_AGENTE_BOLSA_ID,
+  RELACION_FIADOR_ID,
   IDS_RELACIONES_TERCEROS_BASE,
   RELACIONES_TERCEROS_BASE,
 } from "../../../../constants/tiposRelacionSocio";
@@ -267,6 +268,24 @@ export function SociosLegajo({
     [relacionesBaseActivas],
   );
 
+  // Se sube acá (antes vivía junto con el resto de socioLegajoData, más
+  // abajo) porque tabsDisponibles necesita accionistas.length para decidir
+  // fiadorForzado antes de armar las pestañas.
+  const queryClient = useQueryClient();
+  const { data: socioLegajoData, isLoading: loadingQuery } = useObtenerDatosSocioLegajo(socioIdActivo);
+  const accionistas = socioLegajoData?.accionistas || [];
+
+  // Fiador obligatorio forzado (SGRPLUSPLA-137): persona física siempre, o
+  // jurídica con un único accionista (SAS/SAU/sociedad unipersonal) - en
+  // ambos casos el fiador es una persona DISTINTA del titular/accionista, no
+  // un dato opcional que dependa de la parametrización de la cadena. Con 2+
+  // accionistas el backend ya los da de alta como fiadores automáticamente
+  // (ver AltaOperacion/legajo) y ahí sí aplica la parametrización normal de
+  // la cadena (Opcional/Obligatorio/No mostrar, según si el contrato es con
+  // o sin fianza).
+  const fiadorForzado = esPersonaFisica || accionistas.length === 1;
+  const accionistaUnico = !esPersonaFisica && accionistas.length === 1 ? accionistas[0] : null;
+
   // Cualquier relación que el admin haya activado más allá de las 4 de
   // siempre se agrega acá como pestaña extra con TerceroRelacionSection -
   // siempre ANTES de "Vincular usuarios" (ver el splice más abajo), que
@@ -284,14 +303,32 @@ export function SociosLegajo({
 
   const tabsDisponibles = useMemo(() => {
     const usuariosTab = ESTRUCTURA_SOCIOS.find((t) => t.key === "usuarios");
+    const mappedBase = ESTRUCTURA_SOCIOS.filter((t) => t.key !== "usuarios").map((t) => {
+      const idConocido = ID_POR_CLAVE_BASE[t.key];
+      if (!idConocido) return t; // "perfil" - no es una relación de terceros
+      const tituloVivo = descripcionBasePorClave[t.key];
+      return tituloVivo ? { ...t, title: tituloVivo } : t;
+    });
+
+    // Fiador (SGRPLUSPLA-137) se saca del resto de las relaciones extra y se
+    // inserta pegado a "Accionistas" en vez de ir al final con las demás -
+    // están directamente relacionados (el fiador es el propio accionista
+    // único, o uno de los accionistas cuando son varios). El resto de las
+    // relaciones activadas dinámicamente sigue yendo después de las 4 con
+    // sección fija, como siempre.
+    const fiadorKey = String(RELACION_FIADOR_ID);
+    const fiadorTab = tabsExtra.find((t) => t.key === fiadorKey);
+    const restoTabsExtra = tabsExtra.filter((t) => t.key !== fiadorKey);
+    const indiceAccionistas = mappedBase.findIndex((t) => t.key === "accionistas");
+
+    const conFiadorInsertado = [...mappedBase];
+    if (fiadorTab && indiceAccionistas !== -1) {
+      conFiadorInsertado.splice(indiceAccionistas + 1, 0, fiadorTab);
+    }
+
     let baseTabs = [
-      ...ESTRUCTURA_SOCIOS.filter((t) => t.key !== "usuarios").map((t) => {
-        const idConocido = ID_POR_CLAVE_BASE[t.key];
-        if (!idConocido) return t; // "perfil" - no es una relación de terceros
-        const tituloVivo = descripcionBasePorClave[t.key];
-        return tituloVivo ? { ...t, title: tituloVivo } : t;
-      }),
-      ...tabsExtra,
+      ...conFiadorInsertado,
+      ...restoTabsExtra,
       ...(usuariosTab ? [usuariosTab] : []),
     ];
     // "Perfil corporativo" es solo informativo para el cliente: en el panel
@@ -314,12 +351,15 @@ export function SociosLegajo({
         return !idConocido || clavesBaseActivas.has(t.key);
       });
     }
-    // Filtrar según los requisitos configurados
+    // Filtrar según los requisitos configurados - el Fiador forzado
+    // (SGRPLUSPLA-137) ignora "No mostrar": es obligatorio sin importar la
+    // parametrización de la cadena.
     return baseTabs.filter(t => {
+      if (fiadorForzado && t.key === String(RELACION_FIADOR_ID)) return true;
       const configVal = requisitos?.relaciones?.[t.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [esPersonaFisica, requisitos, adminMode, tabsExtra, descripcionBasePorClave, clavesBaseActivas, isLoadingCatalogoActivo]);
+  }, [esPersonaFisica, requisitos, adminMode, tabsExtra, descripcionBasePorClave, clavesBaseActivas, isLoadingCatalogoActivo, fiadorForzado]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [perfilModalOpen, setPerfilModalOpen] = useState(false);
@@ -385,10 +425,6 @@ export function SociosLegajo({
     }
   }, [tabsDisponibles, activeTab]);
 
-  const queryClient = useQueryClient();
-  const { data: socioLegajoData, isLoading: loadingQuery } = useObtenerDatosSocioLegajo(socioIdActivo);
-
-  const accionistas = socioLegajoData?.accionistas || [];
   // socioLegajoData.representantes junta Representante Legal (230) y
   // Apoderado (210, ver useObtenerDatosSocioLegajo) - cada pestaña se
   // queda solo con lo suyo.
@@ -525,6 +561,9 @@ export function SociosLegajo({
         // dinámicamente (ver tabsExtra más arriba).
         const idRelacionExtra = Number(doc.key);
         const isExtra = Number.isInteger(idRelacionExtra) && idRelacionExtra > 0;
+        const esObligatorio =
+          requisitos?.relaciones?.[doc.key] === 1 ||
+          (fiadorForzado && doc.key === String(RELACION_FIADOR_ID));
 
         return (
           <React.Fragment key={doc.key}>
@@ -546,7 +585,7 @@ export function SociosLegajo({
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle} title={tituloTab(doc)}>{tituloTab(doc)}</span>
                 {!isPerfil &&
-                  (requisitos?.relaciones?.[doc.key] === 1 ? (
+                  (esObligatorio ? (
                     <span className={`${styles.reqBadge} ${completitudPorTab[doc.key] ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
                       Obligatorio
                     </span>
@@ -555,7 +594,7 @@ export function SociosLegajo({
                   ))}
               </div>
               <span
-                className={`${styles.statusDot} ${isPerfil ? styles.dotGreen : loadingSocios ? styles.dotLoading : completitudPorTab[doc.key] ? styles.dotGreen : requisitos?.relaciones?.[doc.key] === 1 ? styles.dotYellow : styles.dotGray}`}
+                className={`${styles.statusDot} ${isPerfil ? styles.dotGreen : loadingSocios ? styles.dotLoading : completitudPorTab[doc.key] ? styles.dotGreen : esObligatorio ? styles.dotYellow : styles.dotGray}`}
               />
               <FiChevronDown
                 className={styles.mobileChevron}
@@ -779,12 +818,31 @@ export function SociosLegajo({
                 ) : isExtra ? (
                   <TerceroRelacionSection
                     loadingSocios={loadingSocios}
-                    items={socioLegajoData?.porTipoRelacion?.[doc.key] || []}
+                    items={
+                      idRelacionExtra === RELACION_FIADOR_ID && accionistaUnico
+                        ? // El backend todavía no distingue el caso de accionista
+                          // único (pendiente del lado de Victor, SGRPLUSPLA-137):
+                          // sigue auto-creando la relación de Fiador apuntando
+                          // al mismo tercero que el accionista, que acá no
+                          // cuenta como un fiador real. Se oculta ese registro
+                          // en vez de mostrarlo como si fuera válido - en
+                          // cuanto se carga un fiador de verdad (persona
+                          // distinta), ese pasa a ser el único que se ve.
+                          (socioLegajoData?.porTipoRelacion?.[doc.key] || []).filter(
+                            (p) => Number(p.id) !== Number(accionistaUnico.id),
+                          )
+                        : socioLegajoData?.porTipoRelacion?.[doc.key] || []
+                    }
                     titulo={doc.title}
                     tipoRelacionSocioId={idRelacionExtra}
                     handleEliminarRelacion={handleEliminarRelacion}
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
+                    evitarCoincidenciaCon={
+                      idRelacionExtra === RELACION_FIADOR_ID && accionistaUnico
+                        ? { cuit: accionistaUnico.cuit, email: accionistaUnico.email }
+                        : undefined
+                    }
                   />
                 ) : null}
               </section>

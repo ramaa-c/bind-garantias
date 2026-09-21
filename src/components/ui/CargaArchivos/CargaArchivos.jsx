@@ -8,6 +8,18 @@ import { TAMANIO_MAXIMO_ARCHIVO_MB } from "../../../utils/fileUtils";
 export const CargaArchivos = ({
   title = "Arrastrá tu archivo acá",
   subtitle = "o hacé click para buscar",
+  // Ícono del estado vacío - por defecto la nube genérica, pero un
+  // consumidor puede pasar algo más específico (ej. DNI Frente/Dorso en
+  // SocioAccionistaModal) para que se distinga de un dropzone de archivo
+  // cualquiera.
+  // eslint-disable-next-line no-unused-vars
+  icon: Icon = FiUploadCloud,
+  // El límite de 50MB es real para archivos sueltos (PDFs, comprobantes),
+  // pero no aplica a fotos de DNI - ahí no tiene sentido mostrarlo.
+  showMaxSizeHint = true,
+  // Ver .compact en CargaArchivos.module.css: ícono/textos más chicos, para
+  // que el estado vacío no quede más alto que el estado con archivo cargado.
+  compact = false,
   file,
   isDragging,
   onDrop,
@@ -29,7 +41,7 @@ export const CargaArchivos = ({
 
   if (isUploading) {
     return (
-      <div className={`${styles.box} ${styles.uploading} ${className}`} style={style}>
+      <div className={`${styles.box} ${styles.uploading} ${compact ? styles.compact : ""} ${className}`} style={style}>
         <Spinner size={36} />
         <h4 className={styles.text}>Subiendo archivo...</h4>
         <p className={styles.subtext}>Puede tardar unos segundos si el archivo es grande.</p>
@@ -39,7 +51,7 @@ export const CargaArchivos = ({
 
   if (file) {
     return (
-      <div className={`${styles.box} ${styles.loaded} ${className}`} style={style}>
+      <div className={`${styles.box} ${styles.loaded} ${compact ? styles.compact : ""} ${className}`} style={style}>
         <div className={styles.loadedInfo}>
           <FiFile className={styles.loadedIcon} />
           <div className={styles.textGroup}>
@@ -81,7 +93,7 @@ export const CargaArchivos = ({
 
   const activeIsDragging = isDragging !== undefined ? isDragging : internalIsDragging;
 
-  const boxClass = `${styles.box} ${activeIsDragging ? styles.dragging : ""} ${hasError ? styles.error : ""} ${className}`;
+  const boxClass = `${styles.box} ${activeIsDragging ? styles.dragging : ""} ${hasError ? styles.error : ""} ${compact ? styles.compact : ""} ${className}`;
 
   return (
     <div 
@@ -120,10 +132,12 @@ export const CargaArchivos = ({
         }
       }}
     >
-      <FiUploadCloud className={styles.icon} />
+      <Icon className={styles.icon} />
       <h4 className={styles.text}>{title}</h4>
       <p className={styles.subtext}>{subtitle}</p>
-      <p className={styles.maxSizeHint}>Tamaño máximo: {TAMANIO_MAXIMO_ARCHIVO_MB} MB</p>
+      {showMaxSizeHint && (
+        <p className={styles.maxSizeHint}>Tamaño máximo: {TAMANIO_MAXIMO_ARCHIVO_MB} MB</p>
+      )}
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { useCadenaActiva } from "./useCadenaActiva";
 import {
   RELACION_APODERADO_ID,
   RELACION_REPRESENTANTE_LEGAL_ID,
+  RELACION_FIADOR_ID,
   IDS_RELACIONES_TERCEROS_BASE,
 } from "../constants/tiposRelacionSocio";
 import {
@@ -392,6 +393,14 @@ export const useValidacionLegajo = ({
       }
     }
 
+    // Fiador obligatorio forzado (SGRPLUSPLA-137): mismo criterio que
+    // SociosLegajo.jsx - persona física siempre, o jurídica con un único
+    // accionista (SAS/SAU/sociedad unipersonal). Con 2+ accionistas el
+    // backend ya los da de alta como fiadores automáticamente, así que ahí
+    // rige la parametrización normal de la cadena (ver más abajo).
+    const fiadorForzado = esFisica || accionistas.length === 1;
+    const accionistaUnico = !esFisica && accionistas.length === 1 ? accionistas[0] : null;
+
     // Relaciones activadas dinámicamente desde /admin/tipos-relacion-socio
     // (ver TerceroRelacionSection) - misma lógica de validación que
     // Apoderado/Representante Legal: contacto + domicilio + CUIT, sin DNI, y
@@ -399,9 +408,17 @@ export const useValidacionLegajo = ({
     catalogoExtra.forEach((item) => {
       const etiqueta = item.descripcion || `relación #${item.id}`;
       const idKey = String(item.id);
-      const personas = porTipoRelacion[idKey] || [];
+      const esFiador = item.id === RELACION_FIADOR_ID;
+      // El backend todavía no distingue el caso de accionista único
+      // (pendiente del lado de Victor, SGRPLUSPLA-137): sigue auto-creando
+      // la relación de Fiador apuntando al mismo tercero que el accionista.
+      // Se descarta acá, igual que en SociosLegajo.jsx, para que no cuente
+      // como si ya hubiera un fiador real cargado.
+      const personas = (porTipoRelacion[idKey] || []).filter(
+        (p) => !(esFiador && accionistaUnico && Number(p.id) === Number(accionistaUnico.id)),
+      );
 
-      if (requisitos.relaciones[idKey] !== 1) return;
+      if (requisitos.relaciones[idKey] !== 1 && !(esFiador && fiadorForzado)) return;
 
       totalRequisitos++;
       totalLegajoObligatorios++;
@@ -423,6 +440,24 @@ export const useValidacionLegajo = ({
             erroresExtra.push(
               `${etiqueta} ${persona.nombre} no pasó los Criterios de Aceptación — un administrador debe reintentarlo.`,
             );
+          }
+          // Defensa adicional (ver también RepresentanteModal, que ya
+          // bloquea esto al guardar): el fiador no puede ser la misma
+          // persona que el accionista único.
+          if (esFiador && accionistaUnico) {
+            const cuitPersona = String(persona.cuit || "").replace(/\D/g, "");
+            const cuitAccionista = String(accionistaUnico.cuit || "").replace(/\D/g, "");
+            const emailPersona = String(persona.email || "").trim().toLowerCase();
+            const emailAccionista = String(accionistaUnico.email || "").trim().toLowerCase();
+            if (
+              (cuitAccionista && cuitPersona === cuitAccionista) ||
+              (emailAccionista && emailPersona === emailAccionista)
+            ) {
+              extraValidos = false;
+              erroresExtra.push(
+                `El fiador ${persona.nombre} no puede ser la misma persona que el accionista único.`,
+              );
+            }
           }
         });
       }
