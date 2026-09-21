@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield } from "react-icons/fi";
+import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield, FiCreditCard } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
 import { Modal } from "../../../../../ui/Modal/Modal";
@@ -43,7 +43,14 @@ const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError }) => {
+// DNI Dorso reusa el mismo ícono de DNI Frente, solo espejado - así se
+// distinguen entre sí sin necesitar un segundo ícono real de "reverso de
+// documento" (no existe uno claro en Feather/react-icons/fi).
+const IconoDniDorso = (props) => (
+  <FiCreditCard {...props} style={{ transform: "scaleX(-1)" }} />
+);
+
+const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError }) => {
   const [isDragging, setIsDragging] = useState(false);
   return (
     <div className={styles.dropzoneWrapper}>
@@ -61,6 +68,11 @@ const DropzoneField = ({ file, title, subtitle, onChange, onEdit, onView, onDown
       <CargaArchivos
         title={title}
         subtitle={subtitle}
+        icon={icon}
+        // El límite de 50MB es un dato de archivos sueltos, no de una foto
+        // de DNI - acá no aplica (ver CargaArchivos.jsx).
+        showMaxSizeHint={false}
+        compact
         hasError={hasError}
         file={
           file
@@ -824,6 +836,21 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
 
     if (!isValid || hasDropzoneErrors || !domicilioValido) return;
 
+    // No puede repetirse el email entre accionistas (SGRPLUSPLA-137) -
+    // reusa indexSocioEditado (ya calculado más arriba) para excluirse a sí
+    // mismo al editar.
+    const emailValue = (getValues("email") || "").trim().toLowerCase();
+    const emailDuplicado = accionistas.some(
+      (s, idx) => idx !== indexSocioEditado && (s.email || "").trim().toLowerCase() === emailValue,
+    );
+    if (emailDuplicado) {
+      setError("email", {
+        type: "manual",
+        message: "Ya hay otro accionista cargado con este mismo email.",
+      });
+      return;
+    }
+
     if (!isDirty && !filesChanged) {
       await handleCerrar();
       return;
@@ -1400,6 +1427,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   file={dniFrenteFile}
                   title="DNI Frente"
                   subtitle="Imagen clara y legible (Obligatorio)"
+                  icon={FiCreditCard}
                   fileKey="frente"
                   hasError={errorDniFrente}
                   onChange={(f) => { setDniFrenteFile(f); setFilesChanged(true); setErrorDniFrente(false); }}
@@ -1416,6 +1444,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   file={dniDorsoFile}
                   title="DNI Dorso"
                   subtitle="Imagen clara y legible (Obligatorio)"
+                  icon={IconoDniDorso}
                   fileKey="dorso"
                   hasError={errorDniDorso}
                   onChange={(f) => { setDniDorsoFile(f); setFilesChanged(true); setErrorDniDorso(false); }}

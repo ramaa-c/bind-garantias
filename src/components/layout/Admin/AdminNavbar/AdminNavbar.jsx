@@ -74,17 +74,44 @@ export default function AdminNavbar() {
     navigate(path);
   };
 
-  const adminMenu = [
-    "Cadenas de Valor",
-    "CDAs Globales",
-    "CDAs por Cadena",
-    "Líneas",
-    "CDAs Alta de Línea",
-    "Productos de Líneas",
-    "Relaciones de Terceros",
-    "Modo Offline",
-    "Variables Parametrizables",
+  // Agrupados por dominio en vez de un único dropdown "Administración" con
+  // los 9 sueltos (quedó sobrepoblado e ilegible, ver charla del 2026-09-21) -
+  // Términos y Condiciones se sumó acá adentro (antes vivía como botón de
+  // primer nivel) porque encaja con el resto de Configuración tanto como
+  // cualquiera de esos.
+  const gruposMenu = [
+    {
+      key: "cadenas",
+      label: "Cadenas de Valor",
+      items: [
+        { label: "Cadenas de Valor", path: "/admin/cadenas-valor" },
+        { label: "Líneas", path: "/admin/lineas-cadenas" },
+        { label: "Productos de Líneas", path: "/admin/lineas-productos" },
+      ],
+    },
+    {
+      key: "cdas",
+      label: "CDAs",
+      items: [
+        { label: "CDAs Globales", path: "/admin/cdas" },
+        { label: "CDAs por Cadena", path: "/admin/cadenas-cda" },
+        { label: "CDAs Alta de Línea", path: "/admin/lineas-cda" },
+      ],
+    },
+    {
+      key: "configuracion",
+      label: "Configuración",
+      items: [
+        { label: "Relaciones de Terceros", path: "/admin/tipos-relacion-socio" },
+        { label: "Variables Parametrizables", path: "/admin/variables-parametrizacion" },
+        { label: "Modo Offline", path: "/admin/modo-offline" },
+        { label: "Términos y Condiciones", path: "/admin/terminos" },
+      ],
+    },
   ];
+
+  const grupoContieneRutaActiva = (grupo) =>
+    grupo.items.some((item) => isActive(item.path));
 
   return (
     <div className={styles.navWrapper}>
@@ -170,62 +197,32 @@ export default function AdminNavbar() {
             Empresas
           </button>
 
-          {/* Términos y Condiciones */}
-          <button type="button"
-            className={`${styles.navButton} ${
-              isActive("/admin/terminos") ? styles.active : ""
-            }`}
-            onClick={() => handleNavigate("/admin/terminos")}
-          >
-            Términos y Condiciones
-          </button>
-
-          {/* Administración Dropdown */}
-          <div className={styles.dropdownContainer}>
-            <button type="button"
-              className={`${styles.navButton} ${
-                activeDropdown === "administracion" ? styles.dropdownActive : ""
-              }`}
-              onClick={() => toggleDropdown("administracion")}
-            >
-              Administración <FiChevronDown className={styles.chevron} />
-            </button>
-            {activeDropdown === "administracion" && (
-              <div className={`${styles.dropdownMenu} ${styles.scrollableMenu}`}>
-                {adminMenu.map((item) => {
-                  let destPath = null;
-                  if (item === "Cadenas de Valor") {
-                    destPath = "/admin/cadenas-valor";
-                  } else if (item === "CDAs Globales") {
-                    destPath = "/admin/cdas";
-                  } else if (item === "CDAs por Cadena") {
-                    destPath = "/admin/cadenas-cda";
-                  } else if (item === "Líneas") {
-                    destPath = "/admin/lineas-cadenas";
-                  } else if (item === "CDAs Alta de Línea") {
-                    destPath = "/admin/lineas-cda";
-                  } else if (item === "Productos de Líneas") {
-                    destPath = "/admin/lineas-productos";
-                  } else if (item === "Relaciones de Terceros") {
-                    destPath = "/admin/tipos-relacion-socio";
-                  } else if (item === "Modo Offline") {
-                    destPath = "/admin/modo-offline";
-                  } else if (item === "Variables Parametrizables") {
-                    destPath = "/admin/variables-parametrizacion";
-                  }
-                  return (
+          {/* Grupos de Administración: Cadenas de Valor / CDAs / Configuración */}
+          {gruposMenu.map((grupo) => (
+            <div className={styles.dropdownContainer} key={grupo.key}>
+              <button type="button"
+                className={`${styles.navButton} ${
+                  activeDropdown === grupo.key ? styles.dropdownActive : ""
+                } ${grupoContieneRutaActiva(grupo) ? styles.active : ""}`}
+                onClick={() => toggleDropdown(grupo.key)}
+              >
+                {grupo.label} <FiChevronDown className={styles.chevron} />
+              </button>
+              {activeDropdown === grupo.key && (
+                <div className={`${styles.dropdownMenu} ${styles.scrollableMenu}`}>
+                  {grupo.items.map((item) => (
                     <button type="button"
-                      key={item}
-                      className={styles.dropdownItem}
-                      onClick={() => handleNavigate(destPath)}
+                      key={item.path}
+                      className={`${styles.dropdownItem} ${isActive(item.path) ? styles.dropdownItemActive : ""}`}
+                      onClick={() => handleNavigate(item.path)}
                     >
-                      {item}
+                      {item.label}
                     </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
 
             {/* Ocultados Ayuda y Soporte por el momento */}
             </>

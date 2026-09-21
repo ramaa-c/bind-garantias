@@ -461,8 +461,7 @@ const rutasLegacy = (
         redirigía a /{cadenaId}/login (ver RootRedirect, ya eliminado) —
         pedido explícito de sacarlo: la URL de cada cadena se arma siempre a
         mano, nunca automática, y un redirect acá (aunque sea client-side)
-        rompe el enmascarado de la URL en el entorno del banco (Victor,
-        2026-08-21). Ese riesgo no aplica al admin: nunca estuvo enmascarado
+        rompe el enmascarado de la URL en el entorno del banco. Ese riesgo no aplica al admin: nunca estuvo enmascarado
         (su URL siempre mostró /login o /admin), así que no hay nada que
         proteger acá. Con el deploy por carpeta (una por banco + una para
         admin, con tenants.json vacío) llegar a "/" en modo legacy significa

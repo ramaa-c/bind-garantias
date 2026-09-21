@@ -21,6 +21,7 @@ import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { tercerosService } from "../../../../services/tercerosService";
 import { parseAddress, armarDireccion } from "../../../../utils/direccionParser";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
+import { RELACION_FIADOR_ID } from "../../../../constants/tiposRelacionSocio";
 
 import styles from "./RepresentanteModal.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
@@ -50,6 +51,8 @@ export function RepresentanteModal({
   onGuardar,              // Form mode: callback to update parent React Hook Form state
   tipoRelacionSocioId,    // TipoRelacionSocioID a usar para la relación (fijo, no editable)
   etiquetaRol,            // Nombre a mostrar (viene de api/TipoRelacionSocio para relaciones dinámicas)
+  evitarCoincidenciaCon,  // { cuit, email } a rechazar si coinciden (ver Fiador con accionista único, SGRPLUSPLA-137)
+  itemsExistentes = [],   // Resto de los items ya cargados para este mismo tipoRelacionSocioId (ver duplicado de email entre Fiadores, SGRPLUSPLA-137)
 }) {
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
@@ -181,6 +184,7 @@ export function RepresentanteModal({
 
   const cuitValue = useWatch({ control, name: "cuit" });
   const nombreValue = useWatch({ control, name: "nombre" });
+  const emailValue = useWatch({ control, name: "email" });
   const currentProvincia = useWatch({ control, name: "provinciaid" });
 
   const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
@@ -223,6 +227,17 @@ export function RepresentanteModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cuitValue, clearErrors]);
 
+  // Mismo criterio que el CUIT de arriba: los errores manuales que agrega
+  // este modal sobre email (evitarCoincidenciaCon / duplicado entre
+  // Fiadores, ver handlePreSubmit) no deben seguir pisando el mensaje de
+  // validación normal apenas el usuario retoma la edición del campo.
+  useEffect(() => {
+    if (errors.email?.type === "manual") {
+      clearErrors("email");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [emailValue, clearErrors]);
+
   const handleAfipLookup = async () => {
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
     
@@ -230,7 +245,22 @@ export function RepresentanteModal({
       setError("cuit", { type: "manual", message: "Por favor, ingrese un CUIT de 11 dígitos válido." });
       return;
     }
-    
+
+    // Fiador con accionista único (SGRPLUSPLA-137): se corta ACÁ, antes de
+    // vincular/consultar ARCA/correr CDA - si no, el usuario ve todo el
+    // flujo completarse "con éxito" (auto-completa los mismos datos del
+    // accionista, CDA aprobado) y recién se entera del rechazo al final,
+    // en el submit (reportado en vivo: probó cargar al mismo accionista y
+    // pareció "dejarlo" porque el bloqueo real llegaba demasiado tarde).
+    const cuitAEvitarTemprano = String(evitarCoincidenciaCon?.cuit || "").replace(/\D/g, "");
+    if (cuitAEvitarTemprano && cuitLimpio === cuitAEvitarTemprano) {
+      setError("cuit", {
+        type: "manual",
+        message: "El fiador no puede ser la misma persona que el accionista único.",
+      });
+      return;
+    }
+
     setValidando(true);
     clearErrors("cuit");
 
@@ -677,6 +707,52 @@ export function RepresentanteModal({
     const domicilioValido = validarDomicilio();
     if (!isValid || !domicilioValido) return;
 
+    // Fiador con accionista único (SGRPLUSPLA-137): no puede ser la misma
+    // persona que ya está cargada como accionista - se compara CUIT y email
+    // (case-insensitive, mismo criterio que el resto de las comparaciones de
+    // email de este modal/SocioAccionistaModal).
+    if (evitarCoincidenciaCon) {
+      const cuitLimpio = String(getValues("cuit") || "").replace(/\D/g, "");
+      const cuitAEvitar = String(evitarCoincidenciaCon.cuit || "").replace(/\D/g, "");
+      const emailValue = (getValues("email") || "").trim().toLowerCase();
+      const emailAEvitar = (evitarCoincidenciaCon.email || "").trim().toLowerCase();
+
+      if (cuitAEvitar && cuitLimpio === cuitAEvitar) {
+        setError("cuit", {
+          type: "manual",
+          message: "El fiador no puede ser la misma persona que el accionista único.",
+        });
+        return;
+      }
+      if (emailAEvitar && emailValue === emailAEvitar) {
+        setError("email", {
+          type: "manual",
+          message: "El fiador no puede tener el mismo email que el accionista único.",
+        });
+        return;
+      }
+    }
+
+    // Tampoco puede repetirse el email entre Fiadores (SGRPLUSPLA-137) -
+    // mismo criterio que entre Accionistas (ver SocioAccionistaModal). Se
+    // excluye al propio item por id para no chocar consigo mismo al editar.
+    if (tipoRelacionSocioId === RELACION_FIADOR_ID) {
+      const emailActual = (getValues("email") || "").trim().toLowerCase();
+      const idActual = representante?.id;
+      const emailDuplicado = itemsExistentes.some(
+        (it) =>
+          it.id !== idActual &&
+          (it.email || "").trim().toLowerCase() === emailActual,
+      );
+      if (emailDuplicado) {
+        setError("email", {
+          type: "manual",
+          message: "Ya hay otro fiador cargado con este mismo email.",
+        });
+        return;
+      }
+    }
+
     if (!isDirty) {
       await handleCerrar();
       return;
@@ -1110,7 +1186,14 @@ export function RepresentanteModal({
                   render={({ field, fieldState }) => (
                     <InputSocioMasked
                       value={field.value}
-                      onChange={(val) => setValue("email", val, { shouldDirty: true, shouldValidate: true })}
+                      // Sin shouldValidate acá (a diferencia del resto de los
+                      // campos de este modal): con el patrón de email, "true"
+                      // revalida en cada tecla y muestra "Email inválido"
+                      // mientras la persona todavía está escribiendo. La
+                      // validación real sigue ocurriendo al perder el foco
+                      // (field.onBlur) y al enviar (trigger() en
+                      // handlePreSubmit).
+                      onChange={(val) => setValue("email", val, { shouldDirty: true })}
                       onBlur={field.onBlur}
                       label="Correo Electrónico"
                       icon={<FiMail />}

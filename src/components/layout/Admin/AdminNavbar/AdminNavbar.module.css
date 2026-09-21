@@ -372,6 +372,14 @@
   font-weight: 600;
 }
 
+.dropdownItemActive {
+  background-color: rgba(76, 101, 230, 0.1);
+  color: var(--color-azul-bind, #4c65e6);
+  border-left: 3px solid var(--color-azul-bind, #4c65e6);
+  padding-left: 1.25rem;
+  font-weight: 700;
+}
+
 @keyframes dropdownFade {
   from {
     opacity: 0;

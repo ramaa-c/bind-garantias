@@ -38,7 +38,7 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
 
   // Fuente de verdad para qué relaciones se pueden parametrizar y cómo se
   // llaman: lo que el admin activó en /admin/tipos-relacion-socio (ver
-  // SGRPLUSPLA, pedido de Victor). Compartida con la mini parametrización de
+  // Compartida con la mini parametrización de
   // terceros en TiposRelacionSocio.jsx - ver useRelationMetadata.
   const { relationMetadata } = useRelationMetadata();
 

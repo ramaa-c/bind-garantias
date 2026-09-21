@@ -13,8 +13,7 @@ import styles from "./NotificarSocioModal.module.css";
 // vinculados (ver useUsuariosVinculadosASocio). El backend interpreta HTML
 // plano dentro de Mensaje - de ahí el editor contentEditable en vez de un
 // textarea común: el admin ve la negrita real mientras escribe, pero lo que
-// viaja en el payload sigue siendo <strong>texto</strong> (confirmado con
-// Victor: es la única etiqueta que soporta por ahora).
+// viaja en el payload sigue siendo <strong>texto</strong>.
 //
 // El botón "Negrita" es un toggle (se pidió expresamente: clickearlo activa
 // el modo y todo lo que se tipee de ahí en más queda en negrita hasta

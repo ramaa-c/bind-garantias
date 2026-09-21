@@ -79,6 +79,30 @@
   pointer-events: none;
 }
 
+/* Variante compacta: para dropzones que muestran poco texto (ej. DNI
+   Frente/Dorso en SocioAccionistaModal, sin subtítulo de tamaño máximo) el
+   ícono/textos grandes por defecto dejaban el estado vacío bastante más
+   alto que el estado "archivo cargado" (una sola fila) - acá se achica todo
+   junto para que ambos estados puedan compartir un min-height bajo sin que
+   ninguno quede recortado. */
+.compact {
+  min-height: 132px;
+}
+
+.compact .icon {
+  font-size: 1.6rem;
+  margin-bottom: 4px;
+}
+
+.compact .text {
+  font-size: 0.85rem;
+  margin-bottom: 2px;
+}
+
+.compact .subtext {
+  font-size: 0.72rem;
+}
+
 /* --- ESTADO: ARCHIVO CARGADO ---
    .loaded y .actionsGroup se resuelven con flex-wrap en vez de un media
    query: la caja se usa tanto sola en una columna angosta como dentro de

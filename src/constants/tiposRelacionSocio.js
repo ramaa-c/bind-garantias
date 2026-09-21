@@ -25,6 +25,15 @@ export const RELACION_AGENTE_BOLSA_ID = 21;
 // de TerceroRelacionado sino de UsuarioCadenaValor.
 export const RELACION_USUARIOS_ID = 999;
 
+// Fiador (SGRPLUSPLA-137): a propósito NO se agrega a RELACIONES_TERCEROS_BASE
+// - sigue viajando por el pipeline genérico (porTipoRelacion/TerceroRelacionSection/
+// RepresentanteModal), que ya alcanza para mostrarlo y validarlo. Se centraliza
+// el ID acá solo porque SociosLegajo.jsx y useValidacionLegajo.js necesitan
+// tratarlo distinto del resto de las relaciones genéricas: cuando el socio
+// jurídico tiene un único accionista (o es persona física), el Fiador pasa a
+// ser obligatorio sin importar la parametrización de la cadena.
+export const RELACION_FIADOR_ID = 30;
+
 export const RELACIONES_TERCEROS_BASE = [
   { clave: "accionistas", tipoRelacionSocioId: RELACION_ACCIONISTA_ID },
   { clave: "representanteLegal", tipoRelacionSocioId: RELACION_REPRESENTANTE_LEGAL_ID },

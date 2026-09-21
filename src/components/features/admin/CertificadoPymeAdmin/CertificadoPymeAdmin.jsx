@@ -50,7 +50,7 @@ const calcularVigencia = (hasta) => {
 // SGR+ o no. Esa tabla no se completa sola — se carga llamando a
 // Socio/CertificadoVigente con Vincular=true (botón "Reverificar", el mismo
 // chequeo que ya corre una vez en Paso1Cuit), o a mano acá si CASFOG/LUFE
-// no refleja la realidad. Acordado con Victor el 2026-08-21.
+// no refleja la realidad.
 export function CertificadoPymeAdmin({ socioId, cuit }) {
   const queryClient = useQueryClient();
   const { data: certificados, isLoading } = useCertificadoPyme(socioId);
