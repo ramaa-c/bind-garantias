@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { catalogosService } from "../services/catalogosService";
 
 const mapAndSort = (data, idField, descField = "descripcion") => {
@@ -142,3 +142,70 @@ export const useObligaciones = () =>
       return mapAndSort(arrayLimpio, "tipoobligacionid");
     },
   });
+
+export const useTipoModeloDocumento = () =>
+  useQuery({
+    queryKey: ["catalogos", "tipoModeloDocumento"],
+    queryFn: catalogosService.obtenerTipoModeloDocumento,
+    staleTime: STALE_TIME,
+    select: (data) => {
+      const arrayReal = Array.isArray(data) ? data : data?.list || [];
+      const arrayLimpio = arrayReal.filter((item) => item !== null);
+      return mapAndSort(arrayLimpio, "tipomodelodocumentoid");
+    },
+  });
+
+// TextoModeloDocumento/HTMLModeloDocumento (el contrato completo en base64)
+// se descartan acá: son varios cientos de KB por modelo y no se usan para
+// llenar el combo. Si en algún momento hacen falta, conviene pedirlos aparte
+// por ModeloDocumentoID en vez de guardarlos en esta caché.
+export const useModelosDocumento = (tipoModeloDocumentoId) =>
+  useQuery({
+    queryKey: ["catalogos", "modelosDocumento", tipoModeloDocumentoId],
+    queryFn: () => catalogosService.obtenerModelosDocumento(tipoModeloDocumentoId),
+    enabled: !!tipoModeloDocumentoId,
+    staleTime: STALE_TIME,
+    select: (data) => {
+      const arrayReal = Array.isArray(data) ? data : data?.list || [];
+      const arrayLimpio = arrayReal
+        .filter((item) => item !== null)
+        .map((item) => {
+          const { textomodelodocumento: _texto, htmlmodelodocumento: _html, ...resto } = item;
+          return resto;
+        });
+      return mapAndSort(arrayLimpio, "modelodocumentoid", "descripcion");
+    },
+  });
+
+// Parámetros de varios modelos de documento a la vez. Devuelve
+// { porModelo: Map(modeloDocumentoID -> parámetros), cargando }.
+//
+// Dos usos, ambos por adelantado (no al momento de generar el PDF):
+// - Dashboard: saber ya en el render si una solicitud va a poder generar su
+//   documento, para que el botón avise antes de clickear y la pestaña nueva
+//   solo se abra cuando realmente va a funcionar (ver useAbrirModeloDocumento).
+// - Alta/edición de cadena: filtrar del combo los modelos que no se pueden
+//   resolver desde una solicitud (ver esModeloResolubleDesdeSolicitud).
+//
+// El endpoint es liviano - devuelve apenas la lista de campos, no el
+// contenido del modelo.
+export const useParametrosModelosDocumento = (modeloIds) => {
+  const ids = (modeloIds || []).map(Number).filter((id) => id > 0);
+
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: ["catalogos", "parametrosModeloDocumento", id],
+      queryFn: () => catalogosService.obtenerParametrosModeloDocumento(id),
+      staleTime: STALE_TIME,
+    })),
+    // Los resultados vienen en el mismo orden que `queries`, así que el
+    // índice alcanza para volver a asociar cada uno con su modelo.
+    combine: (resultados) => {
+      const porModelo = new Map();
+      resultados.forEach((resultado, i) => {
+        if (Array.isArray(resultado.data)) porModelo.set(ids[i], resultado.data);
+      });
+      return { porModelo, cargando: resultados.some((r) => r.isPending) };
+    },
+  });
+};

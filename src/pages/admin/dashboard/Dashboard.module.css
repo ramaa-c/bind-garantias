@@ -736,6 +736,36 @@
   flex-wrap: wrap;
 }
 
+.btnDocumento {
+  border: 1.5px solid rgba(76, 101, 230, 0.35);
+}
+
+.btnDocumento:hover {
+  border-color: var(--color-azul-bind);
+}
+
+/* El modelo configurado en la cadena no se puede resolver con los datos de
+   esta solicitud (ver evaluarModeloDocumento). El botón sigue siendo
+   clickeable a propósito: el click muestra el motivo completo, que no entra
+   en el tooltip de todos los navegadores. */
+.btnDocumentoNoDisponible {
+  border-color: rgba(255, 255, 255, 0.12);
+  opacity: 0.55;
+}
+
+.btnDocumentoNoDisponible:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  opacity: 0.8;
+}
+
+.actionsDivider {
+  width: 1px;
+  align-self: stretch;
+  min-height: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
 @media (min-width: 64rem) {
   .rowActions {
     flex-wrap: nowrap;

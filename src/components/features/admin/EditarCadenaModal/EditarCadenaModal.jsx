@@ -1,8 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FiUploadCloud } from "react-icons/fi";
 import { toast } from "sonner";
 import { useActualizarCadenaValor } from "../../../../hooks/useCadenaValor";
-import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas } from "../../../../hooks/useCatalogos";
+import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas, useTipoModeloDocumento } from "../../../../hooks/useCatalogos";
+import { useModelosDocumentoDisponibles } from "../../../../hooks/useModeloDocumento";
+import { filtrarTiposModeloDocumento } from "../../../../utils/parametrosModeloDocumento";
 import { Modal, Button, InputSimple, SelectSimple, MontoEnPalabras } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
@@ -20,7 +23,11 @@ const construirDatosFormulario = (activeItem) => ({
   montomaximoutilizado: activeItem?.montomaximoutilizado != null && activeItem.montomaximoutilizado !== "" ? activeItem.montomaximoutilizado.toString() : "0",
   porcentajemaximoutilizado: activeItem?.porcentajemaximoutilizado != null && activeItem.porcentajemaximoutilizado !== "" ? activeItem.porcentajemaximoutilizado.toString() : "100",
   monedaid: activeItem?.monedaid != null ? activeItem.monedaid.toString() : "",
-  activa: activeItem?.activa || "1"
+  activa: activeItem?.activa || "1",
+  // El listado de cadenas solo trae ModeloDocumentoID (no el TipoModeloDocumentoID
+  // que le dio origen), así que el combo de Tipo arranca vacío en edición aunque
+  // ya haya un modelo configurado - ver tipoModeloDocumentoIdSeleccionUI más abajo.
+  modelodocumentoid: activeItem?.modelodocumentoid != null ? activeItem.modelodocumentoid.toString() : "0",
 });
 
 // El padre remonta este modal en cada apertura (ver key en CadenasValor.jsx),
@@ -28,6 +35,37 @@ const construirDatosFormulario = (activeItem) => ({
 // activeItem - no hace falta un efecto que lo vuelva a sincronizar.
 export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) => {
   const [formState, setFormState] = useState(() => construirDatosFormulario(activeItem));
+
+  // Solo sirve para filtrar el combo de Modelo - no se persiste (ver comentario
+  // en construirDatosFormulario sobre por qué no se puede derivar en edición).
+  const [tipoModeloDocumentoIdUI, setTipoModeloDocumentoIdUI] = useState("");
+
+  const queryClient = useQueryClient();
+
+  // El backend no guarda el TipoModeloDocumentoID en la cadena (solo el
+  // ModeloDocumentoID ya elegido), así que no hay forma de pedírselo
+  // directamente a la API sin traer catalogos/ModeloDocumento SIN filtro
+  // (17MB, ver comentario en catalogosService.js) - probar tipo por tipo
+  // tampoco sirve, cada uno pesa ~1MB+.
+  // Como mejor esfuerzo, se busca el modelo ya asignado en lo que
+  // react-query ya tenga en caché de esta sesión (ej: si este mismo admin
+  // lo acaba de configurar). Si no está en caché, el combo de Tipo queda
+  // vacío y se muestra el hint de "Modelo actual N.º X" más abajo.
+  useEffect(() => {
+    const modeloId = Number(activeItem?.modelodocumentoid);
+    if (!modeloId) return;
+    const cachedEntries = queryClient.getQueriesData({ queryKey: ["catalogos", "modelosDocumento"] });
+    for (const [queryKey, data] of cachedEntries) {
+      const lista = Array.isArray(data) ? data : [];
+      const encontrado = lista.find((m) => Number(m?.modelodocumentoid) === modeloId);
+      if (encontrado) {
+        setTipoModeloDocumentoIdUI(String(queryKey[2]));
+        break;
+      }
+    }
+    // Solo al montar: activeItem no cambia durante la vida de este modal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Mismo patrón que LineasCadena.jsx/ActivarCadenaModal.jsx: cada campo
   // obligatorio muestra su propio error debajo en vez de un toast que
@@ -63,12 +101,22 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
   const { data: equiposData } = useEquipoComercial();
   const { data: contratosData } = useTipoContrato();
   const { data: monedasData } = useMonedas();
+  const { data: tiposModeloDocumentoData } = useTipoModeloDocumento();
+  const {
+    opciones: modelosDocumentoOpciones,
+    cargando: cargandoModelosDocumento,
+    ocultos: modelosDocumentoOcultos,
+  } = useModelosDocumentoDisponibles(tipoModeloDocumentoIdUI, formState.modelodocumentoid);
   const actualizarMutation = useActualizarCadenaValor();
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
   const contratosOpciones = contratosData?.opciones || [];
   const monedasOpciones = monedasData?.opciones || [];
+  const tiposModeloDocumentoOpciones = filtrarTiposModeloDocumento(
+    tiposModeloDocumentoData?.opciones,
+    tipoModeloDocumentoIdUI,
+  );
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Snapshot del formState al abrir el modal: permite saber si el usuario
@@ -106,6 +154,13 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       delete next[field];
       return next;
     });
+  };
+
+  // Cambiar el tipo invalida el modelo elegido previamente (los modelos de
+  // otro tipo no son válidos acá) - mismo criterio que provincia/ciudad.
+  const handleTipoModeloDocumentoChange = (val) => {
+    setTipoModeloDocumentoIdUI(val);
+    handleInputChange("modelodocumentoid", "0");
   };
 
   const handleFileChange = (e) => {
@@ -196,7 +251,8 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       montomaximoutilizado: Number(desenmascarar(formState.montomaximoutilizado)),
       porcentajemaximoutilizado: Number(desenmascarar(formState.porcentajemaximoutilizado)),
       monedaid: Number(formState.monedaid),
-      activa: formState.activa
+      activa: formState.activa,
+      modelodocumentoid: Number(formState.modelodocumentoid) || 0,
     };
 
     actualizarMutation.mutate(payload, {
@@ -305,6 +361,51 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 className={styles.compactInput}
                 error={formErrors.tipocontratoid}
               />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.sectionGroup}>
+          <h4 className={styles.sectionTitle}>Modelo de Documento</h4>
+          <div className={styles.row}>
+            <div style={{ flex: 1 }}>
+              <SelectSimple
+                label="Tipo de Modelo"
+                placeholder="Seleccione tipo de modelo..."
+                options={tiposModeloDocumentoOpciones}
+                value={tipoModeloDocumentoIdUI}
+                onChange={handleTipoModeloDocumentoChange}
+                className={styles.compactInput}
+              />
+              {!tipoModeloDocumentoIdUI && Number(formState.modelodocumentoid) > 0 && (
+                <span className={styles.selectHint}>
+                  Modelo actual N.º {formState.modelodocumentoid}. Elegí un tipo para cambiarlo.
+                </span>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <SelectSimple
+                label="Modelo de Documento"
+                placeholder={
+                  cargandoModelosDocumento
+                    ? "Cargando..."
+                    : tipoModeloDocumentoIdUI && modelosDocumentoOpciones.length === 0
+                      ? "Sin modelos disponibles"
+                      : "Seleccione modelo..."
+                }
+                options={modelosDocumentoOpciones}
+                value={formState.modelodocumentoid !== "0" ? formState.modelodocumentoid : ""}
+                onChange={val => handleInputChange("modelodocumentoid", val)}
+                disabled={!tipoModeloDocumentoIdUI || modelosDocumentoOpciones.length === 0}
+                className={styles.compactInput}
+              />
+              {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && (
+                <span className={styles.selectHint}>
+                  {modelosDocumentoOpciones.length === 0
+                    ? "Ningún modelo de este tipo se puede generar desde una solicitud."
+                    : `Se ocultaron ${modelosDocumentoOcultos} modelo(s) que no se pueden generar desde una solicitud.`}
+                </span>
+              )}
             </div>
           </div>
         </div>

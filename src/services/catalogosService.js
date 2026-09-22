@@ -120,4 +120,23 @@ export const catalogosService = {
   // Trae los tipos de obligación (Productos)
   obtenerObligaciones: async () =>
     (await api.get("catalogos/TipoObligacion")).data,
+
+  // Trae las clasificaciones de Modelo de Documento (ej: "Contrato y Fianza")
+  obtenerTipoModeloDocumento: async () =>
+    (await api.get("catalogos/TipoModeloDocumento")).data,
+
+  // Trae los modelos de documento de un tipo dado. TipoModeloDocumentoID
+  // siempre requerido: sin filtro este endpoint devuelve ~17MB (arrastra
+  // TextoModeloDocumento/HTMLModeloDocumento en base64 por cada modelo).
+  obtenerModelosDocumento: async (tipoModeloDocumentoId) =>
+    (
+      await api.get("catalogos/ModeloDocumento", {
+        params: { TipoModeloDocumentoID: tipoModeloDocumentoId },
+      })
+    ).data,
+
+  // Trae los parámetros que un Modelo de Documento necesita para generarse
+  // (ver api/ModeloDocumentoPDF)
+  obtenerParametrosModeloDocumento: async (modeloId) =>
+    (await api.get(`catalogos/ModeloDocumento/${modeloId}/Parametros`)).data,
 };

@@ -18,6 +18,7 @@ export const cadenaValorAdapter = {
       PorcentajeMaximoUtilizado: d.porcentajemaximoutilizado,
       MontoMaximoUtilizado: d.montomaximoutilizado,
       Activa: d.activa,
+      ModeloDocumentoID: d.modelodocumentoid ?? 0,
     };
   },
   adaptarPayload2: (data) => {
@@ -36,6 +37,7 @@ export const cadenaValorAdapter = {
       PorcentajeMaximoUtilizado: d.porcentajemaximoutilizado,
       MontoMaximoUtilizado: d.montomaximoutilizado,
       Activa: d.activa,
+      ModeloDocumentoID: d.modelodocumentoid ?? 0,
     };
   },
   // POST /api/cadenavalor/cdas - Agrega CDAs a un GrupoCda (Pantalla x

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
+import { BotonIcono } from "../../../components/ui/BotonIcono/BotonIcono";
 import { Modal } from "../../../components/ui/Modal/Modal";
 import { SinResultados } from "../../../components/ui/SinResultados/SinResultados";
 import { SelectSimple, SelectFechaSimple } from "../../../components/ui";
@@ -11,7 +12,9 @@ import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
 import { useObtenerSocios, useActualizarSocio } from "../../../hooks/useSocios";
-import { useTiposProducto } from "../../../hooks/useCatalogos";
+import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
+import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
+import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { sociosService } from "../../../services/sociosService";
@@ -122,6 +125,7 @@ export default function Dashboard() {
   const [solicitudCda, setSolicitudCda] = useState(null);
   const [solicitudARechazar, setSolicitudARechazar] = useState(null);
   const [isChainModalOpen, setIsChainModalOpen] = useState(false);
+  const { abrir: abrirModeloDocumento, pendienteId: pendienteModeloDocumentoId } = useAbrirModeloDocumento();
   const [chainSearchQuery, setChainSearchQuery] = useState("");
   const { isRestricted, cadenas } = useAdminRestrictions();
   // useObtenerTodasWeb trae TODAS las cadenas configuradas en la web, estén
@@ -134,6 +138,28 @@ export default function Dashboard() {
     () => (todasCadenasConEstado || []).filter((c) => c.activaOperativa),
     [todasCadenasConEstado],
   );
+
+  // ModeloDocumentoID por cadena, para el botón "Previsualizar documento" de
+  // cada solicitud (ver useAbrirModeloDocumento) - ya viene incluido en la
+  // misma respuesta que arma activeCadenas, así que no hace falta pedirlo
+  // aparte.
+  const modeloDocumentoIdPorCadena = useMemo(() => {
+    const map = new Map();
+    (todasCadenasConEstado || []).forEach((c) => {
+      map.set(String(c.cadenavalorid), c.modelodocumentoid);
+    });
+    return map;
+  }, [todasCadenasConEstado]);
+
+  // Los parámetros de esos modelos se piden por adelantado para saber, ya
+  // acá, si cada solicitud pendiente va a poder generar su documento (ver
+  // evaluarModeloDocumento): el botón lo explica en su tooltip y no se
+  // abre una pestaña nueva al pedo.
+  const modelosDocumentoIds = useMemo(
+    () => [...new Set([...modeloDocumentoIdPorCadena.values()])],
+    [modeloDocumentoIdPorCadena],
+  );
+  const { porModelo: parametrosPorModelo } = useParametrosModelosDocumento(modelosDocumentoIds);
 
   const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
   const { data: limitesData, isLoading: isLoadingLimites } =
@@ -802,6 +828,18 @@ export default function Dashboard() {
             const isPendiente = !isAprobada && !isRechazada && !isCancelada;
             const estadoKey = dotYPillClaseDesde(isAprobada, isRechazada, isCancelada);
 
+            // La previsualización del documento es solo para solicitudes
+            // pendientes: en los demás estados la operación ya se resolvió.
+            const modeloDocumentoId = modeloDocumentoIdPorCadena.get(String(item.cadenavalorid));
+            const parametrosModelo = parametrosPorModelo.get(Number(modeloDocumentoId));
+            const modeloDocumento = isPendiente
+              ? evaluarModeloDocumento({
+                  solicitud: item,
+                  modeloDocumentoId,
+                  parametrosCatalogo: parametrosModelo,
+                })
+              : null;
+
             return (
               <div
                 key={item.id}
@@ -840,6 +878,21 @@ export default function Dashboard() {
                     la propagación del click para no disparar el detalle
                     encima. */}
                 <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
+                  {/* Siempre seguido de otra acción (CRITERIOS si el admin
+                      está restringido, ACEPTAR/RECHAZAR si no), así que el
+                      divisor va sin condición extra. */}
+                  {isPendiente && (
+                    <>
+                      <BotonIcono
+                        icon={FiFileText}
+                        onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo)}
+                        title={modeloDocumento.motivo || "Previsualizar documento"}
+                        isLoading={pendienteModeloDocumentoId === item.id}
+                        className={`${styles.btnDocumento} ${modeloDocumento.disponible ? "" : styles.btnDocumentoNoDisponible}`}
+                      />
+                      <span className={styles.actionsDivider} />
+                    </>
+                  )}
                   {isRestricted ? (
                     <Button
                       onClick={() => setSolicitudCda(item)}

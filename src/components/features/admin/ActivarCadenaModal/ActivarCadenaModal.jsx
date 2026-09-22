@@ -8,7 +8,9 @@ import { esCdaActivo } from "../../../../utils/cdaUtils";
 import { PANTALLAS_CDA } from "../../../../utils/pantallasCda";
 import { cdaService } from "../../../../services/cdaService";
 import { cadenaValorService } from "../../../../services/cadenaValorService";
-import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas } from "../../../../hooks/useCatalogos";
+import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas, useTipoModeloDocumento } from "../../../../hooks/useCatalogos";
+import { useModelosDocumentoDisponibles } from "../../../../hooks/useModeloDocumento";
+import { filtrarTiposModeloDocumento } from "../../../../utils/parametrosModeloDocumento";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
@@ -41,8 +43,13 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     tipocontratoid: "",
     monedaid: "",
     montomaximoutilizado: "0",
-    porcentajemaximoutilizado: "100"
+    porcentajemaximoutilizado: "100",
+    modelodocumentoid: "0",
   });
+
+  // Solo sirve para filtrar el combo de Modelo - no se persiste (mismo
+  // criterio que en EditarCadenaModal.jsx).
+  const [tipoModeloDocumentoIdUI, setTipoModeloDocumentoIdUI] = useState("");
 
   // Mismo patrón que LineasCadena.jsx: cada campo obligatorio muestra su
   // propio error debajo (InputSimple/SelectSimple ya lo soportan) en vez de
@@ -90,6 +97,12 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
   const { data: equiposData } = useEquipoComercial();
   const { data: contratosData } = useTipoContrato();
   const { data: monedasData } = useMonedas();
+  const { data: tiposModeloDocumentoData } = useTipoModeloDocumento();
+  const {
+    opciones: modelosDocumentoOpciones,
+    cargando: cargandoModelosDocumento,
+    ocultos: modelosDocumentoOcultos,
+  } = useModelosDocumentoDisponibles(tipoModeloDocumentoIdUI, formState.modelodocumentoid);
   const crearMutation = useCrearCadenaValor();
   const usuarioWebId = useUsuarioWebIdActual();
 
@@ -97,6 +110,10 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
   const equiposOpciones = equiposData?.opciones || [];
   const contratosOpciones = contratosData?.opciones || [];
   const monedasOpciones = monedasData?.opciones || [];
+  const tiposModeloDocumentoOpciones = filtrarTiposModeloDocumento(
+    tiposModeloDocumentoData?.opciones,
+    tipoModeloDocumentoIdUI,
+  );
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -137,10 +154,19 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       tipocontratoid: chain.tipocontratoid != null ? chain.tipocontratoid.toString() : "",
       monedaid: monedaMatch ? String(monedaMatch.monedaid) : "",
       montomaximoutilizado: "0",
-      porcentajemaximoutilizado: "100"
+      porcentajemaximoutilizado: "100",
+      modelodocumentoid: "0",
     });
+    setTipoModeloDocumentoIdUI("");
     setFormErrors({});
     setStep("form");
+  };
+
+  // Cambiar el tipo invalida el modelo elegido previamente (los modelos de
+  // otro tipo no son válidos acá).
+  const handleTipoModeloDocumentoChange = (val) => {
+    setTipoModeloDocumentoIdUI(val);
+    handleInputChange("modelodocumentoid", "0");
   };
 
   const handleFileChange = (e) => {
@@ -234,7 +260,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       monedaid: Number(formState.monedaid),
       montomaximoutilizado: Number(desenmascarar(formState.montomaximoutilizado)),
       porcentajemaximoutilizado: Number(desenmascarar(formState.porcentajemaximoutilizado)),
-      activa: "1"
+      activa: "1",
+      modelodocumentoid: Number(formState.modelodocumentoid) || 0,
     };
 
     crearMutation.mutate(payload, {
@@ -470,6 +497,44 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     onChange={val => handleInputChange("tipocontratoid", val)}
                     error={formErrors.tipocontratoid}
                   />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.sectionGroup}>
+              <h4 className={styles.sectionTitle}>Modelo de Documento</h4>
+              <div className={styles.row}>
+                <div style={{ flex: 1 }}>
+                  <SelectSimple
+                    label="Tipo de Modelo"
+                    placeholder="Seleccione tipo de modelo..."
+                    options={tiposModeloDocumentoOpciones}
+                    value={tipoModeloDocumentoIdUI}
+                    onChange={handleTipoModeloDocumentoChange}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <SelectSimple
+                    label="Modelo de Documento"
+                    placeholder={
+                      cargandoModelosDocumento
+                        ? "Cargando..."
+                        : tipoModeloDocumentoIdUI && modelosDocumentoOpciones.length === 0
+                          ? "Sin modelos disponibles"
+                          : "Seleccione modelo..."
+                    }
+                    options={modelosDocumentoOpciones}
+                    value={formState.modelodocumentoid !== "0" ? formState.modelodocumentoid : ""}
+                    onChange={val => handleInputChange("modelodocumentoid", val)}
+                    disabled={!tipoModeloDocumentoIdUI || modelosDocumentoOpciones.length === 0}
+                  />
+                  {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && (
+                    <span className={styles.selectHint}>
+                      {modelosDocumentoOpciones.length === 0
+                        ? "Ningún modelo de este tipo se puede generar desde una solicitud."
+                        : `Se ocultaron ${modelosDocumentoOcultos} modelo(s) que no se pueden generar desde una solicitud.`}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
