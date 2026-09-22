@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useEmpresaActiva } from "./useEmpresaActiva";
-import { useChannel } from "../context/ChannelContext";
+import { useChannel } from "../context/useChannel";
 import { sgrPlusCoreService } from "../services/sgrPlusCoreService";
 import { lineaService } from "../services/lineaService";
 

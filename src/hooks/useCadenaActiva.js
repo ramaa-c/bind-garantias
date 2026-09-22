@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useChannel } from "../context/ChannelContext";
+import { useChannel } from "../context/useChannel";
 
 // Única fuente de verdad de "en qué cadena de valor estamos parados",
 // independientemente de cómo se haya resuelto:

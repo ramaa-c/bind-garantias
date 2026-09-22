@@ -4,6 +4,122 @@ import { IMaskInput } from "react-imask";
 import { FiInfo } from "react-icons/fi";
 import styles from "./InputSocioMasked.module.css";
 
+// Componente aparte, con identidad estable entre renders de InputSocioMasked,
+// que recibe el ref vía forwardRef (la forma soportada por el compiler) en
+// vez de como parámetro de una función interna - eso último es lo que
+// dispara react-hooks/refs, porque el compiler no puede garantizar que una
+// función cualquiera no lea ref.current durante el render.
+const InputSocioMaskedField = forwardRef(function InputSocioMaskedField(
+  {
+    val,
+    onCh,
+    fieldError,
+    error,
+    esValido,
+    icon,
+    mask,
+    tooltip,
+    className,
+    disabled,
+    isFocused,
+    setIsFocused,
+    manualOnFocus,
+    manualOnBlur,
+    label,
+    ...props
+  },
+  inputRef,
+) {
+  const hasError = !!(error || fieldError);
+  const errorMessage = error || fieldError?.message;
+  const hasValue = val !== undefined && val !== null && String(val).length > 0;
+
+  let statusClass = styles.statusDefault;
+  if (hasError) {
+    statusClass = styles.statusError;
+  } else if (isFocused) {
+    statusClass = styles.statusFocus;
+  } else if (esValido) {
+    statusClass = styles.statusSuccess;
+  }
+
+  const containerClasses = [
+    styles.container,
+    statusClass,
+    hasValue || isFocused ? styles.hasValue : "",
+    disabled ? styles.isDisabled : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const handleFocus = (e) => {
+    setIsFocused(true);
+    if (manualOnFocus) manualOnFocus(e);
+  };
+
+  const handleBlur = (e) => {
+    setIsFocused(false);
+    if (manualOnBlur) manualOnBlur(e);
+  };
+
+  return (
+    <div className={containerClasses}>
+      <div className={styles.innerGroup}>
+        {icon && <div className={styles.icon}>{icon}</div>}
+
+        <div className={styles.fieldGroup}>
+          {mask ? (
+            <IMaskInput
+              mask={mask}
+              value={val?.toString() || ""}
+              unmask={true}
+              onAccept={(unmaskedValue) => {
+                if (onCh) onCh(unmaskedValue);
+              }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className={styles.input}
+              placeholder=" "
+              autoComplete="off"
+              inputRef={inputRef}
+              disabled={disabled}
+              {...props}
+            />
+          ) : (
+            <input
+              value={val !== undefined && val !== null ? val : ""}
+              onChange={(e) => {
+                if (onCh) onCh(e.target.value);
+              }}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              className={styles.input}
+              placeholder=" "
+              autoComplete="off"
+              ref={inputRef}
+              disabled={disabled}
+              {...props}
+            />
+          )}
+          <label className={styles.label}>{label}</label>
+        </div>
+
+        {tooltip && (
+          <div className={styles.helpIconContainer}>
+            <FiInfo className={styles.helpIcon} />
+            <div className={styles.tooltipBubble}>
+              {tooltip}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {hasError && <span className={styles.errorMsg}>{errorMessage}</span>}
+    </div>
+  );
+});
+
 export const InputSocioMasked = forwardRef(({
   control,
   name,
@@ -24,112 +140,58 @@ export const InputSocioMasked = forwardRef(({
 }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
 
-  const renderInput = (val, onCh, inputRef, fieldError) => {
-    const hasError = !!(error || fieldError);
-    const errorMessage = error || fieldError?.message;
-    const hasValue =
-      val !== undefined && val !== null && String(val).length > 0;
-
-    let statusClass = styles.statusDefault;
-    if (hasError) {
-      statusClass = styles.statusError;
-    } else if (isFocused) {
-      statusClass = styles.statusFocus;
-    } else if (esValido) {
-      statusClass = styles.statusSuccess;
-    }
-
-    const containerClasses = [
-      styles.container,
-      statusClass,
-      hasValue || isFocused ? styles.hasValue : "",
-      disabled ? styles.isDisabled : "",
-      className,
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-    const handleFocus = (e) => {
-      setIsFocused(true);
-      if (manualOnFocus) manualOnFocus(e);
-    };
-
-    const handleBlur = (e) => {
-      setIsFocused(false);
-      if (manualOnBlur) manualOnBlur(e);
-    };
-
-    return (
-      <div className={containerClasses}>
-        <div className={styles.innerGroup}>
-          {icon && <div className={styles.icon}>{icon}</div>}
-
-          <div className={styles.fieldGroup}>
-            {mask ? (
-              <IMaskInput
-                mask={mask}
-                value={val?.toString() || ""}
-                unmask={true}
-                onAccept={(unmaskedValue) => {
-                  if (onCh) onCh(unmaskedValue);
-                }}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                className={styles.input}
-                placeholder=" "
-                autoComplete="off"
-                inputRef={inputRef}
-                disabled={disabled}
-                {...props}
-              />
-            ) : (
-              <input
-                value={val !== undefined && val !== null ? val : ""}
-                onChange={(e) => {
-                  if (onCh) onCh(e.target.value);
-                }}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                className={styles.input}
-                placeholder=" "
-                autoComplete="off"
-                ref={inputRef}
-                disabled={disabled}
-                {...props}
-              />
-            )}
-            <label className={styles.label}>{label}</label>
-          </div>
-
-          {tooltip && (
-            <div className={styles.helpIconContainer}>
-              <FiInfo className={styles.helpIcon} />
-              <div className={styles.tooltipBubble}>
-                {tooltip}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {hasError && <span className={styles.errorMsg}>{errorMessage}</span>}
-      </div>
-    );
-  };
-
   if (control && name) {
     return (
       <Controller
         name={name}
         control={control}
         defaultValue={defaultValue}
-        render={({ field: { onChange, value, ref: fieldRef }, fieldState }) => {
-          return renderInput(value, onChange, fieldRef || ref, fieldState.error);
-        }}
+        render={({ field: { onChange, value, ref: fieldRef }, fieldState }) => (
+          <InputSocioMaskedField
+            ref={fieldRef || ref}
+            val={value}
+            onCh={onChange}
+            fieldError={fieldState.error}
+            error={error}
+            esValido={esValido}
+            icon={icon}
+            mask={mask}
+            tooltip={tooltip}
+            className={className}
+            disabled={disabled}
+            isFocused={isFocused}
+            setIsFocused={setIsFocused}
+            manualOnFocus={manualOnFocus}
+            manualOnBlur={manualOnBlur}
+            label={label}
+            {...props}
+          />
+        )}
       />
     );
   }
 
-  return renderInput(manualValue, manualOnChange, ref, null);
+  return (
+    <InputSocioMaskedField
+      ref={ref}
+      val={manualValue}
+      onCh={manualOnChange}
+      fieldError={null}
+      error={error}
+      esValido={esValido}
+      icon={icon}
+      mask={mask}
+      tooltip={tooltip}
+      className={className}
+      disabled={disabled}
+      isFocused={isFocused}
+      setIsFocused={setIsFocused}
+      manualOnFocus={manualOnFocus}
+      manualOnBlur={manualOnBlur}
+      label={label}
+      {...props}
+    />
+  );
 });
 
-InputSocioMasked.displayName = "InputSocioMasked";
+InputSocioMasked.displayName = "InputSocioMasked";

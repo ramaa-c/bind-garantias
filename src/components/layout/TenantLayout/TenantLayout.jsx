@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { Outlet, Navigate, useNavigate } from "react-router-dom";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import { useCadenaActiva } from "../../../hooks/useCadenaActiva";
 import { useObtenerPorCadenaValorIdWeb, useObtenerPorId } from "../../../hooks/useCadenaValor";
 import { useObtenerStatusPlataforma } from "../../../hooks/useStatusPlataforma";

@@ -150,31 +150,42 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   // Inicializar estado local a partir de los datos cargados. Se seedea con
   // el catálogo COMPLETO (allCdasListSinAcotar), no con el recorte visible
   // por el filtro de pantalla - ver comentario en su declaración más arriba.
-  useEffect(() => {
+  // Sincronizado durante el render (en vez de en un efecto) comparando
+  // contra la última referencia de todosCdas/grupoData ya procesada.
+  const [todosCdasSincronizados, setTodosCdasSincronizados] = useState(todosCdas);
+  const [grupoDataSincronizadoConfigs, setGrupoDataSincronizadoConfigs] = useState(grupoData);
+
+  if (todosCdas !== todosCdasSincronizados || grupoData !== grupoDataSincronizadoConfigs) {
+    setTodosCdasSincronizados(todosCdas);
+    setGrupoDataSincronizadoConfigs(grupoData);
     setCdaConfigs(buildCdaConfigs(allCdasListSinAcotar, linkedCdasList));
-  }, [todosCdas, grupoData]);
+  }
 
   // Detectar el tipo de agrupación a partir de la expresión guardada
-  useEffect(() => {
+  const [grupoDataSincronizadoExpr, setGrupoDataSincronizadoExpr] = useState(grupoData);
+
+  if (grupoData !== grupoDataSincronizadoExpr) {
+    setGrupoDataSincronizadoExpr(grupoData);
+
     const grupo = grupoData?.grupo;
     const expr = grupo?.expresionagrupacion || "";
     setExpresionAgrupacion(expr);
 
     if (!expr.trim()) {
       setAgrupacionType("and");
-      return;
-    }
-    const linkedActiveIds = linkedCdasList.filter(esCdaActivo).map(getCdaId).filter((id) => id !== undefined);
-    const expectedOrExpr = linkedActiveIds.map(id => `cda${id}`).join(" or");
-    const expectedOrExprUpper = linkedActiveIds.map(id => `cda${id}`).join(" OR ");
-    const normalizedExpr = expr.trim().replace(/\s+/g, " ");
-
-    if (normalizedExpr === expectedOrExpr || normalizedExpr === expectedOrExprUpper) {
-      setAgrupacionType("or");
     } else {
-      setAgrupacionType("custom");
+      const linkedActiveIds = linkedCdasList.filter(esCdaActivo).map(getCdaId).filter((id) => id !== undefined);
+      const expectedOrExpr = linkedActiveIds.map(id => `cda${id}`).join(" or");
+      const expectedOrExprUpper = linkedActiveIds.map(id => `cda${id}`).join(" OR ");
+      const normalizedExpr = expr.trim().replace(/\s+/g, " ");
+
+      if (normalizedExpr === expectedOrExpr || normalizedExpr === expectedOrExprUpper) {
+        setAgrupacionType("or");
+      } else {
+        setAgrupacionType("custom");
+      }
     }
-  }, [grupoData]);
+  }
 
   // Al tildar/destildar un CDA la lista se reordena (activos arriba de
   // todo) — sin esto, el item desaparece de donde estaba y aparece en otro

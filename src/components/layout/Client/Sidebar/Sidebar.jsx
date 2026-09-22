@@ -12,7 +12,7 @@ import { useVersionApi } from "../../../../hooks/useSistema";
 import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useChannel } from "../../../../context/useChannel";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 import styles from "./Sidebar.module.css";

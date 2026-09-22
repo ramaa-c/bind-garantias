@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FiCheckCircle, FiChevronRight, FiArrowRight, FiRefreshCw, FiAlertTriangle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useChannel } from "../../../../context/useChannel";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme, useActualizarSocio } from "../../../../hooks/useSocios";

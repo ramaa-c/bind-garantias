@@ -131,6 +131,7 @@ export default function VariablesParametrizacion() {
       </div>
 
       <VariableParametrizacionModal
+        key={`${itemEditar?.variable ?? "nueva"}-${modalAbierto ? "open" : "closed"}`}
         isOpen={modalAbierto}
         onClose={() => setModalAbierto(false)}
         itemEditar={itemEditar}

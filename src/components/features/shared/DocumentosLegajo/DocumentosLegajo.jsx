@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 
 import { useFormContext, useWatch, Controller } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import {
   FiCheckCircle,
@@ -53,6 +53,7 @@ import {
   descargarLegajoCompletoZip,
   validarTamanioArchivo,
 } from "../../../../utils/fileUtils";
+import { ESTRUCTURA_LEGAJO } from "./DocumentosLegajo.constants";
 
 // Ícono de los botones de descarga en ZIP según en qué fase esté
 // (ver useDescargaConFeedback). A diferencia de la descarga de un archivo
@@ -63,95 +64,6 @@ const IconoDescarga = ({ fase }) => {
   if (fase === "listo") return <FiCheck size={13} />;
   return <FiDownload size={13} />;
 };
-
-export const ESTRUCTURA_LEGAJO = [
-  {
-    category: "Documentación",
-    key: "estatuto",
-    title: "Estatuto Social",
-    info: "Normas constitutivas de la entidad legal.",
-  },
-  {
-    category: "Documentación",
-    key: "eecc",
-    title: "Estados Contables (EECC)",
-    info: "Estados contables auditados de los últimos ejercicios.",
-  },
-  {
-    category: "Documentación",
-    key: "balance",
-    title: "Balance de Sumas y Saldos",
-    info: "Cargá o visualizá el último balance de tu empresa firmado por contador público.",
-  },
-  {
-    category: "Documentación",
-    key: "ddjjIva",
-    title: "Declaración Jurada de IVA",
-    info: "Declaración jurada de IVA y su constancia de presentación.",
-  },
-  {
-    category: "Documentación",
-    key: "poderes",
-    title: "Poderes",
-    info: "Documento que autoriza a un representante legal.",
-  },
-  {
-    category: "Documentación",
-    key: "certificadoPyme",
-    title: "Certificado de PyME",
-    info: "Acredita tu condición ante la ARCA y organismos. Si no lo tenés, podés ",
-    linkText: "obtenerlo aquí.",
-    url: "https://pyme.produccion.gob.ar/certificado/",
-  },
-  {
-    category: "Documentación",
-    key: "actaDesignacion",
-    title: "Acta de Designación de Autoridades",
-    info: "Designación de autoridades vigente o declaración jurada equivalente.",
-  },
-  {
-    category: "Documentación",
-    key: "actaSocios",
-    title: "Acta de Reunión de Socios",
-    info: "Acta de última reunión de socios o asamblea.",
-  },
-  {
-    category: "Documentación",
-    key: "f1272",
-    title: "Formulario F1272",
-    info: "Formulario de declaración de PyME ante la ARCA.",
-  },
-  {
-    category: "Documentación",
-    key: "ddjjGanancias",
-    title: "DDJJ de Ganancias",
-    info: "Declaración jurada de Ganancias presentada ante ARCA.",
-  },
-  {
-    category: "Documentación",
-    key: "manifestacionBienes",
-    title: "Manifestación de Bienes",
-    info: "Manifestación de bienes o DDJJ de Bienes Personales.",
-  },
-  {
-    category: "Documentación",
-    key: "constanciaMonotributo",
-    title: "Constancia de Monotributo",
-    info: "Constancia de opción al Monotributo de ARCA.",
-  },
-  {
-    category: "Documentación",
-    key: "cartasDocumento",
-    title: "Cartas Documento",
-    info: "Cargá o visualizá las cartas documento vinculadas a la empresa.",
-  },
-  {
-    category: "Documentación",
-    key: "otrosDocumentos",
-    title: "Otros documentos",
-    info: "Adjuntá cualquier otro documento que consideres necesario.",
-  },
-];
 
 const getDownloadCategoryText = (key, title) => {
   const plurals = {
@@ -279,12 +191,22 @@ export function DocumentosLegajo({
     }
   }, [estructuraFiltrada, activeTab, isMobile]);
 
-  const [archivosBackend, setArchivosBackend] = useState([]);
-  // Arranca en true (no en false) porque apenas se monta ya se sabe que va
-  // a haber un fetch: si arrancara en false, en la primera pintada todos
-  // los tabs se verían un instante como "sin archivo" (punto gris) antes de
-  // que dispare el loading real.
-  const [cargandoArchivos, setCargandoArchivos] = useState(true);
+  // Vía useQuery (no useState + fetch manual, como antes) para que
+  // invalidateQueries(["socioArchivos", socioIdActivo]) - que ya disparan
+  // "Consultar a LUFE" (DocumentacionView.jsx) y las propias mutaciones de
+  // este componente más abajo - de verdad refresque la lista. Con estado
+  // local, invalidar la query no hacía nada: nadie estaba suscripto a ese
+  // queryKey, así que un documento restaurado por LUFE (o eliminado y
+  // reimportado) recién se veía después de un F5 (SGRPLUSPLA-203).
+  const { data: archivosBackendData, isLoading: cargandoArchivos } = useQuery({
+    queryKey: ["socioArchivos", socioIdActivo],
+    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo),
+    enabled: !!socioIdActivo,
+  });
+  const archivosBackend = useMemo(
+    () => (Array.isArray(archivosBackendData) ? archivosBackendData : []),
+    [archivosBackendData],
+  );
   const [activeSubTabs, setActiveSubTabs] = useState({});
   const [metaFecha, setMetaFecha] = useState("");
   const [metaRef, setMetaRef] = useState("");
@@ -314,63 +236,50 @@ export function DocumentosLegajo({
   // (SGRPLUSPLA-199).
   const { descargar, faseDe } = useDescargaConFeedback();
 
-  const cargarArchivosExistentes = async () => {
-    if (!socioIdActivo) return;
-    setCargandoArchivos(true);
-    try {
-      const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo);
-      if (Array.isArray(archivos)) {
-        setArchivosBackend(archivos);
-
-        // Agrupar archivos por tipo
-        const grouped = {};
-        archivos.forEach((arch) => {
-          const tipoId = arch.tipodocumentoarchivoid;
-          const key = Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).find(
-            (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId
-          );
-          if (key) {
-            if (!grouped[key]) grouped[key] = [];
-            grouped[key].push(arch);
-          }
-        });
-
-        // Sincronizar react-hook-form con el archivo más nuevo para la validación visual
-        Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach((key) => {
-          const files = grouped[key] || [];
-          if (files.length > 0) {
-            const latest = [...files].sort((a, b) => b.socioarchivoid - a.socioarchivoid)[0];
-            setValue(
-              key,
-              {
-                name: latest.nombrearchivo,
-                size: latest.contenido
-                  ? formatBase64Size(latest.contenido)
-                  : "Disponible",
-                _uploaded: true,
-                _backendId: latest.socioarchivoid,
-                _tipodocumentoarchivoid: latest.tipodocumentoarchivoid,
-                vialufe: latest.vialufe || latest.Vialufe || "0",
-              },
-              { shouldValidate: true }
-            );
-            setValue(`${key}_backendId`, latest.socioarchivoid);
-          } else {
-            setValue(key, null);
-            setValue(`${key}_backendId`, null);
-          }
-        });
-      }
-    } catch (err) {
-      console.error("Error cargando archivos del legajo:", err);
-    } finally {
-      setCargandoArchivos(false);
-    }
-  };
-
+  // Sincroniza react-hook-form (para la validación visual de obligatorios)
+  // cada vez que cambian los archivos de la query - ya no solo al montar,
+  // así que también corre después de que "Consultar a LUFE" invalide la
+  // query y llegue el dato nuevo.
   useEffect(() => {
-    cargarArchivosExistentes();
-  }, [socioIdActivo, setValue]);
+    if (!socioIdActivo) return;
+
+    const grouped = {};
+    archivosBackend.forEach((arch) => {
+      const tipoId = arch.tipodocumentoarchivoid;
+      const key = Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).find(
+        (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId
+      );
+      if (key) {
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(arch);
+      }
+    });
+
+    Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach((key) => {
+      const files = grouped[key] || [];
+      if (files.length > 0) {
+        const latest = [...files].sort((a, b) => b.socioarchivoid - a.socioarchivoid)[0];
+        setValue(
+          key,
+          {
+            name: latest.nombrearchivo,
+            size: latest.contenido
+              ? formatBase64Size(latest.contenido)
+              : "Disponible",
+            _uploaded: true,
+            _backendId: latest.socioarchivoid,
+            _tipodocumentoarchivoid: latest.tipodocumentoarchivoid,
+            vialufe: latest.vialufe || latest.Vialufe || "0",
+          },
+          { shouldValidate: true }
+        );
+        setValue(`${key}_backendId`, latest.socioarchivoid);
+      } else {
+        setValue(key, null);
+        setValue(`${key}_backendId`, null);
+      }
+    });
+  }, [archivosBackend, socioIdActivo, setValue]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -466,8 +375,6 @@ export function DocumentosLegajo({
         fchArchivoManual
       );
 
-      await cargarArchivosExistentes();
-
       queryClient.invalidateQueries({
         queryKey: ["socioArchivos", socioIdActivo],
       });
@@ -556,8 +463,6 @@ export function DocumentosLegajo({
         }
 
         if (resultado) {
-          await cargarArchivosExistentes();
-          
           queryClient.invalidateQueries({
             queryKey: ["socioArchivos", socioIdActivo],
           });
@@ -623,36 +528,36 @@ export function DocumentosLegajo({
       // y por eso se corta acá (catch de abajo) en vez de seguir de largo.
       await socioArchivoService.marcarArchivoEliminado(archivoExistente);
 
-      setArchivosBackend((prev) => {
-        const actualizados = prev.filter((a) => a.socioarchivoid !== fileId);
-        
-        // Recalcular RHF con los archivos restantes
-        const tipoId = socioArchivoService.TIPO_DOCUMENTO_MAP[key];
-        const restantes = actualizados
-          .filter((a) => a.tipodocumentoarchivoid === tipoId)
-          .sort((a, b) => b.socioarchivoid - a.socioarchivoid);
+      // Actualización optimista sobre la query (antes era setArchivosBackend
+      // local) - mismo criterio: no esperar al refetch para que la card
+      // desaparezca, pero ahora viviendo en la cache que sí está conectada a
+      // invalidateQueries.
+      const actualizados = archivosBackend.filter((a) => a.socioarchivoid !== fileId);
+      queryClient.setQueryData(["socioArchivos", socioIdActivo], actualizados);
 
-        if (restantes.length > 0) {
-          setValue(
-            key,
-            {
-              name: restantes[0].nombrearchivo,
-              size: restantes[0].contenido ? formatBase64Size(restantes[0].contenido) : "Disponible",
-              _uploaded: true,
-              _backendId: restantes[0].socioarchivoid,
-              _tipodocumentoarchivoid: restantes[0].tipodocumentoarchivoid,
-              vialufe: restantes[0].vialufe || restantes[0].Vialufe || "0",
-            },
-            { shouldValidate: true }
-          );
-          setValue(`${key}_backendId`, restantes[0].socioarchivoid);
-        } else {
-          setValue(key, null);
-          setValue(`${key}_backendId`, null);
-        }
+      const tipoId = socioArchivoService.TIPO_DOCUMENTO_MAP[key];
+      const restantes = actualizados
+        .filter((a) => a.tipodocumentoarchivoid === tipoId)
+        .sort((a, b) => b.socioarchivoid - a.socioarchivoid);
 
-        return actualizados;
-      });
+      if (restantes.length > 0) {
+        setValue(
+          key,
+          {
+            name: restantes[0].nombrearchivo,
+            size: restantes[0].contenido ? formatBase64Size(restantes[0].contenido) : "Disponible",
+            _uploaded: true,
+            _backendId: restantes[0].socioarchivoid,
+            _tipodocumentoarchivoid: restantes[0].tipodocumentoarchivoid,
+            vialufe: restantes[0].vialufe || restantes[0].Vialufe || "0",
+          },
+          { shouldValidate: true }
+        );
+        setValue(`${key}_backendId`, restantes[0].socioarchivoid);
+      } else {
+        setValue(key, null);
+        setValue(`${key}_backendId`, null);
+      }
 
       queryClient.invalidateQueries({
         queryKey: ["socioArchivos", socioIdActivo],

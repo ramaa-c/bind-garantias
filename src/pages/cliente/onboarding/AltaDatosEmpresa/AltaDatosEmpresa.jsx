@@ -22,7 +22,7 @@ import {
   limpiarSocioPendiente,
 } from "../../../../utils/altaEmpresaPendiente";
 import { useVendor } from "../../../../hooks/useVendor";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useChannel } from "../../../../context/useChannel";
 import styles from "./AltaDatosEmpresa.module.css";
 import { toast } from "sonner";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";

@@ -8,7 +8,7 @@ import { useResetearPassword } from "../../../hooks/useUsuario";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
 import { Alert } from "../../../components/ui/Alert/Alert";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
 import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";

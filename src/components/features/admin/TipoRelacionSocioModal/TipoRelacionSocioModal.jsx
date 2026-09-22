@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "../../../ui/Modal/Modal";
 import styles from "./TipoRelacionSocioModal.module.css";
@@ -23,16 +23,12 @@ export const TipoRelacionSocioModal = ({
 }) => {
   const esEdicion = !!itemEditar;
 
-  const [tipoRelacionSocioId, setTipoRelacionSocioId] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setTipoRelacionSocioId(
-      itemEditar ? String(itemEditar.tiporelacionsocioid) : "",
-    );
-    setDescripcion(itemEditar?.descripcion || "");
-  }, [isOpen, itemEditar]);
+  const [tipoRelacionSocioId, setTipoRelacionSocioId] = useState(() =>
+    itemEditar ? String(itemEditar.tiporelacionsocioid) : "",
+  );
+  const [descripcion, setDescripcion] = useState(
+    () => itemEditar?.descripcion || "",
+  );
 
   const { data: catalogoReal, isLoading: isLoadingCatalogo } =
     useTipoRelacionSocioReal();

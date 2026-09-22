@@ -9,7 +9,7 @@ import {
 } from "react-icons/fi";
 import { Button } from "../../../ui/Button/Button";
 import { BotonVolver } from "../../../ui/BotonVolver/BotonVolver";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useChannel } from "../../../../context/useChannel";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import styles from "./Paso7Exito.module.css";
 

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
 import { Spinner } from "../../../components/ui/Spinner/Spinner";
 import { parseTerminos } from "../../../constants/terminosCondiciones";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
 import {

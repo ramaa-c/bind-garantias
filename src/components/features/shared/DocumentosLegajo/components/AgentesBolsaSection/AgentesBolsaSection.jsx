@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { FiUsers, FiBriefcase, FiPlus, FiEdit2, FiTrash2 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { BolsaModal } from "../BolsaModal/BolsaModal";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
+import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 
 export function AgentesBolsaSection({
   loadingSocios,
@@ -14,13 +15,9 @@ export function AgentesBolsaSection({
 }) {
   const [modalBolsaOpen, setModalBolsaOpen] = useState(false);
   const [editBolsa, setEditBolsa] = useState(null);
-  const [portalTarget, setPortalTarget] = useState(null);
+  const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
-
-  useEffect(() => {
-    setPortalTarget(document.getElementById("socios-header-action-portal"));
-  }, []);
 
   return (
     <div className={styles.sociosContainer}>

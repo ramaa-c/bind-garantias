@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { FiPlus, FiEdit2, FiSearch, FiInbox, FiSave, FiRotateCcw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button, InfoTooltip, Skeleton } from "../../../components/ui";
@@ -45,6 +45,7 @@ export default function TiposRelacionSocio() {
   const [selectedCadenaId, setSelectedCadenaId] = useState("");
   const [activeParamTab, setActiveParamTab] = useState("sa");
   const [localConfig, setLocalConfig] = useState(null);
+  const [requisitosSincronizados, setRequisitosSincronizados] = useState(null);
   const [confirmParamOpen, setConfirmParamOpen] = useState(false);
 
   const { data: cadenasWebData, isLoading: isLoadingCadenas } =
@@ -67,11 +68,15 @@ export default function TiposRelacionSocio() {
   // esta cadena - sincronizar antes de tiempo hacía que, al cambiar de
   // cadena, se vieran por un instante los valores por defecto en vez de los
   // reales, quedando la sensación de que se habían perdido cambios guardados.
-  useEffect(() => {
-    if (selectedCadenaId && requisitos && !isLoadingRequisitos) {
-      setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
-    }
-  }, [selectedCadenaId, requisitos, isLoadingRequisitos]);
+  if (
+    selectedCadenaId &&
+    requisitos &&
+    !isLoadingRequisitos &&
+    requisitos !== requisitosSincronizados
+  ) {
+    setRequisitosSincronizados(requisitos);
+    setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
+  }
 
   // Al cambiar de cadena se limpia localConfig de una: si no, mientras
   // carga la nueva, se seguían viendo en pantalla las filas de la cadena
@@ -79,6 +84,7 @@ export default function TiposRelacionSocio() {
   const handleSeleccionarCadena = (val) => {
     setSelectedCadenaId(String(val));
     setLocalConfig(null);
+    setRequisitosSincronizados(null);
   };
 
   const sinCambiosParam =
@@ -435,6 +441,7 @@ export default function TiposRelacionSocio() {
       />
 
       <TipoRelacionSocioModal
+        key={`${itemEditar?.tiporelacionsocioid ?? "nuevo"}-${modalAbierto ? "open" : "closed"}`}
         isOpen={modalAbierto}
         onClose={() => setModalAbierto(false)}
         itemEditar={itemEditar}

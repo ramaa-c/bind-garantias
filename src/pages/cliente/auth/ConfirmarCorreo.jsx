@@ -4,7 +4,7 @@ import { HiOutlineMailOpen, HiClock } from "react-icons/hi";
 import { FiMail } from "react-icons/fi";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
 import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";

@@ -11,7 +11,7 @@ import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { requisitosService } from "../../../../services/requisitosService";
 import { sociosService } from "../../../../services/sociosService";
 import styles from "./SeleccionarEmpresa.module.css";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useChannel } from "../../../../context/useChannel";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 

@@ -25,7 +25,7 @@ import { lineaService } from "../../../../services/lineaService";
 import { cadenaValorService } from "../../../../services/cadenaValorService";
 import { posicionConsolidadaService } from "../../../../services/posicionConsolidadaService";
 import { catalogosService } from "../../../../services/catalogosService";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useChannel } from "../../../../context/useChannel";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useObtenerTodasWeb } from "../../../../hooks/useCadenaValor";
 import { useTiposProducto, useMonedas } from "../../../../hooks/useCatalogos";

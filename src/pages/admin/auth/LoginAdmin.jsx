@@ -42,6 +42,21 @@ const passwordSchema = z.object({
   password: z.string().min(1, "La contraseña es obligatoria"),
 });
 
+const leerOtpPendiente = () => {
+  const pendingEmail = sessionStorage.getItem("pendingOtpEmail");
+  const expiresAt = sessionStorage.getItem("otpExpiresAt");
+
+  if (pendingEmail && expiresAt) {
+    if (Date.now() < parseInt(expiresAt, 10)) {
+      return { fase: "validacion_otp", email: pendingEmail };
+    }
+    sessionStorage.removeItem("pendingOtpEmail");
+    sessionStorage.removeItem("otpExpiresAt");
+  }
+
+  return { fase: "ingreso_credenciales", email: "" };
+};
+
 export const OtpPhase = ({
   control,
   onResend,
@@ -246,9 +261,11 @@ const checkAccesoAdmin = async (email) => {
 };
 
 const LoginAdmin = () => {
-  const [fase, setFase] = useState("ingreso_credenciales");
+  const [otpPendienteInicial] = useState(leerOtpPendiente);
+  const [fase, setFase] = useState(otpPendienteInicial.fase);
   const [generatedOtp, setGeneratedOtp] = useState(null);
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
+  const [locationSincronizada, setLocationSincronizada] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
@@ -285,30 +302,21 @@ const LoginAdmin = () => {
     setValue,
   } = useForm({
     resolver: zodResolver(currentSchema),
-    defaultValues: { email: "", otp: "", password: "" },
+    defaultValues: { email: otpPendienteInicial.email, otp: "", password: "" },
     mode: "onChange",
   });
 
-  useEffect(() => {
-    const pendingEmail = sessionStorage.getItem("pendingOtpEmail");
-    const expiresAt = sessionStorage.getItem("otpExpiresAt");
-
-    if (pendingEmail && expiresAt) {
-      if (Date.now() < parseInt(expiresAt, 10)) {
-        setValue("email", pendingEmail);
-        setFase("validacion_otp");
-      } else {
-        sessionStorage.removeItem("pendingOtpEmail");
-        sessionStorage.removeItem("otpExpiresAt");
-      }
+  if (location.state?.emailIngresado && location !== locationSincronizada) {
+    setLocationSincronizada(location);
+    if (location.state?.generatedOtp) {
+      setGeneratedOtp(location.state.generatedOtp);
     }
+    setFase("validacion_otp");
+  }
 
+  useEffect(() => {
     if (location.state?.emailIngresado) {
       setValue("email", location.state.emailIngresado);
-      if (location.state?.generatedOtp) {
-        setGeneratedOtp(location.state.generatedOtp);
-      }
-      setFase("validacion_otp");
       window.history.replaceState({}, document.title);
     }
   }, [location, setValue]);

@@ -17,7 +17,7 @@ import {
 import { BuscadorListado } from "../../../components/ui/BuscadorListado/BuscadorListado";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import Spinner from "../../../components/ui/Spinner/Spinner";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import styles from "./Gestion.module.css";
 
 export const Gestion = () => {

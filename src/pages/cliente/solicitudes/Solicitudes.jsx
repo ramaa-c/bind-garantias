@@ -27,7 +27,7 @@ import { useActualizarLimiteSocio } from "../../../hooks/useLinea";
 import { useVerificarHabilitacionNuevaOperacion } from "../../../hooks/useVerificarHabilitacionSolicitudes";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
