@@ -448,7 +448,7 @@ export default function CadenasValor() {
       />
 
       <EditarCadenaModal
-        key={activeItem?.cadenavalorid ?? "none"}
+        key={`${activeItem?.cadenavalorid ?? "none"}-${isModalOpen && modalType === "edit" ? "open" : "closed"}`}
         isOpen={isModalOpen && modalType === "edit"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}
@@ -462,6 +462,7 @@ export default function CadenasValor() {
       />
 
       <RequisitosConfigModal
+        key={`${activeItem?.cadenavalorid ?? "none"}-${isModalOpen && modalType === "requisitos" ? "open" : "closed"}`}
         isOpen={isModalOpen && modalType === "requisitos"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}

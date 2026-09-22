@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { FiUploadCloud } from "react-icons/fi";
 import { toast } from "sonner";
 import { useActualizarCadenaValor } from "../../../../hooks/useCadenaValor";
@@ -8,21 +8,26 @@ import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./EditarCadenaModal.module.css";
 
+const construirDatosFormulario = (activeItem) => ({
+  cadenavalorid: activeItem?.cadenavalorid ?? 0,
+  denominacion: activeItem?.denominacion ?? "",
+  referencia: activeItem?.referencia || "",
+  logo: activeItem?.logo || "",
+  tipocanalcomercializacionid: activeItem?.tipocanalcomercializacionid != null ? activeItem.tipocanalcomercializacionid.toString() : "",
+  equipocomercialid: activeItem?.equipocomercialid != null ? activeItem.equipocomercialid.toString() : "",
+  tipocontratoid: activeItem?.tipocontratoid != null ? activeItem.tipocontratoid.toString() : "",
+  montomaximo: activeItem?.montomaximo != null && activeItem.montomaximo !== "" ? activeItem.montomaximo.toString() : "100",
+  montomaximoutilizado: activeItem?.montomaximoutilizado != null && activeItem.montomaximoutilizado !== "" ? activeItem.montomaximoutilizado.toString() : "0",
+  porcentajemaximoutilizado: activeItem?.porcentajemaximoutilizado != null && activeItem.porcentajemaximoutilizado !== "" ? activeItem.porcentajemaximoutilizado.toString() : "100",
+  monedaid: activeItem?.monedaid != null ? activeItem.monedaid.toString() : "",
+  activa: activeItem?.activa || "1"
+});
+
+// El padre remonta este modal en cada apertura (ver key en CadenasValor.jsx),
+// así que alcanza con calcular el estado inicial una sola vez a partir de
+// activeItem - no hace falta un efecto que lo vuelva a sincronizar.
 export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) => {
-  const [formState, setFormState] = useState({
-    cadenavalorid: 0,
-    denominacion: "",
-    referencia: "",
-    logo: "",
-    tipocanalcomercializacionid: "",
-    equipocomercialid: "",
-    tipocontratoid: "",
-    montomaximo: "",
-    montomaximoutilizado: "",
-    porcentajemaximoutilizado: "",
-    monedaid: "",
-    activa: "1"
-  });
+  const [formState, setFormState] = useState(() => construirDatosFormulario(activeItem));
 
   // Mismo patrón que LineasCadena.jsx/ActivarCadenaModal.jsx: cada campo
   // obligatorio muestra su propio error debajo en vez de un toast que
@@ -70,29 +75,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
   // realmente modificó algo antes de disparar el ConfirmacionModal de
   // "¿guardar cambios?" - evita el falso positivo de confirmar un guardado
   // que no cambia nada (mismo criterio que LineasCadena).
-  const [formStateInicial, setFormStateInicial] = useState(null);
-
-  useEffect(() => {
-    if (activeItem && isOpen) {
-      const datos = {
-        cadenavalorid: activeItem.cadenavalorid,
-        denominacion: activeItem.denominacion,
-        referencia: activeItem.referencia || "",
-        logo: activeItem.logo || "",
-        tipocanalcomercializacionid: activeItem.tipocanalcomercializacionid != null ? activeItem.tipocanalcomercializacionid.toString() : "",
-        equipocomercialid: activeItem.equipocomercialid != null ? activeItem.equipocomercialid.toString() : "",
-        tipocontratoid: activeItem.tipocontratoid != null ? activeItem.tipocontratoid.toString() : "",
-        montomaximo: activeItem.montomaximo != null && activeItem.montomaximo !== "" ? activeItem.montomaximo.toString() : "100",
-        montomaximoutilizado: activeItem.montomaximoutilizado != null && activeItem.montomaximoutilizado !== "" ? activeItem.montomaximoutilizado.toString() : "0",
-        porcentajemaximoutilizado: activeItem.porcentajemaximoutilizado != null && activeItem.porcentajemaximoutilizado !== "" ? activeItem.porcentajemaximoutilizado.toString() : "100",
-        monedaid: activeItem.monedaid != null ? activeItem.monedaid.toString() : "",
-        activa: activeItem.activa || "1"
-      };
-      setFormState(datos);
-      setFormStateInicial(datos);
-      setFormErrors({});
-    }
-  }, [activeItem, isOpen]);
+  const [formStateInicial] = useState(() => construirDatosFormulario(activeItem));
 
   // Los inputs enmascarados de Monto/Porcentaje reformatean su valor (padding
   // de decimales, separador de miles) apenas montan, disparando su propio

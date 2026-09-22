@@ -44,9 +44,20 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
 
   // Solapa activa actual
   const [activeTab, setActiveTab] = useState("sa");
-  // Estado local de configuraciones agrupadas
-  const [localConfig, setLocalConfig] = useState(null);
+  // Estado local de configuraciones agrupadas: arranca como copia de lo que
+  // haya en caché al montar (el padre remonta este modal en cada apertura,
+  // ver key en CadenasValor.jsx) y se resincroniza durante el render cuando
+  // el refetch de abajo trae datos más frescos.
+  const [localConfig, setLocalConfig] = useState(() =>
+    requisitos ? JSON.parse(JSON.stringify(requisitos)) : null
+  );
+  const [requisitosSincronizados, setRequisitosSincronizados] = useState(requisitos);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  if (requisitos && requisitos !== requisitosSincronizados) {
+    setRequisitosSincronizados(requisitos);
+    setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
+  }
 
   // Refetch fresh data when modal opens
   useEffect(() => {
@@ -54,12 +65,6 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
       refetch();
     }
   }, [isOpen, cadenaId, refetch]);
-
-  useEffect(() => {
-    if (requisitos) {
-      setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
-    }
-  }, [requisitos, isOpen]);
 
   // localConfig arranca como copia exacta de requisitos (lo último guardado)
   // y solo se aparta de eso vía handleUpdate/handleReset: comparar contra

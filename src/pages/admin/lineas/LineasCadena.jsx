@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   FiPlus,
   FiEdit,
@@ -485,11 +485,9 @@ export default function LineasCadena() {
     JSON.stringify(normalizarParaComparar(formData)) ===
       JSON.stringify(normalizarParaComparar(formDataInicial));
 
-  useEffect(() => {
-    if (listCadenas.length > 0 && !selectedCadenaId) {
-      setSelectedCadenaId(String(listCadenas[0].cadenavalorid));
-    }
-  }, [listCadenas, selectedCadenaId]);
+  if (listCadenas.length > 0 && !selectedCadenaId) {
+    setSelectedCadenaId(String(listCadenas[0].cadenavalorid));
+  }
 
   const handleInputChange = (field, val) => {
     setFormData((prev) => ({ ...prev, [field]: val }));

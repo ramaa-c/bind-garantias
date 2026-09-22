@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import {
   FiUser,
@@ -17,6 +17,7 @@ import { RepresentanteModal } from "../../../RepresentanteModal/RepresentanteMod
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
+import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 
 // Versión genérica de RepresentantesSection/ApoderadosSection: misma lógica
 // de carga (contacto + domicilio, sin DNI ni campos propios de accionista o
@@ -38,7 +39,7 @@ export function TerceroRelacionSection({
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [expandedItem, setExpandedItem] = useState(null);
-  const [portalTarget, setPortalTarget] = useState(null);
+  const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
@@ -52,10 +53,6 @@ export function TerceroRelacionSection({
     setModalOpen(false);
     setEditItem(null);
   };
-
-  useEffect(() => {
-    setPortalTarget(document.getElementById("socios-header-action-portal"));
-  }, []);
 
   return (
     <div className={styles.sociosContainer}>

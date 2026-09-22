@@ -6,7 +6,8 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
-import { ChannelProvider, useChannel } from "./context/ChannelContext";
+import { ChannelProvider } from "./context/ChannelContext";
+import { useChannel } from "./context/useChannel";
 import { Toaster } from "sonner";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";

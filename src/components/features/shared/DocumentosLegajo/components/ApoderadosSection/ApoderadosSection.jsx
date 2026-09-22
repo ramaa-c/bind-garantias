@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import {
   FiUser,
@@ -17,6 +17,7 @@ import { ApoderadoModal } from "../../../ApoderadoModal/ApoderadoModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
+import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 
 // Solo Apoderado (TipoRelacionSocioID 210) - aplica tanto a persona física
 // como jurídica. Representante Legal tiene su propia pestaña/sección (ver
@@ -32,7 +33,7 @@ export function ApoderadosSection({
   const [modalOpen, setModalOpen] = useState(false);
   const [editApoderado, setEditApoderado] = useState(null);
   const [expandedRep, setExpandedRep] = useState(null);
-  const [portalTarget, setPortalTarget] = useState(null);
+  const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
@@ -46,10 +47,6 @@ export function ApoderadosSection({
     setModalOpen(false);
     setEditApoderado(null);
   };
-
-  useEffect(() => {
-    setPortalTarget(document.getElementById("socios-header-action-portal"));
-  }, []);
 
   return (
     <div className={styles.sociosContainer}>

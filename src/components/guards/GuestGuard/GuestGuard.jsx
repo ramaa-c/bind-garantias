@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 
 // Evita que un usuario ya logueado vea login/registro/recuperar-clave -
 // análogo cliente del useEffect que ya hace LoginAdmin.jsx para admin

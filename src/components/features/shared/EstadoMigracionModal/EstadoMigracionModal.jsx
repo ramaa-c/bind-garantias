@@ -17,10 +17,10 @@ import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId } from "../../../../hooks/useSocios";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useChannel } from "../../../../context/useChannel";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
-import { ESTRUCTURA_LEGAJO } from "../DocumentosLegajo/DocumentosLegajo";
-import { ESTRUCTURA_SOCIOS } from "../SociosLegajo/SociosLegajo";
+import { ESTRUCTURA_LEGAJO } from "../DocumentosLegajo/DocumentosLegajo.constants";
+import { ESTRUCTURA_SOCIOS } from "../SociosLegajo/SociosLegajo.constants";
 import styles from "./EstadoMigracionModal.module.css";
 
 function ChecklistSection({ icon, title, items, bloqueado, notaBloqueo, numero }) {

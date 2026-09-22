@@ -26,7 +26,7 @@ import {
   useLoginByCode,
   useReactivarUsuario,
 } from "../../../hooks/useUsuario";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
 import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./CrearClave.module.css";

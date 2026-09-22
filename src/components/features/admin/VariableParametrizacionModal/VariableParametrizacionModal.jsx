@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "../../../ui/Modal/Modal";
 import styles from "./VariableParametrizacionModal.module.css";
@@ -20,14 +20,10 @@ export const VariableParametrizacionModal = ({
 }) => {
   const esEdicion = !!itemEditar;
 
-  const [variable, setVariable] = useState("");
-  const [valor, setValor] = useState("");
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setVariable(itemEditar?.variable || "");
-    setValor(itemEditar ? String(itemEditar.valor ?? "") : "");
-  }, [isOpen, itemEditar]);
+  const [variable, setVariable] = useState(() => itemEditar?.variable || "");
+  const [valor, setValor] = useState(() =>
+    itemEditar ? String(itemEditar.valor ?? "") : "",
+  );
 
   const { mutate: crear, isPending: isCreando } =
     useCrearVariableParametrizacion();

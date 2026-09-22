@@ -70,7 +70,8 @@ import {
 } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { NotificarSocioModal } from "../../../components/features/admin/NotificarSocioModal/NotificarSocioModal";
-import { DocumentosLegajo, ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
+import { DocumentosLegajo } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
+import { ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo.constants";
 import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
 import { LegajoUniversalBar } from "../../../components/features/shared/LegajoUniversalBar/LegajoUniversalBar";
 import { CertificadoPymeAdmin } from "../../../components/features/admin/CertificadoPymeAdmin/CertificadoPymeAdmin";

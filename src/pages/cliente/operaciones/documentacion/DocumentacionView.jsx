@@ -9,7 +9,7 @@ import {
   DocumentosLegajo,
   LegajoUniversalBar,
 } from "../../../../components/features";
-import { ESTRUCTURA_LEGAJO } from "../../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
+import { ESTRUCTURA_LEGAJO } from "../../../../components/features/shared/DocumentosLegajo/DocumentosLegajo.constants";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";

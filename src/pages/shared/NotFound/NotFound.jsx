@@ -5,7 +5,7 @@ import { Button } from "../../../components/ui/Button/Button";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./NotFound.module.css";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 
 const NotFound = () => {
   const navigate = useNavigate();

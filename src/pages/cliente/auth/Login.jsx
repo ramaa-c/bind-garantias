@@ -12,7 +12,7 @@ import { useLogin, useLoginByCode, useResetearPassword } from "../../../hooks/us
 import { usuarioService } from "../../../services/usuarioService";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useThemeStore } from "../../../store/useThemeStore";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import { denominacionDesdeEmail, extraerRegistroUsuario, esAdministradorActivo } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
@@ -20,6 +20,21 @@ import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 const MENSAJE_ADMIN_EN_CLIENTE =
   "Esta cuenta es de administración y no puede operar como cliente. Registrate con un correo distinto para acceder desde acá.";
+
+const leerOtpPendiente = () => {
+  const pendingEmail = sessionStorage.getItem("pendingOtpEmail");
+  const expiresAt = sessionStorage.getItem("otpExpiresAt");
+
+  if (pendingEmail && expiresAt) {
+    if (Date.now() < parseInt(expiresAt, 10)) {
+      return { fase: "validacion_otp", email: pendingEmail };
+    }
+    sessionStorage.removeItem("pendingOtpEmail");
+    sessionStorage.removeItem("otpExpiresAt");
+  }
+
+  return { fase: "ingreso_credenciales", email: "" };
+};
 
 const parsearCadenas = (data) => {
   if (!data) return [];
@@ -322,10 +337,12 @@ const CredentialsPhase = ({
 );
 
 const Login = () => {
-  const [fase, setFase] = useState("ingreso_credenciales");
+  const [otpPendienteInicial] = useState(leerOtpPendiente);
+  const [fase, setFase] = useState(otpPendienteInicial.fase);
   const [generatedOtp, setGeneratedOtp] = useState(null);
   const [modalPendiente, setModalPendiente] = useState(false);
   const [emailPendiente, setEmailPendiente] = useState("");
+  const [locationSincronizada, setLocationSincronizada] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const setUser = useAuthStore((state) => state.setUser);
@@ -395,31 +412,22 @@ const Login = () => {
     setValue,
   } = useForm({
     resolver: zodResolver(currentSchema),
-    defaultValues: { email: "", otp: "", password: "" },
+    defaultValues: { email: otpPendienteInicial.email, otp: "", password: "" },
     mode: "onChange",
   });
 
-  useEffect(() => {
-    const pendingEmail = sessionStorage.getItem("pendingOtpEmail");
-    const expiresAt = sessionStorage.getItem("otpExpiresAt");
-
-    if (pendingEmail && expiresAt) {
-      if (Date.now() < parseInt(expiresAt, 10)) {
-        setValue("email", pendingEmail);
-        setFase("validacion_otp");
-      } else {
-        sessionStorage.removeItem("pendingOtpEmail");
-        sessionStorage.removeItem("otpExpiresAt");
-      }
+  // Redirección desde CrearClave
+  if (location.state?.emailIngresado && location !== locationSincronizada) {
+    setLocationSincronizada(location);
+    if (location.state?.generatedOtp) {
+      setGeneratedOtp(location.state.generatedOtp);
     }
+    setFase("validacion_otp");
+  }
 
-    // B) Redirección desde CrearClave
+  useEffect(() => {
     if (location.state?.emailIngresado) {
       setValue("email", location.state.emailIngresado);
-      if (location.state?.generatedOtp) {
-        setGeneratedOtp(location.state.generatedOtp);
-      }
-      setFase("validacion_otp");
       window.history.replaceState({}, document.title);
     }
   }, [location, setValue]);

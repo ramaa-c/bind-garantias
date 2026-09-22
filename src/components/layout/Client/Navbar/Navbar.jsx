@@ -20,7 +20,7 @@ import { useThemeStore, LIGHT_MODE_ENABLED } from "../../../../store/useThemeSto
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useChannel } from "../../../../context/useChannel";
 import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
 import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 

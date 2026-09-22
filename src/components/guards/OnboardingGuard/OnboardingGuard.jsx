@@ -15,7 +15,7 @@ import {
 } from "../../../hooks/useTerminos";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
 import ErrorServicio from "../../../pages/shared/ErrorServicio/ErrorServicio";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import { useVendor } from "../../../hooks/useVendor";
 import { useVerificarHabilitacionSolicitudes } from "../../../hooks/useVerificarHabilitacionSolicitudes";
 import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";

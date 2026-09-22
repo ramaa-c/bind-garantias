@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { MODO_POR_HOST, MODO_LEGACY, resolverTenant } from "../utils/tenantConfig";
 import { LoadingScreen } from "../components/ui/LoadingScreen/LoadingScreen";
-
-const ChannelContext = createContext();
+import { ChannelContext } from "./channelContextObject";
 
 export const ChannelProvider = ({ children }) => {
   // Iniciamos con valores por defecto genéricos hasta que TenantLayout establezca los correctos
@@ -61,12 +60,4 @@ export const ChannelProvider = ({ children }) => {
   return (
     <ChannelContext.Provider value={valor}>{children}</ChannelContext.Provider>
   );
-};
-
-export const useChannel = () => {
-  const context = useContext(ChannelContext);
-  if (!context) {
-    throw new Error("useChannel debe ser usado dentro de un ChannelProvider");
-  }
-  return context;
 };

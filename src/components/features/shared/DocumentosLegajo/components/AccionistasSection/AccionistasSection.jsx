@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { FiUsers, FiPlus, FiAlertCircle, FiUser, FiChevronDown, FiEdit2, FiTrash2, FiMail, FiPhone, FiMapPin, FiPercent, FiXCircle } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
@@ -6,6 +6,7 @@ import { SocioAccionistaModal } from "../SocioAccionistaModal/SocioAccionistaMod
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
+import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 
 const normalizarTexto = (str) =>
   String(str || "")
@@ -27,15 +28,11 @@ export function AccionistasSection({
   const [modalAccionistaOpen, setModalAccionistaOpen] = useState(false);
   const [editAccionista, setEditAccionista] = useState(null);
   const [expandedSocio, setExpandedSocio] = useState(null);
-  const [portalTarget, setPortalTarget] = useState(null);
+  const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
   const { data: estadoCdaMap } = useEstadoCdaTerceros(accionistas.map((a) => a.id));
-
-  useEffect(() => {
-    setPortalTarget(document.getElementById("socios-header-action-portal"));
-  }, []);
 
   return (
     <div className={styles.sociosContainer}>

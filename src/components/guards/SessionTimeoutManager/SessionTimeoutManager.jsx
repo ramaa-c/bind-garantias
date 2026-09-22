@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useSessionTimeout } from "../../../hooks/useSessionTimeout";
 import { ConfirmacionModal } from "../../features/shared/ConfirmacionModal/ConfirmacionModal";
