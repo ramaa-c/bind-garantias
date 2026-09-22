@@ -9,17 +9,20 @@
    de verdad, sin duplicar a mano el padding de .adminContent en un número
    mágico separado que se puede desincronizar.
 
-   Rango 2 (fluido) más abajo, en el mismo umbral único que el resto del
-   panel admin (1440px de ancho u 716px de alto - ver AdminLayout.module.css).
-   Reproducido primero con zoom de navegador alto (130%+, BIND 2026-08-14),
-   de nuevo a 175% y a 150% (2026-09-09, esta vez ya con ancho "de sobra"
-   pero alto insuficiente - lo que confirmó que el ancho solo no alcanza
-   como condición): el zoom no solo achica el ancho efectivo, achica el
-   alto también. Ahí ninguna altura queda fija: cada tarjeta apilada ocupa
-   lo que su contenido necesita y .adminContent scrollea la página entera
-   con normalidad - .versionText (ver ese comentario) aparece después, como
-   parte normal de ese mismo scroll, sin que haya que reservarle lugar a
-   mano. */
+   Rango 2 más abajo, en el mismo umbral único que el resto del panel admin
+   (1440px de ancho u 716px de alto - ver AdminLayout.module.css): TODA
+   página admin con este patrón debe pasar a height:auto acá, porque
+   .containerInner (el padre) también pasa a height:auto en Rango 2 - pedirle
+   height:100% a un padre en auto es el caso circular que ese mismo archivo
+   documenta ("el navegador lo trata como indefinido... se miden solas"). Se
+   probó mantener .container en height:100% igual (2026-09-22) para intentar
+   que .jsonViewerContainer conservara su scroll interno - resultado: el caso
+   circular de arriba, ninguna altura quedaba realmente acotada y el síntoma
+   original (el JSON estira la página) seguía igual. El fix real no puede
+   pasar por mantener .container acotado (rompe el contrato compartido con
+   .containerInner); pasa por ponerle un max-height PROPIO y absoluto
+   directamente a .jsonViewerContainer (ver ese selector, más abajo), que no
+   depende de que ningún ancestro tenga una altura definida. */
 .container {
   display: flex;
   flex-direction: column;
@@ -84,7 +87,7 @@
   text-decoration: underline;
 }
 
-/* ============ WORKBENCH: layout de 3 columnas ============ */
+/* ============ WORKBENCH: layout de 3 columnas (Rango 1) / 2 filas (Rango 2) ============ */
 .workbench {
   display: grid;
   grid-template-columns: minmax(260px, 0.85fr) minmax(340px, 1.15fr) minmax(300px, 1fr);
@@ -94,11 +97,43 @@
   min-height: 0;
 }
 
+/* Rango 2: ya no apila las 3 columnas completas una debajo de otra. Fuente
+   de Datos y Definí la Regla comparten una fila arriba, con el ancho que
+   antes ocupaban las 3 juntas; Probá y Publicá pasa a una fila propia
+   abajo, dividida en dos mitades (ver .colAccionesBody) - zona de pruebas a
+   la izquierda, vinculación y botones a la derecha. Las filas quedan en
+   "auto" (alto de contenido, no minmax/fr): en Rango 2 nada en esta pantalla
+   tiene una altura acotada de verdad (ver el comentario de .container), así
+   que repartir un presupuesto fijo entre filas no aplica acá - la página
+   entera scrollea con normalidad si hace falta, como el resto del panel
+   admin en este rango. */
 @media (max-width: 1440px), (max-height: 716px) {
   .workbench {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(280px, 1fr) minmax(340px, 1.2fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "colFuente colRegla"
+      "colAcciones colAcciones";
+    /* align-items default (stretch): "Fuente de Datos" y "Definí la Regla"
+       quedan con la misma altura de tarjeta (la de la más alta de las dos),
+       igual que en Rango 1 - .jsonViewerContainer (flex:1 más abajo) llena
+       esa altura en vez de dejar aire debajo. Se probó "start" (cada
+       tarjeta a su alto natural) para resolver un aire vacío anterior, pero
+       eso dejaba a "Fuente de Datos" visiblemente más corta que su vecina
+       (reportado el 2026-09-22) - el aire vacío en realidad era porque
+       .jsonViewerContainer todavía tenía un max-height bajo puesto para
+       Rango 2 (ya sacado, ver ese selector), no por el stretch en sí. */
     min-height: auto;
     gap: 0.85rem;
+  }
+  .colFuente {
+    grid-area: colFuente;
+  }
+  .colRegla {
+    grid-area: colRegla;
+  }
+  .colAcciones {
+    grid-area: colAcciones;
   }
 }
 
@@ -124,18 +159,18 @@
   }
 }
 
-/* Columna 3 ("Probá y Publicá"): a diferencia de las otras 2, tiene 4
-   piezas apiladas (sandbox fijo, divisor, switches de vinculación, botón
-   de guardar) y las 2 fijas de los extremos siempre exigen su espacio. Con
-   overflow:hidden (igual que las otras columnas, heredado de .col) toda la
-   presión de achique caía sobre los switches del medio (la única zona con
-   min-height:0) hasta comprimirlos a una franja de pocos px - técnicamente
-   seguían ahí y scrolleables, pero invisibles/imposibles de usar en la
-   práctica (reportado con zoom 150%/175%, 2026-09-09). Por eso en Rango 1
-   esta columna en particular scrollea ENTERA en vez de una franja interna:
-   nada se comprime por debajo de su alto natural, así que en el peor caso
-   hay que scrollear la tarjeta - nunca se pierde nada. En Rango 2 no hace
-   falta (la página entera ya scrollea, ver .col). */
+/* Columna 3 ("Probá y Publicá"): a diferencia de las otras 2, tiene piezas
+   apiladas (sandbox fijo, divisor, switches de vinculación, botón de
+   guardar) que siempre exigen su espacio. Con overflow:hidden (igual que
+   las otras columnas, heredado de .col) toda la presión de achique caía
+   sobre los switches del medio (la única zona con min-height:0) hasta
+   comprimirlos a una franja de pocos px - técnicamente seguían ahí y
+   scrolleables, pero invisibles/imposibles de usar en la práctica
+   (reportado con zoom 150%/175%, 2026-09-09). Por eso esta columna en
+   particular scrollea ENTERA en Rango 1 en vez de una franja interna: nada
+   se comprime por debajo de su alto natural, así que en el peor caso hay
+   que scrollear la tarjeta - nunca se pierde nada. En Rango 2 no hace falta
+   (la página entera ya scrollea, igual que .col). */
 .colAcciones {
   overflow-x: hidden;
   overflow-y: auto;
@@ -144,6 +179,51 @@
 @media (max-width: 1440px), (max-height: 716px) {
   .colAcciones {
     overflow: visible;
+  }
+}
+
+/* Agrupa el laboratorio de pruebas (.sandboxContainer) y todo lo demás
+   (.colAccionesSecondary) como una sola pieza dentro de .colAcciones: en
+   Rango 1 es una columna más (mismo gap que el resto de .col, para que se
+   vea idéntico a como estaban sueltos antes de este wrapper), en Rango 2
+   pasa a fila - ver el comentario de .workbench. Ningún alto artificial acá
+   (ni en .sandboxContainer ni en .colAccionesSecondary, más abajo): en
+   Rango 2 la página ya scrollea sola si hace falta, así que no hay riesgo
+   real de "aplastar" nada por presupuesto compartido (a diferencia de
+   .jsonViewerContainer, que si necesita su propio tope - ver ese
+   selector). */
+.colAccionesBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  min-height: 0;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .colAccionesBody {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 1rem;
+  }
+}
+
+/* Vinculación + botones: alto natural, debajo del laboratorio de pruebas en
+   Rango 1 (y a la derecha del sandbox en Rango 2 - ver .colAccionesBody). */
+.colAccionesSecondary {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .colAccionesSecondary {
+    flex: 1 1 0;
+    min-width: 0;
+    gap: 0.85rem;
+    /* Reemplaza al .colDivider horizontal (ver más abajo): acá separa las
+       dos mitades de la fila, no un bloque del siguiente. */
+    padding-left: 1rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -218,18 +298,36 @@
   gap: 1rem;
 }
 
-/* JSON Viewer */
+/* JSON Viewer: flex:1/min-height:0 para llenar el alto disponible de la
+   columna. En Rango 1, .col está acotada por CSS puro (overflow:hidden). En
+   Rango 2, .col ya no tiene una altura propia acotada, pero SÍ recibe una
+   vía Grid: "Fuente de Datos" y "Definí la Regla" comparten fila y por
+   default (align-items:stretch, ver .workbench) quedan a la misma altura -
+   la de la más alta de las dos -, y ESA es la altura definida que flex:1
+   acá llena. Achicar esto a un max-height bajo en Rango 2 (probado el
+   2026-09-22) dejaba a la tarjeta igual de alta (el stretch de Grid no
+   cambia) pero con el JSON parado antes de tiempo: aire vacío debajo, sin
+   ninguna ganancia real. max-height es un techo generoso, pensado para
+   NUNCA activarse en un monitor real - solo actúa como red de seguridad si
+   algún ancestro quedara mal acotado por algo fuera de este componente.
+   overflow-wrap: una key JSON larga sin espacios (ej.
+   "descripcioncaracterizacion") no tiene dónde partir una línea y forzaba
+   scroll horizontal en vez de wrapear - mismo criterio ya aplicado en
+   Terminos.module.css. */
 .jsonViewerContainer {
   background-color: #0d1117;
   border: 1px solid #30363d;
   border-radius: 0.5rem;
   padding: 0.85rem;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
   font-size: 0.8rem;
   line-height: 1.5;
   flex: 1 1 auto;
   min-height: 0;
+  max-height: 34rem;
 }
 
 .jsonViewerMessage {
@@ -603,13 +701,20 @@
   min-height: 1.2em;
 }
 
+/* Sin margin-left:auto: .valorBelowRow ya lo empuja a la derecha con
+   justify-content:space-between cuando entra en la misma línea que el
+   hint/error de la izquierda. La columna 2 es angosta (una de 3) y ese
+   wrap pasa seguido incluso sin zoom - con margin-left:auto, al quedar
+   solo en su propia línea, igual se pegaba al borde derecho con un hueco
+   enorme a la izquierda, como flotando sin relación con el input de
+   arriba (reportado el 2026-09-22). Sin el margin, en su línea propia
+   arranca pegado a la izquierda, alineado con todo lo demás. */
 .vacioCheckRow {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
   user-select: none;
-  margin-left: auto;
 }
 
 .vacioCheckLabel {
@@ -631,15 +736,28 @@
   padding-top: 0.6rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
+  align-items: center;
   gap: 0.75rem;
 }
 
+/* Guardar/Crear (siempre el último botón, ver CdaWorkbench.jsx) es la
+   acción principal: ocupa el espacio que sobra. Eliminar, cuando está,
+   siempre va primero y es secundaria/destructiva - a tamaño de su propio
+   contenido, no compitiendo en peso visual con la principal (antes ambas
+   eran flex:1 al 50%, mismo tamaño que "Guardar Cambios" para una acción
+   que además es irreversible - reportado el 2026-09-22). */
 .formActions button {
-  width: 100%;
+  width: auto;
+}
+
+.formActions button:last-child {
   flex: 1;
 }
 
-/* Selector de variables de NOSIS (columna 1) */
+/* Selector de variables de NOSIS (columna 1). Mismo criterio que
+   .jsonViewerContainer: flex:1 para llenar el alto disponible, acotado por
+   CSS en Rango 1 y por el stretch de Grid entre columnas en Rango 2 (ver
+   el comentario de .jsonViewerContainer para el detalle). */
 .nosisPickerContainer {
   background-color: #0d1117;
   border: 1px solid #30363d;
@@ -669,14 +787,15 @@
 }
 
 .nosisVarListScroll {
-  flex: 1 1 auto;
-  min-height: 0;
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 34rem;
 }
 
 .nosisVarRow {
@@ -769,17 +888,60 @@
   min-height: 9rem;
 }
 
+/* Rango 2: .colAccionesBody pasa a fila (ver ese comentario) - acá el
+   sandbox deja de ser "0 0 auto" (se angostaría a su contenido mínimo,
+   apretado) y pasa a compartir la fila en partes iguales con
+   .colAccionesSecondary, con el mismo tope de alto/scroll de resguardo
+   para que las dos mitades queden parejas. */
+@media (max-width: 1440px), (max-height: 716px) {
+  .sandboxContainer {
+    flex: 1 1 0;
+    min-width: 0;
+    max-height: 17rem;
+    overflow-y: auto;
+  }
+}
+
 .sandboxBody {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
 }
 
-/* Separa el laboratorio de pruebas (zona fija, arriba) de la vinculación (zona con scroll, abajo) */
+/* Fila de "CUIT para la prueba" + botón "Probar": antes flex:1 sin piso
+   (inline, sin flex-wrap) - cuando el sandbox se angosta (columna 3 en
+   Rango 1 ya era la más angosta de las 3, y ahora en Rango 2 comparte fila
+   solo con la mitad de vinculación, ver .colAccionesBody) el botón nunca
+   cede su ancho y todo el achique caía sobre el input, que llegaba a
+   mostrar un CUIT completo solo hasta la mitad (reportado el 2026-09-22).
+   Mismo patrón ya usado en .fieldRow/.fieldOperador/.fieldValorComparacion
+   más abajo: min-width + flex-wrap, así el botón pasa a su propia línea en
+   vez de aplastar al input. */
+.sandboxTestRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.sandboxTestInput {
+  flex: 1 1 11rem;
+  min-width: 11rem;
+}
+
+/* Separa el laboratorio de pruebas (zona fija, arriba) de la vinculación (zona con scroll, abajo).
+   En Rango 2 la separación pasa a ser el border-left de .colAccionesSecondary
+   (las dos mitades quedan lado a lado, no una debajo de la otra). */
 .colDivider {
   flex: 0 0 auto;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   margin: 0.1rem 0;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .colDivider {
+    display: none;
+  }
 }
 
 .sandboxTitle {
