@@ -54,13 +54,25 @@ const InputSimpleField = forwardRef(function InputSimpleField(
     statusClass = styles.statusFocus;
   }
 
+  // El padding-right grande (ver .sinIconos en InputSimple.module.css) solo
+  // hace falta cuando .actions va a mostrar algo de verdad (el tilde de
+  // válido, o el ojito de mostrar/ocultar contraseña) - si ninguno de los
+  // dos aplica, ese hueco reservado no cumple ningún propósito y le come
+  // espacio real al valor tipeado (reportado el 2026-09-22 en el CUIT de
+  // prueba de CdaWorkbench, pero "sinIconos" era opt-in por campo: pasaba
+  // en cualquier input de la app al que no se le hubiera puesto el flag a
+  // mano). Auto-detectado acá en vez de a mano por campo: no cambia nada en
+  // los inputs que SÍ muestran algo en .actions (siguen con el padding
+  // ancho), solo angosta los que de verdad no lo necesitan.
+  const sinAccionesVisibles = !esValido && !isPasswordType;
+
   const containerClasses = [
     styles.group,
     statusClass,
     hasValue || isFocused ? styles.hasValue : "",
     isAdmin ? styles.adminVariant : "",
     hideErrorSpace ? styles.noErrorSpace : "",
-    sinIconos ? styles.sinIconos : "",
+    sinIconos || sinAccionesVisibles ? styles.sinIconos : "",
     className,
   ].filter(Boolean).join(" ");
 

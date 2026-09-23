@@ -95,15 +95,19 @@
 /* En Rango 1 (base) el scroll vive adentro del CdaPanel (columna de la
    lista), no acá: si el panel deja de encajar en 1px por redondeo, mostrar
    acá también un scrollbar duplica la barra y se ve como si "todo"
-   scrolleara. En Rango 2 (mismo umbral que .container arriba), sin alto de
-   sobra, .panelWrap vuelve a su propio overflow-y:auto en vez de delegar
-   el scroll a columnas internas que podrían terminar comprimiendo el
-   footer de CdaPanel (.mainFooter) contra su contenido. */
+   scrolleara. En Rango 2 (mismo umbral que .container arriba) .container
+   ya es height:auto y las columnas de CdaPanel (.leftCol/.rightCol) vuelven
+   a su alto natural sin overflow propio: la página entera scrollea y la
+   lista tiene su scroll aparte, así que .panelWrap no tiene nada que
+   acotar. Con overflow-y:auto acá (como estaba antes) un desborde de 1-2px
+   por redondeo/sombras dibujaba un scroll mínimo sin ningún efecto real
+   (reportado el 2026-09-23) - overflow:visible lo elimina de raíz. */
 .panelWrap {
+  --panel-pad: 1.25rem;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 0.75rem;
-  padding: 1.25rem;
+  padding: var(--panel-pad);
   backdrop-filter: blur(8px);
   position: relative;
   flex: 1;
@@ -115,9 +119,8 @@
 
 @media (max-width: 1440px), (max-height: 716px) {
   .panelWrap {
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 0.85rem;
+    --panel-pad: 0.85rem;
+    overflow: visible;
   }
 }
 

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useCrearCda, useActualizarCda, useProbarCda } from "../../../../hooks/useCda";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
-import { INTEGRACIONES_MOCKS } from "../../../../utils/integracionesMocks";
+import { INTEGRACIONES_MOCKS, SGRPLUS_FUNCIONES } from "../../../../utils/integracionesMocks";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
@@ -234,6 +234,31 @@ const NosisVariablePicker = ({ variables, searchTerm, onSearchChange, selectedEx
   );
 };
 
+const expresionSgrPlus = (f) => `sgrplus.${f.nombre}(${f.origen.toLowerCase()})`;
+
+const SgrPlusFuncionPicker = ({ selectedExpresion, onSelect }) => (
+  <div className={styles.nosisPickerContainer}>
+    <div className={styles.nosisVarListScroll}>
+      {SGRPLUS_FUNCIONES.map((f) => {
+        const activa = selectedExpresion.trim() === expresionSgrPlus(f);
+        return (
+          <div
+            key={f.nombre}
+            className={`${styles.nosisVarRow} ${activa ? styles.nosisVarRowActive : ""}`}
+            onClick={() => onSelect(expresionSgrPlus(f))}
+            title={`Usar ${expresionSgrPlus(f)} en la expresión`}
+          >
+            <div className={styles.nosisVarHead}>
+              <span className={styles.nosisVarName}>{expresionSgrPlus(f)}</span>
+              <span className={styles.nosisVarType}>{f.origen}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
+
 // Fila compacta para las opciones de vinculación (columna 3): switch chico +
 // nombre corto + ícono de info con la descripción larga en un tooltip, para
 // que entren varias opciones sin que cada una ocupe una tarjeta completa.
@@ -370,6 +395,7 @@ export function CdaWorkbench({
   const [testCuit, setTestCuit] = useState("");
   const [testResult, setTestResult] = useState(null);
 
+  const esSgrPlus = integracion === "SGRPLUS";
   const currentJsonData = integracion ? INTEGRACIONES_MOCKS[integracion] : null;
   const nosisVariables = INTEGRACIONES_MOCKS?.NOSIS?.Contenido?.Datos?.Variables || [];
 
@@ -441,9 +467,12 @@ export function CdaWorkbench({
     return `'${casedCleanVal}'`;
   };
 
-  const reglaActual = expresion.trim()
-    ? `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valorcomparacion)}`
-    : "";
+  const armarExpresionCompleta = (valor) =>
+    esSgrPlus
+      ? expresion.trim()
+      : `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valor)}`;
+
+  const reglaActual = expresion.trim() ? armarExpresionCompleta(valorcomparacion) : "";
 
   const handleIntegracionChange = (val) => {
     setIntegracion(val);
@@ -459,6 +488,13 @@ export function CdaWorkbench({
     setExpresion(fullPath);
     if (!userEditedExpresionLog) {
       setExpresionLog(fullPath);
+    }
+  };
+
+  const handleSelectSgrPlusFuncion = (expresionCompleta) => {
+    setExpresion(expresionCompleta);
+    if (!userEditedExpresionLog) {
+      setExpresionLog(expresionCompleta);
     }
   };
 
@@ -505,8 +541,7 @@ export function CdaWorkbench({
 
     setTestResult(null);
     const valorSaneado = sanearValor(valorcomparacion, integracion);
-    const valorParaLog = formatValorParaLog(valorSaneado);
-    const fullExpression = `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+    const fullExpression = armarExpresionCompleta(valorSaneado);
 
     try {
       const res = await probarCda({
@@ -532,7 +567,7 @@ export function CdaWorkbench({
 
   const errorDescripcion = intentoEnviar && !descripcion.trim();
   const errorExpresion = intentoEnviar && !expresion.trim();
-  const errorValor = intentoEnviar && !comparaPorVacio && !valorcomparacion.trim();
+  const errorValor = intentoEnviar && !esSgrPlus && !comparaPorVacio && !valorcomparacion.trim();
   const errorMensaje = intentoEnviar && !mensajerechazo.trim();
 
   const handleSave = (e) => {
@@ -541,7 +576,7 @@ export function CdaWorkbench({
     const faltaAlgunCampo =
       !descripcion.trim() ||
       !expresion.trim() ||
-      (!comparaPorVacio && !valorcomparacion.trim()) ||
+      (!esSgrPlus && !comparaPorVacio && !valorcomparacion.trim()) ||
       !mensajerechazo.trim();
 
     if (faltaAlgunCampo) {
@@ -563,8 +598,8 @@ export function CdaWorkbench({
     setIsGuardando(true);
 
     const valorSaneado = sanearValor(valorcomparacion, integracion);
-    const valorParaLog = formatValorParaLog(valorSaneado);
-    const fullExpression = `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+    const valorParaLog = esSgrPlus ? "" : formatValorParaLog(valorSaneado);
+    const fullExpression = armarExpresionCompleta(valorSaneado);
 
     try {
       const resValida = await probarCda({
@@ -587,7 +622,7 @@ export function CdaWorkbench({
       cdaID: esEdicion ? (getCdaId(cdaEditando) ?? 0) : 0,
       descripcion: descripcion.trim(),
       expresion: expresion.trim(),
-      simboloComparacion: simbolocomparacion,
+      simboloComparacion: esSgrPlus ? "" : simbolocomparacion,
       // El motor de CDAs espera los valores de texto entre comillas simples
       // (ej. 'REINA') y los numéricos/fechas sin comillas: mismo criterio
       // que ya usa el Laboratorio de Pruebas (formatValorParaLog).
@@ -651,7 +686,7 @@ export function CdaWorkbench({
 
       <form onSubmit={handleSave} className={styles.workbench}>
         {/* COLUMNA 1: Fuente de Datos */}
-        <div className={styles.col}>
+        <div className={`${styles.col} ${styles.colFuente}`}>
           <div className={styles.colHeader}>
             <span className={styles.colStepBadge}>1</span>
             <div>
@@ -680,7 +715,12 @@ export function CdaWorkbench({
             Es opcional: podés armar la expresión con clics o escribirla manualmente sin seleccionar nada.
           </p>
 
-          {integracion === "NOSIS" ? (
+          {esSgrPlus ? (
+            <SgrPlusFuncionPicker
+              selectedExpresion={expresion}
+              onSelect={handleSelectSgrPlusFuncion}
+            />
+          ) : integracion === "NOSIS" ? (
             <NosisVariablePicker
               variables={nosisVariables}
               searchTerm={nosisSearchTerm}
@@ -704,7 +744,7 @@ export function CdaWorkbench({
         </div>
 
         {/* COLUMNA 2: Definir la Regla */}
-        <div className={styles.col}>
+        <div className={`${styles.col} ${styles.colRegla}`}>
           <div className={styles.colHeader}>
             <span className={styles.colStepBadge}>2</span>
             <div>
@@ -752,63 +792,65 @@ export function CdaWorkbench({
                 />
               </div>
 
-              <div className={styles.fieldRow}>
-                <div className={styles.fieldOperador}>
-                  <SelectSimple
-                    label="Operador"
-                    value={simbolocomparacion}
-                    onChange={setSimbolocomparacion}
-                    options={[
-                      { value: "=", label: "=" },
-                      { value: ">", label: ">" },
-                      { value: "<", label: "<" },
-                      { value: ">=", label: ">=" },
-                      { value: "<=", label: "<=" },
-                      { value: "<>", label: "<>" }
-                    ]}
-                    disabled={isGuardando}
-                    variant="admin"
-                  />
-                </div>
+              {!esSgrPlus && (
+                <div className={styles.fieldRow}>
+                  <div className={styles.fieldOperador}>
+                    <SelectSimple
+                      label="Operador"
+                      value={simbolocomparacion}
+                      onChange={setSimbolocomparacion}
+                      options={[
+                        { value: "=", label: "=" },
+                        { value: ">", label: ">" },
+                        { value: "<", label: "<" },
+                        { value: ">=", label: ">=" },
+                        { value: "<=", label: "<=" },
+                        { value: "<>", label: "<>" }
+                      ]}
+                      disabled={isGuardando}
+                      variant="admin"
+                    />
+                  </div>
 
-                <div className={styles.fieldValorComparacion}>
-                  <InputSimple
-                    label="Valor de Comparación"
-                    value={valorcomparacion}
-                    onChange={setValorcomparacion}
-                    disabled={isGuardando || comparaPorVacio}
-                    variant="admin"
-                    hideErrorSpace={true}
-                    error={errorValor ? true : undefined}
-                  />
-                  <div className={styles.valorBelowRow}>
-                    <span className={errorValor ? styles.valorErrorText : styles.valorHintText}>
-                      {errorValor ? "Campo obligatorio" : "Fechas: AAAA-MM-DD"}
-                    </span>
-                    <div
-                      className={styles.vacioCheckRow}
-                      onClick={() => {
-                        if (isGuardando) return;
-                        const next = !comparaPorVacio;
-                        setComparaPorVacio(next);
-                        if (next) setValorcomparacion(esCampoNumericoActual() ? "0" : "");
-                      }}
-                      title={
-                        comparaPorVacio && esCampoNumericoActual()
-                          ? "Este campo es numérico: el motor de CDAs no puede comparar un número contra vacío ('') sin fallar, así que se compara contra 0 en su lugar."
-                          : "Marcá esto si el criterio compara contra un texto vacío."
-                      }
-                    >
-                      <div className={`${styles.customCheckbox} ${comparaPorVacio ? styles.checkboxChecked : ""}`}>
-                        {comparaPorVacio && <FiCheck size={11} className={styles.checkmarkIcon} />}
-                      </div>
-                      <span className={styles.vacioCheckLabel}>
-                        {comparaPorVacio && esCampoNumericoActual() ? "Comparar contra vacío (campo numérico → se usa 0)" : "Comparar contra vacío"}
+                  <div className={styles.fieldValorComparacion}>
+                    <InputSimple
+                      label="Valor de Comparación"
+                      value={valorcomparacion}
+                      onChange={setValorcomparacion}
+                      disabled={isGuardando || comparaPorVacio}
+                      variant="admin"
+                      hideErrorSpace={true}
+                      error={errorValor ? true : undefined}
+                    />
+                    <div className={styles.valorBelowRow}>
+                      <span className={errorValor ? styles.valorErrorText : styles.valorHintText}>
+                        {errorValor ? "Campo obligatorio" : "Fechas: AAAA-MM-DD"}
                       </span>
+                      <div
+                        className={styles.vacioCheckRow}
+                        onClick={() => {
+                          if (isGuardando) return;
+                          const next = !comparaPorVacio;
+                          setComparaPorVacio(next);
+                          if (next) setValorcomparacion(esCampoNumericoActual() ? "0" : "");
+                        }}
+                        title={
+                          comparaPorVacio && esCampoNumericoActual()
+                            ? "Este campo es numérico: el motor de CDAs no puede comparar un número contra vacío ('') sin fallar, así que se compara contra 0 en su lugar."
+                            : "Marcá esto si el criterio compara contra un texto vacío."
+                        }
+                      >
+                        <div className={`${styles.customCheckbox} ${comparaPorVacio ? styles.checkboxChecked : ""}`}>
+                          {comparaPorVacio && <FiCheck size={11} className={styles.checkmarkIcon} />}
+                        </div>
+                        <span className={styles.vacioCheckLabel}>
+                          {comparaPorVacio && esCampoNumericoActual() ? "Comparar contra vacío (campo numérico → se usa 0)" : "Comparar contra vacío"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <button
                 type="button"
@@ -866,126 +908,137 @@ export function CdaWorkbench({
             </div>
           </div>
 
-          {/* Laboratorio de Pruebas: zona fija arriba. El resultado se superpone
-              a este mismo contenedor (overlay), así que nunca crece ni empuja
-              a la vinculación de abajo. */}
-          <div className={styles.sandboxContainer}>
-            <h3 className={styles.sandboxTitle}>Laboratorio de Pruebas</h3>
+          {/* .colAccionesBody agrupa el laboratorio de pruebas y todo lo demás
+              (vinculación + botones) en dos piezas hermanas: en Rango 1/2
+              normal es una columna vertical más (igual que antes de este
+              wrapper), pero en Rango responsive pasa a fila - zona de
+              pruebas a la izquierda, vinculación y botones a la derecha,
+              en vez de apilar las 3 columnas completas una debajo de la
+              otra (ver CdaWorkbench.module.css). */}
+          <div className={styles.colAccionesBody}>
+            {/* Laboratorio de Pruebas: zona fija arriba. El resultado se
+                superpone a este mismo contenedor (overlay), así que nunca
+                crece ni empuja a la vinculación de al lado/abajo. */}
+            <div className={styles.sandboxContainer}>
+              <h3 className={styles.sandboxTitle}>Laboratorio de Pruebas</h3>
 
-            <div className={styles.sandboxBody}>
-              {reglaActual ? (
-                <p className={styles.sandboxRulePreview}>
-                  La regla actual que diseñaste es: <code>{reglaActual}</code>
-                </p>
-              ) : (
-                <p className={styles.sandboxRulePreview}>
-                  Definí una regla en el paso 2 para poder probarla acá.
-                </p>
-              )}
+              <div className={styles.sandboxBody}>
+                {reglaActual ? (
+                  <p className={styles.sandboxRulePreview}>
+                    La regla actual que diseñaste es: <code>{reglaActual}</code>
+                  </p>
+                ) : (
+                  <p className={styles.sandboxRulePreview}>
+                    Definí una regla en el paso 2 para poder probarla acá.
+                  </p>
+                )}
 
-              <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end" }}>
-                <div style={{ flex: 1 }}>
-                  <InputSimple
-                    label="CUIT para la prueba"
-                    value={testCuit}
-                    onChange={setTestCuit}
-                    disabled={isTesting || isGuardando}
-                    variant="admin"
-                    hideErrorSpace={true}
-                  />
-                </div>
-                <div>
-                  <Button
-                    type="button"
-                    variant="outlineBlue"
-                    size="md"
-                    onClick={handleTestExpression}
-                    isLoading={isTesting}
-                    disabled={isGuardando || !reglaActual || !testCuit.trim()}
-                  >
-                    Probar
-                  </Button>
+                <div className={styles.sandboxTestRow}>
+                  <div className={styles.sandboxTestInput}>
+                    <InputSimple
+                      label="CUIT para la prueba"
+                      value={testCuit}
+                      onChange={setTestCuit}
+                      disabled={isTesting || isGuardando}
+                      variant="admin"
+                      hideErrorSpace={true}
+                    />
+                  </div>
+                  <div>
+                    <Button
+                      type="button"
+                      variant="outlineBlue"
+                      size="md"
+                      onClick={handleTestExpression}
+                      isLoading={isTesting}
+                      disabled={isGuardando || !reglaActual || !testCuit.trim()}
+                    >
+                      Probar
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {testResult && (() => {
-              const resultado = getResultadoPrueba(testResult.status, styles);
-              return (
-                <div className={styles.testResultBox}>
-                  <div className={styles.testResultHeader}>
-                    <span>Resultado:</span>
-                    <div className={styles.testResultHeaderRight}>
-                      <span className={resultado.badgeClass}>{resultado.label}</span>
-                      <button
-                        type="button"
-                        className={styles.testResultCloseBtn}
-                        onClick={() => setTestResult(null)}
-                        title="Cerrar resultado"
-                        aria-label="Cerrar resultado"
-                      >
-                        <FiX size={14} />
-                      </button>
+              {testResult && (() => {
+                const resultado = getResultadoPrueba(testResult.status, styles);
+                return (
+                  <div className={styles.testResultBox}>
+                    <div className={styles.testResultHeader}>
+                      <span>Resultado:</span>
+                      <div className={styles.testResultHeaderRight}>
+                        <span className={resultado.badgeClass}>{resultado.label}</span>
+                        <button
+                          type="button"
+                          className={styles.testResultCloseBtn}
+                          onClick={() => setTestResult(null)}
+                          title="Cerrar resultado"
+                          aria-label="Cerrar resultado"
+                        >
+                          <FiX size={14} />
+                        </button>
+                      </div>
                     </div>
+                    <div className={styles.testResultMessage}>{resultado.descripcion}</div>
+                    {testResult.message && (
+                      <div className={styles.testResultLog}>
+                        <span className={styles.testResultLogLabel}>Mensaje devuelto por el backend</span>
+                        <code className={styles.testResultLogValue}>{testResult.message}</code>
+                      </div>
+                    )}
+                    {testResult.log && (
+                      <div className={styles.testResultLog}>
+                        <span className={styles.testResultLogLabel}>Valor resuelto</span>
+                        <code className={styles.testResultLogValue}>{testResult.log}</code>
+                      </div>
+                    )}
                   </div>
-                  <div className={styles.testResultMessage}>{resultado.descripcion}</div>
-                  {testResult.message && (
-                    <div className={styles.testResultLog}>
-                      <span className={styles.testResultLogLabel}>Mensaje devuelto por el backend</span>
-                      <code className={styles.testResultLogValue}>{testResult.message}</code>
-                    </div>
-                  )}
-                  {testResult.log && (
-                    <div className={styles.testResultLog}>
-                      <span className={styles.testResultLogLabel}>Valor resuelto</span>
-                      <code className={styles.testResultLogValue}>{testResult.log}</code>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-
-          <div className={styles.colDivider} />
-
-          {/* Vinculación: alto natural, debajo del laboratorio de pruebas.
-              Si no entra, scrollea la columna entera (.colAcciones), no esta
-              franja - así los switches nunca quedan comprimidos a un
-              tamaño inusable. */}
-          <div className={styles.colVinculacion}>
-            <div className={styles.toggleOptionsPanel}>
-              <ToggleOptionRow
-                label="CDA por Defecto"
-                description="Se vincula automáticamente a las cadenas de valor que se creen de ahora en adelante. No afecta a las cadenas ya existentes."
-                checked={vinculadefaultcv}
-                onToggle={() => setVinculadefaultcv(!vinculadefaultcv)}
-                disabled={isGuardando}
-              />
-              {extraToggleOptions}
+                );
+              })()}
             </div>
-          </div>
 
-          <div className={styles.formActions}>
-            {onEliminar && (
-              <Button
-                type="button"
-                variant="danger"
-                size="md"
-                onClick={onEliminar}
-                disabled={isGuardando || isEliminando}
-              >
-                <FiTrash2 /> Eliminar
-              </Button>
-            )}
-            <Button
-              type="submit"
-              variant="blue"
-              size="md"
-              isLoading={isGuardando}
-              disabled={isEliminando}
-            >
-              {submitLabel || (esEdicion ? "Guardar Cambios" : "Crear Criterio")}
-            </Button>
+            {/* Vinculación + botones: alto natural. Si no entra, scrollea
+                este bloque (.colAccionesSecondary), no la columna/fila
+                entera - así los switches nunca quedan comprimidos a un
+                tamaño inusable. */}
+            <div className={styles.colAccionesSecondary}>
+              <div className={styles.colDivider} />
+
+              <div className={styles.colVinculacion}>
+                <div className={styles.toggleOptionsPanel}>
+                  <ToggleOptionRow
+                    label="CDA por Defecto"
+                    description="Se vincula automáticamente a las cadenas de valor que se creen de ahora en adelante. No afecta a las cadenas ya existentes."
+                    checked={vinculadefaultcv}
+                    onToggle={() => setVinculadefaultcv(!vinculadefaultcv)}
+                    disabled={isGuardando}
+                  />
+                  {extraToggleOptions}
+                </div>
+              </div>
+
+              <div className={styles.formActions}>
+                {onEliminar && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    size="sm"
+                    onClick={onEliminar}
+                    disabled={isGuardando || isEliminando}
+                  >
+                    <FiTrash2 /> Eliminar
+                  </Button>
+                )}
+                <Button
+                  type="submit"
+                  variant="blue"
+                  size="md"
+                  isLoading={isGuardando}
+                  disabled={isEliminando}
+                >
+                  {submitLabel || (esEdicion ? "Guardar Cambios" : "Crear Criterio")}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </form>
