@@ -144,15 +144,48 @@ export const INTEGRACIONES_MOCKS = {
     }
   },
   CASFOG: {
-    "solicitudId": 98765,
-    "estadoGeneral": "APROBADO",
-    "montoGarantizado": 1500000.00,
-    "fechaAprobacion": "2023-11-20T10:30:00Z",
-    "calificacion": "A",
-    "condiciones": {
-      "tasa": 25.5,
-      "plazoMeses": 12,
-      "requiereContragarantia": false
+    "success": true,
+    "data": {
+      "general": {
+        "socio_protector": [
+          { "business_name": "string", "cuit": "string" }
+        ],
+        "socio_participe": [
+          { "business_name": "string", "cuit": "string" }
+        ],
+        "cuit_de_terceros": [
+          { "business_name": "string", "cuit": "string" }
+        ],
+        "nueva_pyme": false,
+        "nueva_pyme_datos_disponibles_al": "string"
+      },
+      "informacion_de_garantias_de_la_pyme": {
+        "metricas": {
+          "cantidad_total_garantias_otorgadas": "string",
+          "monto_total_garantias_otorgadas": "string",
+          "cantidad_total_garantias_vigentes": "string",
+          "saldo_bruto_garantias_vigentes": "string"
+        },
+        "data": [
+          {
+            "SGR": "string",
+            "SALDO_BRUTO_DE_GTIAS_VIGENTE": "string",
+            "SALDO_DEUDA_POR_GTIAS_ABONADAS": "string",
+            "CANTIDAD_GTIAS_EN_MORA": "string",
+            "SITUACION_DE_LA_DEUDA": "string",
+            "DIAS_ATRASO": "string"
+          }
+        ]
+      },
+      "certificados_pymes": [
+        {
+          "NUMERO": "string",
+          "FECHA_REGISTRO": "string",
+          "FECHA_VENCIMIENTO": "string",
+          "SECTOR": "string",
+          "CATEGORIA": "string"
+        }
+      ]
     }
   },
   LUFE: {
@@ -410,13 +443,14 @@ export const INTEGRACIONES_MOCKS = {
         ]
       }
     }
-  },
-  SGRPLUS: {
-    "socioParticipe": true,
-    "limiteCreditoAsignado": 5000000.00,
-    "limiteDisponible": 3500000.00,
-    "garantiasVigentes": 2,
-    "estadoMora": "NORMAL",
-    "ultimoAvalAprobado": "2023-09-15"
   }
 };
+
+export const SGRPLUS_FUNCIONES = [
+  { nombre: "CtrlActividadesExcluidas", origen: "AFIP" },
+  { nombre: "CtrlActividadesRequeridas", origen: "AFIP" },
+  { nombre: "CtrlCategoriaAdmitida", origen: "AFIP" },
+  { nombre: "CertificadoVigente", origen: "CASFOG" },
+  { nombre: "TamanioEmpresaValido", origen: "CASFOG" },
+  { nombre: "SectorValido", origen: "CASFOG" }
+];

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useCrearCda, useActualizarCda, useProbarCda } from "../../../../hooks/useCda";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
-import { INTEGRACIONES_MOCKS } from "../../../../utils/integracionesMocks";
+import { INTEGRACIONES_MOCKS, SGRPLUS_FUNCIONES } from "../../../../utils/integracionesMocks";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
@@ -234,6 +234,31 @@ const NosisVariablePicker = ({ variables, searchTerm, onSearchChange, selectedEx
   );
 };
 
+const expresionSgrPlus = (f) => `sgrplus.${f.nombre}(${f.origen.toLowerCase()})`;
+
+const SgrPlusFuncionPicker = ({ selectedExpresion, onSelect }) => (
+  <div className={styles.nosisPickerContainer}>
+    <div className={styles.nosisVarListScroll}>
+      {SGRPLUS_FUNCIONES.map((f) => {
+        const activa = selectedExpresion.trim() === expresionSgrPlus(f);
+        return (
+          <div
+            key={f.nombre}
+            className={`${styles.nosisVarRow} ${activa ? styles.nosisVarRowActive : ""}`}
+            onClick={() => onSelect(expresionSgrPlus(f))}
+            title={`Usar ${expresionSgrPlus(f)} en la expresión`}
+          >
+            <div className={styles.nosisVarHead}>
+              <span className={styles.nosisVarName}>{expresionSgrPlus(f)}</span>
+              <span className={styles.nosisVarType}>{f.origen}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+);
+
 // Fila compacta para las opciones de vinculación (columna 3): switch chico +
 // nombre corto + ícono de info con la descripción larga en un tooltip, para
 // que entren varias opciones sin que cada una ocupe una tarjeta completa.
@@ -370,6 +395,7 @@ export function CdaWorkbench({
   const [testCuit, setTestCuit] = useState("");
   const [testResult, setTestResult] = useState(null);
 
+  const esSgrPlus = integracion === "SGRPLUS";
   const currentJsonData = integracion ? INTEGRACIONES_MOCKS[integracion] : null;
   const nosisVariables = INTEGRACIONES_MOCKS?.NOSIS?.Contenido?.Datos?.Variables || [];
 
@@ -441,9 +467,12 @@ export function CdaWorkbench({
     return `'${casedCleanVal}'`;
   };
 
-  const reglaActual = expresion.trim()
-    ? `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valorcomparacion)}`
-    : "";
+  const armarExpresionCompleta = (valor) =>
+    esSgrPlus
+      ? expresion.trim()
+      : `${expresion.trim()} ${simbolocomparacion} ${formatValorParaLog(valor)}`;
+
+  const reglaActual = expresion.trim() ? armarExpresionCompleta(valorcomparacion) : "";
 
   const handleIntegracionChange = (val) => {
     setIntegracion(val);
@@ -459,6 +488,13 @@ export function CdaWorkbench({
     setExpresion(fullPath);
     if (!userEditedExpresionLog) {
       setExpresionLog(fullPath);
+    }
+  };
+
+  const handleSelectSgrPlusFuncion = (expresionCompleta) => {
+    setExpresion(expresionCompleta);
+    if (!userEditedExpresionLog) {
+      setExpresionLog(expresionCompleta);
     }
   };
 
@@ -505,8 +541,7 @@ export function CdaWorkbench({
 
     setTestResult(null);
     const valorSaneado = sanearValor(valorcomparacion, integracion);
-    const valorParaLog = formatValorParaLog(valorSaneado);
-    const fullExpression = `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+    const fullExpression = armarExpresionCompleta(valorSaneado);
 
     try {
       const res = await probarCda({
@@ -532,7 +567,7 @@ export function CdaWorkbench({
 
   const errorDescripcion = intentoEnviar && !descripcion.trim();
   const errorExpresion = intentoEnviar && !expresion.trim();
-  const errorValor = intentoEnviar && !comparaPorVacio && !valorcomparacion.trim();
+  const errorValor = intentoEnviar && !esSgrPlus && !comparaPorVacio && !valorcomparacion.trim();
   const errorMensaje = intentoEnviar && !mensajerechazo.trim();
 
   const handleSave = (e) => {
@@ -541,7 +576,7 @@ export function CdaWorkbench({
     const faltaAlgunCampo =
       !descripcion.trim() ||
       !expresion.trim() ||
-      (!comparaPorVacio && !valorcomparacion.trim()) ||
+      (!esSgrPlus && !comparaPorVacio && !valorcomparacion.trim()) ||
       !mensajerechazo.trim();
 
     if (faltaAlgunCampo) {
@@ -563,8 +598,8 @@ export function CdaWorkbench({
     setIsGuardando(true);
 
     const valorSaneado = sanearValor(valorcomparacion, integracion);
-    const valorParaLog = formatValorParaLog(valorSaneado);
-    const fullExpression = `${expresion.trim()} ${simbolocomparacion} ${valorParaLog}`;
+    const valorParaLog = esSgrPlus ? "" : formatValorParaLog(valorSaneado);
+    const fullExpression = armarExpresionCompleta(valorSaneado);
 
     try {
       const resValida = await probarCda({
@@ -587,7 +622,7 @@ export function CdaWorkbench({
       cdaID: esEdicion ? (getCdaId(cdaEditando) ?? 0) : 0,
       descripcion: descripcion.trim(),
       expresion: expresion.trim(),
-      simboloComparacion: simbolocomparacion,
+      simboloComparacion: esSgrPlus ? "" : simbolocomparacion,
       // El motor de CDAs espera los valores de texto entre comillas simples
       // (ej. 'REINA') y los numéricos/fechas sin comillas: mismo criterio
       // que ya usa el Laboratorio de Pruebas (formatValorParaLog).
@@ -680,7 +715,12 @@ export function CdaWorkbench({
             Es opcional: podés armar la expresión con clics o escribirla manualmente sin seleccionar nada.
           </p>
 
-          {integracion === "NOSIS" ? (
+          {esSgrPlus ? (
+            <SgrPlusFuncionPicker
+              selectedExpresion={expresion}
+              onSelect={handleSelectSgrPlusFuncion}
+            />
+          ) : integracion === "NOSIS" ? (
             <NosisVariablePicker
               variables={nosisVariables}
               searchTerm={nosisSearchTerm}
@@ -752,63 +792,65 @@ export function CdaWorkbench({
                 />
               </div>
 
-              <div className={styles.fieldRow}>
-                <div className={styles.fieldOperador}>
-                  <SelectSimple
-                    label="Operador"
-                    value={simbolocomparacion}
-                    onChange={setSimbolocomparacion}
-                    options={[
-                      { value: "=", label: "=" },
-                      { value: ">", label: ">" },
-                      { value: "<", label: "<" },
-                      { value: ">=", label: ">=" },
-                      { value: "<=", label: "<=" },
-                      { value: "<>", label: "<>" }
-                    ]}
-                    disabled={isGuardando}
-                    variant="admin"
-                  />
-                </div>
+              {!esSgrPlus && (
+                <div className={styles.fieldRow}>
+                  <div className={styles.fieldOperador}>
+                    <SelectSimple
+                      label="Operador"
+                      value={simbolocomparacion}
+                      onChange={setSimbolocomparacion}
+                      options={[
+                        { value: "=", label: "=" },
+                        { value: ">", label: ">" },
+                        { value: "<", label: "<" },
+                        { value: ">=", label: ">=" },
+                        { value: "<=", label: "<=" },
+                        { value: "<>", label: "<>" }
+                      ]}
+                      disabled={isGuardando}
+                      variant="admin"
+                    />
+                  </div>
 
-                <div className={styles.fieldValorComparacion}>
-                  <InputSimple
-                    label="Valor de Comparación"
-                    value={valorcomparacion}
-                    onChange={setValorcomparacion}
-                    disabled={isGuardando || comparaPorVacio}
-                    variant="admin"
-                    hideErrorSpace={true}
-                    error={errorValor ? true : undefined}
-                  />
-                  <div className={styles.valorBelowRow}>
-                    <span className={errorValor ? styles.valorErrorText : styles.valorHintText}>
-                      {errorValor ? "Campo obligatorio" : "Fechas: AAAA-MM-DD"}
-                    </span>
-                    <div
-                      className={styles.vacioCheckRow}
-                      onClick={() => {
-                        if (isGuardando) return;
-                        const next = !comparaPorVacio;
-                        setComparaPorVacio(next);
-                        if (next) setValorcomparacion(esCampoNumericoActual() ? "0" : "");
-                      }}
-                      title={
-                        comparaPorVacio && esCampoNumericoActual()
-                          ? "Este campo es numérico: el motor de CDAs no puede comparar un número contra vacío ('') sin fallar, así que se compara contra 0 en su lugar."
-                          : "Marcá esto si el criterio compara contra un texto vacío."
-                      }
-                    >
-                      <div className={`${styles.customCheckbox} ${comparaPorVacio ? styles.checkboxChecked : ""}`}>
-                        {comparaPorVacio && <FiCheck size={11} className={styles.checkmarkIcon} />}
-                      </div>
-                      <span className={styles.vacioCheckLabel}>
-                        {comparaPorVacio && esCampoNumericoActual() ? "Comparar contra vacío (campo numérico → se usa 0)" : "Comparar contra vacío"}
+                  <div className={styles.fieldValorComparacion}>
+                    <InputSimple
+                      label="Valor de Comparación"
+                      value={valorcomparacion}
+                      onChange={setValorcomparacion}
+                      disabled={isGuardando || comparaPorVacio}
+                      variant="admin"
+                      hideErrorSpace={true}
+                      error={errorValor ? true : undefined}
+                    />
+                    <div className={styles.valorBelowRow}>
+                      <span className={errorValor ? styles.valorErrorText : styles.valorHintText}>
+                        {errorValor ? "Campo obligatorio" : "Fechas: AAAA-MM-DD"}
                       </span>
+                      <div
+                        className={styles.vacioCheckRow}
+                        onClick={() => {
+                          if (isGuardando) return;
+                          const next = !comparaPorVacio;
+                          setComparaPorVacio(next);
+                          if (next) setValorcomparacion(esCampoNumericoActual() ? "0" : "");
+                        }}
+                        title={
+                          comparaPorVacio && esCampoNumericoActual()
+                            ? "Este campo es numérico: el motor de CDAs no puede comparar un número contra vacío ('') sin fallar, así que se compara contra 0 en su lugar."
+                            : "Marcá esto si el criterio compara contra un texto vacío."
+                        }
+                      >
+                        <div className={`${styles.customCheckbox} ${comparaPorVacio ? styles.checkboxChecked : ""}`}>
+                          {comparaPorVacio && <FiCheck size={11} className={styles.checkmarkIcon} />}
+                        </div>
+                        <span className={styles.vacioCheckLabel}>
+                          {comparaPorVacio && esCampoNumericoActual() ? "Comparar contra vacío (campo numérico → se usa 0)" : "Comparar contra vacío"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <button
                 type="button"

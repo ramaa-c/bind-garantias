@@ -400,9 +400,16 @@
   gap: 1.25rem;
 }
 
+/* El sangrado negativo tiene que calzar exacto con el padding del contenedor
+   (--panel-pad, definido en .panelWrap de CadenasCda.module.css; 1.5rem si
+   no lo define nadie): con un valor fijo distinto, el fondo se salía del
+   borde de la tarjeta apenas ese contenedor dejó de recortarlo con
+   overflow (reportado el 2026-09-23). El radio inferior reemplaza al
+   recorte que antes hacía el overflow:hidden del contenedor. */
 .mainFooter {
-  margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+  margin: 1.5rem calc(-1 * var(--panel-pad, 1.5rem)) calc(-1 * var(--panel-pad, 1.5rem)) calc(-1 * var(--panel-pad, 1.5rem));
   padding: 1rem 1.5rem;
+  border-radius: 0 0 0.65rem 0.65rem;
   border-top: 1px solid rgba(43, 113, 200, 0.12);
   display: flex;
   justify-content: flex-end;

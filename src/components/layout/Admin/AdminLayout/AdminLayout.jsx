@@ -34,12 +34,27 @@ export default function AdminLayout({ children }) {
     const versionText = versionTextRef.current;
     if (!adminContent || !containerInner || !versionText) return;
 
+    // La medición se hace SIEMPRE en modo acotado (sacando un instante la
+    // clase de desborde), no en el estado que tenga en ese momento: con la
+    // clase puesta, containerInner mide "height:auto" y su scrollHeight es
+    // el alto natural del contenido - que en una página con regiones de
+    // scroll interno (ej. la lista de variables NOSIS de CdaWorkbench) casi
+    // siempre supera lo disponible, así que "desborda" se sostenía a sí
+    // mismo: una vez en true (p.ej. al pasar por Rango 2, donde el contenido
+    // fluye sin acotar) nunca podía volver a false, y al retroceder a Rango 1
+    // las columnas quedaban fijas en el alto inflado de Rango 2 (reportado el
+    // 2026-09-23; reproducido con contenido de tamaño real: 841px trabados
+    // en vez de los 645px de Rango 1). Restituir la clase en el mismo tick
+    // evita que React o el usuario vean el estado intermedio.
     const chequearDesborde = () => {
+      const claseDesborde = styles.containerInnerDesborda;
+      const teniaClase = containerInner.classList.contains(claseDesborde);
+      if (teniaClase) containerInner.classList.remove(claseDesborde);
       const disponible = adminContent.clientHeight - versionText.offsetHeight;
-      setDesborda((actual) => {
-        const nuevo = containerInner.scrollHeight > disponible;
-        return actual === nuevo ? actual : nuevo;
-      });
+      const excede = containerInner.scrollHeight > disponible;
+      if (teniaClase) containerInner.classList.add(claseDesborde);
+
+      setDesborda((actual) => (actual === excede ? actual : excede));
     };
 
     chequearDesborde();
