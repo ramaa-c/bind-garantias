@@ -372,3 +372,17 @@
 .emptyStateIcon {
   font-size: 1.75rem;
 }
+
+@media (max-width: 480px) {
+  .filterField {
+    flex: 1 1 100%;
+  }
+
+  .clearFiltersBtn {
+    display: none;
+  }
+
+  .clearFiltersBtnVisible {
+    display: inline-flex;
+  }
+}

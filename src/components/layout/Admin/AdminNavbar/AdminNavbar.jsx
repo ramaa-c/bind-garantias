@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiChevronDown, FiLogOut, FiSettings } from "react-icons/fi";
+import { FiChevronDown, FiLogOut, FiMenu, FiSettings, FiX } from "react-icons/fi";
 import { FaRegUserCircle } from "react-icons/fa";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./AdminNavbar.module.css";
@@ -20,6 +20,7 @@ export default function AdminNavbar() {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCuentaModalOpen, setIsCuentaModalOpen] = useState(false);
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const navRef = useRef(null);
   const profileRef = useRef(null);
 
@@ -71,6 +72,7 @@ export default function AdminNavbar() {
   const handleNavigate = (path) => {
     if (!path) return;
     setActiveDropdown(null);
+    setMenuMovilAbierto(false);
     navigate(path);
   };
 
@@ -164,6 +166,15 @@ export default function AdminNavbar() {
             </div>
           )}
         </div>
+        <button
+          type="button"
+          className={styles.menuToggle}
+          aria-label={menuMovilAbierto ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menuMovilAbierto}
+          onClick={() => setMenuMovilAbierto((abierto) => !abierto)}
+        >
+          {menuMovilAbierto ? <FiX /> : <FiMenu />}
+        </button>
       </div>
 
       <CuentaUsuarioModal
@@ -172,7 +183,10 @@ export default function AdminNavbar() {
       />
 
       {/* Main navigation links bar mimicking the blue header */}
-      <nav className={styles.mainNav} ref={navRef}>
+      <nav
+        className={`${styles.mainNav} ${menuMovilAbierto ? styles.mainNavAbierto : ""}`}
+        ref={navRef}
+      >
         <div className={styles.navItemsContainer}>
           {/* Mis Pendientes */}
           <button type="button"

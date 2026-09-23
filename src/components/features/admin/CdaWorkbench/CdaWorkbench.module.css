@@ -1107,3 +1107,30 @@
   padding: 0.1rem 0.35rem;
   border-radius: 0.25rem;
 }
+
+@media (max-width: 768px) {
+  .workbench {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "colFuente"
+      "colRegla"
+      "colAcciones";
+  }
+
+  .colAccionesBody {
+    flex-direction: column;
+  }
+
+  .colAccionesSecondary {
+    padding-left: 0;
+    padding-top: 1rem;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .sandboxContainer {
+    flex: 0 0 auto;
+    max-height: none;
+  }
+}

@@ -416,3 +416,15 @@
   border-radius: 0.75rem;
   font-size: 0.95rem;
 }
+
+@media (max-width: 768px) {
+  .splitLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .adminCard,
+  .cardHeaderInfo,
+  .textStack {
+    min-width: 0;
+  }
+}

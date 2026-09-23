@@ -285,3 +285,24 @@
   padding-top: 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
+
+@media (max-width: 480px) {
+  .scroll {
+    padding: 0.85rem;
+  }
+
+  .hero {
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .hero > .badge {
+    margin-left: auto;
+  }
+
+  .heroInfo {
+    order: 3;
+    flex: 1 1 100%;
+  }
+}

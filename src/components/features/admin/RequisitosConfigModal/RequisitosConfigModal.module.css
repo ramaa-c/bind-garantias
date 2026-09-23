@@ -270,3 +270,33 @@
     flex: 1;
   }
 }
+
+@media (max-width: 480px) {
+  .tabBtn svg {
+    display: none;
+  }
+
+  .tabBtn {
+    padding: 0.55rem 0.25rem;
+  }
+
+  .segmentBtn {
+    padding-inline: 0.25rem;
+    font-size: 0.72rem;
+  }
+
+  .modalFooter {
+    gap: 0.5rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .modalFooter > * {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 0.5rem;
+  }
+
+  .modalFooter svg {
+    display: none;
+  }
+}

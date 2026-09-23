@@ -323,10 +323,10 @@ export default function CadenasValor() {
                         ID: #{item.cadenavalorid}
                       </span>
                     </td>
-                    <td className={styles.truncateCell}>
+                    <td className={styles.truncateCell} data-label="Referencia">
                       <span title={item.referencia}>{item.referencia || "-"}</span>
                     </td>
-                    <td className={styles.truncateCell}>
+                    <td className={styles.truncateCell} data-label="Canal">
                       <span>
                         {getCatalogLabel(
                           canalesOpciones,
@@ -334,7 +334,7 @@ export default function CadenasValor() {
                         )}
                       </span>
                     </td>
-                    <td className={styles.truncateCell}>
+                    <td className={styles.truncateCell} data-label="Equipo">
                       <span>{getCatalogLabel(equiposOpciones, item.equipocomercialid)}</span>
                     </td>
                     <td style={{ textAlign: "center" }} className={styles.switchCell}>
