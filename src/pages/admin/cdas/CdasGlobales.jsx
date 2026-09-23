@@ -259,7 +259,7 @@ export default function CdasGlobales() {
                           {integ || "—"}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Pantallas">
                         {pantallasCda.length === 0 ? (
                           <span className={styles.pantallaBadgeVacio}>Sin vincular</span>
                         ) : (
@@ -278,13 +278,13 @@ export default function CdasGlobales() {
                           </div>
                         )}
                       </td>
-                      <td className={styles.truncateCell}>
+                      <td className={styles.truncateCell} data-label="Expresión">
                         <code className={styles.tableCode} title={expresion}>{expresion}</code>
                       </td>
-                      <td className={styles.truncateCell}>
+                      <td className={styles.truncateCell} data-label="Rechazo">
                         <span title={mensajeRechazo}>{mensajeRechazo}</span>
                       </td>
-                      <td style={{ textAlign: "center" }}>
+                      <td style={{ textAlign: "center" }} data-label="Vinculación default">
                         <span className={esDefault ? styles.pillYes : styles.pillNo}>{esDefault ? "Sí" : "No"}</span>
                       </td>
                       <td style={{ textAlign: "center" }}>

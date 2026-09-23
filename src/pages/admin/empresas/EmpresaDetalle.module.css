@@ -1238,8 +1238,15 @@
    se comprimía a una franja inusable en vez de que la página entera
    empiece a scrollear. */
 @media (max-width: 1440px), (max-height: 716px) {
+  /* min-height: en pestañas cortas (Usuarios Vinculados, CDAs) el contenido
+     no llegaba al pie y .versionText (hermana de .containerInner en
+     AdminLayout) quedaba pegada justo debajo, muy arriba. Se le reserva el
+     alto de pantalla menos el padding superior de .containerInner (11rem) y
+     el alto de .versionText (2.75rem) - solo acá, no global: en otras
+     páginas admin el layout ya se veía bien (reportado el 2026-09-23). */
   .container {
     height: auto;
+    min-height: calc(100dvh - 13.75rem);
   }
 
   .embeddedLegajo,
@@ -1266,5 +1273,56 @@
 
   .sectionCardFields {
     grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .heroActions {
+    flex-shrink: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .headerBadges {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .headerBadges > * {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tabs {
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabBtn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .cdaRowActions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .cdaRowFecha {
+    white-space: normal;
+  }
+
+  .cdasSectionHeaderRow,
+  .cdasSectionHeaderActions {
+    flex-wrap: wrap;
+    min-width: 0;
   }
 }

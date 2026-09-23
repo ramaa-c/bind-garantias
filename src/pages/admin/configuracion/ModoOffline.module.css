@@ -654,3 +654,24 @@
   background: var(--error-red, #ef4444);
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
 }
+
+@media (max-width: 768px) {
+  .statusHero {
+    flex-wrap: wrap;
+    padding: 0.85rem 1rem;
+  }
+
+  .statusHeroLeft {
+    flex: 1 1 100%;
+  }
+
+  .statusHeroRight {
+    flex: 1 1 100%;
+    flex-shrink: 1;
+    justify-content: space-between;
+  }
+
+  .switchHint {
+    white-space: normal;
+  }
+}

@@ -414,3 +414,99 @@
     transform: translateX(-50%);
   }
 }
+
+.menuToggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .menuToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    background: rgba(var(--overlay-rgb), 0.03);
+    border: 1px solid rgba(var(--overlay-rgb), 0.08);
+    border-radius: 0.75rem;
+    color: var(--white);
+    font-size: 1.25rem;
+    cursor: pointer;
+  }
+
+  .topBrandBar {
+    gap: 0.5rem;
+  }
+
+  .logoBox {
+    min-width: 0;
+  }
+
+  .logoImg {
+    height: 2.25rem;
+  }
+
+  .userMenuContainer {
+    margin-left: auto;
+  }
+
+  .userTrigger {
+    min-width: 0;
+    gap: 0.4rem;
+    padding: 0.25rem;
+  }
+
+  .userName,
+  .userChevron {
+    display: none;
+  }
+
+  .userDropdownMenu {
+    width: 15rem;
+  }
+
+  .mainNav {
+    display: none;
+    padding: 0.5rem;
+    max-height: calc(100dvh - 6.5rem);
+    overflow-y: auto;
+  }
+
+  .mainNavAbierto {
+    display: block;
+  }
+
+  .navItemsContainer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+
+  .navButton {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border-bottom: none;
+    border-radius: 0.5rem;
+  }
+
+  .navButton:hover,
+  .dropdownActive,
+  .active {
+    border-bottom: none;
+  }
+
+  .dropdownMenu {
+    position: static;
+    min-width: 0;
+    margin-top: 0.25rem;
+    background: rgba(0, 0, 0, 0.2);
+    box-shadow: none;
+    animation: none;
+  }
+
+  .scrollableMenu {
+    max-height: none;
+  }
+}

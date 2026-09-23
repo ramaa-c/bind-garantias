@@ -166,3 +166,10 @@
   color: #8b949e;
   padding-left: 0.25rem;
 }
+
+@media (max-width: 480px) {
+  .row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
