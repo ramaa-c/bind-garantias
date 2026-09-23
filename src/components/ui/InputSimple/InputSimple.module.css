@@ -265,6 +265,7 @@
      (derivado del padding+line-height del input) queda desalineado en una
      misma fila de filtros. */
   height: 2.35rem;
+  min-height: 0;
 }
 
 .compact .input {
@@ -289,6 +290,11 @@
 .compact.statusFocus .label {
   top: 0.28rem;
   font-size: 0.56rem;
+}
+
+.compact.hasValue .input,
+.compact.statusFocus .input {
+  padding-top: 0.65rem;
 }
 
 /* ── ADMIN VARIANT OVERRIDES ────────────────────────────────────────────────── */
