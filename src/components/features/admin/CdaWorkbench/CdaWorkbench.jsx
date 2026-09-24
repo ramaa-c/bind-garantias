@@ -10,7 +10,7 @@ import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
 import { ReglaAsistente } from "../ReglaAsistente/ReglaAsistente";
 import { OPERADORES_POR_TIPO, tieneValoresSugeridos } from "../../../../utils/reglaAsistente";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
-import { FiCheck, FiChevronDown, FiChevronUp, FiArrowLeft, FiTrash2, FiX, FiInfo, FiSearch } from "react-icons/fi";
+import { FiAlertCircle, FiCheck, FiChevronDown, FiChevronUp, FiArrowLeft, FiTrash2, FiX, FiInfo, FiSearch } from "react-icons/fi";
 import styles from "./CdaWorkbench.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -590,6 +590,10 @@ export function CdaWorkbench({
   const testResult = testResultRaw && testResultRaw.clave === claveTestActual ? testResultRaw : null;
   const setTestResult = (resultado) => setTestResultRaw(resultado && { ...resultado, clave: claveTestActual });
 
+  useEffect(() => {
+    setTestResultRaw((previo) => (previo && previo.clave !== claveTestActual ? null : previo));
+  }, [claveTestActual]);
+
   const handleIntegracionChange = (val) => {
     setIntegracion(val);
     setExpresion(""); // reset expression when changing integration
@@ -989,6 +993,7 @@ export function CdaWorkbench({
                       options={(operadoresPermitidosGuia || ["=", ">", "<", ">=", "<=", "<>"]).map((op) => ({ value: op, label: op }))}
                       disabled={isGuardando}
                       variant="admin"
+                      hideErrorSpace={true}
                     />
                   </div>
 
@@ -1002,8 +1007,16 @@ export function CdaWorkbench({
                       hideErrorSpace={true}
                       error={errorValor ? true : undefined}
                     />
-                    <div className={styles.valorBelowRow}>
-                      {(comparaPorVacio || mostrarCompararVacio) && (
+                    {errorValor && (
+                      <div className={styles.valorBelowRow}>
+                        <span className={styles.valorErrorText}>
+                          <FiAlertCircle size={12} /> Campo obligatorio
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {(comparaPorVacio || mostrarCompararVacio) && (
+                    <div className={styles.vacioCheckWrap}>
                       <div
                         className={styles.vacioCheckRow}
                         onClick={() => {
@@ -1025,10 +1038,8 @@ export function CdaWorkbench({
                           {comparaPorVacio && esCampoNumericoActual() ? "Comparar contra vacío (campo numérico → se usa 0)" : "Comparar contra vacío"}
                         </span>
                       </div>
-                      )}
-                      {errorValor && <span className={styles.valorErrorText}>Campo obligatorio</span>}
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -1058,7 +1069,7 @@ export function CdaWorkbench({
                     hideErrorSpace={true}
                   />
                   <p className={styles.helperText}>
-                    Podés agregar más de una, separándolas con coma, o dejarlo vacío si no lo necesitás.
+                    Podés agregar más de una expresión, separándolas con coma, o dejarlo vacío si no lo necesitás.
                   </p>
                 </div>
               )}
@@ -1169,6 +1180,14 @@ export function CdaWorkbench({
                       <div className={styles.testResultLog}>
                         <span className={styles.testResultLogLabel}>Valor resuelto</span>
                         <code className={styles.testResultLogValue}>{testResult.log}</code>
+                      </div>
+                    )}
+                    {testResult.status === 406 && !testResult.log && !esSgrPlus && expresionLog.trim() && (
+                      <div className={styles.testResultLog}>
+                        <span className={styles.testResultLogLabel}>Sin valor resuelto</span>
+                        <span className={styles.testResultMessage}>
+                          El motor no devolvió el dato del campo: puede que la integración no tenga datos para este CUIT o que haya fallado en ese momento. Reejecutá para confirmar antes de darlo por falso.
+                        </span>
                       </div>
                     )}
                   </div>
