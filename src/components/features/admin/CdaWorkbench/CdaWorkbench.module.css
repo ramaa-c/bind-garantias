@@ -452,29 +452,71 @@
 }
 
 .fieldRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: minmax(11rem, 30%) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 0;
+  row-gap: 0.35rem;
+  align-items: start;
 }
 
-.fieldRow > * {
-  flex: 1;
-  min-width: 0;
-}
-
-/* Antes tenía flex:"0 0 30%" inline, sin min-width: a zoom/resolución alta
-   (columna del workbench más angosta) el Operador se achicaba por debajo del
-   ancho que necesita su label + valor, y se superponían. Con min-width y
-   flex-wrap en .fieldRow, si no entra ambos en la misma fila, el Operador
-   pasa a ocupar su propia fila arriba en vez de aplastarse. */
 .fieldOperador {
-  flex: 1 1 7rem;
-  min-width: 7rem;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.fieldOperador:focus-within {
+  z-index: 2;
+}
+
+.fieldOperador > div > div {
+  border-radius: 0.875rem 0 0 0.875rem;
 }
 
 .fieldValorComparacion {
-  flex: 3 1 12rem;
-  min-width: 12rem;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-width: 0;
+  margin-left: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+.fieldValorComparacion > div:first-child > div {
+  border-radius: 0 0.875rem 0.875rem 0;
+  min-height: calc(3.2rem + 2px);
+}
+
+.vacioCheckWrap {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .fieldRow {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+  }
+
+  .fieldOperador > div > div,
+  .fieldValorComparacion > div:first-child > div {
+    border-radius: 0.875rem;
+  }
+
+  .fieldValorComparacion {
+    grid-column: 1;
+    grid-row: 2;
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+
+  .vacioCheckWrap {
+    grid-column: 1;
+    grid-row: 3;
+  }
 }
 
 /* Textareas de una sola línea (expresión, log): no necesitan la altura por defecto */
@@ -857,6 +899,15 @@
   gap: 0.5rem;
   cursor: pointer;
   user-select: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vacioCheckRow:focus,
+.vacioCheckRow:focus-visible,
+.vacioCheckRow:active {
+  outline: none;
+  box-shadow: none;
 }
 
 .vacioCheckLabel {
@@ -1275,4 +1326,15 @@
     flex: 0 0 auto;
     max-height: none;
   }
+}
+
+.valorErrorText {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.vacioCheckRow .customCheckbox.checkboxChecked,
+.vacioCheckRow:hover .customCheckbox.checkboxChecked {
+  border-color: #3b4ed1;
 }
