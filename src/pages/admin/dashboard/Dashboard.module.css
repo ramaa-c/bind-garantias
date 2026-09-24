@@ -511,6 +511,10 @@
   }
 }
 
+.listWrapper .emptyState {
+  margin-top: 0;
+}
+
 .emptyState {
   padding: 3rem 2rem;
   text-align: center;

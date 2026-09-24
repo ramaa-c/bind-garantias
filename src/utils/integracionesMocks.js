@@ -447,10 +447,10 @@ export const INTEGRACIONES_MOCKS = {
 };
 
 export const SGRPLUS_FUNCIONES = [
-  { nombre: "CtrlActividadesExcluidas", origen: "AFIP" },
-  { nombre: "CtrlActividadesRequeridas", origen: "AFIP" },
-  { nombre: "CtrlCategoriaAdmitida", origen: "AFIP" },
-  { nombre: "CertificadoVigente", origen: "CASFOG" },
-  { nombre: "TamanioEmpresaValido", origen: "CASFOG" },
-  { nombre: "SectorValido", origen: "CASFOG" }
+  { nombre: "CtrlActividadesExcluidas", origen: "AFIP", descripcion: "Controla las actividades excluidas de la empresa según AFIP." },
+  { nombre: "CtrlActividadesRequeridas", origen: "AFIP", descripcion: "Controla que la empresa tenga las actividades requeridas según AFIP." },
+  { nombre: "CtrlCategoriaAdmitida", origen: "AFIP", descripcion: "Controla que la categoría de la empresa sea admitida según AFIP." },
+  { nombre: "CertificadoVigente", origen: "CASFOG", descripcion: "Controla que el certificado PyME esté vigente según CASFOG." },
+  { nombre: "TamanioEmpresaValido", origen: "CASFOG", descripcion: "Controla que el tamaño de la empresa sea válido según CASFOG." },
+  { nombre: "SectorValido", origen: "CASFOG", descripcion: "Controla que el sector de la empresa sea válido según CASFOG." }
 ];
