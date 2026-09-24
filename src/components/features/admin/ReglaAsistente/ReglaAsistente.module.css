@@ -1,0 +1,245 @@
+.asistente {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: linear-gradient(160deg, rgba(76, 101, 230, 0.12), rgba(179, 136, 255, 0.05));
+  border: 1px solid rgba(124, 140, 255, 0.28);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.cabecera:hover {
+  background-color: rgba(124, 140, 255, 0.08);
+}
+
+.iconoCabecera {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 0.5rem;
+  background: rgba(124, 140, 255, 0.2);
+  color: #aab4ff;
+}
+
+.tituloCabecera {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.badgeTipo {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #cbd2ff;
+  background: rgba(124, 140, 255, 0.18);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  white-space: nowrap;
+}
+
+.chevron {
+  flex: 0 0 auto;
+  color: #8b949e;
+  transition: transform 0.2s ease;
+}
+
+.tituloCabecera + .chevron {
+  margin-left: auto;
+}
+
+.chevronAbierto {
+  transform: rotate(180deg);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.15rem 0.75rem 0.8rem;
+  min-width: 0;
+}
+
+.texto {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #c9d1d9;
+  overflow-wrap: anywhere;
+}
+
+.texto strong,
+.textoSuave strong {
+  color: #ffffff;
+}
+
+.textoSuave {
+  margin: 0;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  color: #8b949e;
+  overflow-wrap: anywhere;
+}
+
+.codigo {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.74rem;
+  color: #aab4ff;
+  background: rgba(124, 140, 255, 0.14);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.etiqueta {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b949e;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chipOperador,
+.chipEjemplo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+  padding: 0.25rem 0.6rem;
+  background: rgba(13, 17, 23, 0.6);
+  border: 1px solid #30363d;
+  border-radius: 999px;
+  color: #c9d1d9;
+  font-family: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+
+.chipOperador code,
+.chipEjemplo code {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-weight: 700;
+  color: #aab4ff;
+}
+
+.chipOperador:hover:not(:disabled),
+.chipEjemplo:hover:not(:disabled) {
+  border-color: #7c8cff;
+  background: rgba(124, 140, 255, 0.16);
+}
+
+.chipOperador:active:not(:disabled),
+.chipEjemplo:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.chipOperador:disabled,
+.chipEjemplo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chipActivo {
+  border-color: #7c8cff;
+  background: rgba(124, 140, 255, 0.22);
+  color: #ffffff;
+}
+
+.resumen,
+.advertencia {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.resumen svg,
+.advertencia svg {
+  flex: 0 0 auto;
+  margin-top: 0.12rem;
+}
+
+.resumen {
+  background: rgba(46, 160, 67, 0.12);
+  color: #b6e3bd;
+}
+
+.resumen strong {
+  color: #ffffff;
+}
+
+.advertencia {
+  background: rgba(210, 153, 34, 0.14);
+  color: #f2cc60;
+}
+
+.guiaGeneral {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.4rem;
+}
+
+.guiaItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.3rem 0.5rem;
+  background: rgba(13, 17, 23, 0.55);
+  border: 1px solid #30363d;
+  border-radius: 0.5rem;
+  font-size: 0.72rem;
+  color: #c9d1d9;
+}
+
+.guiaIcono {
+  flex: 0 0 auto;
+  color: #aab4ff;
+}
+
+.guiaTipo {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

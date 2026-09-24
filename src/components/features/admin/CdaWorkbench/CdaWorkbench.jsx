@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { useCrearCda, useActualizarCda, useProbarCda } from "../../../../hooks/useCda";
@@ -7,8 +7,10 @@ import { INTEGRACIONES_MOCKS, SGRPLUS_FUNCIONES } from "../../../../utils/integr
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
+import { ReglaAsistente } from "../ReglaAsistente/ReglaAsistente";
+import { OPERADORES_POR_TIPO, tieneValoresSugeridos } from "../../../../utils/reglaAsistente";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
-import { FiCheck, FiChevronDown, FiArrowLeft, FiTrash2, FiX, FiInfo } from "react-icons/fi";
+import { FiCheck, FiChevronDown, FiChevronUp, FiArrowLeft, FiTrash2, FiX, FiInfo, FiSearch } from "react-icons/fi";
 import styles from "./CdaWorkbench.module.css";
 
 // Prefijos para cada integración según el formato esperado por el backend
@@ -101,8 +103,25 @@ const applyCasingStrategy = (val, integrationName) => {
   return val;
 };
 
+const buscarClavesEnJson = (data, termino) => {
+  const term = termino.trim().toLowerCase();
+  if (!term || data === null || typeof data !== "object") return [];
+  const encontradas = [];
+  const recorrer = (nodo, parentKey) => {
+    if (nodo === null || typeof nodo !== "object") return;
+    const esArray = Array.isArray(nodo);
+    Object.keys(nodo).forEach((key) => {
+      const path = parentKey ? (esArray ? `${parentKey}[${key}]` : `${parentKey}.${key}`) : key;
+      if (!esArray && key.toLowerCase().includes(term)) encontradas.push(path);
+      recorrer(nodo[key], path);
+    });
+  };
+  recorrer(data, "");
+  return encontradas;
+};
+
 // Componente recursivo para renderizar el JSON de forma interactiva
-const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
+const JsonViewer = ({ data, parentKey = "", onSelectField, coincidencias, pathActivo }) => {
   if (data === null) {
     return <span className={styles.jsonValueNull}>null</span>;
   }
@@ -147,13 +166,16 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
           const currentPath = parentKey ? (isArray ? `${parentKey}[${key}]` : `${parentKey}.${key}`) : key;
           const isLast = index === keys.length - 1;
           const isValArray = Array.isArray(data[key]);
+          const esCoincidencia = !isArray && coincidencias?.has(currentPath);
+          const esActivo = esCoincidencia && currentPath === pathActivo;
 
           return (
             <div key={key}>
               {!isArray && (
                 <>
                   <span
-                    className={`${styles.jsonKey} ${styles.jsonFieldHover}`}
+                    className={`${styles.jsonKey} ${styles.jsonFieldHover} ${esCoincidencia ? styles.jsonMatch : ""} ${esActivo ? styles.jsonMatchActive : ""}`}
+                    data-json-activo={esActivo ? "true" : undefined}
                     onClick={(e) => {
                       e.stopPropagation();
                       // Si el valor es un array, sugerimos la propiedad .Count
@@ -171,6 +193,8 @@ const JsonViewer = ({ data, parentKey = "", onSelectField }) => {
                 data={data[key]}
                 parentKey={currentPath}
                 onSelectField={onSelectField}
+                coincidencias={coincidencias}
+                pathActivo={pathActivo}
               />
               {!isLast && ","}
             </div>
@@ -252,6 +276,7 @@ const SgrPlusFuncionPicker = ({ selectedExpresion, onSelect }) => (
               <span className={styles.nosisVarName}>{expresionSgrPlus(f)}</span>
               <span className={styles.nosisVarType}>{f.origen}</span>
             </div>
+            <span className={styles.nosisVarDesc}>{f.descripcion}</span>
           </div>
         );
       })}
@@ -358,6 +383,9 @@ export function CdaWorkbench({
 
   const [integracion, setIntegracion] = useState(() => detectarIntegracion(getCdaProp(cdaEditando, "expresion")));
   const [nosisSearchTerm, setNosisSearchTerm] = useState("");
+  const [busquedaJson, setBusquedaJson] = useState("");
+  const [indiceCoincidencia, setIndiceCoincidencia] = useState(0);
+  const jsonContainerRef = useRef(null);
 
   const [descripcion, setDescripcion] = useState(() => getCdaProp(cdaEditando, "descripcion") || "");
   const [expresion, setExpresion] = useState(() => getCdaProp(cdaEditando, "expresion") || "");
@@ -393,10 +421,37 @@ export function CdaWorkbench({
   const [isGuardando, setIsGuardando] = useState(false);
 
   const [testCuit, setTestCuit] = useState("");
-  const [testResult, setTestResult] = useState(null);
+  const [testResultRaw, setTestResultRaw] = useState(null);
 
   const esSgrPlus = integracion === "SGRPLUS";
   const currentJsonData = integracion ? INTEGRACIONES_MOCKS[integracion] : null;
+  const rutasCoincidentes = useMemo(
+    () => buscarClavesEnJson(currentJsonData, busquedaJson),
+    [currentJsonData, busquedaJson]
+  );
+  const setCoincidencias = useMemo(() => new Set(rutasCoincidentes), [rutasCoincidentes]);
+  const indiceValido = rutasCoincidentes.length ? Math.min(indiceCoincidencia, rutasCoincidentes.length - 1) : 0;
+  const pathActivo = rutasCoincidentes[indiceValido];
+
+  useEffect(() => {
+    if (!pathActivo) return;
+    const contenedor = jsonContainerRef.current;
+    const activo = contenedor?.querySelector('[data-json-activo="true"]');
+    if (!contenedor || !activo) return;
+    const cajaContenedor = contenedor.getBoundingClientRect();
+    const cajaActivo = activo.getBoundingClientRect();
+    const destino =
+      contenedor.scrollTop +
+      (cajaActivo.top - cajaContenedor.top) -
+      (contenedor.clientHeight - cajaActivo.height) / 2;
+    contenedor.scrollTo({ top: Math.max(0, destino), behavior: "smooth" });
+  }, [pathActivo, indiceValido]);
+
+  const irACoincidencia = (delta) => {
+    if (!rutasCoincidentes.length) return;
+    setIndiceCoincidencia((indiceValido + delta + rutasCoincidentes.length) % rutasCoincidentes.length);
+  };
+
   const nosisVariables = INTEGRACIONES_MOCKS?.NOSIS?.Contenido?.Datos?.Variables || [];
 
   // El motor de CDAs no maneja bien comparar un campo numérico contra el
@@ -416,9 +471,9 @@ export function CdaWorkbench({
     const path = expresion.trim();
     if (!path) return false;
     if (integracion === "NOSIS") {
-      const testeoCoincide = testResult && (expresionLog.trim() || path) === path;
-      if (testeoCoincide && testResult.log !== undefined && testResult.log !== "") {
-        return !isNaN(testResult.log);
+      const testeoCoincide = testResultRaw && (expresionLog.trim() || path) === path;
+      if (testeoCoincide && testResultRaw.log !== undefined && testResultRaw.log !== "") {
+        return !isNaN(testResultRaw.log);
       }
       const nombre = path.replace(/^nosis\./i, "");
       const variable = nosisVariables.find((v) => v.Nombre === nombre);
@@ -426,23 +481,80 @@ export function CdaWorkbench({
       const val = variable?.Valor;
       return val !== undefined && val !== null && val !== "" && !isNaN(val);
     }
-    if (integracion === "ARCA") {
-      const segments = path.replace(/^afip\./i, "").split(".").filter(Boolean);
-      let node = INTEGRACIONES_MOCKS.ARCA;
-      for (const key of segments) {
-        if (node === null || typeof node !== "object") return false;
-        node = node[key.toLowerCase()];
-      }
-      return typeof node === "number";
-    }
-    return false;
+    if (/\.count$/i.test(path)) return true;
+    return typeof resolverNodoMock(path) === "number";
   };
+
+  const resolverNodoMock = (path, integracionObjetivo = integracion) => {
+    const prefix = INTEGRACION_PREFIXES[integracionObjetivo];
+    if (!prefix || !INTEGRACIONES_MOCKS[integracionObjetivo]) return undefined;
+    const sinPrefijo = path.toLowerCase().startsWith(prefix) ? path.slice(prefix.length) : path;
+    const segments = sinPrefijo.replace(/\[\d+\]/g, ".0").split(".").filter(Boolean);
+    let node = INTEGRACIONES_MOCKS[integracionObjetivo];
+    for (const key of segments) {
+      if (node === null || typeof node !== "object") return undefined;
+      node = Array.isArray(node) ? node[0] : node[integracionObjetivo === "ARCA" ? key.toLowerCase() : key];
+    }
+    return node;
+  };
+
+  const integracionGuia = integracion || detectarIntegracion(expresion);
+  const variableNosisGuia =
+    integracionGuia === "NOSIS"
+      ? nosisVariables.find((v) => v.Nombre === expresion.trim().replace(/^nosis\./i, ""))
+      : undefined;
+  const funcionSgrPlusGuia = SGRPLUS_FUNCIONES.find((f) => expresionSgrPlus(f) === expresion.trim());
+
+  const obtenerTipoCampoGuia = () => {
+    const path = expresion.trim();
+    if (!path) return null;
+    if (integracionGuia === "SGRPLUS") return "funcion";
+    if (/\.count$/i.test(path)) return "cantidad";
+    if (integracionGuia === "NOSIS") {
+      if (!variableNosisGuia) return null;
+      const tipoNosis = String(variableNosisGuia.Tipo || "").toUpperCase();
+      if (tipoNosis === "BOOLEANO") return "booleano";
+      if (tipoNosis === "FECHA") return "fecha";
+      if (TIPOS_NOSIS_NUMERICOS.includes(tipoNosis) || esCampoNumericoActual()) return "numero";
+      return "texto";
+    }
+    const nodo = resolverNodoMock(path, integracionGuia);
+    if (typeof nodo === "number") return "numero";
+    if (typeof nodo === "boolean") return "booleano";
+    if (typeof nodo === "string") {
+      const ultimo = path.split(".").pop() || "";
+      return /(^|_)(fecha|desde|hasta|vencimiento)|^ff/i.test(ultimo) ? "fecha" : "texto";
+    }
+    return null;
+  };
+
+  const tipoCampoGuia = obtenerTipoCampoGuia();
+  const operadoresPermitidosGuia = tipoCampoGuia ? OPERADORES_POR_TIPO[tipoCampoGuia] : null;
+  const mostrarCompararVacio =
+    !["booleano", "cantidad", "fecha", "funcion"].includes(tipoCampoGuia) && !tieneValoresSugeridos(expresion);
+
+  useEffect(() => {
+    if (operadoresPermitidosGuia && !operadoresPermitidosGuia.includes(simbolocomparacion)) {
+      setSimbolocomparacion(operadoresPermitidosGuia[0]);
+    }
+  }, [operadoresPermitidosGuia, simbolocomparacion]);
+
+  const aplicarSugerenciaRegla = ({ simbolo, valor }) => {
+    setSimbolocomparacion(simbolo);
+    if (valor !== undefined) {
+      setValorcomparacion(valor);
+      setComparaPorVacio(false);
+    }
+  };
+
+  const esCampoBooleanoActual = () => typeof resolverNodoMock(expresion.trim()) === "boolean";
 
   // Reemplaza al viejo "debeIrSinComillas": las fechas van sin comillas por
   // el formato del valor tipeado (eso no depende del campo), pero para todo
   // lo demás lo que importa es si el CAMPO elegido es numérico de verdad, no
   // si el valor que escribió el admin "parece" un número.
-  const valorDebeIrSinComillas = (val) => FECHA_REGEX.test(val) || esCampoNumericoActual();
+  const valorDebeIrSinComillas = (val) =>
+    FECHA_REGEX.test(val) || esCampoNumericoActual() || (esCampoBooleanoActual() && /^(true|false)$/i.test(val));
 
   // Determina si el valor es numérico o no, para agregarle comillas simples si no las tiene
   const formatValorParaLog = (val) => {
@@ -474,12 +586,18 @@ export function CdaWorkbench({
 
   const reglaActual = expresion.trim() ? armarExpresionCompleta(valorcomparacion) : "";
 
+  const claveTestActual = `${reglaActual}|${expresionLog.trim()}|${testCuit.trim()}|${comparaPorVacio}`;
+  const testResult = testResultRaw && testResultRaw.clave === claveTestActual ? testResultRaw : null;
+  const setTestResult = (resultado) => setTestResultRaw(resultado && { ...resultado, clave: claveTestActual });
+
   const handleIntegracionChange = (val) => {
     setIntegracion(val);
     setExpresion(""); // reset expression when changing integration
     setExpresionLog("");
     setUserEditedExpresionLog(false);
     setNosisSearchTerm("");
+    setBusquedaJson("");
+    setIndiceCoincidencia(0);
   };
 
   const handleSelectField = (fieldPath) => {
@@ -729,9 +847,52 @@ export function CdaWorkbench({
               onSelect={handleSelectNosisVariable}
             />
           ) : (
-            <div className={styles.jsonViewerContainer}>
+            <div className={styles.jsonBuscadorWrap}>
+              {currentJsonData && (
+                <div className={styles.jsonSearchRow}>
+                  <FiSearch className={styles.jsonSearchIcon} size={14} />
+                  <input
+                    type="text"
+                    placeholder="Buscar campo..."
+                    value={busquedaJson}
+                    onChange={(e) => {
+                      setBusquedaJson(e.target.value);
+                      setIndiceCoincidencia(0);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        irACoincidencia(e.shiftKey ? -1 : 1);
+                      } else if (e.key === "Escape") {
+                        setBusquedaJson("");
+                        setIndiceCoincidencia(0);
+                      }
+                    }}
+                    className={styles.jsonSearchInput}
+                  />
+                  {busquedaJson.trim() && (
+                    <>
+                      <span className={styles.jsonSearchCount}>
+                        {rutasCoincidentes.length ? `${indiceValido + 1} / ${rutasCoincidentes.length}` : "0"}
+                      </span>
+                      <button type="button" className={styles.jsonSearchBtn} onClick={() => irACoincidencia(-1)} disabled={!rutasCoincidentes.length} aria-label="Coincidencia anterior">
+                        <FiChevronUp size={14} />
+                      </button>
+                      <button type="button" className={styles.jsonSearchBtn} onClick={() => irACoincidencia(1)} disabled={!rutasCoincidentes.length} aria-label="Coincidencia siguiente">
+                        <FiChevronDown size={14} />
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+              <div className={styles.jsonViewerContainer} ref={jsonContainerRef}>
               {currentJsonData ? (
-                <JsonViewer data={currentJsonData} onSelectField={handleSelectField} />
+                <JsonViewer
+                  data={currentJsonData}
+                  onSelectField={handleSelectField}
+                  coincidencias={setCoincidencias}
+                  pathActivo={pathActivo}
+                />
               ) : (
                 <div className={styles.jsonViewerMessage}>
                   Seleccioná una integración arriba para ver su estructura de datos.
@@ -739,6 +900,7 @@ export function CdaWorkbench({
                   Podrás hacer clic en cualquier valor para usar su campo en la regla.
                 </div>
               )}
+              </div>
             </div>
           )}
         </div>
@@ -775,22 +937,47 @@ export function CdaWorkbench({
             <div className={styles.sectionGroup}>
               <h3 className={styles.sectionLabel}>Armá tu Regla</h3>
 
-              <div className={styles.compactField}>
-                <InputSimple
-                  label="Expresión (Campo a evaluar)"
-                  type="textarea"
-                  value={expresion}
-                  onChange={(val) => {
-                    setExpresion(val);
-                    if (!userEditedExpresionLog) {
-                      setExpresionLog(val);
-                    }
-                  }}
-                  disabled={isGuardando}
-                  variant="admin"
-                  error={errorExpresion ? "Campo obligatorio" : undefined}
-                />
+              <div className={`${styles.campoSeleccionado} ${errorExpresion ? styles.campoSeleccionadoError : ""}`}>
+                <div className={styles.campoSeleccionadoTexto}>
+                  <span className={styles.campoSeleccionadoEtiqueta}>Campo a evaluar</span>
+                  {expresion.trim() ? (
+                    <code className={styles.campoSeleccionadoValor} title={expresion.trim()}>{expresion.trim()}</code>
+                  ) : (
+                    <span className={styles.campoSeleccionadoVacio}>
+                      {errorExpresion ? "Campo obligatorio: elegilo en el paso 1" : "Elegilo en el paso 1 (Fuente de Datos)"}
+                    </span>
+                  )}
+                </div>
+                {expresion.trim() && (
+                  <button
+                    type="button"
+                    className={styles.campoSeleccionadoQuitar}
+                    onClick={() => {
+                      setExpresion("");
+                      if (!userEditedExpresionLog) setExpresionLog("");
+                    }}
+                    disabled={isGuardando}
+                    aria-label="Quitar campo seleccionado"
+                    title="Quitar campo seleccionado"
+                  >
+                    <FiX size={14} />
+                  </button>
+                )}
               </div>
+
+              <ReglaAsistente
+                integracion={integracionGuia}
+                expresion={expresion}
+                tipo={tipoCampoGuia}
+                simbolo={simbolocomparacion}
+                valor={valorcomparacion}
+                comparaPorVacio={comparaPorVacio}
+                ejemplo={variableNosisGuia?.Valor}
+                descripcion={funcionSgrPlusGuia?.descripcion || variableNosisGuia?.Descripcion}
+                funcionSgrPlus={funcionSgrPlusGuia}
+                onAplicar={aplicarSugerenciaRegla}
+                disabled={isGuardando}
+              />
 
               {!esSgrPlus && (
                 <div className={styles.fieldRow}>
@@ -799,14 +986,7 @@ export function CdaWorkbench({
                       label="Operador"
                       value={simbolocomparacion}
                       onChange={setSimbolocomparacion}
-                      options={[
-                        { value: "=", label: "=" },
-                        { value: ">", label: ">" },
-                        { value: "<", label: "<" },
-                        { value: ">=", label: ">=" },
-                        { value: "<=", label: "<=" },
-                        { value: "<>", label: "<>" }
-                      ]}
+                      options={(operadoresPermitidosGuia || ["=", ">", "<", ">=", "<=", "<>"]).map((op) => ({ value: op, label: op }))}
                       disabled={isGuardando}
                       variant="admin"
                     />
@@ -823,9 +1003,7 @@ export function CdaWorkbench({
                       error={errorValor ? true : undefined}
                     />
                     <div className={styles.valorBelowRow}>
-                      <span className={errorValor ? styles.valorErrorText : styles.valorHintText}>
-                        {errorValor ? "Campo obligatorio" : "Fechas: AAAA-MM-DD"}
-                      </span>
+                      {(comparaPorVacio || mostrarCompararVacio) && (
                       <div
                         className={styles.vacioCheckRow}
                         onClick={() => {
@@ -847,6 +1025,8 @@ export function CdaWorkbench({
                           {comparaPorVacio && esCampoNumericoActual() ? "Comparar contra vacío (campo numérico → se usa 0)" : "Comparar contra vacío"}
                         </span>
                       </div>
+                      )}
+                      {errorValor && <span className={styles.valorErrorText}>Campo obligatorio</span>}
                     </div>
                   </div>
                 </div>
@@ -953,7 +1133,7 @@ export function CdaWorkbench({
                       isLoading={isTesting}
                       disabled={isGuardando || !reglaActual || !testCuit.trim()}
                     >
-                      Probar
+                      {testResult ? "Reejecutar" : "Probar"}
                     </Button>
                   </div>
                 </div>
