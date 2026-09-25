@@ -252,6 +252,22 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
 
+  const completarUbicacionDesdePadron = async (cuitLimpio, ciudadLocal) => {
+    try {
+      const datosPadron = await obtenerDatosEmpresaPorCuit(cuitLimpio, opcionesProvincias);
+      if (!datosPadron?.encontrado) return;
+      const { valores } = datosPadron;
+      if (valores.provinciaid) {
+        setValue("provinciaid", String(valores.provinciaid), { shouldValidate: true, shouldDirty: true });
+      }
+      if (!ciudadLocal) {
+        setValue("ciudad", valores.localidad || valores.ciudad || "", { shouldValidate: true, shouldDirty: true });
+      }
+    } catch (padronErr) {
+      console.warn("[SocioAccionistaModal] Error completando provincia/ciudad desde el padrón:", padronErr);
+    }
+  };
+
   const [prevDeps, setPrevDeps] = useState({ isOpen, cuitValue, nombreValue, archivosBackend, dniTerceros, socio });
 
   if (
@@ -569,6 +585,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         const provId = terceroEncontrado.provinciaid || terceroEncontrado.ProvinciaID || 0;
         if (provId) {
           setValue("provinciaid", String(provId), { shouldValidate: true, shouldDirty: true });
+        } else {
+          await completarUbicacionDesdePadron(cuitLimpio, terceroEncontrado.ciudad);
         }
 
         toast.success("Datos del accionista recuperados del sistema.");

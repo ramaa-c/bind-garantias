@@ -189,6 +189,23 @@ export function RepresentanteModal({
 
   const { data: provinciasData, isLoading: cargandoProvincias } = useProvincias();
   const opcionesProvincias = provinciasData?.opciones || [];
+
+  const completarUbicacionDesdePadron = async (cuitLimpio, ciudadLocal) => {
+    try {
+      const datosPadron = await obtenerDatosEmpresaPorCuit(cuitLimpio, opcionesProvincias);
+      if (!datosPadron?.encontrado) return;
+      const { valores } = datosPadron;
+      if (valores.provinciaid) {
+        setValue("provinciaid", String(valores.provinciaid), { shouldValidate: true, shouldDirty: true });
+      }
+      if (!ciudadLocal) {
+        setValue("ciudad", valores.localidad || valores.ciudad || "", { shouldValidate: true, shouldDirty: true });
+      }
+    } catch (padronErr) {
+      console.warn("[RepresentanteModal] Error completando provincia/ciudad desde el padrón:", padronErr);
+    }
+  };
+
   const { data: ciudadesData, isLoading: cargandoCiudades } = useCiudades(currentProvincia);
   const opcionesCiudades = useMemo(() => ciudadesData?.opciones || [], [ciudadesData]);
 
@@ -452,6 +469,8 @@ export function RepresentanteModal({
         const provIdExistente = terceroEncontrado.provinciaid || terceroEncontrado.ProvinciaID || 0;
         if (provIdExistente) {
           setValue("provinciaid", String(provIdExistente), { shouldValidate: true, shouldDirty: true });
+        } else {
+          await completarUbicacionDesdePadron(cuitLimpio, terceroEncontrado.ciudad);
         }
 
         toast.success(`Datos del ${etiquetaRol.toLowerCase()} recuperados del sistema.`);
