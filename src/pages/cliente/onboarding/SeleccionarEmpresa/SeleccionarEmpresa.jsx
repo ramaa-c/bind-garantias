@@ -118,29 +118,7 @@ export const SeleccionarEmpresa = () => {
 
   const listaEmpresasBase = parsearEmpresas(socioUsuarios);
 
-  const isVendorMock = user?.email?.toLowerCase() === "vendorbind@yopmail.com";
-  const MOCK_EMPRESAS = [
-    {
-      SocioID: 101,
-      Socio: { Denominacion: "AGRO EMPRESA S.A.", Cuit: "30-70123456-1" },
-    },
-    {
-      SocioID: 102,
-      Socio: {
-        Denominacion: "CONSTRUCTORA DEL SUR S.R.L.",
-        Cuit: "30-70987654-3",
-      },
-    },
-    {
-      SocioID: 103,
-      Socio: {
-        Denominacion: "TECNOLOGÍA E INNOVACIÓN S.A.",
-        Cuit: "30-71112223-4",
-      },
-    },
-  ];
-
-  const listaEmpresas = isVendorMock ? MOCK_EMPRESAS : listaEmpresasBase;
+  const listaEmpresas = listaEmpresasBase;
 
   /* — handlers — */
   const handleSelectEmpresa = useCallback(

@@ -28,6 +28,7 @@ import {
   DEFAULT_OTRAS_CONFIG,
 } from "../../../../services/requisitosService";
 import styles from "./ActivarCadenaModal.module.css";
+import { FORMATOS_ARCHIVO, validarTipoArchivo } from "../../../../utils/fileUtils";
 
 export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) => {
   const [step, setStep] = useState("select"); // "select" or "form"
@@ -172,6 +173,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!validarTipoArchivo(file, FORMATOS_ARCHIVO.imagen)) return;
       if (file.size > 500 * 1024) {
         toast.error("El tamaño máximo permitido para la imagen es 500kb");
         return;
@@ -609,7 +611,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                       Cargar Logo de la Cadena (Opcional)
                     </div>
                     <div style={{ fontSize: "0.7rem", color: "#8b949e", marginTop: "0.15rem" }}>
-                      Arrastrá o hacé click aquí. Fondo transparente, Max 500kb.
+                      Arrastrá o hacé click aquí. JPG o PNG con fondo transparente, máx. 500 KB.
                     </div>
                   </div>
                 </div>
@@ -620,7 +622,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
               type="file"
               ref={fileInputRef}
               style={{ display: "none" }}
-              accept="image/*"
+              accept={FORMATOS_ARCHIVO.imagen.accept}
               onChange={handleFileChange}
             />
           </>

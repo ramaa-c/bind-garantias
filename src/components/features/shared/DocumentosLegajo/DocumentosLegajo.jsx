@@ -51,7 +51,8 @@ import {
   formatBase64Size,
   descargarArchivosEnZip,
   descargarLegajoCompletoZip,
-  validarTamanioArchivo,
+  validarArchivo,
+  FORMATOS_ARCHIVO,
 } from "../../../../utils/fileUtils";
 import { ESTRUCTURA_LEGAJO } from "./DocumentosLegajo.constants";
 
@@ -397,7 +398,7 @@ export function DocumentosLegajo({
   // este mismo tick (los setState de React son asincrónicos).
   const handleFileUpload = async (key, file, docTitle, specificId = null, fechaPeriodoOverride = null) => {
     if (file instanceof File) {
-      if (!validarTamanioArchivo(file)) return;
+      if (!validarArchivo(file, FORMATOS_ARCHIVO.pdf)) return;
 
       const fechaPeriodoEfectiva = fechaPeriodoOverride || metaFechaPeriodo;
 
@@ -731,6 +732,7 @@ export function DocumentosLegajo({
                 <CargaArchivos
                   title={currentSubTab === "nuevo" ? "Arrastrá tu nuevo archivo acá" : doc.title}
                   subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
+                  formatos={FORMATOS_ARCHIVO.pdf.etiqueta}
                   hasError={hasError}
                   isUploading={uploadingKey === doc.key}
                   faseDescarga={faseDe(doc.key)}
@@ -783,7 +785,7 @@ export function DocumentosLegajo({
                     }
                     e.target.value = null;
                   }}
-                  accept="application/pdf"
+                  accept={FORMATOS_ARCHIVO.pdf.accept}
                 />
               </div>
             );
