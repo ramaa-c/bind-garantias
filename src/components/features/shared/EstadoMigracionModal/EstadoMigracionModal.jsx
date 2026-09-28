@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import {
   FiCheckCircle,
   FiCircle,
-  FiClock,
   FiAlertTriangle,
   FiFileText,
   FiUsers,
   FiArrowRight,
+  FiLock,
+  FiPlusCircle,
 } from "react-icons/fi";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Spinner } from "../../../ui/Spinner/Spinner";
@@ -15,39 +16,50 @@ import { Button } from "../../../ui/Button/Button";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useSocioWebPorId } from "../../../../hooks/useSocios";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
+import { useChannel } from "../../../../context/useChannel";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
-import { ESTRUCTURA_LEGAJO } from "../DocumentosLegajo/DocumentosLegajo";
-import { ESTRUCTURA_SOCIOS } from "../SociosLegajo/SociosLegajo";
+import { ESTRUCTURA_LEGAJO } from "../DocumentosLegajo/DocumentosLegajo.constants";
+import { ESTRUCTURA_SOCIOS } from "../SociosLegajo/SociosLegajo.constants";
 import styles from "./EstadoMigracionModal.module.css";
 
-// Cada item lleva su propio ícono de sección (Documentación / Legajo) y una
-// leyenda de "X de Y" — nada de porcentajes ni acordeones acá adentro: el
-// resumen global ya lo da la barra de progreso de arriba, esto es el
-// detalle de qué falta puntualmente.
-function ChecklistSection({ icon, title, items }) {
+function ChecklistSection({ icon, title, items, bloqueado, notaBloqueo, numero }) {
   if (items.length === 0) return null;
   const completados = items.filter((item) => item.done).length;
 
   return (
-    <div className={styles.section}>
+    <div className={`${styles.section} ${bloqueado ? styles.sectionBloqueada : ""}`}>
       <div className={styles.sectionHeader}>
         <span className={styles.sectionTitle}>
-          {icon} {title}
+          {icon} {numero != null ? `${numero}. ` : ""}{title}
+          {bloqueado && <FiLock className={styles.lockIcon} />}
         </span>
         <span className={styles.sectionTally}>
           {completados}/{items.length}
         </span>
       </div>
+      {bloqueado && notaBloqueo && (
+        <p className={styles.notaBloqueo}>{notaBloqueo}</p>
+      )}
       <ul className={styles.checklist}>
         {items.map((item) => (
           <li key={item.key} className={styles.checklistItem}>
-            {item.done ? (
+            {bloqueado ? (
+              <FiCircle className={styles.iconBloqueado} />
+            ) : item.done ? (
               <FiCheckCircle className={styles.iconDone} />
             ) : (
               <FiCircle className={styles.iconPending} />
             )}
-            <span className={item.done ? styles.labelDone : styles.labelPending}>
+            <span
+              className={
+                bloqueado
+                  ? styles.labelBloqueado
+                  : item.done
+                    ? styles.labelDone
+                    : styles.labelPending
+              }
+            >
               {item.label}
             </span>
           </li>
@@ -57,15 +69,9 @@ function ChecklistSection({ icon, title, items }) {
   );
 }
 
-// Reemplaza a EmpresaPerfilModal: en vez de un perfil genérico de la empresa
-// (dirección, teléfono, tipo de persona...), esto es pura foto del estado de
-// migración a SGR+ — lo mismo que ya calculaba LegajoUniversalBar, pero con
-// el detalle de qué documento/dato puntual falta. Se abre desde ahí (ver
-// LegajoUniversalBar.jsx, el contenedor con la clase containerValid/
-// containerInvalid) y también desde la card de empresa del Sidebar.
 export function EstadoMigracionModal({ isOpen, onClose }) {
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
   const { socioIdActivo, nombreEmpresa, tipoPersonaId } = useEmpresaActiva();
   const { data: socioWeb, isLoading: cargandoSocio } = useSocioWebPorId(socioIdActivo);
   const {
@@ -77,15 +83,23 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
     agentesBolsaCompletos,
     isLoading: cargandoValidacion,
   } = useValidacionLegajo();
+  const { hayLineaActiva, legajoDesbloqueado, documentacionDesbloqueada } =
+    useAccesoDashboardCliente();
+
+  // Numeración de pasos: solo tiene sentido con línea activa (sin línea el
+  // flujo sigue siendo el de siempre, sin pasos). "Solicitar línea" se
+  // cuenta como paso 1 únicamente mientras siga siendo lo que falta - una
+  // vez que ya hay una solicitud en curso, no tiene sentido seguir
+  // mostrándolo como un paso pendiente en esta modal.
+  const mostrarPasoSolicitud = hayLineaActiva && !legajoDesbloqueado;
+  const numeroLegajo = hayLineaActiva ? (mostrarPasoSolicitud ? 2 : 1) : null;
+  const numeroDocumentacion = hayLineaActiva ? (mostrarPasoSolicitud ? 3 : 2) : null;
 
   const cargando = cargandoSocio || cargandoValidacion;
   const esPersonaFisica = Number(tipoPersonaId) === 1;
   const legajoSgrPlus = Number(socioWeb?.legajo) > 0 ? socioWeb.legajo : null;
   const estaMigrado = !!legajoSgrPlus;
 
-  // Mismos nombres que ve el usuario en la pestaña Documentación: se filtra
-  // por lo que la cadena realmente exige (requisitos.documentos) y se marca
-  // hecho/pendiente contra los archivos ya subidos.
   const documentosChecklist = ESTRUCTURA_LEGAJO.filter(
     (doc) => doc.category === "Documentación" && requisitos?.documentos?.[doc.key] === 1,
   ).map((doc) => ({
@@ -96,10 +110,6 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
     ),
   }));
 
-  // Mismos nombres que las pestañas de Legajo (Composición accionaria,
-  // Representantes legales/Apoderado, Agentes de bolsa), filtrados por lo
-  // que la cadena exige y por tipo de persona (accionistas no aplica a
-  // Persona Física, ver SociosLegajo).
   const completitudPorTab = {
     accionistas: accionistasCompletos,
     representanteLegal: representanteLegalCompletos,
@@ -122,38 +132,35 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
   const itemsCompletados =
     documentosChecklist.filter((i) => i.done).length +
     legajoChecklist.filter((i) => i.done).length;
-  const legajoListo = totalItems > 0 && itemsCompletados === totalItems;
+
+  const legajoListo = itemsCompletados === totalItems;
   const porcentaje = totalItems > 0 ? Math.round((itemsCompletados / totalItems) * 100) : 0;
 
   const faltanDocumentos = documentosChecklist.some((i) => !i.done);
   const faltanLegajo = legajoChecklist.some((i) => !i.done);
 
-  const estado = estaMigrado ? "migrado" : legajoListo ? "listo" : "pendiente";
-  const tono = estado === "migrado" ? "success" : estado === "listo" ? "ready" : "pending";
+  const legajoCompleto = estaMigrado || legajoListo;
+  const estado = legajoCompleto ? "completo" : "pendiente";
+  const tono = estado === "completo" ? "success" : "pending";
 
-  // El estado "pendiente" ya no tiene hero propio: el título y el mensaje
-  // genérico ("Legajo incompleto para SGR+" / "Te falta completar...") ya se
-  // ven en LegajoUniversalBar (containerInvalid) — repetirlos acá arriba del
-  // checklist no agregaba nada, solo empujaba hacia abajo el detalle
-  // puntual que es lo único que este modal aporta de más. "migrado" y
-  // "listo" sí conservan su hero porque dicen algo que la barra no dice
-  // (el número de legajo SGR+, que la migración es automática).
+  // Con totalItems=0 (cadena sin ningún requisito obligatorio) "Ya cargaste
+  // todos los datos..." se puede malinterpretar como que sí se subió algo:
+  // en ese caso no se cargó nada porque no había nada para cargar, no
+  // porque ya esté todo hecho.
   const HERO_POR_ESTADO = {
-    migrado: {
+    completo: {
       icon: <FiCheckCircle size={22} />,
       titulo: "Legajo completo",
-      subtitulo: `Tu legajo #${legajoSgrPlus} ya está completo y al día.`,
-    },
-    listo: {
-      icon: <FiClock size={22} />,
-      titulo: "Todo listo",
-      subtitulo: "Completaste todos los requisitos. En unos instantes tu legajo va a quedar al día.",
+      subtitulo:
+        totalItems === 0
+          ? "Esta cadena no requiere documentos ni datos adicionales."
+          : "Ya cargaste todos los datos y documentos de tu empresa.",
     },
   };
   const hero = HERO_POR_ESTADO[estado];
 
   const irA = (path) => {
-    navigate(`/${channelInfo?.id || "default"}${path}`);
+    navigate(`${basePath}${path}`);
     onClose();
   };
 
@@ -199,20 +206,38 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
             </div>
           )}
 
-          <ChecklistSection
-            icon={<FiFileText size={13} />}
-            title="Documentación"
-            items={documentosChecklist}
-          />
+          {mostrarPasoSolicitud && (
+            <div className={styles.section}>
+              <div className={styles.sectionHeader}>
+                <span className={styles.sectionTitle}>
+                  <FiPlusCircle size={13} /> 1. Solicitar línea
+                </span>
+              </div>
+              <p className={styles.notaBloqueo}>
+                Cargá tu primera solicitud para poder continuar.
+              </p>
+            </div>
+          )}
           <ChecklistSection
             icon={<FiUsers size={13} />}
             title="Legajo"
             items={legajoChecklist}
+            bloqueado={!legajoDesbloqueado}
+            notaBloqueo="Se habilita cuando tengas una solicitud en curso."
+            numero={numeroLegajo}
+          />
+          <ChecklistSection
+            icon={<FiFileText size={13} />}
+            title="Documentación"
+            items={documentosChecklist}
+            bloqueado={!documentacionDesbloqueada}
+            notaBloqueo="Se habilita cuando completes el Legajo al 100%."
+            numero={numeroDocumentacion}
           />
 
-          {!estaMigrado && (faltanDocumentos || faltanLegajo) && (
+          {!legajoCompleto && (faltanDocumentos || faltanLegajo) && (
             <div className={styles.ctaRow}>
-              {faltanDocumentos && (
+              {faltanDocumentos && documentacionDesbloqueada && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -222,7 +247,7 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
                   Completar documentación
                 </Button>
               )}
-              {faltanLegajo && (
+              {faltanLegajo && legajoDesbloqueado && (
                 <Button
                   variant="outline"
                   size="sm"

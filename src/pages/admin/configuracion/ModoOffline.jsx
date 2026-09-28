@@ -6,6 +6,7 @@ import { ConfirmacionModal } from "../../../components/features/shared/Confirmac
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useObtenerStatusPlataforma, useActualizarStatusPlataforma } from "../../../hooks/useStatusPlataforma";
 import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import {
   INTEGRACIONES,
   obtenerUltimoStatus,
@@ -34,6 +35,8 @@ const formatearDuracion = (ms) => {
 };
 
 export default function ModoOffline() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const user = useAuthStore((state) => state.user);
   const usuarioWebId = user?.usuarioWebId || 0;
 
@@ -127,6 +130,8 @@ export default function ModoOffline() {
     offline && ultimoStatus?.momento
       ? formatearDuracion(ahora - new Date(ultimoStatus.momento).getTime())
       : null;
+
+  if (bloqueado) return null;
 
   if (isLoading) {
     return (

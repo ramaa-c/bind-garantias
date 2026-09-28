@@ -3,10 +3,19 @@
 .workspace {
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.015);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.015);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 1rem;
   overflow: hidden;
+}
+
+/* En oscuro un 1.5% de blanco alcanza para distinguirse de la página - en
+   claro ese mismo truco (ahora en negro) es demasiado sutil para notarse
+   sobre un fondo ya claro (reportado: "no se distingue del fondo"). Se
+   fuerza un fondo sólido solo para el tema claro. */
+[data-theme="light"] .workspace {
+  background: var(--bg-surface);
+  border-color: var(--border);
 }
 
 /* SIDEBAR BG (desktop) */
@@ -24,14 +33,24 @@
   padding: 0.875rem 1.25rem 0.5rem;
   margin: 0;
   background: rgba(0, 0, 0, 0.15);
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 0.5px solid rgba(var(--overlay-rgb), 0.04);
+}
+
+/* rgba(0,0,0,0.15) es un negro fijo, no un token de tema: en oscuro apenas
+   se nota (ya era casi negro de por sí), pero en claro ese mismo 15% de
+   negro tiñe la franja de un gris visiblemente más oscuro que el resto de
+   la card - es la "capa gris" que hace parecer inactiva toda esta zona
+   (reportado). Se reemplaza por un tinte sutil con el mismo --overlay-rgb
+   que ya usa el resto del componente para diferenciar superficies. */
+[data-theme="light"] .categoryLabel {
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .tabBtn {
   position: relative;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(var(--overlay-rgb), 0.025);
   border: none;
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 0.5px solid rgba(var(--overlay-rgb), 0.07);
   padding: 0.875rem 1.25rem;
   cursor: pointer;
   display: flex;
@@ -43,15 +62,21 @@
   transition: background 0.15s;
   overflow: hidden;
   flex-shrink: 0;
+  /* En desktop este botón es un ítem de grid, columna fija de 14rem (ver
+     grid-template-columns más abajo) - un ítem de grid por default no se
+     achica por debajo del ancho de su contenido ("min-width: auto"), así
+     que con un nombre largo el botón entero se estira más allá de la
+     columna en vez de dejar que el ellipsis de .tabTitle haga su trabajo. */
+  min-width: 0;
 }
 
 .tabBtn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .tabActive {
-  background: rgba(255, 255, 255, 0.06);
-  border-bottom-color: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.06);
+  border-bottom-color: rgba(var(--overlay-rgb), 0.04);
 }
 
 .activeBar {
@@ -77,12 +102,33 @@
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.25;
-  color: #aaa;
+  color: var(--text-muted);
   transition: color 0.15s;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
+  /* Los dos hacen falta para que el ellipsis de arriba realmente corte un
+     nombre largo (ej. una relación de terceros con descripción larga
+     cargada desde /admin/tipos-relacion-socio):
+     - min-width: 0 para el layout de fila (mobile), donde como item de flex
+       el mínimo por default es "auto" (el ancho del contenido sin cortar).
+     - max-width: 100% para el layout de columna (desktop, ver
+       .tabTitleGroup en el media query de 48rem): ahí el ancho es el eje
+       CRUZADO del flex y con align-items:flex-start el span toma el ancho
+       de su contenido sin que lo limite el contenedor, así que min-width no
+       lo frena - se desbordaba y lo terminaba recortando el overflow:hidden
+       del botón, sin puntos suspensivos. */
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Mismo criterio que los links del Sidebar principal: --text-muted como
+   color de reposo permanente (no solo del hover) hace que toda pestaña no
+   seleccionada se lea como deshabilitada, más todavía en claro. Un
+   escalón más oscuro/legible para el estado de reposo. */
+[data-theme="light"] .tabTitle {
+  color: var(--white-muted);
 }
 
 .tabActive .tabTitle {
@@ -102,20 +148,20 @@
 }
 
 .reqBadgeMandatory {
-  background: rgba(244, 245, 0, 0.12);
-  color: var(--yellow, #f4f500);
-  border: 1px solid rgba(244, 245, 0, 0.2);
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+  border: 1px solid var(--badge-amarillo-border);
 }
 
 .reqBadgeOptional {
-  background: rgba(255, 255, 255, 0.05);
-  color: #888;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--overlay-rgb), 0.05);
+  color: var(--text-muted);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
 }
 
 .reqBadgeComplete {
   background: rgba(76, 175, 80, 0.12);
-  color: #4caf50;
+  color: var(--success-bright);
   border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
@@ -128,14 +174,14 @@
 }
 
 .dotGreen {
-  background: #4caf50;
+  background: var(--success-bright);
   box-shadow: 0 0 4px rgba(76, 175, 80, 0.4);
 }
 .dotRed {
-  background: #ff5252;
+  background: var(--danger-bright);
 }
 .dotGray {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--overlay-rgb), 0.12);
 }
 
 .dotYellow {
@@ -145,7 +191,7 @@
 
 .dotLoading {
   background: transparent;
-  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border: 1.5px solid rgba(var(--overlay-rgb), 0.15);
   border-top-color: var(--color-azul-bind, #4C65E6);
   animation: dotSpin 0.7s linear infinite;
 }
@@ -159,7 +205,7 @@
 @media (prefers-reduced-motion: reduce) {
   .dotLoading {
     animation: none;
-    border-top-color: rgba(255, 255, 255, 0.15);
+    border-top-color: rgba(var(--overlay-rgb), 0.15);
   }
 }
 
@@ -170,7 +216,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  border-top: 0.5px solid rgba(255, 255, 255, 0.05);
+  border-top: 0.5px solid rgba(var(--overlay-rgb), 0.05);
   background: rgba(0, 0, 0, 0.08);
   flex: 1;
 }
@@ -181,7 +227,7 @@
   flex-direction: column;
   gap: 0.5rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.07);
+  border-bottom: 1px dashed rgba(var(--overlay-rgb), 0.07);
 }
 
 .headerActionPortal {
@@ -211,28 +257,14 @@
   }
 }
 
+/* flex-wrap para que la acción propia de la pestaña (el portal) caiga a su
+   propia línea en mobile en vez de apretarse contra el título - mismo
+   criterio que .headerActionPortal ya aplicaba desde su propio media query. */
 .viewerMeta {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-}
-
-.viewerBadge {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #f4f500;
-  background: rgba(244, 245, 0, 0.07);
-  border: 1px solid rgba(244, 245, 0, 0.15);
-  border-radius: 999px;
-  padding: 0.15rem 0.55rem;
-}
-
-.viewerBadgeAdmin {
-  color: #8a9fff;
-  background: rgba(76, 101, 230, 0.1);
-  border-color: rgba(76, 101, 230, 0.25);
 }
 
 .viewerTitle {
@@ -244,14 +276,14 @@
 }
 
 .viewerInfo {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.86rem;
   line-height: 1.5;
   margin: 0;
 }
 
 .helperLink {
-  color: var(--yellow, #f4f500);
+  color: var(--color-amarillo-bind);
   text-decoration: none;
   font-weight: 600;
   display: inline-flex;
@@ -280,8 +312,8 @@
 .vincularForm {
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.025);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   padding: 1.25rem;
   border-radius: 0.875rem;
 }
@@ -295,7 +327,7 @@
 
 .vincularFormText {
   font-size: 0.8125rem;
-  color: #aaa;
+  color: var(--text-muted);
   margin: 0.5rem 0 1rem 0;
   line-height: 1.5;
 }
@@ -314,7 +346,7 @@
 .vincularInput {
   flex: 1;
   background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
   border-radius: 0.5rem;
   padding: 0.75rem 1rem;
   color: var(--white, #fff);
@@ -329,7 +361,7 @@
 .vincularInput:focus {
   outline: none;
   background: rgba(0, 0, 0, 0.4);
-  border-color: var(--yellow, #f4f500);
+  border-color: var(--color-amarillo-bind);
 }
 
 .vincularInput:disabled {
@@ -342,14 +374,14 @@
 }
 
 .vincularInputError:focus {
-  border-color: #ff5252 !important;
+  border-color: var(--danger-bright) !important;
   box-shadow: 0 0 0 1px rgba(255, 82, 82, 0.2);
 }
 
 
 
 .errorMessage {
-  color: #ff5252;
+  color: var(--danger-bright);
   font-size: 0.75rem;
   font-weight: 500;
   display: flex;
@@ -364,97 +396,332 @@
     align-items: stretch;
   }
 }
-/* ── PERFIL: CHIPS EN GRID ───────────────────────────────────────────────────── */
+/* ── PERFIL: FICHA DE LA EMPRESA ─────────────────────────────────────────────── */
+/* Trasladado acá desde DocumentosLegajo.module.css junto con la pestaña
+   (ver SociosLegajo.jsx): antes vivía en la pantalla de Documentación,
+   ahora es la primera pestaña de Legajo. */
 
-.perfilGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-  flex: 1;
-}
-
-.perfilChip {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    rgba(255, 255, 255, 0.01) 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.875rem;
-  padding: 1.125rem 1.25rem;
+.perfilPanel {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 0.5rem;
-  transition:
-    border-color 0.25s,
-    background 0.25s,
-    transform 0.2s,
-    box-shadow 0.25s;
   flex: 1;
-  position: relative;
-  overflow: hidden;
 }
 
-.perfilChip::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(244, 245, 0, 0.15),
-    transparent
-  );
-  opacity: 0;
-  transition: opacity 0.3s;
+/* Tarjeta única (rediseño 2026-09-14): título+acción, identidad, datos
+   clave y lista de contacto/ubicación, todo en UNA pieza - antes era un
+   header genérico flotando arriba (título+descripción, repetido de página
+   en página) + una tarjeta abajo con hero separado y 3 tonos de color de
+   etiqueta por grupo, que se leía "plano y sobrecargado de colores". Sin
+   blur/glassmorphism a propósito: es un panel de datos estático, no algo
+   flotando sobre contenido en movimiento - el blur no cumplía ninguna
+   función acá, solo era decorativo. Sin hover-lift: la tarjeta entera ya
+   no es una unidad clickeable, solo el chip de Editar lo es. */
+.perfilCard {
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 0.85rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  padding: 0.9rem 1.1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
 }
 
-.perfilChip:hover {
-  border-color: rgba(244, 245, 0, 0.15);
-  background: linear-gradient(
-    135deg,
-    rgba(244, 245, 0, 0.03) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.perfilChip:hover::before {
-  opacity: 1;
-}
-
-.perfilChipHeader {
+/* Título + botón de Editar, fusionados como cabecera de la tarjeta (antes
+   vivían en el header genérico compartido con el resto de las pestañas,
+   separados de la tarjeta - ver SociosLegajo.jsx). */
+.perfilTopBar {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.perfilChipIcon {
-  color: var(--color-amarillo-bind, #f5f400);
+.perfilCardTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+
+/* Identidad: avatar con inicial + nombre + CUIT/tipo como subtítulo simple
+   (ya no un chip con borde propio - un tono de texto menos) + badge de
+   estado. El acento amarillo de marca queda acá (avatar) y en el chip de
+   Editar más abajo - nada más en la tarjeta lleva color de marca, así no
+   compite por atención con esos dos puntos. */
+.perfilIdentity {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
+}
+
+.perfilAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
   flex-shrink: 0;
+  border-radius: 0.7rem;
+  background: linear-gradient(135deg, rgba(244, 245, 0, 0.2), rgba(244, 245, 0, 0.04));
+  border: 1px solid rgba(244, 245, 0, 0.3);
+  color: var(--color-amarillo-bind);
+  font-size: 1rem;
+  font-weight: 800;
 }
 
-.perfilChipLabel {
-  font-size: 0.75rem;
+/* El amarillo tenue sobre negro (fondo traslúcido + letra amarilla) se
+   apoya en que el amarillo brilla contra un fondo oscuro - sobre blanco
+   ningún nivel de opacidad baja alcanza. Se invierte la relación: relleno
+   sólido de marca + letra oscura encima (mismo recurso que ya usan los
+   badges "Obligatorio", --badge-amarillo-*). */
+[data-theme="light"] .perfilAvatar {
+  background: var(--color-amarillo-bind);
+  border-color: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+}
+
+.perfilIdentityInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.perfilHeroName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perfilHeroMeta {
+  font-size: 0.78rem;
+  color: var(--white-muted);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perfilEstadoBadge {
+  flex-shrink: 0;
+  font-size: 0.66rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #888;
+  letter-spacing: 0.05em;
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(76, 175, 80, 0.12);
+  color: var(--success-bright);
+  border: 1px solid rgba(76, 175, 80, 0.25);
 }
 
-.perfilChipValue {
-  font-size: 0.9375rem;
-  color: #e0e0e0;
+/* Bloque de estadísticas: los 2 datos comerciales "de un vistazo" (el
+   resto - canal, fechas - baja a la lista simple) en tiles con valor
+   grande. Le da a la tarjeta una jerarquía de tamaños real en vez de que
+   todo el contenido se lea al mismo peso visual - mismo recurso que
+   cualquier resumen de cliente en un dashboard fintech (ej. "Ongoing /
+   Completed" de un panel de proyectos). Fondo apenas distinto al de la
+   tarjeta (un tono de gris más, no un color) para que se lea como un
+   panel inset sin sumar más color a la mezcla. */
+.perfilStatGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.perfilStatGroupLabel {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-amarillo-bind);
+}
+
+/* position:relative + padding-top de sobra: hace de contenedor para el
+   chip de Editar, que cuelga en la esquina superior derecha como una
+   acción del BLOQUE entero (ver .perfilEditarChip) en vez de ir pegado al
+   valor de un tile en particular. */
+.perfilStatTiles {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
+  border-radius: 0.65rem;
+  padding: 1.9rem 0.9rem 0.7rem;
+}
+
+.perfilStatTile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.perfilStatTileDivider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(var(--overlay-rgb), 0.08);
+  margin: 0 1rem;
+}
+
+.perfilStatLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--white-muted);
   font-weight: 600;
-  line-height: 1.3;
+}
+
+.perfilStatValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
   letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Lista de filas simples: etiqueta a la izquierda, valor a la derecha, una
+   sola línea cada una - reemplaza la vieja grilla de celdas label-arriba/
+   valor-abajo (más alta, y con un color de etiqueta distinto por grupo).
+   Una sola tonalidad de gris para todas las etiquetas es deliberado: sin
+   eso cada dato competía por atención con su propio color, que es
+   justamente lo que se leía "sobrecargado". */
+.perfilRowsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.perfilRowsGroupLabel {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-amarillo-bind);
+  margin-top: 0.5rem;
+}
+
+.perfilRowsGroupLabel:first-child {
+  margin-top: 0;
+}
+
+.perfilRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.32rem 0;
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
+  font-size: 0.83rem;
+}
+
+.perfilRow:last-child {
+  border-bottom: none;
+}
+
+.perfilRowLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  color: var(--white-muted);
+}
+
+.perfilRowLabel svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.perfilRowValue {
+  color: var(--white);
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.perfilVacio {
+  color: var(--text-muted) !important;
+  font-weight: 500 !important;
+}
+
+/* Antes un ícono suelto de 1.5rem sin texto, casi invisible junto al
+   valor: es un chip con label, mismo lenguaje visual que .addButton
+   ("Editar mi perfil" en la cabecera) - se lee de entrada como una
+   acción, no como un detalle decorativo, siempre visible (no solo al
+   pasar el mouse). Posicionado en la esquina superior derecha de
+   .perfilStatTiles (su padre relative) en vez de pegado al valor: es una
+   acción del bloque de contacto entero, no solo del tile de facturación. */
+.perfilEditarChip {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+  background: rgba(245, 244, 0, 0.1);
+  border: 1px solid rgba(245, 244, 0, 0.3);
+  color: var(--color-amarillo-bind);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.22rem 0.5rem;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.perfilEditarChip:hover {
+  background: var(--color-amarillo-bind, #f5f400);
+  color: #000;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 244, 0, 0.2);
+}
+
+@media (max-width: 48rem) {
+  .perfilCard {
+    padding: 0.75rem 0.85rem 0.9rem;
+    gap: 0.75rem;
+  }
+  .perfilHeroName {
+    font-size: 0.95rem;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .perfilStatTiles {
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1.9rem 0.75rem 0.6rem;
+  }
+  .perfilStatTileDivider {
+    width: auto;
+    height: 1px;
+    align-self: stretch;
+    margin: 0;
+  }
+  .perfilRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+  }
+  .perfilRowValue {
+    text-align: left;
+  }
 }
 
 /* ── EMPTY SLOT (socios) ─────────────────────────────────────────────────────── */
@@ -465,7 +732,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.625rem;
-  border: 1.5px dashed rgba(255, 255, 255, 0.06);
+  border: 1.5px dashed rgba(var(--overlay-rgb), 0.06);
   border-radius: 0.75rem;
   padding: 3rem 1.5rem;
   text-align: center;
@@ -474,19 +741,19 @@
 }
 
 .emptyIcon {
-  color: #333;
+  color: var(--border-hover);
 }
 
 .emptyTitle {
   margin: 0;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .emptyText {
   font-size: 0.8125rem;
-  color: #333;
+  color: var(--border-hover);
   max-width: 20rem;
   line-height: 1.5;
 }
@@ -516,7 +783,7 @@
 
 .statBadge {
   background: rgba(245, 244, 0, 0.08);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.7rem;
   font-weight: 700;
   padding: 0.25rem 0.65rem;
@@ -525,12 +792,12 @@
 
 .statTotal {
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
 .statTotalOk {
-  color: #4caf50;
+  color: var(--success-bright);
 }
 
 .sociosList {
@@ -540,14 +807,14 @@
 }
 
 .socioCard {
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 0.625rem;
   overflow: hidden;
   transition: border-color 0.2s;
 }
 
 .socioCard:hover {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(var(--overlay-rgb), 0.1);
 }
 
 .socioCardBtn {
@@ -566,19 +833,19 @@
 }
 
 .socioCardBtn:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .socioAvatar {
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #aaa;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -600,7 +867,7 @@
 }
 
 .socioCuit {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
 }
@@ -610,14 +877,14 @@
   border: 1px solid rgba(245, 244, 0, 0.12);
   border-radius: 0.375rem;
   padding: 0.2rem 0.5rem;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.75rem;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .socioChevron {
-  color: #555;
+  color: var(--text-muted);
   font-size: 0.9rem;
   transition: transform 0.3s ease;
   flex-shrink: 0;
@@ -642,7 +909,7 @@
   max-height: 260px;
   opacity: 1;
   padding: 0 1rem 1rem 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.04);
 }
 
 .socioDetailGrid {
@@ -659,7 +926,7 @@
 }
 
 .socioDetailIcon {
-  color: #555;
+  color: var(--text-muted);
   font-size: 0.85rem;
   margin-top: 0.1rem;
   flex-shrink: 0;
@@ -668,7 +935,7 @@
 .socioDetailLabel {
   display: block;
   font-size: 0.6rem;
-  color: #555;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-weight: 600;
@@ -677,7 +944,7 @@
 
 .socioDetailVal {
   display: block;
-  color: #bbb;
+  color: var(--text-muted);
   font-size: 0.8rem;
   margin-top: 0.1rem;
   line-height: 1.3;
@@ -703,10 +970,20 @@
     bottom: 0;
     width: 14rem;
     min-width: 14rem;
-    border-right: 0.5px solid rgba(255, 255, 255, 0.06);
+    border-right: 0.5px solid rgba(var(--overlay-rgb), 0.06);
     background: rgba(0, 0, 0, 0.12);
     z-index: 0;
     pointer-events: none;
+  }
+
+  /* rgba(0,0,0,0.12) es negro fijo, no un token de tema - en escritorio
+     este panel cubre TODA la columna de pestañas (por eso "toda la zona
+     se ve gris/inactiva", no solo un renglón). En claro se reemplaza por
+     el mismo criterio de superficie recesada que ya usa .workspace más
+     arriba (--bg-surface, un gris apenas perceptible contra el blanco de
+     .viewer, no un velo oscuro encima). */
+  [data-theme="light"] .sidebarBg {
+    background: var(--bg-surface);
   }
 
   .categoryLabel, .tabBtn {
@@ -726,7 +1003,7 @@
   }
 
   .tabBtn:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--overlay-rgb), 0.03);
   }
 
   .tabTitleGroup {
@@ -736,7 +1013,20 @@
   }
 
   .tabActive {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--overlay-rgb), 0.04);
+  }
+
+  /* Con un nombre largo (una relación de terceros cargada desde
+     /admin/tipos-relacion-socio) el título tomaba todo su ancho natural y
+     empujaba el botón de acción a una segunda línea. Truncándolo, los dos
+     entran en la misma fila como en el resto de las pantallas. En mobile
+     no aplica: ahí el botón va al 100% en su propia línea a propósito (ver
+     .headerActionPortal), así que conviene que el título envuelva. */
+  .viewerTitle {
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .mobileChevron {
@@ -757,11 +1047,6 @@
     min-width: 0;
   }
 
-  .perfilGrid {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: 1fr 1fr;
-    gap: 0.75rem;
-  }
 
   .socioDetailGrid {
     grid-template-columns: 1fr 1fr;
@@ -771,8 +1056,8 @@
 /* ── NUEVAS SECCIONES Y CONTROLES ── */
 
 .sectionBlock {
-  background: rgba(255, 255, 255, 0.015);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.015);
+  border: 1px solid rgba(var(--overlay-rgb), 0.05);
   border-radius: 0.875rem;
   padding: 1rem;
   margin-bottom: 1rem;
@@ -782,7 +1067,7 @@
 }
 
 .sectionBlock:hover {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(var(--overlay-rgb), 0.08);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
@@ -793,7 +1078,7 @@
   gap: 1rem;
   margin-bottom: 0.75rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
 }
 
 .sectionHeaderLeft {
@@ -803,7 +1088,7 @@
 }
 
 .sectionIcon {
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   display: flex;
   align-items: center;
 }
@@ -811,7 +1096,7 @@
 .sectionTitle {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--white);
   margin: 0;
 }
 
@@ -821,7 +1106,7 @@
   gap: 0.375rem;
   background: rgba(245, 244, 0, 0.08);
   border: 1px solid rgba(245, 244, 0, 0.25);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.35rem 0.75rem;
@@ -838,9 +1123,9 @@
 }
 
 .addButton:disabled {
-  background: rgba(255, 255, 255, 0.02) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  color: #555 !important;
+  background: rgba(var(--overlay-rgb), 0.02) !important;
+  border-color: rgba(var(--overlay-rgb), 0.08) !important;
+  color: var(--text-dim) !important;
   cursor: not-allowed !important;
   transform: none !important;
   box-shadow: none !important;
@@ -849,8 +1134,8 @@
 /* BARRA DE PROGRESO DE PARTICIPACIÓN */
 .progressContainer {
   margin-bottom: 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px solid rgba(var(--overlay-rgb), 0.04);
   padding: 0.875rem;
   border-radius: 0.625rem;
 }
@@ -860,13 +1145,13 @@
   justify-content: space-between;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #aaa;
+  color: var(--text-muted);
   margin-bottom: 0.4rem;
 }
 
 .progressTrack {
   height: 0.5rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -939,7 +1224,7 @@
 .roleBolsa {
   background: rgba(245, 244, 0, 0.08);
   border: 1px solid rgba(245, 244, 0, 0.25);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
 }
 
 /* CONTROLES DE TARJETA (EDITAR/ELIMINAR) */
@@ -958,9 +1243,9 @@
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 0.375rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
-  color: #888;
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  background: rgba(var(--overlay-rgb), 0.02);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -972,13 +1257,13 @@
 .actionBtnEdit:hover {
   border-color: rgba(245, 244, 0, 0.3);
   background: rgba(245, 244, 0, 0.08);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
 }
 
 .actionBtnDelete:hover {
   border-color: rgba(255, 82, 82, 0.3);
   background: rgba(255, 82, 82, 0.08);
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 
 /* ── DISEÑO DE FORMULARIO DE MODAL ─────────────────────────────────────────── */
@@ -1021,7 +1306,7 @@
   justify-content: flex-end;
   gap: 0.75rem;
   padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.05);
   margin-top: 0.25rem;
 }
 
@@ -1063,7 +1348,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   flex-shrink: 0;
 }
 
@@ -1166,12 +1451,12 @@
 }
 
 .editLink {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
   border-radius: 0.4rem;
   cursor: pointer;
   padding: 0.3rem 0.6rem;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 600;
   display: inline-flex;
@@ -1189,14 +1474,14 @@
 
 .editLink:hover {
   color: var(--white-muted, #f0f0f0);
-  border-color: rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(var(--overlay-rgb), 0.15);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .summaryDivider {
   width: 100%;
   height: 1px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   flex-shrink: 0;
 }
 
@@ -1230,7 +1515,7 @@
   display: flex;
   align-items: center;
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(var(--overlay-rgb), 0.09);
   border-radius: 0.75rem;
   padding: 0 1rem;
   width: 7.5rem;
@@ -1265,7 +1550,7 @@
 }
 
 .percentageSymbol {
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 1.125rem;
   font-weight: 700;
   opacity: 0.6;
@@ -1288,7 +1573,7 @@
 }
 
 .errorText {
-  color: #ff5252;
+  color: var(--danger-bright);
   font-size: 0.72rem;
   margin: 0;
   display: flex;
@@ -1356,15 +1641,15 @@
   transition:
     background 0.18s ease,
     border-color 0.18s ease;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  color: var(--white);
   font-family: inherit;
 }
 
 .afipSearchButton:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--overlay-rgb), 0.07);
+  border-color: rgba(var(--overlay-rgb), 0.2);
 }
 
 .afipSearchButton:disabled {

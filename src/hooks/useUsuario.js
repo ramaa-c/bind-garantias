@@ -75,14 +75,10 @@ export const useEstablecerClave = () => {
 };
 
 export const useObtenerPorNombreOEmail = (identificador) => {
-  const isMock =
-    identificador === "admin" ||
-    identificador === "admin_restricto" ||
-    identificador === "admin restricto";
   return useQuery({
     queryKey: ["usuarios", "porNombreOEmail", identificador],
     queryFn: () => usuarioService.obtenerPorNombreOEmail(identificador),
-    enabled: !!identificador && !isMock,
+    enabled: !!identificador,
   });
 };
 
@@ -168,5 +164,11 @@ export const useActualizarUsuario = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["usuarios"] });
     },
+  });
+};
+
+export const useNotificarUsuario = () => {
+  return useMutation({
+    mutationFn: (data) => usuarioService.notificarUsuario(data),
   });
 };

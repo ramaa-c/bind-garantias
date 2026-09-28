@@ -61,13 +61,8 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
-  const isMock =
-    user?.email === "admin" ||
-    user?.email === "admin_restricto" ||
-    user?.email === "admin restricto";
-
   const { data: usuarioDb, isPending: isLoadingUsuario } =
-    useObtenerPorNombreOEmail(isOpen && !isMock ? user?.email || "" : "");
+    useObtenerPorNombreOEmail(isOpen ? user?.email || "" : "");
 
   const registro = extraerRegistroUsuario(usuarioDb);
   const usuarioWebId =
@@ -189,14 +184,7 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
       maxWidth="760px"
       variant="blue"
     >
-      {isMock ? (
-        <div className={styles.avisoNoDisponible}>
-          <FiAlertCircle />
-          <p>
-            Esta función no está disponible para este tipo de acceso.
-          </p>
-        </div>
-      ) : isLoadingUsuario ? (
+      {isLoadingUsuario ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", padding: "0.9rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.75rem" }}>
             <Skeleton width="2.6rem" height="2.6rem" radius="50%" />

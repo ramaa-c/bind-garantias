@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
 import { Spinner } from "../../../components/ui/Spinner/Spinner";
 import { parseTerminos } from "../../../constants/terminosCondiciones";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
 import {
@@ -24,10 +24,11 @@ export default function AceptarTerminos() {
   const [aceptado, setAceptado] = useState(false);
   const [seccionActiva, setSeccionActiva] = useState(null);
   const [progreso, setProgreso] = useState(0);
+  const [lecturaCompleta, setLecturaCompleta] = useState(false);
   const [isGenerandoPdf, setIsGenerandoPdf] = useState(false);
   const scrollRef = useRef(null);
 
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
   const user = useAuthStore((state) => state.user);
   const setTerminosVerificado = useAuthStore(
     (state) => state.setTerminosVerificado,
@@ -61,7 +62,8 @@ export default function AceptarTerminos() {
   }, [terminos]);
 
   const handleAceptarTerminos = async () => {
-    if (!aceptado || isConfirmando || isEnviandoRef.current) return;
+    if (!aceptado || !lecturaCompleta || isConfirmando || isEnviandoRef.current)
+      return;
 
     if (!usuarioWebId || !terminosVigentes?.terminosycondicionesid) {
       toast.error(
@@ -88,7 +90,7 @@ export default function AceptarTerminos() {
 
       setTerminosVerificado(true);
       navigate(
-        `/${channelInfo.id}/${tieneEmpresas ? "legajo" : "alta-datos-empresa"}`,
+        `${basePath}/${tieneEmpresas ? "legajo" : "alta-datos-empresa"}`,
       );
     } catch (err) {
       console.error("[AceptarTerminos] Error al registrar la aceptación:", err);
@@ -105,11 +107,19 @@ export default function AceptarTerminos() {
 
     const onScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = el;
-      const pct = Math.min(
-        100,
-        Math.round((scrollTop / (scrollHeight - clientHeight)) * 100),
-      );
-      setProgreso(pct);
+      const scrolleable = scrollHeight - clientHeight;
+      const pct =
+        scrolleable <= 0
+          ? 100
+          : Math.min(100, Math.round((scrollTop / scrolleable) * 100));
+      // Solo puede subir: representa "cuánto se llegó a leer", no la
+      // posición actual del scroll - si el usuario vuelve arriba a
+      // releer algo, no tiene sentido que el progreso baje.
+      setProgreso((prev) => Math.max(prev, pct));
+
+      if (scrolleable <= 0 || scrollTop + clientHeight >= scrollHeight - 4) {
+        setLecturaCompleta(true);
+      }
 
       const secciones = el.querySelectorAll("[data-section-id]");
       let activa = null;
@@ -122,6 +132,7 @@ export default function AceptarTerminos() {
     };
 
     el.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     return () => el.removeEventListener("scroll", onScroll);
   }, [terminos]);
 
@@ -175,7 +186,7 @@ export default function AceptarTerminos() {
           <div className={styles.progressBar}>
             <div
               className={styles.progressFill}
-              style={{ width: `${progreso}%` }}
+              style={{ transform: `scaleX(${progreso / 100})` }}
             />
           </div>
           <span className={styles.progressLabel}>{progreso}% leído</span>
@@ -224,7 +235,6 @@ export default function AceptarTerminos() {
                   </table>
                 ) : (
                   seccion.parrafos.map((parrafo, i) => (
-                     // eslint-disable-next-line react/no-array-index-key
                     <p key={`${seccion.id}-p-${i}`} className={styles.parrafo}>
                       {parrafo}
                     </p>
@@ -239,29 +249,44 @@ export default function AceptarTerminos() {
 
         {/* FOOTER DE ACEPTACIÓN */}
         <footer className={styles.docFooter}>
-          <label className={styles.checkboxRow}>
-            <span className={styles.checkboxWrapper}>
-              <input
-                type="checkbox"
-                className={styles.hiddenCheckbox}
-                checked={aceptado}
-                onChange={() => setAceptado(!aceptado)}
-              />
-              <span
-                className={`${styles.checkmark} ${aceptado ? styles.checkmarkActive : ""}`}
-              >
-                {aceptado && <FiCheck size={12} color="#000" strokeWidth={3} />}
+          <div className={styles.checkboxCol}>
+            <label
+              className={`${styles.checkboxRow} ${!lecturaCompleta ? styles.checkboxRowDisabled : ""}`}
+            >
+              <span className={styles.checkboxWrapper}>
+                <input
+                  type="checkbox"
+                  className={styles.hiddenCheckbox}
+                  checked={aceptado}
+                  disabled={!lecturaCompleta}
+                  onChange={() => setAceptado(!aceptado)}
+                />
+                <span
+                  className={`${styles.checkmark} ${aceptado ? styles.checkmarkActive : ""}`}
+                >
+                  {aceptado && (
+                    <FiCheck size={12} color="#000" strokeWidth={3} />
+                  )}
+                </span>
               </span>
-            </span>
-            <span className={styles.checkboxLabel}>
-              He leído y acepto los términos y condiciones de uso de la
-              plataforma
-            </span>
-          </label>
+              <span className={styles.checkboxLabel}>
+                He leído y acepto los términos y condiciones de uso de la
+                plataforma
+              </span>
+            </label>
+            {!lecturaCompleta && (
+              <span className={styles.lecturaHint}>
+                Desplazá el documento hasta el final para habilitar la
+                aceptación.
+              </span>
+            )}
+          </div>
 
           <Button
             variant="primary"
-            disabled={!aceptado || isConfirmando || isGenerandoPdf}
+            disabled={
+              !aceptado || !lecturaCompleta || isConfirmando || isGenerandoPdf
+            }
             isLoading={isConfirmando || isGenerandoPdf}
             onClick={handleAceptarTerminos}
             className={styles.btnAceptar}

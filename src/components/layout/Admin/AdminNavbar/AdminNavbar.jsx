@@ -1,26 +1,26 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate, useLocation, useParams } from "react-router-dom";
-import { FiChevronDown, FiLogOut, FiSettings } from "react-icons/fi";
+import { useNavigate, useLocation } from "react-router-dom";
+import { FiChevronDown, FiLogOut, FiMenu, FiSettings, FiX } from "react-icons/fi";
 import { FaRegUserCircle } from "react-icons/fa";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./AdminNavbar.module.css";
 import { useAuthStore } from "../../../../store/useAuthStore";
-import { useChannel } from "../../../../context/ChannelContext";
 import { useAdminRestrictions } from "../../../../hooks/useAdminRestrictions";
+import { useChannel } from "../../../../context/useChannel";
 import { CuentaUsuarioModal } from "../../../features/admin/CuentaUsuarioModal/CuentaUsuarioModal";
 
 export default function AdminNavbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { cadenaSlug } = useParams();
-  const { channelInfo } = useChannel();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const user = useAuthStore((state) => state.user);
-  const { isRestricted } = useAdminRestrictions();
+  const { isRestricted, cadenas } = useAdminRestrictions();
+  const { modoPorHost } = useChannel();
 
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isCuentaModalOpen, setIsCuentaModalOpen] = useState(false);
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
   const navRef = useRef(null);
   const profileRef = useRef(null);
 
@@ -42,8 +42,24 @@ export default function AdminNavbar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Un UsuarioCadenaValor (admin restringido a su/s cadena/s, ver
+  // Login.jsx → resolverDestinoPostLogin) entró por el login de cliente de
+  // su banco, no por el de admin — al desloguearse tiene que volver ahí, no
+  // a /login (que es el ingreso de un Administrador General). En
+  // modo-por-host ya estamos en el dominio correcto de ese banco, así que
+  // "/login" ahí adentro ES el login de cliente — solo en modo legacy hace
+  // falta reconstruir /{cadenaId}/login a mano.
   const handleLogout = () => {
     if (clearAuth) clearAuth();
+
+    if (!modoPorHost && isRestricted && cadenas.length > 0) {
+      const cadenaId = cadenas[0]?.cadenavalorid ?? cadenas[0]?.CadenaValorID;
+      if (cadenaId) {
+        navigate(`/${cadenaId}/login`);
+        return;
+      }
+    }
+
     navigate("/login");
   };
 
@@ -56,18 +72,48 @@ export default function AdminNavbar() {
   const handleNavigate = (path) => {
     if (!path) return;
     setActiveDropdown(null);
+    setMenuMovilAbierto(false);
     navigate(path);
   };
 
-  const adminMenu = [
-    "Cadenas de Valor",
-    "CDAs Globales",
-    "CDAs por Cadena",
-    "Líneas",
-    "CDAs por Línea",
-    "Productos de Líneas",
-    "Modo Offline",
+  // Agrupados por dominio en vez de un único dropdown "Administración" con
+  // los 9 sueltos (quedó sobrepoblado e ilegible, ver charla del 2026-09-21) -
+  // Términos y Condiciones se sumó acá adentro (antes vivía como botón de
+  // primer nivel) porque encaja con el resto de Configuración tanto como
+  // cualquiera de esos.
+  const gruposMenu = [
+    {
+      key: "cadenas",
+      label: "Cadenas de Valor",
+      items: [
+        { label: "Cadenas de Valor", path: "/admin/cadenas-valor" },
+        { label: "Líneas", path: "/admin/lineas-cadenas" },
+        { label: "Productos de Líneas", path: "/admin/lineas-productos" },
+      ],
+    },
+    {
+      key: "cdas",
+      label: "CDAs",
+      items: [
+        { label: "CDAs Globales", path: "/admin/cdas" },
+        { label: "CDAs por Cadena", path: "/admin/cadenas-cda" },
+        { label: "CDAs Alta de Línea", path: "/admin/lineas-cda" },
+      ],
+    },
+    {
+      key: "configuracion",
+      label: "Configuración",
+      items: [
+        { label: "Relaciones de Terceros", path: "/admin/tipos-relacion-socio" },
+        { label: "Variables Parametrizables", path: "/admin/variables-parametrizacion" },
+        { label: "Modo Offline", path: "/admin/modo-offline" },
+        { label: "Términos y Condiciones", path: "/admin/terminos" },
+      ],
+    },
   ];
+
+  const grupoContieneRutaActiva = (grupo) =>
+    grupo.items.some((item) => isActive(item.path));
 
   return (
     <div className={styles.navWrapper}>
@@ -120,6 +166,15 @@ export default function AdminNavbar() {
             </div>
           )}
         </div>
+        <button
+          type="button"
+          className={styles.menuToggle}
+          aria-label={menuMovilAbierto ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menuMovilAbierto}
+          onClick={() => setMenuMovilAbierto((abierto) => !abierto)}
+        >
+          {menuMovilAbierto ? <FiX /> : <FiMenu />}
+        </button>
       </div>
 
       <CuentaUsuarioModal
@@ -128,7 +183,10 @@ export default function AdminNavbar() {
       />
 
       {/* Main navigation links bar mimicking the blue header */}
-      <nav className={styles.mainNav} ref={navRef}>
+      <nav
+        className={`${styles.mainNav} ${menuMovilAbierto ? styles.mainNavAbierto : ""}`}
+        ref={navRef}
+      >
         <div className={styles.navItemsContainer}>
           {/* Mis Pendientes */}
           <button type="button"
@@ -153,58 +211,32 @@ export default function AdminNavbar() {
             Empresas
           </button>
 
-          {/* Criterios de Aceptación */}
-          <button type="button"
-            className={`${styles.navButton} ${
-              isActive("/admin/terminos") ? styles.active : ""
-            }`}
-            onClick={() => handleNavigate("/admin/terminos")}
-          >
-            Criterios de Aceptación
-          </button>
-
-          {/* Administración Dropdown */}
-          <div className={styles.dropdownContainer}>
-            <button type="button"
-              className={`${styles.navButton} ${
-                activeDropdown === "administracion" ? styles.dropdownActive : ""
-              }`}
-              onClick={() => toggleDropdown("administracion")}
-            >
-              Administración <FiChevronDown className={styles.chevron} />
-            </button>
-            {activeDropdown === "administracion" && (
-              <div className={`${styles.dropdownMenu} ${styles.scrollableMenu}`}>
-                {adminMenu.map((item) => {
-                  let destPath = null;
-                  if (item === "Cadenas de Valor") {
-                    destPath = "/admin/cadenas-valor";
-                  } else if (item === "CDAs Globales") {
-                    destPath = "/admin/cdas";
-                  } else if (item === "CDAs por Cadena") {
-                    destPath = "/admin/cadenas-cda";
-                  } else if (item === "Líneas") {
-                    destPath = "/admin/lineas-cadenas";
-                  } else if (item === "CDAs por Línea") {
-                    destPath = "/admin/lineas-cda";
-                  } else if (item === "Productos de Líneas") {
-                    destPath = "/admin/lineas-productos";
-                  } else if (item === "Modo Offline") {
-                    destPath = "/admin/modo-offline";
-                  }
-                  return (
+          {/* Grupos de Administración: Cadenas de Valor / CDAs / Configuración */}
+          {gruposMenu.map((grupo) => (
+            <div className={styles.dropdownContainer} key={grupo.key}>
+              <button type="button"
+                className={`${styles.navButton} ${
+                  activeDropdown === grupo.key ? styles.dropdownActive : ""
+                } ${grupoContieneRutaActiva(grupo) ? styles.active : ""}`}
+                onClick={() => toggleDropdown(grupo.key)}
+              >
+                {grupo.label} <FiChevronDown className={styles.chevron} />
+              </button>
+              {activeDropdown === grupo.key && (
+                <div className={`${styles.dropdownMenu} ${styles.scrollableMenu}`}>
+                  {grupo.items.map((item) => (
                     <button type="button"
-                      key={item}
-                      className={styles.dropdownItem}
-                      onClick={() => handleNavigate(destPath)}
+                      key={item.path}
+                      className={`${styles.dropdownItem} ${isActive(item.path) ? styles.dropdownItemActive : ""}`}
+                      onClick={() => handleNavigate(item.path)}
                     >
-                      {item}
+                      {item.label}
                     </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
 
             {/* Ocultados Ayuda y Soporte por el momento */}
             </>

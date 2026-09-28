@@ -227,6 +227,19 @@ export const procesarArchivo = async (
   }
 };
 
+export const TAMANIO_MAXIMO_ARCHIVO_MB = 50;
+const TAMANIO_MAXIMO_ARCHIVO_BYTES = TAMANIO_MAXIMO_ARCHIVO_MB * 1024 * 1024;
+
+export const validarTamanioArchivo = (file) => {
+  if (file && file.size > TAMANIO_MAXIMO_ARCHIVO_BYTES) {
+    toast.error(
+      `El archivo "${file.name}" supera el tamaño máximo permitido (${TAMANIO_MAXIMO_ARCHIVO_MB} MB).`,
+    );
+    return false;
+  }
+  return true;
+};
+
 export const formatBase64Size = (base64Str) => {
   if (!base64Str) return "Disponible";
   const len = base64Str.length;

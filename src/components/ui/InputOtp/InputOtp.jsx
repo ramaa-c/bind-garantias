@@ -90,7 +90,6 @@ export const InputOTP = ({
       <div className={styles.grid}>
         {digits.map((digit, index) => (
           <div
-             // eslint-disable-next-line react/no-array-index-key
             key={index}
             className={`${styles.cellWrapper} ${getStatusClass(index)}`}
           >

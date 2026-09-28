@@ -10,19 +10,25 @@ import api from "../api/axios";
 // es transitoria.
 const ESPERA_REINTENTO_MS = 1500;
 
+// El interceptor de axios (ver src/api/axios.js) ya convirtió las keys de
+// la respuesta a minúsculas antes de llegar acá — leer en PascalCase acá
+// (Contenido/Datos/Variables/Nombre/Valor) hacía que esta condición diera
+// siempre undefined, tratando a Nosis como "no disponible" aunque
+// respondiera bien (confirmado en vivo: la respuesta cruda tiene datos
+// completos, pero llega como data.contenido.datos.variables).
 const extraerDiccionario = (data) => {
   if (
     !data ||
-    !data.Contenido ||
-    !data.Contenido.Datos ||
-    !data.Contenido.Datos.Variables
+    !data.contenido ||
+    !data.contenido.datos ||
+    !data.contenido.datos.variables
   ) {
     return null;
   }
   const diccionario = {};
-  data.Contenido.Datos.Variables.forEach((v) => {
-    if (v.Nombre) {
-      diccionario[v.Nombre] = v.Valor;
+  data.contenido.datos.variables.forEach((v) => {
+    if (v.nombre) {
+      diccionario[v.nombre] = v.valor;
     }
   });
   return diccionario;

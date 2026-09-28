@@ -64,7 +64,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   font-weight: 700;
   font-size: 1.25rem;
 }
@@ -132,7 +132,7 @@
 }
 
 .searchInput::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--text-muted);
 }
 
 .optionsList {
@@ -164,7 +164,7 @@
 .noResults {
   padding: 2rem 1rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 

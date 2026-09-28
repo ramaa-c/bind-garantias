@@ -8,9 +8,12 @@ import { useResetearPassword } from "../../../hooks/useUsuario";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
 import { Alert } from "../../../components/ui/Alert/Alert";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
+import { useThemeStore } from "../../../store/useThemeStore";
+import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 const recuperarSchema = z.object({
   email: z
@@ -21,13 +24,12 @@ const recuperarSchema = z.object({
 
 const RecuperarClave = () => {
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
+  const theme = useThemeStore((state) => state.theme);
 
   const {
     control,
-    register,
     handleSubmit,
-    formState: { errors },
   } = useForm({
     resolver: zodResolver(recuperarSchema),
     defaultValues: { email: "" },
@@ -53,20 +55,21 @@ const RecuperarClave = () => {
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: canalId,
+      hashseguridad: "",
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: canalId,
+      denominacion: denominacionDesdeEmail(data.email),
+      fronturl: window.location.origin + basePath,
     };
 
     try {
       await enviarCorreoAsync(payloadReset);
-      navigate(`/${channelInfo.id}/confirmar-correo`, {
+      navigate(`${basePath}/confirmar-correo`, {
         replace: true,
         state: { emailIngresado: data.email, canal: canalId, origen: "recuperar" },
       });
-    } catch (error) {
+    } catch {
       toast.error("Error al solicitar el enlace", {
         description: "Verificá tu correo o intentá más tarde.",
       });
@@ -80,12 +83,12 @@ const RecuperarClave = () => {
         <div className={styles.globalLogo}>
           <div className={styles.logosWrapper}>
             <img
-              src={logoBind}
+              src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
-              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
               className={styles.clickableLogo}
             />
-            {channelInfo.id !== "default" && (
+            {channelInfo.id !== "default" && channelInfo.logo && (
               <>
                 <div className={styles.logoSeparator} />
                 <img
@@ -116,6 +119,7 @@ const RecuperarClave = () => {
               control={control}
               label="Email"
               type="text"
+              autoComplete="email"
               disabled={isPending}
               error={isError ? "Usuario no encontrado." : undefined}
             />

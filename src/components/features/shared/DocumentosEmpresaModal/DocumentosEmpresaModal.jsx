@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import {
   FiFileText,
-  FiX,
   FiCheckCircle,
   FiAlertCircle,
   FiClock,
   FiLoader,
 } from "react-icons/fi";
+import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { CargaArchivos } from "../../../ui/CargaArchivos/CargaArchivos";
 import styles from "./DocumentosEmpresaModal.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { toast } from "sonner";
 
@@ -20,7 +18,6 @@ export const DocumentosEmpresaModal = ({
   onClose,
   archivos,
   onFileUpload,
-  onFileRemove,
   intentoAvanzar,
   socioId,
   archivosBackend = [],
@@ -56,7 +53,7 @@ export const DocumentosEmpresaModal = ({
     {
       key: "certificadoPyme",
       title: "Certificado PyME",
-      info: "Certificado oficial emitido por el Ministerio de Producción / AFIP.",
+      info: "Certificado oficial emitido por el Ministerio de Producción / ARCA.",
     },
     {
       key: "actaDesignacion",
@@ -71,12 +68,12 @@ export const DocumentosEmpresaModal = ({
     {
       key: "f1272",
       title: "Formulario F1272",
-      info: "Formulario de declaración de PyME ante la AFIP.",
+      info: "Formulario de declaración de PyME ante la ARCA.",
     },
     {
       key: "ddjjGanancias",
       title: "DDJJ de Ganancias",
-      info: "Declaración jurada de Ganancias presentada ante AFIP.",
+      info: "Declaración jurada de Ganancias presentada ante ARCA.",
     },
     {
       key: "manifestacionBienes",
@@ -86,7 +83,7 @@ export const DocumentosEmpresaModal = ({
     {
       key: "constanciaMonotributo",
       title: "Constancia de Monotributo",
-      info: "Constancia de opción al Monotributo de AFIP.",
+      info: "Constancia de opción al Monotributo de ARCA.",
     },
     {
       key: "cartasDocumento",
@@ -118,12 +115,6 @@ export const DocumentosEmpresaModal = ({
 
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingKeys, setUploadingKeys] = useState({});
-
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  useEscape(onClose, isOpen);
 
   const handleGuardarYCerrar = async () => {
     if (!socioId) {
@@ -186,23 +177,8 @@ export const DocumentosEmpresaModal = ({
     onClose();
   };
 
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div
-        className={styles.modalContainer}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          className={styles.btnClose}
-          onClick={onClose}
-          aria-label="Cerrar"
-        >
-          <FiX size={20} />
-        </button>
-
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="56rem">
         <div className={styles.body}>
           <div className={styles.iconWrapper}>
             <FiFileText size={30} />
@@ -265,6 +241,7 @@ export const DocumentosEmpresaModal = ({
                           className={styles.dropzoneTaller}
                           title={doc.title}
                           hasError={hasError}
+                          isUploading={isUploading}
                           file={
                             currentFile
                               ? {
@@ -296,6 +273,7 @@ export const DocumentosEmpresaModal = ({
                           type="file"
                           id={`modal-file-${doc.key}`}
                           style={{ display: "none" }}
+                          disabled={isUploading}
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
                               onFileUpload(doc.key, e.target.files[0]);
@@ -323,8 +301,6 @@ export const DocumentosEmpresaModal = ({
             </Button>
           </div>
         </div>
-      </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 };

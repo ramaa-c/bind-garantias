@@ -18,6 +18,7 @@ import {
   SelectSimple,
 } from "../../../components/ui";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./LineasProductos.module.css";
 
 // --- CHILD COMPONENT: SKELETON CARD ---
@@ -295,6 +296,8 @@ const ConfigModalInner = ({
 
 // --- MAIN PAGE COMPONENT ---
 export default function LineasProducto() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const [selectedTipoLimiteId, setSelectedTipoLimiteId] = useState("");
   const [activeProducto, setActiveProducto] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -326,6 +329,8 @@ export default function LineasProducto() {
     setActiveProducto(null);
     setIsModalOpen(false);
   };
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>

@@ -18,14 +18,14 @@
 }
 
 .title {
-  color: #fff;
+  color: var(--white);
   margin: 0;
   font-size: 1.15rem;
   font-weight: 700;
 }
 
 .description {
-  color: #888;
+  color: var(--text-muted);
   margin: 0;
   font-size: 0.875rem;
   line-height: 1.6;

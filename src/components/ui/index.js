@@ -14,6 +14,7 @@ export * from './SelectSocio/SelectSocio';
 
 export * from './InputPasswordSeguro/InputPasswordSeguro';
 export * from './InputSimple/InputSimple';
+export * from './MontoEnPalabras/MontoEnPalabras';
 
 export * from './Modal/Modal';
 export * from './Select/Select';
@@ -36,3 +37,4 @@ export * from './Skeleton/Skeleton';
 export * from './Paginacion/Paginacion';
 export * from './BuscadorListado/BuscadorListado';
 export * from './InputOtp/InputOtp';
+export * from './InfoTooltip/InfoTooltip';

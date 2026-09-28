@@ -164,6 +164,21 @@ export const tercerosService = {
     }
   },
 
+  // Da de baja una relación vigente. No hay DELETE en el backend: se la
+  // vence poniéndole FechaHasta en el pasado, mismo mecanismo que usa
+  // "Eliminar del legajo" (ver handleConfirmEliminar en SociosLegajo).
+  darDeBajaRelacionDeSocio: async (relacion) => {
+    const ayer = new Date();
+    ayer.setDate(ayer.getDate() - 1);
+    const ayerStr = ayer.toISOString().split(".")[0];
+
+    return tercerosService.actualizarRelacionDeSocio({
+      ...relacion,
+      fechahasta: ayerStr,
+      FechaHasta: ayerStr,
+    });
+  },
+
   //------- TERCEROS RELACIONADOS (SGRPlus) ---------
 
   obtenerTercerosSGRPlus: async (params = {}) =>

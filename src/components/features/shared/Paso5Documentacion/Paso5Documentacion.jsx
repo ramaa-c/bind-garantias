@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+
 import { useRequisitos } from "../../../../hooks/useRequisitos";
+import {
+  RELACION_APODERADO_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+} from "../../../../constants/tiposRelacionSocio";
 import {
   useFormContext,
   useFormState,
@@ -27,9 +31,11 @@ import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { formatBase64Size } from "../../../../utils/fileUtils";
+import { formatBase64Size, validarTamanioArchivo } from "../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 const DOC_ITEMS = [
   { key: "estatuto", label: "Estatuto Social" },
@@ -50,7 +56,6 @@ const DOC_ITEMS = [
 
 const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
   <div style={{ display: "none" }}>
-    <input {...register("emailFacturacion")} />
     {socios.map((socio, i) => (
       <React.Fragment key={socio?.cuit || i}>
         <input {...register(`socios.${i}.email`)} />
@@ -73,15 +78,12 @@ const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
 );
 
 export default function Paso5Documentacion({
-  docExpandido,
-  toggleDoc,
   socios = [],
-  onVolverASocios,
   avanzarPaso6,
   isSubmitting,
   socioId,
 }) {
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaId = Number(cadenaSlug) || 1;
 
   const { tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
@@ -104,7 +106,7 @@ export default function Paso5Documentacion({
     const configVal = requisitos?.documentos?.[key];
     return configVal !== 0; // 0 = no mostrar
   });
-  const { register, control, setValue, trigger, clearErrors, getValues } =
+  const { register, control, setValue, trigger, getValues } =
     useFormContext();
   const { errors } = useFormState({ control });
   const {
@@ -189,15 +191,10 @@ export default function Paso5Documentacion({
 
   const {
     archivos,
-    socioActivoIndex,
     repActivoIndex,
     modalDocsOpen,
     modalRepTipo,
-    draggingKey,
-    backupSocio,
     intentoAvanzar,
-    intentoGuardarSocio,
-    isGuardando,
   } = uiState;
 
   const updateState = (updates) => {
@@ -284,6 +281,8 @@ export default function Paso5Documentacion({
   // ── handlers  ──────────────────────────────────────────────────
   const handleFileUpload = (key, file) => {
     if (file) {
+      if (!validarTamanioArchivo(file)) return;
+
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
       updateState((prev) => ({
         archivos: {
@@ -345,7 +344,7 @@ export default function Paso5Documentacion({
               Number(
                 r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID,
               ) === Number(terceroId) &&
-              [210, 230].includes(
+              [RELACION_APODERADO_ID, RELACION_REPRESENTANTE_LEGAL_ID].includes(
                 Number(
                   r.tiporelacionsocioid ||
                     r.TipoRelacionSocioID ||
@@ -410,10 +409,16 @@ export default function Paso5Documentacion({
   const isEmailFacturacionValido =
     !errorEmailFacturacion && emailFacturacionVal.trim() !== "";
 
-  const totalTareas = mostrarSeccionReps ? 3 : 2;
+  // La sección de representantes/apoderados se MUESTRA cada vez que
+  // mostrarSeccionReps es true (para poder cargar/corregir uno si hace
+  // falta), pero solo cuenta como una tarea pendiente del progreso cuando
+  // es realmente obligatoria (repRequerido) - si es opcional (Requerimiento
+  // = 2 en CadenaValorParametrizacion), no debe contarse como "falta" solo
+  // porque está vacía.
+  const totalTareas = repRequerido ? 3 : 2;
   const tareasCompletas =
     (docsEmpresaListos ? 1 : 0) +
-    (mostrarSeccionReps && representantes.length > 0 ? 1 : 0) +
+    (repRequerido && representantes.length > 0 ? 1 : 0) +
     (isEmailFacturacionValido ? 1 : 0);
   const progresoPct = (tareasCompletas / totalTareas) * 100;
 
@@ -490,6 +495,9 @@ export default function Paso5Documentacion({
             <div className={styles.sectionHeaderRow}>
               <span className={styles.sectionLabel}>
                 Representantes y Apoderados
+                {!repRequerido && (
+                  <span className={styles.countBadge}> · Opcional</span>
+                )}
               </span>
               {representantes.length > 0 && (
                 <div style={{ display: "flex", gap: "0.75rem" }}>
@@ -520,7 +528,7 @@ export default function Paso5Documentacion({
                 {mostrarRepLegal && (
                   <button
                     type="button"
-                    className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
+                    className={`${styles.emptySlot} ${intentoAvanzar && repRequerido ? styles.emptySlotError : ""}`}
                     style={{ flex: 1 }}
                     onClick={() => handleAbrirModalRep(null, "legal")}
                   >
@@ -531,7 +539,7 @@ export default function Paso5Documentacion({
                 {mostrarApoderado && (
                   <button
                     type="button"
-                    className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
+                    className={`${styles.emptySlot} ${intentoAvanzar && repRequerido ? styles.emptySlotError : ""}`}
                     style={{ flex: 1 }}
                     onClick={() => handleAbrirModalRep(null, "apoderado")}
                   >

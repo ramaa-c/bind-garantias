@@ -59,13 +59,13 @@ export const InputPasswordSeguro = React.forwardRef(
 
       const pct = (metCount / REQUIREMENTS.length) * 100;
       if (metCount <= 1)
-        return { width: `${Math.max(pct, 20)}%`, color: "#ff5252" };
+        return { width: `${Math.max(pct, 20)}%`, color: "var(--danger-bright)" };
       if (metCount <= 2) return { width: `${pct}%`, color: "#ffb142" };
       return { width: `${pct}%`, color: "#2196f3" };
     };
 
     const { width, color } = getStrength(currentValue);
-    const defaultColor = theme === "blue" ? "var(--primary-blue, #4c65e6)" : "var(--yellow, #f5f400)";
+    const defaultColor = theme === "blue" ? "var(--color-azul-bind)" : "var(--yellow, #f5f400)";
     const dynamicColor = currentValue ? color : defaultColor;
 
     return (

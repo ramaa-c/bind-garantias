@@ -22,7 +22,7 @@
 }
 
 .header h1 {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 800;
   margin: 0;
   color: #ffffff;
@@ -33,6 +33,14 @@
   margin: 0.4rem 0 0 0;
   font-size: 0.95rem;
   max-width: 45rem;
+}
+
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en Dashboard.module.css). */
+@media (max-height: 716px) {
+  .header p {
+    display: none;
+  }
 }
 
 .btnAdd {
@@ -347,7 +355,7 @@
 }
 
 .switchOff {
-  color: #484f58;
+  color: var(--text-muted);
 }
 
 /* Footer block */
@@ -407,4 +415,16 @@
   border: 1px dashed #30363d;
   border-radius: 0.75rem;
   font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .splitLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .adminCard,
+  .cardHeaderInfo,
+  .textStack {
+    min-width: 0;
+  }
 }

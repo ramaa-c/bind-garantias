@@ -30,7 +30,12 @@ export const lineaAdapter = {
       TipoLibradorID: d.tipolibradorid,
       ContratoID: d.contratoid,
       CadenaValorID: d.cadenavalorid,
-      EquipoComercialID: d.equipocomercialid,
+      // Único campo de todo TipoLimiteSocio con "id" en minúscula en vez de
+      // "ID" (confirmado en vivo: con "EquipoComercialID" el backend acepta
+      // el PUT/POST pero descarta el valor y persiste 0 - con "EquipoComercialid"
+      // sí lo guarda). No es un error de tipeo nuestro, es el nombre real
+      // del campo en el backend.
+      EquipoComercialid: d.equipocomercialid,
       SolicitudID: d.solicitudid,
       TipoLimiteRiesgoID: d.tipolimiteriesgoid,
       TerceroViaId: d.terceroviaid,
@@ -45,9 +50,13 @@ export const lineaAdapter = {
       CadenaValorID: d.cadenavalorid,
       TipoLimiteID: d.tipolimiteid,
       Descripcion: d.descripcion,
-      MonedaID: d.monedaid,
-      MontoMaximo: d.montomaximo,
-      DiasVigencia: d.diasvigencia,
+      MontoLinea: d.montolinea,
+      MontoContrato: d.montocontrato,
+      ValoresPorDefecto: d.valorespordefecto ?? "",
+      MonedaLineaID: d.monedalineaid,
+      DiasVigenciaLinea: d.diasvigencialinea,
+      MonedaContratoID: d.monedacontratoid,
+      DiasVigenciaContrato: d.diasvigenciacontrato,
       AptaNuevaLinea: d.aptanuevalinea,
       Activa: d.activa,
     };
@@ -60,9 +69,13 @@ export const lineaAdapter = {
       CadenaValorID: d.cadenavalorid,
       TipoLimiteID: d.tipolimiteid,
       Descripcion: d.descripcion,
-      MonedaID: d.monedaid,
-      MontoMaximo: d.montomaximo,
-      DiasVigencia: d.diasvigencia,
+      MontoLinea: d.montolinea,
+      MontoContrato: d.montocontrato,
+      ValoresPorDefecto: d.valorespordefecto ?? "",
+      MonedaLineaID: d.monedalineaid,
+      DiasVigenciaLinea: d.diasvigencialinea,
+      MonedaContratoID: d.monedacontratoid,
+      DiasVigenciaContrato: d.diasvigenciacontrato,
       AptaNuevaLinea: d.aptanuevalinea,
       Activa: d.activa,
     };
@@ -85,6 +98,13 @@ export const lineaAdapter = {
       TipoObligacionID: d.tipoobligacionid,
       TipoLimiteID: d.tipolimiteid,
       Descripcion: d.descripcion,
+    };
+  },
+  adaptarPayload6: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      TipoLimiteSocioID: d.tipolimitesocioid,
     };
   },
 };

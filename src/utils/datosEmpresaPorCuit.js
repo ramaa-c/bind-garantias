@@ -4,18 +4,6 @@ import { afipService } from "../services/afipService";
 import { matchProvinciaAfip } from "./provinciaUtils";
 import { decodeHtmlEntities, parseAddress } from "./direccionParser";
 
-// Consulta Nosis (con fallback a LUFE y luego a AFIP) para un CUIT y arma los
-// valores del formulario de AltaDatosEmpresa (mismo mapeo que usaba
-// Paso1Cuit). Se extrajo acá para poder reusarlo también al retomar un
-// socio existente en el Paso 2 ("modo completar" en AltaDatosEmpresa):
-// reconstruir esos valores desde el Socio ya guardado no alcanza —
-// Provincia no tiene columna en el backend (se pierde siempre) y
-// Localidad/Ciudad nunca se guardaron con ID, así que hay que volver a
-// consultar la fuente y re-matchear.
-//
-// onProgress(fuente) es opcional — se llama con "lufe"/"afip" justo antes de
-// probar cada fallback, para que quien llame pueda actualizar UI de
-// progreso (ver Paso1Cuit). Si no se pasa, no hace nada.
 export const obtenerDatosEmpresaPorCuit = async (
   cuit,
   opcionesProvincias,
@@ -55,13 +43,43 @@ export const obtenerDatosEmpresaPorCuit = async (
   }
 
   if (!nosisData && !(afipData && afipData.datosgenerales)) {
-    return { encontrado: false, nosisData: null, afipData: null, valores: null };
+    return {
+      encontrado: false,
+      nosisData: null,
+      afipData: null,
+      valores: null,
+    };
   }
+
+  // Cascada Nosis -> LUFE -> AFIP, mismo orden que el resto de esta
+  // función. LUFE ya llega con tipoactividadsepymeid embebido en
+  // datosgenerales (ver normalizarLufeAEstructuraAfip en sociosService.js);
+  // para AFIP real hay que buscar la actividad de Orden 1 dentro del
+  // arreglo (siempre es la principal).
+  const deducirTipoActividadSepymeId = () => {
+    if (nosisData?.VI_Act01_Cod) {
+      return String(nosisData.VI_Act01_Cod);
+    }
+    if (afipData?.datosgenerales?.tipoactividadsepymeid != null) {
+      return String(afipData.datosgenerales.tipoactividadsepymeid);
+    }
+    const actividades = afipData?.datosregimengeneral?.actividad;
+    if (Array.isArray(actividades)) {
+      const principal = actividades.find((act) => Number(act.orden) === 1);
+      if (principal?.idactividad != null) {
+        return String(principal.idactividad);
+      }
+    }
+    return null;
+  };
 
   const cuitLimpio = String(cuit).replace(/\D/g, "");
   const deducirTipoPersonaPorPrefijo = () => {
     const prefix = cuitLimpio.substring(0, 2);
-    if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cuitLimpio.startsWith("2")) {
+    if (
+      ["20", "23", "24", "27", "25", "26"].includes(prefix) ||
+      cuitLimpio.startsWith("2")
+    ) {
       return 1;
     }
     if (["30", "33", "34"].includes(prefix) || cuitLimpio.startsWith("3")) {
@@ -92,8 +110,13 @@ export const obtenerDatosEmpresaPorCuit = async (
     } else if (nosisData.VI_TipoPersona === "2") {
       tipoPersonaId = 1;
     } else if (afipData && afipData.datosgenerales) {
-      const tipoPersonaStr = (afipData.datosgenerales.tipopersona || "").toUpperCase();
-      if (tipoPersonaStr.includes("JURIDICA") || tipoPersonaStr.includes("JURÍDICA")) {
+      const tipoPersonaStr = (
+        afipData.datosgenerales.tipopersona || ""
+      ).toUpperCase();
+      if (
+        tipoPersonaStr.includes("JURIDICA") ||
+        tipoPersonaStr.includes("JURÍDICA")
+      ) {
         tipoPersonaId = 10;
       } else if (
         tipoPersonaStr.includes("FISICA") ||
@@ -147,6 +170,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       mescierre: mesCierre,
       fechainicioactividades: fechaInicioActividades,
       tiporegimenivaid: tipoRegimenIvaId,
+      tipoactividadsepymeid: deducirTipoActividadSepymeId(),
     };
   } else {
     const dg = afipData.datosgenerales;
@@ -163,7 +187,10 @@ export const obtenerDatosEmpresaPorCuit = async (
 
     let tipoPersonaId = 0;
     const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
-    if (tipoPersonaStr.includes("JURIDICA") || tipoPersonaStr.includes("JURÍDICA")) {
+    if (
+      tipoPersonaStr.includes("JURIDICA") ||
+      tipoPersonaStr.includes("JURÍDICA")
+    ) {
       tipoPersonaId = 10;
     } else if (
       tipoPersonaStr.includes("FISICA") ||
@@ -222,8 +249,12 @@ export const obtenerDatosEmpresaPorCuit = async (
       direccion: fullDireccion,
       codpos: dom.codpostal || "",
       calle: parsedDir.calle,
-      sinNumero: parsedDir.numero === 0,
-      numero: parsedDir.numero || "",
+      // parsedDir.numero es null cuando no se encontró número en el texto
+      // (equivale a "sin número"); una altura 0 real (numero: 0) es válida
+      // y no debe marcarse como si faltara - ver mismo criterio en
+      // hasNumber para la rama de Nosis, unas líneas más abajo.
+      sinNumero: parsedDir.numero === null,
+      numero: parsedDir.numero ?? "",
       piso: parsedDir.piso,
       departamento: parsedDir.departamento,
       localidad: localidadStr,
@@ -236,6 +267,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       mescierre: mesCierre,
       fechainicioactividades: fechaInicioActividades,
       tiporegimenivaid: tipoRegimenIvaId,
+      tipoactividadsepymeid: deducirTipoActividadSepymeId(),
     };
   }
 

@@ -20,11 +20,7 @@ export const useAdminRestrictions = () => {
   const user = useAuthStore((state) => state.user);
   const email = user?.email || "";
 
-  const isMockAdmin = email === "admin";
-  const isMock = isMockAdmin;
-
-  const emailToFetch = isMock ? "" : email;
-  const { data: usuarioDb, isPending: isLoadingUser } = useObtenerPorNombreOEmail(emailToFetch);
+  const { data: usuarioDb, isPending: isLoadingUser } = useObtenerPorNombreOEmail(email);
   const registroUsuario = parsearRegistroUsuario(usuarioDb);
   const usuarioWebId =
     registroUsuario?.usuariowebid ??
@@ -33,10 +29,19 @@ export const useAdminRestrictions = () => {
     null;
   const esAdministrador = esAdministradorActivo(registroUsuario);
 
+  // ⚠️ El parámetro que el backend realmente filtra es "usuarioid" (o
+  // cualquier variante de casing de ESE nombre) — "usuariowebid" (con "web",
+  // aunque el campo de la respuesta se llame UsuarioWebID) lo ignora en
+  // silencio y devuelve TODAS las filas de la tabla sin filtrar. Confirmado
+  // en vivo contra el backend 103 el 2026-08-21: con "usuariowebid" un
+  // usuario con una sola cadena vinculada terminaba viendo también cadenas
+  // de otros usuarios (restrictedIds se armaba con toda la tabla). Mismo
+  // parámetro que ya usa correctamente useObtenerCadenasPorUsuario
+  // (useUsuario.js), que nunca tuvo este bug.
   const { data: adminCadenas, isPending: isLoadingCadenas } = useQuery({
-    queryKey: ["admin", "cadenas", usuarioWebId || "mock"],
+    queryKey: ["admin", "cadenas", usuarioWebId || "sin-usuario"],
     queryFn: () => {
-      return usuarioService.obtenerUsuariosRelacionados({ usuariowebid: usuarioWebId });
+      return usuarioService.obtenerUsuariosRelacionados({ usuarioid: usuarioWebId });
     },
     enabled: !!usuarioWebId,
   });
@@ -52,14 +57,6 @@ export const useAdminRestrictions = () => {
   };
 
   const listaCadenas = parsearCadenas(adminCadenas);
-  
-  if (isMock) {
-    return {
-      isRestricted: false,
-      isPending: false,
-      cadenas: []
-    };
-  }
 
   // Un administrador general (EsAdministrador=1) ve todo el panel aunque
   // además tenga cadenas de valor vinculadas; la restricción de navegación

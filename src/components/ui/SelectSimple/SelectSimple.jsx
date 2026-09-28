@@ -27,7 +27,7 @@ export const SelectSimple = ({
 
   const focusColor = isAdmin ? "var(--color-azul-bind, #4c65e6)" : "var(--yellow, #f4f500)";
   const bgSelected = isAdmin ? "var(--color-azul-bind, #4c65e6)" : "var(--yellow, #f4f500)";
-  const textSelected = isAdmin ? "#ffffff" : "#000";
+  const textSelected = isAdmin ? "var(--white)" : "#000";
   const bgOptionFocused = isAdmin ? "rgba(76, 101, 230, 0.15)" : "rgba(244, 245, 0, 0.1)";
   const textOptionFocused = isAdmin ? "var(--color-azul-bind-300, #8a9fff)" : "var(--yellow, #f4f500)";
 
@@ -38,13 +38,22 @@ export const SelectSimple = ({
       border: "none",
       boxShadow: "none",
       minHeight: compact ? "2.35rem" : "3.2rem",
-      paddingTop: compact ? "0.5rem" : "0.85rem", // Leaves space for the floating label
+      height: compact ? "2.35rem" : "3.2rem", // Fijo, no solo mínimo: sin esto react-select puede quedar más alto que InputSimple/SelectFechaSimple según el contenido interno.
       cursor: state.isDisabled ? "not-allowed" : "pointer",
     }),
+    // El paddingTop (espacio para el label flotante) va acá y no en `control`:
+    // si estuviera en `control` empujaba hacia abajo TODOS sus hijos por
+    // igual, incluida la flecha del indicatorsContainer, descentrándola
+    // verticalmente. Así solo se corre el texto del valor.
     valueContainer: (base) => ({
       ...base,
-      padding: compact ? "0 0.75rem" : "0 1rem",
+      padding: compact ? "0.5rem 0.75rem 0" : "0.85rem 1rem 0",
       flexWrap: "nowrap",
+    }),
+    indicatorsContainer: (base) => ({
+      ...base,
+      height: compact ? "2.35rem" : "3.2rem",
+      alignItems: "center",
     }),
     singleValue: (base) => ({
       ...base,
@@ -60,7 +69,7 @@ export const SelectSimple = ({
     }),
     placeholder: (base) => ({
       ...base,
-      color: "#555",
+      color: "var(--text-dim)",
       fontSize: compact ? "0.825rem" : "1rem",
       fontFamily: "var(--font-principal, inherit)",
       maxWidth: "100%",
@@ -75,7 +84,7 @@ export const SelectSimple = ({
     indicatorSeparator: () => ({
       display: "none",
     }),
-    dropdownIndicator: (base, state) => ({
+    dropdownIndicator: (base) => ({
       ...base,
       color: isFocused ? focusColor : "#8b949e",
       padding: compact ? "6px 8px" : "8px 12px",
@@ -85,8 +94,8 @@ export const SelectSimple = ({
     }),
     menu: (base) => ({
       ...base,
-      backgroundColor: "#0d1117",
-      border: "1px solid #30363d",
+      backgroundColor: "var(--bg-surface)",
+      border: "1px solid var(--border-hover)",
       borderRadius: "0.5rem",
       zIndex: 99999,
       padding: "0.5rem 0",

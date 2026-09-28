@@ -23,11 +23,15 @@ import {
   FiCheckCircle,
   FiDownload,
   FiLink,
+  FiAward,
+  FiBell,
+  FiUserCheck,
 } from "react-icons/fi";
 import {
   useSocioPorId,
   useActualizarSocio,
   useObtenerExecuteCda,
+  useUsuariosVinculadosASocio,
 } from "../../../hooks/useSocios";
 import { cdaService } from "../../../services/cdaService";
 import { useObtenerTodasWebConEstado, useObtenerGrupoCdaConCdas } from "../../../hooks/useCadenaValor";
@@ -41,10 +45,12 @@ import {
 import { useObtenerTodosCdas, useReejecutarCda, useProbarCda } from "../../../hooks/useCda";
 import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
 import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { esCdaActivo } from "../../../utils/cdaUtils";
 import { socioArchivoService } from "../../../services/socioArchivoService";
 import { descargarLegajoCompletoZip } from "../../../utils/fileUtils";
+import { useDescargaConFeedback } from "../../../hooks/useDescargaConFeedback";
 import {
   ultimaEjecucionPorCda,
   ordenarEjecucionesCda,
@@ -63,8 +69,12 @@ import {
   Skeleton,
 } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { DocumentosLegajo, ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
+import { NotificarSocioModal } from "../../../components/features/admin/NotificarSocioModal/NotificarSocioModal";
+import { DocumentosLegajo } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
+import { ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo.constants";
 import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
+import { LegajoUniversalBar } from "../../../components/features/shared/LegajoUniversalBar/LegajoUniversalBar";
+import { CertificadoPymeAdmin } from "../../../components/features/admin/CertificadoPymeAdmin/CertificadoPymeAdmin";
 import styles from "./EmpresaDetalle.module.css";
 
 const getTipoPersonaLabel = (tipoPersonaId) => {
@@ -114,6 +124,8 @@ const TABS = [
   { key: "documentacion", label: "Documentación", icon: FiFileText },
   { key: "terceros", label: "Terceros Relacionados", icon: FiUsers },
   { key: "cdas", label: "CDAs", icon: FiShield },
+  { key: "pyme", label: "Certificado PyME", icon: FiAward },
+  { key: "usuarios", label: "Usuarios Vinculados", icon: FiUserCheck },
 ];
 
 // Filas fantasma con la forma real del panel de CDAs (barra de resultado
@@ -163,6 +175,60 @@ const construirEstadoInicial = (socio) => ({
   fechainicioactividades: socio.fechainicioactividades || "",
   fechacierreejercicio: socio.fechacierreejercicio || "",
 });
+
+// Pestaña de solo lectura - muestra qué usuarios tienen acceso a esta
+// empresa, algo que hasta SGRPLUSPLA-201/mejora de api/SocioUsuario no se
+// podía ver desde ningún lado del panel admin. Hoy solo trae email/fecha de
+// vinculación/estado de la cuenta (lo único que expone
+// api/SocioUsuario/{SocioID}:PorSocio + api/usuario/{id}) - a futuro se
+// puede sumar más info propia de cada usuario si hace falta.
+function UsuariosVinculadosTab({ socioId }) {
+  const { usuariosVinculados, isLoading } = useUsuariosVinculadosASocio(socioId);
+
+  return (
+    <div className={styles.usuariosVinculadosTab}>
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionCardHeader}>
+          <span className={styles.sectionCardIcon}>
+            <FiUserCheck size={15} />
+          </span>
+          <h3>Usuarios vinculados</h3>
+        </header>
+
+        {isLoading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+            <Skeleton width="100%" height="2.3rem" radius="0.6rem" />
+            <Skeleton width="100%" height="2.3rem" radius="0.6rem" />
+          </div>
+        ) : usuariosVinculados.length === 0 ? (
+          <p className={styles.usuariosVinculadosVacio}>
+            Todavía no hay ningún usuario vinculado a esta empresa.
+          </p>
+        ) : (
+          <ul className={styles.usuariosVinculadosLista}>
+            {usuariosVinculados.map((u) => (
+              <li key={u.usuarioWebId} className={styles.usuarioVinculadoRow}>
+                <span className={styles.usuarioVinculadoEmail}>
+                  {u.email || `Usuario #${u.usuarioWebId}`}
+                </span>
+                <span className={styles.usuarioVinculadoMeta}>
+                  {String(u.estado) !== "1" && (
+                    <span className={`${styles.badge} ${styles["badge-warning"]}`}>
+                      Inactivo
+                    </span>
+                  )}
+                  {u.momentoCreacion
+                    ? new Date(u.momentoCreacion).toLocaleDateString("es-AR")
+                    : "—"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
 
 function DatosTab({ socio }) {
   const estadoInicial = useMemo(() => construirEstadoInicial(socio), [socio]);
@@ -246,6 +312,8 @@ function DatosTab({ socio }) {
                   onChange={setField("denominacion")}
                   variant="admin"
                   hideErrorSpace
+                  disabled
+                  title="La razón social no se puede modificar."
                 />
               </div>
               <div className={styles.fieldFull}>
@@ -887,7 +955,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
     try {
       await cdaService.ejecutarCda(
         PANTALLA_EMPRESA,
-        socio.cuit,
+        { socioId: socio.socioid },
         cadenaValorId,
         usuarioWebId,
       );
@@ -933,7 +1001,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
     // el mismo resultado a TODOS los CDAs del grupo, pisando la evaluación
     // real de los demás. Por eso "Forzar expresión" nunca cierra una fila de
     // grupo nueva: sería inseguro en cualquier pantalla con más de un CDA
-    // vinculado. Reportado a Victor: no hay forma de forzar un único CDA y
+    // vinculado. Reportado al backend: no hay forma de forzar un único CDA y
     // cerrar el grupo en la misma llamada.
     const cadenaValorId = cadenaValorIdDetectada;
     if (!cadenaValorId) {
@@ -944,7 +1012,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
     reejecutar(
       {
         cdaId: item.cdaid,
-        cuit: socio.cuit,
+        socioId: socio.socioid,
         usuarioId: usuarioWebId,
         pantalla: PANTALLA_EMPRESA,
         cadenaValorId,
@@ -1663,8 +1731,23 @@ export default function EmpresaDetalle() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("datos");
   const [historialOpen, setHistorialOpen] = useState(false);
+  const [notificarOpen, setNotificarOpen] = useState(false);
+  const usuarioWebAdminId = useAuthStore((state) => state.user?.usuarioWebId) || 0;
+  // Feedback del botón de descarga del legajo completo (SGRPLUSPLA-199).
+  const { descargar, faseDe } = useDescargaConFeedback();
+
+  // Defensa en profundidad: ver useBloqueoAdminRestringido — un usuario
+  // vinculado solo por UsuarioCadenaValor no debería poder ver el detalle de
+  // NINGUNA empresa (esta pantalla no filtra por cadena propia).
+  const bloqueado = useBloqueoAdminRestringido();
 
   const { data: socio, isLoading } = useSocioPorId(id);
+  // Mismo hook/queryKey que ya usa UsuariosVinculadosSection (ver DatosTab
+  // más abajo) - react-query lo dedupea, así que esto no duplica el
+  // request, solo expone la lista acá arriba para pasársela a
+  // NotificarSocioModal (permitir elegir a qué usuario vinculado avisar,
+  // no solo al email de la empresa).
+  const { usuariosVinculados } = useUsuariosVinculadosASocio(socio?.socioid);
   const { data: estadosSocio } = useEstadoSocio();
 
   // Se calcula una sola vez acá (no hay CadenaValorID en Socio, se infiere
@@ -1714,13 +1797,17 @@ export default function EmpresaDetalle() {
     }
     const cleanRazonSocial = (socio?.denominacion || "Empresa").replace(/\s+/g, "_");
     const zipName = `Legajo_Completo_${cleanRazonSocial}.zip`;
-    descargarLegajoCompletoZip(
-      archivosBackend,
-      ESTRUCTURA_LEGAJO,
-      socioArchivoService.TIPO_DOCUMENTO_MAP,
-      zipName,
+    descargar("zip-legajo", () =>
+      descargarLegajoCompletoZip(
+        archivosBackend,
+        ESTRUCTURA_LEGAJO,
+        socioArchivoService.TIPO_DOCUMENTO_MAP,
+        zipName,
+      ),
     );
   };
+
+  if (bloqueado) return null;
 
   // Skeleton con la forma real del detalle (hero + tabs + contenido) en vez
   // de un spinner de página completa.
@@ -1775,10 +1862,20 @@ export default function EmpresaDetalle() {
   );
   const estadoTono = getEstadoTono(estadoSocioLabel);
   const legajoCompleto = totalRequisitos > 0 && requisitosCompletados === totalRequisitos;
-  const estaMigrado = Number(socio.legajo) > 0 || legajoCompleto;
+  // Única fuente de verdad: el propio MarcaVinculacion del Socio ("1" = ya
+  // migró), que LegajoUniversalBar escribe recién después de confirmar la
+  // migración con SGR+ - ver ese archivo.
+  const estaMigrado = String(socio.marcavinculacion ?? "") === "1";
 
   return (
     <div className={styles.container}>
+      <LegajoUniversalBar
+        adminMode
+        socioIdActivo={socio?.socioid}
+        tipoPersonaId={socio?.tipopersonaid}
+        nombreEmpresa={socio?.denominacion}
+        cadenaId={cadenaValorIdDetectada}
+      />
       <header className={styles.header}>
         <button
           type="button"
@@ -1804,8 +1901,17 @@ export default function EmpresaDetalle() {
               </p>
             </div>
           </div>
-          <div className={styles.headerBadges}>
-            {estaMigrado ? (
+          <div className={styles.heroActions}>
+            <Button
+              type="button"
+              variant="outlineBlue"
+              size="sm"
+              onClick={() => setNotificarOpen(true)}
+            >
+              <FiBell size={13} /> Notificar
+            </Button>
+            <div className={styles.headerBadges}>
+              {estaMigrado ? (
               <span
                 className={`${styles.badge} ${styles["badge-success"]}`}
                 title="El legajo ya se migró al sistema core (SGR+)."
@@ -1838,6 +1944,7 @@ export default function EmpresaDetalle() {
                 <FiLink size={12} /> {nombreCadenaDetectada}
               </span>
             )}
+            </div>
           </div>
         </div>
       </header>
@@ -1875,9 +1982,19 @@ export default function EmpresaDetalle() {
             variant="outlineBlue"
             size="sm"
             onClick={handleDownloadLegajoCompleto}
+            isLoading={faseDe("zip-legajo") === "cargando"}
+            disabled={faseDe("zip-legajo") !== null}
             title="Descargar legajo de documentos completo en un archivo ZIP"
           >
-            <FiDownload size={13} /> Descargar Legajo Completo
+            {faseDe("zip-legajo") === "listo" ? (
+              <>
+                <FiCheckCircle size={13} /> Descargado
+              </>
+            ) : (
+              <>
+                <FiDownload size={13} /> Descargar Legajo Completo
+              </>
+            )}
           </Button>
         )}
       </div>
@@ -1905,12 +2022,27 @@ export default function EmpresaDetalle() {
             nombreCadenaDetectada={nombreCadenaDetectada}
           />
         )}
+        {activeTab === "pyme" && (
+          <CertificadoPymeAdmin socioId={socio?.socioid} cuit={socio?.cuit} />
+        )}
+        {activeTab === "usuarios" && (
+          <UsuariosVinculadosTab socioId={socio?.socioid} />
+        )}
       </div>
 
       <HistorialCdaModal
         isOpen={historialOpen}
         onClose={() => setHistorialOpen(false)}
         socio={socio}
+      />
+
+      <NotificarSocioModal
+        key={socio?.socioid ?? "none"}
+        isOpen={notificarOpen}
+        onClose={() => setNotificarOpen(false)}
+        socio={socio}
+        usuariosVinculados={usuariosVinculados}
+        usuarioWebAdminId={usuarioWebAdminId}
       />
     </div>
   );

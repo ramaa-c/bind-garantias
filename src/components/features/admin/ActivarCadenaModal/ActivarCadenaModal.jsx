@@ -8,11 +8,14 @@ import { esCdaActivo } from "../../../../utils/cdaUtils";
 import { PANTALLAS_CDA } from "../../../../utils/pantallasCda";
 import { cdaService } from "../../../../services/cdaService";
 import { cadenaValorService } from "../../../../services/cadenaValorService";
-import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../hooks/useCatalogos";
+import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas, useTipoModeloDocumento } from "../../../../hooks/useCatalogos";
+import { useModelosDocumentoDisponibles } from "../../../../hooks/useModeloDocumento";
+import { filtrarTiposModeloDocumento } from "../../../../utils/parametrosModeloDocumento";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
+import { MontoEnPalabras } from "../../../ui/MontoEnPalabras/MontoEnPalabras";
 import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
@@ -36,20 +39,81 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     referencia: "",
     logo: "",
     tipocanalcomercializacionid: "",
-    equipocomercialid: ""
+    equipocomercialid: "",
+    tipocontratoid: "",
+    monedaid: "",
+    montomaximoutilizado: "0",
+    porcentajemaximoutilizado: "100",
+    modelodocumentoid: "0",
   });
 
+  // Solo sirve para filtrar el combo de Modelo - no se persiste (mismo
+  // criterio que en EditarCadenaModal.jsx).
+  const [tipoModeloDocumentoIdUI, setTipoModeloDocumentoIdUI] = useState("");
+
+  // Mismo patrón que LineasCadena.jsx: cada campo obligatorio muestra su
+  // propio error debajo (InputSimple/SelectSimple ya lo soportan) en vez de
+  // un toast que desaparece solo y no señala qué campo hay que corregir.
+  const [formErrors, setFormErrors] = useState({});
+
   const fileInputRef = useRef(null);
+
+  // Bloque numérico compartido por los inputs enmascarados de Monto/Porcentaje
+  // Máximo Utilizado: coma como separador decimal (es-AR).
+  const bloqueNumerico = (max) => ({
+    mask: Number,
+    scale: 2,
+    signed: false,
+    min: 0,
+    ...(max !== undefined ? { max } : {}),
+    thousandsSeparator: ".",
+    padFractionalZeros: true,
+    normalizeZeros: true,
+    radix: ",",
+    mapToRadix: ["."],
+  });
+
+  const desenmascarar = (val) => {
+    if (typeof val !== "string") return val;
+    return val.replace(/[^0-9,]/g, "").replace(",", ".");
+  };
+
+  // Actualiza el campo y, si ya tenía un error marcado, lo limpia apenas el
+  // usuario empieza a corregirlo - mismo criterio que handleInputChange en
+  // LineasCadena.jsx.
+  const handleInputChange = (field, val) => {
+    setFormState((prev) => ({ ...prev, [field]: val }));
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
 
   // Queries & Mutations
   const { data: todasCadenasData, isLoading: isLoadingTodas } = useObtenerCadenasCursanPlataforma();
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
+  const { data: contratosData } = useTipoContrato();
+  const { data: monedasData } = useMonedas();
+  const { data: tiposModeloDocumentoData } = useTipoModeloDocumento();
+  const {
+    opciones: modelosDocumentoOpciones,
+    cargando: cargandoModelosDocumento,
+    ocultos: modelosDocumentoOcultos,
+  } = useModelosDocumentoDisponibles(tipoModeloDocumentoIdUI, formState.modelodocumentoid);
   const crearMutation = useCrearCadenaValor();
   const usuarioWebId = useUsuarioWebIdActual();
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
+  const contratosOpciones = contratosData?.opciones || [];
+  const monedasOpciones = monedasData?.opciones || [];
+  const tiposModeloDocumentoOpciones = filtrarTiposModeloDocumento(
+    tiposModeloDocumentoData?.opciones,
+    tipoModeloDocumentoIdUI,
+  );
 
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -70,15 +134,39 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
 
   const handleSelectChain = (chain) => {
     setSelectedChain(chain);
+
+    // La moneda de la cadena viene del CORE (SGR+) como texto ("Pesos
+    // Argentinos", "Dolares Estadounidenses"), no como MonedaID - se
+    // preselecciona matcheando ese texto contra catalogos/Moneda.Descripcion.
+    // El admin puede corregirla si no matchea.
+    const monedaCore = (chain.moneda || "").trim().toLowerCase();
+    const monedaMatch = monedasData?.raw?.find(
+      (m) => (m.descripcion || "").trim().toLowerCase() === monedaCore,
+    );
+
     setFormState({
       cadenavalorid: chain.cadenavalorid,
       denominacion: chain.denominacion,
       referencia: chain.referencia || "",
       logo: chain.logo || "",
       tipocanalcomercializacionid: chain.tipocanalcomercializacionid != null ? chain.tipocanalcomercializacionid.toString() : "",
-      equipocomercialid: chain.equipocomercialid != null ? chain.equipocomercialid.toString() : ""
+      equipocomercialid: chain.equipocomercialid != null ? chain.equipocomercialid.toString() : "",
+      tipocontratoid: chain.tipocontratoid != null ? chain.tipocontratoid.toString() : "",
+      monedaid: monedaMatch ? String(monedaMatch.monedaid) : "",
+      montomaximoutilizado: "0",
+      porcentajemaximoutilizado: "100",
+      modelodocumentoid: "0",
     });
+    setTipoModeloDocumentoIdUI("");
+    setFormErrors({});
     setStep("form");
+  };
+
+  // Cambiar el tipo invalida el modelo elegido previamente (los modelos de
+  // otro tipo no son válidos acá).
+  const handleTipoModeloDocumentoChange = (val) => {
+    setTipoModeloDocumentoIdUI(val);
+    handleInputChange("modelodocumentoid", "0");
   };
 
   const handleFileChange = (e) => {
@@ -103,15 +191,47 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
     }
   };
 
-  const handleSave = async () => {
+  // Sin toast genérico: cada campo obligatorio muestra su propio error
+  // debajo (mismo patrón que ya usa LineasCadena.jsx), así se ve de un
+  // vistazo qué falta en vez de un mensaje flotante que desaparece solo.
+  const validarFormulario = () => {
+    const errores = {};
+
     if (!formState.tipocanalcomercializacionid) {
-      toast.error("Seleccione un Canal de Comercialización");
-      return;
+      errores.tipocanalcomercializacionid = "Seleccioná un canal";
     }
     if (!formState.equipocomercialid) {
-      toast.error("Seleccione un Equipo Comercial");
-      return;
+      errores.equipocomercialid = "Seleccioná un equipo comercial";
     }
+    if (!formState.tipocontratoid) {
+      errores.tipocontratoid = "Seleccioná un tipo de contrato";
+    }
+    if (!formState.monedaid) {
+      errores.monedaid = "Seleccioná una moneda";
+    }
+
+    // Si todavía no hay moneda elegida, el input de monto está deshabilitado
+    // (ver el hint que se muestra en su lugar) - no tiene sentido duplicar el
+    // reclamo con un error superpuesto en el mismo espacio reservado.
+    if (formState.monedaid) {
+      const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
+      if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) <= 0) {
+        errores.montomaximoutilizado = "Ingresá un monto válido";
+      }
+    }
+
+    const porcentajeLimpio = desenmascarar(formState.porcentajemaximoutilizado);
+    if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) <= 0 || Number(porcentajeLimpio) > 100) {
+      errores.porcentajemaximoutilizado = "Ingresá un porcentaje válido (0 a 100)";
+    }
+
+    return errores;
+  };
+
+  const handleSave = () => {
+    const errores = validarFormulario();
+    setFormErrors(errores);
+    if (Object.keys(errores).length > 0) return;
     setConfirmOpen(true);
   };
 
@@ -135,9 +255,13 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       logo: formState.logo,
       tipocanalcomercializacionid: Number(formState.tipocanalcomercializacionid),
       equipocomercialid: Number(formState.equipocomercialid),
+      tipocontratoid: Number(formState.tipocontratoid),
       montomaximo: parseMonto(selectedChain),
-      porcentajemaximo: 100,
-      activa: "1"
+      monedaid: Number(formState.monedaid),
+      montomaximoutilizado: Number(desenmascarar(formState.montomaximoutilizado)),
+      porcentajemaximoutilizado: Number(desenmascarar(formState.porcentajemaximoutilizado)),
+      activa: "1",
+      modelodocumentoid: Number(formState.modelodocumentoid) || 0,
     };
 
     crearMutation.mutate(payload, {
@@ -350,7 +474,8 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     placeholder="Seleccione canal comercial..."
                     options={canalesOpciones}
                     value={formState.tipocanalcomercializacionid}
-                    onChange={val => setFormState({ ...formState, tipocanalcomercializacionid: val })}
+                    onChange={val => handleInputChange("tipocanalcomercializacionid", val)}
+                    error={formErrors.tipocanalcomercializacionid}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
@@ -359,7 +484,102 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
                     placeholder="Seleccione equipo comercial..."
                     options={equiposOpciones}
                     value={formState.equipocomercialid}
-                    onChange={val => setFormState({ ...formState, equipocomercialid: val })}
+                    onChange={val => handleInputChange("equipocomercialid", val)}
+                    error={formErrors.equipocomercialid}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <SelectSimple
+                    label="Tipo de Contrato *"
+                    placeholder="Seleccione tipo de contrato..."
+                    options={contratosOpciones}
+                    value={formState.tipocontratoid}
+                    onChange={val => handleInputChange("tipocontratoid", val)}
+                    error={formErrors.tipocontratoid}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.sectionGroup}>
+              <h4 className={styles.sectionTitle}>Modelo de Documento</h4>
+              <div className={styles.row}>
+                <div style={{ flex: 1 }}>
+                  <SelectSimple
+                    label="Tipo de Modelo"
+                    placeholder="Seleccione tipo de modelo..."
+                    options={tiposModeloDocumentoOpciones}
+                    value={tipoModeloDocumentoIdUI}
+                    onChange={handleTipoModeloDocumentoChange}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <SelectSimple
+                    label="Modelo de Documento"
+                    placeholder={
+                      cargandoModelosDocumento
+                        ? "Cargando..."
+                        : tipoModeloDocumentoIdUI && modelosDocumentoOpciones.length === 0
+                          ? "Sin modelos disponibles"
+                          : "Seleccione modelo..."
+                    }
+                    options={modelosDocumentoOpciones}
+                    value={formState.modelodocumentoid !== "0" ? formState.modelodocumentoid : ""}
+                    onChange={val => handleInputChange("modelodocumentoid", val)}
+                    disabled={!tipoModeloDocumentoIdUI || modelosDocumentoOpciones.length === 0}
+                  />
+                  {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && (
+                    <span className={styles.selectHint}>
+                      {modelosDocumentoOpciones.length === 0
+                        ? "Ningún modelo de este tipo se puede generar desde una solicitud."
+                        : `Se ocultaron ${modelosDocumentoOcultos} modelo(s) que no se pueden generar desde una solicitud.`}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.sectionGroup}>
+              <h4 className={styles.sectionTitle}>Límites Financieros</h4>
+              <div className={styles.row}>
+                <div style={{ flex: 1 }}>
+                  <SelectSimple
+                    label="Moneda *"
+                    placeholder="Seleccione moneda..."
+                    options={monedasOpciones}
+                    value={formState.monedaid}
+                    onChange={val => handleInputChange("monedaid", val)}
+                    error={formErrors.monedaid}
+                  />
+                </div>
+                <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+                  <InputSimple
+                    label="Monto Máximo Utilizado *"
+                    value={formState.montomaximoutilizado}
+                    onChange={val => handleInputChange("montomaximoutilizado", val)}
+                    mask="$ num"
+                    blocks={{ num: bloqueNumerico() }}
+                    lazy={false}
+                    sinIconos
+                    disabled={!formState.monedaid}
+                    error={formErrors.montomaximoutilizado}
+                  />
+                  {!formState.monedaid && (
+                    <span className={styles.fieldHint}>Elegí primero una moneda</span>
+                  )}
+                  {formState.monedaid && !formErrors.montomaximoutilizado && (
+                    <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
+                  )}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <InputSimple
+                    label="Porcentaje Máximo Utilizado (%) *"
+                    value={formState.porcentajemaximoutilizado}
+                    onChange={val => handleInputChange("porcentajemaximoutilizado", val)}
+                    mask="% num"
+                    blocks={{ num: bloqueNumerico(100) }}
+                    lazy={false}
+                    error={formErrors.porcentajemaximoutilizado}
                   />
                 </div>
               </div>

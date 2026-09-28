@@ -19,6 +19,34 @@ export const useObtenerLimitesPorSocio = (socioId) => {
     });
 };
 
+export const useObtenerLimites = (cadenavalorid) => {
+    return useQuery({
+        queryKey: ['linea', 'limites', cadenavalorid ? String(cadenavalorid) : 'todas'],
+        queryFn: () => lineaService.obtenerLimites(cadenavalorid),
+    });
+};
+
+export const useActualizarLimiteSocio = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: lineaService.actualizarLimiteSocio,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['linea', 'limites'] });
+            // useObtenerLimitesSocio (pantalla de Solicitudes del cliente) usa
+            // una queryKey distinta ('limites','socio',socioId) para el mismo
+            // recurso - sin esto, cancelar/aprobar/rechazar desde un lugar no
+            // refresca la lista del otro.
+            queryClient.invalidateQueries({ queryKey: ['limites', 'socio'] });
+        }
+    });
+};
+
+export const useMigrarLinea = () => {
+    return useMutation({
+        mutationFn: lineaService.migrarLinea,
+    });
+};
+
 export const useObtenerLimitesCadenaValor = (cadenavalorid) => {
     return useQuery({
         queryKey: ['linea', 'limitesCadenaValor', String(cadenavalorid)],
@@ -31,8 +59,15 @@ export const useCrearLimiteCadenaValor = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: lineaService.crearLimiteCadenaValor,
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'limitesCadenaValor', String(variables.cadenavalorid)] });
+        // Invalida por prefijo (sin el ID de cadena al final) en vez de
+        // reconstruir la queryKey exacta con String(variables.cadenavalorid):
+        // si ese ID viajó en un tipo/formato distinto al que ya está en la
+        // cache (ej. number vs string, o con decimales de más si el backend
+        // lo serializó como float), la key exacta no matchea y la card queda
+        // desactualizada hasta recargar la página. Con el prefijo alcanza,
+        // porque esta pantalla solo tiene una cadena seleccionada a la vez.
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['linea', 'limitesCadenaValor'] });
         }
     });
 };
@@ -41,8 +76,8 @@ export const useActualizarLimiteCadenaValor = () => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: lineaService.actualizarLimiteCadenaValor,
-        onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'limitesCadenaValor', String(variables.cadenavalorid)] });
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['linea', 'limitesCadenaValor'] });
         }
     });
 };

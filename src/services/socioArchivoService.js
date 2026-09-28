@@ -54,6 +54,25 @@ const getTipoDocumentoId = (key) => {
 
 const archivosCache = {};
 
+const TIMEOUT_ARCHIVO_MS = 120000;
+
+// SocioArchivo no tiene DELETE (solo GET/POST/PUT — confirmado con el backend,
+// 2026-08-26): "eliminar" un archivo es en realidad un PUT que pisa
+// fchArchivo con esta fecha centinela. obtenerArchivos filtra cualquier
+// archivo con esa fecha (ver esArchivoEliminado más abajo), así que
+// desaparece de la UI y no vuelve a aparecer al recargar — a diferencia de
+// la simulación puramente local que había antes (que solo sacaba el
+// archivo del estado de React, nunca del backend).
+const FECHA_ARCHIVO_ELIMINADO = "1900-01-01T00:00:00";
+const ANIO_ARCHIVO_ELIMINADO = 1900;
+
+const esArchivoEliminado = (archivo) => {
+  const fecha = archivo?.fcharchivo || archivo?.FchArchivo;
+  if (!fecha) return false;
+  const anio = new Date(fecha).getFullYear();
+  return !Number.isNaN(anio) && anio <= ANIO_ARCHIVO_ELIMINADO;
+};
+
 export const socioArchivoService = {
   /**   Limpia el caché de archivos de un socio   */
   clearCache: (socioId) => {
@@ -64,7 +83,7 @@ export const socioArchivoService = {
     }
   },
 
-  /**   Obtiene todos los archivos de un socio   */
+  /**   Obtiene todos los archivos de un socio (sin los marcados como eliminados)   */
   obtenerArchivos: async (socioId, forceRefresh = false) => {
     if (!socioId) return [];
     if (!forceRefresh && archivosCache[socioId]) {
@@ -73,9 +92,11 @@ export const socioArchivoService = {
     try {
       const response = await api.get("api/SocioArchivo", {
         params: { socioid: socioId },
+        timeout: TIMEOUT_ARCHIVO_MS,
       });
-      archivosCache[socioId] = response.data;
-      return response.data;
+      const archivos = (response.data || []).filter((a) => !esArchivoEliminado(a));
+      archivosCache[socioId] = archivos;
+      return archivos;
     } catch (error) {
       if (error.response && error.response.status === 404) {
         archivosCache[socioId] = [];
@@ -112,7 +133,11 @@ export const socioArchivoService = {
       referencia: referencia || "",
     };
 
-    const response = await api.post("api/SocioArchivo", socioArchivoAdapter.adaptarPayload1(payload));
+    const response = await api.post(
+      "api/SocioArchivo",
+      socioArchivoAdapter.adaptarPayload1(payload),
+      { timeout: TIMEOUT_ARCHIVO_MS },
+    );
     return response.data;
   },
 
@@ -151,7 +176,11 @@ export const socioArchivoService = {
       contenido: `(base64, ${contenidoBase64.length} chars)`,
     });
 
-    const response = await api.put("api/SocioArchivo", socioArchivoAdapter.adaptarPayload2(payload));
+    const response = await api.put(
+      "api/SocioArchivo",
+      socioArchivoAdapter.adaptarPayload2(payload),
+      { timeout: TIMEOUT_ARCHIVO_MS },
+    );
     return response.data;
   },
 
@@ -192,10 +221,26 @@ export const socioArchivoService = {
     }
   },
 
-  eliminarArchivo: async (socioId, socioArchivoId) => {
-    socioArchivoService.clearCache(socioId);
-    const response = await api.delete(`api/SocioArchivo/${socioArchivoId}`);
-    return response.data;
+  // "Elimina" un archivo pisando su fchArchivo con la fecha centinela (ver
+  // arriba) vía PUT — no existe un DELETE real para este endpoint. Recibe
+  // el registro completo (no solo el ID) porque el PUT necesita reenviar
+  // todos los campos, Contenido incluido, igual que actualizarArchivo.
+  marcarArchivoEliminado: (archivoExistente) => {
+    const tipoId = archivoExistente?.tipodocumentoarchivoid ?? archivoExistente?.TipoDocumentoArchivoID;
+    const docKey =
+      Object.keys(TIPO_DOCUMENTO_MAP).find((k) => TIPO_DOCUMENTO_MAP[k] === Number(tipoId)) ||
+      "otrosDocumentos";
+
+    return socioArchivoService.actualizarArchivo(
+      archivoExistente,
+      null,
+      docKey,
+      archivoExistente?.descripcion ?? archivoExistente?.Descripcion,
+      archivoExistente?.vialufe ?? archivoExistente?.ViaLufe ?? "0",
+      undefined,
+      undefined,
+      FECHA_ARCHIVO_ELIMINADO,
+    );
   },
 
   fileToBase64,

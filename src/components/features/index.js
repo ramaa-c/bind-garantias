@@ -19,6 +19,7 @@ export { default as UbicacionModal } from "./shared/UbicacionModal/UbicacionModa
 export { default as ContactoModal } from "./shared/ContactoModal/ContactoModal";
 export { default as FacturacionModal } from "./shared/FacturacionModal/FacturacionModal";
 export { default as ConfirmacionBorradorModal } from "./shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
+export { default as PerfilModal } from "./shared/PerfilModal/PerfilModal";
 export * from "./shared/HistorialEstadoModal/HistorialEstadoModal";
 export * from "./shared/DocumentosLegajo/DocumentosLegajo";
 export * from "./shared/ConfirmacionModal/ConfirmacionModal";
@@ -41,7 +42,8 @@ export * from "./admin/CdaConfigModal/CdaConfigModal";
 export * from "./admin/UsuariosRelacionadosModal/UsuariosRelacionadosModal";
 export * from "./admin/CriteriosAceptacionModal/CriteriosAceptacionModal";
 export * from "./admin/RequisitosConfigModal/RequisitosConfigModal";
+export * from "./admin/RechazarSolicitudModal/RechazarSolicitudModal";
+export * from "./admin/NotificarSocioModal/NotificarSocioModal";
 export * from "./shared/LegajoUniversalBar/LegajoUniversalBar";
-export * from "./shared/BloqueoLegajoModal/BloqueoLegajoModal";
 
 

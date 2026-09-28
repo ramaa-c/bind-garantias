@@ -8,6 +8,7 @@ import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { sociosService } from "../../../../services/sociosService";
 import { tercerosService } from "../../../../services/tercerosService";
 import { useObtenerGrupoCdaConCdas } from "../../../../hooks/useCadenaValor";
+import { RELACION_ACCIONISTA_ID } from "../../../../constants/tiposRelacionSocio";
 import styles from "./CriteriosAceptacionModal.module.css";
 
 export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
@@ -70,7 +71,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
       const now = new Date();
       const relacionesFiltradas = relaciones.filter((rel) => {
         const tiporel = rel.tiporelacionsocioid || rel.TipoRelacionSocioID || rel.tiporelacionsocioId;
-        if (Number(tiporel) !== 25) return false; // 25 = Accionista
+        if (Number(tiporel) !== RELACION_ACCIONISTA_ID) return false;
         const fh = rel.fechahasta || rel.FechaHasta;
         if (fh && fh !== "") {
           const expirationDate = new Date(fh);
@@ -103,7 +104,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
               tercero = terceroSGR;
             }
           }
-        } catch (e) {
+        } catch {
           try {
             tercero = await tercerosService.obtenerTerceroPorIdSGRPlus(terceroId);
           } catch (sgrErr) {
@@ -261,7 +262,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
                   </div>
                 </div>
               </div>
-              {cdasEmpresa.map((cda, idx) => {
+              {cdasEmpresa.map((cda) => {
                 const rowKey = `empresa-${cda.cdaid}`;
                 const isExpanded = !!expandedRows[rowKey];
                 const isReloading = !!reloadingRows[rowKey];

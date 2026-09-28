@@ -4,7 +4,6 @@ import { useAuthStore } from "../../../store/useAuthStore";
 import {
   useObtenerSocioUsuarioPorUsuarioId,
   useEmpresasCompletas,
-  useEstadoCdaSocio,
 } from "../../../hooks/useSocios";
 import {
   useObtenerPorNombreOEmail,
@@ -15,17 +14,25 @@ import {
   useObtenerConfirmacionTyC,
 } from "../../../hooks/useTerminos";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
-import { useChannel } from "../../../context/ChannelContext";
+import ErrorServicio from "../../../pages/shared/ErrorServicio/ErrorServicio";
+import { useChannel } from "../../../context/useChannel";
 import { useVendor } from "../../../hooks/useVendor";
 import { useVerificarHabilitacionSolicitudes } from "../../../hooks/useVerificarHabilitacionSolicitudes";
+import { useAccesoDashboardCliente } from "../../../hooks/useAccesoDashboardCliente";
 
 export const OnboardingGuard = ({ children }) => {
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
 
   const { activeSocioId } = useAuthStore((state) => state);
-  const { data: vendorData, isPending: isLoadingVendor } = useVendor();
+  const {
+    data: vendorData,
+    isPending: isLoadingVendor,
+    isError: isErrorVendor,
+    isFetching: isFetchingVendor,
+    refetch: refetchVendor,
+  } = useVendor();
 
   const isTerminosPage = location.pathname.endsWith("/terminos");
   const isAltaDatosPage = location.pathname.endsWith("/alta-datos-empresa");
@@ -33,15 +40,25 @@ export const OnboardingGuard = ({ children }) => {
     "/seleccionar-empresa",
   );
   const isSolicitudesPage = location.pathname.endsWith("/solicitudes");
+  const isLegajoPage = location.pathname.endsWith("/legajo");
+  const isDocumentacionPage = location.pathname.endsWith("/documentacion");
   const isInicioPage = location.pathname.endsWith("/inicio");
-  const isEstadoSolicitudPage = location.pathname.endsWith(
-    "/estado-solicitud",
-  );
 
   const isSolicitudesEnabled = useAuthStore(
     (state) => state.isSolicitudesEnabled,
   );
   const { isVerifying } = useVerificarHabilitacionSolicitudes();
+  const {
+    hayLineaActiva,
+    legajoDesbloqueado,
+    documentacionDesbloqueada,
+    cargando: cargandoAccesoDashboard,
+  } = useAccesoDashboardCliente();
+  // Con línea activa, el punto de entrada al dashboard es Solicitudes (ahí
+  // se carga la primera solicitud sin pedirle antes datos que capaz no
+  // hacían falta si el CDA de la línea rechaza) — sin línea, sigue siendo
+  // Legajo como siempre.
+  const homePath = `${basePath}${hayLineaActiva ? "/solicitudes" : "/legajo"}`;
 
   const email = user?.email || "";
 
@@ -67,8 +84,13 @@ export const OnboardingGuard = ({ children }) => {
 
   const usuarioWebId = parsearUsuarioWebId(usuarioDb);
 
-  const { data: socioUsuarios, isPending: isPendingSocios } =
-    useObtenerSocioUsuarioPorUsuarioId(usuarioWebId || 0);
+  const {
+    data: socioUsuarios,
+    isPending: isPendingSocios,
+    isError: isErrorSocios,
+    isFetching: isFetchingSocios,
+    refetch: refetchSocios,
+  } = useObtenerSocioUsuarioPorUsuarioId(usuarioWebId || 0);
 
   const { data: cadenasData, isPending: isCadenasLoading } =
     useObtenerCadenasPorUsuario(usuarioWebId);
@@ -104,14 +126,11 @@ export const OnboardingGuard = ({ children }) => {
   // El socio ya puede tener datos reales (esSocioVacio ya no alcanza) sin
   // que el CDA de PANTALLA_INGRESO_CUIT haya pasado — eso pasa siempre que
   // el usuario cruzó el umbral (ver Paso1Cuit) pero el CDA quedó rechazado
-  // o pendiente. Para vendors no lo chequeamos: pueden gestionar varias
-  // empresas con estados distintos, y ese flujo queda fuera de este cambio
-  // por ahora.
+  // o pendiente. Ya NO se usa para bloquear el acceso acá (acordado con el
+  // equipo el 2026-08-13): el socio puede entrar más allá del resultado del
+  // CDA — el aviso y el bloqueo real (migración a SGR+) viven en
+  // LegajoUniversalBar, que sí sigue consultando ese estado.
   const empresaActual = !isVendor && !isVendorMock ? listaEmpresas[0] : null;
-  const socioIdParaEstado =
-    empresaActual?.socioid ?? empresaActual?.SocioID ?? null;
-  const { data: estadoCda, isPending: isPendingEstadoCda } =
-    useEstadoCdaSocio(socioIdParaEstado);
   const telefonoActual = String(
     empresaActual?.telefono ?? empresaActual?.Telefono ?? "",
   ).trim();
@@ -160,14 +179,23 @@ export const OnboardingGuard = ({ children }) => {
   ]);
 
   React.useEffect(() => {
-    if (tieneEmpresas && !activeSocioId && !isVendor) {
+    // isVendor vale false por default mientras useVendor no resolvió con
+    // éxito (vendorData es undefined) — eso pasa durante la carga inicial,
+    // mientras está en error, y también durante el refetch de un
+    // "Reintentar" (una query que ya falló queda en status "error", no
+    // vuelve a "pending", así que isLoadingVendor/isPending no alcanza acá).
+    // Por eso este efecto solo debe correr con vendorData ya resuelto:
+    // si tieneEmpresas resuelve antes, le fijaría un activeSocioId a un
+    // vendor real antes de saber que lo es, y el guard de abajo ya no lo
+    // manda a /seleccionar-empresa.
+    if (tieneEmpresas && !activeSocioId && vendorData && !vendorData.isVendor) {
       const firstSocioId =
         listaEmpresas[0]?.socioid || listaEmpresas[0]?.SocioID;
       if (firstSocioId) {
         setActiveSocioId(firstSocioId);
       }
     }
-  }, [tieneEmpresas, activeSocioId, isVendor, listaEmpresas, setActiveSocioId]);
+  }, [tieneEmpresas, activeSocioId, vendorData, listaEmpresas, setActiveSocioId]);
 
   React.useEffect(() => {
     if (isVendor && !isLoadingVendor && user && !isVendorMock) {
@@ -206,14 +234,10 @@ export const OnboardingGuard = ({ children }) => {
   ]);
 
   if (!user || !user.email) {
-    return <Navigate to={`/${channelInfo.id}/login`} replace />;
+    return <Navigate to={`${basePath}/login`} replace />;
   }
 
-  const isBasicAdmin =
-    user?.role === "admin" ||
-    user?.email === "admin" ||
-    user?.email === "admin_restricto" ||
-    user?.email === "admin restricto";
+  const isBasicAdmin = user?.role === "admin";
 
   if (isBasicAdmin) {
     return <Navigate to="/admin" replace />;
@@ -235,12 +259,12 @@ export const OnboardingGuard = ({ children }) => {
   if (
     (usuarioWebId && isPendingSocios) ||
     (usuarioWebId && !isPendingSocios && isLoadingEmpresasCompletas) ||
-    (socioIdParaEstado && isPendingEstadoCda) ||
     (usuarioWebId && isCadenasLoading) ||
     (necesitaChequeoTerminos &&
       (isLoadingTerminosVigentes || isLoadingConfirmacionTyC)) ||
     isLoadingVendor ||
-    isVerifying
+    isVerifying ||
+    cargandoAccesoDashboard
   ) {
     return (
       <LoadingScreen
@@ -250,15 +274,39 @@ export const OnboardingGuard = ({ children }) => {
     );
   }
 
+  // Si falló CadenaValor/RelacionesPorEmail no podemos saber si el usuario
+  // es vendor: seguir de largo lo trataría como "no vendor" y lo mandaría
+  // directo a /legajo salteando /seleccionar-empresa (ver useVendor).
+  if (isErrorVendor) {
+    return (
+      <ErrorServicio onReintentar={refetchVendor} reintentando={isFetchingVendor} />
+    );
+  }
+
+  // ⚠️ Un 404 acá no es distinguible entre "el usuario realmente no tiene
+  // ninguna empresa vinculada" y "el endpoint SocioUsuario está caído"
+  // (confirmado en vivo el 2026-09-15: un usuario CON vinculación real
+  // recibía 404 por una falla del backend, no por falta de datos) - ver
+  // sociosService.obtenerSocioUsuarioPorUsuarioId. Tratar ese error como
+  // "sin empresas" mandaría a un usuario existente de vuelta a
+  // alta-datos-empresa como si fuera nuevo, un error grave. Se corta acá con
+  // reintento manual, nunca se cae al branch de "no tiene empresas" de más
+  // abajo.
+  if (usuarioWebId && isErrorSocios) {
+    return (
+      <ErrorServicio onReintentar={refetchSocios} reintentando={isFetchingSocios} />
+    );
+  }
+
   if (debeAceptarTerminos && !isTerminosPage) {
-    return <Navigate to={`/${channelInfo.id}/terminos`} replace />;
+    return <Navigate to={`${basePath}/terminos`} replace />;
   }
 
   if (usuarioWebId && tieneEmpresas) {
     if (isVendor) {
       if (!activeSocioId && !isSeleccionarEmpresaPage && !isAltaDatosPage) {
         return (
-          <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />
+          <Navigate to={`${basePath}/seleccionar-empresa`} replace />
         );
       }
 
@@ -269,35 +317,22 @@ export const OnboardingGuard = ({ children }) => {
           isAltaDatosPage ||
           isInicioPage)
       ) {
-        return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+        return <Navigate to={homePath} replace />;
       }
-    } else if (estadoCda === "rechazado" || estadoCda === "pendiente") {
-      // Cruzó el umbral (existe el socio, con datos reales) pero el CDA
-      // todavía no está aprobado — no lo dejamos entrar a ningún lado
-      // salvo la pantalla de estado. Si todavía debe aceptar una versión
-      // nueva de TyC, no lo sacamos de /terminos (mismo motivo que el
-      // "else if" de más abajo: sin este guard, el check de arriba lo manda
-      // a /terminos y este lo rebota a /estado-solicitud en loop infinito).
-      if (!isEstadoSolicitudPage && !debeAceptarTerminos) {
-        return (
-          <Navigate
-            to={`/${channelInfo.id}/estado-solicitud`}
-            state={{ estado: estadoCda }}
-            replace
-          />
-        );
-      }
-    } else if (estadoCda === "aprobado" && !telefonoActual) {
-      // El CDA pasó, pero nunca completó el Paso 2 (ver Paso1Cuit: el socio
-      // se crea con el "umbral", el Paso 2 es lo que termina de cargar
-      // datos como el teléfono). Lo mandamos directo a completarlo, sin
-      // pasar de nuevo por Paso1Cuit (ese paso bloquearía por "ya existe").
-      // Mismo guard que arriba: si debe aceptar TyC nuevos, que se quede en
-      // /terminos en vez de rebotar en loop hacia alta-datos-empresa.
+    } else if (!telefonoActual) {
+      // Nunca completó el Paso 2 (ver Paso1Cuit: el socio se crea con el
+      // "umbral", el Paso 2 es lo que termina de cargar datos como el
+      // teléfono). Lo mandamos directo a completarlo, sin pasar de nuevo
+      // por Paso1Cuit (ese paso bloquearía por "ya existe"). A propósito ya
+      // NO importa el resultado del CDA acá — el socio puede entrar a
+      // operar con su cuenta más allá de si el CDA de ingreso pasó o no; el
+      // aviso de "no pasaste las validaciones" vive en LegajoUniversalBar
+      // (banner permanente) y el bloqueo real está en la migración a SGR+,
+      // no en el acceso (acordado con el equipo el 2026-08-13).
       if (!isAltaDatosPage && !debeAceptarTerminos) {
         return (
           <Navigate
-            to={`/${channelInfo.id}/alta-datos-empresa`}
+            to={`${basePath}/alta-datos-empresa`}
             state={{ socioParaCompletar: empresaActual }}
             replace
           />
@@ -307,26 +342,44 @@ export const OnboardingGuard = ({ children }) => {
       (isTerminosPage && !debeAceptarTerminos) ||
       isAltaDatosPage ||
       isSeleccionarEmpresaPage ||
-      isInicioPage ||
-      isEstadoSolicitudPage
+      isInicioPage
     ) {
-      return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+      return <Navigate to={homePath} replace />;
     }
 
     if (!isSolicitudesEnabled && isSolicitudesPage) {
-      return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+      return <Navigate to={homePath} replace />;
+    }
+
+    // Con línea activa, Legajo queda bloqueado hasta que exista al menos
+    // una solicitud que el CDA de PANTALLA_LINEAS no haya rechazado (ver
+    // useAccesoDashboardCliente) — evita pedir datos de legajo antes de
+    // saber si la línea siquiera se va a aprobar. Documentación, a su vez,
+    // sigue exigiendo Legajo 100% completo en los dos escenarios (con y sin
+    // línea) — antes eso solo bloqueaba el botón "Nueva Operación", nunca
+    // la navegación en sí.
+    if (!legajoDesbloqueado && isLegajoPage) {
+      return <Navigate to={`${basePath}/solicitudes`} replace />;
+    }
+    if (!documentacionDesbloqueada && isDocumentacionPage) {
+      return (
+        <Navigate
+          to={`${basePath}${legajoDesbloqueado ? "/legajo" : "/solicitudes"}`}
+          replace
+        />
+      );
     }
   } else if (usuarioWebId && !tieneEmpresas) {
     if (isVendor) {
       if (!isSeleccionarEmpresaPage && !isAltaDatosPage) {
-        return <Navigate to={`/${channelInfo.id}/seleccionar-empresa`} replace />;
+        return <Navigate to={`${basePath}/seleccionar-empresa`} replace />;
       }
     } else if (!debeAceptarTerminos && !isAltaDatosPage) {
       // El chequeo de arriba ya lo mandó a /terminos si todavía le faltaba
       // aceptar. Si llegó hasta acá sin necesitarlo (o ya lo aceptó en un
       // intento de alta anterior que abandonó antes de crear la empresa),
       // lo mandamos directo al alta — no hace falta mostrarle /terminos de nuevo.
-      return <Navigate to={`/${channelInfo.id}/alta-datos-empresa`} replace />;
+      return <Navigate to={`${basePath}/alta-datos-empresa`} replace />;
     }
   }
 

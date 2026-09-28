@@ -7,8 +7,12 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { sociosService } from "../services/sociosService";
+import { usuarioService } from "../services/usuarioService";
 import { esSocioVacio } from "../utils/socioUtils";
 import { calcularEstadoDesdeHistorial } from "../utils/executeCda";
+import { esCdaActivo } from "../utils/cdaUtils";
+import { useObtenerGrupoCdaConCdas } from "./useCadenaValor";
+import { useEstadoValidarSocio } from "./useSgrPlusCore";
 
 export const useObtenerSocios = (params = {}) => {
   return useQuery({
@@ -32,22 +36,6 @@ export const useSocioPorId = (socioId) => {
     staleTime: 1000 * 60 * 5, // 5 minutos
     refetchOnMount: "always",
     placeholderData: keepPreviousData,
-  });
-};
-
-const useCrearSocio = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: sociosService.crearSocio,
-    onSuccess: () => {
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["socios", "lista"] }),
-      ]);
-    },
-    onError: (error) => {
-      console.error("Error al crear el socio:", error);
-    },
   });
 };
 
@@ -91,6 +79,35 @@ export const useSocioWebPorId = (socioId) => {
     staleTime: 1000 * 60 * 5, // 5 minutos
     placeholderData: keepPreviousData,
   });
+};
+
+// GET Socio/CertificadoPYME?SocioID=X nunca da 404: devuelve [] cuando el
+// socio todavía no tiene ninguno cargado, o la lista si ya tiene. ⚠️ Esta
+// tabla NO se completa sola en ningún momento (ni al vincular el socio, ni
+// de ninguna otra forma) — solo se carga llamando a
+// Socio/CertificadoVigente con Vincular=true (ver obtenerCertificadoVigente
+// en sociosService.js), o a mano desde CertificadoPymeAdmin.jsx
+// (crearCertificadoPyme/actualizarCertificadoPyme). Confirmado con el
+// equipo el 2026-08-21.
+export const useCertificadoPyme = (socioId) => {
+  return useQuery({
+    queryKey: ["socios", "certificadoPyme", Number(socioId) || null],
+    queryFn: () => sociosService.obtenerCertificadoPyme(socioId),
+    enabled: !!socioId,
+    staleTime: 1000 * 60 * 2, // 2 minutos
+  });
+};
+
+// Igual que useCertificadoPyme, pero reducido a un booleano — usado por
+// LegajoUniversalBar (banner informativo) y sincronizarConSgrPlus (que de
+// todas formas hace su propio chequeo fresco antes de migrar de verdad, ver
+// LegajoUniversalBar.jsx).
+export const useTieneCertificadoPyme = (socioId) => {
+  const { data, isLoading } = useCertificadoPyme(socioId);
+  return {
+    data: Array.isArray(data) && data.length > 0,
+    isLoading,
+  };
 };
 
 // SocioUsuario solo devuelve { SocioID, UsuarioWebID, momentoCreacion } — no
@@ -150,38 +167,148 @@ export const useEmpresasCompletas = (socioUsuarios) => {
 // para el detalle). Si en cambio se agrega un CDA nuevo al grupo sin
 // evaluarlo para este socio, el historial no sabe nada de él y el
 // resultado sigue siendo el del cierre viejo — tampoco lo afecta.
-export const useEstadoCdaSocio = (socioId) => {
+// cadenaValorId (opcional) solo se usa para desambiguar el caso de
+// historial vacío (calcularEstadoDesdeHistorial devuelve null, distinto de
+// "pendiente"): puede ser que el socio nunca haya tenido una corrida
+// registrada porque la cadena directamente no tiene NINGÚN CDA vinculado a
+// PANTALLA_INGRESO_CUIT — nunca se había contemplado ese caso, y debe
+// contar como aprobado (no hay nada que validar), no como pendiente. Se
+// resuelve con una consulta liviana a la vinculación vigente (misma que ya
+// usa el admin, ver cdasActivosIdsGrupo en EmpresaDetalle.jsx), pero SOLO
+// cuando hace falta desambiguar — en el caso común (ya hay historial) no
+// agrega ningún pedido extra.
+export const useEstadoCdaSocio = (socioId, cadenaValorId) => {
   const { data: historial, isPending } = useObtenerExecuteCda(socioId);
+
+  const estadoHistorial = useMemo(() => {
+    if (!socioId || isPending) return undefined;
+    const lista = Array.isArray(historial) ? historial : historial ? [historial] : [];
+    return calcularEstadoDesdeHistorial(lista);
+  }, [socioId, isPending, historial]);
+
+  const necesitaChequearVinculacion = estadoHistorial === null && !!cadenaValorId;
+  const { data: grupoCdaData, isPending: isPendingGrupo } = useObtenerGrupoCdaConCdas(
+    necesitaChequearVinculacion ? cadenaValorId : null,
+    necesitaChequearVinculacion ? "PANTALLA_INGRESO_CUIT" : null,
+  );
 
   const data = useMemo(() => {
     if (!socioId || isPending) return undefined;
-    const lista = Array.isArray(historial) ? historial : historial ? [historial] : [];
-    return calcularEstadoDesdeHistorial(lista) ?? "pendiente";
-  }, [socioId, isPending, historial]);
+    if (estadoHistorial !== null) return estadoHistorial ?? "pendiente";
+    if (!necesitaChequearVinculacion) return "pendiente";
+    if (isPendingGrupo) return undefined;
+    const cdasActivos = (grupoCdaData?.cdas || []).filter(esCdaActivo);
+    return cdasActivos.length === 0 ? "aprobado" : "pendiente";
+  }, [socioId, isPending, estadoHistorial, necesitaChequearVinculacion, isPendingGrupo, grupoCdaData]);
 
-  return { data, isPending: !!socioId && isPending };
+  return {
+    data,
+    isPending: !!socioId && (isPending || (necesitaChequearVinculacion && isPendingGrupo)),
+  };
 };
 
+// Determina si hay que bloquear la carga de legajo/documentación: o bien el
+// socio no pasó el CDA de PANTALLA_INGRESO_CUIT, o bien lo rechazó
+// SGRPlusCore/ValidarSocio (mora, Protector/Postulante a Protector, etc. -
+// ver Paso1Cuit.jsx, ejecutarValidarSocioYSiguientes). Distinto del
+// Certificado PyME, que NUNCA bloquea - solo impide la migración a SGR+
+// (ver LegajoUniversalBar). Mientras no se sepa el estado (isPending) no se
+// bloquea: mejor dejar completar de más por unos segundos que trabar la
+// pantalla por un falso positivo de carga.
+export const useBloqueoLegajo = (socioId, cadenaValorId, cuit) => {
+  const { data: estadoCdaSocio, isPending: pendingCda } = useEstadoCdaSocio(socioId, cadenaValorId);
+  const { data: resultValidarSocio, isPending: pendingValidarSocio } =
+    useEstadoValidarSocio(cuit, cadenaValorId);
+
+  const cdaNoAprobado = !!estadoCdaSocio && estadoCdaSocio !== "aprobado";
+  const rechazadoPorSgrCore = !!cuit && resultValidarSocio?.data?.success === false;
+  const cargando = pendingCda || (!!cuit && pendingValidarSocio);
+
+  return {
+    bloqueado: !cargando && (cdaNoAprobado || rechazadoPorSgrCore),
+    cargando,
+    motivoSgrCore: rechazadoPorSgrCore
+      ? resultValidarSocio?.data?.message ||
+        "No superaste las validaciones de aceptación correspondientes."
+      : null,
+  };
+};
+
+// GET api/Socio/Actividad/{cuit} - Log de actividad del socio. Se pide
+// `habilitado` aparte de `!!cuit` para que la pantalla de listado pueda
+// abrir esto como modal on-demand (recién al abrirlo) en vez de traer el
+// log de las 8 empresas visibles en cada página.
+export const useActividadSocio = (cuit, habilitado = true) => {
+  const cuitLimpio = String(cuit || "").replace(/\D/g, "");
+  return useQuery({
+    queryKey: ["socios", "actividad", cuitLimpio],
+    queryFn: () => sociosService.obtenerActividadSocio(cuitLimpio),
+    enabled: !!cuitLimpio && habilitado,
+    staleTime: 1000 * 60 * 2, // 2 minutos
+  });
+};
+
+// Sin staleTime esto se re-pedía en cada navegación entre rutas del
+// cliente: OnboardingGuard (el principal consumidor) se remonta en cada
+// cambio de ruta (es un wrapper por-ruta, no un layout persistente), y sin
+// caché fresca cada remount volvía a golpear el backend de cero - visible
+// en la consola como el mismo GET repitiéndose muchas veces seguidas
+// durante la navegación normal, no por reintentos del interceptor (ese solo
+// reintenta ante 5xx/red, nunca 404). La vinculación socio-usuario no
+// cambia de un momento a otro dentro de la misma sesión, así que 5 minutos
+// alcanza de sobra.
 export const useObtenerSocioUsuarioPorUsuarioId = (usuarioWebId) => {
   return useQuery({
     queryKey: ["socioUsuario", "listaPorUsuario", usuarioWebId],
     queryFn: () => sociosService.obtenerSocioUsuarioPorUsuarioId(usuarioWebId),
     enabled: !!usuarioWebId,
+    staleTime: 1000 * 60 * 5,
   });
 };
 
-const useVincularSocioUsuario = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: sociosService.vincularSocioUsuario,
-    onSuccess: (data, variables) => {
-      return queryClient.invalidateQueries({
-        queryKey: ["socioUsuario", "listaPorUsuario", variables.usuariowebid],
-      });
-    },
-    onError: (error) => {
-      console.error("Error al vincular el socio con el usuario:", error);
-    },
+// Sección "Usuarios Vinculados" del panel admin (EmpresaDetalle.jsx).
+// api/SocioUsuario/{SocioID}:PorSocio solo trae { SocioID, UsuarioWebID,
+// momentoCreacion } - sin email ni estado de la cuenta - así que hay que
+// resolver cada UsuarioWebID aparte contra api/usuario/{id} (mismo patrón
+// que useEmpresasCompletas, arriba, pero en el sentido socio → usuarios en
+// vez de usuario → socios).
+export const useUsuariosVinculadosASocio = (socioId) => {
+  const { data: vinculos, isPending: isPendingVinculos } = useQuery({
+    queryKey: ["socioUsuario", "listaPorSocio", socioId],
+    queryFn: () => sociosService.obtenerSocioUsuarioPorSocioId(socioId),
+    enabled: !!socioId,
+    staleTime: 1000 * 60 * 5,
   });
+
+  const lista = Array.isArray(vinculos) ? vinculos : [];
+  const usuarioIds = lista
+    .map((v) => Number(v.usuariowebid ?? v.UsuarioWebID))
+    .filter((id) => !Number.isNaN(id));
+
+  const resultados = useQueries({
+    queries: usuarioIds.map((usuarioWebId) => ({
+      queryKey: ["usuarios", "detalle", usuarioWebId],
+      queryFn: () => usuarioService.obtenerUsuarioPorId(usuarioWebId),
+      staleTime: 1000 * 60 * 5,
+    })),
+  });
+
+  const usuariosVinculados = lista
+    .map((v, i) => {
+      const detalle = resultados[i]?.data;
+      const usuarioWebId = Number(v.usuariowebid ?? v.UsuarioWebID);
+      if (Number.isNaN(usuarioWebId)) return null;
+      return {
+        usuarioWebId,
+        momentoCreacion: v.momentocreacion ?? v.momentoCreacion ?? v.MomentoCreacion,
+        email: detalle?.email || detalle?.Email || "",
+        estado: detalle?.estado ?? detalle?.Estado ?? "",
+      };
+    })
+    .filter(Boolean);
+
+  return {
+    usuariosVinculados,
+    isLoading: isPendingVinculos || resultados.some((r) => r.isPending),
+  };
 };

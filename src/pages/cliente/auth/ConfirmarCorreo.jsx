@@ -4,9 +4,12 @@ import { HiOutlineMailOpen, HiClock } from "react-icons/hi";
 import { FiMail } from "react-icons/fi";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
+import { useThemeStore } from "../../../store/useThemeStore";
+import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 const RESEND_SECONDS = 60;
 const pad = (n) => String(n).padStart(2, "0");
@@ -15,12 +18,12 @@ const fmt = (t) => `${pad(Math.floor(t / 60))}:${pad(t % 60)}`;
 const ConfirmarCorreo = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
+  const theme = useThemeStore((state) => state.theme);
 
   const emailUsuario =
     location.state?.usuarioSkeletor?.email || location.state?.emailIngresado;
   const usuarioSkeletor = location.state?.usuarioSkeletor || null;
-  const canal = location.state?.canal || "";
   const origen = location.state?.origen || "registro";
 
   const { mutate: reenviarCorreo, isPending } = useResetearPassword();
@@ -31,6 +34,14 @@ const ConfirmarCorreo = () => {
     const id = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
     return () => clearTimeout(id);
   }, [timeLeft, emailUsuario]);
+
+  useEffect(() => {
+    if (emailUsuario) return;
+    toast.error("Sesión inválida", {
+      description:
+        "No se encontró información del registro. Volvé a intentarlo.",
+    });
+  }, [emailUsuario]);
 
   const canResend = timeLeft === 0 && !isPending;
 
@@ -43,19 +54,18 @@ const ConfirmarCorreo = () => {
       return date.toISOString().split(".")[0];
     };
 
-    const canalId = channelInfo.id;
-
     reenviarCorreo(
       {
         email: emailUsuario,
         usuariowebid: 0,
         fchalta: usuarioSkeletor?.fchalta || getCSharpIsoDate(),
         fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(1),
-        hashseguridad: canalId,
+        hashseguridad: "",
         estado: "",
         debecambiarclave: "",
         esadministrador: "",
-        denominacion: canalId,
+        denominacion: denominacionDesdeEmail(emailUsuario),
+        fronturl: window.location.origin + basePath,
       },
       {
         onSuccess: () => {
@@ -74,13 +84,7 @@ const ConfirmarCorreo = () => {
   };
 
   if (!emailUsuario) {
-    setTimeout(() => {
-      toast.error("Sesión inválida", {
-        description:
-          "No se encontró información del registro. Volvé a intentarlo.",
-      });
-    }, 0);
-    return <Navigate to={`/${channelInfo.id}/registro`} replace />;
+    return <Navigate to={`${basePath}/registro`} replace />;
   }
 
   return (
@@ -90,18 +94,18 @@ const ConfirmarCorreo = () => {
         <div className={styles.globalLogo}>
           <div className={styles.logosWrapper}>
             <img
-              src={logoBind}
+              src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
               onClick={() =>
                 navigate(
                   channelInfo?.id && channelInfo.id !== "default"
-                    ? `/${channelInfo.id}/login`
+                    ? `${basePath}/login`
                     : "/login",
                 )
               }
               className={styles.clickableLogo}
             />
-            {channelInfo?.id !== "default" && (
+            {channelInfo?.id !== "default" && channelInfo.logo && (
               <>
                 <div className={styles.logoSeparator} />
                 <img
@@ -180,14 +184,14 @@ const ConfirmarCorreo = () => {
                 tabIndex={0}
                 onClick={() =>
                   navigate(
-                    `/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                    `${basePath}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
                   )
                 }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     navigate(
-                      `/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                      `${basePath}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
                     );
                   }
                 }}

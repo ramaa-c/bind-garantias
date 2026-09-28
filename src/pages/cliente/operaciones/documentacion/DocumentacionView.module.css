@@ -42,7 +42,7 @@
   gap: 1.25rem;
   margin-top: 1rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.06);
   margin-bottom: 0.5rem;
 }
 
@@ -56,8 +56,8 @@
 .iconCircleSmall {
   width: 2.25rem;
   height: 2.25rem;
-  background-color: rgba(244, 245, 0, 0.1);
-  color: var(--yellow);
+  background-color: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -82,7 +82,7 @@
 
 .subtitle {
   font-size: 1rem;
-  color: #888;
+  color: var(--text-muted);
   margin: 0.15rem 0 0 0;
   line-height: 1.5;
 }
@@ -91,20 +91,29 @@
 .formLayout {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
   width: 100%;
   flex: 1;
   min-width: 0;
 }
 
+/* BLOQUEADO (CDA de ingreso no aprobado - ver useBloqueoLegajo) */
+.formLayoutBloqueado {
+  opacity: 0.45;
+  filter: grayscale(0.6);
+  pointer-events: none;
+  user-select: none;
+}
+
 /* ACCIONES */
-.submitBtn {
-  flex-shrink: 0;
+.lufeAction {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   width: 100%;
 }
 
-.downloadBtn {
-  align-self: center;
+.submitBtn {
+  flex: 1;
   width: 100%;
 }
 
@@ -163,13 +172,13 @@
     margin-top: 0;
   }
 
-  .submitBtn {
-    min-width: 12rem;
+  .lufeAction {
     width: auto;
   }
 
-  .downloadBtn {
-    align-self: auto;
+  .submitBtn {
+    min-width: 12rem;
     width: auto;
+    flex: initial;
   }
 }

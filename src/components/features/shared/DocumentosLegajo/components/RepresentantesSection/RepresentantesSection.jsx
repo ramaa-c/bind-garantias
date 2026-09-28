@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import {
   FiUser,
@@ -10,11 +10,14 @@ import {
   FiPhone,
   FiMapPin,
   FiAlertCircle,
+  FiXCircle,
 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { RepresentanteLegalModal } from "../../../RepresentanteLegalModal/RepresentanteLegalModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
+import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
+import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 
 // Solo Representante Legal (TipoRelacionSocioID 230, persona jurídica) -
 // Apoderado tiene su propia pestaña/sección (ver ApoderadosSection), no
@@ -30,9 +33,11 @@ export function RepresentantesSection({
   const [modalOpen, setModalOpen] = useState(false);
   const [editRepresentante, setEditRepresentante] = useState(null);
   const [expandedRep, setExpandedRep] = useState(null);
-  const [portalTarget, setPortalTarget] = useState(null);
+  const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
+
+  const { data: estadoCdaMap } = useEstadoCdaTerceros(representantes.map((r) => r.id));
 
   const abrirModal = (rep = null) => {
     setEditRepresentante(rep);
@@ -42,10 +47,6 @@ export function RepresentantesSection({
     setModalOpen(false);
     setEditRepresentante(null);
   };
-
-  useEffect(() => {
-    setPortalTarget(document.getElementById("socios-header-action-portal"));
-  }, []);
 
   return (
     <div className={styles.sociosContainer}>
@@ -95,8 +96,16 @@ export function RepresentantesSection({
                 const cuitLimpio = String(rep.cuit || "").replace(/\D/g, "");
                 if (!cuitLimpio) faltantes.push("CUIT válido");
 
+                const cdaRechazado = estadoCdaMap?.get(Number(rep.id)) === "rechazado";
+
                 return (
-                <div key={rep.id} className={`${styles.socioCard} ${faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
+                <div key={rep.id} className={`${styles.socioCard} ${cdaRechazado ? styles.socioCardRejected : faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
+                  {cdaRechazado && (
+                    <div className={styles.socioRejectedBanner}>
+                      <FiXCircle size={14} />
+                      <span>Esta persona no superó las validaciones de aceptación correspondientes. Comunicate con nosotros para que la revisemos.</span>
+                    </div>
+                  )}
                   <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
@@ -212,7 +221,6 @@ export function RepresentantesSection({
                     {isAdmin && (
                       <TerceroCdaEstado
                         terceroId={rep.id}
-                        cuit={rep.cuit}
                         socioIdActivo={socioIdActivo}
                       />
                     )}

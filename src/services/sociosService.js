@@ -5,6 +5,32 @@ import { socioArchivoService } from "./socioArchivoService";
 const cuitCache = new Map();
 const cuitWebCache = new Map();
 
+// LUFE a veces devuelve la razón social truncada, sin el sufijo societario
+// (confirmado en vivo: "JADI PRODUCTORA AGROGANADERA S" en vez de
+// "...S.A." para el CUIT 30710816480) — eso rompe tanto la Denominación
+// que termina guardándose en el Socio como la detección de tipo de
+// sociedad para los requisitos documentales (ver getSocTypeFromDenominacion
+// en requisitosService.js, que solo mira el texto del nombre): sin "SA"
+// en el string, cae en "otras" aunque la empresa sea una S.A. real.
+// `forma_juridica` sí trae esa info sin truncar, simplemente nunca se
+// usaba — se completa el nombre con eso antes de que se propague al resto
+// del sistema.
+const SUFIJOS_SOCIETARIOS_LUFE = [
+  { match: /ACCION|ANONIMA/i, sufijo: "S.A." },
+  { match: /RESPONSABILIDAD LIMITADA/i, sufijo: "S.R.L." },
+  { match: /HECHO/i, sufijo: "S.H." },
+];
+
+const tieneSufijoSocietario = (nombre) =>
+  /\bS\.?\s*A\.?\b|\bS\.?\s*R\.?\s*L\.?\b|\bS\.?\s*H\.?\b|SOCIEDAD/i.test(nombre || "");
+
+const completarRazonSocialLufe = (nombre, formaJuridica) => {
+  const nombreLimpio = (nombre || "").trim();
+  if (!nombreLimpio || tieneSufijoSocietario(nombreLimpio)) return nombreLimpio;
+  const sufijoEncontrado = SUFIJOS_SOCIETARIOS_LUFE.find((s) => s.match.test(formaJuridica || ""));
+  return sufijoEncontrado ? `${nombreLimpio} ${sufijoEncontrado.sufijo}` : nombreLimpio;
+};
+
 export const sociosService = {
   // Trae lista de socios (SGRPlus)
   obtenerSocios: async (params = {}) => {
@@ -86,18 +112,28 @@ export const sociosService = {
     return response.data;
   },
 
-  // GET api/Socio/CertificadoVigente/{Cuit} - Valida si la empresa tiene un
-  // certificado PyME vigente. 200 = vigente, 401 = no vigente — el backend
-  // reutiliza el código HTTP como semántica de negocio (mismo patrón que
-  // cda/execute con 202/406/409), no es un fallo de autenticación real: no
-  // hay ningún header de auth en esta app. Nunca tira: devuelve
-  // { status, data } para diferenciar sin try/catch afuera (mismo patrón
-  // que probarCda/reejecutarCda).
-  obtenerCertificadoVigente: async (cuit) => {
+  // GET api/Socio/CertificadoVigente/{Cuit}?Vincular=X - Verifica contra
+  // CASFOG/LUFE si la empresa tiene un certificado PyME vigente. 200 =
+  // vigente, 401 = no vigente — el backend reutiliza el código HTTP como
+  // semántica de negocio (mismo patrón que cda/execute con 202/406/409), no
+  // es un fallo de autenticación real: no hay ningún header de auth en esta
+  // app. Nunca tira: devuelve { status, data } para diferenciar sin
+  // try/catch afuera (mismo patrón que probarCda/reejecutarCda).
+  //
+  // ⚠️ Vincular=true (confirmado con el backend el 2026-08-21) es lo que hace
+  // que el backend cargue/actualice la fila correspondiente en
+  // SocioCertificadoPYME (ver obtenerCertificadoPyme/crearCertificadoPyme
+  // más abajo) — esa tabla NO se completa sola, ni al vincular el socio, ni
+  // de ninguna otra forma: solo se llena llamando a ESTE endpoint con
+  // Vincular=true, o cargándola a mano vía el CRUD de CertificadoPYME. El
+  // GET de esa tabla (obtenerCertificadoPyme) es de solo lectura: nunca
+  // consulta CASFOG/LUFE por su cuenta.
+  obtenerCertificadoVigente: async (cuit, vincular = true) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
     try {
       const response = await api.get(
         `api/Socio/CertificadoVigente/${cuitLimpio}`,
+        { params: { Vincular: vincular } },
       );
       return { status: response.status, data: response.data };
     } catch (error) {
@@ -106,6 +142,72 @@ export const sociosService = {
       }
       throw error;
     }
+  },
+
+  // GET api/Socio/ValidarCuit/{cuit} - Verifica formato/dígito verificador
+  // del CUIT. 200 = válido, 401 = inválido — mismo patrón que
+  // CertificadoVigente (el backend reutiliza el código HTTP como semántica
+  // de negocio, no es un fallo de autenticación real). Nunca tira: devuelve
+  // { valido, mensaje } para no necesitar try/catch afuera.
+  validarCuit: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    try {
+      const response = await api.get(`api/Socio/ValidarCuit/${cuitLimpio}`);
+      return { valido: true, mensaje: response.data };
+    } catch (error) {
+      if (error.response?.status === 401) {
+        return { valido: false, mensaje: error.response.data };
+      }
+      throw error;
+    }
+  },
+
+  // GET api/Socio/CertificadoPYME?SocioID=X - Certificado(s) PyME ya
+  // cargados del socio. NO es una verificación en vivo (esa es
+  // CertificadoVigente, arriba) — es de solo lectura sobre lo que ya está
+  // guardado: se completa llamando a CertificadoVigente con Vincular=true,
+  // o a mano con crearCertificadoPyme/actualizarCertificadoPyme abajo.
+  // Nunca da 404: devuelve [] (200) si todavía no tiene ninguno, así que
+  // alcanza con chequear si la lista viene vacía.
+  obtenerCertificadoPyme: async (socioId) => {
+    const response = await api.get("api/Socio/CertificadoPYME", {
+      params: { SocioID: socioId },
+    });
+    return response.data;
+  },
+
+  // POST api/Socio/CertificadoPYME - Alta manual de un Certificado PYME
+  // (panel admin: cuando el resultado de CertificadoVigente no refleja la
+  // realidad, o para cargar uno sin depender de CASFOG/LUFE).
+  crearCertificadoPyme: async (certificadoData) => {
+    const response = await api.post("api/Socio/CertificadoPYME", sociosAdapter.adaptarPayload5(certificadoData));
+    return response.data;
+  },
+
+  // PUT api/Socio/CertificadoPYME - Edición manual de un Certificado PYME
+  // ya cargado.
+  actualizarCertificadoPyme: async (certificadoData) => {
+    const response = await api.put("api/Socio/CertificadoPYME", sociosAdapter.adaptarPayload5(certificadoData));
+    return response.data;
+  },
+
+  // DELETE api/Socio/CertificadoPYME?SocioCertificadoPYMEID=X - Elimina un
+  // Certificado PYME cargado (revoca la habilitación para migrar).
+  eliminarCertificadoPyme: async (socioCertificadoPymeId) => {
+    const response = await api.delete("api/Socio/CertificadoPYME", {
+      params: { SocioCertificadoPYMEID: socioCertificadoPymeId },
+    });
+    return response.data;
+  },
+
+  // GET api/Socio/Actividad/{cuit} - Log de actividad del socio: una fila
+  // por cada consulta/alta/modificación hecha sobre ese CUIT en la
+  // plataforma (usado por el panel admin para auditoría). Nunca da 404: si
+  // el CUIT no tiene actividad registrada devuelve un array vacío.
+  obtenerActividadSocio: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    const response = await api.get(`api/Socio/Actividad/${cuitLimpio}`);
+    return response.data;
   },
 
   // Crea nuevo socio
@@ -126,9 +228,29 @@ export const sociosService = {
     return response.data;
   },
 
-  // GET api/SocioUsuario/{UsuarioWebID} - Listado de relaciones por UsuarioWebID
+  // GET api/SocioUsuario/{UsuarioWebID}:PorUsuario - Listado de relaciones
+  // por UsuarioWebID (endpoint renombrado por el backend el 2026-09-15; ver
+  // el rewrite de /porusuario en vite.config.js).
+  // ⚠️ A propósito NO atrapa el 404 acá: a diferencia de obtenerSocios/
+  // obtenerSociosWeb/obtenerSociosSgrplus, un 404 en este endpoint puntual no
+  // es distinguible entre "el usuario realmente no tiene ninguna empresa
+  // vinculada" y "el endpoint está caído/fallando" (confirmado en vivo el
+  // 2026-09-15: un usuario CON vinculación real recibía 404 acá por una
+  // falla del backend, resultó ser el cambio de endpoint de este comentario).
+  // Tratarlo como lista vacía mandaba a un usuario existente de vuelta a
+  // alta-datos-empresa como si fuera nuevo - un error grave. Se deja
+  // propagar como error y OnboardingGuard lo trata como falla real (pantalla
+  // de reintento manual, ver isErrorVendor ahí), nunca como "sin empresas".
   obtenerSocioUsuarioPorUsuarioId: async (usuarioWebId) => {
-    const response = await api.get(`api/SocioUsuario/${usuarioWebId}`);
+    const response = await api.get(`api/SocioUsuario/${usuarioWebId}/porusuario`);
+    return response.data;
+  },
+
+  // GET api/SocioUsuario/{SocioID}:PorSocio - Listado de relaciones por
+  // SocioID (agregado por el backend el 2026-09-15, ver rewrite de
+  // /porsocio en vite.config.js).
+  obtenerSocioUsuarioPorSocioId: async (socioId) => {
+    const response = await api.get(`api/SocioUsuario/${socioId}/porsocio`);
     return response.data;
   },
 
@@ -204,19 +326,45 @@ export const sociosService = {
     return response.data;
   },
 
-  // GET api/lufe/entidad/{cuit} - Obtener entidad de LUFE
+  // GET api/lufe/entidad/{cuit} - Obtener entidad de LUFE. Un solo
+  // reintento (con una espera corta) ante un timeout/error puntual — mismo
+  // patrón que nosisService.obtenerDatosNormalizados para su propio
+  // "arranque en frío": confirmado en vivo el 2026-09-02 que Nosis Y LUFE
+  // pueden fallar juntos justo en la misma consulta (CUIT 27131917800),
+  // dejando tipoactividadsepymeid en null aunque el dato exista en ambas
+  // fuentes. noRetry:true sigue puesto en cada intento porque el reintento
+  // automático del interceptor global (ante 5xx) multiplicaría los pedidos
+  // igual que ya se evita en el resto de las llamadas a LUFE.
   obtenerEntidadLufe: async (cuit) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
-    const response = await api.get(`api/lufe/entidad/${cuitLimpio}`, {
-      timeout: 8000,
-      noRetry: true,
-    });
-    return response.data;
+    const pedir = () =>
+      api.get(`api/lufe/entidad/${cuitLimpio}`, {
+        timeout: 8000,
+        noRetry: true,
+      });
+
+    try {
+      const response = await pedir();
+      return response.data;
+    } catch (error) {
+      console.warn(
+        "[sociosService] Primer intento contra LUFE falló, reintentando una vez (posible arranque en frío)...",
+        error,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await pedir();
+      return response.data;
+    }
   },
 
   // Helper para normalizar la respuesta de LUFE Entidad al formato de AFIP datosgenerales
   normalizarLufeAEstructuraAfip: (lufeData) => {
     if (!lufeData) return null;
+
+    const razonSocialCompleta = completarRazonSocialLufe(
+      lufeData.nombre,
+      lufeData.forma_juridica,
+    );
 
     let email = "";
     let telefono = "";
@@ -252,14 +400,15 @@ export const sociosService = {
 
     return {
       datosgenerales: {
-        razonsocial: lufeData.nombre || "",
-        nombre: lufeData.nombre || "",
+        razonsocial: razonSocialCompleta,
+        nombre: razonSocialCompleta,
         apellido: "",
         email: email,
         emailfacturacion: email,
         telefono: telefono,
         tipopersona: lufeData.personeria || "",
         mescierre: lufeData.mes_cierre || null,
+        tipoactividadsepymeid: lufeData.actividad_principal ?? null,
         domiciliofiscal: {
           direccion: direccion,
           localidad: localidad,
@@ -283,11 +432,20 @@ export const sociosService = {
     };
   },
 
-  // Envía todos los datos consolidados del legajo al esquema SGR+
+  // Envía todos los datos consolidados del legajo al esquema SGR+.
+  // noRetry: true porque el interceptor global reintenta automáticamente
+  // ante un 5xx (hasta 2 veces más) — para un endpoint de escritura que hoy
+  // está fallando con 500 (ver LegajoUniversalBar.jsx), eso significaba 3
+  // POSTs reales por cada intento en vez de 1. Si falla, tiene que quedar
+  // en "pendiente" de una y listo — no insistir solo en esta llamada.
   enviarASgrPlus: async (socioId) => {
-    const response = await api.post("api/Socio/Migrar", sociosAdapter.adaptarPayload4({
-      socioid: Number(socioId),
-    }));
+    const response = await api.post(
+      "api/Socio/Migrar",
+      sociosAdapter.adaptarPayload4({
+        socioid: Number(socioId),
+      }),
+      { noRetry: true },
+    );
     return {
       success: true,
       message: response.data?.message || "Legajo enviado a SGR+ exitosamente.",

@@ -1,3 +1,19 @@
+// El historial de un tercero (WSTerceroExecuteCda) tiene la misma forma que
+// el de un socio (WSSocioExecuteCda), solo cambia el nombre del ID
+// (TerceroExecuteCdaID en vez de SocioExecuteCdaID). Todas las funciones de
+// este archivo están escritas contra el shape de socio — cualquiera que
+// reciba historial de TERCEROS tiene que pasarlo por acá primero, si no
+// idDe() siempre da 0 (el campo que busca no existe) y el ordenamiento por
+// "más reciente" queda roto en silencio, terminando en el primer elemento
+// del array en vez del último.
+export const normalizarHistorialTercero = (data) => {
+  const lista = Array.isArray(data) ? data : data ? [data] : [];
+  return lista.map((f) => ({
+    ...f,
+    socioexecutecdaid: f.terceroexecutecdaid ?? f.TerceroExecuteCdaID ?? f.socioexecutecdaid,
+  }));
+};
+
 const idDe = (item) => Number(item?.socioexecutecdaid ?? item?.SocioExecuteCdaID) || 0;
 
 const estadoDeItem = (item) => {
@@ -181,7 +197,13 @@ export const calcularEstadoEfectivo = ({
     String(expresionAgrupacion || "").trim() ||
     (cdasActivosIds || []).map((id) => `cda${id}`).join(" and ");
 
-  if (!expresion.trim()) return "pendiente";
+  // Expresión vacía con cdasActivosIds definido (aunque sea []) significa
+  // que la vinculación vigente no tiene ningún CDA activo: no hay nada que
+  // validar, así que no debe bloquear al socio. Si cdasActivosIds ni
+  // siquiera se pasó, no hay información de vinculación (no confundir los
+  // casos): ahí se mantiene "pendiente". Nunca se había probado el caso de
+  // cero CDAs vinculados antes de esto.
+  if (!expresion.trim()) return cdasActivosIds ? "aprobado" : "pendiente";
 
   const resultado = evaluarExpresionAgrupacion(expresion, estadoPorCda);
   if (resultado === true) return "aprobado";

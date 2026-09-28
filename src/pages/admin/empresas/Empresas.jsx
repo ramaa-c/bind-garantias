@@ -1,12 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
-import { FiInbox, FiSearch, FiChevronRight, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink } from "react-icons/fi";
+import { FiInbox, FiSearch, FiX, FiChevronRight, FiChevronUp, FiChevronDown, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
 import { useObtenerSocios, useObtenerExecuteCda } from "../../../hooks/useSocios";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
+import { SelectSimple } from "../../../components/ui";
+import { ActividadSocioModal } from "../../../components/features/admin/ActividadSocioModal/ActividadSocioModal";
 import { detectarCadenaValorId } from "../../../utils/executeCda";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./Empresas.module.css";
 
 // Filas más altas que antes (avatar + contacto en dos líneas): con 10
@@ -21,14 +24,44 @@ const TIPO_PERSONA = {
 const getTipoPersona = (tipoPersonaId) =>
   TIPO_PERSONA[Number(tipoPersonaId)] || { label: "Sin definir", tono: "indefinido" };
 
+// Única fuente de verdad de si un socio migró a SGR+: el propio
+// MarcaVinculacion del Socio ("1" = migró con éxito), que LegajoUniversalBar
+// escribe recién después de confirmar la migración (ver ese archivo). Antes
+// acá se comparaba contra sgrplus/Socios por CUIT (una consulta extra por
+// fila) — ya no hace falta, el dato viene directo en la lista de Socios.
+const esMigrado = (socio) => String(socio?.marcavinculacion ?? "") === "1";
+
+const FILTROS_POR_DEFECTO = {
+  tipoPersona: "todos",
+  estado: "todos",
+  orden: "recientes",
+};
+
+const OPCIONES_TIPO_PERSONA = [
+  { value: "todos", label: "Todos los tipos" },
+  { value: "fisica", label: "Persona Física" },
+  { value: "juridica", label: "Persona Jurídica" },
+];
+
+const OPCIONES_ESTADO = [
+  { value: "todos", label: "Todos los estados" },
+  { value: "migrado", label: "Migrado a SGR+" },
+  { value: "postulante", label: "Postulante" },
+];
+
+const OPCIONES_ORDEN = [
+  { value: "recientes", label: "Más recientes" },
+  { value: "antiguas", label: "Más antiguas" },
+  { value: "az", label: "Nombre A-Z" },
+  { value: "za", label: "Nombre Z-A" },
+];
+
 const getIniciales = (denominacion) => {
   if (!denominacion) return "?";
   const palabras = denominacion.trim().split(/\s+/).filter(Boolean);
   if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
   return (palabras[0][0] + palabras[1][0]).toUpperCase();
 };
-
-import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 
 const EmpresaRowSkeleton = () => (
   <tr>
@@ -47,6 +80,7 @@ const EmpresaRowSkeleton = () => (
     </td>
     <td><Skeleton width="5.5rem" height="1.4rem" radius="pill" /></td>
     <td><Skeleton width="5.5rem" height="1.4rem" radius="pill" /></td>
+    <td></td>
     <td></td>
   </tr>
 );
@@ -75,23 +109,7 @@ const EstadoBadge = ({ e, cadenasWeb }) => {
     return fila?.denominacion || `Cadena #${cadenaValorIdDetectada}`;
   }, [cadenasWeb, cadenaValorIdDetectada]);
 
-  const { requisitosCompletados, totalRequisitos, isLoading } = useValidacionLegajo({
-    adminMode: true,
-    socioIdActivo: e.socioid,
-    tipoPersonaId: e.tipopersonaid,
-    nombreEmpresa: e.denominacion,
-    cadenaId: cadenaValorIdDetectada,
-  });
-
-  const isMigrado = Number(e.legajo) > 0 || (!isLoading && totalRequisitos > 0 && requisitosCompletados === totalRequisitos);
-
-  if (isLoading && Number(e.legajo) === 0) {
-    return (
-      <span className={`${styles.estadoBadge} ${styles.estadoAzulBind}`} style={{ opacity: 0.6 }}>
-        ...
-      </span>
-    );
-  }
+  const isMigrado = esMigrado(e);
 
   return (
     <div className={styles.estadoCell}>
@@ -115,9 +133,24 @@ const EstadoBadge = ({ e, cadenasWeb }) => {
 
 export default function Empresas() {
   const navigate = useNavigate();
+  // Defensa en profundidad: ver useBloqueoAdminRestringido — no confía
+  // únicamente en AdminGuard para mantener afuera a un usuario vinculado
+  // solo por UsuarioCadenaValor (esta pantalla muestra empresas de TODAS
+  // las cadenas, sin ningún filtro propio).
+  const bloqueado = useBloqueoAdminRestringido();
   const [busqueda, setBusqueda] = useState("");
   const [debouncedBusqueda] = useDebounce(busqueda, 400);
+  const [tipoPersona, setTipoPersona] = useState(FILTROS_POR_DEFECTO.tipoPersona);
+  const [estado, setEstado] = useState(FILTROS_POR_DEFECTO.estado);
+  const [orden, setOrden] = useState(FILTROS_POR_DEFECTO.orden);
   const [pagina, setPagina] = useState(1);
+  const [empresaActividad, setEmpresaActividad] = useState(null);
+  // Colapsado por defecto solo en Rango 2 (mismo umbral y mismo criterio
+  // que Dashboard.jsx - ahí es donde el espacio es crítico; en Rango 1
+  // arranca abierto porque sobra aire).
+  const [panelesVisibles, setPanelesVisibles] = useState(
+    () => typeof window === "undefined" || !window.matchMedia("(max-height: 716px)").matches
+  );
 
   // El backend solo permite filtrar la lista de socios por Cuit o por
   // Denominacion (nunca ambos a la vez: el Cuit es único, así que combinarlos
@@ -136,12 +169,26 @@ export default function Empresas() {
   const { data, isLoading, isFetching } = useObtenerSocios(params);
   const { data: cadenasWeb } = useObtenerTodasWebConEstado();
 
-  // Más nuevas primero: el backend no garantiza un orden particular en la
-  // respuesta de Socios.
-  const empresas = useMemo(
-    () => [...(data || [])].sort((a, b) => Number(b.socioid) - Number(a.socioid)),
-    [data],
-  );
+  const empresas = useMemo(() => {
+    let lista = [...(data || [])];
+
+    if (tipoPersona !== FILTROS_POR_DEFECTO.tipoPersona) {
+      lista = lista.filter((e) => getTipoPersona(e.tipopersonaid).tono === tipoPersona);
+    }
+
+    if (estado !== FILTROS_POR_DEFECTO.estado) {
+      lista = lista.filter((e) => (estado === "migrado" ? esMigrado(e) : !esMigrado(e)));
+    }
+
+    lista.sort((a, b) => {
+      if (orden === "az") return (a.denominacion || "").localeCompare(b.denominacion || "");
+      if (orden === "za") return (b.denominacion || "").localeCompare(a.denominacion || "");
+      if (orden === "antiguas") return Number(a.socioid) - Number(b.socioid);
+      return Number(b.socioid) - Number(a.socioid); // recientes (default): el backend no garantiza orden
+    });
+
+    return lista;
+  }, [data, tipoPersona, estado, orden]);
 
   const totalPaginas = Math.max(1, Math.ceil(empresas.length / ELEMENTOS_POR_PAGINA));
   const paginaActual = Math.min(pagina, totalPaginas);
@@ -155,6 +202,37 @@ export default function Empresas() {
     setPagina(1);
   };
 
+  const handleTipoPersona = (value) => {
+    setTipoPersona(value);
+    setPagina(1);
+  };
+
+  const handleEstado = (value) => {
+    setEstado(value);
+    setPagina(1);
+  };
+
+  const handleOrden = (value) => {
+    setOrden(value);
+    setPagina(1);
+  };
+
+  const hayFiltrosActivos =
+    !!busqueda ||
+    tipoPersona !== FILTROS_POR_DEFECTO.tipoPersona ||
+    estado !== FILTROS_POR_DEFECTO.estado ||
+    orden !== FILTROS_POR_DEFECTO.orden;
+
+  const handleLimpiarFiltros = () => {
+    setBusqueda("");
+    setTipoPersona(FILTROS_POR_DEFECTO.tipoPersona);
+    setEstado(FILTROS_POR_DEFECTO.estado);
+    setOrden(FILTROS_POR_DEFECTO.orden);
+    setPagina(1);
+  };
+
+  if (bloqueado) return null;
+
   return (
     <div className={styles.container}>
       <div className={styles.headerTitle}>
@@ -162,8 +240,28 @@ export default function Empresas() {
           <h1>Empresas</h1>
           <p>Listado de empresas registradas en la plataforma.</p>
         </div>
+        <button
+          type="button"
+          className={styles.toggleFiltersBtn}
+          onClick={() => setPanelesVisibles((v) => !v)}
+          aria-expanded={panelesVisibles}
+          title={panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
+        >
+          {panelesVisibles ? <FiChevronUp /> : <FiChevronDown />}
+          {panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
+          {/* Con el panel colapsado, esta es la única señal de que la lista
+              de abajo está filtrada y no es el total real. */}
+          {!panelesVisibles && hayFiltrosActivos && (
+            <span className={styles.toggleFiltersActiveDot} title="Hay filtros activos" />
+          )}
+        </button>
       </div>
 
+      {/* Colapsable en Rango 2 (mismo patrón que Dashboard.jsx): entra por
+          panelesVisibles, con grid-template-rows 1fr→0fr (ver
+          .collapsiblePanel en Empresas.module.css). */}
+      <div className={`${styles.collapsiblePanel} ${!panelesVisibles ? styles.collapsiblePanelClosed : ""}`}>
+        <div className={styles.collapsiblePanelInner}>
       <div className={styles.filtersCard}>
         <div className={styles.searchWrap}>
           <FiSearch className={styles.iconSearch} />
@@ -175,6 +273,55 @@ export default function Empresas() {
             className={styles.inputSearch}
           />
         </div>
+
+        <div className={styles.filterFieldsRow}>
+          <SelectSimple
+            label="Tipo"
+            value={tipoPersona}
+            onChange={handleTipoPersona}
+            options={OPCIONES_TIPO_PERSONA}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
+          <SelectSimple
+            label="Estado"
+            value={estado}
+            onChange={handleEstado}
+            options={OPCIONES_ESTADO}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
+          <SelectSimple
+            label="Orden"
+            value={orden}
+            onChange={handleOrden}
+            options={OPCIONES_ORDEN}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
+        </div>
+
+        <button
+          type="button"
+          className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
+          onClick={handleLimpiarFiltros}
+          disabled={!hayFiltrosActivos}
+          tabIndex={hayFiltrosActivos ? 0 : -1}
+          title="Limpiar filtros"
+          aria-label="Limpiar filtros"
+        >
+          <FiX />
+        </button>
+
         {!isLoading && (
           <span className={styles.listCount}>
             <FiBriefcase />
@@ -182,16 +329,19 @@ export default function Empresas() {
           </span>
         )}
       </div>
+      </div>
+      </div>
 
       <div className={styles.tableCard}>
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th style={{ width: "38%" }}>Empresa</th>
-                <th style={{ width: "32%" }}>Contacto</th>
-                <th style={{ width: "14%" }}>Tipo</th>
-                <th style={{ width: "14%" }}>Estado</th>
+                <th style={{ width: "36%" }}>Empresa</th>
+                <th style={{ width: "30%" }}>Contacto</th>
+                <th style={{ width: "13%" }}>Tipo</th>
+                <th style={{ width: "13%" }}>Estado</th>
+                <th style={{ width: "2.5rem" }}></th>
                 <th style={{ width: "2.5rem" }}></th>
               </tr>
             </thead>
@@ -200,7 +350,7 @@ export default function Empresas() {
                 Array.from({ length: 6 }).map((_, i) => <EmpresaRowSkeleton key={i} />)
               ) : empresasPagina.length === 0 ? (
                 <tr>
-                  <td colSpan={5} style={{ padding: 0 }}>
+                  <td colSpan={6} style={{ padding: 0 }}>
                     <div className={styles.emptyState}>
                       <FiInbox className={styles.emptyStateIcon} />
                       <span>No se encontraron empresas que coincidan con los criterios de búsqueda.</span>
@@ -246,6 +396,19 @@ export default function Empresas() {
                         <EstadoBadge e={e} cadenasWeb={cadenasWeb} />
                       </td>
                       <td style={{ textAlign: "center" }}>
+                        <button
+                          type="button"
+                          className={styles.activityButton}
+                          title="Ver actividad"
+                          onClick={(ev) => {
+                            ev.stopPropagation();
+                            setEmpresaActividad(e);
+                          }}
+                        >
+                          <FiActivity size={14} />
+                        </button>
+                      </td>
+                      <td style={{ textAlign: "center" }}>
                         <FiChevronRight className={styles.rowChevron} />
                       </td>
                     </tr>
@@ -270,6 +433,13 @@ export default function Empresas() {
           itemLabel="empresas"
         />
       )}
+
+      <ActividadSocioModal
+        isOpen={!!empresaActividad}
+        onClose={() => setEmpresaActividad(null)}
+        cuit={empresaActividad?.cuit}
+        denominacion={empresaActividad?.denominacion}
+      />
     </div>
   );
 }

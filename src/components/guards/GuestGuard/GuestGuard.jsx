@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 
 // Evita que un usuario ya logueado vea login/registro/recuperar-clave -
 // análogo cliente del useEffect que ya hace LoginAdmin.jsx para admin
@@ -15,10 +15,31 @@ import { useChannel } from "../../../context/ChannelContext";
 // después del atajo de LoginAdmin).
 export const GuestGuard = ({ children }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { channelInfo } = useChannel();
+  const activeSocioId = useAuthStore((state) => state.activeSocioId);
+  const cambiarEmpresa = useAuthStore((state) => state.cambiarEmpresa);
+  const { basePath } = useChannel();
+
+  // Volver a /login con una sesión que nunca se cerró (activeSocioId de la
+  // última empresa usada todavía en el store) no debe reanudar en
+  // silencio esa elección - se lo trata igual que "Cambiar empresa" (mismo
+  // cambiarEmpresa(), ver useAuthStore) para que OnboardingGuard, al
+  // evaluar de nuevo ya con activeSocioId limpio, mande a un vendor al
+  // selector en vez de arrastrar la elección de la sesión anterior. Se
+  // resuelve acá (no eligiendo destino nosotros mismos) para no duplicar la
+  // decisión de a dónde mandar a cada rol - esa autoridad es de
+  // OnboardingGuard.
+  useEffect(() => {
+    if (isAuthenticated && activeSocioId) {
+      cambiarEmpresa();
+    }
+  }, [isAuthenticated, activeSocioId, cambiarEmpresa]);
+
+  if (isAuthenticated && activeSocioId) {
+    return null;
+  }
 
   if (isAuthenticated) {
-    return <Navigate to={`/${channelInfo.id}/legajo`} replace />;
+    return <Navigate to={`${basePath}/legajo`} replace />;
   }
 
   return <>{children}</>;

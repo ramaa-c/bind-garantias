@@ -11,9 +11,95 @@ import { ActivacionPendienteModal } from "../../../components/features/shared/Ac
 import { useLogin, useLoginByCode, useResetearPassword } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useChannel } from "../../../context/ChannelContext";
+import { useThemeStore } from "../../../store/useThemeStore";
+import { useChannel } from "../../../context/useChannel";
+import { denominacionDesdeEmail, extraerRegistroUsuario, esAdministradorActivo } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
+
+const MENSAJE_ADMIN_EN_CLIENTE =
+  "Esta cuenta es de administración y no puede operar como cliente. Registrate con un correo distinto para acceder desde acá.";
+
+const leerOtpPendiente = () => {
+  const pendingEmail = sessionStorage.getItem("pendingOtpEmail");
+  const expiresAt = sessionStorage.getItem("otpExpiresAt");
+
+  if (pendingEmail && expiresAt) {
+    if (Date.now() < parseInt(expiresAt, 10)) {
+      return { fase: "validacion_otp", email: pendingEmail };
+    }
+    sessionStorage.removeItem("pendingOtpEmail");
+    sessionStorage.removeItem("otpExpiresAt");
+  }
+
+  return { fase: "ingreso_credenciales", email: "" };
+};
+
+const parsearCadenas = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (data.items) return data.items;
+  if (data.data) return data.data;
+  if (typeof data === "object" && Object.keys(data).length > 0) return [data];
+  return [];
+};
+
+// Un usuario vinculado a una o más cadenas de valor (UsuarioCadenaValor) es
+// un admin restringido (ve el panel admin acotado a sus propias cadenas —
+// ver useAdminRestrictions) aunque nunca haya entrado por /login de admin:
+// entra por el login normal de SU banco, como cualquier cliente, y de acá
+// hay que mandarlo al admin en vez de a su legajo (que ni siquiera tiene,
+// porque no es dueño de ningún Socio). AdminGuard no valida el "role" que
+// se setea al loguear, así que no hace falta nada especial del lado del
+// guard — solo decidir bien el destino acá.
+// Chequeo suelto, para cortar ANTES de pedir el código por mail (así una
+// cuenta de administración ni siquiera lo recibe). En el resto de los
+// caminos no hace falta: resolverAccesoPostLogin ya trae el registro y
+// decide con eso, sin pagar un request extra.
+const esCuentaDeAdministracion = async (email) => {
+  try {
+    const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
+    return esAdministradorActivo(extraerRegistroUsuario(usuarioDb));
+  } catch {
+    return false;
+  }
+};
+
+const resolverAccesoPostLogin = async (email, basePath) => {
+  try {
+    const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
+    const registro = extraerRegistroUsuario(usuarioDb);
+
+    // Un Administrador General no tiene Socio ni legajo propio: su cuenta es
+    // exclusivamente del panel admin y no corresponde que entre por el login
+    // de un banco, aunque el backend valide bien sus credenciales
+    // (SGRPLUSPLA-195). OJO: esto NO alcanza a los admin restringidos, que
+    // no llevan esta marca y sí entran por acá (ver más abajo).
+    if (esAdministradorActivo(registro)) {
+      return { permitido: false, destino: null };
+    }
+
+    const usuarioWebId =
+      registro?.usuariowebid ?? registro?.UsuarioWebID ?? registro?.id ?? null;
+    if (!usuarioWebId) return { permitido: true, destino: `${basePath}/legajo` };
+
+    // ⚠️ El backend filtra por el param "usuarioid" (no "usuariowebid") —
+    // ver el mismo aviso en useAdminRestrictions.js.
+    const cadenasData = await usuarioService.obtenerUsuariosRelacionados({
+      usuarioid: usuarioWebId,
+    });
+    const tieneCadenas = parsearCadenas(cadenasData).length > 0;
+    return {
+      permitido: true,
+      destino: tieneCadenas ? "/admin" : `${basePath}/legajo`,
+    };
+  } catch {
+    // Ante cualquier falla de esta verificación extra, seguir el camino
+    // normal en vez de bloquear el login por completo.
+    return { permitido: true, destino: `${basePath}/legajo` };
+  }
+};
 
 const emailSchema = z.object({
   email: z
@@ -139,6 +225,7 @@ const EmailForCodePhase = ({ control, isPending, onFallback }) => (
       control={control}
       label="Email"
       type="text"
+      autoComplete="username"
       disabled={isPending}
     />
     <Button type="submit" variant="primary" isLoading={isPending}>
@@ -172,6 +259,7 @@ const CredentialsPhase = ({
       control={control}
       label="Email"
       type="text"
+      autoComplete="username"
       disabled={isPending}
     />
     <InputSimple
@@ -179,6 +267,7 @@ const CredentialsPhase = ({
       control={control}
       label="Contraseña"
       type="password"
+      autoComplete="current-password"
       disabled={isPending}
     />
     <Button type="submit" variant="primary" isLoading={isPending}>
@@ -192,7 +281,7 @@ const CredentialsPhase = ({
         alignItems: "center",
         gap: "0.5rem",
         fontSize: "0.875rem",
-        color: "var(--gray-text, #a0a0a0)",
+        color: "var(--text-muted)",
       }}
     >
       <span>
@@ -229,7 +318,7 @@ const CredentialsPhase = ({
         marginTop: "1.5rem",
         textAlign: "center",
         fontSize: "0.875rem",
-        color: "var(--gray-text, #a0a0a0)",
+        color: "var(--text-muted)",
       }}
     >
       ¿No tenés una cuenta?{" "}
@@ -248,14 +337,17 @@ const CredentialsPhase = ({
 );
 
 const Login = () => {
-  const [fase, setFase] = useState("ingreso_credenciales");
+  const [otpPendienteInicial] = useState(leerOtpPendiente);
+  const [fase, setFase] = useState(otpPendienteInicial.fase);
   const [generatedOtp, setGeneratedOtp] = useState(null);
   const [modalPendiente, setModalPendiente] = useState(false);
   const [emailPendiente, setEmailPendiente] = useState("");
+  const [locationSincronizada, setLocationSincronizada] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const setUser = useAuthStore((state) => state.setUser);
-  const { channelInfo } = useChannel();
+  const theme = useThemeStore((state) => state.theme);
+  const { channelInfo, basePath } = useChannel();
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
   const { mutate: loginByCode, isPending: solicitandoCodigo } =
     useLoginByCode();
@@ -278,17 +370,18 @@ const Login = () => {
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: canalId,
+      hashseguridad: "",
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: canalId,
+      denominacion: denominacionDesdeEmail(emailPendiente),
+      fronturl: window.location.origin + basePath,
     };
 
     try {
       await reenviarCorreo(payloadReset);
       setModalPendiente(false);
-      navigate(`/${channelInfo.id}/confirmar-correo`, {
+      navigate(`${basePath}/confirmar-correo`, {
         state: {
           emailIngresado: emailPendiente,
           canal: canalId,
@@ -319,31 +412,22 @@ const Login = () => {
     setValue,
   } = useForm({
     resolver: zodResolver(currentSchema),
-    defaultValues: { email: "", otp: "", password: "" },
+    defaultValues: { email: otpPendienteInicial.email, otp: "", password: "" },
     mode: "onChange",
   });
 
-  useEffect(() => {
-    const pendingEmail = sessionStorage.getItem("pendingOtpEmail");
-    const expiresAt = sessionStorage.getItem("otpExpiresAt");
-
-    if (pendingEmail && expiresAt) {
-      if (Date.now() < parseInt(expiresAt, 10)) {
-        setValue("email", pendingEmail);
-        setFase("validacion_otp");
-      } else {
-        sessionStorage.removeItem("pendingOtpEmail");
-        sessionStorage.removeItem("otpExpiresAt");
-      }
+  // Redirección desde CrearClave
+  if (location.state?.emailIngresado && location !== locationSincronizada) {
+    setLocationSincronizada(location);
+    if (location.state?.generatedOtp) {
+      setGeneratedOtp(location.state.generatedOtp);
     }
+    setFase("validacion_otp");
+  }
 
-    // B) Redirección desde CrearClave
+  useEffect(() => {
     if (location.state?.emailIngresado) {
       setValue("email", location.state.emailIngresado);
-      if (location.state?.generatedOtp) {
-        setGeneratedOtp(location.state.generatedOtp);
-      }
-      setFase("validacion_otp");
       window.history.replaceState({}, document.title);
     }
   }, [location, setValue]);
@@ -352,6 +436,11 @@ const Login = () => {
     if (fase === "solicitar_codigo") {
       const isValid = await trigger("email");
       if (!isValid) return;
+
+      if (await esCuentaDeAdministracion(formData.email)) {
+        setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+        return;
+      }
 
       loginByCode(
         { email: formData.email, password: "" },
@@ -393,8 +482,13 @@ const Login = () => {
 
     if (fase === "validacion_otp") {
       if (formData.otp === generatedOtp) {
-        setUser({ email: formData.email, role: "user" });
-        navigate(`/${channelInfo.id}/legajo`, { replace: true });
+        const acceso = await resolverAccesoPostLogin(formData.email, basePath);
+        if (!acceso.permitido) {
+          setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+          return;
+        }
+        setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
+        navigate(acceso.destino, { replace: true });
       } else {
         setError("otp", { type: "server", message: "Código incorrecto" });
       }
@@ -405,9 +499,14 @@ const Login = () => {
       iniciarSesion(
         { email: formData.email, password: formData.password },
         {
-          onSuccess: () => {
-            setUser({ email: formData.email, role: "user" });
-            navigate(`/${channelInfo.id}/legajo`, { replace: true });
+          onSuccess: async () => {
+            const acceso = await resolverAccesoPostLogin(formData.email, basePath);
+            if (!acceso.permitido) {
+              setError("password", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+              return;
+            }
+            setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
+            navigate(acceso.destino, { replace: true });
           },
           onError: async (error) => {
             const status = error?.response?.status;
@@ -473,12 +572,12 @@ const Login = () => {
         <div className={styles.globalLogo}>
           <div className={styles.logosWrapper}>
             <img
-              src={logoBind}
+              src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
-              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
               className={styles.clickableLogo}
             />
-            {channelInfo.id !== "default" && (
+            {channelInfo.id !== "default" && channelInfo.logo && (
               <>
                 <div className={styles.logoSeparator} />
                 <img
@@ -532,8 +631,8 @@ const Login = () => {
               <CredentialsPhase
                 control={control}
                 isPending={isPending}
-                onRegister={() => navigate(`/${channelInfo.id}/registro`)}
-                onRecoverPassword={() => navigate(`/${channelInfo.id}/recuperar-clave`)}
+                onRegister={() => navigate(`${basePath}/registro`)}
+                onRecoverPassword={() => navigate(`${basePath}/recuperar-clave`)}
                 onLoginWithCode={() => {
                   clearErrors();
                   setFase("solicitar_codigo");

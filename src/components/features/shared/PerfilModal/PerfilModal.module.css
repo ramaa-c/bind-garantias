@@ -1,0 +1,229 @@
+.modalBody {
+  padding: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.identityCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: rgba(245, 244, 0, 0.04);
+  border: 1px solid rgba(245, 244, 0, 0.14);
+  border-radius: 0.9rem;
+}
+
+.identityAvatarSize {
+  width: 2.35rem;
+  height: 2.35rem;
+  font-size: 0.875rem;
+  border-radius: 0.75rem;
+}
+
+.identityAvatarUser {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+  border: 1px solid var(--badge-amarillo-border);
+  font-size: 1.1rem;
+}
+
+.identityInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.identityName {
+  margin: 0;
+  color: var(--white);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.identityMeta {
+  margin: 0.15rem 0 0 0;
+  color: #8b949e;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── TABS ─────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.3rem;
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
+  border-radius: 0.85rem;
+}
+
+.tabBtn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: transparent;
+  border: none;
+  border-radius: 0.65rem;
+  color: #8b949e;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.tabBtn:hover {
+  color: var(--white);
+  background: rgba(var(--overlay-rgb), 0.04);
+}
+
+.tabBtnActive {
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+}
+
+.tabBtnActive:hover {
+  color: var(--badge-amarillo-text);
+  filter: brightness(1.15);
+}
+
+/* ── CUENTA (usuario/contraseña) ─────────────────────────────────────── */
+
+.columnsGrid {
+  display: grid;
+  border: 1px solid rgba(245, 244, 0, 0.12);
+  border-radius: 0.85rem;
+  overflow: hidden;
+  background: rgba(var(--overlay-rgb), 0.012);
+}
+
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 1.125rem;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--white);
+  margin: 0;
+}
+
+.sectionTitle svg {
+  color: var(--color-amarillo-bind);
+  font-size: 0.95rem;
+}
+
+.sectionHint {
+  margin: -0.2rem 0 0.1rem 0;
+  color: #8b949e;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  min-height: 1.05rem;
+}
+
+.sectionActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  flex: 1;
+}
+
+.skeletonStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.avisoNoDisponible {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 2rem 1rem;
+  color: #8b949e;
+}
+
+.avisoNoDisponible svg {
+  font-size: 2rem;
+  color: #ea4a5a;
+}
+
+.avisoNoDisponible p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.modalFoot {
+  margin: 1rem -1.5rem -1.5rem -1.5rem;
+  padding: 0.85rem 1.5rem;
+  border-top: 1px solid rgba(245, 244, 0, 0.1);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Mobile-first: por defecto una sola columna (el celular es la mayoría del
+   tráfico de la app cliente, ver CLAUDE.md). Recién a partir de ~720px hay
+   ancho real para separar "Datos de la empresa"/"Mi cuenta" en dos
+   columnas lado a lado. */
+.tabBtn span {
+  display: none;
+}
+
+.columnsGrid {
+  grid-template-columns: 1fr;
+}
+
+.sectionGroup + .sectionGroup {
+  border-left: none;
+  border-top: 1px solid rgba(245, 244, 0, 0.12);
+}
+
+@media (min-width: 45rem) {
+  .tabBtn span {
+    display: inline;
+  }
+
+  .columnsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sectionGroup + .sectionGroup {
+    border-top: none;
+    border-left: 1px solid rgba(245, 244, 0, 0.12);
+  }
+}

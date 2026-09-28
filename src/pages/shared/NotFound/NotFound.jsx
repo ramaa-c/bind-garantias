@@ -5,19 +5,19 @@ import { Button } from "../../../components/ui/Button/Button";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import styles from "./NotFound.module.css";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
 
 const NotFound = () => {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
 
   const handleGoHome = () => {
     if (user) {
       if (user.role === "admin") {
         navigate("/admin", { replace: true });
       } else {
-        navigate(`/${channelInfo.id}/legajo`, { replace: true });
+        navigate(`${basePath}/legajo`, { replace: true });
       }
     } else {
       navigate("/", { replace: true });

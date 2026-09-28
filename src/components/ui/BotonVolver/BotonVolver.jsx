@@ -5,6 +5,7 @@ import styles from "./BotonVolver.module.css";
 export const BotonVolver = ({ 
   onClick, 
   texto = "Volver al paso anterior",
+  // eslint-disable-next-line no-unused-vars -- ESLint no rastrea el uso de este parámetro como tag JSX
   icon: Icon = FaAngleLeft,
 }) => {
   return (

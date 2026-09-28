@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, FormProvider } from "react-hook-form";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaDatosEmpresaSchema } from "../../../../schemas/AltaDatosEmpresaSchema";
 import { BarraProgreso, Button, Modal } from "../../../../components/ui";
@@ -9,12 +9,8 @@ import { LoadingScreen } from "../../../../components/ui";
 import { Paso1Cuit, Paso2Datos } from "../../../../components/features";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { sociosService } from "../../../../services/sociosService";
-import { afipService } from "../../../../services/afipService";
-import { tercerosService } from "../../../../services/tercerosService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { requisitosService } from "../../../../services/requisitosService";
-import { catalogosService } from "../../../../services/catalogosService";
-import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
@@ -26,9 +22,11 @@ import {
   limpiarSocioPendiente,
 } from "../../../../utils/altaEmpresaPendiente";
 import { useVendor } from "../../../../hooks/useVendor";
-import { useChannel } from "../../../../context/ChannelContext";
+import { useChannel } from "../../../../context/useChannel";
 import styles from "./AltaDatosEmpresa.module.css";
 import { toast } from "sonner";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 const getCSharpIsoDate = () => {
   const date = new Date();
@@ -75,6 +73,8 @@ const mapearSocioAValoresFormulario = (socio) => {
       socio.fechainicioactividades || socio.FechaInicioActividades || null,
     tiporegimenivaid:
       Number(socio.tiporegimenivaid ?? socio.TipoRegimenIvaId) || 0,
+    tipoactividadsepymeid:
+      socio.tipoactividadsepymeid || socio.TipoActividadSEPYMEID || null,
   };
 };
 
@@ -82,8 +82,8 @@ export const AltaDatosEmpresa = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
-  const { channelInfo } = useChannel();
-  const { cadenaSlug } = useParams();
+  const { basePath } = useChannel();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaValorId = Number(cadenaSlug);
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorId);
   const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
@@ -138,13 +138,24 @@ export const AltaDatosEmpresa = () => {
   });
 
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
-  const [isNavigating, setIsNavigating] = useState(false);
+  const [isNavigating] = useState(false);
 
   const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email);
   const usuariowebidReal =
     usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id;
 
-  const { data: vendorData } = useVendor();
+  // ⚠️ Única fuente de verdad del estado vendor para todo el wizard: se
+  // resuelve ACÁ, se espera (isPendingVendor, ver el gate de carga más abajo)
+  // ANTES de renderizar Paso1/Paso2, y se pasa ya resuelto como prop a
+  // Paso1Cuit — que ya no llama a useVendor() por su cuenta. Antes cada uno
+  // tenía su propio useQuery independiente: mismo cache (mismo queryKey), pero
+  // nada garantizaba que Paso1Cuit ya lo tuviera resuelto al momento en que el
+  // usuario clickeaba "VALIDAR CUIT" (isVendor podía leerse en false por una
+  // carrera, justo el escenario que se pidió eliminar — el chequeo debe
+  // resolverse siempre ANTES de Paso 1, nunca durante ni después).
+  const { data: vendorData, isPending: isPendingVendor } = useVendor();
+  const isVendor = vendorData?.isVendor || false;
+  const vendorCuit = vendorData?.vendorCuit || null;
 
   const { data: provinciasData, isPending: isPendingProvincias } =
     useProvincias();
@@ -186,10 +197,11 @@ export const AltaDatosEmpresa = () => {
           mescierre: null,
           fechainicioactividades: null,
           tiporegimenivaid: 0,
+          tipoactividadsepymeid: null,
         },
   });
 
-  const { handleSubmit, trigger, reset, getValues, register } = metodosFormulario;
+  const { handleSubmit, trigger, reset, register } = metodosFormulario;
 
   useEffect(() => {
     // Registro de todos los campos "ocultos" que se nutren en segundo plano mediante setValue
@@ -198,6 +210,7 @@ export const AltaDatosEmpresa = () => {
     register("mescierre");
     register("fechainicioactividades");
     register("tiporegimenivaid");
+    register("tipoactividadsepymeid");
     register("codpos");
     register("provinciaid");
     register("localidad");
@@ -290,8 +303,18 @@ export const AltaDatosEmpresa = () => {
         tipocarteraid: 2,
         sectorcontableid: 700,
         tipoactividadbcraid: 0,
-        tipoactividadsepymeid: null,
-        marcavinculacion: "",
+        tipoactividadsepymeid: data.tipoactividadsepymeid || null,
+        // Este PUT reescribe el registro completo (no es parcial), así que
+        // no se puede hardcodear "0" a ciegas: en "modo completar" el socio
+        // ya existe desde antes (ver socioParaCompletar más arriba) y, aunque
+        // en la práctica no debería poder haber migrado sin haber pasado por
+        // acá, se preserva lo que ya tenía en vez de arriesgarse a pisarle
+        // un "1" real. Recién nace en "0" cuando de verdad es la primera vez
+        // (mismo default que ya pone Paso1Cuit al crear el socio).
+        marcavinculacion:
+          socioParaCompletar?.marcavinculacion ??
+          socioParaCompletar?.MarcaVinculacion ??
+          "0",
         situacionbcraid: 1,
         fechabaja: null,
         motivobajaid: null,
@@ -429,14 +452,13 @@ export const AltaDatosEmpresa = () => {
         limpiarSocioPendiente(cadenaSlug, user?.email);
         toast.success("Empresa creada y vinculada correctamente");
 
-        if (vendorData?.isVendor) {
-          navigate(`/${channelInfo?.id}/seleccionar-empresa`, {
-            replace: true,
-          });
-        } else {
-          setActiveSocioId(socioId);
-          navigate(`/${channelInfo?.id}/legajo`, { replace: true });
-        }
+        // Vendor o no: la empresa recién creada/vinculada queda como activa
+        // y se entra directo a su legajo — es una elección tan explícita
+        // como cuando el vendor la elige desde SeleccionarEmpresa.jsx (que
+        // también llama a setActiveSocioId), no tiene sentido mandarlo a
+        // "elegir" algo que acaba de crear él mismo.
+        setActiveSocioId(socioId);
+        navigate(`${basePath}/legajo`, { replace: true });
       } else {
         throw new Error(
           "No pudimos identificar tu usuario para vincular la empresa.",
@@ -477,26 +499,16 @@ export const AltaDatosEmpresa = () => {
     if (pasoActual === 1) {
       return (
         <Paso1Cuit
-          onValidar={async () => {
-            const isOk = await trigger("cuit");
-            if (isOk) {
-              const cuitValue = metodosFormulario
-                .getValues("cuit")
-                .replace(/\D/g, "");
-              const vendorCuitLimpio = vendorData?.vendorCuit
-                ? vendorData.vendorCuit.replace(/\D/g, "")
-                : null;
-
-              if (vendorData?.isVendor && cuitValue === vendorCuitLimpio) {
-                metodosFormulario.setError("cuit", {
-                  type: "manual",
-                  message: "Un vendor no puede gestionar su propia empresa.",
-                });
-                return;
-              }
-              handleValidarCuitSuccess();
-            }
-          }}
+          // El chequeo "vendor no puede gestionar su propia empresa" corre
+          // ahora dentro de Paso1Cuit.jsx (handleValidar), antes de pedir
+          // confirmación de vinculación - antes vivía acá, pero onValidar
+          // recién se llama al final de todo el flujo (después de crear el
+          // socio y correr el CDA), demasiado tarde para bloquear nada.
+          // isVendor/vendorCuit se resuelven acá arriba (ver useVendor) y se
+          // pasan ya resueltos — Paso1Cuit no vuelve a consultarlo.
+          isVendor={isVendor}
+          vendorCuit={vendorCuit}
+          onValidar={handleValidarCuitSuccess}
           onSocioExistente={(socioData, reason) =>
             setSocioExistenteModal({ isOpen: true, socioData, reason })
           }
@@ -509,12 +521,7 @@ export const AltaDatosEmpresa = () => {
         <Paso2Datos
           onContinuar={async () => {
             if (
-              await trigger([
-                "direccion",
-                "localidad",
-                "celular",
-                "emailfacturacion",
-              ])
+              await trigger(["direccion", "localidad", "celular"])
             ) {
               handleSubmit(onSubmitFinal)();
             }
@@ -525,6 +532,19 @@ export const AltaDatosEmpresa = () => {
     }
     return null;
   };
+
+  // Se espera a que el estado vendor esté resuelto ANTES de mostrar Paso 1:
+  // sin este gate, el usuario podía llegar a interactuar con el wizard (y
+  // Paso1Cuit a evaluar isVendor) mientras la consulta todavía estaba en
+  // vuelo — ver comentario junto a useVendor() más arriba.
+  if (isPendingVendor) {
+    return (
+      <LoadingScreen
+        title="Preparando entorno"
+        message="Verificando tu cuenta..."
+      />
+    );
+  }
 
   if (isNavigating) {
     return (
@@ -562,21 +582,29 @@ export const AltaDatosEmpresa = () => {
                 // completar los datos y avanzar.
                 onStepClick={pasoActual === 2 ? undefined : setPasoActual}
                 onVolver={null}
+                // Sin botón de "Inicio"/"Volver" en el caso general: el CUIT
+                // queda comprometido apenas se llega a Paso 2 (ver comentario
+                // de onStepClick arriba) y en Paso 1 tampoco tiene sentido —
+                // no hay nada reversible desde ahí que amerite un atajo de
+                // salida. Excepción: un vendor que todavía está en Paso 1 y
+                // no cruzó el umbral (!socioId — Paso1Cuit todavía no llamó a
+                // onSocioCreado) puede haber entrado por error desde
+                // "Agregar nueva empresa" en SeleccionarEmpresa — se le
+                // ofrece volver ahí. Deja de ofrecerse en cuanto socioId se
+                // setea (el socio ya existe en el backend, mismo criterio de
+                // "irreversible" que el resto de este comentario).
                 onVolverInicio={
-                  pasoActual === 1
-                    ? () => {
-                        if (vendorData?.isVendor) {
-                          navigate(`/${cadenaSlug}/seleccionar-empresa`);
-                        } else {
-                          navigate(`/${cadenaSlug}/legajo`);
-                        }
-                      }
+                  pasoActual === 1 && isVendor && !socioId
+                    ? () => navigate(`${basePath}/seleccionar-empresa`)
                     : null
                 }
                 onReiniciar={null}
               />
 
               <div className={styles.bienvenidaHeader}>
+                {/* La identidad de vendor (usuario/correo/plataforma) se
+                    muestra en el Sidebar (ver Sidebar.jsx) — visible ahí
+                    durante todo el wizard sin duplicarla acá. */}
                 {obtenerTextosCabecera().badge && (
                   <span className={styles.bienvenidaBadge}>
                     {obtenerTextosCabecera().badge}

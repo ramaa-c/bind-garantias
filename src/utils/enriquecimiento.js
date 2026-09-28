@@ -4,6 +4,11 @@ import { tercerosService } from "../services/tercerosService";
 import { catalogosService } from "../services/catalogosService";
 import { matchProvinciaAfip } from "./provinciaUtils";
 import { parseAddress } from "./direccionParser";
+import {
+  RELACION_ACCIONISTA_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+  RELACION_APODERADO_ID,
+} from "../constants/tiposRelacionSocio";
 
 const getCSharpIsoDate = () => {
   const date = new Date();
@@ -23,14 +28,14 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
 
   try {
     await sociosService.obtenerAutoridadesLufe(cuit, true);
-  } catch (lufeErr) {
+  } catch {
     // Silently handle error
   }
 
   let relacionesSocio = [];
   try {
     relacionesSocio = await tercerosService.obtenerRelacionesDeSocio(socioId);
-  } catch (err) {
+  } catch {
     // Silently handle error
   }
   const arrRelaciones = Array.isArray(relacionesSocio) ? relacionesSocio : [];
@@ -41,7 +46,11 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
   const relacionAccionistas = arrRelaciones.filter((r) => {
     const rid =
       r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId;
-    return [25, 210, 230].includes(Number(rid));
+    return [
+      RELACION_ACCIONISTA_ID,
+      RELACION_APODERADO_ID,
+      RELACION_REPRESENTANTE_LEGAL_ID,
+    ].includes(Number(rid));
   });
 
   if (relacionAccionistas.length === 0) {
@@ -57,7 +66,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
         value: item.provinciaid.toString(),
         label: item.descripcion,
       }));
-  } catch (err) {
+  } catch {
     // Silently handle error
   }
 
@@ -83,7 +92,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
       let respAfip = null;
       try {
         respAfip = await afipService.obtenerConstanciaInscripcion(cuitSocioLimpio);
-      } catch (afipErr) {
+      } catch {
         afipFailed = true;
         try {
           const lufeEntidad = await sociosService.obtenerEntidadLufe(cuitSocioLimpio);
@@ -91,7 +100,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
             respAfip = sociosService.normalizarLufeAEstructuraAfip(lufeEntidad);
             fallbackSuccess = true;
           }
-        } catch (lufeErr) {
+        } catch {
           // Both failed
         }
       }
@@ -179,7 +188,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
         };
         await tercerosService.actualizarRelacionDeSocio(payloadRel);
       }
-    } catch (singleErr) {
+    } catch {
       // Silently catch
     }
   }

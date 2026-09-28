@@ -9,9 +9,12 @@ import { Button } from "../../../components/ui/Button/Button";
 import { ActivacionPendienteModal } from "../../../components/features/shared/ActivacionPendienteModal/ActivacionPendienteModal";
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
-import { useChannel } from "../../../context/ChannelContext";
+import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
+import { useChannel } from "../../../context/useChannel";
+import { useThemeStore } from "../../../store/useThemeStore";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 // --- SCHEMA ---
 const registroSchema = z.object({
@@ -25,11 +28,12 @@ const registroSchema = z.object({
 
 const Registro = () => {
   const navigate = useNavigate();
+  const theme = useThemeStore((state) => state.theme);
   const { mutateAsync: crearUsuario, isPending: registrando } =
     useCrearUsuario();
   const { mutateAsync: reenviarCorreo, isPending: reenviando } =
     useResetearPassword();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
 
   const [modalUsuarioExistente, setModalUsuarioExistente] = useState(false);
   const [emailPendiente, setEmailPendiente] = useState("");
@@ -69,17 +73,18 @@ const Registro = () => {
       email: data.email,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: canalId,
+      hashseguridad: "",
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: canalId,
+      denominacion: denominacionDesdeEmail(data.email),
+      fronturl: window.location.origin + basePath,
     };
 
     try {
       await crearUsuario(payloadSkeletor);
 
-      navigate(`/${channelInfo.id}/confirmar-correo`, {
+      navigate(`${basePath}/confirmar-correo`, {
         replace: true,
         state: {
           usuarioSkeletor: payloadSkeletor,
@@ -134,11 +139,12 @@ const Registro = () => {
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
       fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: canalId,
+      hashseguridad: "",
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: canalId,
+      denominacion: denominacionDesdeEmail(emailPendiente),
+      fronturl: window.location.origin + basePath,
     };
 
     try {
@@ -146,7 +152,7 @@ const Registro = () => {
 
       setModalUsuarioExistente(false);
 
-      navigate(`/${channelInfo.id}/confirmar-correo`, {
+      navigate(`${basePath}/confirmar-correo`, {
         replace: true,
         state: {
           emailIngresado: emailPendiente,
@@ -179,12 +185,12 @@ const Registro = () => {
           <div className={styles.globalLogo}>
             <div className={styles.logosWrapper}>
               <img
-                src={logoBind}
+                src={theme === "light" ? logoBindBlack : logoBind}
                 alt="Logo BIND"
-                onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+                onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
                 className={styles.clickableLogo}
               />
-              {channelInfo.id !== "default" && (
+              {channelInfo.id !== "default" && channelInfo.logo && (
                 <>
                   <div className={styles.logoSeparator} />
                   <img
@@ -213,6 +219,7 @@ const Registro = () => {
                 control={control}
                 label="Correo Electrónico"
                 type="email"
+                autoComplete="email"
                 disabled={isFormDisabled}
               />
 
@@ -230,11 +237,11 @@ const Registro = () => {
               </div>
 
               {/* Navegación secundaria como enlace (Estándar UX) */}
-              <div style={{ marginTop: "1.5rem", textAlign: "center", fontSize: "0.875rem", color: "var(--gray-text, #a0a0a0)" }}>
+              <div style={{ marginTop: "1.5rem", textAlign: "center", fontSize: "0.875rem", color: "var(--text-muted)" }}>
                 ¿Ya tenés una cuenta?{" "}
                 <span 
                   className={styles.inlineLink}
-                  onClick={!isFormDisabled ? () => navigate(`/${channelInfo.id}/login`) : undefined} 
+                  onClick={!isFormDisabled ? () => navigate(`${basePath}/login`) : undefined} 
                   style={{ 
                     cursor: isFormDisabled ? "not-allowed" : "pointer", 
                     opacity: isFormDisabled ? 0.6 : undefined

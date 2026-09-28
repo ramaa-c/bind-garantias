@@ -34,6 +34,14 @@
   font-size: 0.875rem;
 }
 
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en Dashboard.module.css). */
+@media (max-height: 716px) {
+  .titleBox p {
+    display: none;
+  }
+}
+
 .actionsTop {
   display: flex;
   align-items: center;
@@ -164,7 +172,7 @@
 }
 
 .cardHeader {
-  padding: 1rem 1.25rem;
+  padding: 0.85rem 1.25rem;
   background: rgba(255, 255, 255, 0.015);
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
@@ -237,7 +245,7 @@
 }
 
 .cardBody {
-  padding: 1rem 1.25rem;
+  padding: 0.9rem 1.25rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -283,6 +291,86 @@
   font-size: 1.15rem;
   font-weight: 800;
   color: var(--yellow, #f5f400);
+}
+
+/* Bloque Línea/Contrato de LineaCard: reemplaza la vieja grilla de 6 datos
+   sueltos (moneda + vigencia + monto repetidos dos veces) por dos columnas
+   "monto grande + vigencia chica", como un balance de tarjeta — mismo dato
+   con mucha menos altura, y más legible de un vistazo. */
+.moneyGrid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.moneyBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.moneyDivider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.moneyLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8b949e;
+}
+
+.moneyAmount {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--yellow, #f5f400);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.moneyAmountMuted {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #c9d1d9;
+}
+
+.moneyCaption {
+  font-size: 0.72rem;
+  color: #8b949e;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Debajo de un input de monto deshabilitado (ej: falta elegir moneda),
+   ocupando el mismo lugar donde iría MontoEnPalabras/el mensaje de error
+   una vez habilitado. */
+.fieldHint {
+  margin-top: -1.875rem;
+  font-size: 0.7rem;
+  color: #8b949e;
+  padding-left: 0.25rem;
+}
+
+.moneyChip {
+  align-self: flex-start;
+  margin-top: 0.15rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(245, 244, 0, 0.08);
+  border: 1px solid rgba(245, 244, 0, 0.2);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--yellow, #f5f400);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* Products Section inside card */
@@ -490,7 +578,7 @@
 .cardTogglesBottom {
   display: flex;
   gap: 1.25rem;
-  padding: 1rem 1.25rem;
+  padding: 0.7rem 1.25rem;
   background: rgba(0, 0, 0, 0.15);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -570,7 +658,7 @@
 .formGrid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
+  gap: 0.7rem;
 }
 
 @media (min-width: 576px) {
@@ -583,15 +671,285 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  /* Sin esto, un hijo con contenido largo (ej. MontoEnPalabras con un monto
+     grande) empuja el ancho de la columna del grid más allá de 1fr en vez
+     de respetarlo - los ítems de grid/flex no encogen por debajo del ancho
+     de su contenido por default. */
+  min-width: 0;
+  /* Ancla para MontoEnPalabras, que se posiciona absolute dentro del
+     campo de monto que corresponda, ocupando el mismo lugar reservado
+     para el mensaje de error del input (ver MontoEnPalabras.module.css). */
+  position: relative;
 }
 
 .formGroupFull {
   grid-column: 1 / -1;
 }
 
+.uniqueAmountCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  background: rgba(76, 101, 230, 0.05);
+  border: 1px solid rgba(76, 101, 230, 0.16);
+  border-radius: 0.875rem;
+}
+
+.uniqueAmountCardTop {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+
+.uniqueAmountCardLabel {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #c9d1d9;
+}
+
+.uniqueAmountCardCaption {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #8b949e;
+}
+
+.uniqueAmountSwitch {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.uniqueAmountSwitchInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.uniqueAmountSwitchTrack {
+  position: relative;
+  flex-shrink: 0;
+  width: 34px;
+  height: 19px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.uniqueAmountSwitch:hover .uniqueAmountSwitchTrack {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.uniqueAmountSwitchThumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #8b949e;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+}
+
+.uniqueAmountSwitchInput:checked + .uniqueAmountSwitchTrack {
+  background: var(--color-azul-bind, #4c65e6);
+  border-color: var(--color-azul-bind, #4c65e6);
+}
+
+.uniqueAmountSwitchInput:checked + .uniqueAmountSwitchTrack .uniqueAmountSwitchThumb {
+  transform: translateX(15px);
+  background: #ffffff;
+}
+
+.uniqueAmountSwitchInput:focus-visible + .uniqueAmountSwitchTrack {
+  outline: 2px solid var(--color-azul-bind, #4c65e6);
+  outline-offset: 2px;
+}
+
 .formGroup label {
   font-size: 0.8125rem;
   color: #8b949e;
+}
+
+/* Sufijo "días" superpuesto al input de vigencia: el input en sí es un
+   Number mask puro (sin texto de unidad en el patrón — ver comentario en
+   LineasCadena.jsx sobre por qué "días" no puede ir en el mask), así que la
+   unidad se agrega visualmente acá encima. */
+.unitInputWrapper {
+  position: relative;
+}
+
+.unitSuffix {
+  position: absolute;
+  top: 1.3rem;
+  right: 1rem;
+  font-size: 0.75rem;
+  color: #8b949e;
+  pointer-events: none;
+}
+
+/* Vista previa de a qué fecha equivale la vigencia en días recién tipeada:
+   compensa que el input ya no muestra un calendario, mostrando el resultado
+   concreto sin que el admin tenga que calcularlo.
+   margin-top negativo: cancela el padding-bottom de 1.875rem que InputSimple
+   reserva siempre para su mensaje de error, así el chip queda pegado al
+   input en vez de "flotar" separado al fondo del formGroup. Es seguro
+   porque error y chip son mutuamente excluyentes (el chip solo aparece con
+   un valor válido, que es justo cuando no hay error). */
+.dueDateChip {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.35rem;
+  margin-top: -1.875rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  background: rgba(76, 101, 230, 0.08);
+  border: 1px solid rgba(76, 101, 230, 0.18);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #8b9bff;
+  font-variant-numeric: tabular-nums;
+}
+
+.dueDateChip svg {
+  flex-shrink: 0;
+  color: var(--color-azul-bind-400, #6b82ff);
+}
+
+/* Tarjeta de disponibilidad de la cadena, arriba de la grilla de "Línea":
+   antes era un texto gris suelto debajo del input de Monto Máximo, difícil
+   de notar. Ahora es visible de entrada, con barra de uso coloreada según
+   qué tan cerca está del techo de la cadena. */
+.cvUsageCard {
+  background: rgba(76, 101, 230, 0.05);
+  border: 1px solid rgba(76, 101, 230, 0.18);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.cvUsageTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cvUsageLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8b949e;
+}
+
+.cvUsageAmount {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-azul-bind-400, #6b82ff);
+  font-variant-numeric: tabular-nums;
+}
+
+.cvUsageTrack {
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.cvUsageFill {
+  height: 100%;
+  width: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, var(--color-azul-bind, #4c65e6), var(--color-azul-bind-400, #6b82ff));
+  transform-origin: left center;
+  transition: transform 0.3s ease;
+}
+
+.cvUsageFillWarning {
+  background: linear-gradient(90deg, #d68a1f, #f5a623);
+}
+
+.cvUsageFillDanger {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+}
+
+.cvUsageBottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #8b949e;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Reemplaza la vieja tarjeta con borde/ícono/subtítulo por sección: en un
+   modal con muchos campos esas cards duplicaban borde+padding en cada grupo
+   y empujaban el alto total. Un divisor liviano alcanza para separar
+   "Línea" de "Contrato" sin gastar tanto espacio vertical. */
+.formSectionDivider {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b949e;
+}
+
+.formSectionDivider svg {
+  flex-shrink: 0;
+  color: var(--color-azul-bind-400, #6b82ff);
+}
+
+.formHint {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: -0.3rem 0 0 0;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 0.75rem;
+  color: #8b949e;
+  line-height: 1.45;
+}
+
+.formHint strong {
+  color: #c9d1d9;
+  font-weight: 600;
+}
+
+/* Todo el texto (incluido el <strong>) va en un único span: si quedaran
+   sueltos como hijos directos de .formHint, el flex los trata como items
+   separados y el texto se corta en columnas en vez de fluir como una
+   oración. */
+.formHintText {
+  flex: 1;
+  min-width: 0;
+}
+
+.formHint svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--color-azul-bind-400, #6b82ff);
 }
 
 .formInput, .formSelect {
@@ -620,7 +978,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-  margin-top: 1.5rem;
+  margin-top: 0.85rem;
 }
 
 /* Products selector modal styles */

@@ -17,7 +17,7 @@ const ICON_MAP = {
 export const Alert = ({
   children,
   variant = "info",
-  layout = "horizontal",
+  layout = "box",
   className = "",
   icon: CustomIcon,
 }) => {

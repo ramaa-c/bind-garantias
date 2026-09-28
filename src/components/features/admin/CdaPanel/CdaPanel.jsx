@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiCheck, FiRotateCcw, FiSave, FiLock, FiEdit3, FiSearch, FiInfo } from "react-icons/fi";
 import { toast } from "sonner";
-import { useObtenerGrupoCdaConCdas, useVincularCdasAGrupo, useActualizarVinculacionCda } from "../../../../hooks/useCadenaValor";
+import { useObtenerGrupoCdaConCdas, useVincularCdasAGrupo, useActualizarVinculacionCda, useObtenerCdaIdsPorPantalla } from "../../../../hooks/useCadenaValor";
 import { useObtenerTodosCdas, useActualizarGrupoCda } from "../../../../hooks/useCda";
 import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { esCdaActivo, esCdaActivoEstricto } from "../../../../utils/cdaUtils";
@@ -33,7 +33,7 @@ function encontrarContenedorScrolleable(el) {
 // lógica (AND/OR/personalizada) de UN GrupoCda puntual, identificado por la
 // combinación (pantalla, cadena). El padre (CadenasCda.jsx / CdaConfigModal.jsx)
 // decide qué pantalla mostrar (tabs); acá solo se edita una a la vez.
-export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false }) => {
+export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hideUnchecked = isReadOnly, hideHeader = false, hideCheckboxes = false, description }) => {
   const queryClient = useQueryClient();
   const cadenaId = activeItem?.cadenavalorid;
 
@@ -45,11 +45,41 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   // al guardar, vía resolverGrupoCda).
   const { data: grupoData, isLoading: isLoadingGrupo, isError: isErrorGrupo, refetch: refetchGrupo } = useObtenerGrupoCdaConCdas(cadenaId, pantalla);
 
+  // IDs de los CDAs ya vinculados a ESTA pantalla en cualquier cadena (no
+  // solo la actual): sirve para acotar el checklist por default a "los CDAs
+  // pensados para esta pantalla" en vez de listar el catálogo global entero
+  // (~61 CDAs, la mayoría de otra pantalla). El toggle "Ver todos los CDA
+  // globales" lo desactiva a pedido, para el caso de un CDA recién creado en
+  // Criterios de Aceptación Globales que todavía no se vinculó a ninguna
+  // pantalla (si no, nunca aparecería acá para poder vincularlo).
+  const { data: cdaIdsDePantalla, isLoading: isLoadingCdaIdsPantalla } = useObtenerCdaIdsPorPantalla(pantalla);
+  const [mostrarTodosLosCdas, setMostrarTodosLosCdas] = useState(false);
+
   const { mutateAsync: vincularCda, isPending: isVinculandoCda } = useVincularCdasAGrupo();
   const { mutateAsync: actualizarVinculacionCda, isPending: isActualizandoVinculacion } = useActualizarVinculacionCda();
   const { mutateAsync: actualizarGrupoCda, isPending: isActualizandoGrupo } = useActualizarGrupoCda();
   const usuarioWebId = useUsuarioWebIdActual();
-  const allCdasList = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivoEstricto);
+  // allCdasListSinAcotar (catálogo global completo) es la fuente de verdad
+  // para cdaConfigs/guardado/reset - así un CDA marcado vía "Ver todos" no
+  // pierde su estado si el admin vuelve a tildar el filtro por pantalla
+  // antes de guardar. cdasEnPantalla es solo un recorte para MOSTRAR (qué
+  // tarjetas se listan), nunca para decidir qué se guarda.
+  const allCdasListSinAcotar = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivoEstricto);
+  // El recorte por cdaIdsDePantalla es un filtro cruzado entre cadenas
+  // (agrega qué CDAs se vincularon a esta pantalla en CUALQUIER cadena),
+  // pensado solo para acotar el checklist de "qué puedo agregar" en modo
+  // edición. En modo solo-lectura no hace falta ese cruce - lo que hay que
+  // mostrar es exactamente lo vinculado a ESTA cadena (linkedCdasList, vía
+  // grupoData), y aplicar ese filtro igual podía terminar OCULTANDO un CDA
+  // realmente activo para esta cadena si por algún motivo no aparecía en el
+  // agregado cruzado (ver hideUnchecked más abajo, que ya se encarga de
+  // dejar solo los activos).
+  const cdasEnPantalla = mostrarTodosLosCdas || isReadOnly
+    ? allCdasListSinAcotar
+    : allCdasListSinAcotar.filter((c) => {
+        const id = c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
+        return (cdaIdsDePantalla || []).includes(Number(id));
+      });
   const linkedCdasList = Array.isArray(grupoData?.cdas) ? grupoData.cdas : grupoData?.cdas?.items || grupoData?.cdas?.data || [];
 
   const getCdaId = (c) => {
@@ -117,32 +147,45 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
     return configs;
   };
 
-  // Inicializar estado local a partir de los datos cargados
-  useEffect(() => {
-    setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
-  }, [todosCdas, grupoData]);
+  // Inicializar estado local a partir de los datos cargados. Se seedea con
+  // el catálogo COMPLETO (allCdasListSinAcotar), no con el recorte visible
+  // por el filtro de pantalla - ver comentario en su declaración más arriba.
+  // Sincronizado durante el render (en vez de en un efecto) comparando
+  // contra la última referencia de todosCdas/grupoData ya procesada.
+  const [todosCdasSincronizados, setTodosCdasSincronizados] = useState(todosCdas);
+  const [grupoDataSincronizadoConfigs, setGrupoDataSincronizadoConfigs] = useState(grupoData);
+
+  if (todosCdas !== todosCdasSincronizados || grupoData !== grupoDataSincronizadoConfigs) {
+    setTodosCdasSincronizados(todosCdas);
+    setGrupoDataSincronizadoConfigs(grupoData);
+    setCdaConfigs(buildCdaConfigs(allCdasListSinAcotar, linkedCdasList));
+  }
 
   // Detectar el tipo de agrupación a partir de la expresión guardada
-  useEffect(() => {
+  const [grupoDataSincronizadoExpr, setGrupoDataSincronizadoExpr] = useState(grupoData);
+
+  if (grupoData !== grupoDataSincronizadoExpr) {
+    setGrupoDataSincronizadoExpr(grupoData);
+
     const grupo = grupoData?.grupo;
     const expr = grupo?.expresionagrupacion || "";
     setExpresionAgrupacion(expr);
 
     if (!expr.trim()) {
       setAgrupacionType("and");
-      return;
-    }
-    const linkedActiveIds = linkedCdasList.filter(esCdaActivo).map(getCdaId).filter((id) => id !== undefined);
-    const expectedOrExpr = linkedActiveIds.map(id => `cda${id}`).join(" or");
-    const expectedOrExprUpper = linkedActiveIds.map(id => `cda${id}`).join(" OR ");
-    const normalizedExpr = expr.trim().replace(/\s+/g, " ");
-
-    if (normalizedExpr === expectedOrExpr || normalizedExpr === expectedOrExprUpper) {
-      setAgrupacionType("or");
     } else {
-      setAgrupacionType("custom");
+      const linkedActiveIds = linkedCdasList.filter(esCdaActivo).map(getCdaId).filter((id) => id !== undefined);
+      const expectedOrExpr = linkedActiveIds.map(id => `cda${id}`).join(" or");
+      const expectedOrExprUpper = linkedActiveIds.map(id => `cda${id}`).join(" OR ");
+      const normalizedExpr = expr.trim().replace(/\s+/g, " ");
+
+      if (normalizedExpr === expectedOrExpr || normalizedExpr === expectedOrExprUpper) {
+        setAgrupacionType("or");
+      } else {
+        setAgrupacionType("custom");
+      }
     }
-  }, [grupoData]);
+  }
 
   // Al tildar/destildar un CDA la lista se reordena (activos arriba de
   // todo) — sin esto, el item desaparece de donde estaba y aparece en otro
@@ -152,14 +195,31 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   const [recienTogglado, setRecienTogglado] = useState(null);
   const cardRefs = useRef({});
 
+  // El toggle "Ver todos los CDA globales" puede revelar CDAs que el efecto
+  // de arriba nunca sembró en cdaConfigs (solo corre cuando cambian
+  // todosCdas/grupoData, no cuando cambia el filtro de pantalla - a
+  // propósito, para no perder ediciones sin guardar si el admin prende y
+  // apaga el toggle a mitad de una edición). Sin este fallback, tildar un
+  // CDA recién revelado perdía su valorcomparacion/expresion/etc. al armar
+  // el objeto desde un `prev[cdaId]` inexistente.
+  const getDefaultConfigFor = (cdaId) => {
+    const cda = allCdasListSinAcotar.find((c) => getCdaId(c) === cdaId);
+    return {
+      checked: false,
+      valorcomparacion: getCdaProperty(cda, "valorcomparacion") || "",
+      simbolocomparacion: getCdaProperty(cda, "simbolocomparacion") || "=",
+      expresion: getCdaProperty(cda, "expresion") || "",
+      mensajerechazo: getCdaProperty(cda, "mensajerechazo") || "",
+      cdacadenavalorid: undefined,
+      initiallyChecked: false
+    };
+  };
+
   const handleToggleCda = (cdaId) => {
-    setCdaConfigs(prev => ({
-      ...prev,
-      [cdaId]: {
-        ...prev[cdaId],
-        checked: !prev[cdaId]?.checked
-      }
-    }));
+    setCdaConfigs(prev => {
+      const base = prev[cdaId] || getDefaultConfigFor(cdaId);
+      return { ...prev, [cdaId]: { ...base, checked: !base.checked } };
+    });
     setRecienTogglado(cdaId);
   };
 
@@ -188,13 +248,10 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   }, [recienTogglado, cdaConfigs]);
 
   const handleValueChange = (cdaId, val) => {
-    setCdaConfigs(prev => ({
-      ...prev,
-      [cdaId]: {
-        ...prev[cdaId],
-        valorcomparacion: val
-      }
-    }));
+    setCdaConfigs(prev => {
+      const base = prev[cdaId] || getDefaultConfigFor(cdaId);
+      return { ...prev, [cdaId]: { ...base, valorcomparacion: val } };
+    });
   };
 
   const checkedIds = Object.entries(cdaConfigs)
@@ -231,7 +288,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
 
   // Comparar estado actual vs inicial para habilitar el botón de Guardar
   const hasChanges = () => {
-    const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
+    const baseConfigs = buildCdaConfigs(allCdasListSinAcotar, linkedCdasList);
     const baseExpr = grupoData?.grupo?.expresionagrupacion || "";
 
     const checklistChanged = Object.entries(cdaConfigs).some(([idStr, config]) => {
@@ -263,18 +320,19 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   };
 
   const handleReset = () => {
-    setCdaConfigs(buildCdaConfigs(allCdasList, linkedCdasList));
+    setCdaConfigs(buildCdaConfigs(allCdasListSinAcotar, linkedCdasList));
     setExpresionAgrupacion(grupoData?.grupo?.expresionagrupacion || "");
     toast.success("CDAs restablecidos a la configuración guardada");
   };
 
-  const sanearValor = (val) => {
-    let valorSaneado = String(val || "").trim();
-    if (valorSaneado === '""' || valorSaneado === "''") {
-      valorSaneado = "";
-    }
-    return valorSaneado;
-  };
+  // Solo recorta espacios: el valor ya viene con el formato definitivo
+  // desde el CDA global (p. ej. "''" para "comparar contra vacío", o
+  // "'REINA'" para un string) — ver formatValorParaLog en CdasGlobales.jsx.
+  // Antes esto además pisaba "''"/'""' a string vacío, perdiendo la
+  // semántica de "comparar contra vacío" al vincular el CDA a una cadena
+  // (quedaba guardado literalmente vacío en vez de "''"). Bug reportado por
+  // BIND el 2026-08-14.
+  const sanearValor = (val) => String(val || "").trim();
 
   const confirmSaveVinculacion = async () => {
     if (!usuarioWebId) {
@@ -288,7 +346,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
       const grupoActual = grupoData?.grupo || (await resolverGrupoCda(pantalla, cadenaId));
       const grupoCdaId = grupoActual.grupocdaid;
 
-      const baseConfigs = buildCdaConfigs(allCdasList, linkedCdasList);
+      const baseConfigs = buildCdaConfigs(allCdasListSinAcotar, linkedCdasList);
 
       const nuevos = [];
       const modificados = [];
@@ -360,10 +418,10 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
     }
   };
 
-  const isLoading = isLoadingTodos || isLoadingGrupo;
+  const isLoading = isLoadingTodos || isLoadingGrupo || isLoadingCdaIdsPantalla;
   const isSaving = isVinculandoCda || isActualizandoVinculacion || isActualizandoGrupo;
 
-  const cdasVisibles = allCdasList
+  const cdasVisibles = cdasEnPantalla
     .filter(cda => !hideUnchecked || (cdaConfigs[getCdaId(cda)]?.checked))
     .filter(cda => !soloActivos || (cdaConfigs[getCdaId(cda)]?.checked))
     .filter(cda => {
@@ -452,12 +510,36 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
           />
         )}
         <p style={{ fontSize: "0.825rem", color: "#8b949e", lineHeight: "1.4" }}>
-          {isReadOnly
-            ? "Listado de los CDAs activos para esta cadena y pantalla. La regla y el mensaje de rechazo se definen en Criterios de Aceptación; el valor mostrado es el vigente para esta combinación."
-            : "Activá los CDAs que se deben ejecutar para esta cadena en esta pantalla, y definí cómo se combinan entre sí. La regla y el mensaje de rechazo son los definidos en Criterios de Aceptación: acá solo podés personalizar, por cadena, el valor límite de cada uno."}
+          {description ||
+            (isReadOnly
+              ? "CDAs activos para esta cadena y pantalla. La regla se define en Criterios de Aceptación."
+              : "Activá los CDAs a ejecutar y cómo se combinan. La regla se define en Criterios de Aceptación; acá solo el valor por cadena.")}
         </p>
 
+        {/* En modo solo-lectura el selector AND/OR/personalizada (leftCol)
+            queda deshabilitado y no aporta nada interactivo - ocupa espacio
+            para mostrar un dato que cabe en una línea. Se reemplaza por este
+            badge compacto con la misma información. */}
+        {isReadOnly && (
+          <div className={styles.readOnlyRuleBadge}>
+            <FiLock size={11} className={styles.lockIcon} />
+            {agrupacionType === "and" && (
+              <span>Se deben cumplir <strong>todos</strong> los criterios activos (AND)</span>
+            )}
+            {agrupacionType === "or" && (
+              <span>Alcanza con <strong>cualquiera</strong> de los criterios activos (OR)</span>
+            )}
+            {agrupacionType === "custom" && (
+              <span>
+                Expresión personalizada:{" "}
+                <code className={styles.readOnlyRuleCode}>{expresionAgrupacion || "(vacía)"}</code>
+              </span>
+            )}
+          </div>
+        )}
+
         <div className={styles.mainLayout}>
+        {!isReadOnly && (
         <div className={styles.leftCol}>
           <div className={styles.agrupacionSection}>
             <span className={styles.customTextareaLabel}>Agrupación lógica de esta cadena y pantalla</span>
@@ -541,7 +623,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
                         </span>
                       ) : (
                         checkedIds.map(id => {
-                          const found = allCdasList.find(c => getCdaId(c) === id);
+                          const found = allCdasListSinAcotar.find(c => getCdaId(c) === id);
                           const label = found ? getCdaProperty(found, "descripcion") : `Criterio ${id}`;
                           return (
                             <button
@@ -576,9 +658,16 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
             )}
           </div>
         </div>
+        )}
 
         <div className={styles.rightCol}>
-        {!hideUnchecked && allCdasList.length > 0 && (
+        {/* Se gatea por el catálogo SIN acotar (no por cdasEnPantalla): si el
+            filtro por pantalla deja la vista en 0 pero el catálogo global
+            tiene CDAs, igual hace falta mostrar el toggle "Ver todos" para
+            poder salir de ese estado - si se gatea por cdasEnPantalla, el
+            toggle que saca del filtro queda escondido justo cuando más
+            falta hace. */}
+        {!hideUnchecked && allCdasListSinAcotar.length > 0 && (
           <div className={styles.searchRow}>
             <div className={styles.searchWrap}>
               <FiSearch className={styles.iconSearch} />
@@ -601,20 +690,40 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
               </span>
               <span className={styles.activosToggleText}>Solo activos</span>
             </label>
+            <label className={styles.activosToggle} title="Por defecto solo se muestran los CDAs ya vinculados a esta pantalla en alguna cadena. Activá esto para ver también los que todavía no se vincularon a ninguna.">
+              <input
+                type="checkbox"
+                className={styles.activosToggleInput}
+                checked={mostrarTodosLosCdas}
+                onChange={(e) => setMostrarTodosLosCdas(e.target.checked)}
+              />
+              <span className={styles.activosToggleTrack}>
+                <span className={styles.activosToggleThumb} />
+              </span>
+              <span className={styles.activosToggleText}>Ver todos</span>
+            </label>
           </div>
         )}
 
-        {!hideUnchecked && allCdasList.length > 0 && (
+        {!hideUnchecked && allCdasListSinAcotar.length > 0 && (
           <div className={styles.checklistHeader}>
-            <span>{checkedIds.length} de {allCdasList.length} CDA{allCdasList.length !== 1 ? "s" : ""} activo{checkedIds.length !== 1 ? "s" : ""}</span>
+            {/* Cuenta relativa a lo VISIBLE (cdasEnPantalla), no al total
+                global marcado (checkedIds): si se cuenta contra el total,
+                un CDA tildado vía "Ver todos" y luego ocultado por el
+                filtro de pantalla podía mostrar algo como "5 de 3". */}
+            <span>{cdasEnPantalla.filter((cda) => cdaConfigs[getCdaId(cda)]?.checked).length} de {cdasEnPantalla.length} CDA{cdasEnPantalla.length !== 1 ? "s" : ""} activo{cdasEnPantalla.length !== 1 ? "s" : ""}</span>
           </div>
         )}
 
         <div className={`${styles.cdasSection} ${isReadOnly ? styles.readOnly : ""}`}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {allCdasList.length === 0 ? (
+          <div className={styles.cdasList}>
+            {cdasEnPantalla.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
-                No hay CDAs creados en el sistema.
+                {allCdasListSinAcotar.length === 0
+                  ? "No hay CDAs creados en el sistema."
+                  : mostrarTodosLosCdas
+                    ? "No se encontró ningún CDA."
+                    : 'Sin CDAs vinculados a esta pantalla. Probá "Ver todos" arriba, o creá uno en Criterios de Aceptación Globales.'}
               </div>
             ) : cdasVisibles.length === 0 ? (
               <div style={{ padding: "2rem", textAlign: "center", color: "#8b949e", border: "1px dashed #30363d", borderRadius: "0.5rem" }}>
@@ -689,26 +798,36 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
 
                       <div className={styles.controlPanel}>
                         <span className={styles.controlPanelLabel}>Valor en esta cadena</span>
-                        <div className={styles.controlValueWrap}>
-                          <input
-                            type="text"
-                            value={valComparacion}
-                            onChange={(e) => handleValueChange(id, e.target.value)}
-                            className={styles.controlValueInput}
-                            placeholder="Valor"
-                            disabled={!isChecked || isReadOnly}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                          {!isReadOnly && <FiEdit3 className={styles.controlPencilIcon} size={12} />}
-                        </div>
+                        {isReadOnly ? (
+                          <span className={styles.controlValueReadOnly}>{valComparacion || "—"}</span>
+                        ) : (
+                          <div className={styles.controlValueWrap}>
+                            <input
+                              type="text"
+                              value={valComparacion}
+                              onChange={(e) => handleValueChange(id, e.target.value)}
+                              className={styles.controlValueInput}
+                              placeholder="Valor"
+                              disabled={!isChecked}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <FiEdit3 className={styles.controlPencilIcon} size={12} />
+                          </div>
+                        )}
                         {esValorPersonalizado && (
                           <span className={styles.overrideHint} title={`El valor definido en Criterios de Aceptación es "${valorGlobal || "(vacío)"}"`}>
                             ≠ global: {valorGlobal || "(vacío)"}
                           </span>
                         )}
-                        <span className={`${styles.cdaStatusBadge} ${isChecked ? styles.badgeActive : styles.badgeInactive}`}>
-                          {isChecked ? "Activo" : "Inactivo"}
-                        </span>
+                        {/* En solo-lectura todas las tarjetas visibles son
+                            activas por definición del filtro (hideUnchecked) -
+                            el badge "Activo" repetido en cada una no aporta
+                            nada, solo ruido. */}
+                        {!isReadOnly && (
+                          <span className={`${styles.cdaStatusBadge} ${isChecked ? styles.badgeActive : styles.badgeInactive}`}>
+                            {isChecked ? "Activo" : "Inactivo"}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );

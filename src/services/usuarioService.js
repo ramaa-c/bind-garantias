@@ -54,7 +54,32 @@ export const usuarioService = {
             ? listData
             : (listData?.items || listData?.data || listData?.resultados || listData?.list || []);
           if (list.length > 0 && list[0]) {
-            return list[0];
+            const encontrado = list[0];
+            // ⚠️ GET api/usuarios devuelve Denominacion corrompida (a veces
+            // el ID de una cadena en vez del nombre real cargado al dar de
+            // alta al usuario — reportado al backend, confirmado en vivo el
+            // 2026-09-04). Esta rama solo existe para ubicar el
+            // UsuarioWebID cuando /pornombre falla; con ese id se pide el
+            // registro real por api/usuario/{id} (misma fuente confiable
+            // que /pornombre) en vez de confiar en nada de esta búsqueda.
+            const usuarioWebId =
+              encontrado.usuariowebid ?? encontrado.UsuarioWebID ?? encontrado.id;
+            if (usuarioWebId) {
+              try {
+                return await usuarioService.obtenerUsuarioPorId(usuarioWebId);
+              } catch (porIdErr) {
+                console.warn(
+                  "[usuarioService] No se pudo confirmar el usuario por id tras el fallback de api/usuarios:",
+                  porIdErr,
+                );
+              }
+            }
+            // Si ni el id resolvió, se devuelve igual para no romper a
+            // quien solo necesita estado/usuariowebid — pero sin
+            // Denominacion, que en esta fuente no es confiable.
+            const { Denominacion: _d1, denominacion: _d2, ...sinDenominacion } =
+              encontrado;
+            return sinDenominacion;
           }
         } catch (searchErr) {
           console.warn(
@@ -67,18 +92,34 @@ export const usuarioService = {
     }
   },
 
-  // Un usuario existe pero nunca completó CrearClave (ni seteó contraseña ni
-  // "omitió" con login por código). Se distingue de un usuario bloqueado por
-  // un admin porque ambos comparten Estado="0", pero solo este caso tiene
-  // DebeCambiarClave="1". Único lugar que hace esta comparación: si cambia el
-  // casing/tipo que devuelve el backend, se corrige acá y no en cada pantalla.
+  // Un usuario existe pero su cuenta todavía no está activa (Estado!=="1").
+  //
+  // ⚠️ A propósito NO mira DebeCambiarClave: ese campo solo indica si la
+  // cuenta tiene una contraseña propia seteada o no (queda en "1" tanto al
+  // darse de alta como al pedir "Recuperar clave", y también si el usuario
+  // hace "Omitir e ingresar con código" en CrearClave.jsx — ese camino activa
+  // la cuenta vía reactivarUsuario/status-release sin tocar la contraseña) —
+  // no es un indicador de si la cuenta está pendiente de activación. Ingresar
+  // con código es una forma de acceso legítima y permanente, no un estado
+  // transitorio; si el usuario más adelante quiere una contraseña, tiene
+  // "Recuperar clave" para eso. Antes esta función exigía además
+  // DebeCambiarClave==="1", lo que hacía que un usuario que ya usó "ingresar
+  // con código" viera el modal de "cuenta pendiente de activación" al fallar
+  // cualquier login normal, aunque su cuenta estuviera 100% activa.
+  //
+  // Nota: un usuario bloqueado por un admin (bloquearUsuario/status-block)
+  // también queda con Estado!=="1", igual que uno que nunca se activó — se
+  // acordó tratarlos igual acá (mismo modal/mensaje para ambos casos).
+  //
+  // Único lugar que hace esta comparación: si cambia el casing/tipo que
+  // devuelve el backend, se corrige acá y no en cada pantalla.
   esCuentaPendienteActivacion: async (email) => {
     try {
       const userData = await usuarioService.obtenerPorNombreOEmail(email);
       const targetUser = Array.isArray(userData)
         ? userData[0]
         : userData?.items?.[0] || userData?.data?.[0] || userData;
-      return !!targetUser && String(targetUser.debecambiarclave) === "1";
+      return !!targetUser && String(targetUser.estado) !== "1";
     } catch {
       return false;
     }
@@ -114,5 +155,9 @@ export const usuarioService = {
   // PUT api/usuario/actualizar
   actualizarUsuario: async (data) =>
     (await api.put("api/usuario/actualizar", usuarioAdapter.adaptarPayload9(data))).data,
+
+  // POST api/usuario/notificar
+  notificarUsuario: async (data) =>
+    (await api.post("api/usuario/notificar", usuarioAdapter.adaptarPayload10(data))).data,
 };
 

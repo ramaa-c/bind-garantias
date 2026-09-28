@@ -11,31 +11,9 @@ import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { requisitosService } from "../../../../services/requisitosService";
 import { sociosService } from "../../../../services/sociosService";
 import styles from "./SeleccionarEmpresa.module.css";
-import { useChannel } from "../../../../context/ChannelContext";
-
-/* ─── helpers ─────────────────────────────────────────────── */
-const getInitials = (nombre = "") => {
-  const palabras = nombre
-    .trim()
-    .split(/\s+/)
-    .filter(
-      (p) =>
-        p.length > 2 &&
-        !["S.A.", "S.R.L.", "S.A.S.", "DE", "DEL", "LA", "LOS", "LAS"].includes(
-          p.toUpperCase(),
-        ),
-    );
-  if (palabras.length >= 2)
-    return (palabras[0][0] + palabras[1][0]).toUpperCase();
-  if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
-  return nombre.slice(0, 2).toUpperCase();
-};
-
-const AVATAR_VARIANTS = ["azul", "verde", "amarillo", "coral"];
-const getAvatarVariant = (nombre = "") => {
-  const code = nombre.charCodeAt(0) || 0;
-  return AVATAR_VARIANTS[code % AVATAR_VARIANTS.length];
-};
+import { useChannel } from "../../../../context/useChannel";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+import { obtenerInicialesEmpresa, obtenerVarianteAvatarEmpresa } from "../../../../utils/empresaAvatar";
 
 /* ─── sub-componente: EmpresaCard ──────────────────────────── */
 
@@ -47,8 +25,8 @@ const EmpresaCard = ({ socioInitial, socioId, index, onSelect }) => {
 
   const nombre = socio?.denominacion || socio?.Denominacion || "";
   const cuit = socio?.cuit || socio?.Cuit || "";
-  const initials = getInitials(nombre);
-  const variant = getAvatarVariant(nombre);
+  const initials = obtenerInicialesEmpresa(nombre);
+  const variant = obtenerVarianteAvatarEmpresa(nombre);
 
   const handleClick = useCallback(() => {
     if (!socio) return;
@@ -96,7 +74,8 @@ const EmpresaCard = ({ socioInitial, socioId, index, onSelect }) => {
 
 export const SeleccionarEmpresa = () => {
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { basePath } = useChannel();
+  const { cadenaId: cadenaIdActiva } = useCadenaActiva();
   const user = useAuthStore((state) => state.user);
   const setActiveSocioId = useAuthStore((state) => state.setActiveSocioId);
   const queryClient = useQueryClient();
@@ -171,7 +150,7 @@ export const SeleccionarEmpresa = () => {
 
       const tipoPersonaId = socio.tipopersonaid || socio.TipoPersonaID;
       const nombreEmpresa = socio.denominacion || socio.Denominacion;
-      const cadenaId = Number(channelInfo.id) || 1;
+      const cadenaId = cadenaIdActiva || 1;
 
       try {
         await Promise.all([
@@ -196,13 +175,13 @@ export const SeleccionarEmpresa = () => {
         console.error("Prefetch error", e);
       }
 
-      navigate(`/${channelInfo.id}/legajo`, { replace: true });
+      navigate(`${basePath}/legajo`, { replace: true });
     },
-    [setActiveSocioId, navigate, channelInfo.id, queryClient],
+    [setActiveSocioId, navigate, basePath, queryClient, cadenaIdActiva],
   );
 
   const handleAltaEmpresa = () => {
-    navigate(`/${channelInfo.id}/alta-datos-empresa`);
+    navigate(`${basePath}/alta-datos-empresa`);
   };
 
   /* — loading state — */

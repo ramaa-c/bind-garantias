@@ -20,3 +20,14 @@ export const useObtenerLimiteSocio = (socioId) => {
         placeholderData: keepPreviousData,
     });
 };
+
+export const useObtenerLimiteSocioPorCuit = (cuit) => {
+    const cuitLimpio = String(cuit || '').replace(/\D/g, '');
+    return useQuery({
+        queryKey: ['posicionConsolidada', 'limitePorCuit', cuitLimpio],
+        queryFn: () => posicionConsolidadaService.obtenerLimiteSocioPorCuit(cuitLimpio),
+        enabled: !!cuitLimpio,
+        staleTime: 1000 * 60 * 2, // 2 minutos
+        placeholderData: keepPreviousData,
+    });
+};

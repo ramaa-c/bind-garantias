@@ -45,7 +45,7 @@
   align-items: stretch;
   gap: 1.25rem;
   padding-bottom: 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
   margin-bottom: 1.25rem;
 }
 
@@ -58,8 +58,8 @@
 .iconCircleSmall {
   width: 2.25rem;
   height: 2.25rem;
-  background-color: rgba(244, 245, 0, 0.1);
-  color: var(--yellow);
+  background-color: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -82,7 +82,7 @@
 }
 
 .subtitle {
-  color: #888;
+  color: var(--text-muted);
   margin: 0.15rem 0 0 0;
   font-size: 0.85rem;
 }
@@ -90,11 +90,11 @@
 /* CAJA DE CRÉDITO */
 .creditInfo {
   text-align: left;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   backdrop-filter: blur(12px);
   padding: 1rem 1.25rem;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   width: 100%;
   transition:
     transform 0.2s ease,
@@ -102,12 +102,12 @@
 }
 
 .creditInfo:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
 }
 
 .creditLabel {
   display: block;
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -116,7 +116,7 @@
 
 .creditAmount {
   display: block;
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0.25rem 0;
@@ -124,7 +124,7 @@
 }
 
 .creditExpiry {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -139,88 +139,123 @@
   overflow: hidden;
 }
 
-/* TOOLBAR & FILTROS */
-.toolbar {
+/* BARRA DE FILTROS — mobile: buscador + botón de limpiar comparten la
+   primera fila (con flex-wrap, no en su propia línea suelta como antes -
+   se veía huérfano, con todo el ancho vacío a la izquierda) y los 4 campos
+   pasan a una fila propia debajo. El orden visual (search, limpiar, campos)
+   no coincide con el orden real del DOM (search, campos, limpiar) porque
+   ese es el orden que necesita el layout de escritorio (ver
+   @media min-width:56.25rem, sin tocar); `order` los reacomoda solo acá,
+   y se resetea ahí abajo para que el desktop quede exactamente como estaba. */
+.filterBar {
   display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  align-items: stretch;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.filtersWrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.875rem;
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
+  border-radius: 1rem;
+  padding: 1rem 1.125rem;
+  margin-bottom: 1.5rem;
 }
 
 .searchBox {
   position: relative;
   display: flex;
   align-items: center;
-  width: 100%;
+  order: 1;
+  flex: 1 1 auto;
+  min-width: 8rem;
 }
 
 .searchIcon {
   position: absolute;
-  left: 1.2rem;
+  left: 0.9rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #888;
-  font-size: 1.1rem;
+  color: var(--text-muted);
+  font-size: 1rem;
   transition: color 0.2s ease;
 }
 
 .searchBox:focus-within .searchIcon {
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
 }
 
 .searchInput {
   width: 100%;
-  height: 3.25rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.5rem;
-  padding: 0 1rem 0 3rem;
+  height: 2.5rem;
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 0.625rem;
+  padding: 0 0.875rem 0 2.5rem;
   color: var(--white);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   transition: all 0.2s ease;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.searchInput:hover,
-.filterSelect:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+.searchInput:hover {
+  background: rgba(var(--overlay-rgb), 0.05);
+  border-color: rgba(var(--overlay-rgb), 0.15);
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: var(--yellow);
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow:
-    0 0 0 3px rgba(244, 245, 0, 0.15),
-    inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-color: var(--color-amarillo-bind);
+  background: rgba(var(--overlay-rgb), 0.05);
+  box-shadow: 0 0 0 3px rgba(244, 245, 0, 0.15);
 }
 
 .searchInput::placeholder {
-  color: #666;
+  color: var(--text-muted);
   font-weight: 400;
 }
 
-.customSelectWrapper {
-  flex: 1;
-  min-width: 0;
-  width: 100%;
+.filterFieldsRow {
+  order: 3;
+  flex-basis: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
 }
 
-.selectGroup {
-  display: flex;
-  gap: 0.75rem;
-  width: 100%;
+.filterField {
+  min-width: 0;
+}
+
+/* Ocupa siempre el mismo espacio (ancho/alto fijos) esté o no visible, así
+   la fila de filtros no se corre cuando aparece/desaparece según haya
+   filtros activos: se apaga con opacity+pointer-events, nunca con
+   display/conditional render. */
+.clearFiltersBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  order: 2;
+  align-self: center;
+  flex-shrink: 0;
+  width: 2.35rem;
+  height: 2.35rem;
+  background: transparent;
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 0.6rem;
+  color: #8b949e;
+  font-size: 1rem;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.clearFiltersBtnVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.clearFiltersBtn:hover {
+  color: var(--color-amarillo-bind);
+  border-color: rgba(244, 245, 0, 0.3);
+  background: rgba(244, 245, 0, 0.06);
 }
 
 .listContainer {
@@ -230,30 +265,34 @@
   flex: 1;
   overflow-y: auto;
   padding-right: 0.5rem;
+  /* Sin esto, el "levantado" + sombra al hacer hover de la primera tarjeta
+     quedaba cortado por el borde superior del propio contenedor con scroll. */
+  padding-top: 0.4rem;
+  margin-top: -0.4rem;
 }
 
 .listContainer::-webkit-scrollbar {
   width: 6px;
 }
 .listContainer::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
   border-radius: 4px;
 }
 .listContainer::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--overlay-rgb), 0.1);
   border-radius: 4px;
 }
 .listContainer::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--overlay-rgb), 0.2);
 }
 
 .emptyState,
 .loadingContainer {
   text-align: center;
   padding: 3rem 1.5rem;
-  color: #666;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px dashed rgba(var(--overlay-rgb), 0.1);
   border-radius: 1rem;
   display: flex;
   flex-direction: column;
@@ -306,41 +345,52 @@
     font-size: 1.8rem;
   }
 
-  .toolbar {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.25rem;
-  }
-
   .btnNuevaOp {
     flex-shrink: 0;
     box-shadow: 0 4px 12px rgba(244, 245, 0, 0.15);
-  }
-
-  .filtersWrapper {
-    flex-direction: row;
-    width: auto;
-    flex: 1;
-    justify-content: flex-end;
-  }
-
-  .selectGroup {
-    width: auto;
-  }
-
-  .filterSelect {
-    flex: none;
-    min-width: 10rem;
   }
 
   .emptyState {
     padding: 4rem;
   }
 
-  .customSelectWrapper {
-    flex: none;
-    width: 12rem;
+  .filterBar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    /* Mismo valor que el padding horizontal: así el hueco entre "Orden" y
+       el botón de limpiar queda igual al hueco entre el botón y el borde
+       de la card, sin necesitar un margin-left:auto que se comiera todo
+       el espacio sobrante de forma asimétrica. */
+    gap: 1.25rem;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1.5rem;
+  }
+
+  /* El orden visual mobile (search, limpiar, campos) se resuelve con
+     `order` porque el DOM real es search → campos → limpiar (lo que este
+     layout de escritorio necesita); acá se resetea a 0 en los tres para
+     que floteen en el orden natural del DOM otra vez, como siempre. */
+  .searchBox,
+  .filterFieldsRow,
+  .clearFiltersBtn {
+    order: 0;
+  }
+
+  .searchBox {
+    /* Sin max-width: absorbe ella sola todo el espacio sobrante de la fila,
+       para que no quede sobrante suelto en ningún otro punto de la barra. */
+    flex: 1 1 14rem;
+    min-width: 10rem;
+  }
+
+  .filterFieldsRow {
+    flex-basis: auto;
+    grid-template-columns: repeat(4, 7rem);
+    flex-shrink: 0;
+  }
+
+  .clearFiltersBtn {
+    align-self: center;
   }
 }

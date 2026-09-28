@@ -1,46 +1,72 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+
 import { FiUsers as FiUsersIcon, FiRefreshCw } from "react-icons/fi";
 import { SociosLegajo, LegajoUniversalBar } from "../../../../components/features";
 import { ConfirmacionModal } from "../../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { Button } from "../../../../components/ui";
+import { AvisoBloqueoLegajoModal } from "../../../../components/features/shared/AvisoBloqueoLegajoModal/AvisoBloqueoLegajoModal";
+import { Button, InfoTooltip } from "../../../../components/ui";
 import { HelpDrawer } from "../../../../components/layout/Client/HelpDrawer/HelpDrawer";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
+import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
+import { useBloqueoLegajo, useTieneCertificadoPyme } from "../../../../hooks/useSocios";
 import { sociosService } from "../../../../services/sociosService";
 import { enriquecerSociosLufeAfip } from "../../../../utils/enriquecimiento";
+import { obtenerMensajeAmigable } from "../../../../utils/mensajesError";
 import { toast } from "sonner";
 import styles from "./SociosView.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
-const obtenerMensajeAmigable = (err, defaultMsg) => {
-  if (err?.code === "ECONNABORTED" || err?.message?.toLowerCase().includes("timeout")) {
-    return "El servicio externo está demorando en responder. Por favor, intentá nuevamente en unos momentos.";
-  }
-  if (err?.message?.toLowerCase().includes("network error") || !err?.response) {
-    return "No se pudo conectar con el servidor. Verificá tu conexión a internet o reintentá más tarde.";
-  }
-  const status = err.response?.status;
-  if (status >= 500) {
-    return "Hubo un inconveniente en el sistema al procesar los datos. Por favor, reintentá más tarde.";
-  }
-  if (status === 404) {
-    return "No se encontraron los datos correspondientes en el padrón.";
-  }
-  if (status === 403 || status === 401) {
-    return "No tenés permisos para realizar esta consulta.";
-  }
-  if (status === 400) {
-    const backendMessage = err.response?.data?.message || err.response?.data || err.response?.data?.title;
-    if (typeof backendMessage === "string" && backendMessage.length < 150) {
-      return backendMessage;
-    }
-    return "Los datos de la empresa no pudieron ser validados. Revisá el CUIT y reintentá.";
-  }
-  return defaultMsg;
-};
 
 export default function SociosView() {
   const queryClient = useQueryClient();
+  const { cadenaSlug } = useCadenaActiva();
+  const cadenaId = Number(cadenaSlug) || 1;
   const { socioIdActivo, cuitActivo } = useEmpresaActiva();
+
+  // Único caso que NO bloquea la carga (ver useBloqueoLegajo): sin
+  // Certificado PyME vigente se puede completar el legajo igual, solo
+  // queda pendiente la migración a SGR+. Cualquier otra validación inicial
+  // (CDA de PANTALLA_INGRESO_CUIT no aprobado - ej. mora) sí bloquea: se
+  // puede seguir navegando entre Legajo/Documentación, pero no cargar ni
+  // modificar nada (acordado con el equipo el 2026-08-26).
+  const { bloqueado, cargando: cargandoBloqueo, motivoSgrCore } = useBloqueoLegajo(
+    socioIdActivo,
+    cadenaId,
+    cuitActivo,
+  );
+  const { data: tieneCertificadoPyme, isLoading: cargandoCertificadoPyme } =
+    useTieneCertificadoPyme(socioIdActivo);
+
+  const [avisoBloqueoOpen, setAvisoBloqueoOpen] = useState(false);
+  const avisoMostradoRef = useRef(false);
+  useEffect(() => {
+    if (bloqueado && !cargandoBloqueo && !avisoMostradoRef.current) {
+      avisoMostradoRef.current = true;
+      setAvisoBloqueoOpen(true);
+    }
+  }, [bloqueado, cargandoBloqueo]);
+
+  const motivosBloqueo = [];
+  if (bloqueado) {
+    motivosBloqueo.push(
+      motivoSgrCore ||
+        "No superaste las validaciones de aceptación correspondientes. Comunicate con BIND Garantías para que las revisemos.",
+    );
+  }
+  if (!cargandoCertificadoPyme && !tieneCertificadoPyme) {
+    motivosBloqueo.push("Todavía no tenés un Certificado PyME generado.");
+  }
+
+  // Mismo criterio que hayDocumentacionRequerida en DocumentacionView.jsx:
+  // sin ningún requisito obligatorio en legajo (accionistas/apoderados/
+  // representante legal/agentes de bolsa, según useValidacionLegajo), no
+  // tiene sentido ofrecer "Consultar a LUFE" acá. Mientras isLoading, se
+  // asume que sí hay algo (default más seguro que ocultar el botón y
+  // hacerlo aparecer después).
+  const { totalLegajoObligatorios, isLoading: isLoadingValidacion } = useValidacionLegajo();
+  const hayLegajoRequerido = isLoadingValidacion || totalLegajoObligatorios > 0;
+
   const [sincronizando, setSincronizando] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
@@ -59,7 +85,7 @@ export default function SociosView() {
 
     setSincronizando(true);
     setShowConfirmModal(false);
-    const toastId = toast.loading("Sincronizando legajo con LUFE y AFIP...");
+    const toastId = toast.loading("Sincronizando legajo con LUFE y ARCA...");
     try {
       // 1. Ejecutar la precarga LUFE + enriquecimiento síncrono AFIP + PUTs de accionistas y representantes/apoderados
       const resEnriquecimiento = await enriquecerSociosLufeAfip(socioIdActivo, cuitActivo);
@@ -67,7 +93,7 @@ export default function SociosView() {
       // 2. Vincular documentos de LUFE
       try {
         await sociosService.obtenerDocumentosLufe(cuitActivo, true);
-      } catch (lufeDocsError) {
+      } catch {
         // Silently handle error
       }
 
@@ -78,14 +104,14 @@ export default function SociosView() {
 
       if (resEnriquecimiento?.afipFailed) {
         toast.warning(
-          "Legajo sincronizado, pero no se pudieron obtener todos los datos de AFIP (se utilizaron datos de LUFE o locales como fallback).",
+          "Legajo sincronizado, pero no se pudieron obtener todos los datos de ARCA (se utilizaron datos de LUFE o locales como fallback).",
           { id: toastId, duration: 6000 }
         );
       } else {
-        toast.success("Legajo sincronizado correctamente desde LUFE/AFIP", { id: toastId });
+        toast.success("Legajo sincronizado correctamente desde LUFE/ARCA", { id: toastId });
       }
     } catch (err) {
-      const errorMsg = obtenerMensajeAmigable(err, "Error al sincronizar datos desde LUFE/AFIP.");
+      const errorMsg = obtenerMensajeAmigable(err, "Error al sincronizar datos desde LUFE/ARCA.");
       toast.error(errorMsg, { id: toastId });
     } finally {
       setSincronizando(false);
@@ -103,33 +129,41 @@ export default function SociosView() {
           <div className={styles.titleWrapper}>
             <h1 className={styles.title}>Legajo</h1>
             <p className={styles.subtitle}>
-              Gestioná la composición accionaria, representantes y
-              vinculaciones.
+              Completá los datos de tu empresa y de las personas
+              vinculadas a ella.
             </p>
           </div>
         </div>
 
-        <Button
-          type="button"
-          variant="primary"
-          size="sm"
-          className={styles.submitBtn}
-          onClick={() => setShowConfirmModal(true)}
-          disabled={sincronizando}
-        >
-          <FiRefreshCw
-            style={{
-              marginRight: "0.5rem",
-              animation: sincronizando ? "spin 1s linear infinite" : "none"
-            }}
-          />
-          {sincronizando ? "Sincronizando..." : "Refrescar datos LUFE"}
-        </Button>
+        {hayLegajoRequerido && (
+          <div className={styles.lufeAction}>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              className={styles.submitBtn}
+              onClick={() => setShowConfirmModal(true)}
+              disabled={sincronizando || bloqueado}
+            >
+              <FiRefreshCw
+                style={{
+                  marginRight: "0.5rem",
+                  animation: sincronizando ? "spin 1s linear infinite" : "none"
+                }}
+              />
+              {sincronizando ? "Sincronizando..." : "Consultar a LUFE"}
+            </Button>
+            <InfoTooltip
+              label="¿Qué es LUFE?"
+              texto="LUFE es tu Legajo Único Financiero y Económico, una plataforma digital oficial que centraliza los datos contables y financieros de las MiPyMEs. Si autorizaste a compartir tus datos, vas a ver tu información ya precargada."
+            />
+          </div>
+        )}
       </header>
 
       <LegajoUniversalBar context="legajo" />
 
-      <div className={styles.formLayout}>
+      <div className={`${styles.formLayout} ${bloqueado ? styles.formLayoutBloqueado : ""}`}>
         <SociosLegajo />
       </div>
 
@@ -143,8 +177,14 @@ export default function SociosView() {
         isOpen={showConfirmModal}
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleRefrescarLufe}
-        titulo="Refrescar datos LUFE"
-        mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y AFIP? Esta acción actualizará la composición accionaria y los representantes."
+        titulo="Consultar a LUFE"
+        mensaje="¿Estás seguro de que deseas sincronizar los datos de esta empresa con LUFE y ARCA? Esta acción actualizará la información de las personas vinculadas a tu empresa."
+      />
+
+      <AvisoBloqueoLegajoModal
+        isOpen={avisoBloqueoOpen}
+        onClose={() => setAvisoBloqueoOpen(false)}
+        motivos={motivosBloqueo}
       />
     </section>
   );

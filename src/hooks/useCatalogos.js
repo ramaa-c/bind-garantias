@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { catalogosService } from "../services/catalogosService";
 
 const mapAndSort = (data, idField, descField = "descripcion") => {
@@ -14,22 +14,6 @@ const mapAndSort = (data, idField, descField = "descripcion") => {
 };
 
 const STALE_TIME = 1000 * 60 * 60 * 24;
-
-const useTipoActividadSEPYME = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoActividadSEPYME"],
-    queryFn: catalogosService.obtenerTipoActividadSEPYME,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipoactividadsepymeid"),
-  });
-
-const useTipoActividadBCRA = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoActividadBCRA"],
-    queryFn: catalogosService.obtenerTipoActividadBCRA,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipoactividadbcraid"),
-  });
 
 export const useSituacionBCRA = () =>
   useQuery({
@@ -63,55 +47,6 @@ export const useTamanioEmpresa = () =>
     select: (data) => mapAndSort(data, "tamanioempresaid"),
   });
 
-const useTipoComision = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoComision"],
-    queryFn: catalogosService.obtenerTipoComision,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipocomisionid"),
-  });
-
-const useTipoCotizacion = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoCotizacion"],
-    queryFn: catalogosService.obtenerTipoCotizacion,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipocotizmonid"),
-  });
-
-const useCotizacion = (moneda, fecha, tipoCotizacion) =>
-  useQuery({
-    queryKey: ["catalogos", "cotizacion", moneda, fecha, tipoCotizacion],
-    queryFn: () =>
-      catalogosService.obtenerCotizacion({ moneda, fecha, tipoCotizacion }),
-    enabled: !!moneda && !!fecha && !!tipoCotizacion,
-    staleTime: 1000 * 60 * 5, // 5 minutos de caché
-  });
-
-const useTipoReferencia = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoReferencia"],
-    queryFn: catalogosService.obtenerTipoReferencia,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tiporeferenciaid"),
-  });
-
-const useTipoTerceroRelacionado = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoTerceroRelacionado"],
-    queryFn: catalogosService.obtenerTipoTerceroRelacionado,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipotercerorelacionadoid"),
-  });
-
-const useTipoRelacionSocio = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoRelacionSocio"],
-    queryFn: catalogosService.obtenerTipoRelacionSocio,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tiporelacionsocioid"),
-  });
-
 export const useTipoContrato = () =>
   useQuery({
     queryKey: ["catalogos", "tipoContrato"],
@@ -136,46 +71,6 @@ export const useTipoCanalComercializacion = () =>
     select: (data) => mapAndSort(data, "tipocanalcomercializacionid"),
   });
 
-const useTipoActividadGlobal = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoActividadGlobal"],
-    queryFn: catalogosService.obtenerTipoActividadGlobal,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipoactividadglobalid"),
-  });
-
-const useTipoRegimenIva = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoRegimenIva"],
-    queryFn: catalogosService.obtenerTipoRegimenIva,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tiporegimenivaid"),
-  });
-
-const useTipoCondicionFianza = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoCondicionFianza"],
-    queryFn: catalogosService.obtenerTipoCondicionFianza,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipocondicionfianzaid"),
-  });
-
-const useTipoLimiteEstado = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoLimiteEstado"],
-    queryFn: catalogosService.obtenerTipoLimiteEstado,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipolimiteestadoid"),
-  });
-
-const useTipoLimiteRiesgo = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoLimiteRiesgo"],
-    queryFn: catalogosService.obtenerTipoLimiteRiesgo,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipolimiteriesgoid"),
-  });
-
 export const useTiposProducto = () =>
   useQuery({
     queryKey: ["catalogos", "tiposProducto"],
@@ -189,18 +84,6 @@ export const useTiposProducto = () =>
         String(prod.escadenavalor) === "1"
       );
       return mapAndSort(dataActiva, "tipolimiteid");
-    },
-  });
-
-const useTipoSocio = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoSocio"],
-    queryFn: catalogosService.obtenerTipoSocio,
-    staleTime: STALE_TIME,
-    select: (data) => {
-      const arrayReal = Array.isArray(data) ? data : data?.list || [];
-      const arrayLimpio = arrayReal.filter((item) => item !== null);
-      return mapAndSort(arrayLimpio, "tiposocioid");
     },
   });
 
@@ -228,36 +111,24 @@ export const usePartidos = (provinciaId) =>
     select: (data) => mapAndSort(data, "partidoid"),
   });
 
-const useTipoPersona = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoPersona"],
-    queryFn: catalogosService.obtenerTipoPersona,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipopersonaid"),
-  });
-
-const useSectorContable = () =>
-  useQuery({
-    queryKey: ["catalogos", "sectorContable"],
-    queryFn: catalogosService.obtenerSectorContable,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "sectorcontableid"),
-  });
-
-const useTipoCartera = () =>
-  useQuery({
-    queryKey: ["catalogos", "tipoCartera"],
-    queryFn: catalogosService.obtenerTipoCartera,
-    staleTime: STALE_TIME,
-    select: (data) => mapAndSort(data, "tipocarteraid"),
-  });
-
 export const useEquipoComercial = () =>
   useQuery({
     queryKey: ["catalogos", "equipoComercial"],
     queryFn: catalogosService.obtenerEquipoComercial,
     staleTime: STALE_TIME,
     select: (data) => mapAndSort(data, "equipocomercialid"),
+  });
+
+// Catálogo real de SGR+ (los vínculos legales posibles entre un tercero y un
+// socio, con la Descripcion tal cual vive en SGR+). Es la fuente de la que
+// el admin elige qué relaciones activar y renombrar para la web (ver
+// useTipoRelacionSocio.js).
+export const useTipoRelacionSocioReal = () =>
+  useQuery({
+    queryKey: ["catalogos", "tipoRelacionSocioReal"],
+    queryFn: catalogosService.obtenerTipoRelacionSocio,
+    staleTime: STALE_TIME,
+    select: (data) => mapAndSort(data, "tiporelacionsocioid"),
   });
 
 export const useObligaciones = () =>
@@ -271,3 +142,70 @@ export const useObligaciones = () =>
       return mapAndSort(arrayLimpio, "tipoobligacionid");
     },
   });
+
+export const useTipoModeloDocumento = () =>
+  useQuery({
+    queryKey: ["catalogos", "tipoModeloDocumento"],
+    queryFn: catalogosService.obtenerTipoModeloDocumento,
+    staleTime: STALE_TIME,
+    select: (data) => {
+      const arrayReal = Array.isArray(data) ? data : data?.list || [];
+      const arrayLimpio = arrayReal.filter((item) => item !== null);
+      return mapAndSort(arrayLimpio, "tipomodelodocumentoid");
+    },
+  });
+
+// TextoModeloDocumento/HTMLModeloDocumento (el contrato completo en base64)
+// se descartan acá: son varios cientos de KB por modelo y no se usan para
+// llenar el combo. Si en algún momento hacen falta, conviene pedirlos aparte
+// por ModeloDocumentoID en vez de guardarlos en esta caché.
+export const useModelosDocumento = (tipoModeloDocumentoId) =>
+  useQuery({
+    queryKey: ["catalogos", "modelosDocumento", tipoModeloDocumentoId],
+    queryFn: () => catalogosService.obtenerModelosDocumento(tipoModeloDocumentoId),
+    enabled: !!tipoModeloDocumentoId,
+    staleTime: STALE_TIME,
+    select: (data) => {
+      const arrayReal = Array.isArray(data) ? data : data?.list || [];
+      const arrayLimpio = arrayReal
+        .filter((item) => item !== null)
+        .map((item) => {
+          const { textomodelodocumento: _texto, htmlmodelodocumento: _html, ...resto } = item;
+          return resto;
+        });
+      return mapAndSort(arrayLimpio, "modelodocumentoid", "descripcion");
+    },
+  });
+
+// Parámetros de varios modelos de documento a la vez. Devuelve
+// { porModelo: Map(modeloDocumentoID -> parámetros), cargando }.
+//
+// Dos usos, ambos por adelantado (no al momento de generar el PDF):
+// - Dashboard: saber ya en el render si una solicitud va a poder generar su
+//   documento, para que el botón avise antes de clickear y la pestaña nueva
+//   solo se abra cuando realmente va a funcionar (ver useAbrirModeloDocumento).
+// - Alta/edición de cadena: filtrar del combo los modelos que no se pueden
+//   resolver desde una solicitud (ver esModeloResolubleDesdeSolicitud).
+//
+// El endpoint es liviano - devuelve apenas la lista de campos, no el
+// contenido del modelo.
+export const useParametrosModelosDocumento = (modeloIds) => {
+  const ids = (modeloIds || []).map(Number).filter((id) => id > 0);
+
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: ["catalogos", "parametrosModeloDocumento", id],
+      queryFn: () => catalogosService.obtenerParametrosModeloDocumento(id),
+      staleTime: STALE_TIME,
+    })),
+    // Los resultados vienen en el mismo orden que `queries`, así que el
+    // índice alcanza para volver a asociar cada uno con su modelo.
+    combine: (resultados) => {
+      const porModelo = new Map();
+      resultados.forEach((resultado, i) => {
+        if (Array.isArray(resultado.data)) porModelo.set(ids[i], resultado.data);
+      });
+      return { porModelo, cargando: resultados.some((r) => r.isPending) };
+    },
+  });
+};

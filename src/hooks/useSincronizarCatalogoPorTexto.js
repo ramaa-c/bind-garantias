@@ -42,6 +42,14 @@ const buscarPorTexto = (texto, opciones) => {
  *      que no corresponde mostrarle todavia "la ciudad es requerida". Esa
  *      validacion queda para el submit (trigger()/handleGuardar propio de
  *      cada formulario).
+ *
+ * `opciones` vacio NO es lo mismo que "cargado y confirmado sin match": el
+ * catalogo que filtra a `opciones` (ej. useCiudades(provinciaId)) suele
+ * estar deshabilitado hasta que se elige el campo padre (provincia), y una
+ * query deshabilitada reporta cargando=false sin haber pedido nada todavia
+ * - sin este chequeo, ese primer render (provincia aun sin resolver) borraba
+ * un id/texto ya precargado (ej. desde el propio registro guardado) antes
+ * de que el catalogo real llegara a cargar.
  */
 export const useSincronizarCatalogoPorTexto = ({
   cargando,
@@ -53,7 +61,7 @@ export const useSincronizarCatalogoPorTexto = ({
   setValue,
 }) => {
   useEffect(() => {
-    if (cargando) return;
+    if (cargando || opciones.length === 0) return;
 
     if (valorId) {
       const sigueValido = opciones.some(

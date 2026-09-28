@@ -1,23 +1,32 @@
-import React, { useState, useMemo } from "react";
-import { createPortal } from "react-dom";
-import { FiMapPin, FiMap, FiX } from "react-icons/fi";
+import React, { useState, useMemo, useEffect } from "react";
+import { FiMapPin, FiMap } from "react-icons/fi";
 import { useFormContext } from "react-hook-form";
+import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSocioMasked } from "../../../ui/InputSocioMasked/InputSocioMasked";
 import { SelectSocio } from "../../../ui/SelectSocio/SelectSocio";
 import styles from "./UbicacionModal.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
 import { useProvincias, useCiudades, usePartidos } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
 
-export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
+export default function UbicacionModal({
+  isOpen,
+  onClose,
+  onGuardar,
+  // El wizard de onboarding (Paso2Datos) reutiliza este mismo "Guardar"
+  // para marcar ubicacionConfirmada=true, incluso cuando reanuda con datos
+  // ya completos y nada para cambiar - ahí el botón debe seguir siempre
+  // habilitado. Fuera de ese flujo (ej. PerfilModal, edición de datos ya
+  // guardados) si no se tocó nada no hay nada que guardar.
+  bloquearSinCambios = false,
+}) {
   const {
     control,
     trigger,
     watch,
     setValue,
     clearErrors,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useFormContext();
 
   const [intentoGuardar, setIntentoGuardar] = useState(false);
@@ -36,6 +45,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     () => ciudadesData?.opciones || [],
     [ciudadesData],
   );
+  const ciudadesRaw = useMemo(() => ciudadesData?.raw || [], [ciudadesData]);
 
   const { data: partidosData, isLoading: cargandoPartidos } =
     usePartidos(currentProvincia);
@@ -46,12 +56,12 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
 
   const currentCiudad = watch("ciudad");
   const currentCiudadId = watch("ciudadid");
-  const currentLocalidad = watch("localidad");
   const currentLocalidadId = watch("localidadid");
 
-  // Ciudad y Localidad se filtran por la provincia elegida (useCiudades /
-  // usePartidos reciben currentProvincia) - ver useSincronizarCatalogoPorTexto
-  // para el detalle de como se resuelven/limpian ciudadid y localidadid.
+  // Ciudad se filtra por la provincia elegida (useCiudades recibe
+  // currentProvincia) - ver useSincronizarCatalogoPorTexto para el detalle
+  // de como se resuelve/limpia ciudadid a partir del texto que puede venir
+  // de AFIP/Nosis.
   useSincronizarCatalogoPorTexto({
     cargando: cargandoCiudades,
     opciones: opcionesCiudades,
@@ -62,15 +72,42 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     setValue,
   });
 
-  useSincronizarCatalogoPorTexto({
-    cargando: cargandoPartidos,
-    opciones: opcionesLocalidades,
-    valorTexto: currentLocalidad,
-    valorId: currentLocalidadId,
-    campoTexto: "localidad",
-    campoId: "localidadid",
+  // Localidad (Partido) ya NO se elige a mano ni se matchea por texto: cada
+  // Ciudad trae su propio PartidoID (confirmado en vivo contra
+  // catalogos/Ciudad - viene poblado), así que se deriva directo apenas se
+  // resuelve la Ciudad. El select queda deshabilitado (ver más abajo).
+  useEffect(() => {
+    if (cargandoCiudades || cargandoPartidos || !currentCiudadId) return;
+
+    const ciudadElegida = ciudadesRaw.find(
+      (c) => String(c.ciudadid) === String(currentCiudadId),
+    );
+    if (!ciudadElegida) return;
+
+    const partidoIdDerivado = Number(ciudadElegida.partidoid) || 0;
+    if (Number(currentLocalidadId) === partidoIdDerivado) return;
+
+    const partidoMatch = opcionesLocalidades.find(
+      (p) => Number(p.value) === partidoIdDerivado,
+    );
+
+    setValue("localidadid", partidoIdDerivado, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+    setValue("localidad", partidoMatch?.label || "", {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [
+    cargandoCiudades,
+    cargandoPartidos,
+    currentCiudadId,
+    currentLocalidadId,
+    ciudadesRaw,
+    opcionesLocalidades,
     setValue,
-  });
+  ]);
 
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
@@ -79,9 +116,25 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     }
   }
 
-  useEscape(onClose, isOpen);
-
   if (!isOpen) return null;
+
+  // Campos propios de este modal: los auto-completados por la triangulación
+  // de provincia/ciudad (ver PerfilModal.jsx) no marcan dirty a propósito
+  // (no llevan shouldDirty), así que no habilitan el botón por sí solos -
+  // solo un cambio real del usuario lo hace.
+  const CAMPOS_PROPIOS = [
+    "calle",
+    "numero",
+    "sinNumero",
+    "piso",
+    "departamento",
+    "provincia",
+    "ciudadid",
+    "localidadid",
+    "codpos",
+  ];
+  const hayCambios = CAMPOS_PROPIOS.some((campo) => dirtyFields?.[campo]);
+  const guardarDeshabilitado = bloquearSinCambios && !hayCambios;
 
   // `ciudadid`/`localidadid` usan 0 como "sin seleccionar" - sin el
   // `val !== 0`, ese 0 pasaba `hasValue` igual (Number(0).toString() es
@@ -169,21 +222,9 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
     }
   };
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) onClose();
-  };
-
-  return createPortal(
-    <div className={styles.overlay} onMouseDown={handleOverlayMouseDown}>
-      <div
-        className={styles.modalContainer}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <button type="button" className={styles.btnClose} onClick={onClose}>
-          <FiX size={20} />
-        </button>
-
-        <form className={styles.body} onSubmit={handleGuardar}>
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} maxWidth="45rem">
+      <form className={styles.body} onSubmit={handleGuardar}>
           <div className={styles.iconWrapper}>
             <FiMapPin size={30} />
           </div>
@@ -269,6 +310,7 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
                 icon={<FiMap />}
                 options={opcionesLocalidades}
                 isLoading={cargandoPartidos}
+                disabled
                 error={getError("localidadid")}
                 esValido={getEsValido("localidadid")}
               />
@@ -300,14 +342,13 @@ export default function UbicacionModal({ isOpen, onClose, onGuardar }) {
             <Button
               type="submit"
               variant="primary"
+              disabled={guardarDeshabilitado}
               style={{ width: "100%", minHeight: "3rem" }}
             >
               GUARDAR DATOS
             </Button>
           </div>
         </form>
-      </div>
-    </div>,
-    document.body,
+    </Modal>
   );
 }

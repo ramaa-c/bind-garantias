@@ -4,7 +4,12 @@ import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
-import { FiSave, FiHelpCircle, FiRotateCcw, FiUser, FiBriefcase } from "react-icons/fi";
+import { useRelationMetadata } from "../../../../hooks/useTipoRelacionSocio";
+import {
+  TABS_TIPO_PERSONA,
+  esRelacionVisible,
+} from "../../../../utils/relacionesTercerosUtils";
+import { FiSave, FiHelpCircle, FiRotateCcw } from "react-icons/fi";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./RequisitosConfigModal.module.css";
 
@@ -14,42 +19,45 @@ const DOCUMENT_METADATA = [
   { key: "balance", title: "Balance de Sumas y Saldos", desc: "Estado de sumas y saldos firmado por contador público." },
   { key: "ddjjIva", title: "Declaración Jurada de IVA", desc: "Últimas declaraciones juradas de IVA presentadas." },
   { key: "poderes", title: "Poderes", desc: "Copia de representación legal para firmantes." },
-  { key: "certificadoPyme", title: "Certificado PyME", desc: "Certificado oficial emitido por el Ministerio de Producción / AFIP." },
+  { key: "certificadoPyme", title: "Certificado PyME", desc: "Certificado oficial emitido por el Ministerio de Producción / ARCA." },
   { key: "actaDesignacion", title: "Acta de Designación de Autoridades", desc: "Acta de designación de autoridades vigente." },
   { key: "actaSocios", title: "Acta de Reunión de Socios", desc: "Acta de última reunión de socios o asamblea de la sociedad." },
-  { key: "f1272", title: "Formulario F1272", desc: "Formulario de declaración de PyME ante la AFIP." },
+  { key: "f1272", title: "Formulario F1272", desc: "Formulario de declaración de PyME ante la ARCA." },
   { key: "ddjjGanancias", title: "DDJJ de Ganancias", desc: "Última declaración jurada de Ganancias presentada (Física)." },
   { key: "manifestacionBienes", title: "Manifestación de Bienes", desc: "Manifestación de bienes o DDJJ de Bienes Personales (Física)." },
-  { key: "constanciaMonotributo", title: "Constancia de Monotributo", desc: "Constancia de opción al Monotributo de AFIP (Física)." },
+  { key: "constanciaMonotributo", title: "Constancia de Monotributo", desc: "Constancia de opción al Monotributo de ARCA (Física)." },
   { key: "cartasDocumento", title: "Cartas Documento", desc: "Cartas documento operativas relacionadas." },
   { key: "otrosDocumentos", title: "Otros Documentos", desc: "Cualquier otra documentación de respaldo del legajo." }
 ];
 
-const RELATION_METADATA = [
-  { key: "accionistas", title: "Composición Accionaria", desc: "Declaración del cuadro accionario y participaciones societarias (Socio/Fiador)." },
-  { key: "representanteLegal", title: "Representantes Legales", desc: "Administración de representantes legales habilitados." },
-  { key: "apoderados", title: "Apoderados", desc: "Administración de apoderados habilitados para operar en nombre del titular." },
-  { key: "agentesBolsa", title: "Agentes de Bolsa", desc: "Vinculación y administración de cuentas comitentes con agentes de bolsa." },
-  { key: "usuarios", title: "Vincular Usuarios", desc: "Autorización y otorgamiento de accesos a otros usuarios en la plataforma." }
-];
-
-const TABS = [
-  { id: "sa", label: "S.A.", icon: FiBriefcase },
-  { id: "srl", label: "S.R.L.", icon: FiBriefcase },
-  { id: "sh", label: "S.H.", icon: FiBriefcase },
-  { id: "otras", label: "Otras", icon: FiBriefcase },
-  { id: "fisica", label: "Física", icon: FiUser },
-];
+const TABS = TABS_TIPO_PERSONA;
 
 export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
   const cadenaId = activeItem?.cadenavalorid;
   const { requisitos, updateRequisitos, isUpdating, refetch } = useRequisitos(cadenaId);
 
+  // Fuente de verdad para qué relaciones se pueden parametrizar y cómo se
+  // llaman: lo que el admin activó en /admin/tipos-relacion-socio (ver
+  // Compartida con la mini parametrización de
+  // terceros en TiposRelacionSocio.jsx - ver useRelationMetadata.
+  const { relationMetadata } = useRelationMetadata();
+
   // Solapa activa actual
   const [activeTab, setActiveTab] = useState("sa");
-  // Estado local de configuraciones agrupadas
-  const [localConfig, setLocalConfig] = useState(null);
+  // Estado local de configuraciones agrupadas: arranca como copia de lo que
+  // haya en caché al montar (el padre remonta este modal en cada apertura,
+  // ver key en CadenasValor.jsx) y se resincroniza durante el render cuando
+  // el refetch de abajo trae datos más frescos.
+  const [localConfig, setLocalConfig] = useState(() =>
+    requisitos ? JSON.parse(JSON.stringify(requisitos)) : null
+  );
+  const [requisitosSincronizados, setRequisitosSincronizados] = useState(requisitos);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  if (requisitos && requisitos !== requisitosSincronizados) {
+    setRequisitosSincronizados(requisitos);
+    setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
+  }
 
   // Refetch fresh data when modal opens
   useEffect(() => {
@@ -58,11 +66,12 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
     }
   }, [isOpen, cadenaId, refetch]);
 
-  useEffect(() => {
-    if (requisitos) {
-      setLocalConfig(JSON.parse(JSON.stringify(requisitos)));
-    }
-  }, [requisitos, isOpen]);
+  // localConfig arranca como copia exacta de requisitos (lo último guardado)
+  // y solo se aparta de eso vía handleUpdate/handleReset: comparar contra
+  // requisitos alcanza para saber si el usuario cambió algo de verdad antes
+  // de disparar el ConfirmacionModal de guardado.
+  const sinCambios =
+    !!requisitos && !!localConfig && JSON.stringify(localConfig) === JSON.stringify(requisitos);
 
   const handleUpdate = (type, key, value) => {
     setLocalConfig(prev => {
@@ -76,6 +85,27 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
             [key]: value
           }
         }
+      };
+    });
+  };
+
+  const handleSetTodos = (type, value) => {
+    setLocalConfig(prev => {
+      if (!prev) return prev;
+      const metadata = type === "documentos" ? DOCUMENT_METADATA : relationMetadata;
+      const claves = metadata
+        .map(({ key }) => key)
+        .filter((key) => type === "documentos" || esRelacionVisible(key, activeTab));
+      const actualizado = { ...prev[activeTab][type] };
+      claves.forEach((key) => {
+        actualizado[key] = value;
+      });
+      return {
+        ...prev,
+        [activeTab]: {
+          ...prev[activeTab],
+          [type]: actualizado,
+        },
       };
     });
   };
@@ -162,7 +192,32 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
 
         {/* SECTION 1: DOCUMENTACION */}
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Documentación Requerida</h3>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Documentación Requerida</h3>
+            <div className={styles.bulkActions}>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnNone}`}
+                onClick={() => handleSetTodos("documentos", 0)}
+              >
+                Todo No mostrar
+              </button>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnOptional}`}
+                onClick={() => handleSetTodos("documentos", 2)}
+              >
+                Todo Opcional
+              </button>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnRequired}`}
+                onClick={() => handleSetTodos("documentos", 1)}
+              >
+                Todo Obligatorio
+              </button>
+            </div>
+          </div>
           <div className={styles.list}>
             {DOCUMENT_METADATA.map(({ key, title, desc }) => {
               const val = localConfig[activeTab]?.documentos?.[key] !== undefined
@@ -209,9 +264,34 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
 
         {/* SECTION 2: RELACIONES */}
         <div className={styles.section}>
-          <h3 className={styles.sectionTitle}>Relaciones y Secciones</h3>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>Relaciones y Secciones</h3>
+            <div className={styles.bulkActions}>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnNone}`}
+                onClick={() => handleSetTodos("relaciones", 0)}
+              >
+                Todo No mostrar
+              </button>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnOptional}`}
+                onClick={() => handleSetTodos("relaciones", 2)}
+              >
+                Todo Opcional
+              </button>
+              <button
+                type="button"
+                className={`${styles.bulkBtn} ${styles.bulkBtnRequired}`}
+                onClick={() => handleSetTodos("relaciones", 1)}
+              >
+                Todo Obligatorio
+              </button>
+            </div>
+          </div>
           <div className={styles.list}>
-            {RELATION_METADATA.map(({ key, title, desc }) => {
+            {relationMetadata.map(({ key, title, desc }) => {
               if (activeTab === "fisica" && key === "accionistas") return null;
               // Persona Física no tiene Representante Legal (230) - solo
               // Apoderado (210), que sí aplica a ambos tipos de persona.
@@ -261,11 +341,25 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
       </div>
 
       <div className={styles.modalFooter}>
-        <Button variant="outlineBlue" size="sm" onClick={handleReset} disabled={isUpdating}>
+        <Button
+          variant="outlineBlue"
+          size="sm"
+          onClick={handleReset}
+          disabled={isUpdating || sinCambios}
+          title={sinCambios ? "No hay cambios para restablecer" : undefined}
+        >
           <FiRotateCcw style={{ marginRight: "0.5rem" }} />
           REESTABLECER
         </Button>
-        <Button variant="blue" size="sm" onClick={handleSave} className={styles.saveBtn} isLoading={isUpdating} disabled={isUpdating}>
+        <Button
+          variant="blue"
+          size="sm"
+          onClick={handleSave}
+          className={styles.saveBtn}
+          isLoading={isUpdating}
+          disabled={isUpdating || sinCambios}
+          title={sinCambios ? "No hay cambios para guardar" : undefined}
+        >
           <FiSave style={{ marginRight: "0.5rem" }} />
           GUARDAR CONFIGURACIÓN
         </Button>
