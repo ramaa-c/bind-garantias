@@ -9,6 +9,7 @@ import {
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { CargaArchivos } from "../../../ui/CargaArchivos/CargaArchivos";
+import { FORMATOS_ARCHIVO } from "../../../../utils/fileUtils";
 import styles from "./DocumentosEmpresaModal.module.css";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
 import { toast } from "sonner";
@@ -240,6 +241,7 @@ export const DocumentosEmpresaModal = ({
                         <CargaArchivos
                           className={styles.dropzoneTaller}
                           title={doc.title}
+                          formatos={FORMATOS_ARCHIVO.documento.etiqueta}
                           hasError={hasError}
                           isUploading={isUploading}
                           file={
@@ -272,6 +274,7 @@ export const DocumentosEmpresaModal = ({
                         <input
                           type="file"
                           id={`modal-file-${doc.key}`}
+                          accept={FORMATOS_ARCHIVO.documento.accept}
                           style={{ display: "none" }}
                           disabled={isUploading}
                           onChange={(e) => {

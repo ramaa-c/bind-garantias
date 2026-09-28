@@ -110,7 +110,6 @@ export const OnboardingGuard = ({ children }) => {
   };
 
   const listaEmpresasBase = parsearEmpresas(socioUsuarios);
-  const isVendorMock = user?.email?.toLowerCase() === "vendorbind@yopmail.com";
   const isVendor = vendorData?.isVendor || false;
 
   // Un socioUsuario vinculado puede apuntar a un socio "stub" (creado por
@@ -119,8 +118,8 @@ export const OnboardingGuard = ({ children }) => {
   // para no mandar al usuario a /legajo con una empresa vacía, dejándolo sin
   // forma de volver a completar el alta.
   const { empresasCompletas, isLoading: isLoadingEmpresasCompletas } =
-    useEmpresasCompletas(isVendorMock ? [] : listaEmpresasBase);
-  const listaEmpresas = isVendorMock ? [1, 2, 3] : empresasCompletas;
+    useEmpresasCompletas(listaEmpresasBase);
+  const listaEmpresas = empresasCompletas;
   const tieneEmpresas = listaEmpresas.length > 0;
 
   // El socio ya puede tener datos reales (esSocioVacio ya no alcanza) sin
@@ -130,7 +129,7 @@ export const OnboardingGuard = ({ children }) => {
   // equipo el 2026-08-13): el socio puede entrar más allá del resultado del
   // CDA — el aviso y el bloqueo real (migración a SGR+) viven en
   // LegajoUniversalBar, que sí sigue consultando ese estado.
-  const empresaActual = !isVendor && !isVendorMock ? listaEmpresas[0] : null;
+  const empresaActual = !isVendor ? listaEmpresas[0] : null;
   const telefonoActual = String(
     empresaActual?.telefono ?? empresaActual?.Telefono ?? "",
   ).trim();
@@ -198,7 +197,7 @@ export const OnboardingGuard = ({ children }) => {
   }, [tieneEmpresas, activeSocioId, vendorData, listaEmpresas, setActiveSocioId]);
 
   React.useEffect(() => {
-    if (isVendor && !isLoadingVendor && user && !isVendorMock) {
+    if (isVendor && !isLoadingVendor && user) {
       const isAllowed = vendorData?.cadenas?.some(
         (c) => c.cadenavalorid.toString() === channelInfo.id.toString(),
       );
@@ -229,7 +228,6 @@ export const OnboardingGuard = ({ children }) => {
     vendorData,
     channelInfo.id,
     user,
-    isVendorMock,
     clearAuth,
   ]);
 
