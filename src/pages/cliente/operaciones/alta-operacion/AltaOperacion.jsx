@@ -200,7 +200,7 @@ export const AltaOperacion = () => {
           : solicitudes?.data || [];
         // Este gate inicial solo bloquea por PLATAFORMA de origen
         // (TerceroViaID) ajena a la nuestra (4000000), sobre la que no
-        // tenemos control (confirmado con Victor el 2026-08-13, ver
+        // tenemos control (confirmado con el backend el 2026-08-13, ver
         // TERCERO_VIA_PLATAFORMA_PROPIA) — acá todavía no se sabe qué línea
         // ni qué cadena va a elegir el socio, así que no se puede aplicar
         // todavía la regla más fina de "mismo TipoLimiteID + misma
@@ -209,7 +209,7 @@ export const AltaOperacion = () => {
         // tiempo, solicitudes de tipos distintos, o el mismo tipo en otra
         // cadena — lo que no puede es repetir la misma combinación
         // (TipoLimiteID, CadenaValorID) vigente a la vez (confirmado por
-        // Victor, 2026-09-15).
+        // el backend, 2026-09-15).
         //
         // Ya no hace falta mirar EstadoSolicitud acá: el backend borra la
         // fila de SolicitudEnProceso apenas deja de estar en Inicial o
@@ -502,7 +502,7 @@ export const AltaOperacion = () => {
       const montoLineaReal = Number(lineaSeleccionada.montolinea) || 0;
 
       // El chequeo de "ya tenés una solicitud en curso para esta línea"
-      // (mismo TipoLimiteID + CadenaValorID, confirmado por Victor el
+      // (mismo TipoLimiteID + CadenaValorID, confirmado por el backend el
       // 2026-09-15) ya no se hace acá: se controla antes, en el botón
       // "Nueva Operación" de Solicitudes.jsx, para no dejar completar todo
       // el wizard y enterarse recién al final (ver tieneSolicitudPendiente
@@ -608,7 +608,7 @@ export const AltaOperacion = () => {
       // ya se validó al entrar a la pantalla (ver verificarAcceso) - si ya
       // estaba en el tope, el alta queda bloqueada antes de llegar acá.
 
-      // Criterio confirmado por Victor (14/8/2026): el POST a
+      // Criterio confirmado por el backend (14/8/2026): el POST a
       // SolicitudEnProceso se hace SIEMPRE al dar de alta, sin importar si
       // el propio frontend ya sabe que la va a rechazar (CDA de línea /
       // PorcentajeMinimoSolicitud, ver debeRechazarseAutomaticamente más

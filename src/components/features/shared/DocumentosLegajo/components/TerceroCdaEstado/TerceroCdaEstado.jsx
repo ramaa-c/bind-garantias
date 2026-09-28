@@ -18,7 +18,7 @@ import styles from "../../DocumentosLegajo.module.css";
 
 // Herramienta puntual para admin: muestra el resultado de la última corrida
 // de CDAs (pantalla PANTALLA_SOCIOS) para ESTE tercero puntual y permite
-// reejecutarla. Solución rápida acordada con Victor mientras no se justifica
+// reejecutarla. Solución rápida acordada con el backend mientras no se justifica
 // construir un historial/panel completo para terceros (como el que ya
 // existe para socios) — ver conversación del 2026-07-21.
 export function TerceroCdaEstado({ terceroId, socioIdActivo }) {

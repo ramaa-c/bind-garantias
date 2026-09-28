@@ -1,6 +1,6 @@
 // Catálogo único de estados (WSSolicitudEnProceso.EstadoSolicitud), ahora
 // compartido literalmente por TipoLimiteSocio.TipoLimiteEstadoID y
-// SolicitudEnProceso.EstadoSolicitud — unificado con Victor el 2026-08-18,
+// SolicitudEnProceso.EstadoSolicitud — unificado con el backend el 2026-08-18,
 // con migración de los datos existentes de TipoLimiteSocio a esta escala a
 // cargo del backend. Antes TipoLimiteSocio tenía su propia escala
 // (-2 Cancelada / -1 Rechazada / 0 Pendiente / 1 Aprobada); ahora usa
@@ -21,7 +21,7 @@ export const ESTADO_VENCIDO = 5;
 // distintos (-1 y -2); el catálogo nuevo solo tiene un estado terminal
 // negativo "real" (Cancelado). Como workaround TEMPORAL para no perder la
 // distinción, Cancelada pisa el valor de Vencido (5) — un estado que hoy no
-// usamos para nada — hasta que Victor agregue un indicador propio para
+// usamos para nada — hasta que el backend agregue un indicador propio para
 // distinguirlas de verdad. Sacar este workaround el día que eso pase: ver
 // mensaje del 2026-08-18.
 export const ESTADO_PENDIENTE = ESTADO_EN_PROCESO;
@@ -31,7 +31,7 @@ export const ESTADO_CANCELADA = ESTADO_VENCIDO;
 
 // TerceroViaID de SolicitudEnProceso: identifica la plataforma de origen de
 // la solicitud, no la cadena de valor. La nuestra es 4000000 - otras
-// plataformas usan 2000000/3000000 (confirmado con Victor el 2026-08-13).
+// plataformas usan 2000000/3000000 (confirmado con el backend el 2026-08-13).
 // Un socio puede tener varias solicitudes en curso al mismo tiempo dentro de
 // NUESTRA plataforma (en distintas cadenas) sin problema; lo que hay que
 // evitar es dejarlo arrancar una acá si ya tiene una en curso en OTRA

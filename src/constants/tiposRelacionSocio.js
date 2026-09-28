@@ -2,7 +2,7 @@
 // flujo de carga propio en el legajo (accionista/representante
 // legal/apoderado/agente de bolsa) - ver SGRPLUSPLA (parametrización de
 // terceros). El ID sigue siendo el mismo del catálogo real de SGR+
-// (confirmado con Victor: api/TipoRelacionSocio expone ese mismo ID, nunca
+// (confirmado con el backend: api/TipoRelacionSocio expone ese mismo ID, nunca
 // uno propio), pero antes vivía repetido a mano en ~10 archivos distintos.
 // Acá se centraliza para que cambiarlo (si algún día correspondiera) sea un
 // solo lugar, y para que la parametrización por cadena (requisitosService.js)

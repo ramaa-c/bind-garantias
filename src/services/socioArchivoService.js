@@ -1,5 +1,6 @@
 import { socioArchivoAdapter } from "../adapters/socioArchivoAdapter";
 import api from "../api/axios";
+import { esContenidoArchivoPermitido } from "../utils/fileUtils";
 
 /**   Convierte un File del navegador a string base64   */
 const fileToBase64 = (file) =>
@@ -15,6 +16,16 @@ const fileToBase64 = (file) =>
   });
 
 /**  Formatea una fecha JS al formato requerido "2026-01-01T00:00:00"   */
+const leerArchivoValidado = async (file) => {
+  const contenidoBase64 = await fileToBase64(file);
+  if (!esContenidoArchivoPermitido(contenidoBase64)) {
+    throw new Error(
+      `El contenido de "${file.name}" no corresponde a un PDF, JPG o PNG válido.`,
+    );
+  }
+  return contenidoBase64;
+};
+
 const formatFechaArchivo = (date = new Date()) => {
   const d = new Date(date);
   const pad = (n) => String(n).padStart(2, "0");
@@ -56,7 +67,7 @@ const archivosCache = {};
 
 const TIMEOUT_ARCHIVO_MS = 120000;
 
-// SocioArchivo no tiene DELETE (solo GET/POST/PUT — confirmado con Victor,
+// SocioArchivo no tiene DELETE (solo GET/POST/PUT — confirmado con el backend,
 // 2026-08-26): "eliminar" un archivo es en realidad un PUT que pisa
 // fchArchivo con esta fecha centinela. obtenerArchivos filtra cualquier
 // archivo con esa fecha (ver esArchivoEliminado más abajo), así que
@@ -117,7 +128,7 @@ export const socioArchivoService = {
     fchArchivoManual = null
   ) => {
     socioArchivoService.clearCache(socioId);
-    const contenidoBase64 = await fileToBase64(file);
+    const contenidoBase64 = await leerArchivoValidado(file);
 
     const payload = {
       socioarchivoid: 0,
@@ -156,7 +167,7 @@ export const socioArchivoService = {
       socioArchivoService.clearCache(socioId);
     }
     const contenidoBase64 = file
-      ? await fileToBase64(file)
+      ? await leerArchivoValidado(file)
       : (archivoExistente.contenido || "");
 
     const payload = {

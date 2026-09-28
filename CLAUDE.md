@@ -5,7 +5,7 @@ Plataforma web para una SGR (Sociedad de Garantía Recíproca) de BIND. Permite 
 ## Equipo y flujo de trabajo
 
 - **Frontend**: Mati (`feature-mati`) y Ramiro (`feature-rama`). Cada uno trabaja en su rama y se mergea a `dev` (por PR en GitHub o merge directo). `main` se actualiza aparte.
-- **Backend**: Victor. El frontend NO puede modificar el backend; cualquier bug de API se le reporta a él.
+- **Backend**: equipo de backend. El frontend NO puede modificar el backend; cualquier bug de API se le reporta a ese equipo.
 - Antes de mergear a `dev`: correr `npm run lint` y `npm run build`. Después de mergear, traer `dev` de vuelta a la rama propia.
 
 ## Comandos
@@ -94,7 +94,7 @@ Reglas de negocio evaluadas contra datos de integraciones externas para aprobar/
 - **3 niveles de configuración** (admin): CDAs globales (definición), CDAs por cadena de valor (vinculación + valor de comparación custom), CDAs por pantalla (agrupación con expresión lógica sobre tokens `cdaN`, ej: `cda1050 and cda1 or cda1053`).
 - **Pantallas actuales**: `PANTALLA_INGRESO_CUIT` (valida la empresa en Paso1Cuit del onboarding) y `PANTALLA_SOCIOS` (valida accionistas/representantes en sus modales).
 - **Ejecución**: `GET cda/execute?Pantalla=X&Cuit=Y&CadenaValorID=Z`. Códigos: `202` pasa, `406` no cumple (devuelve mensaje de rechazo), `400` "CDAs Inexistentes", `409` dato faltante, `500` error. El frontend la maneja vía `useCdaEngine` (`src/hooks/useCdaEngine.js`).
-- ⚠️ **Bug conocido del backend** (reportado a Victor): el parser de `ExpresionAgrupacion` falla con 500 `"Couldn't find cdaX"` cuando hay paréntesis y un ID de CDA es prefijo numérico de otro (ej: `cda1` y `cda1050`). Workaround: evitar paréntesis cuando se concatena en plano (`and` tiene mayor precedencia que `or`, así que casi nunca hacen falta).
+- ⚠️ **Bug conocido del backend** (reportado al equipo de backend): el parser de `ExpresionAgrupacion` falla con 500 `"Couldn't find cdaX"` cuando hay paréntesis y un ID de CDA es prefijo numérico de otro (ej: `cda1` y `cda1050`). Workaround: evitar paréntesis cuando se concatena en plano (`and` tiene mayor precedencia que `or`, así que casi nunca hacen falta).
 - ⚠️ `useCdaEngine` hardcodea que el CDA con ID=10 no es bloqueante (socio protector en otra SGR). Frágil: depende de un ID de base de datos.
 
 ## Multi-tenant (app cliente)

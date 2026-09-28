@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from './CargaArchivos.module.css';
-import { FiUploadCloud, FiFile, FiTrash2, FiEye, FiDownload, FiEdit2, FiShield } from 'react-icons/fi';
+import { FiUploadCloud, FiFile, FiTrash2, FiEye, FiDownload, FiEdit2, FiShield, FiCamera } from 'react-icons/fi';
 import { BotonIcono } from "..//BotonIcono/BotonIcono";
 import { Spinner } from "../Spinner/Spinner";
 import { TAMANIO_MAXIMO_ARCHIVO_MB } from "../../../utils/fileUtils";
@@ -17,6 +17,8 @@ export const CargaArchivos = ({
   // El límite de 50MB es real para archivos sueltos (PDFs, comprobantes),
   // pero no aplica a fotos de DNI - ahí no tiene sentido mostrarlo.
   showMaxSizeHint = true,
+  formatos = null,
+  onCamara,
   // Ver .compact en CargaArchivos.module.css: ícono/textos más chicos, para
   // que el estado vacío no quede más alto que el estado con archivo cargado.
   compact = false,
@@ -91,6 +93,13 @@ export const CargaArchivos = ({
     );
   }
 
+  const hintFormatos = [
+    formatos && `Formatos: ${formatos}`,
+    showMaxSizeHint && `Máx. ${TAMANIO_MAXIMO_ARCHIVO_MB} MB`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
   const activeIsDragging = isDragging !== undefined ? isDragging : internalIsDragging;
 
   const boxClass = `${styles.box} ${activeIsDragging ? styles.dragging : ""} ${hasError ? styles.error : ""} ${compact ? styles.compact : ""} ${className}`;
@@ -135,8 +144,20 @@ export const CargaArchivos = ({
       <Icon className={styles.icon} />
       <h4 className={styles.text}>{title}</h4>
       <p className={styles.subtext}>{subtitle}</p>
-      {showMaxSizeHint && (
-        <p className={styles.maxSizeHint}>Tamaño máximo: {TAMANIO_MAXIMO_ARCHIVO_MB} MB</p>
+      {hintFormatos && <p className={styles.maxSizeHint}>{hintFormatos}</p>}
+      {onCamara && (
+        <button
+          type="button"
+          className={styles.btnCamara}
+          onClick={(e) => {
+            e.stopPropagation();
+            onCamara();
+          }}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <FiCamera aria-hidden="true" />
+          Sacar foto
+        </button>
       )}
     </div>
   );

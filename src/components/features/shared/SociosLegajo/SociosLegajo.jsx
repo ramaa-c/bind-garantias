@@ -783,7 +783,7 @@ export function SociosLegajo({
                     items={
                       idRelacionExtra === RELACION_FIADOR_ID && accionistaUnico
                         ? // El backend todavía no distingue el caso de accionista
-                          // único (pendiente del lado de Victor, SGRPLUSPLA-137):
+                          // único (pendiente del lado del backend, SGRPLUSPLA-137):
                           // sigue auto-creando la relación de Fiador apuntando
                           // al mismo tercero que el accionista, que acá no
                           // cuenta como un fiador real. Se oculta ese registro

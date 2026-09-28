@@ -166,8 +166,8 @@ export function LegajoUniversalBar({
     // PRIMERA migración (isValid ya los exige), pero una vez migrado, un
     // socio ya se considera al día en SGR+ aunque siga tocando documentos.
     // Solo remigra por cambios de terceros (altas/bajas/edición) o de los
-    // datos de la empresa en sí (ver datosEmpresaKey) — acordado con Victor
-    // el 2026-08-11.
+    // datos de la empresa en sí (ver datosEmpresaKey) — acordado con el
+    // backend el 2026-08-11.
     const datosEmpresaKey = socioWeb
       ? [
           socioWeb.denominacion,
@@ -246,7 +246,7 @@ export function LegajoUniversalBar({
 
   // Aviso "¡Felicitaciones!" del CLIENTE: dispara apenas su legajo pasa a
   // estar completo, sin importar si la migración a SGR+ (que ni sabe que
-  // existe) sale bien o mal en ese momento — acordado con Victor el
+  // existe) sale bien o mal en ese momento — acordado con el backend el
   // 2026-08-12. isValidBaselineRef guarda si YA estaba completo al abrir la
   // pantalla (mismo patrón que `baseline` arriba, con ref en vez de state
   // porque acá no hace falta re-renderizar por esto): solo cuenta como
@@ -406,7 +406,7 @@ export function LegajoUniversalBar({
         // corresponde enterarse de la migración real. El aviso del cliente
         // NO depende de esto — se dispara aparte apenas su legajo queda
         // completo, migre o no migre en el momento (ver el useEffect de
-        // isValid más abajo, acordado con Victor el 2026-08-12).
+        // isValid más abajo, acordado con el backend el 2026-08-12).
         if (!silent) setShowMigracionExitosa(true);
         setBaseline(fingerprint);
         await Promise.all([
@@ -825,7 +825,7 @@ export function LegajoUniversalBar({
           ) : (
             // La migración a SGR+ es un detalle interno — de cara al
             // cliente alcanza con decir que ya completó todo, sin mencionar
-            // sincronización/migración ni su estado (acordado con Victor el
+            // sincronización/migración ni su estado (acordado con el backend el
             // 2026-08-12). isMigrating/migradoEnBackend se siguen calculando
             // arriba para la lógica de reintento, solo dejaron de
             // mostrarse acá.

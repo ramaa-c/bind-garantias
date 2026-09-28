@@ -17,7 +17,7 @@ import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../../../utils/executeCda";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
-import { formatBase64Size, procesarArchivo, validarTamanioArchivo } from "../../../../../../utils/fileUtils";
+import { FORMATOS_ARCHIVO, formatBase64Size, procesarArchivo, validarArchivo } from "../../../../../../utils/fileUtils";
 import { RELACION_ACCIONISTA_ID } from "../../../../../../constants/tiposRelacionSocio";
 import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincronizarCatalogoPorTexto";
@@ -58,10 +58,22 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
         type="file"
         id={`file-input-${fileKey}`}
         style={{ display: "none" }}
-        accept="image/*,application/pdf"
+        accept={FORMATOS_ARCHIVO.documento.accept}
         onChange={(e) => {
           const selected = e.target.files?.[0];
-          if (selected && validarTamanioArchivo(selected)) onChange(selected);
+          if (selected && validarArchivo(selected)) onChange(selected);
+          e.target.value = null;
+        }}
+      />
+      <input
+        type="file"
+        id={`camera-input-${fileKey}`}
+        style={{ display: "none" }}
+        accept="image/*"
+        capture="environment"
+        onChange={(e) => {
+          const selected = e.target.files?.[0];
+          if (selected && validarArchivo(selected, FORMATOS_ARCHIVO.imagen)) onChange(selected);
           e.target.value = null;
         }}
       />
@@ -72,6 +84,8 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
         // El límite de 50MB es un dato de archivos sueltos, no de una foto
         // de DNI - acá no aplica (ver CargaArchivos.jsx).
         showMaxSizeHint={false}
+        formatos={FORMATOS_ARCHIVO.documento.etiqueta}
+        onCamara={() => document.getElementById(`camera-input-${fileKey}`).click()}
         compact
         hasError={hasError}
         file={
@@ -98,7 +112,7 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
           e.preventDefault();
           setIsDragging(false);
           const droppedFile = e.dataTransfer.files?.[0];
-          if (droppedFile && validarTamanioArchivo(droppedFile)) {
+          if (droppedFile && validarArchivo(droppedFile)) {
             onChange(droppedFile);
           }
         }}

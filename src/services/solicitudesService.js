@@ -26,7 +26,7 @@ export const solicitudesService = {
   // (pedido del backend), así que la fila de SolicitudEnProceso no se ubica
   // por ID sino por (Cuit, TipoLimiteID, CadenaValorID): el backend garantiza
   // que nunca hay más de una vigente con esa misma combinación (confirmado
-  // con Victor, 2026-09-15). El PUT espera la entidad completa, así que
+  // con el backend, 2026-09-15). El PUT espera la entidad completa, así que
   // primero se trae la fila vigente (por CUIT) para no perder el resto de
   // sus campos — y si ya no está (se sincronizó antes, o el backend ya la
   // dio de baja por vencimiento) no hay nada para actualizar.

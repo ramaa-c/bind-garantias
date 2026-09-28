@@ -10,6 +10,7 @@ import { Modal, Button, InputSimple, SelectSimple, MontoEnPalabras } from "../..
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./EditarCadenaModal.module.css";
+import { FORMATOS_ARCHIVO, validarTipoArchivo } from "../../../../utils/fileUtils";
 
 const construirDatosFormulario = (activeItem) => ({
   cadenavalorid: activeItem?.cadenavalorid ?? 0,
@@ -166,6 +167,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!validarTipoArchivo(file, FORMATOS_ARCHIVO.imagen)) return;
       if (file.size > 500 * 1024) {
         toast.error("El tamaño máximo permitido para la imagen es 500kb");
         return;
@@ -506,7 +508,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                   Cargar Logo de la Cadena (Opcional)
                 </div>
                 <div style={{ fontSize: "0.7rem", color: "#8b949e", marginTop: "0.15rem" }}>
-                  Arrastrá o hacé click aquí. Fondo transparente, Max 500kb.
+                  Arrastrá o hacé click aquí. JPG o PNG con fondo transparente, máx. 500 KB.
                 </div>
               </div>
             </div>
@@ -517,7 +519,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
           type="file"
           ref={fileInputRef}
           style={{ display: "none" }}
-          accept="image/*"
+          accept={FORMATOS_ARCHIVO.imagen.accept}
           onChange={handleFileChange}
         />
       </div>

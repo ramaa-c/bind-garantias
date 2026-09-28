@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { FiBell, FiBold } from "react-icons/fi";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
 import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { Switch } from "../../../ui/Switch/Switch";
@@ -31,16 +32,13 @@ import styles from "./NotificarSocioModal.module.css";
 // El caller monta esto con key={socio?.socioid ?? "none"} para que el
 // mensaje y la selección arranquen de cero en cada apertura, mismo patrón
 // que RechazarSolicitudModal.
-function normalizarNegritas(html) {
-  const contenedor = document.createElement("div");
-  contenedor.innerHTML = html;
-  contenedor.querySelectorAll("b").forEach((b) => {
-    const strong = document.createElement("strong");
-    strong.innerHTML = b.innerHTML;
-    b.replaceWith(strong);
-  });
-  return contenedor.innerHTML;
-}
+const sanitizarMensaje = (html) =>
+  DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ["b", "strong", "br", "div", "p"],
+    ALLOWED_ATTR: [],
+  })
+    .replace(/<b>/g, "<strong>")
+    .replace(/<\/b>/g, "</strong>");
 
 export function NotificarSocioModal({
   isOpen,
@@ -121,11 +119,22 @@ export function NotificarSocioModal({
     sincronizarVacio();
   };
 
+  const handlePegar = (e) => {
+    e.preventDefault();
+    const texto = e.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, texto);
+    sincronizarVacio();
+  };
+
+  const handleSoltar = (e) => {
+    e.preventDefault();
+  };
+
   const handleEnviar = async () => {
     const editor = editorRef.current;
     if (!editor || enviando || estaVacio || emailsSeleccionados.length === 0) return;
 
-    const mensaje = normalizarNegritas(editor.innerHTML);
+    const mensaje = sanitizarMensaje(editor.innerHTML);
     setEnviando(true);
 
     const exitosos = [];
@@ -241,6 +250,8 @@ export function NotificarSocioModal({
             aria-multiline="true"
             aria-label="Mensaje para el socio"
             onInput={sincronizarVacio}
+            onPaste={handlePegar}
+            onDrop={handleSoltar}
             onKeyUp={sincronizarEstadoNegrita}
             onMouseUp={sincronizarEstadoNegrita}
             onFocus={handleFocusEditor}

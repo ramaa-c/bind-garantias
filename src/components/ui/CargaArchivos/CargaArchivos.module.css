@@ -225,3 +225,32 @@
   font-size: 0.78rem;
   color: var(--color-azul-bind);
 }
+.btnCamara {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--overlay-rgb), 0.2);
+  background: rgba(var(--overlay-rgb), 0.05);
+  color: var(--white);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.btnCamara:hover,
+.btnCamara:focus-visible {
+  border-color: var(--color-amarillo-bind);
+  background: rgba(244, 245, 0, 0.06);
+}
+
+@media (pointer: coarse) {
+  .btnCamara {
+    display: inline-flex;
+  }
+}
