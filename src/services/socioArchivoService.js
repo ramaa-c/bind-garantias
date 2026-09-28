@@ -56,7 +56,7 @@ const archivosCache = {};
 
 const TIMEOUT_ARCHIVO_MS = 120000;
 
-// SocioArchivo no tiene DELETE (solo GET/POST/PUT — confirmado con Victor,
+// SocioArchivo no tiene DELETE (solo GET/POST/PUT — confirmado con el backend,
 // 2026-08-26): "eliminar" un archivo es en realidad un PUT que pisa
 // fchArchivo con esta fecha centinela. obtenerArchivos filtra cualquier
 // archivo con esa fecha (ver esArchivoEliminado más abajo), así que

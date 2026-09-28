@@ -1001,7 +1001,7 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
     // el mismo resultado a TODOS los CDAs del grupo, pisando la evaluación
     // real de los demás. Por eso "Forzar expresión" nunca cierra una fila de
     // grupo nueva: sería inseguro en cualquier pantalla con más de un CDA
-    // vinculado. Reportado a Victor: no hay forma de forzar un único CDA y
+    // vinculado. Reportado al backend: no hay forma de forzar un único CDA y
     // cerrar el grupo en la misma llamada.
     const cadenaValorId = cadenaValorIdDetectada;
     if (!cadenaValorId) {

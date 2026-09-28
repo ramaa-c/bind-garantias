@@ -431,7 +431,7 @@ export default function Dashboard() {
 
   // Cada cambio de estado en TipoLimiteSocio (aprobar/rechazar) tiene que
   // reflejarse también en SolicitudEnProceso — desde que se unificó el
-  // catálogo de estados con Victor (2026-08-18), ambas tablas usan
+  // catálogo de estados con el backend (2026-08-18), ambas tablas usan
   // literalmente los mismos valores, así que no hace falta traducir nada.
   // TipoLimiteSocio.SolicitudID viaja siempre en null (pedido del backend, no
   // se resuelve nunca del lado de ellos - confirmado en vivo el 2026-09-15),
@@ -461,7 +461,7 @@ export default function Dashboard() {
     // El EquipoComercialID de la línea puede haber quedado en 0 (mismo
     // criterio que usa AltaOperacion.jsx al crearla: no hay que confiar en
     // lo que ya esté guardado en TipoLimiteSocio, sino resolverlo siempre
-    // desde la CadenaValor vigente). Victor detectó que ese 0 es lo que
+    // desde la CadenaValor vigente). El backend detectó que ese 0 es lo que
     // rompe api/Linea/Migrar al aprobar — reportado el 2026-08-14.
     const cadenaId = item.cadenavalorid ?? item.raw?.cadenavalorid ?? item.raw?.CadenaValorID;
     const cadenaDeLaLinea = (activeCadenas || []).find(

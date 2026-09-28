@@ -120,7 +120,7 @@ export const sociosService = {
   // app. Nunca tira: devuelve { status, data } para diferenciar sin
   // try/catch afuera (mismo patrón que probarCda/reejecutarCda).
   //
-  // ⚠️ Vincular=true (confirmado con Victor el 2026-08-21) es lo que hace
+  // ⚠️ Vincular=true (confirmado con el backend el 2026-08-21) es lo que hace
   // que el backend cargue/actualice la fila correspondiente en
   // SocioCertificadoPYME (ver obtenerCertificadoPyme/crearCertificadoPyme
   // más abajo) — esa tabla NO se completa sola, ni al vincular el socio, ni

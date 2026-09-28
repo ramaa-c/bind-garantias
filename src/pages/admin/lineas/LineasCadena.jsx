@@ -438,7 +438,7 @@ export default function LineasCadena() {
   // El campo "Disponible" que devuelve GET CadenaValor/Utilizado/{id} viene
   // mal calculado desde el backend (confirmado: para una cadena con
   // MontoMaximoCV=200M y Utilizado=0 devuelve Disponible=0 en vez de 200M) -
-  // se recalcula acá en vez de confiar en ese campo. Reportado a Victor.
+  // se recalcula acá en vez de confiar en ese campo. Reportado al backend.
   //
   // El "Utilizado" tampoco sale de ese endpoint: se recalcula sumando el
   // MontoLinea de las líneas (TipoLimiteCadenaValor) ya configuradas para

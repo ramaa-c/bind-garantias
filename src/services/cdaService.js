@@ -6,8 +6,8 @@ export const cdaService = {
   // combinación Pantalla+Cadena, con su propia ExpresionAgrupacion.
   //
   // ⚠️ El backend hoy IGNORA el filtro CadenaValorID (devuelve todos los
-  // grupos de la pantalla, sin importar la cadena pedida) — reportado a
-  // Victor. Filtramos acá del lado del cliente para no terminar operando
+  // grupos de la pantalla, sin importar la cadena pedida) — reportado al
+  // backend. Filtramos acá del lado del cliente para no terminar operando
   // sobre el GrupoCda de otra cadena. Sacar este filtro extra el día que el
   // backend lo resuelva de verdad.
   obtenerGrupoCda: async (pantalla, cadenaValorId) => {
@@ -84,7 +84,7 @@ export const cdaService = {
   // también criterios que en realidad se cumplían). Solo es seguro pasar
   // ValorParticularExpresion junto con CdaID (ver reejecutarCda), que sí
   // evalúa un único CDA — a costa de nunca generar una fila de cierre de
-  // grupo (CdaID 0). Reportado a Victor: no hay forma de forzar un único CDA
+  // grupo (CdaID 0). Reportado al backend: no hay forma de forzar un único CDA
   // y cerrar el grupo en la misma llamada.
   ejecutarCda: async (pantallaOrObj, entidad, cadenaValorId, usuarioId, valorParticularExpresion) => {
     let Pantalla = pantallaOrObj;

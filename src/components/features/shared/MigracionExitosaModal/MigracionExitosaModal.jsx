@@ -7,7 +7,7 @@ import styles from "./MigracionExitosaModal.module.css";
 // Aviso "fuerte" de que el legajo quedó completo: reemplaza al toast (que
 // pasa desapercibido) para un momento que hay que notar sí o sí. De cara al
 // CLIENTE esto no es "se migró a SGR+" (ver LegajoUniversalBar y
-// EstadoMigracionModal, acordado con Victor el 2026-08-12) — es simplemente
+// EstadoMigracionModal, acordado con el backend el 2026-08-12) — es simplemente
 // que ya no le falta nada por cargar. El ADMIN sí necesita saber que la
 // migración a SGR+ ocurrió de verdad, así que en adminMode se lo dice tal
 // cual — a él la migración no se le puede ocultar, es justamente lo que

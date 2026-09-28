@@ -6,7 +6,7 @@ import { tipoRelacionSocioAdapter } from "../adapters/tipoRelacionSocioAdapter";
 // mismo TipoRelacionSocioID que el catálogo real, con la Descripcion que se
 // va a mostrar/usar para esa relación. El POST da de alta un ID del catálogo
 // real que todavía no está curado acá; el PUT solo permite renombrarlo, no
-// existe baja (confirmado con Victor - un registro cargado queda existente
+// existe baja (confirmado con el backend - un registro cargado queda existente
 // hasta que se pida un borrado manual en la base).
 export const tipoRelacionSocioService = {
   obtenerActivos: async () => (await api.get("api/TipoRelacionSocio")).data,

@@ -410,7 +410,7 @@ export const useValidacionLegajo = ({
       const idKey = String(item.id);
       const esFiador = item.id === RELACION_FIADOR_ID;
       // El backend todavía no distingue el caso de accionista único
-      // (pendiente del lado de Victor, SGRPLUSPLA-137): sigue auto-creando
+      // (pendiente del lado del backend, SGRPLUSPLA-137): sigue auto-creando
       // la relación de Fiador apuntando al mismo tercero que el accionista.
       // Se descarta acá, igual que en SociosLegajo.jsx, para que no cuente
       // como si ya hubiera un fiador real cargado.
