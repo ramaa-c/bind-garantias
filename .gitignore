@@ -30,6 +30,7 @@ Thumbs.db
 !.env.example
 
 # Claude Code (estado local de la herramienta, no del proyecto)
+CLAUDE.md
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 .claude/scheduled_tasks.json
