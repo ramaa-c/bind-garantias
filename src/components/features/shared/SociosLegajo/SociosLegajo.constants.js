@@ -30,7 +30,7 @@ export const ESTRUCTURA_SOCIOS = [
     info: "Vinculación y administración de agentes de bolsa y cuentas comitentes.",
   },
   {
-    category: "Legajo",
+    category: "Accesos",
     key: "usuarios",
     title: "Vincular usuarios",
     info: "Otorgá acceso a otros usuarios para operar con esta empresa.",

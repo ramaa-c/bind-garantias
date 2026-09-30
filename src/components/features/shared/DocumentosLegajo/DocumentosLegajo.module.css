@@ -875,17 +875,39 @@
     padding: 1.25rem 1.25rem 0.5rem;
   }
 
+  /* Mismo criterio que .tabBtn en SociosLegajo.module.css (ver ese
+     comentario): cada documento pasa a ser su propia tarjeta (radio +
+     margen real entre una y otra) en vez de filas pegadas con un borde de
+     0.5px casi invisible sobre el fondo oscuro - con la cadena completa de
+     ESTRUCTURA_LEGAJO (10+ documentos, cada uno ya de 2-3 líneas por los
+     badges de Obligatorio/Vía LUFE/Vence en Xd debajo del título) esas
+     filas se leían todas encimadas, sin aire entre un documento y el
+     siguiente (reportado el 2026-09-30). */
   .tabBtn {
     background: transparent;
-    border-bottom: 0.5px solid rgba(var(--overlay-rgb), 0.03);
+    width: calc(100% - 1.25rem);
+    margin: 0 0.625rem 0.35rem;
+    padding: 0.8rem 0.875rem;
+    border-radius: 0.65rem;
+    border-bottom: none;
   }
 
   .tabBtn:hover {
-    background: rgba(var(--overlay-rgb), 0.03);
+    background: rgba(var(--overlay-rgb), 0.05);
+  }
+
+  .tabTitleGroup {
+    gap: 0.3rem;
   }
 
   .tabActive {
-    background: rgba(var(--overlay-rgb), 0.04);
+    background: rgba(var(--overlay-rgb), 0.07);
+  }
+
+  /* Coincide con el radio de .tabBtn de acá arriba - ver el mismo
+     comentario en SociosLegajo.module.css. */
+  .activeBar {
+    border-radius: 2px;
   }
 
   .mobileChevron {
