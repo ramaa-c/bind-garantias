@@ -215,6 +215,14 @@
   line-height: 1.4;
 }
 
+.group.statusError:not(.noErrorSpace) {
+  padding-bottom: 0.5rem;
+}
+
+.group.statusError:not(.noErrorSpace) .errorMsg {
+  position: static;
+}
+
 /* ── RESET AUTOCOMPLETADO ───────────────────────────────────────────────────── */
 .input:-webkit-autofill,
 .input:-webkit-autofill:hover,

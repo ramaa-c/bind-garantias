@@ -63,19 +63,6 @@ const parsearCadenas = (data) => {
 // porque no es dueño de ningún Socio). AdminGuard no valida el "role" que
 // se setea al loguear, así que no hace falta nada especial del lado del
 // guard — solo decidir bien el destino acá.
-// Chequeo suelto, para cortar ANTES de pedir el código por mail (así una
-// cuenta de administración ni siquiera lo recibe). En el resto de los
-// caminos no hace falta: resolverAccesoPostLogin ya trae el registro y
-// decide con eso, sin pagar un request extra.
-const esCuentaDeAdministracion = async (email) => {
-  try {
-    const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
-    return esAdministradorActivo(extraerRegistroUsuario(usuarioDb));
-  } catch {
-    return false;
-  }
-};
-
 const resolverAccesoPostLogin = async (email, basePath) => {
   try {
     const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
@@ -444,11 +431,6 @@ const Login = () => {
       const isValid = await trigger("email");
       if (!isValid) return;
 
-      if (await esCuentaDeAdministracion(formData.email)) {
-        setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
-        return;
-      }
-
       solicitarCodigo(formData.email, {
         onSuccess: () => {
           sessionStorage.setItem("pendingOtpEmail", formData.email);
@@ -601,16 +583,15 @@ const Login = () => {
       },
       onError: (error) => {
         const status = error?.response?.status;
-        const errorData = error?.response?.data;
         if (!error?.response || status >= 500) {
           toast.error("Error de servidor", {
             description: "Ocurrió un error. Intentá más tarde.",
           });
         } else {
-          const message =
-            errorData?.message ||
-            "Error al reenviar código. Verificá los datos.";
-          setError("otp", { type: "server", message });
+          setError("otp", {
+            type: "server",
+            message: "Error al reenviar código. Verificá los datos.",
+          });
         }
       },
     });

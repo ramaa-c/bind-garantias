@@ -11,7 +11,6 @@ import { useLogin, useLoginByCode, useSolicitarCodigoLogin } from "../../../hook
 import { useAuthStore } from "../../../store/useAuthStore";
 import { usuarioService } from "../../../services/usuarioService";
 import {
-  mensajeConIntentosRestantes,
   MENSAJE_CUENTA_BLOQUEADA,
   DESBLOQUEO_CUENTA_ADMIN,
   avisarCuentaBloqueada,
@@ -333,18 +332,6 @@ const LoginAdmin = () => {
       const isValid = await trigger("email");
       if (!isValid) return;
 
-      setIsCheckingAdmin(true);
-      const hasAccess = await checkAccesoAdmin(formData.email);
-      setIsCheckingAdmin(false);
-
-      if (!hasAccess) {
-        setError("email", {
-          type: "server",
-          message: "No tenés permisos de administrador.",
-        });
-        return;
-      }
-
       solicitarCodigo(formData.email, {
         onSuccess: () => {
           sessionStorage.setItem("pendingOtpEmail", formData.email);
@@ -354,7 +341,6 @@ const LoginAdmin = () => {
         },
         onError: async (error) => {
           const status = error?.response?.status;
-          const errorData = error?.response?.data;
           if (!error?.response || status >= 500) {
             toast.error("Error de servidor", {
               description: "Ocurrió un error. Intentá más tarde.",
@@ -365,8 +351,7 @@ const LoginAdmin = () => {
           const message =
             status === 406
               ? MENSAJE_CUENTA_BLOQUEADA
-              : errorData?.message ||
-                "Error al solicitar código. Verificá los datos.";
+              : "Error al solicitar código. Verificá los datos.";
           setError("email", { type: "server", message });
         },
       });
@@ -404,17 +389,10 @@ const LoginAdmin = () => {
               return;
             }
             if (status === 401) {
-              const estadoIntentos = await usuarioService.obtenerEstadoIntentosLogin(
-                formData.email,
-              );
               setError("otp", {
                 type: "server",
-                message: mensajeConIntentosRestantes(
-                  mensajeCodigoLoginRechazado(error),
-                  estadoIntentos,
-                ),
+                message: mensajeCodigoLoginRechazado(error),
               });
-              if (estadoIntentos?.bloqueada) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
               return;
             }
             if (status === 406) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
@@ -469,18 +447,10 @@ const LoginAdmin = () => {
               avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
               return;
             }
-            const estadoIntentos =
-              status === 401
-                ? await usuarioService.obtenerEstadoIntentosLogin(formData.email)
-                : null;
             setError("password", {
               type: "server",
-              message: mensajeConIntentosRestantes(
-                "Usuario o contraseña incorrecto.",
-                estadoIntentos,
-              ),
+              message: "Usuario o contraseña incorrecto.",
             });
-            if (estadoIntentos?.bloqueada) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
           },
         },
       );
@@ -496,16 +466,15 @@ const LoginAdmin = () => {
       },
       onError: (error) => {
         const status = error?.response?.status;
-        const errorData = error?.response?.data;
         if (!error?.response || status >= 500) {
           toast.error("Error de servidor", {
             description: "Ocurrió un error. Intentá más tarde.",
           });
         } else {
-          const message =
-            errorData?.message ||
-            "Error al reenviar código. Verificá los datos.";
-          setError("otp", { type: "server", message });
+          setError("otp", {
+            type: "server",
+            message: "Error al reenviar código. Verificá los datos.",
+          });
         }
       },
     });
