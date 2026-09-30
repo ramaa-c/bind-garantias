@@ -23,7 +23,7 @@ import {
   useObtenerUsuarioPorEncrypt,
   useEstablecerClave,
   useResetearPassword,
-  useLoginByCode,
+  useSolicitarCodigoLogin,
   useReactivarUsuario,
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/useChannel";
@@ -77,8 +77,8 @@ const CrearClave = () => {
   const { mutate: resetearPassword, isPending: solicitandoNuevo } =
     useResetearPassword();
 
-  const { mutate: loginByCode, isPending: solicitandoCodigo } =
-    useLoginByCode();
+  const { mutate: solicitarCodigo, isPending: solicitandoCodigo } =
+    useSolicitarCodigoLogin();
   const { mutate: reactivarUsuario, isPending: reactivando } =
     useReactivarUsuario();
 
@@ -87,35 +87,29 @@ const CrearClave = () => {
 
     reactivarUsuario(usuario.usuariowebid, {
       onSuccess: () => {
-        loginByCode(
-          { email: usuario.email, password: "" },
-          {
-            onSuccess: (data) => {
-              toast.success("Código enviado", {
-                description: "Revisá tu correo para ingresar.",
-              });
-              navigate(`${basePath}/login`, {
-                state: {
-                  emailIngresado: usuario.email,
-                  generatedOtp: data.password,
-                },
-              });
-            },
-            onError: (error) => {
-              const isServerError = error?.response?.status >= 500;
-              toast.error(
-                isServerError
-                  ? "Error de servidor"
-                  : "Error al solicitar código",
-                {
-                  description: isServerError
-                    ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-                    : "Ocurrió un error. Intentá más tarde.",
-                },
-              );
-            },
+        solicitarCodigo(usuario.email, {
+          onSuccess: () => {
+            toast.success("Código enviado", {
+              description: "Revisá tu correo para ingresar.",
+            });
+            navigate(`${basePath}/login`, {
+              state: { emailIngresado: usuario.email },
+            });
           },
-        );
+          onError: (error) => {
+            const isServerError = error?.response?.status >= 500;
+            toast.error(
+              isServerError
+                ? "Error de servidor"
+                : "Error al solicitar código",
+              {
+                description: isServerError
+                  ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
+                  : "Ocurrió un error. Intentá más tarde.",
+              },
+            );
+          },
+        });
       },
       onError: (error) => {
         const isServerError = error?.response?.status >= 500;

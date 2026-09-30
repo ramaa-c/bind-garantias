@@ -7,9 +7,17 @@ import { toast } from "sonner";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
 import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
-import { useLogin, useLoginByCode } from "../../../hooks/useUsuario";
+import { useLogin, useLoginByCode, useSolicitarCodigoLogin } from "../../../hooks/useUsuario";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { usuarioService } from "../../../services/usuarioService";
+import {
+  mensajeConIntentosRestantes,
+  MENSAJE_CUENTA_BLOQUEADA,
+  DESBLOQUEO_CUENTA_ADMIN,
+  avisarCuentaBloqueada,
+  VIGENCIA_CODIGO_LOGIN_MS,
+  mensajeCodigoLoginRechazado,
+} from "../../../utils/usuarioUtils";
 import styles from "../../cliente/auth/Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 
@@ -263,7 +271,6 @@ const checkAccesoAdmin = async (email) => {
 const LoginAdmin = () => {
   const [otpPendienteInicial] = useState(leerOtpPendiente);
   const [fase, setFase] = useState(otpPendienteInicial.fase);
-  const [generatedOtp, setGeneratedOtp] = useState(null);
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
   const [locationSincronizada, setLocationSincronizada] = useState(null);
   const navigate = useNavigate();
@@ -272,9 +279,12 @@ const LoginAdmin = () => {
   const setUser = useAuthStore((state) => state.setUser);
 
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
-  const { mutate: loginByCode, isPending: solicitandoCodigo } = useLoginByCode();
+  const { mutate: solicitarCodigo, isPending: solicitandoCodigo } =
+    useSolicitarCodigoLogin();
+  const { mutate: loginByCode, isPending: validandoCodigo } = useLoginByCode();
 
-  const isPending = isLoginPending || solicitandoCodigo || isCheckingAdmin;
+  const isPending =
+    isLoginPending || solicitandoCodigo || validandoCodigo || isCheckingAdmin;
 
   // AdminGuard revalida contra el backend apenas se entra a /admin (esadministrador
   // / cadenas asociadas), así que este redirect es solo un atajo de UX: si el rol
@@ -308,9 +318,6 @@ const LoginAdmin = () => {
 
   if (location.state?.emailIngresado && location !== locationSincronizada) {
     setLocationSincronizada(location);
-    if (location.state?.generatedOtp) {
-      setGeneratedOtp(location.state.generatedOtp);
-    }
     setFase("validacion_otp");
   }
 
@@ -338,54 +345,89 @@ const LoginAdmin = () => {
         return;
       }
 
-      loginByCode(
-        { email: formData.email, password: "" },
-        {
-          onSuccess: (data) => {
-            setGeneratedOtp(data.password);
-            sessionStorage.setItem("pendingOtpEmail", formData.email);
-            sessionStorage.setItem("otpExpiresAt", Date.now() + 60000);
-            setFase("validacion_otp");
-            toast.success("Código enviado a tu email");
-          },
-          onError: (error) => {
-            const status = error?.response?.status;
-            const errorData = error?.response?.data;
-            if (!error?.response || status >= 500) {
-              toast.error("Error de servidor", {
-                description: "Ocurrió un error. Intentá más tarde.",
-              });
-            } else {
-              const message =
-                errorData?.message ||
-                "Error al solicitar código. Verificá los datos.";
-              setError("email", { type: "server", message });
-            }
-          },
+      solicitarCodigo(formData.email, {
+        onSuccess: () => {
+          sessionStorage.setItem("pendingOtpEmail", formData.email);
+          sessionStorage.setItem("otpExpiresAt", Date.now() + VIGENCIA_CODIGO_LOGIN_MS);
+          setFase("validacion_otp");
+          toast.success("Código enviado a tu email");
         },
-      );
+        onError: async (error) => {
+          const status = error?.response?.status;
+          const errorData = error?.response?.data;
+          if (!error?.response || status >= 500) {
+            toast.error("Error de servidor", {
+              description: "Ocurrió un error. Intentá más tarde.",
+            });
+            return;
+          }
+          if (status === 406) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
+          const message =
+            status === 406
+              ? MENSAJE_CUENTA_BLOQUEADA
+              : errorData?.message ||
+                "Error al solicitar código. Verificá los datos.";
+          setError("email", { type: "server", message });
+        },
+      });
       return;
     }
 
     if (fase === "validacion_otp") {
-      if (formData.otp === generatedOtp) {
-        setIsCheckingAdmin(true);
-        const hasAccess = await checkAccesoAdmin(formData.email);
-        setIsCheckingAdmin(false);
+      loginByCode(
+        { email: formData.email, password: formData.otp },
+        {
+          onSuccess: async () => {
+            setIsCheckingAdmin(true);
+            const hasAccess = await checkAccesoAdmin(formData.email);
+            setIsCheckingAdmin(false);
 
-        if (!hasAccess) {
-          setError("otp", {
-            type: "server",
-            message: "No tenés permisos de administrador.",
-          });
-          return;
-        }
+            if (!hasAccess) {
+              setError("otp", {
+                type: "server",
+                message: "No tenés permisos de administrador.",
+              });
+              return;
+            }
 
-        setUser({ email: formData.email, role: "admin" }, { esNuevoLogin: true });
-        navigate("/admin", { replace: true });
-      } else {
-        setError("otp", { type: "server", message: "Código incorrecto" });
-      }
+            sessionStorage.removeItem("pendingOtpEmail");
+            sessionStorage.removeItem("otpExpiresAt");
+            setUser({ email: formData.email, role: "admin" }, { esNuevoLogin: true });
+            navigate("/admin", { replace: true });
+          },
+          onError: async (error) => {
+            const status = error?.response?.status;
+            if (!error?.response || status >= 500) {
+              toast.error("Error de servidor", {
+                description: "Ocurrió un error. Intentá más tarde.",
+              });
+              return;
+            }
+            if (status === 401) {
+              const estadoIntentos = await usuarioService.obtenerEstadoIntentosLogin(
+                formData.email,
+              );
+              setError("otp", {
+                type: "server",
+                message: mensajeConIntentosRestantes(
+                  mensajeCodigoLoginRechazado(error),
+                  estadoIntentos,
+                ),
+              });
+              if (estadoIntentos?.bloqueada) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
+              return;
+            }
+            if (status === 406) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
+            setError("otp", {
+              type: "server",
+              message:
+                status === 406
+                  ? MENSAJE_CUENTA_BLOQUEADA
+                  : "No pudimos validar el código. Solicitá uno nuevo.",
+            });
+          },
+        },
+      );
       return;
     }
 
@@ -410,19 +452,35 @@ const LoginAdmin = () => {
             setUser({ email: formData.email, role: "admin" }, { esNuevoLogin: true });
             navigate("/admin", { replace: true });
           },
-          onError: (error) => {
+          onError: async (error) => {
             const status = error?.response?.status;
             if (!error?.response || status >= 500) {
               clearErrors("password");
               toast.error("Error de servidor", {
                 description: "Ocurrió un error. Intentá más tarde.",
               });
-            } else {
+              return;
+            }
+            if (status === 406) {
               setError("password", {
                 type: "server",
-                message: "Usuario o contraseña incorrecto.",
+                message: MENSAJE_CUENTA_BLOQUEADA,
               });
+              avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
+              return;
             }
+            const estadoIntentos =
+              status === 401
+                ? await usuarioService.obtenerEstadoIntentosLogin(formData.email)
+                : null;
+            setError("password", {
+              type: "server",
+              message: mensajeConIntentosRestantes(
+                "Usuario o contraseña incorrecto.",
+                estadoIntentos,
+              ),
+            });
+            if (estadoIntentos?.bloqueada) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
           },
         },
       );
@@ -430,31 +488,27 @@ const LoginAdmin = () => {
   };
 
   const handleResendCode = () => {
-    loginByCode(
-      { email: getValues("email"), password: "" },
-      {
-        onSuccess: (data) => {
-          setGeneratedOtp(data.password);
-          sessionStorage.setItem("pendingOtpEmail", getValues("email"));
-          sessionStorage.setItem("otpExpiresAt", Date.now() + 60000);
-          toast.success("Código reenviado");
-        },
-        onError: (error) => {
-          const status = error?.response?.status;
-          const errorData = error?.response?.data;
-          if (!error?.response || status >= 500) {
-            toast.error("Error de servidor", {
-              description: "Ocurrió un error. Intentá más tarde.",
-            });
-          } else {
-            const message =
-              errorData?.message ||
-              "Error al reenviar código. Verificá los datos.";
-            setError("otp", { type: "server", message });
-          }
-        },
+    solicitarCodigo(getValues("email"), {
+      onSuccess: () => {
+        sessionStorage.setItem("pendingOtpEmail", getValues("email"));
+        sessionStorage.setItem("otpExpiresAt", Date.now() + VIGENCIA_CODIGO_LOGIN_MS);
+        toast.success("Código reenviado");
       },
-    );
+      onError: (error) => {
+        const status = error?.response?.status;
+        const errorData = error?.response?.data;
+        if (!error?.response || status >= 500) {
+          toast.error("Error de servidor", {
+            description: "Ocurrió un error. Intentá más tarde.",
+          });
+        } else {
+          const message =
+            errorData?.message ||
+            "Error al reenviar código. Verificá los datos.";
+          setError("otp", { type: "server", message });
+        }
+      },
+    });
   };
 
   return (

@@ -13,6 +13,12 @@ export const useLogin = () => {
   });
 };
 
+export const useSolicitarCodigoLogin = () => {
+  return useMutation({
+    mutationFn: (email) => usuarioService.solicitarCodigoLogin(email),
+  });
+};
+
 export const useLoginByCode = () => {
   return useMutation({
     mutationFn: (credenciales) => usuarioService.loginByCode(credenciales),
