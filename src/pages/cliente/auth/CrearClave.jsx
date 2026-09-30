@@ -28,7 +28,11 @@ import {
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
-import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
+import {
+  denominacionDesdeEmail,
+  esUsuarioBloqueado,
+  esUsuarioPendienteActivacion,
+} from "../../../utils/usuarioUtils";
 import styles from "./CrearClave.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -225,7 +229,11 @@ const CrearClave = () => {
     establecerClave(payload, {
       onSuccess: () => {
         toast.success("Contraseña establecida correctamente", {
-          description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
+          description: cuentaPendienteActivacion
+            ? "Tu cuenta ha sido activada. Ya podés iniciar sesión."
+            : cuentaBloqueada
+              ? "Tu cuenta fue desbloqueada. Ya podés iniciar sesión."
+              : "Ya podés iniciar sesión con tu nueva contraseña.",
           duration: 5000,
         });
         navigate(`${basePath}/login`, { replace: true });
@@ -249,13 +257,35 @@ const CrearClave = () => {
   const mostrarErrorFaltaUsuario =
     !usuario && tokenExpirado && !verificandoToken;
 
-  // String(estado) !== "1", no !== 1: el backend puede devolver "estado" como
-  // string ("1") en vez de number (ver la misma comparación, ya defensiva,
-  // en usuarioService.js/esCuentaPendienteActivacion). Con el !== 1 estricto
-  // anterior, una cuenta activa con estado:"1" caía siempre en la rama de
-  // "pendiente de activación" acá — nunca en la de "restablecer contraseña".
   const cuentaPendienteActivacion =
-    !tokenInvalidoDeOrigen && !!usuario && String(usuario.estado) !== "1";
+    !tokenInvalidoDeOrigen && !!usuario && esUsuarioPendienteActivacion(usuario);
+
+  const cuentaBloqueada =
+    !tokenInvalidoDeOrigen && !!usuario && esUsuarioBloqueado(usuario);
+
+  const avisoEstadoCuenta = cuentaPendienteActivacion
+    ? {
+        tono: "warning",
+        Icono: FiAlertTriangle,
+        titulo: "Activación pendiente",
+        texto:
+          'Si salís sin crear una contraseña o usar "Omitir e ingresar con código", vas a necesitar un nuevo enlace.',
+      }
+    : cuentaBloqueada
+      ? {
+          tono: "warning",
+          Icono: FiAlertTriangle,
+          titulo: "Cuenta bloqueada",
+          texto:
+            "Tu cuenta se bloqueó por superar el máximo de intentos de ingreso. Al guardar tu nueva contraseña se desbloquea.",
+        }
+      : {
+          tono: "neutral",
+          Icono: FiLock,
+          titulo: "Actualizando tu acceso",
+          texto:
+            "Tu cuenta sigue activa mientras hacés este cambio. Podés seguir usando tus accesos actuales hasta confirmar la nueva contraseña.",
+        };
 
   useEffect(() => {
     if (!cuentaPendienteActivacion) return;
@@ -332,18 +362,6 @@ const CrearClave = () => {
                 >
                   <FiCheckCircle className={styles.calloutIcon} />
                   <div className={styles.calloutContent}>
-                    {/* usuario.estado === 1 ya significa "cuenta activa"
-                        (ver esCuentaPendienteActivacion en usuarioService.js
-                        y cuentaPendienteActivacion acá abajo, que dependen
-                        de esta misma comparación) — este link es el único
-                        lugar del sistema que activa cuentas nuevas, así que
-                        si la cuenta YA está activa es porque estamos acá por
-                        "Recuperar clave", no por una activación. Antes el
-                        texto de las dos ramas estaba invertido: le decía
-                        "¡Email verificado con éxito! ... opcional" a una
-                        cuenta sin activar, mientras más abajo el cartel de
-                        "Activación pendiente" advertía lo contrario en el
-                        mismo render. */}
                     {!cuentaPendienteActivacion ? (
                       <>
                         <h2 className={styles.calloutTitle}>
@@ -606,21 +624,17 @@ const CrearClave = () => {
               {!tokenInvalidoDeOrigen && usuario && (
                 <div
                   className={styles.brandStatusCard}
-                  data-tone={cuentaPendienteActivacion ? "warning" : "neutral"}
+                  data-tone={avisoEstadoCuenta.tono}
                 >
                   <div className={styles.brandStatusIconWrap}>
-                    {cuentaPendienteActivacion ? <FiAlertTriangle /> : <FiLock />}
+                    <avisoEstadoCuenta.Icono />
                   </div>
                   <div>
                     <h3 className={styles.brandStatusTitle}>
-                      {cuentaPendienteActivacion
-                        ? "Activación pendiente"
-                        : "Actualizando tu acceso"}
+                      {avisoEstadoCuenta.titulo}
                     </h3>
                     <p className={styles.brandStatusText}>
-                      {cuentaPendienteActivacion
-                        ? 'Si salís sin crear una contraseña o usar "Omitir e ingresar con código", vas a necesitar un nuevo enlace.'
-                        : "Tu cuenta sigue activa mientras hacés este cambio. Podés seguir usando tus accesos actuales hasta confirmar la nueva contraseña."}
+                      {avisoEstadoCuenta.texto}
                     </p>
                   </div>
                 </div>

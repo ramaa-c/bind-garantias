@@ -1,6 +1,10 @@
 import { usuarioAdapter } from "../adapters/usuarioAdapter";
 import api from "../api/axios";
-import { extraerRegistroUsuario, calcularEstadoIntentosLogin } from "../utils/usuarioUtils";
+import {
+  extraerRegistroUsuario,
+  calcularEstadoIntentosLogin,
+  esUsuarioPendienteActivacion,
+} from "../utils/usuarioUtils";
 
 export const usuarioService = {
   // POST api/usuario/login
@@ -97,7 +101,7 @@ export const usuarioService = {
     }
   },
 
-  // Un usuario existe pero su cuenta todavía no está activa (Estado!=="1").
+  // Un usuario existe pero su cuenta todavía no está activa (Estado "2").
   //
   // ⚠️ A propósito NO mira DebeCambiarClave: ese campo solo indica si la
   // cuenta tiene una contraseña propia seteada o no (queda en "1" tanto al
@@ -112,10 +116,6 @@ export const usuarioService = {
   // con código" viera el modal de "cuenta pendiente de activación" al fallar
   // cualquier login normal, aunque su cuenta estuviera 100% activa.
   //
-  // Nota: un usuario bloqueado por un admin (bloquearUsuario/status-block)
-  // también queda con Estado!=="1", igual que uno que nunca se activó — se
-  // acordó tratarlos igual acá (mismo modal/mensaje para ambos casos).
-  //
   // Único lugar que hace esta comparación: si cambia el casing/tipo que
   // devuelve el backend, se corrige acá y no en cada pantalla.
   esCuentaPendienteActivacion: async (email) => {
@@ -124,7 +124,7 @@ export const usuarioService = {
       const targetUser = Array.isArray(userData)
         ? userData[0]
         : userData?.items?.[0] || userData?.data?.[0] || userData;
-      return !!targetUser && String(targetUser.estado) !== "1";
+      return !!targetUser && esUsuarioPendienteActivacion(targetUser);
     } catch {
       return false;
     }

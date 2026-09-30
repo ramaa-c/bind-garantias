@@ -32,7 +32,24 @@ export const denominacionDesdeEmail = (email) => {
     .trim();
 };
 
+export const ESTADO_USUARIO = {
+  BLOQUEADO: "0",
+  ACTIVO: "1",
+  PENDIENTE_ACTIVACION: "2",
+};
+
+const leerEstadoUsuario = (registro) =>
+  String(registro?.estado ?? registro?.Estado ?? "");
+
+export const esUsuarioBloqueado = (registro) =>
+  leerEstadoUsuario(registro) === ESTADO_USUARIO.BLOQUEADO;
+
+export const esUsuarioPendienteActivacion = (registro) =>
+  leerEstadoUsuario(registro) === ESTADO_USUARIO.PENDIENTE_ACTIVACION;
+
 export const MAX_INTENTOS_LOGIN = 5;
+
+export const INTENTOS_ANTES_DE_AVISAR = 3;
 
 export const VIGENCIA_CODIGO_LOGIN_MS = 5 * 60 * 1000;
 
@@ -51,19 +68,18 @@ export const avisarCuentaBloqueada = (descripcion) =>
 export const calcularEstadoIntentosLogin = (registro) => {
   const intentos = Number(registro?.intentoslogin ?? registro?.IntentosLogin);
   if (!registro || !Number.isFinite(intentos)) return null;
-  const inactiva = String(registro.estado ?? registro.Estado) !== "1";
-  const debeCambiarClave =
-    String(registro.debecambiarclave ?? registro.DebeCambiarClave) === "1";
   return {
+    intentos,
     restantes: Math.max(MAX_INTENTOS_LOGIN - intentos, 0),
-    bloqueada: inactiva && !debeCambiarClave,
-    pendiente: inactiva && debeCambiarClave,
+    bloqueada: esUsuarioBloqueado(registro),
+    pendiente: esUsuarioPendienteActivacion(registro),
   };
 };
 
 export const mensajeConIntentosRestantes = (mensaje, estadoIntentos) => {
   if (!estadoIntentos) return mensaje;
   if (estadoIntentos.bloqueada) return MENSAJE_CUENTA_BLOQUEADA;
+  if (estadoIntentos.intentos < INTENTOS_ANTES_DE_AVISAR) return mensaje;
   const { restantes } = estadoIntentos;
   if (restantes === 0) {
     return `${mensaje} Último intento antes del bloqueo.`;
