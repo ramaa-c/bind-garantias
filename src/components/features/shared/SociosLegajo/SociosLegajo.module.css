@@ -23,6 +23,14 @@
   display: none;
 }
 
+/* Columna de navegación propia de escritorio (ver el comentario completo
+   en el media query de 48rem, y en SociosLegajo.jsx): en mobile el
+   acordeón ya usa la lista intercalada con el contenido, así que esta
+   queda afuera. */
+.sidebarNav {
+  display: none;
+}
+
 /* CATEGORÍA */
 .categoryLabel {
   font-size: 0.65rem;
@@ -953,9 +961,23 @@
 /* ── DESKTOP ─────────────────────────────────────────────────────────────────── */
 
 @media (min-width: 48rem) {
+  /* .workspace mantiene el mismo alto que tenía siempre (flex:1 normal,
+     sin piso propio): lo fija .embeddedLegajo (EmpresaDetalle), que en
+     Rango 1 (alto fijo del panel admin) le da un presupuesto acotado. El
+     que scrollea cuando el listado de relaciones no entra ahí es
+     .sidebarNav (más abajo), no .workspace entero - por eso
+     grid-template-rows es un track explícito (minmax(0,1fr)) en vez de
+     "auto": con "auto" la fila mide el alto natural de su contenido
+     (exactamente lo que NO queremos acá), mientras que un track 1fr
+     estira/achica esa fila al alto real disponible de .workspace y dentro
+     de ella es .sidebarNav quien decide, con su propio overflow-y:auto, si
+     hace falta scroll (reportado el 2026-09-30: con muchas relaciones
+     activadas esa falta de espacio terminaba comprimiendo toda la columna
+     en vez de scrollear). */
   .workspace {
     display: grid;
     grid-template-columns: minmax(14rem, 14rem) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     min-height: 26rem;
     position: relative;
     flex: 1;
@@ -974,6 +996,33 @@
     background: rgba(0, 0, 0, 0.12);
     z-index: 0;
     pointer-events: none;
+  }
+
+  /* Columna de navegación propia de escritorio (ver el comentario del
+     lado del JSX, SociosLegajo.jsx): único hijo real de la columna 1 del
+     grid en este rango (las instancias .inlineOnly de acá abajo quedan en
+     display:none, así que no compiten por esa celda). min-height:0 es lo
+     que le permite de verdad achicarse por debajo de su contenido en vez
+     de empujar el alto de .workspace - sin esto volvería el mismo
+     problema que .workspace tenía antes, un nivel más adentro. */
+  .sidebarNav {
+    display: flex;
+    flex-direction: column;
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    z-index: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Instancias intercaladas con el contenido (acordeón de mobile, ver
+     .viewer): en este rango la navegación real es .sidebarNav de acá
+     arriba, así que estas no deben ocupar espacio ni pintarse - display:none
+     (no visibility:hidden) para que además queden afuera del auto-placement
+     del grid, ver el comentario de .sidebarNav. */
+  .inlineOnly {
+    display: none;
   }
 
   /* rgba(0,0,0,0.12) es negro fijo, no un token de tema - en escritorio
@@ -998,22 +1047,43 @@
     padding: 1.25rem 1.25rem 0.5rem;
   }
 
+  /* Cada pestaña pasa a ser su propia tarjeta (radio + separación real
+     entre una y otra) en vez de filas pegadas con un borde de 0.5px casi
+     invisible sobre el fondo oscuro: con 2-3 pestañas no se notaba, pero
+     con el listado completo de relaciones activadas (7-8 filas, cada una
+     ya de 2 líneas por el badge debajo del título) esas filas se leían
+     todas encimadas, sin aire entre una relación y la siguiente
+     (reportado el 2026-09-30). */
   .tabBtn {
     background: transparent;
+    width: calc(100% - 1.25rem);
+    margin: 0 0.625rem 0.35rem;
+    padding: 0.8rem 0.875rem;
+    border-radius: 0.65rem;
+    border-bottom: none;
   }
 
   .tabBtn:hover {
-    background: rgba(var(--overlay-rgb), 0.03);
+    background: rgba(var(--overlay-rgb), 0.05);
   }
 
   .tabTitleGroup {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.25rem;
+    gap: 0.3rem;
   }
 
   .tabActive {
-    background: rgba(var(--overlay-rgb), 0.04);
+    background: rgba(var(--overlay-rgb), 0.07);
+  }
+
+  /* Coincide con el radio de .tabBtn de acá arriba - antes era un
+     rectángulo recto (0 1px 1px 0) pensado para un botón sin margen,
+     flush contra el borde de la columna; ahora que el botón es una
+     tarjeta con margen propio, redondearla del todo evita que quede
+     sobresaliendo en ángulo recto de una esquina ya curva. */
+  .activeBar {
+    border-radius: 2px;
   }
 
   /* Con un nombre largo (una relación de terceros cargada desde

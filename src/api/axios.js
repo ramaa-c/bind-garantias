@@ -2,6 +2,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { queryClient } from "./queryClient";
 import { obtenerUltimoStatus, esOffline } from "../utils/statusPlataforma";
+import { obtenerTokenApi, invalidarTokenApi } from "./tokenApi";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -40,10 +41,23 @@ const redirigirAFueraDeServicio = () => {
   setTimeout(() => window.location.assign("/fuera-de-servicio"), 900);
 };
 
-api.interceptors.request.use((config) => {
+const agregarTokenApi = async (config) => {
+  try {
+    const token = await obtenerTokenApi();
+    config.__tokenApi = token;
+    config.headers.Authorization = `Bearer ${token}`;
+    return config;
+  } catch (errorToken) {
+    errorToken.config = config;
+    errorToken.esErrorTokenApi = true;
+    throw errorToken;
+  }
+};
+
+api.interceptors.request.use(async (config) => {
   // El propio chequeo de estado nunca se bloquea a sí mismo.
   if (config.url?.includes("StatusPlataforma") || esRutaAdmin()) {
-    return config;
+    return agregarTokenApi(config);
   }
 
   const statusCacheado = queryClient.getQueryData(["statusPlataforma"]);
@@ -53,7 +67,7 @@ api.interceptors.request.use((config) => {
     return Promise.reject(error);
   }
 
-  return config;
+  return agregarTokenApi(config);
 });
 
 const MAX_RETRIES = 2;
@@ -71,6 +85,14 @@ const isPoolExhaustionError = (error) => {
   if (!data) return false;
   const text = typeof data === "string" ? data : JSON.stringify(data);
   return POOL_EXHAUSTION_PATTERN.test(text);
+};
+
+const esErrorDeTokenApi = (error) => {
+  if (error.esErrorTokenApi || error.response?.status !== 401) return false;
+  const data = error.response?.data;
+  if (!data) return false;
+  const text = typeof data === "string" ? data : JSON.stringify(data);
+  return /EMVCJWTException/i.test(text);
 };
 
 const transformKeysToLowercase = (obj) => {
@@ -113,6 +135,12 @@ api.interceptors.response.use(
     const config = error.config;
 
     if (!config) return Promise.reject(error);
+
+    if (esErrorDeTokenApi(error) && !config.__tokenRenovado) {
+      config.__tokenRenovado = true;
+      invalidarTokenApi(config.__tokenApi);
+      return api(config);
+    }
 
     config.__retryCount = config.__retryCount || 0;
 

@@ -1,10 +1,15 @@
 import { usuarioAdapter } from "../adapters/usuarioAdapter";
 import api from "../api/axios";
+import { extraerRegistroUsuario, calcularEstadoIntentosLogin } from "../utils/usuarioUtils";
 
 export const usuarioService = {
   // POST api/usuario/login
   login: async (credenciales) =>
     (await api.post("api/usuario/login", usuarioAdapter.adaptarPayload1(credenciales))).data,
+
+  // POST api/usuario/login:requestcode
+  solicitarCodigoLogin: async (email) =>
+    (await api.post("api/usuario/login-requestcode", usuarioAdapter.adaptarPayload2({ email, password: "" }))).data,
 
   // POST api/usuario/login:bycode
   loginByCode: async (credenciales) =>
@@ -122,6 +127,17 @@ export const usuarioService = {
       return !!targetUser && String(targetUser.estado) !== "1";
     } catch {
       return false;
+    }
+  },
+
+  obtenerEstadoIntentosLogin: async (email) => {
+    try {
+      const registro = extraerRegistroUsuario(
+        await usuarioService.obtenerPorNombreOEmail(email),
+      );
+      return calcularEstadoIntentosLogin(registro);
+    } catch {
+      return null;
     }
   },
 
