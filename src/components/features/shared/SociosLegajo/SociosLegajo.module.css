@@ -413,6 +413,30 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  gap: 1.25rem;
+}
+
+/* "Vincular usuarios", colgando de Mi Perfil (ver el comentario en
+   SociosLegajo.jsx): tarjeta propia, al mismo nivel que .perfilCard, no
+   anidada adentro - VincularUsuarioSection ya trae su propio fondo/borde/
+   radio (.vincularForm en DocumentosLegajo.module.css), así que meterla
+   dentro de .perfilCard hubiera sido tarjeta-dentro-de-tarjeta. La
+   etiqueta de acá arriba es la misma categoría ("Accesos") que esta
+   sección tenía como pestaña propia antes del rediseño - mismo nombre,
+   mismo concepto, ahora como eyebrow de esta tarjeta en vez de header de
+   navegación. */
+.perfilExtraSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.perfilExtraSectionLabel {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-amarillo-bind);
 }
 
 /* Tarjeta única (rediseño 2026-09-14): título+acción, identidad, datos

@@ -297,6 +297,13 @@ export function SociosLegajo({
     // admin esos mismos datos ya se editan desde EmpresaDetalle.jsx.
     if (adminMode) {
       baseTabs = baseTabs.filter(t => t.key !== "perfil");
+    } else {
+      // "Vincular usuarios" dejó de ser una pestaña propia para el cliente -
+      // ahora cuelga de "Perfil corporativo" (ver el render de isPerfil más
+      // abajo). En adminMode sigue siendo su propia pestaña: ahí no existe
+      // "perfil" (se filtra arriba) y admin no tiene otro lugar donde
+      // ofrecer esta acción dentro de este mismo componente.
+      baseTabs = baseTabs.filter(t => t.key !== "usuarios");
     }
     if (esPersonaFisica) {
       // Persona Física no tiene Representante Legal (230) - solo Apoderado
@@ -588,6 +595,9 @@ export function SociosLegajo({
         const isRepresentantes = doc.key === "representanteLegal";
         const isApoderados = doc.key === "apoderados";
         const isAgentesBolsa = doc.key === "agentesBolsa";
+        // Solo alcanzable en adminMode: para el cliente "usuarios" ya no es
+        // una pestaña navegable (se filtra en tabsDisponibles), vive como
+        // tarjeta dentro de "perfil" (ver el render de isPerfil más abajo).
         const isUsuarios = doc.key === "usuarios";
         // Cualquier otra clave es un TipoRelacionSocioID activado
         // dinámicamente (ver tabsExtra más arriba).
@@ -767,6 +777,24 @@ export function SociosLegajo({
                           </span>
                         </div>
                       </div>
+                    </div>
+
+                    {/* "Vincular usuarios" vivía como pestaña propia
+                        (categoría "Accesos", ver tabsDisponibles más abajo);
+                        ahora cuelga de Mi Perfil como una tarjeta aparte,
+                        mismo criterio que cualquier settings page (Stripe,
+                        Linear, etc.): la gestión de accesos de la cuenta
+                        vive junto al resto de "mi perfil", no como un ítem
+                        de navegación de primer nivel - sigue siendo un
+                        componente propio (no .perfilCard anidada, ver
+                        .perfilExtraSection) para no caer en tarjeta-dentro-
+                        de-tarjeta. Solo en modo cliente: en adminMode esta
+                        sección entera no se renderiza (ver el filtro de
+                        "perfil" en tabsDisponibles), así que acá no hace
+                        falta repetir el chequeo. */}
+                    <div className={styles.perfilExtraSection}>
+                      <span className={styles.perfilExtraSectionLabel}>Accesos</span>
+                      <VincularUsuarioSection socioIdActivo={socioIdActivo} />
                     </div>
                   </div>
                 ) : isUsuarios ? (
