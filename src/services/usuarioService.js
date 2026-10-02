@@ -1,18 +1,29 @@
 import { usuarioAdapter } from "../adapters/usuarioAdapter";
 import api from "../api/axios";
+import { guardarTokenApi } from "../api/tokenApi";
+
+const obtenerTokenDeUsuario = async ({ email, password }) => {
+  const { data } = await api.post("api/auth/login", null, {
+    sinToken: true,
+    noRetry: true,
+    headers: { jwtusername: email, jwtpassword: password },
+  });
+  const token = data?.token;
+  if (!token) throw new Error("La API no devolvió un token de acceso");
+  guardarTokenApi(token);
+  return data;
+};
 
 export const usuarioService = {
-  // POST api/usuario/login
-  login: async (credenciales) =>
-    (await api.post("api/usuario/login", usuarioAdapter.adaptarPayload1(credenciales))).data,
+  // POST api/auth/login (email + clave)
+  login: obtenerTokenDeUsuario,
 
   // POST api/usuario/login:requestcode
   solicitarCodigoLogin: async (email) =>
-    (await api.post("api/usuario/login-requestcode", usuarioAdapter.adaptarPayload2({ email, password: "" }))).data,
+    (await api.post("api/usuario/login-requestcode", usuarioAdapter.adaptarPayload2({ email }), { sinToken: true })).data,
 
-  // POST api/usuario/login:bycode
-  loginByCode: async (credenciales) =>
-    (await api.post("api/usuario/login-bycode", usuarioAdapter.adaptarPayload2(credenciales))).data,
+  // POST api/auth/login (email + código recibido por mail)
+  loginByCode: obtenerTokenDeUsuario,
 
   // PUT api/usuario/{usuarioid}/status:block
   bloquearUsuario: async (usuarioId) =>

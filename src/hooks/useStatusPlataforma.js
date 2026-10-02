@@ -17,12 +17,23 @@ export const useObtenerStatusPlataforma = (options = {}) => {
   });
 };
 
+export const useObtenerPlataformaOnline = (options = {}) => {
+  return useQuery({
+    queryKey: ["plataformaOnline"],
+    queryFn: statusPlataformaService.obtenerPlataformaOnline,
+    refetchInterval: 10000,
+    refetchOnWindowFocus: true,
+    ...options,
+  });
+};
+
 export const useActualizarStatusPlataforma = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: statusPlataformaService.actualizarStatus,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["statusPlataforma"] });
+      queryClient.invalidateQueries({ queryKey: ["plataformaOnline"] });
     },
   });
 };

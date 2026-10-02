@@ -2,8 +2,9 @@ import axios from "axios";
 import { toast } from "sonner";
 import { queryClient } from "./queryClient";
 import { obtenerUltimoStatus, esOffline } from "../utils/statusPlataforma";
-import { obtenerTokenApi, invalidarTokenApi } from "./tokenApi";
+import { obtenerTokenApi, borrarTokenApi } from "./tokenApi";
 import { CABECERAS_BASE_API } from "./cabecerasApi";
+import { useAuthStore } from "../store/useAuthStore";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -40,26 +41,26 @@ const redirigirAFueraDeServicio = () => {
   setTimeout(() => window.location.assign("/fuera-de-servicio"), 900);
 };
 
-const agregarTokenApi = async (config) => {
-  try {
-    const token = await obtenerTokenApi();
-    config.__tokenApi = token;
+const agregarTokenApi = (config) => {
+  if (config.sinToken) return config;
+  const token = obtenerTokenApi();
+  if (token) {
+    config.__conToken = true;
     config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  } catch (errorToken) {
-    errorToken.config = config;
-    errorToken.esErrorTokenApi = true;
-    throw errorToken;
   }
+  return config;
 };
+
+const esConsultaDeEstado = (url = "") =>
+  url.includes("StatusPlataforma") || url.includes("PlataformaOnline");
 
 api.interceptors.request.use(async (config) => {
   // El propio chequeo de estado nunca se bloquea a sí mismo.
-  if (config.url?.includes("StatusPlataforma") || esRutaAdmin()) {
+  if (esConsultaDeEstado(config.url) || esRutaAdmin()) {
     return agregarTokenApi(config);
   }
 
-  const statusCacheado = queryClient.getQueryData(["statusPlataforma"]);
+  const statusCacheado = queryClient.getQueryData(["plataformaOnline"]);
   if (esOffline(obtenerUltimoStatus(statusCacheado))) {
     const error = new Error("La plataforma cliente está en mantenimiento");
     error.isPlataformaOffline = true;
@@ -86,11 +87,34 @@ const isPoolExhaustionError = (error) => {
   return POOL_EXHAUSTION_PATTERN.test(text);
 };
 
-const RUTAS_CON_401_DE_NEGOCIO = /usuario\/(login|password)|Socio\/ValidarCuit/i;
+const RUTAS_CON_401_DE_NEGOCIO = /auth\/login|usuario\/(login|password)|Socio\/ValidarCuit/i;
 
-const esErrorDeTokenApi = (error) => {
-  if (error.esErrorTokenApi || error.response?.status !== 401) return false;
-  return !RUTAS_CON_401_DE_NEGOCIO.test(error.config?.url || "");
+const esSesionVencida = (error) => {
+  const config = error.config;
+  if (error.response?.status !== 401 || config?.sinToken) return false;
+  if (RUTAS_CON_401_DE_NEGOCIO.test(config?.url || "")) return false;
+  return Boolean(config?.__conToken) || useAuthStore.getState().isAuthenticated;
+};
+
+const rutaDeLogin = () => {
+  const path = window.location.pathname;
+  if (path.startsWith("/admin")) return "/login";
+  const primerSegmento = path.split("/")[1];
+  return /^\d+$/.test(primerSegmento) ? `/${primerSegmento}/login` : "/login";
+};
+
+let cerrandoSesion = false;
+
+const cerrarSesionVencida = () => {
+  if (cerrandoSesion) return;
+  cerrandoSesion = true;
+  borrarTokenApi();
+  useAuthStore.getState().clearAuth();
+  queryClient.clear();
+  toast.error("Tu sesión venció", {
+    description: "Volvé a ingresar para continuar.",
+  });
+  setTimeout(() => window.location.assign(rutaDeLogin()), 900);
 };
 
 const transformKeysToLowercase = (obj) => {
@@ -134,10 +158,9 @@ api.interceptors.response.use(
 
     if (!config) return Promise.reject(error);
 
-    if (esErrorDeTokenApi(error) && !config.__tokenRenovado) {
-      config.__tokenRenovado = true;
-      invalidarTokenApi(config.__tokenApi);
-      return api(config);
+    if (esSesionVencida(error)) {
+      cerrarSesionVencida();
+      return Promise.reject(error);
     }
 
     config.__retryCount = config.__retryCount || 0;

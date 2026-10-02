@@ -10,6 +10,7 @@ import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
 import { useLogin, useLoginByCode, useSolicitarCodigoLogin } from "../../../hooks/useUsuario";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { usuarioService } from "../../../services/usuarioService";
+import { borrarTokenApi } from "../../../api/tokenApi";
 import {
   MENSAJE_CUENTA_BLOQUEADA,
   DESBLOQUEO_CUENTA_ADMIN,
@@ -368,6 +369,7 @@ const LoginAdmin = () => {
             setIsCheckingAdmin(false);
 
             if (!hasAccess) {
+              borrarTokenApi();
               setError("otp", {
                 type: "server",
                 message: "No tenés permisos de administrador.",
@@ -419,6 +421,7 @@ const LoginAdmin = () => {
             setIsCheckingAdmin(false);
 
             if (!hasAccess) {
+              borrarTokenApi();
               setError("password", {
                 type: "server",
                 message: "No tenés permisos de administrador.",

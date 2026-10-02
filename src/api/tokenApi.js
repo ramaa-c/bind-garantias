@@ -1,13 +1,4 @@
-import axios from "axios";
-import { obtenerCredencialesApi } from "./credencialesApi";
-import { CABECERAS_BASE_API } from "./cabecerasApi";
-
-const MARGEN_RENOVACION_MS = 60 * 1000;
-const DURACION_POR_DEFECTO_MS = 50 * 60 * 1000;
-
-let tokenActual = null;
-let vencimientoMs = 0;
-let solicitudEnCurso = null;
+const CLAVE_STORAGE = "tokenApi";
 
 const leerPayload = (token) => {
   try {
@@ -18,55 +9,38 @@ const leerPayload = (token) => {
   }
 };
 
-const calcularDuracionMs = (token) => {
+const estaVencido = (token) => {
   const payload = leerPayload(token);
-  if (payload?.exp && payload?.iat && payload.exp > payload.iat) {
-    return (payload.exp - payload.iat) * 1000;
-  }
-  return DURACION_POR_DEFECTO_MS;
+  return Boolean(payload?.exp) && Date.now() >= payload.exp * 1000;
 };
 
-const solicitarToken = async () => {
-  const { usuario, clave } = obtenerCredencialesApi();
-  const { data } = await axios.post(
-    `${import.meta.env.VITE_API_URL}api/auth/login`,
-    null,
-    {
-      timeout: 30000,
-      headers: {
-        ...CABECERAS_BASE_API,
-        jwtusername: usuario,
-        jwtpassword: clave,
-      },
-    },
-  );
-
-  const token = data?.token ?? data?.Token;
-  if (!token) {
-    throw new Error("La API no devolvió un token de acceso");
+export const guardarTokenApi = (token) => {
+  try {
+    localStorage.setItem(CLAVE_STORAGE, token);
+  } catch {
+    return;
   }
+};
 
-  tokenActual = token;
-  vencimientoMs = Date.now() + calcularDuracionMs(token);
-  return token;
+export const borrarTokenApi = () => {
+  try {
+    localStorage.removeItem(CLAVE_STORAGE);
+  } catch {
+    return;
+  }
 };
 
 export const obtenerTokenApi = () => {
-  if (tokenActual && Date.now() < vencimientoMs - MARGEN_RENOVACION_MS) {
-    return Promise.resolve(tokenActual);
+  let token = null;
+  try {
+    token = localStorage.getItem(CLAVE_STORAGE);
+  } catch {
+    return null;
   }
-
-  if (!solicitudEnCurso) {
-    solicitudEnCurso = solicitarToken().finally(() => {
-      solicitudEnCurso = null;
-    });
+  if (!token) return null;
+  if (estaVencido(token)) {
+    borrarTokenApi();
+    return null;
   }
-
-  return solicitudEnCurso;
-};
-
-export const invalidarTokenApi = (tokenRechazado) => {
-  if (tokenRechazado && tokenRechazado !== tokenActual) return;
-  tokenActual = null;
-  vencimientoMs = 0;
+  return token;
 };
