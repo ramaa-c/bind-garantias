@@ -74,7 +74,16 @@ const ConfirmarCorreo = () => {
           });
           setTimeLeft(RESEND_SECONDS);
         },
-        onError: () => {
+        onError: (error) => {
+          const status = error?.response?.status;
+          const esErrorDeServidor = !error?.response || status >= 500;
+          if (origen === "recuperar" && !esErrorDeServidor) {
+            toast.success("Enlace reenviado", {
+              description: "Revisá tu bandeja de entrada o la carpeta de SPAM.",
+            });
+            setTimeLeft(RESEND_SECONDS);
+            return;
+          }
           toast.error("Error al reenviar", {
             description: "Ocurrió un error. Intentá más tarde.",
           });
@@ -123,8 +132,9 @@ const ConfirmarCorreo = () => {
           <div className={styles.headerText}>
             <h2>Revisá tu correo</h2>
             <p>
-              Enviamos un enlace a esta dirección. Hacé clic en el enlace para
-              continuar con el proceso.
+              {origen === "recuperar"
+                ? "Si esta dirección está registrada, te enviamos un enlace. Hacé clic en el enlace para continuar con el proceso."
+                : "Enviamos un enlace a esta dirección. Hacé clic en el enlace para continuar con el proceso."}
             </p>
           </div>
 

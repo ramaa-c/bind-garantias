@@ -63,16 +63,24 @@ const RecuperarClave = () => {
       fronturl: window.location.origin + basePath,
     };
 
-    try {
-      await enviarCorreoAsync(payloadReset);
+    const irAConfirmacion = () =>
       navigate(`${basePath}/confirmar-correo`, {
         replace: true,
         state: { emailIngresado: data.email, canal: canalId, origen: "recuperar" },
       });
-    } catch {
-      toast.error("Error al solicitar el enlace", {
-        description: "Verificá tu correo o intentá más tarde.",
-      });
+
+    try {
+      await enviarCorreoAsync(payloadReset);
+      irAConfirmacion();
+    } catch (error) {
+      const status = error?.response?.status;
+      if (!error?.response || status >= 500) {
+        toast.error("Error al solicitar el enlace", {
+          description: "Ocurrió un error. Intentá más tarde.",
+        });
+        return;
+      }
+      irAConfirmacion();
     }
   };
 

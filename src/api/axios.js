@@ -87,12 +87,11 @@ const isPoolExhaustionError = (error) => {
   return POOL_EXHAUSTION_PATTERN.test(text);
 };
 
+const RUTAS_CON_401_DE_NEGOCIO = /usuario\/(login|password)|Socio\/ValidarCuit/i;
+
 const esErrorDeTokenApi = (error) => {
   if (error.esErrorTokenApi || error.response?.status !== 401) return false;
-  const data = error.response?.data;
-  if (!data) return false;
-  const text = typeof data === "string" ? data : JSON.stringify(data);
-  return /EMVCJWTException/i.test(text);
+  return !RUTAS_CON_401_DE_NEGOCIO.test(error.config?.url || "");
 };
 
 const transformKeysToLowercase = (obj) => {
