@@ -1,10 +1,5 @@
 import { usuarioAdapter } from "../adapters/usuarioAdapter";
 import api from "../api/axios";
-import {
-  extraerRegistroUsuario,
-  calcularEstadoIntentosLogin,
-  esUsuarioPendienteActivacion,
-} from "../utils/usuarioUtils";
 
 export const usuarioService = {
   // POST api/usuario/login
@@ -98,46 +93,6 @@ export const usuarioService = {
         }
       }
       throw error;
-    }
-  },
-
-  // Un usuario existe pero su cuenta todavía no está activa (Estado "2").
-  //
-  // ⚠️ A propósito NO mira DebeCambiarClave: ese campo solo indica si la
-  // cuenta tiene una contraseña propia seteada o no (queda en "1" tanto al
-  // darse de alta como al pedir "Recuperar clave", y también si el usuario
-  // hace "Omitir e ingresar con código" en CrearClave.jsx — ese camino activa
-  // la cuenta vía reactivarUsuario/status-release sin tocar la contraseña) —
-  // no es un indicador de si la cuenta está pendiente de activación. Ingresar
-  // con código es una forma de acceso legítima y permanente, no un estado
-  // transitorio; si el usuario más adelante quiere una contraseña, tiene
-  // "Recuperar clave" para eso. Antes esta función exigía además
-  // DebeCambiarClave==="1", lo que hacía que un usuario que ya usó "ingresar
-  // con código" viera el modal de "cuenta pendiente de activación" al fallar
-  // cualquier login normal, aunque su cuenta estuviera 100% activa.
-  //
-  // Único lugar que hace esta comparación: si cambia el casing/tipo que
-  // devuelve el backend, se corrige acá y no en cada pantalla.
-  esCuentaPendienteActivacion: async (email) => {
-    try {
-      const userData = await usuarioService.obtenerPorNombreOEmail(email);
-      const targetUser = Array.isArray(userData)
-        ? userData[0]
-        : userData?.items?.[0] || userData?.data?.[0] || userData;
-      return !!targetUser && esUsuarioPendienteActivacion(targetUser);
-    } catch {
-      return false;
-    }
-  },
-
-  obtenerEstadoIntentosLogin: async (email) => {
-    try {
-      const registro = extraerRegistroUsuario(
-        await usuarioService.obtenerPorNombreOEmail(email),
-      );
-      return calcularEstadoIntentosLogin(registro);
-    } catch {
-      return null;
     }
   },
 
