@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiAlertCircle } from "react-icons/fi";
+import { FiAlertCircle, FiMail, FiUserCheck } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
 import { usuarioService } from "../../../../../../services/usuarioService";
@@ -82,32 +82,42 @@ export function VincularUsuarioSection({ socioIdActivo }) {
   return (
     <div className={styles.usuariosContainer}>
       <div className={styles.vincularForm}>
-        <h5 className={styles.vincularFormTitle}>Vincular nuevo usuario</h5>
-        <p className={styles.vincularFormText}>
-          Ingresá el correo electrónico del usuario que deseás vincular. Este
-          usuario debe estar previamente registrado en la plataforma Bind
-          Garantías.
-        </p>
+        <div className={styles.vincularFormHeader}>
+          <span className={`${styles.vincularFormIcon} ${isAdmin ? styles.vincularFormIconAdmin : ""}`}>
+            <FiUserCheck size={16} />
+          </span>
+          <div className={styles.vincularFormHeaderText}>
+            <h5 className={styles.vincularFormTitle}>Vincular nuevo usuario</h5>
+            <p className={styles.vincularFormText}>
+              Ingresá el correo electrónico del usuario que deseás vincular.
+              Este usuario debe estar previamente registrado en la
+              plataforma Bind Garantías.
+            </p>
+          </div>
+        </div>
 
         <div className={styles.vincularInputWrapper}>
           <div className={styles.vincularInputGroup}>
-            <input
-              type="email"
-              className={`${styles.vincularInput} ${isAdmin ? styles.vincularInputAdmin : ""} ${emailError ? styles.vincularInputError : ""}`}
-              placeholder="ejemplo@correo.com"
-              value={emailVincular}
-              onChange={(e) => {
-                setEmailVincular(e.target.value);
-                if (emailError) setEmailError("");
-              }}
-              disabled={loadingVinculacion}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleVincularUsuario();
-                }
-              }}
-            />
+            <div className={styles.vincularInputField}>
+              <FiMail className={styles.vincularInputFieldIcon} size={14} />
+              <input
+                type="email"
+                className={`${styles.vincularInput} ${isAdmin ? styles.vincularInputAdmin : ""} ${emailError ? styles.vincularInputError : ""}`}
+                placeholder="ejemplo@correo.com"
+                value={emailVincular}
+                onChange={(e) => {
+                  setEmailVincular(e.target.value);
+                  if (emailError) setEmailError("");
+                }}
+                disabled={loadingVinculacion}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleVincularUsuario();
+                  }
+                }}
+              />
+            </div>
             <Button
               type="button"
               variant={isAdmin ? "blue" : "primary"}

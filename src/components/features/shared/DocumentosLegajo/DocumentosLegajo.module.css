@@ -333,26 +333,84 @@
   flex: 1;
 }
 
+/* Mismo lenguaje visual que .perfilCard en SociosLegajo.module.css (fondo,
+   borde, radio, sombra): esta tarjeta ahora cuelga justo al lado de esa,
+   dentro de "Mi Perfil" (ver el comentario en SociosLegajo.jsx), y
+   quedaba visiblemente "más plana" que su vecina - sin sombra, sin ícono,
+   con un título liviano. Mismas medidas de padding/radio que .perfilCard
+   (no "1.25rem" suelto) para que no cambie de tamaño al lado de ella. */
 .vincularForm {
   display: flex;
   flex-direction: column;
-  background: rgba(var(--overlay-rgb), 0.025);
-  border: 1px solid rgba(var(--overlay-rgb), 0.06);
-  padding: 1.25rem;
-  border-radius: 0.875rem;
+  gap: 0.9rem;
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 0.85rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  padding: 0.9rem 1.1rem 1.1rem;
+}
+
+.vincularFormHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+/* Mismo chip que .perfilAvatar (ver ese comentario): ícono amarillo sobre
+   degradado traslúcido en vez de letra sobre fondo - acá no hay una
+   inicial que mostrar, así que el ícono hace ese mismo trabajo de "primer
+   vistazo" de la fila de identidad. */
+.vincularFormIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 0.7rem;
+  background: linear-gradient(135deg, rgba(244, 245, 0, 0.2), rgba(244, 245, 0, 0.04));
+  border: 1px solid rgba(244, 245, 0, 0.3);
+  color: var(--color-amarillo-bind);
+}
+
+[data-theme="light"] .vincularFormIcon {
+  background: var(--color-amarillo-bind);
+  border-color: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+}
+
+/* Esta sección también vive, sin cambios, como pestaña propia del panel
+   admin (ver isUsuarios en SociosLegajo.jsx) - ahí el acento de marca es
+   azul, no amarillo (mismo criterio que InputTooltip variant="admin" y
+   el resto del panel admin). */
+.vincularFormIconAdmin {
+  background: linear-gradient(135deg, rgba(76, 101, 230, 0.22), rgba(76, 101, 230, 0.05));
+  border-color: rgba(76, 101, 230, 0.35);
+  color: var(--color-azul-bind, #4c65e6);
+}
+
+[data-theme="light"] .vincularFormIconAdmin {
+  background: var(--color-azul-bind, #4c65e6);
+  border-color: var(--color-azul-bind, #4c65e6);
+  color: var(--white);
+}
+
+.vincularFormHeaderText {
+  min-width: 0;
 }
 
 .vincularFormTitle {
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--white, #fff);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .vincularFormText {
-  font-size: 0.8125rem;
+  font-size: 0.8rem;
   color: var(--text-muted);
-  margin: 0.5rem 0 1rem 0;
+  margin: 0.25rem 0 0;
   line-height: 1.5;
 }
 
@@ -367,12 +425,27 @@
   align-items: center;
 }
 
-.vincularInput {
+.vincularInputField {
+  position: relative;
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.vincularInputFieldIcon {
+  position: absolute;
+  left: 0.9rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.vincularInput {
+  width: 100%;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(var(--overlay-rgb), 0.1);
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
+  border-radius: 0.6rem;
+  padding: 0.75rem 1rem 0.75rem 2.3rem;
   color: var(--white, #fff);
   font-size: 0.875rem;
   font-family: inherit;
