@@ -17,7 +17,6 @@ import {
   denominacionDesdeEmail,
   extraerRegistroUsuario,
   esAdministradorActivo,
-  mensajeConIntentosRestantes,
   MENSAJE_CUENTA_BLOQUEADA,
   DESBLOQUEO_CUENTA_CLIENTE,
   avisarCuentaBloqueada,
@@ -338,6 +337,7 @@ const Login = () => {
   const [fase, setFase] = useState(otpPendienteInicial.fase);
   const [modalPendiente, setModalPendiente] = useState(false);
   const [emailPendiente, setEmailPendiente] = useState("");
+  const [mostrarAyudaActivacion, setMostrarAyudaActivacion] = useState(false);
   const [locationSincronizada, setLocationSincronizada] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -438,7 +438,7 @@ const Login = () => {
           setFase("validacion_otp");
           toast.success("Código enviado a tu email");
         },
-        onError: async (error) => {
+        onError: (error) => {
           const status = error?.response?.status;
           if (!error?.response || status >= 500) {
             toast.error("Error de servidor", {
@@ -446,21 +446,13 @@ const Login = () => {
             });
             return;
           }
-
-          const estadoIntentos = await usuarioService.obtenerEstadoIntentosLogin(
-            formData.email,
-          );
-          if (estadoIntentos?.pendiente) {
-            setEmailPendiente(formData.email);
-            setModalPendiente(true);
-            return;
-          }
-          if (estadoIntentos?.bloqueada) {
+          if (status === 406) {
             setError("email", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
             avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
             return;
           }
 
+          setMostrarAyudaActivacion(true);
           setError("email", {
             type: "server",
             message: "Error al solicitar código. Verificá los datos.",
@@ -485,7 +477,7 @@ const Login = () => {
             setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
             navigate(acceso.destino, { replace: true });
           },
-          onError: async (error) => {
+          onError: (error) => {
             const status = error?.response?.status;
             if (!error?.response || status >= 500) {
               toast.error("Error de servidor", {
@@ -494,17 +486,10 @@ const Login = () => {
               return;
             }
             if (status === 401) {
-              const estadoIntentos = await usuarioService.obtenerEstadoIntentosLogin(
-                formData.email,
-              );
               setError("otp", {
                 type: "server",
-                message: mensajeConIntentosRestantes(
-                  mensajeCodigoLoginRechazado(error),
-                  estadoIntentos,
-                ),
+                message: mensajeCodigoLoginRechazado(error),
               });
-              if (estadoIntentos?.bloqueada) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
               return;
             }
             if (status === 406) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
@@ -534,7 +519,7 @@ const Login = () => {
             setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
             navigate(acceso.destino, { replace: true });
           },
-          onError: async (error) => {
+          onError: (error) => {
             const status = error?.response?.status;
             if (!error?.response || status >= 500) {
               clearErrors("password");
@@ -543,35 +528,26 @@ const Login = () => {
               });
               return;
             }
-
-            const estadoIntentos = await usuarioService.obtenerEstadoIntentosLogin(
-              formData.email,
-            );
-            if (estadoIntentos?.pendiente) {
-              setEmailPendiente(formData.email);
-              setModalPendiente(true);
-              return;
-            }
-            if (estadoIntentos?.bloqueada) {
+            if (status === 406) {
               setError("password", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
               avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
               return;
             }
 
+            setMostrarAyudaActivacion(true);
             setError("password", {
               type: "server",
-              message:
-                status === 401
-                  ? mensajeConIntentosRestantes(
-                      "Usuario o contraseña incorrecto.",
-                      estadoIntentos,
-                    )
-                  : "Usuario o contraseña incorrecto.",
+              message: "Usuario o contraseña incorrecto.",
             });
           },
         },
       );
     }
+  };
+
+  const abrirAyudaActivacion = () => {
+    setEmailPendiente(getValues("email"));
+    setModalPendiente(true);
   };
 
   const handleResendCode = () => {
@@ -695,6 +671,26 @@ const Login = () => {
               />
             )}
           </form>
+
+          {mostrarAyudaActivacion && fase !== "validacion_otp" && (
+            <p className={styles.ayudaActivacion}>
+              ¿Te registraste y todavía no activaste tu cuenta?{" "}
+              <span
+                className={styles.inlineLink}
+                role="button"
+                tabIndex={0}
+                onClick={!isPending ? abrirAyudaActivacion : undefined}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && !isPending) {
+                    e.preventDefault();
+                    abrirAyudaActivacion();
+                  }
+                }}
+              >
+                Reenviar activación
+              </span>
+            </p>
+          )}
         </div>
       </section>
 

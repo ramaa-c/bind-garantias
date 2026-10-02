@@ -1,5 +1,6 @@
 import axios from "axios";
 import { obtenerCredencialesApi } from "./credencialesApi";
+import { CABECERAS_BASE_API } from "./cabecerasApi";
 
 const MARGEN_RENOVACION_MS = 60 * 1000;
 const DURACION_POR_DEFECTO_MS = 50 * 60 * 1000;
@@ -33,7 +34,7 @@ const solicitarToken = async () => {
     {
       timeout: 30000,
       headers: {
-        Accept: "application/json",
+        ...CABECERAS_BASE_API,
         jwtusername: usuario,
         jwtpassword: clave,
       },

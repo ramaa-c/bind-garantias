@@ -3,13 +3,12 @@ import { toast } from "sonner";
 import { queryClient } from "./queryClient";
 import { obtenerUltimoStatus, esOffline } from "../utils/statusPlataforma";
 import { obtenerTokenApi, invalidarTokenApi } from "./tokenApi";
+import { CABECERAS_BASE_API } from "./cabecerasApi";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 30000,
-  headers: {
-    Accept: "application/json",
-  },
+  headers: { ...CABECERAS_BASE_API },
 });
 
 // ─────────────────────────────────────────────────────────────

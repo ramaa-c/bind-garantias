@@ -41,19 +41,19 @@ export function ActivacionPendienteModal({
           <div className={styles.seal}>
             <FiMail />
           </div>
-          <h2 className={styles.title}>Cuenta pendiente de activación</h2>
+          <h2 className={styles.title}>Activación de cuenta</h2>
         </div>
 
         <div className={styles.perforation} />
 
         <p className={styles.mensaje}>
-          El correo{" "}
-          <span className={styles.emailChip}>{email}</span> ya está
-          registrado, pero todavía no se completó la activación de la cuenta.
+          Si el correo <span className={styles.emailChip}>{email}</span> tiene
+          una cuenta pendiente de activación, te enviamos un enlace para
+          completarla.
         </p>
         <p className={styles.mensaje}>
-          Te reenviamos el enlace de verificación para terminar el proceso
-          desde ahí.
+          Si la cuenta ya está activa, el mismo enlace te permite crear una
+          nueva contraseña.
         </p>
 
         <div className={styles.perforation} />
@@ -68,7 +68,7 @@ export function ActivacionPendienteModal({
             disabled={bloqueado}
             isLoading={bloqueado}
           >
-            {bloqueado ? "Reenviando..." : "Reenviar correo"}
+            {bloqueado ? "Enviando..." : "Enviar enlace"}
           </Button>
         </div>
       </div>

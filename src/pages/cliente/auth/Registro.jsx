@@ -8,7 +8,6 @@ import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
 import { ActivacionPendienteModal } from "../../../components/features/shared/ActivacionPendienteModal/ActivacionPendienteModal";
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
-import { usuarioService } from "../../../services/usuarioService";
 import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
@@ -37,7 +36,6 @@ const Registro = () => {
 
   const [modalUsuarioExistente, setModalUsuarioExistente] = useState(false);
   const [emailPendiente, setEmailPendiente] = useState("");
-  const [verificandoEstado, setVerificandoEstado] = useState(false);
 
   const {
     control,
@@ -94,25 +92,8 @@ const Registro = () => {
       });
     } catch (error) {
       if (error?.response?.status === 409) {
-        setVerificandoEstado(true);
-        try {
-          const pendiente = await usuarioService.esCuentaPendienteActivacion(
-            data.email,
-          );
-
-          if (pendiente) {
-            setEmailPendiente(data.email);
-            setModalUsuarioExistente(true);
-          } else {
-            setError("email", {
-              type: "server",
-              message:
-                "Ya existe una cuenta con este correo. Intenta iniciar sesión.",
-            });
-          }
-        } finally {
-          setVerificandoEstado(false);
-        }
+        setEmailPendiente(data.email);
+        setModalUsuarioExistente(true);
       } else {
         // Manejo de errores 500 y otros problemas de red
         if (error?.response?.status >= 500 || !error?.response) {
@@ -121,10 +102,9 @@ const Registro = () => {
             description: "Ocurrió un error. Intentá más tarde.",
           });
         } else {
-          const message = error?.response?.data?.message || "Error al registrar cuenta. Verificá los datos.";
           setError("email", {
             type: "server",
-            message: message,
+            message: "Error al registrar cuenta. Verificá los datos.",
           });
         }
       }
@@ -170,13 +150,13 @@ const Registro = () => {
         setModalUsuarioExistente(false);
         setError("email", {
           type: "server",
-          message: error?.response?.data?.message || "Error al reenviar enlace. Verificá los datos.",
+          message: "Error al reenviar enlace. Verificá los datos.",
         });
       }
     }
   };
 
-  const isFormDisabled = registrando || reenviando || verificandoEstado;
+  const isFormDisabled = registrando || reenviando;
 
   return (
     <>
@@ -230,9 +210,7 @@ const Registro = () => {
                   isLoading={isFormDisabled}
                   style={{ width: "100%" }}
                 >
-                  {registrando || verificandoEstado
-                    ? "PROCESANDO..."
-                    : "REGISTRARSE"}
+                  {registrando ? "PROCESANDO..." : "REGISTRARSE"}
                 </Button>
               </div>
 
