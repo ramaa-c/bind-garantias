@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +6,6 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
-import { ActivacionPendienteModal } from "../../../components/features/shared/ActivacionPendienteModal/ActivacionPendienteModal";
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
 import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import { useChannel } from "../../../context/useChannel";
@@ -33,9 +32,6 @@ const Registro = () => {
   const { mutateAsync: reenviarCorreo, isPending: reenviando } =
     useResetearPassword();
   const { channelInfo, basePath } = useChannel();
-
-  const [modalUsuarioExistente, setModalUsuarioExistente] = useState(false);
-  const [emailPendiente, setEmailPendiente] = useState("");
 
   const {
     control,
@@ -79,9 +75,7 @@ const Registro = () => {
       fronturl: window.location.origin + basePath,
     };
 
-    try {
-      await crearUsuario(payloadSkeletor);
-
+    const irAConfirmacion = () =>
       navigate(`${basePath}/confirmar-correo`, {
         replace: true,
         state: {
@@ -90,67 +84,36 @@ const Registro = () => {
           origen: "registro",
         },
       });
-    } catch (error) {
-      if (error?.response?.status === 409) {
-        setEmailPendiente(data.email);
-        setModalUsuarioExistente(true);
-      } else {
-        // Manejo de errores 500 y otros problemas de red
-        if (error?.response?.status >= 500 || !error?.response) {
-          clearErrors("email");
-          toast.error("Error de servidor", {
-            description: "Ocurrió un error. Intentá más tarde.",
-          });
-        } else {
-          setError("email", {
-            type: "server",
-            message: "Error al registrar cuenta. Verificá los datos.",
-          });
-        }
-      }
-    }
-  };
 
-  const handleContinuarProcesoPendiente = async () => {
-    const canalId = channelInfo.id;
-
-    const payloadReset = {
-      email: emailPendiente,
-      usuariowebid: 0,
-      fchalta: getCSharpIsoDate(),
-      fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: "",
-      estado: "",
-      debecambiarclave: "",
-      esadministrador: "",
-      denominacion: denominacionDesdeEmail(emailPendiente),
-      fronturl: window.location.origin + basePath,
+    const avisarErrorServidor = () => {
+      clearErrors("email");
+      toast.error("Error de servidor", {
+        description: "Ocurrió un error. Intentá más tarde.",
+      });
     };
 
     try {
-      await reenviarCorreo(payloadReset);
-
-      setModalUsuarioExistente(false);
-
-      navigate(`${basePath}/confirmar-correo`, {
-        replace: true,
-        state: {
-          emailIngresado: emailPendiente,
-          canal: canalId,
-          origen: "registro",
-        },
-      });
+      await crearUsuario(payloadSkeletor);
+      irAConfirmacion();
     } catch (error) {
       const status = error?.response?.status;
+
+      if (status === 409) {
+        try {
+          await reenviarCorreo({ ...payloadSkeletor, usuariowebid: 0 });
+          irAConfirmacion();
+        } catch {
+          avisarErrorServidor();
+        }
+        return;
+      }
+
       if (!error?.response || status >= 500) {
-        toast.error("Error de servidor", {
-          description: "Ocurrió un error. Intentá más tarde.",
-        });
+        avisarErrorServidor();
       } else {
-        setModalUsuarioExistente(false);
         setError("email", {
           type: "server",
-          message: "Error al reenviar enlace. Verificá los datos.",
+          message: "Error al registrar cuenta. Verificá los datos.",
         });
       }
     }
@@ -159,7 +122,6 @@ const Registro = () => {
   const isFormDisabled = registrando || reenviando;
 
   return (
-    <>
       <div className={styles.layoutSplit}>
         <section className={styles.sideForm}>
           <div className={styles.globalLogo}>
@@ -256,15 +218,6 @@ const Registro = () => {
           </div>
         </section>
       </div>
-
-      <ActivacionPendienteModal
-        isOpen={modalUsuarioExistente}
-        onClose={() => setModalUsuarioExistente(false)}
-        email={emailPendiente}
-        onReenviar={handleContinuarProcesoPendiente}
-        isLoading={reenviando}
-      />
-    </>
   );
 };
 

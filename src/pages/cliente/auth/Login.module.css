@@ -362,13 +362,6 @@
   opacity: 0.8;
 }
 
-.ayudaActivacion {
-  margin-top: 1rem;
-  text-align: center;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
 /* ── SOPORTE / FOOTER ── */
 
 .supportContainerModern {
