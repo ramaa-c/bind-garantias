@@ -36,24 +36,54 @@ export const usuarioService = {
 
   // PUT api/usuario/password:reset
   resetearPassword: async (payloadSkeletor) =>
-    (await api.put(`api/usuario/password-reset`, usuarioAdapter.adaptarPayload3(payloadSkeletor))).data,
+    (
+      await api.put(
+        `api/usuario/password-reset`,
+        usuarioAdapter.adaptarPayload3(payloadSkeletor),
+        { sinToken: true },
+      )
+    ).data,
 
   // POST api/usuario/alta
   crearUsuario: async (nuevoUsuario) =>
-    (await api.post("api/usuario/alta", usuarioAdapter.adaptarPayload4(nuevoUsuario))).data,
+    (await api.post("api/usuario/alta", usuarioAdapter.adaptarPayload4(nuevoUsuario), { sinToken: true })).data,
 
   // PUT api/usuario/{usuarioid}/password:change
   cambiarPassword: async (usuarioId, datosCambioClave) =>
     (await api.put(`api/usuario/${usuarioId}/password-change`, usuarioAdapter.adaptarPayload5(datosCambioClave))).data,
 
-  // GET api/usuario/{encrypt}/:byencrypt
-  obtenerPorEncrypt: async (encryptToken) =>
-    (await api.get(`api/usuario/${encodeURIComponent(encryptToken)}/byencrypt`))
-      .data,
+  // GET api/usuario/estado/{encrypt}:byencrypt (302 activa / 404 inactiva / 406 vencido)
+  obtenerEstadoPorEncrypt: async (encryptToken) => {
+    const { status } = await api.get(
+      `api/usuario/estado/${encodeURIComponent(encryptToken)}-byencrypt`,
+      {
+        sinToken: true,
+        noRetry: true,
+        validateStatus: (codigo) =>
+          codigo === 302 ||
+          codigo === 404 ||
+          codigo === 406 ||
+          (codigo >= 200 && codigo < 300),
+      },
+    );
+    if (status === 404) return "inactiva";
+    if (status === 406) return "expirado";
+    return "activa";
+  },
 
-  // PUT api/usuario/{usuarioid}/password:new
-  establecerClaveNueva: async ({ usuarioid, data }) =>
-    (await api.put(`api/usuario/${usuarioid}/password-new`, usuarioAdapter.adaptarPayload6(data))).data,
+  // PUT api/usuario/password:new (identifica al usuario por el token del mail)
+  establecerClaveNueva: async ({ encrypt, newPassword }) =>
+    (
+      await api.put(
+        "api/usuario/password-new",
+        usuarioAdapter.adaptarPayload6({
+          oldpassword: "",
+          newpassword: newPassword,
+          encrypt,
+        }),
+        { sinToken: true },
+      )
+    ).data,
 
   obtenerPorNombreOEmail: async (identificador) => {
     try {

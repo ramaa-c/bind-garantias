@@ -24,6 +24,10 @@ export default defineConfig({
         rewrite: (path) => {
           let rewritten = path.replace(/^\/proxy-backend/, "");
 
+          rewritten = rewritten.replace(
+            /\/estado\/(.+)-byencrypt$/,
+            "/estado/$1:byencrypt",
+          );
           rewritten = rewritten.replace(/\/(byencrypt|pornombre)$/, "/:$1");
           rewritten = rewritten.replace(/\/porusuario$/, ":PorUsuario");
           rewritten = rewritten.replace(/\/porsocio$/, ":PorSocio");
