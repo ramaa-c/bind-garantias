@@ -58,6 +58,7 @@ export const usuarioAdapter = {
     return {
       oldPassword: d.oldpassword,
       newPassword: d.newpassword,
+      encrypt: d.encrypt,
     };
   },
   adaptarPayload7: (data) => {

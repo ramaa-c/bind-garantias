@@ -20,19 +20,13 @@ import {
   InputSimple,
 } from "../../../components/ui";
 import {
-  useObtenerUsuarioPorEncrypt,
+  useObtenerEstadoPorEncrypt,
   useEstablecerClave,
   useResetearPassword,
-  useSolicitarCodigoLogin,
-  useReactivarUsuario,
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
-import {
-  denominacionDesdeEmail,
-  esUsuarioBloqueado,
-  esUsuarioPendienteActivacion,
-} from "../../../utils/usuarioUtils";
+import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
 import styles from "./CrearClave.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -70,64 +64,16 @@ const CrearClave = () => {
   const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
   const {
-    data: usuario,
-    isLoading: verificandoToken,
-    isError: tokenExpirado,
-  } = useObtenerUsuarioPorEncrypt(tokenIntegridad);
+    data: estadoCuenta,
+    isLoading: verificandoEstado,
+    isError: estadoError,
+  } = useObtenerEstadoPorEncrypt(tokenIntegridad);
 
   const { mutate: establecerClave, isPending: guardandoClave } =
     useEstablecerClave();
 
   const { mutate: resetearPassword, isPending: solicitandoNuevo } =
     useResetearPassword();
-
-  const { mutate: solicitarCodigo, isPending: solicitandoCodigo } =
-    useSolicitarCodigoLogin();
-  const { mutate: reactivarUsuario, isPending: reactivando } =
-    useReactivarUsuario();
-
-  const handleOmitir = () => {
-    if (!usuario?.email || !usuario?.usuariowebid) return;
-
-    reactivarUsuario(usuario.usuariowebid, {
-      onSuccess: () => {
-        solicitarCodigo(usuario.email, {
-          onSuccess: () => {
-            toast.success("Código enviado", {
-              description: "Revisá tu correo para ingresar.",
-            });
-            navigate(`${basePath}/login`, {
-              state: { emailIngresado: usuario.email },
-            });
-          },
-          onError: (error) => {
-            const isServerError = error?.response?.status >= 500;
-            toast.error(
-              isServerError
-                ? "Error de servidor"
-                : "Error al solicitar código",
-              {
-                description: isServerError
-                  ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-                  : "Ocurrió un error. Intentá más tarde.",
-              },
-            );
-          },
-        });
-      },
-      onError: (error) => {
-        const isServerError = error?.response?.status >= 500;
-        toast.error(
-          isServerError ? "Error de servidor" : "Error al activar cuenta",
-          {
-            description: isServerError
-              ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-              : "No pudimos activar tu cuenta en este momento. Intentá más tarde.",
-          },
-        );
-      },
-    });
-  };
 
   const handleSolicitarNuevoEnlace = () => {
     if (!emailManual) {
@@ -218,77 +164,68 @@ const CrearClave = () => {
   }, [passwordValue, trigger]);
 
   const onSubmit = (formData) => {
-    const payload = {
-      usuarioid: usuario?.usuariowebid,
-      data: {
-        oldpassword: "",
-        newpassword: formData.password,
-      },
-    };
-
-    establecerClave(payload, {
-      onSuccess: () => {
-        toast.success("Contraseña establecida correctamente", {
-          description: cuentaPendienteActivacion
-            ? "Tu cuenta ha sido activada. Ya podés iniciar sesión."
-            : cuentaBloqueada
-              ? "Tu cuenta fue desbloqueada. Ya podés iniciar sesión."
+    establecerClave(
+      { encrypt: tokenIntegridad, newPassword: formData.password },
+      {
+        onSuccess: () => {
+          toast.success("Contraseña establecida correctamente", {
+            description: cuentaInactiva
+              ? "Tu cuenta fue activada. Ya podés iniciar sesión."
               : "Ya podés iniciar sesión con tu nueva contraseña.",
-          duration: 5000,
-        });
-        navigate(`${basePath}/login`, { replace: true });
+            duration: 5000,
+          });
+          navigate(`${basePath}/login`, { replace: true });
+        },
+        onError: (error) => {
+          const status = error?.response?.status;
+          const isServerError = !error?.response || status >= 500;
+          const errMsg =
+            status === 404
+              ? "El enlace expiró o no es válido. Solicitá uno nuevo."
+              : isServerError
+                ? "El servidor está experimentando problemas. Por favor, intentá nuevamente más tarde."
+                : "Error al establecer la credencial. Intentá más tarde.";
+          toast.error(
+            isServerError ? "Error de servidor" : "Error de activación",
+            {
+              description: errMsg,
+            },
+          );
+          setError("root.serverError", { type: "manual", message: errMsg });
+        },
       },
-      onError: (error) => {
-        const isServerError = error?.response?.status >= 500;
-        const errMsg = isServerError
-          ? "El servidor está experimentando problemas. Por favor, intentá nuevamente más tarde."
-          : "Error al establecer la credencial. Intentá más tarde.";
-        toast.error(
-          isServerError ? "Error de servidor" : "Error de activación",
-          {
-            description: errMsg,
-          },
-        );
-        setError("root.serverError", { type: "manual", message: errMsg });
-      },
-    });
+    );
   };
 
-  const mostrarErrorFaltaUsuario =
-    !usuario && tokenExpirado && !verificandoToken;
+  const enlaceVencido =
+    !tokenInvalidoDeOrigen &&
+    !verificandoEstado &&
+    (estadoCuenta === "expirado" || estadoError);
 
-  const cuentaPendienteActivacion =
-    !tokenInvalidoDeOrigen && !!usuario && esUsuarioPendienteActivacion(usuario);
+  const cuentaInactiva = !tokenInvalidoDeOrigen && estadoCuenta === "inactiva";
+  const cuentaActiva = !tokenInvalidoDeOrigen && estadoCuenta === "activa";
+  const mostrarFormulario = cuentaActiva || cuentaInactiva;
 
-  const cuentaBloqueada =
-    !tokenInvalidoDeOrigen && !!usuario && esUsuarioBloqueado(usuario);
+  const mostrarErrorFaltaUsuario = enlaceVencido;
 
-  const avisoEstadoCuenta = cuentaPendienteActivacion
+  const avisoEstadoCuenta = cuentaInactiva
     ? {
         tono: "warning",
         Icono: FiAlertTriangle,
-        titulo: "Activación pendiente",
+        titulo: "Activá tu cuenta",
         texto:
-          'Si salís sin crear una contraseña o usar "Omitir e ingresar con código", vas a necesitar un nuevo enlace.',
+          "Tu cuenta está inactiva. Al crear tu contraseña queda activa y lista para usar.",
       }
-    : cuentaBloqueada
-      ? {
-          tono: "warning",
-          Icono: FiAlertTriangle,
-          titulo: "Cuenta bloqueada",
-          texto:
-            "Tu cuenta se bloqueó por superar el máximo de intentos de ingreso. Al guardar tu nueva contraseña se desbloquea.",
-        }
-      : {
-          tono: "neutral",
-          Icono: FiLock,
-          titulo: "Actualizando tu acceso",
-          texto:
-            "Tu cuenta sigue activa mientras hacés este cambio. Podés seguir usando tus accesos actuales hasta confirmar la nueva contraseña.",
-        };
+    : {
+        tono: "neutral",
+        Icono: FiLock,
+        titulo: "Actualizando tu acceso",
+        texto:
+          "Tu cuenta sigue activa mientras hacés este cambio. Podés seguir usando tus accesos actuales hasta confirmar la nueva contraseña.",
+      };
 
   useEffect(() => {
-    if (!cuentaPendienteActivacion) return;
+    if (!cuentaInactiva) return;
 
     const avisarAntesDeCerrar = (e) => {
       e.preventDefault();
@@ -298,11 +235,11 @@ const CrearClave = () => {
     window.addEventListener("beforeunload", avisarAntesDeCerrar);
     return () =>
       window.removeEventListener("beforeunload", avisarAntesDeCerrar);
-  }, [cuentaPendienteActivacion]);
+  }, [cuentaInactiva]);
 
   return (
     <>
-      {verificandoToken && !tokenInvalidoDeOrigen ? (
+      {verificandoEstado && !tokenInvalidoDeOrigen ? (
         <div
           style={{
             display: "flex",
@@ -355,34 +292,30 @@ const CrearClave = () => {
                 marginTop: "3.5rem",
               }}
             >
-              {!tokenInvalidoDeOrigen && usuario && (
+              {mostrarFormulario && (
                 <div
                   className={styles.successCallout}
                   style={{ marginBottom: 0 }}
                 >
                   <FiCheckCircle className={styles.calloutIcon} />
                   <div className={styles.calloutContent}>
-                    {!cuentaPendienteActivacion ? (
+                    {cuentaActiva ? (
                       <>
                         <h2 className={styles.calloutTitle}>
                           Restablecé tu contraseña
                         </h2>
                         <p>
-                          Ingresá tu nueva contraseña a continuación. Recordá
-                          que siempre podés seguir ingresando con un código a
-                          tu correo si lo preferís.
+                          Ingresá tu nueva contraseña a continuación.
                         </p>
                       </>
                     ) : (
                       <>
                         <h2 className={styles.calloutTitle}>
-                          ¡Email verificado con éxito!
+                          Activá tu cuenta
                         </h2>
                         <p>
-                          Para activar tu cuenta, creá tu contraseña o elegí
-                          ingresar con un código a tu correo. Si creás una
-                          contraseña, después también vas a poder seguir
-                          usando el código de acceso cuando prefieras.
+                          Creá tu contraseña para activar tu cuenta y poder
+                          ingresar.
                         </p>
                       </>
                     )}
@@ -490,7 +423,7 @@ const CrearClave = () => {
                 )}
 
                 {/* Formulario principal */}
-                {!tokenInvalidoDeOrigen && usuario && (
+                {mostrarFormulario && (
                   <form onSubmit={handleSubmit(onSubmit)} noValidate>
                     <div className={styles.inputGroup}>
                       <Controller
@@ -501,7 +434,7 @@ const CrearClave = () => {
                             {...field}
                             label="Nueva Contraseña"
                             currentValue={passwordValue}
-                            email={usuario?.email || ""}
+                            email=""
                             esValido={!errors.password && !!passwordValue}
                             disabled={guardandoClave}
                             autoComplete="new-password"
@@ -558,38 +491,11 @@ const CrearClave = () => {
                       <Button
                         type="submit"
                         variant="primary"
-                        disabled={
-                          !isValid ||
-                          guardandoClave ||
-                          solicitandoCodigo ||
-                          reactivando
-                        }
+                        disabled={!isValid || guardandoClave}
                         style={{ width: "100%" }}
                       >
                         {guardandoClave ? "PROCESANDO..." : "GUARDAR"}
                       </Button>
-                      {cuentaPendienteActivacion && (
-                        <>
-                          <div className={styles.divider}>
-                            <span>o</span>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={handleOmitir}
-                            disabled={
-                              solicitandoCodigo ||
-                              guardandoClave ||
-                              reactivando
-                            }
-                            style={{ width: "100%" }}
-                          >
-                            {solicitandoCodigo || reactivando
-                              ? "PROCESANDO..."
-                              : "Omitir e ingresar con código"}
-                          </Button>
-                        </>
-                      )}
                     </div>
                   </form>
                 )}
@@ -621,7 +527,7 @@ const CrearClave = () => {
                   siempre está a la vista, sin pelear espacio con el
                   formulario, y cambia de tono según por qué se llegó a esta
                   pantalla en vez de ser un mensaje genérico fijo. */}
-              {!tokenInvalidoDeOrigen && usuario && (
+              {mostrarFormulario && (
                 <div
                   className={styles.brandStatusCard}
                   data-tone={avisoEstadoCuenta.tono}

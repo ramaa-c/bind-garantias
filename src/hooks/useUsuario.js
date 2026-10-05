@@ -64,10 +64,10 @@ export const useCambiarPassword = () => {
   });
 };
 
-export const useObtenerUsuarioPorEncrypt = (encryptToken) => {
+export const useObtenerEstadoPorEncrypt = (encryptToken) => {
   return useQuery({
-    queryKey: ["usuarios", "detalleEncrypt", encryptToken],
-    queryFn: () => usuarioService.obtenerPorEncrypt(encryptToken),
+    queryKey: ["usuarios", "estadoEncrypt", encryptToken],
+    queryFn: () => usuarioService.obtenerEstadoPorEncrypt(encryptToken),
     enabled: !!encryptToken && encryptToken.length > 10,
     retry: false,
   });
@@ -75,8 +75,8 @@ export const useObtenerUsuarioPorEncrypt = (encryptToken) => {
 
 export const useEstablecerClave = () => {
   return useMutation({
-    mutationFn: ({ usuarioid, data }) =>
-      usuarioService.establecerClaveNueva({ usuarioid, data }),
+    mutationFn: ({ encrypt, newPassword }) =>
+      usuarioService.establecerClaveNueva({ encrypt, newPassword }),
   });
 };
 
