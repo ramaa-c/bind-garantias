@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore } from "../../../store/useAuthStore";
@@ -7,6 +7,7 @@ import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useSessionTimeout } from "../../../hooks/useSessionTimeout";
 import { ConfirmacionModal } from "../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { SessionExpiryNotice } from "./SessionExpiryNotice";
+import { borrarTokenApi, obtenerVencimientoTokenMs } from "../../../api/tokenApi";
 
 // Estándar de industria (OWASP ASVS) para apps autenticadas de riesgo medio:
 // 15-30 min de inactividad. 20 min + aviso 1 min antes, igual en admin y en
@@ -40,6 +41,7 @@ const resolverLoginPath = (pathname, modoPorHost, isRestricted, cadenas) => {
 
 export const SessionTimeoutManager = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const usuarioLogueado = useAuthStore((state) => state.user);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,6 +53,29 @@ export const SessionTimeoutManager = () => {
     toast.info("Tu sesión se cerró por inactividad.");
     navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
   };
+
+  const handleVencimientoToken = () => {
+    borrarTokenApi();
+    clearAuth();
+    toast.info("Tu sesión venció. Volvé a ingresar para continuar.");
+    navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
+  };
+
+  const handleVencimientoTokenRef = useRef(handleVencimientoToken);
+  useEffect(() => {
+    handleVencimientoTokenRef.current = handleVencimientoToken;
+  });
+
+  useEffect(() => {
+    if (!isAuthenticated) return undefined;
+    const vencimientoMs = obtenerVencimientoTokenMs();
+    if (!vencimientoMs) return undefined;
+    const temporizador = setTimeout(
+      () => handleVencimientoTokenRef.current(),
+      Math.max(vencimientoMs - Date.now(), 0),
+    );
+    return () => clearTimeout(temporizador);
+  }, [isAuthenticated, usuarioLogueado]);
 
   const { showWarning, secondsLeft, extenderSesion } = useSessionTimeout({
     enabled: isAuthenticated,

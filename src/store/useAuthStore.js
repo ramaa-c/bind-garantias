@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { setLastActivity, clearLastActivity } from "../utils/sessionActivity";
-import { borrarTokenApi } from "../api/tokenApi";
+import { cerrarSesionApi } from "../api/tokenApi";
 
 // Compartido por clearAuth (logout real) y cambiarEmpresa (logout "suave",
 // ver más abajo): tira todo lo efímero de una sesión/intento de onboarding —
@@ -82,7 +82,7 @@ export const useAuthStore = create(
 
       clearAuth: () => {
         clearLastActivity();
-        borrarTokenApi();
+        cerrarSesionApi();
         limpiarStorageEfimero();
         set({
           user: null,

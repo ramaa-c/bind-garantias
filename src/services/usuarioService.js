@@ -1,6 +1,6 @@
 import { usuarioAdapter } from "../adapters/usuarioAdapter";
 import api from "../api/axios";
-import { guardarTokenApi } from "../api/tokenApi";
+import { guardarTokenApi, cerrarSesionApi } from "../api/tokenApi";
 
 const obtenerTokenDeUsuario = async ({ email, password }) => {
   const { data } = await api.post("api/auth/login", null, {
@@ -10,6 +10,7 @@ const obtenerTokenDeUsuario = async ({ email, password }) => {
   });
   const token = data?.token;
   if (!token) throw new Error("La API no devolvió un token de acceso");
+  cerrarSesionApi();
   guardarTokenApi(token);
   return data;
 };

@@ -9,7 +9,7 @@ import { Button } from "../../../components/ui/Button/Button";
 import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
 import { useLogin, useLoginByCode, useSolicitarCodigoLogin } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
-import { borrarTokenApi } from "../../../api/tokenApi";
+import { cerrarSesionApi } from "../../../api/tokenApi";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useThemeStore } from "../../../store/useThemeStore";
 import { useChannel } from "../../../context/useChannel";
@@ -429,7 +429,7 @@ const Login = () => {
           onSuccess: async () => {
             const acceso = await resolverAccesoPostLogin(formData.email, basePath);
             if (!acceso.permitido) {
-              borrarTokenApi();
+              cerrarSesionApi();
               if (acceso.motivo === "bloqueada") {
                 setError("email", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
                 avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
@@ -480,7 +480,7 @@ const Login = () => {
           onSuccess: async () => {
             const acceso = await resolverAccesoPostLogin(formData.email, basePath);
             if (!acceso.permitido) {
-              borrarTokenApi();
+              cerrarSesionApi();
               if (acceso.motivo === "bloqueada") {
                 setError("password", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
                 avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);

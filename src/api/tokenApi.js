@@ -1,3 +1,5 @@
+import { CABECERAS_BASE_API } from "./cabecerasApi";
+
 const CLAVE_STORAGE = "tokenApi";
 
 const leerPayload = (token) => {
@@ -43,4 +45,25 @@ export const obtenerTokenApi = () => {
     return null;
   }
   return token;
+};
+
+export const obtenerVencimientoTokenMs = () => {
+  const token = obtenerTokenApi();
+  const payload = token ? leerPayload(token) : null;
+  return payload?.exp ? payload.exp * 1000 : null;
+};
+
+export const cerrarSesionApi = () => {
+  const token = obtenerTokenApi();
+  borrarTokenApi();
+  if (!token) return;
+  try {
+    fetch(`${import.meta.env.VITE_API_URL}api/auth/logout`, {
+      method: "POST",
+      keepalive: true,
+      headers: { ...CABECERAS_BASE_API, Authorization: `Bearer ${token}` },
+    }).catch(() => {});
+  } catch {
+    return;
+  }
 };
