@@ -27,6 +27,8 @@ import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
+const ESTADO_CUENTA_BLOQUEADA = 406;
+
 const MENSAJE_ADMIN_EN_CLIENTE =
   "Esta cuenta es de administración y no puede operar como cliente. Registrate con un correo distinto para acceder desde acá.";
 
@@ -406,6 +408,11 @@ const Login = () => {
             });
             return;
           }
+          if (status === ESTADO_CUENTA_BLOQUEADA) {
+            setError("email", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+            avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+            return;
+          }
           setError("email", {
             type: "server",
             message: "Error al solicitar código. Verificá los datos.",
@@ -442,6 +449,11 @@ const Login = () => {
               toast.error("Error de servidor", {
                 description: "Ocurrió un error. Intentá más tarde.",
               });
+              return;
+            }
+            if (status === ESTADO_CUENTA_BLOQUEADA) {
+              setError("otp", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+              avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
               return;
             }
             if (status === 401) {
@@ -489,6 +501,11 @@ const Login = () => {
               });
               return;
             }
+            if (status === ESTADO_CUENTA_BLOQUEADA) {
+              setError("password", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+              avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+              return;
+            }
             setError("password", {
               type: "server",
               message: "Usuario o contraseña incorrecto.",
@@ -512,6 +529,9 @@ const Login = () => {
           toast.error("Error de servidor", {
             description: "Ocurrió un error. Intentá más tarde.",
           });
+        } else if (status === ESTADO_CUENTA_BLOQUEADA) {
+          setError("otp", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+          avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
         } else {
           setError("otp", {
             type: "server",

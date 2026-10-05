@@ -4,6 +4,39 @@ import { afipService } from "../services/afipService";
 import { matchProvinciaAfip } from "./provinciaUtils";
 import { decodeHtmlEntities, parseAddress } from "./direccionParser";
 
+const CARACTERES_PERDIDOS = /[?�]/;
+
+const tieneCaracteresPerdidos = (texto) => CARACTERES_PERDIDOS.test(texto || "");
+
+const nombreDesdeAfip = (data) => {
+  const dg = data?.datosgenerales;
+  if (!dg) return "";
+  return decodeHtmlEntities(
+    dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim(),
+  );
+};
+
+const resolverNombreSinCaracteresPerdidos = async (nombreNosis, nosisData, afipData, cuit) => {
+  const nombrePorPartes = decodeHtmlEntities(
+    `${nosisData.VI_Apellido || ""} ${nosisData.VI_Nombre || ""}`.trim(),
+  );
+  if (nombrePorPartes && !tieneCaracteresPerdidos(nombrePorPartes)) return nombrePorPartes;
+
+  const nombreAfipDisponible = nombreDesdeAfip(afipData);
+  if (nombreAfipDisponible && !tieneCaracteresPerdidos(nombreAfipDisponible)) {
+    return nombreAfipDisponible;
+  }
+
+  try {
+    const nombreAfip = nombreDesdeAfip(await afipService.obtenerConstanciaInscripcion(cuit));
+    if (nombreAfip && !tieneCaracteresPerdidos(nombreAfip)) return nombreAfip;
+  } catch (e) {
+    console.warn("No se pudo consultar ARCA para corregir el nombre de Nosis:", e);
+  }
+
+  return nombreNosis;
+};
+
 export const obtenerDatosEmpresaPorCuit = async (
   cuit,
   opcionesProvincias,
@@ -91,10 +124,18 @@ export const obtenerDatosEmpresaPorCuit = async (
   let valores;
 
   if (nosisData) {
-    const nombreCompleto = decodeHtmlEntities(
+    let nombreCompleto = decodeHtmlEntities(
       nosisData.VI_RazonSocial ||
         `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim(),
     );
+    if (tieneCaracteresPerdidos(nombreCompleto)) {
+      nombreCompleto = await resolverNombreSinCaracteresPerdidos(
+        nombreCompleto,
+        nosisData,
+        afipData,
+        cuit,
+      );
+    }
     const fullDireccion = decodeHtmlEntities(
       `${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim(),
     );
