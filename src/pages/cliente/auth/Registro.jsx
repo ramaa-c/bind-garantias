@@ -7,7 +7,11 @@ import { toast } from "sonner";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
-import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
+import {
+  denominacionDesdeEmail,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
+} from "../../../utils/usuarioUtils";
 import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
 import styles from "./Login.module.css";
@@ -98,11 +102,20 @@ const Registro = () => {
     } catch (error) {
       const status = error?.response?.status;
 
+      if (esDemasiadosIntentos(error)) {
+        avisarDemasiadosIntentos();
+        return;
+      }
+
       if (status === 409) {
         try {
           await reenviarCorreo({ ...payloadSkeletor, usuariowebid: 0 });
           irAConfirmacion();
-        } catch {
+        } catch (errorReenvio) {
+          if (esDemasiadosIntentos(errorReenvio)) {
+            avisarDemasiadosIntentos();
+            return;
+          }
           avisarErrorServidor();
         }
         return;

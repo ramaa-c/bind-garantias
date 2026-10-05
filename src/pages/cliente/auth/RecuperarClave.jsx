@@ -10,7 +10,11 @@ import { Button } from "../../../components/ui/Button/Button";
 import { Alert } from "../../../components/ui/Alert/Alert";
 import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
-import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
+import {
+  denominacionDesdeEmail,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
+} from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -78,6 +82,10 @@ const RecuperarClave = () => {
         toast.error("Error al solicitar el enlace", {
           description: "Ocurrió un error. Intentá más tarde.",
         });
+        return;
+      }
+      if (esDemasiadosIntentos(error)) {
+        avisarDemasiadosIntentos();
         return;
       }
       irAConfirmacion();

@@ -6,7 +6,11 @@ import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
-import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
+import {
+  denominacionDesdeEmail,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
+} from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -75,6 +79,10 @@ const ConfirmarCorreo = () => {
           setTimeLeft(RESEND_SECONDS);
         },
         onError: (error) => {
+          if (esDemasiadosIntentos(error)) {
+            avisarDemasiadosIntentos();
+            return;
+          }
           const status = error?.response?.status;
           const esErrorDeServidor = !error?.response || status >= 500;
           if (origen === "recuperar" && !esErrorDeServidor) {

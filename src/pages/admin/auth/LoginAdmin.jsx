@@ -17,6 +17,8 @@ import {
   avisarCuentaBloqueada,
   VIGENCIA_CODIGO_LOGIN_MS,
   mensajeCodigoLoginRechazado,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
 } from "../../../utils/usuarioUtils";
 import styles from "../../cliente/auth/Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
@@ -348,6 +350,10 @@ const LoginAdmin = () => {
             });
             return;
           }
+          if (esDemasiadosIntentos(error)) {
+            avisarDemasiadosIntentos();
+            return;
+          }
           if (status === 406) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
           const message =
             status === 406
@@ -388,6 +394,10 @@ const LoginAdmin = () => {
               toast.error("Error de servidor", {
                 description: "Ocurrió un error. Intentá más tarde.",
               });
+              return;
+            }
+            if (esDemasiadosIntentos(error)) {
+              avisarDemasiadosIntentos();
               return;
             }
             if (status === 401) {
@@ -442,6 +452,10 @@ const LoginAdmin = () => {
               });
               return;
             }
+            if (esDemasiadosIntentos(error)) {
+              avisarDemasiadosIntentos();
+              return;
+            }
             if (status === 406) {
               setError("password", {
                 type: "server",
@@ -473,6 +487,8 @@ const LoginAdmin = () => {
           toast.error("Error de servidor", {
             description: "Ocurrió un error. Intentá más tarde.",
           });
+        } else if (esDemasiadosIntentos(error)) {
+          avisarDemasiadosIntentos();
         } else {
           setError("otp", {
             type: "server",

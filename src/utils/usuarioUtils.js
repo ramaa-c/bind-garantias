@@ -61,6 +61,13 @@ export const DESBLOQUEO_CUENTA_ADMIN =
 export const avisarCuentaBloqueada = (descripcion) =>
   toast.error("Tu cuenta fue bloqueada", { description: descripcion });
 
+export const esDemasiadosIntentos = (error) => error?.response?.status === 429;
+
+export const avisarDemasiadosIntentos = () =>
+  toast.error("Demasiados intentos", {
+    description: "Esperá unos minutos y volvé a probar.",
+  });
+
 export const esCodigoLoginExpirado = (error) => {
   const data = error?.response?.data;
   const mensaje = data?.message ?? data?.Message ?? "";

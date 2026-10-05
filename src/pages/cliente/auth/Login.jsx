@@ -22,6 +22,8 @@ import {
   avisarCuentaBloqueada,
   VIGENCIA_CODIGO_LOGIN_MS,
   mensajeCodigoLoginRechazado,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
 } from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
@@ -408,6 +410,10 @@ const Login = () => {
             });
             return;
           }
+          if (esDemasiadosIntentos(error)) {
+            avisarDemasiadosIntentos();
+            return;
+          }
           if (status === ESTADO_CUENTA_BLOQUEADA) {
             setError("email", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
             avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
@@ -449,6 +455,10 @@ const Login = () => {
               toast.error("Error de servidor", {
                 description: "Ocurrió un error. Intentá más tarde.",
               });
+              return;
+            }
+            if (esDemasiadosIntentos(error)) {
+              avisarDemasiadosIntentos();
               return;
             }
             if (status === ESTADO_CUENTA_BLOQUEADA) {
@@ -501,6 +511,10 @@ const Login = () => {
               });
               return;
             }
+            if (esDemasiadosIntentos(error)) {
+              avisarDemasiadosIntentos();
+              return;
+            }
             if (status === ESTADO_CUENTA_BLOQUEADA) {
               setError("password", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
               avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
@@ -529,6 +543,8 @@ const Login = () => {
           toast.error("Error de servidor", {
             description: "Ocurrió un error. Intentá más tarde.",
           });
+        } else if (esDemasiadosIntentos(error)) {
+          avisarDemasiadosIntentos();
         } else if (status === ESTADO_CUENTA_BLOQUEADA) {
           setError("otp", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
           avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
