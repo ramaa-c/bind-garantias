@@ -357,7 +357,7 @@ export function DocumentosLegajo({
       return;
     }
     setIsSavingMeta(true);
-    const toastId = toast.loading("Guardando metadatos del archivo...");
+    const toastId = toast.loading("Guardando información...");
     try {
       const fchreferencia = metaFecha ? `${metaFecha.split("T")[0]}T00:00:00` : null;
       const fchArchivoManual =
@@ -383,10 +383,10 @@ export function DocumentosLegajo({
         queryKey: ["socioLegajoCompleto", socioIdActivo],
       });
 
-      toast.success("Metadatos guardados correctamente", { id: toastId });
+      toast.success("Información guardada correctamente", { id: toastId });
     } catch (error) {
       console.error("Error al guardar metadatos:", error);
-      toast.error("Error al guardar los metadatos del archivo.", { id: toastId });
+      toast.error("Error al guardar la información del archivo.", { id: toastId });
     } finally {
       setIsSavingMeta(false);
     }
