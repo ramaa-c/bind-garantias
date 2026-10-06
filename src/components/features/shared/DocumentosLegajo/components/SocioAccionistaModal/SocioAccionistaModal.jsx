@@ -469,7 +469,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           denominacion: "",
           cuit: cuitLimpio,
           bcraid: 0,
-          tipopersonaid: cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
+          tipopersonaid: ["30", "33", "34"].some((prefijo) => cuitLimpio.startsWith(prefijo)) ? 2 : 1,
           tipodocumentoid: 0,
           numerodocumento: cuitLimpio,
           estadocivilid: 0,
@@ -672,7 +672,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               denominacion: nombreSocio,
               cuit: cuitLimpio,
               bcraid: 0,
-              tipopersonaid: cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
+              tipopersonaid: ["30", "33", "34"].some((prefijo) => cuitLimpio.startsWith(prefijo)) ? 2 : 1,
               tipodocumentoid: 0,
               numerodocumento: cuitLimpio,
               estadocivilid: 0,
@@ -891,75 +891,75 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     setShowConfirm(true);
   };
 
-  const onConfirmSave = async () => {
-    // Al editar un accionista existente (ej. precargado por LUFE) el paso
-    // de "Validar CUIT" se salta directo al formulario — handleAfipLookup,
-    // que es donde corre el CDA, nunca se dispara. Acá, recién al confirmar
-    // el guardado (no antes, en el primer click de "Guardar Cambios"), es
-    // la única oportunidad de validarlo, ya con los datos completos.
-    //
-    // Se cierra el diálogo de confirmación genérico y se muestra el mismo
-    // modal de progreso que usa handleAfipLookup, para que quede visible
-    // que se está validando — antes esto corría en silencio (solo el
-    // spinner del botón) y era fácil no darse cuenta.
-    //
-    // Si ya tiene un CDA Aprobado vigente (mismo cálculo que usa
-    // TerceroCdaEstado para el badge), se confía en eso y no se vuelve a
-    // ejecutar. Si rechaza, YA NO bloquea el guardado (unificado con
-    // handleAfipLookup): se guarda igual, y la persona queda marcada en
-    // rojo en la lista para que un admin la reintente después.
-    if (socio) {
-      let yaAprobado = false;
-      try {
-        const historial = await tercerosService.obtenerExecuteCda(socio.id);
-        yaAprobado = calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial)) === "aprobado";
-      } catch (histErr) {
-        console.warn("[SocioAccionistaModal] No se pudo obtener el historial de CDA, se re-ejecuta por las dudas:", histErr);
-      }
-
-      if (!yaAprobado) {
-        setShowConfirm(false);
-        setProcesoModal({
-          isOpen: true,
-          titulo: "Validando Accionista",
-          pasos: [
-            { id: "cda", etiqueta: "Verificando requisitos", estado: "cargando", descripcion: "Comprobando políticas de riesgo y negocio." },
-          ],
-          hasError: false,
-          isSystemError: false,
-        });
-        const resultCda = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: socio.id }, cadenaValorIdParam, usuarioWebIdActual);
-        // Ver comentario equivalente en handleAfipLookup: sin esto la card
-        // de la lista y el badge de TerceroCdaEstado quedan mostrando el
-        // estado viejo hasta que algo más los refresque.
-        queryClient.invalidateQueries({ queryKey: ["terceros", "executeCda", socio.id] });
-        queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
-        if (resultCda.success) {
-          setProcesoModal((prev) => ({
-            ...prev,
-            pasos: prev.pasos.map((p) => (p.id === "cda" ? { ...p, estado: "completado" } : p)),
-          }));
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
-        } else {
-          // hasError:true muestra el botón "Continuar" y no hay timeout: se
-          // espera a que el usuario lo apriete (ver onClose del
-          // ProcesamientoModal más abajo, que resuelve esta promesa) antes
-          // de seguir con el guardado real de más abajo.
-          setProcesoModal((prev) => ({
-            ...prev,
-            hasError: true,
-            pasos: prev.pasos.map((p) =>
-              p.id === "cda" ? { ...p, estado: "alerta", errores: resultCda.errors.map((e) => e.message) } : p
-            ),
-          }));
-          await new Promise((resolve) => {
-            cdaContinuarResolveRef.current = resolve;
-          });
-        }
-      }
+  // Al editar un accionista existente (ej. precargado por LUFE) el paso
+  // de "Validar CUIT" se salta directo al formulario — handleAfipLookup,
+  // que es donde corre el CDA, nunca se dispara. Por eso se valida al
+  // confirmar el guardado, DESPUÉS de persistir el tercero: el backend
+  // evalúa el CDA contra lo que hay en la base, y si corría antes evaluaba
+  // los datos viejos (ej. un TipoPersonaID heredado de la migración que el
+  // PUT recién corrige → rechazo "no es persona física" que desaparecía
+  // al volver a guardar).
+  //
+  // Se muestra el mismo modal de progreso que usa handleAfipLookup, para
+  // que quede visible que se está validando.
+  //
+  // Si ya tiene un CDA Aprobado vigente (mismo cálculo que usa
+  // TerceroCdaEstado para el badge), se confía en eso y no se vuelve a
+  // ejecutar. Si rechaza, NO bloquea (unificado con handleAfipLookup): el
+  // guardado ya quedó hecho, y la persona queda marcada en rojo en la
+  // lista para que un admin la reintente después.
+  const validarCdaAccionistaExistente = async (terceroId) => {
+    let yaAprobado = false;
+    try {
+      const historial = await tercerosService.obtenerExecuteCda(terceroId);
+      yaAprobado = calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial)) === "aprobado";
+    } catch (histErr) {
+      console.warn("[SocioAccionistaModal] No se pudo obtener el historial de CDA, se re-ejecuta por las dudas:", histErr);
     }
 
+    if (yaAprobado) return;
+
+    setProcesoModal({
+      isOpen: true,
+      titulo: "Validando Accionista",
+      pasos: [
+        { id: "cda", etiqueta: "Verificando requisitos", estado: "cargando", descripcion: "Comprobando políticas de riesgo y negocio." },
+      ],
+      hasError: false,
+      isSystemError: false,
+    });
+    const resultCda = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId }, cadenaValorIdParam, usuarioWebIdActual);
+    // Ver comentario equivalente en handleAfipLookup: sin esto la card
+    // de la lista y el badge de TerceroCdaEstado quedan mostrando el
+    // estado viejo hasta que algo más los refresque.
+    queryClient.invalidateQueries({ queryKey: ["terceros", "executeCda", terceroId] });
+    queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
+    if (resultCda.success) {
+      setProcesoModal((prev) => ({
+        ...prev,
+        pasos: prev.pasos.map((p) => (p.id === "cda" ? { ...p, estado: "completado" } : p)),
+      }));
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setProcesoModal({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
+    } else {
+      // hasError:true muestra el botón "Continuar" y no hay timeout: se
+      // espera a que el usuario lo apriete (ver onClose del
+      // ProcesamientoModal más abajo, que resuelve esta promesa) antes
+      // de cerrar el modal del accionista.
+      setProcesoModal((prev) => ({
+        ...prev,
+        hasError: true,
+        pasos: prev.pasos.map((p) =>
+          p.id === "cda" ? { ...p, estado: "alerta", errores: resultCda.errors.map((e) => e.message) } : p
+        ),
+      }));
+      await new Promise((resolve) => {
+        cdaContinuarResolveRef.current = resolve;
+      });
+    }
+  };
+
+  const onConfirmSave = async () => {
     const formData = getValues();
     setGuardando(true);
     const mainToastId = toast.loading("Guardando datos del accionista...");
@@ -999,7 +999,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         denominacion: formData.nombre,
         cuit: cuitLimpio,
         bcraid: 0,
-        tipopersonaid: cuitLimpio.startsWith("30") || cuitLimpio.startsWith("33") ? 2 : 1,
+        tipopersonaid: ["30", "33", "34"].some((prefijo) => cuitLimpio.startsWith(prefijo)) ? 2 : 1,
         tipodocumentoid: 0,
         numerodocumento: cuitLimpio,
         estadocivilid: 0,
@@ -1130,6 +1130,11 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       // El alta quedó confirmada: la relación ya no es un stub pendiente y
       // no hay que darla de baja al cerrar.
       stubRelacionRef.current = null;
+
+      if (socio) {
+        setShowConfirm(false);
+        await validarCdaAccionistaExistente(terceroId);
+      }
 
       // No se espera a onSuccess (cargarSocios en SociosLegajo.jsx puede
       // tardar unos segundos en refetchear todo de verdad) — la modal se

@@ -378,14 +378,21 @@ const Login = () => {
   });
 
   // Redirección desde CrearClave
-  if (location.state?.emailIngresado && location !== locationSincronizada) {
-    setLocationSincronizada(location);
-    setFase("validacion_otp");
+  if (location.state && location !== locationSincronizada) {
+    if (location.state.emailIngresado) {
+      setLocationSincronizada(location);
+      setFase("validacion_otp");
+    } else if (location.state.faseInicial) {
+      setLocationSincronizada(location);
+      setFase(location.state.faseInicial);
+    }
   }
 
   useEffect(() => {
     if (location.state?.emailIngresado) {
       setValue("email", location.state.emailIngresado);
+      window.history.replaceState({}, document.title);
+    } else if (location.state?.faseInicial) {
       window.history.replaceState({}, document.title);
     }
   }, [location, setValue]);

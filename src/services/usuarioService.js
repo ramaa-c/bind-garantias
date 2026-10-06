@@ -77,6 +77,16 @@ export const usuarioService = {
       )
     ).data,
 
+  // PUT api/usuario/{encrypt}/status:release (reactiva/desbloquea con el token del mail)
+  reactivarUsuario: async (encrypt) =>
+    (
+      await api.put(
+        `api/usuario/${encodeURIComponent(encrypt)}/status-release`,
+        null,
+        { sinToken: true },
+      )
+    ).data,
+
   obtenerPorNombreOEmail: async (identificador) => {
     try {
       const response = await api.get(`api/usuario/${identificador}/pornombre`);

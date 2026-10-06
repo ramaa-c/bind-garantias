@@ -6,6 +6,9 @@ import {
   FiArrowRight,
   FiLock,
   FiZap,
+  FiFileText,
+  FiAlertCircle,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { Button } from "../../../ui/Button/Button";
 import { BotonVolver } from "../../../ui/BotonVolver/BotonVolver";
@@ -31,7 +34,11 @@ const formatearPlazo = (plazo) => {
   });
 };
 
-export default function Paso7Exito({ onVolverInicio, resumen }) {
+export default function Paso7Exito({
+  onVolverInicio,
+  onNuevaSolicitud,
+  resumen,
+}) {
   const navigate = useNavigate();
   const { basePath } = useChannel();
   // Crear la solicitud (para llegar hasta acá) ya cuenta como "solicitud
@@ -64,21 +71,37 @@ export default function Paso7Exito({ onVolverInicio, resumen }) {
       ? `${SIMBOLOS_MONEDA[resumen.monedaId] || "$"} ${resumen.monto.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
       : null;
   const plazoFormateado = resumen ? formatearPlazo(resumen.plazo) : null;
+  const rechazada = !!resumen?.rechazada;
 
   return (
     <div className={styles.container}>
-      <div className={styles.hero}>
+      <div className={`${styles.hero} ${rechazada ? styles.heroNeutral : ""}`}>
         <div className={styles.heroGlow}></div>
         <div className={styles.heroIconWrap}>
-          <FiCheckCircle className={styles.heroIcon} />
+          {rechazada ? (
+            <FiFileText className={styles.heroIcon} />
+          ) : (
+            <FiCheckCircle className={styles.heroIcon} />
+          )}
         </div>
         <div className={styles.heroText}>
           <h1 className={styles.heroTitle}>
-            ¡Felicitaciones! Tu solicitud está pre-aprobada
+            {rechazada
+              ? "Tu solicitud fue registrada"
+              : "¡Felicitaciones! Tu solicitud está pre-aprobada"}
           </h1>
           <p className={styles.heroSubtitle}>
-            Restan estos <strong>2 pasos</strong> para activar tu línea de
-            crédito.
+            {rechazada ? (
+              <>
+                No superó la evaluación automática de la línea. Podés realizar
+                una <strong>nueva solicitud</strong> cuando quieras.
+              </>
+            ) : (
+              <>
+                Restan estos <strong>2 pasos</strong> para activar tu línea de
+                crédito.
+              </>
+            )}
           </p>
         </div>
       </div>
@@ -87,9 +110,14 @@ export default function Paso7Exito({ onVolverInicio, resumen }) {
         <div className={styles.summaryCard}>
           <div className={styles.summaryHead}>
             <span className={styles.summaryLabel}>Resumen de tu solicitud</span>
-            {!!resumen.id && (
-              <span className={styles.summaryIdTag}>N° {resumen.id}</span>
-            )}
+            <div className={styles.summaryTags}>
+              {rechazada && (
+                <span className={styles.summaryEstadoTag}>No aprobada</span>
+              )}
+              {!!resumen.id && (
+                <span className={styles.summaryIdTag}>N° {resumen.id}</span>
+              )}
+            </div>
           </div>
 
           {montoFormateado && (
@@ -125,6 +153,21 @@ export default function Paso7Exito({ onVolverInicio, resumen }) {
               )}
             </div>
           )}
+
+          {rechazada && (
+            <div className={styles.summaryMotivo}>
+              <span className={styles.summaryMotivoIcon}>
+                <FiAlertCircle size={15} />
+              </span>
+              <div className={styles.summaryMotivoText}>
+                <span className={styles.summaryMotivoLabel}>Motivo</span>
+                <p className={styles.summaryMotivoValue}>
+                  {resumen.motivoRechazo ||
+                    "No cumple los criterios de aprobación automática de esta línea."}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -136,99 +179,117 @@ export default function Paso7Exito({ onVolverInicio, resumen }) {
           viejo). El tercer nodo (Línea activa) no es un paso propio: es el
           destino, para que la secuencia cierre con el objetivo en vez de
           terminar en el paso 2 sin mostrar a dónde lleva todo esto. */}
-      <span className={styles.stepsGridLabel}>Para activar tu línea</span>
-      <div className={styles.timeline}>
-        <div className={styles.timelineItem}>
-          <div className={styles.timelineRail}>
-            <span
-              className={`${styles.timelineDot} ${legajoCompleto ? styles.dotDone : styles.dotActive}`}
-            >
-              {legajoCompleto ? <FiCheck size={14} /> : "1"}
-            </span>
-            <span
-              className={`${styles.timelineLine} ${legajoCompleto ? styles.lineDone : ""}`}
-            />
-          </div>
-          <div className={styles.timelineContent}>
-            <h4 className={styles.timelineTitle}>Completá tu Legajo</h4>
-            {legajoCompleto ? (
-              <p className={styles.timelineText}>
-                Datos de tu empresa completos.
-              </p>
-            ) : (
-              <>
-                <p className={styles.timelineText}>
-                  Cargá los datos de tu empresa y de las personas vinculadas
-                  a ella. No hace falta esperar: ya podés hacerlo.
-                </p>
-                {legajoDesbloqueado && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleIrALegajo}
-                    className={styles.timelineBtn}
-                    iconRight={<FiArrowRight size={14} />}
-                  >
-                    Ir al Legajo
-                  </Button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.timelineItem}>
-          <div className={styles.timelineRail}>
-            <span
-              className={`${styles.timelineDot} ${documentacionDesbloqueada ? styles.dotActive : styles.dotLocked}`}
-            >
-              {documentacionDesbloqueada ? "2" : <FiLock size={12} />}
-            </span>
-            <span className={styles.timelineLine} />
-          </div>
-          <div className={styles.timelineContent}>
-            <h4 className={styles.timelineTitle}>Cargá la Documentación</h4>
-            {documentacionDesbloqueada ? (
-              <>
-                <p className={styles.timelineText}>
-                  Subí la documentación requerida de tu empresa.
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleIrADocumentacion}
-                  className={styles.timelineBtn}
-                  iconRight={<FiArrowRight size={14} />}
+      {!rechazada && (
+        <>
+          <span className={styles.stepsGridLabel}>Para activar tu línea</span>
+          <div className={styles.timeline}>
+            <div className={styles.timelineItem}>
+              <div className={styles.timelineRail}>
+                <span
+                  className={`${styles.timelineDot} ${legajoCompleto ? styles.dotDone : styles.dotActive}`}
                 >
-                  Ir a Documentación
-                </Button>
-              </>
-            ) : (
-              <p className={styles.timelineText}>
-                Se habilita cuando completes el Legajo al 100%.
-              </p>
-            )}
-          </div>
-        </div>
+                  {legajoCompleto ? <FiCheck size={14} /> : "1"}
+                </span>
+                <span
+                  className={`${styles.timelineLine} ${legajoCompleto ? styles.lineDone : ""}`}
+                />
+              </div>
+              <div className={styles.timelineContent}>
+                <h4 className={styles.timelineTitle}>Completá tu Legajo</h4>
+                {legajoCompleto ? (
+                  <p className={styles.timelineText}>
+                    Datos de tu empresa completos.
+                  </p>
+                ) : (
+                  <>
+                    <p className={styles.timelineText}>
+                      Cargá los datos de tu empresa y de las personas vinculadas
+                      a ella. No hace falta esperar: ya podés hacerlo.
+                    </p>
+                    {legajoDesbloqueado && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleIrALegajo}
+                        className={styles.timelineBtn}
+                        iconRight={<FiArrowRight size={14} />}
+                      >
+                        Ir al Legajo
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
 
-        <div className={styles.timelineItem}>
-          <div className={styles.timelineRail}>
-            <span className={styles.timelineDot}>
-              <FiZap size={13} />
-            </span>
-          </div>
-          <div className={styles.timelineContent}>
-            <h4 className={styles.timelineTitle}>Línea activa</h4>
-            <p className={styles.timelineText}>
-              Te avisamos apenas quede todo listo para operar.
-            </p>
-          </div>
-        </div>
-      </div>
+            <div className={styles.timelineItem}>
+              <div className={styles.timelineRail}>
+                <span
+                  className={`${styles.timelineDot} ${documentacionDesbloqueada ? styles.dotActive : styles.dotLocked}`}
+                >
+                  {documentacionDesbloqueada ? "2" : <FiLock size={12} />}
+                </span>
+                <span className={styles.timelineLine} />
+              </div>
+              <div className={styles.timelineContent}>
+                <h4 className={styles.timelineTitle}>Cargá la Documentación</h4>
+                {documentacionDesbloqueada ? (
+                  <>
+                    <p className={styles.timelineText}>
+                      Subí la documentación requerida de tu empresa.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleIrADocumentacion}
+                      className={styles.timelineBtn}
+                      iconRight={<FiArrowRight size={14} />}
+                    >
+                      Ir a Documentación
+                    </Button>
+                  </>
+                ) : (
+                  <p className={styles.timelineText}>
+                    Se habilita cuando completes el Legajo al 100%.
+                  </p>
+                )}
+              </div>
+            </div>
 
-      <div className={styles.footer}>
+            <div className={styles.timelineItem}>
+              <div className={styles.timelineRail}>
+                <span className={styles.timelineDot}>
+                  <FiZap size={13} />
+                </span>
+              </div>
+              <div className={styles.timelineContent}>
+                <h4 className={styles.timelineTitle}>Línea activa</h4>
+                <p className={styles.timelineText}>
+                  Te avisamos apenas quede todo listo para operar.
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div
+        className={`${styles.footer} ${rechazada ? styles.footerConAccion : ""}`}
+      >
+        {rechazada && onNuevaSolicitud && (
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={onNuevaSolicitud}
+            className={styles.footerAccionBtn}
+            iconRight={<FiRefreshCw size={14} />}
+          >
+            Realizar otra solicitud
+          </Button>
+        )}
         <BotonVolver
           texto="VOLVER A LA LISTA DE SOLICITUDES"
           onClick={handleFinalizar}

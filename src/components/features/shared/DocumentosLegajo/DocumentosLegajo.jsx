@@ -464,7 +464,18 @@ export function DocumentosLegajo({
         }
 
         if (resultado) {
-          queryClient.invalidateQueries({
+          // Se espera a que termine el refetch de "socioArchivos" (dispara
+          // uno porque la query está activa, ver el comentario de
+          // archivosBackendData más arriba) antes de mover la subpestaña:
+          // categoryFiles sale de ese mismo query, así que sin este await
+          // selectSubTab(key, 0) corría contra la lista todavía vieja (sin
+          // el archivo recién subido) - en una categoría que arrancaba
+          // vacía (ej. "Otros documentos"), categoryFiles[0] todavía no
+          // existía y el dropzone se veía vacío un instante hasta que el
+          // refetch en segundo plano terminaba (reportado el 2026-10-06).
+          // handleFileDelete de más abajo no tiene este problema porque ya
+          // actualiza la cache a mano con setQueryData antes de moverse.
+          await queryClient.invalidateQueries({
             queryKey: ["socioArchivos", socioIdActivo],
           });
           queryClient.invalidateQueries({

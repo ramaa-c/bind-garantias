@@ -139,7 +139,7 @@ export const enriquecerSociosLufeAfip = async (socioId, cuit) => {
           cuit: cuitSocioLimpio,
           bcraid: 0,
           tipopersonaid:
-            cuitSocioLimpio.startsWith("30") || cuitSocioLimpio.startsWith("33")
+            ["30", "33", "34"].some((prefijo) => cuitSocioLimpio.startsWith(prefijo))
               ? 2
               : 1,
           tipodocumentoid: 0,
