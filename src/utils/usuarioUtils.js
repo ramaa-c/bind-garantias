@@ -58,6 +58,11 @@ export const DESBLOQUEO_CUENTA_CLIENTE =
 export const DESBLOQUEO_CUENTA_ADMIN =
   "Contactá a soporte para recuperar el acceso.";
 
+// 423 es el código nuevo de cuenta bloqueada; 406 queda por compatibilidad
+// mientras el backend no lo unifique en todos los endpoints de login.
+export const esRespuestaCuentaBloqueada = (error) =>
+  [406, 423].includes(error?.response?.status);
+
 export const avisarCuentaBloqueada = (descripcion) =>
   toast.error("Tu cuenta fue bloqueada", { description: descripcion });
 

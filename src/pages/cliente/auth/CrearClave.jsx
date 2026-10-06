@@ -199,9 +199,11 @@ const CrearClave = () => {
       {
         onSuccess: () => {
           toast.success("Contraseña establecida correctamente", {
-            description: cuentaInactiva
+            description: cuentaPendiente
               ? "Tu cuenta fue activada. Ya podés iniciar sesión."
-              : "Ya podés iniciar sesión con tu nueva contraseña.",
+              : cuentaBloqueada
+                ? "Tu cuenta fue desbloqueada. Ya podés iniciar sesión."
+                : "Ya podés iniciar sesión con tu nueva contraseña.",
             duration: 5000,
           });
           navigate(`${basePath}/login`, { replace: true });
@@ -230,32 +232,44 @@ const CrearClave = () => {
   const enlaceVencido =
     !tokenInvalidoDeOrigen &&
     !verificandoEstado &&
-    (estadoCuenta === "expirado" || estadoError);
+    (estadoCuenta === "expirado" ||
+      estadoCuenta === "inexistente" ||
+      estadoError);
 
-  const cuentaInactiva = !tokenInvalidoDeOrigen && estadoCuenta === "inactiva";
+  const cuentaPendiente = !tokenInvalidoDeOrigen && estadoCuenta === "pendiente";
+  const cuentaBloqueada = !tokenInvalidoDeOrigen && estadoCuenta === "bloqueada";
   const cuentaActiva = !tokenInvalidoDeOrigen && estadoCuenta === "activa";
-  const mostrarFormulario = cuentaActiva || cuentaInactiva;
+  const cuentaRequiereAccion = cuentaPendiente || cuentaBloqueada;
+  const mostrarFormulario = cuentaActiva || cuentaRequiereAccion;
 
   const mostrarErrorFaltaUsuario = enlaceVencido;
 
-  const avisoEstadoCuenta = cuentaInactiva
+  const avisoEstadoCuenta = cuentaPendiente
     ? {
         tono: "warning",
         Icono: FiAlertTriangle,
         titulo: "Activá tu cuenta",
         texto:
-          "Tu cuenta está inactiva. Al crear tu contraseña queda activa y lista para usar.",
+          "Tu cuenta está pendiente de activación. Al crear tu contraseña queda activa y lista para usar.",
       }
-    : {
-        tono: "neutral",
-        Icono: FiLock,
-        titulo: "Actualizando tu acceso",
-        texto:
-          "Tu cuenta sigue activa mientras hacés este cambio. Podés seguir usando tus accesos actuales hasta confirmar la nueva contraseña.",
-      };
+    : cuentaBloqueada
+      ? {
+          tono: "warning",
+          Icono: FiAlertTriangle,
+          titulo: "Cuenta bloqueada",
+          texto:
+            "Tu cuenta se bloqueó por superar el máximo de intentos. Al crear una nueva contraseña se desbloquea.",
+        }
+      : {
+          tono: "neutral",
+          Icono: FiLock,
+          titulo: "Actualizando tu acceso",
+          texto:
+            "Tu cuenta sigue activa mientras hacés este cambio. Podés seguir usando tus accesos actuales hasta confirmar la nueva contraseña.",
+        };
 
   useEffect(() => {
-    if (!cuentaInactiva) return;
+    if (!cuentaRequiereAccion) return;
 
     const avisarAntesDeCerrar = (e) => {
       e.preventDefault();
@@ -265,7 +279,7 @@ const CrearClave = () => {
     window.addEventListener("beforeunload", avisarAntesDeCerrar);
     return () =>
       window.removeEventListener("beforeunload", avisarAntesDeCerrar);
-  }, [cuentaInactiva]);
+  }, [cuentaRequiereAccion]);
 
   return (
     <>
@@ -336,6 +350,15 @@ const CrearClave = () => {
                         </h2>
                         <p>
                           Ingresá tu nueva contraseña a continuación.
+                        </p>
+                      </>
+                    ) : cuentaBloqueada ? (
+                      <>
+                        <h2 className={styles.calloutTitle}>
+                          Desbloqueá tu cuenta
+                        </h2>
+                        <p>
+                          Creá una nueva contraseña para desbloquear tu cuenta.
                         </p>
                       </>
                     ) : (
@@ -526,7 +549,7 @@ const CrearClave = () => {
                       >
                         {guardandoClave ? "PROCESANDO..." : "GUARDAR"}
                       </Button>
-                      {cuentaInactiva && (
+                      {cuentaPendiente && (
                         <>
                           <div className={styles.divider}>
                             <span>o</span>

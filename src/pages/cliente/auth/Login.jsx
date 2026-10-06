@@ -17,6 +17,7 @@ import {
   extraerRegistroUsuario,
   esAdministradorActivo,
   esUsuarioBloqueado,
+  esRespuestaCuentaBloqueada,
   MENSAJE_CUENTA_BLOQUEADA,
   DESBLOQUEO_CUENTA_CLIENTE,
   avisarCuentaBloqueada,
@@ -28,8 +29,6 @@ import {
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
-
-const ESTADO_CUENTA_BLOQUEADA = 406;
 
 const MENSAJE_ADMIN_EN_CLIENTE =
   "Esta cuenta es de administración y no puede operar como cliente. Registrate con un correo distinto para acceder desde acá.";
@@ -421,7 +420,7 @@ const Login = () => {
             avisarDemasiadosIntentos();
             return;
           }
-          if (status === ESTADO_CUENTA_BLOQUEADA) {
+          if (esRespuestaCuentaBloqueada(error)) {
             setError("email", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
             avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
             return;
@@ -468,7 +467,7 @@ const Login = () => {
               avisarDemasiadosIntentos();
               return;
             }
-            if (status === ESTADO_CUENTA_BLOQUEADA) {
+            if (esRespuestaCuentaBloqueada(error)) {
               setError("otp", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
               avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
               return;
@@ -522,7 +521,7 @@ const Login = () => {
               avisarDemasiadosIntentos();
               return;
             }
-            if (status === ESTADO_CUENTA_BLOQUEADA) {
+            if (esRespuestaCuentaBloqueada(error)) {
               setError("password", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
               avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
               return;
@@ -552,7 +551,7 @@ const Login = () => {
           });
         } else if (esDemasiadosIntentos(error)) {
           avisarDemasiadosIntentos();
-        } else if (status === ESTADO_CUENTA_BLOQUEADA) {
+        } else if (esRespuestaCuentaBloqueada(error)) {
           setError("otp", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
           avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
         } else {
