@@ -44,7 +44,8 @@ export const usuarioService = {
   cambiarPassword: async (usuarioId, datosCambioClave) =>
     (await api.put(`api/usuario/${usuarioId}/password-change`, usuarioAdapter.adaptarPayload5(datosCambioClave))).data,
 
-  // GET api/usuario/estado/{encrypt}:byencrypt (302 activa / 404 inactiva / 406 vencido)
+  // GET api/usuario/estado/{encrypt}:byencrypt
+  // 302 activa / 409 pendiente (Estado 2) / 423 bloqueada (Estado 0) / 404 no existe / 406 vencido
   obtenerEstadoPorEncrypt: async (encryptToken) => {
     const { status } = await api.get(
       `api/usuario/estado/${encodeURIComponent(encryptToken)}-byencrypt`,
@@ -52,13 +53,13 @@ export const usuarioService = {
         sinToken: true,
         noRetry: true,
         validateStatus: (codigo) =>
-          codigo === 302 ||
-          codigo === 404 ||
-          codigo === 406 ||
+          [302, 404, 406, 409, 423].includes(codigo) ||
           (codigo >= 200 && codigo < 300),
       },
     );
-    if (status === 404) return "inactiva";
+    if (status === 409) return "pendiente";
+    if (status === 423) return "bloqueada";
+    if (status === 404) return "inexistente";
     if (status === 406) return "expirado";
     return "activa";
   },

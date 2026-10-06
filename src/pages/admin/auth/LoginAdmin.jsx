@@ -15,6 +15,7 @@ import {
   MENSAJE_CUENTA_BLOQUEADA,
   DESBLOQUEO_CUENTA_ADMIN,
   avisarCuentaBloqueada,
+  esRespuestaCuentaBloqueada,
   VIGENCIA_CODIGO_LOGIN_MS,
   mensajeCodigoLoginRechazado,
   esDemasiadosIntentos,
@@ -354,9 +355,9 @@ const LoginAdmin = () => {
             avisarDemasiadosIntentos();
             return;
           }
-          if (status === 406) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
+          if (esRespuestaCuentaBloqueada(error)) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
           const message =
-            status === 406
+            esRespuestaCuentaBloqueada(error)
               ? MENSAJE_CUENTA_BLOQUEADA
               : "Error al solicitar código. Verificá los datos.";
           setError("email", { type: "server", message });
@@ -407,11 +408,11 @@ const LoginAdmin = () => {
               });
               return;
             }
-            if (status === 406) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
+            if (esRespuestaCuentaBloqueada(error)) avisarCuentaBloqueada(DESBLOQUEO_CUENTA_ADMIN);
             setError("otp", {
               type: "server",
               message:
-                status === 406
+                esRespuestaCuentaBloqueada(error)
                   ? MENSAJE_CUENTA_BLOQUEADA
                   : "No pudimos validar el código. Solicitá uno nuevo.",
             });
@@ -456,7 +457,7 @@ const LoginAdmin = () => {
               avisarDemasiadosIntentos();
               return;
             }
-            if (status === 406) {
+            if (esRespuestaCuentaBloqueada(error)) {
               setError("password", {
                 type: "server",
                 message: MENSAJE_CUENTA_BLOQUEADA,
