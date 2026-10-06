@@ -46,11 +46,6 @@ const AltaOperacion = lazy(() =>
     (m) => ({ default: m.AltaOperacion }),
   ),
 );
-const GestionUsuarios = lazy(() =>
-  import("./pages/cliente/usuarios/Gestion").then((m) => ({
-    default: m.Gestion,
-  })),
-);
 const DocumentacionView = lazy(
   () => import("./pages/cliente/operaciones/documentacion/DocumentacionView"),
 );
@@ -157,17 +152,6 @@ const rutasCliente = (
               <Route
                 path="socios"
                 element={<Navigate to="../legajo" replace />}
-              />
-
-              <Route
-                path="usuarios"
-                element={
-                  <OnboardingGuard>
-                    <DashboardLayout>
-                      <GestionUsuarios />
-                    </DashboardLayout>
-                  </OnboardingGuard>
-                }
               />
               <Route
                 path="documentacion"

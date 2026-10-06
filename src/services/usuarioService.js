@@ -26,14 +26,6 @@ export const usuarioService = {
   // POST api/auth/login (email + código recibido por mail)
   loginByCode: obtenerTokenDeUsuario,
 
-  // PUT api/usuario/{usuarioid}/status:block
-  bloquearUsuario: async (usuarioId) =>
-    (await api.put(`api/usuario/${usuarioId}/status-block`, {})).data,
-
-  // PUT api/usuario/{usuarioid}/status:release
-  reactivarUsuario: async (usuarioId) =>
-    (await api.put(`api/usuario/${usuarioId}/status-release`, {})).data,
-
   // PUT api/usuario/password:reset
   resetearPassword: async (payloadSkeletor) =>
     (
@@ -136,14 +128,6 @@ export const usuarioService = {
       }
       throw error;
     }
-  },
-
-  // GET api/usuarios
-  buscarUsuarios: async (page = 1, pageSize = 10, email = "", nombre = "") => {
-    const params = { page, page_size: pageSize };
-    if (email) params.Email = email;
-    if (nombre) params.Nombre = nombre;
-    return (await api.get("api/usuarios", { params })).data;
   },
 
   // GET api/usuario/{usuarioid}
