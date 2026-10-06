@@ -23,6 +23,7 @@ import {
   useObtenerEstadoPorEncrypt,
   useEstablecerClave,
   useResetearPassword,
+  useReactivarUsuario,
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
@@ -74,6 +75,35 @@ const CrearClave = () => {
 
   const { mutate: resetearPassword, isPending: solicitandoNuevo } =
     useResetearPassword();
+
+  const { mutate: reactivarUsuario, isPending: reactivando } =
+    useReactivarUsuario();
+
+  const handleIngresarConCodigo = () => {
+    reactivarUsuario(tokenIntegridad, {
+      onSuccess: () => {
+        toast.success("Cuenta activada", {
+          description: "Ingresá tu correo para recibir un código de acceso.",
+        });
+        navigate(`${basePath}/login`, {
+          state: { faseInicial: "solicitar_codigo" },
+        });
+      },
+      onError: (error) => {
+        const status = error?.response?.status;
+        const isServerError = !error?.response || status >= 500;
+        toast.error(
+          isServerError ? "Error de servidor" : "No pudimos activar tu cuenta",
+          {
+            description:
+              status === 404
+                ? "El enlace expiró o no es válido. Solicitá uno nuevo."
+                : "Ocurrió un error. Intentá más tarde.",
+          },
+        );
+      },
+    });
+  };
 
   const handleSolicitarNuevoEnlace = () => {
     if (!emailManual) {
@@ -314,8 +344,8 @@ const CrearClave = () => {
                           Activá tu cuenta
                         </h2>
                         <p>
-                          Creá tu contraseña para activar tu cuenta y poder
-                          ingresar.
+                          Creá tu contraseña para activar tu cuenta, o ingresá
+                          con un código a tu correo.
                         </p>
                       </>
                     )}
@@ -491,11 +521,29 @@ const CrearClave = () => {
                       <Button
                         type="submit"
                         variant="primary"
-                        disabled={!isValid || guardandoClave}
+                        disabled={!isValid || guardandoClave || reactivando}
                         style={{ width: "100%" }}
                       >
                         {guardandoClave ? "PROCESANDO..." : "GUARDAR"}
                       </Button>
+                      {cuentaInactiva && (
+                        <>
+                          <div className={styles.divider}>
+                            <span>o</span>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleIngresarConCodigo}
+                            disabled={reactivando || guardandoClave}
+                            style={{ width: "100%" }}
+                          >
+                            {reactivando
+                              ? "PROCESANDO..."
+                              : "Ingresar con código"}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </form>
                 )}

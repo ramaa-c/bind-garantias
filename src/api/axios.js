@@ -87,12 +87,21 @@ const isPoolExhaustionError = (error) => {
   return POOL_EXHAUSTION_PATTERN.test(text);
 };
 
-const RUTAS_CON_401_DE_NEGOCIO = /auth\/login|usuario\/(login|password)|Socio\/ValidarCuit/i;
+const RUTAS_CON_401_DE_NEGOCIO = [
+  /auth\/login/i,
+  /usuario\/(?:[^/]+\/)?(?:login|password)/i,
+  /usuario\/notificar/i,
+  /Socio\/ValidarCuit/i,
+  /Socio\/CertificadoVigente/i,
+  /CadenaValor\/Libradores\/[^/?]+\/[^/?]+/i,
+  /CadenaValor\/Relaciones\/[^/?]+\/[^/?]+/i,
+];
 
 const esSesionVencida = (error) => {
   const config = error.config;
   if (error.response?.status !== 401 || config?.sinToken) return false;
-  if (RUTAS_CON_401_DE_NEGOCIO.test(config?.url || "")) return false;
+  const url = config?.url || "";
+  if (RUTAS_CON_401_DE_NEGOCIO.some((ruta) => ruta.test(url))) return false;
   return Boolean(config?.__conToken) || useAuthStore.getState().isAuthenticated;
 };
 

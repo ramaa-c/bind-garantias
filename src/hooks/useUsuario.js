@@ -59,6 +59,12 @@ export const useEstablecerClave = () => {
   });
 };
 
+export const useReactivarUsuario = () => {
+  return useMutation({
+    mutationFn: (encrypt) => usuarioService.reactivarUsuario(encrypt),
+  });
+};
+
 export const useObtenerPorNombreOEmail = (identificador) => {
   return useQuery({
     queryKey: ["usuarios", "porNombreOEmail", identificador],

@@ -98,10 +98,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
 }
 
 .summaryLabel {
+  white-space: nowrap;
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -166,6 +168,110 @@
   font-weight: 700;
   color: var(--white, #fff);
   font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.heroNeutral {
+  background: rgba(var(--overlay-rgb), 0.03);
+  border-color: rgba(var(--overlay-rgb), 0.09);
+}
+
+.heroNeutral .heroGlow {
+  background: rgba(var(--overlay-rgb), 0.06);
+}
+
+.heroNeutral .heroIconWrap {
+  border-radius: 0.75rem;
+  background: rgba(var(--overlay-rgb), 0.05);
+  border-color: rgba(var(--overlay-rgb), 0.14);
+}
+
+.heroNeutral .heroIcon {
+  color: var(--white-muted, #f0f0f0);
+  font-size: 1.25rem;
+}
+
+.heroNeutral .heroSubtitle strong {
+  color: var(--white, #fff);
+}
+
+.footer.footerConAccion {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+@media (max-width: 30rem) {
+  .footer.footerConAccion {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .footerAccionBtn {
+    width: 100%;
+  }
+}
+
+.summaryTags {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.summaryEstadoTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba(239, 83, 80, 0.1);
+  color: var(--danger-bright);
+  border: 1px solid rgba(239, 83, 80, 0.25);
+}
+
+.summaryMotivo {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.65rem;
+  background: rgba(239, 83, 80, 0.05);
+  border: 1px solid rgba(239, 83, 80, 0.16);
+}
+
+.summaryMotivoIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  background: rgba(239, 83, 80, 0.1);
+  color: var(--danger-bright);
+}
+
+.summaryMotivoText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.summaryMotivoLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--danger-bright);
+}
+
+.summaryMotivoValue {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--white-muted, #f0f0f0);
   overflow-wrap: anywhere;
 }
 
