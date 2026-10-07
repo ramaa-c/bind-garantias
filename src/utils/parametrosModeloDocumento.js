@@ -162,11 +162,24 @@ export const esModeloResolubleDesdeSolicitud = (parametrosCatalogo) => {
 // parametrosCatalogo en null/undefined significa "todavía no cargaron":
 // ahí se asume disponible y la validación real queda para el momento de
 // generar, que es cuando se van a pedir sí o sí.
-export const evaluarModeloDocumento = ({ solicitud, modeloDocumentoId, parametrosCatalogo }) => {
+export const evaluarModeloDocumento = ({
+  solicitud,
+  modeloDocumentoId,
+  parametrosCatalogo,
+  tieneApoderadoFirmante,
+}) => {
   if (!modeloDocumentoId || Number(modeloDocumentoId) <= 0) {
     return {
       disponible: false,
       motivo: `La cadena de ${solicitud?.cliente || "esta solicitud"} todavía no tiene un modelo de documento configurado.`,
+      parametros: null,
+    };
+  }
+
+  if (tieneApoderadoFirmante === false) {
+    return {
+      disponible: false,
+      motivo: `${solicitud?.cliente || "La empresa"} necesita tener cargado un apoderado firmante para generar el documento.`,
       parametros: null,
     };
   }

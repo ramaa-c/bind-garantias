@@ -34,6 +34,8 @@ export const RELACION_USUARIOS_ID = 999;
 // ser obligatorio sin importar la parametrización de la cadena.
 export const RELACION_FIADOR_ID = 30;
 
+export const RELACION_APODERADO_FIRMANTE_ID = 1500;
+
 export const RELACIONES_TERCEROS_BASE = [
   { clave: "accionistas", tipoRelacionSocioId: RELACION_ACCIONISTA_ID },
   { clave: "representanteLegal", tipoRelacionSocioId: RELACION_REPRESENTANTE_LEGAL_ID },

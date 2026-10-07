@@ -12,6 +12,7 @@ import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
 import { useObtenerSocios, useActualizarSocio } from "../../../hooks/useSocios";
+import { useApoderadoFirmantePorSocio } from "../../../hooks/useTerceros";
 import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
 import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
 import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
@@ -323,11 +324,11 @@ export default function Dashboard() {
         estado: estadoText,
         accionPendiente: accionText,
         creado: fchVigenciaDesde
-          ? new Date(fchVigenciaDesde).toLocaleString("es-AR")
+          ? new Date(fchVigenciaDesde).toLocaleDateString("es-AR")
           : "Reciente",
         creadoISO: fchVigenciaDesde || null,
         actualizado: fchVigenciaHasta
-          ? new Date(fchVigenciaHasta).toLocaleString("es-AR")
+          ? new Date(fchVigenciaHasta).toLocaleDateString("es-AR")
           : "Reciente",
         cadenaSlug: "default",
         raw: l,
@@ -603,6 +604,17 @@ export default function Dashboard() {
     paginaActual * ELEMENTOS_POR_PAGINA,
   );
 
+  const apoderadoFirmantePorSocio = useApoderadoFirmantePorSocio(
+    filtradasPagina
+      .filter(
+        (s) =>
+          s.tipoLimiteEstadoId !== ESTADO_APROBADA &&
+          s.tipoLimiteEstadoId !== ESTADO_RECHAZADA &&
+          s.tipoLimiteEstadoId !== ESTADO_CANCELADA,
+      )
+      .map((s) => s.socioid),
+  );
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -832,11 +844,13 @@ export default function Dashboard() {
             // pendientes: en los demás estados la operación ya se resolvió.
             const modeloDocumentoId = modeloDocumentoIdPorCadena.get(String(item.cadenavalorid));
             const parametrosModelo = parametrosPorModelo.get(Number(modeloDocumentoId));
+            const tieneApoderadoFirmante = apoderadoFirmantePorSocio.get(Number(item.socioid));
             const modeloDocumento = isPendiente
               ? evaluarModeloDocumento({
                   solicitud: item,
                   modeloDocumentoId,
                   parametrosCatalogo: parametrosModelo,
+                  tieneApoderadoFirmante,
                 })
               : null;
 
@@ -885,7 +899,7 @@ export default function Dashboard() {
                     <>
                       <BotonIcono
                         icon={FiFileText}
-                        onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo)}
+                        onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo, tieneApoderadoFirmante)}
                         title={modeloDocumento.motivo || "Previsualizar documento"}
                         isLoading={pendienteModeloDocumentoId === item.id}
                         className={`${styles.btnDocumento} ${modeloDocumento.disponible ? "" : styles.btnDocumentoNoDisponible}`}

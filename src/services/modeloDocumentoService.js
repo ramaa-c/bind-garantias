@@ -3,6 +3,9 @@ import api from "../api/axios";
 
 const TIMEOUT_GENERAR_PDF_MS = 60000;
 
+const MENSAJE_SIN_DETALLE =
+  "No se pudo generar el documento. Revisá que la empresa tenga cargado un apoderado firmante.";
+
 export const modeloDocumentoService = {
   // POST /api/ModeloDocumentoPDF - Devuelve el PDF generado como Blob.
   //
@@ -27,7 +30,8 @@ export const modeloDocumentoService = {
       const blob = error.response?.data;
       if (blob instanceof Blob) {
         const mensaje = (await blob.text()).trim();
-        throw new Error(mensaje || "No se pudo generar el documento");
+        const sinDetalle = !mensaje || mensaje.endsWith(":");
+        throw new Error(sinDetalle ? MENSAJE_SIN_DETALLE : mensaje);
       }
       throw error;
     }

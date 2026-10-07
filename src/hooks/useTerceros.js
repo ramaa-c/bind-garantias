@@ -1,4 +1,4 @@
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueries, keepPreviousData } from '@tanstack/react-query';
 import { tercerosService } from '../services/tercerosService';
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from '../utils/executeCda';
 import {
@@ -6,6 +6,7 @@ import {
   RELACION_APODERADO_ID,
   RELACION_REPRESENTANTE_LEGAL_ID,
   RELACION_AGENTE_BOLSA_ID,
+  RELACION_APODERADO_FIRMANTE_ID,
 } from '../constants/tiposRelacionSocio';
 
 export const useObtenerTerceros = (params = {}) => {
@@ -272,5 +273,31 @@ export const useEstadoCdaTerceros = (terceroIds = []) => {
       return new Map(entries);
     },
     enabled: ids.length > 0,
+  });
+};
+
+export const useApoderadoFirmantePorSocio = (socioIds = []) => {
+  const ids = [...new Set((socioIds || []).map(Number).filter((id) => id > 0))];
+
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: ["terceros", "relacionesSocio", id],
+      queryFn: () => tercerosService.obtenerRelacionesDeSocio(id),
+      staleTime: 1000 * 60 * 2,
+    })),
+    combine: (resultados) => {
+      const porSocio = new Map();
+      resultados.forEach((resultado, i) => {
+        if (!resultado.isSuccess) return;
+        const relaciones = Array.isArray(resultado.data) ? resultado.data : [];
+        porSocio.set(
+          ids[i],
+          relaciones.some(
+            (r) => Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID) === RELACION_APODERADO_FIRMANTE_ID,
+          ),
+        );
+      });
+      return porSocio;
+    },
   });
 };
