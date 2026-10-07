@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiTool } from "react-icons/fi";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
-import { useObtenerStatusPlataforma } from "../../../hooks/useStatusPlataforma";
+import { useObtenerPlataformaOnline } from "../../../hooks/useStatusPlataforma";
 import { obtenerUltimoStatus, esOffline } from "../../../utils/statusPlataforma";
 import styles from "./FueraDeServicio.module.css";
 
@@ -11,7 +11,7 @@ const MENSAJE_MANTENIMIENTO =
 
 const FueraDeServicio = () => {
   const navigate = useNavigate();
-  const { data, isLoading } = useObtenerStatusPlataforma();
+  const { data, isLoading } = useObtenerPlataformaOnline();
   const activo = esOffline(obtenerUltimoStatus(data));
 
   useEffect(() => {

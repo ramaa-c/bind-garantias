@@ -116,8 +116,9 @@ export const sociosService = {
   // CASFOG/LUFE si la empresa tiene un certificado PyME vigente. 200 =
   // vigente, 401 = no vigente — el backend reutiliza el código HTTP como
   // semántica de negocio (mismo patrón que cda/execute con 202/406/409), no
-  // es un fallo de autenticación real: no hay ningún header de auth en esta
-  // app. Nunca tira: devuelve { status, data } para diferenciar sin
+  // es un fallo de autenticación real: por eso está en
+  // RUTAS_CON_401_DE_NEGOCIO (api/axios.js), para que ese 401 no cierre la
+  // sesión. Nunca tira: devuelve { status, data } para diferenciar sin
   // try/catch afuera (mismo patrón que probarCda/reejecutarCda).
   //
   // ⚠️ Vincular=true (confirmado con el backend el 2026-08-21) es lo que hace

@@ -569,11 +569,11 @@ export const AltaOperacion = () => {
       const cdaLineaRechazada = rechazosCdaLinea.length > 0;
 
       const debeRechazarseAutomaticamente = noAlcanzaMinimo || cdaLineaRechazada;
-      const motivoRechazoAutomatico = construirMotivoRechazoAutomatico(
-        noAlcanzaMinimo
-          ? MOTIVOS_RECHAZO_AUTOMATICO.PORCENTAJE_MINIMO_SOLICITUD
-          : rechazosCdaLinea.map((e) => e.message).join("; "),
-      );
+      const motivoRechazoBase = noAlcanzaMinimo
+        ? MOTIVOS_RECHAZO_AUTOMATICO.PORCENTAJE_MINIMO_SOLICITUD
+        : rechazosCdaLinea.map((e) => e.message).join("; ");
+      const motivoRechazoAutomatico =
+        construirMotivoRechazoAutomatico(motivoRechazoBase);
 
       // Convertido a pesos ANTES de crear nada: si la validación de cupo de
       // la cadena (más abajo) rechaza la operación, no queremos dejar una
@@ -740,6 +740,8 @@ export const AltaOperacion = () => {
         monto: montoLimpio,
         monedaId: Number(cleanData.moneda) || 5000,
         plazo: cleanData.plazo,
+        rechazada: debeRechazarseAutomaticamente,
+        motivoRechazo: debeRechazarseAutomaticamente ? motivoRechazoBase : "",
       });
 
       setPasoActual(2);
@@ -872,6 +874,7 @@ export const AltaOperacion = () => {
         <Paso7Exito
           resumen={resumenSolicitud}
           onVolverInicio={handleIrASolicitudes}
+          onNuevaSolicitud={handleResetFlujoCompleto}
         />
       );
     }

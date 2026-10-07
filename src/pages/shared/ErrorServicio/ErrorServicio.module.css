@@ -61,6 +61,13 @@
   max-width: 25rem;
 }
 
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
 .iconGirando {
   animation: girar 1s linear infinite;
 }

@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 // Las respuestas de GET usuario/{id}/pornombre no tienen forma consistente
 // según el backend haya matcheado por id, por nombre o por email - a veces
 // viene el registro plano, a veces envuelto en {items:[...]} o {data:[...]}.
@@ -29,3 +31,55 @@ export const denominacionDesdeEmail = (email) => {
     .replace(/\s+/g, " ")
     .trim();
 };
+
+export const ESTADO_USUARIO = {
+  BLOQUEADO: "0",
+  ACTIVO: "1",
+  PENDIENTE_ACTIVACION: "2",
+};
+
+const leerEstadoUsuario = (registro) =>
+  String(registro?.estado ?? registro?.Estado ?? "");
+
+export const esUsuarioBloqueado = (registro) =>
+  leerEstadoUsuario(registro) === ESTADO_USUARIO.BLOQUEADO;
+
+export const esUsuarioPendienteActivacion = (registro) =>
+  leerEstadoUsuario(registro) === ESTADO_USUARIO.PENDIENTE_ACTIVACION;
+
+export const VIGENCIA_CODIGO_LOGIN_MS = 5 * 60 * 1000;
+
+export const MENSAJE_CUENTA_BLOQUEADA =
+  "Cuenta bloqueada por superar el máximo de intentos.";
+
+export const DESBLOQUEO_CUENTA_CLIENTE =
+  "Para desbloquearla, usá \"Recuperar clave\" y generá una nueva contraseña.";
+
+export const DESBLOQUEO_CUENTA_ADMIN =
+  "Contactá a soporte para recuperar el acceso.";
+
+// 423 es el código nuevo de cuenta bloqueada; 406 queda por compatibilidad
+// mientras el backend no lo unifique en todos los endpoints de login.
+export const esRespuestaCuentaBloqueada = (error) =>
+  [406, 423].includes(error?.response?.status);
+
+export const avisarCuentaBloqueada = (descripcion) =>
+  toast.error("Tu cuenta fue bloqueada", { description: descripcion });
+
+export const esDemasiadosIntentos = (error) => error?.response?.status === 429;
+
+export const avisarDemasiadosIntentos = () =>
+  toast.error("Demasiados intentos", {
+    description: "Esperá unos minutos y volvé a probar.",
+  });
+
+export const esCodigoLoginExpirado = (error) => {
+  const data = error?.response?.data;
+  const mensaje = data?.message ?? data?.Message ?? "";
+  return /expirad/i.test(String(mensaje));
+};
+
+export const mensajeCodigoLoginRechazado = (error) =>
+  esCodigoLoginExpirado(error)
+    ? "El código venció. Solicitá uno nuevo."
+    : "Código incorrecto.";

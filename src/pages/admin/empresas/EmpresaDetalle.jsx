@@ -75,6 +75,10 @@ import { ESTRUCTURA_LEGAJO } from "../../../components/features/shared/Documento
 import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
 import { LegajoUniversalBar } from "../../../components/features/shared/LegajoUniversalBar/LegajoUniversalBar";
 import { CertificadoPymeAdmin } from "../../../components/features/admin/CertificadoPymeAdmin/CertificadoPymeAdmin";
+import {
+  esUsuarioBloqueado,
+  esUsuarioPendienteActivacion,
+} from "../../../utils/usuarioUtils";
 import styles from "./EmpresaDetalle.module.css";
 
 const getTipoPersonaLabel = (tipoPersonaId) => {
@@ -212,9 +216,14 @@ function UsuariosVinculadosTab({ socioId }) {
                   {u.email || `Usuario #${u.usuarioWebId}`}
                 </span>
                 <span className={styles.usuarioVinculadoMeta}>
-                  {String(u.estado) !== "1" && (
+                  {esUsuarioPendienteActivacion(u) && (
                     <span className={`${styles.badge} ${styles["badge-warning"]}`}>
-                      Inactivo
+                      Pendiente de activación
+                    </span>
+                  )}
+                  {esUsuarioBloqueado(u) && (
+                    <span className={`${styles.badge} ${styles["badge-warning"]}`}>
+                      Bloqueado
                     </span>
                   )}
                   {u.momentoCreacion

@@ -390,7 +390,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
                               </div>
                               <div className={styles.detailRow}>
                                 <span className={styles.detailBold}>Última modificación: </span>
-                                <span>{passed ? "sistema@bind.com.ar" : "pruebaivsa1@yopmail.com"}</span>
+                                <span>sistema@bind.com.ar</span>
                               </div>
                             </div>
                             <button

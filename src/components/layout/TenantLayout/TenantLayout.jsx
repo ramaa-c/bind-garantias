@@ -2,8 +2,8 @@ import React, { useEffect } from "react";
 import { Outlet, Navigate, useNavigate } from "react-router-dom";
 import { useChannel } from "../../../context/useChannel";
 import { useCadenaActiva } from "../../../hooks/useCadenaActiva";
-import { useObtenerPorCadenaValorIdWeb, useObtenerPorId } from "../../../hooks/useCadenaValor";
-import { useObtenerStatusPlataforma } from "../../../hooks/useStatusPlataforma";
+import { useObtenerCadenaPublicaWeb, useObtenerCadenaPublicaCore } from "../../../hooks/useCadenaValor";
+import { useObtenerPlataformaOnline } from "../../../hooks/useStatusPlataforma";
 import { esCadenaOperativaParaWeb } from "../../../utils/cadenaValorUtils";
 import { obtenerUltimoStatus, esOffline } from "../../../utils/statusPlataforma";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
@@ -16,7 +16,7 @@ const TenantLayout = () => {
   const { cadenaSlug } = useCadenaActiva();
   const { setChannelInfo } = useChannel();
   const navigate = useNavigate();
-  const { data: statusPlataformaData, isLoading: isLoadingStatus } = useObtenerStatusPlataforma();
+  const { data: statusPlataformaData, isLoading: isLoadingStatus } = useObtenerPlataformaOnline();
   const enMantenimiento = esOffline(obtenerUltimoStatus(statusPlataformaData));
 
   const cadenaValorId = Number(cadenaSlug);
@@ -28,14 +28,14 @@ const TenantLayout = () => {
     isError: isErrorWeb,
     isFetching: isFetchingWeb,
     refetch: refetchWeb,
-  } = useObtenerPorCadenaValorIdWeb(isValidId ? cadenaValorId : 0);
+  } = useObtenerCadenaPublicaWeb(isValidId ? cadenaValorId : 0);
   const {
     data: cadenaCoreData,
     isLoading: isLoadingCore,
     isError: isErrorCore,
     isFetching: isFetchingCore,
     refetch: refetchCore,
-  } = useObtenerPorId(isValidId ? cadenaValorId : 0);
+  } = useObtenerCadenaPublicaCore(isValidId ? cadenaValorId : 0);
 
   // Si alguna de las dos consultas falló (backend caído, error 5xx, red), no
   // se puede saber si la cadena existe: se muestra un error de servicio con
@@ -45,15 +45,14 @@ const TenantLayout = () => {
   useEffect(() => {
     if (isLoading || isLoadingCore || hayErrorServicio) return;
 
-    if (!isValidId || !cadenaData || cadenaData.error || (Array.isArray(cadenaData) && cadenaData.length === 0)) {
+    const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
+    const cadenaCoreObj = Array.isArray(cadenaCoreData) ? cadenaCoreData[0] : cadenaCoreData;
+    const resolvedDenominacion = cadenaObj?.denominacion || cadenaObj?.Denominacion;
+
+    if (!isValidId || !resolvedDenominacion) {
       navigate("/not-found", { replace: true });
       return;
     }
-
-    const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
-    const cadenaCoreObj = Array.isArray(cadenaCoreData) ? cadenaCoreData[0] : cadenaCoreData;
-
-    const resolvedDenominacion = cadenaObj.denominacion || cadenaObj.Denominacion;
 
     // Igual que en el panel admin: la cadena debe estar Aprobada y vigente en
     // CORE, y además no haber sido desactivada manualmente con el switch
@@ -79,16 +78,14 @@ const TenantLayout = () => {
       }
     }
 
-    const resolvedId = cadenaObj.cadenavalorid ?? cadenaObj.CadenaValorID ?? cadenaObj.cadenaValorId;
-
     setChannelInfo({
-      id: String(resolvedId),
+      id: String(cadenaValorId),
       nombre: resolvedDenominacion || "Cadena de Valor",
       logo: formatLogo,
       colorPrincipal: "var(--color-azul-bind)",
       colorSecundario: "var(--color-amarillo-bind)",
     });
-  }, [cadenaSlug, cadenaData, cadenaCoreData, isLoading, isLoadingCore, hayErrorServicio, setChannelInfo, navigate, isValidId]);
+  }, [cadenaSlug, cadenaValorId, cadenaData, cadenaCoreData, isLoading, isLoadingCore, hayErrorServicio, setChannelInfo, navigate, isValidId]);
 
   if (isLoadingStatus) {
     return (

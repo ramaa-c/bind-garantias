@@ -51,6 +51,22 @@ export const useObtenerUtilizado = (cadenaValorId) => {
     });
 };
 
+export const useObtenerCadenaPublicaWeb = (cadenaValorId) => {
+    return useQuery({
+        queryKey: ['cadenaValor', 'publica', 'web', cadenaValorId],
+        queryFn: () => cadenaValorService.obtenerPublicaWeb(cadenaValorId),
+        enabled: !!cadenaValorId
+    });
+};
+
+export const useObtenerCadenaPublicaCore = (cadenaValorId) => {
+    return useQuery({
+        queryKey: ['cadenaValor', 'publica', 'core', cadenaValorId],
+        queryFn: () => cadenaValorService.obtenerPublicaCore(cadenaValorId),
+        enabled: !!cadenaValorId
+    });
+};
+
 export const useObtenerPorCadenaValorIdWeb = (cadenaValorId) => {
     return useQuery({
         queryKey: ['cadenaValor', 'web', cadenaValorId],

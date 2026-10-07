@@ -1,43 +1,92 @@
 import { usuarioAdapter } from "../adapters/usuarioAdapter";
 import api from "../api/axios";
+import { guardarTokenApi, cerrarSesionApi } from "../api/tokenApi";
+
+const obtenerTokenDeUsuario = async ({ email, password }) => {
+  const { data } = await api.post("api/auth/login", null, {
+    sinToken: true,
+    noRetry: true,
+    headers: { jwtusername: email, jwtpassword: password },
+  });
+  const token = data?.token;
+  if (!token) throw new Error("La API no devolvió un token de acceso");
+  cerrarSesionApi();
+  guardarTokenApi(token);
+  return data;
+};
 
 export const usuarioService = {
-  // POST api/usuario/login
-  login: async (credenciales) =>
-    (await api.post("api/usuario/login", usuarioAdapter.adaptarPayload1(credenciales))).data,
+  // POST api/auth/login (email + clave)
+  login: obtenerTokenDeUsuario,
 
-  // POST api/usuario/login:bycode
-  loginByCode: async (credenciales) =>
-    (await api.post("api/usuario/login-bycode", usuarioAdapter.adaptarPayload2(credenciales))).data,
+  // POST api/usuario/login:requestcode
+  solicitarCodigoLogin: async (email) =>
+    (await api.post("api/usuario/login-requestcode", usuarioAdapter.adaptarPayload2({ email }), { sinToken: true })).data,
 
-  // PUT api/usuario/{usuarioid}/status:block
-  bloquearUsuario: async (usuarioId) =>
-    (await api.put(`api/usuario/${usuarioId}/status-block`, {})).data,
-
-  // PUT api/usuario/{usuarioid}/status:release
-  reactivarUsuario: async (usuarioId) =>
-    (await api.put(`api/usuario/${usuarioId}/status-release`, {})).data,
+  // POST api/auth/login (email + código recibido por mail)
+  loginByCode: obtenerTokenDeUsuario,
 
   // PUT api/usuario/password:reset
   resetearPassword: async (payloadSkeletor) =>
-    (await api.put(`api/usuario/password-reset`, usuarioAdapter.adaptarPayload3(payloadSkeletor))).data,
+    (
+      await api.put(
+        `api/usuario/password-reset`,
+        usuarioAdapter.adaptarPayload3(payloadSkeletor),
+        { sinToken: true },
+      )
+    ).data,
 
   // POST api/usuario/alta
   crearUsuario: async (nuevoUsuario) =>
-    (await api.post("api/usuario/alta", usuarioAdapter.adaptarPayload4(nuevoUsuario))).data,
+    (await api.post("api/usuario/alta", usuarioAdapter.adaptarPayload4(nuevoUsuario), { sinToken: true })).data,
 
   // PUT api/usuario/{usuarioid}/password:change
   cambiarPassword: async (usuarioId, datosCambioClave) =>
     (await api.put(`api/usuario/${usuarioId}/password-change`, usuarioAdapter.adaptarPayload5(datosCambioClave))).data,
 
-  // GET api/usuario/{encrypt}/:byencrypt
-  obtenerPorEncrypt: async (encryptToken) =>
-    (await api.get(`api/usuario/${encodeURIComponent(encryptToken)}/byencrypt`))
-      .data,
+  // GET api/usuario/estado/{encrypt}:byencrypt
+  // 302 activa / 409 pendiente (Estado 2) / 423 bloqueada (Estado 0) / 404 no existe / 406 vencido
+  obtenerEstadoPorEncrypt: async (encryptToken) => {
+    const { status } = await api.get(
+      `api/usuario/estado/${encodeURIComponent(encryptToken)}-byencrypt`,
+      {
+        sinToken: true,
+        noRetry: true,
+        validateStatus: (codigo) =>
+          [302, 404, 406, 409, 423].includes(codigo) ||
+          (codigo >= 200 && codigo < 300),
+      },
+    );
+    if (status === 409) return "pendiente";
+    if (status === 423) return "bloqueada";
+    if (status === 404) return "inexistente";
+    if (status === 406) return "expirado";
+    return "activa";
+  },
 
-  // PUT api/usuario/{usuarioid}/password:new
-  establecerClaveNueva: async ({ usuarioid, data }) =>
-    (await api.put(`api/usuario/${usuarioid}/password-new`, usuarioAdapter.adaptarPayload6(data))).data,
+  // PUT api/usuario/password:new (identifica al usuario por el token del mail)
+  establecerClaveNueva: async ({ encrypt, newPassword }) =>
+    (
+      await api.put(
+        "api/usuario/password-new",
+        usuarioAdapter.adaptarPayload6({
+          oldpassword: "",
+          newpassword: newPassword,
+          encrypt,
+        }),
+        { sinToken: true },
+      )
+    ).data,
+
+  // PUT api/usuario/{encrypt}/status:release (reactiva/desbloquea con el token del mail)
+  reactivarUsuario: async (encrypt) =>
+    (
+      await api.put(
+        `api/usuario/${encodeURIComponent(encrypt)}/status-release`,
+        null,
+        { sinToken: true },
+      )
+    ).data,
 
   obtenerPorNombreOEmail: async (identificador) => {
     try {
@@ -90,47 +139,6 @@ export const usuarioService = {
       }
       throw error;
     }
-  },
-
-  // Un usuario existe pero su cuenta todavía no está activa (Estado!=="1").
-  //
-  // ⚠️ A propósito NO mira DebeCambiarClave: ese campo solo indica si la
-  // cuenta tiene una contraseña propia seteada o no (queda en "1" tanto al
-  // darse de alta como al pedir "Recuperar clave", y también si el usuario
-  // hace "Omitir e ingresar con código" en CrearClave.jsx — ese camino activa
-  // la cuenta vía reactivarUsuario/status-release sin tocar la contraseña) —
-  // no es un indicador de si la cuenta está pendiente de activación. Ingresar
-  // con código es una forma de acceso legítima y permanente, no un estado
-  // transitorio; si el usuario más adelante quiere una contraseña, tiene
-  // "Recuperar clave" para eso. Antes esta función exigía además
-  // DebeCambiarClave==="1", lo que hacía que un usuario que ya usó "ingresar
-  // con código" viera el modal de "cuenta pendiente de activación" al fallar
-  // cualquier login normal, aunque su cuenta estuviera 100% activa.
-  //
-  // Nota: un usuario bloqueado por un admin (bloquearUsuario/status-block)
-  // también queda con Estado!=="1", igual que uno que nunca se activó — se
-  // acordó tratarlos igual acá (mismo modal/mensaje para ambos casos).
-  //
-  // Único lugar que hace esta comparación: si cambia el casing/tipo que
-  // devuelve el backend, se corrige acá y no en cada pantalla.
-  esCuentaPendienteActivacion: async (email) => {
-    try {
-      const userData = await usuarioService.obtenerPorNombreOEmail(email);
-      const targetUser = Array.isArray(userData)
-        ? userData[0]
-        : userData?.items?.[0] || userData?.data?.[0] || userData;
-      return !!targetUser && String(targetUser.estado) !== "1";
-    } catch {
-      return false;
-    }
-  },
-
-  // GET api/usuarios
-  buscarUsuarios: async (page = 1, pageSize = 10, email = "", nombre = "") => {
-    const params = { page, page_size: pageSize };
-    if (email) params.Email = email;
-    if (nombre) params.Nombre = nombre;
-    return (await api.get("api/usuarios", { params })).data;
   },
 
   // GET api/usuario/{usuarioid}

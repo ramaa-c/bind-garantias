@@ -357,7 +357,7 @@ export function DocumentosLegajo({
       return;
     }
     setIsSavingMeta(true);
-    const toastId = toast.loading("Guardando metadatos del archivo...");
+    const toastId = toast.loading("Guardando información...");
     try {
       const fchreferencia = metaFecha ? `${metaFecha.split("T")[0]}T00:00:00` : null;
       const fchArchivoManual =
@@ -383,10 +383,10 @@ export function DocumentosLegajo({
         queryKey: ["socioLegajoCompleto", socioIdActivo],
       });
 
-      toast.success("Metadatos guardados correctamente", { id: toastId });
+      toast.success("Información guardada correctamente", { id: toastId });
     } catch (error) {
       console.error("Error al guardar metadatos:", error);
-      toast.error("Error al guardar los metadatos del archivo.", { id: toastId });
+      toast.error("Error al guardar la información del archivo.", { id: toastId });
     } finally {
       setIsSavingMeta(false);
     }
@@ -464,7 +464,18 @@ export function DocumentosLegajo({
         }
 
         if (resultado) {
-          queryClient.invalidateQueries({
+          // Se espera a que termine el refetch de "socioArchivos" (dispara
+          // uno porque la query está activa, ver el comentario de
+          // archivosBackendData más arriba) antes de mover la subpestaña:
+          // categoryFiles sale de ese mismo query, así que sin este await
+          // selectSubTab(key, 0) corría contra la lista todavía vieja (sin
+          // el archivo recién subido) - en una categoría que arrancaba
+          // vacía (ej. "Otros documentos"), categoryFiles[0] todavía no
+          // existía y el dropzone se veía vacío un instante hasta que el
+          // refetch en segundo plano terminaba (reportado el 2026-10-06).
+          // handleFileDelete de más abajo no tiene este problema porque ya
+          // actualiza la cache a mano con setQueryData antes de moverse.
+          await queryClient.invalidateQueries({
             queryKey: ["socioArchivos", socioIdActivo],
           });
           queryClient.invalidateQueries({

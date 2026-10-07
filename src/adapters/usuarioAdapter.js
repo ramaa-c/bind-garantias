@@ -1,20 +1,11 @@
 import { normalizarClaves } from "../utils/normalizarClaves";
 
 export const usuarioAdapter = {
-  adaptarPayload1: (data) => {
-    if (!data) return data;
-    const d = normalizarClaves(data);
-    return {
-      Email: d.email,
-      Password: d.password,
-    };
-  },
   adaptarPayload2: (data) => {
     if (!data) return data;
     const d = normalizarClaves(data);
     return {
       Email: d.email,
-      Password: d.password,
     };
   },
   adaptarPayload3: (data) => {
@@ -67,6 +58,7 @@ export const usuarioAdapter = {
     return {
       oldPassword: d.oldpassword,
       newPassword: d.newpassword,
+      encrypt: d.encrypt,
     };
   },
   adaptarPayload7: (data) => {

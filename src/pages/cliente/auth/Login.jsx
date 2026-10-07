@@ -7,13 +7,25 @@ import { toast } from "sonner";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
 import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
-import { ActivacionPendienteModal } from "../../../components/features/shared/ActivacionPendienteModal/ActivacionPendienteModal";
-import { useLogin, useLoginByCode, useResetearPassword } from "../../../hooks/useUsuario";
+import { useLogin, useLoginByCode, useSolicitarCodigoLogin } from "../../../hooks/useUsuario";
 import { usuarioService } from "../../../services/usuarioService";
+import { cerrarSesionApi } from "../../../api/tokenApi";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useThemeStore } from "../../../store/useThemeStore";
 import { useChannel } from "../../../context/useChannel";
-import { denominacionDesdeEmail, extraerRegistroUsuario, esAdministradorActivo } from "../../../utils/usuarioUtils";
+import {
+  extraerRegistroUsuario,
+  esAdministradorActivo,
+  esUsuarioBloqueado,
+  esRespuestaCuentaBloqueada,
+  MENSAJE_CUENTA_BLOQUEADA,
+  DESBLOQUEO_CUENTA_CLIENTE,
+  avisarCuentaBloqueada,
+  VIGENCIA_CODIGO_LOGIN_MS,
+  mensajeCodigoLoginRechazado,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
+} from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -53,23 +65,14 @@ const parsearCadenas = (data) => {
 // porque no es dueño de ningún Socio). AdminGuard no valida el "role" que
 // se setea al loguear, así que no hace falta nada especial del lado del
 // guard — solo decidir bien el destino acá.
-// Chequeo suelto, para cortar ANTES de pedir el código por mail (así una
-// cuenta de administración ni siquiera lo recibe). En el resto de los
-// caminos no hace falta: resolverAccesoPostLogin ya trae el registro y
-// decide con eso, sin pagar un request extra.
-const esCuentaDeAdministracion = async (email) => {
-  try {
-    const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
-    return esAdministradorActivo(extraerRegistroUsuario(usuarioDb));
-  } catch {
-    return false;
-  }
-};
-
 const resolverAccesoPostLogin = async (email, basePath) => {
   try {
     const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
     const registro = extraerRegistroUsuario(usuarioDb);
+
+    if (esUsuarioBloqueado(registro)) {
+      return { permitido: false, motivo: "bloqueada", destino: null };
+    }
 
     // Un Administrador General no tiene Socio ni legajo propio: su cuenta es
     // exclusivamente del panel admin y no corresponde que entre por el login
@@ -77,7 +80,7 @@ const resolverAccesoPostLogin = async (email, basePath) => {
     // (SGRPLUSPLA-195). OJO: esto NO alcanza a los admin restringidos, que
     // no llevan esta marca y sí entran por acá (ver más abajo).
     if (esAdministradorActivo(registro)) {
-      return { permitido: false, destino: null };
+      return { permitido: false, motivo: "admin", destino: null };
     }
 
     const usuarioWebId =
@@ -339,9 +342,6 @@ const CredentialsPhase = ({
 const Login = () => {
   const [otpPendienteInicial] = useState(leerOtpPendiente);
   const [fase, setFase] = useState(otpPendienteInicial.fase);
-  const [generatedOtp, setGeneratedOtp] = useState(null);
-  const [modalPendiente, setModalPendiente] = useState(false);
-  const [emailPendiente, setEmailPendiente] = useState("");
   const [locationSincronizada, setLocationSincronizada] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -349,51 +349,11 @@ const Login = () => {
   const theme = useThemeStore((state) => state.theme);
   const { channelInfo, basePath } = useChannel();
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
-  const { mutate: loginByCode, isPending: solicitandoCodigo } =
-    useLoginByCode();
-  const { mutateAsync: reenviarCorreo, isPending: reenviando } =
-    useResetearPassword();
+  const { mutate: solicitarCodigo, isPending: solicitandoCodigo } =
+    useSolicitarCodigoLogin();
+  const { mutate: loginByCode, isPending: validandoCodigo } = useLoginByCode();
 
-  const isPending = isLoginPending || solicitandoCodigo;
-
-  const getCSharpIsoDate = (addYears = 0) => {
-    const date = new Date();
-    if (addYears) date.setFullYear(date.getFullYear() + addYears);
-    return date.toISOString().split(".")[0];
-  };
-
-  const handleReenviarActivacion = async () => {
-    const canalId = channelInfo.id;
-
-    const payloadReset = {
-      email: emailPendiente,
-      usuariowebid: 0,
-      fchalta: getCSharpIsoDate(),
-      fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: "",
-      estado: "",
-      debecambiarclave: "",
-      esadministrador: "",
-      denominacion: denominacionDesdeEmail(emailPendiente),
-      fronturl: window.location.origin + basePath,
-    };
-
-    try {
-      await reenviarCorreo(payloadReset);
-      setModalPendiente(false);
-      navigate(`${basePath}/confirmar-correo`, {
-        state: {
-          emailIngresado: emailPendiente,
-          canal: canalId,
-          origen: "registro",
-        },
-      });
-    } catch {
-      toast.error("Error al reenviar el correo", {
-        description: "Ocurrió un error. Intentá más tarde.",
-      });
-    }
-  };
+  const isPending = isLoginPending || solicitandoCodigo || validandoCodigo;
 
   const currentSchema =
     fase === "ingreso_credenciales"
@@ -417,17 +377,21 @@ const Login = () => {
   });
 
   // Redirección desde CrearClave
-  if (location.state?.emailIngresado && location !== locationSincronizada) {
-    setLocationSincronizada(location);
-    if (location.state?.generatedOtp) {
-      setGeneratedOtp(location.state.generatedOtp);
+  if (location.state && location !== locationSincronizada) {
+    if (location.state.emailIngresado) {
+      setLocationSincronizada(location);
+      setFase("validacion_otp");
+    } else if (location.state.faseInicial) {
+      setLocationSincronizada(location);
+      setFase(location.state.faseInicial);
     }
-    setFase("validacion_otp");
   }
 
   useEffect(() => {
     if (location.state?.emailIngresado) {
       setValue("email", location.state.emailIngresado);
+      window.history.replaceState({}, document.title);
+    } else if (location.state?.faseInicial) {
       window.history.replaceState({}, document.title);
     }
   }, [location, setValue]);
@@ -437,22 +401,61 @@ const Login = () => {
       const isValid = await trigger("email");
       if (!isValid) return;
 
-      if (await esCuentaDeAdministracion(formData.email)) {
-        setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
-        return;
-      }
+      solicitarCodigo(formData.email, {
+        onSuccess: () => {
+          sessionStorage.setItem("pendingOtpEmail", formData.email);
+          sessionStorage.setItem("otpExpiresAt", Date.now() + VIGENCIA_CODIGO_LOGIN_MS);
+          setFase("validacion_otp");
+          toast.success("Código enviado a tu email");
+        },
+        onError: (error) => {
+          const status = error?.response?.status;
+          if (!error?.response || status >= 500) {
+            toast.error("Error de servidor", {
+              description: "Ocurrió un error. Intentá más tarde.",
+            });
+            return;
+          }
+          if (esDemasiadosIntentos(error)) {
+            avisarDemasiadosIntentos();
+            return;
+          }
+          if (esRespuestaCuentaBloqueada(error)) {
+            setError("email", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+            avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+            return;
+          }
+          setError("email", {
+            type: "server",
+            message: "Error al solicitar código. Verificá los datos.",
+          });
+        },
+      });
+      return;
+    }
 
+    if (fase === "validacion_otp") {
       loginByCode(
-        { email: formData.email, password: "" },
+        { email: formData.email, password: formData.otp },
         {
-          onSuccess: (data) => {
-            setGeneratedOtp(data.password);
-            sessionStorage.setItem("pendingOtpEmail", formData.email);
-            sessionStorage.setItem("otpExpiresAt", Date.now() + 60000);
-            setFase("validacion_otp");
-            toast.success("Código enviado a tu email");
+          onSuccess: async () => {
+            const acceso = await resolverAccesoPostLogin(formData.email, basePath);
+            if (!acceso.permitido) {
+              cerrarSesionApi();
+              if (acceso.motivo === "bloqueada") {
+                setError("email", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+                avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+              } else {
+                setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+              }
+              return;
+            }
+            sessionStorage.removeItem("pendingOtpEmail");
+            sessionStorage.removeItem("otpExpiresAt");
+            setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
+            navigate(acceso.destino, { replace: true });
           },
-          onError: async (error) => {
+          onError: (error) => {
             const status = error?.response?.status;
             if (!error?.response || status >= 500) {
               toast.error("Error de servidor", {
@@ -460,38 +463,29 @@ const Login = () => {
               });
               return;
             }
-
-            const pendiente = await usuarioService.esCuentaPendienteActivacion(
-              formData.email,
-            );
-            if (pendiente) {
-              setEmailPendiente(formData.email);
-              setModalPendiente(true);
+            if (esDemasiadosIntentos(error)) {
+              avisarDemasiadosIntentos();
               return;
             }
-
-            setError("email", {
+            if (esRespuestaCuentaBloqueada(error)) {
+              setError("otp", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+              avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+              return;
+            }
+            if (status === 401) {
+              setError("otp", {
+                type: "server",
+                message: mensajeCodigoLoginRechazado(error),
+              });
+              return;
+            }
+            setError("otp", {
               type: "server",
-              message: "Error al solicitar código. Verificá los datos.",
+              message: "No pudimos validar el código. Solicitá uno nuevo.",
             });
           },
         },
       );
-      return;
-    }
-
-    if (fase === "validacion_otp") {
-      if (formData.otp === generatedOtp) {
-        const acceso = await resolverAccesoPostLogin(formData.email, basePath);
-        if (!acceso.permitido) {
-          setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
-          return;
-        }
-        setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
-        navigate(acceso.destino, { replace: true });
-      } else {
-        setError("otp", { type: "server", message: "Código incorrecto" });
-      }
       return;
     }
 
@@ -502,13 +496,19 @@ const Login = () => {
           onSuccess: async () => {
             const acceso = await resolverAccesoPostLogin(formData.email, basePath);
             if (!acceso.permitido) {
-              setError("password", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+              cerrarSesionApi();
+              if (acceso.motivo === "bloqueada") {
+                setError("password", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+                avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+              } else {
+                setError("password", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+              }
               return;
             }
             setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
             navigate(acceso.destino, { replace: true });
           },
-          onError: async (error) => {
+          onError: (error) => {
             const status = error?.response?.status;
             if (!error?.response || status >= 500) {
               clearErrors("password");
@@ -517,16 +517,15 @@ const Login = () => {
               });
               return;
             }
-
-            const pendiente = await usuarioService.esCuentaPendienteActivacion(
-              formData.email,
-            );
-            if (pendiente) {
-              setEmailPendiente(formData.email);
-              setModalPendiente(true);
+            if (esDemasiadosIntentos(error)) {
+              avisarDemasiadosIntentos();
               return;
             }
-
+            if (esRespuestaCuentaBloqueada(error)) {
+              setError("password", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+              avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+              return;
+            }
             setError("password", {
               type: "server",
               message: "Usuario o contraseña incorrecto.",
@@ -538,35 +537,34 @@ const Login = () => {
   };
 
   const handleResendCode = () => {
-    loginByCode(
-      { email: getValues("email"), password: "" },
-      {
-        onSuccess: (data) => {
-          setGeneratedOtp(data.password);
-          sessionStorage.setItem("pendingOtpEmail", getValues("email"));
-          sessionStorage.setItem("otpExpiresAt", Date.now() + 60000);
-          toast.success("Código reenviado");
-        },
-        onError: (error) => {
-          const status = error?.response?.status;
-          const errorData = error?.response?.data;
-          if (!error?.response || status >= 500) {
-            toast.error("Error de servidor", {
-              description: "Ocurrió un error. Intentá más tarde.",
-            });
-          } else {
-            const message =
-              errorData?.message ||
-              "Error al reenviar código. Verificá los datos.";
-            setError("otp", { type: "server", message });
-          }
-        },
+    solicitarCodigo(getValues("email"), {
+      onSuccess: () => {
+        sessionStorage.setItem("pendingOtpEmail", getValues("email"));
+        sessionStorage.setItem("otpExpiresAt", Date.now() + VIGENCIA_CODIGO_LOGIN_MS);
+        toast.success("Código reenviado");
       },
-    );
+      onError: (error) => {
+        const status = error?.response?.status;
+        if (!error?.response || status >= 500) {
+          toast.error("Error de servidor", {
+            description: "Ocurrió un error. Intentá más tarde.",
+          });
+        } else if (esDemasiadosIntentos(error)) {
+          avisarDemasiadosIntentos();
+        } else if (esRespuestaCuentaBloqueada(error)) {
+          setError("otp", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
+          avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+        } else {
+          setError("otp", {
+            type: "server",
+            message: "Error al reenviar código. Verificá los datos.",
+          });
+        }
+      },
+    });
   };
 
   return (
-    <>
     <div className={styles.layoutSplit}>
       <section className={styles.sideForm}>
         <div className={styles.globalLogo}>
@@ -679,16 +677,7 @@ const Login = () => {
         </div>
       </section>
     </div>
-
-    <ActivacionPendienteModal
-      isOpen={modalPendiente}
-      onClose={() => setModalPendiente(false)}
-      email={emailPendiente}
-      onReenviar={handleReenviarActivacion}
-      isLoading={reenviando}
-    />
-    </>
   );
 };
 
-export default Login;
+export default Login;

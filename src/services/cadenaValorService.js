@@ -22,6 +22,14 @@ export const cadenaValorService = {
   obtenerPorId: async (cadenaValorId) =>
     (await api.get(`CadenaValor/Obtener/${cadenaValorId}`)).data,
 
+  // GET /CadenaValor/Obtener/{CadenaValorID}/publica (CORE, sin login)
+  obtenerPublicaCore: async (cadenaValorId) =>
+    (await api.get(`CadenaValor/Obtener/${cadenaValorId}/publica`, { sinToken: true })).data,
+
+  // GET /api/cadenavalor/{CadenaValorID}/publica (Web, sin login)
+  obtenerPublicaWeb: async (cadenaValorId) =>
+    (await api.get(`api/cadenavalor/${cadenaValorId}/publica`, { sinToken: true })).data,
+
   // GET /CadenaValor/Libradores/{CadenaValorID}
   obtenerLibradores: async (cadenaValorId, page = 1, pageSize = 10) => {
     console.log(

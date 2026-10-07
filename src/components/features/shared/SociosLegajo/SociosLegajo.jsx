@@ -297,6 +297,13 @@ export function SociosLegajo({
     // admin esos mismos datos ya se editan desde EmpresaDetalle.jsx.
     if (adminMode) {
       baseTabs = baseTabs.filter(t => t.key !== "perfil");
+    } else {
+      // "Vincular usuarios" dejó de ser una pestaña propia para el cliente -
+      // ahora cuelga de "Perfil corporativo" (ver el render de isPerfil más
+      // abajo). En adminMode sigue siendo su propia pestaña: ahí no existe
+      // "perfil" (se filtra arriba) y admin no tiene otro lugar donde
+      // ofrecer esta acción dentro de este mismo componente.
+      baseTabs = baseTabs.filter(t => t.key !== "usuarios");
     }
     if (esPersonaFisica) {
       // Persona Física no tiene Representante Legal (230) - solo Apoderado
@@ -504,13 +511,83 @@ export function SociosLegajo({
     }
   };
 
+  // Botón + etiqueta de categoría de una pestaña: se llama dos veces (ver
+  // .sidebarNav más abajo) - una para la columna de navegación propia de
+  // escritorio, otra para la lista intercalada de mobile (acordeón, con
+  // el contenido de la pestaña activa justo debajo de su botón). Mismo
+  // estado/handler en los dos casos, así que no hay lógica que duplicar
+  // además de este render.
+  const renderCategoriaYBoton = (doc, index, { inlineOnly = false } = {}) => {
+    const isNewCategory =
+      index === 0 || doc.category !== tabsDisponibles[index - 1].category;
+    const isActive = activeTab === doc.key;
+    const isPerfil = doc.key === "perfil";
+    const esObligatorio =
+      requisitos?.relaciones?.[doc.key] === 1 ||
+      (fiadorForzado && doc.key === String(RELACION_FIADOR_ID));
+    const marcaInline = inlineOnly ? ` ${styles.inlineOnly}` : "";
+
+    return (
+      <React.Fragment key={doc.key}>
+        {isNewCategory && (
+          <p className={`${styles.categoryLabel}${marcaInline}`}>{doc.category}</p>
+        )}
+        <button
+          type="button"
+          onClick={() => {
+            if (window.innerWidth <= 768) {
+              setActiveTab((prev) => (prev === doc.key ? null : doc.key));
+            } else {
+              setActiveTab(doc.key);
+            }
+          }}
+          className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}${marcaInline}`}
+        >
+          {isActive && <span className={styles.activeBar} />}
+          <div className={styles.tabTitleGroup}>
+            <span className={styles.tabTitle} title={tituloTab(doc)}>{tituloTab(doc)}</span>
+            {!isPerfil &&
+              (esObligatorio ? (
+                <span className={`${styles.reqBadge} ${completitudPorTab[doc.key] ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
+                  Obligatorio
+                </span>
+              ) : (
+                <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
+              ))}
+          </div>
+          <span
+            className={`${styles.statusDot} ${isPerfil ? styles.dotGreen : loadingSocios ? styles.dotLoading : completitudPorTab[doc.key] ? styles.dotGreen : esObligatorio ? styles.dotYellow : styles.dotGray}`}
+          />
+          <FiChevronDown
+            className={styles.mobileChevron}
+            style={{
+              transform: isActive ? "rotate(180deg)" : "rotate(0deg)",
+              transition: "transform 0.3s ease",
+              color: isActive ? "var(--white)" : "var(--text-muted)",
+              fontSize: "1.1rem"
+            }}
+          />
+        </button>
+      </React.Fragment>
+    );
+  };
+
   return (
     <div className={styles.workspace}>
       <div className={styles.sidebarBg} />
+      {/* Columna de navegación propia de escritorio (ver .sidebarNav en el
+          CSS): a diferencia de la lista de acá abajo (intercalada con el
+          contenido de la pestaña activa, para el acordeón de mobile),
+          ésta tiene su propio overflow-y:auto acotado al alto real de
+          .workspace - con muchas relaciones activadas el listado puede no
+          entrar en el presupuesto fijo del panel admin, y antes esa falta
+          de espacio terminaba comprimiendo toda la columna en vez de
+          scrollear (reportado el 2026-09-30). Oculta en mobile (ver el
+          mismo comentario del lado del CSS). */}
+      <div className={styles.sidebarNav}>
+        {tabsDisponibles.map((doc, index) => renderCategoriaYBoton(doc, index))}
+      </div>
       {tabsDisponibles.map((doc, index) => {
-        const isNewCategory =
-          index === 0 ||
-          doc.category !== tabsDisponibles[index - 1].category;
         const isActive = activeTab === doc.key;
 
         const isPerfil = doc.key === "perfil";
@@ -518,56 +595,18 @@ export function SociosLegajo({
         const isRepresentantes = doc.key === "representanteLegal";
         const isApoderados = doc.key === "apoderados";
         const isAgentesBolsa = doc.key === "agentesBolsa";
+        // Solo alcanzable en adminMode: para el cliente "usuarios" ya no es
+        // una pestaña navegable (se filtra en tabsDisponibles), vive como
+        // tarjeta dentro de "perfil" (ver el render de isPerfil más abajo).
         const isUsuarios = doc.key === "usuarios";
         // Cualquier otra clave es un TipoRelacionSocioID activado
         // dinámicamente (ver tabsExtra más arriba).
         const idRelacionExtra = Number(doc.key);
         const isExtra = Number.isInteger(idRelacionExtra) && idRelacionExtra > 0;
-        const esObligatorio =
-          requisitos?.relaciones?.[doc.key] === 1 ||
-          (fiadorForzado && doc.key === String(RELACION_FIADOR_ID));
 
         return (
           <React.Fragment key={doc.key}>
-            {isNewCategory && (
-              <p className={styles.categoryLabel}>{doc.category}</p>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                if (window.innerWidth <= 768) {
-                  setActiveTab((prev) => (prev === doc.key ? null : doc.key));
-                } else {
-                  setActiveTab(doc.key);
-                }
-              }}
-              className={`${styles.tabBtn} ${isActive ? styles.tabActive : ""}`}
-            >
-              {isActive && <span className={styles.activeBar} />}
-              <div className={styles.tabTitleGroup}>
-                <span className={styles.tabTitle} title={tituloTab(doc)}>{tituloTab(doc)}</span>
-                {!isPerfil &&
-                  (esObligatorio ? (
-                    <span className={`${styles.reqBadge} ${completitudPorTab[doc.key] ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}>
-                      Obligatorio
-                    </span>
-                  ) : (
-                    <span className={`${styles.reqBadge} ${styles.reqBadgeOptional}`}>Opcional</span>
-                  ))}
-              </div>
-              <span
-                className={`${styles.statusDot} ${isPerfil ? styles.dotGreen : loadingSocios ? styles.dotLoading : completitudPorTab[doc.key] ? styles.dotGreen : esObligatorio ? styles.dotYellow : styles.dotGray}`}
-              />
-              <FiChevronDown
-                className={styles.mobileChevron}
-                style={{
-                  transform: isActive ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 0.3s ease",
-                  color: isActive ? "var(--white)" : "var(--text-muted)",
-                  fontSize: "1.1rem"
-                }}
-              />
-            </button>
+            {renderCategoriaYBoton(doc, index, { inlineOnly: true })}
 
             {isActive && (
               <section className={styles.viewer}>
@@ -738,6 +777,24 @@ export function SociosLegajo({
                           </span>
                         </div>
                       </div>
+                    </div>
+
+                    {/* "Vincular usuarios" vivía como pestaña propia
+                        (categoría "Accesos", ver tabsDisponibles más abajo);
+                        ahora cuelga de Mi Perfil como una tarjeta aparte,
+                        mismo criterio que cualquier settings page (Stripe,
+                        Linear, etc.): la gestión de accesos de la cuenta
+                        vive junto al resto de "mi perfil", no como un ítem
+                        de navegación de primer nivel - sigue siendo un
+                        componente propio (no .perfilCard anidada, ver
+                        .perfilExtraSection) para no caer en tarjeta-dentro-
+                        de-tarjeta. Solo en modo cliente: en adminMode esta
+                        sección entera no se renderiza (ver el filtro de
+                        "perfil" en tabsDisponibles), así que acá no hace
+                        falta repetir el chequeo. */}
+                    <div className={styles.perfilExtraSection}>
+                      <span className={styles.perfilExtraSectionLabel}>Accesos</span>
+                      <VincularUsuarioSection socioIdActivo={socioIdActivo} />
                     </div>
                   </div>
                 ) : isUsuarios ? (
