@@ -56,8 +56,10 @@ const OPCIONES_ORDEN = [
 ];
 
 const normalizarLista = (data) => {
-  if (Array.isArray(data)) return data;
-  return data?.items || data?.data || data?.resultados || data?.list || [];
+  const lista = Array.isArray(data)
+    ? data
+    : data?.items || data?.data || data?.resultados || data?.list || [];
+  return lista.filter((u) => u && typeof u === "object");
 };
 
 const leerId = (u) => u?.usuariowebid ?? u?.id ?? null;
@@ -73,7 +75,7 @@ const formatearFecha = (valor) => {
   return fecha.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
-const getIniciales = (email) => (email ? email.slice(0, 2).toUpperCase() : "?");
+const getIniciales = (email) => (email ? String(email).slice(0, 2).toUpperCase() : "?");
 
 const mensajeErrorAccion = (error, accion) => {
   const status = error?.response?.status;
