@@ -20,6 +20,21 @@ export const esAdministradorActivo = (registro) => {
   return valor === "1" || valor === 1 || valor === true;
 };
 
+const extraerVinculosCadena = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (data.items) return data.items;
+  if (data.data) return data.data;
+  if (typeof data === "object" && Object.keys(data).length > 0) return [data];
+  return [];
+};
+
+export const vinculosCadenaActivos = (data) =>
+  extraerVinculosCadena(data).filter((vinculo) => {
+    const valor = vinculo?.activa ?? vinculo?.Activa;
+    return valor === "1" || valor === 1 || valor === true;
+  });
+
 // Nombre de usuario legible a partir del email, para precargar Denominacion
 // al dar de alta la cuenta (el usuario puede cambiarlo después desde "Mi
 // cuenta") - toma la parte antes del @ y reemplaza separadores comunes por
@@ -32,41 +47,66 @@ export const denominacionDesdeEmail = (email) => {
     .trim();
 };
 
+export const FECHA_VENCIMIENTO_USUARIO = "2999-12-31T00:00:00";
+
 export const ESTADO_USUARIO = {
   BLOQUEADO: "0",
   ACTIVO: "1",
   PENDIENTE_ACTIVACION: "2",
+  BLOQUEADO_ADMIN: "9",
 };
 
 const leerEstadoUsuario = (registro) =>
   String(registro?.estado ?? registro?.Estado ?? "");
 
 export const esUsuarioBloqueado = (registro) =>
-  leerEstadoUsuario(registro) === ESTADO_USUARIO.BLOQUEADO;
+  [ESTADO_USUARIO.BLOQUEADO, ESTADO_USUARIO.BLOQUEADO_ADMIN].includes(
+    leerEstadoUsuario(registro),
+  );
+
+export const esUsuarioBloqueadoPorAdmin = (registro) =>
+  leerEstadoUsuario(registro) === ESTADO_USUARIO.BLOQUEADO_ADMIN;
 
 export const esUsuarioPendienteActivacion = (registro) =>
   leerEstadoUsuario(registro) === ESTADO_USUARIO.PENDIENTE_ACTIVACION;
 
 export const VIGENCIA_CODIGO_LOGIN_MS = 5 * 60 * 1000;
 
-export const MENSAJE_CUENTA_BLOQUEADA =
-  "Cuenta bloqueada por superar el máximo de intentos.";
+export const MENSAJE_CUENTA_NO_ACTIVA = "Tu cuenta no está activa.";
 
-export const DESBLOQUEO_CUENTA_CLIENTE =
-  "Para desbloquearla, usá \"Recuperar clave\" y generá una nueva contraseña.";
+export const HABILITAR_CUENTA_CLIENTE =
+  "Usá \"Recuperar clave\" para habilitarla.";
 
 export const DESBLOQUEO_CUENTA_ADMIN =
   "Contactá a soporte para recuperar el acceso.";
 
-// 423 es el código nuevo de cuenta bloqueada; 406 queda por compatibilidad
-// mientras el backend no lo unifique en todos los endpoints de login.
-export const esRespuestaCuentaBloqueada = (error) =>
+export const MENSAJE_CUENTA_BLOQUEADA_ADMIN =
+  "Tu cuenta fue bloqueada por un administrador. Contactá a soporte.";
+
+export const MENSAJE_CUENTA_VENCIDA = "Tu cuenta venció. Contactá a soporte.";
+
+export const avisarCuentaVencida = () =>
+  toast.error("Tu cuenta venció", { description: "Contactá a soporte." });
+
+export const esRespuestaCuentaNoActiva = (error) =>
   [406, 423].includes(error?.response?.status);
 
-export const avisarCuentaBloqueada = (descripcion) =>
-  toast.error("Tu cuenta fue bloqueada", { description: descripcion });
+export const esRespuestaBloqueoAdmin = (error) =>
+  error?.response?.status === 403;
 
-export const esDemasiadosIntentos = (error) => error?.response?.status === 429;
+export const avisarCuentaNoActiva = (descripcion) =>
+  toast.error("Tu cuenta no está activa", { description: descripcion });
+
+export const avisarBloqueoAdmin = () =>
+  toast.error("Tu cuenta fue bloqueada por un administrador", {
+    description: "Contactá a soporte.",
+  });
+
+export const esClaveActualIncorrecta = (error) =>
+  error?.response?.status === 401 &&
+  /incorrect/i.test(String(error?.response?.data?.message ?? ""));
+
+export const esDemasiadosIntentos =(error) => error?.response?.status === 429;
 
 export const avisarDemasiadosIntentos = () =>
   toast.error("Demasiados intentos", {

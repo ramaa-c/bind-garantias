@@ -61,6 +61,7 @@ export default function AdminLayout({ children }) {
 
     const resizeObserver = new ResizeObserver(chequearDesborde);
     resizeObserver.observe(adminContent);
+    Array.from(containerInner.children).forEach((hijo) => resizeObserver.observe(hijo));
 
     return () => resizeObserver.disconnect();
   }, [children]);

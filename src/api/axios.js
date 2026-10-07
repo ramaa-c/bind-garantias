@@ -114,15 +114,17 @@ const rutaDeLogin = () => {
 
 let cerrandoSesion = false;
 
-const cerrarSesionVencida = () => {
+export const cerrarSesionLocal = ({
+  titulo = "Tu sesión venció",
+  descripcion = "Volvé a ingresar para continuar.",
+  tipo = "error",
+} = {}) => {
   if (cerrandoSesion) return;
   cerrandoSesion = true;
   borrarTokenApi();
   useAuthStore.getState().clearAuth();
   queryClient.clear();
-  toast.error("Tu sesión venció", {
-    description: "Volvé a ingresar para continuar.",
-  });
+  toast[tipo](titulo, { description: descripcion });
   setTimeout(() => window.location.assign(rutaDeLogin()), 900);
 };
 
@@ -168,7 +170,7 @@ api.interceptors.response.use(
     if (!config) return Promise.reject(error);
 
     if (esSesionVencida(error)) {
-      cerrarSesionVencida();
+      cerrarSesionLocal();
       return Promise.reject(error);
     }
 

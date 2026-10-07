@@ -45,7 +45,7 @@ export const usuarioService = {
     (await api.put(`api/usuario/${usuarioId}/password-change`, usuarioAdapter.adaptarPayload5(datosCambioClave))).data,
 
   // GET api/usuario/estado/{encrypt}:byencrypt
-  // 302 activa / 409 pendiente (Estado 2) / 423 bloqueada (Estado 0) / 404 no existe / 406 vencido
+  // 302 activa / 409 pendiente (Estado 2) / 423 bloqueada (Estado 0) / 403 bloqueada por admin (Estado 9) / 404 no existe / 406 vencido
   obtenerEstadoPorEncrypt: async (encryptToken) => {
     const { status } = await api.get(
       `api/usuario/estado/${encodeURIComponent(encryptToken)}-byencrypt`,
@@ -53,12 +53,13 @@ export const usuarioService = {
         sinToken: true,
         noRetry: true,
         validateStatus: (codigo) =>
-          [302, 404, 406, 409, 423].includes(codigo) ||
+          [302, 403, 404, 406, 409, 423].includes(codigo) ||
           (codigo >= 200 && codigo < 300),
       },
     );
     if (status === 409) return "pendiente";
     if (status === 423) return "bloqueada";
+    if (status === 403) return "bloqueada_admin";
     if (status === 404) return "inexistente";
     if (status === 406) return "expirado";
     return "activa";
@@ -74,7 +75,7 @@ export const usuarioService = {
           newpassword: newPassword,
           encrypt,
         }),
-        { sinToken: true },
+        { sinToken: true, noRetry: true },
       )
     ).data,
 
@@ -84,7 +85,7 @@ export const usuarioService = {
       await api.put(
         `api/usuario/${encodeURIComponent(encrypt)}/status-release`,
         null,
-        { sinToken: true },
+        { sinToken: true, noRetry: true },
       )
     ).data,
 
@@ -140,6 +141,15 @@ export const usuarioService = {
       throw error;
     }
   },
+
+  listarUsuarios: async ({ page = 1, pageSize = 1000 } = {}) =>
+    (await api.get("api/usuarios", { params: { page, page_size: pageSize } })).data,
+
+  bloquearUsuario: async (usuarioId) =>
+    (await api.put(`api/usuario/${usuarioId}/status-block`, {}, { noRetry: true })).data,
+
+  desbloquearUsuario: async (usuarioId) =>
+    (await api.put(`api/usuario/${usuarioId}/status-unblock`, {}, { noRetry: true })).data,
 
   // GET api/usuario/{usuarioid}
   obtenerUsuarioPorId: async (usuarioId) =>

@@ -8,6 +8,7 @@ import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
 import {
   denominacionDesdeEmail,
+  FECHA_VENCIMIENTO_USUARIO,
   esDemasiadosIntentos,
   avisarDemasiadosIntentos,
 } from "../../../utils/usuarioUtils";
@@ -52,9 +53,8 @@ const ConfirmarCorreo = () => {
   const handleReenviar = () => {
     if (!canResend) return;
 
-    const getCSharpIsoDate = (addYears = 0) => {
+    const getCSharpIsoDate = () => {
       const date = new Date();
-      if (addYears) date.setFullYear(date.getFullYear() + addYears);
       return date.toISOString().split(".")[0];
     };
 
@@ -63,7 +63,7 @@ const ConfirmarCorreo = () => {
         email: emailUsuario,
         usuariowebid: 0,
         fchalta: usuarioSkeletor?.fchalta || getCSharpIsoDate(),
-        fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(1),
+        fchvencimiento: FECHA_VENCIMIENTO_USUARIO,
         hashseguridad: "",
         estado: "",
         debecambiarclave: "",
@@ -73,8 +73,8 @@ const ConfirmarCorreo = () => {
       },
       {
         onSuccess: () => {
-          toast.success("Enlace reenviado", {
-            description: "Revisá tu bandeja de entrada o la carpeta de SPAM.",
+          toast.success("Solicitud enviada", {
+            description: "Si el correo está registrado, vas a recibir un nuevo enlace. Revisá también la carpeta de SPAM.",
           });
           setTimeLeft(RESEND_SECONDS);
         },
@@ -86,8 +86,8 @@ const ConfirmarCorreo = () => {
           const status = error?.response?.status;
           const esErrorDeServidor = !error?.response || status >= 500;
           if (origen === "recuperar" && !esErrorDeServidor) {
-            toast.success("Enlace reenviado", {
-              description: "Revisá tu bandeja de entrada o la carpeta de SPAM.",
+            toast.success("Solicitud enviada", {
+              description: "Si el correo está registrado, vas a recibir un nuevo enlace. Revisá también la carpeta de SPAM.",
             });
             setTimeLeft(RESEND_SECONDS);
             return;

@@ -16,11 +16,16 @@ import { useChannel } from "../../../context/useChannel";
 import {
   extraerRegistroUsuario,
   esAdministradorActivo,
-  esUsuarioBloqueado,
-  esRespuestaCuentaBloqueada,
-  MENSAJE_CUENTA_BLOQUEADA,
-  DESBLOQUEO_CUENTA_CLIENTE,
-  avisarCuentaBloqueada,
+  vinculosCadenaActivos,
+  esRespuestaCuentaNoActiva,
+  esRespuestaBloqueoAdmin,
+  MENSAJE_CUENTA_NO_ACTIVA,
+  MENSAJE_CUENTA_BLOQUEADA_ADMIN,
+  MENSAJE_CUENTA_VENCIDA,
+  HABILITAR_CUENTA_CLIENTE,
+  avisarCuentaNoActiva,
+  avisarCuentaVencida,
+  avisarBloqueoAdmin,
   VIGENCIA_CODIGO_LOGIN_MS,
   mensajeCodigoLoginRechazado,
   esDemasiadosIntentos,
@@ -48,14 +53,6 @@ const leerOtpPendiente = () => {
   return { fase: "ingreso_credenciales", email: "" };
 };
 
-const parsearCadenas = (data) => {
-  if (!data) return [];
-  if (Array.isArray(data)) return data;
-  if (data.items) return data.items;
-  if (data.data) return data.data;
-  if (typeof data === "object" && Object.keys(data).length > 0) return [data];
-  return [];
-};
 
 // Un usuario vinculado a una o más cadenas de valor (UsuarioCadenaValor) es
 // un admin restringido (ve el panel admin acotado a sus propias cadenas —
@@ -70,17 +67,13 @@ const resolverAccesoPostLogin = async (email, basePath) => {
     const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
     const registro = extraerRegistroUsuario(usuarioDb);
 
-    if (esUsuarioBloqueado(registro)) {
-      return { permitido: false, motivo: "bloqueada", destino: null };
-    }
-
     // Un Administrador General no tiene Socio ni legajo propio: su cuenta es
     // exclusivamente del panel admin y no corresponde que entre por el login
     // de un banco, aunque el backend valide bien sus credenciales
     // (SGRPLUSPLA-195). OJO: esto NO alcanza a los admin restringidos, que
     // no llevan esta marca y sí entran por acá (ver más abajo).
     if (esAdministradorActivo(registro)) {
-      return { permitido: false, motivo: "admin", destino: null };
+      return { permitido: false, destino: null };
     }
 
     const usuarioWebId =
@@ -92,7 +85,7 @@ const resolverAccesoPostLogin = async (email, basePath) => {
     const cadenasData = await usuarioService.obtenerUsuariosRelacionados({
       usuarioid: usuarioWebId,
     });
-    const tieneCadenas = parsearCadenas(cadenasData).length > 0;
+    const tieneCadenas = vinculosCadenaActivos(cadenasData).length > 0;
     return {
       permitido: true,
       destino: tieneCadenas ? "/admin" : `${basePath}/legajo`,
@@ -396,6 +389,21 @@ const Login = () => {
     }
   }, [location, setValue]);
 
+  const avisarCuentaInhabilitada = (campo, motivo) => {
+    if (motivo === "bloqueada_admin") {
+      setError(campo, { type: "server", message: MENSAJE_CUENTA_BLOQUEADA_ADMIN });
+      avisarBloqueoAdmin();
+      return;
+    }
+    if (motivo === "vencida") {
+      setError(campo, { type: "server", message: MENSAJE_CUENTA_VENCIDA });
+      avisarCuentaVencida();
+      return;
+    }
+    setError(campo, { type: "server", message: MENSAJE_CUENTA_NO_ACTIVA });
+    avisarCuentaNoActiva(HABILITAR_CUENTA_CLIENTE);
+  };
+
   const onSubmit = async (formData) => {
     if (fase === "solicitar_codigo") {
       const isValid = await trigger("email");
@@ -420,9 +428,16 @@ const Login = () => {
             avisarDemasiadosIntentos();
             return;
           }
-          if (esRespuestaCuentaBloqueada(error)) {
-            setError("email", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
-            avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+          if (esRespuestaBloqueoAdmin(error)) {
+            avisarCuentaInhabilitada("email", "bloqueada_admin");
+            return;
+          }
+          if (status === 401) {
+            avisarCuentaInhabilitada("email", "vencida");
+            return;
+          }
+          if (esRespuestaCuentaNoActiva(error)) {
+            avisarCuentaInhabilitada("email", "no_activa");
             return;
           }
           setError("email", {
@@ -442,12 +457,7 @@ const Login = () => {
             const acceso = await resolverAccesoPostLogin(formData.email, basePath);
             if (!acceso.permitido) {
               cerrarSesionApi();
-              if (acceso.motivo === "bloqueada") {
-                setError("email", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
-                avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
-              } else {
-                setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
-              }
+              setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
               return;
             }
             sessionStorage.removeItem("pendingOtpEmail");
@@ -467,9 +477,8 @@ const Login = () => {
               avisarDemasiadosIntentos();
               return;
             }
-            if (esRespuestaCuentaBloqueada(error)) {
-              setError("otp", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
-              avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+            if (esRespuestaCuentaNoActiva(error)) {
+              avisarCuentaInhabilitada("otp", "no_activa");
               return;
             }
             if (status === 401) {
@@ -497,12 +506,7 @@ const Login = () => {
             const acceso = await resolverAccesoPostLogin(formData.email, basePath);
             if (!acceso.permitido) {
               cerrarSesionApi();
-              if (acceso.motivo === "bloqueada") {
-                setError("password", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
-                avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
-              } else {
-                setError("password", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
-              }
+              setError("password", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
               return;
             }
             setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
@@ -521,9 +525,8 @@ const Login = () => {
               avisarDemasiadosIntentos();
               return;
             }
-            if (esRespuestaCuentaBloqueada(error)) {
-              setError("password", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
-              avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+            if (esRespuestaCuentaNoActiva(error)) {
+              avisarCuentaInhabilitada("password", "no_activa");
               return;
             }
             setError("password", {
@@ -551,9 +554,12 @@ const Login = () => {
           });
         } else if (esDemasiadosIntentos(error)) {
           avisarDemasiadosIntentos();
-        } else if (esRespuestaCuentaBloqueada(error)) {
-          setError("otp", { type: "server", message: MENSAJE_CUENTA_BLOQUEADA });
-          avisarCuentaBloqueada(DESBLOQUEO_CUENTA_CLIENTE);
+        } else if (esRespuestaBloqueoAdmin(error)) {
+          avisarCuentaInhabilitada("otp", "bloqueada_admin");
+        } else if (status === 401) {
+          avisarCuentaInhabilitada("otp", "vencida");
+        } else if (esRespuestaCuentaNoActiva(error)) {
+          avisarCuentaInhabilitada("otp", "no_activa");
         } else {
           setError("otp", {
             type: "server",

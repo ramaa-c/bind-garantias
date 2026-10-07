@@ -71,9 +71,7 @@ const Empresas = lazy(() => import("./pages/admin/empresas/Empresas"));
 const EmpresaDetalle = lazy(
   () => import("./pages/admin/empresas/EmpresaDetalle"),
 );
-const RolesPermisos = lazy(
-  () => import("./pages/admin/configuracion/RolesPermisos"),
-);
+const Usuarios = lazy(() => import("./pages/admin/usuarios/Usuarios"));
 const Terminos = lazy(() => import("./pages/admin/configuracion/Terminos"));
 const CadenasValor = lazy(
   () => import("./pages/admin/cadenas-valor/CadenasValor"),
@@ -240,8 +238,8 @@ const rutasCliente = (
               />
 
               <Route
-                path="admin/roles-permisos"
-                element={<Navigate to="/admin/roles-permisos" replace />}
+                path="admin/usuarios"
+                element={<Navigate to="/admin/usuarios" replace />}
               />
               <Route
                 path="admin/terminos"
@@ -299,11 +297,11 @@ const rutasAdmin = (
       }
     />
     <Route
-      path="/admin/roles-permisos"
+      path="/admin/usuarios"
       element={
         <AdminGuard>
           <AdminLayout>
-            <RolesPermisos />
+            <Usuarios />
           </AdminLayout>
         </AdminGuard>
       }

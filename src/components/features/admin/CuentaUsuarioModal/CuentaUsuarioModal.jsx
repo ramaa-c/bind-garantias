@@ -18,6 +18,8 @@ import {
   useActualizarUsuario,
   useCambiarPassword,
 } from "../../../../hooks/useUsuario";
+import { esClaveActualIncorrecta } from "../../../../utils/usuarioUtils";
+import { cerrarSesionLocal } from "../../../../api/axios";
 import styles from "./CuentaUsuarioModal.module.css";
 
 const usernameSchema = z.object({
@@ -154,15 +156,30 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
       },
       {
         onSuccess: () => {
-          toast.success("Contraseña actualizada correctamente");
-          resetPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+          cerrarSesionLocal({
+            tipo: "success",
+            titulo: "Contraseña actualizada",
+            descripcion: "Cambiaste tu contraseña: volvé a ingresar.",
+          });
         },
         onError: (error) => {
           const status = error?.response?.status;
-          if (status === 400 || status === 401 || status === 403) {
+          if (esClaveActualIncorrecta(error)) {
             setPasswordError("oldPassword", {
               type: "server",
               message: "La contraseña actual es incorrecta",
+            });
+            return;
+          }
+          if (status === 401) {
+            cerrarSesionLocal();
+            return;
+          }
+          if (status === 400 || status === 403) {
+            toast.error("No se pudo actualizar la contraseña", {
+              description:
+                error?.response?.data?.message ||
+                "Revisá los datos ingresados e intentá nuevamente.",
             });
             return;
           }

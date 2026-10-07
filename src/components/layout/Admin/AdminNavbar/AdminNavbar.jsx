@@ -104,6 +104,7 @@ export default function AdminNavbar() {
       key: "configuracion",
       label: "Configuración",
       items: [
+        { label: "Usuarios", path: "/admin/usuarios" },
         { label: "Relaciones de Terceros", path: "/admin/tipos-relacion-socio" },
         { label: "Variables Parametrizables", path: "/admin/variables-parametrizacion" },
         { label: "Modo Offline", path: "/admin/modo-offline" },

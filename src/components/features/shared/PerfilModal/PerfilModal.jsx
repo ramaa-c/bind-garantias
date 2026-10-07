@@ -26,7 +26,11 @@ import { useSocioWebPorId, useActualizarSocio } from "../../../../hooks/useSocio
 import { useVendor } from "../../../../hooks/useVendor";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
-import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
+import {
+  extraerRegistroUsuario,
+  esClaveActualIncorrecta,
+} from "../../../../utils/usuarioUtils";
+import { cerrarSesionLocal } from "../../../../api/axios";
 import {
   useObtenerPorNombreOEmail,
   useActualizarUsuario,
@@ -354,15 +358,30 @@ export const PerfilModal = ({ isOpen, onClose }) => {
       },
       {
         onSuccess: () => {
-          toast.success("Contraseña actualizada correctamente");
-          resetPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+          cerrarSesionLocal({
+            tipo: "success",
+            titulo: "Contraseña actualizada",
+            descripcion: "Cambiaste tu contraseña: volvé a ingresar.",
+          });
         },
         onError: (error) => {
           const status = error?.response?.status;
-          if (status === 400 || status === 401 || status === 403) {
+          if (esClaveActualIncorrecta(error)) {
             setPasswordError("oldPassword", {
               type: "server",
               message: "La contraseña actual es incorrecta",
+            });
+            return;
+          }
+          if (status === 401) {
+            cerrarSesionLocal();
+            return;
+          }
+          if (status === 400 || status === 403) {
+            toast.error("No se pudo actualizar la contraseña", {
+              description:
+                error?.response?.data?.message ||
+                "Revisá los datos ingresados e intentá nuevamente.",
             });
             return;
           }
