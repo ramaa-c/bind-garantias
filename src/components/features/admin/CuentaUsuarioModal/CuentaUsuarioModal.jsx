@@ -18,7 +18,10 @@ import {
   useActualizarUsuario,
   useCambiarPassword,
 } from "../../../../hooks/useUsuario";
-import { esClaveActualIncorrecta } from "../../../../utils/usuarioUtils";
+import {
+  esClaveActualIncorrecta,
+  esDemasiadosIntentos,
+} from "../../../../utils/usuarioUtils";
 import { cerrarSesionLocal } from "../../../../api/axios";
 import styles from "./CuentaUsuarioModal.module.css";
 
@@ -164,6 +167,12 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
         },
         onError: (error) => {
           const status = error?.response?.status;
+          if (esDemasiadosIntentos(error)) {
+            toast.error("Demasiados intentos", {
+              description: "Intentá nuevamente más tarde.",
+            });
+            return;
+          }
           if (esClaveActualIncorrecta(error)) {
             setPasswordError("oldPassword", {
               type: "server",

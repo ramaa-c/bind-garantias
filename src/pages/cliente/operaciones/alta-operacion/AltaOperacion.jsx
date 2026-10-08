@@ -32,8 +32,6 @@ import { useTiposProducto, useMonedas } from "../../../../hooks/useCatalogos";
 import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
 import { useObtenerVariableParametrizacion } from "../../../../hooks/useVariablesParametrizacion";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
-import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
-import { useAuthStore } from "../../../../store/useAuthStore";
 import { PANTALLA_LINEAS } from "../../../../utils/pantallasCda";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
@@ -129,11 +127,6 @@ export const AltaOperacion = () => {
     "PorcentajeMinimoSolicitud",
   );
 
-  // UsuarioID requerido por cda/execute (ver useCdaEngine) - mismo patrón
-  // que Paso1Cuit.jsx para resolver el UsuarioWebID del usuario logueado.
-  const user = useAuthStore((state) => state.user);
-  const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email);
-  const usuarioWebId = usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id;
   const { ejecutarValidaciones } = useCdaEngine();
 
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
@@ -559,7 +552,6 @@ export const AltaOperacion = () => {
         PANTALLA_LINEAS,
         { lineaId: tipoLimiteIdReal },
         Number(cadenaSlug),
-        usuarioWebId,
       );
       const rechazosCdaLinea = resultCdaLinea.success
         ? []

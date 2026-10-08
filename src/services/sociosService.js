@@ -1,6 +1,7 @@
 import api from "../api/axios";
 import { sociosAdapter } from "../adapters/sociosAdapter";
 import { socioArchivoService } from "./socioArchivoService";
+import { conCacheCuit, esLimiteDeConsultas } from "../utils/cacheConsultasCuit";
 
 const cuitCache = new Map();
 const cuitWebCache = new Map();
@@ -56,6 +57,22 @@ export const sociosService = {
   },
 
   // Trae lista de socios (SGRPlus Core)
+  cuitDisponibleEnWeb: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    const { data } = await api.get(`api/Socio/DisponibilidadCuit/${cuitLimpio}`, {
+      noRetry: true,
+    });
+    return String(data?.resultado ?? "").toLowerCase() === "aceptado";
+  },
+
+  vinculoPermitidoEnSgrplus: async (cuit) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+    const { data } = await api.get(`sgrplus/Socio/ValidarVinculo/${cuitLimpio}`, {
+      noRetry: true,
+    });
+    return String(data?.resultado ?? "").toLowerCase() === "aceptado";
+  },
+
   obtenerSociosSgrplus: async (params = {}) => {
     try {
       const response = await api.get("sgrplus/Socios", { params });
@@ -150,17 +167,19 @@ export const sociosService = {
   // CertificadoVigente (el backend reutiliza el código HTTP como semántica
   // de negocio, no es un fallo de autenticación real). Nunca tira: devuelve
   // { valido, mensaje } para no necesitar try/catch afuera.
-  validarCuit: async (cuit) => {
+  validarCuit: (cuit) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
-    try {
-      const response = await api.get(`api/Socio/ValidarCuit/${cuitLimpio}`);
-      return { valido: true, mensaje: response.data };
-    } catch (error) {
-      if (error.response?.status === 401) {
-        return { valido: false, mensaje: error.response.data };
+    return conCacheCuit("validar-cuit", cuitLimpio, async () => {
+      try {
+        const response = await api.get(`api/Socio/ValidarCuit/${cuitLimpio}`);
+        return { valido: true, mensaje: response.data };
+      } catch (error) {
+        if (error.response?.status === 401) {
+          return { valido: false, mensaje: error.response.data };
+        }
+        throw error;
       }
-      throw error;
-    }
+    });
   },
 
   // GET api/Socio/CertificadoPYME?SocioID=X - Certificado(s) PyME ya
@@ -222,6 +241,15 @@ export const sociosService = {
     const response = await api.put("api/Socio", sociosAdapter.adaptarPayload2(socioData));
     return response.data;
   },
+
+  vincularUsuarioPorEmail: async ({ socioId, email }) =>
+    (
+      await api.post(
+        "api/SocioUsuario/porEmail",
+        sociosAdapter.adaptarVinculoPorEmail({ socioid: socioId, email }),
+        { noRetry: true },
+      )
+    ).data,
 
   // POST api/SocioUsuario - Carga de nueva relación entre socio y usuario
   vincularSocioUsuario: async (socioUsuarioData) => {
@@ -336,7 +364,7 @@ export const sociosService = {
   // fuentes. noRetry:true sigue puesto en cada intento porque el reintento
   // automático del interceptor global (ante 5xx) multiplicaría los pedidos
   // igual que ya se evita en el resto de las llamadas a LUFE.
-  obtenerEntidadLufe: async (cuit) => {
+  obtenerEntidadLufe: (cuit) => {
     const cuitLimpio = String(cuit).replace(/\D/g, "");
     const pedir = () =>
       api.get(`api/lufe/entidad/${cuitLimpio}`, {
@@ -344,18 +372,21 @@ export const sociosService = {
         noRetry: true,
       });
 
-    try {
-      const response = await pedir();
-      return response.data;
-    } catch (error) {
-      console.warn(
-        "[sociosService] Primer intento contra LUFE falló, reintentando una vez (posible arranque en frío)...",
-        error,
-      );
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      const response = await pedir();
-      return response.data;
-    }
+    return conCacheCuit("lufe-entidad", cuitLimpio, async () => {
+      try {
+        const response = await pedir();
+        return response.data;
+      } catch (error) {
+        if (esLimiteDeConsultas(error)) throw error;
+        console.warn(
+          "[sociosService] Primer intento contra LUFE falló, reintentando una vez (posible arranque en frío)...",
+          error,
+        );
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const response = await pedir();
+        return response.data;
+      }
+    });
   },
 
   // Helper para normalizar la respuesta de LUFE Entidad al formato de AFIP datosgenerales

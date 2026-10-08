@@ -680,9 +680,11 @@ export const AltaDatosEmpresa = () => {
           </p>
 
           <div className={styles.modalHighlight}>
-            <strong className={styles.modalHighlightTitle}>
-              {socioExistenteModal.socioData?.denominacion}
-            </strong>
+            {socioExistenteModal.socioData?.denominacion && (
+              <strong className={styles.modalHighlightTitle}>
+                {socioExistenteModal.socioData.denominacion}
+              </strong>
+            )}
             <span className={styles.modalHighlightSubtitle}>
               CUIT {socioExistenteModal.socioData?.cuit}
             </span>

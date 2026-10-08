@@ -29,6 +29,7 @@ import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCui
 import {
   extraerRegistroUsuario,
   esClaveActualIncorrecta,
+  esDemasiadosIntentos,
 } from "../../../../utils/usuarioUtils";
 import { cerrarSesionLocal } from "../../../../api/axios";
 import {
@@ -366,6 +367,12 @@ export const PerfilModal = ({ isOpen, onClose }) => {
         },
         onError: (error) => {
           const status = error?.response?.status;
+          if (esDemasiadosIntentos(error)) {
+            toast.error("Demasiados intentos", {
+              description: "Intentá nuevamente más tarde.",
+            });
+            return;
+          }
           if (esClaveActualIncorrecta(error)) {
             setPasswordError("oldPassword", {
               type: "server",

@@ -30,17 +30,17 @@ export const useCdaEngine = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const ejecutarValidaciones = useCallback(async (pantalla, entidad, cadenaValorId = null, usuarioId = null) => {
+  const ejecutarValidaciones = useCallback(async (pantalla, entidad, cadenaValorId = null) => {
     setLoading(true);
     setError(null);
 
     try {
       console.log(
-        `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}", entidad ${JSON.stringify(entidad)}, CadenaValorID ${cadenaValorId} y UsuarioID ${usuarioId}`,
+        `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}", entidad ${JSON.stringify(entidad)}, CadenaValorID ${cadenaValorId}`,
       );
 
       // 202: WSResponseCDA { Result: true, ListTest: [...] } - pasó todo.
-      const data = await cdaService.ejecutarCda(pantalla, entidad, cadenaValorId, usuarioId);
+      const data = await cdaService.ejecutarCda(pantalla, entidad, cadenaValorId);
 
       // ⚠️ Cuando una integración está deshabilitada desde Modo Offline
       // (StatusPlataforma), el backend NO marca como pendiente/rechazado el

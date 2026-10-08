@@ -67,10 +67,6 @@ export const cdaService = {
     return created?.pantallagrupocdaid;
   },
 
-  // ⚠️ UsuarioID es requerido por el backend para resolver la ejecución del
-  // grupo: sin él, cda/execute devuelve 409 "Dato Requerido Faltante" aunque
-  // ninguna integración esté caída (confirmado comparando contra Swagger).
-  //
   // ⚠️ El backend dejó de aceptar Cuit por completo (confirmado en vivo:
   // mandarlo da el mismo 409 que no mandar nada). Ahora pide una entidad —
   // SocioID, TerceroID o LineaID — para resolver contra quién evalúa los
@@ -86,11 +82,10 @@ export const cdaService = {
   // evalúa un único CDA — a costa de nunca generar una fila de cierre de
   // grupo (CdaID 0). Reportado al backend: no hay forma de forzar un único CDA
   // y cerrar el grupo en la misma llamada.
-  ejecutarCda: async (pantallaOrObj, entidad, cadenaValorId, usuarioId, valorParticularExpresion) => {
+  ejecutarCda: async (pantallaOrObj, entidad, cadenaValorId, valorParticularExpresion) => {
     let Pantalla = pantallaOrObj;
     let SocioID, TerceroID, LineaID;
     let CadenaValorID = cadenaValorId;
-    let UsuarioID = usuarioId;
     let ValorParticularExpresion = valorParticularExpresion;
     if (typeof pantallaOrObj === "object" && pantallaOrObj !== null) {
       Pantalla = pantallaOrObj.pantalla || pantallaOrObj.Pantalla;
@@ -98,7 +93,6 @@ export const cdaService = {
       TerceroID = pantallaOrObj.terceroId ?? pantallaOrObj.TerceroID;
       LineaID = pantallaOrObj.lineaId ?? pantallaOrObj.LineaID;
       CadenaValorID = pantallaOrObj.cadenaValorId || pantallaOrObj.CadenaValorID || pantallaOrObj.cadenavalorid || cadenaValorId;
-      UsuarioID = pantallaOrObj.usuarioId || pantallaOrObj.UsuarioID || pantallaOrObj.usuarioid || usuarioId;
       ValorParticularExpresion =
         pantallaOrObj.valorParticularExpresion || pantallaOrObj.ValorParticularExpresion || valorParticularExpresion;
     } else if (entidad && typeof entidad === "object") {
@@ -118,9 +112,6 @@ export const cdaService = {
     }
     if (CadenaValorID !== undefined && CadenaValorID !== null && String(CadenaValorID).trim() !== "" && !isNaN(Number(CadenaValorID))) {
       params.CadenaValorID = Number(CadenaValorID);
-    }
-    if (UsuarioID !== undefined && UsuarioID !== null && String(UsuarioID).trim() !== "" && !isNaN(Number(UsuarioID))) {
-      params.UsuarioID = Number(UsuarioID);
     }
     if (ValorParticularExpresion && String(ValorParticularExpresion).trim()) {
       params.ValorParticularExpresion = String(ValorParticularExpresion).trim();
@@ -170,7 +161,7 @@ export const cdaService = {
   // combinarEstadoCdas en utils/executeCda.js), pero es temporal: si más
   // adelante se reejecuta el grupo completo, este CDA vuelve a evaluarse con
   // su regla real y esa fila de cierre nueva sí puede volver a rechazarlo.
-  reejecutarCda: async ({ cdaId, socioId, terceroId, lineaId, usuarioId, pantalla, cadenaValorId, valorParticularExpresion }) => {
+  reejecutarCda: async ({ cdaId, socioId, terceroId, lineaId, pantalla, cadenaValorId, valorParticularExpresion }) => {
     const params = { CdaID: cdaId };
     if (socioId !== undefined && socioId !== null && String(socioId).trim() !== "") {
       params.SocioID = Number(socioId);
@@ -181,7 +172,6 @@ export const cdaService = {
     if (lineaId !== undefined && lineaId !== null && String(lineaId).trim() !== "") {
       params.LineaID = Number(lineaId);
     }
-    if (usuarioId) params.UsuarioID = usuarioId;
     if (pantalla) params.Pantalla = pantalla;
     if (cadenaValorId !== undefined && cadenaValorId !== null && String(cadenaValorId).trim() !== "" && !isNaN(Number(cadenaValorId))) {
       params.CadenaValorID = Number(cadenaValorId);

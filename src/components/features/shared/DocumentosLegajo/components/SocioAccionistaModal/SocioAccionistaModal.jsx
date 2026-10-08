@@ -13,7 +13,6 @@ import { ProcesamientoModal } from "../../../../../ui/ProcesamientoModal/Procesa
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
-import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../../../utils/executeCda";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
@@ -141,7 +140,6 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
-  const usuarioWebIdActual = useUsuarioWebIdActual();
   const queryClient = useQueryClient();
   // Cuando el CDA rechaza en onConfirmSave (edición), en vez de un timeout
   // fijo se espera a que el usuario apriete "Continuar" en el
@@ -770,7 +768,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       return;
     }
 
-    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam, usuarioWebIdActual);
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam);
 
     // Sin esto, la card de la lista (AccionistasSection, vía
     // useEstadoCdaTerceros) y el badge de TerceroCdaEstado siguen mostrando
@@ -928,7 +926,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       hasError: false,
       isSystemError: false,
     });
-    const resultCda = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId }, cadenaValorIdParam, usuarioWebIdActual);
+    const resultCda = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId }, cadenaValorIdParam);
     // Ver comentario equivalente en handleAfipLookup: sin esto la card
     // de la lista y el badge de TerceroCdaEstado quedan mostrando el
     // estado viejo hasta que algo más los refresque.

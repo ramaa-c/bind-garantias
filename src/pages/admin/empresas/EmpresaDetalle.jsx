@@ -634,7 +634,6 @@ const NombreUsuario = ({ usuarioId }) => {
 // DocumentacionTab y TercerosTab, ver detectarCadenaValorId en
 // utils/executeCda.js).
 function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
-  const usuarioWebId = useAuthStore((state) => state.user?.usuarioWebId) || 0;
   const queryClient = useQueryClient();
   const [cdaEnCurso, setCdaEnCurso] = useState(null);
   const [isReejecutandoGrupo, setIsReejecutandoGrupo] = useState(false);
@@ -966,7 +965,6 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
         PANTALLA_EMPRESA,
         { socioId: socio.socioid },
         cadenaValorId,
-        usuarioWebId,
       );
       toast.success("CDAs aprobados", {
         description: "El grupo completo se volvió a evaluar y pasó correctamente.",
@@ -1022,7 +1020,6 @@ function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
       {
         cdaId: item.cdaid,
         socioId: socio.socioid,
-        usuarioId: usuarioWebId,
         pantalla: PANTALLA_EMPRESA,
         cadenaValorId,
         valorParticularExpresion,

@@ -105,6 +105,13 @@ const esSesionVencida = (error) => {
   return Boolean(config?.__conToken) || useAuthStore.getState().isAuthenticated;
 };
 
+const RUTAS_CON_LIMITE_POR_CUIT =
+  /(api\/(nosis|afip|lufe|Socio\/(ValidarCuit|CertificadoVigente|DisponibilidadCuit)|TerceroRelacionado)|sgrplus\/Socio\/ValidarVinculo)\b/i;
+
+const esLimiteDeConsultasPorCuit = (error) =>
+  error.response?.status === 429 &&
+  RUTAS_CON_LIMITE_POR_CUIT.test(error.config?.url || "");
+
 const rutaDeLogin = () => {
   const path = window.location.pathname;
   if (path.startsWith("/admin")) return "/login";
@@ -171,6 +178,15 @@ api.interceptors.response.use(
 
     if (esSesionVencida(error)) {
       cerrarSesionLocal();
+      return Promise.reject(error);
+    }
+
+    if (esLimiteDeConsultasPorCuit(error)) {
+      toast.error("Demasiados pedidos", {
+        id: "limite-consultas-cuit",
+        description:
+          "Alcanzaste el límite de consultas de datos por CUIT. Intentá nuevamente más tarde.",
+      });
       return Promise.reject(error);
     }
 

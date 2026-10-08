@@ -7,7 +7,11 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 1,
+      retry: (fallas, error) => {
+        const status = error?.response?.status;
+        if (status >= 400 && status < 500) return false;
+        return fallas < 1;
+      },
     },
   },
 });

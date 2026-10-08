@@ -7,7 +7,6 @@ import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { sociosService } from "../../../../services/sociosService";
 import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
-import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useObtenerPorCadenaValorIdWeb } from "../../../../hooks/useCadenaValor";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
@@ -53,8 +52,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
   const { mutateAsync: validarSocioCore } = useValidarSocioCore();
   const [isValidatingSocio, setIsValidatingSocio] = useState(false);
   const user = useAuthStore((state) => state.user);
-  const { data: usuarioDb } = useObtenerPorNombreOEmail(user?.email);
-  const usuarioWebId = usuarioDb?.usuariowebid || usuarioDb?.UsuarioWebID || usuarioDb?.id;
   const { data: cadenaData } = useObtenerPorCadenaValorIdWeb(cadenaValorIdParam);
   const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
 
@@ -169,47 +166,28 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
       }
 
       try {
-        const sociosWebEncontrados = await sociosService.obtenerSocios({
-          Cuit: cuit,
-        });
-
-        if (sociosWebEncontrados && sociosWebEncontrados.length > 0) {
-          if (onSocioExistente) {
-            onSocioExistente(sociosWebEncontrados[0], "ya_existe");
-          }
-          return; // Bloquea a todos (incluyendo vendors) porque ya está registrada en la web
+        const disponibleEnWeb = await sociosService.cuitDisponibleEnWeb(cuit);
+        if (!disponibleEnWeb) {
+          if (onSocioExistente) onSocioExistente({ cuit }, "ya_existe");
+          return;
         }
 
-        // Si no está en la web, verificamos si existe históricamente en SGRPlus Core
-        const sociosSgrEncontrados = await sociosService.obtenerSociosSgrplus({
-          Cuit: cuit,
-        });
-
-        if (sociosSgrEncontrados && sociosSgrEncontrados.length > 0 && !isVendor) {
-          const socioSgrExistente = sociosSgrEncontrados[0];
-          const socioEmailStr = socioSgrExistente.email
-            ? socioSgrExistente.email.trim()
-            : "";
-          const currentUserEmail = user?.email ? user.email.trim() : "";
-
-          if (
-            socioEmailStr &&
-            currentUserEmail &&
-            socioEmailStr.toLowerCase() !== currentUserEmail.toLowerCase()
-          ) {
-            if (onSocioExistente) {
-              onSocioExistente(socioSgrExistente, "email_mismatch");
-            }
-            return; // Bloquea al usuario normal porque el email de SGRPlus no coincide
+        if (!isVendor) {
+          const vinculoPermitido = await sociosService.vinculoPermitidoEnSgrplus(cuit);
+          if (!vinculoPermitido) {
+            if (onSocioExistente) onSocioExistente({ cuit }, "email_mismatch");
+            return;
           }
-          // Si es vendor, o si es un usuario normal y el email SÍ coincide,
-          // no hacemos return. Dejamos que el flujo continúe.
         }
       } catch (errorSocios) {
-        console.warn(
-          "Error consultando socios para validación de existencia:",
-          errorSocios,
-        );
+        console.warn("Error verificando si el CUIT ya está registrado:", errorSocios);
+        if (errorSocios?.response?.status !== 429) {
+          setError("cuit", {
+            type: "manual",
+            message: "No pudimos verificar si el CUIT ya está registrado. Intentá nuevamente.",
+          });
+        }
+        return;
       }
 
       // Nada bloqueó: antes de avisar que la decisión es irreversible,
@@ -294,7 +272,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
       "PANTALLA_INGRESO_CUIT",
       { socioId: socioIdCreadoRef.current },
       cadenaValorIdParam,
-      usuarioWebId,
     );
 
     if (!resultCda.success) {
@@ -640,16 +617,6 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         ...payloadSocio,
         socioid: socioId,
       });
-
-      if (usuarioWebId) {
-        await sociosService.vincularSocioUsuario({
-          usuariowebid: usuarioWebId,
-          socioid: socioId,
-          momentocreacion: getCSharpIsoDate(),
-        });
-      } else {
-        console.warn("No se pudo vincular el socio al usuario logueado: usuarioWebId no resolvió a tiempo.");
-      }
 
       if (onSocioCreado) {
         onSocioCreado(socioId);

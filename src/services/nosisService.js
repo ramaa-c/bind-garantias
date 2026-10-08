@@ -1,4 +1,5 @@
 import api from "../api/axios";
+import { conCacheCuit, esLimiteDeConsultas } from "../utils/cacheConsultasCuit";
 
 // El cliente de Nosis del lado del backend arranca "en frío": la primera
 // consulta después de un rato sin uso puede devolver un cuerpo vacío/
@@ -52,29 +53,32 @@ export const nosisService = {
   // por un arranque en frío puntual: nunca tira (equivalente al `null` que
   // ya devolvía antes), los callers ya lo tratan como "no hay datos" y
   // caen a AFIP/LUFE.
-  obtenerDatosNormalizados: async (cuit) => {
-    try {
-      const primerIntento = extraerDiccionario(
-        await nosisService.obtenerVariables(cuit),
-      );
-      if (primerIntento) return primerIntento;
-    } catch (error) {
-      console.warn(
-        "[nosisService] Primer intento contra Nosis falló, reintentando una vez (posible arranque en frío del backend)...",
-        error,
-      );
-    }
+  obtenerDatosNormalizados: (cuit) =>
+    conCacheCuit("nosis", cuit, async () => {
+      try {
+        const respuesta = await nosisService.obtenerVariables(cuit);
+        if (respuesta === null) return null;
+        const primerIntento = extraerDiccionario(respuesta);
+        if (primerIntento) return primerIntento;
+      } catch (error) {
+        if (esLimiteDeConsultas(error)) throw error;
+        console.warn(
+          "[nosisService] Primer intento contra Nosis falló, reintentando una vez (posible arranque en frío del backend)...",
+          error,
+        );
+      }
 
-    await new Promise((resolve) => setTimeout(resolve, ESPERA_REINTENTO_MS));
+      await new Promise((resolve) => setTimeout(resolve, ESPERA_REINTENTO_MS));
 
-    try {
-      return extraerDiccionario(await nosisService.obtenerVariables(cuit));
-    } catch (error) {
-      console.warn(
-        "[nosisService] Nosis volvió a fallar en el reintento, se cae a AFIP/LUFE.",
-        error,
-      );
-      return null;
-    }
-  },
+      try {
+        return extraerDiccionario(await nosisService.obtenerVariables(cuit));
+      } catch (error) {
+        if (esLimiteDeConsultas(error)) throw error;
+        console.warn(
+          "[nosisService] Nosis volvió a fallar en el reintento, se cae a AFIP/LUFE.",
+          error,
+        );
+        return null;
+      }
+    }),
 };

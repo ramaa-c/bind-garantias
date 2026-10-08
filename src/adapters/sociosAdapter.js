@@ -106,6 +106,14 @@ export const sociosAdapter = {
       momentoCreacion: d.momentocreacion,
     };
   },
+  adaptarVinculoPorEmail: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      SocioID: d.socioid,
+      Email: d.email,
+    };
+  },
   adaptarPayload4: (data) => {
     if (!data) return data;
     const d = normalizarClaves(data);
