@@ -49,7 +49,7 @@ const IconoDniDorso = (props) => (
   <FiCreditCard {...props} style={{ transform: "scaleX(-1)" }} />
 );
 
-const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError }) => {
+const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, onDownload, faseDescarga, fileKey, hasError, isLoading }) => {
   const [isDragging, setIsDragging] = useState(false);
   return (
     <div className={styles.dropzoneWrapper}>
@@ -86,6 +86,7 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
         formatos={FORMATOS_ARCHIVO.documento.etiqueta}
         onCamara={() => document.getElementById(`camera-input-${fileKey}`).click()}
         compact
+        isLoading={isLoading}
         hasError={hasError}
         file={
           file
@@ -123,7 +124,7 @@ const DropzoneField = ({ file, title, subtitle, icon, onChange, onEdit, onView, 
 const DEFAULT_DNI_TERCEROS = {};
 const DEFAULT_ACCIONISTAS = [];
 
-export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
+export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioIdActivo, archivosBackend, cargandoArchivos = false, accionistas = DEFAULT_ACCIONISTAS, dniTerceros = DEFAULT_DNI_TERCEROS }) {
   const { cadenaSlug } = useCadenaActiva();
   const cadenaValorIdParam = Number(cadenaSlug) || 0;
   const isAdmin =
@@ -355,6 +356,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       }
     }
 
+    const recienAbierto = isOpen && !wasOpen;
+    const frenteLocal = recienAbierto ? null : dniFrenteFile;
+    const dorsoLocal = recienAbierto ? null : dniDorsoFile;
     const cuitLimpio = String(cuitValue || "").replace(/\D/g, "");
     const nombreLimpio = normalizarTexto(nombreValue || socio?.nombre);
 
@@ -364,7 +368,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       if (memoryFiles?.dniFrente) {
         setDniFrenteFile(memoryFiles.dniFrente);
         setErrorDniFrente(false);
-      } else if (!(dniFrenteFile instanceof File)) {
+      } else if (!(frenteLocal instanceof File)) {
         const frente = archivosBackend?.find((a) => {
           if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"]) return false;
           const descNorm = normalizarTexto(a.descripcion);
@@ -389,7 +393,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       if (memoryFiles?.dniDorso) {
         setDniDorsoFile(memoryFiles.dniDorso);
         setErrorDniDorso(false);
-      } else if (!(dniDorsoFile instanceof File)) {
+      } else if (!(dorsoLocal instanceof File)) {
         const dorso = archivosBackend?.find((a) => {
           if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-dorso"]) return false;
           const descNorm = normalizarTexto(a.descripcion);
@@ -828,7 +832,12 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   const handlePreSubmit = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
+    if (cargandoArchivos && (!dniFrenteFile || !dniDorsoFile)) {
+      toast.info("Esperá a que terminen de cargar las imágenes del DNI.");
+      return;
+    }
+
     const calleVal = getValues("calle") || "";
     const numeroVal = getValues("numero") || "";
     const pisoVal = getValues("piso") || "";
@@ -1464,6 +1473,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   subtitle="Imagen clara y legible (Obligatorio)"
                   icon={FiCreditCard}
                   fileKey="frente"
+                  isLoading={cargandoArchivos && !dniFrenteFile}
                   hasError={errorDniFrente}
                   onChange={(f) => { setDniFrenteFile(f); setFilesChanged(true); setErrorDniFrente(false); }}
                   onEdit={() => document.getElementById(`file-input-frente`).click()}
@@ -1481,6 +1491,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   subtitle="Imagen clara y legible (Obligatorio)"
                   icon={IconoDniDorso}
                   fileKey="dorso"
+                  isLoading={cargandoArchivos && !dniDorsoFile}
                   hasError={errorDniDorso}
                   onChange={(f) => { setDniDorsoFile(f); setFilesChanged(true); setErrorDniDorso(false); }}
                   onEdit={() => document.getElementById(`file-input-dorso`).click()}
