@@ -1,7 +1,10 @@
 // Resolución de "a qué cadena de valor corresponde esta URL", sin llevar el
-// ID en el path. Se apoya en /tenants.json (ver public/tenants.json), un
-// archivo estático que vive en la carpeta del sitio en IIS y que se puede
-// editar ahí mismo para dar de alta una cadena nueva, sin rebuild.
+// ID en el path. Se apoya en /tenants.json, que IIS resuelve por hostname
+// (regla "Tenant por host" del web.config) contra public/tenants/<hostname>.json:
+// cada dominio recibe solo su propia entrada, nunca el mapa completo. Para dar
+// de alta una cadena nueva alcanza con agregar ese archivo en la carpeta del
+// sitio en IIS, sin rebuild. Un hostname sin archivo (admin, IPs de prueba)
+// recibe 404 y cae en modo legacy.
 //
 // Hay dos modos posibles, resueltos una sola vez al arrancar la app:
 //
@@ -65,25 +68,6 @@ const leerCadenasDelArchivo = async () => {
     );
     return {};
   }
-};
-
-// Camino inverso a resolverTenant(): ahí se parte del hostname para llegar
-// al ID de cadena; acá se parte del ID para llegar a la URL pública. Hace
-// falta cuando se arma un link para un usuario que NO está navegando esa
-// cadena en este momento (ej: el admin dando de alta un vendor vinculado a
-// otro banco) — no se puede usar window.location.origin de la pestaña
-// actual porque esa es la del admin, no la del banco destino.
-export const resolverUrlPublicaCadena = async (cadenaId) => {
-  const cadenas = await leerCadenasDelArchivo();
-  const hostname = Object.keys(cadenas).find(
-    (host) => Number(cadenas[host]) === Number(cadenaId),
-  );
-  if (hostname) return `https://${hostname}`;
-
-  // Esa cadena todavía no tiene hostname propio en tenants.json: se arma
-  // igual que en modo legacy, con el ID en el path, sobre el mismo origen
-  // desde el que se está armando el link.
-  return `${window.location.origin}/${cadenaId}`;
 };
 
 export const resolverTenant = async () => {
