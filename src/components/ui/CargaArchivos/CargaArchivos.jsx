@@ -34,6 +34,7 @@ export const CargaArchivos = ({
   onDelete,
   hasError = false,
   isUploading = false,
+  isLoading = false,
   // "cargando" | "listo" | null - ver useDescargaConFeedback.
   faseDescarga = null,
   className = "",
@@ -47,6 +48,15 @@ export const CargaArchivos = ({
         <Spinner size={36} />
         <h4 className={styles.text}>Subiendo archivo...</h4>
         <p className={styles.subtext}>Puede tardar unos segundos si el archivo es grande.</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className={`${styles.box} ${styles.uploading} ${compact ? styles.compact : ""} ${className}`} style={style} aria-busy="true">
+        <Spinner size={compact ? 28 : 36} />
+        <h4 className={styles.text}>Cargando archivo...</h4>
       </div>
     );
   }
