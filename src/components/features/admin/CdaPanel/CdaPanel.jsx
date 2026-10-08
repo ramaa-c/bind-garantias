@@ -13,6 +13,8 @@ import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CdaPanel.module.css";
 
+const SIN_SINCRONIZAR = Symbol("sinSincronizar");
+
 // Busca, subiendo por los ancestros de `el`, el primer contenedor con scroll
 // PROPIO real (overflowY auto/scroll Y contenido más alto que su caja).
 // Se detiene antes de document.body: nunca deja que el scroll se le escape
@@ -64,7 +66,16 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   // pierde su estado si el admin vuelve a tildar el filtro por pantalla
   // antes de guardar. cdasEnPantalla es solo un recorte para MOSTRAR (qué
   // tarjetas se listan), nunca para decidir qué se guarda.
-  const allCdasListSinAcotar = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(esCdaActivoEstricto);
+  const linkedCdasList = Array.isArray(grupoData?.cdas) ? grupoData.cdas : grupoData?.cdas?.items || grupoData?.cdas?.data || [];
+  const idsVinculadosActivos = new Set(
+    linkedCdasList
+      .filter(esCdaActivo)
+      .map((c) => Number(c.cdaid ?? c.CdaId ?? c.CdaID))
+      .filter((id) => !Number.isNaN(id)),
+  );
+  const allCdasListSinAcotar = (Array.isArray(todosCdas) ? todosCdas : todosCdas?.items || todosCdas?.data || []).filter(
+    (c) => esCdaActivoEstricto(c) || idsVinculadosActivos.has(Number(c.cdaid ?? c.CdaId ?? c.CdaID)),
+  );
   // El recorte por cdaIdsDePantalla es un filtro cruzado entre cadenas
   // (agrega qué CDAs se vincularon a esta pantalla en CUALQUIER cadena),
   // pensado solo para acotar el checklist de "qué puedo agregar" en modo
@@ -77,10 +88,9 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   const cdasEnPantalla = mostrarTodosLosCdas || isReadOnly
     ? allCdasListSinAcotar
     : allCdasListSinAcotar.filter((c) => {
-        const id = c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID);
-        return (cdaIdsDePantalla || []).includes(Number(id));
+        const id = Number(c.cdaid !== undefined ? c.cdaid : (c.CdaId !== undefined ? c.CdaId : c.CdaID));
+        return (cdaIdsDePantalla || []).includes(id) || idsVinculadosActivos.has(id);
       });
-  const linkedCdasList = Array.isArray(grupoData?.cdas) ? grupoData.cdas : grupoData?.cdas?.items || grupoData?.cdas?.data || [];
 
   const getCdaId = (c) => {
     if (!c) return undefined;
@@ -152,8 +162,8 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   // por el filtro de pantalla - ver comentario en su declaración más arriba.
   // Sincronizado durante el render (en vez de en un efecto) comparando
   // contra la última referencia de todosCdas/grupoData ya procesada.
-  const [todosCdasSincronizados, setTodosCdasSincronizados] = useState(todosCdas);
-  const [grupoDataSincronizadoConfigs, setGrupoDataSincronizadoConfigs] = useState(grupoData);
+  const [todosCdasSincronizados, setTodosCdasSincronizados] = useState(SIN_SINCRONIZAR);
+  const [grupoDataSincronizadoConfigs, setGrupoDataSincronizadoConfigs] = useState(SIN_SINCRONIZAR);
 
   if (todosCdas !== todosCdasSincronizados || grupoData !== grupoDataSincronizadoConfigs) {
     setTodosCdasSincronizados(todosCdas);
@@ -162,7 +172,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
   }
 
   // Detectar el tipo de agrupación a partir de la expresión guardada
-  const [grupoDataSincronizadoExpr, setGrupoDataSincronizadoExpr] = useState(grupoData);
+  const [grupoDataSincronizadoExpr, setGrupoDataSincronizadoExpr] = useState(SIN_SINCRONIZAR);
 
   if (grupoData !== grupoDataSincronizadoExpr) {
     setGrupoDataSincronizadoExpr(grupoData);
@@ -774,6 +784,14 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
                           <strong className={styles.cdaTitleText}>{getCdaProperty(cda, "descripcion")}</strong>
                           {isDefault && (
                             <span className={styles.defaultBadge}>Por Defecto</span>
+                          )}
+                          {!esCdaActivoEstricto(cda) && (
+                            <span
+                              className={styles.inactivoGlobalBadge}
+                              title="Este CDA está desactivado en Criterios de Aceptación, pero sigue vinculado a esta cadena."
+                            >
+                              Desactivado globalmente
+                            </span>
                           )}
                         </div>
 
