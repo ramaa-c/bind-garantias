@@ -44,6 +44,31 @@ export const obtenerDatosEmpresaPorCuit = async (
 ) => {
   let nosisData = null;
   let afipData = null;
+  const cuitLimpio = String(cuit).replace(/\D/g, "");
+
+  const consultarLufe = async () => {
+    try {
+      const lufeData = await sociosService.obtenerEntidadLufe(cuit);
+      if (lufeData && lufeData.success) {
+        return sociosService.normalizarLufeAEstructuraAfip(lufeData);
+      }
+    } catch (lufeError) {
+      console.warn("Error consultando LUFE:", lufeError);
+    }
+    return null;
+  };
+
+  const consultarAfip = async () => {
+    try {
+      return await afipService.obtenerConstanciaInscripcion(cuit);
+    } catch (e) {
+      console.warn("Error consultando AFIP:", e);
+      return null;
+    }
+  };
+
+  const mesCierreDe = (data) =>
+    Number(data?.datosgenerales?.mescierre ?? data?.datosgenerales?.mes_cierre) || null;
 
   try {
     nosisData = await nosisService.obtenerDatosNormalizados(cuit);
@@ -51,27 +76,29 @@ export const obtenerDatosEmpresaPorCuit = async (
     console.warn("Error consultando Nosis, se intentará AFIP...", e);
   }
 
-  if (!nosisData) {
+  if (nosisData) {
+    afipData = await consultarAfip();
+    const esJuridica = nosisData.VI_TipoPersona === "1" || cuitLimpio.startsWith("3");
+    if (esJuridica && !mesCierreDe(afipData)) {
+      const lufeNormalizado = await consultarLufe();
+      if (afipData?.datosgenerales) {
+        const mesCierreLufe = mesCierreDe(lufeNormalizado);
+        if (mesCierreLufe) {
+          afipData = {
+            ...afipData,
+            datosgenerales: { ...afipData.datosgenerales, mescierre: mesCierreLufe },
+          };
+        }
+      } else if (lufeNormalizado) {
+        afipData = lufeNormalizado;
+      }
+    }
+  } else {
     onProgress?.("lufe");
-  }
-
-  try {
-    const lufeData = await sociosService.obtenerEntidadLufe(cuit);
-    if (lufeData && lufeData.success) {
-      afipData = sociosService.normalizarLufeAEstructuraAfip(lufeData);
-    }
-  } catch (lufeError) {
-    console.warn("Error consultando LUFE:", lufeError);
-  }
-
-  if (!afipData || !afipData.datosgenerales) {
-    if (!nosisData) {
+    afipData = await consultarLufe();
+    if (!afipData || !afipData.datosgenerales) {
       onProgress?.("afip");
-    }
-    try {
-      afipData = await afipService.obtenerConstanciaInscripcion(cuit);
-    } catch (e) {
-      console.warn("Error consultando AFIP como fallback...", e);
+      afipData = await consultarAfip();
     }
   }
 
@@ -84,8 +111,7 @@ export const obtenerDatosEmpresaPorCuit = async (
     };
   }
 
-  // Cascada Nosis -> LUFE -> AFIP, mismo orden que el resto de esta
-  // función. LUFE ya llega con tipoactividadsepymeid embebido en
+  // Cascada Nosis -> LUFE/AFIP. LUFE ya llega con tipoactividadsepymeid embebido en
   // datosgenerales (ver normalizarLufeAEstructuraAfip en sociosService.js);
   // para AFIP real hay que buscar la actividad de Orden 1 dentro del
   // arreglo (siempre es la principal).
@@ -106,7 +132,6 @@ export const obtenerDatosEmpresaPorCuit = async (
     return null;
   };
 
-  const cuitLimpio = String(cuit).replace(/\D/g, "");
   const deducirTipoPersonaPorPrefijo = () => {
     const prefix = cuitLimpio.substring(0, 2);
     if (
