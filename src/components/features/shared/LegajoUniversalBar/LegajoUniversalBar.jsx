@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useChannel } from "../../../../context/useChannel";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme, useActualizarSocio } from "../../../../hooks/useSocios";
+import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme } from "../../../../hooks/useSocios";
 import { useEstadoValidarSocio } from "../../../../hooks/useSgrPlusCore";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
@@ -91,16 +91,10 @@ export function LegajoUniversalBar({
   // que necesita el chequeo de migración real de abajo. Sirve para ambos
   // modos: en admin, useEmpresaActiva(true) no trae nada (está "skippeado").
   const { data: socioWeb, isLoading: loadingSocioWeb } = useSocioWebPorId(socioIdActivo);
-  const actualizarSocioMutation = useActualizarSocio();
 
   // Única fuente de verdad de si el legajo YA se migró de verdad al core:
   // el propio campo MarcaVinculacion del Socio ("0" = no migró, "1" = migró
-  // con éxito). Antes esto se inferían comparando contra sgrplus/Socios por
-  // CUIT; ahora el backend lo persiste directo en el Socio y esta barra es
-  // la única que lo escribe, y solo después de una migración confirmada
-  // (ver sincronizarConSgrPlus más abajo) — nunca en base a un cambio local
-  // sin confirmar, así que no hay riesgo del falso "Sincronizado" que daba
-  // el cálculo viejo con solo el fingerprint.
+  // con éxito), que marca el backend dentro de Socio/Migrar.
   const migradoEnBackend = String(socioWeb?.marcavinculacion ?? "") === "1";
 
   // El bloqueo por líneas SOLO aplica a la primera migración - un socio ya
@@ -387,20 +381,6 @@ export function LegajoUniversalBar({
 
       const response = await sociosService.enviarASgrPlus(socioIdActivo);
       if (response.success) {
-        // Recién ACÁ, con la migración ya confirmada por el backend, se
-        // marca MarcaVinculacion="1" sobre el propio Socio — nunca antes,
-        // nunca en optimista. Si este PUT en sí falla (ej. se corta la red
-        // justo acá), se deja que el catch de abajo lo trate como un fallo
-        // de la sincronización completa: no se corre nada del bloque de
-        // éxito (ni el aviso, ni la nueva baseline), así que la próxima
-        // visita vuelve a intentarlo solo (confirmado que reintentar
-        // Socio/Migrar sobre un socio ya migrado es seguro).
-        await actualizarSocioMutation.mutateAsync({
-          ...socioWeb,
-          socioid: socioIdActivo,
-          marcavinculacion: "1",
-        });
-
         if (toastId) toast.dismiss(toastId);
         // Solo para admin (silent=false, ver migrarAhora): a él sí le
         // corresponde enterarse de la migración real. El aviso del cliente
@@ -412,7 +392,7 @@ export function LegajoUniversalBar({
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
           queryClient.invalidateQueries({ queryKey: ["socioArchivos"] }),
-          queryClient.invalidateQueries({ queryKey: ["sociosWeb", "detalle", Number(socioIdActivo)] }),
+          queryClient.invalidateQueries({ queryKey: ["sociosWeb", "detalle"] }),
         ]);
       } else {
         throw new Error(response.message || "Error al sincronizar");

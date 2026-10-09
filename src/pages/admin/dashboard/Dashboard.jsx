@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
@@ -11,7 +12,7 @@ import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
-import { useObtenerSocios, useActualizarSocio } from "../../../hooks/useSocios";
+import { useObtenerSocios } from "../../../hooks/useSocios";
 import { useApoderadoFirmantePorSocio } from "../../../hooks/useTerceros";
 import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
 import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
@@ -169,7 +170,7 @@ export default function Dashboard() {
   const { data: sociosData, isLoading: isLoadingSocios } = useObtenerSocios();
   const actualizarEstadoMutation = useActualizarLimiteSocio();
   const migrarLineaMutation = useMigrarLinea();
-  const actualizarSocioMutation = useActualizarSocio();
+  const queryClient = useQueryClient();
 
   // Catálogo global de TipoLimite: desde que las líneas dejaron de ser un
   // set fijo "cheque/préstamo/pagaré" y pasaron a ser las reales de cada
@@ -197,9 +198,8 @@ export default function Dashboard() {
   const loading = isLoadingLimites || isLoadingSocios;
 
   // Mismo mapeo que arma solicitudesCanal más abajo, expuesto acá aparte
-  // porque migrarSocioSiCorresponde necesita el registro completo del
-  // Socio (no solo los 3 campos que solicitudesCanal deja en `item`) para
-  // el PUT api/Socio que marca MarcaVinculacion.
+  // porque migrarSocioSiCorresponde necesita leer el MarcaVinculacion del
+  // Socio, que solicitudesCanal no deja en `item`.
   const sociosPorId = useMemo(() => {
     const map = new Map();
     (Array.isArray(sociosData) ? sociosData : []).forEach((s) => {
@@ -410,11 +410,7 @@ export default function Dashboard() {
       const response = await sociosService.enviarASgrPlus(socioId);
       if (!response.success) throw new Error(response.message || "Error al migrar el socio");
 
-      await actualizarSocioMutation.mutateAsync({
-        ...socio,
-        socioid: socioId,
-        marcavinculacion: "1",
-      });
+      await queryClient.invalidateQueries({ queryKey: ["socios", "lista"] });
     } catch (socioMigError) {
       toast.error(
         contexto === "aprobar"

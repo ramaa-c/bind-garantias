@@ -59,6 +59,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
   const [certificadoEditando, setCertificadoEditando] = useState(null);
   const [form, setForm] = useState(FORM_INICIAL);
   const [guardando, setGuardando] = useState(false);
+  const [errorNumero, setErrorNumero] = useState("");
   const [confirmEliminarOpen, setConfirmEliminarOpen] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
@@ -99,6 +100,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
   const abrirAlta = () => {
     setCertificadoEditando(null);
     setForm(FORM_INICIAL);
+    setErrorNumero("");
     setModalAbierto(true);
   };
 
@@ -111,11 +113,17 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
       numero: certificadoActual.numero ?? certificadoActual.Numero ?? "",
       observaciones: certificadoActual.observaciones ?? certificadoActual.Observaciones ?? "",
     });
+    setErrorNumero("");
     setModalAbierto(true);
   };
 
   const handleGuardar = async (e) => {
     e.preventDefault();
+    const numero = String(form.numero ?? "").trim();
+    if (!numero) {
+      setErrorNumero("El número de certificado es obligatorio.");
+      return;
+    }
     setGuardando(true);
     try {
       const payload = {
@@ -124,7 +132,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
         socioid: socioId,
         fchdesde: aFechaBackend(form.fchDesde),
         fchhasta: aFechaBackend(form.fchHasta),
-        numero: form.numero,
+        numero,
         observaciones: form.observaciones,
       };
       if (certificadoEditando) {
@@ -293,11 +301,17 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
             />
           </div>
           <InputSimple
-            label="Número de certificado"
+            label="Número de certificado *"
             value={form.numero}
-            onChange={(val) => setForm((f) => ({ ...f, numero: val }))}
+            onChange={(val) => {
+              setForm((f) => ({ ...f, numero: val }));
+              if (errorNumero) setErrorNumero("");
+            }}
             variant="admin"
-            hideErrorSpace
+            error={errorNumero}
+            hideErrorSpace={!errorNumero}
+            aria-required="true"
+            aria-invalid={!!errorNumero}
           />
           <InputSimple
             label="Observaciones"
