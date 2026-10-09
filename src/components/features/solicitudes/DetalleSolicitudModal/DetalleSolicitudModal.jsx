@@ -17,6 +17,7 @@ import {
 const estadoConfig = {
   Cancelada: { color: styles.badgeGrey, label: "Cancelada" },
   Cancelado: { color: styles.badgeGrey, label: "Cancelado" },
+  Vencida: { color: styles.badgeGrey, label: "Vencida" },
   Aprobada: { color: styles.badgeGreen, label: "Aprobada" },
   Aprobado: { color: styles.badgeGreen, label: "Aprobado" },
   Pendiente: { color: styles.badgeYellow, label: "Pendiente" },

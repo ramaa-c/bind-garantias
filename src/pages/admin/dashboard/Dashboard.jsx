@@ -24,6 +24,7 @@ import {
   ESTADO_PENDIENTE,
   ESTADO_APROBADA,
   ESTADO_CANCELADA,
+  ESTADO_VENCIDA,
   estadoTextoDesde,
   esRechazoAutomatico,
 } from "../../../utils/estadoLimiteSocio";
@@ -277,11 +278,8 @@ export default function Dashboard() {
       const tipoLimiteEstadoId = l.tipolimiteestadoid ?? l.TipoLimiteEstadoID ?? ESTADO_PENDIENTE;
       const estadoText = estadoTextoDesde(tipoLimiteEstadoId);
 
-      // Rechazada (admin) y Cancelada (socio) vuelven a distinguirse con un
-      // workaround temporal: Cancelada pisa el valor de Vencido (5), que no
-      // usamos para nada más (ver ESTADO_CANCELADA en utils/estadoLimiteSocio.js).
-      // Dentro de Rechazada hay además dos orígenes distintos que comparten
-      // el mismo TipoLimiteEstadoID (4): un rechazo automático al crear la
+      // Dentro de Rechazada hay dos orígenes distintos que comparten
+      // el mismo TipoLimiteEstadoID (6): un rechazo automático al crear la
       // solicitud (CDA de línea / PorcentajeMinimoSolicitud, ver
       // AltaOperacion.jsx) y un rechazo manual del admin - se distinguen por
       // el prefijo que AltaOperacion.jsx deja en Observaciones.
@@ -297,7 +295,9 @@ export default function Dashboard() {
               : "Rechazada por Administrador"
             : Number(tipoLimiteEstadoId) === ESTADO_CANCELADA
               ? "Cancelada por el cliente"
-              : "Espera de validación del Administrador";
+              : Number(tipoLimiteEstadoId) === ESTADO_VENCIDA
+                ? "Vencida"
+                : "Espera de validación del Administrador";
 
       const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
       const tipoText = familiaDeLinea(tipoLimiteId);
@@ -606,12 +606,7 @@ export default function Dashboard() {
 
   const apoderadoFirmantePorSocio = useApoderadoFirmantePorSocio(
     filtradasPagina
-      .filter(
-        (s) =>
-          s.tipoLimiteEstadoId !== ESTADO_APROBADA &&
-          s.tipoLimiteEstadoId !== ESTADO_RECHAZADA &&
-          s.tipoLimiteEstadoId !== ESTADO_CANCELADA,
-      )
+      .filter((s) => Number(s.tipoLimiteEstadoId) === ESTADO_PENDIENTE)
       .map((s) => s.socioid),
   );
 
@@ -836,8 +831,10 @@ export default function Dashboard() {
           filtradasPagina.map((item) => {
             const isAprobada = item.tipoLimiteEstadoId === ESTADO_APROBADA;
             const isRechazada = item.tipoLimiteEstadoId === ESTADO_RECHAZADA;
-            const isCancelada = item.tipoLimiteEstadoId === ESTADO_CANCELADA;
-            const isPendiente = !isAprobada && !isRechazada && !isCancelada;
+            const isCancelada =
+              item.tipoLimiteEstadoId === ESTADO_CANCELADA ||
+              item.tipoLimiteEstadoId === ESTADO_VENCIDA;
+            const isPendiente = Number(item.tipoLimiteEstadoId) === ESTADO_PENDIENTE;
             const estadoKey = dotYPillClaseDesde(isAprobada, isRechazada, isCancelada);
 
             // La previsualización del documento es solo para solicitudes
@@ -997,7 +994,8 @@ export default function Dashboard() {
                     <span className={`${styles.solicitudStatusBadge} ${
                       solicitudDetalle.tipoLimiteEstadoId === ESTADO_APROBADA ? styles.badgeAproved :
                       solicitudDetalle.tipoLimiteEstadoId === ESTADO_RECHAZADA ? styles.badgeRejected :
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_CANCELADA ? styles.badgeCancelled :
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_CANCELADA ||
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_VENCIDA ? styles.badgeCancelled :
                       styles.badgePending
                     }`}>
                       {solicitudDetalle.estado}

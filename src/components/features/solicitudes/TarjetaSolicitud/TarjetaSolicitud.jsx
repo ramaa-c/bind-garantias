@@ -13,7 +13,7 @@ const getStatusKey = (estado) => {
   const e = estado?.toLowerCase();
   if (e?.includes("aprob")) return "statusApproved";
   if (e?.includes("rechaz")) return "statusRejected";
-  if (e?.includes("cancel")) return "statusCancelled";
+  if (e?.includes("cancel") || e?.includes("venc")) return "statusCancelled";
   return "statusWaiting";
 };
 

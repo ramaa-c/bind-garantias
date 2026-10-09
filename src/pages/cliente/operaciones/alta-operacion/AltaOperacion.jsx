@@ -606,8 +606,8 @@ export const AltaOperacion = () => {
       // PorcentajeMinimoSolicitud, ver debeRechazarseAutomaticamente más
       // arriba) — es lo que le avisa al resto del sistema que algo entró.
       // Lo que hay que hacer con un rechazo automático es informarlo con un
-      // PUT a Cancelado (4) apenas se crea (ver más abajo): "el PUT mismo
-      // cuando recibe un estado 3, 4 o 5 lo elimina de la tabla" de
+      // PUT a Rechazada (6) apenas se crea (ver más abajo): "el PUT mismo
+      // cuando recibe un estado terminal lo elimina de la tabla" de
       // SolicitudEnProceso — en TipoLimiteSocio (el registro real, creado
       // más abajo) siempre queda. Antes se saltaba directamente el POST para
       // este caso; evitaba el síntoma (fila fantasma en "Mis Solicitudes")
@@ -620,13 +620,7 @@ export const AltaOperacion = () => {
         cadenavalorid: Number(cadenaSlug),
         monedaid: Number(cleanData.moneda) || 5000,
         importe: montoLimpio,
-        // EstadoSolicitud=2 (EnProceso): la solicitud se está enviando con
-        // éxito y queda esperando la respuesta del administrador — no es
-        // un simple "Inicial" (1), que quedaría reservado para un estado
-        // previo al envío que este flujo no tiene (confirmado con el
-        // equipo el 2026-08-18). Ver mapearAEstadoSolicitudEnProceso en
-        // utils/estadoLimiteSocio.js para el resto del catálogo.
-        estadosolicitud: 2,
+        estadosolicitud: ESTADO_PENDIENTE,
         idexterno: 0,
         terceroviaid: 4000000,
         terceropresentanteid: 0,
