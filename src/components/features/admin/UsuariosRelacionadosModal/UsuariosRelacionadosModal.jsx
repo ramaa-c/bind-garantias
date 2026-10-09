@@ -8,8 +8,9 @@ import {
   useActualizarUsuarioCadenaValor,
 } from "../../../../hooks/useUsuario";
 import { usuarioService } from "../../../../services/usuarioService";
+import { sociosService } from "../../../../services/sociosService";
 import styles from "./UsuariosRelacionadosModal.module.css";
-import { FiPlus, FiX, FiUserPlus } from "react-icons/fi";
+import { FiPlus, FiX, FiUserPlus, FiAlertCircle } from "react-icons/fi";
 
 const EMPTY_ARRAY = [];
 
@@ -18,10 +19,28 @@ const esAdministradorActivo = (registro) => {
   return valor === "1" || valor === 1 || valor === true;
 };
 
+const extraerListaSocios = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.data)) return data.data;
+  return typeof data === "object" && Object.keys(data).length > 0 ? [data] : [];
+};
+
+const verificarSociosVinculados = async (usuarioWebId) => {
+  try {
+    const data = await sociosService.obtenerSocioUsuarioPorUsuarioId(usuarioWebId);
+    return extraerListaSocios(data).length > 0 ? "con_socios" : "sin_socios";
+  } catch (error) {
+    return error?.response?.status === 404 ? "sin_socios" : "error";
+  }
+};
+
 export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
   const [showForm, setShowForm] = useState(false);
   const [searchEmail, setSearchEmail] = useState("");
   const [isVinculando, setIsVinculando] = useState(false);
+  const [errorEmail, setErrorEmail] = useState("");
 
   // Queries & Mutations
   const { data: relationsData, isLoading: loadingRelations, error: errorRelations } =
@@ -74,6 +93,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
     if (!trimmedEmail) return;
 
     setIsVinculando(true);
+    setErrorEmail("");
 
     try {
       let targetUser = null;
@@ -89,9 +109,9 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       const userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
 
       if (!userId) {
-        toast.error("Usuario no encontrado", {
-          description: "Todavía no se registró. Debe entrar al login y registrarse primero.",
-        });
+        setErrorEmail(
+          "No hay ningún usuario registrado con ese correo. Debe registrarse primero desde el login de su banco.",
+        );
         return;
       }
 
@@ -99,10 +119,26 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       // valor: no tiene sentido (ni corresponde) vincularlo a una en
       // particular como usuario de cadena.
       if (esAdministradorActivo(targetUser)) {
-        toast.error("No se puede vincular este usuario", {
+        setErrorEmail(
+          "Es Administrador General: ya tiene acceso a todas las cadenas de valor.",
+        );
+        return;
+      }
+
+      const verificacionSocios = await verificarSociosVinculados(userId);
+
+      if (verificacionSocios === "error") {
+        toast.error("No se pudo verificar el usuario", {
           description:
-            "Es Administrador General y ya tiene acceso a todas las cadenas de valor.",
+            "No pudimos confirmar si tiene empresas vinculadas. Reintentá en unos minutos.",
         });
+        return;
+      }
+
+      if (verificacionSocios === "con_socios") {
+        setErrorEmail(
+          "Ya opera como cliente con una empresa vinculada. Para administrar la cadena debe registrarse con otro correo.",
+        );
         return;
       }
 
@@ -188,6 +224,7 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
             onClick={() => {
               setShowForm((prev) => !prev);
               setSearchEmail("");
+              setErrorEmail("");
             }}
           >
             {showForm ? <><FiX style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> CANCELAR</> : <><FiPlus style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> NUEVO</>}
@@ -206,8 +243,13 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
                   value={searchEmail}
                   onChange={(val) => {
                     setSearchEmail(val);
+                    if (errorEmail) setErrorEmail("");
                   }}
                   disabled={isVinculando}
+                  error={!!errorEmail}
+                  hideErrorSpace
+                  aria-invalid={!!errorEmail}
+                  aria-describedby={errorEmail ? "error-email-vinculo" : undefined}
                 />
               </div>
               <Button
@@ -219,6 +261,12 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
                 <FiUserPlus style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> VINCULAR
               </Button>
             </div>
+            {errorEmail && (
+              <p id="error-email-vinculo" className={styles.errorVinculo} role="alert">
+                <FiAlertCircle aria-hidden="true" />
+                {errorEmail}
+              </p>
+            )}
           </div>
         )}
 
