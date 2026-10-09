@@ -66,10 +66,10 @@ const CrearClave = () => {
   const [bloqueoAdminDetectado, setBloqueoAdminDetectado] = useState(false);
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const tokenIntegridad =
-    typeof window !== "undefined" && window.location.hash
-      ? `${token || ""}${window.location.hash}`
-      : token || "";
+  const hashUrl = typeof window !== "undefined" ? window.location.hash : "";
+  const tokenIntegridad = token
+    ? `${token}${hashUrl}`
+    : hashUrl.replace(/^#/, "");
 
   const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
@@ -153,7 +153,7 @@ const CrearClave = () => {
     }
 
     const getCSharpIsoDate = () => {
-      const date = new Date();
+      const date = new Date();
       return date.toISOString().split(".")[0];
     };
 

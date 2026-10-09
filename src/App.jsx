@@ -123,6 +123,7 @@ const rutasCliente = (
                 }
               />
 
+              <Route path="0" element={<CrearClave />} />
               <Route path="0/:token" element={<CrearClave />} />
 
               <Route path="confirmar-correo" element={<ConfirmarCorreo />} />
@@ -456,6 +457,7 @@ const rutasLegacy = (
     <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
     <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
 
+    <Route path="/0" element={<CrearClave />} />
     <Route path="/0/:token" element={<CrearClave />} />
 
     <Route path="/:cadenaSlug" element={<TenantLayout />}>
