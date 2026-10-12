@@ -8,6 +8,7 @@ import { useObtenerTerminosVigentes, usePublicarTerminos } from "../../../hooks/
 import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./Terminos.module.css";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 
 const formatearMomento = (momento) => {
   if (!momento) return "—";
@@ -60,7 +61,7 @@ export default function Terminos() {
     } catch (err) {
       console.error("[Terminos] Error al publicar la nueva versión:", err);
       setConfirmOpen(false);
-      toast.error("No se pudo publicar la nueva versión. Intentá nuevamente.");
+      toast.error("No se pudo publicar la nueva versión. Intentá nuevamente.", { description: mensajeNegocio(err, "") });
     }
   };
 

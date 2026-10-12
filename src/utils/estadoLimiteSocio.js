@@ -38,8 +38,12 @@ export const PREFIJO_RECHAZO_AUTOMATICO = "Rechazo automático:";
 export const construirMotivoRechazoAutomatico = (motivo) =>
   `${PREFIJO_RECHAZO_AUTOMATICO} ${motivo}`;
 
+// Sin distinguir acentos: la API también deja ese prefijo cuando rechaza sola
+// por el porcentaje mínimo ("Rechazo automatico: ...").
+const sinAcentos = (texto) => String(texto || "").normalize("NFD").replace(/[̀-ͯ]/g, "");
+
 export const esRechazoAutomatico = (observaciones) =>
-  String(observaciones || "").startsWith(PREFIJO_RECHAZO_AUTOMATICO);
+  sinAcentos(observaciones).startsWith(sinAcentos(PREFIJO_RECHAZO_AUTOMATICO));
 
 export const MOTIVO_CANCELACION_SOCIO = "Cancelada por el socio desde la plataforma.";
 

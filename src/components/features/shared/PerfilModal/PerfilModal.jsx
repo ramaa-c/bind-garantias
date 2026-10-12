@@ -32,6 +32,7 @@ import {
   esDemasiadosIntentos,
 } from "../../../../utils/usuarioUtils";
 import { cerrarSesionLocal } from "../../../../api/axios";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 import {
   useObtenerPorNombreOEmail,
   useActualizarUsuario,
@@ -59,6 +60,7 @@ const passwordSchema = z
     newPassword: z
       .string()
       .min(12, "Mínimo 12 caracteres")
+      .max(128, "Máximo 128 caracteres")
       .regex(/[a-z]/, "Incluir una minúscula")
       .regex(/[A-Z]/, "Incluir una mayúscula")
       .regex(/[0-9]/, "Incluir un número")
@@ -226,9 +228,12 @@ export const PerfilModal = ({ isOpen, onClose }) => {
             queryKey: ["sociosWeb", "detalle", Number(socioIdActivo)],
           });
         },
-        onError: () => {
+        onError: (error) => {
           toast.error("No se pudo actualizar", {
-            description: "Ocurrió un error al guardar los cambios. Intentá nuevamente.",
+            description: mensajeNegocio(
+              error,
+              "Ocurrió un error al guardar los cambios. Intentá nuevamente.",
+            ),
           });
         },
       },
@@ -369,7 +374,7 @@ export const PerfilModal = ({ isOpen, onClose }) => {
           const status = error?.response?.status;
           if (esDemasiadosIntentos(error)) {
             toast.error("Demasiados intentos", {
-              description: "Intentá nuevamente más tarde.",
+              description: mensajeNegocio(error, "Intentá nuevamente más tarde."),
             });
             return;
           }
@@ -384,11 +389,19 @@ export const PerfilModal = ({ isOpen, onClose }) => {
             cerrarSesionLocal();
             return;
           }
-          if (status === 400 || status === 403) {
+          if (status === 400) {
+            setPasswordError("newPassword", {
+              type: "server",
+              message: mensajeNegocio(error, "La contraseña nueva no es válida"),
+            });
+            return;
+          }
+          if (status === 403) {
             toast.error("No se pudo actualizar la contraseña", {
-              description:
-                error?.response?.data?.message ||
+              description: mensajeNegocio(
+                error,
                 "Revisá los datos ingresados e intentá nuevamente.",
+              ),
             });
             return;
           }

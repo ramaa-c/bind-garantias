@@ -14,6 +14,7 @@ import {
   useObtenerConfirmacionTyC,
 } from "../../../hooks/useTerminos";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
+import { vinculosCadenaActivos } from "../../../utils/usuarioUtils";
 import ErrorServicio from "../../../pages/shared/ErrorServicio/ErrorServicio";
 import { useChannel } from "../../../context/useChannel";
 import { useVendor } from "../../../hooks/useVendor";
@@ -94,9 +95,7 @@ export const OnboardingGuard = ({ children }) => {
 
   const { data: cadenasData, isPending: isCadenasLoading } =
     useObtenerCadenasPorUsuario(usuarioWebId);
-  const hasCadenas = Array.isArray(cadenasData)
-    ? cadenasData.length > 0
-    : cadenasData?.items?.length > 0 || cadenasData?.data?.length > 0;
+  const hasCadenas = vinculosCadenaActivos(cadenasData).length > 0;
   const isAdminCadena = hasCadenas;
 
   const parsearEmpresas = (sociosData) => {

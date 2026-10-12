@@ -28,3 +28,14 @@ export const obtenerMensajeAmigable = (err, defaultMsg) => {
   }
   return defaultMsg;
 };
+
+// Mensaje que devuelve la API en el cuerpo del error ({ statusCode, message }); si no hay, el texto por defecto.
+export const mensajeDeApi = (err, porDefecto = "") => {
+  const data = err?.response?.data;
+  const mensaje = typeof data === "string" ? data : data?.message;
+  return typeof mensaje === "string" && mensaje.trim() && mensaje.length < 300 ? mensaje : porDefecto;
+};
+
+// Igual que mensajeDeApi, pero solo para los errores de negocio (400, 403, 409, 429): el resto (5xx, red) muestra el texto por defecto.
+export const mensajeNegocio = (err, porDefecto = "") =>
+  [400, 403, 409, 429].includes(err?.response?.status) ? mensajeDeApi(err, porDefecto) : porDefecto;

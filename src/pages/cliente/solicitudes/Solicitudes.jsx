@@ -28,6 +28,7 @@ import { useVerificarHabilitacionNuevaOperacion } from "../../../hooks/useVerifi
 import { solicitudesService } from "../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
 import { useChannel } from "../../../context/useChannel";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
@@ -296,7 +297,7 @@ export default function Solicitudes() {
       });
       setSolicitudACancelar(null);
     } catch (err) {
-      toast.error("No se pudo cancelar la solicitud: " + err.message);
+      toast.error("No se pudo cancelar la solicitud: " + mensajeNegocio(err, err.message));
     }
   };
 

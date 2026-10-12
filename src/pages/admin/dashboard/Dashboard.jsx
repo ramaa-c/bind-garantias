@@ -20,6 +20,7 @@ import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { sociosService } from "../../../services/sociosService";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 import {
   ESTADO_RECHAZADA,
   ESTADO_PENDIENTE,
@@ -486,7 +487,7 @@ export default function Dashboard() {
         }
       },
       onError: (err) => {
-        toast.error(`No se pudo actualizar la Solicitud N°${item.id}: ` + err.message);
+        toast.error(`No se pudo actualizar la Solicitud N°${item.id}: ` + mensajeNegocio(err, err.message));
       },
     });
   };

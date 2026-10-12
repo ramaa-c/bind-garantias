@@ -12,6 +12,7 @@ import {
 import { FiSave, FiHelpCircle, FiRotateCcw } from "react-icons/fi";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./RequisitosConfigModal.module.css";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 const DOCUMENT_METADATA = [
   { key: "estatuto", title: "Estatuto Social", desc: "Normas constitutivas de la entidad legal." },
@@ -132,7 +133,7 @@ export const RequisitosConfigModal = ({ isOpen, onClose, activeItem }) => {
       },
       onError: (error) => {
         console.error(error);
-        toast.error("Ocurrió un error al guardar los requisitos");
+        toast.error("Ocurrió un error al guardar los requisitos", { description: mensajeNegocio(error, "") });
         setConfirmOpen(false);
       }
     });

@@ -10,6 +10,7 @@ import { useObtenerTerceros } from "../../../../../../hooks/useTerceros";
 import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { RELACION_AGENTE_BOLSA_ID } from "../../../../../../constants/tiposRelacionSocio";
+import { mensajeNegocio } from "../../../../../../utils/mensajesError";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./BolsaModal.module.css";
 
@@ -123,7 +124,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
           toast.error(backendErrors[key]);
         });
       } else {
-        toast.error("Ocurrió un error inesperado al guardar los datos.");
+        toast.error(mensajeNegocio(error, "Ocurrió un error inesperado al guardar los datos."));
       }
     }
   };
