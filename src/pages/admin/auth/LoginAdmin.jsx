@@ -23,6 +23,7 @@ import {
 } from "../../../utils/usuarioUtils";
 import styles from "../../cliente/auth/Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import { cadenasAdminActivas } from "../../../utils/usuarioUtils";
 
 const emailSchema = z.object({
   email: z
@@ -264,7 +265,7 @@ const checkAccesoAdmin = async (email) => {
       listaCadenas = [chainsData];
     }
 
-    return listaCadenas.length > 0;
+    return cadenasAdminActivas(listaCadenas).length > 0;
   } catch (err) {
     console.error("Error al verificar acceso admin:", err);
     return false;

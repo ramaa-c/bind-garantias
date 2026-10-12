@@ -27,6 +27,7 @@ import { useVendor } from "../../../../hooks/useVendor";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
 import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 import {
   useObtenerPorNombreOEmail,
   useActualizarUsuario,
@@ -54,6 +55,7 @@ const passwordSchema = z
     newPassword: z
       .string()
       .min(12, "Mínimo 12 caracteres")
+      .max(128, "Máximo 128 caracteres")
       .regex(/[a-z]/, "Incluir una minúscula")
       .regex(/[A-Z]/, "Incluir una mayúscula")
       .regex(/[0-9]/, "Incluir un número")
@@ -221,9 +223,12 @@ export const PerfilModal = ({ isOpen, onClose }) => {
             queryKey: ["sociosWeb", "detalle", Number(socioIdActivo)],
           });
         },
-        onError: () => {
+        onError: (error) => {
           toast.error("No se pudo actualizar", {
-            description: "Ocurrió un error al guardar los cambios. Intentá nuevamente.",
+            description: mensajeNegocio(
+              error,
+              "Ocurrió un error al guardar los cambios. Intentá nuevamente.",
+            ),
           });
         },
       },
@@ -359,10 +364,25 @@ export const PerfilModal = ({ isOpen, onClose }) => {
         },
         onError: (error) => {
           const status = error?.response?.status;
-          if (status === 400 || status === 401 || status === 403) {
+          if (status === 401 || status === 403) {
             setPasswordError("oldPassword", {
               type: "server",
               message: "La contraseña actual es incorrecta",
+            });
+            return;
+          }
+          // 400: la clave nueva no cumple la política de la API (ej. contiene el email)
+          if (status === 400) {
+            setPasswordError("newPassword", {
+              type: "server",
+              message: mensajeNegocio(error, "La contraseña nueva no es válida"),
+            });
+            return;
+          }
+          // 429: demasiados intentos fallidos con la clave actual
+          if (status === 429) {
+            toast.error("Demasiados intentos", {
+              description: mensajeNegocio(error, "Intentá nuevamente más tarde."),
             });
             return;
           }

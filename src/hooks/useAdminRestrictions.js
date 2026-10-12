@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthStore } from "../store/useAuthStore";
 import { useObtenerPorNombreOEmail } from "./useUsuario";
 import { usuarioService } from "../services/usuarioService";
+import { cadenasAdminActivas } from "../utils/usuarioUtils";
 
 const parsearRegistroUsuario = (db) => {
   if (!db) return null;
@@ -56,7 +57,7 @@ export const useAdminRestrictions = () => {
     return [];
   };
 
-  const listaCadenas = parsearCadenas(adminCadenas);
+  const listaCadenas = cadenasAdminActivas(parsearCadenas(adminCadenas));
 
   // Un administrador general (EsAdministrador=1) ve todo el panel aunque
   // además tenga cadenas de valor vinculadas; la restricción de navegación

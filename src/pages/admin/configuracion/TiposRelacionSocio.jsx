@@ -11,6 +11,7 @@ import { useRequisitos } from "../../../hooks/useRequisitos";
 import { TABS_TIPO_PERSONA, esRelacionVisible } from "../../../utils/relacionesTercerosUtils";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./TiposRelacionSocio.module.css";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 
 const RowSkeleton = () => (
   <tr>
@@ -148,7 +149,7 @@ export default function TiposRelacionSocio() {
       },
       onError: (error) => {
         console.error(error);
-        toast.error("Ocurrió un error al guardar la configuración");
+        toast.error("Ocurrió un error al guardar la configuración", { description: mensajeNegocio(error, "") });
         setConfirmParamOpen(false);
       },
     });

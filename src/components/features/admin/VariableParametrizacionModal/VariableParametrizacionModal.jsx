@@ -8,6 +8,7 @@ import {
   useCrearVariableParametrizacion,
   useActualizarVariableParametrizacion,
 } from "../../../../hooks/useVariablesParametrizacion";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 // Alta y edición de una variable parametrizable (api/VariablesParametrizacion).
 // En alta se define el nombre y el valor inicial; en edición el nombre queda
@@ -63,7 +64,7 @@ export const VariableParametrizacionModal = ({
         "[VariableParametrizacionModal] Error al guardar:",
         error,
       );
-      toast.error("Ocurrió un error al guardar la variable");
+      toast.error("Ocurrió un error al guardar la variable", { description: mensajeNegocio(error, "") });
     };
 
     if (esEdicion) {

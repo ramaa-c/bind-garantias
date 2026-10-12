@@ -23,6 +23,7 @@ import {
 } from "../../../../utils/altaEmpresaPendiente";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/useChannel";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 import styles from "./AltaDatosEmpresa.module.css";
 import { toast } from "sonner";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
@@ -466,7 +467,11 @@ export const AltaDatosEmpresa = () => {
       }
     } catch (error) {
       console.error("Error en alta de empresa:", error);
-      toast.error("Error al registrar la empresa.");
+      // Si la API rechazó el alta con un motivo de negocio (ej. el celular no
+      // fue verificado por SMS o venció la verificación), se muestra tal cual.
+      toast.error("Error al registrar la empresa.", {
+        description: mensajeNegocio(error, ""),
+      });
       setEnviandoSolicitud(false);
     }
   };

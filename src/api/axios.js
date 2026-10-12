@@ -197,6 +197,20 @@ api.interceptors.response.use(
       }
     }
 
+    // Rechazos de negocio de la API (400, 403, 409, 429): el cuerpo es
+    // { statusCode, message } con el motivo. Se deja ese motivo como
+    // error.message para que cualquier pantalla que muestre err.message
+    // (o utils/mensajesError) lo vea, en vez de "Request failed with status
+    // code 409".
+    const statusRechazo = error.response?.status;
+    if ([400, 403, 409, 429].includes(statusRechazo)) {
+      const cuerpo = error.response?.data;
+      const motivo = typeof cuerpo === "string" ? cuerpo : cuerpo?.message;
+      if (typeof motivo === "string" && motivo.trim() && motivo.length < 300) {
+        error.message = motivo;
+      }
+    }
+
     return Promise.reject(error);
   },
 );

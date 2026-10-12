@@ -14,6 +14,7 @@ import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
+import { mensajeNegocio } from "../../../../../../utils/mensajesError";
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../../../utils/executeCda";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
@@ -1152,7 +1153,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         });
         toast.error("Por favor, revisá los errores en el formulario.", { id: mainToastId });
       } else {
-        toast.error("Ocurrió un error inesperado al guardar los datos.", { id: mainToastId });
+        // Motivo de negocio de la API (ej. la suma de participaciones supera
+        // el 100%, relación duplicada, CUIT inválido) o el texto genérico.
+        toast.error(mensajeNegocio(error, "Ocurrió un error inesperado al guardar los datos."), { id: mainToastId });
       }
     } finally {
       setGuardando(false);

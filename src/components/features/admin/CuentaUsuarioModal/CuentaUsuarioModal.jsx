@@ -18,6 +18,7 @@ import {
   useActualizarUsuario,
   useCambiarPassword,
 } from "../../../../hooks/useUsuario";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 import styles from "./CuentaUsuarioModal.module.css";
 
 const usernameSchema = z.object({
@@ -34,6 +35,7 @@ const passwordSchema = z
     newPassword: z
       .string()
       .min(12, "Mínimo 12 caracteres")
+      .max(128, "Máximo 128 caracteres")
       .regex(/[a-z]/, "Incluir una minúscula")
       .regex(/[A-Z]/, "Incluir una mayúscula")
       .regex(/[0-9]/, "Incluir un número")
@@ -159,10 +161,25 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
         },
         onError: (error) => {
           const status = error?.response?.status;
-          if (status === 400 || status === 401 || status === 403) {
+          if (status === 401 || status === 403) {
             setPasswordError("oldPassword", {
               type: "server",
               message: "La contraseña actual es incorrecta",
+            });
+            return;
+          }
+          // 400: la clave nueva no cumple la política de la API (ej. contiene el email)
+          if (status === 400) {
+            setPasswordError("newPassword", {
+              type: "server",
+              message: mensajeNegocio(error, "La contraseña nueva no es válida"),
+            });
+            return;
+          }
+          // 429: demasiados intentos fallidos con la clave actual
+          if (status === 429) {
+            toast.error("Demasiados intentos", {
+              description: mensajeNegocio(error, "Intentá nuevamente más tarde."),
             });
             return;
           }

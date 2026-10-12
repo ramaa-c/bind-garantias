@@ -12,6 +12,7 @@ import { Skeleton } from "../../../ui/Skeleton/Skeleton";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CdaPanel.module.css";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 // Busca, subiendo por los ancestros de `el`, el primer contenedor con scroll
 // PROPIO real (overflowY auto/scroll Y contenido más alto que su caja).
@@ -413,7 +414,7 @@ export const CdaPanel = ({ activeItem, pantalla, onClose, isReadOnly = false, hi
       if (onClose) onClose();
     } catch (err) {
       console.error(err);
-      toast.error("Ocurrió un error al guardar los cambios");
+      toast.error("Ocurrió un error al guardar los cambios", { description: mensajeNegocio(err, "") });
       setConfirmOpen(false);
     }
   };

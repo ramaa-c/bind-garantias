@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { useChannel } from "../../../../context/useChannel";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme, useActualizarSocio } from "../../../../hooks/useSocios";
+import { useSocioWebPorId, useEstadoCdaSocio, useTieneCertificadoPyme } from "../../../../hooks/useSocios";
 import { useEstadoValidarSocio } from "../../../../hooks/useSgrPlusCore";
 import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
@@ -91,7 +91,6 @@ export function LegajoUniversalBar({
   // que necesita el chequeo de migración real de abajo. Sirve para ambos
   // modos: en admin, useEmpresaActiva(true) no trae nada (está "skippeado").
   const { data: socioWeb, isLoading: loadingSocioWeb } = useSocioWebPorId(socioIdActivo);
-  const actualizarSocioMutation = useActualizarSocio();
 
   // Única fuente de verdad de si el legajo YA se migró de verdad al core:
   // el propio campo MarcaVinculacion del Socio ("0" = no migró, "1" = migró
@@ -387,20 +386,10 @@ export function LegajoUniversalBar({
 
       const response = await sociosService.enviarASgrPlus(socioIdActivo);
       if (response.success) {
-        // Recién ACÁ, con la migración ya confirmada por el backend, se
-        // marca MarcaVinculacion="1" sobre el propio Socio — nunca antes,
-        // nunca en optimista. Si este PUT en sí falla (ej. se corta la red
-        // justo acá), se deja que el catch de abajo lo trate como un fallo
-        // de la sincronización completa: no se corre nada del bloque de
-        // éxito (ni el aviso, ni la nueva baseline), así que la próxima
-        // visita vuelve a intentarlo solo (confirmado que reintentar
-        // Socio/Migrar sobre un socio ya migrado es seguro).
-        await actualizarSocioMutation.mutateAsync({
-          ...socioWeb,
-          socioid: socioIdActivo,
-          marcavinculacion: "1",
-        });
-
+        // MarcaVinculacion="1" ya NO se marca desde acá: la API lo hace sola
+        // cuando Socio/Migrar termina bien (un PUT Socio ignora ese campo).
+        // Solo se refresca el socio (más abajo) para que migradoEnBackend
+        // se actualice.
         if (toastId) toast.dismiss(toastId);
         // Solo para admin (silent=false, ver migrarAhora): a él sí le
         // corresponde enterarse de la migración real. El aviso del cliente
@@ -413,6 +402,7 @@ export function LegajoUniversalBar({
           queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
           queryClient.invalidateQueries({ queryKey: ["socioArchivos"] }),
           queryClient.invalidateQueries({ queryKey: ["sociosWeb", "detalle", Number(socioIdActivo)] }),
+          queryClient.invalidateQueries({ queryKey: ["socios"] }),
         ]);
       } else {
         throw new Error(response.message || "Error al sincronizar");

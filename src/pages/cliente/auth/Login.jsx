@@ -29,6 +29,7 @@ import {
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
+import { cadenasAdminActivas } from "../../../utils/usuarioUtils";
 
 const MENSAJE_ADMIN_EN_CLIENTE =
   "Esta cuenta es de administración y no puede operar como cliente. Registrate con un correo distinto para acceder desde acá.";
@@ -92,7 +93,7 @@ const resolverAccesoPostLogin = async (email, basePath) => {
     const cadenasData = await usuarioService.obtenerUsuariosRelacionados({
       usuarioid: usuarioWebId,
     });
-    const tieneCadenas = parsearCadenas(cadenasData).length > 0;
+    const tieneCadenas = cadenasAdminActivas(parsearCadenas(cadenasData)).length > 0;
     return {
       permitido: true,
       destino: tieneCadenas ? "/admin" : `${basePath}/legajo`,

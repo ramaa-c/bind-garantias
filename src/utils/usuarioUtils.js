@@ -83,3 +83,8 @@ export const mensajeCodigoLoginRechazado = (error) =>
   esCodigoLoginExpirado(error)
     ? "El código venció. Solicitá uno nuevo."
     : "Código incorrecto.";
+
+// Vinculos usuario-cadena (UsuarioCadenaValor) activos: un admin de cadena solo lo es mientras su vinculo tiene Activa = "1".
+// La API aplica el mismo criterio (un vinculo inactivo no da acceso a las lineas ni a los socios de la cadena).
+export const cadenasAdminActivas = (lista) =>
+  (Array.isArray(lista) ? lista : []).filter((c) => String(c?.activa ?? c?.Activa ?? "1") === "1");

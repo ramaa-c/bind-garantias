@@ -11,13 +11,15 @@ import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
-import { useObtenerSocios, useActualizarSocio } from "../../../hooks/useSocios";
+import { useQueryClient } from "@tanstack/react-query";
+import { useObtenerSocios } from "../../../hooks/useSocios";
 import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
 import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
 import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { sociosService } from "../../../services/sociosService";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 import {
   ESTADO_RECHAZADA,
   ESTADO_PENDIENTE,
@@ -167,7 +169,7 @@ export default function Dashboard() {
   const { data: sociosData, isLoading: isLoadingSocios } = useObtenerSocios();
   const actualizarEstadoMutation = useActualizarLimiteSocio();
   const migrarLineaMutation = useMigrarLinea();
-  const actualizarSocioMutation = useActualizarSocio();
+  const queryClient = useQueryClient();
 
   // Catálogo global de TipoLimite: desde que las líneas dejaron de ser un
   // set fijo "cheque/préstamo/pagaré" y pasaron a ser las reales de cada
@@ -409,11 +411,9 @@ export default function Dashboard() {
       const response = await sociosService.enviarASgrPlus(socioId);
       if (!response.success) throw new Error(response.message || "Error al migrar el socio");
 
-      await actualizarSocioMutation.mutateAsync({
-        ...socio,
-        socioid: socioId,
-        marcavinculacion: "1",
-      });
+      // MarcaVinculacion="1" la marca la propia API al migrar bien (un PUT
+      // Socio ignora ese campo): solo se refresca el listado de socios.
+      await queryClient.invalidateQueries({ queryKey: ["socios"] });
     } catch (socioMigError) {
       toast.error(
         contexto === "aprobar"
@@ -489,7 +489,7 @@ export default function Dashboard() {
         }
       },
       onError: (err) => {
-        toast.error(`No se pudo actualizar la Solicitud N°${item.id}: ` + err.message);
+        toast.error(`No se pudo actualizar la Solicitud N°${item.id}: ` + mensajeNegocio(err, err.message));
       },
     });
   };

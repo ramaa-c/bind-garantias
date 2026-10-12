@@ -25,6 +25,7 @@ import {
 } from "../../../components/features";
 import { toast } from "sonner";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 
 // Mismo criterio que Empresas.jsx/CdasGlobales.jsx: con el alto de fila
 // blindado a una sola línea (table-layout:fixed + truncado, ver
@@ -164,7 +165,7 @@ export default function CadenasValor() {
       },
       onError: (err) => {
         console.error("Error al cambiar estado de la cadena:", err);
-        toast.error("Ocurrió un error al cambiar el estado de la cadena de valor");
+        toast.error("Ocurrió un error al cambiar el estado de la cadena de valor", { description: mensajeNegocio(err, "") });
         setToggledStates(prev => {
           const next = { ...prev };
           delete next[item.cadenavalorid];

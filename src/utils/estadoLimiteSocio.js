@@ -14,20 +14,21 @@ export const ESTADO_EN_PROCESO = 2;
 export const ESTADO_COMPLETO = 3;
 export const ESTADO_CANCELADO = 4;
 export const ESTADO_VENCIDO = 5;
+// Rechazada (decisión del admin o rechazo automático) tiene su propio valor
+// desde que la API lo incorporó al catálogo (TConstEstadoEwanPcnt.Rechazada).
+// Antes se pisaba Cancelado/Vencido como workaround; ya no.
+export const ESTADO_RECHAZADO = 6;
 
 // Alias con los nombres que ya usa el resto del código (Dashboard, cliente):
-// Pendiente = EnProceso, Aprobada = Completo. Rechazada (decisión del
-// admin) y Cancelada (decisión del propio socio) antes eran dos estados
-// distintos (-1 y -2); el catálogo nuevo solo tiene un estado terminal
-// negativo "real" (Cancelado). Como workaround TEMPORAL para no perder la
-// distinción, Cancelada pisa el valor de Vencido (5) — un estado que hoy no
-// usamos para nada — hasta que el backend agregue un indicador propio para
-// distinguirlas de verdad. Sacar este workaround el día que eso pase: ver
-// mensaje del 2026-08-18.
+// Pendiente = EnProceso, Aprobada = Completo, Cancelada = Cancelado (decisión
+// del propio socio) y Rechazada = Rechazado. La API acepta estas
+// transiciones: el socio cancela (2 a 4); el admin aprueba (2 a 3) o rechaza
+// (2 a 6); una solicitud nueva nace En proceso (2) o Rechazada (6, rechazo
+// automático). Los estados mayores a 2 no se pueden volver a mover.
 export const ESTADO_PENDIENTE = ESTADO_EN_PROCESO;
 export const ESTADO_APROBADA = ESTADO_COMPLETO;
-export const ESTADO_RECHAZADA = ESTADO_CANCELADO;
-export const ESTADO_CANCELADA = ESTADO_VENCIDO;
+export const ESTADO_RECHAZADA = ESTADO_RECHAZADO;
+export const ESTADO_CANCELADA = ESTADO_CANCELADO;
 
 // TerceroViaID de SolicitudEnProceso: identifica la plataforma de origen de
 // la solicitud, no la cadena de valor. La nuestra es 4000000 - otras
@@ -59,8 +60,12 @@ export const PREFIJO_RECHAZO_AUTOMATICO = "Rechazo automático:";
 export const construirMotivoRechazoAutomatico = (motivo) =>
   `${PREFIJO_RECHAZO_AUTOMATICO} ${motivo}`;
 
+// Sin distinguir acentos: la API también deja ese prefijo cuando rechaza sola
+// por el porcentaje mínimo ("Rechazo automatico: ...").
+const sinAcentos = (texto) => String(texto || "").normalize("NFD").replace(/[̀-ͯ]/g, "");
+
 export const esRechazoAutomatico = (observaciones) =>
-  String(observaciones || "").startsWith(PREFIJO_RECHAZO_AUTOMATICO);
+  sinAcentos(observaciones).startsWith(sinAcentos(PREFIJO_RECHAZO_AUTOMATICO));
 
 // TipoLimiteEstadoID=5 (Vencido) también se usa hoy como Cancelada (ver
 // ESTADO_CANCELADA arriba) - cuando el backend active el vencimiento
