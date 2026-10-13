@@ -17,8 +17,8 @@ import styles from "./CriteriosAceptacionModal.module.css";
 const PANTALLA_EMPRESA = "PANTALLA_INGRESO_CUIT";
 const PANTALLA_ACCIONISTAS = "PANTALLA_SOCIOS";
 
-// La API devuelve una fila por cada vez que se vinculÃ³ el CDA al grupo (el historial incluye repetidas):
-// se muestra un solo criterio por CdaID, el de la vinculaciÃ³n mÃ¡s reciente.
+// La API devuelve una fila por cada vez que se vinculó el CDA al grupo (el historial incluye repetidas):
+// se muestra un solo criterio por CdaID, el de la vinculación más reciente.
 const unicosPorCda = (lista) => {
   const masReciente = new Map();
   lista.forEach((c, i) => {
@@ -152,7 +152,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
       });
       if (status === 202) toast.success(`Criterio "${cda.descripcion}" superado.`);
       else if (status === 406) toast.error(`Criterio "${cda.descripcion}" no superado.`);
-      else toast.info(`Criterio "${cda.descripcion}" quedÃ³ pendiente de evaluaciÃ³n.`);
+      else toast.info(`Criterio "${cda.descripcion}" quedó pendiente de evaluación.`);
       await queryClient.invalidateQueries({ queryKey: ["criterios"] });
     } catch (err) {
       toast.error(`No se pudo evaluar el criterio: ${err.message}`);
@@ -198,7 +198,7 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
                 </div>
               ) : null}
               <div className={styles.detailRow}>
-                <span className={styles.detailBold}>Ãšltima evaluaciÃ³n: </span>
+                <span className={styles.detailBold}>Última evaluación: </span>
                 <span>{ejecucion ? formatearMomentoControl(ejecucion.momentocontrol ?? ejecucion.MomentoControl) : "Sin evaluar"}</span>
               </div>
             </div>
@@ -223,14 +223,14 @@ export const CriteriosAceptacionModal = ({ isOpen, onClose, solicitud }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Criterios De AceptaciÃ³n"
+      title="Criterios De Aceptación"
       maxWidth="650px"
       variant="blue"
       headerActions={
         <button
           type="button"
           className={styles.helpButton}
-          onClick={() => toast.info("Los criterios de aceptaciÃ³n definen las reglas de negocio y riesgo evaluadas para esta operaciÃ³n.")}
+          onClick={() => toast.info("Los criterios de aceptación definen las reglas de negocio y riesgo evaluadas para esta operación.")}
           title="Ayuda"
         >
           <FiHelpCircle size={20} />
