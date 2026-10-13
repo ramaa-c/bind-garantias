@@ -44,6 +44,7 @@ import {
   construirMotivoRechazoAutomatico,
 } from "../../../../utils/estadoLimiteSocio";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
+import { simboloMoneda } from "../../../../utils/monedaUtils";
 
 const STORAGE_KEY = "draft_alta_operacion_v2";
 
@@ -781,11 +782,7 @@ export const AltaOperacion = () => {
 
   const handleIrASolicitudes = () => {
     const data = getValues();
-    let simbolo = "$";
-    if (String(data.moneda) === "2") simbolo = "U$D";
-    else if (String(data.moneda) === "500") simbolo = "€";
-    else if (String(data.moneda) === "10") simbolo = "UVAS";
-    else if (String(data.moneda) === "5000") simbolo = "$";
+    const simbolo = simboloMoneda(data.moneda);
 
     const montoLimpio = Number(data.monto) || 0;
     const montoFormateado = montoLimpio.toLocaleString("es-AR", {
