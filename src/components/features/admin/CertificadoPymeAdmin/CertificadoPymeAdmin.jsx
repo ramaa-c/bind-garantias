@@ -14,19 +14,19 @@ import styles from "./CertificadoPymeAdmin.module.css";
 
 const FORM_INICIAL = { fchDesde: "", fchHasta: "", numero: "", observaciones: "", sector: "", tamanio: "0" };
 
-// Ids de TipoActividadGlobal / TamanioEmpresa de SGR+. La API exige un sector (1 a 5): con 0 la migraciÃ³n
-// del socio a SGR+ falla por la clave forÃ¡nea de TipoActividadGlobal.
+// Ids de TipoActividadGlobal / TamanioEmpresa de SGR+. La API exige un sector (1 a 5): con 0 la migración
+// del socio a SGR+ falla por la clave foránea de TipoActividadGlobal.
 const OPCIONES_SECTOR = [
   { value: "1", label: "Agropecuario" },
-  { value: "2", label: "Industria y minerÃ­a" },
-  { value: "3", label: "ConstrucciÃ³n" },
+  { value: "2", label: "Industria y minería" },
+  { value: "3", label: "Construcción" },
   { value: "4", label: "Comercio" },
   { value: "5", label: "Servicios" },
 ];
 const OPCIONES_TAMANIO = [
-  { value: "0", label: "Sin informaciÃ³n" },
+  { value: "0", label: "Sin información" },
   { value: "1", label: "Micro" },
-  { value: "2", label: "PequeÃ±a" },
+  { value: "2", label: "Pequeña" },
   { value: "3", label: "Mediana tramo 1" },
   { value: "4", label: "Mediana tramo 2" },
 ];
@@ -48,7 +48,7 @@ const aFechaBackend = (isoCompleto) => {
   return isoCompleto.split(".")[0];
 };
 
-// 0 = certificado viejo cargado sin sector: el formulario lo deja vacÃ­o para obligar a elegirlo
+// 0 = certificado viejo cargado sin sector: el formulario lo deja vacío para obligar a elegirlo
 const sectorGuardado = (c) => {
   const id = String(c?.tipoactividadglobalid ?? c?.TipoActividadGlobalId ?? "");
   return id === "0" ? "" : id;
@@ -152,7 +152,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
       return;
     }
     if (!form.sector) {
-      toast.error("ElegÃ­ el sector de actividad del certificado.");
+      toast.error("Elegí el sector de actividad del certificado.");
       return;
     }
     setGuardando(true);
@@ -263,7 +263,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
                 <span className={styles.factValue}>{etiquetaDe(OPCIONES_SECTOR, sectorActual) || "Sin definir (editalo)"}</span>
               </div>
               <div className={styles.factCell}>
-                <span className={styles.factLabel}>TamaÃ±o</span>
+                <span className={styles.factLabel}>Tamaño</span>
                 <span className={styles.factValue}>{etiquetaDe(OPCIONES_TAMANIO, tamanioActual) || "â€”"}</span>
               </div>
               <div className={styles.factCell}>
@@ -367,7 +367,7 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
               variant="admin"
             />
             <SelectSimple
-              label="TamaÃ±o"
+              label="Tamaño"
               value={form.tamanio}
               onChange={(val) => setForm((f) => ({ ...f, tamanio: val }))}
               options={OPCIONES_TAMANIO}
