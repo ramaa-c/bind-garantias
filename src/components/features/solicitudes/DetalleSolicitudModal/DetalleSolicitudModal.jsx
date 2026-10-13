@@ -5,7 +5,7 @@ import styles from "./DetalleSolicitudModal.module.css";
 import { useQuery } from "@tanstack/react-query";
 import { sociosService } from "../../../../services/sociosService";
 import { tercerosService } from "../../../../services/tercerosService";
-import { RELACION_ACCIONISTA_ID } from "../../../../constants/tiposRelacionSocio";
+import { RELACION_ACCIONISTA_ID, RELACION_FIADOR_ID } from "../../../../constants/tiposRelacionSocio";
 import {
   FiFileText,
   FiDollarSign,
@@ -110,7 +110,8 @@ export const DetalleSolicitudModal = ({
           rel.TipoRelacionSocioID ||
           rel.tiporelacionsocioId;
         const tiporelNum = Number(tiporel);
-        if (tiporel && tiporelNum !== RELACION_ACCIONISTA_ID) return false;
+        // Accionistas y fiadores: el bloque se llama "Accionistas / Fiadores" pero solo contaba a los primeros
+        if (tiporel && tiporelNum !== RELACION_ACCIONISTA_ID && tiporelNum !== RELACION_FIADOR_ID) return false;
 
         // 2. Validar expiración de fecha (fechahasta)
         const fd = rel.fechadesde || rel.FechaDesde;
@@ -178,6 +179,8 @@ export const DetalleSolicitudModal = ({
         if (tercero) {
           res.push({
             ...tercero,
+            esFiador:
+              Number(rel.tiporelacionsocioid || rel.TipoRelacionSocioID || rel.tiporelacionsocioId) === RELACION_FIADOR_ID,
             participacion:
               rel.porcacciones ||
               rel.participacion ||
@@ -331,30 +334,37 @@ export const DetalleSolicitudModal = ({
                   .join("");
 
                 const participacion = Number(accionista.participacion) || 0;
+                const esFiador = !!accionista.esFiador;
 
                 return (
                   <div key={accionista.cuit || accionista.nombre || "accionista-" + i} className={styles.fiadorCard}>
                     <div className={styles.fiadorAvatar}>{iniciales}</div>
                     <div className={styles.fiadorInfo}>
                       <p className={styles.fiadorName}>{nombre}</p>
-                      <div className={styles.fiadorPart}>
-                        <div className={styles.partBar}>
-                          <div
-                            className={styles.partFill}
-                            style={{
-                              width: `${Math.min(participacion, 100)}%`,
-                            }}
-                          />
+                      {esFiador ? (
+                        <div className={styles.fiadorPart}>
+                          <span>Fiador</span>
                         </div>
-                        <span>{participacion}%</span>
-                      </div>
+                      ) : (
+                        <div className={styles.fiadorPart}>
+                          <div className={styles.partBar}>
+                            <div
+                              className={styles.partFill}
+                              style={{
+                                width: `${Math.min(participacion, 100)}%`,
+                              }}
+                            />
+                          </div>
+                          <span>{participacion}%</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })
             ) : (
               <p className={styles.emptyText}>
-                No se encontraron accionistas vinculados a esta empresa.
+                No se encontraron accionistas ni fiadores vinculados a esta empresa.
               </p>
             )}
           </div>
