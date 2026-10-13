@@ -284,3 +284,17 @@
   display: inline-block;
   vertical-align: middle;
 }
+
+.iconPending {
+  color: var(--text-muted, #9aa4b2);
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statusPendiente {
+  color: var(--text-muted, #9aa4b2);
+  font-weight: 700;
+}
