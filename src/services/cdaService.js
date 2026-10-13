@@ -6,8 +6,8 @@ export const cdaService = {
   // combinación Pantalla+Cadena, con su propia ExpresionAgrupacion.
   //
   // ⚠️ El backend hoy IGNORA el filtro CadenaValorID (devuelve todos los
-  // grupos de la pantalla, sin importar la cadena pedida) — reportado a
-  // Victor. Filtramos acá del lado del cliente para no terminar operando
+  // grupos de la pantalla, sin importar la cadena pedida) — reportado al
+  // backend. Filtramos acá del lado del cliente para no terminar operando
   // sobre el GrupoCda de otra cadena. Sacar este filtro extra el día que el
   // backend lo resuelva de verdad.
   obtenerGrupoCda: async (pantalla, cadenaValorId) => {
@@ -67,9 +67,10 @@ export const cdaService = {
     return created?.pantallagrupocdaid;
   },
 
-  // ⚠️ UsuarioID es requerido por el backend para resolver la ejecución del
-  // grupo: sin él, cda/execute devuelve 409 "Dato Requerido Faltante" aunque
-  // ninguna integración esté caída (confirmado comparando contra Swagger).
+  // ⚠️ El backend dejó de aceptar Cuit por completo (confirmado en vivo:
+  // mandarlo da el mismo 409 que no mandar nada). Ahora pide una entidad —
+  // SocioID, TerceroID o LineaID — para resolver contra quién evalúa los
+  // CDAs. Se manda solo la que corresponda según quién llama.
   //
   // ⚠️⚠️ NO usar valorParticularExpresion acá (sin CdaID, evaluación de
   // pantalla completa): confirmado con pruebas manuales que el backend NO lo
@@ -79,28 +80,38 @@ export const cdaService = {
   // también criterios que en realidad se cumplían). Solo es seguro pasar
   // ValorParticularExpresion junto con CdaID (ver reejecutarCda), que sí
   // evalúa un único CDA — a costa de nunca generar una fila de cierre de
-  // grupo (CdaID 0). Reportado a Victor: no hay forma de forzar un único CDA
+  // grupo (CdaID 0). Reportado al backend: no hay forma de forzar un único CDA
   // y cerrar el grupo en la misma llamada.
-  ejecutarCda: async (pantallaOrObj, cuit, cadenaValorId, usuarioId, valorParticularExpresion) => {
+  ejecutarCda: async (pantallaOrObj, entidad, cadenaValorId, valorParticularExpresion) => {
     let Pantalla = pantallaOrObj;
-    let Cuit = cuit;
+    let SocioID, TerceroID, LineaID;
     let CadenaValorID = cadenaValorId;
-    let UsuarioID = usuarioId;
     let ValorParticularExpresion = valorParticularExpresion;
     if (typeof pantallaOrObj === "object" && pantallaOrObj !== null) {
       Pantalla = pantallaOrObj.pantalla || pantallaOrObj.Pantalla;
-      Cuit = pantallaOrObj.cuit || pantallaOrObj.Cuit;
+      SocioID = pantallaOrObj.socioId ?? pantallaOrObj.SocioID;
+      TerceroID = pantallaOrObj.terceroId ?? pantallaOrObj.TerceroID;
+      LineaID = pantallaOrObj.lineaId ?? pantallaOrObj.LineaID;
       CadenaValorID = pantallaOrObj.cadenaValorId || pantallaOrObj.CadenaValorID || pantallaOrObj.cadenavalorid || cadenaValorId;
-      UsuarioID = pantallaOrObj.usuarioId || pantallaOrObj.UsuarioID || pantallaOrObj.usuarioid || usuarioId;
       ValorParticularExpresion =
         pantallaOrObj.valorParticularExpresion || pantallaOrObj.ValorParticularExpresion || valorParticularExpresion;
+    } else if (entidad && typeof entidad === "object") {
+      SocioID = entidad.socioId ?? entidad.SocioID;
+      TerceroID = entidad.terceroId ?? entidad.TerceroID;
+      LineaID = entidad.lineaId ?? entidad.LineaID;
     }
-    const params = { Pantalla, Cuit };
+    const params = { Pantalla };
+    if (SocioID !== undefined && SocioID !== null && String(SocioID).trim() !== "") {
+      params.SocioID = Number(SocioID);
+    }
+    if (TerceroID !== undefined && TerceroID !== null && String(TerceroID).trim() !== "") {
+      params.TerceroID = Number(TerceroID);
+    }
+    if (LineaID !== undefined && LineaID !== null && String(LineaID).trim() !== "") {
+      params.LineaID = Number(LineaID);
+    }
     if (CadenaValorID !== undefined && CadenaValorID !== null && String(CadenaValorID).trim() !== "" && !isNaN(Number(CadenaValorID))) {
       params.CadenaValorID = Number(CadenaValorID);
-    }
-    if (UsuarioID !== undefined && UsuarioID !== null && String(UsuarioID).trim() !== "" && !isNaN(Number(UsuarioID))) {
-      params.UsuarioID = Number(UsuarioID);
     }
     if (ValorParticularExpresion && String(ValorParticularExpresion).trim()) {
       params.ValorParticularExpresion = String(ValorParticularExpresion).trim();
@@ -126,10 +137,14 @@ export const cdaService = {
     return response.data;
   },
 
-  // GET api/cda/execute?CdaID=X&Cuit=Y - Vuelve a evaluar un CDA puntual (ej.
-  // tras reactivar una integración que lo había dejado en estado Pendiente).
-  // Igual que probarCda: nunca tira, devuelve { status, data } para poder
-  // diferenciar 202 (aprobado) de 406 (rechazado) sin try/catch afuera.
+  // GET api/cda/execute?CdaID=X&SocioID|TerceroID|LineaID=Y - Vuelve a
+  // evaluar un CDA puntual (ej. tras reactivar una integración que lo había
+  // dejado en estado Pendiente). Igual que probarCda: nunca tira, devuelve
+  // { status, data } para poder diferenciar 202 (aprobado) de 406
+  // (rechazado) sin try/catch afuera.
+  //
+  // ⚠️ El backend ya no acepta Cuit (confirmado en vivo, mismo 409 que sin
+  // nada) — ahora pide SocioID/TerceroID/LineaID, igual que ejecutarCda.
   //
   // ⚠️ Confirmado con pruebas manuales: re-ejecutar por CdaID "pelado" (sin
   // Pantalla ni CadenaValorID) da 409 "Dato Requerido Faltante" para
@@ -146,9 +161,17 @@ export const cdaService = {
   // combinarEstadoCdas en utils/executeCda.js), pero es temporal: si más
   // adelante se reejecuta el grupo completo, este CDA vuelve a evaluarse con
   // su regla real y esa fila de cierre nueva sí puede volver a rechazarlo.
-  reejecutarCda: async ({ cdaId, cuit, usuarioId, pantalla, cadenaValorId, valorParticularExpresion }) => {
-    const params = { CdaID: cdaId, Cuit: cuit };
-    if (usuarioId) params.UsuarioID = usuarioId;
+  reejecutarCda: async ({ cdaId, socioId, terceroId, lineaId, pantalla, cadenaValorId, valorParticularExpresion }) => {
+    const params = { CdaID: cdaId };
+    if (socioId !== undefined && socioId !== null && String(socioId).trim() !== "") {
+      params.SocioID = Number(socioId);
+    }
+    if (terceroId !== undefined && terceroId !== null && String(terceroId).trim() !== "") {
+      params.TerceroID = Number(terceroId);
+    }
+    if (lineaId !== undefined && lineaId !== null && String(lineaId).trim() !== "") {
+      params.LineaID = Number(lineaId);
+    }
     if (pantalla) params.Pantalla = pantalla;
     if (cadenaValorId !== undefined && cadenaValorId !== null && String(cadenaValorId).trim() !== "" && !isNaN(Number(cadenaValorId))) {
       params.CadenaValorID = Number(cadenaValorId);

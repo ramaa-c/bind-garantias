@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,6 +9,7 @@ import {
   FiCircle,
   FiXCircle,
   FiAlertCircle,
+  FiAlertTriangle,
   FiLock,
 } from "react-icons/fi";
 import { FaUserLock } from "react-icons/fa";
@@ -19,21 +20,32 @@ import {
   InputSimple,
 } from "../../../components/ui";
 import {
-  useObtenerUsuarioPorEncrypt,
+  useObtenerEstadoPorEncrypt,
   useEstablecerClave,
   useResetearPassword,
-  useLoginByCode,
   useReactivarUsuario,
 } from "../../../hooks/useUsuario";
-import { useChannel } from "../../../context/ChannelContext";
-import styles from "./Login.module.css";
+import { useChannel } from "../../../context/useChannel";
+import { useThemeStore } from "../../../store/useThemeStore";
+import {
+  denominacionDesdeEmail,
+  FECHA_VENCIMIENTO_USUARIO,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
+  esRespuestaBloqueoAdmin,
+  avisarBloqueoAdmin,
+} from "../../../utils/usuarioUtils";
+import { mensajeNegocio } from "../../../utils/mensajesError";
+import styles from "./CrearClave.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 const passwordSchema = z
   .object({
     password: z
       .string()
       .min(12, { message: "Mínimo 12 caracteres" })
+      .max(128, { message: "Máximo 128 caracteres" })
       .regex(/[a-z]/, { message: "Incluir una minúscula" })
       .regex(/[A-Z]/, { message: "Incluir una mayúscula" })
       .regex(/[0-9]/, { message: "Incluir un número" })
@@ -46,26 +58,28 @@ const passwordSchema = z
   });
 
 const CrearClave = () => {
-  const { canal, token } = useParams();
-  const { channelInfo } = useChannel();
+  const { token } = useParams();
+  const { channelInfo, basePath } = useChannel();
+  const theme = useThemeStore((state) => state.theme);
   const navigate = useNavigate();
   const [emailManual, setEmailManual] = useState("");
+  const [emailManualTouched, setEmailManualTouched] = useState(false);
+  const [enlaceInvalidado, setEnlaceInvalidado] = useState(false);
+  const [bloqueoAdminDetectado, setBloqueoAdminDetectado] = useState(false);
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const tokenIntegridad =
-    typeof window !== "undefined" && window.location.hash
-      ? `${token || ""}${window.location.hash}`
-      : token || "";
-
-  const canalIntegridad = canal;
+  const hashUrl = typeof window !== "undefined" ? window.location.hash : "";
+  const tokenIntegridad = token
+    ? `${token}${hashUrl}`
+    : hashUrl.replace(/^#/, "");
 
   const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
   const {
-    data: usuario,
-    isLoading: verificandoToken,
-    isError: tokenExpirado,
-  } = useObtenerUsuarioPorEncrypt(tokenIntegridad);
+    data: estadoCuenta,
+    isLoading: verificandoEstado,
+    isError: estadoError,
+  } = useObtenerEstadoPorEncrypt(tokenIntegridad);
 
   const { mutate: establecerClave, isPending: guardandoClave } =
     useEstablecerClave();
@@ -73,54 +87,61 @@ const CrearClave = () => {
   const { mutate: resetearPassword, isPending: solicitandoNuevo } =
     useResetearPassword();
 
-  const { mutate: loginByCode, isPending: solicitandoCodigo } =
-    useLoginByCode();
   const { mutate: reactivarUsuario, isPending: reactivando } =
     useReactivarUsuario();
 
-  const handleOmitir = () => {
-    if (!usuario?.email || !usuario?.usuariowebid) return;
+  const marcarEnlaceVencido = () => {
+    setEnlaceInvalidado(true);
+    toast.error("El enlace expiró o no es válido", {
+      description: "Solicitá uno nuevo para continuar.",
+    });
+  };
 
-    reactivarUsuario(usuario.usuariowebid, {
+  const marcarBloqueoAdmin = () => {
+    setBloqueoAdminDetectado(true);
+    avisarBloqueoAdmin();
+  };
+
+  const irALoginConCodigo = () =>
+    navigate(`${basePath}/login`, {
+      state: { faseInicial: "solicitar_codigo" },
+    });
+
+  const handleIngresarConCodigo = () => {
+    reactivarUsuario(tokenIntegridad, {
       onSuccess: () => {
-        loginByCode(
-          { email: usuario.email, password: "" },
-          {
-            onSuccess: (data) => {
-              toast.success("Código enviado", {
-                description: "Revisá tu correo para ingresar.",
-              });
-              navigate(`/${channelInfo.id}/login`, {
-                state: {
-                  emailIngresado: usuario.email,
-                  generatedOtp: data.password,
-                },
-              });
-            },
-            onError: (error) => {
-              const isServerError = error?.response?.status >= 500;
-              toast.error(
-                isServerError
-                  ? "Error de servidor"
-                  : "Error al solicitar código",
-                {
-                  description: isServerError
-                    ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-                    : "Ocurrió un error. Intentá más tarde.",
-                },
-              );
-            },
-          },
-        );
+        toast.success("Cuenta activada", {
+          description: "Ingresá tu correo para recibir un código de acceso.",
+        });
+        irALoginConCodigo();
       },
       onError: (error) => {
-        const isServerError = error?.response?.status >= 500;
+        const status = error?.response?.status;
+        if (esRespuestaBloqueoAdmin(error)) {
+          marcarBloqueoAdmin();
+          return;
+        }
+        if (status === 406) {
+          marcarEnlaceVencido();
+          return;
+        }
+        if (status === 409) {
+          toast.info("Tu cuenta ya está activa", {
+            description: "Ingresá tu correo para recibir un código de acceso.",
+          });
+          irALoginConCodigo();
+          return;
+        }
+        const isServerError = !error?.response || status >= 500;
         toast.error(
-          isServerError ? "Error de servidor" : "Error al activar cuenta",
+          isServerError ? "Error de servidor" : "No pudimos activar tu cuenta",
           {
-            description: isServerError
-              ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-              : "No pudimos activar tu cuenta en este momento. Intentá más tarde.",
+            description:
+              status === 404
+                ? "No encontramos una cuenta asociada a este enlace."
+                : status === 423
+                  ? "Tu cuenta está bloqueada. Creá una nueva contraseña para desbloquearla."
+                  : "Ocurrió un error. Intentá más tarde.",
           },
         );
       },
@@ -133,9 +154,8 @@ const CrearClave = () => {
       return;
     }
 
-    const getCSharpIsoDate = (addYears = 0) => {
+    const getCSharpIsoDate = () => {
       const date = new Date();
-      if (addYears) date.setFullYear(date.getFullYear() + addYears);
       return date.toISOString().split(".")[0];
     };
 
@@ -145,37 +165,39 @@ const CrearClave = () => {
       email: emailManual,
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
-      fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: canalId,
+      fchvencimiento: FECHA_VENCIMIENTO_USUARIO,
+      hashseguridad: "",
       estado: "",
       debecambiarclave: "",
       esadministrador: "",
-      denominacion: canalId,
+      denominacion: denominacionDesdeEmail(emailManual),
+      fronturl: window.location.origin + basePath,
     };
 
+    const irAConfirmacion = () =>
+      navigate(`${basePath}/confirmar-correo`, {
+        state: {
+          emailIngresado: emailManual,
+          canal: canalId,
+          origen: "recuperar",
+        },
+      });
+
     resetearPassword(payloadReset, {
-      onSuccess: () => {
-        navigate(`/${channelInfo.id}/confirmar-correo`, {
-          state: {
-            emailIngresado: emailManual,
-            canal: canalId,
-            origen: "recuperar",
-          },
-        });
-      },
+      onSuccess: irAConfirmacion,
       onError: (error) => {
-        const isServerError = error?.response?.status >= 500;
-        toast.error(
-          isServerError ? "Error de servidor" : "Error al solicitar enlace",
-          {
-            description: isServerError
-              ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-              : "No pudimos enviar el correo. Intentá registrarte nuevamente.",
-          },
-        );
-        if (!isServerError) {
-          navigate(`/${channelInfo.id}/registro`);
+        if (!error?.response || error.response.status >= 500) {
+          toast.error("Error de servidor", {
+            description:
+              "El servidor no responde. Por favor, intentá nuevamente más tarde.",
+          });
+          return;
         }
+        if (esDemasiadosIntentos(error)) {
+          avisarDemasiadosIntentos();
+          return;
+        }
+        irAConfirmacion();
       },
     });
   };
@@ -184,6 +206,7 @@ const CrearClave = () => {
     control,
     handleSubmit,
     watch,
+    trigger,
     formState: { isValid, errors },
     setError,
   } = useForm({
@@ -194,52 +217,142 @@ const CrearClave = () => {
   const passwordValue = watch("password") || "";
   const confirmPasswordValue = watch("confirmPassword") || "";
 
-  const onSubmit = (formData) => {
-    const payload = {
-      usuarioid: usuario?.usuariowebid,
-      data: {
-        oldpassword: "",
-        newpassword: formData.password,
-      },
-    };
+  // React Hook Form, con resolver, solo actualiza el estado de error del
+  // campo que efectivamente cambió — aunque zod ya revalidó el objeto
+  // completo y sabe que ahora coinciden (o no), RHF no propaga esa
+  // corrección a "confirmPassword" solo porque el que cambió fue
+  // "password". Sin este trigger manual, si "confirmPassword" ya tenía el
+  // error "no coinciden" (path del .refine() del schema) y el usuario
+  // corrige "password" — no "confirmPassword" — para que vuelvan a
+  // coincidir, el mensaje queda pegado para siempre; incluso vaciando los
+  // dos campos de nuevo. Se dispara solo si "confirmPassword" ya tiene
+  // valor o ya tiene un error viejo (no ambos en false): si no, tipear la
+  // primera letra de "password" ya marcaría "no coinciden" contra un
+  // "confirmPassword" que el usuario todavía ni tocó.
+  useEffect(() => {
+    if (confirmPasswordValue || errors.confirmPassword) {
+      trigger("confirmPassword");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passwordValue, trigger]);
 
-    establecerClave(payload, {
-      onSuccess: () => {
-        toast.success("Contraseña establecida correctamente", {
-          description: "Tu cuenta ha sido activada. Ya podés iniciar sesión.",
-          duration: 5000,
-        });
-        navigate(`/${channelInfo.id}/login`, { replace: true });
+  const onSubmit = (formData) => {
+    establecerClave(
+      { encrypt: tokenIntegridad, newPassword: formData.password },
+      {
+        onSuccess: () => {
+          toast.success("Contraseña establecida correctamente", {
+            description: cuentaPendiente
+              ? "Tu cuenta fue activada. Ya podés iniciar sesión."
+              : cuentaBloqueada
+                ? "Tu cuenta fue desbloqueada. Ya podés iniciar sesión."
+                : "Ya podés iniciar sesión con tu nueva contraseña.",
+            duration: 5000,
+          });
+          navigate(`${basePath}/login`, { replace: true });
+        },
+        onError: (error) => {
+          const status = error?.response?.status;
+          if (esRespuestaBloqueoAdmin(error)) {
+            marcarBloqueoAdmin();
+            return;
+          }
+          if (status === 406) {
+            marcarEnlaceVencido();
+            return;
+          }
+          const isServerError = !error?.response || status >= 500;
+          const mensajeBackend = error?.response?.data?.message;
+          const errMsg =
+            status === 404
+              ? "No encontramos una cuenta asociada a este enlace."
+              : status === 400 && mensajeBackend
+                ? mensajeBackend
+                : isServerError
+                  ? "El servidor está experimentando problemas. Por favor, intentá nuevamente más tarde."
+                  : mensajeNegocio(error, "Error al establecer la credencial. Intentá más tarde.");
+          toast.error(
+            isServerError ? "Error de servidor" : "Error de activación",
+            {
+              description: errMsg,
+            },
+          );
+          setError("root.serverError", { type: "manual", message: errMsg });
+        },
       },
-      onError: (error) => {
-        const isServerError = error?.response?.status >= 500;
-        const errMsg = isServerError
-          ? "El servidor está experimentando problemas. Por favor, intentá nuevamente más tarde."
-          : "Error al establecer la credencial. Intentá más tarde.";
-        toast.error(
-          isServerError ? "Error de servidor" : "Error de activación",
-          {
-            description: errMsg,
-          },
-        );
-        setError("root.serverError", { type: "manual", message: errMsg });
-      },
-    });
+    );
   };
 
-  const mostrarErrorFaltaUsuario =
-    !usuario && tokenExpirado && !verificandoToken;
+  const cuentaBloqueadaPorAdmin =
+    !tokenInvalidoDeOrigen &&
+    (estadoCuenta === "bloqueada_admin" || bloqueoAdminDetectado);
+
+  const enlaceVencido =
+    !tokenInvalidoDeOrigen &&
+    !verificandoEstado &&
+    !cuentaBloqueadaPorAdmin &&
+    (estadoCuenta === "expirado" ||
+      estadoCuenta === "inexistente" ||
+      estadoError ||
+      enlaceInvalidado);
+
+  const enlaceUtilizable =
+    !tokenInvalidoDeOrigen && !enlaceVencido && !cuentaBloqueadaPorAdmin;
+  const cuentaPendiente = enlaceUtilizable && estadoCuenta === "pendiente";
+  const cuentaBloqueada = enlaceUtilizable && estadoCuenta === "bloqueada";
+  const cuentaActiva = enlaceUtilizable && estadoCuenta === "activa";
+  const cuentaRequiereAccion = cuentaPendiente || cuentaBloqueada;
+  const mostrarFormulario = cuentaActiva || cuentaRequiereAccion;
+
+  const mostrarErrorFaltaUsuario = enlaceVencido;
+
+  const avisoEstadoCuenta = cuentaPendiente
+    ? {
+        tono: "warning",
+        Icono: FiAlertTriangle,
+        titulo: "Activá tu cuenta",
+        texto:
+          "Tu cuenta está pendiente de activación. Al crear tu contraseña queda activa y lista para usar.",
+      }
+    : cuentaBloqueada
+      ? {
+          tono: "warning",
+          Icono: FiAlertTriangle,
+          titulo: "Cuenta bloqueada",
+          texto:
+            "Tu cuenta se bloqueó por superar el máximo de intentos. Al crear una nueva contraseña se desbloquea.",
+        }
+      : {
+          tono: "neutral",
+          Icono: FiLock,
+          titulo: "Actualizando tu acceso",
+          texto:
+            "Tu cuenta sigue activa mientras hacés este cambio. Podés seguir usando tus accesos actuales hasta confirmar la nueva contraseña.",
+        };
+
+  useEffect(() => {
+    if (!cuentaRequiereAccion) return;
+
+    const avisarAntesDeCerrar = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", avisarAntesDeCerrar);
+    return () =>
+      window.removeEventListener("beforeunload", avisarAntesDeCerrar);
+  }, [cuentaRequiereAccion]);
 
   return (
     <>
-      {verificandoToken && !tokenInvalidoDeOrigen ? (
+      {verificandoEstado && !tokenInvalidoDeOrigen ? (
         <div
           style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             minHeight: "100vh",
-            backgroundColor: "var(--color-background, #121212)",
+            backgroundColor: "var(--bg-primario)",
           }}
         >
           <Spinner />
@@ -247,16 +360,23 @@ const CrearClave = () => {
       ) : (
         <div className={styles.loginContainer}>
           {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
-          <section className={styles.loginFormSection}>
+          <section
+            className={`${styles.loginFormSection} ${
+              (mostrarErrorFaltaUsuario || cuentaBloqueadaPorAdmin) &&
+              !tokenInvalidoDeOrigen
+                ? styles.loginFormSectionCentered
+                : ""
+            }`}
+          >
             <div className={styles.globalLogo}>
               <div className={styles.logosWrapper}>
                 <img
-                  src={logoBind}
+                  src={theme === "light" ? logoBindBlack : logoBind}
                   alt="Logo BIND"
-                  onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+                  onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
                   className={styles.clickableLogo}
                 />
-                {channelInfo.id !== "default" && (
+                {channelInfo.id !== "default" && channelInfo.logo && (
                   <>
                     <div className={styles.logoSeparator} />
                     <img
@@ -279,32 +399,39 @@ const CrearClave = () => {
                 marginTop: "3.5rem",
               }}
             >
-              {!tokenInvalidoDeOrigen && usuario && (
+              {mostrarFormulario && (
                 <div
                   className={styles.successCallout}
                   style={{ marginBottom: 0 }}
                 >
                   <FiCheckCircle className={styles.calloutIcon} />
                   <div className={styles.calloutContent}>
-                    {usuario.estado === 1 ? (
+                    {cuentaActiva ? (
                       <>
                         <h2 className={styles.calloutTitle}>
-                          Creación de nueva contraseña
+                          Restablecé tu contraseña
                         </h2>
                         <p>
-                          Ingresá tu nueva contraseña para acceder a la plataforma.
+                          Ingresá tu nueva contraseña a continuación.
+                        </p>
+                      </>
+                    ) : cuentaBloqueada ? (
+                      <>
+                        <h2 className={styles.calloutTitle}>
+                          Desbloqueá tu cuenta
+                        </h2>
+                        <p>
+                          Creá una nueva contraseña para desbloquear tu cuenta.
                         </p>
                       </>
                     ) : (
                       <>
                         <h2 className={styles.calloutTitle}>
-                          ¡Email verificado con éxito!
+                          Activá tu cuenta
                         </h2>
                         <p>
-                          Tu cuenta ya está activa. Crear una contraseña es{" "}
-                          <strong>opcional</strong>. Podés configurarla ahora o
-                          saltar este paso para ingresar siempre con un código a tu
-                          correo.
+                          Creá tu contraseña para activar tu cuenta, o ingresá
+                          con un código a tu correo.
                         </p>
                       </>
                     )}
@@ -315,7 +442,7 @@ const CrearClave = () => {
               <div className={styles.formWrapper}>
                 {tokenInvalidoDeOrigen && (
                   <div className={styles.expiredTokenContainer}>
-                    <FiAlertCircle size={48} color="var(--red)" />
+                    <FiAlertCircle size={48} color="var(--error-red)" />
                     <h3>Enlace corrupto o ausente</h3>
                     <p>El enlace de seguridad está incompleto o mal formado.</p>
 
@@ -332,6 +459,7 @@ const CrearClave = () => {
                         value={emailManual}
                         onChange={setEmailManual}
                         type="email"
+                        autoComplete="email"
                         disabled={solicitandoNuevo}
                         esValido={
                           emailManual.length > 0 && isValidEmail(emailManual)
@@ -358,9 +486,28 @@ const CrearClave = () => {
                   </div>
                 )}
 
+                {cuentaBloqueadaPorAdmin && (
+                  <div className={styles.expiredTokenContainer}>
+                    <FiLock size={48} color="var(--error-red)" />
+                    <h3>Tu cuenta fue bloqueada por un administrador</h3>
+                    <p>
+                      Por seguridad, no podés desbloquearla desde este enlace.
+                      Contactá a soporte para recuperar el acceso.
+                    </p>
+
+                    <Button
+                      variant="primary"
+                      onClick={() => navigate(`${basePath}/login`, { replace: true })}
+                      style={{ marginTop: "1.5rem", width: "100%" }}
+                    >
+                      VOLVER AL INICIO
+                    </Button>
+                  </div>
+                )}
+
                 {mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen && (
                   <div className={styles.expiredTokenContainer}>
-                    <FiAlertCircle size={48} color="var(--red)" />
+                    <FiAlertCircle size={48} color="var(--error-red)" />
                     <h3>El enlace ha expirado o es inválido</h3>
                     <p>
                       Por seguridad, los enlaces tienen un tiempo de validez
@@ -379,13 +526,17 @@ const CrearClave = () => {
                         label="Ingresá tu correo electrónico"
                         value={emailManual}
                         onChange={setEmailManual}
+                        onBlur={() => setEmailManualTouched(true)}
                         type="email"
+                        autoComplete="email"
                         disabled={solicitandoNuevo}
                         esValido={
                           emailManual.length > 0 && isValidEmail(emailManual)
                         }
                         error={
-                          emailManual.length > 0 && !isValidEmail(emailManual)
+                          emailManualTouched &&
+                          emailManual.length > 0 &&
+                          !isValidEmail(emailManual)
                             ? { message: "Formato de correo inválido" }
                             : null
                         }
@@ -407,7 +558,7 @@ const CrearClave = () => {
                 )}
 
                 {/* Formulario principal */}
-                {!tokenInvalidoDeOrigen && usuario && (
+                {mostrarFormulario && (
                   <form onSubmit={handleSubmit(onSubmit)} noValidate>
                     <div className={styles.inputGroup}>
                       <Controller
@@ -418,9 +569,10 @@ const CrearClave = () => {
                             {...field}
                             label="Nueva Contraseña"
                             currentValue={passwordValue}
-                            email={usuario?.email || ""}
+                            email=""
                             esValido={!errors.password && !!passwordValue}
                             disabled={guardandoClave}
+                            autoComplete="new-password"
                           />
                         )}
                       />
@@ -435,16 +587,28 @@ const CrearClave = () => {
                         control={control}
                         label="Confirmar Contraseña"
                         type="password"
+                        autoComplete="new-password"
                         esValido={
                           !!confirmPasswordValue &&
-                          passwordValue === confirmPasswordValue
+                          passwordValue === confirmPasswordValue &&
+                          !errors.confirmPassword
                         }
                         error={errors.confirmPassword}
                         disabled={guardandoClave}
                       />
 
+                      {/* !errors.confirmPassword es necesario acá, no solo
+                          decorativo: al editar el PRIMER campo (password) en
+                          vez de este, `watch()` ya refleja el match en este
+                          mismo render, pero errors.confirmPassword (lo
+                          resuelve el .refine() del schema vía zodResolver,
+                          async) todavía no se actualizó - sin este guard,
+                          el mensaje de éxito aparecía superpuesto arriba del
+                          error rojo todavía vigente en vez de esperar a que
+                          se termine de limpiar. */}
                       {confirmPasswordValue.length > 0 &&
-                        passwordValue === confirmPasswordValue && (
+                        passwordValue === confirmPasswordValue &&
+                        !errors.confirmPassword && (
                           <span className={styles.successMsgMatch}>
                             Las contraseñas coinciden
                           </span>
@@ -462,17 +626,12 @@ const CrearClave = () => {
                       <Button
                         type="submit"
                         variant="primary"
-                        disabled={
-                          !isValid ||
-                          guardandoClave ||
-                          solicitandoCodigo ||
-                          reactivando
-                        }
+                        disabled={!isValid || guardandoClave || reactivando}
                         style={{ width: "100%" }}
                       >
                         {guardandoClave ? "PROCESANDO..." : "GUARDAR"}
                       </Button>
-                      {usuario.estado !== 1 && (
+                      {cuentaPendiente && (
                         <>
                           <div className={styles.divider}>
                             <span>o</span>
@@ -480,17 +639,13 @@ const CrearClave = () => {
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={handleOmitir}
-                            disabled={
-                              solicitandoCodigo ||
-                              guardandoClave ||
-                              reactivando
-                            }
+                            onClick={handleIngresarConCodigo}
+                            disabled={reactivando || guardandoClave}
                             style={{ width: "100%" }}
                           >
-                            {solicitandoCodigo || reactivando
+                            {reactivando
                               ? "PROCESANDO..."
-                              : "Omitir e ingresar con código"}
+                              : "Ingresar con código"}
                           </Button>
                         </>
                       )}
@@ -498,6 +653,7 @@ const CrearClave = () => {
                   </form>
                 )}
               </div>
+
             </div>
           </section>
 
@@ -517,6 +673,31 @@ const CrearClave = () => {
                 <br />
                 <em className={styles.brandEm}>seguro.</em>
               </h2>
+
+              {/* Reemplaza al viejo warningCallout que vivía pegado abajo
+                  del todo en la columna izquierda (con el formulario largo,
+                  no entraba en una pantalla de full HD sin scroll). Acá
+                  siempre está a la vista, sin pelear espacio con el
+                  formulario, y cambia de tono según por qué se llegó a esta
+                  pantalla en vez de ser un mensaje genérico fijo. */}
+              {mostrarFormulario && (
+                <div
+                  className={styles.brandStatusCard}
+                  data-tone={avisoEstadoCuenta.tono}
+                >
+                  <div className={styles.brandStatusIconWrap}>
+                    <avisoEstadoCuenta.Icono />
+                  </div>
+                  <div>
+                    <h3 className={styles.brandStatusTitle}>
+                      {avisoEstadoCuenta.titulo}
+                    </h3>
+                    <p className={styles.brandStatusText}>
+                      {avisoEstadoCuenta.texto}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </section>
         </div>

@@ -1,25 +1,36 @@
-import React, { useState } from "react";
-import { createPortal } from "react-dom";
+import React, { useState, useEffect } from "react";
 import {
   FiSmartphone,
-  FiX,
   FiCheckCircle,
   FiMessageSquare,
 } from "react-icons/fi";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
+import { toast } from "sonner";
+import { Modal } from "../../../ui/Modal/Modal";
 import { Button } from "../../../ui/Button/Button";
 import { InputSocioMasked } from "../../../ui/InputSocioMasked/InputSocioMasked";
+import { InputOTP } from "../../../ui/InputOtp/InputOtp";
 import styles from "./ContactoModal.module.css";
-import { useEscape } from "../../../../hooks/useEscape";
+import { useValidarNumero } from "../../../../hooks/useSms";
+import { mensajeDeApi } from "../../../../utils/mensajesError";
+
+const COOLDOWN_SEGUNDOS = 60;
+const LONGITUD_CODIGO_DEFECTO = 6;
 
 export default function ContactoModal({ isOpen, onClose, onGuardar }) {
-  const { getValues, setValue } = useFormContext();
+  const { getValues, setValue, control } = useFormContext();
+  const { mutate: validarNumero, isPending: enviandoSms } = useValidarNumero();
+
+  const celularVerificado = useWatch({ control, name: "celularVerificado" }) || "";
 
   const [fase, setFase] = useState("ingresar");
   const [intentoSolicitarSms, setIntentoSolicitarSms] = useState(false);
   const [procesando, setProcesando] = useState(false);
   const [codigoSms, setCodigoSms] = useState("");
   const [celLocal, setCelLocal] = useState("");
+  const [smsDesactivada, setSmsDesactivada] = useState(false);
+  const [errorCodigo, setErrorCodigo] = useState(null);
+  const [segundosRestantes, setSegundosRestantes] = useState(0);
 
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
@@ -31,17 +42,23 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
       setCodigoSms("");
       setProcesando(false);
       setIntentoSolicitarSms(false);
+      setSmsDesactivada(false);
+      setErrorCodigo(null);
+      setSegundosRestantes(0);
     }
   }
 
+  useEffect(() => {
+    if (segundosRestantes <= 0) return undefined;
+    const id = setTimeout(() => setSegundosRestantes((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [segundosRestantes]);
+
   const handleClose = () => {
-    if (procesando) return;
     setFase("ingresar");
     setCodigoSms("");
     onClose();
   };
-
-  useEscape(handleClose, isOpen);
 
   if (!isOpen) return null;
 
@@ -50,22 +67,78 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
       ? "Debe tener 10 números"
       : null;
   const isCelValido = !errorCel && celLocal.length === 10;
+  const longitudCodigo = LONGITUD_CODIGO_DEFECTO;
+  const celularYaValidado = isCelValido && celLocal === celularVerificado;
+
+  const enviarSms = (numero) => {
+    validarNumero(
+      { nroTelefono: numero, codigo: "" },
+      {
+        onSuccess: () => {
+          setSmsDesactivada(false);
+          setCodigoSms("");
+          setErrorCodigo(null);
+          setFase("verificar");
+          setSegundosRestantes(COOLDOWN_SEGUNDOS);
+        },
+        onError: (error) => {
+          const status = error?.response?.status;
+          if (status === 406) {
+            setSmsDesactivada(true);
+            setCodigoSms("");
+            setErrorCodigo(null);
+            setFase("verificar");
+            setSegundosRestantes(COOLDOWN_SEGUNDOS);
+            return;
+          }
+          // Error de red: ya lo notifica el interceptor de axios.
+          if (!error?.response) return;
+          toast.error("Error al enviar el código", {
+            description:
+              status === 429
+                ? mensajeDeApi(error, "Esperá un minuto antes de pedir otro código.")
+                : status === 400
+                  ? mensajeDeApi(error, "El número no es válido.")
+                  : status === 404
+                    ? "No se pudo enviar el SMS. Intentá de nuevo en unos segundos."
+                    : "Ocurrió un error al validar el número. Intentá más tarde.",
+          });
+        },
+      },
+    );
+  };
 
   const handleSolicitarSms = (e) => {
     if (e) e.preventDefault();
     setIntentoSolicitarSms(true);
-    if (isCelValido) {
-      setValue("celular", celLocal, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-      setFase("verificar");
+    if (!isCelValido || enviandoSms) return;
+
+    setValue("celular", celLocal, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    // Este número exacto ya pasó la validación por SMS antes: no tiene
+    // sentido (ni cupo) reenviar otro código para lo mismo.
+    if (celularYaValidado) {
+      onGuardar();
+      return;
     }
+
+    enviarSms(celLocal);
+  };
+
+  const handleReenviarSms = () => {
+    if (segundosRestantes > 0 || enviandoSms) return;
+    enviarSms(celLocal);
   };
 
   const handleVerificarSms = (e) => {
     if (e) e.preventDefault();
-    if (codigoSms.length === 4 && !procesando) {
+    if (codigoSms.length !== longitudCodigo || procesando) return;
+
+    const completarVerificacion = () => {
+      setValue("celularVerificado", celLocal, { shouldDirty: true });
       setProcesando(true);
       setFase("exito");
 
@@ -77,33 +150,46 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
           setProcesando(false);
         }, 300);
       }, 1200);
+    };
+
+    // Integración de SMS apagada: no hay código que comparar.
+    if (smsDesactivada) {
+      completarVerificacion();
+      return;
     }
+
+    // El código lo compara la API: queda registrado que este usuario verificó
+    // este celular, y PUT Socio lo exige para cambiarlo.
+    validarNumero(
+      { nroTelefono: celLocal, codigo: codigoSms },
+      {
+        onSuccess: completarVerificacion,
+        onError: (error) => {
+          const status = error?.response?.status;
+          if (status === 400) {
+            setErrorCodigo(mensajeDeApi(error, "Código incorrecto"));
+          } else if (status === 429) {
+            setErrorCodigo(mensajeDeApi(error, "Demasiados intentos. Pedí un código nuevo."));
+          } else if (error?.response) {
+            toast.error("No se pudo verificar el código", {
+              description: "Ocurrió un error al validar el código. Intentá más tarde.",
+            });
+          }
+        },
+      },
+    );
   };
 
-  const handleOverlayMouseDown = (e) => {
-    if (e.target === e.currentTarget) handleClose();
-  };
+  const mm = String(Math.floor(segundosRestantes / 60)).padStart(2, "0");
+  const ss = String(segundosRestantes % 60).padStart(2, "0");
 
-  return createPortal(
-    <div
-      className={styles.overlay}
-      onMouseDown={handleOverlayMouseDown}
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      maxWidth="28.125rem"
+      preventClose={procesando || enviandoSms}
     >
-      <div
-        className={styles.modalContainer}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        {!procesando && (
-          <button
-            type="button"
-            className={styles.btnClose}
-            onClick={handleClose}
-            aria-label="Cerrar"
-          >
-            <FiX size={20} />
-          </button>
-        )}
-
         <form className={styles.body} onSubmit={(e) => {
           e.preventDefault();
           if (fase === "ingresar") {
@@ -135,17 +221,27 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
                   value={celLocal}
                   onChange={(val) => setCelLocal(typeof val === 'string' ? val : val.target?.value || "")}
                   icon={<FiSmartphone />}
+                  disabled={enviandoSms}
                 />
               </div>
+              {celularYaValidado && (
+                <p className={styles.yaValidadoHint}>
+                  <FiCheckCircle size={14} /> Este número ya fue validado.
+                </p>
+              )}
               <div className={styles.btnSave}>
                 <Button
                   type="button"
                   variant="primary"
                   onClick={handleSolicitarSms}
-                  disabled={procesando || celLocal.length < 10}
+                  disabled={enviandoSms || celLocal.length < 10}
                   style={{ width: "100%", minHeight: "3rem" }}
                 >
-                  ENVIAR CÓDIGO SMS
+                  {enviandoSms
+                    ? "ENVIANDO..."
+                    : celularYaValidado
+                      ? "CONTINUAR"
+                      : "ENVIAR CÓDIGO SMS"}
                 </Button>
               </div>
             </>
@@ -175,14 +271,16 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
                 </span>
               </p>
               <div className={styles.formSection}>
-                <InputSocioMasked
-                  label="Código de verificación"
-                  mask="0000"
-                  unmask={true}
+                <InputOTP
                   value={codigoSms}
-                  esValido={codigoSms.length === 4}
-                  onChange={(val) => setCodigoSms(typeof val === 'string' ? val : val.target?.value || "")}
-                  icon={<FiMessageSquare />}
+                  onChange={(val) => {
+                    setErrorCodigo(null);
+                    setCodigoSms(val);
+                  }}
+                  error={errorCodigo}
+                  esValido={codigoSms.length === longitudCodigo && !errorCodigo}
+                  disabled={procesando || enviandoSms}
+                  length={longitudCodigo}
                 />
               </div>
               <div className={styles.btnSave}>
@@ -190,16 +288,29 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
                   type="button"
                   variant="primary"
                   onClick={handleVerificarSms}
-                  disabled={codigoSms.length < 4 || procesando}
+                  disabled={codigoSms.length !== longitudCodigo || procesando}
                   style={{ width: "100%", minHeight: "3rem" }}
                 >
                   VERIFICAR IDENTIDAD
                 </Button>
               </div>
-              <p className={styles.resendText}>
-                ¿No recibiste el código?{" "}
-                <span className={styles.resendLink}>Reenviar SMS</span>
-              </p>
+              <div className={styles.resendRow}>
+                <span className={styles.resendLabel}>¿No recibiste el código?</span>
+                {segundosRestantes > 0 ? (
+                  <span className={styles.resendTimer}>
+                    {mm}:{ss}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.resendBtn}
+                    onClick={handleReenviarSms}
+                    disabled={enviandoSms}
+                  >
+                    {enviandoSms ? "Reenviando..." : "Reenviar SMS"}
+                  </button>
+                )}
+              </div>
             </>
           )}
 
@@ -220,8 +331,6 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
             </div>
           )}
         </form>
-      </div>
-    </div>,
-    document.body
+    </Modal>
   );
 }

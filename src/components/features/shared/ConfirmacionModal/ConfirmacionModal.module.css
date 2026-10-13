@@ -2,12 +2,12 @@
    punteadas y el botón de confirmar — no el contenedor del modal. */
 
 .dialog {
-  --tone-color: var(--yellow, #f5f400);
+  --tone-color: var(--color-amarillo-bind);
   position: relative;
 }
 
 .dialog.yellow {
-  --tone-color: var(--yellow, #f5f400);
+  --tone-color: var(--color-amarillo-bind);
 }
 
 .dialog.blue {
@@ -16,6 +16,10 @@
 
 .dialog.danger {
   --tone-color: var(--error-red, #ef4444);
+}
+
+.dialog.warning {
+  --tone-color: var(--warning);
 }
 
 .sealRow {
@@ -107,7 +111,7 @@
 .mensaje {
   font-size: 0.925rem;
   line-height: 1.65;
-  color: #9aa1af;
+  color: var(--text-muted);
   margin: 0;
 }
 

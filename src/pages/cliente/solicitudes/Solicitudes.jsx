@@ -1,24 +1,40 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { FiPlus, FiSearch, FiClock } from "react-icons/fi";
+import { useQueryClient } from "@tanstack/react-query";
+import { useForm, useWatch } from "react-hook-form";
+import { FiPlus, FiSearch, FiClock, FiX } from "react-icons/fi";
 import { FaFileInvoiceDollar } from "react-icons/fa";
-import { BotonVolver, Button, Select, Spinner, SkeletonTable } from "../../../components/ui";
+import { toast } from "sonner";
+import {
+  BotonVolver,
+  Button,
+  SelectSimple,
+  SelectFechaSimple,
+  Spinner,
+  SkeletonTable,
+} from "../../../components/ui";
 import {
   TarjetaSolicitud,
   DetalleSolicitudModal,
   LegajoUniversalBar,
-  BloqueoLegajoModal
 } from "../../../components/features";
 import ConfirmacionBorradorModal from "../../../components/features/shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 import InformativoModal from "../../../components/features/shared/InformativoModal/InformativoModal";
+import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
 import { HelpDrawer } from "../../../components/layout/Client/HelpDrawer/HelpDrawer";
-import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
 import { useObtenerLimitesSocio, useObtenerSolicitudesEnProceso } from "../../../hooks/useSolicitudes";
-import { useQuery } from "@tanstack/react-query";
-import { sociosService } from "../../../services/sociosService";
+import { useActualizarLimiteSocio } from "../../../hooks/useLinea";
+import { useVerificarHabilitacionNuevaOperacion } from "../../../hooks/useVerificarHabilitacionSolicitudes";
+import { solicitudesService } from "../../../services/solicitudesService";
 import { useEmpresaActiva } from "../../../hooks/useEmpresaActiva";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
+import { mensajeNegocio } from "../../../utils/mensajesError";
+import {
+  ESTADO_PENDIENTE,
+  ESTADO_CANCELADA,
+  estadoTextoDesde,
+  MOTIVO_CANCELACION_SOCIO,
+} from "../../../utils/estadoLimiteSocio";
 
 import styles from "./Solicitudes.module.css";
 
@@ -29,12 +45,34 @@ const opcionesEstado = [
   { value: "pendiente", label: "Pendiente" },
   { value: "aprobada", label: "Aprobada" },
   { value: "rechazada", label: "Rechazada" },
+  { value: "cancelada", label: "Cancelada" },
 ];
 
 const opcionesOrden = [
   { value: "desc", label: "Más recientes" },
   { value: "asc", label: "Más antiguas" },
 ];
+
+const FILTROS_POR_DEFECTO = {
+  busqueda: "",
+  estado: "todos",
+  orden: "desc",
+  fechaDesde: "",
+  fechaHasta: "",
+};
+
+// SelectFechaSimple entrega el valor ya como ISO completo (no un simple
+// "yyyy-mm-dd"), así que para el límite superior del rango hay que llevar la
+// hora local al final del día explícitamente en vez de asumir un formato.
+const finDelDia = (fecha) => {
+  const d = new Date(fecha);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
+// Extrae la parte numérica del id propio del item para ordenar: id más
+// grande = más reciente.
+const idNumerico = (item) => parseInt(String(item.id), 10) || 0;
 
 const hasMeaningfulData = (dataString) => {
   if (!dataString) return false;
@@ -82,24 +120,37 @@ const hasMeaningfulData = (dataString) => {
 export default function Solicitudes() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { channelInfo } = useChannel();
+  const queryClient = useQueryClient();
+  const { basePath } = useChannel();
 
-  const { control, register } = useForm({
-    defaultValues: {
-      busqueda: "",
-      estado: "",
-      orden: "desc",
-    },
+  const { control, register, setValue, reset } = useForm({
+    defaultValues: FILTROS_POR_DEFECTO,
   });
+  const filtros = useWatch({ control });
+
+  const fechaDesdeDate = filtros.fechaDesde ? new Date(filtros.fechaDesde) : undefined;
+  const fechaHastaDate = filtros.fechaHasta ? new Date(filtros.fechaHasta) : undefined;
+
+  const hayFiltrosActivos =
+    !!filtros.busqueda ||
+    (filtros.estado && filtros.estado !== "todos") ||
+    (filtros.orden && filtros.orden !== "desc") ||
+    !!filtros.fechaDesde ||
+    !!filtros.fechaHasta;
+
+  const handleLimpiarFiltros = () => reset(FILTROS_POR_DEFECTO);
 
   const [flujoPendiente, setFlujoPendiente] = useState(null);
   const [draftKeyPendiente, setDraftKeyPendiente] = useState(null);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [modalPendienteOpen, setModalPendienteOpen] = useState(false);
-  const [modalBloqueoLegajoOpen, setModalBloqueoLegajoOpen] = useState(false);
+  const [modalNuevaOperacionBloqueada, setModalNuevaOperacionBloqueada] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  const { isValid, faltanDocumentos, faltanLegajo } = useValidacionLegajo();
+  const {
+    habilitada: nuevaOperacionHabilitada,
+    motivo: motivoNuevaOperacionBloqueada,
+  } = useVerificarHabilitacionNuevaOperacion();
 
   const { cuitActivo, nombreEmpresa, socioIdActivo } = useEmpresaActiva();
   const socioIdFinal = socioIdActivo || 0;
@@ -119,46 +170,136 @@ export default function Solicitudes() {
     return () => document.removeEventListener("bindHelp:toggle", handler);
   }, []);
 
+  // Se bloquea el botón "Nueva Operación" (no el submit al final del
+  // wizard) apenas exista CUALQUIER solicitud en curso — de cualquier línea,
+  // cadena o plataforma. Es más estricto que la regla real del backend (que
+  // permite convivir varias siempre que no repitan TipoLimiteID+CadenaValorID,
+  // ver AltaOperacion.jsx), pero evita que el socio entre a todo el wizard
+  // para recién enterarse al final de que esa línea puntual ya tenía una
+  // pendiente. mirar solicitudesEnProceso (no solo TipoLimiteSocio) cubre
+  // además el caso borde de una SolicitudEnProceso que ya se creó pero cuyo
+  // TipoLimiteSocio todavía no llegó a persistirse (falla parcial en
+  // AltaOperacion.jsx).
   const tieneSolicitudPendiente = useMemo(() => {
     const hasRealPendiente = Array.isArray(solicitudesReal) && solicitudesReal.some(s =>
-      !s.tipolimiteestadoid || s.tipolimiteestadoid === 0 || s.tipolimiteestadoid === 1
+      Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE) === ESTADO_PENDIENTE
     );
-    const hasProcesoPendiente = Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
+    const hasProcesoPendiente =
+      Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
     return hasRealPendiente || hasProcesoPendiente;
   }, [solicitudesReal, solicitudesEnProceso]);
 
+  // SolicitudEnProceso ya no se muestra acá: pasó a ser una tabla de control
+  // interno entre plataformas, sin ninguna fila propia en pantalla (decisión
+  // confirmada el 2026-09-15) - lo que el socio ve es directamente
+  // TipoLimiteSocio, la única fuente real de sus solicitudes.
   const listaSolicitudes = useMemo(() => {
-    const reales = (solicitudesReal || [])
-      .map(s => ({
-        id: s.tipolimitesocioid?.toString() || Math.random().toString(),
+    return (solicitudesReal || []).map((s) => {
+      const tipoLimiteEstadoId = Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE);
+      return {
+        id: s.tipolimitesocioid?.toString() || "",
         tipo: s.tipolimiteid === 1 ? "Cheque" : s.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
         monto: s.importelimite ? new Intl.NumberFormat("es-AR").format(s.importelimite) : "0",
         moneda: s.monedaid === 5000 ? "$" : s.monedaid === 2 ? "U$D" : s.monedaid === 10 ? "UVAS" : s.monedaid === 500 ? "€" : "$",
-        estado: (!s.tipolimiteestadoid || s.tipolimiteestadoid === 0 || s.tipolimiteestadoid === 1) ? "Pendiente" : s.tipolimiteestadoid === 2 ? "Aprobada" : s.tipolimiteestadoid === 3 ? "Rechazada" : "Cancelada",
+        estado: estadoTextoDesde(tipoLimiteEstadoId),
+        tipoLimiteEstadoId,
         fecha: s.fchvigenciadesde ? new Date(s.fchvigenciadesde).toLocaleDateString("es-AR") : "Hoy",
+        fechaISO: s.fchvigenciadesde || null,
         socioid: s.socioid || socioIdFinal,
         cuit: cuitActivo,
-        isReal: true,
-        solicitudid: s.solicitudid,
-      }));
+        raw: s,
+      };
+    });
+  }, [solicitudesReal, socioIdFinal, cuitActivo]);
 
-    const pendientes = (solicitudesEnProceso || [])
-      .filter(sp => !reales.some(r => Number(r.solicitudid) === sp.solicitudenprocesoid))
-      .map(sp => ({
-        id: `sp-${sp.solicitudenprocesoid}`,
-        tipo: sp.tipolimiteid === 1 ? "Cheque" : sp.tipolimiteid === 2 ? "Préstamo" : "Pagaré",
-        monto: sp.importe ? new Intl.NumberFormat("es-AR").format(sp.importe) : "0",
-        moneda: sp.monedaid === 5000 ? "$" : sp.monedaid === 2 ? "U$D" : sp.monedaid === 10 ? "UVAS" : sp.monedaid === 500 ? "€" : "$",
-        estado: "Pendiente",
-        fecha: sp.fechacarga ? new Date(sp.fechacarga).toLocaleDateString("es-AR") : "Hoy",
-        socioid: socioIdFinal,
-        cuit: cuitActivo,
-        isReal: true,
-        solicitudid: sp.solicitudenprocesoid,
-      }));
+  const listaFiltrada = useMemo(() => {
+    const texto = (filtros.busqueda || "").trim().toLowerCase();
+    const estadoFiltro = filtros.estado;
+    const desde = filtros.fechaDesde ? new Date(filtros.fechaDesde) : null;
+    const hasta = filtros.fechaHasta ? finDelDia(filtros.fechaHasta) : null;
 
-    return [...reales, ...pendientes].sort((a, b) => (Number(b.solicitudid) || 0) - (Number(a.solicitudid) || 0));
-  }, [solicitudesReal, solicitudesEnProceso, socioIdFinal, cuitActivo]);
+    const filtradas = listaSolicitudes.filter((item) => {
+      if (texto) {
+        const matchTexto =
+          (item.cuit || "").toLowerCase().includes(texto) ||
+          (item.id || "").toLowerCase().includes(texto) ||
+          (item.tipo || "").toLowerCase().includes(texto);
+        if (!matchTexto) return false;
+      }
+
+      if (estadoFiltro && estadoFiltro !== "todos") {
+        if ((item.estado || "").toLowerCase() !== estadoFiltro) return false;
+      }
+
+      if (desde || hasta) {
+        // Sin fecha real no hay forma de ubicarla en el rango elegido, así
+        // que si están filtrando por fecha la excluimos en vez de mostrarla
+        // de todos modos.
+        if (!item.fechaISO) return false;
+        const fechaItem = new Date(item.fechaISO);
+        if (desde && fechaItem < desde) return false;
+        if (hasta && fechaItem > hasta) return false;
+      }
+
+      return true;
+    });
+
+    return filtradas.sort((a, b) => {
+      const diff = idNumerico(b) - idNumerico(a);
+      return filtros.orden === "asc" ? -diff : diff;
+    });
+  }, [listaSolicitudes, filtros.busqueda, filtros.estado, filtros.fechaDesde, filtros.fechaHasta, filtros.orden]);
+
+  const [solicitudACancelar, setSolicitudACancelar] = useState(null);
+  const actualizarLimiteMutation = useActualizarLimiteSocio();
+
+  const handleConfirmarCancelacion = async () => {
+    if (!solicitudACancelar?.raw) return;
+    try {
+      await actualizarLimiteMutation.mutateAsync({
+        ...solicitudACancelar.raw,
+        tipolimiteestadoid: ESTADO_CANCELADA,
+        observaciones: MOTIVO_CANCELACION_SOCIO,
+      });
+
+      // Igual que en Dashboard.jsx (admin): todo cambio de estado en
+      // TipoLimiteSocio se refleja también en SolicitudEnProceso — ambas
+      // tablas usan literalmente el mismo catálogo (2026-08-18), así que no
+      // hace falta traducir el valor. TipoLimiteSocio.SolicitudID viaja
+      // siempre en null, así que la fila se ubica por (Cuit, TipoLimiteID,
+      // CadenaValorID) en vez de por ID. No bloquea la cancelación si falla,
+      // queda solo logueado — es una sincronización secundaria.
+      const tipoLimiteId =
+        solicitudACancelar.raw?.tipolimiteid ?? solicitudACancelar.raw?.TipoLimiteID;
+      const cadenaValorId =
+        solicitudACancelar.raw?.cadenavalorid ?? solicitudACancelar.raw?.CadenaValorID;
+      if (tipoLimiteId && cadenaValorId && cuitActivo) {
+        solicitudesService
+          .sincronizarEstadoSolicitudEnProcesoPorClave(cuitActivo, tipoLimiteId, cadenaValorId, ESTADO_CANCELADA)
+          .catch((syncErr) => {
+            console.error(
+              `[Solicitudes] No se pudo sincronizar el estado en SolicitudEnProceso para la solicitud N°${solicitudACancelar.id}:`,
+              syncErr,
+            );
+          })
+          .finally(() => {
+            // Sin esto, useObtenerSolicitudesEnProceso (staleTime 5min) sigue
+            // devolviendo la fila ya sincronizada/borrada del lado del
+            // backend, y tieneSolicitudPendiente sigue bloqueando "Nueva
+            // Operación" aunque la cancelación haya funcionado (reportado en
+            // vivo, 2026-09-15).
+            queryClient.invalidateQueries({ queryKey: ["solicitudes", "en-proceso"] });
+          });
+      }
+
+      toast.success(`Solicitud N°${solicitudACancelar.id} cancelada`, {
+        description: "Ya podés iniciar una nueva operación.",
+      });
+      setSolicitudACancelar(null);
+    } catch (err) {
+      toast.error("No se pudo cancelar la solicitud: " + mensajeNegocio(err, err.message));
+    }
+  };
 
   useEffect(() => {
     if (location.state?.nuevaSolicitud) {
@@ -167,13 +308,21 @@ export default function Solicitudes() {
   }, [location.state]);
 
   const handleNuevaOperacion = async (ruta, draftKey) => {
-    if (!isValid) {
-      setModalBloqueoLegajoOpen(true);
+    // Esta pantalla solo es alcanzable cuando la cadena tiene línea activa
+    // (ver OnboardingGuard/useAccesoDashboardCliente) — en ese caso, cargar
+    // una solicitud no depende de tener legajo/documentación completos: es
+    // justamente el primer paso del flujo, antes de pedirle al cliente más
+    // datos que capaz no hacían falta si el CDA de la línea rechaza.
+    if (tieneSolicitudPendiente) {
+      setModalPendienteOpen(true);
       return;
     }
 
-    if (tieneSolicitudPendiente) {
-      setModalPendienteOpen(true);
+    // SGRPlusCore/ValidarUtilizacion + AptaNuevaLinea: ya no bloquean la
+    // pantalla entera (ver useVerificarHabilitacionSolicitudes), solo el
+    // inicio de una operación nueva.
+    if (!nuevaOperacionHabilitada) {
+      setModalNuevaOperacionBloqueada(true);
       return;
     }
 
@@ -235,7 +384,7 @@ export default function Solicitudes() {
           variant="primary"
           size="sm"
           onClick={() =>
-            handleNuevaOperacion(`/${channelInfo?.id || "default"}/alta-operacion`, "draft_alta_operacion")
+            handleNuevaOperacion(`${basePath}/alta-operacion`, "draft_alta_operacion")
           }
           className={styles.btnNuevaOp}
         >
@@ -245,59 +394,112 @@ export default function Solicitudes() {
 
       {/* CUERPO PRINCIPAL */}
       <main className={styles.main}>
-        <LegajoUniversalBar />
+        <LegajoUniversalBar context="solicitudes" />
         
-        <div className={styles.toolbar}>
-          <div className={styles.filtersWrapper}>
-            <div className={styles.searchBox}>
-              <FiSearch className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Buscar por nombre o CUIT..."
-                className={styles.searchInput}
-                {...register("busqueda")}
-              />
-            </div>
-
-            <div className={styles.selectGroup}>
-              <div className={styles.customSelectWrapper}>
-                <Select
-                  name="estado"
-                  control={control}
-                  options={opcionesEstado}
-                  placeholder="Estado"
-                  isSearchable={false}
-                  hideErrorSpace
-                />
-              </div>
-
-              <div className={styles.customSelectWrapper}>
-                <Select
-                  name="orden"
-                  control={control}
-                  options={opcionesOrden}
-                  placeholder="Orden"
-                  isSearchable={false}
-                  hideErrorSpace
-                />
-              </div>
-            </div>
+        <div className={styles.filterBar}>
+          <div className={styles.searchBox}>
+            <FiSearch className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="Buscar por N° de solicitud o CUIT..."
+              className={styles.searchInput}
+              {...register("busqueda")}
+            />
           </div>
+
+          <div className={styles.filterFieldsRow}>
+            <SelectFechaSimple
+              label="Desde"
+              value={filtros.fechaDesde}
+              onChange={(val) => setValue("fechaDesde", val, { shouldDirty: true })}
+              disableFuture
+              maxDate={fechaHastaDate}
+              variant="client"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+            <SelectFechaSimple
+              label="Hasta"
+              value={filtros.fechaHasta}
+              onChange={(val) => setValue("fechaHasta", val, { shouldDirty: true })}
+              disableFuture
+              minDate={fechaDesdeDate}
+              variant="client"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+            <SelectSimple
+              name="estado"
+              control={control}
+              label="Estado"
+              options={opcionesEstado}
+              variant="client"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+            <SelectSimple
+              name="orden"
+              control={control}
+              label="Orden"
+              options={opcionesOrden}
+              variant="client"
+              compact
+              hideErrorSpace
+              className={styles.filterField}
+            />
+          </div>
+
+          <button
+            type="button"
+            className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
+            onClick={handleLimpiarFiltros}
+            disabled={!hayFiltrosActivos}
+            tabIndex={hayFiltrosActivos ? 0 : -1}
+            title="Limpiar filtros"
+            aria-label="Limpiar filtros"
+          >
+            <FiX />
+          </button>
         </div>
         <div className={styles.listContainer}>
           {isLoadingData ? (
             <SkeletonTable rows={3} />
-          ) : listaSolicitudes.length > 0 ? (
-            listaSolicitudes.map((item) => (
-              <TarjetaSolicitud
-                key={item.id}
-                solicitud={item}
-                onVerDetalle={setSolicitudSeleccionada}
-              />
-            ))
+          ) : listaFiltrada.length > 0 ? (
+            listaFiltrada.map((item) => {
+              // Solo se puede cancelar una solicitud real (ya tiene
+              // TipoLimiteSocio, no un simple borrador en proceso) que
+              // todavía esté pendiente de validación.
+              const puedeCancelar =
+                !!item.raw && item.tipoLimiteEstadoId === ESTADO_PENDIENTE;
+              return (
+                <TarjetaSolicitud
+                  key={item.id}
+                  solicitud={item}
+                  onVerDetalle={setSolicitudSeleccionada}
+                  acciones={
+                    puedeCancelar
+                      ? [
+                          {
+                            label: "Cancelar solicitud",
+                            variant: "danger",
+                            onClick: () => setSolicitudACancelar(item),
+                          },
+                        ]
+                      : undefined
+                  }
+                />
+              );
+            })
           ) : (
             <div className={styles.emptyState}>
-              <p>No tenés solicitudes activas en este momento.</p>
+              <p>
+                {listaSolicitudes.length > 0
+                  ? "No encontramos solicitudes con esos filtros."
+                  : "No tenés solicitudes activas en este momento."}
+              </p>
             </div>
           )}
         </div>
@@ -310,20 +512,23 @@ export default function Solicitudes() {
         onContinueBorrador={handleCloseContinueDraft}
       />
 
-      <BloqueoLegajoModal
-        isOpen={modalBloqueoLegajoOpen}
-        onClose={() => setModalBloqueoLegajoOpen(false)}
-        faltanDocumentos={faltanDocumentos}
-        faltanLegajo={faltanLegajo}
-        onGoToSocios={() => navigate(`/${channelInfo?.id || "default"}/legajo`)}
-        onGoToDocumentacion={() => navigate(`/${channelInfo?.id || "default"}/documentacion`)}
-      />
-
       <DetalleSolicitudModal
         isOpen={!!solicitudSeleccionada}
         onClose={() => setSolicitudSeleccionada(null)}
         solicitud={solicitudSeleccionada}
         nombreEmpresa={nombreEmpresaActiva}
+      />
+
+      <ConfirmacionModal
+        isOpen={!!solicitudACancelar}
+        onClose={() => setSolicitudACancelar(null)}
+        onConfirm={handleConfirmarCancelacion}
+        isLoading={actualizarLimiteMutation.isPending}
+        tone="danger"
+        titulo="Cancelar solicitud"
+        mensaje={`¿Seguro que querés cancelar la Solicitud N°${solicitudACancelar?.id}? Vas a poder iniciar una nueva operación una vez cancelada.`}
+        confirmText="Sí, cancelar"
+        cancelText="Volver"
       />
 
       <InformativoModal
@@ -333,6 +538,19 @@ export default function Solicitudes() {
         variant="warning"
         title="Solicitud en proceso"
         description="Ya tenés una solicitud de línea en análisis. Debés esperar a que se valide o cancelarla antes de crear una nueva."
+        buttonText="Entendido"
+      />
+
+      <InformativoModal
+        isOpen={modalNuevaOperacionBloqueada}
+        onClose={() => setModalNuevaOperacionBloqueada(false)}
+        icon={<FiClock style={{ color: "var(--yellow, #f4f500)" }} />}
+        variant="warning"
+        title="No podés iniciar una operación nueva"
+        description={
+          motivoNuevaOperacionBloqueada ||
+          "No podés iniciar una nueva operación en este momento."
+        }
         buttonText="Entendido"
       />
 

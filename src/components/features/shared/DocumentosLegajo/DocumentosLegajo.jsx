@@ -1,16 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
-import { useFormContext, useWatch, useForm, Controller } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+
+import { useFormContext, useWatch, Controller } from "react-hook-form";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRequisitos } from "../../../../hooks/useRequisitos";
 import {
   FiCheckCircle,
   FiClock,
   FiAlertCircle,
-  FiBriefcase,
-  FiCreditCard,
-  FiMapPin,
-  FiPhone,
   FiExternalLink,
   FiUsers,
   FiUser,
@@ -25,6 +21,7 @@ import {
   FiSmartphone,
   FiMap,
   FiDownload,
+  FiCheck,
   FiFile,
   FiX,
 } from "react-icons/fi";
@@ -37,119 +34,37 @@ import {
   InputSocioMasked,
   BuscadorCuit,
   SelectFecha,
+  InfoTooltip,
+  Spinner,
 } from "../../../ui";
+import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { tercerosService } from "../../../../services/tercerosService";
-import { sociosService } from "../../../../services/sociosService";
-import { usuarioService } from "../../../../services/usuarioService";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
-import { afipService } from "../../../../services/afipService";
-import { useProvincias } from "../../../../hooks/useCatalogos";
-import { useObtenerTerceros } from "../../../../hooks/useTerceros";
 import { useDiasMargenVencimientoBalance } from "../../../../hooks/useValorOperativo";
 import { calcularEstadoBalance } from "../../../../utils/balanceVigencia";
 import styles from "./DocumentosLegajo.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+import { useDescargaConFeedback } from "../../../../hooks/useDescargaConFeedback";
+
 import {
   procesarArchivo,
-  normalizarTexto,
   formatBase64Size,
   descargarArchivosEnZip,
+  descargarLegajoCompletoZip,
+  validarArchivo,
+  FORMATOS_ARCHIVO,
 } from "../../../../utils/fileUtils";
+import { ESTRUCTURA_LEGAJO } from "./DocumentosLegajo.constants";
 
-export const ESTRUCTURA_LEGAJO = [
-  {
-    category: "Empresa",
-    key: "perfil",
-    title: "Perfil corporativo",
-    info: "Datos identificatorios registrados en la plataforma.",
-  },
-  {
-    category: "Documentación",
-    key: "estatuto",
-    title: "Estatuto Social",
-    info: "Normas constitutivas de la entidad legal.",
-  },
-  {
-    category: "Documentación",
-    key: "eecc",
-    title: "Estados Contables (EECC)",
-    info: "Estados contables auditados de los últimos ejercicios.",
-  },
-  {
-    category: "Documentación",
-    key: "balance",
-    title: "Balance de Sumas y Saldos",
-    info: "Cargá o visualizá el último balance de tu empresa firmado por contador público.",
-  },
-  {
-    category: "Documentación",
-    key: "ddjjIva",
-    title: "Declaración Jurada de IVA",
-    info: "Declaración jurada de IVA y su constancia de presentación.",
-  },
-  {
-    category: "Documentación",
-    key: "poderes",
-    title: "Poderes",
-    info: "Documento que autoriza a un representante legal.",
-  },
-  {
-    category: "Documentación",
-    key: "certificadoPyme",
-    title: "Certificado de PyME",
-    info: "Acredita tu condición ante la AFIP y organismos. Si no lo tenés, podés ",
-    linkText: "obtenerlo aquí.",
-    url: "https://pyme.produccion.gob.ar/certificado/",
-  },
-  {
-    category: "Documentación",
-    key: "actaDesignacion",
-    title: "Acta de Designación de Autoridades",
-    info: "Designación de autoridades vigente o declaración jurada equivalente.",
-  },
-  {
-    category: "Documentación",
-    key: "actaSocios",
-    title: "Acta de Reunión de Socios",
-    info: "Acta de última reunión de socios o asamblea.",
-  },
-  {
-    category: "Documentación",
-    key: "f1272",
-    title: "Formulario F1272",
-    info: "Formulario de declaración de PyME ante la AFIP.",
-  },
-  {
-    category: "Documentación",
-    key: "ddjjGanancias",
-    title: "DDJJ de Ganancias",
-    info: "Declaración jurada de Ganancias presentada ante AFIP.",
-  },
-  {
-    category: "Documentación",
-    key: "manifestacionBienes",
-    title: "Manifestación de Bienes",
-    info: "Manifestación de bienes o DDJJ de Bienes Personales.",
-  },
-  {
-    category: "Documentación",
-    key: "constanciaMonotributo",
-    title: "Constancia de Monotributo",
-    info: "Constancia de opción al Monotributo de AFIP.",
-  },
-  {
-    category: "Documentación",
-    key: "cartasDocumento",
-    title: "Cartas Documento",
-    info: "Cargá o visualizá las cartas documento vinculadas a la empresa.",
-  },
-  {
-    category: "Documentación",
-    key: "otrosDocumentos",
-    title: "Otros documentos",
-    info: "Adjuntá cualquier otro documento que consideres necesario.",
-  },
-];
+// Ícono de los botones de descarga en ZIP según en qué fase esté
+// (ver useDescargaConFeedback). A diferencia de la descarga de un archivo
+// suelto, estos ZIP sí tardan de verdad (jszip comprime todo el legajo),
+// así que el spinner acá refleja trabajo real.
+const IconoDescarga = ({ fase }) => {
+  if (fase === "cargando") return <Spinner size={14} />;
+  if (fase === "listo") return <FiCheck size={13} />;
+  return <FiDownload size={13} />;
+};
 
 const getDownloadCategoryText = (key, title) => {
   const plurals = {
@@ -171,10 +86,36 @@ const getDownloadCategoryText = (key, title) => {
   return `Descargar ${plurals[key] || `todos: ${title}`}`;
 };
 
+// Cuando hay 2+ archivos del mismo tipo con el mismo nombre (ej. varias
+// "Presentación Única de Balances" subidas en distintas fechas), el nombre
+// truncado en la sub-pestaña no alcanza para distinguir cuál es cuál - ver
+// la fecha del archivo alcanza para eso sin necesitar mostrar el nombre
+// completo.
+const formatFechaCorta = (fecha) => {
+  if (!fecha) return null;
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return null;
+  return new Intl.DateTimeFormat("es-AR", { day: "2-digit", month: "short" }).format(d);
+};
+
+// No se puede presentar un balance de un período que todavía no concluyó -
+// el calendario de SelectFecha ya bloquea elegir una fecha futura (ver
+// maxDate en los 3 usos de "Fecha del período del balance" más abajo), esto
+// es el respaldo por si `fechaStr` llega seteado de otra forma.
+const esFechaFutura = (fechaStr) => {
+  if (!fechaStr) return false;
+  const fecha = new Date(`${fechaStr.split("T")[0]}T00:00:00`);
+  if (Number.isNaN(fecha.getTime())) return false;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return fecha > hoy;
+};
+
 export function DocumentosLegajo({
   socioIdOverride,
   empresaOverride,
   adminMode = false,
+  cadenaIdOverride,
 } = {}) {
   const { control, setValue } = useFormContext();
   const formValues = useWatch({ control });
@@ -186,9 +127,6 @@ export function DocumentosLegajo({
   const {
     socioIdActivo,
     nombreEmpresa,
-    cuitActivo,
-    direccion,
-    telefono,
     tipoPersonaId,
     fechaCierreEjercicio,
   } = adminMode
@@ -209,25 +147,22 @@ export function DocumentosLegajo({
     });
   };
 
-  // En modo admin no se conoce con certeza a qué cadena de valor pertenece
-  // el socio (no hay un campo CadenaValorID en Socio), así que se muestra
-  // el legajo completo sin aplicar el filtro de requisitos por cadena.
-  const { cadenaSlug } = useParams();
-  const cadenaId = Number(cadenaSlug) || 1;
-  const { requisitos } = useRequisitos(
-    adminMode ? null : cadenaId,
-    adminMode ? null : tipoPersonaId,
-    adminMode ? null : nombreEmpresa,
-  );
+  // No hay un campo CadenaValorID en Socio, así que en modo admin la cadena
+  // llega ya detectada desde afuera (EmpresaDetalle.jsx la infiere del
+  // historial de CDAs del socio, ver detectarCadenaValorId). Si no se pudo
+  // detectar (historial viejo o inexistente), useRequisitos cae solo al
+  // fallback por tipo de persona/sociedad — sigue siendo mejor que mostrar
+  // el legajo completo sin ningún criterio.
+  const { cadenaSlug } = useCadenaActiva();
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
+  const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
 
   const estructuraFiltrada = useMemo(() => {
-    if (adminMode) return ESTRUCTURA_LEGAJO;
-    return ESTRUCTURA_LEGAJO.filter((doc) => {
-      if (doc.key === "perfil") return true;
-      const configVal = requisitos?.documentos?.[doc.key];
+    return ESTRUCTURA_LEGAJO.filter((item) => {
+      const configVal = requisitos?.documentos?.[item.key];
       return configVal !== 0; // 0 = no mostrar
     });
-  }, [requisitos, adminMode]);
+  }, [requisitos]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -257,67 +192,95 @@ export function DocumentosLegajo({
     }
   }, [estructuraFiltrada, activeTab, isMobile]);
 
-  const [archivosBackend, setArchivosBackend] = useState([]);
+  // Vía useQuery (no useState + fetch manual, como antes) para que
+  // invalidateQueries(["socioArchivos", socioIdActivo]) - que ya disparan
+  // "Consultar a LUFE" (DocumentacionView.jsx) y las propias mutaciones de
+  // este componente más abajo - de verdad refresque la lista. Con estado
+  // local, invalidar la query no hacía nada: nadie estaba suscripto a ese
+  // queryKey, así que un documento restaurado por LUFE (o eliminado y
+  // reimportado) recién se veía después de un F5 (SGRPLUSPLA-203).
+  const { data: archivosBackendData, isLoading: cargandoArchivos } = useQuery({
+    queryKey: ["socioArchivos", socioIdActivo],
+    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo),
+    enabled: !!socioIdActivo,
+  });
+  const archivosBackend = useMemo(
+    () => (Array.isArray(archivosBackendData) ? archivosBackendData : []),
+    [archivosBackendData],
+  );
   const [activeSubTabs, setActiveSubTabs] = useState({});
   const [metaFecha, setMetaFecha] = useState("");
   const [metaRef, setMetaRef] = useState("");
+  // Solo aplica en mobile: con un archivo ya cargado, el selector de
+  // archivo/"Subir otro"/metadatos quedan colapsados detrás de este toggle
+  // para no abrumar la pantalla — en desktop siempre van expandidos.
+  const [mostrarOpcionesArchivo, setMostrarOpcionesArchivo] = useState(false);
   const [metaFechaPeriodo, setMetaFechaPeriodo] = useState("");
   const [isSavingMeta, setIsSavingMeta] = useState(false);
+  // Si se intenta subir un balance sin haber completado la fecha del
+  // período arriba del dropzone, en vez de bloquear con un toast (fácil de
+  // no ver) se guarda el archivo elegido acá y se lo obliga a confirmar la
+  // fecha en una modal — recién ahí se dispara el POST/PUT real.
+  const [pendingBalanceUpload, setPendingBalanceUpload] = useState(null);
+  const [fechaModalValue, setFechaModalValue] = useState("");
+  // Guarda sincrónica contra doble click en "Confirmar y subir": el cierre
+  // de la modal (setPendingBalanceUpload(null)) recién se refleja en el
+  // próximo render de React, no en este mismo tick — dos clicks muy rápidos
+  // podrían alcanzar a disparar dos subidas del mismo archivo antes de eso.
+  const confirmandoFechaBalanceRef = useRef(false);
+  const [confirmandoFechaBalance, setConfirmandoFechaBalance] = useState(false);
+  const [archivoAEliminar, setArchivoAEliminar] = useState(null);
+  const [uploadingKey, setUploadingKey] = useState(null);
+  // Feedback del botón de descarga (spinner y después tilde) - ver
+  // useDescargaConFeedback: la descarga es instantánea, sin la espera
+  // artificial de ese hook no se ve nada ni se frena el doble click
+  // (SGRPLUSPLA-199).
+  const { descargar, faseDe } = useDescargaConFeedback();
 
-  const cargarArchivosExistentes = async () => {
-    if (!socioIdActivo) return;
-    try {
-      const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo);
-      if (Array.isArray(archivos)) {
-        setArchivosBackend(archivos);
-
-        // Agrupar archivos por tipo
-        const grouped = {};
-        archivos.forEach((arch) => {
-          const tipoId = arch.tipodocumentoarchivoid;
-          const key = Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).find(
-            (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId
-          );
-          if (key) {
-            if (!grouped[key]) grouped[key] = [];
-            grouped[key].push(arch);
-          }
-        });
-
-        // Sincronizar react-hook-form con el archivo más nuevo para la validación visual
-        Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach((key) => {
-          const files = grouped[key] || [];
-          if (files.length > 0) {
-            const latest = [...files].sort((a, b) => b.socioarchivoid - a.socioarchivoid)[0];
-            setValue(
-              key,
-              {
-                name: latest.nombrearchivo,
-                size: latest.contenido
-                  ? formatBase64Size(latest.contenido)
-                  : "Disponible",
-                _uploaded: true,
-                _backendId: latest.socioarchivoid,
-                _tipodocumentoarchivoid: latest.tipodocumentoarchivoid,
-                vialufe: latest.vialufe || latest.Vialufe || "0",
-              },
-              { shouldValidate: true }
-            );
-            setValue(`${key}_backendId`, latest.socioarchivoid);
-          } else {
-            setValue(key, null);
-            setValue(`${key}_backendId`, null);
-          }
-        });
-      }
-    } catch (err) {
-      console.error("Error cargando archivos del legajo:", err);
-    }
-  };
-
+  // Sincroniza react-hook-form (para la validación visual de obligatorios)
+  // cada vez que cambian los archivos de la query - ya no solo al montar,
+  // así que también corre después de que "Consultar a LUFE" invalide la
+  // query y llegue el dato nuevo.
   useEffect(() => {
-    cargarArchivosExistentes();
-  }, [socioIdActivo, setValue]);
+    if (!socioIdActivo) return;
+
+    const grouped = {};
+    archivosBackend.forEach((arch) => {
+      const tipoId = arch.tipodocumentoarchivoid;
+      const key = Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).find(
+        (k) => socioArchivoService.TIPO_DOCUMENTO_MAP[k] === tipoId
+      );
+      if (key) {
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push(arch);
+      }
+    });
+
+    Object.keys(socioArchivoService.TIPO_DOCUMENTO_MAP).forEach((key) => {
+      const files = grouped[key] || [];
+      if (files.length > 0) {
+        const latest = [...files].sort((a, b) => b.socioarchivoid - a.socioarchivoid)[0];
+        setValue(
+          key,
+          {
+            name: latest.nombrearchivo,
+            size: latest.contenido
+              ? formatBase64Size(latest.contenido)
+              : "Disponible",
+            _uploaded: true,
+            _backendId: latest.socioarchivoid,
+            _tipodocumentoarchivoid: latest.tipodocumentoarchivoid,
+            vialufe: latest.vialufe || latest.Vialufe || "0",
+          },
+          { shouldValidate: true }
+        );
+        setValue(`${key}_backendId`, latest.socioarchivoid);
+      } else {
+        setValue(key, null);
+        setValue(`${key}_backendId`, null);
+      }
+    });
+  }, [archivosBackend, socioIdActivo, setValue]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -335,14 +298,17 @@ export function DocumentosLegajo({
 
   // Obtener archivos de la categoría activa ordenados de más nuevo a más viejo
   const categoryFiles = useMemo(() => {
-    if (!activeDoc || activeDoc.key === "perfil") return [];
+    if (!activeDoc) return [];
     const tipoId = socioArchivoService.TIPO_DOCUMENTO_MAP[activeDoc.key];
     const files = archivosBackend.filter((a) => a.tipodocumentoarchivoid === tipoId);
     return files.sort((a, b) => b.socioarchivoid - a.socioarchivoid);
   }, [archivosBackend, activeDoc]);
 
-  // Subpestaña activa para la categoría
-  const currentSubTab = activeSubTabs[activeDoc.key] !== undefined
+  // Subpestaña activa para la categoría. activeDoc puede ser undefined
+  // (estructuraFiltrada vacía, ver el early-return de más abajo): esto se
+  // evalúa en CADA render, antes de llegar a ese return, así que necesita
+  // su propio guard en vez de asumir que activeDoc siempre existe.
+  const currentSubTab = activeDoc && activeSubTabs[activeDoc.key] !== undefined
     ? activeSubTabs[activeDoc.key]
     : (categoryFiles.length > 0 ? 0 : "nuevo");
 
@@ -360,6 +326,7 @@ export function DocumentosLegajo({
 
   // Sincronizar los campos de metadatos cuando cambia el archivo seleccionado
   useEffect(() => {
+    setMostrarOpcionesArchivo(false);
     if (activeFile) {
       const rawDate = activeFile.fchreferencia || "";
       const dateVal = rawDate ? rawDate.split("T")[0] : "";
@@ -385,8 +352,12 @@ export function DocumentosLegajo({
       toast.error("Ingresá la fecha del período del balance.");
       return;
     }
+    if (activeDoc?.key === "balance" && esFechaFutura(metaFechaPeriodo)) {
+      toast.error("La fecha del período del balance no puede ser futura.");
+      return;
+    }
     setIsSavingMeta(true);
-    const toastId = toast.loading("Guardando metadatos del archivo...");
+    const toastId = toast.loading("Guardando información...");
     try {
       const fchreferencia = metaFecha ? `${metaFecha.split("T")[0]}T00:00:00` : null;
       const fchArchivoManual =
@@ -405,8 +376,6 @@ export function DocumentosLegajo({
         fchArchivoManual
       );
 
-      await cargarArchivosExistentes();
-
       queryClient.invalidateQueries({
         queryKey: ["socioArchivos", socioIdActivo],
       });
@@ -414,19 +383,37 @@ export function DocumentosLegajo({
         queryKey: ["socioLegajoCompleto", socioIdActivo],
       });
 
-      toast.success("Metadatos guardados correctamente", { id: toastId });
+      toast.success("Información guardada correctamente", { id: toastId });
     } catch (error) {
       console.error("Error al guardar metadatos:", error);
-      toast.error("Error al guardar los metadatos del archivo.", { id: toastId });
+      toast.error("Error al guardar la información del archivo.", { id: toastId });
     } finally {
       setIsSavingMeta(false);
     }
   };
 
-  const handleFileUpload = async (key, file, docTitle, specificId = null) => {
+  // `fechaPeriodoOverride` lo manda confirmarFechaBalanceModal con la fecha
+  // recién elegida: no alcanza con confiar en releer metaFechaPeriodo del
+  // estado, porque el setMetaFechaPeriodo previo todavía no se aplicó en
+  // este mismo tick (los setState de React son asincrónicos).
+  const handleFileUpload = async (key, file, docTitle, specificId = null, fechaPeriodoOverride = null) => {
     if (file instanceof File) {
-      if (key === "balance" && !metaFechaPeriodo) {
-        toast.error("Ingresá primero la fecha del período del balance.");
+      if (!validarArchivo(file, FORMATOS_ARCHIVO.pdf)) return;
+
+      const fechaPeriodoEfectiva = fechaPeriodoOverride || metaFechaPeriodo;
+
+      if (key === "balance" && !fechaPeriodoEfectiva) {
+        // No se bloquea con un toast: se guarda el archivo elegido y se
+        // fuerza la fecha en una modal. Al confirmar, se vuelve a llamar a
+        // esta misma función (ver confirmarFechaBalanceModal), pasándole la
+        // fecha directo.
+        setPendingBalanceUpload({ key, file, docTitle, specificId });
+        setFechaModalValue("");
+        return;
+      }
+
+      if (key === "balance" && esFechaFutura(fechaPeriodoEfectiva)) {
+        toast.error("La fecha del período del balance no puede ser futura.");
         return;
       }
 
@@ -438,11 +425,11 @@ export function DocumentosLegajo({
       }
 
       const fchArchivoManual =
-        key === "balance" && metaFechaPeriodo
-          ? `${metaFechaPeriodo.split("T")[0]}T00:00:00`
+        key === "balance" && fechaPeriodoEfectiva
+          ? `${fechaPeriodoEfectiva.split("T")[0]}T00:00:00`
           : null;
 
-      const toastId = toast.loading(`Subiendo ${docTitle}...`);
+      setUploadingKey(key);
       try {
         let resultado;
         if (specificId) {
@@ -477,23 +464,62 @@ export function DocumentosLegajo({
         }
 
         if (resultado) {
-          await cargarArchivosExistentes();
-          
-          queryClient.invalidateQueries({
+          // Se espera a que termine el refetch de "socioArchivos" (dispara
+          // uno porque la query está activa, ver el comentario de
+          // archivosBackendData más arriba) antes de mover la subpestaña:
+          // categoryFiles sale de ese mismo query, así que sin este await
+          // selectSubTab(key, 0) corría contra la lista todavía vieja (sin
+          // el archivo recién subido) - en una categoría que arrancaba
+          // vacía (ej. "Otros documentos"), categoryFiles[0] todavía no
+          // existía y el dropzone se veía vacío un instante hasta que el
+          // refetch en segundo plano terminaba (reportado el 2026-10-06).
+          // handleFileDelete de más abajo no tiene este problema porque ya
+          // actualiza la cache a mano con setQueryData antes de moverse.
+          await queryClient.invalidateQueries({
             queryKey: ["socioArchivos", socioIdActivo],
           });
           queryClient.invalidateQueries({
             queryKey: ["socioLegajoCompleto", socioIdActivo],
           });
 
-          toast.success("Documento subido exitosamente", { id: toastId });
+          toast.success("Documento subido exitosamente");
           selectSubTab(key, 0);
         }
       } catch (error) {
         console.error("Fallo al subir el archivo:", error);
-        toast.error("Error al subir el documento. Por favor, reintente.", { id: toastId });
+        toast.error("Error al subir el documento. Por favor, reintente.");
+      } finally {
+        setUploadingKey(null);
       }
     }
+  };
+
+  const confirmarFechaBalanceModal = () => {
+    if (confirmandoFechaBalanceRef.current) return;
+    if (!fechaModalValue) {
+      toast.error("Seleccioná la fecha del período del balance.");
+      return;
+    }
+    if (esFechaFutura(fechaModalValue)) {
+      toast.error("La fecha del período del balance no puede ser futura.");
+      return;
+    }
+    confirmandoFechaBalanceRef.current = true;
+    setConfirmandoFechaBalance(true);
+    const { key, file, docTitle, specificId } = pendingBalanceUpload;
+    setMetaFechaPeriodo(fechaModalValue);
+    setPendingBalanceUpload(null);
+    handleFileUpload(key, file, docTitle, specificId, fechaModalValue).finally(() => {
+      confirmandoFechaBalanceRef.current = false;
+      setConfirmandoFechaBalance(false);
+    });
+  };
+
+  const cancelarFechaBalanceModal = () => {
+    confirmandoFechaBalanceRef.current = false;
+    setConfirmandoFechaBalance(false);
+    setPendingBalanceUpload(null);
+    setFechaModalValue("");
   };
 
   const handleFileDelete = async (key, fileId, docTitle) => {
@@ -501,46 +527,49 @@ export function DocumentosLegajo({
       toast.error("No se pudo identificar la empresa activa.");
       return;
     }
+    const archivoExistente = archivosBackend.find((a) => a.socioarchivoid === fileId);
+    if (!archivoExistente) {
+      toast.error("No se encontró el archivo a eliminar.");
+      return;
+    }
     const toastId = toast.loading(`Eliminando ${docTitle}...`);
     try {
-      // Intentar llamada al backend (por si implementan el endpoint)
-      try {
-        await socioArchivoService.eliminarArchivo(socioIdActivo, fileId);
-      } catch (apiError) {
-        console.warn("El backend no soporta DELETE para SocioArchivo aún. Aplicando simulación local.", apiError);
+      // SocioArchivo no tiene DELETE: esto hace un PUT real que pisa
+      // fchArchivo con la fecha centinela (ver socioArchivoService), no una
+      // simulación local — si falla, el archivo sigue existiendo de verdad
+      // y por eso se corta acá (catch de abajo) en vez de seguir de largo.
+      await socioArchivoService.marcarArchivoEliminado(archivoExistente);
+
+      // Actualización optimista sobre la query (antes era setArchivosBackend
+      // local) - mismo criterio: no esperar al refetch para que la card
+      // desaparezca, pero ahora viviendo en la cache que sí está conectada a
+      // invalidateQueries.
+      const actualizados = archivosBackend.filter((a) => a.socioarchivoid !== fileId);
+      queryClient.setQueryData(["socioArchivos", socioIdActivo], actualizados);
+
+      const tipoId = socioArchivoService.TIPO_DOCUMENTO_MAP[key];
+      const restantes = actualizados
+        .filter((a) => a.tipodocumentoarchivoid === tipoId)
+        .sort((a, b) => b.socioarchivoid - a.socioarchivoid);
+
+      if (restantes.length > 0) {
+        setValue(
+          key,
+          {
+            name: restantes[0].nombrearchivo,
+            size: restantes[0].contenido ? formatBase64Size(restantes[0].contenido) : "Disponible",
+            _uploaded: true,
+            _backendId: restantes[0].socioarchivoid,
+            _tipodocumentoarchivoid: restantes[0].tipodocumentoarchivoid,
+            vialufe: restantes[0].vialufe || restantes[0].Vialufe || "0",
+          },
+          { shouldValidate: true }
+        );
+        setValue(`${key}_backendId`, restantes[0].socioarchivoid);
+      } else {
+        setValue(key, null);
+        setValue(`${key}_backendId`, null);
       }
-
-      // Filtrar el archivo eliminado del estado local para el maquetado visual
-      setArchivosBackend((prev) => {
-        const actualizados = prev.filter((a) => a.socioarchivoid !== fileId);
-        
-        // Recalcular RHF con los archivos restantes
-        const tipoId = socioArchivoService.TIPO_DOCUMENTO_MAP[key];
-        const restantes = actualizados
-          .filter((a) => a.tipodocumentoarchivoid === tipoId)
-          .sort((a, b) => b.socioarchivoid - a.socioarchivoid);
-
-        if (restantes.length > 0) {
-          setValue(
-            key,
-            {
-              name: restantes[0].nombrearchivo,
-              size: restantes[0].contenido ? formatBase64Size(restantes[0].contenido) : "Disponible",
-              _uploaded: true,
-              _backendId: restantes[0].socioarchivoid,
-              _tipodocumentoarchivoid: restantes[0].tipodocumentoarchivoid,
-              vialufe: restantes[0].vialufe || restantes[0].Vialufe || "0",
-            },
-            { shouldValidate: true }
-          );
-          setValue(`${key}_backendId`, restantes[0].socioarchivoid);
-        } else {
-          setValue(key, null);
-          setValue(`${key}_backendId`, null);
-        }
-
-        return actualizados;
-      });
 
       queryClient.invalidateQueries({
         queryKey: ["socioArchivos", socioIdActivo],
@@ -562,15 +591,16 @@ export function DocumentosLegajo({
     const cleanDocTitle = activeDoc.title.replace(/\s+/g, "_");
     const cleanRazonSocial = (nombreEmpresa || "Empresa").replace(/\s+/g, "_");
     const zipName = `Documentos_${cleanRazonSocial}_${cleanDocTitle}.zip`;
-    descargarArchivosEnZip(categoryFiles, zipName);
+    descargar("zip-categoria", () =>
+      descargarArchivosEnZip(categoryFiles, zipName),
+    );
   };
 
   const renderViewer = (doc) => {
     if (!doc) return null;
-    const isPerfil = doc.key === "perfil";
     const files = categoryFiles;
-    const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
-    const showSubTabs = !isPerfil && files.length > 0;
+    const isRequired = requisitos?.documentos?.[doc.key] === 1;
+    const showSubTabs = files.length > 0;
     const isBalance = doc.key === "balance";
     const estadoBalance = isBalance ? calcularEstadoBalanceDoc(files) : null;
     const isVencidoBalance = estadoBalance?.estado === "vencido";
@@ -582,32 +612,40 @@ export function DocumentosLegajo({
     } : null;
 
     const hasError =
-      intentoAvanzar && !isPerfil && isRequired && (files.length === 0 || isVencidoBalance);
+      intentoAvanzar && isRequired && (files.length === 0 || isVencidoBalance);
     const isLufe = files.some((a) => String(a.vialufe || a.Vialufe) === "1");
 
     return (
       <section className={styles.viewer}>
+        {/* La categoría ("Documentación") y el nombre del documento ya se ven
+            resaltados en la pestaña activa del sidebar, a centímetros de acá:
+            repetirlos como badge + título aparte era puro relleno visual.
+            Se unifican en una sola fila (título + estado + acción), lo que
+            además libera una fila entera de alto. */}
         <header className={styles.viewerHeader}>
           <div className={styles.viewerMeta}>
-            <span className={`${styles.viewerBadge} ${adminMode ? styles.viewerBadgeAdmin : ""}`}>
-              {doc.category}
-            </span>
-            {isLufe && (
-              <span className={`${styles.viewerBadge} ${styles.viewerBadgeLufe}`}>
-                Vía LUFE
-              </span>
-            )}
-          </div>
-          <div className={styles.viewerHeaderTitleRow}>
-            <h4 className={styles.viewerTitle}>{doc.title}</h4>
+            <div className={styles.viewerMetaLeft}>
+              <h4 className={styles.viewerTitle}>{doc.title}</h4>
+              {isLufe && (
+                <span className={`${styles.viewerBadge} ${styles.viewerBadgeLufe}`}>
+                  Vía LUFE
+                </span>
+              )}
+            </div>
             {files.length > 1 && (
               <button
                 type="button"
                 className={`${styles.downloadCategoryBtn} ${adminMode ? styles.downloadCategoryBtnAdmin : ""}`}
                 onClick={handleDownloadCategoryZip}
+                disabled={faseDe("zip-categoria") !== null}
                 title={`Descargar todos los archivos de tipo ${doc.title}`}
               >
-                <FiDownload size={13} /> {getDownloadCategoryText(doc.key, doc.title)} ({files.length})
+                <IconoDescarga fase={faseDe("zip-categoria")} />{" "}
+                {faseDe("zip-categoria") === "cargando"
+                  ? "Generando ZIP..."
+                  : faseDe("zip-categoria") === "listo"
+                    ? "Descargado"
+                    : `${getDownloadCategoryText(doc.key, doc.title)} (${files.length})`}
               </button>
             )}
           </div>
@@ -626,59 +664,12 @@ export function DocumentosLegajo({
           </p>
         </header>
 
-        {isPerfil ? (
-          <div className={styles.perfilGrid}>
-            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
-              <div className={styles.perfilChipHeader}>
-                <FiBriefcase
-                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
-                  size={20}
-                />
-                <span className={styles.perfilChipLabel}>Razón Social</span>
-              </div>
-              <span className={styles.perfilChipValue}>
-                {nombreEmpresa || "—"}
-              </span>
-            </div>
-            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
-              <div className={styles.perfilChipHeader}>
-                <FiCreditCard
-                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
-                  size={20}
-                />
-                <span className={styles.perfilChipLabel}>CUIT</span>
-              </div>
-              <span className={styles.perfilChipValue}>
-                {cuitActivo || "—"}
-              </span>
-            </div>
-            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
-              <div className={styles.perfilChipHeader}>
-                <FiMapPin
-                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
-                  size={20}
-                />
-                <span className={styles.perfilChipLabel}>Domicilio</span>
-              </div>
-              <span className={styles.perfilChipValue}>{direccion || "—"}</span>
-            </div>
-            <div className={`${styles.perfilChip} ${styles.glassCard}`}>
-              <div className={styles.perfilChipHeader}>
-                <FiPhone
-                  className={`${styles.perfilChipIcon} ${adminMode ? styles.perfilChipIconAdmin : ""}`}
-                  size={20}
-                />
-                <span className={styles.perfilChipLabel}>Teléfono</span>
-              </div>
-              <span className={styles.perfilChipValue}>{telefono || "—"}</span>
-            </div>
-          </div>
-        ) : (
-          <div className={styles.viewerContent}>
-            {showSubTabs && (
+        {(() => {
+            const bloqueSubTabs = showSubTabs && (
               <div className={styles.subTabsContainer}>
                 {files.map((file, idx) => {
                   const isActive = currentSubTab === idx;
+                  const fechaCorta = formatFechaCorta(file.fcharchivo || file.FchArchivo);
                   return (
                     <button
                       key={file.socioarchivoid}
@@ -688,31 +679,39 @@ export function DocumentosLegajo({
                       title={file.nombrearchivo}
                     >
                       <FiFile
-                        size={12}
+                        size={13}
                         className={`${styles.subTabIcon} ${isActive && adminMode ? styles.subTabIconAdminActive : ""}`}
                       />
-                      <span className={styles.subTabText}>
-                        {file.nombrearchivo.length > 25
-                          ? `${file.nombrearchivo.substring(0, 22)}...`
-                          : file.nombrearchivo}
+                      <span className={styles.subTabTextGroup}>
+                        <span className={styles.subTabText}>
+                          {file.nombrearchivo.length > 25
+                            ? `${file.nombrearchivo.substring(0, 22)}...`
+                            : file.nombrearchivo}
+                        </span>
+                        {/* Con dos archivos del mismo tipo y mismo nombre, el
+                            nombre solo no alcanza para distinguirlos - la
+                            fecha sí (y el orden de los chips ya es del más
+                            nuevo al más viejo, ver categoryFiles). */}
+                        {fechaCorta && (
+                          <span className={styles.subTabDate}>{fechaCorta}</span>
+                        )}
                       </span>
                       <span
                         role="button"
                         tabIndex={0}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (
-                            window.confirm(
-                              `¿Estás seguro de que deseas eliminar el archivo "${file.nombrearchivo}"?`
-                            )
-                          ) {
-                            handleFileDelete(doc.key, file.socioarchivoid, doc.title);
-                          }
+                          setArchivoAEliminar({
+                            key: doc.key,
+                            fileId: file.socioarchivoid,
+                            docTitle: doc.title,
+                            nombreArchivo: file.nombrearchivo,
+                          });
                         }}
                         className={styles.subTabClose}
                         title="Eliminar archivo"
                       >
-                        <FiX size={10} />
+                        <FiX size={13} />
                       </span>
                     </button>
                   );
@@ -726,9 +725,9 @@ export function DocumentosLegajo({
                   <span>Subir otro</span>
                 </button>
               </div>
-            )}
+            );
 
-            {isBalance && (estadoBalance?.estado === "por_vencer" || estadoBalance?.estado === "vencido") && (
+            const bloqueAvisoBalance = isBalance && (estadoBalance?.estado === "por_vencer" || estadoBalance?.estado === "vencido") && (
               <div
                 className={`${styles.balanceVigenciaAviso} ${estadoBalance.estado === "vencido" ? styles.balanceVigenciaAvisoVencido : ""}`}
               >
@@ -737,151 +736,341 @@ export function DocumentosLegajo({
                   ? "El balance cargado ya venció y no cuenta como documento válido. Subí uno nuevo."
                   : `El balance cargado corresponde a un período anterior al último cierre de ejercicio. Tenés ${estadoBalance.diasRestantes} día${estadoBalance.diasRestantes === 1 ? "" : "s"} para actualizarlo.`}
               </div>
-            )}
+            );
 
-            {isBalance && currentSubTab === "nuevo" && (
-              <div className={styles.metaFormContainer}>
-                <div className={styles.metaFieldGroup}>
-                  <label className={styles.metaLabel}>
-                    Fecha del período del balance *
-                  </label>
-                  <SelectFecha
-                    label=""
-                    placeholder="Seleccionar fecha"
-                    value={metaFechaPeriodo}
-                    onChange={(val) => setMetaFechaPeriodo(val)}
-                    variant="compact"
-                    placement="top"
-                    minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
-                  />
-                </div>
+            const bloqueDropzone = (
+              <div className={styles.dropzoneContainer}>
+                <CargaArchivos
+                  title={currentSubTab === "nuevo" ? "Arrastrá tu nuevo archivo acá" : doc.title}
+                  subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
+                  formatos={FORMATOS_ARCHIVO.pdf.etiqueta}
+                  hasError={hasError}
+                  isUploading={uploadingKey === doc.key}
+                  faseDescarga={faseDe(doc.key)}
+                  file={fileProp}
+                  onClick={() =>
+                    document.getElementById(`file-input-${doc.key}`).click()
+                  }
+                  onEdit={() =>
+                    document.getElementById(`file-input-${doc.key}`).click()
+                  }
+                  onDrop={(e) => {
+                    if (e.dataTransfer.files?.[0]) {
+                      const specificId = activeFile ? activeFile.socioarchivoid : null;
+                      handleFileUpload(doc.key, e.dataTransfer.files[0], doc.title, specificId);
+                    }
+                  }}
+                  onView={() => {
+                    if (activeFile) {
+                      procesarArchivo(activeFile, archivosBackend, "view");
+                    }
+                  }}
+                  onDownload={() => {
+                    if (activeFile) {
+                      descargar(doc.key, () =>
+                        procesarArchivo(activeFile, archivosBackend, "download"),
+                      );
+                    }
+                  }}
+                  onDelete={
+                    activeFile
+                      ? () =>
+                          setArchivoAEliminar({
+                            key: doc.key,
+                            fileId: activeFile.socioarchivoid,
+                            docTitle: doc.title,
+                            nombreArchivo: activeFile.nombrearchivo,
+                          })
+                      : undefined
+                  }
+                />
+                <input
+                  id={`file-input-${doc.key}`}
+                  type="file"
+                  style={{ display: "none" }}
+                  disabled={uploadingKey === doc.key}
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      const specificId = activeFile ? activeFile.socioarchivoid : null;
+                      handleFileUpload(doc.key, e.target.files[0], doc.title, specificId);
+                    }
+                    e.target.value = null;
+                  }}
+                  accept={FORMATOS_ARCHIVO.pdf.accept}
+                />
               </div>
-            )}
+            );
 
-            <div className={styles.dropzoneContainer}>
-              <CargaArchivos
-                title={currentSubTab === "nuevo" ? "Arrastrá tu nuevo archivo acá" : doc.title}
-                subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
-                hasError={hasError}
-                file={fileProp}
-                onClick={() =>
-                  document.getElementById(`file-input-${doc.key}`).click()
-                }
-                onEdit={() =>
-                  document.getElementById(`file-input-${doc.key}`).click()
-                }
-                onDrop={(e) => {
-                  if (e.dataTransfer.files?.[0]) {
-                    const specificId = activeFile ? activeFile.socioarchivoid : null;
-                    handleFileUpload(doc.key, e.dataTransfer.files[0], doc.title, specificId);
-                  }
-                }}
-                onView={() => {
-                  if (activeFile) {
-                    procesarArchivo(activeFile, archivosBackend, "view");
-                  }
-                }}
-                onDownload={() => {
-                  if (activeFile) {
-                    procesarArchivo(activeFile, archivosBackend, "download");
-                  }
-                }}
-              />
-              <input
-                id={`file-input-${doc.key}`}
-                type="file"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    const specificId = activeFile ? activeFile.socioarchivoid : null;
-                    handleFileUpload(doc.key, e.target.files[0], doc.title, specificId);
-                  }
-                  e.target.value = null;
-                }}
-                accept="application/pdf"
-              />
-            </div>
-
-            {/* Fecha del período del balance: en su propia fila, aparte de la
-                grilla de 3 columnas de metadatos genéricos (fecha/referencia). */}
-            {activeFile && isBalance && (
-              <div className={styles.metaFormContainer}>
-                <div className={styles.metaFieldGroup}>
-                  <label className={styles.metaLabel}>
-                    Fecha del período del balance *
-                  </label>
-                  <SelectFecha
-                    label=""
-                    placeholder="Seleccionar fecha"
-                    value={metaFechaPeriodo}
-                    onChange={(val) => setMetaFechaPeriodo(val)}
-                    variant="compact"
-                    placement="top"
-                    minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Formulario de Metadatos Adicionales (Diseño compacto horizontal) */}
-            {activeFile && (
-              <div className={styles.metaFormContainer}>
-                <div className={styles.metaFormFields}>
-                  <div className={styles.metaFieldGroup}>
-                    <label className={styles.metaLabel}>
-                      Fecha (Opcional)
-                    </label>
-                    <SelectFecha
-                      label=""
-                      placeholder="Seleccionar fecha"
-                      value={metaFecha}
-                      onChange={(val) => setMetaFecha(val)}
-                      variant="compact"
-                      placement="top"
-                      minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
-                    />
+            const bloqueMetadatos = (
+              <>
+                {/* Fecha del período del balance: en su propia fila, aparte de la
+                    grilla de 3 columnas de metadatos genéricos (fecha/referencia). */}
+                {activeFile && isBalance && (
+                  <div className={styles.metaFormContainer}>
+                    <div className={styles.metaFieldGroup}>
+                      <label className={styles.metaLabel}>
+                        Fecha del período del balance *
+                      </label>
+                      <SelectFecha
+                        label=""
+                        placeholder="Seleccionar fecha"
+                        value={metaFechaPeriodo}
+                        onChange={(val) => setMetaFechaPeriodo(val)}
+                        variant="compact"
+                        placement="top"
+                        minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+                        maxDate={new Date()}
+                      />
+                    </div>
                   </div>
-                  <div className={styles.metaFieldGroup}>
-                    <label htmlFor="meta-ref" className={styles.metaLabel}>
-                      Referencia (Opcional)
-                    </label>
-                    <input
-                      id="meta-ref"
-                      type="text"
-                      placeholder="Ej. Año 2025 o Versión final"
-                      value={metaRef}
-                      onChange={(e) => setMetaRef(e.target.value)}
-                      className={styles.metaInput}
-                    />
+                )}
+
+                {/* Formulario de Metadatos Adicionales (Diseño compacto horizontal) */}
+                {activeFile && (
+                  <div className={styles.metaFormContainer}>
+                    <div className={styles.metaFormFields}>
+                      <div className={styles.metaFieldGroup}>
+                        <label className={styles.metaLabel}>
+                          Fecha (Opcional)
+                        </label>
+                        <SelectFecha
+                          label=""
+                          placeholder="Seleccionar fecha"
+                          value={metaFecha}
+                          onChange={(val) => setMetaFecha(val)}
+                          variant="compact"
+                          placement="top"
+                          minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+                        />
+                      </div>
+                      <div className={styles.metaFieldGroup}>
+                        <label htmlFor="meta-ref" className={styles.metaLabel}>
+                          Referencia (Opcional)
+                        </label>
+                        <input
+                          id="meta-ref"
+                          type="text"
+                          placeholder="Ej. Año 2025 o Versión final"
+                          value={metaRef}
+                          onChange={(e) => setMetaRef(e.target.value)}
+                          className={styles.metaInput}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSaveMetadata}
+                        disabled={isSavingMeta}
+                        className={styles.saveMetaBtn}
+                      >
+                        {isSavingMeta ? "..." : "Guardar"}
+                      </button>
+                    </div>
                   </div>
+                )}
+              </>
+            );
+
+            // En mobile, con un archivo ya cargado, el selector de archivos/
+            // "Subir otro"/metadatos quedan colapsados detrás de un toggle: la
+            // tarjeta del archivo (con ver/descargar/editar) es lo único que
+            // importa a simple vista. En desktop hay espacio de sobra, así que
+            // todo va expandido como siempre.
+            if (isMobile && activeFile) {
+              return (
+                <div className={styles.viewerContent}>
+                  {bloqueAvisoBalance}
+                  {bloqueDropzone}
                   <button
                     type="button"
-                    onClick={handleSaveMetadata}
-                    disabled={isSavingMeta}
-                    className={styles.saveMetaBtn}
+                    onClick={() => setMostrarOpcionesArchivo((v) => !v)}
+                    className={`${styles.mobileOpcionesToggle} ${adminMode ? styles.mobileOpcionesToggleAdmin : ""}`}
+                    aria-expanded={mostrarOpcionesArchivo}
                   >
-                    {isSavingMeta ? "..." : "Guardar"}
+                    <span>
+                      {files.length > 1
+                        ? `Ver ${files.length} archivos y más opciones`
+                        : "Ver más opciones"}
+                    </span>
+                    <FiChevronDown
+                      size={14}
+                      className={`${styles.mobileOpcionesChevron} ${mostrarOpcionesArchivo ? styles.mobileOpcionesChevronOpen : ""}`}
+                    />
                   </button>
+                  {mostrarOpcionesArchivo && (
+                    <div className={styles.mobileOpcionesPanel}>
+                      {bloqueSubTabs}
+                      {bloqueMetadatos}
+                    </div>
+                  )}
                 </div>
+              );
+            }
+
+            return (
+              <div className={styles.viewerContent}>
+                {bloqueSubTabs}
+                {bloqueAvisoBalance}
+                {bloqueDropzone}
+                {bloqueMetadatos}
               </div>
-            )}
-          </div>
-        )}
+            );
+          })()}
       </section>
     );
   };
 
+  // Se referencia igual desde el return desktop y el mobile (ver más abajo)
+  // en vez de duplicar el JSX: es un Modal con Portal, así que no importa
+  // en qué punto del árbol se monte.
+  const fechaBalanceModal = (
+    <Modal
+      isOpen={!!pendingBalanceUpload}
+      onClose={cancelarFechaBalanceModal}
+      title="Fecha del período del balance"
+      maxWidth="420px"
+      preventClose={confirmandoFechaBalance}
+    >
+      <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
+        Para subir este balance necesitamos saber a qué período corresponde.
+      </p>
+      <SelectFecha
+        label=""
+        placeholder="Seleccionar fecha"
+        value={fechaModalValue}
+        onChange={setFechaModalValue}
+        variant="compact"
+        minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+        maxDate={new Date()}
+      />
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
+        <Button variant="outline" onClick={cancelarFechaBalanceModal} disabled={confirmandoFechaBalance}>
+          Cancelar
+        </Button>
+        <Button
+          variant="primary"
+          onClick={confirmarFechaBalanceModal}
+          disabled={confirmandoFechaBalance}
+          isLoading={confirmandoFechaBalance}
+        >
+          Confirmar y subir
+        </Button>
+      </div>
+    </Modal>
+  );
+
+  const confirmarEliminarArchivoModal = (
+    <ConfirmacionModal
+      isOpen={!!archivoAEliminar}
+      onClose={() => setArchivoAEliminar(null)}
+      onConfirm={async () => {
+        await handleFileDelete(
+          archivoAEliminar.key,
+          archivoAEliminar.fileId,
+          archivoAEliminar.docTitle,
+        );
+        setArchivoAEliminar(null);
+      }}
+      titulo="Eliminar archivo"
+      mensaje={`¿Estás seguro de que deseas eliminar el archivo "${archivoAEliminar?.nombreArchivo}"?`}
+      tone="danger"
+      confirmText="Eliminar"
+      cancelText="Cancelar"
+    />
+  );
+
+  // Antes vivía como botón del header de DocumentacionView.jsx, junto al de
+  // "Actualizar datos vía LUFE": con dos botones ahí, Legajo (un solo botón)
+  // y Documentación (dos) quedaban visualmente inconsistentes. Bajarlo acá,
+  // adentro del propio listado de documentos, lo deja como una acción
+  // secundaria y contextual (solo aparece si hay algo para descargar) sin
+  // competir con la acción principal del header en ninguna de las dos
+  // pantallas.
+  // "Descargar todo" baja el legajo COMPLETO del socio (descargarLegajoCompletoZip
+  // recorre archivosBackend entero, no lo filtra por estructuraFiltrada): el
+  // socio comparte la misma documentación entre todas las cadenas por las
+  // que opera, así que el conteo de acá puede ser mayor a lo que se ve
+  // arriba filtrado para ESTA cadena. Aclarado con "en total" + tooltip para
+  // que no se lea como "esto es lo que pide/tiene esta cadena".
+  const legajoToolbar = archivosBackend.length > 0 && (
+    <div className={styles.legajoToolbar}>
+      <div className={styles.legajoToolbarInfoRow}>
+        <span className={styles.legajoToolbarInfo}>
+          {archivosBackend.length} documento{archivosBackend.length !== 1 ? "s" : ""} cargado
+          {archivosBackend.length !== 1 ? "s" : ""} en total
+        </span>
+        <InfoTooltip
+          label="¿Qué significa 'en total'?"
+          texto="Incluye todos los documentos cargados por esta empresa, no solo los que pide esta cadena — la documentación se comparte entre todas las cadenas por las que opera."
+          size="sm"
+        />
+      </div>
+      <button
+        type="button"
+        className={`${styles.downloadCategoryBtn} ${styles.legajoToolbarBtn} ${adminMode ? styles.downloadCategoryBtnAdmin : ""}`}
+        onClick={() => {
+          const cleanRazonSocial = (nombreEmpresa || "Empresa").replace(/\s+/g, "_");
+          descargar("zip-legajo", () =>
+            descargarLegajoCompletoZip(
+              archivosBackend,
+              ESTRUCTURA_LEGAJO,
+              socioArchivoService.TIPO_DOCUMENTO_MAP,
+              `Legajo_Completo_${cleanRazonSocial}.zip`,
+            ),
+          );
+        }}
+        disabled={faseDe("zip-legajo") !== null}
+        title="Descargar legajo de documentos completo en un archivo ZIP"
+      >
+        <IconoDescarga fase={faseDe("zip-legajo")} />{" "}
+        {faseDe("zip-legajo") === "cargando"
+          ? "Generando ZIP..."
+          : faseDe("zip-legajo") === "listo"
+            ? "Descargado"
+            : "Descargar todo"}
+      </button>
+    </div>
+  );
+
+  // Antes esto quedaba en blanco (sidebar y viewer vacíos, sin ningún
+  // mensaje): pasa de verdad cuando la parametrización de la cadena oculta
+  // los 14 documentos de ESTRUCTURA_LEGAJO (Requerimiento=0 en todos), no
+  // solo mientras carga — useRequisitos ya resuelve a un objeto vacío en
+  // ese caso, nunca a undefined. Sin legajoToolbar acá a propósito: son
+  // documentos de un tipo que ya no está habilitado (quedaron de una
+  // parametrización anterior) — no tiene sentido ofrecer "descargar todo"
+  // ni contarlos como si la cadena todavía pidiera algo.
+  if (estructuraFiltrada.length === 0) {
+    return (
+      <>
+        {fechaBalanceModal}
+        {confirmarEliminarArchivoModal}
+        <div className={styles.emptyState}>
+          <div className={styles.emptyStateIconWrap}>
+            <FiCheckCircle className={styles.emptyStateIcon} />
+          </div>
+          <h3 className={styles.emptyStateTitle}>Sin documentación requerida</h3>
+          <p className={styles.emptyStateText}>
+            Por el momento no necesitás subir ningún documento para esta cadena.
+          </p>
+        </div>
+      </>
+    );
+  }
+
   if (!isMobile) {
     return (
+      <>
+      {fechaBalanceModal}
+      {confirmarEliminarArchivoModal}
+      {legajoToolbar}
       <div className={styles.workspace}>
         <div className={styles.sidebar}>
           {estructuraFiltrada.map((doc, index) => {
             const isNewCategory =
               index === 0 ||
               doc.category !== estructuraFiltrada[index - 1].category;
-            const isPerfil = doc.key === "perfil";
             const currentFile = formValues[doc.key];
-            const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
+            const isRequired = requisitos?.documentos?.[doc.key] === 1;
             const isActive = activeTab === doc.key;
 
             const docFiles = archivosBackend.filter(
@@ -890,9 +1079,9 @@ export function DocumentosLegajo({
             const isLufe = docFiles.some((a) => String(a.vialufe || a.Vialufe) === "1");
             const estadoBalance = doc.key === "balance" ? calcularEstadoBalanceDoc(docFiles) : null;
             const isVencidoBalance = estadoBalance?.estado === "vencido";
-            const isComplete = isPerfil || (!!currentFile && !isVencidoBalance);
+            const isComplete = !!currentFile && !isVencidoBalance;
             const hasError =
-              intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
+              !cargandoArchivos && intentoAvanzar && isRequired && (!currentFile || isVencidoBalance);
 
             return (
               <React.Fragment key={doc.key}>
@@ -908,8 +1097,7 @@ export function DocumentosLegajo({
                   <div className={styles.tabTitleGroup}>
                     <span className={styles.tabTitle}>{doc.title}</span>
                     <div className={styles.badgeRow}>
-                      {!isPerfil && !adminMode &&
-                        (isRequired ? (
+                      {(isRequired ? (
                           <span
                             className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
                           >
@@ -929,7 +1117,7 @@ export function DocumentosLegajo({
                           Vía LUFE
                         </span>
                       )}
-                      {!adminMode && estadoBalance?.estado === "por_vencer" && (
+                      {estadoBalance?.estado === "por_vencer" && (
                         <span
                           className={`${styles.reqBadge} ${styles.reqBadgeVenceProximo}`}
                         >
@@ -939,7 +1127,7 @@ export function DocumentosLegajo({
                     </div>
                   </div>
                   <span
-                    className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
+                    className={`${styles.statusDot} ${cargandoArchivos ? styles.dotLoading : isComplete ? styles.dotGreen : hasError ? styles.dotRed : isRequired ? styles.dotYellow : styles.dotGray}`}
                   />
                 </button>
               </React.Fragment>
@@ -948,19 +1136,23 @@ export function DocumentosLegajo({
         </div>
         <div className={styles.viewerContainer}>{renderViewer(activeDoc)}</div>
       </div>
+      </>
     );
   }
 
   // Layout Mobile (Accordion vertical)
   return (
+    <>
+    {fechaBalanceModal}
+    {confirmarEliminarArchivoModal}
+    {legajoToolbar}
     <div className={styles.workspaceMobile}>
       {estructuraFiltrada.map((doc, index) => {
         const isNewCategory =
           index === 0 ||
           doc.category !== estructuraFiltrada[index - 1].category;
-        const isPerfil = doc.key === "perfil";
         const currentFile = formValues[doc.key];
-        const isRequired = !adminMode && requisitos?.documentos?.[doc.key] === 1;
+        const isRequired = requisitos?.documentos?.[doc.key] === 1;
         const isActive = activeTab === doc.key;
 
         const docFiles = archivosBackend.filter(
@@ -969,9 +1161,9 @@ export function DocumentosLegajo({
         const isLufe = docFiles.some((a) => String(a.vialufe || a.Vialufe) === "1");
         const estadoBalance = doc.key === "balance" ? calcularEstadoBalanceDoc(docFiles) : null;
         const isVencidoBalance = estadoBalance?.estado === "vencido";
-        const isComplete = isPerfil || (!!currentFile && !isVencidoBalance);
+        const isComplete = !!currentFile && !isVencidoBalance;
         const hasError =
-          intentoAvanzar && !isPerfil && isRequired && (!currentFile || isVencidoBalance);
+          !cargandoArchivos && intentoAvanzar && isRequired && (!currentFile || isVencidoBalance);
 
         return (
           <React.Fragment key={doc.key}>
@@ -989,8 +1181,7 @@ export function DocumentosLegajo({
               <div className={styles.tabTitleGroup}>
                 <span className={styles.tabTitle}>{doc.title}</span>
                 <div className={styles.badgeRow}>
-                  {!isPerfil && !adminMode &&
-                    (isRequired ? (
+                  {(isRequired ? (
                       <span
                         className={`${styles.reqBadge} ${isComplete ? styles.reqBadgeComplete : styles.reqBadgeMandatory}`}
                       >
@@ -1010,7 +1201,7 @@ export function DocumentosLegajo({
                       Vía LUFE
                     </span>
                   )}
-                  {!adminMode && estadoBalance?.estado === "por_vencer" && (
+                  {estadoBalance?.estado === "por_vencer" && (
                     <span
                       className={`${styles.reqBadge} ${styles.reqBadgeVenceProximo}`}
                     >
@@ -1020,14 +1211,14 @@ export function DocumentosLegajo({
                 </div>
               </div>
               <span
-                className={`${styles.statusDot} ${isComplete ? styles.dotGreen : hasError ? styles.dotRed : styles.dotGray}`}
+                className={`${styles.statusDot} ${cargandoArchivos ? styles.dotLoading : isComplete ? styles.dotGreen : hasError ? styles.dotRed : isRequired ? styles.dotYellow : styles.dotGray}`}
               />
               <FiChevronDown
                 className={styles.mobileChevron}
                 style={{
                   transform: isActive ? "rotate(180deg)" : "rotate(0deg)",
                   transition: "transform 0.3s ease",
-                  color: isActive ? "#fff" : "#aaa",
+                  color: isActive ? "var(--white)" : "var(--text-muted)",
                   fontSize: "1.1rem",
                 }}
               />
@@ -1038,5 +1229,6 @@ export function DocumentosLegajo({
         );
       })}
     </div>
+    </>
   );
 }

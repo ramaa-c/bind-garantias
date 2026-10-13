@@ -110,6 +110,40 @@
   flex: 1;
 }
 
+.errorVinculo {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  padding-left: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--danger-bright);
+  animation: aparecerError 0.2s ease-out;
+}
+
+.errorVinculo svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+@keyframes aparecerError {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .errorVinculo {
+    animation: none;
+  }
+}
+
 /* User Found Box */
 .userFoundBox {
   display: flex;
@@ -303,5 +337,49 @@
   }
   to {
     opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .usersTable,
+  .usersTable tbody {
+    display: block;
+  }
+
+  .usersTable thead {
+    display: none;
+  }
+
+  .usersTable tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.6rem 0.75rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid rgba(59, 78, 209, 0.08);
+  }
+
+  .usersTable tr:last-child {
+    border-bottom: none;
+  }
+
+  .usersTable td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    text-align: left !important;
+  }
+
+  .usersTable td:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  .userMailText {
+    overflow-wrap: anywhere;
+  }
+
+  .usersTable td:nth-child(3) button {
+    width: 100%;
   }
 }

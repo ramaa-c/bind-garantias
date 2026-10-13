@@ -2,27 +2,22 @@ import React, { useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import {
   FiCheckCircle,
-  FiAlertCircle,
   FiMapPin,
   FiPhone,
   FiEdit2,
   FiChevronRight,
+  FiLock,
 } from "react-icons/fi";
 import { Button } from "../../../ui";
 import { UbicacionModal, ContactoModal } from "../../../features";
 import styles from "./Paso2Datos.module.css";
 
-export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
+export default function Paso2Datos({ onContinuar, isSubmitting }) {
   const { setValue, trigger, control } = useFormContext();
 
   const [modalUbicacionOpen, setUbicacionModalOpen] = useState(false);
   const [modalContactoOpen, setContactoModalOpen] = useState(false);
-  const [intentoAvanzar, setIntentoAvanzar] = useState(false);
 
-  const calle = useWatch({ control, name: "calle" });
-  const numero = useWatch({ control, name: "numero" });
-  const sinNumero = useWatch({ control, name: "sinNumero" });
-  const provincia = useWatch({ control, name: "provincia" });
   const localidad = useWatch({ control, name: "localidad" });
   const direccion = useWatch({ control, name: "direccion" }) || "";
   const celular = useWatch({ control, name: "celular" }) || "";
@@ -35,6 +30,7 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
 
   const ubicacionOk = ubicacionConfirmada && direccion.trim().length >= 5;
   const contactoOk = celular.trim().length >= 8;
+  const puedeContinuar = ubicacionOk && contactoOk;
 
   const totalTareas = 2;
   const tareasCompletas = (ubicacionOk ? 1 : 0) + (contactoOk ? 1 : 0);
@@ -57,7 +53,6 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
   const [isValidando, setIsValidando] = useState(false);
 
   const handleAvanzarClick = async () => {
-    setIntentoAvanzar(true);
     if (isValidando) return;
     setIsValidando(true);
     try {
@@ -69,7 +64,7 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
         "localidad",
         "celular",
       ]);
-      if (ubicacionOk && contactoOk && esValidoGlobal) {
+      if (puedeContinuar && esValidoGlobal) {
         await onContinuar();
       }
     } finally {
@@ -88,7 +83,7 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
         <div className={styles.progressTrack}>
           <div
             className={`${styles.progressFill} ${progresoPct === 100 ? styles.progressFillDone : ""}`}
-            style={{ width: `${progresoPct}%` }}
+            style={{ transform: `scaleX(${progresoPct / 100})` }}
           />
         </div>
       </div>
@@ -103,17 +98,13 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
           <h2 className={styles.empresaName}>{razonSocial}</h2>
           <p className={styles.empresaCuit}>CUIT {cuit || "20-12345678-9"}</p>
         </div>
-        {onVolver && (
-          <button
-            type="button"
-            className={styles.editLink}
-            onClick={onVolver}
-            disabled={isSubmitting}
-            aria-label="Editar CUIT"
-          >
-            <FiEdit2 size={13} />
-          </button>
-        )}
+        <span
+          className={styles.lockedBadge}
+          title="El CUIT ya fue validado y no se puede modificar"
+          aria-label="CUIT verificado, no editable"
+        >
+          <FiLock size={13} />
+        </span>
       </div>
 
       {/* TAREAS ──────────────────────────────────────────────────────────────── */}
@@ -128,7 +119,7 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
               setUbicacionModalOpen(true);
             }
           }}
-          className={`${styles.taskRow} ${ubicacionOk ? styles.rowSuccess : intentoAvanzar && !ubicacionOk ? styles.rowError : ""}`}
+          className={`${styles.taskRow} ${ubicacionOk ? styles.rowSuccess : ""}`}
           onClick={() => !isSubmitting && setUbicacionModalOpen(true)}
           style={{
             cursor: isSubmitting ? "not-allowed" : "pointer",
@@ -136,15 +127,9 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
           }}
         >
           <span
-            className={`${styles.taskIcon} ${ubicacionOk ? styles.iconSuccess : intentoAvanzar && !ubicacionOk ? styles.iconError : styles.iconWarn}`}
+            className={`${styles.taskIcon} ${ubicacionOk ? styles.iconSuccess : styles.iconWarn}`}
           >
-            {ubicacionOk ? (
-              <FiCheckCircle size={17} />
-            ) : intentoAvanzar ? (
-              <FiAlertCircle size={17} />
-            ) : (
-              <FiMapPin size={17} />
-            )}
+            {ubicacionOk ? <FiCheckCircle size={17} /> : <FiMapPin size={17} />}
           </span>
 
           <div className={styles.taskInfo}>
@@ -157,7 +142,7 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
           </div>
 
           <span
-            className={`${styles.taskAction} ${ubicacionOk ? styles.taskActionEdit : intentoAvanzar && !ubicacionOk ? styles.taskActionError : ""}`}
+            className={`${styles.taskAction} ${ubicacionOk ? styles.taskActionEdit : ""}`}
           >
             {ubicacionOk ? (
               <>
@@ -181,7 +166,7 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
               setContactoModalOpen(true);
             }
           }}
-          className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : intentoAvanzar && !contactoOk ? styles.rowError : ""}`}
+          className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : ""}`}
           onClick={() => !isSubmitting && setContactoModalOpen(true)}
           style={{
             cursor: isSubmitting ? "not-allowed" : "pointer",
@@ -189,15 +174,9 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
           }}
         >
           <span
-            className={`${styles.taskIcon} ${contactoOk ? styles.iconSuccess : intentoAvanzar && !contactoOk ? styles.iconError : styles.iconWarn}`}
+            className={`${styles.taskIcon} ${contactoOk ? styles.iconSuccess : styles.iconWarn}`}
           >
-            {contactoOk ? (
-              <FiCheckCircle size={17} />
-            ) : intentoAvanzar ? (
-              <FiAlertCircle size={17} />
-            ) : (
-              <FiPhone size={17} />
-            )}
+            {contactoOk ? <FiCheckCircle size={17} /> : <FiPhone size={17} />}
           </span>
 
           <div className={styles.taskInfo}>
@@ -210,7 +189,7 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
           </div>
 
           <span
-            className={`${styles.taskAction} ${contactoOk ? styles.taskActionEdit : intentoAvanzar && !contactoOk ? styles.taskActionError : ""}`}
+            className={`${styles.taskAction} ${contactoOk ? styles.taskActionEdit : ""}`}
           >
             {contactoOk ? (
               <>
@@ -232,7 +211,7 @@ export default function Paso2Datos({ onVolver, onContinuar, isSubmitting }) {
           iconRight={!isSubmitting ? <FiChevronRight /> : null}
           onClick={handleAvanzarClick}
           className={styles.continueBtn}
-          disabled={isSubmitting}
+          disabled={isSubmitting || !puedeContinuar}
         >
           {isSubmitting ? "PROCESANDO..." : "CONTINUAR"}
         </Button>

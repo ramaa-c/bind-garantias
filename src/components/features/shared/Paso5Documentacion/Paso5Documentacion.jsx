@@ -1,6 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+
 import { useRequisitos } from "../../../../hooks/useRequisitos";
+import {
+  RELACION_APODERADO_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+} from "../../../../constants/tiposRelacionSocio";
 import {
   useFormContext,
   useFormState,
@@ -17,17 +21,21 @@ import {
   FiMail,
 } from "react-icons/fi";
 import { toast } from "sonner";
-import { Button, InputFlotante, InputSocioMasked } from "../../../ui";
+import { Button, InputSocioMasked } from "../../../ui";
 import {
   DocumentosEmpresaModal,
-  RepresentanteModal,
+  RepresentanteLegalModal,
+  ApoderadoModal,
 } from "../../../features";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { socioArchivoService } from "../../../../services/socioArchivoService";
+import { tercerosService } from "../../../../services/tercerosService";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
-import { formatBase64Size } from "../../../../utils/fileUtils";
+import { formatBase64Size, validarArchivo } from "../../../../utils/fileUtils";
 import { matchProvinciaAfip } from "../../../../utils/provinciaUtils";
 import styles from "./Paso5Documentacion.module.css";
+import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
+
 
 const DOC_ITEMS = [
   { key: "estatuto", label: "Estatuto Social" },
@@ -48,7 +56,6 @@ const DOC_ITEMS = [
 
 const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
   <div style={{ display: "none" }}>
-    <input {...register("emailFacturacion")} />
     {socios.map((socio, i) => (
       <React.Fragment key={socio?.cuit || i}>
         <input {...register(`socios.${i}.email`)} />
@@ -71,26 +78,35 @@ const PersistenciaOculta = ({ register, socios = [], representantes = [] }) => (
 );
 
 export default function Paso5Documentacion({
-  docExpandido,
-  toggleDoc,
   socios = [],
-  onVolverASocios,
   avanzarPaso6,
-  onGuardarSocioDb,
   isSubmitting,
   socioId,
 }) {
-  const { cadenaSlug } = useParams();
+  const { cadenaSlug } = useCadenaActiva();
   const cadenaId = Number(cadenaSlug) || 1;
 
   const { tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
   const { requisitos } = useRequisitos(cadenaId, tipoPersonaId, nombreEmpresa);
+  const esPersonaFisica = Number(tipoPersonaId) === 1;
+
+  // Apoderado (210) y Representante Legal (230) son requisitos
+  // independientes desde la parametrización (ver requisitosService.js) -
+  // esta sección todavía junta la carga de ambos roles en un solo bloque
+  // (a diferencia del Legajo, que ya tiene una pestaña propia por rol), así
+  // que se combinan acá: se muestra/exige si cualquiera de los dos aplica.
+  const requisitoApoderados = requisitos?.relaciones?.apoderados;
+  const requisitoRepLegal = esPersonaFisica ? 0 : requisitos?.relaciones?.representanteLegal;
+  const mostrarApoderado = requisitoApoderados !== 0;
+  const mostrarRepLegal = requisitoRepLegal !== 0;
+  const mostrarSeccionReps = mostrarApoderado || mostrarRepLegal;
+  const repRequerido = requisitoApoderados === 1 || requisitoRepLegal === 1;
 
   const docItemsFiltered = DOC_ITEMS.filter(({ key }) => {
     const configVal = requisitos?.documentos?.[key];
     return configVal !== 0; // 0 = no mostrar
   });
-  const { register, control, setValue, trigger, clearErrors, getValues } =
+  const { register, control, setValue, trigger, getValues } =
     useFormContext();
   const { errors } = useFormState({ control });
   const {
@@ -110,7 +126,7 @@ export default function Paso5Documentacion({
     socioActivoIndex: null,
     repActivoIndex: null,
     modalDocsOpen: false,
-    modalRepOpen: false,
+    modalRepTipo: null, // null | "legal" | "apoderado"
     draggingKey: null,
     backupSocio: {},
     backupArchivos: {},
@@ -175,15 +191,10 @@ export default function Paso5Documentacion({
 
   const {
     archivos,
-    socioActivoIndex,
     repActivoIndex,
     modalDocsOpen,
-    modalRepOpen,
-    draggingKey,
-    backupSocio,
+    modalRepTipo,
     intentoAvanzar,
-    intentoGuardarSocio,
-    isGuardando,
   } = uiState;
 
   const updateState = (updates) => {
@@ -270,6 +281,8 @@ export default function Paso5Documentacion({
   // ── handlers  ──────────────────────────────────────────────────
   const handleFileUpload = (key, file) => {
     if (file) {
+      if (!validarArchivo(file)) return;
+
       const sizeMB = (file.size / (1024 * 1024)).toFixed(2) + " MB";
       updateState((prev) => ({
         archivos: {
@@ -296,18 +309,84 @@ export default function Paso5Documentacion({
     return true; // Si es opcional (2) o no visible, no bloquea el avance
   });
 
-  const handleAbrirModalRep = (index) =>
-    updateState({ repActivoIndex: index, modalRepOpen: true });
+  const handleAbrirModalRep = (index, tipo) =>
+    updateState({ repActivoIndex: index, modalRepTipo: tipo });
   const handleGuardarRep = (repData) =>
     repActivoIndex !== null
       ? updateRep(repActivoIndex, repData)
       : appendRep(repData);
 
+  const handleEliminarRep = async (index) => {
+    const rep = representantes[index];
+    const cuitLimpio = String(rep?.cuit || "").replace(/\D/g, "");
+
+    if (socioId && cuitLimpio) {
+      try {
+        const existentes = await tercerosService.obtenerTerceros({
+          Cuit: cuitLimpio,
+        });
+        const arrTerceros = Array.isArray(existentes)
+          ? existentes
+          : existentes?.data || [];
+        const terceroId =
+          arrTerceros[0]?.tercerorelacionadoid ||
+          arrTerceros[0]?.TerceroRelacionadoID ||
+          arrTerceros[0]?.id;
+
+        if (terceroId) {
+          const relaciones =
+            await tercerosService.obtenerRelacionesDeSocio(socioId);
+          const arrRel = Array.isArray(relaciones)
+            ? relaciones
+            : relaciones?.data || [];
+          const relacionActiva = arrRel.find(
+            (r) =>
+              Number(
+                r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID,
+              ) === Number(terceroId) &&
+              [RELACION_APODERADO_ID, RELACION_REPRESENTANTE_LEGAL_ID].includes(
+                Number(
+                  r.tiporelacionsocioid ||
+                    r.TipoRelacionSocioID ||
+                    r.tiporelacionsocioId,
+                ),
+              ),
+          );
+
+          if (relacionActiva) {
+            const ayer = new Date();
+            ayer.setDate(ayer.getDate() - 1);
+            const ayerStr = ayer.toISOString().split(".")[0];
+            const payload = {
+              ...relacionActiva,
+              fechahasta: ayerStr,
+              FechaHasta: ayerStr,
+            };
+            delete payload.provinciaid;
+            delete payload.ProvinciaID;
+            await tercerosService.actualizarRelacionDeSocio(payload);
+            toast.success(
+              `${rep?.rol || "Representante"} desvinculado correctamente.`,
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Error al desvincular representante:", err);
+        toast.error(
+          "Ocurrió un error al intentar desvincular al representante.",
+        );
+        return;
+      }
+    }
+
+    removeRep(index);
+  };
+
   const handleAvanzarClick = async () => {
     updateState({ intentoAvanzar: true });
-    const isRepRequired = requisitos?.relaciones?.representantes === 1;
+    const isRepRequired = repRequerido;
     const tieneRepresentantes = representantes.length > 0;
-    const canAdvanceReps = !isRepRequired || tieneRepresentantes || requisitos?.relaciones?.representantes === 0;
+    const canAdvanceReps = !isRepRequired || tieneRepresentantes;
 
     const emailFacValido = await trigger("emailFacturacion");
     if (
@@ -330,50 +409,32 @@ export default function Paso5Documentacion({
   const isEmailFacturacionValido =
     !errorEmailFacturacion && emailFacturacionVal.trim() !== "";
 
-  // ── pill helpers ────────────────────────────────────────────────────────────
-  const pill = (done, warn) => {
-    if (done) return styles.pillDone;
-    if (warn) return styles.pillError;
-    return styles.pillPending;
-  };
+  // La sección de representantes/apoderados se MUESTRA cada vez que
+  // mostrarSeccionReps es true (para poder cargar/corregir uno si hace
+  // falta), pero solo cuenta como una tarea pendiente del progreso cuando
+  // es realmente obligatoria (repRequerido) - si es opcional (Requerimiento
+  // = 2 en CadenaValorParametrizacion), no debe contarse como "falta" solo
+  // porque está vacía.
+  const totalTareas = repRequerido ? 3 : 2;
+  const tareasCompletas =
+    (docsEmpresaListos ? 1 : 0) +
+    (repRequerido && representantes.length > 0 ? 1 : 0) +
+    (isEmailFacturacionValido ? 1 : 0);
+  const progresoPct = (tareasCompletas / totalTareas) * 100;
 
   return (
     <div className={styles.container}>
-      {/* HEADER ─────────────────────────────────────────────────────────────── */}
-      <div className={styles.header}>
-        <div className={styles.completionPills}>
-          <span
-            className={`${styles.pill} ${pill(docsEmpresaListos, intentoAvanzar)}`}
-          >
-            {docsEmpresaListos ? (
-              <FiCheckCircle size={11} />
-            ) : (
-              <FiAlertCircle size={11} />
-            )}
-            Documentos
-          </span>
-          {requisitos?.relaciones?.representantes !== 0 && (
-            <span
-              className={`${styles.pill} ${pill(representantes.length > 0, intentoAvanzar)}`}
-            >
-              {representantes.length > 0 ? (
-                <FiCheckCircle size={11} />
-              ) : (
-                <FiAlertCircle size={11} />
-              )}
-              Representantes
-            </span>
-          )}
-          <span
-            className={`${styles.pill} ${pill(isEmailFacturacionValido, intentoAvanzar && !isEmailFacturacionValido)}`}
-          >
-            {isEmailFacturacionValido ? (
-              <FiCheckCircle size={11} />
-            ) : (
-              <FiAlertCircle size={11} />
-            )}
-            Facturación
-          </span>
+      {/* PROGRESO ────────────────────────────────────────────────────────────── */}
+      <div className={styles.progressRow}>
+        <span className={styles.progressLabel}>
+          {tareasCompletas} de {totalTareas} completado
+          {tareasCompletas === 1 ? "" : "s"}
+        </span>
+        <div className={styles.progressTrack}>
+          <div
+            className={`${styles.progressFill} ${progresoPct === 100 ? styles.progressFillDone : ""}`}
+            style={{ transform: `scaleX(${progresoPct / 100})` }}
+          />
         </div>
       </div>
 
@@ -429,32 +490,64 @@ export default function Paso5Documentacion({
 
 
         {/* REPRESENTANTES */}
-        {requisitos?.relaciones?.representantes !== 0 && (
+        {mostrarSeccionReps && (
           <section className={styles.section}>
             <div className={styles.sectionHeaderRow}>
               <span className={styles.sectionLabel}>
                 Representantes y Apoderados
+                {!repRequerido && (
+                  <span className={styles.countBadge}> · Opcional</span>
+                )}
               </span>
               {representantes.length > 0 && (
-                <button
-                  type="button"
-                  className={styles.actionLink}
-                  onClick={() => handleAbrirModalRep(null)}
-                >
-                  <FiPlus size={11} /> Agregar
-                </button>
+                <div style={{ display: "flex", gap: "0.75rem" }}>
+                  {mostrarRepLegal && (
+                    <button
+                      type="button"
+                      className={styles.actionLink}
+                      onClick={() => handleAbrirModalRep(null, "legal")}
+                    >
+                      <FiPlus size={11} /> Repr. Legal
+                    </button>
+                  )}
+                  {mostrarApoderado && (
+                    <button
+                      type="button"
+                      className={styles.actionLink}
+                      onClick={() => handleAbrirModalRep(null, "apoderado")}
+                    >
+                      <FiPlus size={11} /> Apoderado
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
             {representantes.length === 0 ? (
-              <button
-                type="button"
-                className={`${styles.emptySlot} ${intentoAvanzar ? styles.emptySlotError : ""}`}
-                onClick={() => handleAbrirModalRep(null)}
-              >
-                <FiPlus size={14} />
-                <span>Agregar representante o apoderado</span>
-              </button>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {mostrarRepLegal && (
+                  <button
+                    type="button"
+                    className={`${styles.emptySlot} ${intentoAvanzar && repRequerido ? styles.emptySlotError : ""}`}
+                    style={{ flex: 1 }}
+                    onClick={() => handleAbrirModalRep(null, "legal")}
+                  >
+                    <FiPlus size={14} />
+                    <span>Agregar representante legal</span>
+                  </button>
+                )}
+                {mostrarApoderado && (
+                  <button
+                    type="button"
+                    className={`${styles.emptySlot} ${intentoAvanzar && repRequerido ? styles.emptySlotError : ""}`}
+                    style={{ flex: 1 }}
+                    onClick={() => handleAbrirModalRep(null, "apoderado")}
+                  >
+                    <FiPlus size={14} />
+                    <span>Agregar apoderado</span>
+                  </button>
+                )}
+              </div>
             ) : (
               <div className={styles.compactList}>
                 {representantes.map((rep, index) => (
@@ -473,7 +566,12 @@ export default function Paso5Documentacion({
                       <button
                         type="button"
                         className={styles.iconBtn}
-                        onClick={() => handleAbrirModalRep(index)}
+                        onClick={() =>
+                          handleAbrirModalRep(
+                            index,
+                            rep.rol === "Representante Legal" ? "legal" : "apoderado",
+                          )
+                        }
                         title="Editar"
                       >
                         <FiEdit2 size={13} />
@@ -481,7 +579,7 @@ export default function Paso5Documentacion({
                       <button
                         type="button"
                         className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
-                        onClick={() => removeRep(index)}
+                        onClick={() => handleEliminarRep(index)}
                         title="Eliminar"
                       >
                         <FiTrash2 size={13} />
@@ -545,13 +643,28 @@ export default function Paso5Documentacion({
         requisitos={requisitos}
       />
 
-      <RepresentanteModal
-        isOpen={modalRepOpen}
+      <RepresentanteLegalModal
+        isOpen={modalRepTipo === "legal"}
         onClose={() =>
-          updateState({ modalRepOpen: false, repActivoIndex: null })
+          updateState({ modalRepTipo: null, repActivoIndex: null })
         }
         representanteInicial={
-          repActivoIndex !== null ? representantes[repActivoIndex] : null
+          modalRepTipo === "legal" && repActivoIndex !== null
+            ? representantes[repActivoIndex]
+            : null
+        }
+        socioIdActivo={socioId}
+        onGuardar={handleGuardarRep}
+      />
+      <ApoderadoModal
+        isOpen={modalRepTipo === "apoderado"}
+        onClose={() =>
+          updateState({ modalRepTipo: null, repActivoIndex: null })
+        }
+        representanteInicial={
+          modalRepTipo === "apoderado" && repActivoIndex !== null
+            ? representantes[repActivoIndex]
+            : null
         }
         socioIdActivo={socioId}
         onGuardar={handleGuardarRep}

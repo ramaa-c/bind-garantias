@@ -3,10 +3,12 @@ import { FiSave, FiEye, FiEdit3, FiFileText, FiClock, FiAlertTriangle } from "re
 import { toast } from "sonner";
 import { parseTerminos } from "../../../constants/terminosCondiciones";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
-import { Spinner } from "../../../components/ui/Spinner/Spinner";
+import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { useObtenerTerminosVigentes, usePublicarTerminos } from "../../../hooks/useTerminos";
 import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./Terminos.module.css";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 
 const formatearMomento = (momento) => {
   if (!momento) return "—";
@@ -18,6 +20,8 @@ const formatearMomento = (momento) => {
 const TITULO_TERMINOS = "Términos y Condiciones Generales";
 
 export default function Terminos() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const usuarioWebId = useUsuarioWebIdActual();
   const { data: terminosVigentes, isLoading: isLoadingTerminos } = useObtenerTerminosVigentes();
   const { mutateAsync: publicarTerminos, isPending: isPublicando } = usePublicarTerminos();
@@ -57,9 +61,11 @@ export default function Terminos() {
     } catch (err) {
       console.error("[Terminos] Error al publicar la nueva versión:", err);
       setConfirmOpen(false);
-      toast.error("No se pudo publicar la nueva versión. Intentá nuevamente.");
+      toast.error("No se pudo publicar la nueva versión. Intentá nuevamente.", { description: mensajeNegocio(err, "") });
     }
   };
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>
@@ -111,8 +117,18 @@ export default function Terminos() {
         {/* Panel Central de Edición */}
         <div className={styles.mainEditorPanel}>
           {isLoadingTerminos ? (
-            <div style={{ display: "flex", justifyContent: "center", padding: "3rem" }}>
-              <Spinner size={36} />
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem", padding: "0.5rem 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                <Skeleton width="16rem" height="1.2rem" />
+                <Skeleton width="4rem" height="1.3rem" radius="pill" />
+                <Skeleton width="13rem" height="0.8rem" />
+                <Skeleton width="14rem" height="2rem" radius="0.6rem" style={{ marginLeft: "auto" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", marginTop: "0.5rem" }}>
+                {["100%", "97%", "94%", "98%", "88%", "96%", "60%"].map((w, i) => (
+                  <Skeleton key={i} width={w} height="0.85rem" />
+                ))}
+              </div>
             </div>
           ) : (
             <>

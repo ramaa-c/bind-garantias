@@ -14,11 +14,10 @@ import {
   useObtenerUtilizado,
   useObtenerLineas,
 } from "../../../hooks/useCadenaValor";
-import Spinner from "../../../components/ui/Spinner/Spinner";
 
 import { HistorialEstadoModal } from "../../../components/features";
 import styles from "./CadenaDetalle.module.css";
-import { Button, BotonVolver } from "../../../components/ui";
+import { Button, BotonVolver, Skeleton } from "../../../components/ui";
 
 export default function CadenaDetalle() {
   const { id } = useParams();
@@ -44,8 +43,62 @@ export default function CadenaDetalle() {
     serverItemsPerPage,
   );
 
+  // Skeleton que calca el layout real (header + KPIs + lista de líneas) en
+  // vez de un spinner de página completa: la estructura aparece al instante
+  // y los datos "se materializan" sin salto de layout.
   if (isCadenaLoading || isUtilizadoLoading || isLineasLoading) {
-    return <Spinner center size={100} />;
+    return (
+      <div className={styles.pageContainer}>
+        <header className={styles.header}>
+          <div style={{ alignSelf: "flex-start" }}>
+            <BotonVolver onClick={() => navigate(-1)} texto="Volver" />
+          </div>
+          <div className={styles.headerTitles}>
+            <div className={styles.titleBadgeWrapper}>
+              <Skeleton width="18rem" height="1.6rem" />
+              <Skeleton width="5.5rem" height="1.4rem" radius="pill" />
+            </div>
+            <Skeleton width="24rem" height="0.9rem" style={{ maxWidth: "80%", marginTop: "0.5rem" }} />
+          </div>
+        </header>
+
+        <section className={styles.kpiGrid}>
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className={styles.kpiCard}>
+              <Skeleton width="42px" height="42px" radius="0.625rem" />
+              <div style={{ flex: 1 }}>
+                <Skeleton width="60%" height="0.75rem" />
+                <Skeleton width="45%" height="1.3rem" style={{ marginTop: "0.5rem" }} />
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <div className={styles.contentGrid}>
+          <section className={styles.mainBlock}>
+            <div className={styles.sectionHeader}>
+              <Skeleton width="16rem" height="1.1rem" />
+              <Skeleton width="6rem" height="1.3rem" radius="pill" />
+            </div>
+            <div className={styles.listContainer}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className={styles.listItem}>
+                  <Skeleton width="38px" height="38px" radius="0.5rem" />
+                  <div style={{ flex: 1 }}>
+                    <Skeleton width="40%" height="0.95rem" />
+                    <Skeleton width="65%" height="0.75rem" style={{ marginTop: "0.45rem" }} />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.4rem" }}>
+                    <Skeleton width="3rem" height="0.7rem" />
+                    <Skeleton width="6rem" height="1rem" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    );
   }
 
   const cadenaData = cadena || {};

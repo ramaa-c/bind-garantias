@@ -4,15 +4,15 @@
 }
 
 .searchIcon {
-  color: #888;
+  color: var(--text-muted);
   font-size: 1.25rem;
   margin-left: 0.5rem;
   flex-shrink: 0;
 }
 
 .control {
-  background-color: #1a1a1a !important;
-  border-color: #333 !important;
+  background-color: var(--carbon-black) !important;
+  border-color: var(--border-hover) !important;
   border-radius: 0.5rem !important;
   padding: 0 0.5rem !important;
   box-shadow: none !important;
@@ -20,12 +20,12 @@
 }
 
 .control:hover {
-  border-color: #555 !important;
+  border-color: var(--text-dim) !important;
   cursor: pointer !important;
 }
 
 .controlFocused {
-  background-color: #1a1a1a !important;
+  background-color: var(--carbon-black) !important;
   border-color: var(--yellow) !important;
   border-radius: 0.5rem !important;
   padding: 0 0.5rem !important;
@@ -44,7 +44,7 @@
 }
 
 .placeholder {
-  color: #888 !important;
+  color: var(--text-muted) !important;
   font-size: 1rem !important;
   margin: 0 !important;
 }
@@ -54,13 +54,13 @@
 }
 
 .clearIndicator {
-  color: #888 !important;
+  color: var(--text-muted) !important;
   cursor: pointer !important;
   padding: 0.5rem !important;
 }
 
 .clearIndicator:hover {
-  color: #ffc107 !important;
+  color: var(--warning) !important;
 }
 
 .hidden {

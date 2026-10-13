@@ -4,9 +4,17 @@ import { HiOutlineMailOpen, HiClock } from "react-icons/hi";
 import { FiMail } from "react-icons/fi";
 import { toast } from "sonner";
 import { useResetearPassword } from "../../../hooks/useUsuario";
-import { useChannel } from "../../../context/ChannelContext";
+import { useChannel } from "../../../context/useChannel";
+import { useThemeStore } from "../../../store/useThemeStore";
+import {
+  denominacionDesdeEmail,
+  FECHA_VENCIMIENTO_USUARIO,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
+} from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
 
 const RESEND_SECONDS = 60;
 const pad = (n) => String(n).padStart(2, "0");
@@ -15,12 +23,12 @@ const fmt = (t) => `${pad(Math.floor(t / 60))}:${pad(t % 60)}`;
 const ConfirmarCorreo = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { channelInfo } = useChannel();
+  const { channelInfo, basePath } = useChannel();
+  const theme = useThemeStore((state) => state.theme);
 
   const emailUsuario =
     location.state?.usuarioSkeletor?.email || location.state?.emailIngresado;
   const usuarioSkeletor = location.state?.usuarioSkeletor || null;
-  const canal = location.state?.canal || "";
   const origen = location.state?.origen || "registro";
 
   const { mutate: reenviarCorreo, isPending } = useResetearPassword();
@@ -32,39 +40,58 @@ const ConfirmarCorreo = () => {
     return () => clearTimeout(id);
   }, [timeLeft, emailUsuario]);
 
+  useEffect(() => {
+    if (emailUsuario) return;
+    toast.error("Sesión inválida", {
+      description:
+        "No se encontró información del registro. Volvé a intentarlo.",
+    });
+  }, [emailUsuario]);
+
   const canResend = timeLeft === 0 && !isPending;
 
   const handleReenviar = () => {
     if (!canResend) return;
 
-    const getCSharpIsoDate = (addYears = 0) => {
+    const getCSharpIsoDate = () => {
       const date = new Date();
-      if (addYears) date.setFullYear(date.getFullYear() + addYears);
       return date.toISOString().split(".")[0];
     };
-
-    const canalId = channelInfo.id;
 
     reenviarCorreo(
       {
         email: emailUsuario,
         usuariowebid: 0,
         fchalta: usuarioSkeletor?.fchalta || getCSharpIsoDate(),
-        fchvencimiento: usuarioSkeletor?.fchvencimiento || getCSharpIsoDate(1),
-        hashseguridad: canalId,
+        fchvencimiento: FECHA_VENCIMIENTO_USUARIO,
+        hashseguridad: "",
         estado: "",
         debecambiarclave: "",
         esadministrador: "",
-        denominacion: canalId,
+        denominacion: denominacionDesdeEmail(emailUsuario),
+        fronturl: window.location.origin + basePath,
       },
       {
         onSuccess: () => {
-          toast.success("Enlace reenviado", {
-            description: "Revisá tu bandeja de entrada o la carpeta de SPAM.",
+          toast.success("Solicitud enviada", {
+            description: "Si el correo está registrado, vas a recibir un nuevo enlace. Revisá también la carpeta de SPAM.",
           });
           setTimeLeft(RESEND_SECONDS);
         },
-        onError: () => {
+        onError: (error) => {
+          if (esDemasiadosIntentos(error)) {
+            avisarDemasiadosIntentos();
+            return;
+          }
+          const status = error?.response?.status;
+          const esErrorDeServidor = !error?.response || status >= 500;
+          if (origen === "recuperar" && !esErrorDeServidor) {
+            toast.success("Solicitud enviada", {
+              description: "Si el correo está registrado, vas a recibir un nuevo enlace. Revisá también la carpeta de SPAM.",
+            });
+            setTimeLeft(RESEND_SECONDS);
+            return;
+          }
           toast.error("Error al reenviar", {
             description: "Ocurrió un error. Intentá más tarde.",
           });
@@ -74,13 +101,7 @@ const ConfirmarCorreo = () => {
   };
 
   if (!emailUsuario) {
-    setTimeout(() => {
-      toast.error("Sesión inválida", {
-        description:
-          "No se encontró información del registro. Volvé a intentarlo.",
-      });
-    }, 0);
-    return <Navigate to={`/${channelInfo.id}/registro`} replace />;
+    return <Navigate to={`${basePath}/registro`} replace />;
   }
 
   return (
@@ -90,18 +111,18 @@ const ConfirmarCorreo = () => {
         <div className={styles.globalLogo}>
           <div className={styles.logosWrapper}>
             <img
-              src={logoBind}
+              src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
               onClick={() =>
                 navigate(
                   channelInfo?.id && channelInfo.id !== "default"
-                    ? `/${channelInfo.id}/login`
+                    ? `${basePath}/login`
                     : "/login",
                 )
               }
               className={styles.clickableLogo}
             />
-            {channelInfo?.id !== "default" && (
+            {channelInfo?.id !== "default" && channelInfo.logo && (
               <>
                 <div className={styles.logoSeparator} />
                 <img
@@ -119,8 +140,9 @@ const ConfirmarCorreo = () => {
           <div className={styles.headerText}>
             <h2>Revisá tu correo</h2>
             <p>
-              Enviamos un enlace a esta dirección. Hacé clic en el enlace para
-              continuar con el proceso.
+              {origen === "recuperar"
+                ? "Si esta dirección está registrada, te enviamos un enlace. Hacé clic en el enlace para continuar con el proceso."
+                : "Enviamos un enlace a esta dirección. Hacé clic en el enlace para continuar con el proceso."}
             </p>
           </div>
 
@@ -180,14 +202,14 @@ const ConfirmarCorreo = () => {
                 tabIndex={0}
                 onClick={() =>
                   navigate(
-                    `/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                    `${basePath}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
                   )
                 }
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
                     navigate(
-                      `/${channelInfo.id}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
+                      `${basePath}${origen === "recuperar" ? "/recuperar-clave" : "/registro"}`,
                     );
                   }
                 }}
@@ -238,7 +260,7 @@ const ConfirmarCorreo = () => {
                 size={18}
                 style={{ color: "var(--color-amarillo-bind, #f5f400)" }}
               />{" "}
-              El enlace expira en 5 minutos.
+              El enlace expira en 24 horas.
             </p>
           </div>
         </div>

@@ -1,0 +1,70 @@
+.body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.iconWrapper {
+    width: 3.125rem;
+    height: 3.125rem;
+    background-color: var(--badge-amarillo-bg);
+    color: var(--badge-amarillo-text);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.title {
+    color: var(--white);
+    font-size: 1.25rem;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.description {
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
+}
+
+.formSection {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.btnSave {
+    width: 100%;
+    height: 3rem;
+}
+
+/* Escritorio */
+@media (min-width: 768px) {
+    .iconWrapper {
+        width: 3.75rem;
+        height: 3.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .description {
+        margin-bottom: 1.875rem;
+    }
+
+    .formSection {
+        gap: 1.5625rem;
+        margin-bottom: 1.875rem;
+    }
+}
+

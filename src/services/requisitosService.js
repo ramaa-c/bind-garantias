@@ -1,11 +1,12 @@
 import { requisitosAdapter } from "../adapters/requisitosAdapter";
 import api from "../api/axios";
+import { RELACIONES_TERCEROS_BASE, RELACION_USUARIOS_ID } from "../constants/tiposRelacionSocio";
 
 // Configuración por defecto para Persona Física (Individual)
 export const DEFAULT_PHYSICAL_CONFIG = {
   documentos: {
     estatuto: 0,
-    balance: 0,
+    balance: 1,
     ddjjIva: 0,
     cartasDocumento: 0,
     poderes: 0,
@@ -21,7 +22,11 @@ export const DEFAULT_PHYSICAL_CONFIG = {
   },
   relaciones: {
     accionistas: 0,
-    representantes: 0,
+    // Persona Física solo puede tener Apoderado (TipoRelacionSocioID 210) -
+    // no existe "Representante Legal" (230) para este tipo de persona, por
+    // eso ni se incluye esa clave acá. Por defecto opcional, no obligatorio:
+    // una persona física puede operar sin apoderado.
+    apoderados: 2,
     agentesBolsa: 2,
     usuarios: 2,
   },
@@ -31,7 +36,7 @@ export const DEFAULT_PHYSICAL_CONFIG = {
 export const DEFAULT_SA_CONFIG = {
   documentos: {
     estatuto: 1,
-    balance: 0,
+    balance: 1,
     ddjjIva: 0,
     cartasDocumento: 0,
     poderes: 1,
@@ -47,7 +52,12 @@ export const DEFAULT_SA_CONFIG = {
   },
   relaciones: {
     accionistas: 1,
-    representantes: 1,
+    // Apoderados (210) y Representante Legal (230) son requisitos
+    // independientes desde acá. Apoderado es un caso de excepción para
+    // Persona Jurídica (lo normal es el Representante Legal) - la base
+    // es "No mostrar" y cada cadena lo activa a mano si lo necesita.
+    apoderados: 0,
+    representanteLegal: 2,
     agentesBolsa: 2,
     usuarios: 2,
   },
@@ -80,10 +90,14 @@ export const DEFAULT_OTRAS_CONFIG = {
 
 export const getSocTypeFromDenominacion = (denominacion) => {
   if (!denominacion) return "otras";
-  const name = denominacion.toUpperCase().replace(/\./g, "");
-  if (/\bSA\b/.test(name) || name.includes("S A")) return "sa";
-  if (/\bSRL\b/.test(name) || name.includes("S R L")) return "srl";
-  if (/\bSH\b/.test(name) || name.includes("S H")) return "sh";
+  const name = denominacion
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\./g, "");
+  if (/\bSA\b/.test(name) || name.includes("S A") || name.includes("SOCIEDAD ANONIMA")) return "sa";
+  if (/\bSRL\b/.test(name) || name.includes("S R L") || name.includes("SOCIEDAD DE RESPONSABILIDAD LIMITADA")) return "srl";
+  if (/\bSH\b/.test(name) || name.includes("S H") || name.includes("SOCIEDAD DE HECHO")) return "sh";
   return "otras";
 };
 
@@ -120,11 +134,38 @@ export const TIPO_DOCUMENTO_MAP = {
   constanciaMonotributo: 16,
 };
 
+// Antes era un objeto fijo a mano acá mismo - ahora se arma desde la única
+// fuente de verdad (ver constants/tiposRelacionSocio.js) para no repetir los
+// 4 IDs en dos lugares. "usuarios" es la única excepción: no es una relación
+// de terceros real, así que no vive en esa constante.
 export const TIPO_RELACION_MAP = {
-  accionistas: 25,
-  representantes: 210,
-  agentesBolsa: 21,
-  usuarios: 999,
+  ...Object.fromEntries(
+    RELACIONES_TERCEROS_BASE.map((r) => [r.clave, r.tipoRelacionSocioId]),
+  ),
+  usuarios: RELACION_USUARIOS_ID,
+};
+
+// Traduce un TipoRelacionSocioID a la clave interna del objeto `relaciones`:
+// para los 4 tipos con flujo de carga propio, la clave semántica de siempre
+// (accionistas/apoderados/...); para cualquier otro que el admin haya dado
+// de alta en /admin/tipos-relacion-socio (ver TIPO_RELACION_MAP), el ID
+// mismo como string, para no perder su parametrización guardada aunque
+// todavía no tenga una sección propia en el legajo (ver Fase 3, pendiente).
+const resolverClaveRelacion = (relIdVal) => {
+  const claveConocida = Object.keys(TIPO_RELACION_MAP).find(
+    (k) => TIPO_RELACION_MAP[k] === relIdVal,
+  );
+  return claveConocida || String(relIdVal);
+};
+
+// Camino inverso: de una clave de `relaciones` a su TipoRelacionSocioID. Para
+// las claves semánticas de siempre usa TIPO_RELACION_MAP; para cualquier
+// otra (un ID cargado dinámicamente vía resolverClaveRelacion, arriba) la
+// clave YA ES el ID, solo hay que parsearla.
+const idDesdeClaveRelacion = (key) => {
+  if (TIPO_RELACION_MAP[key]) return TIPO_RELACION_MAP[key];
+  const idParseado = Number(key);
+  return Number.isFinite(idParseado) && idParseado > 0 ? idParseado : 0;
 };
 
 // Helper para normalizar las claves de la respuesta de la API a minúsculas
@@ -206,15 +247,23 @@ export const requisitosService = {
                 config.documentos[docKey] = reqVal;
               }
             } else if (relIdVal > 0) {
-              const relKey = Object.keys(TIPO_RELACION_MAP).find(
-                (k) => TIPO_RELACION_MAP[k] === relIdVal
-              );
-              if (relKey) {
-                config.relaciones[relKey] = reqVal;
-              }
+              config.relaciones[resolverClaveRelacion(relIdVal)] = reqVal;
             }
           }
         });
+
+        // Una persona física no puede ser accionista de sí misma - la
+        // pestaña ni se muestra para Física (ver esRelacionVisible en
+        // RequisitosConfigModal.jsx y el filtro en SociosLegajo.jsx), pero
+        // un registro legacy/global (TipoPersonaID=0, de antes de que
+        // existiera esta separación) puede "matchear" igual en el loop de
+        // arriba y dejar accionistas en 1/2 para Física. Se fuerza a "No
+        // mostrar" acá, en la fuente, para que nada río abajo (validación,
+        // checklist de migración, etc.) dependa de que cada consumidor se
+        // acuerde de ignorarlo.
+        if (resolvedTipoPersonaId === 1) {
+          config.relaciones.accionistas = 0;
+        }
 
         return config;
       }
@@ -261,15 +310,18 @@ export const requisitosService = {
               config[tab].documentos[docKey] = reqVal;
             }
           } else if (relIdVal > 0) {
-            const relKey = Object.keys(TIPO_RELACION_MAP).find(
-              (k) => TIPO_RELACION_MAP[k] === relIdVal
-            );
-            if (relKey) {
-              config[tab].relaciones[relKey] = reqVal;
-            }
+            config[tab].relaciones[resolverClaveRelacion(relIdVal)] = reqVal;
           }
         });
       });
+
+      // Mismo motivo que en modo cliente (ver comentario más arriba): un
+      // registro legacy/global puede dejar "fisica.relaciones.accionistas"
+      // en 1/2 aunque esa fila ni se muestre en el admin para la solapa
+      // Física - sin este override, ese valor invisible se re-guarda tal
+      // cual la próxima vez que alguien apriete "Guardar Configuración"
+      // (el payload manda las 5 solapas completas).
+      config.fisica.relaciones.accionistas = 0;
 
       return config;
     } catch (error) {
@@ -358,15 +410,15 @@ export const requisitosService = {
         };
 
         if (existente) {
-          promises.push(api.put("api/CadenaValorParametrizacion", requisitosAdapter.adaptarPayload1(payload)));
+          promises.push({ method: 'put', url: 'api/CadenaValorParametrizacion', payload });
         } else {
-          promises.push(api.post("api/CadenaValorParametrizacion", requisitosAdapter.adaptarPayload2(payload)));
+          promises.push({ method: 'post', url: 'api/CadenaValorParametrizacion', payload });
         }
       });
 
       // Procesar relaciones
       Object.entries(config.relaciones).forEach(([key, value]) => {
-        const relId = TIPO_RELACION_MAP[key];
+        const relId = idDesdeClaveRelacion(key);
         if (!relId) return;
 
         // Intentar encontrar un registro existente coincidente

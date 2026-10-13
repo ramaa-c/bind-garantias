@@ -12,9 +12,13 @@ export const cadenaValorAdapter = {
       Logo: d.logo,
       TipoCanalComercializacionID: d.tipocanalcomercializacionid,
       EquipoComercialID: d.equipocomercialid,
+      TipoContratoID: d.tipocontratoid,
       MontoMaximo: d.montomaximo,
-      PorcentajeMaximo: d.porcentajemaximo,
+      MonedaID: d.monedaid,
+      PorcentajeMaximoUtilizado: d.porcentajemaximoutilizado,
+      MontoMaximoUtilizado: d.montomaximoutilizado,
       Activa: d.activa,
+      ModeloDocumentoID: d.modelodocumentoid ?? 0,
     };
   },
   adaptarPayload2: (data) => {
@@ -27,9 +31,13 @@ export const cadenaValorAdapter = {
       Logo: d.logo,
       TipoCanalComercializacionID: d.tipocanalcomercializacionid,
       EquipoComercialID: d.equipocomercialid,
+      TipoContratoID: d.tipocontratoid,
       MontoMaximo: d.montomaximo,
-      PorcentajeMaximo: d.porcentajemaximo,
+      MonedaID: d.monedaid,
+      PorcentajeMaximoUtilizado: d.porcentajemaximoutilizado,
+      MontoMaximoUtilizado: d.montomaximoutilizado,
       Activa: d.activa,
+      ModeloDocumentoID: d.modelodocumentoid ?? 0,
     };
   },
   // POST /api/cadenavalor/cdas - Agrega CDAs a un GrupoCda (Pantalla x

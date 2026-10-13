@@ -16,6 +16,7 @@ import {
   useTiposProducto,
   useTipoContrato,
 } from "../../../../hooks/useCatalogos";
+import { simboloMoneda, esMonedaPesos } from "../../../../utils/monedaUtils";
 
 const defaultParametros = {
   lineas: {
@@ -107,6 +108,9 @@ export default function Paso3Simulador({
   opcionesCalculo: propOpcionesCalculo,
   disableTipoCalculo = false,
   disableTipoProducto = false,
+  disableMonto = false,
+  montoMaximoOverride,
+  isSubmitting = false,
 }) {
   const { control, trigger, setValue, setError } = useFormContext();
   const { errors, dirtyFields } = useFormState({ control });
@@ -164,7 +168,8 @@ export default function Paso3Simulador({
 
   const simboloActual =
     monedasData?.raw.find((m) => m.monedaid.toString() === monedaValue)
-      ?.simbolo || "$";
+      ?.simbolo || simboloMoneda(monedaValue);
+  const enPesos = esMonedaPesos(monedaValue);
 
   const handleLocalCalcular = async () => {
     const camposATrigger = ["moneda", "tipoProducto"];
@@ -177,22 +182,26 @@ export default function Paso3Simulador({
       // Dynamic validation based on localStorage limits
       const activeProduct = tipoProductoValue; // cheques, pagares, prestamos
       const productParams = config[activeProduct];
-      if (productParams) {
-        const montoNum = Number(montoValue);
-        if (montoNum < productParams.montoMinimo) {
-          setError("monto", {
-            type: "manual",
-            message: `El monto mínimo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(productParams.montoMinimo)}`,
-          });
-          return;
-        }
-        if (montoNum > productParams.montoMaximo) {
-          setError("monto", {
-            type: "manual",
-            message: `El monto máximo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(productParams.montoMaximo)}`,
-          });
-          return;
-        }
+      const montoNum = Number(montoValue);
+      // montoMaximoOverride es el techo real de la línea elegida
+      // (TipoLimiteCadenaValor.MontoLinea) - cuando está presente manda por
+      // sobre el montoMaximo simulado/local de config[activeProduct].
+      const montoMaximoEfectivo =
+        montoMaximoOverride > 0 ? montoMaximoOverride : productParams?.montoMaximo;
+
+      if (productParams && montoNum < productParams.montoMinimo) {
+        setError("monto", {
+          type: "manual",
+          message: `El monto mínimo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(productParams.montoMinimo)}`,
+        });
+        return;
+      }
+      if (montoMaximoEfectivo > 0 && montoNum > montoMaximoEfectivo) {
+        setError("monto", {
+          type: "manual",
+          message: `El monto máximo es ${simboloActual} ${new Intl.NumberFormat("es-AR").format(montoMaximoEfectivo)}`,
+        });
+        return;
       }
       onCalcular();
     }
@@ -216,12 +225,17 @@ export default function Paso3Simulador({
   const isDolarPagare = tipoProductoValue === "pagare" && monedaValue === "2";
   const montoNumerico = Number(montoValue) || 0;
   const formatCurrency = (val) =>
-    new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(val);
+    enPesos
+      ? new Intl.NumberFormat("es-AR", {
+          style: "currency",
+          currency: "ARS",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(val)
+      : `${simboloActual} ${new Intl.NumberFormat("es-AR", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(val)}`;
 
   const formatDolar = (val) =>
     "USD " +
@@ -283,7 +297,7 @@ export default function Paso3Simulador({
     const comisionBind = montoNumerico * (activeParams.comisionOtorgamiento / 100);
     const derechoMercado = montoNumerico * (activeParams.derechoMercado / 100);
     const arancelBolsa = montoNumerico * (activeParams.arancelBolsa / 100);
-    const valoresCobro = activeParams.valoresCobro * (montoNumerico / 2000000);
+    const valoresCobro = enPesos ? activeParams.valoresCobro * (montoNumerico / 2000000) : 0;
     const iva = (comisionBind + arancelBolsa + valoresCobro) * 0.21;
     const descuentoTope = montoNumerico * -0.1248375 * (dias / 71.365);
 
@@ -336,8 +350,8 @@ export default function Paso3Simulador({
     const intereses = montoNumerico * (activeParams.tasaGeneral / 100) * (dias / 365);
     const derechoMercado = montoNumerico * (activeParams.derechoMercado / 100);
     const arancelBolsa = montoNumerico * (activeParams.arancelBolsa / 100);
-    const valoresCobro = activeParams.valoresCobro;
-    const gestionCobro = activeParams.gestionCobro;
+    const valoresCobro = enPesos ? activeParams.valoresCobro : 0;
+    const gestionCobro = enPesos ? activeParams.gestionCobro : 0;
     const iva = (comisionBind + arancelBolsa + valoresCobro) * 0.21;
     
     totalCostosCheque =
@@ -356,11 +370,15 @@ export default function Paso3Simulador({
         value: formatCurrency(comisionBind),
       },
       { label: `Intereses (${activeParams.tasaGeneral}% TNA*)`, value: formatCurrency(intereses) },
-      { label: "Derecho bolsa", value: "$ 0" },
+      { label: "Derecho bolsa", value: formatCurrency(0) },
       { label: `Derecho mercado (${activeParams.derechoMercado}%)`, value: formatCurrency(derechoMercado) },
       { label: `Arancel Soc Bolsa (${activeParams.arancelBolsa}%)`, value: formatCurrency(arancelBolsa) },
-      { label: "Valores al cobro", value: formatCurrency(valoresCobro) },
-      { label: "Gestión de cobro", value: formatCurrency(gestionCobro) },
+      ...(enPesos
+        ? [
+            { label: "Valores al cobro", value: formatCurrency(valoresCobro) },
+            { label: "Gestión de cobro", value: formatCurrency(gestionCobro) },
+          ]
+        : []),
       { label: "IVA", value: formatCurrency(iva) },
     ];
 
@@ -370,7 +388,9 @@ export default function Paso3Simulador({
     ];
 
     datoExtraTotal = { label: "CFT estimado", value: `${((totalCostosCheque / montoNumerico) * (365 / dias) * 100).toFixed(2)}% anual` };
-    textoAlerta = "IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa.";
+    textoAlerta = enPesos
+      ? "IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa."
+      : "IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa. Los gastos fijos en pesos (valores al cobro y gestión de cobro) no se incluyen en esta estimación.";
   }
 
   const prestamosConfig = config.prestamos;
@@ -449,7 +469,9 @@ export default function Paso3Simulador({
               currency={simboloActual}
               esValido={isMontoValid || montoValue > 0}
               error={errors.monto?.message}
-              disabled={mostrarResultados}
+              disabled={mostrarResultados || disableMonto}
+              locked={disableMonto}
+              lockedMessage="Este es el monto disponible de tu línea de crédito: se completa automáticamente y no se puede modificar."
             />
           </div>
         </div>
@@ -477,6 +499,7 @@ export default function Paso3Simulador({
             datosTabla={datosTablaPrestamo}
             onContinuar={onContinuar}
             onRecalcular={onCancelar}
+            isSubmitting={isSubmitting}
           />
         ) : (
           <TicketSimulacion
@@ -489,6 +512,7 @@ export default function Paso3Simulador({
             onRecalcular={onCancelar}
             onContinuar={onContinuar}
             textoBotonSecundario="Desisto de avanzar"
+            isSubmitting={isSubmitting}
           />
         )}
       </Modal>

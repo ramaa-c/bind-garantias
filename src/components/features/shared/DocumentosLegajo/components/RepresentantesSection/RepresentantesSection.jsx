@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  FiUsers,
   FiUser,
   FiPlus,
   FiChevronDown,
@@ -9,12 +8,21 @@ import {
   FiTrash2,
   FiMail,
   FiPhone,
-  FiInfo,
+  FiMapPin,
+  FiAlertCircle,
+  FiXCircle,
 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
-import { RepresentanteModal } from "../../../RepresentanteModal/RepresentanteModal";
+import { RepresentanteLegalModal } from "../../../RepresentanteLegalModal/RepresentanteLegalModal";
+import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
+import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
+import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 
+// Solo Representante Legal (TipoRelacionSocioID 230, persona jurídica) -
+// Apoderado tiene su propia pestaña/sección (ver ApoderadosSection), no
+// aparece más acá. No pide DNI frente/dorso (a diferencia de Accionistas):
+// este modal no tiene forma de cargarlo, ver useValidacionLegajo.
 export function RepresentantesSection({
   loadingSocios,
   representantes,
@@ -22,16 +30,23 @@ export function RepresentantesSection({
   cargarSocios,
   socioIdActivo,
 }) {
-  const [modalRepresentanteOpen, setModalRepresentanteOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editRepresentante, setEditRepresentante] = useState(null);
   const [expandedRep, setExpandedRep] = useState(null);
-  const [portalTarget, setPortalTarget] = useState(null);
+  const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
-  useEffect(() => {
-    setPortalTarget(document.getElementById("socios-header-action-portal"));
-  }, []);
+  const { data: estadoCdaMap } = useEstadoCdaTerceros(representantes.map((r) => r.id));
+
+  const abrirModal = (rep = null) => {
+    setEditRepresentante(rep);
+    setModalOpen(true);
+  };
+  const cerrarModal = () => {
+    setModalOpen(false);
+    setEditRepresentante(null);
+  };
 
   return (
     <div className={styles.sociosContainer}>
@@ -48,12 +63,9 @@ export function RepresentantesSection({
             <button
               type="button"
               className={`${styles.addButton} ${isAdmin ? styles.addButtonAdmin : ""}`}
-              onClick={() => {
-                setEditRepresentante(null);
-                setModalRepresentanteOpen(true);
-              }}
+              onClick={() => abrirModal()}
             >
-              <FiPlus size={14} /> Agregar Representante
+              <FiPlus size={14} /> Agregar Representante Legal
             </button>,
             portalTarget
           )}
@@ -63,17 +75,37 @@ export function RepresentantesSection({
               className={styles.emptySlot}
               style={{ minHeight: "6rem", padding: "1.5rem" }}
             >
-              <p className={styles.emptyTitle}>
-                Sin representantes registrados
-              </p>
+              <p className={styles.emptyTitle}>Sin representantes registrados</p>
               <span className={styles.emptyText}>
-                Haga click en "Agregar Representante" para dar de alta.
+                Haga click en "Agregar Representante Legal" para dar de alta.
               </span>
             </div>
           ) : (
             <div className={styles.sociosList}>
-              {representantes.map((rep) => (
-                <div key={rep.id} className={styles.socioCard}>
+              {representantes.map((rep) => {
+                const faltantes = [];
+                const sEmail = rep.email || rep.mail || rep.Mail || "";
+                const sCel = rep.celular || rep.telefono || rep.Telefono || "";
+                const sDir = rep.direccion || rep.calle || "";
+                const sProv = rep.provincia || rep.provinciaid || "";
+
+                if (!sEmail) faltantes.push("Email");
+                if (!sCel) faltantes.push("Teléfono");
+                if (!sDir || !sProv) faltantes.push("Domicilio completo");
+
+                const cuitLimpio = String(rep.cuit || "").replace(/\D/g, "");
+                if (!cuitLimpio) faltantes.push("CUIT válido");
+
+                const cdaRechazado = estadoCdaMap?.get(Number(rep.id)) === "rechazado";
+
+                return (
+                <div key={rep.id} className={`${styles.socioCard} ${cdaRechazado ? styles.socioCardRejected : faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
+                  {cdaRechazado && (
+                    <div className={styles.socioRejectedBanner}>
+                      <FiXCircle size={14} />
+                      <span>Esta persona no superó las validaciones de aceptación correspondientes. Comunicate con nosotros para que la revisemos.</span>
+                    </div>
+                  )}
                   <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
@@ -82,6 +114,19 @@ export function RepresentantesSection({
                         setExpandedRep(expandedRep === rep.id ? null : rep.id)
                       }
                     >
+                      {faltantes.length > 0 && (
+                        <div className={styles.socioWarningWrapper}>
+                          <FiAlertCircle className={styles.socioWarningIcon} />
+                          <div className={styles.socioWarningTooltip}>
+                            <strong>Faltan datos obligatorios:</strong>
+                            <ul>
+                              {faltantes.map((f, i) => (
+                                <li key={i}>{f}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
                       <div className={styles.socioAvatar}>
                         <FiUser size={16} />
                       </div>
@@ -91,19 +136,15 @@ export function RepresentantesSection({
                           CUIT: {rep.cuit}
                         </span>
                         <span
-                          className={`${styles.roleBadge} ${styles.roleBadgeMobile} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}
+                          className={`${styles.roleBadge} ${styles.roleBadgeMobile} ${styles.roleRepresentante}`}
                         >
-                          {rep.rolId === 230
-                            ? "Representante Legal"
-                            : "Apoderado"}
+                          Representante Legal
                         </span>
                       </div>
                       <span
-                        className={`${styles.roleBadge} ${styles.roleBadgeDesktop} ${rep.rolId === 230 ? styles.roleRepresentante : styles.roleApoderado}`}
+                        className={`${styles.roleBadge} ${styles.roleBadgeDesktop} ${styles.roleRepresentante}`}
                       >
-                        {rep.rolId === 230
-                          ? "Representante Legal"
-                          : "Apoderado"}
+                        Representante Legal
                       </span>
                       <FiChevronDown
                         className={`${styles.socioChevron} ${expandedRep === rep.id ? styles.socioChevronOpen : ""}`}
@@ -116,11 +157,8 @@ export function RepresentantesSection({
                       <button
                         type="button"
                         className={`${styles.actionBtn} ${styles.actionBtnEdit} ${isAdmin ? styles.actionBtnEditAdmin : ""}`}
-                        onClick={() => {
-                          setEditRepresentante(rep);
-                          setModalRepresentanteOpen(true);
-                        }}
-                        title="Editar Representante"
+                        onClick={() => abrirModal(rep)}
+                        title="Editar Representante Legal"
                       >
                         <FiEdit2 size={13} />
                       </button>
@@ -128,7 +166,7 @@ export function RepresentantesSection({
                         type="button"
                         className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
                         onClick={() => handleEliminarRelacion(rep)}
-                        title="Eliminar Representante"
+                        title="Eliminar Representante Legal"
                       >
                         <FiTrash2 size={13} />
                       </button>
@@ -165,34 +203,39 @@ export function RepresentantesSection({
                           </div>
                         </div>
                       )}
-                      <div className={styles.socioDetail}>
-                        <FiInfo className={styles.socioDetailIcon} />
-                        <div>
-                          <span className={styles.socioDetailLabel}>
-                            Relación
-                          </span>
-                          <span className={styles.socioDetailVal}>
-                            {rep.rolId === 230
-                              ? "Representante Legal (Gerente Gral)"
-                              : "Apoderado de Socio"}
-                          </span>
+                      {rep.direccion && (
+                        <div className={styles.socioDetail}>
+                          <FiMapPin className={styles.socioDetailIcon} />
+                          <div>
+                            <span className={styles.socioDetailLabel}>
+                              Dirección
+                            </span>
+                            <span className={styles.socioDetailVal}>
+                              {rep.direccion}
+                              {rep.codpos ? ` (${rep.codpos})` : ""}
+                            </span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
+                    {isAdmin && (
+                      <TerceroCdaEstado
+                        terceroId={rep.id}
+                        socioIdActivo={socioIdActivo}
+                      />
+                    )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      <RepresentanteModal
-        isOpen={modalRepresentanteOpen}
-        onClose={() => {
-          setModalRepresentanteOpen(false);
-          setEditRepresentante(null);
-        }}
+      <RepresentanteLegalModal
+        isOpen={modalOpen}
+        onClose={cerrarModal}
         onSuccess={() => cargarSocios()}
         representante={editRepresentante}
         socioIdActivo={socioIdActivo}

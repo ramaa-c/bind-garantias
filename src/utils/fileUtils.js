@@ -227,6 +227,66 @@ export const procesarArchivo = async (
   }
 };
 
+export const TAMANIO_MAXIMO_ARCHIVO_MB = 50;
+const TAMANIO_MAXIMO_ARCHIVO_BYTES = TAMANIO_MAXIMO_ARCHIVO_MB * 1024 * 1024;
+
+export const validarTamanioArchivo = (file) => {
+  if (file && file.size > TAMANIO_MAXIMO_ARCHIVO_BYTES) {
+    toast.error(
+      `El archivo "${file.name}" supera el tamaño máximo permitido (${TAMANIO_MAXIMO_ARCHIVO_MB} MB).`,
+    );
+    return false;
+  }
+  return true;
+};
+
+const MIME_POR_EXTENSION = {
+  pdf: "application/pdf",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+};
+
+const MIMES_CONTENIDO_PERMITIDOS = new Set(Object.values(MIME_POR_EXTENSION));
+
+export const FORMATOS_ARCHIVO = {
+  documento: {
+    extensiones: ["pdf", "jpg", "jpeg", "png"],
+    accept: "application/pdf,image/jpeg,image/png",
+    etiqueta: "PDF, JPG o PNG",
+  },
+  pdf: {
+    extensiones: ["pdf"],
+    accept: "application/pdf",
+    etiqueta: "PDF",
+  },
+  imagen: {
+    extensiones: ["jpg", "jpeg", "png"],
+    accept: "image/jpeg,image/png",
+    etiqueta: "JPG o PNG",
+  },
+};
+
+export const validarTipoArchivo = (file, formato = FORMATOS_ARCHIVO.documento) => {
+  if (!file) return true;
+  const extension = String(file.name || "").split(".").pop().toLowerCase();
+  const extensionValida = formato.extensiones.includes(extension);
+  const mimeValido = !file.type || file.type === MIME_POR_EXTENSION[extension];
+  if (!extensionValida || !mimeValido) {
+    toast.error(
+      `El archivo "${file.name}" no tiene un formato permitido. Solo se aceptan archivos ${formato.etiqueta}.`,
+    );
+    return false;
+  }
+  return true;
+};
+
+export const validarArchivo = (file, formato = FORMATOS_ARCHIVO.documento) =>
+  validarTipoArchivo(file, formato) && validarTamanioArchivo(file);
+
+export const esContenidoArchivoPermitido = (base64Str) =>
+  MIMES_CONTENIDO_PERMITIDOS.has(detectMimeTypeFromBase64(base64Str));
+
 export const formatBase64Size = (base64Str) => {
   if (!base64Str) return "Disponible";
   const len = base64Str.length;

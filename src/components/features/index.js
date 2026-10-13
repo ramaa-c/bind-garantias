@@ -7,18 +7,19 @@ export { default as Paso3Simulador } from './shared/Paso3Simulador/Paso3Simulado
 export { default as Paso4Socios } from './shared/Paso4Socios/Paso4Socios';
 export { default as Paso5Documentacion } from './shared/Paso5Documentacion/Paso5Documentacion';
 export { default as Paso7Exito } from './shared/Paso7Exito/Paso7Exito';
-export * from './shared/SocioItem/SocioItem';
 export * from './shared/PanelDudas/PanelDudas';
 
 export * from './shared/PanelDudas/ModalDudas';
-export { default as SocioModal } from './shared/SocioModal/SocioModal';
 export * from './shared/DocumentosEmpresaModal/DocumentosEmpresaModal';
 export { default as Paso6Bolsa } from './cheques/Paso6Bolsa/Paso6Bolsa';
-export * from './shared/RepresentanteModal/RepresentanteModal';
+export * from './shared/RepresentanteLegalModal/RepresentanteLegalModal';
+export * from './shared/ApoderadoModal/ApoderadoModal';
 export * from './shared/SocioTaskCard/SocioTaskCard';
 export { default as UbicacionModal } from "./shared/UbicacionModal/UbicacionModal";
 export { default as ContactoModal } from "./shared/ContactoModal/ContactoModal";
+export { default as FacturacionModal } from "./shared/FacturacionModal/FacturacionModal";
 export { default as ConfirmacionBorradorModal } from "./shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
+export { default as PerfilModal } from "./shared/PerfilModal/PerfilModal";
 export * from "./shared/HistorialEstadoModal/HistorialEstadoModal";
 export * from "./shared/DocumentosLegajo/DocumentosLegajo";
 export * from "./shared/ConfirmacionModal/ConfirmacionModal";
@@ -41,7 +42,8 @@ export * from "./admin/CdaConfigModal/CdaConfigModal";
 export * from "./admin/UsuariosRelacionadosModal/UsuariosRelacionadosModal";
 export * from "./admin/CriteriosAceptacionModal/CriteriosAceptacionModal";
 export * from "./admin/RequisitosConfigModal/RequisitosConfigModal";
+export * from "./admin/RechazarSolicitudModal/RechazarSolicitudModal";
+export * from "./admin/NotificarSocioModal/NotificarSocioModal";
 export * from "./shared/LegajoUniversalBar/LegajoUniversalBar";
-export * from "./shared/BloqueoLegajoModal/BloqueoLegajoModal";
 
 

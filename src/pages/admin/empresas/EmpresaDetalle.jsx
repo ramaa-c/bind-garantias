@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm, FormProvider } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   FiUser,
@@ -19,11 +19,19 @@ import {
   FiEdit3,
   FiX,
   FiEye,
+  FiInfo,
+  FiCheckCircle,
+  FiDownload,
+  FiLink,
+  FiAward,
+  FiBell,
+  FiUserCheck,
 } from "react-icons/fi";
 import {
   useSocioPorId,
   useActualizarSocio,
   useObtenerExecuteCda,
+  useUsuariosVinculadosASocio,
 } from "../../../hooks/useSocios";
 import { cdaService } from "../../../services/cdaService";
 import { useObtenerTodasWebConEstado, useObtenerGrupoCdaConCdas } from "../../../hooks/useCadenaValor";
@@ -36,8 +44,13 @@ import {
 } from "../../../hooks/useCatalogos";
 import { useObtenerTodosCdas, useReejecutarCda, useProbarCda } from "../../../hooks/useCda";
 import { useObtenerUsuarioPorId } from "../../../hooks/useUsuario";
+import { useValidacionLegajo } from "../../../hooks/useValidacionLegajo";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { esCdaActivo } from "../../../utils/cdaUtils";
+import { socioArchivoService } from "../../../services/socioArchivoService";
+import { descargarLegajoCompletoZip } from "../../../utils/fileUtils";
+import { useDescargaConFeedback } from "../../../hooks/useDescargaConFeedback";
 import {
   ultimaEjecucionPorCda,
   ordenarEjecucionesCda,
@@ -52,13 +65,22 @@ import {
   InputSimple,
   SelectSimple,
   SelectFechaSimple,
-  Spinner,
   Modal,
+  Skeleton,
 } from "../../../components/ui";
 import { ConfirmacionModal } from "../../../components/features/shared/ConfirmacionModal/ConfirmacionModal";
+import { NotificarSocioModal } from "../../../components/features/admin/NotificarSocioModal/NotificarSocioModal";
 import { DocumentosLegajo } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo";
+import { ESTRUCTURA_LEGAJO } from "../../../components/features/shared/DocumentosLegajo/DocumentosLegajo.constants";
 import { SociosLegajo } from "../../../components/features/shared/SociosLegajo/SociosLegajo";
+import { LegajoUniversalBar } from "../../../components/features/shared/LegajoUniversalBar/LegajoUniversalBar";
+import { CertificadoPymeAdmin } from "../../../components/features/admin/CertificadoPymeAdmin/CertificadoPymeAdmin";
+import {
+  esUsuarioBloqueado,
+  esUsuarioPendienteActivacion,
+} from "../../../utils/usuarioUtils";
 import styles from "./EmpresaDetalle.module.css";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 
 const getTipoPersonaLabel = (tipoPersonaId) => {
   const id = Number(tipoPersonaId);
@@ -86,6 +108,12 @@ const getInitials = (denominacion) => {
   return `${palabras[0][0]}${palabras[1][0]}`.toUpperCase();
 };
 
+const ESTADO_LABEL_EFECTIVO = {
+  aprobado: "Aprobado",
+  rechazado: "Rechazado",
+  pendiente: "Pendiente",
+};
+
 const getEstadoTono = (label) => {
   const texto = String(label || "").toLowerCase();
   if (/rechaz|baja|inactiv|suspend/.test(texto)) return "danger";
@@ -101,7 +129,32 @@ const TABS = [
   { key: "documentacion", label: "Documentación", icon: FiFileText },
   { key: "terceros", label: "Terceros Relacionados", icon: FiUsers },
   { key: "cdas", label: "CDAs", icon: FiShield },
+  { key: "pyme", label: "Certificado PyME", icon: FiAward },
+  { key: "usuarios", label: "Usuarios Vinculados", icon: FiUserCheck },
 ];
+
+// Filas fantasma con la forma real del panel de CDAs (barra de resultado
+// general + filas de criterio con badge/fecha/acciones): mientras carga se
+// ve la estructura, no un spinner centrado.
+const CdasPanelSkeleton = () => (
+  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%" }}>
+    <Skeleton width="100%" height="3.6rem" radius="0.75rem" />
+    {Array.from({ length: 5 }).map((_, i) => (
+      <div key={i} className={styles.cdaRow}>
+        <div style={{ flex: 1, minWidth: "12rem" }}>
+          <Skeleton width="55%" height="0.9rem" />
+          <Skeleton width="30%" height="0.7rem" style={{ marginTop: "0.45rem" }} />
+        </div>
+        <Skeleton width="6rem" height="1.4rem" radius="pill" />
+        <Skeleton width="7rem" height="0.75rem" />
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <Skeleton width="7.5rem" height="1.9rem" radius="0.5rem" />
+          <Skeleton width="8.5rem" height="1.9rem" radius="0.5rem" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 const construirEstadoInicial = (socio) => ({
   denominacion: socio.denominacion || "",
@@ -127,6 +180,65 @@ const construirEstadoInicial = (socio) => ({
   fechainicioactividades: socio.fechainicioactividades || "",
   fechacierreejercicio: socio.fechacierreejercicio || "",
 });
+
+// Pestaña de solo lectura - muestra qué usuarios tienen acceso a esta
+// empresa, algo que hasta SGRPLUSPLA-201/mejora de api/SocioUsuario no se
+// podía ver desde ningún lado del panel admin. Hoy solo trae email/fecha de
+// vinculación/estado de la cuenta (lo único que expone
+// api/SocioUsuario/{SocioID}:PorSocio + api/usuario/{id}) - a futuro se
+// puede sumar más info propia de cada usuario si hace falta.
+function UsuariosVinculadosTab({ socioId }) {
+  const { usuariosVinculados, isLoading } = useUsuariosVinculadosASocio(socioId);
+
+  return (
+    <div className={styles.usuariosVinculadosTab}>
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionCardHeader}>
+          <span className={styles.sectionCardIcon}>
+            <FiUserCheck size={15} />
+          </span>
+          <h3>Usuarios vinculados</h3>
+        </header>
+
+        {isLoading ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+            <Skeleton width="100%" height="2.3rem" radius="0.6rem" />
+            <Skeleton width="100%" height="2.3rem" radius="0.6rem" />
+          </div>
+        ) : usuariosVinculados.length === 0 ? (
+          <p className={styles.usuariosVinculadosVacio}>
+            Todavía no hay ningún usuario vinculado a esta empresa.
+          </p>
+        ) : (
+          <ul className={styles.usuariosVinculadosLista}>
+            {usuariosVinculados.map((u) => (
+              <li key={u.usuarioWebId} className={styles.usuarioVinculadoRow}>
+                <span className={styles.usuarioVinculadoEmail}>
+                  {u.email || `Usuario #${u.usuarioWebId}`}
+                </span>
+                <span className={styles.usuarioVinculadoMeta}>
+                  {esUsuarioPendienteActivacion(u) && (
+                    <span className={`${styles.badge} ${styles["badge-warning"]}`}>
+                      Pendiente de activación
+                    </span>
+                  )}
+                  {esUsuarioBloqueado(u) && (
+                    <span className={`${styles.badge} ${styles["badge-warning"]}`}>
+                      Bloqueado
+                    </span>
+                  )}
+                  {u.momentoCreacion
+                    ? new Date(u.momentoCreacion).toLocaleDateString("es-AR")
+                    : "—"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
 
 function DatosTab({ socio }) {
   const estadoInicial = useMemo(() => construirEstadoInicial(socio), [socio]);
@@ -185,7 +297,7 @@ function DatosTab({ socio }) {
       },
       onError: (err) => {
         console.error("Error al actualizar el socio:", err);
-        toast.error("Ocurrió un error al guardar los cambios");
+        toast.error("Ocurrió un error al guardar los cambios", { description: mensajeNegocio(err, "") });
         setConfirmOpen(false);
       },
     });
@@ -210,6 +322,8 @@ function DatosTab({ socio }) {
                   onChange={setField("denominacion")}
                   variant="admin"
                   hideErrorSpace
+                  disabled
+                  title="La razón social no se puede modificar."
                 />
               </div>
               <div className={styles.fieldFull}>
@@ -418,22 +532,61 @@ function DatosTab({ socio }) {
   );
 }
 
-function DocumentacionTab({ socio }) {
+// Avisa de dónde sale el filtro de requisitos que se aplica en Documentación
+// y Terceros Relacionados en modo admin: no hay un campo CadenaValorID en
+// Socio, así que se infiere de la ejecución más reciente del historial de
+// CDAs que traiga uno (ver detectarCadenaValorId, mismo dato que usa la
+// pestaña CDAs para reejecutar/forzar).
+function CadenaDetectadaAviso({ cadenaValorIdDetectada, nombreCadenaDetectada }) {
+  return (
+    <p className={styles.cadenaAviso}>
+      <FiInfo size={12} />
+      {cadenaValorIdDetectada ? (
+        <>
+          Requisitos configurados para{" "}
+          <span className={styles.cadenaAvisoFuerte}>{nombreCadenaDetectada}</span>,
+          detectada del historial de CDAs de esta empresa.
+        </>
+      ) : (
+        "No se detectó la cadena de esta empresa en su historial de CDAs: se muestran los requisitos por defecto según su tipo societario."
+      )}
+    </p>
+  );
+}
+
+function DocumentacionTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   const methods = useForm({ defaultValues: {} });
 
   return (
     <div className={styles.embeddedLegajo}>
+      <CadenaDetectadaAviso
+        cadenaValorIdDetectada={cadenaValorIdDetectada}
+        nombreCadenaDetectada={nombreCadenaDetectada}
+      />
       <FormProvider {...methods}>
         <DocumentosLegajo
           adminMode
           socioIdOverride={socio.socioid}
+          cadenaIdOverride={cadenaValorIdDetectada}
           empresaOverride={{
             nombreEmpresa: socio.denominacion,
             cuitActivo: socio.cuit,
             direccion: socio.calle,
+            numero: socio.numero,
+            piso: socio.piso,
+            departamento: socio.departamento,
+            partido: socio.partido,
+            codigoPostal: socio.codpos,
+            email: socio.email,
             telefono: socio.telefono,
+            telefono2: socio.telefono2,
             tipoPersonaId: socio.tipopersonaid,
             fechaCierreEjercicio: socio.fechacierreejercicio,
+            fechaInicioActividades: socio.fechainicioactividades,
+            tamanioEmpresaId: socio.tamanioempresaid,
+            situacionBcraId: socio.situacionbcraid,
+            tipoCanalComercializacionId: socio.tipocanalcomercializacionid,
+            socioEstadoId: socio.socioestadoid,
           }}
         />
       </FormProvider>
@@ -441,12 +594,17 @@ function DocumentacionTab({ socio }) {
   );
 }
 
-function TercerosTab({ socio }) {
+function TercerosTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   return (
     <div className={styles.embeddedLegajo}>
+      <CadenaDetectadaAviso
+        cadenaValorIdDetectada={cadenaValorIdDetectada}
+        nombreCadenaDetectada={nombreCadenaDetectada}
+      />
       <SociosLegajo
         adminMode
         socioIdOverride={socio.socioid}
+        cadenaIdOverride={cadenaValorIdDetectada}
         tipoPersonaIdOverride={Number(socio.tipopersonaid) || null}
         nombreEmpresaOverride={socio.denominacion}
       />
@@ -456,9 +614,10 @@ function TercerosTab({ socio }) {
 
 // PANTALLA_INGRESO_CUIT es hoy la única pantalla que evalúa CDAs a nivel
 // empresa (la otra, PANTALLA_SOCIOS, es para terceros relacionados) — por
-// eso se puede fijar acá. CadenaValorID en cambio no queda guardado en
-// ningún lado del lado del socio ni del historial, así que hasta que se le
-// pida a backend que lo persista, el admin lo tiene que elegir a mano.
+// eso se puede fijar acá. CadenaValorID no queda guardado en ningún campo de
+// Socio, pero sí viaja en cada fila del historial de CDAs desde que se
+// arregló el bug del INSERT que lo dejaba en 0 — se detecta desde ahí (ver
+// detectarCadenaValorId, arriba en EmpresaDetalle).
 const PANTALLA_EMPRESA = "PANTALLA_INGRESO_CUIT";
 
 // Mismo patrón que ModoOffline.jsx: UsuarioWebID viaja en cada fila del
@@ -471,14 +630,15 @@ const NombreUsuario = ({ usuarioId }) => {
   return partes.length > 0 ? partes.join(" - ") : `Usuario #${usuarioId}`;
 };
 
-function CdasTab({ socio }) {
-  const usuarioWebId = useAuthStore((state) => state.user?.usuarioWebId) || 0;
+// cadenaValorIdDetectada/nombreCadenaDetectada llegan ya resueltos desde
+// EmpresaDetalle (se calculan una sola vez ahí porque también los necesitan
+// DocumentacionTab y TercerosTab, ver detectarCadenaValorId en
+// utils/executeCda.js).
+function CdasTab({ socio, cadenaValorIdDetectada, nombreCadenaDetectada }) {
   const queryClient = useQueryClient();
   const [cdaEnCurso, setCdaEnCurso] = useState(null);
   const [isReejecutandoGrupo, setIsReejecutandoGrupo] = useState(false);
   const [confirmReejecutarGrupoOpen, setConfirmReejecutarGrupoOpen] = useState(false);
-
-  const { data: cadenasWeb } = useObtenerTodasWebConEstado();
 
   const {
     data: ejecucionesData,
@@ -486,23 +646,7 @@ function CdasTab({ socio }) {
     isError,
   } = useObtenerExecuteCda(socio.socioid);
 
-  // La cadena real de este socio ya no hay que elegirla a mano: se detecta
-  // de la ejecución más reciente del historial que traiga un CadenaValorID
-  // real (ver detectarCadenaValorId — antes el backend lo dejaba en 0, bug
-  // ya resuelto). Si el socio no tiene ninguna ejecución con ese dato
-  // (historial viejo, previo al fix), no hay forma de saberla y las
-  // acciones que la necesitan (reejecutar, forzar) quedan deshabilitadas.
-  const cadenaValorIdDetectada = useMemo(
-    () => detectarCadenaValorId(ejecucionesData),
-    [ejecucionesData],
-  );
   const hayCadenaDetectada = !!cadenaValorIdDetectada;
-
-  const nombreCadenaDetectada = useMemo(() => {
-    if (!cadenaValorIdDetectada) return null;
-    const fila = (cadenasWeb || []).find((c) => Number(c.cadenavalorid) === cadenaValorIdDetectada);
-    return fila?.denominacion || `Cadena #${cadenaValorIdDetectada}`;
-  }, [cadenasWeb, cadenaValorIdDetectada]);
 
   // Definición VIGENTE del grupo (ExpresionAgrupacion + CDAs activos) para la
   // cadena detectada — se usa para recalcular el estado combinado sin
@@ -624,10 +768,6 @@ function CdasTab({ socio }) {
     () => ultimaEjecucionPorCda(ejecucionesData),
     [ejecucionesData],
   );
-  const historialCompleto = useMemo(
-    () => ordenarEjecucionesCda(ejecucionesData),
-    [ejecucionesData],
-  );
 
   // grupoItem: última fila sintética CdaID=0 (resultado combinado del
   // grupo — no se puede re-ejecutar por CdaID como el resto, ver barra de
@@ -635,7 +775,7 @@ function CdasTab({ socio }) {
   // obtenerCdasDeLaCorridaActual en utils/executeCda.js — desde que el
   // historial trae CadenaValorID/PantallaGrupoCdaID por fila, el batch se
   // scopea por ese contexto real en vez de solo por posición de ID).
-  const { grupoItem, cdas: cdasIndividuales } = useMemo(
+  const { grupoItem, cdas: cdasIndividuales, cdaIdsDelCierre } = useMemo(
     () => obtenerCdasDeLaCorridaActual(ejecucionesData),
     [ejecucionesData],
   );
@@ -658,53 +798,139 @@ function CdasTab({ socio }) {
   // incluye todo lo que se ejecutó en la última corrida, aunque después se
   // haya desvinculado del grupo (ej. "Score alto" quedó Rechazado en un
   // cierre viejo y luego se sacó del grupo — su fila sigue en el historial
-  // para siempre). Mostrar esa fila en la lista confunde: da la sensación de
-  // que el CDA sigue pesando, cuando el resultado combinado de arriba
-  // (estadoEfectivo) ya lo ignora por completo. Con el grupo vigente
-  // resuelto, se filtra la lista a solo los CDAs que siguen activos ahí —
-  // sin grupo vigente (cadena no detectada, o el grupo no existe) se sigue
-  // mostrando el crudo, es lo único que hay.
+  // para siempre). Antes se ocultaban esas filas para no confundir con el
+  // resultado combinado de arriba — pero eso escondía justo la información
+  // que hace falta para entender un cambio de resultado (ver
+  // cdaDefinicionCambio más abajo): ahora se muestran TODAS, marcando cuáles
+  // ya no están vinculadas a esta cadena (ver "Desvinculado" en el render).
+  // estadoEfectivo ya las ignora por completo (ver el filtro nuevo en
+  // calcularEstadoEfectivo, utils/executeCda.js), así que la etiqueta es
+  // solo informativa — no hay ambigüedad sobre si siguen pesando.
   const hayGrupoVigente = hayCadenaDetectada && !!grupoDataElegido?.grupo;
-  const cdasParaMostrar = useMemo(() => {
+
+  // Vinculados primero, desvinculados al final — con el estado (activo vs.
+  // desvinculado) mezclado en la lista sin ningún orden, era fácil pasar
+  // por alto que había CDAs que ya no pesaban en el resultado combinado.
+  //
+  // ⚠️ Un desvinculado solo se muestra si sigue siendo parte de "la
+  // ejecución vigente": si ALGÚN CDA que sigue vinculado ya se reevaluó
+  // DESPUÉS del último cierre, el desvinculado quedó del lado de una
+  // corrida ya superada — mostrarlo confunde (parece que recién se sacó
+  // del grupo, cuando en realidad es historia vieja de antes de esas
+  // reevaluaciones). Confirmado en vivo: reejecutar el único CDA que queda
+  // vinculado, dos veces seguidas después del cierre, seguía mostrando a
+  // los ya desvinculados como si nada hubiera pasado desde el cierre.
+  const cdasIndividualesOrdenados = useMemo(() => {
     if (!hayGrupoVigente) return cdasIndividuales;
-    return cdasIndividuales.filter((item) => cdasActivosIdsGrupo.includes(Number(item.cdaid)));
-  }, [cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo]);
+    const activos = [];
+    const desvinculados = [];
+    cdasIndividuales.forEach((item) => {
+      (cdasActivosIdsGrupo.includes(Number(item.cdaid)) ? activos : desvinculados).push(item);
+    });
+
+    const idDeItem = (item) => Number(item?.socioexecutecdaid ?? item?.SocioExecuteCdaID) || 0;
+    const grupoItemId = idDeItem(grupoItem);
+    const huboReevaluacionPostCierre =
+      !!grupoItem && activos.some((item) => idDeItem(item) > grupoItemId);
+    const desvinculadosVigentes = huboReevaluacionPostCierre ? [] : desvinculados;
+
+    return [...activos, ...desvinculadosVigentes];
+  }, [cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo, grupoItem]);
 
   const estadoEfectivo = useMemo(() => {
     if (!hayCadenaDetectada || isLoadingGrupoElegido) return null;
     return calcularEstadoEfectivo({
-      historial: historialCompleto,
+      cdasCorridaActual: cdasIndividuales,
       expresionAgrupacion: grupoDataElegido?.grupo?.expresionagrupacion,
       cdasActivosIds: cdasActivosIdsGrupo,
-      cadenaValorId: cadenaValorIdDetectada,
-      pantallaGrupoCdaId: grupoDataElegido?.grupo?.pantallagrupocdaid,
     });
-  }, [hayCadenaDetectada, isLoadingGrupoElegido, historialCompleto, grupoDataElegido, cdasActivosIdsGrupo, cadenaValorIdDetectada]);
+  }, [hayCadenaDetectada, isLoadingGrupoElegido, cdasIndividuales, grupoDataElegido, cdasActivosIdsGrupo]);
 
-  // Estado calculado SIN necesitar elegir cadena: infiere la combinación
-  // and/or del propio texto del último cierre (grupoItem.expresion) y la
-  // combina con el estado más reciente de cada CDA de esa corrida
-  // (cdasIndividuales ya toma la última ejecución de cada uno, sea del
-  // batch original o de un forzado puntual posterior al cierre — ver
-  // combinarEstadoCdas). Es lo que permite mostrar, por ejemplo, que un CDA
-  // forzado a Aprobado después de un cierre en Rechazado ya destraba el
-  // resultado combinado, sin depender de la ExpresionAgrupacion vigente.
+  // Estado calculado SIN necesitar la ExpresionAgrupacion vigente: infiere
+  // la combinación and/or del propio texto del último cierre
+  // (grupoItem.expresion) y la combina con el estado más reciente de cada
+  // CDA de esa corrida (cdasIndividuales ya toma la última ejecución de
+  // cada uno, sea del batch original o de un forzado puntual posterior al
+  // cierre). Es lo que permite mostrar, por ejemplo, que un CDA forzado a
+  // Aprobado después de un cierre en Rechazado ya destraba el resultado
+  // combinado, sin depender de esa expresión vigente.
+  //
+  // Sí usa cdasActivosIdsGrupo (la vinculación vigente, información que el
+  // cliente a propósito no usa — ver useEstadoCdaSocio en useSocios.js)
+  // para descartar CDAs desvinculados de la combinación. Además pasa
+  // cdaIdsDelCierre (ver combinarEstadoCdas) para que un CDA ajeno al
+  // cierre viejo (nunca fue miembro de él) decida solo el resultado en vez
+  // de arrastrar a los miembros ya obsoletos — mismo mecanismo que usa el
+  // cliente, con el filtro de vinculación vigente como plus admin. Solo se
+  // pasa cdasActivosIdsGrupo cuando hay grupo vigente resuelto — sin
+  // cadena detectada, sigue funcionando 100% desde el historial.
   const estadoSinCadena = useMemo(
-    () => combinarEstadoCdas(grupoItem, cdasIndividuales),
-    [grupoItem, cdasIndividuales],
+    () =>
+      combinarEstadoCdas(
+        grupoItem,
+        cdasIndividuales,
+        hayGrupoVigente ? cdasActivosIdsGrupo : undefined,
+        cdaIdsDelCierre,
+      ),
+    [grupoItem, cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo, cdaIdsDelCierre],
   );
 
-  // estadoEfectivo (con la cadena detectada y la definición VIGENTE del
-  // grupo) es la fuente de verdad cuando se detectó una cadena;
-  // estadoSinCadena (infiere el and/or del último cierre, sin necesitar
-  // cadena) es solo el fallback mientras no se detectó ninguna. NO se deja
-  // que estadoSinCadena le gane a estadoEfectivo cuando ambos están
-  // disponibles: si se agrega un CDA nuevo a un grupo ya aprobado antes,
-  // estadoSinCadena no lo sabe (nunca se ejecutó para este socio) y
-  // seguiría diciendo "aprobado" del cierre viejo — dejarlo ganar ocultaría
-  // que ese CDA nuevo todavía no se evaluó. Si difieren, se avisa (ver
-  // posibleCadenaIncorrecta) en vez de forzar el badge a "aprobado".
-  const estadoFinal = estadoEfectivo ?? estadoSinCadena;
+  // El badge principal muestra estadoSinCadena (lo que realmente se evaluó
+  // la última vez) y NO estadoEfectivo (la definición vigente): mostrar acá
+  // el recálculo vigente confundía más de lo que aclaraba — ej. un socio
+  // Aprobado que pasaba a verse "Pendiente" solo porque se desvinculó un CDA
+  // del grupo, sin que se haya ejecutado nada nuevo para él. cdaDefinicionCambio
+  // (más abajo) ya avisa cuando la definición vigente difiere de lo
+  // realmente evaluado, así que no hace falta que el badge también lo haga.
+  // estadoEfectivo queda como fallback solo para cuando no hay ningún cierre
+  // de grupo registrado (socio sin historial de grupo todavía).
+  const estadoFinal = estadoSinCadena ?? estadoEfectivo;
+
+  // El grupo de CDAs de esta cadena puede haberse modificado (activar/
+  // desactivar un CDA, cambiar la ExpresionAgrupacion) DESPUÉS de la última
+  // evaluación real de este socio — mismo problema que se corrigió para el
+  // login del cliente (ver useEstadoCdaSocio en useSocios.js), pero acá SÍ
+  // es información útil para el admin: si estadoEfectivo (definición
+  // vigente) y estadoSinCadena (lo que realmente se evaluó la última vez)
+  // difieren, reejecutar el grupo puede dar un resultado distinto al que se
+  // ve arriba — en cualquier sentido (aprobado→rechazado, rechazado
+  // →aprobado, o quedar pendiente).
+  //
+  // ⚠️ estadoSinCadena puede dar null (no solo "otro valor"): pasa cuando el
+  // único CDA vigente no tiene NINGUNA ejecución dentro de "la corrida
+  // actual" (ver obtenerCdasDeLaCorridaActual) — ej. se activó un CDA cuya
+  // última ejecución quedó muy vieja, de antes de varios cierres — en ese
+  // caso combinarEstadoCdas no tiene con qué combinar y devuelve null. Antes
+  // esto apagaba el aviso por completo (exigía que AMBOS valores existieran
+  // para comparar), justo en el caso donde más hace falta: el badge de
+  // arriba termina mostrando estadoEfectivo puro (ver estadoFinal), sin
+  // ningún respaldo del historial reciente, y el aviso se quedaba callado.
+  const cdaDefinicionCambio =
+    hayCadenaDetectada &&
+    !isLoadingGrupoElegido &&
+    !!estadoEfectivo &&
+    (estadoSinCadena == null || estadoEfectivo !== estadoSinCadena);
+
+  // Para el detalle del aviso: qué CDA vigente no tiene una ejecución
+  // reciente para este socio (ni en "la corrida actual" — puede ser que
+  // nunca se ejecutó, o que su última ejecución quedó vieja, de antes de
+  // los últimos cierres) y qué aparece en gris (ver cdasIndividualesOrdenados)
+  // — así el aviso no es solo "algo cambió" sino qué CDA puntual es.
+  const cdaIdsEnCorridaActual = useMemo(
+    () => new Set(cdasIndividuales.map((item) => Number(item.cdaid ?? item.CdaID))),
+    [cdasIndividuales],
+  );
+  const cdasNuevosSinEvaluar = useMemo(() => {
+    if (!hayGrupoVigente) return [];
+    return cdasActivosIdsGrupo.filter((id) => !cdaIdsEnCorridaActual.has(id));
+  }, [hayGrupoVigente, cdasActivosIdsGrupo, cdaIdsEnCorridaActual]);
+  const cdasDesvinculadosVigentes = useMemo(
+    () =>
+      hayGrupoVigente
+        ? cdasIndividualesOrdenados.filter((item) => !cdasActivosIdsGrupo.includes(Number(item.cdaid)))
+        : [],
+    [cdasIndividualesOrdenados, hayGrupoVigente, cdasActivosIdsGrupo],
+  );
 
   // "Reejecutar grupo" corre sin ValorParticularExpresion (ver cdaService.js:
   // no es seguro mandarlo a nivel de pantalla completa), así que cualquier
@@ -715,10 +941,17 @@ function CdasTab({ socio }) {
   // arriba), NO en ultimasPorCda (todo el historial): un CDA forzado en una
   // corrida vieja y ajena a este grupo no se va a tocar al reejecutar, así
   // que no corresponde advertir sobre él.
-  const cdasConExpresionForzada = useMemo(
-    () => cdasIndividuales.filter((item) => item.valorparticularexpresion),
-    [cdasIndividuales],
-  );
+  //
+  // ⚠️ Tampoco corresponde advertir sobre un forzado que sigue en
+  // cdasIndividuales pero ya se desvinculó del grupo (mismo criterio que
+  // cdasActivosIdsGrupo usa en todos lados): "Reejecutar grupo" solo evalúa
+  // los CDAs vigentes, así que un forzado desvinculado no se va a tocar.
+  const cdasConExpresionForzada = useMemo(() => {
+    const forzados = cdasIndividuales.filter((item) => item.valorparticularexpresion);
+    return hayGrupoVigente
+      ? forzados.filter((item) => cdasActivosIdsGrupo.includes(Number(item.cdaid)))
+      : forzados;
+  }, [cdasIndividuales, hayGrupoVigente, cdasActivosIdsGrupo]);
 
   const handleReejecutarGrupo = async () => {
     const cadenaValorId = cadenaValorIdDetectada;
@@ -731,9 +964,8 @@ function CdasTab({ socio }) {
     try {
       await cdaService.ejecutarCda(
         PANTALLA_EMPRESA,
-        socio.cuit,
+        { socioId: socio.socioid },
         cadenaValorId,
-        usuarioWebId,
       );
       toast.success("CDAs aprobados", {
         description: "El grupo completo se volvió a evaluar y pasó correctamente.",
@@ -777,7 +1009,7 @@ function CdasTab({ socio }) {
     // el mismo resultado a TODOS los CDAs del grupo, pisando la evaluación
     // real de los demás. Por eso "Forzar expresión" nunca cierra una fila de
     // grupo nueva: sería inseguro en cualquier pantalla con más de un CDA
-    // vinculado. Reportado a Victor: no hay forma de forzar un único CDA y
+    // vinculado. Reportado al backend: no hay forma de forzar un único CDA y
     // cerrar el grupo en la misma llamada.
     const cadenaValorId = cadenaValorIdDetectada;
     if (!cadenaValorId) {
@@ -788,8 +1020,7 @@ function CdasTab({ socio }) {
     reejecutar(
       {
         cdaId: item.cdaid,
-        cuit: socio.cuit,
-        usuarioId: usuarioWebId,
+        socioId: socio.socioid,
         pantalla: PANTALLA_EMPRESA,
         cadenaValorId,
         valorParticularExpresion,
@@ -836,11 +1067,7 @@ function CdasTab({ socio }) {
   };
 
   if (isLoading) {
-    return (
-      <div className={styles.cdasPlaceholderWrap}>
-        <Spinner center size={60} color="#4c65e6" />
-      </div>
-    );
+    return <CdasPanelSkeleton />;
   }
 
   if (isError) {
@@ -867,31 +1094,26 @@ function CdasTab({ socio }) {
     );
   }
 
+  // Sin esto, con el historial ya cargado pero el grupo vigente todavía no
+  // (isLoadingGrupoElegido), hayGrupoVigente da false y el estado/lista se
+  // arman sin el filtro de cdasActivosIdsGrupo — mostrando por un instante
+  // el resultado crudo del historial (con CDAs ya desvinculados pesando
+  // igual) que después "salta" al valor real apenas resuelve el grupo.
+  // Confunde más que un spinner corto. Solo aplica si hay cadena detectada
+  // (si no, no hay ningún grupo que esperar — useObtenerGrupoCdaConCdas
+  // queda deshabilitado y esto nunca sería true).
+  if (hayCadenaDetectada && isLoadingGrupoElegido) {
+    return <CdasPanelSkeleton />;
+  }
+
   return (
     <div className={styles.cdasScroll}>
       {(grupoItem || (hayCadenaDetectada && cdasIndividuales.length > 0)) && (() => {
-        const ESTADO_LABEL_EFECTIVO = {
-          aprobado: "Aprobado",
-          rechazado: "Rechazado",
-          pendiente: "Pendiente",
-        };
-
-        const calculando = hayCadenaDetectada && isLoadingGrupoElegido;
-        // Si el cálculo cadena-independiente (estadoSinCadena) dice
-        // "aprobado" pero el que usa la definición vigente de la cadena
-        // detectada da otra cosa, es un caso raro (ej. el socio se evaluó
-        // contra más de una cadena) — no hay forma de saber cuál pesa más.
-        // El badge SIEMPRE muestra el resultado con la cadena detectada
-        // (estadoFinal prioriza estadoEfectivo, ver más arriba) — acá solo se
-        // agrega una aclaración, sin tapar un rechazo real.
-        const posibleCadenaIncorrecta =
-          estadoSinCadena === "aprobado" && !!estadoEfectivo && estadoEfectivo !== "aprobado";
-        const estadoLabel = calculando
-          ? "Calculando..."
-          : estadoFinal
-            ? ESTADO_LABEL_EFECTIVO[estadoFinal]
-            : "Sin evaluar";
-        const tono = calculando ? "neutral" : getEstadoTono(estadoLabel);
+        // Para cuando se llega hasta acá, isLoadingGrupoElegido ya resolvió
+        // (ver el gate de carga más arriba) — no hace falta un estado
+        // intermedio de "Calculando...".
+        const estadoLabel = estadoFinal ? ESTADO_LABEL_EFECTIVO[estadoFinal] : "Sin evaluar";
+        const tono = getEstadoTono(estadoLabel);
 
         return (
           <section className={`${styles.grupoBar} ${styles[`grupoBar-${tono}`]}`}>
@@ -900,19 +1122,13 @@ function CdasTab({ socio }) {
                 <FiActivity size={17} />
               </span>
               <div className={styles.grupoBarTexto}>
-                <span className={styles.grupoBarTitulo}>
-                  Resultado general de la pantalla{estadoFinal && !calculando ? " (recalculado)" : ""}
-                </span>
+                <span className={styles.grupoBarTitulo}>Resultado general de la pantalla</span>
                 <span className={styles.grupoBarExpresion}>
-                  {calculando
-                    ? "Calculando con la definición vigente de la cadena detectada..."
-                    : posibleCadenaIncorrecta
-                      ? `Se muestra "${ESTADO_LABEL_EFECTIVO[estadoEfectivo]}" con la cadena detectada (${nombreCadenaDetectada}), pero el último cierre daba "Aprobado" — este socio puede haberse evaluado contra más de una cadena.`
-                      : estadoEfectivo
-                        ? `Calculado con la definición vigente de ${nombreCadenaDetectada} y la última ejecución de cada CDA activo.`
-                        : estadoSinCadena
-                          ? "Calculado con el último cierre y la última ejecución conocida de cada CDA."
-                          : "Todavía no se pudo determinar un resultado combinado para este socio."}
+                  {estadoSinCadena
+                    ? "Calculado con el último cierre y la última ejecución conocida de cada CDA."
+                    : estadoEfectivo
+                      ? `Sin un cierre de grupo registrado: se estima con la definición vigente de ${nombreCadenaDetectada}.`
+                      : "Todavía no se pudo determinar un resultado combinado para este socio."}
                 </span>
               </div>
             </div>
@@ -931,6 +1147,48 @@ function CdasTab({ socio }) {
         );
       })()}
 
+      {cdaDefinicionCambio && (
+        <div className={styles.avisoCambioCda} role="alert">
+          <span className={styles.avisoCambioCdaIcon}>
+            <FiAlertTriangle size={16} />
+          </span>
+          <div className={styles.avisoCambioCdaTexto}>
+            <strong>Los criterios de {nombreCadenaDetectada} cambiaron</strong> desde
+            la última evaluación de este socio.
+            <span className={styles.avisoCambioCdaSub}>
+              {estadoSinCadena == null ? (
+                "No hay ninguna evaluación real reciente que respalde el estado que ves arriba — reejecutar el grupo puede cambiarlo."
+              ) : (
+                <>
+                  El estado que ves arriba es el de la última evaluación real
+                  (<strong>{ESTADO_LABEL_EFECTIVO[estadoSinCadena]}</strong>) — puede
+                  cambiar si reejecutás el grupo.
+                </>
+              )}
+              {cdasNuevosSinEvaluar.length > 0 && (
+                <>
+                  {" "}No {cdasNuevosSinEvaluar.length === 1 ? "tiene" : "tienen"} una
+                  ejecución reciente:{" "}
+                  {cdasNuevosSinEvaluar
+                    .map((id) => descripcionPorCda.get(id) || `CDA #${id}`)
+                    .join(", ")}.
+                </>
+              )}
+              {cdasDesvinculadosVigentes.length > 0 && (
+                <>
+                  {" "}{cdasDesvinculadosVigentes.length === 1 ? "Ya no está vinculado" : "Ya no están vinculados"}:{" "}
+                  {cdasDesvinculadosVigentes
+                    .map((item) => descripcionPorCda.get(Number(item.cdaid)) || `CDA #${item.cdaid}`)
+                    .join(", ")}{" "}
+                  — reejecutar el grupo va a dejar de tenerlo
+                  {cdasDesvinculadosVigentes.length === 1 ? "" : "s"} en cuenta.
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+      )}
+
       <ConfirmacionModal
         isOpen={confirmReejecutarGrupoOpen}
         onClose={() => setConfirmReejecutarGrupoOpen(false)}
@@ -939,7 +1197,7 @@ function CdasTab({ socio }) {
         mensaje={
           <>
             Se va a reevaluar toda la pantalla con las reglas definidas en
-            CDAs Globales — <strong>sin ningún forzado</strong>.
+            CDAs Globales.
             {cdasConExpresionForzada.length > 0 && (
               <>
                 <br />
@@ -1001,31 +1259,54 @@ function CdasTab({ socio }) {
             </Button>
           </div>
         </header>
-        {hayGrupoVigente && cdasParaMostrar.length < cdasIndividuales.length && (
-          <p className={styles.cdaRowFecha} style={{ padding: "0 0 0.5rem" }}>
-            Se ocultaron {cdasIndividuales.length - cdasParaMostrar.length} criterio
-            {cdasIndividuales.length - cdasParaMostrar.length === 1 ? "" : "s"} de una corrida anterior que ya no
-            {cdasIndividuales.length - cdasParaMostrar.length === 1 ? " está vinculado" : " están vinculados"} a esta cadena.
-          </p>
-        )}
         <div className={styles.cdasList}>
-          {cdasParaMostrar.map((item) => {
+          {cdasIndividualesOrdenados.map((item, index) => {
             const estadoLabel =
               resolverLabel(estadosExecuteCda?.opciones, item.estadoexecutecdaid) || "Desconocido";
             const tono = getEstadoTono(estadoLabel);
             const descripcion =
               descripcionPorCda.get(Number(item.cdaid)) || item.expresion || `CDA #${item.cdaid}`;
-            const puedeReejecutar = tono !== "success";
+            // Si no hay grupo vigente resuelto (cadena no detectada, o el
+            // grupo no existe) no hay forma de saber si sigue vinculado —
+            // se asume que sí para no marcar de más (mismo criterio que
+            // calcularEstadoEfectivo cuando no recibe cdasActivosIds).
+            const estaVinculado =
+              !hayGrupoVigente || cdasActivosIdsGrupo.includes(Number(item.cdaid));
+            const anteriorVinculado =
+              index > 0 &&
+              (!hayGrupoVigente || cdasActivosIdsGrupo.includes(Number(cdasIndividualesOrdenados[index - 1].cdaid)));
+            const esInicioDeDesvinculados = hayGrupoVigente && !estaVinculado && (index === 0 || anteriorVinculado);
+            // Se muestran deshabilitados (no ocultos) para un CDA desvinculado:
+            // así el admin ve que la acción existe pero no aplica, en vez de
+            // que desaparezca sin explicación.
+            const muestraAcciones = tono !== "success";
             const fueForzado = !!item.valorparticularexpresion;
+            const tituloAccionDeshabilitada = !estaVinculado
+              ? "Este CDA ya no está vinculado a esta cadena: no pesa en el resultado combinado actual."
+              : !hayCadenaDetectada
+                ? "No se detectó la cadena de este socio"
+                : undefined;
 
             return (
-              <div key={item.cdaid} className={styles.cdaRow}>
+              <React.Fragment key={item.cdaid}>
+                {esInicioDeDesvinculados && (
+                  <p className={styles.cdaListDivider}>Ya no vinculados a esta cadena</p>
+                )}
+                <div className={`${styles.cdaRow} ${!estaVinculado ? styles.cdaRowDesvinculada : ""}`}>
                 <div className={styles.cdaRowInfo}>
                   <span className={styles.cdaRowTitulo}>
                     {descripcion}
                     {fueForzado && (
                       <span className={styles.cdaRowForzadoPill} title="Este resultado se forzó con una expresión personalizada">
                         <FiEdit3 size={10} /> Forzado
+                      </span>
+                    )}
+                    {!estaVinculado && (
+                      <span
+                        className={styles.cdaRowDesvinculadoPill}
+                        title="Este CDA ya no está vinculado a esta cadena: se muestra su última ejecución, pero no pesa en el resultado combinado actual."
+                      >
+                        <FiX size={10} /> Desvinculado
                       </span>
                     )}
                   </span>
@@ -1046,15 +1327,15 @@ function CdasTab({ socio }) {
                   >
                     <FiEye size={13} /> Ver expresión
                   </Button>
-                  {puedeReejecutar && (
+                  {muestraAcciones && (
                     <>
                       <Button
                         variant="outlineBlue"
                         size="sm"
                         onClick={() => handleReejecutar(item)}
                         isLoading={isReejecutando && cdaEnCurso === item.cdaid}
-                        disabled={isReejecutando || !hayCadenaDetectada}
-                        title={!hayCadenaDetectada ? "No se detectó la cadena de este socio" : undefined}
+                        disabled={isReejecutando || !hayCadenaDetectada || !estaVinculado}
+                        title={tituloAccionDeshabilitada}
                       >
                         <FiRefreshCw size={13} /> Volver a ejecutar
                       </Button>
@@ -1062,15 +1343,16 @@ function CdasTab({ socio }) {
                         variant="outlineBlue"
                         size="sm"
                         onClick={() => abrirForzarExpresion(item)}
-                        disabled={isReejecutando || !hayCadenaDetectada}
-                        title={!hayCadenaDetectada ? "No se detectó la cadena de este socio" : undefined}
+                        disabled={isReejecutando || !hayCadenaDetectada || !estaVinculado}
+                        title={tituloAccionDeshabilitada}
                       >
                         <FiEdit3 size={13} /> Forzar expresión
                       </Button>
                     </>
                   )}
                 </div>
-              </div>
+                </div>
+              </React.Fragment>
             );
           })}
         </div>
@@ -1408,7 +1690,18 @@ function HistorialCdaModal({ isOpen, onClose, socio }) {
       maxWidth="640px"
     >
       {isLoading ? (
-        <Spinner center size={50} color="#4c65e6" />
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className={styles.cdaRow}>
+              <div style={{ flex: 1 }}>
+                <Skeleton width="60%" height="0.85rem" />
+                <Skeleton width="35%" height="0.7rem" style={{ marginTop: "0.4rem" }} />
+              </div>
+              <Skeleton width="5.5rem" height="1.3rem" radius="pill" />
+              <Skeleton width="6.5rem" height="0.75rem" />
+            </div>
+          ))}
+        </div>
       ) : isError ? (
         <p className={styles.historialModalMsg}>
           Ocurrió un error al consultar el historial. Probá de nuevo en unos segundos.
@@ -1445,14 +1738,126 @@ export default function EmpresaDetalle() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("datos");
   const [historialOpen, setHistorialOpen] = useState(false);
+  const [notificarOpen, setNotificarOpen] = useState(false);
+  const usuarioWebAdminId = useAuthStore((state) => state.user?.usuarioWebId) || 0;
+  // Feedback del botón de descarga del legajo completo (SGRPLUSPLA-199).
+  const { descargar, faseDe } = useDescargaConFeedback();
+
+  // Defensa en profundidad: ver useBloqueoAdminRestringido — un usuario
+  // vinculado solo por UsuarioCadenaValor no debería poder ver el detalle de
+  // NINGUNA empresa (esta pantalla no filtra por cadena propia).
+  const bloqueado = useBloqueoAdminRestringido();
 
   const { data: socio, isLoading } = useSocioPorId(id);
+  // Mismo hook/queryKey que ya usa UsuariosVinculadosSection (ver DatosTab
+  // más abajo) - react-query lo dedupea, así que esto no duplica el
+  // request, solo expone la lista acá arriba para pasársela a
+  // NotificarSocioModal (permitir elegir a qué usuario vinculado avisar,
+  // no solo al email de la empresa).
+  const { usuariosVinculados } = useUsuariosVinculadosASocio(socio?.socioid);
   const { data: estadosSocio } = useEstadoSocio();
 
+  // Se calcula una sola vez acá (no hay CadenaValorID en Socio, se infiere
+  // del historial de CDAs — ver detectarCadenaValorId) porque lo necesitan
+  // tanto CdasTab como Documentación y Terceros Relacionados, para filtrar
+  // por los requisitos configurados en esa cadena.
+  const { data: ejecucionesCda } = useObtenerExecuteCda(socio?.socioid);
+  const cadenaValorIdDetectada = useMemo(
+    () => detectarCadenaValorId(ejecucionesCda),
+    [ejecucionesCda],
+  );
+  const { data: cadenasWeb } = useObtenerTodasWebConEstado();
+  const nombreCadenaDetectada = useMemo(() => {
+    if (!cadenaValorIdDetectada) return null;
+    const fila = (cadenasWeb || []).find(
+      (c) => Number(c.cadenavalorid) === cadenaValorIdDetectada,
+    );
+    return fila?.denominacion || `Cadena #${cadenaValorIdDetectada}`;
+  }, [cadenasWeb, cadenaValorIdDetectada]);
+
+  // Vistazo rápido del estado del legajo (documentación + terceros
+  // relacionados juntos) para el badge del header — mismo criterio que ya
+  // usa el badge "Obligatorio" de cada pestaña, así que nunca se contradicen.
+  const { requisitosCompletados, totalRequisitos, isLoading: isLoadingLegajo } =
+    useValidacionLegajo({
+      adminMode: true,
+      socioIdActivo: socio?.socioid,
+      tipoPersonaId: socio?.tipopersonaid,
+      nombreEmpresa: socio?.denominacion,
+      cadenaId: cadenaValorIdDetectada,
+    });
+
+  // Vive acá (no dentro de DocumentacionTab) porque el botón se muestra en
+  // la fila de tabs, junto a "Ver historial completo" de CDAs — misma
+  // queryKey que ya invalida DocumentosLegajo al subir/borrar archivos.
+  const { data: archivosBackend = [] } = useQuery({
+    queryKey: ["socioArchivos", socio?.socioid],
+    queryFn: () => socioArchivoService.obtenerArchivos(socio.socioid),
+    enabled: !!socio?.socioid,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const handleDownloadLegajoCompleto = () => {
+    if (archivosBackend.length === 0) {
+      toast.error("No hay archivos cargados para descargar.");
+      return;
+    }
+    const cleanRazonSocial = (socio?.denominacion || "Empresa").replace(/\s+/g, "_");
+    const zipName = `Legajo_Completo_${cleanRazonSocial}.zip`;
+    descargar("zip-legajo", () =>
+      descargarLegajoCompletoZip(
+        archivosBackend,
+        ESTRUCTURA_LEGAJO,
+        socioArchivoService.TIPO_DOCUMENTO_MAP,
+        zipName,
+      ),
+    );
+  };
+
+  if (bloqueado) return null;
+
+  // Skeleton con la forma real del detalle (hero + tabs + contenido) en vez
+  // de un spinner de página completa.
   if (isLoading || !socio) {
     return (
-      <div className={styles.loadingWrap}>
-        <Spinner center size={80} color="#4c65e6" />
+      <div className={styles.container}>
+        <header className={styles.header}>
+          <Skeleton width="8.5rem" height="0.8rem" />
+          <div className={styles.heroRow}>
+            <div className={styles.heroIdentity}>
+              <Skeleton width="3rem" height="3rem" radius="0.9rem" />
+              <div>
+                <Skeleton width="16rem" height="1.35rem" style={{ maxWidth: "60vw" }} />
+                <Skeleton width="11rem" height="0.8rem" style={{ marginTop: "0.55rem" }} />
+              </div>
+            </div>
+            <div className={styles.headerBadges}>
+              <Skeleton width="7.5rem" height="1.5rem" radius="pill" />
+              <Skeleton width="6.5rem" height="1.5rem" radius="pill" />
+            </div>
+          </div>
+        </header>
+
+        <div className={styles.tabsRow}>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            {TABS.map((tab) => (
+              <Skeleton key={tab.key} width="9rem" height="2.2rem" radius="0.6rem" />
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.tabContent}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem", padding: "0.5rem 0" }}>
+            <Skeleton width="14rem" height="1rem" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} style={{ display: "flex", gap: "1rem" }}>
+                <Skeleton width="30%" height="2.4rem" radius="0.5rem" />
+                <Skeleton width="30%" height="2.4rem" radius="0.5rem" />
+                <Skeleton width="30%" height="2.4rem" radius="0.5rem" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -1463,9 +1868,21 @@ export default function EmpresaDetalle() {
     socio.socioestadoid,
   );
   const estadoTono = getEstadoTono(estadoSocioLabel);
+  const legajoCompleto = totalRequisitos > 0 && requisitosCompletados === totalRequisitos;
+  // Única fuente de verdad: el propio MarcaVinculacion del Socio ("1" = ya
+  // migró), que LegajoUniversalBar escribe recién después de confirmar la
+  // migración con SGR+ - ver ese archivo.
+  const estaMigrado = String(socio.marcavinculacion ?? "") === "1";
 
   return (
     <div className={styles.container}>
+      <LegajoUniversalBar
+        adminMode
+        socioIdActivo={socio?.socioid}
+        tipoPersonaId={socio?.tipopersonaid}
+        nombreEmpresa={socio?.denominacion}
+        cadenaId={cadenaValorIdDetectada}
+      />
       <header className={styles.header}>
         <button
           type="button"
@@ -1491,19 +1908,50 @@ export default function EmpresaDetalle() {
               </p>
             </div>
           </div>
-          <div className={styles.headerBadges}>
-            {estadoSocioLabel && (
+          <div className={styles.heroActions}>
+            <Button
+              type="button"
+              variant="outlineBlue"
+              size="sm"
+              onClick={() => setNotificarOpen(true)}
+            >
+              <FiBell size={13} /> Notificar
+            </Button>
+            <div className={styles.headerBadges}>
+              {estaMigrado ? (
               <span
-                className={`${styles.badge} ${styles[`badge-${estadoTono}`]}`}
+                className={`${styles.badge} ${styles["badge-success"]}`}
+                title="El legajo ya se migró al sistema core (SGR+)."
               >
-                <span className={styles.badgeDot} /> {estadoSocioLabel}
+                <FiCheckCircle size={12} /> Migrado {Number(socio.legajo) > 0 ? `· Legajo #${socio.legajo}` : ""}
+              </span>
+            ) : (
+              estadoSocioLabel && (
+                <span
+                  className={`${styles.badge} ${styles[`badge-${estadoTono}`]}`}
+                  title="Todavía no se migró a SGR+: falta que complete el legajo."
+                >
+                  <span className={styles.badgeDot} /> {estadoSocioLabel}
+                </span>
+              )
+            )}
+            {!estaMigrado && !isLoadingLegajo && totalRequisitos > 0 && (
+              <span
+                className={`${styles.badge} ${styles[`badge-${legajoCompleto ? "success" : "warning"}`]}`}
+                title="Documentación + terceros relacionados obligatorios, según los requisitos de su cadena."
+              >
+                <span className={styles.badgeDot} /> Legajo {requisitosCompletados}/{totalRequisitos}
               </span>
             )}
-            {Number(socio.legajo) > 0 && (
-              <span className={`${styles.badge} ${styles["badge-neutral"]}`}>
-                Legajo #{socio.legajo}
+            {cadenaValorIdDetectada && (
+              <span
+                className={`${styles.badge} ${styles["badge-neutral"]}`}
+                title="Cadena detectada del historial de CDAs de esta empresa. Como el socio no está atado a una única cadena, puede ingresar y verse distinto desde el slug de otra cadena."
+              >
+                <FiLink size={12} /> {nombreCadenaDetectada}
               </span>
             )}
+            </div>
           </div>
         </div>
       </header>
@@ -1534,19 +1982,74 @@ export default function EmpresaDetalle() {
             <FiClock size={14} /> Ver historial completo
           </button>
         )}
+
+        {activeTab === "documentacion" && archivosBackend.length > 0 && (
+          <Button
+            type="button"
+            variant="outlineBlue"
+            size="sm"
+            onClick={handleDownloadLegajoCompleto}
+            isLoading={faseDe("zip-legajo") === "cargando"}
+            disabled={faseDe("zip-legajo") !== null}
+            title="Descargar legajo de documentos completo en un archivo ZIP"
+          >
+            {faseDe("zip-legajo") === "listo" ? (
+              <>
+                <FiCheckCircle size={13} /> Descargado
+              </>
+            ) : (
+              <>
+                <FiDownload size={13} /> Descargar Legajo Completo
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       <div className={styles.tabContent}>
         {activeTab === "datos" && <DatosTab socio={socio} />}
-        {activeTab === "documentacion" && <DocumentacionTab socio={socio} />}
-        {activeTab === "terceros" && <TercerosTab socio={socio} />}
-        {activeTab === "cdas" && <CdasTab socio={socio} />}
+        {activeTab === "documentacion" && (
+          <DocumentacionTab
+            socio={socio}
+            cadenaValorIdDetectada={cadenaValorIdDetectada}
+            nombreCadenaDetectada={nombreCadenaDetectada}
+          />
+        )}
+        {activeTab === "terceros" && (
+          <TercerosTab
+            socio={socio}
+            cadenaValorIdDetectada={cadenaValorIdDetectada}
+            nombreCadenaDetectada={nombreCadenaDetectada}
+          />
+        )}
+        {activeTab === "cdas" && (
+          <CdasTab
+            socio={socio}
+            cadenaValorIdDetectada={cadenaValorIdDetectada}
+            nombreCadenaDetectada={nombreCadenaDetectada}
+          />
+        )}
+        {activeTab === "pyme" && (
+          <CertificadoPymeAdmin socioId={socio?.socioid} cuit={socio?.cuit} />
+        )}
+        {activeTab === "usuarios" && (
+          <UsuariosVinculadosTab socioId={socio?.socioid} />
+        )}
       </div>
 
       <HistorialCdaModal
         isOpen={historialOpen}
         onClose={() => setHistorialOpen(false)}
         socio={socio}
+      />
+
+      <NotificarSocioModal
+        key={socio?.socioid ?? "none"}
+        isOpen={notificarOpen}
+        onClose={() => setNotificarOpen(false)}
+        socio={socio}
+        usuariosVinculados={usuariosVinculados}
+        usuarioWebAdminId={usuarioWebAdminId}
       />
     </div>
   );

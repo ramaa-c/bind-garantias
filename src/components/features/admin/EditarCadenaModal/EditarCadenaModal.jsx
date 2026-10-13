@@ -1,25 +1,78 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FiUploadCloud } from "react-icons/fi";
 import { toast } from "sonner";
 import { useActualizarCadenaValor } from "../../../../hooks/useCadenaValor";
-import { useTipoCanalComercializacion, useEquipoComercial } from "../../../../hooks/useCatalogos";
-import { Modal, Button, InputSimple, SelectSimple } from "../../../ui";
+import { useTipoCanalComercializacion, useEquipoComercial, useTipoContrato, useMonedas, useTipoModeloDocumento } from "../../../../hooks/useCatalogos";
+import { useModelosDocumentoDisponibles } from "../../../../hooks/useModeloDocumento";
+import { filtrarTiposModeloDocumento } from "../../../../utils/parametrosModeloDocumento";
+import { Modal, Button, InputSimple, SelectSimple, MontoEnPalabras } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./EditarCadenaModal.module.css";
+import { FORMATOS_ARCHIVO, validarTipoArchivo } from "../../../../utils/fileUtils";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 
+const construirDatosFormulario = (activeItem) => ({
+  cadenavalorid: activeItem?.cadenavalorid ?? 0,
+  denominacion: activeItem?.denominacion ?? "",
+  referencia: activeItem?.referencia || "",
+  logo: activeItem?.logo || "",
+  tipocanalcomercializacionid: activeItem?.tipocanalcomercializacionid != null ? activeItem.tipocanalcomercializacionid.toString() : "",
+  equipocomercialid: activeItem?.equipocomercialid != null ? activeItem.equipocomercialid.toString() : "",
+  tipocontratoid: activeItem?.tipocontratoid != null ? activeItem.tipocontratoid.toString() : "",
+  montomaximo: activeItem?.montomaximo != null && activeItem.montomaximo !== "" ? activeItem.montomaximo.toString() : "100",
+  montomaximoutilizado: activeItem?.montomaximoutilizado != null && activeItem.montomaximoutilizado !== "" ? activeItem.montomaximoutilizado.toString() : "0",
+  porcentajemaximoutilizado: activeItem?.porcentajemaximoutilizado != null && activeItem.porcentajemaximoutilizado !== "" ? activeItem.porcentajemaximoutilizado.toString() : "100",
+  monedaid: activeItem?.monedaid != null ? activeItem.monedaid.toString() : "",
+  activa: activeItem?.activa || "1",
+  // El listado de cadenas solo trae ModeloDocumentoID (no el TipoModeloDocumentoID
+  // que le dio origen), así que el combo de Tipo arranca vacío en edición aunque
+  // ya haya un modelo configurado - ver tipoModeloDocumentoIdSeleccionUI más abajo.
+  modelodocumentoid: activeItem?.modelodocumentoid != null ? activeItem.modelodocumentoid.toString() : "0",
+});
+
+// El padre remonta este modal en cada apertura (ver key en CadenasValor.jsx),
+// así que alcanza con calcular el estado inicial una sola vez a partir de
+// activeItem - no hace falta un efecto que lo vuelva a sincronizar.
 export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) => {
-  const [formState, setFormState] = useState({
-    cadenavalorid: 0,
-    denominacion: "",
-    referencia: "",
-    logo: "",
-    tipocanalcomercializacionid: "",
-    equipocomercialid: "",
-    montomaximo: "",
-    porcentajemaximo: "",
-    activa: "1"
-  });
+  const [formState, setFormState] = useState(() => construirDatosFormulario(activeItem));
+
+  // Solo sirve para filtrar el combo de Modelo - no se persiste (ver comentario
+  // en construirDatosFormulario sobre por qué no se puede derivar en edición).
+  const [tipoModeloDocumentoIdUI, setTipoModeloDocumentoIdUI] = useState("");
+
+  const queryClient = useQueryClient();
+
+  // El backend no guarda el TipoModeloDocumentoID en la cadena (solo el
+  // ModeloDocumentoID ya elegido), así que no hay forma de pedírselo
+  // directamente a la API sin traer catalogos/ModeloDocumento SIN filtro
+  // (17MB, ver comentario en catalogosService.js) - probar tipo por tipo
+  // tampoco sirve, cada uno pesa ~1MB+.
+  // Como mejor esfuerzo, se busca el modelo ya asignado en lo que
+  // react-query ya tenga en caché de esta sesión (ej: si este mismo admin
+  // lo acaba de configurar). Si no está en caché, el combo de Tipo queda
+  // vacío y se muestra el hint de "Modelo actual N.º X" más abajo.
+  useEffect(() => {
+    const modeloId = Number(activeItem?.modelodocumentoid);
+    if (!modeloId) return;
+    const cachedEntries = queryClient.getQueriesData({ queryKey: ["catalogos", "modelosDocumento"] });
+    for (const [queryKey, data] of cachedEntries) {
+      const lista = Array.isArray(data) ? data : [];
+      const encontrado = lista.find((m) => Number(m?.modelodocumentoid) === modeloId);
+      if (encontrado) {
+        setTipoModeloDocumentoIdUI(String(queryKey[2]));
+        break;
+      }
+    }
+    // Solo al montar: activeItem no cambia durante la vida de este modal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Mismo patrón que LineasCadena.jsx/ActivarCadenaModal.jsx: cada campo
+  // obligatorio muestra su propio error debajo en vez de un toast que
+  // desaparece solo y no señala qué campo hay que corregir.
+  const [formErrors, setFormErrors] = useState({});
 
   const fileInputRef = useRef(null);
 
@@ -48,32 +101,74 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
   // Queries & Mutations
   const { data: canalesData } = useTipoCanalComercializacion();
   const { data: equiposData } = useEquipoComercial();
+  const { data: contratosData } = useTipoContrato();
+  const { data: monedasData } = useMonedas();
+  const { data: tiposModeloDocumentoData } = useTipoModeloDocumento();
+  const {
+    opciones: modelosDocumentoOpciones,
+    cargando: cargandoModelosDocumento,
+    ocultos: modelosDocumentoOcultos,
+  } = useModelosDocumentoDisponibles(tipoModeloDocumentoIdUI, formState.modelodocumentoid);
   const actualizarMutation = useActualizarCadenaValor();
 
   const canalesOpciones = canalesData?.opciones || [];
   const equiposOpciones = equiposData?.opciones || [];
+  const contratosOpciones = contratosData?.opciones || [];
+  const monedasOpciones = monedasData?.opciones || [];
+  const tiposModeloDocumentoOpciones = filtrarTiposModeloDocumento(
+    tiposModeloDocumentoData?.opciones,
+    tipoModeloDocumentoIdUI,
+  );
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Snapshot del formState al abrir el modal: permite saber si el usuario
+  // realmente modificó algo antes de disparar el ConfirmacionModal de
+  // "¿guardar cambios?" - evita el falso positivo de confirmar un guardado
+  // que no cambia nada (mismo criterio que LineasCadena).
+  const [formStateInicial] = useState(() => construirDatosFormulario(activeItem));
 
-  useEffect(() => {
-    if (activeItem && isOpen) {
-      setFormState({
-        cadenavalorid: activeItem.cadenavalorid,
-        denominacion: activeItem.denominacion,
-        referencia: activeItem.referencia || "",
-        logo: activeItem.logo || "",
-        tipocanalcomercializacionid: activeItem.tipocanalcomercializacionid != null ? activeItem.tipocanalcomercializacionid.toString() : "",
-        equipocomercialid: activeItem.equipocomercialid != null ? activeItem.equipocomercialid.toString() : "",
-        montomaximo: activeItem.montomaximo != null ? activeItem.montomaximo.toString() : "100",
-        porcentajemaximo: activeItem.porcentajemaximo != null ? activeItem.porcentajemaximo.toString() : "100",
-        activa: activeItem.activa || "1"
-      });
-    }
-  }, [activeItem, isOpen]);
+  // Los inputs enmascarados de Monto/Porcentaje reformatean su valor (padding
+  // de decimales, separador de miles) apenas montan, disparando su propio
+  // onAccept - eso pisa formState con el string ya formateado sin que el
+  // usuario haya tocado nada. Comparar los strings crudos contra el snapshot
+  // sin formatear daba un falso "hay cambios" permanente; se normalizan a
+  // número (mismo criterio que al armar el payload) antes de comparar.
+  const normalizarParaComparar = (fs) => ({
+    ...fs,
+    montomaximo: Number(desenmascarar(fs.montomaximo)) || 0,
+    montomaximoutilizado: Number(desenmascarar(fs.montomaximoutilizado)) || 0,
+    porcentajemaximoutilizado: Number(desenmascarar(fs.porcentajemaximoutilizado)) || 0,
+  });
+
+  const sinCambios =
+    !!formStateInicial &&
+    JSON.stringify(normalizarParaComparar(formState)) ===
+      JSON.stringify(normalizarParaComparar(formStateInicial));
+
+  // Actualiza el campo y, si ya tenía un error marcado, lo limpia apenas el
+  // usuario empieza a corregirlo - mismo criterio que handleInputChange en
+  // LineasCadena.jsx/ActivarCadenaModal.jsx.
+  const handleInputChange = (field, val) => {
+    setFormState((prev) => ({ ...prev, [field]: val }));
+    setFormErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  // Cambiar el tipo invalida el modelo elegido previamente (los modelos de
+  // otro tipo no son válidos acá) - mismo criterio que provincia/ciudad.
+  const handleTipoModeloDocumentoChange = (val) => {
+    setTipoModeloDocumentoIdUI(val);
+    handleInputChange("modelodocumentoid", "0");
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!validarTipoArchivo(file, FORMATOS_ARCHIVO.imagen)) return;
       if (file.size > 500 * 1024) {
         toast.error("El tamaño máximo permitido para la imagen es 500kb");
         return;
@@ -93,31 +188,56 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
     }
   };
 
-  const handleSave = async () => {
+  // Sin toast genérico: cada campo obligatorio muestra su propio error
+  // debajo (mismo patrón que ya usan LineasCadena.jsx/ActivarCadenaModal.jsx).
+  const validarFormulario = () => {
+    const errores = {};
+
     if (!formState.tipocanalcomercializacionid) {
-      toast.error("Seleccione un Canal de Comercialización");
-      return;
+      errores.tipocanalcomercializacionid = "Seleccioná un canal";
     }
     if (!formState.equipocomercialid) {
-      toast.error("Seleccione un Equipo Comercial");
-      return;
+      errores.equipocomercialid = "Seleccioná un equipo comercial";
     }
-    if (!formState.logo) {
-      toast.error("El logo de la cadena de valor es requerido");
-      return;
-    }
-    const montoLimpio = desenmascarar(formState.montomaximo);
-    const porcentajeLimpio = desenmascarar(formState.porcentajemaximo);
-
-    if (montoLimpio === "" || isNaN(Number(montoLimpio)) || Number(montoLimpio) < 0) {
-      toast.error("Ingrese un monto máximo válido");
-      return;
-    }
-    if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) < 0 || Number(porcentajeLimpio) > 100) {
-      toast.error("Ingrese un porcentaje máximo válido (0 a 100)");
-      return;
+    if (!formState.tipocontratoid) {
+      errores.tipocontratoid = "Seleccioná un tipo de contrato";
     }
 
+    // Si no hay moneda asignada, los inputs de monto están deshabilitados
+    // (ver el hint que se muestra en su lugar) - no tiene sentido duplicar el
+    // reclamo con un error superpuesto en el mismo espacio reservado (el
+    // error de "monedaid" de más abajo ya cubre este caso).
+    if (formState.monedaid) {
+      const montoLimpio = desenmascarar(formState.montomaximo);
+      if (montoLimpio === "" || isNaN(Number(montoLimpio)) || Number(montoLimpio) <= 0) {
+        errores.montomaximo = "Ingresá un monto válido";
+      }
+
+      const montoUtilizadoLimpio = desenmascarar(formState.montomaximoutilizado);
+      if (montoUtilizadoLimpio === "" || isNaN(Number(montoUtilizadoLimpio)) || Number(montoUtilizadoLimpio) <= 0) {
+        errores.montomaximoutilizado = "Ingresá un monto válido";
+      }
+    }
+
+    const porcentajeLimpio = desenmascarar(formState.porcentajemaximoutilizado);
+    if (porcentajeLimpio === "" || isNaN(Number(porcentajeLimpio)) || Number(porcentajeLimpio) <= 0 || Number(porcentajeLimpio) > 100) {
+      errores.porcentajemaximoutilizado = "Ingresá un porcentaje válido (0 a 100)";
+    }
+
+    // Campo deshabilitado (no editable acá) - el mensaje queda igual, solo
+    // cambia de toast a texto debajo del select para ser consistente con el
+    // resto, aunque no se limpie solo (no hay onChange que lo dispare).
+    if (!formState.monedaid) {
+      errores.monedaid = "Esta cadena no tiene una moneda asignada. Contactá a soporte para configurarla.";
+    }
+
+    return errores;
+  };
+
+  const handleSave = () => {
+    const errores = validarFormulario();
+    setFormErrors(errores);
+    if (Object.keys(errores).length > 0) return;
     setConfirmOpen(true);
   };
 
@@ -129,9 +249,13 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       logo: formState.logo,
       tipocanalcomercializacionid: Number(formState.tipocanalcomercializacionid),
       equipocomercialid: Number(formState.equipocomercialid),
+      tipocontratoid: Number(formState.tipocontratoid),
       montomaximo: Number(desenmascarar(formState.montomaximo)),
-      porcentajemaximo: Number(desenmascarar(formState.porcentajemaximo)),
-      activa: formState.activa
+      montomaximoutilizado: Number(desenmascarar(formState.montomaximoutilizado)),
+      porcentajemaximoutilizado: Number(desenmascarar(formState.porcentajemaximoutilizado)),
+      monedaid: Number(formState.monedaid),
+      activa: formState.activa,
+      modelodocumentoid: Number(formState.modelodocumentoid) || 0,
     };
 
     actualizarMutation.mutate(payload, {
@@ -143,7 +267,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       },
       onError: (err) => {
         console.error("Error al actualizar cadena:", err);
-        toast.error("Ocurrió un error al modificar la cadena de valor");
+        toast.error("Ocurrió un error al modificar la cadena de valor", { description: mensajeNegocio(err, "") });
         setConfirmOpen(false);
       }
     });
@@ -214,8 +338,9 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 placeholder="Seleccione canal comercial..."
                 options={canalesOpciones}
                 value={formState.tipocanalcomercializacionid}
-                onChange={val => setFormState({ ...formState, tipocanalcomercializacionid: val })}
+                onChange={val => handleInputChange("tipocanalcomercializacionid", val)}
                 className={styles.compactInput}
+                error={formErrors.tipocanalcomercializacionid}
               />
             </div>
             <div style={{ flex: 1 }}>
@@ -224,9 +349,66 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
                 placeholder="Seleccione equipo comercial..."
                 options={equiposOpciones}
                 value={formState.equipocomercialid}
-                onChange={val => setFormState({ ...formState, equipocomercialid: val })}
+                onChange={val => handleInputChange("equipocomercialid", val)}
+                className={styles.compactInput}
+                error={formErrors.equipocomercialid}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <SelectSimple
+                label="Tipo de Contrato *"
+                placeholder="Seleccione tipo de contrato..."
+                options={contratosOpciones}
+                value={formState.tipocontratoid}
+                onChange={val => handleInputChange("tipocontratoid", val)}
+                className={styles.compactInput}
+                error={formErrors.tipocontratoid}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.sectionGroup}>
+          <h4 className={styles.sectionTitle}>Modelo de Documento</h4>
+          <div className={styles.row}>
+            <div style={{ flex: 1 }}>
+              <SelectSimple
+                label="Tipo de Modelo"
+                placeholder="Seleccione tipo de modelo..."
+                options={tiposModeloDocumentoOpciones}
+                value={tipoModeloDocumentoIdUI}
+                onChange={handleTipoModeloDocumentoChange}
                 className={styles.compactInput}
               />
+              {!tipoModeloDocumentoIdUI && Number(formState.modelodocumentoid) > 0 && (
+                <span className={styles.selectHint}>
+                  Modelo actual N.º {formState.modelodocumentoid}. Elegí un tipo para cambiarlo.
+                </span>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <SelectSimple
+                label="Modelo de Documento"
+                placeholder={
+                  cargandoModelosDocumento
+                    ? "Cargando..."
+                    : tipoModeloDocumentoIdUI && modelosDocumentoOpciones.length === 0
+                      ? "Sin modelos disponibles"
+                      : "Seleccione modelo..."
+                }
+                options={modelosDocumentoOpciones}
+                value={formState.modelodocumentoid !== "0" ? formState.modelodocumentoid : ""}
+                onChange={val => handleInputChange("modelodocumentoid", val)}
+                disabled={!tipoModeloDocumentoIdUI || modelosDocumentoOpciones.length === 0}
+                className={styles.compactInput}
+              />
+              {!cargandoModelosDocumento && modelosDocumentoOcultos > 0 && (
+                <span className={styles.selectHint}>
+                  {modelosDocumentoOpciones.length === 0
+                    ? "Ningún modelo de este tipo se puede generar desde una solicitud."
+                    : `Se ocultaron ${modelosDocumentoOcultos} modelo(s) que no se pueden generar desde una solicitud.`}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -235,25 +417,69 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
           <h4 className={styles.sectionTitle}>Límites Financieros</h4>
           <div className={styles.row}>
             <div style={{ flex: 1 }}>
+              <SelectSimple
+                label="Moneda *"
+                placeholder="Sin moneda asignada"
+                options={monedasOpciones}
+                value={formState.monedaid}
+                onChange={() => {}}
+                disabled
+                className={styles.compactInput}
+                error={formErrors.monedaid}
+              />
+            </div>
+            <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
               <InputSimple
                 label="Monto Máximo *"
                 value={formState.montomaximo}
-                onChange={val => setFormState({ ...formState, montomaximo: val })}
+                onChange={val => handleInputChange("montomaximo", val)}
                 mask="$ num"
                 blocks={{ num: bloqueNumerico() }}
                 lazy={false}
-                className={styles.compactInput}
+                className={`${styles.compactInput} ${styles.compactInputMonto}`}
+                sinIconos
+                disabled={!formState.monedaid}
+                error={formErrors.montomaximo}
               />
+              {!formState.monedaid && (
+                <span className={styles.fieldHint}>Sin moneda asignada</span>
+              )}
+              {formState.monedaid && !formErrors.montomaximo && (
+                <MontoEnPalabras value={desenmascarar(formState.montomaximo)} />
+              )}
+            </div>
+          </div>
+          <div className={styles.row}>
+            <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+              <InputSimple
+                label="Monto Máximo Utilizado *"
+                value={formState.montomaximoutilizado}
+                onChange={val => handleInputChange("montomaximoutilizado", val)}
+                mask="$ num"
+                blocks={{ num: bloqueNumerico() }}
+                lazy={false}
+                className={`${styles.compactInput} ${styles.compactInputMonto}`}
+                sinIconos
+                disabled={!formState.monedaid}
+                error={formErrors.montomaximoutilizado}
+              />
+              {!formState.monedaid && (
+                <span className={styles.fieldHint}>Sin moneda asignada</span>
+              )}
+              {formState.monedaid && !formErrors.montomaximoutilizado && (
+                <MontoEnPalabras value={desenmascarar(formState.montomaximoutilizado)} />
+              )}
             </div>
             <div style={{ flex: 1 }}>
               <InputSimple
-                label="Porcentaje Máximo (%) *"
-                value={formState.porcentajemaximo}
-                onChange={val => setFormState({ ...formState, porcentajemaximo: val })}
+                label="Porcentaje Máximo Utilizado (%) *"
+                value={formState.porcentajemaximoutilizado}
+                onChange={val => handleInputChange("porcentajemaximoutilizado", val)}
                 mask="% num"
                 blocks={{ num: bloqueNumerico(100) }}
                 lazy={false}
                 className={styles.compactInput}
+                error={formErrors.porcentajemaximoutilizado}
               />
             </div>
           </div>
@@ -280,10 +506,10 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
               <FiUploadCloud className={styles.uploadIcon} />
               <div style={{ textAlign: "left" }}>
                 <div style={{ fontSize: "0.8125rem", fontWeight: "600", color: "#ffffff" }}>
-                  Cargar Logo de la Cadena *
+                  Cargar Logo de la Cadena (Opcional)
                 </div>
                 <div style={{ fontSize: "0.7rem", color: "#8b949e", marginTop: "0.15rem" }}>
-                  Arrastrá o hacé click aquí. Fondo transparente, Max 500kb.
+                  Arrastrá o hacé click aquí. JPG o PNG con fondo transparente, máx. 500 KB.
                 </div>
               </div>
             </div>
@@ -294,7 +520,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
           type="file"
           ref={fileInputRef}
           style={{ display: "none" }}
-          accept="image/*"
+          accept={FORMATOS_ARCHIVO.imagen.accept}
           onChange={handleFileChange}
         />
       </div>
@@ -311,6 +537,8 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
           variant="blue"
           onClick={handleSave}
           isLoading={actualizarMutation.isPending}
+          disabled={sinCambios}
+          title={sinCambios ? "No hay cambios para guardar" : undefined}
         >
           GUARDAR
         </Button>

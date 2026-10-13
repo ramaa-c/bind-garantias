@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { useFormContext, useFormState, Controller } from "react-hook-form";
 import { FiCalendar } from "react-icons/fi";
 import { DayPicker } from "react-day-picker";
@@ -7,23 +8,26 @@ import { es } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
 import styles from "./SelectFecha.module.css";
 
-export const SelectFecha = ({
+// Componente interno con toda la implementación visual/de interacción,
+// separado del componente que decide si hay que suscribirse a react-hook-form:
+// así useFormState se llama siempre (o nunca) dentro de un mismo componente
+// montado, en vez de condicionalmente según si hay `control` disponible.
+const SelectFechaBase = ({
   name,
   label = "Fecha",
   placeholder,
   disabled = false,
   minDate,
+  maxDate,
   error: errorExterno,
   value: manualValue,
   onChange: manualOnChange,
   variant,
   placement = "bottom",
+  control,
+  errors,
 }) => {
-  const formContext = useFormContext();
-  const control = formContext?.control;
   const effectiveMinDate = minDate || new Date();
-  
-  const { errors } = control ? useFormState({ control, name }) : { errors: {} };
 
   const errorContexto = control && name
     ? name.split(".").reduce((obj, key) => obj?.[key], errors)
@@ -33,10 +37,19 @@ export const SelectFecha = ({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const calendarRef = useRef(null);
+  // El popover se saca por Portal a document.body: si el campo está anidado
+  // en un panel con overflow:auto/hidden (ej. el visor de DocumentosLegajo),
+  // un calendario `position: absolute` normal queda cortado por ese
+  // ancestro sin importar si abre para arriba o para abajo. Con Portal +
+  // `position: fixed` el calendario deja de depender del overflow de ningún
+  // contenedor padre.
+  const popoverRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+      const dentroDelCampo = calendarRef.current?.contains(event.target);
+      const dentroDelPopover = popoverRef.current?.contains(event.target);
+      if (!dentroDelCampo && !dentroDelPopover) {
         setIsCalendarOpen(false);
         setIsFocused(false);
       }
@@ -44,6 +57,55 @@ export const SelectFecha = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // La posición se calcula midiendo el popover ya montado (alto real de
+  // react-day-picker, que varía según el mes/los dropdowns de año) y se
+  // aplica mutando el estilo directamente en vez de por React state: así no
+  // hace falta un segundo render para reposicionar y no hay flash en la
+  // posición equivocada. `placement` es una preferencia, no una garantía —
+  // si el lado pedido no entra entero se abre para el que tenga más
+  // espacio, y el resultado siempre se clampea contra los bordes del
+  // viewport para que el calendario nunca quede ni cortado ni fuera de
+  // pantalla, sea cual sea el tamaño de ventana o zoom.
+  useLayoutEffect(() => {
+    if (!isCalendarOpen) return undefined;
+
+    const MARGEN = 8;
+    const GAP = 6;
+
+    const posicionarPopover = () => {
+      const trigger = calendarRef.current;
+      const popover = popoverRef.current;
+      if (!trigger || !popover) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const altoPopover = popover.offsetHeight;
+      const anchoPopover = popover.offsetWidth;
+
+      const espacioArriba = rect.top;
+      const espacioAbajo = window.innerHeight - rect.bottom;
+      const prefiereArriba = placement === "top";
+      const abreArriba = prefiereArriba
+        ? espacioArriba >= altoPopover + MARGEN || espacioArriba >= espacioAbajo
+        : espacioAbajo < altoPopover + MARGEN && espacioArriba > espacioAbajo;
+
+      const topIdeal = abreArriba ? rect.top - GAP - altoPopover : rect.bottom + GAP;
+      const top = Math.max(MARGEN, Math.min(topIdeal, window.innerHeight - altoPopover - MARGEN));
+      const left = Math.max(MARGEN, Math.min(rect.left, window.innerWidth - anchoPopover - MARGEN));
+
+      popover.style.top = `${top}px`;
+      popover.style.left = `${left}px`;
+      popover.style.visibility = "visible";
+    };
+
+    posicionarPopover();
+    window.addEventListener("scroll", posicionarPopover, true);
+    window.addEventListener("resize", posicionarPopover);
+    return () => {
+      window.removeEventListener("scroll", posicionarPopover, true);
+      window.removeEventListener("resize", posicionarPopover);
+    };
+  }, [isCalendarOpen, placement]);
 
   const renderCalendar = (value, onChange, onBlur, ref) => {
         let dateObj = undefined;
@@ -60,7 +122,6 @@ export const SelectFecha = ({
 
         const hasValue = !!dateObj;
         const hasError = !!errorDisplay;
-        const isValid = !hasError && hasValue;
 
         let statusClass = styles.statusDefault;
         if (hasError) {
@@ -141,21 +202,31 @@ export const SelectFecha = ({
               <span className={styles.errorMsg}>{errorDisplay}</span>
             )}
 
-            {isCalendarOpen && (
-              <div className={`${styles.calendarPopover} ${placement === "top" ? styles.placementTop : ""}`}>
-                <DayPicker
-                  mode="single"
-                  selected={dateObj}
-                  onSelect={handleDateSelect}
-                  locale={es}
-                  disabled={{ before: effectiveMinDate }}
-                  required
-                  captionLayout="dropdown-years"
-                  fromYear={effectiveMinDate.getFullYear()}
-                  toYear={effectiveMinDate.getFullYear() + 10}
-                />
-              </div>
-            )}
+            {isCalendarOpen &&
+              createPortal(
+                <div
+                  ref={popoverRef}
+                  className={`${styles.calendarPopover} ${styles.calendarPopoverPortal} ${placement === "top" ? styles.placementTop : ""}`}
+                  style={{ position: "fixed" }}
+                >
+                  <DayPicker
+                    mode="single"
+                    selected={dateObj}
+                    onSelect={handleDateSelect}
+                    locale={es}
+                    disabled={
+                      maxDate
+                        ? [{ before: effectiveMinDate }, { after: maxDate }]
+                        : { before: effectiveMinDate }
+                    }
+                    required
+                    captionLayout="dropdown-years"
+                    fromYear={effectiveMinDate.getFullYear()}
+                    toYear={maxDate ? maxDate.getFullYear() : effectiveMinDate.getFullYear() + 10}
+                  />
+                </div>,
+                document.body,
+              )}
           </div>
         );
   };
@@ -172,4 +243,20 @@ export const SelectFecha = ({
   }
 
   return renderCalendar(manualValue, manualOnChange, () => {}, null);
+};
+
+const SelectFechaConectado = (props) => {
+  const { errors } = useFormState({ control: props.control, name: props.name });
+  return <SelectFechaBase {...props} errors={errors} />;
+};
+
+export const SelectFecha = (props) => {
+  const formContext = useFormContext();
+  const control = formContext?.control;
+
+  if (control) {
+    return <SelectFechaConectado {...props} control={control} />;
+  }
+
+  return <SelectFechaBase {...props} control={control} errors={{}} />;
 };

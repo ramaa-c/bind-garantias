@@ -1,41 +1,58 @@
 import React, { useEffect } from "react";
-import { useParams, Outlet, Navigate, useNavigate } from "react-router-dom";
-import { useChannel } from "../../../context/ChannelContext";
-import { useObtenerPorCadenaValorIdWeb, useObtenerPorId } from "../../../hooks/useCadenaValor";
-import { useObtenerStatusPlataforma } from "../../../hooks/useStatusPlataforma";
+import { Outlet, Navigate, useNavigate } from "react-router-dom";
+import { useChannel } from "../../../context/useChannel";
+import { useCadenaActiva } from "../../../hooks/useCadenaActiva";
+import { useObtenerCadenaPublicaWeb, useObtenerCadenaPublicaCore } from "../../../hooks/useCadenaValor";
+import { useObtenerPlataformaOnline } from "../../../hooks/useStatusPlataforma";
 import { esCadenaOperativaParaWeb } from "../../../utils/cadenaValorUtils";
 import { obtenerUltimoStatus, esOffline } from "../../../utils/statusPlataforma";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
+import ErrorServicio from "../../../pages/shared/ErrorServicio/ErrorServicio";
 
 const TenantLayout = () => {
-  const { cadenaSlug } = useParams();
+  // El ID puede venir del path (/:cadenaSlug/...) o del hostname vía
+  // /tenants.json — useCadenaActiva resuelve cuál corresponde, así este
+  // layout es el mismo para los dos modos de ruteo (ver utils/tenantConfig).
+  const { cadenaSlug } = useCadenaActiva();
   const { setChannelInfo } = useChannel();
   const navigate = useNavigate();
-  const { data: statusPlataformaData, isLoading: isLoadingStatus } = useObtenerStatusPlataforma();
+  const { data: statusPlataformaData, isLoading: isLoadingStatus } = useObtenerPlataformaOnline();
   const enMantenimiento = esOffline(obtenerUltimoStatus(statusPlataformaData));
 
   const cadenaValorId = Number(cadenaSlug);
   const isValidId = !Number.isNaN(cadenaValorId) && cadenaValorId > 0;
 
-  const { data: cadenaData, isLoading } = useObtenerPorCadenaValorIdWeb(
-    isValidId ? cadenaValorId : 0,
-  );
-  const { data: cadenaCoreData, isLoading: isLoadingCore } = useObtenerPorId(
-    isValidId ? cadenaValorId : 0,
-  );
+  const {
+    data: cadenaData,
+    isLoading,
+    isError: isErrorWeb,
+    isFetching: isFetchingWeb,
+    refetch: refetchWeb,
+  } = useObtenerCadenaPublicaWeb(isValidId ? cadenaValorId : 0);
+  const {
+    data: cadenaCoreData,
+    isLoading: isLoadingCore,
+    isError: isErrorCore,
+    isFetching: isFetchingCore,
+    refetch: refetchCore,
+  } = useObtenerCadenaPublicaCore(isValidId ? cadenaValorId : 0);
+
+  // Si alguna de las dos consultas falló (backend caído, error 5xx, red), no
+  // se puede saber si la cadena existe: se muestra un error de servicio con
+  // reintento en vez de redirigir a not-found.
+  const hayErrorServicio = isErrorWeb || isErrorCore;
 
   useEffect(() => {
-    if (isLoading || isLoadingCore) return;
-
-    if (!isValidId || !cadenaData || cadenaData.error || (Array.isArray(cadenaData) && cadenaData.length === 0)) {
-      navigate("/not-found", { replace: true });
-      return;
-    }
+    if (isLoading || isLoadingCore || hayErrorServicio) return;
 
     const cadenaObj = Array.isArray(cadenaData) ? cadenaData[0] : cadenaData;
     const cadenaCoreObj = Array.isArray(cadenaCoreData) ? cadenaCoreData[0] : cadenaCoreData;
+    const resolvedDenominacion = cadenaObj?.denominacion || cadenaObj?.Denominacion;
 
-    const resolvedDenominacion = cadenaObj.denominacion || cadenaObj.Denominacion;
+    if (!isValidId || !resolvedDenominacion) {
+      navigate("/not-found", { replace: true });
+      return;
+    }
 
     // Igual que en el panel admin: la cadena debe estar Aprobada y vigente en
     // CORE, y además no haber sido desactivada manualmente con el switch
@@ -61,16 +78,14 @@ const TenantLayout = () => {
       }
     }
 
-    const resolvedId = cadenaObj.cadenavalorid ?? cadenaObj.CadenaValorID ?? cadenaObj.cadenaValorId;
-
     setChannelInfo({
-      id: String(resolvedId),
+      id: String(cadenaValorId),
       nombre: resolvedDenominacion || "Cadena de Valor",
       logo: formatLogo,
       colorPrincipal: "var(--color-azul-bind)",
       colorSecundario: "var(--color-amarillo-bind)",
     });
-  }, [cadenaSlug, cadenaData, cadenaCoreData, isLoading, isLoadingCore, setChannelInfo, navigate, isValidId]);
+  }, [cadenaSlug, cadenaValorId, cadenaData, cadenaCoreData, isLoading, isLoadingCore, hayErrorServicio, setChannelInfo, navigate, isValidId]);
 
   if (isLoadingStatus) {
     return (
@@ -94,6 +109,18 @@ const TenantLayout = () => {
       <LoadingScreen
         title="Validando acceso"
         message="Estamos verificando la información de la cadena..."
+      />
+    );
+  }
+
+  if (hayErrorServicio) {
+    return (
+      <ErrorServicio
+        onReintentar={() => {
+          if (isErrorWeb) refetchWeb();
+          if (isErrorCore) refetchCore();
+        }}
+        reintentando={isFetchingWeb || isFetchingCore}
       />
     );
   }

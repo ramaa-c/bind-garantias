@@ -1,18 +1,25 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
+import { createPortal } from "react-dom";
 import { useFormContext, useFormState, Controller } from "react-hook-form";
 import { FiCalendar } from "react-icons/fi";
 import { DayPicker } from "react-day-picker";
-import { format, parseISO, isValid as isValidDate } from "date-fns";
+import { format, parseISO, isValid as isValidDate, differenceInCalendarDays } from "date-fns";
 import { es } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
 import inputStyles from "../InputSimple/InputSimple.module.css";
 import customStyles from "./SelectFechaSimple.module.css";
 
-export const SelectFechaSimple = ({
+// Componente interno con toda la implementación visual/de interacción,
+// separado del componente que decide si hay que suscribirse a react-hook-form:
+// así useFormState se llama siempre (o nunca) dentro de un mismo componente
+// montado, en vez de condicionalmente según si hay `control` disponible.
+const SelectFechaSimpleBase = ({
   name,
   label = "Fecha",
   disabled = false,
   minDate,
+  maxDate,
+  disableFuture = false,
   error: errorExterno,
   value: manualValue,
   onChange: manualOnChange,
@@ -20,12 +27,32 @@ export const SelectFechaSimple = ({
   placement = "bottom",
   hideErrorSpace = false,
   className = "",
+  mostrarDiasDesdeHoy = false,
+  compact = false,
+  control,
+  errors,
 }) => {
-  const formContext = useFormContext();
-  const control = formContext?.control;
-  const effectiveMinDate = minDate || new Date();
-  
-  const { errors } = control ? useFormState({ control, name }) : { errors: {} };
+  // Por defecto el picker solo permite fechas futuras (before: hoy
+  // deshabilitado) - pensado para casos como "fecha de vencimiento". Con
+  // disableFuture=true se invierte para casos históricos (ej: filtrar
+  // solicitudes ya cargadas): se deshabilita todo lo posterior a hoy (o a
+  // maxDate). minDate/maxDate además permiten acotar el rango en cualquiera
+  // de los dos modos (ej: para enlazar un "Desde"/"Hasta" entre sí).
+  const today = new Date();
+  let disabledMatchers;
+  let fromYear;
+  let toYear;
+  if (disableFuture) {
+    const upper = maxDate || today;
+    disabledMatchers = minDate ? [{ after: upper }, { before: minDate }] : [{ after: upper }];
+    fromYear = (minDate || upper).getFullYear() - 5;
+    toYear = upper.getFullYear();
+  } else {
+    const lower = minDate || today;
+    disabledMatchers = maxDate ? [{ before: lower }, { after: maxDate }] : [{ before: lower }];
+    fromYear = lower.getFullYear();
+    toYear = (maxDate || lower).getFullYear() + 10;
+  }
 
   const errorContexto = control && name
     ? name.split(".").reduce((obj, key) => obj?.[key], errors)
@@ -35,10 +62,18 @@ export const SelectFechaSimple = ({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const calendarRef = useRef(null);
+  // El popover se saca por Portal a document.body: si el campo está anidado
+  // en un panel con overflow:auto/hidden, un popover `position: absolute`
+  // normal queda cortado (o directamente invisible) por ese ancestro. Con
+  // Portal + `position: fixed` deja de depender del overflow de ningún
+  // contenedor padre (ver SelectFecha, mismo patrón).
+  const popoverRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+      const dentroDelCampo = calendarRef.current?.contains(event.target);
+      const dentroDelPopover = popoverRef.current?.contains(event.target);
+      if (!dentroDelCampo && !dentroDelPopover) {
         setIsCalendarOpen(false);
         setIsFocused(false);
       }
@@ -46,6 +81,53 @@ export const SelectFechaSimple = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Mismo algoritmo de posicionamiento que SelectFecha: mide el popover ya
+  // montado (alto real, no una estimación) y muta su estilo directamente
+  // (sin pasar por React state) para no necesitar un segundo render ni
+  // arriesgar un flash en la posición equivocada. `placement` es una
+  // preferencia; si ese lado no entra entero se abre para el que tenga más
+  // espacio, y el resultado siempre se clampea contra los bordes del
+  // viewport.
+  useLayoutEffect(() => {
+    if (!isCalendarOpen) return undefined;
+
+    const MARGEN = 8;
+    const GAP = 6;
+
+    const posicionarPopover = () => {
+      const trigger = calendarRef.current;
+      const popover = popoverRef.current;
+      if (!trigger || !popover) return;
+
+      const rect = trigger.getBoundingClientRect();
+      const altoPopover = popover.offsetHeight;
+      const anchoPopover = popover.offsetWidth;
+
+      const espacioArriba = rect.top;
+      const espacioAbajo = window.innerHeight - rect.bottom;
+      const prefiereArriba = placement === "top";
+      const abreArriba = prefiereArriba
+        ? espacioArriba >= altoPopover + MARGEN || espacioArriba >= espacioAbajo
+        : espacioAbajo < altoPopover + MARGEN && espacioArriba > espacioAbajo;
+
+      const topIdeal = abreArriba ? rect.top - GAP - altoPopover : rect.bottom + GAP;
+      const top = Math.max(MARGEN, Math.min(topIdeal, window.innerHeight - altoPopover - MARGEN));
+      const left = Math.max(MARGEN, Math.min(rect.right - anchoPopover, window.innerWidth - anchoPopover - MARGEN));
+
+      popover.style.top = `${top}px`;
+      popover.style.left = `${Math.max(MARGEN, left)}px`;
+      popover.style.visibility = "visible";
+    };
+
+    posicionarPopover();
+    window.addEventListener("scroll", posicionarPopover, true);
+    window.addEventListener("resize", posicionarPopover);
+    return () => {
+      window.removeEventListener("scroll", posicionarPopover, true);
+      window.removeEventListener("resize", posicionarPopover);
+    };
+  }, [isCalendarOpen, placement]);
 
   const renderCalendar = (value, onChange, onBlur, ref) => {
     let dateObj = undefined;
@@ -63,8 +145,12 @@ export const SelectFechaSimple = ({
     }
 
     const hasValue = !!dateObj;
+    const diasDesdeHoy = hasValue
+      ? Math.max(0, differenceInCalendarDays(dateObj, new Date()))
+      : null;
     const hasError = !!errorDisplay;
     const isAdmin = variant === "admin" || (variant !== "client" && typeof window !== "undefined" && window.location.pathname.includes("/admin"));
+    const focusColor = isAdmin ? "var(--color-azul-bind, #4c65e6)" : "var(--yellow, #f4f500)";
 
     let statusClass = inputStyles.statusDefault;
     if (hasError) {
@@ -79,6 +165,7 @@ export const SelectFechaSimple = ({
       hasValue || isCalendarOpen || isFocused ? inputStyles.hasValue : "",
       isAdmin ? inputStyles.adminVariant : "",
       hideErrorSpace ? inputStyles.noErrorSpace : "",
+      compact ? inputStyles.compact : "",
       className,
     ].filter(Boolean).join(" ");
 
@@ -96,16 +183,35 @@ export const SelectFechaSimple = ({
 
     return (
       <div className={containerClasses} ref={calendarRef}>
-        <div className={inputStyles.inputWrapper} onClick={() => !disabled && setIsCalendarOpen(!isCalendarOpen)}>
+        <div className={inputStyles.inputWrapper} onClick={() => !disabled && setIsCalendarOpen(true)}>
           <input
             type="text"
             readOnly
             className={inputStyles.input}
-            value={hasValue ? format(dateObj, "dd/MM/yyyy", { locale: es }) : ""}
+            value={
+              hasValue
+                ? `${format(dateObj, "dd/MM/yyyy", { locale: es })}${
+                    mostrarDiasDesdeHoy ? ` · ${diasDesdeHoy} días` : ""
+                  }`
+                : ""
+            }
             placeholder=" "
             disabled={disabled}
             onFocus={() => {
-              if (!disabled) setIsFocused(true);
+              if (!disabled) {
+                setIsFocused(true);
+                setIsCalendarOpen(true);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                // Si el calendario esta abierto, Escape solo lo cierra: no debe cerrar tambien el modal que lo contiene
+                if (isCalendarOpen) e.stopPropagation();
+                setIsCalendarOpen(false);
+              } else if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+                e.preventDefault();
+                if (!disabled) setIsCalendarOpen(true);
+              }
             }}
             onBlur={() => {
               if (onBlur) onBlur();
@@ -122,32 +228,41 @@ export const SelectFechaSimple = ({
               type="button"
               className={inputStyles.toggleBtn}
               tabIndex="-1"
-              style={{ color: (isCalendarOpen || isFocused || hasValue) ? 'var(--color-azul-bind, #4c65e6)' : '#8b949e' }}
+              onClick={(e) => {
+                // El icono si alterna: es la forma de cerrar el calendario sin elegir una fecha
+                e.stopPropagation();
+                if (!disabled) setIsCalendarOpen(!isCalendarOpen);
+              }}
+              style={{ color: (isCalendarOpen || isFocused || hasValue) ? focusColor : '#8b949e' }}
             >
-              <FiCalendar size={17} />
+              <FiCalendar size={compact ? 14 : 17} />
             </button>
           </div>
         </div>
 
         {hasError && <span className={inputStyles.errorMsg}>{errorDisplay}</span>}
 
-        {isCalendarOpen && (
-          <div
-            className={`${customStyles.calendarPopover} ${placement === "top" ? customStyles.placementTop : ""}`}
-          >
-            <DayPicker
-              mode="single"
-              selected={dateObj}
-              onSelect={handleDateSelect}
-              locale={es}
-              disabled={{ before: effectiveMinDate }}
-              required
-              captionLayout="dropdown-years"
-              fromYear={effectiveMinDate.getFullYear()}
-              toYear={effectiveMinDate.getFullYear() + 10}
-            />
-          </div>
-        )}
+        {isCalendarOpen &&
+          createPortal(
+            <div
+              ref={popoverRef}
+              className={`${customStyles.calendarPopover} ${customStyles.calendarPopoverPortal} ${placement === "top" ? customStyles.placementTop : ""}`}
+              style={{ position: "fixed" }}
+            >
+              <DayPicker
+                mode="single"
+                selected={dateObj}
+                onSelect={handleDateSelect}
+                locale={es}
+                disabled={disabledMatchers}
+                required
+                captionLayout="dropdown-years"
+                fromYear={fromYear}
+                toYear={toYear}
+              />
+            </div>,
+            document.body,
+          )}
       </div>
     );
   };
@@ -164,4 +279,20 @@ export const SelectFechaSimple = ({
   }
 
   return renderCalendar(manualValue, manualOnChange, () => {}, null);
+};
+
+const SelectFechaSimpleConectado = (props) => {
+  const { errors } = useFormState({ control: props.control, name: props.name });
+  return <SelectFechaSimpleBase {...props} errors={errors} />;
+};
+
+export const SelectFechaSimple = (props) => {
+  const formContext = useFormContext();
+  const control = formContext?.control;
+
+  if (control) {
+    return <SelectFechaSimpleConectado {...props} control={control} />;
+  }
+
+  return <SelectFechaSimpleBase {...props} control={control} errors={{}} />;
 };

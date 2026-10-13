@@ -1,6 +1,6 @@
 .box {
-  background: rgba(255, 255, 255, 0.015);
-  border: 2px dashed rgba(255, 255, 255, 0.15);
+  background: rgba(var(--overlay-rgb), 0.015);
+  border: 2px dashed rgba(var(--overlay-rgb), 0.15);
   border-radius: 1rem;
   padding: 25px 20px;
   display: flex;
@@ -27,26 +27,34 @@
 }
 
 .dragging {
-  border-color: var(--yellow);
+  border-color: var(--color-amarillo-bind);
   background-color: rgba(244, 245, 0, 0.05);
   transform: scale(1.02);
   box-shadow: 0 0 20px rgba(244, 245, 0, 0.1);
 }
 
+.uploading {
+  border-style: solid;
+  border-color: var(--color-azul-bind, #4c65e6);
+  background: rgba(76, 101, 230, 0.04);
+  cursor: default;
+  gap: 4px;
+}
+
 .icon {
   font-size: 2.5rem;
-  color: #888;
+  color: var(--text-muted);
   margin-bottom: 10px;
   transition: color 0.3s;
   pointer-events: none;
 }
 
 .box:hover .icon {
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
 }
 
 .dragging .icon {
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
 }
 
 .text {
@@ -58,18 +66,60 @@
 }
 
 .subtext {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.85rem;
   pointer-events: none;
 }
 
-/* --- ESTADO: ARCHIVO CARGADO --- */
+.maxSizeHint {
+  color: var(--text-muted);
+  opacity: 0.7;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  pointer-events: none;
+}
+
+/* Variante compacta: para dropzones que muestran poco texto (ej. DNI
+   Frente/Dorso en SocioAccionistaModal, sin subtítulo de tamaño máximo) el
+   ícono/textos grandes por defecto dejaban el estado vacío bastante más
+   alto que el estado "archivo cargado" (una sola fila) - acá se achica todo
+   junto para que ambos estados puedan compartir un min-height bajo sin que
+   ninguno quede recortado. */
+.compact {
+  min-height: 132px;
+}
+
+.compact .icon {
+  font-size: 1.6rem;
+  margin-bottom: 4px;
+}
+
+.compact .text {
+  font-size: 0.85rem;
+  margin-bottom: 2px;
+}
+
+.compact .subtext {
+  font-size: 0.72rem;
+}
+
+/* --- ESTADO: ARCHIVO CARGADO ---
+   .loaded y .actionsGroup se resuelven con flex-wrap en vez de un media
+   query: la caja se usa tanto sola en una columna angosta como dentro de
+   .dropzoneGrid a 2 columnas (ver DocumentosLegajo.module.css), así que el
+   ancho real disponible no depende solo del viewport. Con
+   .loadedInfo con flex-basis grande, apenas no entran los 4 botones de
+   acción al lado del nombre+badge, el grupo de acciones baja solo a su
+   propia fila (margin-left: auto lo alinea a la derecha ahí también) en vez
+   de amontonarse todo en una sola línea. */
 .loaded {
   border: 2px solid rgba(61, 220, 132, 0.3);
   background-color: rgba(61, 220, 132, 0.05);
   flex-direction: row;
-  justify-content: space-between;
-  padding: 25px 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 0.75rem;
+  padding: 20px;
 }
 
 .loaded:hover {
@@ -82,7 +132,7 @@
   display: flex;
   align-items: center;
   gap: 15px;
-  flex: 1 1 0%;
+  flex: 1 1 12rem;
   min-width: 0;
   overflow: hidden;
 }
@@ -114,46 +164,51 @@
 }
 
 .filesize {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.8rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* --- ESTADO: ERROR --- */
 .error {
-  border-color: #ff5252;
+  border-color: var(--danger-bright);
   background-color: rgba(255, 82, 82, 0.05);
 }
 
 .error .icon {
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 
 .error:hover {
-  border-color: #ff5252;
+  border-color: var(--danger-bright);
   background-color: rgba(255, 82, 82, 0.08);
 }
 
 .error:hover .icon {
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 
 .actionsGroup {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .metaRow {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 6px 12px;
   margin-top: 4px;
 }
 
 .lufeBadge {
   background: rgba(76, 101, 230, 0.15);
   border: 1px solid rgba(76, 101, 230, 0.3);
-  color: #a3b2f7;
+  color: var(--color-azul-bind);
   padding: 2px 8px;
   border-radius: 9999px;
   font-size: 0.72rem;
@@ -162,9 +217,40 @@
   align-items: center;
   gap: 4px;
   line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .lufeBadgeIcon {
   font-size: 0.78rem;
-  color: #a3b2f7;
+  color: var(--color-azul-bind);
+}
+.btnCamara {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--overlay-rgb), 0.2);
+  background: rgba(var(--overlay-rgb), 0.05);
+  color: var(--white);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.btnCamara:hover,
+.btnCamara:focus-visible {
+  border-color: var(--color-amarillo-bind);
+  background: rgba(244, 245, 0, 0.06);
+}
+
+@media (pointer: coarse) {
+  .btnCamara {
+    display: inline-flex;
+  }
 }

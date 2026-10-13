@@ -24,7 +24,7 @@ const customStyles = {
   }),
   singleValue: (base, state) => ({
     ...base,
-    color: state.isDisabled ? "rgba(255, 255, 255, 0.35)" : "var(--white)",
+    color: state.isDisabled ? "rgba(var(--overlay-rgb), 0.35)" : "var(--white)",
     margin: 0,
   }),
   input: (base) => ({
@@ -36,14 +36,14 @@ const customStyles = {
   indicatorSeparator: () => ({ display: "none" }),
   dropdownIndicator: (base, state) => ({
     ...base,
-    color: state.isDisabled ? "rgba(255, 255, 255, 0.15)" : state.isFocused ? "var(--yellow)" : "#888",
+    color: state.isDisabled ? "rgba(var(--overlay-rgb), 0.15)" : state.isFocused ? "var(--yellow)" : "var(--text-muted)",
     padding: "0 1rem 0 0",
-    "&:hover": { color: state.isDisabled ? "rgba(255, 255, 255, 0.15)" : "var(--yellow)" },
+    "&:hover": { color: state.isDisabled ? "rgba(var(--overlay-rgb), 0.15)" : "var(--yellow)" },
   }),
   menu: (base, state) => ({
     ...base,
-    backgroundColor: "#181818",
-    border: "1px solid rgba(255,255,255,0.1)",
+    backgroundColor: "var(--border)",
+    border: "1px solid rgba(var(--overlay-rgb),0.1)",
     borderRadius: "0.75rem",
     boxShadow: "0 16px 48px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.4)",
     zIndex: 50,
@@ -67,7 +67,7 @@ const customStyles = {
       ? "#000"
       : state.isFocused
         ? "var(--yellow)"
-        : "#ccc",
+        : "var(--white-muted)",
     cursor: "pointer",
     padding: "0.75rem 1rem",
     borderRadius: "0.5rem",

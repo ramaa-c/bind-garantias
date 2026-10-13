@@ -1,50 +1,47 @@
 import { normalizarClaves } from "../utils/normalizarClaves";
 
 export const usuarioAdapter = {
-  adaptarPayload1: (data) => {
-    if (!data) return data;
-    const d = normalizarClaves(data);
-    return {
-      Email: d.email,
-      Password: d.password,
-    };
-  },
   adaptarPayload2: (data) => {
     if (!data) return data;
     const d = normalizarClaves(data);
     return {
       Email: d.email,
-      Password: d.password,
     };
   },
   adaptarPayload3: (data) => {
     if (!data) return data;
     const d = normalizarClaves(data);
     return {
-      Email: d.email,
-      UsuarioWebID: d.usuariowebid,
-      fchAlta: d.fchalta,
-      fchVencimiento: d.fchvencimiento,
-      HashSeguridad: d.hashseguridad,
-      Estado: d.estado,
-      DebeCambiarClave: d.debecambiarclave,
-      EsAdministrador: d.esadministrador,
-      Denominacion: d.denominacion,
+      FrontURL: d.fronturl,
+      Usuario: {
+        Email: d.email,
+        UsuarioWebID: d.usuariowebid,
+        fchAlta: d.fchalta,
+        fchVencimiento: d.fchvencimiento,
+        HashSeguridad: d.hashseguridad,
+        Estado: d.estado,
+        DebeCambiarClave: d.debecambiarclave,
+        EsAdministrador: d.esadministrador,
+        Denominacion: d.denominacion,
+      },
     };
   },
   adaptarPayload4: (data) => {
     if (!data) return data;
     const d = normalizarClaves(data);
     return {
-      Email: d.email,
-      UsuarioWebID: d.usuariowebid ?? 0,
-      fchAlta: d.fchalta,
-      fchVencimiento: d.fchvencimiento,
-      HashSeguridad: d.hashseguridad,
-      Estado: d.estado,
-      DebeCambiarClave: d.debecambiarclave,
-      EsAdministrador: d.esadministrador,
-      Denominacion: d.denominacion,
+      FrontURL: d.fronturl,
+      Usuario: {
+        Email: d.email,
+        UsuarioWebID: d.usuariowebid ?? 0,
+        fchAlta: d.fchalta,
+        fchVencimiento: d.fchvencimiento,
+        HashSeguridad: d.hashseguridad,
+        Estado: d.estado,
+        DebeCambiarClave: d.debecambiarclave,
+        EsAdministrador: d.esadministrador,
+        Denominacion: d.denominacion,
+      },
     };
   },
   adaptarPayload5: (data) => {
@@ -61,6 +58,7 @@ export const usuarioAdapter = {
     return {
       oldPassword: d.oldpassword,
       newPassword: d.newpassword,
+      encrypt: d.encrypt,
     };
   },
   adaptarPayload7: (data) => {
@@ -96,6 +94,16 @@ export const usuarioAdapter = {
       DebeCambiarClave: d.debecambiarclave || "",
       EsAdministrador: d.esadministrador || "",
       Denominacion: d.denominacion,
+    };
+  },
+  adaptarPayload10: (data) => {
+    if (!data) return data;
+    const d = normalizarClaves(data);
+    return {
+      Email: d.email,
+      Cuit: d.cuit,
+      Mensaje: d.mensaje,
+      UsuarioWebAdminID: d.usuariowebadminid,
     };
   },
 };

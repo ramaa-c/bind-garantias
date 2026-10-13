@@ -1,5 +1,13 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useQueries, keepPreviousData } from '@tanstack/react-query';
 import { tercerosService } from '../services/tercerosService';
+import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from '../utils/executeCda';
+import {
+  RELACION_ACCIONISTA_ID,
+  RELACION_APODERADO_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+  RELACION_AGENTE_BOLSA_ID,
+  RELACION_APODERADO_FIRMANTE_ID,
+} from '../constants/tiposRelacionSocio';
 
 export const useObtenerTerceros = (params = {}) => {
     return useQuery({
@@ -10,168 +18,34 @@ export const useObtenerTerceros = (params = {}) => {
     });
 };
 
-const useObtenerTerceroPorId = (terceroId) => {
-    return useQuery({
-        queryKey: ['terceros', 'detalle', terceroId],
-        queryFn: () => tercerosService.obtenerTerceroPorId(terceroId),
-        enabled: !!terceroId,
-        staleTime: 1000 * 60 * 5,
-        placeholderData: keepPreviousData
-    });
-};
-
-const useCrearTercero = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: tercerosService.crearTercero,
-    onSuccess: () => {
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["terceros", "lista"] }),
-        queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
-      ]);
-    },
-    onError: (error) => {
-      console.error("Error al crear el tercero:", error);
-    },
-  });
-};
-
-const useObtenerTiposHabilitados = (terceroId) => {
-  return useQuery({
-    queryKey: ["terceros", "tiposHabilitados", terceroId],
-    queryFn: () => tercerosService.obtenerTiposHabilitados(terceroId),
-    enabled: !!terceroId,
-  });
-};
-
-const useObtenerRelacionesDeSocio = (socioId) => {
-  return useQuery({
-    queryKey: ["socioTerceroRelacion", socioId],
-    queryFn: () => tercerosService.obtenerRelacionesDeSocio(socioId),
-    enabled: !!socioId,
-  });
-};
-
-const useGuardarRelacionesDeSocio = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: tercerosService.guardarRelacionesDeSocio,
-    onSuccess: (data, variables) => {
-      return Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["relacionesSocio", variables.socioid],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["socioLegajoCompleto"],
-        }),
-      ]);
-    },
-    onError: (error) => {
-      console.error("Error al guardar las relaciones del socio:", error);
-    },
-  });
-};
-
-const useBuscarTerceroPorCuit = () => {
-  return useMutation({
-    mutationFn: (cuit) => tercerosService.obtenerTerceros({ Cuit: cuit }),
-  });
-};
-
-const useActualizarTercero = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: tercerosService.actualizarTercero,
-    onSuccess: (data, variables) => {
-      return Promise.all(
-        [
-          queryClient.invalidateQueries({ queryKey: ["terceros", "lista"] }),
-          queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
-          variables.tercerorelacionadoid &&
-            queryClient
-              .invalidateQueries({
-                queryKey: [
-                  "terceros",
-                  "detalle",
-                  variables.tercerorelacionadoid,
-                ],
-              })
-              .catch(() => {}),
-        ].filter(Boolean),
-      );
-    },
-    onError: (error) => {
-      console.error("Error al actualizar el tercero:", error);
-    },
-  });
-};
-
-const useActualizarRelacionSocio = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: tercerosService.actualizarRelacionDeSocio,
-    onSuccess: (data, variables) => {
-      return Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["relacionesSocio", variables.socioid],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["socioLegajoCompleto"],
-        }),
-      ]);
-    },
-    onError: (error) => {
-      console.error("Error al actualizar la relación del socio:", error);
-    },
-  });
-};
-
 //------- TERCEROS RELACIONADOS (SGRPlus) ---------
-
-const useObtenerTercerosSGRPlus = (params = {}) => {
-    return useQuery({
-        queryKey: ['tercerosSGRPlus', 'lista', params],
-        queryFn: () => tercerosService.obtenerTercerosSGRPlus(params),
-        staleTime: 1000 * 60 * 2,
-        placeholderData: keepPreviousData
-    });
-};
-
-const useObtenerTerceroPorIdSGRPlus = (terceroId) => {
-    return useQuery({
-        queryKey: ['tercerosSGRPlus', 'detalle', terceroId],
-        queryFn: () => tercerosService.obtenerTerceroPorIdSGRPlus(terceroId),
-        enabled: !!terceroId,
-        staleTime: 1000 * 60 * 5,
-        placeholderData: keepPreviousData
-    });
-};
-
-const useObtenerRelacionesDeSocioSGRPlus = (socioId) => {
-  return useQuery({
-    queryKey: ["socioTerceroRelacionSGRPlus", socioId],
-    queryFn: () => tercerosService.obtenerRelacionesDeSocioSGRPlus(socioId),
-    enabled: !!socioId,
-  });
-};
 
 export const useObtenerDatosSocioLegajo = (socioId) => {
   return useQuery({
     queryKey: ["socioLegajoCompleto", socioId],
     queryFn: async () => {
-      if (!socioId) return { accionistas: [], representantes: [], agentesBolsa: [] };
+      if (!socioId) return { accionistas: [], representantes: [], agentesBolsa: [], porTipoRelacion: {} };
       const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioId);
       const arr = Array.isArray(relaciones) ? relaciones : [];
 
       const accMap = {};
       const repMap = {};
       const bolsaMap = {};
+      // Cualquier TipoRelacionSocioID que el admin haya activado en
+      // /admin/tipos-relacion-socio más allá de los 4 con flujo propio (ver
+      // constants/tiposRelacionSocio.js) cae acá, agrupado por ID - así
+      // TerceroRelacionSection puede mostrar cualquier relación nueva sin
+      // que este hook tenga que conocerla de antemano.
+      const extraMapPorId = {};
 
-      const now = new Date();
+      // Comparación por fecha calendario (sin hora) contra HOY, no contra el
+      // instante exacto: una relación recién creada suele llegar con
+      // FechaHasta defaulteada al mismo día que FechaDesde (hoy a las
+      // 00:00hs) — comparada contra "ahora mismo" (con hora), "hoy a las
+      // 00:00" siempre da en el pasado, así que sin este truncado una
+      // relación recién creada desaparecería sola apenas se crea.
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
 
       // Se descartan primero las relaciones vencidas o sin tercero asociado
       // (no requieren red), y recién ahí se piden los terceros. Los pedidos
@@ -179,20 +53,26 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
       // de pool de FireDAC que obliga a serializar las escrituras) para que
       // el refetch tras guardar/editar no tarde N veces la latencia del
       // backend por cada accionista/representante/agente de bolsa.
+      //
+      // ⚠️ Antes acá había una excepción "si FechaHasta === FechaDesde, no
+      // contar como vencida" (pensada para el caso de arriba). El problema:
+      // "eliminar" un tercero pone FechaHasta = ayer (ver SociosLegajo.jsx),
+      // y si ese tercero se había creado justo el día anterior (típico en
+      // los precargados de LUFE del alta, que quedan con FechaDesde = el
+      // día del alta), FechaHasta(ayer) terminaba coincidiendo con
+      // FechaDesde — la excepción se activaba de nuevo y la "eliminación"
+      // quedaba invisible para este filtro, aunque el PUT sí se haya
+      // guardado bien en el backend (confirmado en vivo el 2026-08-12,
+      // reproducido contra SocioTerceroRelacionID 179 del socio 66: el PUT
+      // devuelve 200 y el valor queda persistido, pero seguía apareciendo
+      // en pantalla). No es un problema de LUFE en sí — pasa con cualquier
+      // tercero borrado exactamente un día después de haberse creado.
       const relacionesValidas = arr.filter((rel) => {
-        const fd = rel.fechadesde || rel.FechaDesde;
         const fh = rel.fechahasta || rel.FechaHasta;
         if (fh && fh !== "") {
           const expirationDate = new Date(fh);
-          const startDate = fd ? new Date(fd) : null;
-
-          const isSameAsStart =
-            startDate &&
-            (expirationDate.getTime() === startDate.getTime() ||
-              expirationDate.toISOString().split("T")[0] ===
-                startDate.toISOString().split("T")[0]);
-
-          if (!isSameAsStart && expirationDate < now) {
+          expirationDate.setHours(0, 0, 0, 0);
+          if (expirationDate < hoy) {
             return false;
           }
         }
@@ -211,10 +91,10 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
             let t = null;
             try {
               t = await tercerosService.obtenerTerceroPorId(tid);
-            } catch (apiErr) {
+            } catch {
               try {
                 t = await tercerosService.obtenerTerceroPorIdSGRPlus(tid);
-              } catch (sgrErr) {
+              } catch {
                 // Ignore error
               }
             }
@@ -286,8 +166,15 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
         const identifier =
           item.cuit && item.cuit !== "—" ? item.cuit : item.id;
 
-        if (tiporelNum === 25) {
-          if (item.participacion === 0) continue; // Omitir suplentes / accionistas con 0%
+        if (tiporelNum === RELACION_ACCIONISTA_ID) {
+          // LUFE puede traer accionistas con 0% de participación que no
+          // sirven de nada acá — se omiten. Nuestra propia modal nunca
+          // puede guardar uno en 0% (el form valida min=0.01), así que el
+          // único 0% que puede aparecer es o bien esto de LUFE, o bien un
+          // alta que se dejó a mitad de camino (el stub que se crea antes
+          // de validar el CDA, ver SocioAccionistaModal) — en ambos casos
+          // corresponde no mostrarlo hasta que tenga un % real.
+          if (item.participacion === 0) continue;
           const existing = accMap[identifier];
           if (!existing) {
             accMap[identifier] = item;
@@ -301,22 +188,35 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
               accMap[identifier] = item;
             }
           }
-        } else if (tiporelNum === 210 || tiporelNum === 230) {
+        } else if (tiporelNum === RELACION_APODERADO_ID || tiporelNum === RELACION_REPRESENTANTE_LEGAL_ID) {
           const existing = repMap[identifier];
           if (!existing) {
             repMap[identifier] = item;
           } else {
-            if (item.rolId === 230 && existing.rolId !== 230) {
+            if (item.rolId === RELACION_REPRESENTANTE_LEGAL_ID && existing.rolId !== RELACION_REPRESENTANTE_LEGAL_ID) {
               repMap[identifier] = item;
             }
           }
-        } else if (tiporelNum === 21) {
+        } else if (tiporelNum === RELACION_AGENTE_BOLSA_ID) {
           const existing = bolsaMap[identifier];
           if (!existing) {
             bolsaMap[identifier] = item;
           } else {
             if (item.nrosubcuentacaja && !existing.nrosubcuentacaja) {
               bolsaMap[identifier] = item;
+            }
+          }
+        } else if (tiporelNum > 0) {
+          const idKey = String(tiporelNum);
+          const bucket = (extraMapPorId[idKey] = extraMapPorId[idKey] || {});
+          const existing = bucket[identifier];
+          if (!existing) {
+            bucket[identifier] = item;
+          } else {
+            const existingMomento = new Date(existing.relacion?.momento || existing.relacion?.Momento || 0).getTime();
+            const currentMomento = new Date(rel.momento || rel.Momento || 0).getTime();
+            if (currentMomento >= existingMomento) {
+              bucket[identifier] = item;
             }
           }
         }
@@ -326,9 +226,78 @@ export const useObtenerDatosSocioLegajo = (socioId) => {
         accionistas: Object.values(accMap),
         representantes: Object.values(repMap),
         agentesBolsa: Object.values(bolsaMap),
+        porTipoRelacion: Object.fromEntries(
+          Object.entries(extraMapPorId).map(([id, bucket]) => [id, Object.values(bucket)]),
+        ),
       };
     },
     enabled: !!socioId,
     staleTime: 1000 * 60 * 10, // 10 minutes cache
+  });
+};
+
+// Historial de ejecuciones de CDA de un tercero puntual (accionista/
+// representante/apoderado) — ver tercerosService.obtenerExecuteCda.
+export const useObtenerExecuteCdaTercero = (terceroId) => {
+  return useQuery({
+    queryKey: ["terceros", "executeCda", terceroId],
+    queryFn: () => tercerosService.obtenerExecuteCda(terceroId),
+    enabled: !!terceroId,
+  });
+};
+
+// Estado CDA ("aprobado"/"rechazado"/"pendiente"/null) de varios terceros a
+// la vez — usado para pintar en rojo la card de un accionista/representante/
+// apoderado rechazado en las listas del legajo, y para el gate de
+// completitud de useValidacionLegajo. No existe un endpoint bulk confiable
+// (GET api/Terceros/ExecuteCda sin TerceroID no responde en un tiempo
+// razonable, probado en vivo) — se resuelve en paralelo, uno por tercero,
+// igual que ya hace useObtenerDatosSocioLegajo.
+export const useEstadoCdaTerceros = (terceroIds = []) => {
+  const ids = [...new Set((terceroIds || []).filter(Boolean).map(Number))].sort((a, b) => a - b);
+  const idsKey = ids.join(",");
+  return useQuery({
+    queryKey: ["terceros", "estadoCdaBulk", idsKey],
+    queryFn: async () => {
+      const entries = await Promise.all(
+        ids.map(async (id) => {
+          try {
+            const historial = await tercerosService.obtenerExecuteCda(id);
+            return [id, calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial))];
+          } catch (err) {
+            console.warn("[useEstadoCdaTerceros] Error obteniendo historial de CDA para tercero", id, err);
+            return [id, null];
+          }
+        }),
+      );
+      return new Map(entries);
+    },
+    enabled: ids.length > 0,
+  });
+};
+
+export const useApoderadoFirmantePorSocio = (socioIds = []) => {
+  const ids = [...new Set((socioIds || []).map(Number).filter((id) => id > 0))];
+
+  return useQueries({
+    queries: ids.map((id) => ({
+      queryKey: ["terceros", "relacionesSocio", id],
+      queryFn: () => tercerosService.obtenerRelacionesDeSocio(id),
+      staleTime: 1000 * 60 * 2,
+    })),
+    combine: (resultados) => {
+      const porSocio = new Map();
+      resultados.forEach((resultado, i) => {
+        if (!resultado.isSuccess) return;
+        const relaciones = Array.isArray(resultado.data) ? resultado.data : [];
+        porSocio.set(
+          ids[i],
+          relaciones.some(
+            (r) => Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID) === RELACION_APODERADO_FIRMANTE_ID,
+          ),
+        );
+      });
+      return porSocio;
+    },
   });
 };

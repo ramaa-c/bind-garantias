@@ -1,12 +1,13 @@
 import React, { useState } from "react";
-import { FiAlertCircle } from "react-icons/fi";
+import { useQueryClient } from "@tanstack/react-query";
+import { FiAlertCircle, FiMail, FiUserCheck } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
-import { usuarioService } from "../../../../../../services/usuarioService";
 import { sociosService } from "../../../../../../services/sociosService";
 import styles from "../../DocumentosLegajo.module.css";
 
 export function VincularUsuarioSection({ socioIdActivo }) {
+  const queryClient = useQueryClient();
   const [emailVincular, setEmailVincular] = useState("");
   const [emailError, setEmailError] = useState("");
   const [loadingVinculacion, setLoadingVinculacion] = useState(false);
@@ -31,50 +32,34 @@ export function VincularUsuarioSection({ socioIdActivo }) {
     }
 
     setLoadingVinculacion(true);
-    let targetUserId = null;
 
     try {
-      const userData =
-        await usuarioService.obtenerPorNombreOEmail(emailNormalizado);
-
-      targetUserId =
-        userData?.usuariowebid || userData?.UsuarioWebID || userData?.id;
-
-      if (!targetUserId) {
-        setEmailError("No se encontró un usuario registrado con este correo.");
-        setLoadingVinculacion(false);
-        return;
-      }
-    } catch (err) {
-      console.warn("Error buscando usuario:", err);
-      setEmailError("No se encontró un usuario registrado con este correo.");
-      setLoadingVinculacion(false);
-      return;
-    }
-
-    try {
-      const date = new Date();
-      const payloadVinculo = {
-        usuariowebid: targetUserId,
-        socioid: socioIdActivo,
-        momentocreacion: date.toISOString().split(".")[0],
-      };
-
-      await sociosService.vincularSocioUsuario(payloadVinculo);
+      await sociosService.vincularUsuarioPorEmail({
+        socioId: socioIdActivo,
+        email: emailNormalizado,
+      });
 
       toast.success("Usuario vinculado exitosamente a la empresa.");
       setEmailVincular("");
-      setLoadingVinculacion(false);
+      queryClient.invalidateQueries({
+        queryKey: ["socioUsuario", "listaPorSocio"],
+      });
     } catch (err) {
-      console.error("Error al hacer POST de vinculación:", err);
-
-      if (err.response?.status === 400 || err.response?.status === 409) {
+      const status = err.response?.status;
+      if (status === 409) {
         setEmailError("Este usuario ya se encuentra vinculado a la empresa.");
+      } else if (status === 404) {
+        setEmailError(
+          "No pudimos vincular este correo. Verificá que esté bien escrito y que el usuario ya esté registrado en la plataforma.",
+        );
+      } else if (status === 429) {
+        setEmailError("Demasiados intentos. Intentá nuevamente más tarde.");
       } else {
         toast.error(
           "Ocurrió un error en el servidor al intentar vincular el usuario.",
         );
       }
+    } finally {
       setLoadingVinculacion(false);
     }
   };
@@ -82,32 +67,42 @@ export function VincularUsuarioSection({ socioIdActivo }) {
   return (
     <div className={styles.usuariosContainer}>
       <div className={styles.vincularForm}>
-        <h5 className={styles.vincularFormTitle}>Vincular nuevo usuario</h5>
-        <p className={styles.vincularFormText}>
-          Ingresá el correo electrónico del usuario que deseás vincular. Este
-          usuario debe estar previamente registrado en la plataforma Bind
-          Garantías.
-        </p>
+        <div className={styles.vincularFormHeader}>
+          <span className={`${styles.vincularFormIcon} ${isAdmin ? styles.vincularFormIconAdmin : ""}`}>
+            <FiUserCheck size={16} />
+          </span>
+          <div className={styles.vincularFormHeaderText}>
+            <h5 className={styles.vincularFormTitle}>Vincular nuevo usuario</h5>
+            <p className={styles.vincularFormText}>
+              Ingresá el correo electrónico del usuario que deseás vincular.
+              Este usuario debe estar previamente registrado en la
+              plataforma Bind Garantías.
+            </p>
+          </div>
+        </div>
 
         <div className={styles.vincularInputWrapper}>
           <div className={styles.vincularInputGroup}>
-            <input
-              type="email"
-              className={`${styles.vincularInput} ${isAdmin ? styles.vincularInputAdmin : ""} ${emailError ? styles.vincularInputError : ""}`}
-              placeholder="ejemplo@correo.com"
-              value={emailVincular}
-              onChange={(e) => {
-                setEmailVincular(e.target.value);
-                if (emailError) setEmailError("");
-              }}
-              disabled={loadingVinculacion}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleVincularUsuario();
-                }
-              }}
-            />
+            <div className={styles.vincularInputField}>
+              <FiMail className={styles.vincularInputFieldIcon} size={14} />
+              <input
+                type="email"
+                className={`${styles.vincularInput} ${isAdmin ? styles.vincularInputAdmin : ""} ${emailError ? styles.vincularInputError : ""}`}
+                placeholder="ejemplo@correo.com"
+                value={emailVincular}
+                onChange={(e) => {
+                  setEmailVincular(e.target.value);
+                  if (emailError) setEmailError("");
+                }}
+                disabled={loadingVinculacion}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleVincularUsuario();
+                  }
+                }}
+              />
+            </div>
             <Button
               type="button"
               variant={isAdmin ? "blue" : "primary"}

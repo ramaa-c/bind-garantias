@@ -10,6 +10,20 @@ export const Modal = ({
   title,
   subtitle,
   children,
+  // Contenido de acciones (ej. "Guardar"/"Cancelar") que queda FUERA del
+  // área con scroll (.body), como hermano de éste en vez de su último
+  // hijo. Antes cada modal con este patrón armaba su propio footer
+  // "sticky" adentro de .body - position:sticky ahí es frágil (rompe en
+  // ciertos zooms/resoluciones, ver SGRPLUSPLA-183: .body es scrolleable
+  // Y a la vez flex:1 dentro de .modalBox con overflow:hidden, una
+  // combinación con bugs de cálculo de sticky conocidos en Chromium).
+  // Pasar `footer` evita el problema de raíz: no depende de sticky, es
+  // simplemente un elemento que nunca formó parte del contenido
+  // scrolleable. El botón de submit dentro de `footer` tiene que usar el
+  // atributo HTML `form="<id>"` para seguir asociado al <form> de más
+  // arriba, ya que ahora queda fuera de él en el DOM.
+  footer,
+  footerClassName = "",
   maxWidth = "600px",
   className = "",
   variant = "default",
@@ -18,6 +32,12 @@ export const Modal = ({
   // poder cerrarse haciendo click afuera, con ESC o con la X: solo los
   // botones internos (que ya se deshabilitan con isLoading) pueden decidir.
   preventClose = false,
+  // Para modales sin ninguna vía de cierre propia (ej. ProcesamientoModal):
+  // ni X, ni ESC, ni click afuera - solo los botones de acción del propio
+  // contenido (que reciben onClose directo) pueden cerrarlo. Sin esto,
+  // el botón flotante quedaría visible pero inerte bajo preventClose, lo
+  // cual confunde más que no tener botón.
+  hideCloseButton = false,
 }) => {
   const handleClose = () => {
     if (preventClose) return;
@@ -63,28 +83,35 @@ export const Modal = ({
               )}
               {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
             </div>
+            {!hideCloseButton && (
+              <button
+                type="button"
+                className={styles.closeButton}
+                onClick={handleClose}
+                aria-label="Cerrar modal"
+              >
+                <FiX size={18} />
+              </button>
+            )}
+          </div>
+        ) : (
+          !hideCloseButton && (
             <button
               type="button"
-              className={styles.closeButton}
+              className={styles.closeButtonFloating}
               onClick={handleClose}
               aria-label="Cerrar modal"
             >
               <FiX size={18} />
             </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className={styles.closeButtonFloating}
-            onClick={handleClose}
-            aria-label="Cerrar modal"
-          >
-            <FiX size={18} />
-          </button>
+          )
         )}
 
         {/* ── BODY ── */}
         <div className={`${styles.body} ${allowOverflow ? styles.allowOverflow : ""}`}>{children}</div>
+
+        {/* ── FOOTER (fuera del área con scroll, ver comentario arriba) ── */}
+        {footer && <div className={`${styles.footer} ${footerClassName}`}>{footer}</div>}
       </div>
     </div>,
     document.body,

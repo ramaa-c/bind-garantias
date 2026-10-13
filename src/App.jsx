@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import {
   BrowserRouter,
   Routes,
@@ -7,337 +7,505 @@ import {
   Outlet,
 } from "react-router-dom";
 import { ChannelProvider } from "./context/ChannelContext";
+import { useChannel } from "./context/useChannel";
 import { Toaster } from "sonner";
-import Login from "./pages/cliente/auth/Login";
-import LoginAdmin from "./pages/admin/auth/LoginAdmin";
-import Registro from "./pages/cliente/auth/Registro";
-import CrearClave from "./pages/cliente/auth/CrearClave";
-import ConfirmarCorreo from "./pages/cliente/auth/ConfirmarCorreo";
-import Solicitudes from "./pages/cliente/solicitudes/Solicitudes";
-import AceptarTerminos from "./pages/cliente/auth/AceptarTerminos";
-import RecuperarClave from "./pages/cliente/auth/RecuperarClave";
-import PosicionConsolidada from "./pages/legacy/posicion-consolidada/PosicionConsolidada";
-import CadenaDetalle from "./pages/admin/cadenas-valor/CadenaDetalle";
 import DashboardLayout from "./components/layout/DashboardLayout/DashboardLayout";
-import { AltaOperacion } from "./pages/cliente/operaciones/alta-operacion/AltaOperacion";
-import { Gestion as GestionUsuarios } from "./pages/cliente/usuarios/Gestion";
-import DocumentacionView from "./pages/cliente/operaciones/documentacion/DocumentacionView";
-import SociosView from "./pages/cliente/operaciones/socios/SociosView";
-import NotFound from "./pages/shared/NotFound/NotFound";
-import CadenaInactiva from "./pages/shared/CadenaInactiva/CadenaInactiva";
-import FueraDeServicio from "./pages/shared/FueraDeServicio/FueraDeServicio";
 import OnboardingGuard from "./components/guards/OnboardingGuard/OnboardingGuard";
+import LegajoDataGuard from "./components/guards/LegajoDataGuard/LegajoDataGuard";
 import AdminGuard from "./components/guards/AdminGuard/AdminGuard";
-import AltaDatosEmpresa from "./pages/cliente/onboarding/AltaDatosEmpresa/AltaDatosEmpresa";
-import SeleccionarEmpresa from "./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa";
-import EstadoSolicitud from "./pages/cliente/onboarding/EstadoSolicitud/EstadoSolicitud";
+import GuestGuard from "./components/guards/GuestGuard/GuestGuard";
+import SessionTimeoutManager from "./components/guards/SessionTimeoutManager/SessionTimeoutManager";
+import ThemeManager from "./components/guards/ThemeManager/ThemeManager";
 import AdminLayout from "./components/layout/Admin/AdminLayout/AdminLayout";
-import Dashboard from "./pages/admin/dashboard/Dashboard";
-import Empresas from "./pages/admin/empresas/Empresas";
-import EmpresaDetalle from "./pages/admin/empresas/EmpresaDetalle";
-
-import RolesPermisos from "./pages/admin/configuracion/RolesPermisos";
-import Terminos from "./pages/admin/configuracion/Terminos";
-import CadenasValor from "./pages/admin/cadenas-valor/CadenasValor";
-import CadenasCda from "./pages/admin/cadenas-valor/CadenasCda";
-import CdasGlobales from "./pages/admin/cdas/CdasGlobales";
-import LineasCadena from "./pages/admin/lineas/LineasCadena";
-import LineasProducto from "./pages/admin/lineas/LineasProducto";
-import ModoOffline from "./pages/admin/configuracion/ModoOffline";
 import TenantLayout from "./components/layout/TenantLayout/TenantLayout";
-import RootRedirect from "./components/layout/RootRedirect/RootRedirect";
+import LoadingScreen from "./components/ui/LoadingScreen/LoadingScreen";
 import "./components/ui/CustomScroll/Scroll.module.css";
 import "./App.css";
+
+const Login = lazy(() => import("./pages/cliente/auth/Login"));
+const LoginAdmin = lazy(() => import("./pages/admin/auth/LoginAdmin"));
+const Registro = lazy(() => import("./pages/cliente/auth/Registro"));
+const CrearClave = lazy(() => import("./pages/cliente/auth/CrearClave"));
+const ConfirmarCorreo = lazy(
+  () => import("./pages/cliente/auth/ConfirmarCorreo"),
+);
+const Solicitudes = lazy(
+  () => import("./pages/cliente/solicitudes/Solicitudes"),
+);
+const AceptarTerminos = lazy(
+  () => import("./pages/cliente/auth/AceptarTerminos"),
+);
+const RecuperarClave = lazy(
+  () => import("./pages/cliente/auth/RecuperarClave"),
+);
+const CadenaDetalle = lazy(
+  () => import("./pages/admin/cadenas-valor/CadenaDetalle"),
+);
+const AltaOperacion = lazy(() =>
+  import("./pages/cliente/operaciones/alta-operacion/AltaOperacion").then(
+    (m) => ({ default: m.AltaOperacion }),
+  ),
+);
+const DocumentacionView = lazy(
+  () => import("./pages/cliente/operaciones/documentacion/DocumentacionView"),
+);
+const SociosView = lazy(
+  () => import("./pages/cliente/operaciones/socios/SociosView"),
+);
+const NotFound = lazy(() => import("./pages/shared/NotFound/NotFound"));
+const CadenaInactiva = lazy(
+  () => import("./pages/shared/CadenaInactiva/CadenaInactiva"),
+);
+const FueraDeServicio = lazy(
+  () => import("./pages/shared/FueraDeServicio/FueraDeServicio"),
+);
+const AltaDatosEmpresa = lazy(
+  () => import("./pages/cliente/onboarding/AltaDatosEmpresa/AltaDatosEmpresa"),
+);
+const SeleccionarEmpresa = lazy(
+  () =>
+    import("./pages/cliente/onboarding/SeleccionarEmpresa/SeleccionarEmpresa"),
+);
+const Dashboard = lazy(() => import("./pages/admin/dashboard/Dashboard"));
+const Empresas = lazy(() => import("./pages/admin/empresas/Empresas"));
+const EmpresaDetalle = lazy(
+  () => import("./pages/admin/empresas/EmpresaDetalle"),
+);
+const Usuarios = lazy(() => import("./pages/admin/usuarios/Usuarios"));
+const Terminos = lazy(() => import("./pages/admin/configuracion/Terminos"));
+const CadenasValor = lazy(
+  () => import("./pages/admin/cadenas-valor/CadenasValor"),
+);
+const CadenasCda = lazy(() => import("./pages/admin/cadenas-valor/CadenasCda"));
+const CdasGlobales = lazy(() => import("./pages/admin/cdas/CdasGlobales"));
+const CdaFormPage = lazy(() => import("./pages/admin/cdas/CdaFormPage"));
+const LineasCadena = lazy(() => import("./pages/admin/lineas/LineasCadena"));
+const LineasProducto = lazy(
+  () => import("./pages/admin/lineas/LineasProducto"),
+);
+const LineasCda = lazy(() => import("./pages/admin/lineas/LineasCda"));
+const ModoOffline = lazy(
+  () => import("./pages/admin/configuracion/ModoOffline"),
+);
+const TiposRelacionSocio = lazy(
+  () => import("./pages/admin/configuracion/TiposRelacionSocio"),
+);
+const VariablesParametrizacion = lazy(
+  () => import("./pages/admin/configuracion/VariablesParametrizacion"),
+);
+
+// Rutas de la zona cliente, compartidas por los dos modos de ruteo (ver
+// utils/tenantConfig.js): cuelgan de "/" cuando la cadena se resuelve por
+// hostname, y de "/:cadenaSlug" en el modo legacy. Van todas con path
+// relativo justamente para poder montarse igual en los dos lugares (los
+// <Navigate to="../algo"> resuelven bien en ambos casos).
+const rutasCliente = (
+  <>
+    <Route index element={<Navigate to="login" replace />} />
+              <Route
+                path="login"
+                element={
+                  <GuestGuard>
+                    <Login />
+                  </GuestGuard>
+                }
+              />
+              <Route
+                path="ingresar"
+                element={<Navigate to="../login" replace />}
+              />
+              <Route
+                path="registro"
+                element={
+                  <GuestGuard>
+                    <Registro />
+                  </GuestGuard>
+                }
+              />
+
+              <Route path="0" element={<CrearClave />} />
+              <Route path="0/:token" element={<CrearClave />} />
+
+              <Route path="confirmar-correo" element={<ConfirmarCorreo />} />
+              <Route
+                path="recuperar-clave"
+                element={
+                  <GuestGuard>
+                    <RecuperarClave />
+                  </GuestGuard>
+                }
+              />
+
+              <Route
+                path="legajo"
+                element={
+                  <OnboardingGuard>
+                    <LegajoDataGuard>
+                      <DashboardLayout>
+                        <SociosView />
+                      </DashboardLayout>
+                    </LegajoDataGuard>
+                  </OnboardingGuard>
+                }
+              />
+              <Route
+                path="socios"
+                element={<Navigate to="../legajo" replace />}
+              />
+              <Route
+                path="documentacion"
+                element={
+                  <OnboardingGuard>
+                    <LegajoDataGuard>
+                      <DashboardLayout>
+                        <DocumentacionView />
+                      </DashboardLayout>
+                    </LegajoDataGuard>
+                  </OnboardingGuard>
+                }
+              />
+              <Route
+                path="inicio"
+                element={<Navigate to="../legajo" replace />}
+              />
+
+              <Route
+                path="solicitudes"
+                element={
+                  <OnboardingGuard>
+                    <LegajoDataGuard>
+                      <DashboardLayout>
+                        <Solicitudes />
+                      </DashboardLayout>
+                    </LegajoDataGuard>
+                  </OnboardingGuard>
+                }
+              />
+
+              <Route
+                path="terminos"
+                element={
+                  <OnboardingGuard>
+                    <AceptarTerminos />
+                  </OnboardingGuard>
+                }
+              />
+              <Route
+                path="alta-datos-empresa"
+                element={
+                  <OnboardingGuard>
+                    <DashboardLayout>
+                      <AltaDatosEmpresa />
+                    </DashboardLayout>
+                  </OnboardingGuard>
+                }
+              />
+              <Route
+                path="seleccionar-empresa"
+                element={
+                  <OnboardingGuard>
+                    <DashboardLayout hideHelpButton>
+                      <SeleccionarEmpresa />
+                    </DashboardLayout>
+                  </OnboardingGuard>
+                }
+              />
+              <Route
+                path="cadenas-valor/:id"
+                element={
+                  <OnboardingGuard>
+                    <DashboardLayout>
+                      <CadenaDetalle />
+                    </DashboardLayout>
+                  </OnboardingGuard>
+                }
+              />
+              <Route
+                path="alta-operacion"
+                element={
+                  <OnboardingGuard>
+                    <DashboardLayout>
+                      <AltaOperacion />
+                    </DashboardLayout>
+                  </OnboardingGuard>
+                }
+              />
+  </>
+);
+
+const redireccionesAdminLegacy = (
+  <>
+    <Route path="admin" element={<Navigate to="/admin" replace />} />
+    <Route path="admin/dashboard" element={<Navigate to="/admin" replace />} />
+    <Route path="admin/usuarios" element={<Navigate to="/admin/usuarios" replace />} />
+    <Route path="admin/terminos" element={<Navigate to="/admin/terminos" replace />} />
+    <Route
+      path="admin/cadenas-valor"
+      element={<Navigate to="/admin/cadenas-valor" replace />}
+    />
+    <Route
+      path="admin/lineas-productos"
+      element={<Navigate to="/admin/lineas-productos" replace />}
+    />
+  </>
+);
+
+// Rutas de /admin/*: se montan tanto en modo legacy como en modo-por-host.
+// Un usuario común de un banco jamás llega acá (AdminGuard lo filtra), pero
+// un UsuarioCadenaValor (admin restringido a su propia cadena, ver
+// Login.jsx → resolverDestinoPostLogin) entra desde el login normal de SU
+// banco y necesita que /admin exista en ESE mismo árbol de rutas — si solo
+// viviera en rutasLegacy, entrar por el dominio enmascarado del banco lo
+// mandaría a un 404 después de loguearse.
+const rutasAdmin = (
+  <>
+    <Route
+      path="/admin"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <Dashboard />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+
+    <Route
+      path="/admin/empresas"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <Empresas />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/empresas/:id"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <EmpresaDetalle />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/usuarios"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <Usuarios />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/terminos"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <Terminos />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/cadenas-valor"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CadenasValor />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/cadenas-cda"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CadenasCda />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+
+    <Route
+      path="/admin/cdas"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CdasGlobales />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/cdas/nuevo"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CdaFormPage />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/cdas/:cdaId"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <CdaFormPage />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/lineas-productos"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <LineasProducto />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/lineas-cda"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <LineasCda />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/lineas-cadenas"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <LineasCadena />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/modo-offline"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <ModoOffline />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/tipos-relacion-socio"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <TiposRelacionSocio />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+    <Route
+      path="/admin/variables-parametrizacion"
+      element={
+        <AdminGuard>
+          <AdminLayout>
+            <VariablesParametrizacion />
+          </AdminLayout>
+        </AdminGuard>
+      }
+    />
+
+    {/* Redirecciones de compatibilidad para rutas legacy de admin */}
+    <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
+  </>
+);
+
+// Rutas del panel admin + las de cliente con el ID en el path. Es el árbol
+// que se sirve cuando el hostname NO corresponde a ninguna cadena de
+// /tenants.json: exactamente lo mismo que había antes de introducir el
+// ruteo por hostname, para no romper links viejos ya circulando (mails de
+// creación de clave, favoritos) ni el acceso al admin.
+const rutasLegacy = (
+  <>
+    {/* Antes acá se auto-seleccionaba la primera cadena activa y se
+        redirigía a /{cadenaId}/login (ver RootRedirect, ya eliminado) —
+        pedido explícito de sacarlo: la URL de cada cadena se arma siempre a
+        mano, nunca automática, y un redirect acá (aunque sea client-side)
+        rompe el enmascarado de la URL en el entorno del banco. Ese riesgo no aplica al admin: nunca estuvo enmascarado
+        (su URL siempre mostró /login o /admin), así que no hay nada que
+        proteger acá. Con el deploy por carpeta (una por banco + una para
+        admin, con tenants.json vacío) llegar a "/" en modo legacy significa
+        "este hostname no es de ningún banco" — se interpreta como el
+        entrypoint de admin y se manda directo a /login en vez de 404. */}
+    <Route path="/" element={<Navigate to="/login" replace />} />
+    <Route path="/login" element={<LoginAdmin />} />
+    <Route path="/not-found" element={<NotFound />} />
+    <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
+    <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
+
+    <Route path="/0" element={<CrearClave />} />
+    <Route path="/0/:token" element={<CrearClave />} />
+
+    <Route path="/:cadenaSlug" element={<TenantLayout />}>
+      {rutasCliente}
+      {redireccionesAdminLegacy}
+    </Route>
+
+    {rutasAdmin}
+  </>
+);
+
+// El árbol de rutas se elige según cómo se haya resuelto la cadena de valor
+// (ver utils/tenantConfig.js). Va en un componente aparte de App porque
+// necesita leer el ChannelContext, y App es justamente quien monta el
+// provider.
+const RutasApp = () => {
+  const { modoPorHost } = useChannel();
+
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <Routes>
+        {modoPorHost ? (
+          <>
+            {/* El hostname ya identifica la cadena: las pantallas de cliente
+                cuelgan de la raíz, sin ID en la URL. /admin también vive
+                acá (rutasAdmin) porque un UsuarioCadenaValor de ESTE banco
+                entra por el login normal de este mismo dominio y necesita
+                que /admin exista en este árbol — no es un acceso "cruzado"
+                a otro banco, AdminGuard igual lo deja ver solo lo suyo. */}
+            <Route path="/not-found" element={<NotFound />} />
+            <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
+            <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
+            <Route path="/" element={<TenantLayout />}>
+              {rutasCliente}
+            </Route>
+            {rutasAdmin}
+          </>
+        ) : (
+          rutasLegacy
+        )}
+
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
+  );
+};
 
 function App() {
   return (
     <BrowserRouter>
       <ChannelProvider>
         <Toaster position="top-right" richColors closeButton theme="dark" />
-        <Routes>
-          <Route path="/" element={<RootRedirect />} />
-          <Route path="/login" element={<LoginAdmin />} />
-          <Route path="/not-found" element={<NotFound />} />
-          <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
-          <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
-
-          <Route path="/0/:token" element={<CrearClave />} />
-
-          <Route path="/:cadenaSlug" element={<TenantLayout />}>
-            <Route index element={<Navigate to="login" replace />} />
-            <Route path="login" element={<Login />} />
-            <Route path="ingresar" element={<Navigate to="../login" replace />} />
-            <Route path="registro" element={<Registro />} />
-
-            <Route path="0/:token" element={<CrearClave />} />
-
-            <Route path="confirmar-correo" element={<ConfirmarCorreo />} />
-            <Route path="recuperar-clave" element={<RecuperarClave />} />
-
-            <Route
-              path="legajo"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <SociosView />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route path="socios" element={<Navigate to="../legajo" replace />} />
-
-            <Route
-              path="usuarios"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <GestionUsuarios />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="documentacion"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <DocumentacionView />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="inicio"
-              element={<Navigate to="../legajo" replace />}
-            />
-
-            <Route
-              path="solicitudes"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <Solicitudes />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-
-            <Route
-              path="terminos"
-              element={
-                <OnboardingGuard>
-                  <AceptarTerminos />
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="alta-datos-empresa"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <AltaDatosEmpresa />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="seleccionar-empresa"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <SeleccionarEmpresa />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="estado-solicitud"
-              element={
-                <OnboardingGuard>
-                  <EstadoSolicitud />
-                </OnboardingGuard>
-              }
-            />
-{/*
-            <Route
-              path="posicion-consolidada"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <PosicionConsolidada />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            */}
-            <Route
-              path="cadenas-valor/:id"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <CadenaDetalle />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-            <Route
-              path="alta-operacion"
-              element={
-                <OnboardingGuard>
-                  <DashboardLayout>
-                    <AltaOperacion />
-                  </DashboardLayout>
-                </OnboardingGuard>
-              }
-            />
-
-            {/* Redirecciones de admin a rutas globales */}
-            <Route
-              path="admin"
-              element={<Navigate to="/admin" replace />}
-            />
-            <Route
-              path="admin/dashboard"
-              element={<Navigate to="/admin" replace />}
-            />
-
-            <Route
-              path="admin/roles-permisos"
-              element={<Navigate to="/admin/roles-permisos" replace />}
-            />
-            <Route
-              path="admin/terminos"
-              element={<Navigate to="/admin/terminos" replace />}
-            />
-            <Route
-              path="admin/cadenas-valor"
-              element={<Navigate to="/admin/cadenas-valor" replace />}
-            />
-            <Route
-              path="admin/lineas-productos"
-              element={<Navigate to="/admin/lineas-productos" replace />}
-            />
-          </Route>
-
-          {/* Rutas de Administración Globales */}
-          <Route
-            path="/admin"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <Dashboard />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-
-          <Route
-            path="/admin/empresas"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <Empresas />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/admin/empresas/:id"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <EmpresaDetalle />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/admin/roles-permisos"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <RolesPermisos />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/admin/terminos"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <Terminos />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/admin/cadenas-valor"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <CadenasValor />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/admin/cadenas-cda"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <CadenasCda />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-
-          <Route
-            path="/admin/cdas"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <CdasGlobales />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/admin/lineas-productos"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <LineasProducto />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/admin/lineas-cadenas"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <LineasCadena />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-          <Route
-            path="/admin/modo-offline"
-            element={
-              <AdminGuard>
-                <AdminLayout>
-                  <ModoOffline />
-                </AdminLayout>
-              </AdminGuard>
-            }
-          />
-
-          {/* Redirecciones de compatibilidad para rutas legacy de admin */}
-          <Route path="/admin/dashboard" element={<Navigate to="/admin" replace />} />
-
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <SessionTimeoutManager />
+        <ThemeManager />
+        <RutasApp />
       </ChannelProvider>
     </BrowserRouter>
   );

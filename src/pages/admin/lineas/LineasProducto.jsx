@@ -13,10 +13,12 @@ import {
   Modal,
   Button,
   Spinner,
+  Skeleton,
   InputSimple,
   SelectSimple,
 } from "../../../components/ui";
 import { CadenaSelectCard } from "../../../components/features/admin/CadenaSelectCard/CadenaSelectCard";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
 import styles from "./LineasProductos.module.css";
 
 // --- CHILD COMPONENT: SKELETON CARD ---
@@ -25,20 +27,11 @@ const LineaSkeletonCard = () => {
     <div className={styles.lineaCard}>
       <div className={styles.cardHeader} style={{ padding: "0.75rem 1rem" }}>
         <div className={styles.headerTitleWrapper}>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "0.95rem", width: "140px" }}
-          ></div>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "0.7rem", width: "80px" }}
-          ></div>
+          <Skeleton height="0.95rem" width="140px" />
+          <Skeleton height="0.7rem" width="80px" />
         </div>
         <div className={styles.headerActions}>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "26px", width: "26px", borderRadius: "0.375rem" }}
-          ></div>
+          <Skeleton height="26px" width="26px" radius="0.375rem" />
         </div>
       </div>
       <div
@@ -51,24 +44,12 @@ const LineaSkeletonCard = () => {
         }}
       >
         <div className={styles.detailItem} style={{ gap: "0.15rem" }}>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "0.65rem", width: "90px" }}
-          ></div>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "0.85rem", width: "120px" }}
-          ></div>
+          <Skeleton height="0.65rem" width="90px" />
+          <Skeleton height="0.85rem" width="120px" />
         </div>
         <div className={styles.detailItem} style={{ gap: "0.15rem" }}>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "0.65rem", width: "70px" }}
-          ></div>
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "0.85rem", width: "40px" }}
-          ></div>
+          <Skeleton height="0.65rem" width="70px" />
+          <Skeleton height="0.85rem" width="40px" />
         </div>
       </div>
     </div>
@@ -315,6 +296,8 @@ const ConfigModalInner = ({
 
 // --- MAIN PAGE COMPONENT ---
 export default function LineasProducto() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const [selectedTipoLimiteId, setSelectedTipoLimiteId] = useState("");
   const [activeProducto, setActiveProducto] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -347,6 +330,8 @@ export default function LineasProducto() {
     setIsModalOpen(false);
   };
 
+  if (bloqueado) return null;
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -370,10 +355,7 @@ export default function LineasProducto() {
 
       <div className={styles.selectorSection}>
         {isLoadingLimitTypes ? (
-          <div
-            className={styles.skeletonBlock}
-            style={{ height: "82px", width: "100%", borderRadius: "0.75rem" }}
-          ></div>
+          <Skeleton height="82px" width="100%" radius="0.75rem" />
         ) : (
           <CadenaSelectCard
             options={mappedLimitTypes}

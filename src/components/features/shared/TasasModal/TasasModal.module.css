@@ -24,7 +24,7 @@
   border: 1px solid var(--graphite);
   border-radius: 4px;
   overflow: hidden;
-  background-color: var(--carbon-black);
+  background-color: var(--bg-elevado);
 }
 
 .table {
@@ -34,7 +34,7 @@
 }
 
 .table th {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(var(--overlay-rgb), 0.05);
   color: var(--white);
   font-weight: 600;
   padding: 0.75rem 1rem;
@@ -60,7 +60,7 @@
 }
 
 .disclaimer {
-  background-color: var(--carbon-black);
+  background-color: var(--bg-elevado);
   border: 1px solid var(--graphite);
   border-radius: 4px;
   padding: 1rem;

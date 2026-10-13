@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
-import { FiUsers, FiPlus, FiAlertCircle, FiUser, FiChevronDown, FiEdit2, FiTrash2, FiMail, FiPhone, FiMapPin, FiPercent } from "react-icons/fi";
+import { FiUsers, FiPlus, FiAlertCircle, FiUser, FiChevronDown, FiEdit2, FiTrash2, FiMail, FiPhone, FiMapPin, FiPercent, FiXCircle } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { SocioAccionistaModal } from "../SocioAccionistaModal/SocioAccionistaModal";
+import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui";
+import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
+import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 
 const normalizarTexto = (str) =>
   String(str || "")
@@ -20,18 +23,17 @@ export function AccionistasSection({
   cargarSocios,
   socioIdActivo,
   archivosBackend,
+  cargandoArchivos = false,
   dniTerceros,
 }) {
   const [modalAccionistaOpen, setModalAccionistaOpen] = useState(false);
   const [editAccionista, setEditAccionista] = useState(null);
   const [expandedSocio, setExpandedSocio] = useState(null);
-  const [portalTarget, setPortalTarget] = useState(null);
+  const portalTarget = usePortalTarget("socios-header-action-portal");
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
-  useEffect(() => {
-    setPortalTarget(document.getElementById("socios-header-action-portal"));
-  }, []);
+  const { data: estadoCdaMap } = useEstadoCdaTerceros(accionistas.map((a) => a.id));
 
   return (
     <div className={styles.sociosContainer}>
@@ -64,7 +66,7 @@ export function AccionistasSection({
               <span>Total Participación</span>
               <span
                 style={{
-                  color: totalParticipacion === 100 ? "#4caf50" : "#ff9800",
+                  color: totalParticipacion === 100 ? "var(--success-bright)" : "var(--warning-orange)",
                 }}
               >
                 {totalParticipacion}% / 100%
@@ -76,7 +78,7 @@ export function AccionistasSection({
                 style={{
                   width: `${Math.min(totalParticipacion, 100)}%`,
                   backgroundColor:
-                    totalParticipacion === 100 ? "#4caf50" : "#ff9800",
+                    totalParticipacion === 100 ? "var(--success-bright)" : "var(--warning-orange)",
                 }}
               />
             </div>
@@ -127,8 +129,16 @@ export function AccionistasSection({
                   if (!tieneDniDorso) faltantes.push("Foto DNI Dorso");
                 }
 
+                const cdaRechazado = estadoCdaMap?.get(Number(socio.id)) === "rechazado";
+
                 return (
-                <div key={socio.id} className={`${styles.socioCard} ${faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
+                <div key={socio.id} className={`${styles.socioCard} ${cdaRechazado ? styles.socioCardRejected : faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
+                  {cdaRechazado && (
+                    <div className={styles.socioRejectedBanner}>
+                      <FiXCircle size={14} />
+                      <span>Esta persona no superó las validaciones de aceptación correspondientes. Comunicate con nosotros para que la revisemos.</span>
+                    </div>
+                  )}
                   <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
@@ -250,6 +260,12 @@ export function AccionistasSection({
                         </div>
                       </div>
                     </div>
+                    {isAdmin && (
+                      <TerceroCdaEstado
+                        terceroId={socio.id}
+                        socioIdActivo={socioIdActivo}
+                      />
+                    )}
                   </div>
                 </div>
               )})}
@@ -268,6 +284,7 @@ export function AccionistasSection({
         socio={editAccionista}
         socioIdActivo={socioIdActivo}
         archivosBackend={archivosBackend}
+        cargandoArchivos={cargandoArchivos}
         accionistas={accionistas}
         dniTerceros={dniTerceros}
       />

@@ -5,12 +5,12 @@ import styles from "./Select.module.css";
 
 const selectStyles = (hasError, size, variant) => {
   const isAdmin = variant === "admin" || (variant !== "client" && typeof window !== "undefined" && window.location.pathname.includes("/admin"));
-  const bgDefault = isAdmin ? "#0d1117" : "rgba(255, 255, 255, 0.03)";
-  const bgFocused = isAdmin ? "rgba(76, 101, 230, 0.08)" : "rgba(255, 255, 255, 0.06)";
+  const bgDefault = isAdmin ? "var(--bg-surface)" : "rgba(var(--overlay-rgb), 0.03)";
+  const bgFocused = isAdmin ? "rgba(76, 101, 230, 0.08)" : "rgba(var(--overlay-rgb), 0.06)";
   const focusColor = isAdmin ? "var(--color-azul-bind)" : "var(--yellow)";
   const bgSelected = isAdmin ? "var(--color-azul-bind)" : "var(--yellow)";
   const bgOptionFocused = isAdmin ? "rgba(76, 101, 230, 0.15)" : "rgba(244, 245, 0, 0.1)";
-  const textSelected = isAdmin ? "#ffffff" : "#000";
+  const textSelected = isAdmin ? "var(--white)" : "#000";
   const textOptionFocused = isAdmin ? "var(--color-azul-bind-300)" : "var(--yellow)";
 
   return {
@@ -19,19 +19,19 @@ const selectStyles = (hasError, size, variant) => {
       height: size === "sm" ? "2.5rem" : "3.25rem",
       minHeight: size === "sm" ? "2.5rem" : "3.25rem",
       backgroundColor: state.isDisabled
-        ? "rgba(255, 255, 255, 0.01)"
+        ? "rgba(var(--overlay-rgb), 0.01)"
         : hasError
           ? "rgba(255, 82, 82, 0.05)"
           : state.isFocused
             ? bgFocused
             : bgDefault,
       borderColor: hasError
-        ? "#ff5252"
+        ? "var(--danger-bright)"
         : state.isFocused
           ? focusColor
           : isAdmin
-            ? "#30363d"
-            : "rgba(255, 255, 255, 0.1)",
+            ? "var(--border-hover)"
+            : "rgba(var(--overlay-rgb), 0.1)",
       borderRadius: "0.5rem",
       boxShadow: "none",
       cursor: state.isDisabled ? "not-allowed" : "pointer",
@@ -39,31 +39,31 @@ const selectStyles = (hasError, size, variant) => {
       transition: "all 0.2s ease",
       "&:hover": {
         borderColor: hasError
-          ? "#ff5252"
+          ? "var(--danger-bright)"
           : state.isFocused
             ? focusColor
             : isAdmin
               ? "rgba(76, 101, 230, 0.5)"
-              : "rgba(255, 255, 255, 0.3)",
+              : "rgba(var(--overlay-rgb), 0.3)",
         backgroundColor: hasError
           ? "rgba(255, 82, 82, 0.05)"
           : isAdmin
             ? "rgba(76, 101, 230, 0.04)"
-            : "rgba(255, 255, 255, 0.06)",
+            : "rgba(var(--overlay-rgb), 0.06)",
       },
     }),
 
     placeholder: (base) => ({
       ...base,
-      color: "#666",
+      color: "var(--text-dim)",
       fontSize: size === "sm" ? "0.875rem" : "0.95rem",
       fontWeight: "400",
     }),
 
     menu: (base) => ({
       ...base,
-      backgroundColor: isAdmin ? "#161b22" : "#1e1e1e",
-      border: isAdmin ? "1px solid #30363d" : "1px solid #333",
+      backgroundColor: isAdmin ? "var(--border)" : "var(--bg-elevado)",
+      border: isAdmin ? "1px solid var(--border-hover)" : "1px solid var(--border-hover)",
       borderRadius: "0.5rem",
       zIndex: 50,
       padding: "0.5rem 0",
@@ -105,7 +105,7 @@ const selectStyles = (hasError, size, variant) => {
 
     dropdownIndicator: (base, state) => ({
       ...base,
-      color: state.isFocused ? focusColor : "#888",
+      color: state.isFocused ? focusColor : "var(--text-muted)",
       transition: "color 0.2s ease",
       padding: size === "sm" ? "4px 8px" : "8px",
       "&:hover": {

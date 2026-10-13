@@ -60,6 +60,51 @@ export const tercerosService = {
     }
   },
 
+  // Busca un tercero por CUIT y lo devuelve si ya existe; si no, lo crea con
+  // `payloadCreacion`. Dos altas simultáneas para el mismo CUIT (dos
+  // pestañas, o dos socios distintos cargando al mismo accionista a la vez)
+  // pueden pasar la búsqueda ambas en vacío y disparar dos POST — si el
+  // POST de acá falla, se reintenta la búsqueda una vez más antes de
+  // propagar el error, para recuperar el tercero que ganó la carrera en vez
+  // de duplicarlo o directamente fallar.
+  buscarOCrearTercero: async (cuit, payloadCreacion) => {
+    const cuitLimpio = String(cuit).replace(/\D/g, "");
+
+    const buscarPorCuit = async () => {
+      const existentes = await tercerosService.obtenerTerceros({
+        Cuit: cuitLimpio,
+      });
+      const arr = Array.isArray(existentes) ? existentes : existentes?.data || [];
+      return arr[0] || null;
+    };
+
+    let existente = null;
+    try {
+      existente = await buscarPorCuit();
+    } catch (err) {
+      console.warn("[tercerosService] Error buscando tercero por CUIT:", err);
+    }
+    if (existente) return existente;
+
+    try {
+      return await tercerosService.crearTercero({
+        ...payloadCreacion,
+        cuit: cuitLimpio,
+      });
+    } catch (createErr) {
+      try {
+        const recuperado = await buscarPorCuit();
+        if (recuperado) return recuperado;
+      } catch (retryErr) {
+        console.warn(
+          "[tercerosService] Error re-buscando tercero tras fallo de creación:",
+          retryErr,
+        );
+      }
+      throw createErr;
+    }
+  },
+
   // Actualiza un tercero relacionado
   actualizarTercero: async (terceroData) => {
     try {
@@ -119,6 +164,21 @@ export const tercerosService = {
     }
   },
 
+  // Da de baja una relación vigente. No hay DELETE en el backend: se la
+  // vence poniéndole FechaHasta en el pasado, mismo mecanismo que usa
+  // "Eliminar del legajo" (ver handleConfirmEliminar en SociosLegajo).
+  darDeBajaRelacionDeSocio: async (relacion) => {
+    const ayer = new Date();
+    ayer.setDate(ayer.getDate() - 1);
+    const ayerStr = ayer.toISOString().split(".")[0];
+
+    return tercerosService.actualizarRelacionDeSocio({
+      ...relacion,
+      fechahasta: ayerStr,
+      FechaHasta: ayerStr,
+    });
+  },
+
   //------- TERCEROS RELACIONADOS (SGRPlus) ---------
 
   obtenerTercerosSGRPlus: async (params = {}) =>
@@ -146,8 +206,24 @@ export const tercerosService = {
       } catch (err) {
         console.warn("[tercerosService] Error resolviendo SGRPlus ID desde Web ID:", err.message);
       }
+      // Un ID web (< 100000) NO es un ID de SGR+: si el socio no esta en SGR+ (o el usuario no puede verlo)
+      // no hay relaciones que mostrar; consultar SGR+ con el ID web podia traer o pedir las de otro socio.
+      return [];
     }
     const response = await api.get(`sgrplus/SocioTerceroRelacion/${socioId}`);
+    return response.data;
+  },
+
+  // GET api/Terceros/ExecuteCda?TerceroID=X - Historial de ejecuciones de
+  // CDAs de un tercero (accionista/representante/apoderado), análogo a
+  // api/Socios/ExecuteCda pero para PANTALLA_SOCIOS. Misma forma de fila
+  // que WSSocioExecuteCda, solo cambia el nombre del ID
+  // (TerceroExecuteCdaID/TerceroRelacionadoID en vez de
+  // SocioExecuteCdaID/SocioID) — ver utils/executeCda.js.
+  obtenerExecuteCda: async (terceroId) => {
+    const response = await api.get("api/Terceros/ExecuteCda", {
+      params: { TerceroID: terceroId },
+    });
     return response.data;
   },
 };

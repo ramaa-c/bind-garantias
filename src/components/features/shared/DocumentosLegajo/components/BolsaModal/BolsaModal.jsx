@@ -7,7 +7,10 @@ import { Modal } from "../../../../../ui/Modal/Modal";
 import { SelectSocio } from "../../../../../ui/SelectSocio/SelectSocio";
 import { InputSocioMasked } from "../../../../../ui/InputSocioMasked/InputSocioMasked";
 import { useObtenerTerceros } from "../../../../../../hooks/useTerceros";
+import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { tercerosService } from "../../../../../../services/tercerosService";
+import { RELACION_AGENTE_BOLSA_ID } from "../../../../../../constants/tiposRelacionSocio";
+import { mensajeNegocio } from "../../../../../../utils/mensajesError";
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 import styles from "./BolsaModal.module.css";
 
@@ -16,6 +19,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
   const [showConfirm, setShowConfirm] = useState(false);
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  useRegistrarModalLegajo(isOpen);
 
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
@@ -25,7 +29,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
     TipoTerceroRelacionadoID: 8,
   });
 
-  const { control, setValue, reset, trigger, getValues, formState: { errors, isDirty } } = useForm({
+  const { control, setValue, reset, trigger, getValues, formState: { isDirty } } = useForm({
     defaultValues: {
       sociedadBolsa: "",
       numeroCuentaBolsa: "",
@@ -89,7 +93,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
               sociotercerorelacionid: 0,
               socioid: socioIdActivo,
               terceroid: Number(formData.sociedadBolsa),
-              tiporelacionsocioid: 21,
+              tiporelacionsocioid: RELACION_AGENTE_BOLSA_ID,
               fechadesde: ahora,
               fechahasta: unAnioMasStr,
               porcacciones: 0,
@@ -120,7 +124,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
           toast.error(backendErrors[key]);
         });
       } else {
-        toast.error("Ocurrió un error inesperado al guardar los datos.");
+        toast.error(mensajeNegocio(error, "Ocurrió un error inesperado al guardar los datos."));
       }
     }
   };

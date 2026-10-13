@@ -26,13 +26,13 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
-.modalFooter {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  margin-top: 0.125rem;
+/* El botón de submit ahora vive en el footer del Modal (fuera del área con
+   scroll, ver prop `footer` de Modal.jsx) - mismo fix que
+   RepresentanteModal.module.css, ver el comentario ahí (SGRPLUSPLA-183).
+   Acá solo queda el override de color para el panel admin, pasado como
+   `footerClassName` a <Modal>. */
+.modalFooterAdmin {
+  background: var(--bg-surface);
 }
 .cuitSearchStep {
   display: flex;
@@ -69,12 +69,12 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 50%;
-  background: rgba(245, 244, 0, 0.06);
-  border: 1px solid rgba(245, 244, 0, 0.15);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--badge-amarillo-text);
   flex-shrink: 0;
 }
 .cuitSearchBannerIconAdmin {
@@ -144,12 +144,12 @@
 }
 
 .editLink {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   border-radius: 0.35rem;
   cursor: pointer;
   padding: 0.25rem 0.6rem;
-  color: #aaa;
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 600;
   display: inline-flex;
@@ -159,9 +159,9 @@
   font-family: inherit;
 }
 .editLink:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--white);
+  background: rgba(var(--overlay-rgb), 0.08);
+  border-color: rgba(var(--overlay-rgb), 0.15);
 }
 
 .summaryBody {
@@ -179,8 +179,8 @@
 .editableSummaryName {
   background: transparent;
   border: none;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border-bottom: 1px dashed rgba(var(--overlay-rgb), 0.2);
+  color: var(--white);
   font-size: 1.125rem;
   font-weight: 700;
   margin: 0;
@@ -195,7 +195,7 @@
 }
 
 .summaryCuit {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.8rem;
   margin: 0;
   margin-top: 0.25rem;
@@ -220,17 +220,17 @@
 }
 
 .pctLabel {
-  color: #ddd;
+  color: var(--white-muted);
   font-size: 0.875rem;
   font-weight: 600;
 }
 
 .availableText {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--text-muted);
 }
 .availableTextError {
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 
 .pctInputContainer {
@@ -243,8 +243,8 @@
 .customInputWrapper {
   display: flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(var(--overlay-rgb), 0.05);
+  border: 1px solid rgba(var(--overlay-rgb), 0.12);
   border-radius: 0.5rem;
   padding: 0 0.875rem;
   width: 8rem;
@@ -254,7 +254,7 @@
 }
 .customInputWrapper:focus-within {
   border-color: var(--color-azul-bind, #4c65e6);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
 }
 .wrapperError {
   border-color: rgba(255, 82, 82, 0.4) !important;
@@ -264,7 +264,7 @@
 .customInput {
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--white);
   font-size: 1.125rem;
   font-weight: 700;
   width: 100%;
@@ -274,13 +274,13 @@
 }
 
 .percentageSymbol {
-  color: #888;
+  color: var(--text-muted);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .errorText {
-  color: #ff5252;
+  color: var(--danger-bright);
   font-size: 0.72rem;
   margin: 0;
   display: flex;
@@ -301,6 +301,16 @@
 .dropzoneWrapper > * {
   width: 100%;
   box-sizing: border-box;
+}
+/* Con CargaArchivos en variante compact (ver DropzoneField acá arriba), el
+   estado vacío (ícono + título + subtítulo) y el estado "archivo cargado"
+   (una fila, ícono + nombre) quedan lo bastante parecidos en alto como para
+   compartir el mismo min-height bajo, sin que ninguno de los dos necesite
+   crecer para igualar al otro (antes 138px "empataba" subiendo el estado
+   cargado, que no lo necesitaba, y terminaba agrandando el modal en vez de
+   achicarlo - reportado el 2026-09-21). */
+.dropzoneWrapper > div {
+  min-height: 118px;
 }
 @media (min-width: 36rem) {
   .dropzoneGrid {
@@ -330,21 +340,21 @@
     margin-top: 0.15rem;
   }
   .dropzoneWrapper > div {
-    min-height: 100px;
+    min-height: 92px;
     padding: 12px 16px;
   }
 }
 .sectionTitle {
   font-size: 0.8125rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(var(--overlay-rgb), 0.7);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .availableText {
   font-size: 0.7rem;
-  color: var(--text-dim, #666);
+  color: var(--text-muted, #666);
 }
 .availableTextError {
-  color: #ff5252;
+  color: var(--danger-bright);
 }

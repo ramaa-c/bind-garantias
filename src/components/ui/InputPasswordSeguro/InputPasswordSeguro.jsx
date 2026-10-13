@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { FaCheck } from "react-icons/fa";
-import { getPasswordScore } from "../../../utils/PasswordSeguro";
+import {
+  getPasswordScore,
+  precargarZxcvbn,
+} from "../../../utils/PasswordSeguro";
 import styles from "./InputPasswordSeguro.module.css";
 
 const REQUIREMENTS = [
@@ -33,7 +36,12 @@ export const InputPasswordSeguro = React.forwardRef(
   ) => {
     const generatedId = React.useId();
     const [showPassword, setShowPassword] = useState(false);
+    const [, setZxcvbnListo] = useState(false);
     const inputId = id || props.name || generatedId;
+
+    useEffect(() => {
+      precargarZxcvbn().then(() => setZxcvbnListo(true));
+    }, []);
 
     const getStrength = (pass) => {
       if (!pass) return { width: "0%", color: "transparent" };
@@ -51,13 +59,13 @@ export const InputPasswordSeguro = React.forwardRef(
 
       const pct = (metCount / REQUIREMENTS.length) * 100;
       if (metCount <= 1)
-        return { width: `${Math.max(pct, 20)}%`, color: "#ff5252" };
+        return { width: `${Math.max(pct, 20)}%`, color: "var(--danger-bright)" };
       if (metCount <= 2) return { width: `${pct}%`, color: "#ffb142" };
       return { width: `${pct}%`, color: "#2196f3" };
     };
 
     const { width, color } = getStrength(currentValue);
-    const defaultColor = theme === "blue" ? "var(--primary-blue, #4c65e6)" : "var(--yellow, #f5f400)";
+    const defaultColor = theme === "blue" ? "var(--color-azul-bind)" : "var(--yellow, #f5f400)";
     const dynamicColor = currentValue ? color : defaultColor;
 
     return (

@@ -10,6 +10,7 @@ export const BuscadorCuit = forwardRef(({
   error,
   esValido,
   isLoading = false,
+  disabled = false,
   buttonText = "VALIDAR CUIT",
   value,
   onChange,
@@ -26,12 +27,12 @@ export const BuscadorCuit = forwardRef(({
           icon={<FiCreditCard />}
           esValido={esValido}
           error={error}
-          disabled={isLoading}
+          disabled={isLoading || disabled}
           value={value}
           onChange={(val) => {
             // Aseguramos que siempre viaje el valor limpio (solo números) de 11 dígitos
             const limpio = val ? String(val).replace(/\D/g, "").slice(0, 11) : "";
-            
+
             if (onChange) {
               onChange({ target: { value: limpio } });
             }
@@ -45,7 +46,7 @@ export const BuscadorCuit = forwardRef(({
           type="button"
           variant="primary"
           onClick={onValidar}
-          disabled={!esValido}
+          disabled={!esValido || disabled}
           isLoading={isLoading}
           className={styles.actionBtn}
         >

@@ -10,7 +10,7 @@ import {
   Button,
   InputSimple,
   InputPasswordSeguro,
-  Spinner,
+  Skeleton,
 } from "../../../ui";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import {
@@ -18,6 +18,12 @@ import {
   useActualizarUsuario,
   useCambiarPassword,
 } from "../../../../hooks/useUsuario";
+import {
+  esClaveActualIncorrecta,
+  esDemasiadosIntentos,
+} from "../../../../utils/usuarioUtils";
+import { cerrarSesionLocal } from "../../../../api/axios";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 import styles from "./CuentaUsuarioModal.module.css";
 
 const usernameSchema = z.object({
@@ -34,6 +40,7 @@ const passwordSchema = z
     newPassword: z
       .string()
       .min(12, "Mínimo 12 caracteres")
+      .max(128, "Máximo 128 caracteres")
       .regex(/[a-z]/, "Incluir una minúscula")
       .regex(/[A-Z]/, "Incluir una mayúscula")
       .regex(/[0-9]/, "Incluir un número")
@@ -61,13 +68,8 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
   const user = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
 
-  const isMock =
-    user?.email === "admin" ||
-    user?.email === "admin_restricto" ||
-    user?.email === "admin restricto";
-
   const { data: usuarioDb, isPending: isLoadingUsuario } =
-    useObtenerPorNombreOEmail(isOpen && !isMock ? user?.email || "" : "");
+    useObtenerPorNombreOEmail(isOpen ? user?.email || "" : "");
 
   const registro = extraerRegistroUsuario(usuarioDb);
   const usuarioWebId =
@@ -116,7 +118,10 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
   }, [isOpen, resetPasswordForm]);
 
   const onSubmitUsername = (formData) => {
-    if (!usuarioWebId) return;
+    if (!usuarioWebId) {
+      toast.error("No se pudo identificar al usuario logueado; recargá la página e intentá de nuevo.");
+      return;
+    }
     const denominacion = formData.denominacion.trim();
 
     actualizarUsuarioMutation.mutate(
@@ -144,7 +149,10 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
   };
 
   const onSubmitPassword = (formData) => {
-    if (!usuarioWebId) return;
+    if (!usuarioWebId) {
+      toast.error("No se pudo identificar al usuario logueado; recargá la página e intentá de nuevo.");
+      return;
+    }
 
     cambiarPasswordMutation.mutate(
       {
@@ -153,15 +161,44 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
       },
       {
         onSuccess: () => {
-          toast.success("Contraseña actualizada correctamente");
-          resetPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+          cerrarSesionLocal({
+            tipo: "success",
+            titulo: "Contraseña actualizada",
+            descripcion: "Cambiaste tu contraseña: volvé a ingresar.",
+          });
         },
         onError: (error) => {
           const status = error?.response?.status;
-          if (status === 400 || status === 401 || status === 403) {
+          if (esDemasiadosIntentos(error)) {
+            toast.error("Demasiados intentos", {
+              description: mensajeNegocio(error, "Intentá nuevamente más tarde."),
+            });
+            return;
+          }
+          if (esClaveActualIncorrecta(error)) {
             setPasswordError("oldPassword", {
               type: "server",
               message: "La contraseña actual es incorrecta",
+            });
+            return;
+          }
+          if (status === 401) {
+            cerrarSesionLocal();
+            return;
+          }
+          if (status === 400) {
+            setPasswordError("newPassword", {
+              type: "server",
+              message: mensajeNegocio(error, "La contraseña nueva no es válida"),
+            });
+            return;
+          }
+          if (status === 403) {
+            toast.error("No se pudo actualizar la contraseña", {
+              description: mensajeNegocio(
+                error,
+                "Revisá los datos ingresados e intentá nuevamente.",
+              ),
             });
             return;
           }
@@ -183,16 +220,25 @@ export const CuentaUsuarioModal = ({ isOpen, onClose }) => {
       maxWidth="760px"
       variant="blue"
     >
-      {isMock ? (
-        <div className={styles.avisoNoDisponible}>
-          <FiAlertCircle />
-          <p>
-            Esta función no está disponible para este tipo de acceso.
-          </p>
-        </div>
-      ) : isLoadingUsuario ? (
-        <div className={styles.loadingWrap}>
-          <Spinner />
+      {isLoadingUsuario ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", padding: "0.9rem 1rem", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "0.75rem" }}>
+            <Skeleton width="2.6rem" height="2.6rem" radius="50%" />
+            <div style={{ flex: 1 }}>
+              <Skeleton width="55%" height="0.9rem" />
+              <Skeleton width="30%" height="0.7rem" style={{ marginTop: "0.45rem" }} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} style={{ flex: "1 1 16rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                <Skeleton width="50%" height="0.9rem" />
+                <Skeleton width="80%" height="0.7rem" />
+                <Skeleton width="100%" height="2.6rem" radius="0.5rem" />
+                <Skeleton width="9rem" height="2.2rem" radius="0.5rem" style={{ marginLeft: "auto" }} />
+              </div>
+            ))}
+          </div>
         </div>
       ) : !usuarioWebId ? (
         <div className={styles.avisoNoDisponible}>

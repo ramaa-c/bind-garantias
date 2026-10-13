@@ -31,24 +31,41 @@ export const decodeHtmlEntities = (text) => {
   });
 };
 
+// El domicilio guardado de un tercero puede estar incompleto: la calle vive
+// en `Calle` y la altura en `Numero`, y hay registros con calle cargada pero
+// Numero en 0. Priorizar el dato local a ciegas hacía que esa calle sin
+// altura le ganara a la del padrón (que sí trae las dos partes) y el número
+// se perdía (SGRPLUSPLA-186). Solo gana lo local cuando está completo.
+export const armarDireccion = (terceroLocal, direccionPadron) => {
+  const calleLocal =
+    terceroLocal?.calle || terceroLocal?.Calle || terceroLocal?.direccion || "";
+  const numeroLocal = Number(terceroLocal?.numero ?? terceroLocal?.Numero) || 0;
+
+  if (calleLocal && numeroLocal) return `${calleLocal} ${numeroLocal}`;
+  return direccionPadron || calleLocal || "";
+};
+
 export const parseAddress = (fullAddress) => {
-  if (!fullAddress) return { calle: "", numero: 0, piso: "", departamento: "" };
+  if (!fullAddress) return { calle: "", numero: null, piso: "", departamento: "" };
 
   let calle = decodeHtmlEntities(fullAddress).trim();
-  let numero = 0;
+  // null = "no se encontró número en el texto" (equivale a "sin número");
+  // 0 es una altura de calle válida en Argentina, no puede compartir el
+  // mismo valor que "no encontrado" o quedaba tratada como si faltara.
+  let numero = null;
   let piso = "";
   let departamento = "";
 
   // 1. Intentar emparejar y extraer formato "Piso" o similar
   // Usamos \b para no matchear letras dentro de palabras como "HIPOLITO"
-  const pisoRegex = /\b(?:piso|piso:)\s*([a-z0-9\-]+)\b/i;
+  const pisoRegex = /\b(?:piso|piso:)\s*([a-z0-9-]+)\b/i;
   const pisoMatch = calle.match(pisoRegex);
   if (pisoMatch) {
     piso = pisoMatch[1];
     calle = calle.replace(pisoMatch[0], "").trim();
   } else {
     // Probar formatos cortos como "P. 3" o "P:3" o "P 3" (debe ser un 'p' suelto)
-    const pisoShortRegex = /\b(?:p\.|p:|p\b)\s*([a-z0-9\-]+)\b/i;
+    const pisoShortRegex = /\b(?:p\.|p:|p\b)\s*([a-z0-9-]+)\b/i;
     const pisoShortMatch = calle.match(pisoShortRegex);
     if (pisoShortMatch) {
       piso = pisoShortMatch[1];
@@ -57,14 +74,14 @@ export const parseAddress = (fullAddress) => {
   }
 
   // 2. Intentar emparejar y extraer formato "Dpto" o similar
-  const deptoRegex = /\b(?:dpto|dpto\.|dept|dep|oficina|of\.?|dpto:)\s*([a-z0-9\-]+)\b/i;
+  const deptoRegex = /\b(?:dpto|dpto\.|dept|dep|oficina|of\.?|dpto:)\s*([a-z0-9-]+)\b/i;
   const deptoMatch = calle.match(deptoRegex);
   if (deptoMatch) {
     departamento = deptoMatch[1];
     calle = calle.replace(deptoMatch[0], "").trim();
   } else {
     // Probar formatos cortos como "D. 3" o "D:3" o "D 3" (debe ser un 'd' suelto)
-    const deptoShortRegex = /\b(?:d\.|d:|d\b)\s*([a-z0-9\-]+)\b/i;
+    const deptoShortRegex = /\b(?:d\.|d:|d\b)\s*([a-z0-9-]+)\b/i;
     const deptoShortMatch = calle.match(deptoShortRegex);
     if (deptoShortMatch) {
       departamento = deptoShortMatch[1];
@@ -73,7 +90,7 @@ export const parseAddress = (fullAddress) => {
   }
 
   // 3. Intentar emparejar y extraer Manzana/Lote, ej: "M:48" o "Mz:48"
-  const manzanaRegex = /(?:m:|m\s|mz:|mz\s)\s*([a-z0-9\-]+)/i;
+  const manzanaRegex = /(?:m:|m\s|mz:|mz\s)\s*([a-z0-9-]+)/i;
   const manzanaMatch = calle.match(manzanaRegex);
   if (manzanaMatch) {
     departamento = (departamento ? departamento + " " : "") + manzanaMatch[0];

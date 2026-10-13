@@ -9,12 +9,19 @@
   min-height: 20rem;
 }
 
+/* height:100% (no calc(100dvh - Nrem)): .containerInner, el padre real
+   (ver AdminLayout.module.css), ya es flex:1/min-height:0 dentro de
+   .adminContent - 100% de esa altura resuelta es siempre la disponible de
+   verdad, sin duplicar a mano el padding de .adminContent en un número
+   mágico separado que puede desincronizarse (pasó una vez, ver el mismo
+   comentario en CdasGlobales.module.css). El fallback a "auto" por poco
+   ancho/alto está en la media query de abajo. */
 .container {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
   width: 100%;
-  height: calc(100dvh - 13rem);
+  height: 100%;
 }
 
 /* ── HEADER ─────────────────────────────────────────────── */
@@ -35,7 +42,7 @@
   background: none;
   border: none;
   padding: 0;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -101,7 +108,7 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   margin: 0.3rem 0 0 0;
   font-size: 0.825rem;
   font-weight: 400;
@@ -113,6 +120,14 @@
 
 .heroDot {
   color: rgba(255, 255, 255, 0.2);
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .headerBadges {
@@ -265,9 +280,37 @@
   overflow-y: auto;
 }
 
+.cadenaAviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  padding: 0 0.1rem 0.85rem;
+  flex-shrink: 0;
+}
+
+.cadenaAviso svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.cadenaAvisoFuerte {
+  color: #8fa3f3;
+  font-weight: 600;
+}
+
 /* ── DATOS TAB ───────────────────────────────────────────── */
+/* max-height (no height fijo): con height:100% la card siempre ocupaba todo
+   el alto disponible del tab aunque los campos ocupen menos, dejando un
+   hueco vacío entre las cards y el footer de Guardar/Revertir (se nota más
+   mientras más "sobre" quede ese alto disponible, ej. con zoom < 100%). Así
+   la card se achica al contenido real y el footer queda pegado abajo de los
+   campos; si el contenido no entra, sigue topeando en el mismo límite y
+   .datosScroll scrollea internamente como antes. */
 .datosTab {
-  height: 100%;
+  max-height: 100%;
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -281,7 +324,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 1.2rem;
+  padding: 1rem;
 }
 
 .sectionsGrid {
@@ -290,7 +333,7 @@
   grid-template-areas:
     "general domicilio"
     "clasificacion fechas";
-  gap: 1rem;
+  gap: 0.85rem;
   align-items: start;
 }
 
@@ -310,14 +353,71 @@
   grid-area: fechas;
 }
 
+.usuariosVinculadosTab {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.usuariosVinculadosTab .sectionCard {
+  max-width: 32rem;
+}
+
+.usuariosVinculadosLista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.usuarioVinculadoRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.6rem;
+  font-size: 0.82rem;
+}
+
+.usuarioVinculadoEmail {
+  color: #ffffff;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.usuarioVinculadoMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.usuariosVinculadosVacio {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
 .sectionCard {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.01) 100%);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 0.9rem;
-  padding: 1rem 1.1rem;
+  padding: 0.85rem 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.65rem;
   transition: border-color 0.2s ease;
 }
 
@@ -329,7 +429,7 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding-bottom: 0.6rem;
+  padding-bottom: 0.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -357,7 +457,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
   column-gap: 1rem;
-  row-gap: 0.65rem;
+  row-gap: 0.55rem;
   align-items: start;
 }
 
@@ -386,7 +486,7 @@
   justify-content: flex-end;
   gap: 0.75rem;
   flex: 0 0 auto;
-  padding: 0.75rem 1.25rem;
+  padding: 0.6rem 1.25rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(0, 0, 0, 0.15);
 }
@@ -522,7 +622,7 @@
 .grupoBarExpresion {
   display: block;
   font-size: 0.72rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   font-family: "SFMono-Regular", Consolas, monospace;
   overflow-wrap: anywhere;
 }
@@ -532,6 +632,46 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+/* ── AVISO: el grupo de CDAs de la cadena cambió desde la última evaluación
+   real de este socio (ver cdaDefinicionCambio) — reejecutar puede dar otro
+   resultado. Mismo lenguaje visual que .grupoBar-warning (ámbar), pero como
+   alerta propia para que no se confunda con el resultado combinado. */
+.avisoCambioCda {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  background: rgba(255, 179, 0, 0.06);
+  border: 1px solid rgba(255, 179, 0, 0.22);
+  border-radius: 0.9rem;
+  padding: 0.85rem 1.1rem;
+}
+
+.avisoCambioCdaIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 179, 0, 0.14);
+  color: #ffb300;
+  margin-top: 0.05rem;
+}
+
+.avisoCambioCdaTexto {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.avisoCambioCdaSub {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.55);
 }
 
 /* Modificador de .sectionCardHeader: título a la izquierda, controles
@@ -572,6 +712,26 @@
   padding: 0.75rem 1rem;
 }
 
+/* CDA que ya no está vinculado a esta cadena (ver estaVinculado): toda la
+   fila se apaga, no solo el pill, para que se lea de un vistazo como
+   "esto ya no cuenta" al separarla del resto de la lista. */
+.cdaRowDesvinculada {
+  opacity: 0.55;
+  filter: grayscale(0.5);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.cdaListDivider {
+  margin: 0.2rem 0 0;
+  padding-top: 0.4rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
 .cdaRowInfo {
   display: flex;
   flex-direction: column;
@@ -588,13 +748,13 @@
 
 .cdaRowResultado {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   overflow-wrap: anywhere;
 }
 
 .cdaRowFecha {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
@@ -624,6 +784,27 @@
   background: rgba(255, 179, 0, 0.12);
   color: #ffb300;
   border: 1px solid rgba(255, 179, 0, 0.3);
+  vertical-align: middle;
+}
+
+/* CDA que sigue en el historial de la corrida pero ya no está vinculado a
+   esta cadena (ver estaVinculado) — tono neutro/apagado a propósito: no es
+   una alerta (eso ya lo cubre el aviso de arriba si corresponde), es solo
+   la aclaración de por qué no pesa en el resultado combinado. */
+.cdaRowDesvinculadoPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   vertical-align: middle;
 }
 
@@ -999,14 +1180,14 @@
 
 .cdaHistorialExpresion {
   font-size: 0.68rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
   font-family: "SFMono-Regular", Consolas, monospace;
   overflow-wrap: anywhere;
 }
 
 .cdaHistorialMeta {
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text-muted);
 }
 
 .historialModalMsg {
@@ -1045,13 +1226,27 @@
   box-shadow: 0 0 6px rgba(76, 101, 230, 0.6);
 }
 
-@media (max-width: 900px) {
+/* Mismo umbral único que el resto del panel admin (1440px de ancho u
+   716px de alto - ver AdminLayout.module.css). El alto fijo de .container
+   (y de .embeddedLegajo/.datosTab/etc, que scrollean adentro de él) solo
+   tiene sentido cuando hay ancho Y alto de sobra - por eso el fallback a
+   "auto" también entra por poco alto efectivo (zoom de navegador alto), no
+   solo por poco ancho. Sin esto, el footer de Guardar/Revertir de
+   .datosTab quedaba sandwicheado entre el contenido y el footer con el
+   mismo bug ya visto y resuelto en el workbench de CDAs (ver
+   CdaWorkbench.module.css) - la única zona con min-height:0 (.datosScroll)
+   se comprimía a una franja inusable en vez de que la página entera
+   empiece a scrollear. */
+@media (max-width: 1440px), (max-height: 716px) {
+  /* min-height: en pestañas cortas (Usuarios Vinculados, CDAs) el contenido
+     no llegaba al pie y .versionText (hermana de .containerInner en
+     AdminLayout) quedaba pegada justo debajo, muy arriba. Se le reserva el
+     alto de pantalla menos el padding superior de .containerInner (11rem) y
+     el alto de .versionText (2.75rem) - solo acá, no global: en otras
+     páginas admin el layout ya se veía bien (reportado el 2026-09-23). */
   .container {
     height: auto;
-  }
-
-  .heroIdentity h1 {
-    max-width: 100%;
+    min-height: calc(100dvh - 13.75rem);
   }
 
   .embeddedLegajo,
@@ -1059,6 +1254,12 @@
   .cdasPlaceholderWrap,
   .cdasScroll {
     height: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .heroIdentity h1 {
+    max-width: 100%;
   }
 
   .sectionsGrid {
@@ -1072,5 +1273,56 @@
 
   .sectionCardFields {
     grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .heroActions {
+    flex-shrink: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .headerBadges {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .headerBadges > * {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tabs {
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tabBtn {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .cdaRowActions {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .cdaRowFecha {
+    white-space: normal;
+  }
+
+  .cdasSectionHeaderRow,
+  .cdasSectionHeaderActions {
+    flex-wrap: wrap;
+    min-width: 0;
   }
 }

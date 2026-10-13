@@ -1,7 +1,7 @@
 .container {
   width: 18rem;
   background: var(--carbon-black, #1a1a1a);
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(var(--overlay-rgb), 0.06);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -24,7 +24,7 @@
   justify-content: flex-start;
   padding: 0 1.25rem;
   min-height: 4.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.04);
 }
 
 .logosWrapper {
@@ -39,7 +39,7 @@
 }
 
 .closeButton {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   border: none;
   border-radius: 50%;
   display: flex;
@@ -54,7 +54,7 @@
 }
 
 .closeButton:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--overlay-rgb), 0.1);
 }
 
 .closeIcon {
@@ -70,36 +70,152 @@
   display: none;
 }
 
-.companyCard {
+/* Identidad de vendor — mismo lenguaje visual que .companyCard (avatar +
+   nombre + metadatos) pero en azul-bind, para distinguirla de la tarjeta de
+   la empresa activa (esa sigue mostrándose aparte, más abajo, cuando el
+   vendor ya eligió una empresa para gestionar). */
+.vendorCard {
   margin: 1.5rem 1.25rem 0.5rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 1rem;
+  padding: 1rem 1.1rem;
+  background: linear-gradient(135deg, rgba(76, 101, 230, 0.08), rgba(var(--overlay-rgb), 0.02));
+  border: 1px solid rgba(76, 101, 230, 0.18);
+  border-radius: 1.1rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
-.companyAvatar {
-  width: 2.25rem;
-  height: 2.25rem;
-  background: var(--yellow, #f4f500);
-  color: #000;
-  font-weight: 800;
-  font-size: 1rem;
+/* Se acorta la distancia hasta companyCard solo en mobile (ver escritorio
+   más abajo, donde esta tarjeta se oculta y vive en Navbar en su lugar):
+   1.5rem de margin-top en companyCard + 0.5rem de margin-bottom acá
+   sumaban 2rem — mucho, dos tarjetas casi idénticas (vendorCard/companyCard)
+   pegadas de más se leían como si fueran una sola cosa partida en dos. */
+@media (max-width: 63.9375rem) {
+  .vendorCard + .companyCard {
+    margin-top: 0.5rem;
+  }
+}
+
+.vendorAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.6rem;
+  border-radius: 0.75rem;
   flex-shrink: 0;
+  background: rgba(76, 101, 230, 0.18);
+  color: #7B93FF;
+  border: 1px solid rgba(76, 101, 230, 0.28);
+}
+
+.vendorInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.vendorName {
+  color: var(--white, #fff);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.vendorMeta {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.companyCard {
+  margin: 1.5rem 1.25rem 0.5rem;
+  padding: 1rem 1.1rem;
+  background: linear-gradient(135deg, rgba(245, 244, 0, 0.05), rgba(var(--overlay-rgb), 0.02));
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
+  border-radius: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  transition: border-color 0.2s ease;
+}
+
+.companyCard:hover {
+  border-color: rgba(245, 244, 0, 0.18);
+}
+
+/* El degradado casi transparente se apoya en el sidebar oscuro para
+   notarse - contra el gris claro del sidebar en modo claro queda
+   indistinguible del fondo. Elevación real (superficie sólida + sombra)
+   en vez de transparencia, mismo criterio que .glassCard en SociosLegajo. */
+:global([data-theme="light"]) .companyCard {
+  background: linear-gradient(135deg, rgba(245, 244, 0, 0.14), var(--bg-elevado) 55%);
+  border-color: var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+:global([data-theme="light"]) .companyCard:hover {
+  border-color: rgba(196, 176, 8, 0.4);
+}
+
+.companyAvatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+}
+
+/* variantes cromáticas — misma paleta/lógica que SeleccionarEmpresa, para
+   que una empresa mantenga el mismo color de avatar en toda la app */
+.avatar--azul {
+  background: rgba(76, 101, 230, 0.18);
+  color: #7B93FF;
+  border: 1px solid rgba(76, 101, 230, 0.28);
+}
+
+.avatar--verde {
+  background: rgba(61, 220, 132, 0.12);
+  color: var(--success-green, #3ddc84);
+  border: 1px solid rgba(61, 220, 132, 0.22);
+}
+
+.avatar--amarillo {
+  background: rgba(245, 244, 0, 0.1);
+  color: var(--color-amarillo-bind);
+  border: 1px solid rgba(245, 244, 0, 0.2);
+}
+
+.avatar--coral {
+  background: rgba(230, 100, 76, 0.14);
+  color: #E6906C;
+  border: 1px solid rgba(230, 100, 76, 0.22);
 }
 
 .companyInfo {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  overflow: hidden;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.companyNameWrap {
+  position: relative;
+  min-width: 0;
+}
+
+.companyNameWrap:focus-visible {
+  outline: none;
 }
 
 .companyName {
@@ -112,9 +228,53 @@
   text-overflow: ellipsis;
 }
 
+.companyTooltip {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.6rem);
+  z-index: 5;
+  width: max-content;
+  max-width: 14rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--bg-modal);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 0.6rem;
+  color: var(--white);
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.35;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.companyTooltip::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 1rem;
+  width: 9px;
+  height: 9px;
+  background: var(--bg-modal);
+  border-left: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.08);
+  transform: rotate(45deg);
+}
+
+.companyNameWrap:hover .companyTooltip,
+.companyNameWrap:focus-visible .companyTooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .companyCuit {
   color: var(--text-muted);
   font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
   margin: 0;
 }
 
@@ -135,11 +295,11 @@
   transition: background 0.2s;
 }
 .sectionHeader:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .heading {
-  color: #888888;
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -147,7 +307,7 @@
 }
 
 .chevron {
-  color: var(--text-dim);
+  color: var(--text-muted);
   transition: transform 0.3s ease;
 }
 .chevronOpen {
@@ -190,8 +350,27 @@
 }
 
 .link:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.04);
   color: var(--white);
+}
+
+/* En reposo, .link/.icon usan --text-muted a propósito (ver más abajo) -
+   en modo claro ese gris se lee como "deshabilitado" en vez de "opción
+   disponible sin seleccionar" (el mismo gris sobre un fondo casi negro no
+   da esa lectura). Se sube un escalón a --white-muted, reservando
+   --text-muted para texto realmente secundario (el heading "GENERAL",
+   etc.) - y el hover, que dependía del mismo --overlay-rgb al 4% ya débil
+   de por sí, se refuerza para que la animación se note. */
+:global([data-theme="light"]) .link:not(.active) {
+  color: var(--white-muted);
+}
+
+:global([data-theme="light"]) .link:hover {
+  background: rgba(var(--overlay-rgb), 0.06);
+}
+
+:global([data-theme="light"]) .icon {
+  color: var(--white-muted);
 }
 
 .active {
@@ -199,6 +378,64 @@
   color: var(--white);
   font-weight: 600;
   box-shadow: inset 3px 0 0 var(--color-azul-bind, #4c65e6);
+}
+
+.linkBloqueado {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.linkBloqueado:hover {
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.lockIcon {
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+
+/* Punto de atención cuando Legajo/Documentación se acaban de desbloquear
+   (ver Sidebar.jsx) - mismo lugar que .lockIcon (nunca coinciden: uno
+   implica bloqueado, el otro desbloqueado). El pulso es la señal real (algo
+   cambió, andá a mirar); el anillo expandiéndose es lo que lo hace notorio
+   sin depender de que el usuario tenga la vista puesta justo ahí en el
+   momento exacto. */
+.novedadDot {
+  position: relative;
+  margin-left: auto;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--color-amarillo-bind, #f5f400);
+  flex-shrink: 0;
+}
+
+.novedadDot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-amarillo-bind, #f5f400);
+  animation: novedadPulse 1.8s cubic-bezier(0.2, 0.7, 0.3, 1) infinite;
+}
+
+@keyframes novedadPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .novedadDot::before {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 .icon {
@@ -219,7 +456,7 @@
 }
 
 .versionText {
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-size: 0.7rem;
   text-align: center;
   margin: 0;
@@ -230,7 +467,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.04);
   padding-top: 1.25rem;
 }
 
@@ -285,12 +522,16 @@
 }
 
 .roleNoVinculado {
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .logoutLargeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   background: rgba(255, 82, 82, 0.1);
-  color: #ff5252;
+  color: var(--danger-bright);
   border: 1px solid rgba(255, 82, 82, 0.15);
   border-radius: 1rem;
   padding: 0.75rem 1rem;
@@ -299,7 +540,6 @@
   width: 100%;
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: center;
   font-family: inherit;
 }
 
@@ -307,15 +547,68 @@
   background: rgba(255, 82, 82, 0.2);
 }
 
+.changeCompanyBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: var(--color-azul-bind-bg, rgba(76, 101, 230, 0.1));
+  color: var(--color-azul-bind-300, #8a9fff);
+  border: 1px solid rgba(76, 101, 230, 0.25);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  margin-bottom: 0.5rem;
+}
+
+.changeCompanyBtn:hover {
+  background: rgba(76, 101, 230, 0.2);
+}
+
+.perfilBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+  border: 1px solid var(--badge-amarillo-border);
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.perfilBtn:hover {
+  filter: brightness(1.15);
+}
+
 /* ── ESCRITORIO ── */
 @media (min-width: 64rem) {
+  /* Se muda a Navbar (ver .vendorBadge ahí) para no confundirse con
+     companyCard: en el sidebar de escritorio quedaban una arriba de la
+     otra, casi con la misma forma (avatar + nombre + meta), y quedaba
+     ambiguo cuál era la empresa activa y cuál el vendor. */
+  .vendorCard {
+    display: none;
+  }
+
   .container {
     position: relative;
     transform: translateX(0);
     margin: 0.75rem 0 1.25rem 1.25rem;
     height: calc(100dvh - 2rem);
     border-radius: 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(var(--overlay-rgb), 0.06);
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
     z-index: 10;
   }
@@ -336,7 +629,7 @@
   .logoSeparator {
     width: 1px;
     height: 2rem;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(var(--overlay-rgb), 0.2);
     flex-shrink: 0;
   }
 
@@ -359,14 +652,10 @@
   .mobileOnlyFooter {
     display: none;
   }
-  
-  .mobileOnlyLink {
-    display: none;
-  }
-  
+
   .footer {
     padding: 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid rgba(var(--overlay-rgb), 0.04);
   }
 
   .closeButton {

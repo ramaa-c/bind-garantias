@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Modal, Button, InputSimple, Spinner } from "../../../ui";
+import { Modal, Button, InputSimple, Skeleton } from "../../../ui";
 import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import {
   useObtenerUsuariosRelacionados,
   useCrearUsuarioCadenaValor,
   useActualizarUsuarioCadenaValor,
-  useCrearUsuario
 } from "../../../../hooks/useUsuario";
 import { usuarioService } from "../../../../services/usuarioService";
-import { useChannel } from "../../../../context/ChannelContext";
+import { sociosService } from "../../../../services/sociosService";
 import styles from "./UsuariosRelacionadosModal.module.css";
-import { FiPlus, FiX, FiUserPlus } from "react-icons/fi";
+import { FiPlus, FiX, FiUserPlus, FiAlertCircle } from "react-icons/fi";
 
 const EMPTY_ARRAY = [];
 
@@ -20,11 +19,28 @@ const esAdministradorActivo = (registro) => {
   return valor === "1" || valor === 1 || valor === true;
 };
 
+const extraerListaSocios = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(data.data)) return data.data;
+  return typeof data === "object" && Object.keys(data).length > 0 ? [data] : [];
+};
+
+const verificarSociosVinculados = async (usuarioWebId) => {
+  try {
+    const data = await sociosService.obtenerSocioUsuarioPorUsuarioId(usuarioWebId);
+    return extraerListaSocios(data).length > 0 ? "con_socios" : "sin_socios";
+  } catch (error) {
+    return error?.response?.status === 404 ? "sin_socios" : "error";
+  }
+};
+
 export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
-  const { channelInfo } = useChannel();
   const [showForm, setShowForm] = useState(false);
   const [searchEmail, setSearchEmail] = useState("");
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isVinculando, setIsVinculando] = useState(false);
+  const [errorEmail, setErrorEmail] = useState("");
 
   // Queries & Mutations
   const { data: relationsData, isLoading: loadingRelations, error: errorRelations } =
@@ -32,7 +48,6 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
 
   const linkMutation = useCrearUsuarioCadenaValor();
   const updateMutation = useActualizarUsuarioCadenaValor();
-  const createUserMutation = useCrearUsuario();
 
   const relationsList = relationsData || EMPTY_ARRAY;
 
@@ -69,97 +84,64 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
     fetchEmails();
   }, [relationsList]);
 
-  const getCSharpIsoDate = (addYears = 0) => {
-    const date = new Date();
-    if (addYears) date.setFullYear(date.getFullYear() + addYears);
-    return date.toISOString().split(".")[0];
-  };
-
-  const handleCreateAndLink = async () => {
+  // Los usuarios se autoregistran desde el login de su banco (ver
+  // Registro.jsx) — el admin nunca los da de alta, solo busca y vincula a
+  // uno que ya existe. Si no lo encuentra, hay que avisarle a la persona
+  // que todavía no se registró en vez de crearle la cuenta desde acá.
+  const handleVincular = async () => {
     const trimmedEmail = searchEmail.trim().toLowerCase();
     if (!trimmedEmail) return;
 
-    setIsCreatingUser(true);
-
-    const canalId = (channelInfo?.id && channelInfo.id !== "default" && channelInfo.id !== "bind") ? channelInfo.id : "canal1";
-
-    const payloadNuevoUsuario = {
-      email: trimmedEmail,
-      fchalta: getCSharpIsoDate(),
-      fchvencimiento: getCSharpIsoDate(1),
-      hashseguridad: canalId,
-      estado: "",
-      debecambiarclave: "",
-      esadministrador: "",
-      denominacion: canalId,
-    };
+    setIsVinculando(true);
+    setErrorEmail("");
 
     try {
-      let userId = null;
       let targetUser = null;
-
-      // 1. Check if user already exists
       try {
         const userData = await usuarioService.obtenerPorNombreOEmail(trimmedEmail);
         targetUser = Array.isArray(userData)
           ? userData[0]
           : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
-        userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
-      } catch (e) {
-        // User not found, we will create them below
+      } catch {
+        targetUser = null;
       }
 
-      if (!userId) {
-        // 2. Call create endpoint only if user doesn't exist
-        try {
-          const createdUser = await createUserMutation.mutateAsync(payloadNuevoUsuario);
-          userId = createdUser?.usuariowebid || createdUser?.usuarioid || createdUser?.id || createdUser?.data?.usuariowebid || createdUser?.data?.usuarioid || createdUser?.data?.id || createdUser?.UsuarioWebID;
-        } catch (createErr) {
-          const errMsg = createErr.response?.data?.message || createErr.response?.data || createErr.message || "";
-          const isAlreadyExists =
-            createErr.response?.status === 409 ||
-            createErr.response?.status === 400 ||
-            errMsg.toLowerCase().includes("existe") ||
-            errMsg.toLowerCase().includes("vinculado");
-
-          if (isAlreadyExists) {
-            // User already exists, retrieve ID to proceed with linking
-            const userData = await usuarioService.obtenerPorNombreOEmail(trimmedEmail);
-            targetUser = Array.isArray(userData)
-              ? userData[0]
-              : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
-            userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
-          } else {
-            throw createErr;
-          }
-        }
-        
-        if (!userId) {
-          // Fallback query
-          const userData = await usuarioService.obtenerPorNombreOEmail(trimmedEmail);
-          targetUser = Array.isArray(userData)
-            ? userData[0]
-            : (userData?.items?.[0] || userData?.data?.[0] || userData?.resultados?.[0] || userData?.list?.[0] || userData);
-          userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
-        }
-      }
+      const userId = targetUser?.usuariowebid || targetUser?.usuarioid || targetUser?.id || targetUser?.UsuarioWebID;
 
       if (!userId) {
-        throw new Error("No se pudo obtener el ID del usuario.");
+        setErrorEmail(
+          "No hay ningún usuario registrado con ese correo. Debe registrarse primero desde el login de su banco.",
+        );
+        return;
       }
 
       // Un Administrador General ya tiene acceso a todas las cadenas de
       // valor: no tiene sentido (ni corresponde) vincularlo a una en
       // particular como usuario de cadena.
-      if (targetUser && esAdministradorActivo(targetUser)) {
-        toast.error("No se puede vincular este usuario", {
+      if (esAdministradorActivo(targetUser)) {
+        setErrorEmail(
+          "Es Administrador General: ya tiene acceso a todas las cadenas de valor.",
+        );
+        return;
+      }
+
+      const verificacionSocios = await verificarSociosVinculados(userId);
+
+      if (verificacionSocios === "error") {
+        toast.error("No se pudo verificar el usuario", {
           description:
-            "Es Administrador General y ya tiene acceso a todas las cadenas de valor.",
+            "No pudimos confirmar si tiene empresas vinculadas. Reintentá en unos minutos.",
         });
         return;
       }
 
-      // 3. Link user to value chain
+      if (verificacionSocios === "con_socios") {
+        setErrorEmail(
+          "Ya opera como cliente con una empresa vinculada. Para administrar la cadena debe registrarse con otro correo.",
+        );
+        return;
+      }
+
       const payloadLink = {
         usuariocadenavalorid: 0,
         cadenavalorid: Number(activeItem.cadenavalorid),
@@ -188,10 +170,10 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
       setSearchEmail("");
       setShowForm(false);
     } catch (err) {
-      console.error("Error creating and linking user:", err);
+      console.error("Error linking user:", err);
       toast.error(err.response?.data?.message || err.message || "Ocurrió un error al vincular el usuario.");
     } finally {
-      setIsCreatingUser(false);
+      setIsVinculando(false);
     }
   };
 
@@ -242,16 +224,17 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
             onClick={() => {
               setShowForm((prev) => !prev);
               setSearchEmail("");
+              setErrorEmail("");
             }}
           >
             {showForm ? <><FiX style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> CANCELAR</> : <><FiPlus style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> NUEVO</>}
           </button>
         </div>
 
-        {/* Inline Registration and Link Form */}
+        {/* Inline Link Form */}
         {showForm && (
           <div className={styles.formContainer}>
-            <h4 className={styles.formTitle}>Registrar y Vincular Nuevo Usuario</h4>
+            <h4 className={styles.formTitle}>Vincular Usuario Existente</h4>
             <div className={styles.formRow}>
               <div className={styles.inputWrap}>
                 <InputSimple
@@ -260,27 +243,56 @@ export const UsuariosRelacionadosModal = ({ isOpen, onClose, activeItem }) => {
                   value={searchEmail}
                   onChange={(val) => {
                     setSearchEmail(val);
+                    if (errorEmail) setErrorEmail("");
                   }}
-                  disabled={isCreatingUser}
+                  disabled={isVinculando}
+                  error={!!errorEmail}
+                  hideErrorSpace
+                  aria-invalid={!!errorEmail}
+                  aria-describedby={errorEmail ? "error-email-vinculo" : undefined}
                 />
               </div>
               <Button
                 variant="blue"
-                onClick={handleCreateAndLink}
-                isLoading={isCreatingUser}
+                onClick={handleVincular}
+                isLoading={isVinculando}
                 disabled={!searchEmail.trim()}
               >
                 <FiUserPlus style={{ marginRight: "0.25rem", verticalAlign: "middle" }} /> VINCULAR
               </Button>
             </div>
+            {errorEmail && (
+              <p id="error-email-vinculo" className={styles.errorVinculo} role="alert">
+                <FiAlertCircle aria-hidden="true" />
+                {errorEmail}
+              </p>
+            )}
           </div>
         )}
 
         {/* Relations List */}
         {loadingRelations ? (
-          <div className={styles.loadingContainer}>
-            <Spinner size={30} />
-            <p className={styles.loadingText}>Cargando usuarios relacionados...</p>
+          <div className={styles.tableWrapper}>
+            <table className={styles.usersTable}>
+              <thead>
+                <tr>
+                  <th>Nombre de usuario / Email</th>
+                  <th>Habilitado</th>
+                  <th style={{ textAlign: "right", width: "120px" }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={i}>
+                    <td><Skeleton width="70%" height="0.85rem" /></td>
+                    <td><Skeleton width="2.6rem" height="1.3rem" radius="pill" /></td>
+                    <td>
+                      <Skeleton width="6.5rem" height="1.8rem" radius="0.5rem" style={{ marginLeft: "auto" }} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ) : errorRelations ? (
           <div className={styles.emptyContainer} style={{ borderColor: "rgba(234, 74, 90, 0.2)" }}>

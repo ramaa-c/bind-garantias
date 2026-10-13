@@ -12,6 +12,7 @@ export const statusPlataformaAdapter = {
       IntegracionLufe: String(d.integracionlufe ?? "1"),
       IntegracionArca: String(d.integracionarca ?? "1"),
       IntegracionNosis: String(d.integracionnosis ?? "1"),
+      IntegracionSMS: String(d.integracionsms ?? "1"),
       UsuarioWebID: d.usuariowebid ?? 0,
       Momento: d.momento,
     };

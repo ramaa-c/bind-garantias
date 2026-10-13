@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   FiSearch,
   FiPlus,
@@ -10,11 +10,13 @@ import {
 import styles from "./CadenasValor.module.css";
 import { useObtenerTodasWebConEstado, useActualizarCadenaValor } from "../../../hooks/useCadenaValor";
 import { cadenaValorService } from "../../../services/cadenaValorService";
+import { lineaService } from "../../../services/lineaService";
 import {
   useTipoCanalComercializacion,
   useEquipoComercial,
 } from "../../../hooks/useCatalogos";
-import { Spinner, Button, Alert } from "../../../components/ui";
+import { Spinner, Button, Alert, Skeleton } from "../../../components/ui";
+import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import {
   ActivarCadenaModal,
   EditarCadenaModal,
@@ -23,9 +25,65 @@ import {
   CdaConfigModal,
 } from "../../../components/features";
 import { toast } from "sonner";
+import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
+import { mensajeNegocio } from "../../../utils/mensajesError";
+
+// Mismo criterio que Empresas.jsx/CdasGlobales.jsx: con el alto de fila
+// blindado a una sola línea (table-layout:fixed + truncado, ver
+// CadenasValor.module.css/el render de la tabla más abajo), 8 es el mismo
+// tamaño de página ya probado en el resto del panel. Hoy hay pocas cadenas
+// (no se nota), pero paginar desde ahora evita que el día que haya muchas
+// la tabla vuelva a crecer sin límite.
+const ELEMENTOS_POR_PAGINA = 8;
+
+const avisarSiNoTieneLineasActivas = async (cadena) => {
+  try {
+    const lineas = await lineaService.obtenerLimitesCadenaValor(cadena.cadenavalorid);
+    const lista = Array.isArray(lineas) ? lineas : [];
+    const tieneLineasOperables = lista.some(
+      (l) => String(l.activa) === "1" && String(l.aptanuevalinea) === "1",
+    );
+    if (!tieneLineasOperables) {
+      toast.warning(`La cadena "${cadena.denominacion}" no tiene líneas activas`, {
+        description: "Los clientes no van a poder crear solicitudes hasta que actives al menos una línea.",
+      });
+    }
+  } catch (err) {
+    console.error(`Error al verificar las líneas de la cadena ${cadena.cadenavalorid}:`, err);
+  }
+};
+
+// Mientras carga la lista se muestran filas fantasma con la misma forma que
+// las reales (el header, buscador y tabla quedan visibles al instante), en
+// vez de un spinner de página completa. Mismo patrón que Empresas/CdasGlobales.
+const CadenaRowSkeleton = () => (
+  <tr>
+    <td><Skeleton width="50px" height="25px" radius="0.25rem" /></td>
+    <td>
+      <Skeleton width="60%" height="0.9rem" />
+      <Skeleton width="35%" height="0.65rem" style={{ marginTop: "0.4rem" }} />
+    </td>
+    <td><Skeleton width="55%" height="0.8rem" /></td>
+    <td><Skeleton width="70%" height="0.8rem" /></td>
+    <td><Skeleton width="60%" height="0.8rem" /></td>
+    <td style={{ textAlign: "center" }}>
+      <Skeleton width="36px" height="20px" radius="pill" style={{ margin: "0 auto" }} />
+    </td>
+    <td>
+      <div style={{ display: "flex", gap: "0.4rem", justifyContent: "center" }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} width="28px" height="28px" radius="0.4rem" />
+        ))}
+      </div>
+    </td>
+  </tr>
+);
 
 export default function CadenasValor() {
+  // Defensa en profundidad: ver useBloqueoAdminRestringido.
+  const bloqueado = useBloqueoAdminRestringido();
   const [searchTerm, setSearchTerm] = useState("");
+  const [pagina, setPagina] = useState(1);
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,6 +169,7 @@ export default function CadenasValor() {
             ? `Cadena "${item.denominacion}" activada.`
             : `Cadena "${item.denominacion}" desactivada.`
         );
+        if (nuevoEstado === "1") avisarSiNoTieneLineasActivas(item);
         setToggledStates(prev => {
           const next = { ...prev };
           delete next[item.cadenavalorid];
@@ -125,7 +184,7 @@ export default function CadenasValor() {
       },
       onError: (err) => {
         console.error("Error al cambiar estado de la cadena:", err);
-        toast.error("Ocurrió un error al cambiar el estado de la cadena de valor");
+        toast.error("Ocurrió un error al cambiar el estado de la cadena de valor", { description: mensajeNegocio(err, "") });
         setToggledStates(prev => {
           const next = { ...prev };
           delete next[item.cadenavalorid];
@@ -173,13 +232,19 @@ export default function CadenasValor() {
       c.referencia?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  if (isLoadingActive) {
-    return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
-        <Spinner size={80} />
-      </div>
-    );
-  }
+  const totalPaginas = Math.max(1, Math.ceil(filteredCadenas.length / ELEMENTOS_POR_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const cadenasPagina = filteredCadenas.slice(
+    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
+    paginaActual * ELEMENTOS_POR_PAGINA
+  );
+
+  const handleBusqueda = (value) => {
+    setSearchTerm(value);
+    setPagina(1);
+  };
+
+  if (bloqueado) return null;
 
   return (
     <div className={styles.container}>
@@ -207,7 +272,7 @@ export default function CadenasValor() {
             type="text"
             placeholder="Filtrar activas por denominación o referencia..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => handleBusqueda(e.target.value)}
           />
         </div>
       </div>
@@ -219,16 +284,18 @@ export default function CadenasValor() {
             <thead>
               <tr>
                 <th style={{ width: "80px" }}>Logo</th>
-                <th>Denominación</th>
-                <th>Referencia</th>
-                <th>Canal Comercialización</th>
-                <th>Equipo Comercial</th>
+                <th style={{ width: "24%" }}>Denominación</th>
+                <th style={{ width: "16%" }}>Referencia</th>
+                <th style={{ width: "20%" }}>Canal Comercialización</th>
+                <th style={{ width: "18%" }}>Equipo Comercial</th>
                 <th style={{ textAlign: "center", width: "80px" }}>Activa</th>
                 <th style={{ textAlign: "center", width: "200px" }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filteredCadenas.map((item) => {
+              {isLoadingActive &&
+                Array.from({ length: 6 }).map((_, i) => <CadenaRowSkeleton key={i} />)}
+              {!isLoadingActive && cadenasPagina.map((item) => {
                 const puedeActivarse = item.aprobadaVigente;
                 const manualStatus = toggledStates[item.cadenavalorid] !== undefined
                   ? toggledStates[item.cadenavalorid]
@@ -264,8 +331,8 @@ export default function CadenasValor() {
                         </div>
                       )}
                     </td>
-                    <td>
-                      <strong>{item.denominacion}</strong>
+                    <td className={styles.truncateCell}>
+                      <strong title={item.denominacion}>{item.denominacion}</strong>
                       <span
                         style={{
                           display: "block",
@@ -276,15 +343,19 @@ export default function CadenasValor() {
                         ID: #{item.cadenavalorid}
                       </span>
                     </td>
-                    <td>{item.referencia || "-"}</td>
-                    <td>
-                      {getCatalogLabel(
-                        canalesOpciones,
-                        item.tipocanalcomercializacionid,
-                      )}
+                    <td className={styles.truncateCell} data-label="Referencia">
+                      <span title={item.referencia}>{item.referencia || "-"}</span>
                     </td>
-                    <td>
-                      {getCatalogLabel(equiposOpciones, item.equipocomercialid)}
+                    <td className={styles.truncateCell} data-label="Canal">
+                      <span>
+                        {getCatalogLabel(
+                          canalesOpciones,
+                          item.tipocanalcomercializacionid,
+                        )}
+                      </span>
+                    </td>
+                    <td className={styles.truncateCell} data-label="Equipo">
+                      <span>{getCatalogLabel(equiposOpciones, item.equipocomercialid)}</span>
                     </td>
                     <td style={{ textAlign: "center" }} className={styles.switchCell}>
                       {isUpdating ? (
@@ -355,7 +426,7 @@ export default function CadenasValor() {
                   </tr>
                 );
               })}
-              {filteredCadenas.length === 0 && (
+              {!isLoadingActive && filteredCadenas.length === 0 && (
                 <tr>
                   <td
                     colSpan={7}
@@ -374,6 +445,20 @@ export default function CadenasValor() {
         </div>
       </div>
 
+      {!isLoadingActive && filteredCadenas.length > 0 && (
+        <Paginacion
+          page={paginaActual}
+          onPageChange={setPagina}
+          hasMoreData={paginaActual < totalPaginas}
+          isLoading={isLoadingActive}
+          knownEndPage={totalPaginas}
+          variant="admin"
+          totalItems={filteredCadenas.length}
+          pageSize={ELEMENTOS_POR_PAGINA}
+          itemLabel="cadenas"
+        />
+      )}
+
       {/* Modals */}
       <ActivarCadenaModal
         isOpen={isModalOpen && modalType === "activar"}
@@ -383,6 +468,7 @@ export default function CadenasValor() {
       />
 
       <EditarCadenaModal
+        key={`editar-${activeItem?.cadenavalorid ?? "none"}-${isModalOpen && modalType === "edit" ? "open" : "closed"}`}
         isOpen={isModalOpen && modalType === "edit"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}
@@ -396,6 +482,7 @@ export default function CadenasValor() {
       />
 
       <RequisitosConfigModal
+        key={`requisitos-${activeItem?.cadenavalorid ?? "none"}-${isModalOpen && modalType === "requisitos" ? "open" : "closed"}`}
         isOpen={isModalOpen && modalType === "requisitos"}
         onClose={() => setIsModalOpen(false)}
         activeItem={activeItem}

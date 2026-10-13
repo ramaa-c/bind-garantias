@@ -3,10 +3,59 @@
 .workspace {
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.015);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.015);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 1rem;
   overflow: hidden;
+}
+
+/* Cadena sin ningún documento obligatorio ni opcional habilitado (los 14
+   tipos de ESTRUCTURA_LEGAJO en Requerimiento=0). Mismo lenguaje visual que
+   el resto de la pantalla (tarjeta con borde sutil), pero en tono positivo
+   (verde) en vez de neutro: no es un error, es "no hay nada que hacer acá". */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: 3.5rem 1.5rem;
+  min-height: 260px;
+  background: rgba(var(--overlay-rgb), 0.015);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
+  border-radius: 1rem;
+}
+
+.emptyStateIconWrap {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(61, 220, 132, 0.1);
+  margin-bottom: 0.15rem;
+}
+
+.emptyStateIcon {
+  font-size: 1.4rem;
+  color: var(--success-green, #3ddc84);
+}
+
+.emptyStateTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+  margin: 0;
+}
+
+.emptyStateText {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+  max-width: 26rem;
+  line-height: 1.5;
 }
 
 /* SIDEBAR BG */
@@ -24,15 +73,15 @@
   padding: 0.875rem 1.25rem 0.5rem;
   margin: 0;
   background: rgba(0, 0, 0, 0.15);
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 0.5px solid rgba(var(--overlay-rgb), 0.04);
   flex-shrink: 0;
 }
 
 .tabBtn {
   position: relative;
-  background: rgba(255, 255, 255, 0.025);
+  background: rgba(var(--overlay-rgb), 0.025);
   border: none;
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 0.5px solid rgba(var(--overlay-rgb), 0.07);
   padding: 0.875rem 1.25rem;
   cursor: pointer;
   display: flex;
@@ -47,12 +96,12 @@
 }
 
 .tabBtn:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .tabActive {
-  background: rgba(255, 255, 255, 0.06);
-  border-bottom-color: rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.06);
+  border-bottom-color: rgba(var(--overlay-rgb), 0.04);
 }
 
 .activeBar {
@@ -76,7 +125,7 @@
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.25;
-  color: #aaa;
+  color: var(--text-muted);
   transition: color 0.15s;
 }
 
@@ -96,15 +145,15 @@
 }
 
 .reqBadgeMandatory {
-  background: rgba(244, 245, 0, 0.12);
-  color: var(--yellow, #f4f500);
-  border: 1px solid rgba(244, 245, 0, 0.2);
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+  border: 1px solid var(--badge-amarillo-border);
 }
 
 /* Obligatorio + ya cargado: mismo verde que el statusDot (.dotGreen) */
 .reqBadgeComplete {
   background: rgba(76, 175, 80, 0.12);
-  color: #4caf50;
+  color: var(--success-bright);
   border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
@@ -116,24 +165,23 @@
 }
 
 .reqBadgeOptional {
-  background: rgba(255, 255, 255, 0.05);
-  color: #888;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(var(--overlay-rgb), 0.05);
+  color: var(--text-muted);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
 }
 
-.glassCard {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 0.75rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s, box-shadow 0.2s;
+.reqBadgeRechazado {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--error-red);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
-.glassCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+/* Separa el bloque de Estado CDA (TerceroCdaEstado) del resto de los datos
+   de contacto — sin esto quedan pegados y se confunden visualmente. */
+.terceroCdaWrapper {
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.08);
+  margin-top: 0.5rem;
+  padding-top: 0.875rem;
 }
 
 /* DOT DE ESTADO */
@@ -145,14 +193,48 @@
 }
 
 .dotGreen {
-  background: #4caf50;
+  background: var(--success-bright);
   box-shadow: 0 0 4px rgba(76, 175, 80, 0.4);
 }
 .dotRed {
-  background: #ff5252;
+  background: var(--danger-bright);
+}
+/* Obligatorio y todavía sin cargar: mismo amarillo que .reqBadgeMandatory,
+   para que el punto adelante ya lea "esto es obligatorio" sin tener que leer
+   el badge del lado. Un documento opcional pendiente sigue en gris (.dotGray,
+   ninguna urgencia real). */
+.dotYellow {
+  background: var(--yellow, #f4f500);
+  box-shadow: 0 0 4px rgba(244, 245, 0, 0.4);
 }
 .dotGray {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--overlay-rgb), 0.12);
+}
+
+/* Mientras se está trayendo la lista de archivos del legajo (algunos tipos
+   de documento, como Balance o Certificado PyME, se resuelven contra LUFE y
+   pueden tardar bastante) ningún tab sabe todavía si tiene archivo o no —
+   se muestra un anillo girando en vez del punto gris de "sin archivo", que
+   se leería como "no tenés nada cargado" cuando en realidad es que todavía
+   no se sabe. */
+.dotLoading {
+  background: transparent;
+  border: 1.5px solid rgba(var(--overlay-rgb), 0.15);
+  border-top-color: var(--color-azul-bind, #4C65E6);
+  animation: dotSpin 0.7s linear infinite;
+}
+
+@keyframes dotSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dotLoading {
+    animation: none;
+    border-top-color: rgba(var(--overlay-rgb), 0.15);
+  }
 }
 
 /* ── VIEWER ──────────────────────────────────────────────────────────────────── */
@@ -162,7 +244,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  border-top: 0.5px solid rgba(255, 255, 255, 0.05);
+  border-top: 0.5px solid rgba(var(--overlay-rgb), 0.05);
   background: rgba(0, 0, 0, 0.08);
   flex: 1;
 }
@@ -171,15 +253,29 @@
 .viewerHeader {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
   padding-bottom: 1.125rem;
-  border-bottom: 1px dashed rgba(255, 255, 255, 0.07);
+  border-bottom: 1px dashed rgba(var(--overlay-rgb), 0.07);
 }
 
+/* Título + estado a la izquierda, acción de descarga a la derecha - todo en
+   una sola fila (antes eran 3: badge de categoría, título+descarga, info).
+   flex-wrap para mobile: si no entra todo junto, el botón (ancho completo
+   ahí, ver .downloadCategoryBtn) cae a su propia línea en vez de recortarse. */
 .viewerMeta {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+}
+
+.viewerMetaLeft {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .viewerBadge {
@@ -192,13 +288,7 @@
   border: 1px solid rgba(244, 245, 0, 0.15);
   border-radius: 999px;
   padding: 0.15rem 0.55rem;
-}
-
-/* Variante admin: mismo estilo, acento azul en vez del amarillo del cliente */
-.viewerBadgeAdmin {
-  color: #8a9fff;
-  background: rgba(76, 101, 230, 0.1);
-  border-color: rgba(76, 101, 230, 0.25);
+  flex-shrink: 0;
 }
 
 .viewerTitle {
@@ -210,14 +300,14 @@
 }
 
 .viewerInfo {
-  color: #888;
+  color: var(--text-muted);
   font-size: 0.86rem;
   line-height: 1.5;
   margin: 0;
 }
 
 .helperLink {
-  color: var(--yellow, #f4f500);
+  color: var(--color-amarillo-bind);
   text-decoration: none;
   font-weight: 600;
   display: inline-flex;
@@ -243,26 +333,84 @@
   flex: 1;
 }
 
+/* Mismo lenguaje visual que .perfilCard en SociosLegajo.module.css (fondo,
+   borde, radio, sombra): esta tarjeta ahora cuelga justo al lado de esa,
+   dentro de "Mi Perfil" (ver el comentario en SociosLegajo.jsx), y
+   quedaba visiblemente "más plana" que su vecina - sin sombra, sin ícono,
+   con un título liviano. Mismas medidas de padding/radio que .perfilCard
+   (no "1.25rem" suelto) para que no cambie de tamaño al lado de ella. */
 .vincularForm {
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 1.25rem;
-  border-radius: 0.875rem;
+  gap: 0.9rem;
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  border-radius: 0.85rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  padding: 0.9rem 1.1rem 1.1rem;
+}
+
+.vincularFormHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+/* Mismo chip que .perfilAvatar (ver ese comentario): ícono amarillo sobre
+   degradado traslúcido en vez de letra sobre fondo - acá no hay una
+   inicial que mostrar, así que el ícono hace ese mismo trabajo de "primer
+   vistazo" de la fila de identidad. */
+.vincularFormIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 0.7rem;
+  background: linear-gradient(135deg, rgba(244, 245, 0, 0.2), rgba(244, 245, 0, 0.04));
+  border: 1px solid rgba(244, 245, 0, 0.3);
+  color: var(--color-amarillo-bind);
+}
+
+[data-theme="light"] .vincularFormIcon {
+  background: var(--color-amarillo-bind);
+  border-color: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+}
+
+/* Esta sección también vive, sin cambios, como pestaña propia del panel
+   admin (ver isUsuarios en SociosLegajo.jsx) - ahí el acento de marca es
+   azul, no amarillo (mismo criterio que InputTooltip variant="admin" y
+   el resto del panel admin). */
+.vincularFormIconAdmin {
+  background: linear-gradient(135deg, rgba(76, 101, 230, 0.22), rgba(76, 101, 230, 0.05));
+  border-color: rgba(76, 101, 230, 0.35);
+  color: var(--color-azul-bind, #4c65e6);
+}
+
+[data-theme="light"] .vincularFormIconAdmin {
+  background: var(--color-azul-bind, #4c65e6);
+  border-color: var(--color-azul-bind, #4c65e6);
+  color: var(--white);
+}
+
+.vincularFormHeaderText {
+  min-width: 0;
 }
 
 .vincularFormTitle {
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
   color: var(--white, #fff);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .vincularFormText {
-  font-size: 0.8125rem;
-  color: #aaa;
-  margin: 0.5rem 0 1rem 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0.25rem 0 0;
   line-height: 1.5;
 }
 
@@ -277,12 +425,27 @@
   align-items: center;
 }
 
-.vincularInput {
+.vincularInputField {
+  position: relative;
   flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.vincularInputFieldIcon {
+  position: absolute;
+  left: 0.9rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.vincularInput {
+  width: 100%;
   background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0.5rem;
-  padding: 0.75rem 1rem;
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  border-radius: 0.6rem;
+  padding: 0.75rem 1rem 0.75rem 2.3rem;
   color: var(--white, #fff);
   font-size: 0.875rem;
   font-family: inherit;
@@ -295,7 +458,7 @@
 .vincularInput:focus {
   outline: none;
   background: rgba(0, 0, 0, 0.4);
-  border-color: var(--yellow, #f4f500);
+  border-color: var(--color-amarillo-bind);
 }
 
 .vincularInputAdmin:focus {
@@ -312,7 +475,7 @@
 }
 
 .vincularInputError:focus {
-  border-color: #ff5252 !important;
+  border-color: var(--danger-bright) !important;
   box-shadow: 0 0 0 1px rgba(255, 82, 82, 0.2);
 }
 
@@ -332,7 +495,7 @@
 }
 
 .errorMessage {
-  color: #ff5252;
+  color: var(--danger-bright);
   font-size: 0.75rem;
   font-weight: 500;
   display: flex;
@@ -347,103 +510,6 @@
     align-items: stretch;
   }
 }
-/* ── PERFIL: CHIPS EN GRID ───────────────────────────────────────────────────── */
-
-.perfilGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-  flex: 1;
-}
-
-.perfilChip {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    rgba(255, 255, 255, 0.01) 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.875rem;
-  padding: 1.125rem 1.25rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.5rem;
-  transition:
-    border-color 0.25s,
-    background 0.25s,
-    transform 0.2s,
-    box-shadow 0.25s;
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-.perfilChip::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(244, 245, 0, 0.15),
-    transparent
-  );
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.perfilChip:hover {
-  border-color: rgba(244, 245, 0, 0.15);
-  background: linear-gradient(
-    135deg,
-    rgba(244, 245, 0, 0.03) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  transform: translateY(-1px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-}
-
-.perfilChip:hover::before {
-  opacity: 1;
-}
-
-.perfilChipHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.perfilChipIcon {
-  color: var(--color-amarillo-bind, #f5f400);
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.perfilChipIconAdmin {
-  color: var(--color-azul-bind, #4c65e6);
-}
-
-.perfilChipLabel {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #888;
-}
-
-.perfilChipValue {
-  font-size: 0.9375rem;
-  color: #e0e0e0;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-}
-
 /* ── EMPTY SLOT (socios) ─────────────────────────────────────────────────────── */
 
 .emptySlot {
@@ -452,7 +518,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.625rem;
-  border: 1.5px dashed rgba(255, 255, 255, 0.06);
+  border: 1.5px dashed rgba(var(--overlay-rgb), 0.06);
   border-radius: 0.75rem;
   padding: 3rem 1.5rem;
   text-align: center;
@@ -461,19 +527,19 @@
 }
 
 .emptyIcon {
-  color: #333;
+  color: var(--border-hover);
 }
 
 .emptyTitle {
   margin: 0;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .emptyText {
   font-size: 0.8125rem;
-  color: #333;
+  color: var(--border-hover);
   max-width: 20rem;
   line-height: 1.5;
 }
@@ -503,7 +569,7 @@
 
 .statBadge {
   background: rgba(245, 244, 0, 0.08);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.7rem;
   font-weight: 700;
   padding: 0.25rem 0.65rem;
@@ -512,12 +578,12 @@
 
 .statTotal {
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
 .statTotalOk {
-  color: #4caf50;
+  color: var(--success-bright);
 }
 
 .sociosList {
@@ -527,7 +593,7 @@
 }
 
 .socioCard {
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 0.625rem;
   transition: border-color 0.2s, background 0.2s;
 }
@@ -550,6 +616,36 @@
   ) !important;
 }
 
+/* Tercero con el CDA rechazado (ver TerceroCdaEstado/useEstadoCdaTerceros):
+   tiene prioridad visual sobre warning/success — no pasó las validaciones
+   correspondientes y queda pendiente de que un admin lo reintente. */
+.socioCardRejected {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  background: linear-gradient(
+    145deg,
+    rgba(239, 68, 68, 0.06) 0%,
+    transparent 100%
+  ) !important;
+}
+
+.socioRejectedBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0.875rem 0;
+  padding: 0.6rem 0.875rem;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 0.5rem;
+  color: var(--error-red);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.socioRejectedBanner svg {
+  flex-shrink: 0;
+}
+
 .socioWarningWrapper {
   position: relative;
   display: flex;
@@ -560,7 +656,7 @@
 }
 
 .socioWarningIcon {
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 1.15rem;
   cursor: help;
   transition: transform 0.2s, filter 0.2s;
@@ -577,7 +673,7 @@
   bottom: 150%;
   left: 0;
   transform: translateY(10px);
-  background: #1a1a1a;
+  background: var(--bg-elevado);
   border: 1px solid rgba(245, 244, 0, 0.3);
   padding: 0.85rem 1rem;
   border-radius: 0.5rem;
@@ -613,7 +709,7 @@
 
 .socioWarningTooltip strong {
   font-size: 0.75rem;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-weight: 700;
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -630,7 +726,7 @@
 
 .socioWarningTooltip li {
   font-size: 0.75rem;
-  color: #e0e0e0;
+  color: var(--white-muted);
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -639,13 +735,13 @@
 
 .socioWarningTooltip li::before {
   content: "•";
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 1rem;
   line-height: 0.5;
 }
 
 .socioCard:hover {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(var(--overlay-rgb), 0.1);
 }
 
 .socioCardHeaderRow {
@@ -670,19 +766,19 @@
 }
 
 .socioCardBtn:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(var(--overlay-rgb), 0.02);
 }
 
 .socioAvatar {
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #aaa;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
@@ -704,7 +800,7 @@
 }
 
 .socioCuit {
-  color: #888888;
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
 }
@@ -714,14 +810,14 @@
   border: 1px solid rgba(245, 244, 0, 0.12);
   border-radius: 0.375rem;
   padding: 0.2rem 0.5rem;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.75rem;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .socioChevron {
-  color: #555;
+  color: var(--text-muted);
   font-size: 0.9rem;
   transition: transform 0.3s ease;
   flex-shrink: 0;
@@ -746,7 +842,7 @@
   max-height: 260px;
   opacity: 1;
   padding: 0 1rem 1rem 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.04);
 }
 
 .socioDetailGrid {
@@ -769,7 +865,7 @@
 }
 
 .socioDetailIcon {
-  color: #888888;
+  color: var(--text-muted);
   font-size: 0.85rem;
   margin-top: 0.1rem;
   flex-shrink: 0;
@@ -787,7 +883,7 @@
 
 .socioDetailVal {
   display: block;
-  color: #bbb;
+  color: var(--text-muted);
   font-size: 0.8rem;
   margin-top: 0.1rem;
   line-height: 1.3;
@@ -814,9 +910,9 @@
     height: 100%;
     overflow-y: auto;
     background: rgba(0, 0, 0, 0.12);
-    border-right: 0.5px solid rgba(255, 255, 255, 0.06);
+    border-right: 0.5px solid rgba(var(--overlay-rgb), 0.06);
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+    scrollbar-color: rgba(var(--overlay-rgb), 0.1) transparent;
   }
 
   .sidebar::-webkit-scrollbar {
@@ -824,7 +920,7 @@
   }
 
   .sidebar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--overlay-rgb), 0.1);
     border-radius: 4px;
   }
 
@@ -834,7 +930,7 @@
     height: 100%;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.08) transparent;
+    scrollbar-color: rgba(var(--overlay-rgb), 0.08) transparent;
   }
 
   .viewerContainer::-webkit-scrollbar {
@@ -842,7 +938,7 @@
   }
 
   .viewerContainer::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--overlay-rgb), 0.08);
     border-radius: 4px;
   }
 
@@ -852,17 +948,39 @@
     padding: 1.25rem 1.25rem 0.5rem;
   }
 
+  /* Mismo criterio que .tabBtn en SociosLegajo.module.css (ver ese
+     comentario): cada documento pasa a ser su propia tarjeta (radio +
+     margen real entre una y otra) en vez de filas pegadas con un borde de
+     0.5px casi invisible sobre el fondo oscuro - con la cadena completa de
+     ESTRUCTURA_LEGAJO (10+ documentos, cada uno ya de 2-3 líneas por los
+     badges de Obligatorio/Vía LUFE/Vence en Xd debajo del título) esas
+     filas se leían todas encimadas, sin aire entre un documento y el
+     siguiente (reportado el 2026-09-30). */
   .tabBtn {
     background: transparent;
-    border-bottom: 0.5px solid rgba(255, 255, 255, 0.03);
+    width: calc(100% - 1.25rem);
+    margin: 0 0.625rem 0.35rem;
+    padding: 0.8rem 0.875rem;
+    border-radius: 0.65rem;
+    border-bottom: none;
   }
 
   .tabBtn:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(var(--overlay-rgb), 0.05);
+  }
+
+  .tabTitleGroup {
+    gap: 0.3rem;
   }
 
   .tabActive {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(var(--overlay-rgb), 0.07);
+  }
+
+  /* Coincide con el radio de .tabBtn de acá arriba - ver el mismo
+     comentario en SociosLegajo.module.css. */
+  .activeBar {
+    border-radius: 2px;
   }
 
   .mobileChevron {
@@ -877,12 +995,6 @@
     flex: 1;
   }
 
-  .perfilGrid {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: 1fr 1fr;
-    gap: 0.75rem;
-  }
-
   .socioDetailGrid {
     grid-template-columns: 1fr 1fr;
   }
@@ -891,8 +1003,8 @@
 .workspaceMobile {
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.015);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--overlay-rgb), 0.015);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 1rem;
   overflow: hidden;
 }
@@ -900,8 +1012,8 @@
 /* ── NUEVAS SECCIONES Y CONTROLES ── */
 
 .sectionBlock {
-  background: rgba(255, 255, 255, 0.015);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.015);
+  border: 1px solid rgba(var(--overlay-rgb), 0.05);
   border-radius: 0.875rem;
   padding: 1.25rem;
   margin-bottom: 1.5rem;
@@ -911,7 +1023,7 @@
 }
 
 .sectionBlock:hover {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(var(--overlay-rgb), 0.08);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
@@ -922,7 +1034,7 @@
   gap: 1rem;
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
 }
 
 .sectionHeaderLeft {
@@ -932,7 +1044,7 @@
 }
 
 .sectionIcon {
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   display: flex;
   align-items: center;
 }
@@ -940,7 +1052,7 @@
 .sectionTitle {
   font-size: 0.9375rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--white);
   margin: 0;
 }
 
@@ -950,13 +1062,41 @@
   gap: 0.375rem;
   background: rgba(245, 244, 0, 0.08);
   border: 1px solid rgba(245, 244, 0, 0.25);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 0.35rem 0.75rem;
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* Las secciones de siempre tienen una etiqueta corta y fija ("Agregar
+   Accionista"), pero TerceroRelacionSection arma la suya con el nombre que
+   el admin haya cargado en /admin/tipos-relacion-socio - sin tope, un
+   nombre largo estira el botón a lo ancho de todo el header. En mobile no
+   aplica: ahí .headerActionPortal ya lo pone al 100% a propósito. */
+@media (min-width: 48rem) {
+  .addButton {
+    max-width: 13rem;
+  }
+}
+
+/* El texto va en su propio span (ver TerceroRelacionSection) porque
+   text-overflow no funciona sobre el contenedor flex del botón: el nodo de
+   texto suelto queda como item anónimo y no hereda el recorte. */
+.addButtonLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* El "+" no se achica cuando la etiqueta se trunca. */
+.addButton svg {
+  flex-shrink: 0;
 }
 
 .addButton:hover {
@@ -967,9 +1107,9 @@
 }
 
 .addButton:disabled {
-  background: rgba(255, 255, 255, 0.02) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  color: #555 !important;
+  background: rgba(var(--overlay-rgb), 0.02) !important;
+  border-color: rgba(var(--overlay-rgb), 0.08) !important;
+  color: var(--text-dim) !important;
   cursor: not-allowed !important;
   transform: none !important;
   box-shadow: none !important;
@@ -983,15 +1123,15 @@
 
 .addButtonAdmin:hover {
   background: var(--color-azul-bind, #4c65e6);
-  color: #fff;
+  color: var(--white);
   box-shadow: 0 4px 12px rgba(76, 101, 230, 0.25);
 }
 
 /* BARRA DE PROGRESO DE PARTICIPACIÓN */
 .progressContainer {
   margin-bottom: 1rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px solid rgba(var(--overlay-rgb), 0.04);
   padding: 0.875rem;
   border-radius: 0.625rem;
 }
@@ -1001,13 +1141,13 @@
   justify-content: space-between;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #aaa;
+  color: var(--text-muted);
   margin-bottom: 0.4rem;
 }
 
 .progressTrack {
   height: 0.5rem;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--overlay-rgb), 0.08);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -1086,7 +1226,16 @@
 .roleBolsa {
   background: rgba(245, 244, 0, 0.08);
   border: 1px solid rgba(245, 244, 0, 0.25);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
+}
+
+/* Relaciones de terceros parametrizadas dinámicamente (ver
+   TerceroRelacionSection) - sin color temático propio como las 4 de
+   siempre, un tono neutro genérico. */
+.roleGenerico {
+  background: rgba(139, 148, 158, 0.1);
+  border: 1px solid rgba(139, 148, 158, 0.28);
+  color: #8b949e;
 }
 
 /* CONTROLES DE TARJETA (EDITAR/ELIMINAR) */
@@ -1105,9 +1254,9 @@
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 0.375rem;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.02);
-  color: #888;
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  background: rgba(var(--overlay-rgb), 0.02);
+  color: var(--text-muted);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1119,7 +1268,7 @@
 .actionBtnEdit:hover {
   border-color: rgba(245, 244, 0, 0.3);
   background: rgba(245, 244, 0, 0.08);
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
 }
 
 .actionBtnEditAdmin:hover {
@@ -1131,7 +1280,7 @@
 .actionBtnDelete:hover {
   border-color: rgba(255, 82, 82, 0.3);
   background: rgba(255, 82, 82, 0.08);
-  color: #ff5252;
+  color: var(--danger-bright);
 }
 
 @media (max-width: 48rem) {
@@ -1141,27 +1290,6 @@
   }
   .socioHeaderActions {
     padding-right: 0.5rem !important;
-  }
-  .perfilGrid {
-    gap: 0.5rem;
-  }
-  .perfilChip {
-    padding: 0.6rem 0.875rem;
-    gap: 0.2rem;
-    border-radius: 0.5rem;
-  }
-  .perfilChipHeader {
-    gap: 0.4rem;
-  }
-  .perfilChipIcon svg {
-    width: 14px;
-    height: 14px;
-  }
-  .perfilChipLabel {
-    font-size: 0.6rem;
-  }
-  .perfilChipValue {
-    font-size: 0.8rem;
   }
   .roleBadgeDesktop {
     display: none !important;
@@ -1226,7 +1354,7 @@
   justify-content: flex-end;
   gap: 0.75rem;
   padding-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.05);
   margin-top: 0.25rem;
 }
 
@@ -1268,7 +1396,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   flex-shrink: 0;
 }
 
@@ -1371,12 +1499,12 @@
 }
 
 .editLink {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.07);
   border-radius: 0.4rem;
   cursor: pointer;
   padding: 0.3rem 0.6rem;
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 600;
   display: inline-flex;
@@ -1394,14 +1522,14 @@
 
 .editLink:hover {
   color: var(--white-muted, #f0f0f0);
-  border-color: rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(var(--overlay-rgb), 0.15);
+  background: rgba(var(--overlay-rgb), 0.05);
 }
 
 .summaryDivider {
   width: 100%;
   height: 1px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.05);
   flex-shrink: 0;
 }
 
@@ -1435,7 +1563,7 @@
   display: flex;
   align-items: center;
   background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(var(--overlay-rgb), 0.09);
   border-radius: 0.75rem;
   padding: 0 1rem;
   width: 7.5rem;
@@ -1470,7 +1598,7 @@
 }
 
 .percentageSymbol {
-  color: var(--color-amarillo-bind, #f5f400);
+  color: var(--color-amarillo-bind);
   font-size: 1.125rem;
   font-weight: 700;
   opacity: 0.6;
@@ -1486,7 +1614,7 @@
 }
 
 .errorText {
-  color: #ff5252;
+  color: var(--danger-bright);
   font-size: 0.72rem;
   margin: 0;
   display: flex;
@@ -1554,15 +1682,15 @@
   transition:
     background 0.18s ease,
     border-color 0.18s ease;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  color: var(--white);
   font-family: inherit;
 }
 
 .afipSearchButton:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(var(--overlay-rgb), 0.07);
+  border-color: rgba(var(--overlay-rgb), 0.2);
 }
 
 .afipSearchButton:disabled {
@@ -1613,15 +1741,6 @@
 
 /* ── MULTI-CARGA SUB-TABS Y DESCARGAS ZIP ────────────────────────────────── */
 
-.viewerHeaderTitleRow {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.75rem;
-  margin-top: 0.25rem;
-  margin-bottom: 0.75rem;
-}
-
 .downloadCategoryBtn {
   display: inline-flex;
   align-items: center;
@@ -1629,9 +1748,9 @@
   gap: 0.375rem;
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--yellow, #f4f500);
-  background: rgba(244, 245, 0, 0.08);
-  border: 1px solid rgba(244, 245, 0, 0.2);
+  color: var(--badge-amarillo-text);
+  background: var(--badge-amarillo-bg);
+  border: 1px solid var(--badge-amarillo-border);
   padding: 0.35rem 0.75rem;
   border-radius: 0.375rem;
   cursor: pointer;
@@ -1640,7 +1759,7 @@
 }
 
 .downloadCategoryBtn:hover {
-  background: rgba(244, 245, 0, 0.15);
+  filter: brightness(1.15);
   transform: translateY(-1px);
 }
 
@@ -1652,6 +1771,40 @@
 
 .downloadCategoryBtnAdmin:hover {
   background: rgba(76, 101, 230, 0.18);
+}
+
+/* ── TOOLBAR DEL LEGAJO (descargar todo) ─────────────────────────────────
+   Mobile-first: apilado (contador arriba, botón de ancho completo abajo)
+   hasta que hay lugar para ponerlos en la misma línea. */
+.legajoToolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.875rem;
+}
+
+.legajoToolbarInfoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.legajoToolbarInfo {
+  font-size: 0.78rem;
+  color: var(--text-muted, #8b949e);
+}
+
+.legajoToolbarBtn {
+  flex-shrink: 0;
+}
+
+@media (min-width: 48rem) {
+  .legajoToolbar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
 
 .viewerContent {
@@ -1667,8 +1820,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.25rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px solid rgba(var(--overlay-rgb), 0.05);
   padding: 0.25rem;
   border-radius: 0.625rem;
   width: 100%;
@@ -1685,7 +1838,7 @@
   padding: 0.5rem 0.8rem;
   border-radius: 0.5rem;
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-muted);
   cursor: pointer;
   font-family: inherit;
   font-weight: 500;
@@ -1694,14 +1847,14 @@
 }
 
 .subTab:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: #fff;
+  background: rgba(var(--overlay-rgb), 0.03);
+  color: var(--white);
 }
 
 .subTabActive {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.05);
-  color: #fff;
+  background: rgba(var(--overlay-rgb), 0.06);
+  border-color: rgba(var(--overlay-rgb), 0.05);
+  color: var(--white);
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
@@ -1713,11 +1866,20 @@
 }
 
 .subTabActive .subTabIcon {
-  color: var(--yellow, #f4f500);
+  color: var(--color-amarillo-bind);
 }
 
 .subTabIcon.subTabIconAdminActive {
   color: var(--color-azul-bind-300, #8a9fff);
+}
+
+.subTabTextGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .subTabText {
@@ -1727,24 +1889,46 @@
   text-overflow: ellipsis;
 }
 
+/* Con dos archivos del mismo nombre, esta es la única pista que los
+   distingue - ver formatFechaCorta en el JSX. */
+.subTabDate {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.subTabActive .subTabDate {
+  color: rgba(var(--overlay-rgb), 0.55);
+}
+
+/* Antes era casi invisible (0.125rem de padding, gris oscuro var(--text-dim) sobre
+   fondo oscuro): en pruebas de usuario nadie la notaba sin que se las
+   señalara. Ahora tiene su propio círculo de fondo siempre visible, no
+   solo al hacer hover. */
 .subTabClose {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   margin-left: 0.375rem;
-  padding: 0.125rem;
+  width: 1.4rem;
+  height: 1.4rem;
   border-radius: 50%;
-  color: #666;
+  background: rgba(var(--overlay-rgb), 0.07);
+  border: 1px solid rgba(var(--overlay-rgb), 0.1);
+  color: var(--text-muted);
   transition: all 0.15s ease;
 }
 
 .subTabClose:hover {
-  background: rgba(255, 82, 82, 0.15);
-  color: #ff5252;
+  background: rgba(255, 82, 82, 0.18);
+  border-color: rgba(255, 82, 82, 0.4);
+  color: var(--danger-bright);
 }
 
 .subTabAdd {
-  color: var(--yellow, #f4f500);
+  color: var(--color-amarillo-bind);
   font-weight: 600;
   flex-basis: 100%;
   justify-content: center;
@@ -1755,12 +1939,6 @@
 }
 
 @media (min-width: 48rem) {
-  .viewerHeaderTitleRow {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0;
-  }
   .downloadCategoryBtn {
     width: auto;
   }
@@ -1782,13 +1960,13 @@
 
 .subTabAdd:hover {
   background: rgba(244, 245, 0, 0.05);
-  color: #fff;
+  color: var(--white);
 }
 
 .subTabAdd.subTabActive {
   background: rgba(244, 245, 0, 0.1);
   border-color: rgba(244, 245, 0, 0.2);
-  color: #fff;
+  color: var(--white);
 }
 
 .subTabAddAdmin {
@@ -1799,19 +1977,19 @@
 
 .subTabAddAdmin:hover {
   background: rgba(76, 101, 230, 0.08);
-  color: #fff;
+  color: var(--white);
 }
 
 .subTabAddAdmin.subTabActive {
   background: rgba(76, 101, 230, 0.14);
   border-color: rgba(76, 101, 230, 0.35);
-  color: #fff;
+  color: var(--white);
 }
 
 /* SIDEBAR DESCARGAR LEGAJO COMPLETO - Más sutil e integrado */
 .sidebarHeader {
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(var(--overlay-rgb), 0.05);
   background: rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: center;
@@ -1825,9 +2003,9 @@
   gap: 0.375rem;
   font-size: 0.72rem;
   font-weight: 600;
-  color: #aaa;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  background: rgba(var(--overlay-rgb), 0.03);
+  border: 1px solid rgba(var(--overlay-rgb), 0.08);
   padding: 0.35rem 0.75rem;
   border-radius: 0.375rem;
   cursor: pointer;
@@ -1837,7 +2015,7 @@
 .downloadAllBtn:hover {
   background: rgba(76, 101, 230, 0.15);
   border-color: var(--color-azul-bind, #4C65E6);
-  color: #fff;
+  color: var(--white);
 }
 
 .downloadAllBtnMobile {
@@ -1856,13 +2034,13 @@
 
 .reqBadgeLufe {
   background: rgba(76, 175, 80, 0.12);
-  color: #4caf50;
+  color: var(--success-bright);
   border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
 .viewerBadgeLufe {
   background: rgba(76, 175, 80, 0.12) !important;
-  color: #4caf50 !important;
+  color: var(--success-bright) !important;
   border: 1px solid rgba(76, 175, 80, 0.2) !important;
 }
 
@@ -1888,10 +2066,59 @@
   color: #ea4a5a;
 }
 
+/* ── COLAPSO DE OPCIONES (mobile, archivo ya cargado) ────────────────── */
+
+.mobileOpcionesToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  background: rgba(244, 245, 0, 0.05);
+  border: 1px dashed rgba(244, 245, 0, 0.3);
+  border-radius: 0.625rem;
+  padding: 0.55rem 0.8rem;
+  color: var(--color-amarillo-bind);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.mobileOpcionesToggle:hover {
+  background: rgba(244, 245, 0, 0.09);
+}
+
+.mobileOpcionesToggleAdmin {
+  color: var(--color-azul-bind-300, #8a9fff);
+  border-color: rgba(76, 101, 230, 0.4);
+  background: rgba(76, 101, 230, 0.06);
+}
+
+.mobileOpcionesToggleAdmin:hover {
+  background: rgba(76, 101, 230, 0.1);
+}
+
+.mobileOpcionesChevron {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.mobileOpcionesChevronOpen {
+  transform: rotate(180deg);
+}
+
+.mobileOpcionesPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
 .metaFormContainer {
   margin-top: 0.75rem;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(var(--overlay-rgb), 0.02);
+  border: 1px solid rgba(var(--overlay-rgb), 0.05);
   border-radius: 0.625rem;
   padding: 0.625rem 0.875rem;
   backdrop-filter: blur(8px);
@@ -1901,7 +2128,7 @@
 }
 
 .metaFormContainer:hover {
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(var(--overlay-rgb), 0.08);
 }
 
 .metaFormFields {
@@ -1928,13 +2155,13 @@
 .metaLabel {
   font-size: 0.6875rem;
   font-weight: 600;
-  color: #777;
+  color: var(--text-muted);
   letter-spacing: 0.01em;
 }
 
 .metaInput {
   background: rgba(0, 0, 0, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--overlay-rgb), 0.06);
   border-radius: 0.375rem;
   padding: 0.4rem 0.625rem;
   color: var(--white, #fff);
@@ -1946,7 +2173,7 @@
 }
 
 .metaInput::placeholder {
-  color: #444;
+  color: var(--text-muted);
 }
 
 .metaInput:focus {
@@ -1972,13 +2199,13 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 1.25rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(var(--overlay-rgb), 0.05);
   padding-top: 1rem;
 }
 
 .saveMetaBtn {
   background: var(--color-azul-bind, #4C65E6);
-  color: #fff;
+  color: var(--white);
   border: none;
   border-radius: 0.5rem;
   padding: 0.6rem 1.25rem;
@@ -2000,8 +2227,8 @@
 }
 
 .saveMetaBtn:disabled {
-  background: rgba(255, 255, 255, 0.08);
-  color: #666;
+  background: rgba(var(--overlay-rgb), 0.08);
+  color: var(--text-dim);
   cursor: not-allowed;
   box-shadow: none;
 }

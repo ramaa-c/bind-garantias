@@ -1,0 +1,1340 @@
+/* Antes compartido con CdasGlobales.module.css (una sola pantalla alternaba
+   lista/workbench); separado en su propio módulo junto con la ruta propia
+   de CdaFormPage.jsx, que es la única que lo usa. */
+
+/* Rango 1 (alto fijo, sin scroll) por default: .container arma sus 3
+   columnas con altura fija - height:100%, no un cálculo propio en base a
+   100dvh: .containerInner (el padre real, ver AdminLayout.module.css) ya
+   tiene una altura definida, 100% de esa altura es siempre la disponible
+   de verdad, sin duplicar a mano el padding de .adminContent en un número
+   mágico separado que se puede desincronizar.
+
+   Rango 2 más abajo, en el mismo umbral único que el resto del panel admin
+   (1440px de ancho u 716px de alto - ver AdminLayout.module.css): TODA
+   página admin con este patrón debe pasar a height:auto acá, porque
+   .containerInner (el padre) también pasa a height:auto en Rango 2 - pedirle
+   height:100% a un padre en auto es el caso circular que ese mismo archivo
+   documenta ("el navegador lo trata como indefinido... se miden solas"). Se
+   probó mantener .container en height:100% igual (2026-09-22) para intentar
+   que .jsonViewerContainer conservara su scroll interno - resultado: el caso
+   circular de arriba, ninguna altura quedaba realmente acotada y el síntoma
+   original (el JSON estira la página) seguía igual. El fix real no puede
+   pasar por mantener .container acotado (rompe el contrato compartido con
+   .containerInner); pasa por ponerle un max-height PROPIO y absoluto
+   directamente a .jsonViewerContainer (ver ese selector, más abajo), que no
+   depende de que ningún ancestro tenga una altura definida. */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .container {
+    height: auto;
+    min-height: auto;
+    gap: 0.85rem;
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 0 0 auto;
+}
+
+.titleBox h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+}
+
+.titleBox p {
+  color: #8b949e;
+  margin: 0.2rem 0 0 0;
+  font-size: 0.8rem;
+}
+
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en
+   CdasGlobales.module.css/Dashboard.module.css). */
+@media (max-height: 716px) {
+  .titleBox p {
+    display: none;
+  }
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  color: #58a6ff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.5rem;
+}
+
+.backButton:hover {
+  text-decoration: underline;
+}
+
+/* ============ WORKBENCH: layout de 3 columnas (Rango 1) / 2 filas (Rango 2) ============ */
+.workbench {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(340px, 1.15fr) minmax(300px, 1fr);
+  gap: 1.1rem;
+  flex: 1 1 auto;
+  margin-bottom: 0.75rem;
+  min-height: 0;
+}
+
+/* Rango 2: ya no apila las 3 columnas completas una debajo de otra. Fuente
+   de Datos y Definí la Regla comparten una fila arriba, con el ancho que
+   antes ocupaban las 3 juntas; Probá y Publicá pasa a una fila propia
+   abajo, dividida en dos mitades (ver .colAccionesBody) - zona de pruebas a
+   la izquierda, vinculación y botones a la derecha. Las filas quedan en
+   "auto" (alto de contenido, no minmax/fr): en Rango 2 nada en esta pantalla
+   tiene una altura acotada de verdad (ver el comentario de .container), así
+   que repartir un presupuesto fijo entre filas no aplica acá - la página
+   entera scrollea con normalidad si hace falta, como el resto del panel
+   admin en este rango. */
+@media (max-width: 1440px), (max-height: 716px) {
+  .workbench {
+    grid-template-columns: minmax(280px, 1fr) minmax(340px, 1.2fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "colFuente colRegla"
+      "colAcciones colAcciones";
+    /* align-items default (stretch): "Fuente de Datos" y "Definí la Regla"
+       quedan con la misma altura de tarjeta (la de la más alta de las dos),
+       igual que en Rango 1 - .jsonViewerContainer (flex:1 más abajo) llena
+       esa altura en vez de dejar aire debajo. Se probó "start" (cada
+       tarjeta a su alto natural) para resolver un aire vacío anterior, pero
+       eso dejaba a "Fuente de Datos" visiblemente más corta que su vecina
+       (reportado el 2026-09-22) - el aire vacío en realidad era porque
+       .jsonViewerContainer todavía tenía un max-height bajo puesto para
+       Rango 2 (ya sacado, ver ese selector), no por el stretch en sí. */
+    min-height: auto;
+    gap: 0.85rem;
+  }
+  .colFuente {
+    grid-area: colFuente;
+  }
+  .colRegla {
+    grid-area: colRegla;
+  }
+  .colAcciones {
+    grid-area: colAcciones;
+  }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+  padding: 1.1rem;
+  min-width: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .col {
+    overflow: visible;
+    min-height: auto;
+    gap: 0.85rem;
+    padding: 0.85rem;
+  }
+}
+
+/* Columna 3 ("Probá y Publicá"): a diferencia de las otras 2, tiene piezas
+   apiladas (sandbox fijo, divisor, switches de vinculación, botón de
+   guardar) que siempre exigen su espacio. Con overflow:hidden (igual que
+   las otras columnas, heredado de .col) toda la presión de achique caía
+   sobre los switches del medio (la única zona con min-height:0) hasta
+   comprimirlos a una franja de pocos px - técnicamente seguían ahí y
+   scrolleables, pero invisibles/imposibles de usar en la práctica
+   (reportado con zoom 150%/175%, 2026-09-09). Por eso esta columna en
+   particular scrollea ENTERA en Rango 1 en vez de una franja interna: nada
+   se comprime por debajo de su alto natural, así que en el peor caso hay
+   que scrollear la tarjeta - nunca se pierde nada. En Rango 2 no hace falta
+   (la página entera ya scrollea, igual que .col). */
+.colAcciones {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .colAcciones {
+    overflow: visible;
+  }
+}
+
+/* Agrupa el laboratorio de pruebas (.sandboxContainer) y todo lo demás
+   (.colAccionesSecondary) como una sola pieza dentro de .colAcciones: en
+   Rango 1 es una columna más (mismo gap que el resto de .col, para que se
+   vea idéntico a como estaban sueltos antes de este wrapper), en Rango 2
+   pasa a fila - ver el comentario de .workbench. Ningún alto artificial acá
+   (ni en .sandboxContainer ni en .colAccionesSecondary, más abajo): en
+   Rango 2 la página ya scrollea sola si hace falta, así que no hay riesgo
+   real de "aplastar" nada por presupuesto compartido (a diferencia de
+   .jsonViewerContainer, que si necesita su propio tope - ver ese
+   selector). */
+.colAccionesBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  min-height: 0;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .colAccionesBody {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 1rem;
+  }
+}
+
+/* Vinculación + botones: alto natural, debajo del laboratorio de pruebas en
+   Rango 1 (y a la derecha del sandbox en Rango 2 - ver .colAccionesBody). */
+.colAccionesSecondary {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .colAccionesSecondary {
+    flex: 1 1 0;
+    min-width: 0;
+    gap: 0.85rem;
+    /* Reemplaza al .colDivider horizontal (ver más abajo): acá separa las
+       dos mitades de la fila, no un bloque del siguiente. */
+    padding-left: 1rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+.colHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 0 0 auto;
+}
+
+.colStepBadge {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: rgba(76, 101, 230, 0.15);
+  border: 1px solid rgba(76, 101, 230, 0.35);
+  color: var(--color-azul-bind, #4c65e6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  flex-shrink: 0;
+}
+
+.colTitle {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.colSubtitle {
+  font-size: 0.7rem;
+  color: #8b949e;
+  margin: 0.1rem 0 0 0;
+  line-height: 1.3;
+}
+
+.colScroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+  margin-right: -0.35rem;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .colScroll {
+    overflow-y: visible;
+    padding-right: 0;
+    margin-right: 0;
+  }
+}
+
+/* Wrapper de los switches de vinculación en la columna 3 (ver .colAcciones):
+   a propósito NO usa flex:1/min-height:0/overflow-y propios como .colScroll
+   - ocupa su alto natural siempre, y si no entra, es .colAcciones (la
+   columna entera) la que scrollea. */
+.colVinculacion {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Columna "Definí la Regla": secciones más pegadas entre sí que el
+   default de .colScroll, para aprovechar mejor el alto disponible. */
+.colScrollTight {
+  gap: 1rem;
+}
+
+/* JSON Viewer: flex:1/min-height:0 para llenar el alto disponible de la
+   columna. En Rango 1, .col está acotada por CSS puro (overflow:hidden). En
+   Rango 2, .col ya no tiene una altura propia acotada, pero SÍ recibe una
+   vía Grid: "Fuente de Datos" y "Definí la Regla" comparten fila y por
+   default (align-items:stretch, ver .workbench) quedan a la misma altura -
+   la de la más alta de las dos -, y ESA es la altura definida que flex:1
+   acá llena. Achicar esto a un max-height bajo en Rango 2 (probado el
+   2026-09-22) dejaba a la tarjeta igual de alta (el stretch de Grid no
+   cambia) pero con el JSON parado antes de tiempo: aire vacío debajo, sin
+   ninguna ganancia real. max-height es un techo generoso, pensado para
+   NUNCA activarse en un monitor real - solo actúa como red de seguridad si
+   algún ancestro quedara mal acotado por algo fuera de este componente.
+   overflow-wrap: una key JSON larga sin espacios (ej.
+   "descripcioncaracterizacion") no tiene dónde partir una línea y forzaba
+   scroll horizontal en vez de wrapear - mismo criterio ya aplicado en
+   Terminos.module.css. */
+.jsonViewerContainer {
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 0.5rem;
+  padding: 0.85rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 34rem;
+}
+
+.jsonViewerMessage {
+  color: #8b949e;
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.jsonNode {
+  margin-left: 1.25rem;
+}
+
+.jsonKey {
+  color: #79c0ff;
+  font-weight: 600;
+}
+
+.jsonValueString { color: #a5d6ff; }
+.jsonValueNumber { color: #d2a8ff; }
+.jsonValueBoolean { color: #ff7b72; }
+.jsonValueNull { color: #8b949e; font-style: italic; }
+
+.jsonBuscadorWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.jsonSearchRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  background: #12141a;
+  border: 1px solid #30363d;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.jsonSearchRow:focus-within {
+  border-color: #b388ff;
+}
+
+.jsonSearchIcon {
+  color: #8b949e;
+  flex: 0 0 auto;
+}
+
+.jsonSearchInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 0.8rem;
+  padding: 0.25rem 0;
+}
+
+.jsonSearchCount {
+  color: #8b949e;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.jsonSearchBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #c9d1d9;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0.2rem;
+}
+
+.jsonSearchBtn:hover:not(:disabled) {
+  background-color: rgba(88, 166, 255, 0.15);
+}
+
+.jsonSearchBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.jsonMatch {
+  background-color: rgba(210, 153, 34, 0.35);
+  border-radius: 4px;
+}
+
+.jsonMatchActive {
+  background-color: rgba(255, 166, 0, 0.75);
+  color: #0d1117;
+}
+
+.jsonFieldHover {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.jsonFieldHover:hover {
+  background-color: rgba(88, 166, 255, 0.15);
+}
+
+/* Form */
+.validationError {
+  background-color: rgba(248, 81, 73, 0.1);
+  color: #ff7b72;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.8rem;
+  border: 1px solid rgba(248, 81, 73, 0.4);
+  flex: 0 0 auto;
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: minmax(11rem, 30%) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 0;
+  row-gap: 0.35rem;
+  align-items: start;
+}
+
+.fieldOperador {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.fieldOperador:focus-within {
+  z-index: 2;
+}
+
+.fieldOperador > div > div {
+  border-radius: 0.875rem 0 0 0.875rem;
+}
+
+.fieldValorComparacion {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-width: 0;
+  margin-left: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+.fieldValorComparacion > div:first-child > div {
+  border-radius: 0 0.875rem 0.875rem 0;
+  min-height: calc(3.2rem + 2px);
+}
+
+.vacioCheckWrap {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .fieldRow {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+  }
+
+  .fieldOperador > div > div,
+  .fieldValorComparacion > div:first-child > div {
+    border-radius: 0.875rem;
+  }
+
+  .fieldValorComparacion {
+    grid-column: 1;
+    grid-row: 2;
+    margin-left: 0;
+    margin-top: 0.5rem;
+  }
+
+  .vacioCheckWrap {
+    grid-column: 1;
+    grid-row: 3;
+  }
+}
+
+/* Textareas de una sola línea (expresión, log): no necesitan la altura por defecto */
+.compactField textarea {
+  min-height: 2.5rem !important;
+}
+
+.campoSeleccionado {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  background: #12141a;
+  border: 1px solid #30363d;
+  border-radius: 0.75rem;
+}
+
+.campoSeleccionadoError {
+  border-color: rgba(248, 81, 73, 0.6);
+}
+
+.campoSeleccionadoTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.campoSeleccionadoEtiqueta {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #8b949e;
+}
+
+.campoSeleccionadoValor {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: #79c0ff;
+  overflow-wrap: anywhere;
+}
+
+.campoSeleccionadoVacio {
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.campoSeleccionadoError .campoSeleccionadoVacio {
+  color: #ff7b72;
+}
+
+.campoSeleccionadoQuitar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0.25rem;
+}
+
+.campoSeleccionadoQuitar:hover:not(:disabled) {
+  background-color: rgba(248, 81, 73, 0.15);
+  color: #ff7b72;
+}
+
+.helperText {
+  font-size: 0.7rem;
+  color: #8b949e;
+  margin: 0.45rem 0 0 0;
+  line-height: 1.3;
+}
+
+/* Secciones dentro de la tarjeta "Definí la Regla" */
+.sectionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.sectionLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.3rem;
+  margin: 0 0 0.15rem 0;
+}
+
+/* Toggle para revelar campos secundarios (menos carga visual) */
+.advancedToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.4rem;
+  color: #8b949e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.3rem 0.6rem;
+  align-self: flex-start;
+  margin-top: -0.25rem;
+  transition: all 0.15s ease;
+}
+
+.advancedToggle:hover {
+  color: #ffffff;
+  border-color: rgba(88, 166, 255, 0.3);
+  background: rgba(88, 166, 255, 0.05);
+}
+
+.advancedToggleIcon {
+  font-size: 0.85rem;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.advancedToggleIconOpen {
+  transform: rotate(180deg);
+}
+
+.advancedToggleHint {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Custom premium checkbox styles */
+.customCheckbox {
+  width: 17px;
+  height: 17px;
+  border: 2px solid #30363d;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.checkboxChecked {
+  border-color: #58a6ff;
+  background: #3b4ed1;
+}
+
+.checkmarkIcon {
+  color: #ffffff;
+}
+
+.checkboxLabel {
+  font-size: 0.8rem;
+  color: #c9d1d9;
+  cursor: pointer;
+}
+
+/* Caja que agrupa la vinculación opcional a pantalla */
+.vinculacionBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.65rem;
+  padding: 0.85rem;
+  flex: 0 0 auto;
+}
+
+.boxLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+/* Botonero compacto de opciones de vinculación: switch chico + nombre corto +
+   ícono de info con la descripción larga en un tooltip. Reemplaza a las
+   tarjetas grandes de antes, que con 3 opciones ya no entraban en la columna. */
+.toggleOptionsPanel {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.15);
+  flex: 0 0 auto;
+}
+
+.toggleOptionRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.95rem 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.toggleOptionRow:last-child {
+  border-bottom: none;
+}
+
+.toggleOptionLabel {
+  flex: 1;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Switch mismo lenguaje visual que el de Administración > Cadenas de Valor,
+   un poco más grande ya que ahora solo son 2 filas y sobra espacio. */
+.miniSwitch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.miniSwitch input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  margin: 0;
+}
+
+.miniSwitch input:disabled {
+  cursor: not-allowed;
+}
+
+.miniSlider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  transition: 0.2s;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.miniSlider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  transition: 0.2s;
+  border-radius: 50%;
+}
+
+.miniSwitch input:checked + .miniSlider {
+  background-color: rgba(76, 101, 230, 0.25);
+  border-color: rgba(76, 101, 230, 0.5);
+}
+
+.miniSwitch input:checked + .miniSlider:before {
+  transform: translateX(18px);
+  background-color: var(--color-azul-bind, #4c65e6);
+}
+
+.miniSwitch input:disabled + .miniSlider {
+  opacity: 0.5;
+}
+
+/* Ícono de info + tooltip con la descripción larga */
+.toggleOptionInfoWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: help;
+  outline: none;
+}
+
+.toggleOptionInfoIcon {
+  color: #8b949e;
+  transition: color 0.2s;
+}
+
+.toggleOptionInfoWrapper:hover .toggleOptionInfoIcon,
+.toggleOptionInfoWrapper:focus-visible .toggleOptionInfoIcon {
+  color: #58a6ff;
+}
+
+/* Posicionado en un portal (position: fixed, top/right calculados en JS) para
+   no quedar recortado por el overflow-y:auto de la columna. */
+.toggleOptionTooltip {
+  position: fixed;
+  transform: translateY(-100%);
+  background: #12141a;
+  border: 1px solid rgba(76, 101, 230, 0.3);
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  width: 250px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  z-index: 2000;
+  pointer-events: none;
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #c9d1d9;
+  text-align: left;
+  white-space: normal;
+  animation: toggleTooltipIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toggleTooltipIn {
+  from { opacity: 0; transform: translateY(calc(-100% + 6px)); }
+  to { opacity: 1; transform: translateY(-100%); }
+}
+
+.toggleOptionTooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  right: 10px;
+  border-width: 6px;
+  border-style: solid;
+  border-color: rgba(76, 101, 230, 0.3) transparent transparent transparent;
+}
+
+/* Fila propia debajo de "Valor de Comparación": mensaje de error a la izquierda
+   (reemplaza al de InputSimple, que con hideErrorSpace queda mal ubicado) y el
+   checkbox "comparar contra vacío" a la derecha, ambos a la misma altura */
+.valorBelowRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.valorErrorText {
+  font-size: 0.7rem;
+  color: #ff5252;
+  min-height: 1.2em;
+}
+
+.valorHintText {
+  font-size: 0.7rem;
+  color: #8b949e;
+  min-height: 1.2em;
+}
+
+/* Sin margin-left:auto: .valorBelowRow ya lo empuja a la derecha con
+   justify-content:space-between cuando entra en la misma línea que el
+   hint/error de la izquierda. La columna 2 es angosta (una de 3) y ese
+   wrap pasa seguido incluso sin zoom - con margin-left:auto, al quedar
+   solo en su propia línea, igual se pegaba al borde derecho con un hueco
+   enorme a la izquierda, como flotando sin relación con el input de
+   arriba (reportado el 2026-09-22). Sin el margin, en su línea propia
+   arranca pegado a la izquierda, alineado con todo lo demás. */
+.vacioCheckRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vacioCheckRow:focus,
+.vacioCheckRow:focus-visible,
+.vacioCheckRow:active {
+  outline: none;
+  box-shadow: none;
+}
+
+.vacioCheckLabel {
+  font-size: 0.78rem;
+  color: #8b949e;
+  transition: color 0.15s ease;
+}
+
+.vacioCheckRow:hover .vacioCheckLabel {
+  color: #c9d1d9;
+}
+
+.vacioCheckRow:hover .customCheckbox {
+  border-color: #58a6ff;
+}
+
+.formActions {
+  flex: 0 0 auto;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Guardar/Crear (siempre el último botón, ver CdaWorkbench.jsx) es la
+   acción principal: ocupa el espacio que sobra. Eliminar, cuando está,
+   siempre va primero y es secundaria/destructiva - a tamaño de su propio
+   contenido, no compitiendo en peso visual con la principal (antes ambas
+   eran flex:1 al 50%, mismo tamaño que "Guardar Cambios" para una acción
+   que además es irreversible - reportado el 2026-09-22). */
+.formActions button {
+  width: auto;
+}
+
+.formActions button:last-child {
+  flex: 1;
+}
+
+/* Selector de variables de NOSIS (columna 1). Mismo criterio que
+   .jsonViewerContainer: flex:1 para llenar el alto disponible, acotado por
+   CSS en Rango 1 y por el stretch de Grid entre columnas en Rango 2 (ver
+   el comentario de .jsonViewerContainer para el detalle). */
+.nosisPickerContainer {
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 0.5rem;
+  padding: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+.nosisSearchInput {
+  background: #12141a;
+  border: 1px solid #30363d;
+  color: #ffffff;
+  border-radius: 0.375rem;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.8rem;
+  outline: none;
+  flex: 0 0 auto;
+}
+
+.nosisSearchInput:focus {
+  border-color: #b388ff;
+}
+
+.nosisVarListScroll {
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 34rem;
+}
+
+.nosisVarRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 0;
+}
+
+.nosisVarRow:hover {
+  border-color: rgba(179, 136, 255, 0.4);
+  background: rgba(179, 136, 255, 0.06);
+}
+
+.nosisVarRowActive {
+  border-color: #b388ff;
+  background: rgba(179, 136, 255, 0.1);
+}
+
+.nosisVarHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.nosisVarName {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #b388ff;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nosisVarType {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #8b949e;
+  background: rgba(139, 148, 158, 0.12);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  flex: 0 0 auto;
+}
+
+.nosisVarDesc {
+  font-size: 0.75rem;
+  color: #c9d1d9;
+  overflow-wrap: anywhere;
+}
+
+.nosisVarExample {
+  font-size: 0.7rem;
+  color: #8b949e;
+  overflow-wrap: anywhere;
+}
+
+.nosisVarEmpty {
+  color: #8b949e;
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* Testing Sandbox: zona fija arriba, no vive dentro de .colScroll. Es
+   position:relative porque el resultado (.testResultBox) se superpone acá
+   mismo (overlay), ocupando todo el contenedor -título incluido- sin
+   empujar nada hacia abajo ni crecer el bloque. */
+.sandboxContainer {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 1.1rem;
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-height: 9rem;
+}
+
+/* Rango 2: .colAccionesBody pasa a fila (ver ese comentario) - acá el
+   sandbox deja de ser "0 0 auto" (se angostaría a su contenido mínimo,
+   apretado) y pasa a compartir la fila en partes iguales con
+   .colAccionesSecondary, con el mismo tope de alto/scroll de resguardo
+   para que las dos mitades queden parejas. */
+@media (max-width: 1440px), (max-height: 716px) {
+  .sandboxContainer {
+    flex: 1 1 0;
+    min-width: 0;
+    max-height: 17rem;
+    overflow-y: auto;
+  }
+}
+
+.sandboxBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* Fila de "CUIT para la prueba" + botón "Probar": antes flex:1 sin piso
+   (inline, sin flex-wrap) - cuando el sandbox se angosta (columna 3 en
+   Rango 1 ya era la más angosta de las 3, y ahora en Rango 2 comparte fila
+   solo con la mitad de vinculación, ver .colAccionesBody) el botón nunca
+   cede su ancho y todo el achique caía sobre el input, que llegaba a
+   mostrar un CUIT completo solo hasta la mitad (reportado el 2026-09-22).
+   Mismo patrón ya usado en .fieldRow/.fieldOperador/.fieldValorComparacion
+   más abajo: min-width + flex-wrap, así el botón pasa a su propia línea en
+   vez de aplastar al input. */
+.sandboxTestRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.sandboxTestInput {
+  flex: 1 1 11rem;
+  min-width: 11rem;
+}
+
+/* Separa el laboratorio de pruebas (zona fija, arriba) de la vinculación (zona con scroll, abajo).
+   En Rango 2 la separación pasa a ser el border-left de .colAccionesSecondary
+   (las dos mitades quedan lado a lado, no una debajo de la otra). */
+.colDivider {
+  flex: 0 0 auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 0.1rem 0;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .colDivider {
+    display: none;
+  }
+}
+
+.sandboxTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.sandboxRulePreview {
+  font-size: 0.7rem;
+  color: #8b949e;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.sandboxRulePreview code {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #58a6ff;
+  background: #0d1117;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.375rem;
+  border: 1px solid #30363d;
+  word-break: break-all;
+  line-height: 1.35;
+}
+
+.confirmModalCode {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #58a6ff;
+  background: #0d1117;
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.375rem;
+  border: 1px solid #30363d;
+  word-break: break-all;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.testResultBox {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  overflow-y: auto;
+  animation: testResultFadeIn 0.15s ease;
+}
+
+@keyframes testResultFadeIn {
+  from { opacity: 0; transform: translateY(-0.25rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.testResultHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  color: #8b949e;
+}
+
+.testResultHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.testResultCloseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #8b949e;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.testResultCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.testResultMessage {
+  font-size: 0.8rem;
+  color: #ffffff;
+  line-height: 1.4;
+  word-break: break-all;
+  font-family: monospace;
+}
+
+.testResultLog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid #21262d;
+}
+
+.testResultLogLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.testResultLogValue {
+  display: block;
+  font-size: 0.8rem;
+  color: #58a6ff;
+  font-family: monospace;
+  word-break: break-all;
+  line-height: 1.4;
+  max-height: 6rem;
+  overflow-y: auto;
+}
+
+.badgeSuccess {
+  background: rgba(56, 161, 105, 0.12);
+  color: #38a169;
+  border: 1px solid rgba(56, 161, 105, 0.25);
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.badgeWarning {
+  background: rgba(221, 107, 32, 0.12);
+  color: #dd6b20;
+  border: 1px solid rgba(221, 107, 32, 0.25);
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.badgeDanger {
+  background: rgba(229, 62, 62, 0.12);
+  color: #e53e3e;
+  border: 1px solid rgba(229, 62, 62, 0.25);
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .workbench {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "colFuente"
+      "colRegla"
+      "colAcciones";
+  }
+
+  .colAccionesBody {
+    flex-direction: column;
+  }
+
+  .colAccionesSecondary {
+    padding-left: 0;
+    padding-top: 1rem;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .sandboxContainer {
+    flex: 0 0 auto;
+    max-height: none;
+  }
+}
+
+.valorErrorText {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.vacioCheckRow .customCheckbox.checkboxChecked,
+.vacioCheckRow:hover .customCheckbox.checkboxChecked {
+  border-color: #3b4ed1;
+}

@@ -1,274 +1,558 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { FiSearch, FiCheck, FiX, FiEye, FiArrowRight, FiFileText, FiBriefcase, FiTrendingUp, FiClock, FiCheckCircle, FiList, FiGlobe, FiGrid, FiChevronRight } from "react-icons/fi";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
-import { Badge } from "../../../components/ui/Badge/Badge";
+import { BotonIcono } from "../../../components/ui/BotonIcono/BotonIcono";
 import { Modal } from "../../../components/ui/Modal/Modal";
 import { SinResultados } from "../../../components/ui/SinResultados/SinResultados";
-import { TarjetaMetrica } from "../../../components/ui/TarjetaMetrica/TarjetaMetrica";
-import { SelectSimple } from "../../../components/ui";
-import { SkeletonTable } from "../../../components/ui";
+import { SelectSimple, SelectFechaSimple } from "../../../components/ui";
+import { Skeleton } from "../../../components/ui";
+import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
-import { useObtenerTodasWeb } from "../../../hooks/useCadenaValor";
-import { CriteriosAceptacionModal } from "../../../components/features";
-import api from "../../../api/axios";
+import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
+import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
+import { useObtenerSocios } from "../../../hooks/useSocios";
+import { useApoderadoFirmantePorSocio } from "../../../hooks/useTerceros";
+import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
+import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
+import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
+import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
+import { solicitudesService } from "../../../services/solicitudesService";
+import { sociosService } from "../../../services/sociosService";
+import { mensajeNegocio } from "../../../utils/mensajesError";
+import {
+  ESTADO_RECHAZADA,
+  ESTADO_PENDIENTE,
+  ESTADO_APROBADA,
+  ESTADO_CANCELADA,
+  ESTADO_VENCIDA,
+  estadoTextoDesde,
+  esRechazoAutomatico,
+} from "../../../utils/estadoLimiteSocio";
 import styles from "./Dashboard.module.css";
-
-const solicitudesIniciales = [
-  {
-    id: "16557",
-    tipo: "Alta de línea en John Deere",
-    monto: "100.000.000",
-    cliente: "COMERCIALIZADORA DE BIENES DE CAPITAL SA",
-    cuit: "30-59319937-8",
-    usuario: "30593199378@yopmail.com",
-    estado: "Pendiente de validación",
-    accionPendiente: "Espera de documentación de Alta de línea",
-    creado: "14/07/2025 20:08",
-    actualizado: "14/07/2025 20:31",
-    tags: ["TyC aceptados", "Legajo validado"],
-    cadenaSlug: "canal1",
-  },
-  {
-    id: "16546",
-    tipo: "Alta de línea en John Deere",
-    monto: "12.000.400",
-    cliente: "RAPTOR.MAX S.R.L.",
-    cuit: "30-71654889-5",
-    usuario: "30716548895@yopmail.com",
-    estado: "Pendiente de validación",
-    accionPendiente: "Espera de documentación de Alta de línea",
-    creado: "05/06/2025 11:31",
-    actualizado: "05/06/2025 11:41",
-    tags: ["TyC aceptados", "Legajo validado"],
-    cadenaSlug: "canal1",
-  },
-  {
-    id: "16540",
-    tipo: "Cheque Avalado BIND",
-    monto: "5.500.000",
-    cliente: "AGROPECUARIA DEL SUR S.A.",
-    cuit: "30-65432110-1",
-    usuario: "brunetti@yopmail.com",
-    estado: "Aprobada",
-    accionPendiente: "Lista para monetizar",
-    creado: "14/05/2025 12:08",
-    actualizado: "15/05/2025 18:21",
-    tags: ["Garantía Digital"],
-    cadenaSlug: "default",
-  },
-  {
-    id: "16538",
-    tipo: "Pagaré Bursátil USD",
-    monto: "250.000",
-    moneda: "U$D",
-    cliente: "TECH INNOVA S.R.L.",
-    cuit: "30-88776655-2",
-    usuario: "finanzas@techinnova.com",
-    estado: "Rechazada",
-    accionPendiente: "Falta de cupo crediticio",
-    creado: "10/05/2025 09:15",
-    actualizado: "11/05/2025 14:00",
-    tags: ["Requiere revisión"],
-    cadenaSlug: "default",
-  },
-];
 
 const opcionesEstado = [
   { value: "todos", label: "Todos los estados" },
   { value: "pendiente", label: "Pendiente" },
   { value: "aprobada", label: "Aprobada" },
   { value: "rechazada", label: "Rechazada" },
+  { value: "cancelada", label: "Cancelada" },
 ];
 
 const opcionesOrden = [
-  { value: "desc", label: "Más Recientes (N° Desc)" },
-  { value: "asc", label: "Más Antiguas (N° Asc)" },
+  { value: "desc", label: "Más recientes" },
+  { value: "asc", label: "Más antiguas" },
 ];
 
+const FILTROS_POR_DEFECTO = {
+  busqueda: "",
+  filtroEstado: "todos",
+  orden: "desc",
+  fechaDesde: "",
+  fechaHasta: "",
+};
+
+// SelectFechaSimple entrega el valor ya como ISO completo, así que el límite
+// superior del rango se lleva a las 23:59:59 locales en vez de asumir un
+// formato "yyyy-mm-dd" (mismo criterio que la pantalla de Solicitudes del
+// cliente).
+const finDelDia = (fecha) => {
+  const d = new Date(fecha);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
+const dotYPillClaseDesde = (isAprobada, isRechazada, isCancelada) => {
+  if (isAprobada) return "Aprobada";
+  if (isRechazada) return "Rechazada";
+  if (isCancelada) return "Cancelada";
+  return "Pendiente";
+};
+
+const getIniciales = (denominacion) => {
+  if (!denominacion) return "?";
+  const palabras = denominacion.trim().split(/\s+/).filter(Boolean);
+  if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
+  return (palabras[0][0] + palabras[1][0]).toUpperCase();
+};
+
+// Filas con avatar (mismo criterio visual que Empresas.jsx): entran menos
+// por página que la vieja grilla ultra-compacta, pero se leen de un vistazo.
+// 8 generaba scroll de página incluso en Full HD a 100% zoom (reportado en
+// vivo, 2026-09-14): a diferencia de Empresas/CdasGlobales, acá arriba de
+// la lista hay header + franja de contexto (cadena + métricas) + barra de
+// filtros, y cada fila es más alta (2 líneas de identidad + avatar de
+// 2.35rem + 2 botones de acción) - el presupuesto de Rango 1 no llegaba a
+// cubrir 8 filas con ese overhead adicional. En vez de bajar la cantidad,
+// .listWrapper quedó con su propio tope de alto + scroll interno (ver
+// Dashboard.module.css) para no perder densidad.
+const ELEMENTOS_POR_PAGINA = 8;
+
+// Misma forma que una fila real, para que el loading no "salte" de tamaño
+// cuando llegan los datos.
+const SolicitudRowSkeleton = () => (
+  <div className={styles.row}>
+    <Skeleton width="2.35rem" height="2.35rem" radius="50%" />
+    <div className={styles.rowIdentity}>
+      <Skeleton height="0.9rem" width="55%" />
+      <Skeleton height="0.75rem" width="75%" style={{ marginTop: "0.35rem" }} />
+    </div>
+    <Skeleton width="6rem" height="1.4rem" radius="9999px" />
+    <Skeleton width="7rem" height="1.1rem" />
+    <div className={styles.rowSpacer} />
+    <Skeleton width="10rem" height="1.9rem" radius="0.5rem" />
+    <Skeleton width="1rem" height="1rem" />
+  </div>
+);
+
 export default function Dashboard() {
-  const [solicitudes, setSolicitudes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [busqueda, setBusqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState("todos");
-  const [orden, setOrden] = useState("desc");
+  const [busqueda, setBusqueda] = useState(FILTROS_POR_DEFECTO.busqueda);
+  const [filtroEstado, setFiltroEstado] = useState(FILTROS_POR_DEFECTO.filtroEstado);
+  const [orden, setOrden] = useState(FILTROS_POR_DEFECTO.orden);
+  const [fechaDesde, setFechaDesde] = useState(FILTROS_POR_DEFECTO.fechaDesde);
+  const [fechaHasta, setFechaHasta] = useState(FILTROS_POR_DEFECTO.fechaHasta);
   const [selectedCadenaId, setSelectedCadenaId] = useState("all");
+  const [pagina, setPagina] = useState(1);
+  // Colapsado por defecto solo en Rango 2 (pantalla chica/zoom alto, mismo
+  // umbral que AdminLayout.module.css): ahí es donde el espacio es
+  // crítico. En Rango 1 sobra aire, así que arranca abierto - cerrarlo ahí
+  // sería un clic gratis en contra. Es solo el estado INICIAL (no
+  // reacciona en vivo a un cambio de zoom con la pantalla montada): el
+  // operador lo puede abrir/cerrar con el botón en cualquier momento.
+  const [panelesVisibles, setPanelesVisibles] = useState(
+    () => typeof window === "undefined" || !window.matchMedia("(max-height: 716px)").matches
+  );
 
   // Detalle Modal
   const [solicitudDetalle, setSolicitudDetalle] = useState(null);
   const [solicitudCda, setSolicitudCda] = useState(null);
+  const [solicitudARechazar, setSolicitudARechazar] = useState(null);
   const [isChainModalOpen, setIsChainModalOpen] = useState(false);
+  const { abrir: abrirModeloDocumento, pendienteId: pendienteModeloDocumentoId } = useAbrirModeloDocumento();
   const [chainSearchQuery, setChainSearchQuery] = useState("");
   const { isRestricted, cadenas } = useAdminRestrictions();
-  const { data: activeCadenas } = useObtenerTodasWeb();
+  // useObtenerTodasWeb trae TODAS las cadenas configuradas en la web, estén
+  // activas o no - useObtenerTodasWebConEstado suma "activaOperativa"
+  // (mismo criterio que usa TenantLayout para decidir si una cadena es
+  // navegable), así el filtro de acá solo ofrece las que realmente están
+  // operativas.
+  const { data: todasCadenasConEstado } = useObtenerTodasWebConEstado();
+  const activeCadenas = useMemo(
+    () => (todasCadenasConEstado || []).filter((c) => c.activaOperativa),
+    [todasCadenasConEstado],
+  );
+
+  // ModeloDocumentoID por cadena, para el botón "Previsualizar documento" de
+  // cada solicitud (ver useAbrirModeloDocumento) - ya viene incluido en la
+  // misma respuesta que arma activeCadenas, así que no hace falta pedirlo
+  // aparte.
+  const modeloDocumentoIdPorCadena = useMemo(() => {
+    const map = new Map();
+    (todasCadenasConEstado || []).forEach((c) => {
+      map.set(String(c.cadenavalorid), c.modelodocumentoid);
+    });
+    return map;
+  }, [todasCadenasConEstado]);
+
+  // Los parámetros de esos modelos se piden por adelantado para saber, ya
+  // acá, si cada solicitud pendiente va a poder generar su documento (ver
+  // evaluarModeloDocumento): el botón lo explica en su tooltip y no se
+  // abre una pestaña nueva al pedo.
+  const modelosDocumentoIds = useMemo(
+    () => [...new Set([...modeloDocumentoIdPorCadena.values()])],
+    [modeloDocumentoIdPorCadena],
+  );
+  const { porModelo: parametrosPorModelo } = useParametrosModelosDocumento(modelosDocumentoIds);
+
+  const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
+  const { data: limitesData, isLoading: isLoadingLimites } =
+    useObtenerLimites(targetCadenaId > 0 ? targetCadenaId : undefined);
+  const { data: sociosData, isLoading: isLoadingSocios } = useObtenerSocios();
+  const actualizarEstadoMutation = useActualizarLimiteSocio();
+  const migrarLineaMutation = useMigrarLinea();
+  const queryClient = useQueryClient();
+
+  // Catálogo global de TipoLimite: desde que las líneas dejaron de ser un
+  // set fijo "cheque/préstamo/pagaré" y pasaron a ser las reales de cada
+  // cadena (mismo criterio que familiaDeLinea en AltaOperacion.jsx), el
+  // TipoLimiteID real casi nunca es literalmente 1 o 2 - comparar contra
+  // esos valores hardcodeados hacía caer CUALQUIER línea real en "Pagaré"
+  // por descarte, sin importar cuál fuera en verdad (reportado en vivo,
+  // Banco Nación: una línea de "Préstamos" con TipoLimiteID 1010 se
+  // mostraba como Pagaré). Se infiere por palabra clave de la Descripcion
+  // global, igual que del lado cliente.
+  const { data: tiposLimiteGlobal } = useTiposProducto();
+  const familiaDeLinea = useCallback(
+    (tipoLimiteId) => {
+      const item = tiposLimiteGlobal?.raw?.find(
+        (t) => Number(t.tipolimiteid) === Number(tipoLimiteId),
+      );
+      const desc = (item?.descripcion || "").toUpperCase();
+      if (desc.includes("CHEQUE")) return "Alta de línea (Cheque)";
+      if (desc.includes("PAGARE")) return "Alta de línea (Pagaré)";
+      return "Alta de línea (Préstamo)";
+    },
+    [tiposLimiteGlobal],
+  );
+
+  const loading = isLoadingLimites || isLoadingSocios;
+
+  // Mismo mapeo que arma solicitudesCanal más abajo, expuesto acá aparte
+  // porque migrarSocioSiCorresponde necesita leer el MarcaVinculacion del
+  // Socio, que solicitudesCanal no deja en `item`.
+  const sociosPorId = useMemo(() => {
+    const map = new Map();
+    (Array.isArray(sociosData) ? sociosData : []).forEach((s) => {
+      const socioId = s.socioid || s.SocioID;
+      if (socioId) map.set(socioId, s);
+    });
+    return map;
+  }, [sociosData]);
 
   const selectedChain = (activeCadenas || []).find(
     (c) => String(c.cadenavalorid || c.CadenaValorID) === String(selectedCadenaId)
   );
 
   // Normalize restricted cadenas
-  const restrictedIds = new Set(
-    (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid)
+  const restrictedIds = useMemo(
+    () =>
+      new Set(
+        (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid),
+      ),
+    [cadenas],
   );
 
-  const visibleCadenas = isRestricted
-    ? (activeCadenas || []).filter((c) => {
-        const id = c.cadenavalorid || c.CadenaValorID;
-        return restrictedIds.has(id);
-      })
-    : (activeCadenas || []);
+  const visibleCadenas = useMemo(
+    () =>
+      isRestricted
+        ? (activeCadenas || []).filter((c) => {
+            const id = c.cadenavalorid || c.CadenaValorID;
+            return restrictedIds.has(id);
+          })
+        : (activeCadenas || []),
+    [isRestricted, activeCadenas, restrictedIds],
+  );
 
-  const selectOptions = [
-    { value: "all", label: "Todas las cadenas de valor" },
-    ...visibleCadenas.map((c) => ({
-      value: String(c.cadenavalorid || c.CadenaValorID),
-      label: c.denominacion || `ID: ${c.cadenavalorid || c.CadenaValorID}`,
-    })),
-  ];
-
-  const cadenasKey = (cadenas || []).map((c) => c.cadenavalorid || c.CadenaValorID || c.id || c.cadenaid).join(",");
+  // Un usuario restringido (solo UsuarioCadenaValor, ver useAdminRestrictions)
+  // únicamente puede ver solicitudes de las cadenas que tiene vinculadas ahí
+  // — con exactamente una, no hay ninguna elección real que ofrecerle: se la
+  // fija directamente en vez de arrancar en "all" y mostrar un selector que
+  // solo tendría una opción posible.
+  const unicaCadenaRestringida = isRestricted && visibleCadenas.length === 1;
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const targetCadenaId = selectedCadenaId === "all" ? 0 : Number(selectedCadenaId) || 0;
-        
-        const params = {};
-        if (targetCadenaId > 0) {
-          params.CadenaValorID = targetCadenaId;
-        }
+    if (!unicaCadenaRestringida || selectedCadenaId !== "all") return;
+    const unica = visibleCadenas[0];
+    const id = unica?.cadenavalorid || unica?.CadenaValorID;
+    if (id) setSelectedCadenaId(String(id));
+  }, [unicaCadenaRestringida, visibleCadenas, selectedCadenaId]);
 
-        const resLimites = await api.get("api/TipoLimiteSocio", { params });
-        const listLimites = resLimites.data || [];
+  const solicitudesCanal = useMemo(() => {
+    const listLimites = Array.isArray(limitesData) ? limitesData : [];
+    const listSocios = Array.isArray(sociosData) ? sociosData : [];
 
-        const resSocios = await api.get("api/Socios");
-        const listSocios = resSocios.data || [];
+    const sociosMap = new Map();
+    listSocios.forEach((s) => {
+      const socioId = s.socioid || s.SocioID;
+      if (socioId) sociosMap.set(socioId, s);
+    });
 
-        const sociosMap = new Map();
-        listSocios.forEach((s) => {
-          const socioId = s.socioid || s.SocioID;
-          if (socioId) sociosMap.set(socioId, s);
-        });
-
-        const matchedLimites = listLimites.filter((l) => {
-          const lCadenaId = l.cadenavalorid || l.CadenaValorID;
-          if (isRestricted && !restrictedIds.has(lCadenaId)) {
-            return false;
-          }
-          if (targetCadenaId > 0 && lCadenaId !== targetCadenaId) {
-            return false;
-          }
-          return true;
-        });
-
-        const mapped = matchedLimites.map((l) => {
-          const socioId = l.socioid || l.SocioID;
-          let socio = socioId ? sociosMap.get(socioId) : null;
-          if (!socio) {
-            socio = listSocios.find((s) => s.denominacion) || null;
-          }
-
-          const tipoLimiteEstadoId = l.tipolimiteestadoid || l.TipoLimiteEstadoID || 0;
-          const estadoText =
-            tipoLimiteEstadoId === 2
-              ? "Aprobada"
-              : tipoLimiteEstadoId === 3
-                ? "Rechazada"
-                : "Pendiente de validación";
-
-          const accionText =
-            tipoLimiteEstadoId === 2
-              ? "Aprobada por Administrador"
-              : tipoLimiteEstadoId === 3
-                ? "Rechazada por Administrador"
-                : "Espera de documentación de Alta de línea";
-
-          const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
-          const tipoText =
-            tipoLimiteId === 1
-              ? "Alta de línea (Cheque)"
-              : tipoLimiteId === 2
-                ? "Alta de línea (Préstamo)"
-                : "Alta de línea (Pagaré)";
-
-          const importeLimite = l.importelimite || l.ImporteLimite;
-          const monedaId = l.monedaid || l.MonedaID;
-          const fchVigenciaDesde = l.fchvigenciadesde || l.FchVigenciaDesde;
-          const fchVigenciaHasta = l.fchvigenciahasta || l.FchVigenciaHasta;
-          const tipoLimiteSocioId = l.tipolimitesocioid || l.TipoLimiteSocioID;
-
-          return {
-            id: tipoLimiteSocioId?.toString() || Math.random().toString(),
-            tipo: tipoText,
-            monto: importeLimite
-              ? new Intl.NumberFormat("es-AR").format(importeLimite)
-              : "0",
-            moneda: monedaId === 2 ? "U$D" : "$",
-            cliente: socio?.denominacion || "SANTA ANGELINA S.A.",
-            cuit: socio?.cuit || "30-68052476-5",
-            usuario: socio?.email || "pruebabind19@yopmail.com",
-            estado: estadoText,
-            accionPendiente: accionText,
-            creado: fchVigenciaDesde
-              ? new Date(fchVigenciaDesde).toLocaleString("es-AR")
-              : "Reciente",
-            actualizado: fchVigenciaHasta
-              ? new Date(fchVigenciaHasta).toLocaleString("es-AR")
-              : "Reciente",
-            tags: ["Canal Activo", "Legajo validado"],
-            cadenaSlug: "default",
-          };
-        });
-
-        setSolicitudes(mapped);
-      } catch (e) {
-        console.error("Error al cargar datos del dashboard de admin:", e);
-        toast.error("Error al cargar solicitudes reales.");
-        setSolicitudes(solicitudesIniciales);
-      } finally {
-        setLoading(false);
+    const matchedLimites = listLimites.filter((l) => {
+      const lCadenaId = l.cadenavalorid || l.CadenaValorID;
+      if (isRestricted && !restrictedIds.has(lCadenaId)) {
+        return false;
       }
-    }
+      if (targetCadenaId > 0 && lCadenaId !== targetCadenaId) {
+        return false;
+      }
+      return true;
+    });
 
-    loadData();
-  }, [selectedCadenaId, isRestricted, cadenasKey]);
+    return matchedLimites.map((l) => {
+      const socioId = l.socioid || l.SocioID;
+      // Sin fallback a "cualquier socio con denominación": si no lo
+      // encontramos, se muestra explícitamente como no encontrado en vez de
+      // mostrar los datos de otro cliente.
+      const socio = socioId ? sociosMap.get(socioId) : null;
 
-  const solicitudesCanal = solicitudes;
+      const tipoLimiteEstadoId = l.tipolimiteestadoid ?? l.TipoLimiteEstadoID ?? ESTADO_PENDIENTE;
+      const estadoText = estadoTextoDesde(tipoLimiteEstadoId);
 
-  const handleAceptar = (id) => {
-    setSolicitudes((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              estado: "Aprobada",
-              accionPendiente: "Aprobada por Administrador",
-            }
-          : s,
-      ),
-    );
-    toast.success(`Solicitud N°${id} Aprobada exitosamente`, {
-      description: "Los fondos o cupos han sido habilitados para el cliente.",
+      // Dentro de Rechazada hay dos orígenes distintos que comparten
+      // el mismo TipoLimiteEstadoID (6): un rechazo automático al crear la
+      // solicitud (CDA de línea / PorcentajeMinimoSolicitud, ver
+      // AltaOperacion.jsx) y un rechazo manual del admin - se distinguen por
+      // el prefijo que AltaOperacion.jsx deja en Observaciones.
+      const fueRechazoAutomatico = esRechazoAutomatico(
+        l.observaciones ?? l.Observaciones,
+      );
+      const accionText =
+        Number(tipoLimiteEstadoId) === ESTADO_APROBADA
+          ? "Aprobada por Administrador"
+          : Number(tipoLimiteEstadoId) === ESTADO_RECHAZADA
+            ? fueRechazoAutomatico
+              ? "Rechazada automáticamente por Criterios de Aceptación"
+              : "Rechazada por Administrador"
+            : Number(tipoLimiteEstadoId) === ESTADO_CANCELADA
+              ? "Cancelada por el cliente"
+              : Number(tipoLimiteEstadoId) === ESTADO_VENCIDA
+                ? "Vencida"
+                : "Espera de validación del Administrador";
+
+      const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
+      const tipoText = familiaDeLinea(tipoLimiteId);
+
+      const importeLimite = l.importelimite || l.ImporteLimite;
+      const monedaId = l.monedaid || l.MonedaID;
+      const fchVigenciaDesde = l.fchvigenciadesde || l.FchVigenciaDesde;
+      const fchVigenciaHasta = l.fchvigenciahasta || l.FchVigenciaHasta;
+      const tipoLimiteSocioId = l.tipolimitesocioid || l.TipoLimiteSocioID;
+
+      return {
+        id: tipoLimiteSocioId?.toString() || "",
+        tipoLimiteEstadoId: Number(tipoLimiteEstadoId),
+        tipo: tipoText,
+        monto: importeLimite
+          ? new Intl.NumberFormat("es-AR").format(importeLimite)
+          : "0",
+        moneda: monedaId === 2 ? "U$D" : "$",
+        cliente: socio?.denominacion || "Socio no encontrado",
+        cuit: socio?.cuit || "—",
+        usuario: socio?.email || "—",
+        socioid: socioId,
+        cadenavalorid: l.cadenavalorid || l.CadenaValorID,
+        estado: estadoText,
+        accionPendiente: accionText,
+        creado: fchVigenciaDesde
+          ? new Date(fchVigenciaDesde).toLocaleDateString("es-AR")
+          : "Reciente",
+        creadoISO: fchVigenciaDesde || null,
+        actualizado: fchVigenciaHasta
+          ? new Date(fchVigenciaHasta).toLocaleDateString("es-AR")
+          : "Reciente",
+        cadenaSlug: "default",
+        raw: l,
+      };
+    });
+  }, [limitesData, sociosData, isRestricted, restrictedIds, targetCadenaId, familiaDeLinea]);
+
+  // La migración a SGR+ es un paso aparte de la aprobación en TipoLimiteSocio
+  // (que ya quedó guardada) — si falla acá, no hay que revertir nada, solo
+  // avisar. `contexto` solo cambia el texto de los toasts: "reintento" se usa
+  // desde el botón manual (ver handleReintentarMigracion más abajo), para
+  // líneas que ya quedaron Aprobadas pero no llegaron a migrar (ej. la
+  // primera vez que se aprobó, api/Linea/Migrar falló).
+  const migrarLinea = (item, { contexto = "aprobar" } = {}) => {
+    const tipoLimiteSocioId =
+      item.raw?.tipolimitesocioid ?? item.raw?.TipoLimiteSocioID ?? item.id;
+    migrarLineaMutation.mutate(tipoLimiteSocioId, {
+      onSuccess: () => {
+        if (contexto === "reintento") {
+          toast.success(`Línea N°${item.id} migrada a SGR+ correctamente`);
+        }
+      },
+      onError: (migError) => {
+        toast.error(
+          contexto === "aprobar"
+            ? `La línea N°${item.id} se aprobó pero no se pudo migrar a SGR+`
+            : `No se pudo migrar la línea N°${item.id} a SGR+`,
+          { description: migError.message },
+        );
+      },
     });
   };
 
-  const handleRechazar = (id) => {
-    setSolicitudes((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? {
-              ...s,
-              estado: "Rechazada",
-              accionPendiente: "Rechazada por Administrador",
-            }
-          : s,
-      ),
+  // Nuevo flujo de migración del Socio (cambio de negocio pedido en llamada
+  // el 2026-09-14, todavía sin ticket propio en Plane): antes el Socio se
+  // migraba solo apenas el legajo quedaba completo (ver LegajoUniversalBar,
+  // que ahora deja de auto-migrar cuando la cadena tiene líneas habilitadas
+  // - ver useObtenerLimitesCadenaValor ahí). Para esas cadenas la migración
+  // del Socio pasa a depender de esto: se dispara junto con la de la línea,
+  // en el mismo botón de Aceptar. Para una cadena SIN líneas habilitadas el
+  // flujo sigue exactamente igual que siempre (auto-migración en
+  // LegajoUniversalBar) - este código ni se ejecuta ahí porque no hay
+  // solicitud de línea que aprobar.
+  //
+  // Mismo criterio de precondición que LegajoUniversalBar.jsx
+  // (sincronizarConSgrPlus): sin Certificado PyME fresco no se llega a
+  // pegarle a Socio/Migrar. A diferencia de esa barra, acá NO se vuelve a
+  // validar CDA/completitud del legajo - la aprobación manual del admin ES
+  // el gate ahora.
+  const migrarSocioSiCorresponde = async (item, { contexto = "aprobar" } = {}) => {
+    const socioId = item.socioid;
+    const socio = socioId ? sociosPorId.get(socioId) : null;
+    if (!socioId || !socio) return;
+
+    // Ya migrado - no hay nada para hacer (reintentar Socio/Migrar sobre un
+    // socio ya migrado es seguro, pero evita un PUT/POST de más en el caso
+    // normal de aprobar una segunda línea del mismo socio).
+    if (String(socio.marcavinculacion ?? "") === "1") return;
+
+    let tieneCertificadoFresco = false;
+    try {
+      const certificados = await sociosService.obtenerCertificadoPyme(socioId);
+      tieneCertificadoFresco = Array.isArray(certificados) && certificados.length > 0;
+    } catch (certError) {
+      console.error("[Dashboard] Error consultando Socio/CertificadoPYME antes de migrar:", certError);
+    }
+
+    if (!tieneCertificadoFresco) {
+      toast.warning(
+        contexto === "aprobar"
+          ? `La línea N°${item.id} se aprobó, pero el socio todavía no tiene Certificado PyME generado`
+          : `El socio de la línea N°${item.id} todavía no tiene Certificado PyME generado`,
+        { description: "El socio va a quedar sin migrar a SGR+ hasta que lo tenga." },
+      );
+      return;
+    }
+
+    try {
+      const response = await sociosService.enviarASgrPlus(socioId);
+      if (!response.success) throw new Error(response.message || "Error al migrar el socio");
+
+      await queryClient.invalidateQueries({ queryKey: ["socios", "lista"] });
+    } catch (socioMigError) {
+      toast.error(
+        contexto === "aprobar"
+          ? `La línea N°${item.id} se aprobó, pero no se pudo migrar el socio a SGR+`
+          : `No se pudo migrar el socio de la línea N°${item.id} a SGR+`,
+        { description: socioMigError.message },
+      );
+    }
+  };
+
+  // Primero el socio y despues la linea: Linea/Migrar necesita que el socio ya exista en SGR+ (si no, responde 409 y
+  // la linea quedaba sin migrar hasta un segundo clic).
+  const migrarSocioYLinea = async (item, opciones) => {
+    await migrarSocioSiCorresponde(item, opciones);
+    migrarLinea(item, opciones);
+  };
+
+  const handleReintentarMigracion = (item) => {
+    migrarSocioYLinea(item, { contexto: "reintento" });
+  };
+
+  // Cada cambio de estado en TipoLimiteSocio (aprobar/rechazar) tiene que
+  // reflejarse también en SolicitudEnProceso — desde que se unificó el
+  // catálogo de estados con el backend (2026-08-18), ambas tablas usan
+  // literalmente los mismos valores, así que no hace falta traducir nada.
+  // TipoLimiteSocio.SolicitudID viaja siempre en null (pedido del backend, no
+  // se resuelve nunca del lado de ellos - confirmado en vivo el 2026-09-15),
+  // así que la fila no se ubica por ID sino por (Cuit, TipoLimiteID,
+  // CadenaValorID) — el backend garantiza que nunca hay más de una
+  // SolicitudEnProceso vigente con esa misma combinación. No bloquea ni
+  // revierte la aprobación/rechazo si falla: solo queda logueado, es una
+  // sincronización secundaria.
+  const sincronizarSolicitudEnProceso = (item, nuevoTipoLimiteEstadoId) => {
+    const tipoLimiteId = item.raw?.tipolimiteid ?? item.raw?.TipoLimiteID;
+    const cadenaValorId = item.cadenavalorid ?? item.raw?.cadenavalorid ?? item.raw?.CadenaValorID;
+    if (!tipoLimiteId || !cadenaValorId || !item.cuit || item.cuit === "—") return;
+    solicitudesService
+      .sincronizarEstadoSolicitudEnProcesoPorClave(item.cuit, tipoLimiteId, cadenaValorId, nuevoTipoLimiteEstadoId)
+      .catch((syncErr) => {
+        console.error(
+          `[Dashboard] No se pudo sincronizar el estado en SolicitudEnProceso para la línea N°${item.id}:`,
+          syncErr,
+        );
+      });
+  };
+
+  const handleDecision = (item, nuevoEstado, observaciones) => {
+    const payload = { ...item.raw, tipolimiteestadoid: nuevoEstado };
+    if (observaciones !== undefined) payload.observaciones = observaciones;
+
+    // El EquipoComercialID de la línea puede haber quedado en 0 (mismo
+    // criterio que usa AltaOperacion.jsx al crearla: no hay que confiar en
+    // lo que ya esté guardado en TipoLimiteSocio, sino resolverlo siempre
+    // desde la CadenaValor vigente). El backend detectó que ese 0 es lo que
+    // rompe api/Linea/Migrar al aprobar — reportado el 2026-08-14.
+    const cadenaId = item.cadenavalorid ?? item.raw?.cadenavalorid ?? item.raw?.CadenaValorID;
+    const cadenaDeLaLinea = (activeCadenas || []).find(
+      (c) => Number(c.cadenavalorid ?? c.CadenaValorID) === Number(cadenaId),
     );
-    toast.error(`Solicitud N°${id} Rechazada`, {
-      description: "Se ha notificado al cliente el rechazo de la operación.",
+    const equipoComercialId = Number(
+      cadenaDeLaLinea?.equipocomercialid ?? cadenaDeLaLinea?.EquipoComercialID ?? 0,
+    );
+    if (equipoComercialId > 0) payload.equipocomercialid = equipoComercialId;
+
+    actualizarEstadoMutation.mutate(payload, {
+      onSuccess: () => {
+        sincronizarSolicitudEnProceso(item, nuevoEstado);
+        if (nuevoEstado === ESTADO_APROBADA) {
+          toast.success(`Solicitud N°${item.id} Aprobada exitosamente`, {
+            description: "Los fondos o cupos han sido habilitados para el cliente.",
+          });
+          migrarSocioYLinea(item);
+        } else {
+          toast.error(`Solicitud N°${item.id} Rechazada`, {
+            description: "Se ha notificado al cliente el rechazo de la operación.",
+          });
+          setSolicitudARechazar(null);
+        }
+      },
+      onError: (err) => {
+        toast.error(`No se pudo actualizar la Solicitud N°${item.id}: ` + mensajeNegocio(err, err.message));
+      },
     });
+  };
+
+  const handleAceptar = (item) => handleDecision(item, ESTADO_APROBADA);
+  // "Rechazar" ya no aplica el cambio directo: abre el modal que pide el
+  // motivo (queda en TipoLimiteSocio.Observaciones, lo que ya muestra
+  // DetalleSolicitudModal.jsx del lado cliente) — ver handleConfirmarRechazo.
+  const handleRechazar = (item) => setSolicitudARechazar(item);
+  const handleConfirmarRechazo = (motivo) => {
+    if (!solicitudARechazar) return;
+    handleDecision(solicitudARechazar, ESTADO_RECHAZADA, motivo);
+  };
+
+  const fechaDesdeDate = fechaDesde ? new Date(fechaDesde) : undefined;
+  const fechaHastaDate = fechaHasta ? new Date(fechaHasta) : undefined;
+
+  const hayFiltrosActivos =
+    !!busqueda ||
+    filtroEstado !== FILTROS_POR_DEFECTO.filtroEstado ||
+    orden !== FILTROS_POR_DEFECTO.orden ||
+    !!fechaDesde ||
+    !!fechaHasta;
+
+  // Cambiar de cadena o tocar cualquier filtro vuelve a la página 1 -
+  // si no, se puede quedar viendo una página vacía (ej. estabas en la
+  // página 3 y el nuevo filtro solo da 1 resultado). Se resetea acá, junto
+  // con el cambio real, en vez de "derivarlo" con un efecto aparte.
+  const handleBusqueda = (val) => {
+    setBusqueda(val);
+    setPagina(1);
+  };
+  const handleFiltroEstado = (val) => {
+    setFiltroEstado(val);
+    setPagina(1);
+  };
+  const handleOrden = (val) => {
+    setOrden(val);
+    setPagina(1);
+  };
+  const handleFechaDesde = (val) => {
+    setFechaDesde(val);
+    setPagina(1);
+  };
+  const handleFechaHasta = (val) => {
+    setFechaHasta(val);
+    setPagina(1);
+  };
+  const handleSelectCadena = (id) => {
+    setSelectedCadenaId(id);
+    setPagina(1);
+  };
+
+  const handleLimpiarFiltros = () => {
+    setBusqueda(FILTROS_POR_DEFECTO.busqueda);
+    setFiltroEstado(FILTROS_POR_DEFECTO.filtroEstado);
+    setOrden(FILTROS_POR_DEFECTO.orden);
+    setFechaDesde(FILTROS_POR_DEFECTO.fechaDesde);
+    setFechaHasta(FILTROS_POR_DEFECTO.fechaHasta);
+    setPagina(1);
   };
 
   const filtradas = solicitudesCanal
@@ -278,16 +562,33 @@ export default function Dashboard() {
         s.cuit.includes(busqueda) ||
         s.id.includes(busqueda) ||
         s.usuario.toLowerCase().includes(busqueda.toLowerCase());
+      if (!matchTexto) return false;
 
-      if (filtroEstado === "todos") return matchTexto;
-      return (
-        matchTexto &&
-        s.estado.toLowerCase().includes(filtroEstado.toLowerCase())
-      );
+      if (filtroEstado !== "todos" && !s.estado.toLowerCase().includes(filtroEstado.toLowerCase())) {
+        return false;
+      }
+
+      if (fechaDesde || fechaHasta) {
+        if (!s.creadoISO) return false;
+        const fechaItem = new Date(s.creadoISO);
+        if (fechaDesde && fechaItem < new Date(fechaDesde)) return false;
+        if (fechaHasta && fechaItem > finDelDia(fechaHasta)) return false;
+      }
+
+      return true;
     })
     .sort((a, b) => {
-      if (orden === "desc") return b.id.localeCompare(a.id);
-      return a.id.localeCompare(b.id);
+      // Por ID numérico, no por fecha ni por id como string: fchVigenciaDesde
+      // viaja sin hora (siempre 00:00:00, confirmado en vivo el 2026-09-15),
+      // así que varias solicitudes del mismo día quedan empatadas y el sort
+      // termina devolviendo el orden crudo de la API (más vieja primero,
+      // sin importar el filtro elegido). Comparar el id como string
+      // (localeCompare) tampoco sirve - ordena alfabéticamente en vez de
+      // numéricamente ("9" queda después de "89"). El ID autoincremental sí
+      // crece con cada alta, así que es el único criterio confiable acá.
+      const idA = Number(a.id) || 0;
+      const idB = Number(b.id) || 0;
+      return orden === "desc" ? idB - idA : idA - idB;
     });
 
   const totalMonto = solicitudesCanal.reduce((acc, curr) => {
@@ -295,381 +596,383 @@ export default function Dashboard() {
     return acc + (curr.moneda === "U$D" ? val * 1500 : val);
   }, 0);
 
+  const totalPendientes = solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length;
+  const totalAprobadas = solicitudesCanal.filter((s) => s.estado === "Aprobada").length;
+
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ELEMENTOS_POR_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const filtradasPagina = filtradas.slice(
+    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
+    paginaActual * ELEMENTOS_POR_PAGINA,
+  );
+
+  const apoderadoFirmantePorSocio = useApoderadoFirmantePorSocio(
+    filtradasPagina
+      .filter((s) => Number(s.tipoLimiteEstadoId) === ESTADO_PENDIENTE)
+      .map((s) => s.socioid),
+  );
+
   return (
-    <div className={styles.dashboardContainer}>
-      {/* Header and top KPI widgets */}
-      <div className={styles.headerTitle}>
-        <div>
-          <h1>Panel General de Control</h1>
-          <p>
-            Supervisión global de todas las líneas y solicitudes activas en el
-            sistema.
-          </p>
-        </div>
-      </div>
-
-      <div className={styles.topSectionSplit}>
-        {/* Left Column: Selected Chain Card */}
-        <div className={styles.selectedChainCardContainer}>
-          {loading ? (
-            <div className={styles.chainSelectorCard}>
-              <div className={styles.chainCardHeader}>
-                <div className={styles.skeletonBlock} style={{ width: '48px', height: '48px', borderRadius: '0.625rem', flexShrink: 0 }}></div>
-                <div style={{ flex: 1 }}>
-                  <div className={styles.skeletonBlock} style={{ height: '1.1875rem', width: '60%', marginBottom: '0.15rem', borderRadius: '4px' }}></div>
-                  <div className={styles.skeletonBlock} style={{ height: '0.8rem', width: '40%', borderRadius: '4px', marginTop: '0.2rem' }}></div>
-                </div>
-              </div>
-              <div>
-                <div className={styles.skeletonBlock} style={{ height: '0.8375rem', width: '90%', borderRadius: '4px', marginBottom: '0.4rem' }}></div>
-                <div className={styles.skeletonBlock} style={{ height: '0.8375rem', width: '70%', borderRadius: '4px' }}></div>
-              </div>
-              <div className={styles.btnRow}>
-                <div className={styles.skeletonBlock} style={{ height: '32px', width: '120px', borderRadius: '6px' }}></div>
-              </div>
-            </div>
-          ) : selectedCadenaId === "all" ? (
-            <div className={`${styles.chainSelectorCard} ${styles.globalConsolidatedCard}`}>
-              <div className={styles.chainCardHeader}>
-                <div className={styles.globalIconWrapper}>
-                  <FiGlobe size={24} />
-                </div>
-                <div>
-                  <h2 className={styles.chainCardTitle}>Consolidado General</h2>
-                  <p className={styles.chainCardSubtitle}>Todas las Cadenas de Valor</p>
-                </div>
-              </div>
-              <p className={styles.chainCardDescription}>
-                Supervisando solicitudes de todas las cadenas comerciales activas en el portal.
-              </p>
-              <Button
-                onClick={() => {
-                  setChainSearchQuery("");
-                  setIsChainModalOpen(true);
-                }}
-                variant="blue"
-                size="sm"
-                className={styles.changeChainBtn}
-              >
-                Seleccionar Cadena <FiChevronRight />
-              </Button>
-            </div>
-          ) : (
-            <div className={styles.chainSelectorCard}>
-              <div className={styles.chainCardHeader}>
-                {selectedChain?.logo ? (
-                  <div className={styles.selectedChainLogoWrapper}>
-                    <img
-                      src={
-                        selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
-                          ? selectedChain.logo
-                          : `data:image/png;base64,${selectedChain.logo}`
-                      }
-                      alt={selectedChain.denominacion}
-                      className={styles.selectedChainLogo}
-                    />
-                  </div>
-                ) : (
-                  <div className={styles.globalIconWrapper}>
-                    <FiGrid size={24} />
-                  </div>
-                )}
-                <div>
-                  <h2 className={styles.chainCardTitle}>{selectedChain?.denominacion || "Cargando..."}</h2>
-                  <p className={styles.chainCardSubtitle}>Referencia: {selectedChain?.referencia || "Sin Ref"}</p>
-                </div>
-              </div>
-              <p className={styles.chainCardDescription}>
-                Visualizando solicitudes de la cadena comercial seleccionada. ID: #{selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}.
-              </p>
-              <div className={styles.btnRow}>
-                <Button
-                  onClick={() => {
-                    setChainSearchQuery("");
-                    setIsChainModalOpen(true);
-                  }}
-                  variant="outlineBlue"
-                  size="sm"
-                  className={styles.changeChainBtn}
-                >
-                  Cambiar Cadena <FiChevronRight />
-                </Button>
-                <Button
-                  onClick={() => setSelectedCadenaId("all")}
-                  variant="ghost"
-                  size="sm"
-                  className={styles.viewAllBtn}
-                >
-                  Ver Todas
-                </Button>
-              </div>
-            </div>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1>Gestión de Solicitudes</h1>
+        <button
+          type="button"
+          className={styles.toggleFiltersBtn}
+          onClick={() => setPanelesVisibles((v) => !v)}
+          aria-expanded={panelesVisibles}
+          title={panelesVisibles ? "Ocultar cadena y filtros" : "Mostrar cadena y filtros"}
+        >
+          {panelesVisibles ? <FiChevronUp /> : <FiChevronDown />}
+          {panelesVisibles ? "Ocultar filtros" : "Mostrar filtros"}
+          {/* Con el panel colapsado, esta es la única señal de que la lista
+              de abajo está filtrada y no es el total real - sin esto el
+              operador puede leerla como completa por error. */}
+          {!panelesVisibles && hayFiltrosActivos && (
+            <span className={styles.toggleFiltersActiveDot} title="Hay filtros activos" />
           )}
-        </div>
-
-        {/* Right Column: Compact Metrics Grid (2x2) */}
-        <div className={styles.compactMetricsGrid}>
-          <TarjetaMetrica
-            className={styles.kpiCardCompact}
-            labelClassName={styles.kpiLabelCompact}
-            valueClassName={styles.kpiValueCompact}
-            icon={FiBriefcase}
-            label="Líneas"
-            value={solicitudesCanal.length}
-            isLoading={loading}
-          />
-          <TarjetaMetrica
-            className={styles.kpiCardCompact}
-            labelClassName={styles.kpiLabelCompact}
-            valueClassName={styles.kpiValueCompact}
-            icon={FiTrendingUp}
-            label="Volumen"
-            value={`$ ${(totalMonto / 1000000).toFixed(1)}M`}
-            isLoading={loading}
-          />
-          <TarjetaMetrica
-            className={styles.kpiCardCompact}
-            labelClassName={styles.kpiLabelCompact}
-            valueClassName={styles.kpiValueWarningCompact}
-            icon={FiClock}
-            label="Pendientes"
-            value={solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length}
-            isLoading={loading}
-          />
-          <TarjetaMetrica
-            className={styles.kpiCardCompact}
-            labelClassName={styles.kpiLabelCompact}
-            valueClassName={styles.kpiValueSuccessCompact}
-            icon={FiCheckCircle}
-            label="Aprobadas"
-            value={solicitudesCanal.filter((s) => s.estado === "Aprobada").length}
-            isLoading={loading}
-          />
-        </div>
+        </button>
       </div>
 
-      {/* Controls & Filter toolbar */}
-      <div className={styles.toolbarCard}>
-        <div className={styles.searchWrap}>
-          <FiSearch className={styles.iconSearch} />
+      {/* Colapsable: subtítulo + franja de contexto + filtros. En pantallas
+          chicas (no full HD) este bloque es el que más espacio vertical le
+          come a la lista, así que se puede ocultar entero con un clic y
+          ver más solicitudes sin scrollear. */}
+      <div className={`${styles.collapsiblePanel} ${!panelesVisibles ? styles.collapsiblePanelClosed : ""}`}>
+        <div className={styles.collapsiblePanelInner}>
+        <p className={styles.subtitle}>Procesá las solicitudes de línea de todas las cadenas de valor activas en el sistema.</p>
+
+        {/* Franja de contexto: cadena seleccionada + métricas, en una sola línea */}
+        <div className={styles.contextBar}>
+        {loading ? (
+          <>
+            <div className={styles.contextChain}>
+              <Skeleton width="2.5rem" height="2.5rem" radius="0.625rem" />
+              <div style={{ flex: 1 }}>
+                <Skeleton height="0.9rem" width="55%" />
+                <Skeleton height="0.7rem" width="35%" style={{ marginTop: "0.3rem" }} />
+              </div>
+            </div>
+            <Skeleton width="9rem" height="1.5rem" />
+          </>
+        ) : (
+          <>
+            <div className={styles.contextChain}>
+              {selectedCadenaId === "all" ? (
+                <div className={styles.contextChainIcon}>
+                  <FiGlobe size={20} />
+                </div>
+              ) : selectedChain?.logo ? (
+                <div className={styles.contextChainLogo}>
+                  <img
+                    src={
+                      selectedChain.logo.startsWith("data:") || selectedChain.logo.startsWith("http")
+                        ? selectedChain.logo
+                        : `data:image/png;base64,${selectedChain.logo}`
+                    }
+                    alt={selectedChain.denominacion}
+                  />
+                </div>
+              ) : (
+                <div className={styles.contextChainIcon}>
+                  <FiGrid size={20} />
+                </div>
+              )}
+              <div className={styles.contextChainInfo}>
+                <span className={styles.contextChainName}>
+                  {selectedCadenaId === "all"
+                    ? "Consolidado General"
+                    : selectedChain?.denominacion || "Cargando..."}
+                </span>
+                <span className={styles.contextChainMeta}>
+                  {selectedCadenaId === "all"
+                    ? "Todas las cadenas de valor"
+                    : `Ref: ${selectedChain?.referencia || "Sin ref"} · #${selectedChain?.cadenavalorid || selectedChain?.CadenaValorID}`}
+                </span>
+              </div>
+              {/* Con una sola cadena vinculada (unicaCadenaRestringida) no hay
+                  nada para elegir ni para "ver todas" — ambos botones
+                  implican una alternativa que no existe. */}
+              {!unicaCadenaRestringida && (
+                <div className={styles.contextChainActions}>
+                  <button
+                    type="button"
+                    className={styles.contextChainBtn}
+                    onClick={() => {
+                      setChainSearchQuery("");
+                      setIsChainModalOpen(true);
+                    }}
+                  >
+                    {selectedCadenaId === "all" ? "Seleccionar cadena" : "Cambiar"} <FiChevronRight size={13} />
+                  </button>
+                  {selectedCadenaId !== "all" && (
+                    <button
+                      type="button"
+                      className={`${styles.contextChainBtn} ${styles.contextChainBtnGhost}`}
+                      onClick={() => handleSelectCadena("all")}
+                    >
+                      Ver todas
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.contextDivider} />
+
+            <div className={styles.contextStats}>
+              <div className={styles.statBlock}>
+                <span className={styles.statLabel}>Líneas</span>
+                <span className={styles.statValue}>{solicitudesCanal.length}</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statBlock}>
+                <span className={styles.statLabel}>Volumen</span>
+                <span className={styles.statValue}>$ {(totalMonto / 1000000).toFixed(1)}M</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statBlock}>
+                <span className={styles.statLabel}>Pendientes</span>
+                <span className={`${styles.statValue} ${styles.statValueWarning}`}>{totalPendientes}</span>
+              </div>
+              <div className={styles.statDivider} />
+              <div className={styles.statBlock}>
+                <span className={styles.statLabel}>Aprobadas</span>
+                <span className={`${styles.statValue} ${styles.statValueSuccess}`}>{totalAprobadas}</span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Barra de filtros — mismo patrón que Solicitudes.jsx del cliente */}
+      <div className={styles.filterBar}>
+        <div className={styles.searchBox}>
+          <FiSearch className={styles.searchIcon} />
           <input
             type="text"
             placeholder="Buscar por Cliente, CUIT, Usuario o N° Solicitud..."
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className={styles.inputSearch}
+            onChange={(e) => handleBusqueda(e.target.value)}
+            className={styles.searchInput}
           />
         </div>
 
-        <div className={styles.filtersGroup}>
-          <div className={styles.customSelectWrapper}>
-            <SelectSimple
-              label="Estado"
-              value={filtroEstado}
-              onChange={setFiltroEstado}
-              options={opcionesEstado}
-              placeholder="Estado"
-              isSearchable={false}
-              hideErrorSpace
-              size="sm"
-            />
-          </div>
+        <div className={styles.filterFieldsRow}>
+          <SelectFechaSimple
+            label="Desde"
+            value={fechaDesde}
+            onChange={handleFechaDesde}
+            disableFuture
+            maxDate={fechaHastaDate}
+            variant="admin"
+            compact
+            hideErrorSpace
+            className={styles.filterField}
+          />
+          <SelectFechaSimple
+            label="Hasta"
+            value={fechaHasta}
+            onChange={handleFechaHasta}
+            disableFuture
+            minDate={fechaDesdeDate}
+            variant="admin"
+            compact
+            hideErrorSpace
+            className={styles.filterField}
+          />
+          <SelectSimple
+            label="Estado"
+            value={filtroEstado}
+            onChange={handleFiltroEstado}
+            options={opcionesEstado}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
+          <SelectSimple
+            label="Orden"
+            value={orden}
+            onChange={handleOrden}
+            options={opcionesOrden}
+            isSearchable={false}
+            hideErrorSpace
+            compact
+            variant="admin"
+            className={styles.filterField}
+          />
+        </div>
 
-          <div className={styles.customSelectWrapper}>
-            <SelectSimple
-              label="Orden"
-              value={orden}
-              onChange={setOrden}
-              options={opcionesOrden}
-              placeholder="Orden"
-              isSearchable={false}
-              hideErrorSpace
-              size="sm"
-            />
-          </div>
+        <button
+          type="button"
+          className={`${styles.clearFiltersBtn} ${hayFiltrosActivos ? styles.clearFiltersBtnVisible : ""}`}
+          onClick={handleLimpiarFiltros}
+          disabled={!hayFiltrosActivos}
+          tabIndex={hayFiltrosActivos ? 0 : -1}
+          title="Limpiar filtros"
+          aria-label="Limpiar filtros"
+        >
+          <FiX />
+        </button>
+        </div>
         </div>
       </div>
 
-      {/* Main Operations List mimicking user screenshot */}
+      {/* Lista de solicitudes */}
       <div className={styles.listWrapper}>
         {loading ? (
-          <SkeletonTable rows={4} />
+          Array.from({ length: 5 }).map((_, i) => <SolicitudRowSkeleton key={i} />)
         ) : filtradas.length === 0 ? (
           <SinResultados
             className={styles.emptyState}
             message="No se encontraron solicitudes que coincidan con los criterios de búsqueda."
           />
         ) : (
-          filtradas.map((item) => {
-            const isAprobada = item.estado === "Aprobada";
-            const isRechazada = item.estado === "Rechazada";
-            const isPendiente = !isAprobada && !isRechazada;
+          filtradasPagina.map((item) => {
+            const isAprobada = item.tipoLimiteEstadoId === ESTADO_APROBADA;
+            const isRechazada = item.tipoLimiteEstadoId === ESTADO_RECHAZADA;
+            const isCancelada =
+              item.tipoLimiteEstadoId === ESTADO_CANCELADA ||
+              item.tipoLimiteEstadoId === ESTADO_VENCIDA;
+            const isPendiente = Number(item.tipoLimiteEstadoId) === ESTADO_PENDIENTE;
+            const estadoKey = dotYPillClaseDesde(isAprobada, isRechazada, isCancelada);
+
+            // La previsualización del documento es solo para solicitudes
+            // pendientes: en los demás estados la operación ya se resolvió.
+            const modeloDocumentoId = modeloDocumentoIdPorCadena.get(String(item.cadenavalorid));
+            const parametrosModelo = parametrosPorModelo.get(Number(modeloDocumentoId));
+            const tieneApoderadoFirmante = apoderadoFirmantePorSocio.get(Number(item.socioid));
+            const modeloDocumento = isPendiente
+              ? evaluarModeloDocumento({
+                  solicitud: item,
+                  modeloDocumentoId,
+                  parametrosCatalogo: parametrosModelo,
+                  tieneApoderadoFirmante,
+                })
+              : null;
 
             return (
               <div
                 key={item.id}
-                className={`${styles.itemRow} ${
-                  isAprobada
-                    ? styles.rowApproved
-                    : isRechazada
-                      ? styles.rowRejected
-                      : styles.rowPending
-                }`}
+                className={`${styles.row} ${styles.rowClickable} ${styles[`row${estadoKey}`]}`}
+                onClick={() => setSolicitudDetalle(item)}
+                title="Ver detalle de la solicitud"
               >
-                <div className={styles.rowMain}>
-                  {/* Left Column: Data Info */}
-                  <div className={styles.infoCol}>
-                    <div className={styles.rowHeaderInfo}>
-                      <span className={styles.tipoText}>{item.tipo}</span>
-                      <div className={styles.tagsWrap}>
-                        {item.tags?.map((t) => {
-                          const lowerT = t.toLowerCase();
-                          let tagStyle = styles.tagBadge;
-                          if (lowerT.includes("activo") || lowerT.includes("validado") || lowerT.includes("aceptados")) {
-                            tagStyle = `${styles.tagBadge} ${styles.tagSuccess}`;
-                          } else if (lowerT.includes("pendiente") || lowerT.includes("revisión")) {
-                            tagStyle = `${styles.tagBadge} ${styles.tagWarning}`;
-                          } else if (lowerT.includes("nuevo")) {
-                            tagStyle = `${styles.tagBadge} ${styles.tagInfo}`;
-                          }
-                          
-                          return (
-                            <Badge key={t} className={tagStyle}>
-                              {t}
-                            </Badge>
-                          );
-                        })}
-                      </div>
-                    </div>
+                <div className={`${styles.rowAvatar} ${styles[`avatar${estadoKey}`] || ""}`}>
+                  {getIniciales(item.cliente)}
+                </div>
 
-                    <h2 className={styles.solicitudHeading}>
-                      Solicitud N°{item.id} por{" "}
-                      <span className={styles.montoHighlight}>
-                        {item.moneda || "$"} {item.monto}
-                      </span>
-                    </h2>
+                <div className={styles.rowIdentity}>
+                  <span className={styles.rowClientName}>{item.cliente}</span>
+                  <span className={styles.rowMeta}>
+                    N°{item.id} · {item.creado} · {item.tipo} · CUIT {item.cuit} · {item.usuario}
+                  </span>
+                </div>
 
-                    <div className={styles.detailsGrid}>
-                      <div>
-                        <span className={styles.detailLabel}>Cliente:</span>{" "}
-                        <span className={styles.detailStrong}>
-                          {item.cliente} ({item.cuit})
-                        </span>
-                      </div>
-                      <div>
-                        <span className={styles.detailLabel}>Usuario:</span>{" "}
-                        <span className={styles.detailText}>
-                          {item.usuario}
-                        </span>
-                      </div>
-                      <div>
-                        <span className={styles.detailLabel}>Estado:</span>{" "}
-                        <Badge
-                          className={`${styles.statusPill} ${
-                            isAprobada
-                              ? styles.pillApproved
-                              : isRechazada
-                                ? styles.pillRejected
-                                : styles.pillPending
-                          }`}
-                        >
-                          {item.estado}
-                        </Badge>
-                      </div>
-                      <div className={styles.fullSpan}>
-                        <span className={styles.detailLabel}>
-                          Acción pendiente:
-                        </span>{" "}
-                        <span className={styles.actionHighlight}>
-                          {item.accionPendiente}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                <span className={`${styles.rowPill} ${styles[`pill${estadoKey}`]}`}>
+                  <span className={styles.statusDot} />
+                  {item.estado}
+                </span>
 
-                  {/* Right Column: Actions & Timestamps */}
-                  <div className={styles.actionCol}>
-                    <div className={styles.timestamps}>
-                      <div>Creado: {item.creado}</div>
-                      <div>Actualizado: {item.actualizado}</div>
-                    </div>
+                <div className={styles.rowAmountBlock}>
+                  <span className={styles.rowAmountLabel}>Monto</span>
+                  <span className={styles.rowAmount}>
+                    {item.moneda || "$"} {item.monto}
+                  </span>
+                </div>
 
-                    <div className={styles.buttonsWrap}>
-                      {isRestricted ? (
+                <div className={styles.rowSpacer} />
+
+                {/* "Ver detalle" ya no es un botón acá: toda la fila lo abre
+                    (ver onClick arriba) - el chevron solo la señaliza. Los
+                    botones que quedan son decisiones reales, por eso cortan
+                    la propagación del click para no disparar el detalle
+                    encima. */}
+                <div className={styles.rowActions} onClick={(e) => e.stopPropagation()}>
+                  {/* Siempre seguido de otra acción (CRITERIOS si el admin
+                      está restringido, ACEPTAR/RECHAZAR si no), así que el
+                      divisor va sin condición extra. */}
+                  {isPendiente && (
+                    <>
+                      <BotonIcono
+                        icon={FiFileText}
+                        onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo, tieneApoderadoFirmante)}
+                        title={modeloDocumento.motivo || "Previsualizar documento"}
+                        isLoading={pendienteModeloDocumentoId === item.id}
+                        className={`${styles.btnDocumento} ${modeloDocumento.disponible ? "" : styles.btnDocumentoNoDisponible}`}
+                      />
+                      <span className={styles.actionsDivider} />
+                    </>
+                  )}
+                  {isRestricted ? (
+                    <Button
+                      onClick={() => setSolicitudCda(item)}
+                      variant="outlineBlue"
+                      size="sm"
+                    >
+                      <FiList /> CRITERIOS
+                    </Button>
+                  ) : (
+                    <>
+                      {isPendiente && (
                         <>
                           <Button
-                            onClick={() => setSolicitudCda(item)}
-                            variant="outlineBlue"
+                            onClick={() => handleAceptar(item)}
+                            variant="success"
                             size="sm"
-                            className={styles.btnCdaCustom}
+                            title="Aprobar Solicitud"
+                            disabled={actualizarEstadoMutation.isPending}
                           >
-                            <FiList /> CRITERIOS
+                            <FiCheck /> ACEPTAR
                           </Button>
                           <Button
-                            onClick={() => setSolicitudDetalle(item)}
-                            variant="ghost"
+                            onClick={() => handleRechazar(item)}
+                            variant="danger"
                             size="sm"
-                            className={styles.btnDetailCustom}
+                            title="Rechazar Solicitud"
+                            disabled={actualizarEstadoMutation.isPending}
                           >
-                            <FiEye /> VER DETALLE
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          {isPendiente && (
-                            <div className={styles.quickDecisions}>
-                              <Button
-                                onClick={() => handleAceptar(item.id)}
-                                variant="success"
-                                size="xs"
-                                className={styles.btnAcceptCustom}
-                                title="Aprobar Solicitud"
-                              >
-                                <FiCheck /> ACEPTAR
-                              </Button>
-                              <Button
-                                onClick={() => handleRechazar(item.id)}
-                                variant="danger"
-                                size="xs"
-                                className={styles.btnRejectCustom}
-                                title="Rechazar Solicitud"
-                              >
-                                <FiX /> RECHAZAR
-                              </Button>
-                            </div>
-                          )}
-
-                          <Button
-                            onClick={() => {
-                              toast.info(
-                                `Continuando flujo de gestión N°${item.id}`,
-                              );
-                            }}
-                            variant="outlineBlue"
-                            size="sm"
-                            className={styles.btnContinueCustom}
-                          >
-                            CONTINUAR <FiArrowRight />
-                          </Button>
-
-                          <Button
-                            onClick={() => setSolicitudDetalle(item)}
-                            variant="ghost"
-                            size="sm"
-                            className={styles.btnDetailCustom}
-                          >
-                            <FiEye /> VER DETALLE
+                            <FiX /> RECHAZAR
                           </Button>
                         </>
                       )}
-                    </div>
-                  </div>
+
+                      {isAprobada && (
+                        <Button
+                          onClick={() => handleReintentarMigracion(item)}
+                          variant="outlineBlue"
+                          size="sm"
+                          title="Reintentar la migración de esta línea a SGR+"
+                          disabled={migrarLineaMutation.isPending}
+                        >
+                          <FiRefreshCw /> MIGRAR
+                        </Button>
+                      )}
+                    </>
+                  )}
                 </div>
+
+                <FiChevronRight className={styles.rowChevron} />
               </div>
             );
           })
         )}
       </div>
+
+      {!loading && filtradas.length > 0 && (
+        <Paginacion
+          page={paginaActual}
+          onPageChange={setPagina}
+          hasMoreData={paginaActual < totalPaginas}
+          knownEndPage={totalPaginas}
+          variant="admin"
+          totalItems={filtradas.length}
+          pageSize={ELEMENTOS_POR_PAGINA}
+          itemLabel="solicitudes"
+        />
+      )}
 
       {/* Mock Detail Modal */}
       <Modal
@@ -691,8 +994,11 @@ export default function Dashboard() {
                   <div className={styles.solicitudMeta}>
                     <span className={styles.solicitudNumber}>SOLICITUD N°{solicitudDetalle.id}</span>
                     <span className={`${styles.solicitudStatusBadge} ${
-                      solicitudDetalle.estado === "Aprobada" ? styles.badgeAproved :
-                      solicitudDetalle.estado === "Rechazada" ? styles.badgeRejected : styles.badgePending
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_APROBADA ? styles.badgeAproved :
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_RECHAZADA ? styles.badgeRejected :
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_CANCELADA ||
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_VENCIDA ? styles.badgeCancelled :
+                      styles.badgePending
                     }`}>
                       {solicitudDetalle.estado}
                     </span>
@@ -777,6 +1083,15 @@ export default function Dashboard() {
         solicitud={solicitudCda}
       />
 
+      <RechazarSolicitudModal
+        key={solicitudARechazar?.id ?? "none"}
+        isOpen={!!solicitudARechazar}
+        onClose={() => setSolicitudARechazar(null)}
+        onConfirm={handleConfirmarRechazo}
+        solicitud={solicitudARechazar}
+        isLoading={actualizarEstadoMutation.isPending}
+      />
+
       {/* Value Chain Selection Modal */}
       <Modal
         isOpen={isChainModalOpen}
@@ -802,7 +1117,7 @@ export default function Dashboard() {
             <div
               className={`${styles.chainCardModal} ${selectedCadenaId === "all" ? styles.chainCardActive : ""}`}
               onClick={() => {
-                setSelectedCadenaId("all");
+                handleSelectCadena("all");
                 setIsChainModalOpen(false);
               }}
             >
@@ -831,7 +1146,7 @@ export default function Dashboard() {
                     key={id}
                     className={`${styles.chainCardModal} ${isSelected ? styles.chainCardActive : ""}`}
                     onClick={() => {
-                      setSelectedCadenaId(id);
+                      handleSelectCadena(id);
                       setIsChainModalOpen(false);
                     }}
                   >

@@ -1,99 +1,304 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import {
   FiCheckCircle,
-  FiDownload,
-  FiEdit3,
+  FiCheck,
+  FiArrowRight,
+  FiLock,
+  FiZap,
   FiFileText,
+  FiAlertCircle,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { Button } from "../../../ui/Button/Button";
-import { Alert } from "../../../ui/Alert/Alert";
 import { BotonVolver } from "../../../ui/BotonVolver/BotonVolver";
+import { useChannel } from "../../../../context/useChannel";
+import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
+import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import styles from "./Paso7Exito.module.css";
 
-export default function Paso7Exito({ onVolverInicio }) {
+const SIMBOLOS_MONEDA = {
+  2: "U$D",
+  10: "UVAS",
+  500: "€",
+  5000: "$",
+};
+
+const formatearPlazo = (plazo) => {
+  if (!plazo) return null;
+  const fecha = new Date(plazo);
+  if (Number.isNaN(fecha.getTime())) return null;
+  return fecha.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+export default function Paso7Exito({
+  onVolverInicio,
+  onNuevaSolicitud,
+  resumen,
+}) {
+  const navigate = useNavigate();
+  const { basePath } = useChannel();
+  // Crear la solicitud (para llegar hasta acá) ya cuenta como "solicitud
+  // activa" del lado de useAccesoDashboardCliente, así que Legajo debería
+  // estar desbloqueado en este mismo momento - el chequeo es solo defensivo
+  // (no mostrar una acción que todavía llevaría a un candado).
+  const { legajoDesbloqueado, documentacionDesbloqueada } =
+    useAccesoDashboardCliente();
+
+  // Con el legajo completo, el paso 2 solo esta pendiente si todavia faltan documentos obligatorios
+  const { faltanDocumentos, isLoading: cargandoDocumentos } = useValidacionLegajo();
+
   const handleFinalizar = () => {
     onVolverInicio();
   };
 
+  const handleIrALegajo = () => {
+    navigate(`${basePath}/legajo`);
+  };
+
+  const handleIrADocumentacion = () => {
+    navigate(`${basePath}/documentacion`);
+  };
+
+  // documentacionDesbloqueada ya implica Legajo 100% completo (ver
+  // useAccesoDashboardCliente) - se reusa esa misma derivación en vez de
+  // pedir faltanLegajo de nuevo, así el nodo 1 del timeline pasa a "hecho"
+  // apenas deja de ser el paso pendiente real.
+  const legajoCompleto = documentacionDesbloqueada;
+  const documentacionCompleta = documentacionDesbloqueada && !cargandoDocumentos && !faltanDocumentos;
+
+  const montoFormateado =
+    resumen && Number.isFinite(resumen.monto)
+      ? `${SIMBOLOS_MONEDA[resumen.monedaId] || "$"} ${resumen.monto.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : null;
+  const plazoFormateado = resumen ? formatearPlazo(resumen.plazo) : null;
+  const rechazada = !!resumen?.rechazada;
+
   return (
     <div className={styles.container}>
-      <div className={styles.hero}>
+      <div className={`${styles.hero} ${rechazada ? styles.heroNeutral : ""}`}>
         <div className={styles.heroGlow}></div>
-        <div className={styles.heroContent}>
-          <FiCheckCircle className={styles.heroIcon} />
-          <div className={styles.heroText}>
-            <h1 className={styles.heroTitle}>
-              ¡Felicitaciones!
-              <br />
-              Tu solicitud está pre-aprobada
-            </h1>
-          </div>
+        <div className={styles.heroIconWrap}>
+          {rechazada ? (
+            <FiFileText className={styles.heroIcon} />
+          ) : (
+            <FiCheckCircle className={styles.heroIcon} />
+          )}
+        </div>
+        <div className={styles.heroText}>
+          <h1 className={styles.heroTitle}>
+            {rechazada
+              ? "Tu solicitud fue registrada"
+              : "¡Felicitaciones! Tu solicitud está pre-aprobada"}
+          </h1>
+          <p className={styles.heroSubtitle}>
+            {rechazada ? (
+              <>
+                No superó la evaluación automática de la línea. Podés realizar
+                una <strong>nueva solicitud</strong> cuando quieras.
+              </>
+            ) : (
+              <>
+                Restan estos <strong>2 pasos</strong> para activar tu línea de
+                crédito.
+              </>
+            )}
+          </p>
         </div>
       </div>
 
-      <h3 className={styles.subtitle}>Te contamos los pasos a seguir:</h3>
+      {resumen && (
+        <div className={styles.summaryCard}>
+          <div className={styles.summaryHead}>
+            <span className={styles.summaryLabel}>Resumen de tu solicitud</span>
+            <div className={styles.summaryTags}>
+              {rechazada && (
+                <span className={styles.summaryEstadoTag}>No aprobada</span>
+              )}
+              {!!resumen.id && (
+                <span className={styles.summaryIdTag}>N° {resumen.id}</span>
+              )}
+            </div>
+          </div>
 
-      <div className={styles.stepsContainer}>
-        <div className={styles.stepCard}>
-          <div className={styles.stepNumber}>1</div>
-          <div className={styles.stepContent}>
-            <h4 className={styles.stepTitle}>Descargá y enviá la instrucción</h4>
-            <p className={styles.stepText}>
-              Descargá este documento, firmalo y envialo escaneado vía mail a{" "}
-              <a
-                href="mailto:comerciales@bindgarantias.com.ar"
-                className={styles.textHighlight}
-              >
-                comerciales@bindgarantias.com.ar
-              </a>
-              . <br />
-              <span className={styles.textMuted}>
-                ¡Es firma simple, no hace falta certificar!
+          {montoFormateado && (
+            <div className={styles.summaryAmountBlock}>
+              <span className={styles.summaryAmountLabel}>
+                Monto solicitado
               </span>
-            </p>
+              <span className={styles.summaryAmountValue}>
+                {montoFormateado}
+              </span>
+            </div>
+          )}
 
-            <div className={styles.downloadBox}>
-              <div className={styles.downloadInfo}>
-                <FiFileText className={styles.downloadIcon} />
-                <span>Nota de instrucción permanente.pdf</span>
+          {(resumen.linea || plazoFormateado) && (
+            <div className={styles.summaryFootRow}>
+              {resumen.linea && (
+                <div className={styles.summaryFootItem}>
+                  <span className={styles.summaryFootLabel}>Línea</span>
+                  <span className={styles.summaryFootValue}>
+                    {resumen.linea}
+                  </span>
+                </div>
+              )}
+              {plazoFormateado && (
+                <div className={styles.summaryFootItem}>
+                  <span className={styles.summaryFootLabel}>
+                    Plazo estimado
+                  </span>
+                  <span className={styles.summaryFootValue}>
+                    {plazoFormateado}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {rechazada && (
+            <div className={styles.summaryMotivo}>
+              <span className={styles.summaryMotivoIcon}>
+                <FiAlertCircle size={15} />
+              </span>
+              <div className={styles.summaryMotivoText}>
+                <span className={styles.summaryMotivoLabel}>Motivo</span>
+                <p className={styles.summaryMotivoValue}>
+                  {resumen.motivoRechazo ||
+                    "No cumple los criterios de aprobación automática de esta línea."}
+                </p>
               </div>
-              <Button type="button" variant="outline" size="sm">
-                <FiDownload className={styles.iconMarginRight} /> DESCARGAR
-              </Button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Estos pasos son de la plataforma actual, no la anterior: ya no hay
+          que descargar/firmar/enviar por mail una nota de instrucción ni
+          esperar una firma electrónica externa del contrato - lo que activa
+          la línea hoy es completar el Legajo y cargar la Documentación,
+          ambos acá mismo (reemplazado el 2026-09-17, quedaban del flujo
+          viejo). El tercer nodo (Línea activa) no es un paso propio: es el
+          destino, para que la secuencia cierre con el objetivo en vez de
+          terminar en el paso 2 sin mostrar a dónde lleva todo esto. */}
+      {!rechazada && (
+        <>
+          <span className={styles.stepsGridLabel}>Para activar tu línea</span>
+          <div className={styles.timeline}>
+            <div className={styles.timelineItem}>
+              <div className={styles.timelineRail}>
+                <span
+                  className={`${styles.timelineDot} ${legajoCompleto ? styles.dotDone : styles.dotActive}`}
+                >
+                  {legajoCompleto ? <FiCheck size={14} /> : "1"}
+                </span>
+                <span
+                  className={`${styles.timelineLine} ${legajoCompleto ? styles.lineDone : ""}`}
+                />
+              </div>
+              <div className={styles.timelineContent}>
+                <h4 className={styles.timelineTitle}>Completá tu Legajo</h4>
+                {legajoCompleto ? (
+                  <p className={styles.timelineText}>
+                    Datos de tu empresa completos.
+                  </p>
+                ) : (
+                  <>
+                    <p className={styles.timelineText}>
+                      Cargá los datos de tu empresa y de las personas vinculadas
+                      a ella. No hace falta esperar: ya podés hacerlo.
+                    </p>
+                    {legajoDesbloqueado && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleIrALegajo}
+                        className={styles.timelineBtn}
+                        iconRight={<FiArrowRight size={14} />}
+                      >
+                        Ir al Legajo
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.timelineItem}>
+              <div className={styles.timelineRail}>
+                <span
+                  className={`${styles.timelineDot} ${documentacionCompleta ? styles.dotDone : documentacionDesbloqueada ? styles.dotActive : styles.dotLocked}`}
+                >
+                  {documentacionCompleta ? <FiCheck size={14} /> : documentacionDesbloqueada ? "2" : <FiLock size={12} />}
+                </span>
+                <span className={`${styles.timelineLine} ${documentacionCompleta ? styles.lineDone : ""}`} />
+              </div>
+              <div className={styles.timelineContent}>
+                <h4 className={styles.timelineTitle}>Cargá la Documentación</h4>
+                {documentacionCompleta ? (
+                  <p className={styles.timelineText}>
+                    Documentación completa.
+                  </p>
+                ) : documentacionDesbloqueada ? (
+                  <>
+                    <p className={styles.timelineText}>
+                      Subí la documentación requerida de tu empresa.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleIrADocumentacion}
+                      className={styles.timelineBtn}
+                      iconRight={<FiArrowRight size={14} />}
+                    >
+                      Ir a Documentación
+                    </Button>
+                  </>
+                ) : (
+                  <p className={styles.timelineText}>
+                    Se habilita cuando completes el Legajo al 100%.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className={styles.timelineItem}>
+              <div className={styles.timelineRail}>
+                <span className={styles.timelineDot}>
+                  <FiZap size={13} />
+                </span>
+              </div>
+              <div className={styles.timelineContent}>
+                <h4 className={styles.timelineTitle}>Línea activa</h4>
+                <p className={styles.timelineText}>
+                  Te avisamos apenas quede todo listo para operar.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        </>
+      )}
 
-        <div className={styles.stepCard}>
-          <div className={styles.stepNumber}>2</div>
-          <div className={styles.stepContent}>
-            <h4 className={styles.stepTitle}>Firmá electrónicamente el Contrato y Fianza</h4>
-            <p className={styles.stepText}>
-              Una vez validada la documentación ingresada, recibirán por mail la
-              solicitud de firma de la{" "}
-              <strong>Oferta del Contrato de Garantía Recíproca</strong> para
-              realizarla en forma electrónica.
-            </p>
-
-            <div className={styles.mtSmall}>
-              <Alert variant="default" layout="pill" icon={FiEdit3}>
-                La firma se valida a través de AFIP. Necesitarán clave fiscal
-                Nivel 2 o superior.
-              </Alert>
-            </div>
-
-            <p className={`${styles.stepText} ${styles.mtSmall}`}>
-              Una vez registradas todas las firmas, vamos a habilitarles la
-              línea en nuestros sistemas para que puedan comenzar a operar.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <hr className={styles.divider} />
-
-      <div className={styles.actionsLeft}>
+      <div
+        className={`${styles.footer} ${rechazada ? styles.footerConAccion : ""}`}
+      >
+        {rechazada && onNuevaSolicitud && (
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={onNuevaSolicitud}
+            className={styles.footerAccionBtn}
+            iconRight={<FiRefreshCw size={14} />}
+          >
+            Realizar otra solicitud
+          </Button>
+        )}
         <BotonVolver
           texto="VOLVER A LA LISTA DE SOLICITUDES"
           onClick={handleFinalizar}

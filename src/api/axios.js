@@ -2,13 +2,14 @@ import axios from "axios";
 import { toast } from "sonner";
 import { queryClient } from "./queryClient";
 import { obtenerUltimoStatus, esOffline } from "../utils/statusPlataforma";
+import { obtenerTokenApi, borrarTokenApi } from "./tokenApi";
+import { CABECERAS_BASE_API } from "./cabecerasApi";
+import { useAuthStore } from "../store/useAuthStore";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 30000,
-  headers: {
-    Accept: "application/json",
-  },
+  headers: { ...CABECERAS_BASE_API },
 });
 
 // ─────────────────────────────────────────────────────────────
@@ -40,20 +41,33 @@ const redirigirAFueraDeServicio = () => {
   setTimeout(() => window.location.assign("/fuera-de-servicio"), 900);
 };
 
-api.interceptors.request.use((config) => {
+const agregarTokenApi = (config) => {
+  if (config.sinToken) return config;
+  const token = obtenerTokenApi();
+  if (token) {
+    config.__conToken = true;
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+const esConsultaDeEstado = (url = "") =>
+  url.includes("StatusPlataforma") || url.includes("PlataformaOnline");
+
+api.interceptors.request.use(async (config) => {
   // El propio chequeo de estado nunca se bloquea a sí mismo.
-  if (config.url?.includes("StatusPlataforma") || esRutaAdmin()) {
-    return config;
+  if (esConsultaDeEstado(config.url) || esRutaAdmin()) {
+    return agregarTokenApi(config);
   }
 
-  const statusCacheado = queryClient.getQueryData(["statusPlataforma"]);
+  const statusCacheado = queryClient.getQueryData(["plataformaOnline"]);
   if (esOffline(obtenerUltimoStatus(statusCacheado))) {
     const error = new Error("La plataforma cliente está en mantenimiento");
     error.isPlataformaOffline = true;
     return Promise.reject(error);
   }
 
-  return config;
+  return agregarTokenApi(config);
 });
 
 const MAX_RETRIES = 2;
@@ -71,6 +85,54 @@ const isPoolExhaustionError = (error) => {
   if (!data) return false;
   const text = typeof data === "string" ? data : JSON.stringify(data);
   return POOL_EXHAUSTION_PATTERN.test(text);
+};
+
+const RUTAS_CON_401_DE_NEGOCIO = [
+  /auth\/login/i,
+  /usuario\/(?:[^/]+\/)?(?:login|password)/i,
+  /usuario\/notificar/i,
+  /Socio\/ValidarCuit/i,
+  /Socio\/CertificadoVigente/i,
+  /CadenaValor\/Libradores\/[^/?]+\/[^/?]+/i,
+  /CadenaValor\/Relaciones\/[^/?]+\/[^/?]+/i,
+];
+
+const esSesionVencida = (error) => {
+  const config = error.config;
+  if (error.response?.status !== 401 || config?.sinToken) return false;
+  const url = config?.url || "";
+  if (RUTAS_CON_401_DE_NEGOCIO.some((ruta) => ruta.test(url))) return false;
+  return Boolean(config?.__conToken) || useAuthStore.getState().isAuthenticated;
+};
+
+const RUTAS_CON_LIMITE_POR_CUIT =
+  /(api\/(nosis|afip|lufe|Socio\/(ValidarCuit|CertificadoVigente|DisponibilidadCuit)|TerceroRelacionado)|sgrplus\/Socio\/ValidarVinculo)\b/i;
+
+const esLimiteDeConsultasPorCuit = (error) =>
+  error.response?.status === 429 &&
+  RUTAS_CON_LIMITE_POR_CUIT.test(error.config?.url || "");
+
+const rutaDeLogin = () => {
+  const path = window.location.pathname;
+  if (path.startsWith("/admin")) return "/login";
+  const primerSegmento = path.split("/")[1];
+  return /^\d+$/.test(primerSegmento) ? `/${primerSegmento}/login` : "/login";
+};
+
+let cerrandoSesion = false;
+
+export const cerrarSesionLocal = ({
+  titulo = "Tu sesión venció",
+  descripcion = "Volvé a ingresar para continuar.",
+  tipo = "error",
+} = {}) => {
+  if (cerrandoSesion) return;
+  cerrandoSesion = true;
+  borrarTokenApi();
+  useAuthStore.getState().clearAuth();
+  queryClient.clear();
+  toast[tipo](titulo, { description: descripcion });
+  setTimeout(() => window.location.assign(rutaDeLogin()), 900);
 };
 
 const transformKeysToLowercase = (obj) => {
@@ -114,6 +176,20 @@ api.interceptors.response.use(
 
     if (!config) return Promise.reject(error);
 
+    if (esSesionVencida(error)) {
+      cerrarSesionLocal();
+      return Promise.reject(error);
+    }
+
+    if (esLimiteDeConsultasPorCuit(error)) {
+      toast.error("Demasiados pedidos", {
+        id: "limite-consultas-cuit",
+        description:
+          "Alcanzaste el límite de consultas de datos por CUIT. Intentá nuevamente más tarde.",
+      });
+      return Promise.reject(error);
+    }
+
     config.__retryCount = config.__retryCount || 0;
 
     const isNetworkError = !error.response;
@@ -136,6 +212,20 @@ api.interceptors.response.use(
       const method = config.method?.toUpperCase();
       if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
         toast.error("Error de red. Verifica tu conexión e intenta nuevamente.");
+      }
+    }
+
+    // Rechazos de negocio de la API (400, 403, 409, 429): el cuerpo es
+    // { statusCode, message } con el motivo. Se deja ese motivo como
+    // error.message para que cualquier pantalla que muestre err.message
+    // (o utils/mensajesError) lo vea, en vez de "Request failed with status
+    // code 409".
+    const statusRechazo = error.response?.status;
+    if ([400, 403, 409, 429].includes(statusRechazo)) {
+      const cuerpo = error.response?.data;
+      const motivo = typeof cuerpo === "string" ? cuerpo : cuerpo?.message;
+      if (typeof motivo === "string" && motivo.trim() && motivo.length < 300) {
+        error.message = motivo;
       }
     }
 

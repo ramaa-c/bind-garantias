@@ -7,11 +7,95 @@ import { toast } from "sonner";
 import { InputSimple } from "../../../components/ui/InputSimple/InputSimple";
 import { Button } from "../../../components/ui/Button/Button";
 import { InputOTP } from "../../../components/ui/InputOtp/InputOtp";
-import { useLogin, useLoginByCode } from "../../../hooks/useUsuario";
+import { useLogin, useLoginByCode, useSolicitarCodigoLogin } from "../../../hooks/useUsuario";
+import { usuarioService } from "../../../services/usuarioService";
+import { cerrarSesionApi } from "../../../api/tokenApi";
 import { useAuthStore } from "../../../store/useAuthStore";
-import { useChannel } from "../../../context/ChannelContext";
+import { useThemeStore } from "../../../store/useThemeStore";
+import { useChannel } from "../../../context/useChannel";
+import {
+  extraerRegistroUsuario,
+  esAdministradorActivo,
+  vinculosCadenaActivos,
+  esRespuestaCuentaNoActiva,
+  esRespuestaBloqueoAdmin,
+  MENSAJE_CUENTA_NO_ACTIVA,
+  MENSAJE_CUENTA_BLOQUEADA_ADMIN,
+  MENSAJE_CUENTA_VENCIDA,
+  HABILITAR_CUENTA_CLIENTE,
+  avisarCuentaNoActiva,
+  avisarCuentaVencida,
+  avisarBloqueoAdmin,
+  VIGENCIA_CODIGO_LOGIN_MS,
+  mensajeCodigoLoginRechazado,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
+} from "../../../utils/usuarioUtils";
 import styles from "./Login.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
+import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
+
+const MENSAJE_ADMIN_EN_CLIENTE =
+  "Esta cuenta es de administración y no puede operar como cliente. Registrate con un correo distinto para acceder desde acá.";
+
+const leerOtpPendiente = () => {
+  const pendingEmail = sessionStorage.getItem("pendingOtpEmail");
+  const expiresAt = sessionStorage.getItem("otpExpiresAt");
+
+  if (pendingEmail && expiresAt) {
+    if (Date.now() < parseInt(expiresAt, 10)) {
+      return { fase: "validacion_otp", email: pendingEmail };
+    }
+    sessionStorage.removeItem("pendingOtpEmail");
+    sessionStorage.removeItem("otpExpiresAt");
+  }
+
+  return { fase: "ingreso_credenciales", email: "" };
+};
+
+
+// Un usuario vinculado a una o más cadenas de valor (UsuarioCadenaValor) es
+// un admin restringido (ve el panel admin acotado a sus propias cadenas —
+// ver useAdminRestrictions) aunque nunca haya entrado por /login de admin:
+// entra por el login normal de SU banco, como cualquier cliente, y de acá
+// hay que mandarlo al admin en vez de a su legajo (que ni siquiera tiene,
+// porque no es dueño de ningún Socio). AdminGuard no valida el "role" que
+// se setea al loguear, así que no hace falta nada especial del lado del
+// guard — solo decidir bien el destino acá.
+const resolverAccesoPostLogin = async (email, basePath) => {
+  try {
+    const usuarioDb = await usuarioService.obtenerPorNombreOEmail(email);
+    const registro = extraerRegistroUsuario(usuarioDb);
+
+    // Un Administrador General no tiene Socio ni legajo propio: su cuenta es
+    // exclusivamente del panel admin y no corresponde que entre por el login
+    // de un banco, aunque el backend valide bien sus credenciales
+    // (SGRPLUSPLA-195). OJO: esto NO alcanza a los admin restringidos, que
+    // no llevan esta marca y sí entran por acá (ver más abajo).
+    if (esAdministradorActivo(registro)) {
+      return { permitido: false, destino: null };
+    }
+
+    const usuarioWebId =
+      registro?.usuariowebid ?? registro?.UsuarioWebID ?? registro?.id ?? null;
+    if (!usuarioWebId) return { permitido: true, destino: `${basePath}/legajo` };
+
+    // ⚠️ El backend filtra por el param "usuarioid" (no "usuariowebid") —
+    // ver el mismo aviso en useAdminRestrictions.js.
+    const cadenasData = await usuarioService.obtenerUsuariosRelacionados({
+      usuarioid: usuarioWebId,
+    });
+    const tieneCadenas = vinculosCadenaActivos(cadenasData).length > 0;
+    return {
+      permitido: true,
+      destino: tieneCadenas ? "/admin" : `${basePath}/legajo`,
+    };
+  } catch {
+    // Ante cualquier falla de esta verificación extra, seguir el camino
+    // normal en vez de bloquear el login por completo.
+    return { permitido: true, destino: `${basePath}/legajo` };
+  }
+};
 
 const emailSchema = z.object({
   email: z
@@ -137,6 +221,7 @@ const EmailForCodePhase = ({ control, isPending, onFallback }) => (
       control={control}
       label="Email"
       type="text"
+      autoComplete="username"
       disabled={isPending}
     />
     <Button type="submit" variant="primary" isLoading={isPending}>
@@ -170,6 +255,7 @@ const CredentialsPhase = ({
       control={control}
       label="Email"
       type="text"
+      autoComplete="username"
       disabled={isPending}
     />
     <InputSimple
@@ -177,6 +263,7 @@ const CredentialsPhase = ({
       control={control}
       label="Contraseña"
       type="password"
+      autoComplete="current-password"
       disabled={isPending}
     />
     <Button type="submit" variant="primary" isLoading={isPending}>
@@ -190,7 +277,7 @@ const CredentialsPhase = ({
         alignItems: "center",
         gap: "0.5rem",
         fontSize: "0.875rem",
-        color: "var(--gray-text, #a0a0a0)",
+        color: "var(--text-muted)",
       }}
     >
       <span>
@@ -227,7 +314,7 @@ const CredentialsPhase = ({
         marginTop: "1.5rem",
         textAlign: "center",
         fontSize: "0.875rem",
-        color: "var(--gray-text, #a0a0a0)",
+        color: "var(--text-muted)",
       }}
     >
       ¿No tenés una cuenta?{" "}
@@ -246,17 +333,20 @@ const CredentialsPhase = ({
 );
 
 const Login = () => {
-  const [fase, setFase] = useState("ingreso_credenciales");
-  const [generatedOtp, setGeneratedOtp] = useState(null);
+  const [otpPendienteInicial] = useState(leerOtpPendiente);
+  const [fase, setFase] = useState(otpPendienteInicial.fase);
+  const [locationSincronizada, setLocationSincronizada] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const setUser = useAuthStore((state) => state.setUser);
-  const { channelInfo } = useChannel();
+  const theme = useThemeStore((state) => state.theme);
+  const { channelInfo, basePath } = useChannel();
   const { mutate: iniciarSesion, isPending: isLoginPending } = useLogin();
-  const { mutate: loginByCode, isPending: solicitandoCodigo } =
-    useLoginByCode();
+  const { mutate: solicitarCodigo, isPending: solicitandoCodigo } =
+    useSolicitarCodigoLogin();
+  const { mutate: loginByCode, isPending: validandoCodigo } = useLoginByCode();
 
-  const isPending = isLoginPending || solicitandoCodigo;
+  const isPending = isLoginPending || solicitandoCodigo || validandoCodigo;
 
   const currentSchema =
     fase === "ingreso_credenciales"
@@ -275,76 +365,136 @@ const Login = () => {
     setValue,
   } = useForm({
     resolver: zodResolver(currentSchema),
-    defaultValues: { email: "", otp: "", password: "" },
+    defaultValues: { email: otpPendienteInicial.email, otp: "", password: "" },
     mode: "onChange",
   });
 
-  useEffect(() => {
-    const pendingEmail = sessionStorage.getItem("pendingOtpEmail");
-    const expiresAt = sessionStorage.getItem("otpExpiresAt");
-
-    if (pendingEmail && expiresAt) {
-      if (Date.now() < parseInt(expiresAt, 10)) {
-        setValue("email", pendingEmail);
-        setFase("validacion_otp");
-      } else {
-        sessionStorage.removeItem("pendingOtpEmail");
-        sessionStorage.removeItem("otpExpiresAt");
-      }
+  // Redirección desde CrearClave
+  if (location.state && location !== locationSincronizada) {
+    if (location.state.emailIngresado) {
+      setLocationSincronizada(location);
+      setFase("validacion_otp");
+    } else if (location.state.faseInicial) {
+      setLocationSincronizada(location);
+      setFase(location.state.faseInicial);
     }
+  }
 
-    // B) Redirección desde CrearClave
+  useEffect(() => {
     if (location.state?.emailIngresado) {
       setValue("email", location.state.emailIngresado);
-      if (location.state?.generatedOtp) {
-        setGeneratedOtp(location.state.generatedOtp);
-      }
-      setFase("validacion_otp");
+      window.history.replaceState({}, document.title);
+    } else if (location.state?.faseInicial) {
       window.history.replaceState({}, document.title);
     }
   }, [location, setValue]);
+
+  const avisarCuentaInhabilitada = (campo, motivo) => {
+    if (motivo === "bloqueada_admin") {
+      setError(campo, { type: "server", message: MENSAJE_CUENTA_BLOQUEADA_ADMIN });
+      avisarBloqueoAdmin();
+      return;
+    }
+    if (motivo === "vencida") {
+      setError(campo, { type: "server", message: MENSAJE_CUENTA_VENCIDA });
+      avisarCuentaVencida();
+      return;
+    }
+    setError(campo, { type: "server", message: MENSAJE_CUENTA_NO_ACTIVA });
+    avisarCuentaNoActiva(HABILITAR_CUENTA_CLIENTE);
+  };
 
   const onSubmit = async (formData) => {
     if (fase === "solicitar_codigo") {
       const isValid = await trigger("email");
       if (!isValid) return;
 
-      loginByCode(
-        { email: formData.email, password: "" },
-        {
-          onSuccess: (data) => {
-            setGeneratedOtp(data.password);
-            sessionStorage.setItem("pendingOtpEmail", formData.email);
-            sessionStorage.setItem("otpExpiresAt", Date.now() + 60000);
-            setFase("validacion_otp");
-            toast.success("Código enviado a tu email");
-          },
-          onError: (error) => {
-            const status = error?.response?.status;
-            const errorData = error?.response?.data;
-            if (!error?.response || status >= 500) {
-              toast.error("Error de servidor", {
-                description: "Ocurrió un error. Intentá más tarde.",
-              });
-            } else {
-              const message =
-                errorData?.message ||
-                "Error al solicitar código. Verificá los datos.";
-              setError("email", { type: "server", message });
-            }
-          },
+      solicitarCodigo(formData.email, {
+        onSuccess: () => {
+          sessionStorage.setItem("pendingOtpEmail", formData.email);
+          sessionStorage.setItem("otpExpiresAt", Date.now() + VIGENCIA_CODIGO_LOGIN_MS);
+          setFase("validacion_otp");
+          toast.success("Código enviado a tu email");
         },
-      );
+        onError: (error) => {
+          const status = error?.response?.status;
+          if (!error?.response || status >= 500) {
+            toast.error("Error de servidor", {
+              description: "Ocurrió un error. Intentá más tarde.",
+            });
+            return;
+          }
+          if (esDemasiadosIntentos(error)) {
+            avisarDemasiadosIntentos();
+            return;
+          }
+          if (esRespuestaBloqueoAdmin(error)) {
+            avisarCuentaInhabilitada("email", "bloqueada_admin");
+            return;
+          }
+          if (status === 401) {
+            avisarCuentaInhabilitada("email", "vencida");
+            return;
+          }
+          if (esRespuestaCuentaNoActiva(error)) {
+            avisarCuentaInhabilitada("email", "no_activa");
+            return;
+          }
+          setError("email", {
+            type: "server",
+            message: "Error al solicitar código. Verificá los datos.",
+          });
+        },
+      });
       return;
     }
 
     if (fase === "validacion_otp") {
-      if (formData.otp === generatedOtp) {
-        setUser({ email: formData.email, role: "user" });
-        navigate(`/${channelInfo.id}/legajo`, { replace: true });
-      } else {
-        setError("otp", { type: "server", message: "Código incorrecto" });
-      }
+      loginByCode(
+        { email: formData.email, password: formData.otp },
+        {
+          onSuccess: async () => {
+            const acceso = await resolverAccesoPostLogin(formData.email, basePath);
+            if (!acceso.permitido) {
+              cerrarSesionApi();
+              setError("email", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+              return;
+            }
+            sessionStorage.removeItem("pendingOtpEmail");
+            sessionStorage.removeItem("otpExpiresAt");
+            setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
+            navigate(acceso.destino, { replace: true });
+          },
+          onError: (error) => {
+            const status = error?.response?.status;
+            if (!error?.response || status >= 500) {
+              toast.error("Error de servidor", {
+                description: "Ocurrió un error. Intentá más tarde.",
+              });
+              return;
+            }
+            if (esDemasiadosIntentos(error)) {
+              avisarDemasiadosIntentos();
+              return;
+            }
+            if (esRespuestaCuentaNoActiva(error)) {
+              avisarCuentaInhabilitada("otp", "no_activa");
+              return;
+            }
+            if (status === 401) {
+              setError("otp", {
+                type: "server",
+                message: mensajeCodigoLoginRechazado(error),
+              });
+              return;
+            }
+            setError("otp", {
+              type: "server",
+              message: "No pudimos validar el código. Solicitá uno nuevo.",
+            });
+          },
+        },
+      );
       return;
     }
 
@@ -352,9 +502,15 @@ const Login = () => {
       iniciarSesion(
         { email: formData.email, password: formData.password },
         {
-          onSuccess: () => {
-            setUser({ email: formData.email, role: "user" });
-            navigate(`/${channelInfo.id}/legajo`, { replace: true });
+          onSuccess: async () => {
+            const acceso = await resolverAccesoPostLogin(formData.email, basePath);
+            if (!acceso.permitido) {
+              cerrarSesionApi();
+              setError("password", { type: "server", message: MENSAJE_ADMIN_EN_CLIENTE });
+              return;
+            }
+            setUser({ email: formData.email, role: "user" }, { esNuevoLogin: true });
+            navigate(acceso.destino, { replace: true });
           },
           onError: (error) => {
             const status = error?.response?.status;
@@ -363,12 +519,20 @@ const Login = () => {
               toast.error("Error de servidor", {
                 description: "Ocurrió un error. Intentá más tarde.",
               });
-            } else {
-              setError("password", {
-                type: "server",
-                message: "Usuario o contraseña incorrecto.",
-              });
+              return;
             }
+            if (esDemasiadosIntentos(error)) {
+              avisarDemasiadosIntentos();
+              return;
+            }
+            if (esRespuestaCuentaNoActiva(error)) {
+              avisarCuentaInhabilitada("password", "no_activa");
+              return;
+            }
+            setError("password", {
+              type: "server",
+              message: "Usuario o contraseña incorrecto.",
+            });
           },
         },
       );
@@ -376,31 +540,34 @@ const Login = () => {
   };
 
   const handleResendCode = () => {
-    loginByCode(
-      { email: getValues("email"), password: "" },
-      {
-        onSuccess: (data) => {
-          setGeneratedOtp(data.password);
-          sessionStorage.setItem("pendingOtpEmail", getValues("email"));
-          sessionStorage.setItem("otpExpiresAt", Date.now() + 60000);
-          toast.success("Código reenviado");
-        },
-        onError: (error) => {
-          const status = error?.response?.status;
-          const errorData = error?.response?.data;
-          if (!error?.response || status >= 500) {
-            toast.error("Error de servidor", {
-              description: "Ocurrió un error. Intentá más tarde.",
-            });
-          } else {
-            const message =
-              errorData?.message ||
-              "Error al reenviar código. Verificá los datos.";
-            setError("otp", { type: "server", message });
-          }
-        },
+    solicitarCodigo(getValues("email"), {
+      onSuccess: () => {
+        sessionStorage.setItem("pendingOtpEmail", getValues("email"));
+        sessionStorage.setItem("otpExpiresAt", Date.now() + VIGENCIA_CODIGO_LOGIN_MS);
+        toast.success("Código reenviado");
       },
-    );
+      onError: (error) => {
+        const status = error?.response?.status;
+        if (!error?.response || status >= 500) {
+          toast.error("Error de servidor", {
+            description: "Ocurrió un error. Intentá más tarde.",
+          });
+        } else if (esDemasiadosIntentos(error)) {
+          avisarDemasiadosIntentos();
+        } else if (esRespuestaBloqueoAdmin(error)) {
+          avisarCuentaInhabilitada("otp", "bloqueada_admin");
+        } else if (status === 401) {
+          avisarCuentaInhabilitada("otp", "vencida");
+        } else if (esRespuestaCuentaNoActiva(error)) {
+          avisarCuentaInhabilitada("otp", "no_activa");
+        } else {
+          setError("otp", {
+            type: "server",
+            message: "Error al reenviar código. Verificá los datos.",
+          });
+        }
+      },
+    });
   };
 
   return (
@@ -409,12 +576,12 @@ const Login = () => {
         <div className={styles.globalLogo}>
           <div className={styles.logosWrapper}>
             <img
-              src={logoBind}
+              src={theme === "light" ? logoBindBlack : logoBind}
               alt="Logo BIND"
-              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `/${channelInfo.id}/login` : "/login")}
+              onClick={() => navigate(channelInfo?.id && channelInfo.id !== "default" ? `${basePath}/login` : "/login")}
               className={styles.clickableLogo}
             />
-            {channelInfo.id !== "default" && (
+            {channelInfo.id !== "default" && channelInfo.logo && (
               <>
                 <div className={styles.logoSeparator} />
                 <img
@@ -468,8 +635,8 @@ const Login = () => {
               <CredentialsPhase
                 control={control}
                 isPending={isPending}
-                onRegister={() => navigate(`/${channelInfo.id}/registro`)}
-                onRecoverPassword={() => navigate(`/${channelInfo.id}/recuperar-clave`)}
+                onRegister={() => navigate(`${basePath}/registro`)}
+                onRecoverPassword={() => navigate(`${basePath}/recuperar-clave`)}
                 onLoginWithCode={() => {
                   clearErrors();
                   setFase("solicitar_codigo");
@@ -519,4 +686,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login;

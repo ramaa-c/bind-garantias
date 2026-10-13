@@ -4,27 +4,43 @@ import { cdaService } from "../services/cdaService";
 // El CDA "Valida al socio que no sea socio protector de otra SGR" (ID 10) es
 // el único criterio no bloqueante: si no se cumple, es informativo pero no
 // impide avanzar. `ListTest` (la respuesta de cda/execute) ya no trae el
-// CdaID de cada ítem, así que se identifica por el texto exacto de su
-// MensajeRechazo. Frágil: si se edita el mensaje de ese CDA en CDAs
-// Globales, hay que actualizar este texto también.
-const MENSAJE_CDA_NO_BLOQUEANTE = "Reviste carácter de socio protector de otra SGR";
+// CdaID de cada ítem, así que se identifica por el texto de su
+// MensajeRechazo. En vez de una comparación exacta (frágil ante cualquier
+// cambio de mayúsculas/espaciado en el admin de CDAs Globales), se matchea
+// por inclusión de una frase clave normalizada (minúsculas, espacios
+// colapsados) — tolera esos cambios menores. Igual sigue dependiendo de que
+// el backend no reescriba el mensaje por completo; si eso pasa, hay que
+// actualizar `FRASES_CDA_NO_BLOQUEANTES` acá.
+const FRASES_CDA_NO_BLOQUEANTES = ["socio protector de otra sgr"];
+
+const normalizarTexto = (texto) =>
+  String(texto || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+const esCdaNoBloqueante = (mensaje) => {
+  const mensajeNormalizado = normalizarTexto(mensaje);
+  return FRASES_CDA_NO_BLOQUEANTES.some((frase) =>
+    mensajeNormalizado.includes(frase),
+  );
+};
 
 export const useCdaEngine = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const ejecutarValidaciones = useCallback(async (pantalla, cuit, cadenaValorId = null, usuarioId = null) => {
+  const ejecutarValidaciones = useCallback(async (pantalla, entidad, cadenaValorId = null) => {
     setLoading(true);
     setError(null);
 
     try {
-      const cuitLimpio = String(cuit).replace(/\D/g, "");
       console.log(
-        `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}", CUIT ${cuitLimpio}, CadenaValorID ${cadenaValorId} y UsuarioID ${usuarioId}`,
+        `[CDA ENGINE] Ejecutando validaciones para pantalla "${pantalla}", entidad ${JSON.stringify(entidad)}, CadenaValorID ${cadenaValorId}`,
       );
 
       // 202: WSResponseCDA { Result: true, ListTest: [...] } - pasó todo.
-      const data = await cdaService.ejecutarCda(pantalla, cuitLimpio, cadenaValorId, usuarioId);
+      const data = await cdaService.ejecutarCda(pantalla, entidad, cadenaValorId);
 
       // ⚠️ Cuando una integración está deshabilitada desde Modo Offline
       // (StatusPlataforma), el backend NO marca como pendiente/rechazado el
@@ -126,7 +142,7 @@ export const useCdaEngine = () => {
         const mappedErrors = rechazos.map((t) => {
           const mensaje =
             t.mensaje || t.Mensaje || "No se cumple el criterio de aceptación.";
-          const isInvalidante = mensaje.trim() !== MENSAJE_CDA_NO_BLOQUEANTE;
+          const isInvalidante = !esCdaNoBloqueante(mensaje);
           return {
             cdaid: 0,
             isInvalidante,
@@ -156,8 +172,24 @@ export const useCdaEngine = () => {
         return { success: !hasBlockingErrors, errors: mappedErrors };
       }
 
-      // 400 / 500 / red / cualquier otra cosa: error de sistema, no un
-      // rechazo de negocio real.
+      // 400 "CDAs Inexistentes": no hay ningún CDA vinculado a esta
+      // combinación de pantalla+cadena — no es un error ni un rechazo, es
+      // que no hay nada que validar. Confirmado en vivo el 2026-08-13
+      // contra una cadena real sin CDAs activos vinculados (COMAFI/
+      // PANTALLA_INGRESO_CUIT): {"Message":"CDAs Inexistentes"}. Se trata
+      // como aprobado — nunca se había probado este caso antes.
+      const mensajeBackend =
+        (typeof responseData === "string" ? responseData : responseData?.message || responseData?.Message) || "";
+      if (status === 400 && /cdas inexistentes/i.test(mensajeBackend)) {
+        console.log(
+          `[CDA ENGINE] No hay CDAs vinculados para "${pantalla}" en esta cadena — se considera aprobado.`,
+        );
+        setLoading(false);
+        return { success: true, errors: [] };
+      }
+
+      // 400 (cualquier otro motivo) / 500 / red / cualquier otra cosa: error
+      // de sistema, no un rechazo de negocio real.
       let msg =
         responseData?.message ||
         responseData?.Message ||

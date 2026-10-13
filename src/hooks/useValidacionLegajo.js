@@ -1,9 +1,22 @@
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router-dom";
+
 import { useEmpresaActiva } from "./useEmpresaActiva";
 import { useRequisitos } from "./useRequisitos";
-import { useObtenerDatosSocioLegajo } from "./useTerceros";
+import { useObtenerDatosSocioLegajo, useEstadoCdaTerceros } from "./useTerceros";
+import { useTiposRelacionSocioActivos } from "./useTipoRelacionSocio";
 import { socioArchivoService } from "../services/socioArchivoService";
+import { useCadenaActiva } from "./useCadenaActiva";
+import {
+  RELACION_APODERADO_ID,
+  RELACION_REPRESENTANTE_LEGAL_ID,
+  RELACION_FIADOR_ID,
+  IDS_RELACIONES_TERCEROS_BASE,
+} from "../constants/tiposRelacionSocio";
+import {
+  normalizarCatalogoActivo,
+  resolverRelacionesBaseActivas,
+} from "../utils/relacionesTercerosUtils";
+
 
 const DOCUMENT_TITLES = {
   estatuto: "Estatuto Social",
@@ -29,10 +42,72 @@ const normalizarTexto = (str) =>
     .trim()
     .toUpperCase();
 
-export const useValidacionLegajo = () => {
-  const { socioIdActivo, tipoPersonaId, nombreEmpresa } = useEmpresaActiva();
-  const { cadenaSlug } = useParams();
-  const cadenaId = Number(cadenaSlug) || 1;
+// Criterio de contacto + domicilio + CUIT valido, compartido por las 3
+// personas del legajo (accionista, representante legal, apoderado).
+// `etiqueta` solo cambia el texto del error. El DNI frente/dorso queda
+// aparte (ver requiereDni): solo Accionista lo pide, porque es el unico de
+// los tres cuyo modal (SocioAccionistaModal) tiene forma de cargarlo -
+// Representante Legal y Apoderado no tienen esa seccion, asi que pedirselo
+// era un requisito imposible de cumplir.
+const validarContactoDomicilioYDni = (persona, archivosBackend, etiqueta, { requiereDni = true } = {}) => {
+  const errores = [];
+  const sEmail = persona.email || persona.mail || persona.Mail || "";
+  const sCel = persona.celular || persona.telefono || persona.Telefono || "";
+  const sDir = persona.direccion || persona.calle || "";
+  const sProv = persona.provincia || persona.provinciaid || "";
+
+  if (!sEmail || !sCel || !sDir || !sProv) {
+    errores.push(`El ${etiqueta} ${persona.nombre} tiene datos de contacto o domicilio incompletos.`);
+  }
+
+  const cuitLimpio = String(persona.cuit || "").replace(/\D/g, "");
+  if (!cuitLimpio) {
+    errores.push(`El ${etiqueta} ${persona.nombre} no posee CUIT válido.`);
+  } else if (requiereDni) {
+    const nombreNorm = normalizarTexto(persona.nombre);
+
+    const tieneDniFrente = archivosBackend.some((a) => {
+      if (a.tipodocumentoarchivoid !== 8) return false;
+      const descNorm = normalizarTexto(a.descripcion);
+      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+    });
+
+    const tieneDniDorso = archivosBackend.some((a) => {
+      if (a.tipodocumentoarchivoid !== 9) return false;
+      const descNorm = normalizarTexto(a.descripcion);
+      return descNorm.includes(cuitLimpio) || (nombreNorm && descNorm.includes(nombreNorm));
+    });
+
+    if (!tieneDniFrente || !tieneDniDorso) {
+      const faltantes = [];
+      if (!tieneDniFrente) faltantes.push("DNI Frente");
+      if (!tieneDniDorso) faltantes.push("DNI Dorso");
+      errores.push(`El ${etiqueta} ${persona.nombre} no tiene cargado: ${faltantes.join(" y ")}.`);
+    }
+  }
+
+  return errores;
+};
+
+// En modo admin (EmpresaDetalle.jsx) no hay ni usuario logueado como cliente
+// ni :cadenaSlug en la ruta, así que socioIdActivo/tipoPersonaId/nombreEmpresa
+// y la cadena de valor se reciben ya resueltos (la cadena se detecta del
+// historial de CDAs del socio, ver detectarCadenaValorId en utils/executeCda.js)
+// en vez de salir de useEmpresaActiva/useParams.
+export const useValidacionLegajo = ({
+  adminMode = false,
+  socioIdActivo: socioIdOverride,
+  tipoPersonaId: tipoPersonaIdOverride,
+  nombreEmpresa: nombreEmpresaOverride,
+  cadenaId: cadenaIdOverride,
+} = {}) => {
+  const empresaActiva = useEmpresaActiva(adminMode);
+  const { cadenaSlug } = useCadenaActiva();
+
+  const socioIdActivo = adminMode ? socioIdOverride : empresaActiva.socioIdActivo;
+  const tipoPersonaId = adminMode ? tipoPersonaIdOverride : empresaActiva.tipoPersonaId;
+  const nombreEmpresa = adminMode ? nombreEmpresaOverride : empresaActiva.nombreEmpresa;
+  const cadenaId = adminMode ? Number(cadenaIdOverride) || null : Number(cadenaSlug) || 1;
 
   const { requisitos, isLoading: loadingRequisitos } = useRequisitos(
     cadenaId,
@@ -43,6 +118,31 @@ export const useValidacionLegajo = () => {
   const { data: socioLegajoData, isLoading: loadingLegajo } =
     useObtenerDatosSocioLegajo(socioIdActivo);
 
+  // Catálogo curado (api/TipoRelacionSocio): ninguna de las 4 relaciones
+  // con sección propia de siempre se asume disponible - si el admin no la
+  // activó para este ambiente, su bloque de validación de más abajo se
+  // salta entero (no cuenta como requisito, aunque la parametrización de la
+  // cadena diga "Obligatorio" con un dato viejo). Cualquier ID que no sea
+  // uno de esos 4 se valida con la misma lógica en el loop genérico.
+  const { data: catalogoActivosData, isLoading: loadingCatalogoActivo } =
+    useTiposRelacionSocioActivos();
+  const catalogoActivo = normalizarCatalogoActivo(catalogoActivosData);
+  const relacionesBaseActivas = resolverRelacionesBaseActivas(catalogoActivo);
+  const clavesBaseActivas = new Set(relacionesBaseActivas.map((r) => r.clave));
+  const catalogoExtra = catalogoActivo.filter(
+    (it) => !IDS_RELACIONES_TERCEROS_BASE.includes(it.id),
+  );
+  const porTipoRelacion = socioLegajoData?.porTipoRelacion || {};
+
+  // Un accionista/representante/apoderado con el CDA rechazado no cuenta
+  // como completo (ver más abajo) — el legajo queda inválido hasta que se
+  // reejecute y pase, momento en el cual LegajoUniversalBar migra solo.
+  const { data: estadoCdaMap, isLoading: loadingEstadoCda } = useEstadoCdaTerceros([
+    ...(socioLegajoData?.accionistas || []).map((a) => a.id),
+    ...(socioLegajoData?.representantes || []).map((r) => r.id),
+    ...Object.values(porTipoRelacion).flat().map((r) => r.id),
+  ]);
+
   const { data: archivosBackend = [], isLoading: loadingArchivos } = useQuery({
     queryKey: ["socioArchivos", socioIdActivo],
     queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo),
@@ -50,7 +150,14 @@ export const useValidacionLegajo = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  const isLoading = loadingRequisitos || loadingLegajo || loadingArchivos;
+  // ⚠️ loadingEstadoCda tiene que estar acá: si no, cuando socioLegajoData
+  // refresca (ej. se acaba de agregar un accionista) pero el estado CDA de
+  // ese tercero todavía no llegó, isValid puede computar en `true` con un
+  // mapa incompleto (el nuevo tercero no figura como "rechazado" porque
+  // todavía no se sabe nada de él) — eso alcanzó a disparar la migración
+  // automática de LegajoUniversalBar antes de que la card se pintara de
+  // rojo. Confirmado en vivo (2026-08-07).
+  const isLoading = loadingRequisitos || loadingLegajo || loadingArchivos || loadingEstadoCda || loadingCatalogoActivo;
 
   if (isLoading || !requisitos) {
     return {
@@ -58,7 +165,9 @@ export const useValidacionLegajo = () => {
       errores: [],
       totalRequisitos: 0,
       requisitosCompletados: 0,
+      completitudPorRelacionExtra: {},
       isLoading: true,
+      cadenaId,
     };
   }
 
@@ -93,14 +202,29 @@ export const useValidacionLegajo = () => {
     });
   }
 
+  // Completitud por sección de relaciones, expuesta para que el badge
+  // "Obligatorio" de SociosLegajo pase a verde cuando ya no falta nada
+  // (mismo criterio que el badge de documentos en DocumentosLegajo).
+  let accionistasCompletos = false;
+  let apoderadosCompletos = false;
+  let representanteLegalCompletos = false;
+  let agentesBolsaCompletos = false;
+  const completitudPorRelacionExtra = {};
+
   // 2. Validar relaciones obligatorias (valor === 1)
   if (requisitos.relaciones) {
     const accionistas = socioLegajoData?.accionistas || [];
     const representantes = socioLegajoData?.representantes || [];
     const agentesBolsa = socioLegajoData?.agentesBolsa || [];
 
-    // Accionistas
-    if (requisitos.relaciones.accionistas === 1) {
+    // Accionistas: no aplica estructuralmente a Persona Física (una persona
+    // no puede ser accionista de sí misma). Se ignora este requisito para
+    // tipoPersonaId=1 sin importar lo que diga la configuración de la
+    // cadena — evita que un dato mal guardado (Requerimiento=1 para
+    // TipoPersonaID=1) deje a una persona física bloqueada pidiendo un dato
+    // que ni siquiera tiene dónde completar (la pestaña de accionistas no
+    // se muestra para física, ver tabsDisponibles en SociosLegajo).
+    if (requisitos.relaciones.accionistas === 1 && Number(tipoPersonaId) !== 1 && clavesBaseActivas.has("accionistas")) {
       totalRequisitos++;
       totalLegajoObligatorios++;
       let accionistasValidos = true;
@@ -110,9 +234,19 @@ export const useValidacionLegajo = () => {
         accionistasValidos = false;
         erroresAccionistas.push("Debe registrar la composición accionaria (Accionistas).");
       } else {
+        // Un accionista con el CDA rechazado no cuenta para la sumatoria
+        // (queda "afuera" hasta que se reejecute y pase) — ver
+        // AccionistasSection, que lo muestra en rojo.
+        const accionistasRechazados = accionistas.filter(
+          (s) => estadoCdaMap?.get(Number(s.id)) === "rechazado"
+        );
+
         // Validar participación = 100%
         const totalParticipacion = Number(
-          accionistas.reduce((acc, s) => acc + Number(s.participacion || 0), 0).toFixed(2)
+          accionistas
+            .filter((s) => estadoCdaMap?.get(Number(s.id)) !== "rechazado")
+            .reduce((acc, s) => acc + Number(s.participacion || 0), 0)
+            .toFixed(2)
         );
 
         if (totalParticipacion !== 100) {
@@ -122,58 +256,26 @@ export const useValidacionLegajo = () => {
           );
         }
 
-        // Validar datos de contacto y DNI para cada accionista
-        accionistas.forEach((socio) => {
-          const sEmail = socio.email || socio.mail || socio.Mail || "";
-          const sCel = socio.celular || socio.telefono || socio.Telefono || "";
-          const sDir = socio.direccion || socio.calle || "";
-          const sProv = socio.provincia || socio.provinciaid || "";
-
-          if (!sEmail || !sCel || !sDir || !sProv) {
-            accionistasValidos = false;
+        if (accionistasRechazados.length > 0) {
+          accionistasValidos = false;
+          accionistasRechazados.forEach((s) => {
             erroresAccionistas.push(
-              `El accionista ${socio.nombre} tiene datos de contacto o domicilio incompletos.`
+              `El accionista ${s.nombre} no pasó los Criterios de Aceptación — un administrador debe reintentarlo.`
             );
-          }
+          });
+        }
 
-          const cuitLimpio = String(socio.cuit || "").replace(/\D/g, "");
-          if (!cuitLimpio) {
+        // Validar datos de contacto, domicilio, CUIT y DNI para cada accionista
+        accionistas.forEach((socio) => {
+          const erroresSocio = validarContactoDomicilioYDni(socio, archivosBackend, "accionista");
+          if (erroresSocio.length > 0) {
             accionistasValidos = false;
-            erroresAccionistas.push(`El accionista ${socio.nombre} no posee CUIT válido.`);
-          } else {
-            const nombreNorm = normalizarTexto(socio.nombre);
-
-            const tieneDniFrente = archivosBackend.some((a) => {
-              if (a.tipodocumentoarchivoid !== 8) return false;
-              const descNorm = normalizarTexto(a.descripcion);
-              return (
-                descNorm.includes(cuitLimpio) ||
-                (nombreNorm && descNorm.includes(nombreNorm))
-              );
-            });
-
-            const tieneDniDorso = archivosBackend.some((a) => {
-              if (a.tipodocumentoarchivoid !== 9) return false;
-              const descNorm = normalizarTexto(a.descripcion);
-              return (
-                descNorm.includes(cuitLimpio) ||
-                (nombreNorm && descNorm.includes(nombreNorm))
-              );
-            });
-
-            if (!tieneDniFrente || !tieneDniDorso) {
-              accionistasValidos = false;
-              const faltantes = [];
-              if (!tieneDniFrente) faltantes.push("DNI Frente");
-              if (!tieneDniDorso) faltantes.push("DNI Dorso");
-              erroresAccionistas.push(
-                `El accionista ${socio.nombre} no tiene cargado: ${faltantes.join(" y ")}.`
-              );
-            }
+            erroresAccionistas.push(...erroresSocio);
           }
         });
       }
 
+      accionistasCompletos = accionistasValidos;
       if (accionistasValidos) {
         requisitosCompletados++;
       } else {
@@ -182,40 +284,87 @@ export const useValidacionLegajo = () => {
       }
     }
 
-    // Representantes
-    if (requisitos.relaciones.representantes === 1) {
+    // Apoderado (TipoRelacionSocioID 210) - aplica tanto a Persona Física
+    // como Jurídica. Antes se validaba junto con Representante Legal bajo
+    // una sola clave "representantes"; ahora son requisitos independientes
+    // (ver requisitosService.js).
+    const esFisica = Number(tipoPersonaId) === 1;
+    const apoderados = representantes.filter((r) => Number(r.rolId) === RELACION_APODERADO_ID);
+    if (requisitos.relaciones.apoderados === 1 && clavesBaseActivas.has("apoderados")) {
       totalRequisitos++;
       totalLegajoObligatorios++;
-      let representantesValidos = true;
-      const erroresRepresentantes = [];
+      let apoderadosValidos = true;
+      const erroresApoderados = [];
 
-      if (representantes.length === 0) {
-        representantesValidos = false;
-        erroresRepresentantes.push("Debe registrar al menos un Representante Legal.");
+      if (apoderados.length === 0) {
+        apoderadosValidos = false;
+        erroresApoderados.push("Debe registrar al menos un Apoderado.");
       } else {
-        representantes.forEach((rep) => {
-          const sEmail = rep.email || rep.mail || rep.Mail || "";
-          const sCel = rep.celular || rep.telefono || rep.Telefono || "";
-
-          if (!sEmail || !sCel) {
-            representantesValidos = false;
-            erroresRepresentantes.push(
-              `El representante ${rep.nombre} tiene datos de contacto incompletos.`
+        apoderados.forEach((rep) => {
+          const erroresRep = validarContactoDomicilioYDni(rep, archivosBackend, "apoderado", { requiereDni: false });
+          if (erroresRep.length > 0) {
+            apoderadosValidos = false;
+            erroresApoderados.push(...erroresRep);
+          }
+          if (estadoCdaMap?.get(Number(rep.id)) === "rechazado") {
+            apoderadosValidos = false;
+            erroresApoderados.push(
+              `El apoderado ${rep.nombre} no pasó los Criterios de Aceptación — un administrador debe reintentarlo.`
             );
           }
         });
       }
 
-      if (representantesValidos) {
+      apoderadosCompletos = apoderadosValidos;
+      if (apoderadosValidos) {
         requisitosCompletados++;
       } else {
-        errores.push(...erroresRepresentantes);
-        erroresLegajo.push(...erroresRepresentantes);
+        errores.push(...erroresApoderados);
+        erroresLegajo.push(...erroresApoderados);
+      }
+    }
+
+    // Representante Legal (TipoRelacionSocioID 230) - no aplica a Persona
+    // Física (no tiene "representante legal", solo apoderado). Se ignora
+    // este requisito para tipoPersonaId=1 sin importar lo que diga la
+    // configuración, mismo criterio que ya se usa para Accionistas.
+    const representantesLegales = representantes.filter((r) => Number(r.rolId) === RELACION_REPRESENTANTE_LEGAL_ID);
+    if (requisitos.relaciones.representanteLegal === 1 && !esFisica && clavesBaseActivas.has("representanteLegal")) {
+      totalRequisitos++;
+      totalLegajoObligatorios++;
+      let repLegalValidos = true;
+      const erroresRepLegal = [];
+
+      if (representantesLegales.length === 0) {
+        repLegalValidos = false;
+        erroresRepLegal.push("Debe registrar al menos un Representante Legal.");
+      } else {
+        representantesLegales.forEach((rep) => {
+          const erroresRep = validarContactoDomicilioYDni(rep, archivosBackend, "representante legal", { requiereDni: false });
+          if (erroresRep.length > 0) {
+            repLegalValidos = false;
+            erroresRepLegal.push(...erroresRep);
+          }
+          if (estadoCdaMap?.get(Number(rep.id)) === "rechazado") {
+            repLegalValidos = false;
+            erroresRepLegal.push(
+              `El representante legal ${rep.nombre} no pasó los Criterios de Aceptación — un administrador debe reintentarlo.`
+            );
+          }
+        });
+      }
+
+      representanteLegalCompletos = repLegalValidos;
+      if (repLegalValidos) {
+        requisitosCompletados++;
+      } else {
+        errores.push(...erroresRepLegal);
+        erroresLegajo.push(...erroresRepLegal);
       }
     }
 
     // Agentes de Bolsa
-    if (requisitos.relaciones.agentesBolsa === 1) {
+    if (requisitos.relaciones.agentesBolsa === 1 && clavesBaseActivas.has("agentesBolsa")) {
       totalRequisitos++;
       totalLegajoObligatorios++;
       let agentesBolsaValidos = true;
@@ -235,6 +384,7 @@ export const useValidacionLegajo = () => {
         });
       }
 
+      agentesBolsaCompletos = agentesBolsaValidos;
       if (agentesBolsaValidos) {
         requisitosCompletados++;
       } else {
@@ -242,6 +392,84 @@ export const useValidacionLegajo = () => {
         erroresLegajo.push(...erroresAgentes);
       }
     }
+
+    // Fiador obligatorio forzado (SGRPLUSPLA-137): mismo criterio que
+    // SociosLegajo.jsx - persona física siempre, o jurídica con un único
+    // accionista (SAS/SAU/sociedad unipersonal). Con 2+ accionistas el
+    // backend ya los da de alta como fiadores automáticamente, así que ahí
+    // rige la parametrización normal de la cadena (ver más abajo).
+    const fiadorForzado = esFisica || accionistas.length === 1;
+    const accionistaUnico = !esFisica && accionistas.length === 1 ? accionistas[0] : null;
+
+    // Relaciones activadas dinámicamente desde /admin/tipos-relacion-socio
+    // (ver TerceroRelacionSection) - misma lógica de validación que
+    // Apoderado/Representante Legal: contacto + domicilio + CUIT, sin DNI, y
+    // CDA no rechazado.
+    catalogoExtra.forEach((item) => {
+      const etiqueta = item.descripcion || `relación #${item.id}`;
+      const idKey = String(item.id);
+      const esFiador = item.id === RELACION_FIADOR_ID;
+      // El backend todavía no distingue el caso de accionista único
+      // (pendiente del lado del backend, SGRPLUSPLA-137): sigue auto-creando
+      // la relación de Fiador apuntando al mismo tercero que el accionista.
+      // Se descarta acá, igual que en SociosLegajo.jsx, para que no cuente
+      // como si ya hubiera un fiador real cargado.
+      const personas = (porTipoRelacion[idKey] || []).filter(
+        (p) => !(esFiador && accionistaUnico && Number(p.id) === Number(accionistaUnico.id)),
+      );
+
+      if (requisitos.relaciones[idKey] !== 1 && !(esFiador && fiadorForzado)) return;
+
+      totalRequisitos++;
+      totalLegajoObligatorios++;
+      let extraValidos = true;
+      const erroresExtra = [];
+
+      if (personas.length === 0) {
+        extraValidos = false;
+        erroresExtra.push(`Debe registrar al menos un/a ${etiqueta}.`);
+      } else {
+        personas.forEach((persona) => {
+          const erroresPersona = validarContactoDomicilioYDni(persona, archivosBackend, etiqueta, { requiereDni: false });
+          if (erroresPersona.length > 0) {
+            extraValidos = false;
+            erroresExtra.push(...erroresPersona);
+          }
+          if (estadoCdaMap?.get(Number(persona.id)) === "rechazado") {
+            extraValidos = false;
+            erroresExtra.push(
+              `${etiqueta} ${persona.nombre} no pasó los Criterios de Aceptación — un administrador debe reintentarlo.`,
+            );
+          }
+          // Defensa adicional (ver también RepresentanteModal, que ya
+          // bloquea esto al guardar): el fiador no puede ser la misma
+          // persona que el accionista único.
+          if (esFiador && accionistaUnico) {
+            const cuitPersona = String(persona.cuit || "").replace(/\D/g, "");
+            const cuitAccionista = String(accionistaUnico.cuit || "").replace(/\D/g, "");
+            const emailPersona = String(persona.email || "").trim().toLowerCase();
+            const emailAccionista = String(accionistaUnico.email || "").trim().toLowerCase();
+            if (
+              (cuitAccionista && cuitPersona === cuitAccionista) ||
+              (emailAccionista && emailPersona === emailAccionista)
+            ) {
+              extraValidos = false;
+              erroresExtra.push(
+                `El fiador ${persona.nombre} no puede ser la misma persona que el accionista único.`,
+              );
+            }
+          }
+        });
+      }
+
+      completitudPorRelacionExtra[idKey] = extraValidos;
+      if (extraValidos) {
+        requisitosCompletados++;
+      } else {
+        errores.push(...erroresExtra);
+        erroresLegajo.push(...erroresExtra);
+      }
+    });
   }
 
   const isValid = errores.length === 0;
@@ -253,11 +481,19 @@ export const useValidacionLegajo = () => {
     totalDocumentosObligatorios,
     totalLegajoObligatorios,
     requisitosCompletados,
+    tipoPersonaId,
+    accionistasCompletos,
+    apoderadosCompletos,
+    representanteLegalCompletos,
+    agentesBolsaCompletos,
+    completitudPorRelacionExtra,
     isLoading: false,
     faltanDocumentos: erroresDocumentos.length > 0,
     faltanLegajo: erroresLegajo.length > 0,
     archivosBackend,
     socioLegajoData,
+    requisitos,
+    cadenaId,
   };
 };
 

@@ -4,14 +4,40 @@
   position: relative;
 }
 
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
 .label {
-  color: #666;
+  color: var(--text-muted);
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 700;
-  margin-bottom: 1.25rem;
   display: block;
+}
+
+.lockedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  background: rgba(76, 101, 230, 0.1);
+  border: 1px solid rgba(76, 101, 230, 0.28);
+  color: #7c8ff2;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.lockedBadgeIcon {
+  font-size: 0.7rem;
 }
 
 .container {
@@ -21,9 +47,22 @@
   gap: 10px;
 }
 
+.lockedContainer {
+  cursor: not-allowed;
+}
+
+.lockIcon {
+  align-self: flex-end;
+  padding-bottom: 0.75rem;
+  font-size: 1.35rem;
+  color: #7c8ff2;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
 .currency {
   font-size: 1.5rem;
-  color: var(--yellow);
+  color: var(--color-amarillo-bind);
   font-weight: 400;
   opacity: 0.75;
   letter-spacing: 0.02em;
@@ -34,7 +73,7 @@
 .input {
   background: transparent;
   border: none;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 2px solid rgba(var(--overlay-rgb), 0.08);
   color: var(--white);
   font-size: 3.5rem;
   font-weight: 700;
@@ -52,12 +91,26 @@
   border-bottom-color: rgba(245, 244, 0, 0.3);
 }
 
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.hint {
+  margin: 0.75rem auto 0;
+  max-width: 26rem;
+  color: var(--text-muted, #8b949e);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .error {
   position: absolute;
-  bottom: 0;
+  top: 100%;
+  margin-top: 0.5rem;
   left: 50%;
   transform: translateX(-50%);
-  color: var(--color-danger, #ef4444);
+  color: var(--error-red);
   font-size: 0.875rem;
   white-space: nowrap;
   pointer-events: none;

@@ -3,6 +3,7 @@ import { useQuery, useMutation, keepPreviousData } from '@tanstack/react-query';
 import { cadenaValorService } from '../services/cadenaValorService';
 import { cdaService } from '../services/cdaService';
 import { esCadenaAprobadaYVigente, esCadenaOperativaParaWeb, obtenerCadenaValorId } from '../utils/cadenaValorUtils';
+import { esCdaActivo } from '../utils/cdaUtils';
 
 export const useObtenerTodas = (page = 1, pageSize = 10) => {
     return useQuery({
@@ -32,24 +33,6 @@ export const useObtenerPorId = (cadenaValorId) => {
     });
 };
 
-const useObtenerLibradores = (cadenaValorId, page = 1, pageSize = 10) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'libradores', cadenaValorId, page, pageSize],
-        queryFn: () => cadenaValorService.obtenerLibradores(cadenaValorId, page, pageSize),
-        enabled: !!cadenaValorId,
-        staleTime: 1000 * 60 * 5,
-        placeholderData: keepPreviousData
-    });
-};
-
-const useObtenerLibradorPorCuit = (cadenaValorId, cuitLibrador) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'libradorCuit', cadenaValorId, cuitLibrador],
-        queryFn: () => cadenaValorService.obtenerLibradorPorCuit(cadenaValorId, cuitLibrador),
-        enabled: !!cadenaValorId && !!cuitLibrador
-    });
-};
-
 export const useObtenerLineas = (cadenaValorId, page = 1, pageSize = 10) => {
     return useQuery({
         queryKey: ['cadenaValor', 'lineas', cadenaValorId, page, pageSize],
@@ -60,35 +43,26 @@ export const useObtenerLineas = (cadenaValorId, page = 1, pageSize = 10) => {
     });
 };
 
-const useVerificarAutorizacionEmail = (cadenaValorId, email) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'autorizacion', cadenaValorId, email],
-        queryFn: () => cadenaValorService.verificarAutorizacionEmail(cadenaValorId, email),
-        enabled: !!cadenaValorId && !!email,
-        retry: false
-    });
-};
-
-const useObtenerCadenasPorEmail = (email) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'porEmail', email],
-        queryFn: () => cadenaValorService.obtenerCadenasPorEmail(email),
-        enabled: !!email
-    });
-};
-
-const useObtenerRelaciones = (cadenaValorId) => {
-    return useQuery({
-        queryKey: ['cadenaValor', 'relaciones', cadenaValorId],
-        queryFn: () => cadenaValorService.obtenerRelaciones(cadenaValorId),
-        enabled: !!cadenaValorId
-    });
-};
-
 export const useObtenerUtilizado = (cadenaValorId) => {
     return useQuery({
         queryKey: ['cadenaValor', 'utilizado', cadenaValorId],
         queryFn: () => cadenaValorService.obtenerUtilizado(cadenaValorId),
+        enabled: !!cadenaValorId
+    });
+};
+
+export const useObtenerCadenaPublicaWeb = (cadenaValorId) => {
+    return useQuery({
+        queryKey: ['cadenaValor', 'publica', 'web', cadenaValorId],
+        queryFn: () => cadenaValorService.obtenerPublicaWeb(cadenaValorId),
+        enabled: !!cadenaValorId
+    });
+};
+
+export const useObtenerCadenaPublicaCore = (cadenaValorId) => {
+    return useQuery({
+        queryKey: ['cadenaValor', 'publica', 'core', cadenaValorId],
+        queryFn: () => cadenaValorService.obtenerPublicaCore(cadenaValorId),
         enabled: !!cadenaValorId
     });
 };
@@ -172,6 +146,47 @@ export const useObtenerTodasWebConEstado = () => {
         isLoading: webQuery.isLoading || coreQuery.isLoading,
         refetch: () => Promise.all([webQuery.refetch(), coreQuery.refetch()]),
     };
+};
+
+// IDs de todos los CDAs vinculados y activos a una pantalla, en CUALQUIER
+// cadena (a diferencia de useObtenerGrupoCdaConCdas, que es por una cadena
+// puntual). Dos usos: acotar el checklist de LineasCda.jsx a los CDAs
+// "pensados para líneas" en vez de listar los ~61 CDAs globales, y armar el
+// filtro/badge "Pantallas" de CdasGlobales.jsx (llamado una vez por cada una
+// de las 3 pantallas). Como no existe ningún campo de "pantalla" en el CDA
+// en sí (confirmado contra swagger el 2026-08-18), la única señal real es
+// "ya está vinculado a esta pantalla en alguna cadena". El propio Pantalla
+// filter de GrupoCda sí funciona bien del lado del backend (a diferencia de
+// CadenaValorID, que hay que filtrar a mano) - acá se aprovecha eso pidiendo
+// TODOS los grupos de la pantalla de una, sin cadena.
+export const useObtenerCdaIdsPorPantalla = (pantalla) => {
+    return useQuery({
+        queryKey: ['cda', 'idsPorPantalla', pantalla],
+        queryFn: async () => {
+            const grupos = await cdaService.obtenerGrupoCda(pantalla);
+            const gruposList = Array.isArray(grupos) ? grupos : grupos?.items || grupos?.data || (grupos ? [grupos] : []);
+
+            const idsSet = new Set();
+            for (const grupo of gruposList) {
+                const grupoCdaId = grupo.grupocdaid ?? grupo.GrupoCdaID;
+                if (!grupoCdaId) continue;
+                try {
+                    const cdas = await cadenaValorService.obtenerCdasPorGrupo(grupoCdaId);
+                    const cdasList = Array.isArray(cdas) ? cdas : cdas?.items || cdas?.data || [];
+                    cdasList.forEach((c) => {
+                        if (!esCdaActivo(c)) return;
+                        const id = c.cdaid ?? c.CdaId ?? c.CdaID;
+                        if (id !== undefined) idsSet.add(Number(id));
+                    });
+                } catch (err) {
+                    console.error(`Error obteniendo CDAs vinculados al grupo ${grupoCdaId}:`, err);
+                }
+            }
+            return Array.from(idsSet);
+        },
+        enabled: !!pantalla,
+        staleTime: 1000 * 60 * 2,
+    });
 };
 
 export const useVincularCdasAGrupo = () => {

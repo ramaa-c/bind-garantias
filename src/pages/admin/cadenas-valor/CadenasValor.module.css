@@ -34,6 +34,14 @@
   font-size: 0.875rem;
 }
 
+/* Rango 2: el subtítulo es texto de onboarding - se oculta para recuperar
+   el aire vertical completo (ver el mismo criterio en Dashboard.module.css). */
+@media (max-height: 716px) {
+  .titleBox p {
+    display: none;
+  }
+}
+
 .actionsTop {
   display: flex;
   align-items: center;
@@ -95,30 +103,22 @@
   flex-direction: column;
 }
 
+/* Sin max-height/overflow-y propio (a diferencia de antes): con
+   ELEMENTOS_POR_PAGINA (CadenasValor.jsx) la cantidad de filas ya está
+   acotada, así que la tarjeta mide lo que su contenido necesita y
+   <Paginacion/> queda pegada justo después de la tabla - mismo estándar
+   que Empresas.module.css/CdasGlobales.module.css/Dashboard.module.css. */
 .tableWrapper {
   overflow-x: auto;
-  overflow-y: auto;
-  max-height: calc(100vh - 260px);
 }
 
-.tableWrapper::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.tableWrapper::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-.tableWrapper::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 4px;
-}
-.tableWrapper::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
-}
-
+/* table-layout:fixed + un ancho por columna (JSX) + .truncateCell: mismo
+   criterio que CdasGlobales.module.css - sin esto, una denominación o
+   referencia larga estira la fila entera y el alto por fila deja de ser
+   predecible (justo lo que la paginación necesita para no desbordar). */
 .table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
   text-align: left;
 }
@@ -126,6 +126,19 @@
 .table th, .table td {
   padding: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.truncateCell {
+  max-width: 0;
+  overflow: hidden;
+}
+
+.truncateCell strong,
+.truncateCell span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table th {
@@ -750,3 +763,98 @@
 }
 
 
+
+@media (max-width: 768px) {
+  .table,
+  .table tbody {
+    display: block;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tr {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .table tr:last-child {
+    border-bottom: none;
+  }
+
+  .table td {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: none;
+  }
+
+  .table td[colspan] {
+    grid-column: 1 / -1;
+  }
+
+  .truncateCell {
+    max-width: none;
+  }
+
+  .table td:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .table td:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .table td:nth-child(6) {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .table td:nth-child(3),
+  .table td:nth-child(4),
+  .table td:nth-child(5) {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .table td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .table td:nth-child(3) {
+    grid-row: 2;
+  }
+
+  .table td:nth-child(4) {
+    grid-row: 3;
+  }
+
+  .table td:nth-child(5) {
+    grid-row: 4;
+  }
+
+  .table td:nth-child(7) {
+    grid-column: 1 / -1;
+    grid-row: 5;
+  }
+
+  .actionsCellGrid {
+    justify-content: flex-start;
+  }
+}

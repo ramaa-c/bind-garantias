@@ -4,18 +4,39 @@ import { afipService } from "../services/afipService";
 import { matchProvinciaAfip } from "./provinciaUtils";
 import { decodeHtmlEntities, parseAddress } from "./direccionParser";
 
-// Consulta Nosis (con fallback a LUFE y luego a AFIP) para un CUIT y arma los
-// valores del formulario de AltaDatosEmpresa (mismo mapeo que usaba
-// Paso1Cuit). Se extrajo acá para poder reusarlo también al retomar un
-// socio existente en el Paso 2 ("modo completar" en AltaDatosEmpresa):
-// reconstruir esos valores desde el Socio ya guardado no alcanza —
-// Provincia no tiene columna en el backend (se pierde siempre) y
-// Localidad/Ciudad nunca se guardaron con ID, así que hay que volver a
-// consultar la fuente y re-matchear.
-//
-// onProgress(fuente) es opcional — se llama con "lufe"/"afip" justo antes de
-// probar cada fallback, para que quien llame pueda actualizar UI de
-// progreso (ver Paso1Cuit). Si no se pasa, no hace nada.
+const CARACTERES_PERDIDOS = /[?�]/;
+
+const tieneCaracteresPerdidos = (texto) => CARACTERES_PERDIDOS.test(texto || "");
+
+const nombreDesdeAfip = (data) => {
+  const dg = data?.datosgenerales;
+  if (!dg) return "";
+  return decodeHtmlEntities(
+    dg.razonsocial || `${dg.nombre || ""} ${dg.apellido || ""}`.trim(),
+  );
+};
+
+const resolverNombreSinCaracteresPerdidos = async (nombreNosis, nosisData, afipData, cuit) => {
+  const nombrePorPartes = decodeHtmlEntities(
+    `${nosisData.VI_Apellido || ""} ${nosisData.VI_Nombre || ""}`.trim(),
+  );
+  if (nombrePorPartes && !tieneCaracteresPerdidos(nombrePorPartes)) return nombrePorPartes;
+
+  const nombreAfipDisponible = nombreDesdeAfip(afipData);
+  if (nombreAfipDisponible && !tieneCaracteresPerdidos(nombreAfipDisponible)) {
+    return nombreAfipDisponible;
+  }
+
+  try {
+    const nombreAfip = nombreDesdeAfip(await afipService.obtenerConstanciaInscripcion(cuit));
+    if (nombreAfip && !tieneCaracteresPerdidos(nombreAfip)) return nombreAfip;
+  } catch (e) {
+    console.warn("No se pudo consultar ARCA para corregir el nombre de Nosis:", e);
+  }
+
+  return nombreNosis;
+};
+
 export const obtenerDatosEmpresaPorCuit = async (
   cuit,
   opcionesProvincias,
@@ -23,6 +44,31 @@ export const obtenerDatosEmpresaPorCuit = async (
 ) => {
   let nosisData = null;
   let afipData = null;
+  const cuitLimpio = String(cuit).replace(/\D/g, "");
+
+  const consultarLufe = async () => {
+    try {
+      const lufeData = await sociosService.obtenerEntidadLufe(cuit);
+      if (lufeData && lufeData.success) {
+        return sociosService.normalizarLufeAEstructuraAfip(lufeData);
+      }
+    } catch (lufeError) {
+      console.warn("Error consultando LUFE:", lufeError);
+    }
+    return null;
+  };
+
+  const consultarAfip = async () => {
+    try {
+      return await afipService.obtenerConstanciaInscripcion(cuit);
+    } catch (e) {
+      console.warn("Error consultando AFIP:", e);
+      return null;
+    }
+  };
+
+  const mesCierreDe = (data) =>
+    Number(data?.datosgenerales?.mescierre ?? data?.datosgenerales?.mes_cierre) || null;
 
   try {
     nosisData = await nosisService.obtenerDatosNormalizados(cuit);
@@ -30,38 +76,68 @@ export const obtenerDatosEmpresaPorCuit = async (
     console.warn("Error consultando Nosis, se intentará AFIP...", e);
   }
 
-  if (!nosisData) {
+  if (nosisData) {
+    afipData = await consultarAfip();
+    const esJuridica = nosisData.VI_TipoPersona === "1" || cuitLimpio.startsWith("3");
+    if (esJuridica && !mesCierreDe(afipData)) {
+      const lufeNormalizado = await consultarLufe();
+      if (afipData?.datosgenerales) {
+        const mesCierreLufe = mesCierreDe(lufeNormalizado);
+        if (mesCierreLufe) {
+          afipData = {
+            ...afipData,
+            datosgenerales: { ...afipData.datosgenerales, mescierre: mesCierreLufe },
+          };
+        }
+      } else if (lufeNormalizado) {
+        afipData = lufeNormalizado;
+      }
+    }
+  } else {
     onProgress?.("lufe");
-  }
-
-  try {
-    const lufeData = await sociosService.obtenerEntidadLufe(cuit);
-    if (lufeData && lufeData.success) {
-      afipData = sociosService.normalizarLufeAEstructuraAfip(lufeData);
-    }
-  } catch (lufeError) {
-    console.warn("Error consultando LUFE:", lufeError);
-  }
-
-  if (!afipData || !afipData.datosgenerales) {
-    if (!nosisData) {
+    afipData = await consultarLufe();
+    if (!afipData || !afipData.datosgenerales) {
       onProgress?.("afip");
-    }
-    try {
-      afipData = await afipService.obtenerConstanciaInscripcion(cuit);
-    } catch (e) {
-      console.warn("Error consultando AFIP como fallback...", e);
+      afipData = await consultarAfip();
     }
   }
 
   if (!nosisData && !(afipData && afipData.datosgenerales)) {
-    return { encontrado: false, nosisData: null, afipData: null, valores: null };
+    return {
+      encontrado: false,
+      nosisData: null,
+      afipData: null,
+      valores: null,
+    };
   }
 
-  const cuitLimpio = String(cuit).replace(/\D/g, "");
+  // Cascada Nosis -> LUFE/AFIP. LUFE ya llega con tipoactividadsepymeid embebido en
+  // datosgenerales (ver normalizarLufeAEstructuraAfip en sociosService.js);
+  // para AFIP real hay que buscar la actividad de Orden 1 dentro del
+  // arreglo (siempre es la principal).
+  const deducirTipoActividadSepymeId = () => {
+    if (nosisData?.VI_Act01_Cod) {
+      return String(nosisData.VI_Act01_Cod);
+    }
+    if (afipData?.datosgenerales?.tipoactividadsepymeid != null) {
+      return String(afipData.datosgenerales.tipoactividadsepymeid);
+    }
+    const actividades = afipData?.datosregimengeneral?.actividad;
+    if (Array.isArray(actividades)) {
+      const principal = actividades.find((act) => Number(act.orden) === 1);
+      if (principal?.idactividad != null) {
+        return String(principal.idactividad);
+      }
+    }
+    return null;
+  };
+
   const deducirTipoPersonaPorPrefijo = () => {
     const prefix = cuitLimpio.substring(0, 2);
-    if (["20", "23", "24", "27", "25", "26"].includes(prefix) || cuitLimpio.startsWith("2")) {
+    if (
+      ["20", "23", "24", "27", "25", "26"].includes(prefix) ||
+      cuitLimpio.startsWith("2")
+    ) {
       return 1;
     }
     if (["30", "33", "34"].includes(prefix) || cuitLimpio.startsWith("3")) {
@@ -73,10 +149,18 @@ export const obtenerDatosEmpresaPorCuit = async (
   let valores;
 
   if (nosisData) {
-    const nombreCompleto = decodeHtmlEntities(
+    let nombreCompleto = decodeHtmlEntities(
       nosisData.VI_RazonSocial ||
         `${nosisData.VI_Nombre || ""} ${nosisData.VI_Apellido || ""}`.trim(),
     );
+    if (tieneCaracteresPerdidos(nombreCompleto)) {
+      nombreCompleto = await resolverNombreSinCaracteresPerdidos(
+        nombreCompleto,
+        nosisData,
+        afipData,
+        cuit,
+      );
+    }
     const fullDireccion = decodeHtmlEntities(
       `${nosisData.VI_DomAF_Calle || ""} ${nosisData.VI_DomAF_Nro || ""}`.trim(),
     );
@@ -92,8 +176,13 @@ export const obtenerDatosEmpresaPorCuit = async (
     } else if (nosisData.VI_TipoPersona === "2") {
       tipoPersonaId = 1;
     } else if (afipData && afipData.datosgenerales) {
-      const tipoPersonaStr = (afipData.datosgenerales.tipopersona || "").toUpperCase();
-      if (tipoPersonaStr.includes("JURIDICA") || tipoPersonaStr.includes("JURÍDICA")) {
+      const tipoPersonaStr = (
+        afipData.datosgenerales.tipopersona || ""
+      ).toUpperCase();
+      if (
+        tipoPersonaStr.includes("JURIDICA") ||
+        tipoPersonaStr.includes("JURÍDICA")
+      ) {
         tipoPersonaId = 10;
       } else if (
         tipoPersonaStr.includes("FISICA") ||
@@ -134,7 +223,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       codpos: nosisData.VI_DomAF_CP || "",
       calle: nosisData.VI_DomAF_Calle || "",
       sinNumero: !hasNumber,
-      numero: hasNumber ? nosisData.VI_DomAF_Nro : 0,
+      numero: hasNumber ? nosisData.VI_DomAF_Nro : "",
       piso: nosisData.VI_DomAF_Piso || "",
       departamento: nosisData.VI_DomAF_Dto || "",
       localidad: localidadStr,
@@ -147,6 +236,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       mescierre: mesCierre,
       fechainicioactividades: fechaInicioActividades,
       tiporegimenivaid: tipoRegimenIvaId,
+      tipoactividadsepymeid: deducirTipoActividadSepymeId(),
     };
   } else {
     const dg = afipData.datosgenerales;
@@ -163,7 +253,10 @@ export const obtenerDatosEmpresaPorCuit = async (
 
     let tipoPersonaId = 0;
     const tipoPersonaStr = (dg.tipopersona || "").toUpperCase();
-    if (tipoPersonaStr.includes("JURIDICA") || tipoPersonaStr.includes("JURÍDICA")) {
+    if (
+      tipoPersonaStr.includes("JURIDICA") ||
+      tipoPersonaStr.includes("JURÍDICA")
+    ) {
       tipoPersonaId = 10;
     } else if (
       tipoPersonaStr.includes("FISICA") ||
@@ -222,8 +315,12 @@ export const obtenerDatosEmpresaPorCuit = async (
       direccion: fullDireccion,
       codpos: dom.codpostal || "",
       calle: parsedDir.calle,
-      sinNumero: parsedDir.numero === 0,
-      numero: parsedDir.numero,
+      // parsedDir.numero es null cuando no se encontró número en el texto
+      // (equivale a "sin número"); una altura 0 real (numero: 0) es válida
+      // y no debe marcarse como si faltara - ver mismo criterio en
+      // hasNumber para la rama de Nosis, unas líneas más abajo.
+      sinNumero: parsedDir.numero === null,
+      numero: parsedDir.numero ?? "",
       piso: parsedDir.piso,
       departamento: parsedDir.departamento,
       localidad: localidadStr,
@@ -236,6 +333,7 @@ export const obtenerDatosEmpresaPorCuit = async (
       mescierre: mesCierre,
       fechainicioactividades: fechaInicioActividades,
       tiporegimenivaid: tipoRegimenIvaId,
+      tipoactividadsepymeid: deducirTipoActividadSepymeId(),
     };
   }
 
