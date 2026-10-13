@@ -260,7 +260,7 @@ const ConfirmarCorreo = () => {
                 size={18}
                 style={{ color: "var(--color-amarillo-bind, #f5f400)" }}
               />{" "}
-              El enlace expira en 5 minutos.
+              El enlace expira en 24 horas.
             </p>
           </div>
         </div>
