@@ -14,6 +14,7 @@ import { Button } from "../../../ui/Button/Button";
 import { BotonVolver } from "../../../ui/BotonVolver/BotonVolver";
 import { useChannel } from "../../../../context/useChannel";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
+import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
 import styles from "./Paso7Exito.module.css";
 
 const SIMBOLOS_MONEDA = {
@@ -48,6 +49,9 @@ export default function Paso7Exito({
   const { legajoDesbloqueado, documentacionDesbloqueada } =
     useAccesoDashboardCliente();
 
+  // Con el legajo completo, el paso 2 solo esta pendiente si todavia faltan documentos obligatorios
+  const { faltanDocumentos, isLoading: cargandoDocumentos } = useValidacionLegajo();
+
   const handleFinalizar = () => {
     onVolverInicio();
   };
@@ -65,6 +69,7 @@ export default function Paso7Exito({
   // pedir faltanLegajo de nuevo, así el nodo 1 del timeline pasa a "hecho"
   // apenas deja de ser el paso pendiente real.
   const legajoCompleto = documentacionDesbloqueada;
+  const documentacionCompleta = documentacionDesbloqueada && !cargandoDocumentos && !faltanDocumentos;
 
   const montoFormateado =
     resumen && Number.isFinite(resumen.monto)
@@ -226,15 +231,19 @@ export default function Paso7Exito({
             <div className={styles.timelineItem}>
               <div className={styles.timelineRail}>
                 <span
-                  className={`${styles.timelineDot} ${documentacionDesbloqueada ? styles.dotActive : styles.dotLocked}`}
+                  className={`${styles.timelineDot} ${documentacionCompleta ? styles.dotDone : documentacionDesbloqueada ? styles.dotActive : styles.dotLocked}`}
                 >
-                  {documentacionDesbloqueada ? "2" : <FiLock size={12} />}
+                  {documentacionCompleta ? <FiCheck size={14} /> : documentacionDesbloqueada ? "2" : <FiLock size={12} />}
                 </span>
-                <span className={styles.timelineLine} />
+                <span className={`${styles.timelineLine} ${documentacionCompleta ? styles.lineDone : ""}`} />
               </div>
               <div className={styles.timelineContent}>
                 <h4 className={styles.timelineTitle}>Cargá la Documentación</h4>
-                {documentacionDesbloqueada ? (
+                {documentacionCompleta ? (
+                  <p className={styles.timelineText}>
+                    Documentación completa.
+                  </p>
+                ) : documentacionDesbloqueada ? (
                   <>
                     <p className={styles.timelineText}>
                       Subí la documentación requerida de tu empresa.
