@@ -20,6 +20,7 @@ import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import { solicitudesService } from "../../../services/solicitudesService";
 import { sociosService } from "../../../services/sociosService";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 import {
   ESTADO_RECHAZADA,
   ESTADO_PENDIENTE,
@@ -421,9 +422,15 @@ export default function Dashboard() {
     }
   };
 
+  // Primero el socio y despues la linea: Linea/Migrar necesita que el socio ya exista en SGR+ (si no, responde 409 y
+  // la linea quedaba sin migrar hasta un segundo clic).
+  const migrarSocioYLinea = async (item, opciones) => {
+    await migrarSocioSiCorresponde(item, opciones);
+    migrarLinea(item, opciones);
+  };
+
   const handleReintentarMigracion = (item) => {
-    migrarLinea(item, { contexto: "reintento" });
-    migrarSocioSiCorresponde(item, { contexto: "reintento" });
+    migrarSocioYLinea(item, { contexto: "reintento" });
   };
 
   // Cada cambio de estado en TipoLimiteSocio (aprobar/rechazar) tiene que
@@ -476,8 +483,7 @@ export default function Dashboard() {
           toast.success(`Solicitud N°${item.id} Aprobada exitosamente`, {
             description: "Los fondos o cupos han sido habilitados para el cliente.",
           });
-          migrarLinea(item);
-          migrarSocioSiCorresponde(item);
+          migrarSocioYLinea(item);
         } else {
           toast.error(`Solicitud N°${item.id} Rechazada`, {
             description: "Se ha notificado al cliente el rechazo de la operación.",
@@ -486,7 +492,7 @@ export default function Dashboard() {
         }
       },
       onError: (err) => {
-        toast.error(`No se pudo actualizar la Solicitud N°${item.id}: ` + err.message);
+        toast.error(`No se pudo actualizar la Solicitud N°${item.id}: ` + mensajeNegocio(err, err.message));
       },
     });
   };

@@ -206,6 +206,9 @@ export const tercerosService = {
       } catch (err) {
         console.warn("[tercerosService] Error resolviendo SGRPlus ID desde Web ID:", err.message);
       }
+      // Un ID web (< 100000) NO es un ID de SGR+: si el socio no esta en SGR+ (o el usuario no puede verlo)
+      // no hay relaciones que mostrar; consultar SGR+ con el ID web podia traer o pedir las de otro socio.
+      return [];
     }
     const response = await api.get(`sgrplus/SocioTerceroRelacion/${socioId}`);
     return response.data;

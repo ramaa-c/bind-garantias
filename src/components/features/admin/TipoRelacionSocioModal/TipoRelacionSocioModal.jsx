@@ -10,6 +10,7 @@ import {
   useCrearTipoRelacionSocio,
   useActualizarTipoRelacionSocio,
 } from "../../../../hooks/useTipoRelacionSocio";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 // Alta y edición de una relación curada (api/TipoRelacionSocio): en alta se
 // elige un ID todavía no activado del catálogo real de SGR+ y se le escribe
@@ -72,7 +73,7 @@ export const TipoRelacionSocioModal = ({
     };
     const onError = (error) => {
       console.error("[TipoRelacionSocioModal] Error al guardar:", error);
-      toast.error("Ocurrió un error al guardar la relación");
+      toast.error("Ocurrió un error al guardar la relación", { description: mensajeNegocio(error, "") });
     };
 
     if (esEdicion) {

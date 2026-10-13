@@ -11,6 +11,7 @@ import { CadenaHeaderCard } from "../CadenaHeaderCard/CadenaHeaderCard";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./EditarCadenaModal.module.css";
 import { FORMATOS_ARCHIVO, validarTipoArchivo } from "../../../../utils/fileUtils";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 const construirDatosFormulario = (activeItem) => ({
   cadenavalorid: activeItem?.cadenavalorid ?? 0,
@@ -266,7 +267,7 @@ export const EditarCadenaModal = ({ isOpen, onClose, activeItem, onSuccess }) =>
       },
       onError: (err) => {
         console.error("Error al actualizar cadena:", err);
-        toast.error("Ocurrió un error al modificar la cadena de valor");
+        toast.error("Ocurrió un error al modificar la cadena de valor", { description: mensajeNegocio(err, "") });
         setConfirmOpen(false);
       }
     });

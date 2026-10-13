@@ -393,6 +393,7 @@ export function LegajoUniversalBar({
           queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
           queryClient.invalidateQueries({ queryKey: ["socioArchivos"] }),
           queryClient.invalidateQueries({ queryKey: ["sociosWeb", "detalle"] }),
+          queryClient.invalidateQueries({ queryKey: ["socios"] }),
         ]);
       } else {
         throw new Error(response.message || "Error al sincronizar");

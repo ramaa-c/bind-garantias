@@ -12,6 +12,7 @@ import { InputSocioMasked } from "../../../ui/InputSocioMasked/InputSocioMasked"
 import { InputOTP } from "../../../ui/InputOtp/InputOtp";
 import styles from "./ContactoModal.module.css";
 import { useValidarNumero } from "../../../../hooks/useSms";
+import { mensajeDeApi } from "../../../../utils/mensajesError";
 
 const COOLDOWN_SEGUNDOS = 60;
 const LONGITUD_CODIGO_DEFECTO = 6;
@@ -27,7 +28,6 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
   const [procesando, setProcesando] = useState(false);
   const [codigoSms, setCodigoSms] = useState("");
   const [celLocal, setCelLocal] = useState("");
-  const [codigoReal, setCodigoReal] = useState(null);
   const [smsDesactivada, setSmsDesactivada] = useState(false);
   const [errorCodigo, setErrorCodigo] = useState(null);
   const [segundosRestantes, setSegundosRestantes] = useState(0);
@@ -42,7 +42,6 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
       setCodigoSms("");
       setProcesando(false);
       setIntentoSolicitarSms(false);
-      setCodigoReal(null);
       setSmsDesactivada(false);
       setErrorCodigo(null);
       setSegundosRestantes(0);
@@ -68,16 +67,15 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
       ? "Debe tener 10 números"
       : null;
   const isCelValido = !errorCel && celLocal.length === 10;
-  const longitudCodigo = codigoReal ? codigoReal.length : LONGITUD_CODIGO_DEFECTO;
+  const longitudCodigo = LONGITUD_CODIGO_DEFECTO;
   const celularYaValidado = isCelValido && celLocal === celularVerificado;
 
   const enviarSms = (numero) => {
     validarNumero(
       { nroTelefono: numero, codigo: "" },
       {
-        onSuccess: (data) => {
+        onSuccess: () => {
           setSmsDesactivada(false);
-          setCodigoReal(data?.codigo || "");
           setCodigoSms("");
           setErrorCodigo(null);
           setFase("verificar");
@@ -87,7 +85,6 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
           const status = error?.response?.status;
           if (status === 406) {
             setSmsDesactivada(true);
-            setCodigoReal(null);
             setCodigoSms("");
             setErrorCodigo(null);
             setFase("verificar");
@@ -98,9 +95,13 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
           if (!error?.response) return;
           toast.error("Error al enviar el código", {
             description:
-              status === 404
-                ? "No se pudo enviar el SMS. Intentá de nuevo en unos segundos."
-                : "Ocurrió un error al validar el número. Intentá más tarde.",
+              status === 429
+                ? mensajeDeApi(error, "Esperá un minuto antes de pedir otro código.")
+                : status === 400
+                  ? mensajeDeApi(error, "El número no es válido.")
+                  : status === 404
+                    ? "No se pudo enviar el SMS. Intentá de nuevo en unos segundos."
+                    : "Ocurrió un error al validar el número. Intentá más tarde.",
           });
         },
       },
@@ -136,23 +137,47 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
     if (e) e.preventDefault();
     if (codigoSms.length !== longitudCodigo || procesando) return;
 
-    if (!smsDesactivada && codigoSms !== codigoReal) {
-      setErrorCodigo("Código incorrecto");
+    const completarVerificacion = () => {
+      setValue("celularVerificado", celLocal, { shouldDirty: true });
+      setProcesando(true);
+      setFase("exito");
+
+      setTimeout(() => {
+        onGuardar();
+        setTimeout(() => {
+          setFase("ingresar");
+          setCodigoSms("");
+          setProcesando(false);
+        }, 300);
+      }, 1200);
+    };
+
+    // Integración de SMS apagada: no hay código que comparar.
+    if (smsDesactivada) {
+      completarVerificacion();
       return;
     }
 
-    setValue("celularVerificado", celLocal, { shouldDirty: true });
-    setProcesando(true);
-    setFase("exito");
-
-    setTimeout(() => {
-      onGuardar();
-      setTimeout(() => {
-        setFase("ingresar");
-        setCodigoSms("");
-        setProcesando(false);
-      }, 300);
-    }, 1200);
+    // El código lo compara la API: queda registrado que este usuario verificó
+    // este celular, y PUT Socio lo exige para cambiarlo.
+    validarNumero(
+      { nroTelefono: celLocal, codigo: codigoSms },
+      {
+        onSuccess: completarVerificacion,
+        onError: (error) => {
+          const status = error?.response?.status;
+          if (status === 400) {
+            setErrorCodigo(mensajeDeApi(error, "Código incorrecto"));
+          } else if (status === 429) {
+            setErrorCodigo(mensajeDeApi(error, "Demasiados intentos. Pedí un código nuevo."));
+          } else if (error?.response) {
+            toast.error("No se pudo verificar el código", {
+              description: "Ocurrió un error al validar el código. Intentá más tarde.",
+            });
+          }
+        },
+      },
+    );
   };
 
   const mm = String(Math.floor(segundosRestantes / 60)).padStart(2, "0");

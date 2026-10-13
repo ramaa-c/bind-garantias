@@ -7,11 +7,30 @@ import { useCertificadoPyme } from "../../../../hooks/useSocios";
 import { Button } from "../../../ui/Button/Button";
 import { InputSimple } from "../../../ui/InputSimple/InputSimple";
 import { SelectFechaSimple } from "../../../ui/SelectFechaSimple/SelectFechaSimple";
+import { SelectSimple } from "../../../ui/SelectSimple/SelectSimple";
 import { Modal } from "../../../ui/Modal/Modal";
 import { ConfirmacionModal } from "../../shared/ConfirmacionModal/ConfirmacionModal";
 import styles from "./CertificadoPymeAdmin.module.css";
 
-const FORM_INICIAL = { fchDesde: "", fchHasta: "", numero: "", observaciones: "" };
+const FORM_INICIAL = { fchDesde: "", fchHasta: "", numero: "", observaciones: "", sector: "", tamanio: "0" };
+
+// Ids de TipoActividadGlobal / TamanioEmpresa de SGR+. La API exige un sector (1 a 5): con 0 la migración
+// del socio a SGR+ falla por la clave foránea de TipoActividadGlobal.
+const OPCIONES_SECTOR = [
+  { value: "1", label: "Agropecuario" },
+  { value: "2", label: "Industria y minería" },
+  { value: "3", label: "Construcción" },
+  { value: "4", label: "Comercio" },
+  { value: "5", label: "Servicios" },
+];
+const OPCIONES_TAMANIO = [
+  { value: "0", label: "Sin información" },
+  { value: "1", label: "Micro" },
+  { value: "2", label: "Pequeña" },
+  { value: "3", label: "Mediana tramo 1" },
+  { value: "4", label: "Mediana tramo 2" },
+];
+const etiquetaDe = (opciones, valor) => opciones.find((o) => o.value === String(valor))?.label;
 
 const formatearFecha = (fecha) => {
   if (!fecha) return "-";
@@ -27,6 +46,12 @@ const formatearFecha = (fecha) => {
 const aFechaBackend = (isoCompleto) => {
   if (!isoCompleto) return null;
   return isoCompleto.split(".")[0];
+};
+
+// 0 = certificado viejo cargado sin sector: el formulario lo deja vacío para obligar a elegirlo
+const sectorGuardado = (c) => {
+  const id = String(c?.tipoactividadglobalid ?? c?.TipoActividadGlobalId ?? "");
+  return id === "0" ? "" : id;
 };
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24;
@@ -73,8 +98,20 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
   )[0];
   const tieneCertificado = !!certificadoActual;
 
-  const invalidarConsulta = () =>
-    queryClient.invalidateQueries({ queryKey: ["socios", "certificadoPyme", Number(socioId) || null] });
+  const claveConsulta = ["socios", "certificadoPyme", Number(socioId) || null];
+
+  // Despues de guardar o eliminar se actualiza la lista en el momento (con lo que devolvio la API) y se vuelve a
+  // pedir al servidor: antes solo se invalidaba y el panel seguia en "No habilitado" hasta recargar la pagina.
+  const idDe = (c) => Number(c?.sociocertificadopymeid ?? c?.SocioCertificadoPYMEID) || 0;
+  const invalidarConsulta = async (guardado) => {
+    if (guardado && typeof guardado === "object" && idDe(guardado) > 0) {
+      queryClient.setQueryData(claveConsulta, (previo) => {
+        const lista = Array.isArray(previo) ? previo.filter((c) => idDe(c) !== idDe(guardado)) : [];
+        return [...lista, guardado];
+      });
+    }
+    await queryClient.refetchQueries({ queryKey: claveConsulta, type: "all" });
+  };
 
   const handleReverificar = async () => {
     if (!cuit) {
@@ -112,6 +149,8 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
       fchHasta: certificadoActual.fchhasta ?? certificadoActual.fchHasta ?? "",
       numero: certificadoActual.numero ?? certificadoActual.Numero ?? "",
       observaciones: certificadoActual.observaciones ?? certificadoActual.Observaciones ?? "",
+      sector: sectorGuardado(certificadoActual),
+      tamanio: String(certificadoActual.tamanioempresaid ?? certificadoActual.TamanioEmpresaId ?? 0),
     });
     setErrorNumero("");
     setModalAbierto(true);
@@ -124,6 +163,10 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
       setErrorNumero("El número de certificado es obligatorio.");
       return;
     }
+    if (!form.sector) {
+      toast.error("Elegí el sector de actividad del certificado.");
+      return;
+    }
     setGuardando(true);
     try {
       const payload = {
@@ -134,16 +177,19 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
         fchhasta: aFechaBackend(form.fchHasta),
         numero,
         observaciones: form.observaciones,
+        tipoactividadglobalid: Number(form.sector),
+        tamanioempresaid: Number(form.tamanio) || 0,
       };
+      let guardado;
       if (certificadoEditando) {
-        await sociosService.actualizarCertificadoPyme(payload);
+        guardado = await sociosService.actualizarCertificadoPyme(payload);
         toast.success("Certificado PyME actualizado.");
       } else {
-        await sociosService.crearCertificadoPyme(payload);
+        guardado = await sociosService.crearCertificadoPyme(payload);
         toast.success("Certificado PyME cargado.");
       }
       setModalAbierto(false);
-      await invalidarConsulta();
+      await invalidarConsulta(guardado);
     } catch (err) {
       toast.error("No se pudo guardar el Certificado PyME: " + err.message);
     } finally {
@@ -159,6 +205,9 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
       await sociosService.eliminarCertificadoPyme(id);
       toast.success("Certificado PyME eliminado.");
       setConfirmEliminarOpen(false);
+      queryClient.setQueryData(claveConsulta, (previo) =>
+        Array.isArray(previo) ? previo.filter((c) => idDe(c) !== Number(id)) : [],
+      );
       await invalidarConsulta();
     } catch (err) {
       toast.error("No se pudo eliminar el Certificado PyME: " + err.message);
@@ -171,6 +220,8 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
   const observacionesActuales = certificadoActual?.observaciones ?? certificadoActual?.Observaciones;
   const fchDesdeActual = certificadoActual?.fchdesde ?? certificadoActual?.fchDesde;
   const fchHastaActual = certificadoActual?.fchhasta ?? certificadoActual?.fchHasta;
+  const sectorActual = sectorGuardado(certificadoActual);
+  const tamanioActual = certificadoActual?.tamanioempresaid ?? certificadoActual?.TamanioEmpresaId;
   const vigencia = tieneCertificado ? calcularVigencia(fchHastaActual) : null;
 
   return (
@@ -222,6 +273,14 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
               <div className={styles.factCell}>
                 <span className={styles.factLabel}>N° de certificado</span>
                 <span className={styles.factValue}>{numeroActual || "—"}</span>
+              </div>
+              <div className={styles.factCell}>
+                <span className={styles.factLabel}>Sector</span>
+                <span className={styles.factValue}>{etiquetaDe(OPCIONES_SECTOR, sectorActual) || "Sin definir (editalo)"}</span>
+              </div>
+              <div className={styles.factCell}>
+                <span className={styles.factLabel}>Tamaño</span>
+                <span className={styles.factValue}>{etiquetaDe(OPCIONES_TAMANIO, tamanioActual) || "â€”"}</span>
               </div>
               <div className={styles.factCell}>
                 <span className={styles.factLabel}>Observaciones</span>
@@ -313,6 +372,26 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
             aria-required="true"
             aria-invalid={!!errorNumero}
           />
+          <div className={styles.formRow}>
+            <SelectSimple
+              label="Sector"
+              value={form.sector}
+              onChange={(val) => setForm((f) => ({ ...f, sector: val }))}
+              options={OPCIONES_SECTOR}
+              isSearchable={false}
+              hideErrorSpace
+              variant="admin"
+            />
+            <SelectSimple
+              label="Tamaño"
+              value={form.tamanio}
+              onChange={(val) => setForm((f) => ({ ...f, tamanio: val }))}
+              options={OPCIONES_TAMANIO}
+              isSearchable={false}
+              hideErrorSpace
+              variant="admin"
+            />
+          </div>
           <InputSimple
             label="Observaciones"
             value={form.observaciones}

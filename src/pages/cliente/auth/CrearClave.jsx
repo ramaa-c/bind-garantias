@@ -35,6 +35,7 @@ import {
   esRespuestaBloqueoAdmin,
   avisarBloqueoAdmin,
 } from "../../../utils/usuarioUtils";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 import styles from "./CrearClave.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../assets/images/bind-g-logo-black.svg";
@@ -44,6 +45,7 @@ const passwordSchema = z
     password: z
       .string()
       .min(12, { message: "Mínimo 12 caracteres" })
+      .max(128, { message: "Máximo 128 caracteres" })
       .regex(/[a-z]/, { message: "Incluir una minúscula" })
       .regex(/[A-Z]/, { message: "Incluir una mayúscula" })
       .regex(/[0-9]/, { message: "Incluir un número" })
@@ -268,7 +270,7 @@ const CrearClave = () => {
                 ? mensajeBackend
                 : isServerError
                   ? "El servidor está experimentando problemas. Por favor, intentá nuevamente más tarde."
-                  : "Error al establecer la credencial. Intentá más tarde.";
+                  : mensajeNegocio(error, "Error al establecer la credencial. Intentá más tarde.");
           toast.error(
             isServerError ? "Error de servidor" : "Error de activación",
             {

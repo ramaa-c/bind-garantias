@@ -10,6 +10,7 @@ import {
 import styles from "./CadenasValor.module.css";
 import { useObtenerTodasWebConEstado, useActualizarCadenaValor } from "../../../hooks/useCadenaValor";
 import { cadenaValorService } from "../../../services/cadenaValorService";
+import { lineaService } from "../../../services/lineaService";
 import {
   useTipoCanalComercializacion,
   useEquipoComercial,
@@ -25,6 +26,7 @@ import {
 } from "../../../components/features";
 import { toast } from "sonner";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 
 // Mismo criterio que Empresas.jsx/CdasGlobales.jsx: con el alto de fila
 // blindado a una sola línea (table-layout:fixed + truncado, ver
@@ -33,6 +35,23 @@ import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestri
 // (no se nota), pero paginar desde ahora evita que el día que haya muchas
 // la tabla vuelva a crecer sin límite.
 const ELEMENTOS_POR_PAGINA = 8;
+
+const avisarSiNoTieneLineasActivas = async (cadena) => {
+  try {
+    const lineas = await lineaService.obtenerLimitesCadenaValor(cadena.cadenavalorid);
+    const lista = Array.isArray(lineas) ? lineas : [];
+    const tieneLineasOperables = lista.some(
+      (l) => String(l.activa) === "1" && String(l.aptanuevalinea) === "1",
+    );
+    if (!tieneLineasOperables) {
+      toast.warning(`La cadena "${cadena.denominacion}" no tiene líneas activas`, {
+        description: "Los clientes no van a poder crear solicitudes hasta que actives al menos una línea.",
+      });
+    }
+  } catch (err) {
+    console.error(`Error al verificar las líneas de la cadena ${cadena.cadenavalorid}:`, err);
+  }
+};
 
 // Mientras carga la lista se muestran filas fantasma con la misma forma que
 // las reales (el header, buscador y tabla quedan visibles al instante), en
@@ -150,6 +169,7 @@ export default function CadenasValor() {
             ? `Cadena "${item.denominacion}" activada.`
             : `Cadena "${item.denominacion}" desactivada.`
         );
+        if (nuevoEstado === "1") avisarSiNoTieneLineasActivas(item);
         setToggledStates(prev => {
           const next = { ...prev };
           delete next[item.cadenavalorid];
@@ -164,7 +184,7 @@ export default function CadenasValor() {
       },
       onError: (err) => {
         console.error("Error al cambiar estado de la cadena:", err);
-        toast.error("Ocurrió un error al cambiar el estado de la cadena de valor");
+        toast.error("Ocurrió un error al cambiar el estado de la cadena de valor", { description: mensajeNegocio(err, "") });
         setToggledStates(prev => {
           const next = { ...prev };
           delete next[item.cadenavalorid];

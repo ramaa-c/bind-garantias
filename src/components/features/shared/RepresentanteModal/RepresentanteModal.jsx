@@ -12,6 +12,7 @@ import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/Procesamiento
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../hooks/useRegistrarModalLegajo";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../utils/executeCda";
 import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
@@ -1081,7 +1082,7 @@ export function RepresentanteModal({
         });
         toast.error("Por favor, revisá los errores en el formulario.");
       } else {
-        toast.error("Ocurrió un error inesperado al guardar los datos.");
+        toast.error(mensajeNegocio(error, "Ocurrió un error inesperado al guardar los datos."));
       }
     }
   };

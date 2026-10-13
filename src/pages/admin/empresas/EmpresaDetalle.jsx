@@ -80,6 +80,7 @@ import {
   esUsuarioPendienteActivacion,
 } from "../../../utils/usuarioUtils";
 import styles from "./EmpresaDetalle.module.css";
+import { mensajeNegocio } from "../../../utils/mensajesError";
 
 const getTipoPersonaLabel = (tipoPersonaId) => {
   const id = Number(tipoPersonaId);
@@ -296,7 +297,7 @@ function DatosTab({ socio }) {
       },
       onError: (err) => {
         console.error("Error al actualizar el socio:", err);
-        toast.error("Ocurrió un error al guardar los cambios");
+        toast.error("Ocurrió un error al guardar los cambios", { description: mensajeNegocio(err, "") });
         setConfirmOpen(false);
       },
     });

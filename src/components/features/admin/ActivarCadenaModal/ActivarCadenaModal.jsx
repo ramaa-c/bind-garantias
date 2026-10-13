@@ -29,6 +29,7 @@ import {
 } from "../../../../services/requisitosService";
 import styles from "./ActivarCadenaModal.module.css";
 import { FORMATOS_ARCHIVO, validarTipoArchivo } from "../../../../utils/fileUtils";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
 
 export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) => {
   const [step, setStep] = useState("select"); // "select" or "form"
@@ -330,7 +331,7 @@ export const ActivarCadenaModal = ({ isOpen, onClose, activeList, onSuccess }) =
       },
       onError: (err) => {
         console.error("Error al crear cadena:", err);
-        toast.error("Ocurrió un error al activar la cadena de valor");
+        toast.error("Ocurrió un error al activar la cadena de valor", { description: mensajeNegocio(err, "") });
         setConfirmOpen(false);
       }
     });

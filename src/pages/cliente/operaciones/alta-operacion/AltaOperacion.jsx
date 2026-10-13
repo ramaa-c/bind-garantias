@@ -39,9 +39,12 @@ import {
   TERCERO_VIA_PLATAFORMA_PROPIA,
   ESTADO_PENDIENTE,
   ESTADO_RECHAZADA,
+  ESTADO_CANCELADA,
   MOTIVOS_RECHAZO_AUTOMATICO,
   construirMotivoRechazoAutomatico,
 } from "../../../../utils/estadoLimiteSocio";
+import { mensajeNegocio } from "../../../../utils/mensajesError";
+import { simboloMoneda } from "../../../../utils/monedaUtils";
 
 const STORAGE_KEY = "draft_alta_operacion_v2";
 
@@ -707,7 +710,33 @@ export const AltaOperacion = () => {
         tercerogeneradorid: 0,
       };
 
-      const resLimite = await lineaService.crearLimiteSocio(payloadLimite);
+      let resLimite;
+      try {
+        resLimite = await lineaService.crearLimiteSocio(payloadLimite);
+      } catch (limiteError) {
+        // La API rechaza el alta de la línea (ej. ya hay una solicitud
+        // pendiente de ese tipo en la cadena, o hay un tope superado): la
+        // SolicitudEnProceso recién creada se da de baja para no dejarla
+        // huérfana (un PUT a Cancelado la elimina). Si esta baja también
+        // falla solo queda logueado y se informa el motivo original.
+        if (!debeRechazarseAutomaticamente) {
+          try {
+            await solicitudesService.sincronizarEstadoSolicitudEnProcesoPorClave(
+              cuitLimpio,
+              tipoLimiteIdReal,
+              Number(cadenaSlug),
+              ESTADO_CANCELADA,
+            );
+          } catch (bajaError) {
+            console.error(
+              "[ALTA OPERACION] No se pudo dar de baja la SolicitudEnProceso tras el rechazo de la línea:",
+              bajaError,
+            );
+          }
+        }
+        queryClient.invalidateQueries({ queryKey: ["solicitudes", "en-proceso"] });
+        throw limiteError;
+      }
       const tipoLimiteSocioIdCreado =
         resLimite?.tipolimitesocioid || resLimite?.id || 0;
 
@@ -733,9 +762,14 @@ export const AltaOperacion = () => {
       setPasoActual(2);
     } catch (error) {
       console.error("[ALTA OPERACION] Error en enviarSolicitud:", error);
+      // Los rechazos de negocio de la API (solicitud pendiente, otra
+      // plataforma, líneas en curso en SGR+, tope de la cadena...) se
+      // muestran con su motivo; el resto, con el texto genérico.
       toast.error("Error al enviar", {
-        description:
+        description: mensajeNegocio(
+          error,
           "Ocurrió un error al enviar la solicitud. Intentá nuevamente en unos minutos.",
+        ),
       });
     } finally {
       setEnviandoSolicitud(false);
@@ -748,11 +782,7 @@ export const AltaOperacion = () => {
 
   const handleIrASolicitudes = () => {
     const data = getValues();
-    let simbolo = "$";
-    if (String(data.moneda) === "2") simbolo = "U$D";
-    else if (String(data.moneda) === "500") simbolo = "€";
-    else if (String(data.moneda) === "10") simbolo = "UVAS";
-    else if (String(data.moneda) === "5000") simbolo = "$";
+    const simbolo = simboloMoneda(data.moneda);
 
     const montoLimpio = Number(data.monto) || 0;
     const montoFormateado = montoLimpio.toLocaleString("es-AR", {
