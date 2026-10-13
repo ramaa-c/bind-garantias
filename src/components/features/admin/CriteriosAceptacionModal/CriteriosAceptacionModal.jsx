@@ -17,13 +17,14 @@ import styles from "./CriteriosAceptacionModal.module.css";
 const PANTALLA_EMPRESA = "PANTALLA_INGRESO_CUIT";
 const PANTALLA_ACCIONISTAS = "PANTALLA_SOCIOS";
 
-// La API devuelve una fila por cada vez que se vinculó el CDA al grupo (el historial incluye repetidas):
-// se muestra un solo criterio por CdaID, el de la vinculación más reciente.
+// La API devuelve una fila por cada vez que se vinculó el CDA al grupo (el historial incluye repetidas y las dadas
+// de baja, Activo = "0"): se muestra un solo criterio por CdaID, el de la vinculación activa más reciente.
 const unicosPorCda = (lista) => {
   const masReciente = new Map();
   lista.forEach((c, i) => {
     const cdaid = Number(c.cdaid ?? c.CdaID);
     if (!cdaid) return;
+    if (String(c.activo ?? c.Activo ?? "") === "0") return;
     const momento = new Date(c.momento ?? c.Momento ?? 0).getTime() || 0;
     const previo = masReciente.get(cdaid);
     if (!previo || momento > previo.momento || (momento === previo.momento && i > previo.i)) {
