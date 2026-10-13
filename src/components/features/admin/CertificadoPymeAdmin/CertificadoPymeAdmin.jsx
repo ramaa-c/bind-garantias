@@ -98,8 +98,20 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
   )[0];
   const tieneCertificado = !!certificadoActual;
 
-  const invalidarConsulta = () =>
-    queryClient.invalidateQueries({ queryKey: ["socios", "certificadoPyme", Number(socioId) || null] });
+  const claveConsulta = ["socios", "certificadoPyme", Number(socioId) || null];
+
+  // Despues de guardar o eliminar se actualiza la lista en el momento (con lo que devolvio la API) y se vuelve a
+  // pedir al servidor: antes solo se invalidaba y el panel seguia en "No habilitado" hasta recargar la pagina.
+  const idDe = (c) => Number(c?.sociocertificadopymeid ?? c?.SocioCertificadoPYMEID) || 0;
+  const invalidarConsulta = async (guardado) => {
+    if (guardado && typeof guardado === "object" && idDe(guardado) > 0) {
+      queryClient.setQueryData(claveConsulta, (previo) => {
+        const lista = Array.isArray(previo) ? previo.filter((c) => idDe(c) !== idDe(guardado)) : [];
+        return [...lista, guardado];
+      });
+    }
+    await queryClient.refetchQueries({ queryKey: claveConsulta, type: "all" });
+  };
 
   const handleReverificar = async () => {
     if (!cuit) {
@@ -168,15 +180,16 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
         tipoactividadglobalid: Number(form.sector),
         tamanioempresaid: Number(form.tamanio) || 0,
       };
+      let guardado;
       if (certificadoEditando) {
-        await sociosService.actualizarCertificadoPyme(payload);
+        guardado = await sociosService.actualizarCertificadoPyme(payload);
         toast.success("Certificado PyME actualizado.");
       } else {
-        await sociosService.crearCertificadoPyme(payload);
+        guardado = await sociosService.crearCertificadoPyme(payload);
         toast.success("Certificado PyME cargado.");
       }
       setModalAbierto(false);
-      await invalidarConsulta();
+      await invalidarConsulta(guardado);
     } catch (err) {
       toast.error("No se pudo guardar el Certificado PyME: " + err.message);
     } finally {
@@ -192,6 +205,9 @@ export function CertificadoPymeAdmin({ socioId, cuit }) {
       await sociosService.eliminarCertificadoPyme(id);
       toast.success("Certificado PyME eliminado.");
       setConfirmEliminarOpen(false);
+      queryClient.setQueryData(claveConsulta, (previo) =>
+        Array.isArray(previo) ? previo.filter((c) => idDe(c) !== Number(id)) : [],
+      );
       await invalidarConsulta();
     } catch (err) {
       toast.error("No se pudo eliminar el Certificado PyME: " + err.message);
