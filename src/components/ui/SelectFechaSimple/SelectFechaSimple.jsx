@@ -183,7 +183,7 @@ const SelectFechaSimpleBase = ({
 
     return (
       <div className={containerClasses} ref={calendarRef}>
-        <div className={inputStyles.inputWrapper} onClick={() => !disabled && setIsCalendarOpen(!isCalendarOpen)}>
+        <div className={inputStyles.inputWrapper} onClick={() => !disabled && setIsCalendarOpen(true)}>
           <input
             type="text"
             readOnly
@@ -198,7 +198,18 @@ const SelectFechaSimpleBase = ({
             placeholder=" "
             disabled={disabled}
             onFocus={() => {
-              if (!disabled) setIsFocused(true);
+              if (!disabled) {
+                setIsFocused(true);
+                setIsCalendarOpen(true);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                setIsCalendarOpen(false);
+              } else if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
+                e.preventDefault();
+                if (!disabled) setIsCalendarOpen(true);
+              }
             }}
             onBlur={() => {
               if (onBlur) onBlur();
@@ -215,6 +226,11 @@ const SelectFechaSimpleBase = ({
               type="button"
               className={inputStyles.toggleBtn}
               tabIndex="-1"
+              onClick={(e) => {
+                // El icono si alterna: es la forma de cerrar el calendario sin elegir una fecha
+                e.stopPropagation();
+                if (!disabled) setIsCalendarOpen(!isCalendarOpen);
+              }}
               style={{ color: (isCalendarOpen || isFocused || hasValue) ? focusColor : '#8b949e' }}
             >
               <FiCalendar size={compact ? 14 : 17} />
