@@ -205,6 +205,8 @@ const SelectFechaSimpleBase = ({
             }}
             onKeyDown={(e) => {
               if (e.key === "Escape") {
+                // Si el calendario esta abierto, Escape solo lo cierra: no debe cerrar tambien el modal que lo contiene
+                if (isCalendarOpen) e.stopPropagation();
                 setIsCalendarOpen(false);
               } else if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
                 e.preventDefault();
