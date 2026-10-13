@@ -124,9 +124,13 @@ const Registro = () => {
       if (!error?.response || status >= 500) {
         avisarErrorServidor();
       } else {
+        const mensajeApi = error.response?.data?.message;
         setError("email", {
           type: "server",
-          message: "Error al registrar cuenta. Verificá los datos.",
+          message:
+            typeof mensajeApi === "string" && mensajeApi.trim() && mensajeApi.length <= 200
+              ? mensajeApi
+              : "Error al registrar cuenta. Verificá los datos.",
         });
       }
     }
