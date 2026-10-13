@@ -58,7 +58,9 @@ export const cerrarSesionApi = () => {
   borrarTokenApi();
   if (!token) return;
   try {
-    fetch(`${import.meta.env.VITE_API_URL}api/auth/logout`, {
+    // VITE_API_URL puede venir con o sin barra final ("/proxy-backend" en los ambientes con IIS): se normaliza
+    const base = String(import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+    fetch(`${base}/api/auth/logout`, {
       method: "POST",
       keepalive: true,
       headers: { ...CABECERAS_BASE_API, Authorization: `Bearer ${token}` },
