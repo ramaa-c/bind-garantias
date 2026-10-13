@@ -23,6 +23,7 @@ export function AccionistasSection({
   cargarSocios,
   socioIdActivo,
   archivosBackend,
+  cargandoArchivos = false,
   dniTerceros,
 }) {
   const [modalAccionistaOpen, setModalAccionistaOpen] = useState(false);
@@ -283,6 +284,7 @@ export function AccionistasSection({
         socio={editAccionista}
         socioIdActivo={socioIdActivo}
         archivosBackend={archivosBackend}
+        cargandoArchivos={cargandoArchivos}
         accionistas={accionistas}
         dniTerceros={dniTerceros}
       />

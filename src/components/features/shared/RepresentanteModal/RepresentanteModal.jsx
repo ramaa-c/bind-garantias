@@ -12,7 +12,6 @@ import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/Procesamiento
 import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../hooks/useRegistrarModalLegajo";
-import { useUsuarioWebIdActual } from "../../../../hooks/useUsuario";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../utils/executeCda";
 import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
@@ -67,7 +66,6 @@ export function RepresentanteModal({
   const [procesoModal, setProcesoModal] = useState({ isOpen: false, titulo: "", pasos: [], hasError: false, isSystemError: false });
 
   const { ejecutarValidaciones } = useCdaEngine();
-  const usuarioWebIdActual = useUsuarioWebIdActual();
   const queryClient = useQueryClient();
   // Cuando el CDA rechaza en el guardado de una edición, en vez de un
   // timeout fijo se espera a que el usuario apriete "Continuar" en el
@@ -642,7 +640,7 @@ export function RepresentanteModal({
       return;
     }
 
-    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam, usuarioWebIdActual);
+    const result = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam);
 
     // Sin esto, la card de la lista (RepresentantesSection/ApoderadosSection,
     // vía useEstadoCdaTerceros) y el badge de TerceroCdaEstado siguen
@@ -819,7 +817,7 @@ export function RepresentanteModal({
       hasError: false,
       isSystemError: false,
     });
-    const resultCda = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam, usuarioWebIdActual);
+    const resultCda = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId: terceroIdValidacion }, cadenaValorIdParam);
     // Ver comentario equivalente en handleAfipLookup: sin esto la
     // card de la lista y el badge de TerceroCdaEstado quedan
     // mostrando el estado viejo hasta que algo más los refresque.

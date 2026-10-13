@@ -3,8 +3,13 @@ import api from "../api/axios";
 
 export const solicitudesService = {
   obtenerSolicitudesEnProceso: async (cuit) => {
-    const response = await api.get(`sgrplus/SolicitudEnProceso/${cuit}`);
-    return response.data;
+    try {
+      const response = await api.get(`sgrplus/SolicitudEnProceso/${cuit}`);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) return [];
+      throw error;
+    }
   },
 
   crearSolicitudEnProceso: async (solicitudData) => {

@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useActualizarCda, useObtenerCda } from "../../../hooks/useCda";
 import { useUsuarioWebIdActual } from "../../../hooks/useUsuario";
 import { cadenaValorService } from "../../../services/cadenaValorService";
+import { cdaService } from "../../../services/cdaService";
 import { esCdaActivo, esCdaActivoEstricto, getCdaId, getCdaProp } from "../../../utils/cdaUtils";
 import { resolverGrupoCda } from "../../../utils/grupoCdaUtils";
 import { TODAS_PANTALLAS_CDA_GLOBAL } from "../../../utils/pantallasCda";
@@ -213,6 +214,62 @@ export default function CdaFormPage() {
     }
   };
 
+  const desvincularDeTodasLasCadenas = async (cdaIdEliminado) => {
+    const todasCadenas = await cadenaValorService.obtenerTodasWeb();
+    const cadenasList = Array.isArray(todasCadenas) ? todasCadenas : todasCadenas?.items || todasCadenas?.data || [];
+    const tokenCda = new RegExp(`\\bcda${cdaIdEliminado}\\b`, "i");
+
+    let desvinculadas = 0;
+    let fallidas = 0;
+    const expresionesARevisar = [];
+
+    for (const cadena of cadenasList) {
+      const cadenaId = cadena.cadenavalorid || cadena.CadenaValorID;
+      if (!cadenaId) continue;
+
+      for (const pantalla of TODAS_PANTALLAS_CDA_GLOBAL) {
+        try {
+          const grupos = await cdaService.obtenerGrupoCda(pantalla.value, cadenaId);
+          const gruposList = Array.isArray(grupos) ? grupos : grupos?.items || grupos?.data || (grupos ? [grupos] : []);
+          const grupo = gruposList[0];
+          if (!grupo?.grupocdaid) continue;
+
+          const linkedCdas = await cadenaValorService.obtenerCdasPorGrupo(grupo.grupocdaid);
+          const linkedCdasList = Array.isArray(linkedCdas) ? linkedCdas : linkedCdas?.items || linkedCdas?.data || [];
+          const vinculosActivos = linkedCdasList.filter(
+            (c) => Number(getCdaId(c)) === Number(cdaIdEliminado) && esCdaActivo(c),
+          );
+
+          for (const vinculo of vinculosActivos) {
+            const cdaCadenaValorId = getCdaProp(vinculo, "cdacadenavalorid");
+            if (cdaCadenaValorId === "" || cdaCadenaValorId === undefined) {
+              fallidas++;
+              continue;
+            }
+            await cadenaValorService.actualizarVinculacionCda({
+              cdacadenavalorid: cdaCadenaValorId,
+              grupocdaid: grupo.grupocdaid,
+              cdaid: cdaIdEliminado,
+              valorcomparacion: getCdaProp(vinculo, "valorcomparacion") || "",
+              activo: "0",
+              usuariowebid: usuarioWebId,
+            });
+            desvinculadas++;
+          }
+
+          if (vinculosActivos.length > 0 && tokenCda.test(grupo.expresionagrupacion || "")) {
+            expresionesARevisar.push(`${cadena.denominacion || `Cadena ${cadenaId}`} (${pantalla.label})`);
+          }
+        } catch (err) {
+          fallidas++;
+          console.error(`Error al desvincular el CDA ${cdaIdEliminado} de la cadena ${cadenaId} (${pantalla.value}):`, err);
+        }
+      }
+    }
+
+    return { desvinculadas, fallidas, expresionesARevisar };
+  };
+
   const handleEliminarCda = () => {
     setDeleteConfirmOpen(true);
   };
@@ -224,7 +281,25 @@ export default function CdaFormPage() {
       return;
     }
     setIsEliminando(true);
+    const idEliminado = getCdaId(cdaEditando);
     try {
+      let resultadoDesvinculo;
+      try {
+        resultadoDesvinculo = await desvincularDeTodasLasCadenas(idEliminado);
+      } catch (err) {
+        console.error(err);
+        toast.error("No se pudieron revisar las cadenas de valor. El CDA no se eliminó; intentá nuevamente.");
+        return;
+      }
+
+      if (resultadoDesvinculo.fallidas > 0) {
+        toast.error("No se pudo desvincular el CDA de todas las cadenas", {
+          description: "El CDA no se eliminó para no dejar vínculos activos sueltos. Intentá nuevamente.",
+        });
+        await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
+        return;
+      }
+
       // Ya no existe un DELETE físico: se "elimina" marcando activo="0", que
       // hace que el CDA se filtre de todos los listados como si no existiera.
       await actualizarCda({
@@ -242,7 +317,19 @@ export default function CdaFormPage() {
       await queryClient.invalidateQueries({ queryKey: ['cda'] });
       await queryClient.invalidateQueries({ queryKey: ["cda", "pantallaGrupo"] });
       await queryClient.invalidateQueries({ queryKey: ['cadenaValor'] });
-      toast.success("Criterio de Aceptación eliminado correctamente.");
+      const { desvinculadas, expresionesARevisar } = resultadoDesvinculo;
+      toast.success("Criterio de Aceptación eliminado correctamente.", {
+        description:
+          desvinculadas > 0
+            ? `Se desvinculó de ${desvinculadas} combinación${desvinculadas !== 1 ? "es" : ""} de cadena y pantalla.`
+            : "No estaba activo en ninguna cadena de valor.",
+      });
+      if (expresionesARevisar.length > 0) {
+        toast.warning("Revisá la expresión personalizada de estas cadenas", {
+          description: `Mencionan al CDA eliminado: ${expresionesARevisar.join(", ")}.`,
+          duration: 15000,
+        });
+      }
       volverAlListado();
     } catch (err) {
       console.error(err);
@@ -323,7 +410,7 @@ export default function CdaFormPage() {
           <>
             ¿Confirmás eliminar el criterio <strong>"{getCdaProp(cdaEditando, "descripcion")}"</strong>?
             <br /><br />
-            Esta acción borra también su historial y lo desvincula de todas las pantallas y cadenas de valor donde esté en uso. No se puede deshacer.
+            Se va a desvincular de todas las cadenas de valor y pantallas donde esté activo, así deja de evaluarse en el onboarding y en las líneas. Puede tardar unos segundos. No se puede deshacer desde la plataforma.
           </>
         }
         variant="blue"

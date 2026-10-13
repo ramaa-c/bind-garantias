@@ -27,7 +27,14 @@ import {
 } from "../../../hooks/useUsuario";
 import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
-import { denominacionDesdeEmail } from "../../../utils/usuarioUtils";
+import {
+  denominacionDesdeEmail,
+  FECHA_VENCIMIENTO_USUARIO,
+  esDemasiadosIntentos,
+  avisarDemasiadosIntentos,
+  esRespuestaBloqueoAdmin,
+  avisarBloqueoAdmin,
+} from "../../../utils/usuarioUtils";
 import { mensajeNegocio } from "../../../utils/mensajesError";
 import styles from "./CrearClave.module.css";
 import logoBind from "../../../assets/images/bind-g-logo.svg";
@@ -57,12 +64,14 @@ const CrearClave = () => {
   const navigate = useNavigate();
   const [emailManual, setEmailManual] = useState("");
   const [emailManualTouched, setEmailManualTouched] = useState(false);
+  const [enlaceInvalidado, setEnlaceInvalidado] = useState(false);
+  const [bloqueoAdminDetectado, setBloqueoAdminDetectado] = useState(false);
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const tokenIntegridad =
-    typeof window !== "undefined" && window.location.hash
-      ? `${token || ""}${window.location.hash}`
-      : token || "";
+  const hashUrl = typeof window !== "undefined" ? window.location.hash : "";
+  const tokenIntegridad = token
+    ? `${token}${hashUrl}`
+    : hashUrl.replace(/^#/, "");
 
   const tokenInvalidoDeOrigen = !tokenIntegridad || tokenIntegridad.length < 10;
 
@@ -81,26 +90,58 @@ const CrearClave = () => {
   const { mutate: reactivarUsuario, isPending: reactivando } =
     useReactivarUsuario();
 
+  const marcarEnlaceVencido = () => {
+    setEnlaceInvalidado(true);
+    toast.error("El enlace expiró o no es válido", {
+      description: "Solicitá uno nuevo para continuar.",
+    });
+  };
+
+  const marcarBloqueoAdmin = () => {
+    setBloqueoAdminDetectado(true);
+    avisarBloqueoAdmin();
+  };
+
+  const irALoginConCodigo = () =>
+    navigate(`${basePath}/login`, {
+      state: { faseInicial: "solicitar_codigo" },
+    });
+
   const handleIngresarConCodigo = () => {
     reactivarUsuario(tokenIntegridad, {
       onSuccess: () => {
         toast.success("Cuenta activada", {
           description: "Ingresá tu correo para recibir un código de acceso.",
         });
-        navigate(`${basePath}/login`, {
-          state: { faseInicial: "solicitar_codigo" },
-        });
+        irALoginConCodigo();
       },
       onError: (error) => {
         const status = error?.response?.status;
+        if (esRespuestaBloqueoAdmin(error)) {
+          marcarBloqueoAdmin();
+          return;
+        }
+        if (status === 406) {
+          marcarEnlaceVencido();
+          return;
+        }
+        if (status === 409) {
+          toast.info("Tu cuenta ya está activa", {
+            description: "Ingresá tu correo para recibir un código de acceso.",
+          });
+          irALoginConCodigo();
+          return;
+        }
         const isServerError = !error?.response || status >= 500;
         toast.error(
           isServerError ? "Error de servidor" : "No pudimos activar tu cuenta",
           {
             description:
               status === 404
-                ? "El enlace expiró o no es válido. Solicitá uno nuevo."
-                : "Ocurrió un error. Intentá más tarde.",
+                ? "No encontramos una cuenta asociada a este enlace."
+                : status === 423
+                  ? "Tu cuenta está bloqueada. Creá una nueva contraseña para desbloquearla."
+                  : "Ocurrió un error. Intentá más tarde.",
           },
         );
       },
@@ -113,9 +154,8 @@ const CrearClave = () => {
       return;
     }
 
-    const getCSharpIsoDate = (addYears = 0) => {
+    const getCSharpIsoDate = () => {
       const date = new Date();
-      if (addYears) date.setFullYear(date.getFullYear() + addYears);
       return date.toISOString().split(".")[0];
     };
 
@@ -125,7 +165,7 @@ const CrearClave = () => {
       email: emailManual,
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
-      fchvencimiento: getCSharpIsoDate(1),
+      fchvencimiento: FECHA_VENCIMIENTO_USUARIO,
       hashseguridad: "",
       estado: "",
       debecambiarclave: "",
@@ -134,29 +174,30 @@ const CrearClave = () => {
       fronturl: window.location.origin + basePath,
     };
 
+    const irAConfirmacion = () =>
+      navigate(`${basePath}/confirmar-correo`, {
+        state: {
+          emailIngresado: emailManual,
+          canal: canalId,
+          origen: "recuperar",
+        },
+      });
+
     resetearPassword(payloadReset, {
-      onSuccess: () => {
-        navigate(`${basePath}/confirmar-correo`, {
-          state: {
-            emailIngresado: emailManual,
-            canal: canalId,
-            origen: "recuperar",
-          },
-        });
-      },
+      onSuccess: irAConfirmacion,
       onError: (error) => {
-        const isServerError = error?.response?.status >= 500;
-        toast.error(
-          isServerError ? "Error de servidor" : "Error al solicitar enlace",
-          {
-            description: isServerError
-              ? "El servidor no responde. Por favor, intentá nuevamente más tarde."
-              : "No pudimos enviar el correo. Intentá registrarte nuevamente.",
-          },
-        );
-        if (!isServerError) {
-          navigate(`${basePath}/registro`);
+        if (!error?.response || error.response.status >= 500) {
+          toast.error("Error de servidor", {
+            description:
+              "El servidor no responde. Por favor, intentá nuevamente más tarde.",
+          });
+          return;
         }
+        if (esDemasiadosIntentos(error)) {
+          avisarDemasiadosIntentos();
+          return;
+        }
+        irAConfirmacion();
       },
     });
   };
@@ -212,13 +253,24 @@ const CrearClave = () => {
         },
         onError: (error) => {
           const status = error?.response?.status;
+          if (esRespuestaBloqueoAdmin(error)) {
+            marcarBloqueoAdmin();
+            return;
+          }
+          if (status === 406) {
+            marcarEnlaceVencido();
+            return;
+          }
           const isServerError = !error?.response || status >= 500;
+          const mensajeBackend = error?.response?.data?.message;
           const errMsg =
             status === 404
-              ? "El enlace expiró o no es válido. Solicitá uno nuevo."
-              : isServerError
-                ? "El servidor está experimentando problemas. Por favor, intentá nuevamente más tarde."
-                : mensajeNegocio(error, "Error al establecer la credencial. Intentá más tarde.");
+              ? "No encontramos una cuenta asociada a este enlace."
+              : status === 400 && mensajeBackend
+                ? mensajeBackend
+                : isServerError
+                  ? "El servidor está experimentando problemas. Por favor, intentá nuevamente más tarde."
+                  : mensajeNegocio(error, "Error al establecer la credencial. Intentá más tarde.");
           toast.error(
             isServerError ? "Error de servidor" : "Error de activación",
             {
@@ -231,16 +283,24 @@ const CrearClave = () => {
     );
   };
 
+  const cuentaBloqueadaPorAdmin =
+    !tokenInvalidoDeOrigen &&
+    (estadoCuenta === "bloqueada_admin" || bloqueoAdminDetectado);
+
   const enlaceVencido =
     !tokenInvalidoDeOrigen &&
     !verificandoEstado &&
+    !cuentaBloqueadaPorAdmin &&
     (estadoCuenta === "expirado" ||
       estadoCuenta === "inexistente" ||
-      estadoError);
+      estadoError ||
+      enlaceInvalidado);
 
-  const cuentaPendiente = !tokenInvalidoDeOrigen && estadoCuenta === "pendiente";
-  const cuentaBloqueada = !tokenInvalidoDeOrigen && estadoCuenta === "bloqueada";
-  const cuentaActiva = !tokenInvalidoDeOrigen && estadoCuenta === "activa";
+  const enlaceUtilizable =
+    !tokenInvalidoDeOrigen && !enlaceVencido && !cuentaBloqueadaPorAdmin;
+  const cuentaPendiente = enlaceUtilizable && estadoCuenta === "pendiente";
+  const cuentaBloqueada = enlaceUtilizable && estadoCuenta === "bloqueada";
+  const cuentaActiva = enlaceUtilizable && estadoCuenta === "activa";
   const cuentaRequiereAccion = cuentaPendiente || cuentaBloqueada;
   const mostrarFormulario = cuentaActiva || cuentaRequiereAccion;
 
@@ -302,7 +362,8 @@ const CrearClave = () => {
           {/* ── COLUMNA IZQUIERDA: FORMULARIO ── */}
           <section
             className={`${styles.loginFormSection} ${
-              mostrarErrorFaltaUsuario && !tokenInvalidoDeOrigen
+              (mostrarErrorFaltaUsuario || cuentaBloqueadaPorAdmin) &&
+              !tokenInvalidoDeOrigen
                 ? styles.loginFormSectionCentered
                 : ""
             }`}
@@ -421,6 +482,25 @@ const CrearClave = () => {
                       {solicitandoNuevo
                         ? "SOLICITANDO..."
                         : "SOLICITAR NUEVO ENLACE"}
+                    </Button>
+                  </div>
+                )}
+
+                {cuentaBloqueadaPorAdmin && (
+                  <div className={styles.expiredTokenContainer}>
+                    <FiLock size={48} color="var(--error-red)" />
+                    <h3>Tu cuenta fue bloqueada por un administrador</h3>
+                    <p>
+                      Por seguridad, no podés desbloquearla desde este enlace.
+                      Contactá a soporte para recuperar el acceso.
+                    </p>
+
+                    <Button
+                      variant="primary"
+                      onClick={() => navigate(`${basePath}/login`, { replace: true })}
+                      style={{ marginTop: "1.5rem", width: "100%" }}
+                    >
+                      VOLVER AL INICIO
                     </Button>
                   </div>
                 )}

@@ -71,9 +71,7 @@ const Empresas = lazy(() => import("./pages/admin/empresas/Empresas"));
 const EmpresaDetalle = lazy(
   () => import("./pages/admin/empresas/EmpresaDetalle"),
 );
-const RolesPermisos = lazy(
-  () => import("./pages/admin/configuracion/RolesPermisos"),
-);
+const Usuarios = lazy(() => import("./pages/admin/usuarios/Usuarios"));
 const Terminos = lazy(() => import("./pages/admin/configuracion/Terminos"));
 const CadenasValor = lazy(
   () => import("./pages/admin/cadenas-valor/CadenasValor"),
@@ -125,6 +123,7 @@ const rutasCliente = (
                 }
               />
 
+              <Route path="0" element={<CrearClave />} />
               <Route path="0/:token" element={<CrearClave />} />
 
               <Route path="confirmar-correo" element={<ConfirmarCorreo />} />
@@ -231,30 +230,23 @@ const rutasCliente = (
                   </OnboardingGuard>
                 }
               />
+  </>
+);
 
-              {/* Redirecciones de admin a rutas globales */}
-              <Route path="admin" element={<Navigate to="/admin" replace />} />
-              <Route
-                path="admin/dashboard"
-                element={<Navigate to="/admin" replace />}
-              />
-
-              <Route
-                path="admin/roles-permisos"
-                element={<Navigate to="/admin/roles-permisos" replace />}
-              />
-              <Route
-                path="admin/terminos"
-                element={<Navigate to="/admin/terminos" replace />}
-              />
-              <Route
-                path="admin/cadenas-valor"
-                element={<Navigate to="/admin/cadenas-valor" replace />}
-              />
-              <Route
-                path="admin/lineas-productos"
-                element={<Navigate to="/admin/lineas-productos" replace />}
-              />
+const redireccionesAdminLegacy = (
+  <>
+    <Route path="admin" element={<Navigate to="/admin" replace />} />
+    <Route path="admin/dashboard" element={<Navigate to="/admin" replace />} />
+    <Route path="admin/usuarios" element={<Navigate to="/admin/usuarios" replace />} />
+    <Route path="admin/terminos" element={<Navigate to="/admin/terminos" replace />} />
+    <Route
+      path="admin/cadenas-valor"
+      element={<Navigate to="/admin/cadenas-valor" replace />}
+    />
+    <Route
+      path="admin/lineas-productos"
+      element={<Navigate to="/admin/lineas-productos" replace />}
+    />
   </>
 );
 
@@ -299,11 +291,11 @@ const rutasAdmin = (
       }
     />
     <Route
-      path="/admin/roles-permisos"
+      path="/admin/usuarios"
       element={
         <AdminGuard>
           <AdminLayout>
-            <RolesPermisos />
+            <Usuarios />
           </AdminLayout>
         </AdminGuard>
       }
@@ -458,10 +450,12 @@ const rutasLegacy = (
     <Route path="/cadena-inactiva" element={<CadenaInactiva />} />
     <Route path="/fuera-de-servicio" element={<FueraDeServicio />} />
 
+    <Route path="/0" element={<CrearClave />} />
     <Route path="/0/:token" element={<CrearClave />} />
 
     <Route path="/:cadenaSlug" element={<TenantLayout />}>
       {rutasCliente}
+      {redireccionesAdminLegacy}
     </Route>
 
     {rutasAdmin}

@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { usuarioService } from "../services/usuarioService";
 import { useAuthStore } from "../store/useAuthStore";
+import { vinculosCadenaActivos } from "../utils/usuarioUtils";
 
 export const useLogin = () => {
   return useMutation({
@@ -65,6 +66,34 @@ export const useReactivarUsuario = () => {
   });
 };
 
+export const useListarUsuarios = () => {
+  return useQuery({
+    queryKey: ["usuarios", "listado"],
+    queryFn: () => usuarioService.listarUsuarios(),
+    staleTime: 1000 * 60,
+  });
+};
+
+export const useBloquearUsuario = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (usuarioId) => usuarioService.bloquearUsuario(usuarioId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+    },
+  });
+};
+
+export const useDesbloquearUsuario = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (usuarioId) => usuarioService.desbloquearUsuario(usuarioId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["usuarios"] });
+    },
+  });
+};
+
 export const useObtenerPorNombreOEmail = (identificador) => {
   return useQuery({
     queryKey: ["usuarios", "porNombreOEmail", identificador],
@@ -105,6 +134,7 @@ export const useObtenerCadenasPorUsuario = (usuarioid) => {
   return useQuery({
     queryKey: ["usuarios", "cadenas_admin", usuarioid],
     queryFn: () => usuarioService.obtenerUsuariosRelacionados({ usuarioid }),
+    select: vinculosCadenaActivos,
     enabled: !!usuarioid,
   });
 };

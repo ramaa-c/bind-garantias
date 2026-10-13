@@ -5,7 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useObtenerExecuteCdaTercero } from "../../../../../../hooks/useTerceros";
 import { useObtenerExecuteCda } from "../../../../../../hooks/useSocios";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
-import { useUsuarioWebIdActual } from "../../../../../../hooks/useUsuario";
 import {
   calcularEstadoDesdeHistorial,
   detectarCadenaValorId,
@@ -23,7 +22,6 @@ import styles from "../../DocumentosLegajo.module.css";
 // existe para socios) — ver conversación del 2026-07-21.
 export function TerceroCdaEstado({ terceroId, socioIdActivo }) {
   const queryClient = useQueryClient();
-  const usuarioWebId = useUsuarioWebIdActual();
   const { ejecutarValidaciones, loading: ejecutando } = useCdaEngine();
 
   const { data: historialTercero, isLoading } = useObtenerExecuteCdaTercero(terceroId);
@@ -49,7 +47,7 @@ export function TerceroCdaEstado({ terceroId, socioIdActivo }) {
       toast.error("No se pudo detectar la cadena de valor para reejecutar los CDAs de esta persona.");
       return;
     }
-    const resultado = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId }, cadenaValorId, usuarioWebId);
+    const resultado = await ejecutarValidaciones("PANTALLA_SOCIOS", { terceroId }, cadenaValorId);
     if (resultado.success) {
       toast.success("CDAs reejecutados con éxito para esta persona.");
     } else {

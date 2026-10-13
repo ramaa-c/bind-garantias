@@ -416,6 +416,7 @@ export function SociosLegajo({
   const loadingSocios = loadingQuery || actualizando;
 
   const [archivosBackend, setArchivosBackend] = useState([]);
+  const [cargandoArchivos, setCargandoArchivos] = useState(false);
   const [dniTerceros] = useState({});
 
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -446,6 +447,7 @@ export function SociosLegajo({
 
   const cargarArchivosExistentes = async () => {
     if (!socioIdActivo) return;
+    setCargandoArchivos(true);
     try {
       const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo);
       if (Array.isArray(archivos)) {
@@ -453,6 +455,8 @@ export function SociosLegajo({
       }
     } catch (err) {
       console.error("Error cargando archivos del legajo:", err);
+    } finally {
+      setCargandoArchivos(false);
     }
   };
 
@@ -808,6 +812,7 @@ export function SociosLegajo({
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
                     archivosBackend={archivosBackend}
+                    cargandoArchivos={cargandoArchivos}
                     dniTerceros={dniTerceros}
                   />
                 ) : isRepresentantes ? (

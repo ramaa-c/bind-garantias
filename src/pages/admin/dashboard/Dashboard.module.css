@@ -883,10 +883,11 @@
 }
 
 .amountLabel {
-  font-size: 0.65rem;
-  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-azul-bind-200, #b8c6ff);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .amountValue {
@@ -918,14 +919,26 @@
 }
 
 .detailsBlockTitle {
-  font-size: 0.6875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--text-muted);
+  color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 0.35rem;
+  padding-bottom: 0.5rem;
   margin: 0;
+}
+
+.detailsBlockTitle::before {
+  content: "";
+  width: 3px;
+  height: 0.875rem;
+  border-radius: 2px;
+  background: var(--color-azul-bind, #4c65e6);
+  flex-shrink: 0;
 }
 
 .detailFields {
@@ -941,11 +954,11 @@
 }
 
 .fieldLabel {
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--color-azul-bind-200, #b8c6ff);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .fieldValue {
@@ -987,7 +1000,8 @@
 }
 
 .trazabilidadLabel {
-  color: var(--text-muted);
+  color: var(--color-azul-bind-200, #b8c6ff);
+  font-weight: 600;
 }
 
 .trazabilidadValue {

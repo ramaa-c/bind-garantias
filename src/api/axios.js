@@ -105,6 +105,13 @@ const esSesionVencida = (error) => {
   return Boolean(config?.__conToken) || useAuthStore.getState().isAuthenticated;
 };
 
+const RUTAS_CON_LIMITE_POR_CUIT =
+  /(api\/(nosis|afip|lufe|Socio\/(ValidarCuit|CertificadoVigente|DisponibilidadCuit)|TerceroRelacionado)|sgrplus\/Socio\/ValidarVinculo)\b/i;
+
+const esLimiteDeConsultasPorCuit = (error) =>
+  error.response?.status === 429 &&
+  RUTAS_CON_LIMITE_POR_CUIT.test(error.config?.url || "");
+
 const rutaDeLogin = () => {
   const path = window.location.pathname;
   if (path.startsWith("/admin")) return "/login";
@@ -114,15 +121,17 @@ const rutaDeLogin = () => {
 
 let cerrandoSesion = false;
 
-const cerrarSesionVencida = () => {
+export const cerrarSesionLocal = ({
+  titulo = "Tu sesión venció",
+  descripcion = "Volvé a ingresar para continuar.",
+  tipo = "error",
+} = {}) => {
   if (cerrandoSesion) return;
   cerrandoSesion = true;
   borrarTokenApi();
   useAuthStore.getState().clearAuth();
   queryClient.clear();
-  toast.error("Tu sesión venció", {
-    description: "Volvé a ingresar para continuar.",
-  });
+  toast[tipo](titulo, { description: descripcion });
   setTimeout(() => window.location.assign(rutaDeLogin()), 900);
 };
 
@@ -168,7 +177,16 @@ api.interceptors.response.use(
     if (!config) return Promise.reject(error);
 
     if (esSesionVencida(error)) {
-      cerrarSesionVencida();
+      cerrarSesionLocal();
+      return Promise.reject(error);
+    }
+
+    if (esLimiteDeConsultasPorCuit(error)) {
+      toast.error("Demasiados pedidos", {
+        id: "limite-consultas-cuit",
+        description:
+          "Alcanzaste el límite de consultas de datos por CUIT. Intentá nuevamente más tarde.",
+      });
       return Promise.reject(error);
     }
 

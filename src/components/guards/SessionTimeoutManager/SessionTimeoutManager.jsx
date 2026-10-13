@@ -8,6 +8,7 @@ import { useSessionTimeout } from "../../../hooks/useSessionTimeout";
 import { ConfirmacionModal } from "../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { SessionExpiryNotice } from "./SessionExpiryNotice";
 import { borrarTokenApi, obtenerVencimientoTokenMs } from "../../../api/tokenApi";
+import { queryClient } from "../../../api/queryClient";
 
 // Estándar de industria (OWASP ASVS) para apps autenticadas de riesgo medio:
 // 15-30 min de inactividad. 20 min + aviso 1 min antes, igual en admin y en
@@ -39,6 +40,36 @@ const resolverLoginPath = (pathname, modoPorHost, isRestricted, cadenas) => {
   return cadenaSlug ? `/${cadenaSlug}/login` : "/login";
 };
 
+const CLAVE_AVISO_CAMBIO_CUENTA = "avisoCambioCuentaOtraPestana";
+
+const leerEstadoPersistido = (valor) => {
+  try {
+    return JSON.parse(valor)?.state ?? null;
+  } catch {
+    return null;
+  }
+};
+
+const normalizarEmail = (usuario) => usuario?.email?.trim().toLowerCase() || null;
+
+const marcarAvisoCambioCuenta = () => {
+  try {
+    sessionStorage.setItem(CLAVE_AVISO_CAMBIO_CUENTA, "1");
+  } catch {
+    return;
+  }
+};
+
+const consumirAvisoCambioCuenta = () => {
+  try {
+    const hayAviso = sessionStorage.getItem(CLAVE_AVISO_CAMBIO_CUENTA) === "1";
+    sessionStorage.removeItem(CLAVE_AVISO_CAMBIO_CUENTA);
+    return hayAviso;
+  } catch {
+    return false;
+  }
+};
+
 export const SessionTimeoutManager = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const usuarioLogueado = useAuthStore((state) => state.user);
@@ -60,6 +91,14 @@ export const SessionTimeoutManager = () => {
     toast.info("Tu sesión venció. Volvé a ingresar para continuar.");
     navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
   };
+
+  useEffect(() => {
+    if (consumirAvisoCambioCuenta()) {
+      toast.info("Se inició sesión con otra cuenta en otra pestaña.", {
+        description: "Esta pestaña se actualizó con esa sesión.",
+      });
+    }
+  }, []);
 
   const handleVencimientoTokenRef = useRef(handleVencimientoToken);
   useEffect(() => {
@@ -88,19 +127,30 @@ export const SessionTimeoutManager = () => {
   // otra pestaña del mismo origen (manual, o por este mismo timeout corriendo
   // ahí), zustand persist ya escribió el nuevo estado en localStorage bajo la
   // key "auth-storage" - pero por defecto el store de ESTA pestaña no se
-  // entera solo (persist no re-hidrata automáticamente entre pestañas). El
-  // evento `storage` del navegador solo dispara en las pestañas que NO
-  // hicieron el cambio, así que no hay riesgo de loop ni de reaccionar a la
-  // propia escritura.
+  // entera solo (persist no re-hidrata automáticamente entre pestañas).
   useEffect(() => {
     const handleAuthStorage = (e) => {
       if (e.key !== "auth-storage") return;
-      const estabaAutenticado = useAuthStore.getState().isAuthenticated;
-      useAuthStore.persist.rehydrate();
-      const sigueAutenticado = useAuthStore.getState().isAuthenticated;
-      if (estabaAutenticado && !sigueAutenticado) {
+      const estadoActual = useAuthStore.getState();
+
+      if (!estadoActual.isAuthenticated) {
+        useAuthStore.persist.rehydrate();
+        return;
+      }
+
+      const estadoNuevo = leerEstadoPersistido(e.newValue);
+
+      if (!estadoNuevo?.isAuthenticated) {
+        useAuthStore.persist.rehydrate();
         toast.info("Tu sesión se cerró en otra pestaña.");
         navigate(resolverLoginPath(location.pathname, modoPorHost, isRestricted, cadenas), { replace: true });
+        return;
+      }
+
+      if (normalizarEmail(estadoNuevo.user) !== normalizarEmail(estadoActual.user)) {
+        marcarAvisoCambioCuenta();
+        queryClient.clear();
+        window.location.reload();
       }
     };
 

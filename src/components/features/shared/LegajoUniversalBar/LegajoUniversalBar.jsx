@@ -94,12 +94,7 @@ export function LegajoUniversalBar({
 
   // Única fuente de verdad de si el legajo YA se migró de verdad al core:
   // el propio campo MarcaVinculacion del Socio ("0" = no migró, "1" = migró
-  // con éxito). Antes esto se inferían comparando contra sgrplus/Socios por
-  // CUIT; ahora el backend lo persiste directo en el Socio y esta barra es
-  // la única que lo escribe, y solo después de una migración confirmada
-  // (ver sincronizarConSgrPlus más abajo) — nunca en base a un cambio local
-  // sin confirmar, así que no hay riesgo del falso "Sincronizado" que daba
-  // el cálculo viejo con solo el fingerprint.
+  // con éxito), que marca el backend dentro de Socio/Migrar.
   const migradoEnBackend = String(socioWeb?.marcavinculacion ?? "") === "1";
 
   // El bloqueo por líneas SOLO aplica a la primera migración - un socio ya
@@ -386,10 +381,6 @@ export function LegajoUniversalBar({
 
       const response = await sociosService.enviarASgrPlus(socioIdActivo);
       if (response.success) {
-        // MarcaVinculacion="1" ya NO se marca desde acá: la API lo hace sola
-        // cuando Socio/Migrar termina bien (un PUT Socio ignora ese campo).
-        // Solo se refresca el socio (más abajo) para que migradoEnBackend
-        // se actualice.
         if (toastId) toast.dismiss(toastId);
         // Solo para admin (silent=false, ver migrarAhora): a él sí le
         // corresponde enterarse de la migración real. El aviso del cliente
@@ -401,7 +392,7 @@ export function LegajoUniversalBar({
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["socioLegajoCompleto"] }),
           queryClient.invalidateQueries({ queryKey: ["socioArchivos"] }),
-          queryClient.invalidateQueries({ queryKey: ["sociosWeb", "detalle", Number(socioIdActivo)] }),
+          queryClient.invalidateQueries({ queryKey: ["sociosWeb", "detalle"] }),
           queryClient.invalidateQueries({ queryKey: ["socios"] }),
         ]);
       } else {

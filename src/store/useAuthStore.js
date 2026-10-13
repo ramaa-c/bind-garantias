@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { setLastActivity, clearLastActivity } from "../utils/sessionActivity";
 import { cerrarSesionApi } from "../api/tokenApi";
+import { limpiarCacheConsultasCuit } from "../utils/cacheConsultasCuit";
+import { queryClient } from "../api/queryClient";
 
 // Compartido por clearAuth (logout real) y cambiarEmpresa (logout "suave",
 // ver más abajo): tira todo lo efímero de una sesión/intento de onboarding —
@@ -64,6 +66,7 @@ export const useAuthStore = create(
 
         if (esNuevoLogin) {
           limpiarStorageEfimero();
+          queryClient.removeQueries();
         }
 
         // Marca el arranque del reloj de inactividad justo en el login -
@@ -83,7 +86,9 @@ export const useAuthStore = create(
       clearAuth: () => {
         clearLastActivity();
         cerrarSesionApi();
+        limpiarCacheConsultasCuit();
         limpiarStorageEfimero();
+        queryClient.removeQueries();
         set({
           user: null,
           isAuthenticated: false,
@@ -117,4 +122,4 @@ export const useAuthStore = create(
       },
     },
   ),
-);
+);

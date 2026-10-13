@@ -1,34 +1,12 @@
-// Catálogo único de estados (WSSolicitudEnProceso.EstadoSolicitud), ahora
-// compartido literalmente por TipoLimiteSocio.TipoLimiteEstadoID y
-// SolicitudEnProceso.EstadoSolicitud — unificado con el backend el 2026-08-18,
-// con migración de los datos existentes de TipoLimiteSocio a esta escala a
-// cargo del backend. Antes TipoLimiteSocio tenía su propia escala
-// (-2 Cancelada / -1 Rechazada / 0 Pendiente / 1 Aprobada); ahora usa
-// exactamente los mismos 5 valores que SolicitudEnProceso, así que sincronizar
-// el estado entre las dos tablas ya no requiere traducir nada.
-//
-// NO es el catálogo TipoLimiteEstado heredado de SGR+ (ese trae ~25 estados
-// de un flujo de crédito bancario que no usamos).
+// Catálogo único de estados, compartido por TipoLimiteSocio.TipoLimiteEstadoID
+// y SolicitudEnProceso.EstadoSolicitud. NO es el catálogo TipoLimiteEstado
+// heredado de SGR+.
 export const ESTADO_INICIAL = 1;
-export const ESTADO_EN_PROCESO = 2;
-export const ESTADO_COMPLETO = 3;
-export const ESTADO_CANCELADO = 4;
-export const ESTADO_VENCIDO = 5;
-// Rechazada (decisión del admin o rechazo automático) tiene su propio valor
-// desde que la API lo incorporó al catálogo (TConstEstadoEwanPcnt.Rechazada).
-// Antes se pisaba Cancelado/Vencido como workaround; ya no.
-export const ESTADO_RECHAZADO = 6;
-
-// Alias con los nombres que ya usa el resto del código (Dashboard, cliente):
-// Pendiente = EnProceso, Aprobada = Completo, Cancelada = Cancelado (decisión
-// del propio socio) y Rechazada = Rechazado. La API acepta estas
-// transiciones: el socio cancela (2 a 4); el admin aprueba (2 a 3) o rechaza
-// (2 a 6); una solicitud nueva nace En proceso (2) o Rechazada (6, rechazo
-// automático). Los estados mayores a 2 no se pueden volver a mover.
-export const ESTADO_PENDIENTE = ESTADO_EN_PROCESO;
-export const ESTADO_APROBADA = ESTADO_COMPLETO;
-export const ESTADO_RECHAZADA = ESTADO_RECHAZADO;
-export const ESTADO_CANCELADA = ESTADO_CANCELADO;
+export const ESTADO_PENDIENTE = 2;
+export const ESTADO_APROBADA = 3;
+export const ESTADO_CANCELADA = 4;
+export const ESTADO_VENCIDA = 5;
+export const ESTADO_RECHAZADA = 6;
 
 // TerceroViaID de SolicitudEnProceso: identifica la plataforma de origen de
 // la solicitud, no la cadena de valor. La nuestra es 4000000 - otras
@@ -48,7 +26,7 @@ export const MOTIVOS_RECHAZO_AUTOMATICO = {
     "El monto solicitado no alcanza el porcentaje mínimo permitido para esta línea.",
 };
 
-// TipoLimiteEstadoID=Cancelado (4) se usa tanto para un rechazo automático
+// TipoLimiteEstadoID=Rechazada (6) se usa tanto para un rechazo automático
 // (CDA de línea / PorcentajeMinimoSolicitud, al momento de crear la
 // solicitud, ver AltaOperacion.jsx) como para un rechazo manual del admin
 // (RechazarSolicitudModal) - no hay un campo aparte que distinga cuál fue.
@@ -67,17 +45,13 @@ const sinAcentos = (texto) => String(texto || "").normalize("NFD").replace(/[̀-
 export const esRechazoAutomatico = (observaciones) =>
   sinAcentos(observaciones).startsWith(sinAcentos(PREFIJO_RECHAZO_AUTOMATICO));
 
-// TipoLimiteEstadoID=5 (Vencido) también se usa hoy como Cancelada (ver
-// ESTADO_CANCELADA arriba) - cuando el backend active el vencimiento
-// automático real, ambas van a compartir el mismo valor numérico. Dejar esta
-// marca en Observaciones al cancelar es la única forma de distinguir después
-// "lo canceló el socio" de "se venció solo".
 export const MOTIVO_CANCELACION_SOCIO = "Cancelada por el socio desde la plataforma.";
 
 export const estadoTextoDesde = (tipolimiteestadoid) => {
   const id = Number(tipolimiteestadoid);
-  if (id === ESTADO_COMPLETO) return "Aprobada";
+  if (id === ESTADO_APROBADA) return "Aprobada";
   if (id === ESTADO_RECHAZADA) return "Rechazada";
   if (id === ESTADO_CANCELADA) return "Cancelada";
+  if (id === ESTADO_VENCIDA) return "Vencida";
   return "Pendiente";
 };

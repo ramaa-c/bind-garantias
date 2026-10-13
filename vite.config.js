@@ -33,7 +33,7 @@ export default defineConfig({
           rewritten = rewritten.replace(/\/porsocio$/, ":PorSocio");
 
           rewritten = rewritten.replace(
-            /\/(status|password|login)-(block|release|reset|change|new|bycode|requestcode)$/,
+            /\/(status|password|login)-(block|unblock|release|reset|change|new|bycode|requestcode)$/,
             "/$1:$2",
           );
 

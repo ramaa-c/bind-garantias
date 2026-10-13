@@ -9,6 +9,7 @@ import { Button } from "../../../components/ui/Button/Button";
 import { useCrearUsuario, useResetearPassword } from "../../../hooks/useUsuario";
 import {
   denominacionDesdeEmail,
+  FECHA_VENCIMIENTO_USUARIO,
   esDemasiadosIntentos,
   avisarDemasiadosIntentos,
 } from "../../../utils/usuarioUtils";
@@ -58,9 +59,8 @@ const Registro = () => {
     }
   }, [emailValue, clearErrors]);
 
-  const getCSharpIsoDate = (addYears = 0) => {
-    const date = new Date();
-    if (addYears) date.setFullYear(date.getFullYear() + addYears);
+  const getCSharpIsoDate = () => {
+    const date = new Date();
     return date.toISOString().split(".")[0];
   };
 
@@ -70,7 +70,7 @@ const Registro = () => {
     const payloadSkeletor = {
       email: data.email,
       fchalta: getCSharpIsoDate(),
-      fchvencimiento: getCSharpIsoDate(1),
+      fchvencimiento: FECHA_VENCIMIENTO_USUARIO,
       hashseguridad: "",
       estado: "",
       debecambiarclave: "",
@@ -124,7 +124,6 @@ const Registro = () => {
       if (!error?.response || status >= 500) {
         avisarErrorServidor();
       } else {
-        // La API responde { statusCode, message } sin datos internos: se muestra tal cual si es un texto razonable
         const mensajeApi = error.response?.data?.message;
         setError("email", {
           type: "server",

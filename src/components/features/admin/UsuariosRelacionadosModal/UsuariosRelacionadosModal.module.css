@@ -110,6 +110,40 @@
   flex: 1;
 }
 
+.errorVinculo {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0;
+  padding-left: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--danger-bright);
+  animation: aparecerError 0.2s ease-out;
+}
+
+.errorVinculo svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+@keyframes aparecerError {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .errorVinculo {
+    animation: none;
+  }
+}
+
 /* User Found Box */
 .userFoundBox {
   display: flex;

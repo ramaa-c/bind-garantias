@@ -12,6 +12,7 @@ import { useChannel } from "../../../context/useChannel";
 import { useThemeStore } from "../../../store/useThemeStore";
 import {
   denominacionDesdeEmail,
+  FECHA_VENCIMIENTO_USUARIO,
   esDemasiadosIntentos,
   avisarDemasiadosIntentos,
 } from "../../../utils/usuarioUtils";
@@ -45,9 +46,8 @@ const RecuperarClave = () => {
     isError,
   } = useResetearPassword();
 
-  const getCSharpIsoDate = (addYears = 0) => {
-    const date = new Date();
-    if (addYears) date.setFullYear(date.getFullYear() + addYears);
+  const getCSharpIsoDate = () => {
+    const date = new Date();
     return date.toISOString().split(".")[0];
   };
 
@@ -58,7 +58,7 @@ const RecuperarClave = () => {
       email: data.email,
       usuariowebid: 0,
       fchalta: getCSharpIsoDate(),
-      fchvencimiento: getCSharpIsoDate(1),
+      fchvencimiento: FECHA_VENCIMIENTO_USUARIO,
       hashseguridad: "",
       estado: "",
       debecambiarclave: "",

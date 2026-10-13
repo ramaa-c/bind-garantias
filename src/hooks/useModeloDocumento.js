@@ -60,11 +60,12 @@ export const useModelosDocumentoDisponibles = (tipoModeloDocumentoId, modeloIdAc
 export const useAbrirModeloDocumento = () => {
   const [pendienteId, setPendienteId] = useState(null);
 
-  const abrir = useCallback(async (solicitud, modeloDocumentoId, parametrosCatalogo) => {
+  const abrir = useCallback(async (solicitud, modeloDocumentoId, parametrosCatalogo, tieneApoderadoFirmante) => {
     const evaluacionPrevia = evaluarModeloDocumento({
       solicitud,
       modeloDocumentoId,
       parametrosCatalogo,
+      tieneApoderadoFirmante,
     });
 
     if (!evaluacionPrevia.disponible) {
@@ -87,6 +88,7 @@ export const useAbrirModeloDocumento = () => {
           solicitud,
           modeloDocumentoId,
           parametrosCatalogo: catalogo,
+          tieneApoderadoFirmante,
         });
         if (!evaluacion.disponible) throw new Error(evaluacion.motivo);
         parametros = evaluacion.parametros;

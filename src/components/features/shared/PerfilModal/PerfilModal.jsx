@@ -26,7 +26,12 @@ import { useSocioWebPorId, useActualizarSocio } from "../../../../hooks/useSocio
 import { useVendor } from "../../../../hooks/useVendor";
 import { useProvincias } from "../../../../hooks/useCatalogos";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
-import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
+import {
+  extraerRegistroUsuario,
+  esClaveActualIncorrecta,
+  esDemasiadosIntentos,
+} from "../../../../utils/usuarioUtils";
+import { cerrarSesionLocal } from "../../../../api/axios";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import {
   useObtenerPorNombreOEmail,
@@ -359,19 +364,31 @@ export const PerfilModal = ({ isOpen, onClose }) => {
       },
       {
         onSuccess: () => {
-          toast.success("Contraseña actualizada correctamente");
-          resetPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+          cerrarSesionLocal({
+            tipo: "success",
+            titulo: "Contraseña actualizada",
+            descripcion: "Cambiaste tu contraseña: volvé a ingresar.",
+          });
         },
         onError: (error) => {
           const status = error?.response?.status;
-          if (status === 401 || status === 403) {
+          if (esDemasiadosIntentos(error)) {
+            toast.error("Demasiados intentos", {
+              description: mensajeNegocio(error, "Intentá nuevamente más tarde."),
+            });
+            return;
+          }
+          if (esClaveActualIncorrecta(error)) {
             setPasswordError("oldPassword", {
               type: "server",
               message: "La contraseña actual es incorrecta",
             });
             return;
           }
-          // 400: la clave nueva no cumple la política de la API (ej. contiene el email)
+          if (status === 401) {
+            cerrarSesionLocal();
+            return;
+          }
           if (status === 400) {
             setPasswordError("newPassword", {
               type: "server",
@@ -379,10 +396,12 @@ export const PerfilModal = ({ isOpen, onClose }) => {
             });
             return;
           }
-          // 429: demasiados intentos fallidos con la clave actual
-          if (status === 429) {
-            toast.error("Demasiados intentos", {
-              description: mensajeNegocio(error, "Intentá nuevamente más tarde."),
+          if (status === 403) {
+            toast.error("No se pudo actualizar la contraseña", {
+              description: mensajeNegocio(
+                error,
+                "Revisá los datos ingresados e intentá nuevamente.",
+              ),
             });
             return;
           }

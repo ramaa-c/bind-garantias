@@ -3,7 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { LoadingScreen } from "../../ui/LoadingScreen/LoadingScreen";
-import { cadenasAdminActivas } from "../../../utils/usuarioUtils";
+import { vinculosCadenaActivos } from "../../../utils/usuarioUtils";
 import {
   useObtenerPorNombreOEmail,
   useObtenerCadenasPorUsuario,
@@ -60,10 +60,7 @@ export const AdminGuard = ({ children }) => {
   const { data: cadenasData, isPending: isCadenasLoading } =
     useObtenerCadenasPorUsuario(usuarioWebId);
 
-  const hasCadenas =
-    cadenasAdminActivas(
-      Array.isArray(cadenasData) ? cadenasData : cadenasData?.items || cadenasData?.data,
-    ).length > 0;
+  const hasCadenas = vinculosCadenaActivos(cadenasData).length > 0;
   const isAdminCadena = hasCadenas;
 
   const { isRestricted, isPending } = useAdminRestrictions();

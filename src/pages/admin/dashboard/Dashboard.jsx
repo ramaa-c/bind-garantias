@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../components/ui/Button/Button";
@@ -11,8 +12,8 @@ import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { useAdminRestrictions } from "../../../hooks/useAdminRestrictions";
 import { useObtenerTodasWebConEstado } from "../../../hooks/useCadenaValor";
 import { useObtenerLimites, useActualizarLimiteSocio, useMigrarLinea } from "../../../hooks/useLinea";
-import { useQueryClient } from "@tanstack/react-query";
 import { useObtenerSocios } from "../../../hooks/useSocios";
+import { useApoderadoFirmantePorSocio } from "../../../hooks/useTerceros";
 import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
 import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
 import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
@@ -25,6 +26,7 @@ import {
   ESTADO_PENDIENTE,
   ESTADO_APROBADA,
   ESTADO_CANCELADA,
+  ESTADO_VENCIDA,
   estadoTextoDesde,
   esRechazoAutomatico,
 } from "../../../utils/estadoLimiteSocio";
@@ -197,9 +199,8 @@ export default function Dashboard() {
   const loading = isLoadingLimites || isLoadingSocios;
 
   // Mismo mapeo que arma solicitudesCanal más abajo, expuesto acá aparte
-  // porque migrarSocioSiCorresponde necesita el registro completo del
-  // Socio (no solo los 3 campos que solicitudesCanal deja en `item`) para
-  // el PUT api/Socio que marca MarcaVinculacion.
+  // porque migrarSocioSiCorresponde necesita leer el MarcaVinculacion del
+  // Socio, que solicitudesCanal no deja en `item`.
   const sociosPorId = useMemo(() => {
     const map = new Map();
     (Array.isArray(sociosData) ? sociosData : []).forEach((s) => {
@@ -278,11 +279,8 @@ export default function Dashboard() {
       const tipoLimiteEstadoId = l.tipolimiteestadoid ?? l.TipoLimiteEstadoID ?? ESTADO_PENDIENTE;
       const estadoText = estadoTextoDesde(tipoLimiteEstadoId);
 
-      // Rechazada (admin) y Cancelada (socio) vuelven a distinguirse con un
-      // workaround temporal: Cancelada pisa el valor de Vencido (5), que no
-      // usamos para nada más (ver ESTADO_CANCELADA en utils/estadoLimiteSocio.js).
-      // Dentro de Rechazada hay además dos orígenes distintos que comparten
-      // el mismo TipoLimiteEstadoID (4): un rechazo automático al crear la
+      // Dentro de Rechazada hay dos orígenes distintos que comparten
+      // el mismo TipoLimiteEstadoID (6): un rechazo automático al crear la
       // solicitud (CDA de línea / PorcentajeMinimoSolicitud, ver
       // AltaOperacion.jsx) y un rechazo manual del admin - se distinguen por
       // el prefijo que AltaOperacion.jsx deja en Observaciones.
@@ -298,7 +296,9 @@ export default function Dashboard() {
               : "Rechazada por Administrador"
             : Number(tipoLimiteEstadoId) === ESTADO_CANCELADA
               ? "Cancelada por el cliente"
-              : "Espera de validación del Administrador";
+              : Number(tipoLimiteEstadoId) === ESTADO_VENCIDA
+                ? "Vencida"
+                : "Espera de validación del Administrador";
 
       const tipoLimiteId = l.tipolimiteid || l.TipoLimiteID;
       const tipoText = familiaDeLinea(tipoLimiteId);
@@ -325,11 +325,11 @@ export default function Dashboard() {
         estado: estadoText,
         accionPendiente: accionText,
         creado: fchVigenciaDesde
-          ? new Date(fchVigenciaDesde).toLocaleString("es-AR")
+          ? new Date(fchVigenciaDesde).toLocaleDateString("es-AR")
           : "Reciente",
         creadoISO: fchVigenciaDesde || null,
         actualizado: fchVigenciaHasta
-          ? new Date(fchVigenciaHasta).toLocaleString("es-AR")
+          ? new Date(fchVigenciaHasta).toLocaleDateString("es-AR")
           : "Reciente",
         cadenaSlug: "default",
         raw: l,
@@ -411,9 +411,7 @@ export default function Dashboard() {
       const response = await sociosService.enviarASgrPlus(socioId);
       if (!response.success) throw new Error(response.message || "Error al migrar el socio");
 
-      // MarcaVinculacion="1" la marca la propia API al migrar bien (un PUT
-      // Socio ignora ese campo): solo se refresca el listado de socios.
-      await queryClient.invalidateQueries({ queryKey: ["socios"] });
+      await queryClient.invalidateQueries({ queryKey: ["socios", "lista"] });
     } catch (socioMigError) {
       toast.error(
         contexto === "aprobar"
@@ -606,6 +604,12 @@ export default function Dashboard() {
   const filtradasPagina = filtradas.slice(
     (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
     paginaActual * ELEMENTOS_POR_PAGINA,
+  );
+
+  const apoderadoFirmantePorSocio = useApoderadoFirmantePorSocio(
+    filtradasPagina
+      .filter((s) => Number(s.tipoLimiteEstadoId) === ESTADO_PENDIENTE)
+      .map((s) => s.socioid),
   );
 
   return (
@@ -829,19 +833,23 @@ export default function Dashboard() {
           filtradasPagina.map((item) => {
             const isAprobada = item.tipoLimiteEstadoId === ESTADO_APROBADA;
             const isRechazada = item.tipoLimiteEstadoId === ESTADO_RECHAZADA;
-            const isCancelada = item.tipoLimiteEstadoId === ESTADO_CANCELADA;
-            const isPendiente = !isAprobada && !isRechazada && !isCancelada;
+            const isCancelada =
+              item.tipoLimiteEstadoId === ESTADO_CANCELADA ||
+              item.tipoLimiteEstadoId === ESTADO_VENCIDA;
+            const isPendiente = Number(item.tipoLimiteEstadoId) === ESTADO_PENDIENTE;
             const estadoKey = dotYPillClaseDesde(isAprobada, isRechazada, isCancelada);
 
             // La previsualización del documento es solo para solicitudes
             // pendientes: en los demás estados la operación ya se resolvió.
             const modeloDocumentoId = modeloDocumentoIdPorCadena.get(String(item.cadenavalorid));
             const parametrosModelo = parametrosPorModelo.get(Number(modeloDocumentoId));
+            const tieneApoderadoFirmante = apoderadoFirmantePorSocio.get(Number(item.socioid));
             const modeloDocumento = isPendiente
               ? evaluarModeloDocumento({
                   solicitud: item,
                   modeloDocumentoId,
                   parametrosCatalogo: parametrosModelo,
+                  tieneApoderadoFirmante,
                 })
               : null;
 
@@ -890,7 +898,7 @@ export default function Dashboard() {
                     <>
                       <BotonIcono
                         icon={FiFileText}
-                        onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo)}
+                        onClick={() => abrirModeloDocumento(item, modeloDocumentoId, parametrosModelo, tieneApoderadoFirmante)}
                         title={modeloDocumento.motivo || "Previsualizar documento"}
                         isLoading={pendienteModeloDocumentoId === item.id}
                         className={`${styles.btnDocumento} ${modeloDocumento.disponible ? "" : styles.btnDocumentoNoDisponible}`}
@@ -988,7 +996,8 @@ export default function Dashboard() {
                     <span className={`${styles.solicitudStatusBadge} ${
                       solicitudDetalle.tipoLimiteEstadoId === ESTADO_APROBADA ? styles.badgeAproved :
                       solicitudDetalle.tipoLimiteEstadoId === ESTADO_RECHAZADA ? styles.badgeRejected :
-                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_CANCELADA ? styles.badgeCancelled :
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_CANCELADA ||
+                      solicitudDetalle.tipoLimiteEstadoId === ESTADO_VENCIDA ? styles.badgeCancelled :
                       styles.badgePending
                     }`}>
                       {solicitudDetalle.estado}
