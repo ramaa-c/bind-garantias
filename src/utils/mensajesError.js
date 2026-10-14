@@ -21,7 +21,7 @@ export const obtenerMensajeAmigable = (err, defaultMsg) => {
   }
   if (status === 400) {
     const backendMessage = err.response?.data?.message || err.response?.data || err.response?.data?.title;
-    if (typeof backendMessage === "string" && backendMessage.length < 150) {
+    if (esMensajeUtil(backendMessage) && backendMessage.length < 150) {
       return backendMessage;
     }
     return "Los datos de la empresa no pudieron ser validados. Revisá el CUIT y reintentá.";
@@ -29,11 +29,20 @@ export const obtenerMensajeAmigable = (err, defaultMsg) => {
   return defaultMsg;
 };
 
+const FRASES_HTTP_GENERICAS =
+  /^(bad request|unauthorized|forbidden|not found|method not allowed|not acceptable|request timeout|conflict|unprocessable (entity|content)|too many requests|internal server error|bad gateway|service unavailable|gateway timeout)\.?$/i;
+
+export const esMensajeUtil = (mensaje) =>
+  typeof mensaje === "string" &&
+  Boolean(mensaje.trim()) &&
+  mensaje.length < 300 &&
+  !FRASES_HTTP_GENERICAS.test(mensaje.trim());
+
 // Mensaje que devuelve la API en el cuerpo del error ({ statusCode, message }); si no hay, el texto por defecto.
 export const mensajeDeApi = (err, porDefecto = "") => {
   const data = err?.response?.data;
   const mensaje = typeof data === "string" ? data : data?.message;
-  return typeof mensaje === "string" && mensaje.trim() && mensaje.length < 300 ? mensaje : porDefecto;
+  return esMensajeUtil(mensaje) ? mensaje : porDefecto;
 };
 
 // Igual que mensajeDeApi, pero solo para los errores de negocio (400, 403, 409, 429): el resto (5xx, red) muestra el texto por defecto.
