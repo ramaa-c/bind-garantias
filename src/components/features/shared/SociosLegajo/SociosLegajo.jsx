@@ -449,7 +449,7 @@ export function SociosLegajo({
     if (!socioIdActivo) return;
     setCargandoArchivos(true);
     try {
-      const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo);
+      const archivos = await socioArchivoService.obtenerArchivos(socioIdActivo, true);
       if (Array.isArray(archivos)) {
         setArchivosBackend(archivos);
       }
@@ -814,6 +814,7 @@ export function SociosLegajo({
                     archivosBackend={archivosBackend}
                     cargandoArchivos={cargandoArchivos}
                     dniTerceros={dniTerceros}
+                    cadenaValorId={cadenaId}
                   />
                 ) : isRepresentantes ? (
                   <RepresentantesSection
@@ -822,6 +823,7 @@ export function SociosLegajo({
                     handleEliminarRelacion={handleEliminarRelacion}
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
+                    cadenaValorId={cadenaId}
                   />
                 ) : isApoderados ? (
                   <ApoderadosSection
@@ -830,6 +832,7 @@ export function SociosLegajo({
                     handleEliminarRelacion={handleEliminarRelacion}
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
+                    cadenaValorId={cadenaId}
                   />
                 ) : isAgentesBolsa ? (
                   <AgentesBolsaSection
@@ -862,6 +865,7 @@ export function SociosLegajo({
                     handleEliminarRelacion={handleEliminarRelacion}
                     cargarSocios={cargarSocios}
                     socioIdActivo={socioIdActivo}
+                    cadenaValorId={cadenaId}
                     evitarCoincidenciaCon={
                       idRelacionExtra === RELACION_FIADOR_ID && accionistaUnico
                         ? { cuit: accionistaUnico.cuit, email: accionistaUnico.email }

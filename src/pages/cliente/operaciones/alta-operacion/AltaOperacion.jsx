@@ -30,7 +30,10 @@ import { useObtenerLimitesCadenaValor } from "../../../../hooks/useLinea";
 import { useObtenerTodasWeb } from "../../../../hooks/useCadenaValor";
 import { useTiposProducto, useMonedas } from "../../../../hooks/useCatalogos";
 import { useObtenerLimiteSocioPorCuit } from "../../../../hooks/usePosicionConsolidada";
-import { useObtenerVariableParametrizacion } from "../../../../hooks/useVariablesParametrizacion";
+import {
+  consultaVariablesParametrizacion,
+  buscarValorVariable,
+} from "../../../../hooks/useVariablesParametrizacion";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { PANTALLA_LINEAS } from "../../../../utils/pantallasCda";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
@@ -42,6 +45,7 @@ import {
   ESTADO_CANCELADA,
   MOTIVOS_RECHAZO_AUTOMATICO,
   construirMotivoRechazoAutomatico,
+  quitarPrefijoRechazoAutomatico,
 } from "../../../../utils/estadoLimiteSocio";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import { simboloMoneda } from "../../../../utils/monedaUtils";
@@ -121,14 +125,6 @@ export const AltaOperacion = () => {
   // fuente del "utilizado" para las reglas de monto por línea (ver más abajo,
   // efecto de auto-completado y enviarSolicitud).
   const { data: limitesSocioData } = useObtenerLimiteSocioPorCuit(cuitActivo);
-
-  // Catálogo global de variables de parametrización de la plataforma (aún
-  // solo tiene esta variable). No bloquea la carga de la solicitud: si el
-  // monto pedido no llega al mínimo, se envía igual pero queda rechazada
-  // automáticamente (ver enviarSolicitud).
-  const { valor: porcentajeMinimoSolicitud } = useObtenerVariableParametrizacion(
-    "PorcentajeMinimoSolicitud",
-  );
 
   const { ejecutarValidaciones } = useCdaEngine();
 
@@ -536,6 +532,21 @@ export const AltaOperacion = () => {
       // PorcentajeMinimoSolicitud de la línea. No impide cargar la
       // solicitud: si no lo alcanza, se guarda directamente rechazada y el
       // motivo queda visible en DetalleSolicitudModal (no se avisa acá).
+      let porcentajeMinimoSolicitud;
+      try {
+        const variables = await queryClient.ensureQueryData(
+          consultaVariablesParametrizacion,
+        );
+        porcentajeMinimoSolicitud = buscarValorVariable(
+          variables,
+          "PorcentajeMinimoSolicitud",
+        );
+      } catch (errorVariables) {
+        console.warn(
+          "[ALTA OPERACION] No se pudo leer PorcentajeMinimoSolicitud:",
+          errorVariables,
+        );
+      }
       const porcentajeSolicitado =
         montoLineaReal > 0 ? (montoLimpio / montoLineaReal) * 100 : 100;
       const noAlcanzaMinimo =
@@ -740,6 +751,32 @@ export const AltaOperacion = () => {
       const tipoLimiteSocioIdCreado =
         resLimite?.tipolimitesocioid || resLimite?.id || 0;
 
+      const rechazadaPorApi =
+        !debeRechazarseAutomaticamente &&
+        Number(resLimite?.tipolimiteestadoid) === ESTADO_RECHAZADA;
+
+      if (rechazadaPorApi) {
+        try {
+          await solicitudesService.sincronizarEstadoSolicitudEnProcesoPorClave(
+            cuitLimpio,
+            tipoLimiteIdReal,
+            Number(cadenaSlug),
+            ESTADO_RECHAZADA,
+          );
+        } catch (putError) {
+          console.error(
+            "[ALTA OPERACION] No se pudo informar en SolicitudEnProceso el rechazo hecho por la API:",
+            putError,
+          );
+        }
+      }
+
+      const quedoRechazada = debeRechazarseAutomaticamente || rechazadaPorApi;
+      const motivoRechazoFinal = rechazadaPorApi
+        ? quitarPrefijoRechazoAutomatico(resLimite?.observaciones) ||
+          MOTIVOS_RECHAZO_AUTOMATICO.PORCENTAJE_MINIMO_SOLICITUD
+        : motivoRechazoBase;
+
       // AltaOperacion crea la solicitud vía servicios directos, no
       // mutaciones de react-query - sin esto, Solicitudes.jsx (que sí
       // cachea con staleTime de 5min) sigue mostrando la lista vieja al
@@ -755,8 +792,8 @@ export const AltaOperacion = () => {
         monto: montoLimpio,
         monedaId: Number(cleanData.moneda) || 5000,
         plazo: cleanData.plazo,
-        rechazada: debeRechazarseAutomaticamente,
-        motivoRechazo: debeRechazarseAutomaticamente ? motivoRechazoBase : "",
+        rechazada: quedoRechazada,
+        motivoRechazo: quedoRechazada ? motivoRechazoFinal : "",
       });
 
       setPasoActual(2);

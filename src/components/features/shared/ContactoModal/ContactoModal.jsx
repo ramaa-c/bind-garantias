@@ -167,7 +167,9 @@ export default function ContactoModal({ isOpen, onClose, onGuardar }) {
         onError: (error) => {
           const status = error?.response?.status;
           if (status === 400) {
-            setErrorCodigo(mensajeDeApi(error, "Código incorrecto"));
+            setErrorCodigo(
+              mensajeDeApi(error, "El código ingresado no es correcto. Revisalo o pedí uno nuevo."),
+            );
           } else if (status === 429) {
             setErrorCodigo(mensajeDeApi(error, "Demasiados intentos. Pedí un código nuevo."));
           } else if (error?.response) {

@@ -7,6 +7,7 @@ import {
   ESTADO_PENDIENTE,
   ESTADO_APROBADA,
   esRechazoAutomatico,
+  procesosVigentes,
 } from "../utils/estadoLimiteSocio";
 
 // Gate central del nuevo flujo "con línea activa": si la cadena tiene
@@ -49,7 +50,7 @@ export const useAccesoDashboardCliente = () => {
         return !esRechazoAutomatico(s.observaciones ?? s.Observaciones);
       });
     const hayProcesoActivo =
-      Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
+      procesosVigentes(solicitudesEnProceso, limitesSocio).length > 0;
     return huboSolicitudLegitima || hayProcesoActivo;
   }, [limitesSocio, solicitudesEnProceso]);
 

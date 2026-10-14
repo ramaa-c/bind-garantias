@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useForm, useWatch } from "react-hook-form";
@@ -32,8 +32,11 @@ import { mensajeNegocio } from "../../../utils/mensajesError";
 import {
   ESTADO_PENDIENTE,
   ESTADO_CANCELADA,
+  ESTADO_RECHAZADA,
   estadoTextoDesde,
   MOTIVO_CANCELACION_SOCIO,
+  procesosVigentes,
+  procesosHuerfanosPorRechazoAutomatico,
 } from "../../../utils/estadoLimiteSocio";
 
 import styles from "./Solicitudes.module.css";
@@ -185,9 +188,45 @@ export default function Solicitudes() {
       Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE) === ESTADO_PENDIENTE
     );
     const hasProcesoPendiente =
-      Array.isArray(solicitudesEnProceso) && solicitudesEnProceso.length > 0;
+      procesosVigentes(solicitudesEnProceso, solicitudesReal).length > 0;
     return hasRealPendiente || hasProcesoPendiente;
   }, [solicitudesReal, solicitudesEnProceso]);
+
+  const procesosHuerfanos = useMemo(
+    () => procesosHuerfanosPorRechazoAutomatico(solicitudesEnProceso, solicitudesReal),
+    [solicitudesEnProceso, solicitudesReal],
+  );
+
+  const huerfanosIntentadosRef = useRef(new Set());
+
+  useEffect(() => {
+    const claveProceso = (p) => `${cuitActivo}-${p.tipolimiteid}-${p.cadenavalorid}`;
+    const pendientes = procesosHuerfanos.filter(
+      (p) => !huerfanosIntentadosRef.current.has(claveProceso(p)),
+    );
+    if (!cuitActivo || pendientes.length === 0) return;
+    pendientes.forEach((p) => huerfanosIntentadosRef.current.add(claveProceso(p)));
+
+    const cerrarHuerfanos = async () => {
+      for (const proceso of pendientes) {
+        try {
+          await solicitudesService.sincronizarEstadoSolicitudEnProcesoPorClave(
+            cuitActivo,
+            proceso.tipolimiteid,
+            proceso.cadenavalorid,
+            ESTADO_RECHAZADA,
+          );
+        } catch (syncErr) {
+          console.error(
+            "[Solicitudes] No se pudo cerrar la SolicitudEnProceso de un rechazo automático:",
+            syncErr,
+          );
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: ["solicitudes", "en-proceso"] });
+    };
+    cerrarHuerfanos();
+  }, [cuitActivo, procesosHuerfanos, queryClient]);
 
   // SolicitudEnProceso ya no se muestra acá: pasó a ser una tabla de control
   // interno entre plataformas, sin ninguna fila propia en pantalla (decisión

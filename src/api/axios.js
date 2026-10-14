@@ -5,6 +5,7 @@ import { obtenerUltimoStatus, esOffline } from "../utils/statusPlataforma";
 import { obtenerTokenApi, borrarTokenApi } from "./tokenApi";
 import { CABECERAS_BASE_API } from "./cabecerasApi";
 import { useAuthStore } from "../store/useAuthStore";
+import { esMensajeUtil } from "../utils/mensajesError";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -224,7 +225,7 @@ api.interceptors.response.use(
     if ([400, 403, 409, 429].includes(statusRechazo)) {
       const cuerpo = error.response?.data;
       const motivo = typeof cuerpo === "string" ? cuerpo : cuerpo?.message;
-      if (typeof motivo === "string" && motivo.trim() && motivo.length < 300) {
+      if (esMensajeUtil(motivo)) {
         error.message = motivo;
       }
     }

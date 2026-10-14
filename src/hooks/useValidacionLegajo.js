@@ -141,11 +141,11 @@ export const useValidacionLegajo = ({
     ...(socioLegajoData?.accionistas || []).map((a) => a.id),
     ...(socioLegajoData?.representantes || []).map((r) => r.id),
     ...Object.values(porTipoRelacion).flat().map((r) => r.id),
-  ]);
+  ], cadenaId);
 
   const { data: archivosBackend = [], isLoading: loadingArchivos } = useQuery({
     queryKey: ["socioArchivos", socioIdActivo],
-    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo),
+    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo, true),
     enabled: !!socioIdActivo,
     staleTime: 1000 * 60 * 5,
   });

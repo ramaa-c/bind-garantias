@@ -10,7 +10,6 @@ import {
   FiPhone,
   FiMapPin,
   FiAlertCircle,
-  FiXCircle,
 } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import { RepresentanteModal } from "../../../RepresentanteModal/RepresentanteModal";
@@ -18,6 +17,7 @@ import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
 import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
 import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
+import { EstadoRevisionChip, AvisoRevisionTercero } from "../EstadoRevisionChip/EstadoRevisionChip";
 
 // Versión genérica de RepresentantesSection/ApoderadosSection: misma lógica
 // de carga (contacto + domicilio, sin DNI ni campos propios de accionista o
@@ -35,6 +35,7 @@ export function TerceroRelacionSection({
   cargarSocios,
   socioIdActivo,
   evitarCoincidenciaCon,
+  cadenaValorId,
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -43,7 +44,7 @@ export function TerceroRelacionSection({
   const isAdmin =
     typeof window !== "undefined" && window.location.pathname.includes("/admin");
 
-  const { data: estadoCdaMap } = useEstadoCdaTerceros(items.map((r) => r.id));
+  const { data: estadoCdaMap } = useEstadoCdaTerceros(items.map((r) => r.id), cadenaValorId);
 
   const abrirModal = (item = null) => {
     setEditItem(item);
@@ -107,13 +108,7 @@ export function TerceroRelacionSection({
                 const cdaRechazado = estadoCdaMap?.get(Number(item.id)) === "rechazado";
 
                 return (
-                <div key={item.id} className={`${styles.socioCard} ${cdaRechazado ? styles.socioCardRejected : faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
-                  {cdaRechazado && (
-                    <div className={styles.socioRejectedBanner}>
-                      <FiXCircle size={14} />
-                      <span>Esta persona no superó las validaciones de aceptación correspondientes. Comunicate con nosotros para que la revisemos.</span>
-                    </div>
-                  )}
+                <div key={item.id} className={`${styles.socioCard} ${cdaRechazado ? (isAdmin ? styles.socioCardRejected : styles.socioCardWarning) : faltantes.length > 0 ? styles.socioCardWarning : styles.socioCardSuccess}`}>
                   <div className={styles.socioCardHeaderRow}>
                     <button
                       type="button"
@@ -154,6 +149,7 @@ export function TerceroRelacionSection({
                       >
                         {titulo}
                       </span>
+                      {cdaRechazado && <EstadoRevisionChip isAdmin={isAdmin} />}
                       <FiChevronDown
                         className={`${styles.socioChevron} ${expandedItem === item.id ? styles.socioChevronOpen : ""}`}
                       />
@@ -184,6 +180,7 @@ export function TerceroRelacionSection({
                   <div
                     className={`${styles.socioExpand} ${expandedItem === item.id ? styles.socioExpandOpen : ""}`}
                   >
+                    {cdaRechazado && !isAdmin && <AvisoRevisionTercero />}
                     <div className={styles.socioDetailGrid}>
                       {item.email && (
                         <div className={styles.socioDetail}>
