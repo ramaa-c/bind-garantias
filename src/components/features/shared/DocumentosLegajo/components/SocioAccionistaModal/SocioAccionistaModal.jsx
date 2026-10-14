@@ -14,7 +14,7 @@ import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../../../hooks/useRegistrarModalLegajo";
 import { mensajeNegocio } from "../../../../../../utils/mensajesError";
-import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../../../utils/executeCda";
+import { decidirReejecucionCdaTercero } from "../../../../../../hooks/useTerceros";
 import { socioArchivoService } from "../../../../../../services/socioArchivoService";
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { FORMATOS_ARCHIVO, formatBase64Size, procesarArchivo, validarArchivo } from "../../../../../../utils/fileUtils";
@@ -165,6 +165,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   // hecha a medias (la lista ya la ocultaba por tener 0% de participación,
   // pero el vínculo quedaba igual en la base).
   const stubRelacionRef = useRef(null);
+  const cdaNoAprobadoRef = useRef(false);
 
   const relacionId = socio?.relacionId || 
                      socio?.relacion?.sociotercerorelacionid || 
@@ -306,6 +307,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       setShowConfirm(false);
       stubIdsRef.current = { terceroId: null, relacionId: null };
       stubRelacionRef.current = null;
+      cdaNoAprobadoRef.current = false;
       if (socio) {
         setAfipValidado(true);
       } else {
@@ -787,6 +789,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     queryClient.invalidateQueries({ queryKey: ["terceros", "executeCda", terceroIdValidacion] });
     queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
 
+    cdaNoAprobadoRef.current = !result.success && !result.errors.some((e) => e.isSystemError);
+
     if (!result.success) {
       // hasError:true acá muestra el botón "Continuar" del ProcesamientoModal
       // y NO se auto-cierra (a diferencia del caso exitoso, más abajo): sin
@@ -816,10 +820,43 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
     setValidando(false);
   };
 
+  const conservarAltaEnRevision = async (relacion) => {
+    const participacionCargada = Number(getValues("participacion"));
+    const participacionValida =
+      participacionCargada > 0 && participacionCargada <= maximoPermitido;
+    const participacion = participacionValida ? participacionCargada : maximoPermitido;
+    if (!(participacion > 0)) return false;
+
+    try {
+      await tercerosService.actualizarRelacionDeSocio({
+        ...relacion,
+        socioid: socioIdActivo,
+        porcacciones: participacion,
+        momento: new Date().toISOString().split(".")[0],
+      });
+    } catch (relErr) {
+      console.warn("[SocioAccionistaModal] No se pudo conservar el alta en revisión:", relErr);
+      return false;
+    }
+
+    toast.info(`El accionista quedó cargado con ${participacion}% y en revisión.`, {
+      description: participacionValida
+        ? "Podés completar o corregir sus datos editándolo desde la lista."
+        : "Se le asignó la participación disponible: revisala y completá sus datos editándolo desde la lista.",
+    });
+    if (onSuccess) onSuccess();
+    return true;
+  };
+
   const descartarAltaSinConfirmar = async () => {
     const relacion = stubRelacionRef.current;
     if (!relacion) return;
     stubRelacionRef.current = null;
+
+    if (cdaNoAprobadoRef.current) {
+      cdaNoAprobadoRef.current = false;
+      if (await conservarAltaEnRevision(relacion)) return;
+    }
 
     try {
       await tercerosService.darDeBajaRelacionDeSocio(relacion);
@@ -830,6 +867,24 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   };
 
   const handleCerrar = async () => {
+    const debeIndicarParticipacion =
+      cdaNoAprobadoRef.current &&
+      !!stubRelacionRef.current &&
+      maximoPermitido > 0 &&
+      !(Number(getValues("participacion")) > 0);
+
+    if (debeIndicarParticipacion) {
+      setError("participacion", {
+        type: "manual",
+        message: "Indicá el % de participación: el accionista queda cargado y en revisión aunque cierres.",
+      });
+      toast.warning("Falta el % de participación", {
+        description: "Este accionista queda cargado aunque cierres. Indicá su participación para continuar.",
+      });
+      document.getElementById("participacionSocioInput")?.focus();
+      return;
+    }
+
     await descartarAltaSinConfirmar();
     onClose();
   };
@@ -921,15 +976,14 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
   // guardado ya quedó hecho, y la persona queda marcada en rojo en la
   // lista para que un admin la reintente después.
   const validarCdaAccionistaExistente = async (terceroId) => {
-    let yaAprobado = false;
+    let reejecutar = true;
     try {
-      const historial = await tercerosService.obtenerExecuteCda(terceroId);
-      yaAprobado = calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial)) === "aprobado";
+      reejecutar = await decidirReejecucionCdaTercero(queryClient, terceroId, cadenaValorIdParam);
     } catch (histErr) {
       console.warn("[SocioAccionistaModal] No se pudo obtener el historial de CDA, se re-ejecuta por las dudas:", histErr);
     }
 
-    if (yaAprobado) return;
+    if (!reejecutar) return;
 
     setProcesoModal({
       isOpen: true,
@@ -1097,7 +1151,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
       if (dniFrenteFile instanceof File || dniDorsoFile instanceof File) {
         toast.loading("Subiendo documentos de identidad del accionista...", { id: mainToastId });
         try {
-          const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo);
+          const archivosExistentes = await socioArchivoService.obtenerArchivos(socioIdActivo, true);
           if (dniFrenteFile instanceof File) {
             const existenteFrente = archivosExistentes?.find((a) => {
               if (a.tipodocumentoarchivoid !== socioArchivoService.TIPO_DOCUMENTO_MAP["socio-frente"]) return false;

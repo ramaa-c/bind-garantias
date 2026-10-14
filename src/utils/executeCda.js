@@ -369,6 +369,50 @@ export const combinarEstadoCdas = (grupoItem, cdas, cdasActivosIds, cdaIdsDelCie
 // obtenerCdasDeLaCorridaActual + combinarEstadoCdas). Es lo que usa el
 // gate del cliente (useEstadoCdaSocio): puro historial, sin vinculación
 // vigente — ver el comentario de combinarEstadoCdas sobre cdaIdsDelCierre.
+export const ultimasEjecucionesDeCadena = (data, cadenaValorId) => {
+  const lista = Array.isArray(data) ? data : data ? [data] : [];
+  const delContexto = lista.filter((item) => {
+    const cadena = item?.cadenavalorid ?? item?.CadenaValorID;
+    return !esIdValido(cadena) || Number(cadena) === Number(cadenaValorId);
+  });
+  return ultimaEjecucionPorCda(delContexto).filter(
+    (item) => Number(item?.cdaid ?? item?.CdaID ?? -1) !== 0,
+  );
+};
+
+export const calcularEstadoConCdasVigentes = (data, { cadenaValorId, expresionAgrupacion, cdasActivosIds }) =>
+  calcularEstadoEfectivo({
+    cdasCorridaActual: ultimasEjecucionesDeCadena(data, cadenaValorId),
+    expresionAgrupacion,
+    cdasActivosIds,
+  });
+
+const esRechazoPorDatoFaltante = (item) =>
+  Number(item?.estadoexecutecdaid ?? item?.EstadoExecuteCdaID ?? 0) === 2 &&
+  String(item?.valorresultado ?? item?.ValorResultado ?? "").trim() === "";
+
+export const debeReejecutarCdaTercero = (data, { cadenaValorId, expresionAgrupacion, cdasActivosIds } = {}) => {
+  const conVigentes = Array.isArray(cdasActivosIds);
+  const estado = conVigentes
+    ? calcularEstadoConCdasVigentes(data, { cadenaValorId, expresionAgrupacion, cdasActivosIds })
+    : calcularEstadoDesdeHistorial(data);
+
+  if (estado === "aprobado") return false;
+  if (estado !== "rechazado") return true;
+
+  const ultimas = conVigentes
+    ? ultimasEjecucionesDeCadena(data, cadenaValorId)
+    : ultimaEjecucionPorCda(Array.isArray(data) ? data : data ? [data] : []).filter(
+        (item) => Number(item?.cdaid ?? item?.CdaID ?? -1) !== 0,
+      );
+  const rechazadas = ultimas.filter(
+    (item) =>
+      Number(item?.estadoexecutecdaid ?? item?.EstadoExecuteCdaID ?? 0) === 2 &&
+      (!conVigentes || cdasActivosIds.map(Number).includes(Number(item?.cdaid ?? item?.CdaID))),
+  );
+  return rechazadas.length > 0 && rechazadas.every(esRechazoPorDatoFaltante);
+};
+
 export const calcularEstadoDesdeHistorial = (data) => {
   const { grupoItem, cdas, cdaIdsDelCierre } = obtenerCdasDeLaCorridaActual(data);
   return combinarEstadoCdas(grupoItem, cdas, undefined, cdaIdsDelCierre);

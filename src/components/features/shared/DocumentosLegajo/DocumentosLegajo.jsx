@@ -201,7 +201,7 @@ export function DocumentosLegajo({
   // reimportado) recién se veía después de un F5 (SGRPLUSPLA-203).
   const { data: archivosBackendData, isLoading: cargandoArchivos } = useQuery({
     queryKey: ["socioArchivos", socioIdActivo],
-    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo),
+    queryFn: () => socioArchivoService.obtenerArchivos(socioIdActivo, true),
     enabled: !!socioIdActivo,
   });
   const archivosBackend = useMemo(

@@ -5,7 +5,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useObtenerExecuteCdaTercero } from "../../../../../../hooks/useTerceros";
 import { useObtenerExecuteCda } from "../../../../../../hooks/useSocios";
 import { useCdaEngine } from "../../../../../../hooks/useCdaEngine";
+import { idsCdasActivos, useObtenerGrupoCdaConCdas } from "../../../../../../hooks/useCadenaValor";
 import {
+  calcularEstadoConCdasVigentes,
   calcularEstadoDesdeHistorial,
   detectarCadenaValorId,
   formatearMomentoControl,
@@ -37,7 +39,17 @@ export function TerceroCdaEstado({ terceroId, socioIdActivo }) {
   // a propósito NO es "cualquier CDA que alguna vez falló" (eso incluiría
   // CDAs viejos ya desvinculados del grupo, como uno que se reemplazó por
   // otro): solo mira el resultado de la corrida vigente actual.
-  const estadoActual = calcularEstadoDesdeHistorial(filas);
+  const { data: grupoVigente, isSuccess: grupoVigenteListo } = useObtenerGrupoCdaConCdas(
+    cadenaValorId,
+    cadenaValorId ? "PANTALLA_SOCIOS" : null,
+  );
+  const estadoActual = grupoVigenteListo
+    ? calcularEstadoConCdasVigentes(filas, {
+        cadenaValorId,
+        expresionAgrupacion: grupoVigente?.grupo?.expresionagrupacion,
+        cdasActivosIds: idsCdasActivos(grupoVigente),
+      })
+    : calcularEstadoDesdeHistorial(filas);
   const ultimaFila = [...filas].sort(
     (a, b) => (Number(b.socioexecutecdaid) || 0) - (Number(a.socioexecutecdaid) || 0),
   )[0];
@@ -72,11 +84,14 @@ export function TerceroCdaEstado({ terceroId, socioIdActivo }) {
 
   const tieneHistorial = filas.length > 0;
   const hayRechazo = estadoActual === "rechazado";
+  const estaAprobado = estadoActual === "aprobado";
   const claseBadge = !tieneHistorial
     ? styles.reqBadgeOptional
     : hayRechazo
       ? styles.reqBadgeRechazado
-      : styles.reqBadgeComplete;
+      : estaAprobado
+        ? styles.reqBadgeComplete
+        : styles.reqBadgeOptional;
 
   return (
     <div className={`${styles.socioDetail} ${styles.terceroCdaWrapper}`}>
@@ -86,7 +101,7 @@ export function TerceroCdaEstado({ terceroId, socioIdActivo }) {
         {tieneHistorial ? (
           <>
             <span className={`${styles.reqBadge} ${claseBadge}`}>
-              {hayRechazo ? "Rechazado" : "Aprobado"}
+              {hayRechazo ? "Rechazado" : estaAprobado ? "Aprobado" : "Pendiente"}
             </span>
             <span className={styles.socioDetailVal} style={{ fontSize: "0.75rem", color: "#8b949e" }}>
               Última corrida: {formatearMomentoControl(ultimaFila?.momentocontrol)}

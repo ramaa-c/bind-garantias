@@ -64,6 +64,7 @@ const getTipoDocumentoId = (key) => {
 };
 
 const archivosCache = {};
+const VIGENCIA_CACHE_ARCHIVOS_MS = 30000;
 
 const TIMEOUT_ARCHIVO_MS = 120000;
 
@@ -97,8 +98,9 @@ export const socioArchivoService = {
   /**   Obtiene todos los archivos de un socio (sin los marcados como eliminados)   */
   obtenerArchivos: async (socioId, forceRefresh = false) => {
     if (!socioId) return [];
-    if (!forceRefresh && archivosCache[socioId]) {
-      return archivosCache[socioId];
+    const enCache = archivosCache[socioId];
+    if (!forceRefresh && enCache && Date.now() - enCache.guardado < VIGENCIA_CACHE_ARCHIVOS_MS) {
+      return enCache.archivos;
     }
     try {
       const response = await api.get("api/SocioArchivo", {
@@ -106,11 +108,11 @@ export const socioArchivoService = {
         timeout: TIMEOUT_ARCHIVO_MS,
       });
       const archivos = (response.data || []).filter((a) => !esArchivoEliminado(a));
-      archivosCache[socioId] = archivos;
+      archivosCache[socioId] = { archivos, guardado: Date.now() };
       return archivos;
     } catch (error) {
       if (error.response && error.response.status === 404) {
-        archivosCache[socioId] = [];
+        archivosCache[socioId] = { archivos: [], guardado: Date.now() };
         return [];
       }
       throw error;
@@ -144,12 +146,16 @@ export const socioArchivoService = {
       referencia: referencia || "",
     };
 
-    const response = await api.post(
-      "api/SocioArchivo",
-      socioArchivoAdapter.adaptarPayload1(payload),
-      { timeout: TIMEOUT_ARCHIVO_MS },
-    );
-    return response.data;
+    try {
+      const response = await api.post(
+        "api/SocioArchivo",
+        socioArchivoAdapter.adaptarPayload1(payload),
+        { timeout: TIMEOUT_ARCHIVO_MS },
+      );
+      return response.data;
+    } finally {
+      socioArchivoService.clearCache(socioId);
+    }
   },
 
   actualizarArchivo: async (
@@ -187,12 +193,17 @@ export const socioArchivoService = {
       contenido: `(base64, ${contenidoBase64.length} chars)`,
     });
 
-    const response = await api.put(
-      "api/SocioArchivo",
-      socioArchivoAdapter.adaptarPayload2(payload),
-      { timeout: TIMEOUT_ARCHIVO_MS },
-    );
-    return response.data;
+    try {
+      const response = await api.put(
+        "api/SocioArchivo",
+        socioArchivoAdapter.adaptarPayload2(payload),
+        { timeout: TIMEOUT_ARCHIVO_MS },
+      );
+      return response.data;
+    } finally {
+      const socioIdArchivo = archivoExistente?.socioid || archivoExistente?.SocioID;
+      if (socioIdArchivo) socioArchivoService.clearCache(socioIdArchivo);
+    }
   },
 
   subirOActualizar: async (

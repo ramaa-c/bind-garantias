@@ -138,7 +138,7 @@ export const SeleccionarEmpresa = () => {
           }),
           queryClient.prefetchQuery({
             queryKey: ["socioArchivos", socioId],
-            queryFn: () => socioArchivoService.obtenerArchivos(socioId),
+            queryFn: () => socioArchivoService.obtenerArchivos(socioId, true),
           }),
           queryClient.prefetchQuery({
             queryKey: ["sociosWeb", "detalle", socioId],
