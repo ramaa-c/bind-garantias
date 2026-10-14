@@ -2,18 +2,12 @@ import { cdaAdapter } from "../adapters/cdaAdapter";
 import api from "../api/axios";
 
 export const cdaService = {
-  // GET api/cda/GrupoCda?Pantalla=X&CadenaValorID=Y - Grupo de CDAs para una
+  // GET api/cda/GrupoCda?Pantalla=X&CadenaID=Y - Grupo de CDAs para una
   // combinación Pantalla+Cadena, con su propia ExpresionAgrupacion.
-  //
-  // ⚠️ El backend hoy IGNORA el filtro CadenaValorID (devuelve todos los
-  // grupos de la pantalla, sin importar la cadena pedida) — reportado al
-  // backend. Filtramos acá del lado del cliente para no terminar operando
-  // sobre el GrupoCda de otra cadena. Sacar este filtro extra el día que el
-  // backend lo resuelva de verdad.
   obtenerGrupoCda: async (pantalla, cadenaValorId) => {
     const params = { Pantalla: pantalla };
     if (cadenaValorId !== undefined && cadenaValorId !== null) {
-      params.CadenaValorID = cadenaValorId;
+      params.CadenaID = cadenaValorId;
     }
     const response = await api.get("api/cda/GrupoCda", { params });
     const data = response.data;

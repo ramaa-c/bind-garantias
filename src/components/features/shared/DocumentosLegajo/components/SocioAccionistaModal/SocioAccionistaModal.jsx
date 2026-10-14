@@ -19,6 +19,7 @@ import { socioArchivoService } from "../../../../../../services/socioArchivoServ
 import { tercerosService } from "../../../../../../services/tercerosService";
 import { FORMATOS_ARCHIVO, formatBase64Size, procesarArchivo, validarArchivo } from "../../../../../../utils/fileUtils";
 import { RELACION_ACCIONISTA_ID } from "../../../../../../constants/tiposRelacionSocio";
+import { buscarRelacionVigente } from "../../../../../../utils/relacionesTercerosUtils";
 import { useProvincias, useCiudades } from "../../../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../../../hooks/useValidarDomicilioRequerido";
@@ -498,9 +499,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
           terceroResuelto.id;
 
         const relacionesSocio = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
-        const relacionesArr = Array.isArray(relacionesSocio) ? relacionesSocio : [];
-        const relacionExistente = relacionesArr.find(
-          (r) => Number(r.terceroid ?? r.TerceroID) === Number(stubTerceroId),
+        const relacionExistente = buscarRelacionVigente(
+          relacionesSocio,
+          stubTerceroId,
+          RELACION_ACCIONISTA_ID,
         );
 
         let stubRelacionId = relacionExistente
@@ -535,8 +537,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             ],
           });
           const relacionesActualizadas = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
-          const nuevaRelacion = (Array.isArray(relacionesActualizadas) ? relacionesActualizadas : []).find(
-            (r) => Number(r.terceroid ?? r.TerceroID) === Number(stubTerceroId),
+          const nuevaRelacion = buscarRelacionVigente(
+            relacionesActualizadas,
+            stubTerceroId,
+            RELACION_ACCIONISTA_ID,
           );
           stubRelacionId = nuevaRelacion?.sociotercerorelacionid ?? nuevaRelacion?.SocioTerceroRelacionID ?? null;
           stubRelacionRef.current = nuevaRelacion || null;

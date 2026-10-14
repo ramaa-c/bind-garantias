@@ -20,7 +20,6 @@ export { default as ContactoModal } from "./shared/ContactoModal/ContactoModal";
 export { default as FacturacionModal } from "./shared/FacturacionModal/FacturacionModal";
 export { default as ConfirmacionBorradorModal } from "./shared/ConfirmacionBorradorModal/ConfirmacionBorradorModal";
 export { default as PerfilModal } from "./shared/PerfilModal/PerfilModal";
-export * from "./shared/HistorialEstadoModal/HistorialEstadoModal";
 export * from "./shared/DocumentosLegajo/DocumentosLegajo";
 export * from "./shared/ConfirmacionModal/ConfirmacionModal";
 export * from "./shared/SociosLegajo/SociosLegajo";

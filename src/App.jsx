@@ -38,9 +38,6 @@ const AceptarTerminos = lazy(
 const RecuperarClave = lazy(
   () => import("./pages/cliente/auth/RecuperarClave"),
 );
-const CadenaDetalle = lazy(
-  () => import("./pages/admin/cadenas-valor/CadenaDetalle"),
-);
 const AltaOperacion = lazy(() =>
   import("./pages/cliente/operaciones/alta-operacion/AltaOperacion").then(
     (m) => ({ default: m.AltaOperacion }),
@@ -206,16 +203,6 @@ const rutasCliente = (
                   <OnboardingGuard>
                     <DashboardLayout hideHelpButton>
                       <SeleccionarEmpresa />
-                    </DashboardLayout>
-                  </OnboardingGuard>
-                }
-              />
-              <Route
-                path="cadenas-valor/:id"
-                element={
-                  <OnboardingGuard>
-                    <DashboardLayout>
-                      <CadenaDetalle />
                     </DashboardLayout>
                   </OnboardingGuard>
                 }

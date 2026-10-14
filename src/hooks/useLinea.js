@@ -1,15 +1,5 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { lineaService } from '../services/lineaService';
-
-export const useObtenerCambiosEstadoLinea = (lineaId) => {
-    return useQuery({
-        queryKey: ['linea', 'cambiosEstado', lineaId],
-        queryFn: () => lineaService.obtenerCambiosEstado(lineaId),
-        enabled: !!lineaId,
-        staleTime: 1000 * 60 * 2,
-        placeholderData: keepPreviousData
-    });
-};
 
 export const useObtenerLimitesPorSocio = (socioId) => {
     return useQuery({
@@ -108,16 +98,6 @@ export const useActualizarProductoLimite = () => {
         mutationFn: lineaService.actualizarProductoLimite,
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', String(variables.tipolimiteid)] });
-        }
-    });
-};
-
-export const useDesasociarProductoLimite = (tipolimiteid) => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: lineaService.desasociarProductoLimite,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['linea', 'productosPorLimite', String(tipolimiteid)] });
         }
     });
 };
