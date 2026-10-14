@@ -29,6 +29,11 @@ Thumbs.db
 .env.*
 !.env.example
 
+# Archivos locales de cada uno (no se suben)
+CLAUDE.md
+.mcp.json
+web.test-*.config
+
 # Claude Code (estado local de la herramienta, no del proyecto)
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
