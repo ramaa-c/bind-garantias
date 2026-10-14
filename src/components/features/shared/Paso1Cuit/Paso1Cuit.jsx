@@ -643,10 +643,35 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
       // (crearSocio, vincularSocioUsuario, etc.) — sin loguear acá no hay
       // forma de saber cuál de esos pasos fue el que tiró, ni por qué.
       console.error("[Paso1Cuit] Error inesperado en continuarValidacionCompleta:", err);
+
+      if (!socioIdCreadoRef.current && err?.response?.status === 409) {
+        const denominacion = getValues("razonSocial");
+        cuitEnProcesoRef.current = "";
+        datosEmpresaPrefetchRef.current = null;
+        setProcesoModal({
+          isOpen: false,
+          titulo: "",
+          pasos: [],
+          hasError: false,
+          isSystemError: false,
+        });
+        if (onSocioExistente) onSocioExistente({ cuit, denominacion }, "email_mismatch");
+        return;
+      }
+
       setProcesoModal((prev) => ({
         ...prev,
         hasError: true,
         isSystemError: true,
+        pasos: prev.pasos.map((p) =>
+          p.estado === "cargando"
+            ? {
+                ...p,
+                estado: "error",
+                error: "No pudimos completar este paso. Intentá nuevamente.",
+              }
+            : p,
+        ),
       }));
     } finally {
       setIsValidatingSocio(false);
