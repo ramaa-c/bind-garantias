@@ -13,7 +13,7 @@ import { Spinner } from "../../../ui/Spinner/Spinner";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
 import { useRegistrarModalLegajo } from "../../../../hooks/useRegistrarModalLegajo";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
-import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from "../../../../utils/executeCda";
+import { decidirReejecucionCdaTercero } from "../../../../hooks/useTerceros";
 import { useProvincias, useCiudades } from "../../../../hooks/useCatalogos";
 import { useSincronizarCatalogoPorTexto } from "../../../../hooks/useSincronizarCatalogoPorTexto";
 import { useValidarDomicilioRequerido } from "../../../../hooks/useValidarDomicilioRequerido";
@@ -85,6 +85,7 @@ export function RepresentanteModal({
   // null cuando la relación ya existía de antes o cuando el alta se
   // confirmó, que son los dos casos en los que no hay que tocar nada.
   const stubRelacionRef = useRef(null);
+  const cdaNoAprobadoRef = useRef(false);
   useRegistrarModalLegajo(isOpen);
 
   const { control, reset, setValue, setError, clearErrors, trigger, getValues, formState: { errors, isDirty } } = useForm({
@@ -118,6 +119,7 @@ export function RepresentanteModal({
       setAfipValidado(!!(representante || representanteInicial));
       setShowConfirm(false);
       stubRelacionRef.current = null;
+      cdaNoAprobadoRef.current = false;
 
       if (representante) {
         // Legajo mode edit — ver useObtenerDatosSocioLegajo (useTerceros.js):
@@ -643,6 +645,8 @@ export function RepresentanteModal({
     queryClient.invalidateQueries({ queryKey: ["terceros", "executeCda", terceroIdValidacion] });
     queryClient.invalidateQueries({ queryKey: ["terceros", "estadoCdaBulk"] });
 
+    cdaNoAprobadoRef.current = !result.success && !result.errors.some((e) => e.isSystemError);
+
     if (!result.success) {
       // hasError:true acá muestra el botón "Continuar" del ProcesamientoModal
       // y NO se auto-cierra (a diferencia del caso exitoso, más abajo): sin
@@ -676,6 +680,15 @@ export function RepresentanteModal({
     const relacion = stubRelacionRef.current;
     if (!relacion) return;
     stubRelacionRef.current = null;
+
+    if (cdaNoAprobadoRef.current) {
+      cdaNoAprobadoRef.current = false;
+      toast.info(`El ${etiquetaRol.toLowerCase()} quedó cargado y en revisión.`, {
+        description: "Podés completar o corregir sus datos editándolo desde la lista.",
+      });
+      if (onSuccess) onSuccess();
+      return;
+    }
 
     try {
       await tercerosService.darDeBajaRelacionDeSocio(relacion);
@@ -791,15 +804,14 @@ export function RepresentanteModal({
   // guardado ya quedó hecho, y la persona queda marcada en rojo en la
   // lista para que un admin la reintente después.
   const validarCdaTerceroExistente = async (terceroIdValidacion) => {
-    let yaAprobado = false;
+    let reejecutar = true;
     try {
-      const historial = await tercerosService.obtenerExecuteCda(terceroIdValidacion);
-      yaAprobado = calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial)) === "aprobado";
+      reejecutar = await decidirReejecucionCdaTercero(queryClient, terceroIdValidacion, cadenaValorIdParam);
     } catch (histErr) {
       console.warn("[RepresentanteModal] No se pudo obtener el historial de CDA, se re-ejecuta por las dudas:", histErr);
     }
 
-    if (yaAprobado) return;
+    if (!reejecutar) return;
 
     setProcesoModal({
       isOpen: true,

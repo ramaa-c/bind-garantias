@@ -197,7 +197,7 @@ export default function TiposRelacionSocio() {
             label="¿Cómo funciona el ID?"
             texto="El ID siempre es el del catálogo real de SGR+ - acá solo se define cómo se llama esa relación para la web. Una vez activada, no se puede desactivar."
           />
-          <Button type="button" variant="blue" size="lg" onClick={handleAgregar}>
+          <Button type="button" variant="blue" size="md" onClick={handleAgregar}>
             <FiPlus /> Agregar relación
           </Button>
         </div>

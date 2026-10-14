@@ -1,6 +1,13 @@
+import { useMemo } from 'react';
 import { useQuery, useQueries, keepPreviousData } from '@tanstack/react-query';
 import { tercerosService } from '../services/tercerosService';
-import { calcularEstadoDesdeHistorial, normalizarHistorialTercero } from '../utils/executeCda';
+import {
+  calcularEstadoConCdasVigentes,
+  calcularEstadoDesdeHistorial,
+  debeReejecutarCdaTercero,
+  normalizarHistorialTercero,
+} from '../utils/executeCda';
+import { consultaGrupoCdaConCdas, idsCdasActivos, useObtenerGrupoCdaConCdas } from './useCadenaValor';
 import {
   RELACION_ACCIONISTA_ID,
   RELACION_APODERADO_ID,
@@ -253,17 +260,19 @@ export const useObtenerExecuteCdaTercero = (terceroId) => {
 // (GET api/Terceros/ExecuteCda sin TerceroID no responde en un tiempo
 // razonable, probado en vivo) — se resuelve en paralelo, uno por tercero,
 // igual que ya hace useObtenerDatosSocioLegajo.
-export const useEstadoCdaTerceros = (terceroIds = []) => {
+export const useEstadoCdaTerceros = (terceroIds = [], cadenaValorId = null) => {
   const ids = [...new Set((terceroIds || []).filter(Boolean).map(Number))].sort((a, b) => a - b);
   const idsKey = ids.join(",");
-  return useQuery({
+  const cadena = Number(cadenaValorId) || null;
+
+  const historiales = useQuery({
     queryKey: ["terceros", "estadoCdaBulk", idsKey],
     queryFn: async () => {
       const entries = await Promise.all(
         ids.map(async (id) => {
           try {
             const historial = await tercerosService.obtenerExecuteCda(id);
-            return [id, calcularEstadoDesdeHistorial(normalizarHistorialTercero(historial))];
+            return [id, normalizarHistorialTercero(historial)];
           } catch (err) {
             console.warn("[useEstadoCdaTerceros] Error obteniendo historial de CDA para tercero", id, err);
             return [id, null];
@@ -274,6 +283,51 @@ export const useEstadoCdaTerceros = (terceroIds = []) => {
     },
     enabled: ids.length > 0,
   });
+
+  const grupoVigente = useObtenerGrupoCdaConCdas(cadena, cadena ? "PANTALLA_SOCIOS" : null);
+
+  const data = useMemo(() => {
+    if (!historiales.data) return undefined;
+    const usarCdasVigentes = !!cadena && grupoVigente.isSuccess;
+    const cdasActivosIds = usarCdasVigentes ? idsCdasActivos(grupoVigente.data) : null;
+
+    return new Map(
+      [...historiales.data].map(([id, filas]) => {
+        if (filas === null) return [id, null];
+        if (!usarCdasVigentes) return [id, calcularEstadoDesdeHistorial(filas)];
+        return [
+          id,
+          calcularEstadoConCdasVigentes(filas, {
+            cadenaValorId: cadena,
+            expresionAgrupacion: grupoVigente.data?.grupo?.expresionagrupacion,
+            cdasActivosIds,
+          }),
+        ];
+      }),
+    );
+  }, [historiales.data, cadena, grupoVigente.isSuccess, grupoVigente.data]);
+
+  return {
+    data,
+    historiales: historiales.data,
+    isLoading: historiales.isLoading || (!!cadena && grupoVigente.isLoading),
+  };
+};
+
+export const decidirReejecucionCdaTercero = async (queryClient, terceroId, cadenaValorId) => {
+  const historial = normalizarHistorialTercero(await tercerosService.obtenerExecuteCda(terceroId));
+  const cadena = Number(cadenaValorId) || null;
+  if (!cadena) return debeReejecutarCdaTercero(historial);
+  try {
+    const grupo = await queryClient.fetchQuery(consultaGrupoCdaConCdas(cadena, "PANTALLA_SOCIOS"));
+    return debeReejecutarCdaTercero(historial, {
+      cadenaValorId: cadena,
+      expresionAgrupacion: grupo?.grupo?.expresionagrupacion,
+      cdasActivosIds: idsCdasActivos(grupo),
+    });
+  } catch {
+    return debeReejecutarCdaTercero(historial);
+  }
 };
 
 export const useApoderadoFirmantePorSocio = (socioIds = []) => {

@@ -420,7 +420,7 @@ export const AltaDatosEmpresa = () => {
           queryClient.invalidateQueries({ queryKey: ["socioArchivos", socioId] }),
           queryClient.prefetchQuery({
             queryKey: ["socioArchivos", socioId],
-            queryFn: () => socioArchivoService.obtenerArchivos(socioId),
+            queryFn: () => socioArchivoService.obtenerArchivos(socioId, true),
             retry: 0,
           }),
           queryClient.prefetchQuery({

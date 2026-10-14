@@ -45,6 +45,53 @@ const sinAcentos = (texto) => String(texto || "").normalize("NFD").replace(/[̀-
 export const esRechazoAutomatico = (observaciones) =>
   sinAcentos(observaciones).startsWith(sinAcentos(PREFIJO_RECHAZO_AUTOMATICO));
 
+const claveLinea = (s) =>
+  `${Number(s.tipolimiteid ?? s.TipoLimiteID)}-${Number(s.cadenavalorid ?? s.CadenaValorID)}`;
+
+const comoLista = (valor) => (Array.isArray(valor) ? valor : valor ? [valor] : []);
+
+const procesosAbiertos = (solicitudesEnProceso) =>
+  comoLista(solicitudesEnProceso).filter(
+    (p) => Number(p.estadosolicitud ?? p.EstadoSolicitud ?? ESTADO_PENDIENTE) <= ESTADO_PENDIENTE,
+  );
+
+export const procesosHuerfanosPorRechazoAutomatico = (solicitudesEnProceso, limitesSocio) => {
+  const limites = comoLista(limitesSocio);
+  const clavesRechazoAutomatico = new Set(
+    limites
+      .filter(
+        (l) =>
+          Number(l.tipolimiteestadoid) === ESTADO_RECHAZADA &&
+          esRechazoAutomatico(l.observaciones),
+      )
+      .map(claveLinea),
+  );
+  const clavesVigentes = new Set(
+    limites
+      .filter((l) => {
+        const estado = Number(l.tipolimiteestadoid ?? ESTADO_PENDIENTE);
+        return estado === ESTADO_PENDIENTE || estado === ESTADO_APROBADA;
+      })
+      .map(claveLinea),
+  );
+  return procesosAbiertos(solicitudesEnProceso).filter((p) => {
+    const clave = claveLinea(p);
+    return clavesRechazoAutomatico.has(clave) && !clavesVigentes.has(clave);
+  });
+};
+
+export const procesosVigentes = (solicitudesEnProceso, limitesSocio) => {
+  const huerfanos = new Set(
+    procesosHuerfanosPorRechazoAutomatico(solicitudesEnProceso, limitesSocio),
+  );
+  return procesosAbiertos(solicitudesEnProceso).filter((p) => !huerfanos.has(p));
+};
+
+export const quitarPrefijoRechazoAutomatico = (observaciones) =>
+  esRechazoAutomatico(observaciones)
+    ? String(observaciones).slice(PREFIJO_RECHAZO_AUTOMATICO.length).trim()
+    : String(observaciones || "").trim();
+
 export const MOTIVO_CANCELACION_SOCIO = "Cancelada por el socio desde la plataforma.";
 
 export const estadoTextoDesde = (tipolimiteestadoid) => {
