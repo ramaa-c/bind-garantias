@@ -225,7 +225,7 @@
   .columnaFormulario > nav {
     grid-area: stepper;
     position: sticky;
-    top: 2.5rem;
+    top: 7rem;
   }
 
   .columnaCentrada {
@@ -248,9 +248,6 @@
     align-items: flex-start;
     margin: 0;
     padding: 0;
-    position: sticky;
-    top: 2.5rem;
-    z-index: 10;
   }
 
   .titleAccent {
