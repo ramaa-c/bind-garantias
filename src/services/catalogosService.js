@@ -19,7 +19,7 @@ export const catalogosService = {
 
   // Trae los estados posibles de una ejecución de CDA (Pendiente/Rechazado/Aprobado)
   obtenerEstadoExecuteCda: async () =>
-    (await api.get("catalogos/EstadoExecuteCda")).data,
+    (await api.get("api/EstadoExecuteCda")).data,
 
   // Trae las clasificaciones por tamaño o envergadura de la empresa
   obtenerTamanioEmpresa: async () =>

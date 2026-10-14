@@ -22,6 +22,7 @@ import { tercerosService } from "../../../../services/tercerosService";
 import { parseAddress, armarDireccion } from "../../../../utils/direccionParser";
 import { obtenerDatosEmpresaPorCuit } from "../../../../utils/datosEmpresaPorCuit";
 import { RELACION_FIADOR_ID } from "../../../../constants/tiposRelacionSocio";
+import { buscarRelacionVigente } from "../../../../utils/relacionesTercerosUtils";
 
 import styles from "./RepresentanteModal.module.css";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
@@ -354,11 +355,7 @@ export function RepresentanteModal({
 
         const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
         const arrRel = Array.isArray(relaciones) ? relaciones : relaciones?.data || [];
-        const relacionExistente = arrRel.find(
-          (r) =>
-            Number(r.terceroid ?? r.tercerorelacionadoid ?? r.TerceroRelacionadoID) === Number(stubTerceroId) &&
-            Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId) === Number(tipoRelacionSocioId),
-        );
+        const relacionExistente = buscarRelacionVigente(arrRel, stubTerceroId, tipoRelacionSocioId);
 
         if (!relacionExistente) {
           const ahoraStub = new Date().toISOString().split(".")[0];
@@ -394,11 +391,7 @@ export function RepresentanteModal({
           // cierra sin confirmar.
           const relacionesPost = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
           const arrPost = Array.isArray(relacionesPost) ? relacionesPost : relacionesPost?.data || [];
-          stubRelacionRef.current = arrPost.find(
-            (r) =>
-              Number(r.terceroid ?? r.tercerorelacionadoid ?? r.TerceroRelacionadoID) === Number(stubTerceroId) &&
-              Number(r.tiporelacionsocioid ?? r.TipoRelacionSocioID ?? r.tiporelacionsocioId) === Number(tipoRelacionSocioId),
-          ) || null;
+          stubRelacionRef.current = buscarRelacionVigente(arrPost, stubTerceroId, tipoRelacionSocioId);
         }
         // A propósito NO se llama a onSuccess acá (mismo criterio que
         // SocioAccionistaModal): refrescar la lista en este punto hace que
@@ -958,11 +951,7 @@ export function RepresentanteModal({
         try {
           const relaciones = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
           const arrRel = Array.isArray(relaciones) ? relaciones : relaciones?.data || [];
-          relacionExistente = arrRel.find(
-            (r) =>
-              Number(r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID) === Number(terceroId) &&
-              Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId) === Number(tipoRelacionSocioId)
-          );
+          relacionExistente = buscarRelacionVigente(arrRel, terceroId, tipoRelacionSocioId);
         } catch (relErr) {
           console.warn("[RepresentanteModal] Error consultando relaciones del socio:", relErr);
         }
@@ -1015,11 +1004,7 @@ export function RepresentanteModal({
           try {
             const relacionesPost = await tercerosService.obtenerRelacionesDeSocio(socioIdActivo);
             const arrRelPost = Array.isArray(relacionesPost) ? relacionesPost : relacionesPost?.data || [];
-            relacionGuardada = arrRelPost.find(
-              (r) =>
-                Number(r.terceroid || r.tercerorelacionadoid || r.TerceroRelacionadoID) === Number(terceroId) &&
-                Number(r.tiporelacionsocioid || r.TipoRelacionSocioID || r.tiporelacionsocioId) === Number(tipoRelacionSocioId),
-            );
+            relacionGuardada = buscarRelacionVigente(arrRelPost, terceroId, tipoRelacionSocioId);
           } catch (postRelErr) {
             console.warn("[RepresentanteModal] No se pudo refrescar la relación recién creada:", postRelErr);
           }

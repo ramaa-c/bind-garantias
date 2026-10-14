@@ -655,7 +655,9 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
           hasError: false,
           isSystemError: false,
         });
-        if (onSocioExistente) onSocioExistente({ cuit, denominacion }, "email_mismatch");
+        const mensajeConflicto = String(err?.response?.data?.message ?? err?.response?.data ?? "");
+        const motivo = /otro email/i.test(mensajeConflicto) ? "email_mismatch" : "ya_existe";
+        if (onSocioExistente) onSocioExistente({ cuit, denominacion }, motivo);
         return;
       }
 
