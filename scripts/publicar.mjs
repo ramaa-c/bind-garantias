@@ -102,13 +102,11 @@ export const estado = () => {
   const lineas = [`Rama actual: ${rama}`];
   const pendientes = cambiosSinCommitear();
   lineas.push(pendientes ? `Cambios sin commitear:\n${pendientes}` : "Sin cambios sin commitear.");
-  const ramas = [...new Set([rama, ...RAMAS_COMPARTIDAS])];
-  for (const r of ramas) {
-    const entreRepos = relacion(`origin/${r}`, `devinline/${r}`);
-    lineas.push(`- ${r}: ${describirRelacion(entreRepos, "GitHub", "Devinline")}`);
-    if (r === rama) {
-      lineas.push(`  local vs GitHub: ${describirRelacion(relacion(r, `origin/${r}`), "local", "GitHub")}`);
-    }
+  if (rama !== "HEAD" && !RAMAS_COMPARTIDAS.includes(rama)) {
+    lineas.push(`- ${rama} (solo GitHub): ${describirRelacion(relacion(rama, `origin/${rama}`), "local", "GitHub")}`);
+  }
+  for (const r of RAMAS_COMPARTIDAS) {
+    lineas.push(`- ${r}: ${describirRelacion(relacion(`origin/${r}`, `devinline/${r}`), "GitHub", "Devinline")}`);
   }
   return lineas.join("\n");
 };
@@ -160,13 +158,10 @@ export const publicar = ({ mergearDev = false } = {}) => {
     pasos.push(`Se trajo dev a '${rama}'.`);
   }
 
-  for (const { remoto, nombre } of REMOTOS) {
-    const remota = `${remoto}/${rama}`;
-    if (sha(remota) && !esAncestro(remota, "HEAD")) {
-      throw new ErrorPublicar(
-        `'${rama}' en ${nombre} tiene commits que no están en tu copia local. Traelos (git pull ${remoto} ${rama}) antes de publicar.`,
-      );
-    }
+  if (sha(`origin/${rama}`) && !esAncestro(`origin/${rama}`, "HEAD")) {
+    throw new ErrorPublicar(
+      `'${rama}' en GitHub tiene commits que no están en tu copia local. Traelos (git pull origin ${rama}) antes de publicar.`,
+    );
   }
 
   const lint = ejecutar("npm", ["run", "lint"], { permitirFallo: true });
@@ -176,17 +171,19 @@ export const publicar = ({ mergearDev = false } = {}) => {
   if (!build.ok) throw new ErrorPublicar(`El build falló, no se subió nada.\n${ultimasLineas(build.salida)}`);
   pasos.push("Build OK.");
 
-  const destinos = [rama, ...(mergearDev ? ["dev"] : [])];
-  for (const destino of destinos) {
-    for (const { remoto, nombre } of REMOTOS) {
-      const res = gitSinFallo("push", remoto, `HEAD:refs/heads/${destino}`);
-      if (!res.ok) {
-        throw new ErrorPublicar(
-          `${nombre} rechazó el push de '${destino}'.\n${pasos.join("\n")}\n${ultimasLineas(res.salida)}`,
-        );
-      }
-      pasos.push(`${destino} subido a ${nombre}.`);
+  const subir = (remoto, nombre, destino) => {
+    const res = gitSinFallo("push", remoto, `HEAD:refs/heads/${destino}`);
+    if (!res.ok) {
+      throw new ErrorPublicar(
+        `${nombre} rechazó el push de '${destino}'.\n${pasos.join("\n")}\n${ultimasLineas(res.salida)}`,
+      );
     }
+    pasos.push(`${destino} subido a ${nombre}.`);
+  };
+
+  subir("origin", "GitHub", rama);
+  if (mergearDev) {
+    for (const { remoto, nombre } of REMOTOS) subir(remoto, nombre, "dev");
   }
 
   if (mergearDev && sha("dev") && esAncestro("dev", "HEAD")) {
@@ -198,9 +195,9 @@ export const publicar = ({ mergearDev = false } = {}) => {
 };
 
 const ayuda = `Uso:
-  npm run publicar               Trae dev, corre lint y build y sube tu rama a GitHub y Devinline
-  npm run publicar -- --dev      Igual, y además actualiza dev en los dos repos con tu rama
-  npm run publicar:estado        Muestra cómo están las ramas en GitHub y en Devinline
+  npm run publicar               Trae dev, corre lint y build y sube tu rama a GitHub
+  npm run publicar -- --dev      Igual, y además actualiza dev en GitHub y Devinline con tu rama
+  npm run publicar:estado        Muestra cómo está tu rama en GitHub y dev/main en los dos repos
   npm run publicar:sincronizar   Copia dev y main al repo que esté atrás (nunca fuerza)`;
 
 const esPrincipal = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);

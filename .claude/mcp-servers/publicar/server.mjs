@@ -9,7 +9,7 @@ const TOOLS = [
   {
     name: "repos_estado",
     description:
-      "Muestra la rama actual, si hay cambios sin commitear y cómo están dev, main y la rama actual en GitHub y en Devinline (iguales, atrás, adelante o con historiales distintos). No modifica nada.",
+      "Muestra la rama actual, si hay cambios sin commitear, si la rama actual está al día con GitHub y cómo están dev y main en GitHub y en Devinline (iguales, atrás, adelante o con historiales distintos). No modifica nada.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
   },
   {
@@ -21,7 +21,7 @@ const TOOLS = [
   {
     name: "repos_publicar",
     description:
-      "Publica la rama actual: exige que no haya cambios sin commitear, trae dev, corre lint y build y, si pasan, sube la rama a GitHub y a Devinline. Con mergear_dev=true también actualiza dev en los dos repos con esa rama. Nunca fuerza.",
+      "Publica la rama actual: exige que no haya cambios sin commitear, trae dev, corre lint y build y, si pasan, sube la rama a GitHub (las ramas de trabajo no van a Devinline). Con mergear_dev=true también actualiza dev en GitHub y en Devinline con esa rama. Nunca fuerza.",
     inputSchema: {
       type: "object",
       properties: {
