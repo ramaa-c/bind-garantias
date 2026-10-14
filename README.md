@@ -1,18 +1,34 @@
-# React + Vite
+# SGRPlusWebFront
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Front para Plataforma Web SGRPlus-Bind.
 
-Currently, two official plugins are available:
+## Puesta en marcha
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. `npm install`
+2. Copiar `.env.example` a `.env`.
+3. Copiar `.mcp.json.example` a `.mcp.json` si usás Claude Code.
+4. `npm run dev`
 
-## React Compiler
+`CLAUDE.md`, `.mcp.json`, `.env` y los `web.test-*.config` son archivos locales de cada uno y no se suben al repo.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Repositorios
 
-Note: This will impact Vite dev & build performances.
+El código vive en GitHub. Devinline es una copia de `dev` y `main` para que el equipo de backend pueda consultar el front; las ramas de trabajo (`feature-*`) se suben solo a GitHub.
 
-## Expanding the ESLint configuration
+| Remoto | Repo |
+|---|---|
+| `origin` | GitHub `ramaa-c/bind-garantias` |
+| `devinline` | Devinline `Devinline/SGRPlusWebFront` |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+No hagas `git push` a mano: usá los comandos de abajo, que mantienen los dos repos iguales y nunca fuerzan.
+
+| Comando | Qué hace |
+|---|---|
+| `npm run publicar` | Exige que no haya cambios sin commitear, trae `dev` a tu rama, corre lint y build y, si pasan, sube tu rama a GitHub. |
+| `npm run publicar -- --dev` | Lo mismo y además actualiza `dev` en GitHub y en Devinline con tu rama. |
+| `npm run publicar:estado` | Muestra si tu rama está al día con GitHub y cómo están `dev` y `main` en cada repo. No modifica nada. |
+| `npm run publicar:sincronizar` | Copia `dev` y `main` al repo que esté atrás, por ejemplo después de mergear un PR en GitHub. |
+
+Si el remoto `devinline` no existe, el script lo agrega solo. Si algún repo tiene commits que el otro no tiene, el script frena y avisa en vez de pisar nada.
+
+Desde Claude Code están las mismas acciones como herramientas del MCP `publicar`: `repos_estado`, `repos_sincronizar` y `repos_publicar`.
