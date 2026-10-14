@@ -4,12 +4,23 @@ import { variablesParametrizacionService } from "../services/variablesParametriz
 const STALE_TIME = 1000 * 60 * 60 * 24;
 const QUERY_KEY = ["variablesParametrizacion"];
 
+export const consultaVariablesParametrizacion = {
+  queryKey: QUERY_KEY,
+  queryFn: variablesParametrizacionService.obtenerVariablesParametrizacion,
+  staleTime: STALE_TIME,
+};
+
+export const buscarValorVariable = (variables, nombreVariable) => {
+  const item = (Array.isArray(variables) ? variables : []).find(
+    (v) =>
+      String(v.variable).toLowerCase() ===
+      String(nombreVariable).toLowerCase(),
+  );
+  return item ? Number(item.valor) : undefined;
+};
+
 export const useVariablesParametrizacion = () =>
-  useQuery({
-    queryKey: QUERY_KEY,
-    queryFn: variablesParametrizacionService.obtenerVariablesParametrizacion,
-    staleTime: STALE_TIME,
-  });
+  useQuery(consultaVariablesParametrizacion);
 
 export const useCrearVariableParametrizacion = () => {
   const queryClient = useQueryClient();
@@ -32,11 +43,5 @@ export const useActualizarVariableParametrizacion = () => {
 // todavía no cargó o no existe - el caller decide si eso bloquea o no.
 export const useObtenerVariableParametrizacion = (nombreVariable) => {
   const { data, ...rest } = useVariablesParametrizacion();
-  const arr = Array.isArray(data) ? data : [];
-  const item = arr.find(
-    (v) =>
-      String(v.variable).toLowerCase() ===
-      String(nombreVariable).toLowerCase(),
-  );
-  return { valor: item ? Number(item.valor) : undefined, ...rest };
+  return { valor: buscarValorVariable(data, nombreVariable), ...rest };
 };

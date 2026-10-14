@@ -80,17 +80,27 @@ export const useObtenerPorCadenaValorIdWeb = (cadenaValorId) => {
 // { grupo: null, cdas: [] } en vez de crearlo — la creación queda para el
 // momento de guardar (ver resolverGrupoCda en grupoCdaUtils), nunca como
 // efecto secundario de abrir una pantalla de solo consulta/edición.
+export const consultaGrupoCdaConCdas = (cadenaId, pantalla) => ({
+    queryKey: ['cadenaValor', 'grupoCdaConCdas', pantalla, cadenaId],
+    queryFn: async () => {
+        const grupo = await cdaService.obtenerGrupoCda(pantalla, cadenaId);
+        const grupoList = Array.isArray(grupo) ? grupo : grupo?.items || grupo?.data || (grupo ? [grupo] : []);
+        const grupoRow = grupoList[0] || null;
+        if (!grupoRow?.grupocdaid) return { grupo: null, cdas: [] };
+        const cdas = await cadenaValorService.obtenerCdasPorGrupo(grupoRow.grupocdaid);
+        return { grupo: grupoRow, cdas };
+    },
+});
+
+export const idsCdasActivos = (grupoConCdas) =>
+    (grupoConCdas?.cdas || [])
+        .filter(esCdaActivo)
+        .map((c) => Number(c.cdaid ?? c.CdaID))
+        .filter((id) => !Number.isNaN(id));
+
 export const useObtenerGrupoCdaConCdas = (cadenaId, pantalla) => {
     return useQuery({
-        queryKey: ['cadenaValor', 'grupoCdaConCdas', pantalla, cadenaId],
-        queryFn: async () => {
-            const grupo = await cdaService.obtenerGrupoCda(pantalla, cadenaId);
-            const grupoList = Array.isArray(grupo) ? grupo : grupo?.items || grupo?.data || (grupo ? [grupo] : []);
-            const grupoRow = grupoList[0] || null;
-            if (!grupoRow?.grupocdaid) return { grupo: null, cdas: [] };
-            const cdas = await cadenaValorService.obtenerCdasPorGrupo(grupoRow.grupocdaid);
-            return { grupo: grupoRow, cdas };
-        },
+        ...consultaGrupoCdaConCdas(cadenaId, pantalla),
         enabled: !!cadenaId && !!pantalla
     });
 };
