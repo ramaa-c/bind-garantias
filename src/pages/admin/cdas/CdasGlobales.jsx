@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useObtenerTodosCdas } from "../../../hooks/useCda";
 import { useObtenerCdaIdsPorPantalla } from "../../../hooks/useCadenaValor";
@@ -9,6 +9,7 @@ import { Skeleton } from "../../../components/ui/Skeleton/Skeleton";
 import { Paginacion } from "../../../components/ui/Paginacion/Paginacion";
 import { FiPlus, FiChevronRight, FiSearch, FiInbox, FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
+import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import styles from "./CdasGlobales.module.css";
 
 // Mismo criterio que Empresas.jsx: con el alto de fila blindado a una sola
@@ -19,6 +20,12 @@ import styles from "./CdasGlobales.module.css";
 // interno de emergencia (ver el mismo comentario en
 // CdasGlobales.module.css).
 const ELEMENTOS_POR_PAGINA = 8;
+
+const ETIQUETA_CORTA_PANTALLA = {
+  PANTALLA_INGRESO_CUIT: "CUIT",
+  PANTALLA_SOCIOS: "Socios",
+  PANTALLA_LINEAS: "Alta de línea",
+};
 
 // Colores distintivos por integración, usados como badges en el listado
 const INTEGRACION_PREFIXES = {
@@ -75,6 +82,11 @@ export default function CdasGlobales() {
   const [searchTerm, setSearchTerm] = useState("");
   const [pantallaFiltro, setPantallaFiltro] = useState("TODAS");
   const [pagina, setPagina] = useState(1);
+  const contenedorRef = useRef(null);
+  const listaRef = useRef(null);
+  const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
+    porDefecto: ELEMENTOS_POR_PAGINA,
+  });
   // Colapsado por defecto solo en Rango 2 (mismo umbral y mismo criterio
   // que Dashboard.jsx/Empresas.jsx).
   const [panelesVisibles, setPanelesVisibles] = useState(
@@ -115,11 +127,11 @@ export default function CdasGlobales() {
     );
   });
 
-  const totalPaginas = Math.max(1, Math.ceil(cdasFiltrados.length / ELEMENTOS_POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(cdasFiltrados.length / filasPorPagina));
   const paginaActual = Math.min(pagina, totalPaginas);
   const cdasPagina = cdasFiltrados.slice(
-    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
-    paginaActual * ELEMENTOS_POR_PAGINA
+    (paginaActual - 1) * filasPorPagina,
+    paginaActual * filasPorPagina
   );
 
   const handleBusqueda = (value) => {
@@ -137,7 +149,7 @@ export default function CdasGlobales() {
   if (bloqueado) return null;
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} ref={contenedorRef}>
       <div className={styles.header}>
         <div className={styles.titleBox}>
           <h1>Criterios de Aceptación Globales</h1>
@@ -160,7 +172,7 @@ export default function CdasGlobales() {
             )}
           </button>
           <Button type="button" variant="blue" size="md" onClick={() => navigate("/admin/cdas/nuevo")}>
-            <FiPlus /> Crear nuevo CDA
+            <FiPlus /> Nuevo CDA
           </Button>
         </div>
       </div>
@@ -207,16 +219,16 @@ export default function CdasGlobales() {
       </div>
 
       <div className={styles.tableCard}>
-        <div className={styles.tableWrapper}>
+        <div className={styles.tableWrapper} ref={listaRef}>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th style={{ width: "20%" }}>Descripción</th>
-                <th style={{ width: "8%" }}>Integración</th>
-                <th style={{ width: "16%" }}>Pantallas</th>
-                <th style={{ width: "18%" }}>Expresión</th>
-                <th style={{ width: "18%" }}>Mensaje de Rechazo</th>
-                <th style={{ textAlign: "center", width: "160px" }}>Vinculación Default</th>
+                <th style={{ width: "21%" }}>Descripción</th>
+                <th style={{ width: "8rem" }}>Integración</th>
+                <th style={{ width: "20%" }}>Pantallas</th>
+                <th style={{ width: "17%" }}>Expresión</th>
+                <th style={{ width: "17%" }}>Mensaje de Rechazo</th>
+                <th style={{ textAlign: "center", width: "6.5rem" }} title="Vinculación default">Default</th>
                 <th style={{ width: "2.5rem" }}></th>
               </tr>
             </thead>
@@ -246,7 +258,7 @@ export default function CdasGlobales() {
                   const pantallasVisibles = pantallasCda.slice(0, 2);
                   const pantallasOcultas = pantallasCda.slice(2);
                   return (
-                    <tr key={id} className={styles.clickableRow} onClick={() => navigate(`/admin/cdas/${id}`)}>
+                    <tr key={id} data-fila className={styles.clickableRow} onClick={() => navigate(`/admin/cdas/${id}`)}>
                       <td className={styles.truncateCell}>
                         <strong title={descripcion}>{descripcion}</strong>
                         <span className={styles.rowIdTag}>ID #{id}</span>
@@ -264,15 +276,29 @@ export default function CdasGlobales() {
                           <span className={styles.pantallaBadgeVacio}>Sin vincular</span>
                         ) : (
                           <div className={styles.pantallaBadgeGroup}>
-                            {pantallasVisibles.map((p) => (
-                              <span key={p.value} className={styles.pantallaBadge}>{p.label}</span>
+                            {pantallasVisibles.map((p, i) => (
+                              <span
+                                key={p.value}
+                                className={`${styles.pantallaBadge} ${i > 0 ? styles.soloAncho : ""}`}
+                                title={p.label}
+                              >
+                                {ETIQUETA_CORTA_PANTALLA[p.value] || p.label}
+                              </span>
                             ))}
                             {pantallasOcultas.length > 0 && (
                               <span
-                                className={styles.pantallaBadgeMore}
+                                className={`${styles.pantallaBadgeMore} ${styles.soloAncho}`}
                                 title={pantallasOcultas.map((p) => p.label).join(", ")}
                               >
                                 +{pantallasOcultas.length}
+                              </span>
+                            )}
+                            {pantallasCda.length > 1 && (
+                              <span
+                                className={`${styles.pantallaBadgeMore} ${styles.soloAngosto}`}
+                                title={pantallasCda.slice(1).map((p) => p.label).join(", ")}
+                              >
+                                +{pantallasCda.length - 1}
                               </span>
                             )}
                           </div>
@@ -308,7 +334,7 @@ export default function CdasGlobales() {
           knownEndPage={totalPaginas}
           variant="admin"
           totalItems={cdasFiltrados.length}
-          pageSize={ELEMENTOS_POR_PAGINA}
+          pageSize={filasPorPagina}
           itemLabel="criterios"
         />
       )}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { toast } from "sonner";
 import { FiInbox, FiSearch, FiX, FiUsers, FiLock, FiUnlock } from "react-icons/fi";
@@ -13,6 +13,7 @@ import {
 } from "../../../hooks/useUsuario";
 import { useAuthStore } from "../../../store/useAuthStore";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
+import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import {
   ESTADO_USUARIO,
   esAdministradorActivo,
@@ -116,6 +117,11 @@ export default function Usuarios() {
   const [orden, setOrden] = useState(FILTROS_POR_DEFECTO.orden);
   const [pagina, setPagina] = useState(1);
   const [accionPendiente, setAccionPendiente] = useState(null);
+  const contenedorRef = useRef(null);
+  const listaRef = useRef(null);
+  const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
+    porDefecto: ELEMENTOS_POR_PAGINA,
+  });
 
   const { data, isLoading, isFetching, isError } = useListarUsuarios();
   const bloquearMutation = useBloquearUsuario();
@@ -145,11 +151,11 @@ export default function Usuarios() {
     });
   }, [data, debouncedBusqueda, tipo, estado, orden]);
 
-  const totalPaginas = Math.max(1, Math.ceil(usuarios.length / ELEMENTOS_POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(usuarios.length / filasPorPagina));
   const paginaActual = Math.min(pagina, totalPaginas);
   const usuariosPagina = usuarios.slice(
-    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
-    paginaActual * ELEMENTOS_POR_PAGINA,
+    (paginaActual - 1) * filasPorPagina,
+    paginaActual * filasPorPagina,
   );
 
   const conReinicioDePagina = (setter) => (valor) => {
@@ -196,7 +202,7 @@ export default function Usuarios() {
   const emailPendiente = accionPendiente?.usuario?.email || "este usuario";
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} ref={contenedorRef}>
       <div className={styles.headerTitle}>
         <div>
           <h1>Usuarios</h1>
@@ -273,7 +279,7 @@ export default function Usuarios() {
       </div>
 
       <div className={styles.tableCard}>
-        <div className={styles.tableWrapper}>
+        <div className={styles.tableWrapper} ref={listaRef}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -309,7 +315,7 @@ export default function Usuarios() {
                     !!emailActual &&
                     String(u.email || "").toLowerCase() === emailActual.toLowerCase();
                   return (
-                    <tr key={leerId(u) ?? `${u.email}-${idx}`}>
+                    <tr key={leerId(u) ?? `${u.email}-${idx}`} data-fila>
                       <td>
                         <div className={styles.usuarioCell}>
                           <div className={styles.avatar}>{getIniciales(u.email)}</div>
@@ -374,7 +380,7 @@ export default function Usuarios() {
           knownEndPage={totalPaginas}
           variant="admin"
           totalItems={usuarios.length}
-          pageSize={ELEMENTOS_POR_PAGINA}
+          pageSize={filasPorPagina}
           itemLabel="usuarios"
         />
       )}

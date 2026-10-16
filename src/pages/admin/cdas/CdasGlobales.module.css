@@ -1,16 +1,15 @@
 /* Mismo umbral único que el resto del panel admin (1440px de ancho u
    716px de alto - ver AdminLayout.module.css): Rango 1 (alto fijo, sin
-   scroll) por default, Rango 2 (fluido, la página entera scrollea) más
-   abajo. La paginación (ELEMENTOS_POR_PAGINA en CdasGlobales.jsx) acota la
-   cantidad de filas, y con el alto de fila blindado a una sola línea (ver
-   .truncateCell/.tableCard más abajo) esa cantidad ya es predecible - no
-   hace falta un scroll interno de emergencia como antes. */
+   scroll de página) por default, Rango 2 (fluido, la página entera
+   scrollea) más abajo. Mismo patrón que Dashboard.module.css: si en Rango
+   1 las filas no entran, la tabla se achica y scrollea por dentro. */
 .container {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   width: 100%;
   height: 100%;
+  min-height: 0;
 }
 
 /* Rango 2: aire decorativo entre bloques, sin función de lectura - se
@@ -25,6 +24,7 @@
 @media (max-width: 1440px), (max-height: 716px) {
   .container {
     height: auto;
+    min-height: auto;
   }
 }
 
@@ -227,17 +227,12 @@
   color: #8b949e;
 }
 
-/* flex:0 0 auto (no flex:1): la tarjeta mide lo que su contenido necesita,
-   no lo que sobra de .container - así la paginación (fuera de esta
-   tarjeta, ver CdasGlobales.jsx) queda pegada justo después de la tabla en
-   vez de quedar empujada al fondo con un hueco vacío en el medio cuando
-   hay menos de ELEMENTOS_POR_PAGINA filas (ej. la última página filtrada).
-   Mismo criterio que Empresas.module.css - es el estándar del panel.
-   Ya no necesita su propio scroll interno (overflow-y/flex/min-height):
-   con el alto de fila blindado a una sola línea (table-layout:fixed +
-   .truncateCell + tope de 2 badges, ver más abajo) cada fila mide siempre
-   lo mismo, así que el alto total de la tabla es predecible - no hace
-   falta un tope de emergencia por overflow. */
+/* flex:0 1 auto (shrink sin grow, mismo criterio que .listWrapper en
+   Dashboard.module.css): la tarjeta mide lo que su contenido necesita, así
+   la paginación queda pegada justo después de la tabla sin un hueco vacío
+   en el medio; y si en Rango 1 las filas no entran (ej. zoom 110%), se
+   achica hasta lo disponible y .tableWrapper scrollea por dentro en vez de
+   desbordar la página. */
 .tableCard {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -248,11 +243,27 @@
   -webkit-backdrop-filter: blur(12px);
   display: flex;
   flex-direction: column;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-height: 0;
 }
 
 .tableWrapper {
-  overflow-x: auto;
+  overflow: auto;
+  min-height: 0;
+  container: tablaCdas / inline-size;
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #121620;
+}
+
+@media (max-width: 1440px), (max-height: 716px) {
+  .tableCard {
+    flex: 0 0 auto;
+  }
 }
 
 .tableWrapper::-webkit-scrollbar {
@@ -310,6 +321,9 @@
   color: #8b949e;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background: rgba(20, 24, 32, 0.97);
   position: sticky;
   top: 0;
@@ -400,9 +414,11 @@
 }
 
 .pantallaBadge {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
+  display: block;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
   font-size: 0.65rem;
@@ -426,6 +442,20 @@
   color: var(--text-muted);
   border: 1px solid rgba(255, 255, 255, 0.14);
   cursor: default;
+}
+
+.soloAngosto {
+  display: none;
+}
+
+@container tablaCdas (max-width: 66rem) {
+  .soloAncho {
+    display: none;
+  }
+
+  .soloAngosto {
+    display: inline-flex;
+  }
 }
 
 .pantallaBadgeVacio {

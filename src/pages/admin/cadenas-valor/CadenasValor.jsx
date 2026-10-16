@@ -258,8 +258,8 @@ export default function CadenasValor() {
           </p>
         </div>
         <div className={styles.actionsTop}>
-          <Button variant="primary" onClick={handleOpenActivarModal}>
-            <FiPlus /> ACTIVAR CADENA
+          <Button type="button" variant="blue" size="md" onClick={handleOpenActivarModal}>
+            <FiPlus /> Activar cadena
           </Button>
         </div>
       </div>

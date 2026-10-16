@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FiSearch, FiCheck, FiX, FiFileText, FiList, FiGlobe, FiGrid, FiChevronRight, FiChevronUp, FiChevronDown, FiRefreshCw } from "react-icons/fi";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import { useObtenerSocios } from "../../../hooks/useSocios";
 import { useApoderadoFirmantePorSocio } from "../../../hooks/useTerceros";
 import { useTiposProducto, useParametrosModelosDocumento } from "../../../hooks/useCatalogos";
 import { useAbrirModeloDocumento } from "../../../hooks/useModeloDocumento";
+import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import { evaluarModeloDocumento } from "../../../utils/parametrosModeloDocumento";
 import { CriteriosAceptacionModal, RechazarSolicitudModal } from "../../../components/features";
 import { solicitudesService } from "../../../services/solicitudesService";
@@ -114,6 +115,11 @@ export default function Dashboard() {
   const [fechaHasta, setFechaHasta] = useState(FILTROS_POR_DEFECTO.fechaHasta);
   const [selectedCadenaId, setSelectedCadenaId] = useState("all");
   const [pagina, setPagina] = useState(1);
+  const contenedorRef = useRef(null);
+  const listaRef = useRef(null);
+  const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
+    porDefecto: ELEMENTOS_POR_PAGINA,
+  });
   // Colapsado por defecto solo en Rango 2 (pantalla chica/zoom alto, mismo
   // umbral que AdminLayout.module.css): ahí es donde el espacio es
   // crítico. En Rango 1 sobra aire, así que arranca abierto - cerrarlo ahí
@@ -599,11 +605,11 @@ export default function Dashboard() {
   const totalPendientes = solicitudesCanal.filter((s) => s.estado.includes("Pendiente")).length;
   const totalAprobadas = solicitudesCanal.filter((s) => s.estado === "Aprobada").length;
 
-  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / ELEMENTOS_POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(filtradas.length / filasPorPagina));
   const paginaActual = Math.min(pagina, totalPaginas);
   const filtradasPagina = filtradas.slice(
-    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
-    paginaActual * ELEMENTOS_POR_PAGINA,
+    (paginaActual - 1) * filasPorPagina,
+    paginaActual * filasPorPagina,
   );
 
   const apoderadoFirmantePorSocio = useApoderadoFirmantePorSocio(
@@ -613,7 +619,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} ref={contenedorRef}>
       <div className={styles.header}>
         <h1>Gestión de Solicitudes</h1>
         <button
@@ -821,7 +827,7 @@ export default function Dashboard() {
       </div>
 
       {/* Lista de solicitudes */}
-      <div className={styles.listWrapper}>
+      <div className={styles.listWrapper} ref={listaRef}>
         {loading ? (
           Array.from({ length: 5 }).map((_, i) => <SolicitudRowSkeleton key={i} />)
         ) : filtradas.length === 0 ? (
@@ -856,6 +862,7 @@ export default function Dashboard() {
             return (
               <div
                 key={item.id}
+                data-fila
                 className={`${styles.row} ${styles.rowClickable} ${styles[`row${estadoKey}`]}`}
                 onClick={() => setSolicitudDetalle(item)}
                 title="Ver detalle de la solicitud"
@@ -969,7 +976,7 @@ export default function Dashboard() {
           knownEndPage={totalPaginas}
           variant="admin"
           totalItems={filtradas.length}
-          pageSize={ELEMENTOS_POR_PAGINA}
+          pageSize={filasPorPagina}
           itemLabel="solicitudes"
         />
       )}

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FiEdit } from "react-icons/fi";
+import { FiEdit, FiPlus } from "react-icons/fi";
 import { toast } from "sonner";
 
 import { useTiposProducto, useObligaciones } from "../../../hooks/useCatalogos";
@@ -344,11 +344,13 @@ export default function LineasProducto() {
         </div>
         <div className={styles.headerActions}>
           <Button
-            variant="primary"
+            type="button"
+            variant="blue"
+            size="md"
             onClick={() => handleOpenConfigModal(null)}
             disabled={!selectedTipoLimiteId}
           >
-            + NUEVO PRODUCTO
+            <FiPlus /> Nuevo producto
           </Button>
         </div>
       </div>

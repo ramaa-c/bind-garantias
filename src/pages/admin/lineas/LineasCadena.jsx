@@ -693,12 +693,14 @@ export default function LineasCadena() {
         </div>
         <div className={styles.actionsTop}>
           <Button
-            variant="primary"
+            type="button"
+            variant="blue"
+            size="md"
             onClick={handleOpenCreateModal}
             disabled={!selectedCadenaId || isCadenaInactiva}
-            title={isCadenaInactiva ? "No podés operar nuevas líneas en una cadena inactiva" : "Nueva Línea"}
+            title={isCadenaInactiva ? "No podés operar nuevas líneas en una cadena inactiva" : "Nueva línea"}
           >
-            <FiPlus /> NUEVA LÍNEA
+            <FiPlus /> Nueva línea
           </Button>
         </div>
       </div>

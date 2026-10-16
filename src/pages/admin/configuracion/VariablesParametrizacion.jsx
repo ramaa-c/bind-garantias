@@ -61,7 +61,7 @@ export default function VariablesParametrizacion() {
             texto="Dar de alta una variable nueva acá no alcanza para que tenga efecto: el código todavía tiene que leerla explícitamente en algún lugar de la plataforma."
           />
           <Button type="button" variant="blue" size="md" onClick={handleAgregar}>
-            <FiPlus /> Agregar variable
+            <FiPlus /> Nueva variable
           </Button>
         </div>
       </div>

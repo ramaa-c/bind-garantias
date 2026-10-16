@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiChevronDown, FiLogOut, FiMenu, FiSettings, FiX } from "react-icons/fi";
-import { FaRegUserCircle } from "react-icons/fa";
+import { FiChevronDown, FiChevronRight, FiLogOut, FiMenu, FiSettings, FiX } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import styles from "./AdminNavbar.module.css";
 import { useAuthStore } from "../../../../store/useAuthStore";
@@ -28,6 +27,14 @@ export default function AdminNavbar() {
   // user.nombre (denominación real, o el email si no tiene una cargada) en
   // cuanto lo conoce, así que acá alcanza con leer el store.
   const nombreMostrado = user?.nombre || user?.email || "Administrador";
+  const iniciales =
+    nombreMostrado
+      .split(/[\s@._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((parte) => parte[0])
+      .join("")
+      .toUpperCase() || "A";
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -117,83 +124,20 @@ export default function AdminNavbar() {
     grupo.items.some((item) => isActive(item.path));
 
   return (
-    <div className={styles.navWrapper}>
-      {/* Topmost branding bar */}
-      <div className={styles.topBrandBar}>
-        <div className={styles.logoBox} role="button" tabIndex={0} onClick={() => navigate("/admin")}>
-          <img src={logoBind} alt="BIND Logo" className={styles.logoImg} />
-          {!isRestricted && <span className={styles.adminTag}>ADMIN</span>}
-        </div>
-        <div className={styles.userMenuContainer} ref={profileRef}>
-          <div
-            className={styles.userTrigger}
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
-          >
-            <div className={styles.avatarWrapper}>
-              <FaRegUserCircle className={styles.userIcon} />
-            </div>
-            <span className={styles.userName}>{nombreMostrado}</span>
-            <FiChevronDown
-              className={`${styles.userChevron} ${isProfileOpen ? styles.userChevronOpen : ""}`}
-            />
-          </div>
-
-          {isProfileOpen && (
-            <div className={styles.userDropdownMenu}>
-              <div className={styles.userDropdownHeader}>
-                <p className={styles.userDropdownEmail}>
-                  {user?.email || "admin"}
-                </p>
-                <p className={styles.userDropdownRole}>
-                  Administrador
-                </p>
-              </div>
-
-              <div className={styles.userDropdownFooter}>
-                <button
-                  type="button"
-                  className={styles.userAccountBtn}
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    setIsCuentaModalOpen(true);
-                  }}
-                >
-                  Mi cuenta <FiSettings />
-                </button>
-                <button type="button" className={styles.userLogoutBtn} onClick={handleLogout}>
-                  Cerrar sesión <FiLogOut />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          className={styles.menuToggle}
-          aria-label={menuMovilAbierto ? "Cerrar menú" : "Abrir menú"}
-          aria-expanded={menuMovilAbierto}
-          onClick={() => setMenuMovilAbierto((abierto) => !abierto)}
-        >
-          {menuMovilAbierto ? <FiX /> : <FiMenu />}
-        </button>
+    <div className={`${styles.navWrapper} ${menuMovilAbierto ? styles.navWrapperAbierto : ""}`}>
+      <div className={styles.logoBox} role="button" tabIndex={0} onClick={() => navigate("/admin")}>
+        <img src={logoBind} alt="BIND Logo" className={styles.logoImg} />
+        {!isRestricted && <span className={styles.adminTag}>ADMIN</span>}
       </div>
 
-      <CuentaUsuarioModal
-        isOpen={isCuentaModalOpen}
-        onClose={() => setIsCuentaModalOpen(false)}
-      />
-
-      {/* Main navigation links bar mimicking the blue header */}
       <nav
         className={`${styles.mainNav} ${menuMovilAbierto ? styles.mainNavAbierto : ""}`}
         ref={navRef}
       >
         <div className={styles.navItemsContainer}>
-          {/* Mis Pendientes */}
-          <button type="button"
-            className={`${styles.navButton} ${
-              isActive("/admin") ? styles.active : ""
-            }`}
+          <button
+            type="button"
+            className={`${styles.navButton} ${isActive("/admin") ? styles.active : ""}`}
             onClick={() => handleNavigate("/admin")}
           >
             Mis Pendientes
@@ -201,49 +145,133 @@ export default function AdminNavbar() {
 
           {!isRestricted && (
             <>
-
-          {/* Empresas */}
-          <button type="button"
-            className={`${styles.navButton} ${
-              isActive("/admin/empresas") ? styles.active : ""
-            }`}
-            onClick={() => handleNavigate("/admin/empresas")}
-          >
-            Empresas
-          </button>
-
-          {/* Grupos de Administración: Cadenas de Valor / CDAs / Configuración */}
-          {gruposMenu.map((grupo) => (
-            <div className={styles.dropdownContainer} key={grupo.key}>
-              <button type="button"
-                className={`${styles.navButton} ${
-                  activeDropdown === grupo.key ? styles.dropdownActive : ""
-                } ${grupoContieneRutaActiva(grupo) ? styles.active : ""}`}
-                onClick={() => toggleDropdown(grupo.key)}
+              <button
+                type="button"
+                className={`${styles.navButton} ${isActive("/admin/empresas") ? styles.active : ""}`}
+                onClick={() => handleNavigate("/admin/empresas")}
               >
-                {grupo.label} <FiChevronDown className={styles.chevron} />
+                Empresas
               </button>
-              {activeDropdown === grupo.key && (
-                <div className={`${styles.dropdownMenu} ${styles.scrollableMenu}`}>
-                  {grupo.items.map((item) => (
-                    <button type="button"
-                      key={item.path}
-                      className={`${styles.dropdownItem} ${isActive(item.path) ? styles.dropdownItemActive : ""}`}
-                      onClick={() => handleNavigate(item.path)}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
 
-            {/* Ocultados Ayuda y Soporte por el momento */}
+              {gruposMenu.map((grupo) => (
+                <div className={styles.dropdownContainer} key={grupo.key}>
+                  <button
+                    type="button"
+                    className={`${styles.navButton} ${
+                      activeDropdown === grupo.key ? styles.dropdownActive : ""
+                    } ${grupoContieneRutaActiva(grupo) ? styles.active : ""}`}
+                    aria-expanded={activeDropdown === grupo.key}
+                    onClick={() => toggleDropdown(grupo.key)}
+                  >
+                    {grupo.label} <FiChevronDown className={styles.chevron} />
+                  </button>
+                  {activeDropdown === grupo.key && (
+                    <div className={`${styles.dropdownMenu} ${styles.scrollableMenu}`}>
+                      {grupo.items.map((item) => (
+                        <button
+                          type="button"
+                          key={item.path}
+                          className={`${styles.dropdownItem} ${isActive(item.path) ? styles.dropdownItemActive : ""}`}
+                          onClick={() => handleNavigate(item.path)}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </>
           )}
         </div>
       </nav>
+
+      <div className={styles.userMenuContainer} ref={profileRef}>
+        <button
+          type="button"
+          className={`${styles.userTrigger} ${isProfileOpen ? styles.userTriggerOpen : ""}`}
+          aria-expanded={isProfileOpen}
+          title={nombreMostrado}
+          onClick={() => setIsProfileOpen(!isProfileOpen)}
+        >
+          <span className={styles.avatarWrapper} aria-hidden="true">
+            {iniciales}
+          </span>
+          <span className={styles.userName}>{nombreMostrado}</span>
+          <FiChevronDown
+            className={`${styles.userChevron} ${isProfileOpen ? styles.userChevronOpen : ""}`}
+          />
+        </button>
+
+        {isProfileOpen && (
+          <div className={styles.userDropdownMenu} role="menu">
+            <div className={styles.userDropdownHeader}>
+              <span className={styles.userDropdownAvatar} aria-hidden="true">
+                {iniciales}
+              </span>
+              <div className={styles.userDropdownIdentity}>
+                <div className={styles.userDropdownNameRow}>
+                  <p className={styles.userDropdownName}>{nombreMostrado}</p>
+                  <span className={styles.userDropdownRole}>Admin</span>
+                </div>
+                <p className={styles.userDropdownEmail}>{user?.email || "admin"}</p>
+              </div>
+            </div>
+
+            <div className={styles.userDropdownList}>
+              <button
+                type="button"
+                role="menuitem"
+                className={styles.userDropdownItem}
+                onClick={() => {
+                  setIsProfileOpen(false);
+                  setIsCuentaModalOpen(true);
+                }}
+              >
+                <span className={styles.userDropdownItemIcon}>
+                  <FiSettings />
+                </span>
+                <span className={styles.userDropdownItemText}>
+                  <span className={styles.userDropdownItemLabel}>Mi cuenta</span>
+                  <span className={styles.userDropdownItemHint}>Usuario y contraseña</span>
+                </span>
+                <FiChevronRight className={styles.userDropdownItemArrow} />
+              </button>
+            </div>
+
+            <div className={styles.userDropdownDivider} />
+
+            <div className={styles.userDropdownList}>
+              <button
+                type="button"
+                role="menuitem"
+                className={`${styles.userDropdownItem} ${styles.userDropdownItemDanger}`}
+                onClick={handleLogout}
+              >
+                <span className={styles.userDropdownItemIcon}>
+                  <FiLogOut />
+                </span>
+                <span className={styles.userDropdownItemLabel}>Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button
+        type="button"
+        className={styles.menuToggle}
+        aria-label={menuMovilAbierto ? "Cerrar menú" : "Abrir menú"}
+        aria-expanded={menuMovilAbierto}
+        onClick={() => setMenuMovilAbierto((abierto) => !abierto)}
+      >
+        {menuMovilAbierto ? <FiX /> : <FiMenu />}
+      </button>
+
+      <CuentaUsuarioModal
+        isOpen={isCuentaModalOpen}
+        onClose={() => setIsCuentaModalOpen(false)}
+      />
     </div>
   );
 }

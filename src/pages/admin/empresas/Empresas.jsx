@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "use-debounce";
 import { FiInbox, FiSearch, FiX, FiChevronRight, FiChevronUp, FiChevronDown, FiMail, FiPhone, FiBriefcase, FiCheckCircle, FiLink, FiActivity } from "react-icons/fi";
@@ -10,6 +10,7 @@ import { SelectSimple } from "../../../components/ui";
 import { ActividadSocioModal } from "../../../components/features/admin/ActividadSocioModal/ActividadSocioModal";
 import { detectarCadenaValorId } from "../../../utils/executeCda";
 import { useBloqueoAdminRestringido } from "../../../hooks/useBloqueoAdminRestringido";
+import { useFilasPorPagina } from "../../../hooks/useFilasPorPagina";
 import styles from "./Empresas.module.css";
 
 // Filas más altas que antes (avatar + contacto en dos líneas): con 10
@@ -145,6 +146,11 @@ export default function Empresas() {
   const [orden, setOrden] = useState(FILTROS_POR_DEFECTO.orden);
   const [pagina, setPagina] = useState(1);
   const [empresaActividad, setEmpresaActividad] = useState(null);
+  const contenedorRef = useRef(null);
+  const listaRef = useRef(null);
+  const filasPorPagina = useFilasPorPagina(contenedorRef, listaRef, {
+    porDefecto: ELEMENTOS_POR_PAGINA,
+  });
   // Colapsado por defecto solo en Rango 2 (mismo umbral y mismo criterio
   // que Dashboard.jsx - ahí es donde el espacio es crítico; en Rango 1
   // arranca abierto porque sobra aire).
@@ -190,11 +196,11 @@ export default function Empresas() {
     return lista;
   }, [data, tipoPersona, estado, orden]);
 
-  const totalPaginas = Math.max(1, Math.ceil(empresas.length / ELEMENTOS_POR_PAGINA));
+  const totalPaginas = Math.max(1, Math.ceil(empresas.length / filasPorPagina));
   const paginaActual = Math.min(pagina, totalPaginas);
   const empresasPagina = empresas.slice(
-    (paginaActual - 1) * ELEMENTOS_POR_PAGINA,
-    paginaActual * ELEMENTOS_POR_PAGINA
+    (paginaActual - 1) * filasPorPagina,
+    paginaActual * filasPorPagina
   );
 
   const handleBusqueda = (value) => {
@@ -234,7 +240,7 @@ export default function Empresas() {
   if (bloqueado) return null;
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} ref={contenedorRef}>
       <div className={styles.headerTitle}>
         <div>
           <h1>Empresas</h1>
@@ -333,7 +339,7 @@ export default function Empresas() {
       </div>
 
       <div className={styles.tableCard}>
-        <div className={styles.tableWrapper}>
+        <div className={styles.tableWrapper} ref={listaRef}>
           <table className={styles.table}>
             <thead>
               <tr>
@@ -363,6 +369,7 @@ export default function Empresas() {
                   return (
                     <tr
                       key={e.socioid || `${e.cuit}-${idx}`}
+                      data-fila
                       className={styles.clickableRow}
                       onClick={() => navigate(`/admin/empresas/${e.socioid}`)}
                     >
@@ -429,7 +436,7 @@ export default function Empresas() {
           knownEndPage={totalPaginas}
           variant="admin"
           totalItems={empresas.length}
-          pageSize={ELEMENTOS_POR_PAGINA}
+          pageSize={filasPorPagina}
           itemLabel="empresas"
         />
       )}
