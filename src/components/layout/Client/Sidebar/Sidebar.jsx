@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FiFileText, FiMenu, FiArchive, FiChevronDown, FiUsers, FiX, FiLogOut, FiUser, FiBriefcase, FiRepeat, FiLock } from "react-icons/fi";
+import {
+  FiFileText,
+  FiClipboard,
+  FiFolder,
+  FiX,
+  FiLogOut,
+  FiUser,
+  FiRepeat,
+  FiLock,
+  FiChevronRight,
+} from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
@@ -9,7 +19,6 @@ import { useAuthStore } from "../../../../store/useAuthStore";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { useThemeStore } from "../../../../store/useThemeStore";
 import { useVersionApi } from "../../../../hooks/useSistema";
-import { TasasModal } from "../../../features/shared/TasasModal/TasasModal";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
 import { useChannel } from "../../../../context/useChannel";
@@ -46,13 +55,6 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
 
-  const [expandedSections, setExpandedSections] = useState({
-    general: true,
-    misLineas: false,
-    terceros: false,
-    administracion: false,
-  });
-
   const { hasUnsavedChanges, setUnsavedChanges } = useNavigationStore();
   const [pendingPath, setPendingPath] = useState(null);
 
@@ -63,10 +65,7 @@ export default function Sidebar({ isOpen, onClose }) {
   // sin esto, la única señal de que algo cambió era que el candado
   // desapareciera, algo fácil de no notar entre dos visitas. Se apaga solo
   // la primera vez que el usuario entra a esa sección (localStorage, por
-  // socio - no vuelve a mostrarse en visitas futuras aunque se cierre
-  // sesión o se cambie de dispositivo... salvo que ese storage se limpie,
-  // caso raro y sin consecuencias graves: en el peor caso reaparece un
-  // punto que ya se había visto una vez).
+  // socio).
   const [legajoRecienDesbloqueado, setLegajoRecienDesbloqueado] = useState(false);
   const [documentacionRecienDesbloqueada, setDocumentacionRecienDesbloqueada] = useState(false);
 
@@ -95,7 +94,7 @@ export default function Sidebar({ isOpen, onClose }) {
   }, [socioIdActivo, documentacionDesbloqueada, location.pathname]);
 
   const handleNavigate = (path) => {
-    const fullPath = `${basePath}${path.startsWith('/') ? path : '/' + path}`;
+    const fullPath = `${basePath}${path.startsWith("/") ? path : "/" + path}`;
     if (hasUnsavedChanges && location.pathname !== fullPath) {
       setPendingPath(fullPath);
       return;
@@ -129,176 +128,176 @@ export default function Sidebar({ isOpen, onClose }) {
     onClose();
   };
 
-  const toggleSection = (section) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }));
-  };
+  const itemsNavegacion = [
+    isSolicitudesEnabled && {
+      path: "/solicitudes",
+      label: "Solicitudes",
+      icono: <FiFileText />,
+      bloqueado: false,
+    },
+    {
+      path: "/legajo",
+      label: "Legajo",
+      icono: <FiClipboard />,
+      bloqueado: !legajoDesbloqueado,
+      motivoBloqueo: "Requiere una solicitud en curso",
+      novedad: legajoRecienDesbloqueado,
+      textoNovedad: "Recién habilitado: completá los datos de tu empresa",
+    },
+    {
+      path: "/documentacion",
+      label: "Documentación",
+      icono: <FiFolder />,
+      bloqueado: !documentacionDesbloqueada,
+      motivoBloqueo: "Requiere el legajo al 100 %",
+      novedad: documentacionRecienDesbloqueada,
+      textoNovedad: "Recién habilitada: ya podés subir tu documentación",
+    },
+  ].filter(Boolean);
+
+  const rolUsuario = isVendor ? "Vendor" : isVinculado ? "Socio vinculado" : "Sin empresa vinculada";
+  const irAlInicio = () => navigate(`${basePath}${isSolicitudesEnabled ? "/solicitudes" : "/legajo"}`);
 
   return (
-    <aside className={`${styles.container} ${isOpen ? styles.open : ""}`}>
-      <div className={styles.sidebarHeader}>
-        <div className={styles.logosWrapper}>
-          <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} role="button" tabIndex={0} onClick={() => isSolicitudesEnabled ? navigate(`${basePath}/solicitudes`) : navigate(`${basePath}/legajo`)} style={{ cursor: "pointer" }} />
+    <aside className={`${styles.container} ${isOpen ? styles.open : ""}`} aria-label="Navegación principal">
+      <div className={styles.marca}>
+        <button type="button" className={styles.marcaLogos} onClick={irAlInicio} aria-label="Ir al inicio">
+          <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} />
           {channelInfo.id !== "default" && channelInfo.logo && (
             <>
-              <div className={styles.logoSeparator} />
+              <span className={styles.logoSeparator} aria-hidden="true" />
               <img src={channelInfo.logo} alt={channelInfo.nombre} className={styles.channelLogo} />
             </>
           )}
-        </div>
-        <button type="button"
-          className={styles.closeButton}
-          onClick={onClose}
-          aria-label="Cerrar menú"
-        >
-          <FiX className={styles.closeIcon} />
+        </button>
+        <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Cerrar menú">
+          <FiX />
         </button>
       </div>
 
-      {isVendor && (
-        <div className={styles.vendorCard}>
-          <div className={styles.vendorAvatar}>
-            <FiBriefcase size={18} />
-          </div>
-          <div className={styles.vendorInfo}>
-            <p className={styles.vendorName}>Usuario Vendor</p>
-            <p className={styles.vendorMeta}>{emailUsuario}</p>
-            <p className={styles.vendorMeta}>{channelInfo?.nombre || "Cadena"}</p>
-          </div>
-        </div>
-      )}
-
-      {isVinculado && (
-        <>
-          <div className={styles.companyCard}>
+      <div className={styles.cuerpo}>
+        {isVinculado && (
+          <div className={styles.empresa}>
             <div
               className={`${styles.companyAvatar} ${styles[`avatar--${obtenerVarianteAvatarEmpresa(nombreEmpresa)}`]}`}
+              aria-hidden="true"
             >
               {obtenerInicialesEmpresa(nombreEmpresa)}
             </div>
-            <div className={styles.companyInfo}>
-              <div className={styles.companyNameWrap} tabIndex={0}>
-                <p className={styles.companyName}>{nombreEmpresa}</p>
-                <span className={styles.companyTooltip} role="tooltip">
-                  {nombreEmpresa}
-                </span>
-              </div>
-              {cuitActivo && (
-                <p className={styles.companyCuit}>CUIT {cuitActivo}</p>
-              )}
+            <div className={styles.empresaInfo} title={nombreEmpresa}>
+              <p className={styles.empresaNombre}>{nombreEmpresa}</p>
+              {cuitActivo && <p className={styles.empresaCuit}>CUIT {cuitActivo}</p>}
             </div>
+            {isVendor && (
+              <button
+                type="button"
+                className={styles.empresaCambiar}
+                onClick={handleCambiarEmpresa}
+                aria-label="Cambiar de empresa"
+                title="Cambiar de empresa"
+              >
+                <FiRepeat />
+              </button>
+            )}
           </div>
+        )}
 
-          {/* Hasta que se complete el Paso 2 del alta (ver AltaDatosEmpresa)
-              y se confirme el PUT, el socio ya tiene denominación pero no es
-              una empresa operable todavía — no mostramos navegación a
-              secciones a las que igual no puede entrar. */}
-          {onboardingCompleto && (
-            <div className={styles.scrollArea}>
-              <nav className={styles.navMenu}>
-                <div
-                  className={styles.sectionHeader}
-                  onClick={() => toggleSection("general")}
-                >
-                  <p className={styles.heading}>GENERAL</p>
-                  <FiChevronDown
-                    className={`${styles.chevron} ${expandedSections.general ? styles.chevronOpen : ""}`}
-                  />
-                </div>
-                <div
-                  className={`${styles.collapsibleContent} ${expandedSections.general ? styles.expanded : ""}`}
-                >
-                  {isSolicitudesEnabled && (
-                    <button type="button"
-                      className={`${styles.link} ${isActive("/solicitudes") ? styles.active : ""}`}
-                      onClick={() => handleNavigate("/solicitudes")}
+        {/* Hasta que se complete el Paso 2 del alta (ver AltaDatosEmpresa)
+            y se confirme el PUT, el socio ya tiene denominación pero no es
+            una empresa operable todavía — no mostramos navegación a
+            secciones a las que igual no puede entrar. */}
+        {isVinculado && onboardingCompleto && (
+          <nav className={styles.nav}>
+            <ul className={styles.navLista}>
+              {itemsNavegacion.map(({ path, label, icono, bloqueado, motivoBloqueo, novedad, textoNovedad }) => {
+                const activo = isActive(path);
+                return (
+                  <li key={path}>
+                    <button
+                      type="button"
+                      className={`${styles.navItem} ${activo ? styles.navItemActivo : ""} ${bloqueado ? styles.navItemBloqueado : ""}`}
+                      onClick={() => !bloqueado && handleNavigate(path)}
+                      disabled={bloqueado}
+                      aria-current={activo ? "page" : undefined}
                     >
-                      <FiFileText className={styles.icon} /> Solicitudes
+                      <span className={styles.navIcono} aria-hidden="true">
+                        {icono}
+                      </span>
+                      <span className={styles.navTexto}>
+                        <span className={styles.navLabel}>{label}</span>
+                        {bloqueado && <span className={styles.navAyuda}>{motivoBloqueo}</span>}
+                        {!bloqueado && novedad && (
+                          <span className={`${styles.navAyuda} ${styles.navAyudaNovedad}`}>{textoNovedad}</span>
+                        )}
+                      </span>
+                      {bloqueado && <FiLock className={styles.navEstado} aria-label="Bloqueado" />}
+                      {!bloqueado && novedad && (
+                        <span className={styles.novedadDot} aria-label="Recién habilitado" />
+                      )}
                     </button>
-                  )}
-                  <button type="button"
-                    className={`${styles.link} ${isActive("/legajo") ? styles.active : ""} ${!legajoDesbloqueado ? styles.linkBloqueado : ""}`}
-                    onClick={() => legajoDesbloqueado && handleNavigate("/legajo")}
-                    disabled={!legajoDesbloqueado}
-                    title={
-                      !legajoDesbloqueado
-                        ? "Se habilita cuando tengas una solicitud en curso."
-                        : legajoRecienDesbloqueado
-                          ? "¡Recién se desbloqueó! Completá los datos de tu empresa."
-                          : undefined
-                    }
-                  >
-                    <FiUsers className={styles.icon} /> Legajo
-                    {!legajoDesbloqueado && <FiLock className={styles.lockIcon} />}
-                    {legajoRecienDesbloqueado && (
-                      <span className={styles.novedadDot} aria-label="Recién desbloqueado" />
-                    )}
-                  </button>
-                  <button type="button"
-                    className={`${styles.link} ${isActive("/documentacion") ? styles.active : ""} ${!documentacionDesbloqueada ? styles.linkBloqueado : ""}`}
-                    onClick={() => documentacionDesbloqueada && handleNavigate("/documentacion")}
-                    disabled={!documentacionDesbloqueada}
-                    title={
-                      !documentacionDesbloqueada
-                        ? "Se habilita cuando completes el Legajo al 100%."
-                        : documentacionRecienDesbloqueada
-                          ? "¡Recién se desbloqueó! Subí tu documentación."
-                          : undefined
-                    }
-                  >
-                    <FiArchive className={styles.icon} /> Documentación
-                    {!documentacionDesbloqueada && <FiLock className={styles.lockIcon} />}
-                    {documentacionRecienDesbloqueada && (
-                      <span className={styles.novedadDot} aria-label="Recién desbloqueada" />
-                    )}
-                  </button>
-                </div>
-              </nav>
-            </div>
-          )}
-        </>
-      )}
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        )}
+      </div>
 
-      <div className={styles.footer}>
-        <div className={styles.mobileOnlyFooter}>
-          <div className={styles.userCard}>
-            <div className={styles.userCardAvatar}>
+      <div className={styles.pie}>
+        <div className={styles.cuentaMovil}>
+          <div className={styles.cuentaIdentidad}>
+            <span className={styles.cuentaAvatar} aria-hidden="true">
               <FiUser />
-            </div>
-            <div className={styles.userCardInfo}>
-              <p className={styles.userCardEmail}>{emailUsuario}</p>
-              <p className={`${styles.userCardRole} ${!isVinculado && !isVendor ? styles.roleNoVinculado : ""}`}>
-                {isVendor ? "VENDOR" : isVinculado ? "SOCIO VINCULADO" : "NO VINCULADO"}
+            </span>
+            <div className={styles.cuentaTexto}>
+              <p className={styles.cuentaEmail} title={emailUsuario}>{emailUsuario}</p>
+              <p className={`${styles.cuentaRol} ${!isVinculado && !isVendor ? styles.cuentaRolNeutro : ""}`}>
+                {rolUsuario}
+                {isVendor && channelInfo?.nombre ? ` · ${channelInfo.nombre}` : ""}
               </p>
             </div>
           </div>
-          <button type="button" className={styles.perfilBtn} onClick={() => setIsPerfilModalOpen(true)}>
-            <FiUser size={14} /> Mi perfil
-          </button>
-          {/* Mismo criterio que Navbar.jsx: solo tiene sentido si ya hay una
-              empresa activa para "cambiar" — sin eso, ya existe el botón
-              "Volver a Inicio" en Paso1Cuit/BarraProgreso. */}
-          {isVendor && isVinculado && (
-            <button type="button" className={styles.changeCompanyBtn} onClick={handleCambiarEmpresa}>
-              <FiRepeat size={14} /> Cambiar empresa
-            </button>
-          )}
-          <button type="button" className={styles.logoutLargeBtn} onClick={handleLogout}>
-            <FiLogOut size={14} /> Cerrar sesión
-          </button>
+
+          <ul className={styles.cuentaAcciones}>
+            <li>
+              <button type="button" className={styles.cuentaAccion} onClick={() => setIsPerfilModalOpen(true)}>
+                <span className={styles.cuentaAccionIcono} aria-hidden="true"><FiUser /></span>
+                Mi perfil
+                <FiChevronRight className={styles.cuentaAccionFlecha} aria-hidden="true" />
+              </button>
+            </li>
+            {/* Solo tiene sentido si ya hay una empresa activa para "cambiar"
+                — sin eso ya existe el botón "Volver a Inicio" en
+                Paso1Cuit/BarraProgreso. */}
+            {isVendor && isVinculado && (
+              <li>
+                <button type="button" className={styles.cuentaAccion} onClick={handleCambiarEmpresa}>
+                  <span className={styles.cuentaAccionIcono} aria-hidden="true"><FiRepeat /></span>
+                  Cambiar empresa
+                  <FiChevronRight className={styles.cuentaAccionFlecha} aria-hidden="true" />
+                </button>
+              </li>
+            )}
+            <li>
+              <button
+                type="button"
+                className={`${styles.cuentaAccion} ${styles.cuentaAccionPeligro}`}
+                onClick={handleLogout}
+              >
+                <span className={styles.cuentaAccionIcono} aria-hidden="true"><FiLogOut /></span>
+                Cerrar sesión
+              </button>
+            </li>
+          </ul>
         </div>
+
         <p className={styles.versionText}>
           Versión {__APP_VERSION__}
           {versionApi && <> · API {versionApi}</>}
         </p>
       </div>
 
-      <PerfilModal
-        isOpen={isPerfilModalOpen}
-        onClose={() => setIsPerfilModalOpen(false)}
-      />
+      <PerfilModal isOpen={isPerfilModalOpen} onClose={() => setIsPerfilModalOpen(false)} />
 
       <ConfirmacionModal
         isOpen={!!pendingPath}
