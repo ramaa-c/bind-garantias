@@ -34,6 +34,7 @@ import {
   ESTADO_CANCELADA,
   ESTADO_RECHAZADA,
   estadoTextoDesde,
+  esEstadoEnCurso,
   MOTIVO_CANCELACION_SOCIO,
   procesosVigentes,
   procesosHuerfanosPorRechazoAutomatico,
@@ -184,9 +185,8 @@ export default function Solicitudes() {
   // TipoLimiteSocio todavía no llegó a persistirse (falla parcial en
   // AltaOperacion.jsx).
   const tieneSolicitudPendiente = useMemo(() => {
-    const hasRealPendiente = Array.isArray(solicitudesReal) && solicitudesReal.some(s =>
-      Number(s.tipolimiteestadoid ?? ESTADO_PENDIENTE) === ESTADO_PENDIENTE
-    );
+    const hasRealPendiente =
+      Array.isArray(solicitudesReal) && solicitudesReal.some((s) => esEstadoEnCurso(s.tipolimiteestadoid));
     const hasProcesoPendiente =
       procesosVigentes(solicitudesEnProceso, solicitudesReal).length > 0;
     return hasRealPendiente || hasProcesoPendiente;
@@ -511,8 +511,7 @@ export default function Solicitudes() {
               // Solo se puede cancelar una solicitud real (ya tiene
               // TipoLimiteSocio, no un simple borrador en proceso) que
               // todavía esté pendiente de validación.
-              const puedeCancelar =
-                !!item.raw && item.tipoLimiteEstadoId === ESTADO_PENDIENTE;
+              const puedeCancelar = !!item.raw && esEstadoEnCurso(item.tipoLimiteEstadoId);
               return (
                 <TarjetaSolicitud
                   key={item.id}

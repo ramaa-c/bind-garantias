@@ -8,6 +8,11 @@ export const ESTADO_CANCELADA = 4;
 export const ESTADO_VENCIDA = 5;
 export const ESTADO_RECHAZADA = 6;
 
+export const esEstadoEnCurso = (estadoId) => {
+  const estado = Number(estadoId ?? ESTADO_PENDIENTE);
+  return estado === ESTADO_INICIAL || estado === ESTADO_PENDIENTE;
+};
+
 // TerceroViaID de SolicitudEnProceso: identifica la plataforma de origen de
 // la solicitud, no la cadena de valor. La nuestra es 4000000 - otras
 // plataformas usan 2000000/3000000 (confirmado con el backend el 2026-08-13).
@@ -68,10 +73,11 @@ export const procesosHuerfanosPorRechazoAutomatico = (solicitudesEnProceso, limi
   );
   const clavesVigentes = new Set(
     limites
-      .filter((l) => {
-        const estado = Number(l.tipolimiteestadoid ?? ESTADO_PENDIENTE);
-        return estado === ESTADO_PENDIENTE || estado === ESTADO_APROBADA;
-      })
+      .filter(
+        (l) =>
+          esEstadoEnCurso(l.tipolimiteestadoid) ||
+          Number(l.tipolimiteestadoid) === ESTADO_APROBADA,
+      )
       .map(claveLinea),
   );
   return procesosAbiertos(solicitudesEnProceso).filter((p) => {
