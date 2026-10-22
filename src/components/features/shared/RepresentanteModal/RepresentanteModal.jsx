@@ -1097,7 +1097,9 @@ export function RepresentanteModal({
         isOpen={isOpen}
         onClose={handleCerrar}
         title={representante || representanteInicial ? `Editar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
-        maxWidth="800px"
+        // El paso de búsqueda es una sola columna: con los 800px del
+        // formulario quedaba mucho aire a los lados.
+        maxWidth={!afipValidado && !representante && !representanteInicial ? "34rem" : "800px"}
         variant={isAdmin ? "blue" : "default"}
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
         footer={

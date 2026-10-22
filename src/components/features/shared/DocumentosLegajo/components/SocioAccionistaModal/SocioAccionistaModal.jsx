@@ -1281,7 +1281,9 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         isOpen={isOpen}
         onClose={handleCerrar}
         title={socio ? "Editar Accionista" : "Agregar Accionista"}
-        maxWidth="800px"
+        // El paso de búsqueda es una sola columna: con los 800px del
+        // formulario quedaba mucho aire a los lados.
+        maxWidth={!afipValidado && !socio ? "34rem" : "800px"}
         variant={isAdmin ? "blue" : "default"}
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
         footer={
