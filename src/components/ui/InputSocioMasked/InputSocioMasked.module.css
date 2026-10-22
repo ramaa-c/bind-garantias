@@ -254,3 +254,36 @@
   border-style: solid;
   border-color: rgba(22, 22, 22, 0.96) transparent transparent transparent;
 }
+
+/* ── TAMAÑO GRANDE + ACCIÓN INTERNA ──────────────────────────────────────────
+   Variante para el campo protagonista de una pantalla (ej. el CUIT del alta
+   de empresa): más alto, dígitos más grandes, y un slot a la derecha
+   (endAdornment) para alojar el botón de acción dentro del mismo borde. */
+.sizeLg .innerGroup {
+  height: 4rem;
+  border-radius: 0.875rem;
+}
+
+.sizeLg .icon {
+  width: 3.5rem;
+}
+
+.sizeLg .input {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.endAdornment {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding-right: 0.5rem;
+}
+
+@media (min-width: 48rem) {
+  .sizeLg .input {
+    font-size: 1.5rem;
+  }
+}

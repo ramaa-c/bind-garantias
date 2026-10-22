@@ -74,20 +74,6 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
 
   return (
     <div className={styles.container}>
-      {/* PROGRESO ────────────────────────────────────────────────────────────── */}
-      <div className={styles.progressRow}>
-        <span className={styles.progressLabel}>
-          {tareasCompletas} de {totalTareas} completado
-          {tareasCompletas === 1 ? "" : "s"}
-        </span>
-        <div className={styles.progressTrack}>
-          <div
-            className={`${styles.progressFill} ${progresoPct === 100 ? styles.progressFillDone : ""}`}
-            style={{ transform: `scaleX(${progresoPct / 100})` }}
-          />
-        </div>
-      </div>
-
       {/* EMPRESA ──────────────────────────────────────────────────────────────── */}
       <div className={styles.empresaCard}>
         <div className={styles.empresaAvatar}>{inicialEmpresa}</div>
@@ -107,6 +93,32 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
         </span>
       </div>
 
+      {/* PROGRESO ────────────────────────────────────────────────────────────── */}
+      <div className={styles.progressRow}>
+        <div className={styles.progressHead}>
+          <span className={styles.progressLabel}>Falta completar</span>
+          <span
+            className={`${styles.progressCount} ${progresoPct === 100 ? styles.progressCountDone : ""}`}
+          >
+            {tareasCompletas} de {totalTareas}
+          </span>
+        </div>
+        <div className={styles.progressSegments} aria-hidden="true">
+          {Array.from({ length: totalTareas }, (_, i) => (
+            <span
+              key={i}
+              className={`${styles.progressSegment} ${
+                i < tareasCompletas
+                  ? progresoPct === 100
+                    ? styles.segmentDone
+                    : styles.segmentActive
+                  : ""
+              }`}
+            />
+          ))}
+        </div>
+      </div>
+
       {/* TAREAS ──────────────────────────────────────────────────────────────── */}
       <div className={styles.taskList}>
         {/* UBICACIÓN */}
@@ -119,7 +131,7 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
               setUbicacionModalOpen(true);
             }
           }}
-          className={`${styles.taskRow} ${ubicacionOk ? styles.rowSuccess : ""}`}
+          className={`${styles.taskRow} ${ubicacionOk ? styles.rowSuccess : styles.rowPending}`}
           onClick={() => !isSubmitting && setUbicacionModalOpen(true)}
           style={{
             cursor: isSubmitting ? "not-allowed" : "pointer",
@@ -166,7 +178,7 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
               setContactoModalOpen(true);
             }
           }}
-          className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : ""}`}
+          className={`${styles.taskRow} ${contactoOk ? styles.rowSuccess : styles.rowPending}`}
           onClick={() => !isSubmitting && setContactoModalOpen(true)}
           style={{
             cursor: isSubmitting ? "not-allowed" : "pointer",
@@ -206,6 +218,11 @@ export default function Paso2Datos({ onContinuar, isSubmitting }) {
 
       {/* FOOTER ──────────────────────────────────────────────────────────────── */}
       <div className={styles.footer}>
+        <span className={styles.footerText}>
+          {puedeContinuar
+            ? "Todo listo. Vamos a crear tu legajo."
+            : "Completá los dos puntos para continuar."}
+        </span>
         <Button
           variant="primary"
           iconRight={!isSubmitting ? <FiChevronRight /> : null}

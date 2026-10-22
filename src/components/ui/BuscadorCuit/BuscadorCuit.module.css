@@ -49,3 +49,37 @@
     transform: translateY(0);
   }
 }
+/* ── VARIANTE INLINE ─────────────────────────────────────────────────────────
+   El botón vive dentro del borde del input (ver endAdornment en
+   InputSocioMasked) en vez de debajo: el campo sigue siendo lo principal y
+   la acción queda pegada a él, sin un bloque amarillo aparte. */
+.containerInline {
+  align-items: stretch;
+  gap: 0;
+}
+
+.containerInline .inputWrapper {
+  max-width: none;
+  padding-top: 0.5rem;
+}
+
+.containerInline .inlineBtn {
+  height: 2.875rem;
+  min-width: 0;
+  padding: 0 1rem;
+  border-radius: 0.625rem;
+  white-space: nowrap;
+}
+
+/* Sigue amarillo aunque esté deshabilitado (CUIT incompleto): solo baja la
+   opacidad, sin el grayscale genérico de Button - pedido explícito, así se
+   lee como "la acción de este campo" desde el primer momento. */
+.containerInline .inlineBtn:disabled {
+  opacity: 0.55 !important;
+  filter: none !important;
+}
+
+/* Dentro del borde del input el "salto" del hover de Button se ve raro. */
+.containerInline .inlineBtn:not(:disabled):hover {
+  transform: none;
+}

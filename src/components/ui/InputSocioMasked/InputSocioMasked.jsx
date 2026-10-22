@@ -26,6 +26,8 @@ const InputSocioMaskedField = forwardRef(function InputSocioMaskedField(
     manualOnFocus,
     manualOnBlur,
     label,
+    size,
+    endAdornment,
     ...props
   },
   inputRef,
@@ -48,6 +50,7 @@ const InputSocioMaskedField = forwardRef(function InputSocioMaskedField(
     statusClass,
     hasValue || isFocused ? styles.hasValue : "",
     disabled ? styles.isDisabled : "",
+    size === "lg" ? styles.sizeLg : "",
     className,
   ]
     .filter(Boolean)
@@ -105,6 +108,10 @@ const InputSocioMaskedField = forwardRef(function InputSocioMaskedField(
           <label className={styles.label}>{label}</label>
         </div>
 
+        {endAdornment && (
+          <div className={styles.endAdornment}>{endAdornment}</div>
+        )}
+
         {tooltip && (
           <div className={styles.helpIconContainer}>
             <FiInfo className={styles.helpIcon} />
@@ -136,6 +143,8 @@ export const InputSocioMasked = forwardRef(({
   onChange: manualOnChange,
   onFocus: manualOnFocus,
   onBlur: manualOnBlur,
+  size,
+  endAdornment,
   ...props
 }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -164,6 +173,8 @@ export const InputSocioMasked = forwardRef(({
             manualOnFocus={manualOnFocus}
             manualOnBlur={manualOnBlur}
             label={label}
+            size={size}
+            endAdornment={endAdornment}
             {...props}
           />
         )}
@@ -189,6 +200,8 @@ export const InputSocioMasked = forwardRef(({
       manualOnFocus={manualOnFocus}
       manualOnBlur={manualOnBlur}
       label={label}
+      size={size}
+      endAdornment={endAdornment}
       {...props}
     />
   );

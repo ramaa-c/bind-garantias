@@ -1,47 +1,13 @@
+/* Rediseño 2026-10. Ojo: PerfilModal.jsx reusa las clases task* / row* /
+   icon* de este módulo (paso2Styles) - mantener esos nombres. */
+
 .container {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.5rem;
   flex: 1;
   animation: fadeIn 0.3s ease;
-}
-
-/* ── PROGRESO ────────────────────────────────────────────────────────────── */
-
-.progressRow {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.progressLabel {
-  color: #8b949e;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.progressTrack {
-  position: relative;
-  height: 0.375rem;
-  border-radius: 999px;
-  background: rgba(var(--overlay-rgb), 0.06);
-  overflow: hidden;
-}
-
-.progressFill {
-  width: 100%;
-  height: 100%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(245, 244, 0, 0.6), var(--yellow, #f5f400));
-  transform-origin: left;
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.progressFillDone {
-  background: linear-gradient(90deg, rgba(76, 175, 80, 0.7), var(--success-bright));
 }
 
 /* ── EMPRESA (identity card) ─────────────────────────────────────────────── */
@@ -50,24 +16,23 @@
   display: flex;
   align-items: center;
   gap: 0.875rem;
-  background: rgba(245, 244, 0, 0.03);
-  border: 1px solid rgba(245, 244, 0, 0.14);
   padding: 1rem;
   border-radius: 1rem;
+  background: var(--bg-elevado);
+  border: 1px solid var(--border);
 }
 
 .empresaAvatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 3rem;
+  height: 3rem;
   flex-shrink: 0;
-  border-radius: 0.9rem;
-  background: var(--badge-amarillo-bg);
-  border: 1px solid var(--badge-amarillo-border);
-  color: var(--badge-amarillo-text);
-  font-size: 1.125rem;
+  border-radius: 0.75rem;
+  background: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+  font-size: 1.25rem;
   font-weight: 700;
 }
 
@@ -82,35 +47,28 @@
 .empresaBadge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.35rem;
   width: fit-content;
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px solid rgba(76, 175, 80, 0.18);
-  color: var(--success-bright);
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  padding: 0.18rem 0.5rem;
-  border-radius: 999px;
-  margin-bottom: 0.1rem;
+  color: var(--success-green);
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .empresaName {
-  color: var(--white, #fff);
-  font-size: 0.9375rem;
-  font-weight: 600;
   margin: 0;
-  letter-spacing: -0.015em;
+  color: var(--white);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .empresaCuit {
-  color: var(--text-muted);
-  font-size: 0.75rem;
   margin: 0;
+  color: var(--text-muted);
+  font-size: 0.875rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -121,18 +79,17 @@
   width: 2.25rem;
   height: 2.25rem;
   flex-shrink: 0;
-  background: rgba(var(--overlay-rgb), 0.03);
-  border: 1px solid rgba(var(--overlay-rgb), 0.08);
+  background: transparent;
+  border: 1px solid var(--border);
   border-radius: 0.7rem;
   cursor: pointer;
-  color: var(--text-muted, #8b949e);
+  color: var(--text-muted);
   transition: all 0.2s;
 }
 
 .editLink:hover {
-  color: var(--white, #fff);
-  border-color: rgba(var(--overlay-rgb), 0.18);
-  background: rgba(var(--overlay-rgb), 0.06);
+  color: var(--white);
+  border-color: var(--border-hover);
 }
 
 .lockedBadge {
@@ -142,49 +99,113 @@
   width: 2.25rem;
   height: 2.25rem;
   flex-shrink: 0;
-  background: rgba(var(--overlay-rgb), 0.03);
-  border: 1px solid rgba(var(--overlay-rgb), 0.08);
-  border-radius: 0.7rem;
-  color: var(--text-muted, #8b949e);
+  color: var(--text-muted);
   cursor: default;
 }
 
-/* ── TASKS ───────────────────────────────────────────────────────────────── */
+/* ── PROGRESO ────────────────────────────────────────────────────────────── */
+
+.progressRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.progressHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.progressLabel {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.progressCount {
+  color: var(--white-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressCountDone {
+  color: var(--success-green);
+}
+
+.progressSegments {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 0.375rem;
+}
+
+.progressSegment {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: var(--border);
+  transition: background-color 0.3s ease;
+}
+
+.segmentActive {
+  background: var(--color-amarillo-bind);
+}
+
+.segmentDone {
+  background: var(--success-green);
+}
+
+/* ── TAREAS ──────────────────────────────────────────────────────────────── */
 
 .taskList {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
 .taskRow {
   display: flex;
   align-items: center;
   gap: 0.875rem;
-  padding: 1rem;
-  border-radius: 0.9rem;
-  border: 1px solid rgba(var(--overlay-rgb), 0.06);
-  background: rgba(var(--overlay-rgb), 0.015);
+  min-height: 4.5rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  border: 1.5px solid var(--border);
+  background: var(--bg-elevado);
   cursor: pointer;
-  transition: all 0.18s;
   user-select: none;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease;
 }
 
 .taskRow:hover {
-  background: rgba(var(--overlay-rgb), 0.035);
-  border-color: rgba(var(--overlay-rgb), 0.1);
-  transform: translateY(-1px);
+  border-color: var(--border-hover);
 }
+
+.taskRow:focus-visible {
+  outline: 2px solid var(--color-azul-bind);
+  outline-offset: 2px;
+}
+
+.rowPending {
+  border-color: color-mix(in srgb, var(--color-amarillo-bind) 35%, var(--border));
+}
+
+.rowPending:hover {
+  border-color: color-mix(in srgb, var(--color-amarillo-bind) 60%, var(--border));
+}
+
 .rowSuccess {
-  border-color: rgba(76, 175, 80, 0.2);
-  background: rgba(76, 175, 80, 0.025);
+  border-color: var(--border);
 }
-.rowSuccess:hover {
-  border-color: rgba(76, 175, 80, 0.35);
-}
+
 .rowError {
-  border-color: rgba(255, 82, 82, 0.22);
-  background: rgba(255, 82, 82, 0.025);
+  border-color: color-mix(in srgb, var(--error-red) 40%, var(--border));
 }
 
 .taskIcon {
@@ -194,25 +215,22 @@
   width: 2.5rem;
   height: 2.5rem;
   flex-shrink: 0;
-  border-radius: 0.9rem;
-  border: 1px solid;
+  border-radius: 0.625rem;
 }
 
 .iconWarn {
-  background: rgba(255, 193, 7, 0.08);
-  color: var(--warning);
-  border-color: rgba(255, 193, 7, 0.2);
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
 }
+
 .iconSuccess {
-  background: rgba(76, 175, 80, 0.1);
-  color: var(--success-bright);
-  border-color: rgba(76, 175, 80, 0.22);
-  box-shadow: 0 0 10px rgba(76, 175, 80, 0.14);
+  background: color-mix(in srgb, var(--success-green) 15%, transparent);
+  color: var(--success-green);
 }
+
 .iconError {
-  background: rgba(255, 82, 82, 0.08);
-  color: var(--danger-bright);
-  border-color: rgba(255, 82, 82, 0.2);
+  background: color-mix(in srgb, var(--error-red) 12%, transparent);
+  color: var(--error-red);
 }
 
 .taskInfo {
@@ -220,92 +238,114 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
 }
 
 .taskTitle {
-  color: var(--white, #fff);
-  font-size: 0.875rem;
+  color: var(--white);
+  font-size: 1rem;
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .taskSub {
-  color: var(--text-muted, #8b949e);
-  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .taskAction {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-muted, #666);
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 0.2rem;
-  transition: color 0.2s;
+  gap: 0.25rem;
+  color: var(--white-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
   white-space: nowrap;
+  transition: color 0.2s;
 }
 
 .taskRow:hover .taskAction {
-  color: #8b949e;
+  color: var(--white);
 }
+
 .taskActionEdit {
-  color: var(--success-bright);
+  color: var(--text-muted);
 }
-.taskRow:hover .taskActionEdit {
-  color: #6ecf6e;
-}
+
 .taskActionError {
-  color: var(--danger-bright);
+  color: var(--error-red);
 }
 
 /* ── FOOTER ──────────────────────────────────────────────────────────────── */
 
 .footer {
-  padding-top: 1.25rem;
-  border-top: 1px solid rgba(var(--overlay-rgb), 0.05);
-  margin-top: auto;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: auto;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.footerText {
+  color: var(--text-muted);
+  font-size: 0.875rem;
 }
 
 .continueBtn {
-  height: 2.625rem;
-  min-width: 9.5rem;
+  min-height: 3.25rem;
+  min-width: 10rem;
+  justify-content: center;
 }
 
-@media (max-width: 56.24rem) {
+/* Mobile: la acción queda fija abajo mientras se completa el paso. */
+@media (max-width: 47.99rem) {
   .footer {
     position: sticky;
     bottom: 0;
     z-index: 40;
+    margin-top: 0.5rem;
+    padding: 0.875rem 0 calc(0.875rem + env(safe-area-inset-bottom));
     background: rgba(var(--glass-rgb), 0.95);
     backdrop-filter: blur(14px);
-    padding: 0.875rem 0;
-    margin-top: 1rem;
-    border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
-    justify-content: center;
   }
+
+  .footerText {
+    text-align: center;
+  }
+
   .continueBtn {
     width: 100%;
-    max-width: 18rem;
-    justify-content: center;
-  }
-  .continueBtn svg {
-    display: none;
   }
 }
 
 @media (min-width: 48rem) {
-  .continueBtn {
-    width: auto;
+  .container {
+    gap: 1.75rem;
   }
+
+  .empresaCard {
+    padding: 1.25rem;
+  }
+
+  .taskRow {
+    padding: 1rem 1.25rem;
+    gap: 1rem;
+  }
+
   .taskSub {
     white-space: normal;
+  }
+
+  .footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 1.5rem;
   }
 }
 

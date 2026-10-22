@@ -486,8 +486,8 @@ export const AltaDatosEmpresa = () => {
       case 1:
         return {
           badge: "Alta de empresa",
-          t: "Necesitamos conocer los datos de tu empresa",
-          s: "Completá el CUIT de tu empresa para comenzar.",
+          t: "¿Cuál es el CUIT de tu empresa?",
+          s: "Validamos tu información fiscal y crediticia en tiempo real para agilizar el registro de tu empresa.",
         };
       case 2:
         return {
@@ -618,7 +618,6 @@ export const AltaDatosEmpresa = () => {
                 <h1 className={styles.tituloBienvenida}>
                   {obtenerTextosCabecera().t}
                 </h1>
-                <div className={styles.titleAccent} />
                 {obtenerTextosCabecera().s && (
                   <p className={styles.subtituloBienvenida}>
                     {obtenerTextosCabecera().s}
