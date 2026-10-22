@@ -738,7 +738,7 @@ export function SociosLegajo({
                               onClick={() => setFacturacionModalOpen(true)}
                               aria-label="Editar email de facturación"
                             >
-                              Editar
+                              <FiEdit2 size={13} aria-hidden="true" /> Editar
                             </button>
                           </header>
                           <dl className={styles.perfilRows}>

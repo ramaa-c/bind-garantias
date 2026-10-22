@@ -611,29 +611,34 @@
 
 /* Acción chica de texto (no un botón lleno): la acción principal del
    panel es "Editar perfil", ésta solo cubre el email de facturación. */
+/* Botón con borde e ícono (antes era solo texto chico): editar el email
+   de facturación es una acción que el cliente tiene que encontrar. */
 .perfilEditarLink {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.2rem 0.1rem;
-  border: none;
-  border-radius: 0.35rem;
-  background: none;
+  gap: 0.4rem;
+  min-height: 2rem;
+  padding: 0 0.8rem;
+  border: 1px solid rgba(245, 244, 0, 0.4);
+  border-radius: 0.6rem;
+  background: rgba(245, 244, 0, 0.08);
   color: var(--color-amarillo-bind);
   font-family: inherit;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.8125rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .perfilEditarLink:hover {
-  text-decoration: underline;
+  background: rgba(245, 244, 0, 0.16);
+  border-color: rgba(245, 244, 0, 0.6);
 }
 
 [data-theme="light"] .perfilEditarLink {
   color: var(--badge-amarillo-text);
   background: var(--badge-amarillo-bg);
-  padding: 0.2rem 0.55rem;
+  border-color: var(--badge-amarillo-border);
 }
 
 .perfilRows {
