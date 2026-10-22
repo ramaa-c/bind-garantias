@@ -51,6 +51,7 @@ const InputSocioMaskedField = forwardRef(function InputSocioMaskedField(
     hasValue || isFocused ? styles.hasValue : "",
     disabled ? styles.isDisabled : "",
     size === "lg" ? styles.sizeLg : "",
+    endAdornment ? styles.hasAdornment : "",
     className,
   ]
     .filter(Boolean)

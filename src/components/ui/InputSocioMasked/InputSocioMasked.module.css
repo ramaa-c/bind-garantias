@@ -166,9 +166,21 @@
 }
 
 /* ── DESHABILITADO ───────────────────────────────────────────────────────────── */
-.container.isDisabled {
+.container.isDisabled:not(.hasAdornment) {
   opacity: 0.45;
   pointer-events: none;
+}
+
+/* Con una acción adentro (endAdornment, ej. "S/N" en el número de calle)
+   solo se apaga el campo: la acción sigue clickeable, si no un check que
+   deshabilita el campo no se podría volver a desmarcar. */
+.container.isDisabled.hasAdornment .innerGroup > :not(.endAdornment) {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.container.isDisabled.hasAdornment .innerGroup {
+  border-color: rgba(var(--overlay-rgb), 0.06);
 }
 
 /* ── AUTOCOMPLETADO ──────────────────────────────────────────────────────────── */
