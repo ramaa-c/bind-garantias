@@ -3,11 +3,10 @@ import { createPortal } from "react-dom";
 import { FiUser, FiPlus, FiMail, FiPhone, FiMapPin } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import s from "../TerceroCard/TerceroCard.module.css";
-import { TerceroCard, TerceroEmpty } from "../TerceroCard/TerceroCard";
+import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
 import { ordenarPendientesPrimero } from "../TerceroCard/terceroCardUtils";
 import { ApoderadoModal } from "../../../ApoderadoModal/ApoderadoModal";
 import { TerceroCdaEstado } from "../TerceroCdaEstado/TerceroCdaEstado";
-import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { useEstadoCdaTerceros } from "../../../../../../hooks/useTerceros";
 import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 import { AvisoRevisionTercero } from "../EstadoRevisionChip/EstadoRevisionChip";
@@ -70,12 +69,7 @@ export function ApoderadosSection({
   return (
     <div className={styles.sociosContainer}>
       {loadingSocios ? (
-        <div className={styles.emptySlot} style={{ display: "flex", flexDirection: "column", gap: "0.875rem", padding: "2rem" }}>
-          <Spinner size={36} />
-          <p className={styles.emptyTitle} style={{ margin: 0 }}>
-            Cargando apoderados...
-          </p>
-        </div>
+        <TerceroSkeleton />
       ) : (
         <div className={styles.sectionBlock}>
           {portalTarget && createPortal(

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiPhone, FiUser, FiShield, FiMapPin, FiMap } from "react-icons/fi";
+import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiPhone, FiUser, FiSearch, FiMapPin, FiMap } from "react-icons/fi";
 import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import { toast } from "sonner";
 import { Button } from "../../../ui/Button/Button";
@@ -1110,13 +1110,16 @@ export function RepresentanteModal({
         <form id={REPRESENTANTE_FORM_ID} onSubmit={handlePreSubmit} className={styles.modalForm}>
           {!afipValidado && !representante && !representanteInicial ? (
             <div className={styles.cuitSearchStep}>
-              <div className={`${styles.cuitSearchBanner} ${isAdmin ? styles.cuitSearchBannerAdmin : ""}`}>
-                <div className={`${styles.cuitSearchBannerIcon} ${isAdmin ? styles.cuitSearchBannerIconAdmin : ""}`}>
-                  <FiShield />
-                </div>
-                <div className={styles.cuitSearchBannerText}>
-                  <p className={styles.cuitSearchBannerTitle}>Buscá al {etiquetaRol.toLowerCase()} por CUIT</p>
-                  <p className={styles.cuitSearchBannerSub}>Completamos sus datos automáticamente.</p>
+              {/* Mismo patrón que el paso 1 del alta (Paso1Cuit): el CUIT es
+                  lo protagonista y "Validar" vive dentro del input. Admin
+                  conserva el botón aparte en azul. */}
+              <div className={styles.cuitSearchHead}>
+                <span className={`${styles.cuitSearchIcon} ${isAdmin ? styles.cuitSearchIconAdmin : ""}`} aria-hidden="true">
+                  <FiSearch />
+                </span>
+                <div className={styles.cuitSearchHeadText}>
+                  <p className={styles.cuitSearchTitle}>Buscá al {etiquetaRol.toLowerCase()} por CUIT</p>
+                  <p className={styles.cuitSearchSub}>Con el CUIT completamos sus datos automáticamente.</p>
                 </div>
               </div>
               <div className={styles.cuitSearchInputWrapper}>
@@ -1127,9 +1130,11 @@ export function RepresentanteModal({
                   onValidar={handleAfipLookup}
                   error={errors.cuit?.message}
                   esValido={String(cuitValue || "").replace(/\D/g, "").length === 11}
-                  buttonText="VALIDAR CUIT"
+                  buttonText={isAdmin ? "VALIDAR CUIT" : "Validar"}
                   isLoading={validando}
+                  inline={!isAdmin}
                 />
+                <p className={styles.cuitSearchAyuda}>Son 11 números, sin guiones.</p>
               </div>
             </div>
           ) : (

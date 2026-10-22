@@ -3,9 +3,8 @@ import { createPortal } from "react-dom";
 import { FiBriefcase, FiPlus } from "react-icons/fi";
 import styles from "../../DocumentosLegajo.module.css";
 import s from "../TerceroCard/TerceroCard.module.css";
-import { TerceroCard, TerceroEmpty } from "../TerceroCard/TerceroCard";
+import { TerceroCard, TerceroEmpty, TerceroSkeleton } from "../TerceroCard/TerceroCard";
 import { BolsaModal } from "../BolsaModal/BolsaModal";
-import { Spinner } from "../../../../../ui/Spinner/Spinner";
 import { usePortalTarget } from "../../../../../../hooks/usePortalTarget";
 
 export function AgentesBolsaSection({
@@ -24,12 +23,7 @@ export function AgentesBolsaSection({
   return (
     <div className={styles.sociosContainer}>
       {loadingSocios ? (
-        <div className={styles.emptySlot} style={{ display: "flex", flexDirection: "column", gap: "0.875rem", padding: "2rem" }}>
-          <Spinner size={36} />
-          <p className={styles.emptyTitle} style={{ margin: 0 }}>
-            Cargando agentes de bolsa...
-          </p>
-        </div>
+        <TerceroSkeleton />
       ) : (
         <div className={styles.sectionBlock}>
           {portalTarget && createPortal(

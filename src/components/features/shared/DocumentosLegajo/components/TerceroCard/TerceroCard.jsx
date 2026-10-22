@@ -3,6 +3,7 @@ import { FiCheck, FiChevronDown, FiEdit2, FiTrash2 } from "react-icons/fi";
 import s from "./TerceroCard.module.css";
 import { inicialesDe } from "./terceroCardUtils";
 import { EstadoRevisionChip } from "../EstadoRevisionChip/EstadoRevisionChip";
+import { Skeleton } from "../../../../../ui/Skeleton/Skeleton";
 
 // Cuántos faltantes se nombran en el chip antes de resumir con "+N": con la
 // lista completa (hasta 6 en Accionistas) el chip ocupaba más que el nombre.
@@ -176,6 +177,36 @@ export function TerceroEmpty({ icon, titulo, hint }) {
       </span>
       <p className={s.emptyTitle}>{titulo}</p>
       {hint && <span className={s.emptyHint}>{hint}</span>}
+    </div>
+  );
+}
+
+// Carga inicial de la lista: tarjetas fantasma con la misma forma que
+// TerceroCard (regla de Skeleton: el Spinner queda para acciones en curso).
+// `conResumen` agrega el bloque de participación de Accionistas.
+export function TerceroSkeleton({ conResumen = false, cantidad = 3 }) {
+  return (
+    <div className={s.lista} aria-busy="true" aria-label="Cargando">
+      {conResumen && (
+        <div className={s.skeletonResumen}>
+          <div className={s.skeletonFila}>
+            <Skeleton width="10rem" height="0.8rem" radius="0.4rem" />
+            <Skeleton width="6rem" height="0.8rem" radius="0.4rem" />
+          </div>
+          <Skeleton width="100%" height="0.5rem" radius="pill" />
+        </div>
+      )}
+      {Array.from({ length: cantidad }).map((_, i) => (
+        <div key={i} className={s.skeletonCard}>
+          <Skeleton width="2.25rem" height="2.25rem" radius="0.7rem" />
+          <div className={s.skeletonTexto}>
+            <Skeleton width={i % 2 ? "45%" : "60%"} height="0.85rem" radius="0.4rem" />
+            <Skeleton width="30%" height="0.7rem" radius="0.4rem" />
+          </div>
+          <Skeleton width="2rem" height="2rem" radius="0.6rem" />
+          <Skeleton width="2rem" height="2rem" radius="0.6rem" />
+        </div>
+      ))}
     </div>
   );
 }
