@@ -12,6 +12,30 @@
   flex-direction: column;
   color: var(--white-muted);
   position: relative;
+  z-index: 1;
+}
+
+/* Mismo fondo degradado azul que Legajo (SociosView). */
+.operacionPage::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--carbon-black, #1a1a1a);
+  background-image:
+    radial-gradient(
+      100vw 30vh at top,
+      rgba(76, 101, 230, 0.15) 0%,
+      transparent 100%
+    ),
+    radial-gradient(
+      100vw 30vh at bottom,
+      rgba(76, 101, 230, 0.15) 0%,
+      transparent 100%
+    );
 }
 
 /* Paso3Simulador asume este mismo padding lateral para que su barra fija
@@ -173,6 +197,20 @@
 /* ── TABLET ──────────────────────────────────────────────────────────────── */
 
 @media (min-width: 48rem) {
+  .operacionPage::before {
+    background-image:
+      radial-gradient(
+        circle at 0% 0%,
+        rgba(76, 101, 230, 0.15) 0%,
+        transparent 40%
+      ),
+      radial-gradient(
+        circle at 100% 100%,
+        rgba(76, 101, 230, 0.15) 0%,
+        transparent 40%
+      );
+  }
+
   .formMainContainer {
     padding: 2rem 2rem 0;
   }

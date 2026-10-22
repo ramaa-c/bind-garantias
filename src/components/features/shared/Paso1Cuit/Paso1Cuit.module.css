@@ -22,80 +22,6 @@
   line-height: 1.5;
 }
 
-/* ── QUÉ PASA DESPUÉS ────────────────────────────────────────────────────── */
-
-.siguiente {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--border);
-}
-
-.siguienteTitulo {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.siguienteLista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-}
-
-.siguienteItem {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.siguienteNum {
-  flex-shrink: 0;
-  min-width: 1.5rem;
-  color: var(--white);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1.5;
-}
-
-/* Raya amarilla corta debajo del número: mismo acento de marca que en modo
-   oscuro, legible también en claro (el amarillo como texto no lo es). */
-.siguienteNum::after {
-  content: "";
-  display: block;
-  width: 1rem;
-  height: 2px;
-  margin-top: 0.2rem;
-  border-radius: 2px;
-  background: var(--color-amarillo-bind);
-}
-
-.siguienteTexto {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 0;
-}
-
-.siguienteTexto strong {
-  color: var(--white);
-  font-size: 0.9375rem;
-  font-weight: 600;
-}
-
-.siguienteTexto span {
-  color: var(--text-muted);
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-
 /* ── TRUST ───────────────────────────────────────────────────────────────── */
 
 .trustRow {
@@ -118,33 +44,9 @@
   font-size: 0.875rem;
 }
 
-@media (min-width: 36rem) {
-  .siguienteLista {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1.25rem;
-  }
-}
-
 @media (min-width: 48rem) {
   .pasoContainer {
-    gap: 2.25rem;
-  }
-
-  .siguiente {
-    padding-top: 2rem;
-  }
-}
-
-/* Rango 2 (pantallas chicas de escritorio / zoom ≥133%): mismo umbral
-   único que el resto de la app. */
-@media (min-width: 64rem) and (max-width: 1440px),
-  (min-width: 64rem) and (max-height: 716px) {
-  .pasoContainer {
-    gap: 1.75rem;
-  }
-
-  .siguiente {
-    padding-top: 1.5rem;
+    gap: 2rem;
   }
 }
 

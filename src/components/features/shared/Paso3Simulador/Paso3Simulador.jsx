@@ -392,6 +392,17 @@ export default function Paso3Simulador({
       : "IMPORTANTE: La tasa de interés utilizada en el simulador es estimativa. Los gastos fijos en pesos (valores al cobro y gestión de cobro) no se incluyen en esta estimación.";
   }
 
+  // Con una sola moneda disponible no hay nada que elegir: queda
+  // seleccionada siempre (también si el valor guardado no corresponde a
+  // ninguna opción, ej. un borrador viejo de sessionStorage).
+  const unicaMoneda =
+    opcionesMoneda.length === 1 ? String(opcionesMoneda[0].value) : null;
+  useEffect(() => {
+    if (unicaMoneda && String(monedaValue) !== unicaMoneda) {
+      setValue("moneda", unicaMoneda, { shouldValidate: true });
+    }
+  }, [unicaMoneda, monedaValue, setValue]);
+
   // Si al cambiar de moneda la línea elegida ya no está entre las opciones
   // (son las de esa moneda), se limpia en vez de quedar seleccionada "a
   // escondidas".
