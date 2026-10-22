@@ -135,6 +135,9 @@ export function LegajoUniversalBar({
     useEstadoValidarSocio(socioWeb?.cuit, cadenaId);
   const sgrCoreNoAprobado =
     !adminMode && !!socioWeb?.cuit && !loadingValidarSocio && resultValidarSocio?.data?.success === false;
+  // Mismo criterio que useBloqueoLegajo: CDA o SGRPlusCore impiden cargar.
+  const cargaBloqueada = cdaSocioNoAprobado || sgrCoreNoAprobado;
+
   const sgrCoreMensaje = sgrCoreNoAprobado
     ? resultValidarSocio?.data?.message ||
       "No superaste las validaciones de aceptación correspondientes."
@@ -723,16 +726,23 @@ export function LegajoUniversalBar({
         onClose={() => setShowEstadoMigracion(false)}
       />
       <div
-        className={`${styles.container} ${isValid ? styles.toneSuccess : isContextInvalid ? styles.toneWarning : styles.toneInfo}`}
-        role="button"
-        tabIndex={0}
-        onClick={() => setShowEstadoMigracion(true)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setShowEstadoMigracion(true);
-          }
-        }}
+        className={`${styles.container} ${isValid ? styles.toneSuccess : isContextInvalid ? styles.toneWarning : styles.toneInfo} ${cargaBloqueada ? styles.containerBloqueado : ""}`}
+        // Con la carga bloqueada (ver avisoBanner) no hay nada que el
+        // cliente pueda completar: la tarjeta queda atenuada, sin acción y
+        // sin abrir el detalle.
+        {...(cargaBloqueada
+          ? { "aria-disabled": true }
+          : {
+            role: "button",
+            tabIndex: 0,
+            onClick: () => setShowEstadoMigracion(true),
+            onKeyDown: (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setShowEstadoMigracion(true);
+              }
+            },
+          })}
       >
         {isValid ? (
           <span className={styles.checkBadge} aria-hidden="true">
@@ -768,6 +778,7 @@ export function LegajoUniversalBar({
           </span>
         )}
 
+        {!cargaBloqueada && (
         <div className={`${styles.cta} ${isValid ? styles.ctaChip : ""}`}>
           {!isValid ? (
             !esVistaGenerica && !isContextInvalid ? (
@@ -844,6 +855,7 @@ export function LegajoUniversalBar({
             </span>
           )}
         </div>
+        )}
       </div>
     </>
   );

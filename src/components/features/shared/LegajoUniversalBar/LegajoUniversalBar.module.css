@@ -301,3 +301,15 @@
     font-size: 0.82rem;
   }
 }
+
+/* Carga bloqueada (CDA / SGRPlusCore): la tarjeta queda atenuada y sin
+   interacción, el aviso de arriba es el que explica por qué. */
+.containerBloqueado {
+  opacity: 0.5;
+  cursor: default;
+  filter: saturate(0.4);
+}
+
+.containerBloqueado:hover {
+  border-color: rgba(var(--tone-rgb), 0.25);
+}
