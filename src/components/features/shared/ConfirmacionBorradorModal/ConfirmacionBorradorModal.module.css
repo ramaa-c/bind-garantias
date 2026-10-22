@@ -59,3 +59,15 @@
   padding: 1rem 1.5rem 0;
   border-top: 1px solid rgba(var(--overlay-rgb), 0.06);
 }
+
+/* Mobile first: en pantallas chicas los botones del pie ocupan todo el
+   ancho disponible; desde 36rem vuelven a su ancho natural a la derecha. */
+.footer > * {
+  flex: 1 1 auto;
+}
+
+@media (min-width: 36rem) {
+  .footer > * {
+    flex: 0 0 auto;
+  }
+}

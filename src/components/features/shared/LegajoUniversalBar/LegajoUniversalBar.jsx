@@ -764,7 +764,7 @@ export function LegajoUniversalBar({
           </span>
         )}
 
-        <div className={styles.cta}>
+        <div className={`${styles.cta} ${isValid ? styles.ctaChip : ""}`}>
           {!isValid ? (
             !esVistaGenerica && !isContextInvalid ? (
               // Esta pestaña ya está completa y lo que falta está en la
