@@ -282,7 +282,7 @@ export default function Sidebar({ isOpen, onClose }) {
                   <li key={path}>
                     <button
                       type="button"
-                      className={`${styles.navItem} ${activo ? styles.navItemActivo : ""} ${bloqueado ? styles.navItemBloqueado : ""}`}
+                      className={`${styles.navItem} ${activo ? styles.navItemActivo : ""} ${bloqueado ? styles.navItemBloqueado : ""} ${novedad && !bloqueado && !activo ? styles.navItemNovedad : ""}`}
                       onClick={() => !bloqueado && handleNavigate(path)}
                       disabled={bloqueado}
                       aria-current={activo ? "page" : undefined}
