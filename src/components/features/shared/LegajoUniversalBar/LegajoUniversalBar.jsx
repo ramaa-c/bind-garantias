@@ -548,13 +548,17 @@ export function LegajoUniversalBar({
       <div className={styles.cdaWarningTextGroup}>
         {(cdaSocioNoAprobado || sgrCoreNoAprobado) && (
           <span className={styles.cdaWarningText}>
+            Por ahora no podés cargar ni modificar datos del legajo.{" "}
             {sgrCoreNoAprobado
               ? sgrCoreMensaje
               : "No superaste las validaciones de aceptación correspondientes."}{" "}
             Comunicate con BIND Garantías para que las revisemos.
           </span>
         )}
-        {pymeSinCertificado && (
+        {/* Con la carga bloqueada (CDA/SGRPlusCore) el aviso de PyME
+            ("podés completar tu legajo igual") contradice al de arriba:
+            solo se muestra cuando el legajo sí se puede completar. */}
+        {pymeSinCertificado && !(cdaSocioNoAprobado || sgrCoreNoAprobado) && (
           <span className={styles.cdaWarningText}>
             Todavía no tenés un Certificado PyME generado. Podés completar tu legajo igual, pero no vamos a poder migrarlo hasta que lo tengas.
           </span>
