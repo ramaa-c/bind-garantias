@@ -10,6 +10,7 @@ import {
   FiRepeat,
   FiLock,
   FiChevronRight,
+  FiSidebar,
 } from "react-icons/fi";
 import logoBind from "../../../../assets/images/bind-g-logo.svg";
 import logoBindBlack from "../../../../assets/images/bind-g-logo-black.svg";
@@ -18,6 +19,7 @@ import { useVendor } from "../../../../hooks/useVendor";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useNavigationStore } from "../../../../store/useNavigationStore";
 import { useThemeStore } from "../../../../store/useThemeStore";
+import { useSidebarStore } from "../../../../store/useSidebarStore";
 import { useVersionApi } from "../../../../hooks/useSistema";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { ConfirmacionModal } from "../../../features/shared/ConfirmacionModal/ConfirmacionModal";
@@ -54,6 +56,8 @@ export default function Sidebar({ isOpen, onClose }) {
   const isVendor = vendorData?.isVendor || false;
 
   const [isPerfilModalOpen, setIsPerfilModalOpen] = useState(false);
+  const compacto = useSidebarStore((state) => state.compacto);
+  const toggleCompacto = useSidebarStore((state) => state.toggleCompacto);
 
   const { hasUnsavedChanges, setUnsavedChanges } = useNavigationStore();
   const [pendingPath, setPendingPath] = useState(null);
@@ -134,6 +138,7 @@ export default function Sidebar({ isOpen, onClose }) {
       label: "Solicitudes",
       icono: <FiFileText />,
       bloqueado: false,
+      ayuda: "Tus solicitudes de línea",
     },
     {
       path: "/legajo",
@@ -141,6 +146,7 @@ export default function Sidebar({ isOpen, onClose }) {
       icono: <FiClipboard />,
       bloqueado: !legajoDesbloqueado,
       motivoBloqueo: "Requiere una solicitud en curso",
+      ayuda: "Datos de la empresa y personas",
       novedad: legajoRecienDesbloqueado,
       textoNovedad: "Recién habilitado: completá los datos de tu empresa",
     },
@@ -150,16 +156,42 @@ export default function Sidebar({ isOpen, onClose }) {
       icono: <FiFolder />,
       bloqueado: !documentacionDesbloqueada,
       motivoBloqueo: "Requiere el legajo al 100 %",
+      ayuda: "Subí la documentación requerida",
       novedad: documentacionRecienDesbloqueada,
       textoNovedad: "Recién habilitada: ya podés subir tu documentación",
     },
   ].filter(Boolean);
 
+  // Mientras el alta de empresa no terminó, la navegación se muestra igual
+  // (para que se vea a dónde lleva el recorrido) pero toda bloqueada: no se
+  // puede entrar a secciones de una empresa que todavía no es operable.
+  const empresaOperable = isVinculado && onboardingCompleto;
+  const itemsVisibles = empresaOperable
+    ? itemsNavegacion
+    : itemsNavegacion.map((item) => ({
+        ...item,
+        bloqueado: true,
+        motivoBloqueo: "Se habilita al terminar el alta",
+        novedad: false,
+      }));
+
+  // "Tu alta": recorrido de 4 pasos (empresa → solicitud → legajo →
+  // documentación). Se deja de mostrar cuando el legajo está completo (ahí
+  // ya solo queda Documentación, que tiene su propio estado en la nav).
+  const pasosHechos = empresaOperable
+    ? 1 + (legajoDesbloqueado ? 1 : 0) + (documentacionDesbloqueada ? 1 : 0)
+    : 0;
+  const mostrarProgreso = !documentacionDesbloqueada || !empresaOperable;
+  const CIRCUNFERENCIA_ANILLO = 2 * Math.PI * 15;
+
   const rolUsuario = isVendor ? "Vendor" : isVinculado ? "Socio vinculado" : "Sin empresa vinculada";
   const irAlInicio = () => navigate(`${basePath}${isSolicitudesEnabled ? "/solicitudes" : "/legajo"}`);
 
   return (
-    <aside className={`${styles.container} ${isOpen ? styles.open : ""}`} aria-label="Navegación principal">
+    <aside
+      className={`${styles.container} ${isOpen ? styles.open : ""} ${compacto ? styles.compacto : ""}`}
+      aria-label="Navegación principal"
+    >
       <div className={styles.marca}>
         <button type="button" className={styles.marcaLogos} onClick={irAlInicio} aria-label="Ir al inicio">
           <img src={theme === "light" ? logoBindBlack : logoBind} alt="Bind Garantías" className={styles.logo} />
@@ -202,45 +234,78 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* Hasta que se complete el Paso 2 del alta (ver AltaDatosEmpresa)
-            y se confirme el PUT, el socio ya tiene denominación pero no es
-            una empresa operable todavía — no mostramos navegación a
-            secciones a las que igual no puede entrar. */}
-        {isVinculado && onboardingCompleto && (
-          <nav className={styles.nav}>
-            <ul className={styles.navLista}>
-              {itemsNavegacion.map(({ path, label, icono, bloqueado, motivoBloqueo, novedad, textoNovedad }) => {
-                const activo = isActive(path);
-                return (
-                  <li key={path}>
-                    <button
-                      type="button"
-                      className={`${styles.navItem} ${activo ? styles.navItemActivo : ""} ${bloqueado ? styles.navItemBloqueado : ""}`}
-                      onClick={() => !bloqueado && handleNavigate(path)}
-                      disabled={bloqueado}
-                      aria-current={activo ? "page" : undefined}
-                    >
-                      <span className={styles.navIcono} aria-hidden="true">
-                        {icono}
-                      </span>
-                      <span className={styles.navTexto}>
-                        <span className={styles.navLabel}>{label}</span>
-                        {bloqueado && <span className={styles.navAyuda}>{motivoBloqueo}</span>}
-                        {!bloqueado && novedad && (
-                          <span className={`${styles.navAyuda} ${styles.navAyudaNovedad}`}>{textoNovedad}</span>
-                        )}
-                      </span>
-                      {bloqueado && <FiLock className={styles.navEstado} aria-label="Bloqueado" />}
-                      {!bloqueado && novedad && (
-                        <span className={styles.novedadDot} aria-label="Recién habilitado" />
-                      )}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
+        {mostrarProgreso && (
+          <div
+            className={styles.progreso}
+            title={`Tu alta: ${pasosHechos} de 4`}
+          >
+            <div className={styles.progresoTexto}>
+              <span className={styles.progresoLabel}>Tu alta</span>
+              <span className={styles.progresoCuenta}>{pasosHechos} de 4</span>
+            </div>
+            <div className={styles.progresoBarra} aria-hidden="true">
+              <span style={{ width: `${(pasosHechos / 4) * 100}%` }} />
+            </div>
+            {/* Versión compacta (solo rail de escritorio): anillo. */}
+            <svg
+              className={styles.progresoAnillo}
+              viewBox="0 0 40 40"
+              role="img"
+              aria-label={`Tu alta: ${pasosHechos} de 4`}
+            >
+              <circle cx="20" cy="20" r="15" className={styles.anilloFondo} />
+              <circle
+                cx="20"
+                cy="20"
+                r="15"
+                className={styles.anilloValor}
+                strokeDasharray={`${(CIRCUNFERENCIA_ANILLO * pasosHechos) / 4} ${CIRCUNFERENCIA_ANILLO}`}
+                transform="rotate(-90 20 20)"
+              />
+              <text x="20" y="24" textAnchor="middle" className={styles.anilloTexto}>
+                {pasosHechos}/4
+              </text>
+            </svg>
+          </div>
         )}
+
+        <nav className={styles.nav}>
+          <ul className={styles.navLista}>
+            {itemsVisibles.map(({ path, label, icono, bloqueado, motivoBloqueo, ayuda, novedad, textoNovedad }) => {
+              const activo = isActive(path);
+              return (
+                <li key={path}>
+                  <button
+                    type="button"
+                    className={`${styles.navItem} ${activo ? styles.navItemActivo : ""} ${bloqueado ? styles.navItemBloqueado : ""}`}
+                    onClick={() => !bloqueado && handleNavigate(path)}
+                    disabled={bloqueado}
+                    aria-current={activo ? "page" : undefined}
+                    title={bloqueado ? `${label} · ${motivoBloqueo}` : label}
+                  >
+                    <span className={styles.navIcono} aria-hidden="true">
+                      {icono}
+                    </span>
+                    <span className={styles.navTexto}>
+                      <span className={styles.navLabel}>{label}</span>
+                      {bloqueado ? (
+                        <span className={styles.navAyuda}>{motivoBloqueo}</span>
+                      ) : novedad ? (
+                        <span className={`${styles.navAyuda} ${styles.navAyudaNovedad}`}>{textoNovedad}</span>
+                      ) : (
+                        <span className={styles.navAyuda}>{ayuda}</span>
+                      )}
+                    </span>
+                    {bloqueado && <FiLock className={styles.navEstado} aria-label="Bloqueado" />}
+                    {!bloqueado && novedad && (
+                      <span className={styles.novedadDot} aria-label="Recién habilitado" />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </div>
 
       <div className={styles.pie}>
@@ -291,9 +356,24 @@ export default function Sidebar({ isOpen, onClose }) {
           </ul>
         </div>
 
+        {/* Solo escritorio: alterna entre sidebar expandido y compacto. */}
+        <button
+          type="button"
+          className={styles.toggleCompacto}
+          onClick={toggleCompacto}
+          aria-label={compacto ? "Expandir menú" : "Contraer menú"}
+          title={compacto ? "Expandir menú" : "Contraer menú"}
+        >
+          <FiSidebar aria-hidden="true" />
+          <span className={styles.toggleTexto}>Contraer menú</span>
+        </button>
+
         <p className={styles.versionText}>
-          Versión {__APP_VERSION__}
-          {versionApi && <> · API {versionApi}</>}
+          <span className={styles.versionCompleta}>
+            Versión {__APP_VERSION__}
+            {versionApi && <> · API {versionApi}</>}
+          </span>
+          <span className={styles.versionCorta}>v{__APP_VERSION__}</span>
         </p>
       </div>
 

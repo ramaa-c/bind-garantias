@@ -18,6 +18,7 @@ import styles from "./Navbar.module.css";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useThemeStore, LIGHT_MODE_ENABLED } from "../../../../store/useThemeStore";
+import { useSidebarStore } from "../../../../store/useSidebarStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
@@ -62,6 +63,8 @@ const Navbar = ({
   // empresa "activa" real que mostrar todavía.
   const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
   const isVinculado = !!nombreEmpresa && !enAltaDatosEmpresa;
+  // Con el sidebar compacto la empresa activa ya no se ve ahí: pasa acá.
+  const sidebarCompacto = useSidebarStore((state) => state.compacto);
 
   const emailUsuario =
     typeof user === "string"
@@ -139,6 +142,15 @@ const Navbar = ({
             </>
           )}
         </button>
+
+        {sidebarCompacto && isVinculado && (
+          <span className={styles.empresaPill} title={nombreEmpresa}>
+            <span className={styles.empresaPillAvatar} aria-hidden="true">
+              {obtenerInicialesEmpresa(nombreEmpresa)}
+            </span>
+            <span className={styles.empresaPillNombre}>{nombreEmpresa}</span>
+          </span>
+        )}
 
         {(tituloSeccion || nombreCadena) && (
           <nav className={styles.contexto} aria-label="Ubicación">

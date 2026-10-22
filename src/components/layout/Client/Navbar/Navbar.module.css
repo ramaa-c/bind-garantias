@@ -453,20 +453,59 @@
   text-underline-offset: 2px;
 }
 
-/* ── Escritorio: barra flotante alineada al sidebar ── */
+/* Empresa activa en la barra: solo con el sidebar compacto (escritorio). */
+.empresaPill {
+  display: none;
+}
+
+/* ── Escritorio: barra de contexto pegada arriba, junto al sidebar ── */
 @media (min-width: 64rem) {
   .header {
-    margin: 0.75rem 0.75rem 0 0.75rem;
-    min-height: calc(4.75rem + 1px);
-    padding: 0 0.6rem 0 1.4rem;
-    background: var(--carbon-black, #1a1a1a);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border: 1px solid rgba(var(--overlay-rgb), 0.07);
-    border-radius: 1.25rem;
-    box-shadow:
-      0 12px 36px rgba(0, 0, 0, 0.22),
-      inset 0 1px 0 rgba(var(--overlay-rgb), 0.04);
+    margin: 0;
+    min-height: 4.5rem;
+    padding: 0 1rem 0 1.75rem;
+    background: rgba(var(--glass-rgb), 0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 0;
+    border-bottom: 1px solid rgba(var(--overlay-rgb), 0.07);
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .empresaPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    max-width: 15rem;
+    padding: 0.25rem 0.75rem 0.25rem 0.25rem;
+    border-radius: 999px;
+    border: 1px solid rgba(var(--overlay-rgb), 0.08);
+    background: rgba(var(--overlay-rgb), 0.035);
+  }
+
+  .empresaPillAvatar {
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: var(--color-amarillo-bind);
+    color: var(--on-amarillo-bind);
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  .empresaPillNombre {
+    min-width: 0;
+    color: var(--white);
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .menuButton,

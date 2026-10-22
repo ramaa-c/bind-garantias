@@ -526,26 +526,105 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Escritorio: panel flotante fijo ── */
+/* ── "Tu alta": progreso del recorrido ── */
+.progreso {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 0.35rem;
+}
+
+.progresoTexto {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.progresoLabel {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.progresoCuenta {
+  color: var(--white-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.progresoBarra {
+  height: 0.25rem;
+  border-radius: 999px;
+  background: rgba(var(--overlay-rgb), 0.08);
+  overflow: hidden;
+}
+
+.progresoBarra span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-amarillo-bind);
+  transition: width 0.4s ease;
+}
+
+.progresoAnillo {
+  display: none;
+}
+
+.anilloFondo,
+.anilloValor {
+  fill: none;
+  stroke-width: 4;
+}
+
+.anilloFondo {
+  stroke: rgba(var(--overlay-rgb), 0.1);
+}
+
+.anilloValor {
+  stroke: var(--color-amarillo-bind);
+  stroke-linecap: round;
+}
+
+.anilloTexto {
+  fill: var(--white);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+/* ── Botón contraer/expandir (solo escritorio) ── */
+.toggleCompacto {
+  display: none;
+}
+
+.versionCorta {
+  display: none;
+}
+
+/* ── Escritorio: sidebar fijo a todo el alto, expandido o compacto ── */
 @media (min-width: 64rem) {
   .container {
     position: relative;
     z-index: 10;
-    width: 17.5rem;
+    width: 17rem;
     flex-shrink: 0;
-    height: calc(100dvh - 1.5rem);
-    margin: 0.75rem 0 0.75rem 0.75rem;
-    border: 1px solid rgba(var(--overlay-rgb), 0.07);
-    border-radius: 1.25rem;
-    box-shadow:
-      0 12px 36px rgba(0, 0, 0, 0.28),
-      inset 0 1px 0 rgba(var(--overlay-rgb), 0.04);
+    height: 100dvh;
+    margin: 0;
+    border: 0;
+    border-right: 1px solid rgba(var(--overlay-rgb), 0.07);
+    border-radius: 0;
+    box-shadow: none;
+    background: rgba(var(--glass-rgb), 0.55);
     transform: none;
-    transition: none;
+    transition: width 0.25s var(--sidebar-ease);
   }
 
   .marca {
-    min-height: 4.75rem;
+    min-height: 4.5rem;
     padding: 0 0.85rem;
   }
 
@@ -558,7 +637,171 @@
   }
 
   .pie {
-    padding: 0.85rem 1rem 1rem;
+    gap: 0.6rem;
+    padding: 0.75rem 0.85rem 0.85rem;
+  }
+
+  /* Ítem activo con el acento de la zona cliente (amarillo). */
+  .navItemActivo,
+  .navItemActivo:hover:not(:disabled) {
+    background: rgba(245, 244, 0, 0.07);
+    border-color: rgba(245, 244, 0, 0.18);
+  }
+
+  .navItemActivo .navIcono,
+  .navItemActivo:hover:not(:disabled) .navIcono {
+    background: var(--badge-amarillo-bg);
+    border-color: var(--badge-amarillo-border);
+    color: var(--badge-amarillo-text);
+    box-shadow: none;
+  }
+
+  .toggleCompacto {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
+    border-radius: 0.65rem;
+    border: 1px solid rgba(var(--overlay-rgb), 0.08);
+    background: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      color 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .toggleCompacto:hover {
+    color: var(--white);
+    border-color: rgba(var(--overlay-rgb), 0.16);
+  }
+
+  .toggleCompacto:focus-visible {
+    outline: 2px solid var(--color-azul-bind-300, #8a9fff);
+    outline-offset: 2px;
+  }
+
+  .toggleCompacto svg {
+    font-size: 1rem;
+  }
+
+  /* ── Modo compacto (rail) ── */
+  .compacto {
+    width: 5.75rem;
+  }
+
+  .compacto .marca {
+    justify-content: center;
+    padding: 0.85rem 0.5rem;
+  }
+
+  .compacto .marcaLogos {
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin: 0;
+  }
+
+  .compacto .logo {
+    height: auto;
+    width: 3rem;
+  }
+
+  .compacto .logoSeparator {
+    width: 1.75rem;
+    height: 1px;
+  }
+
+  .compacto .channelLogo {
+    height: 2rem;
+    max-width: 3.75rem;
+    object-position: center;
+  }
+
+  .compacto .cuerpo {
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 0.5rem;
+  }
+
+  .compacto .empresa {
+    display: none;
+  }
+
+  .compacto .progreso {
+    padding: 0;
+  }
+
+  .compacto .progresoTexto,
+  .compacto .progresoBarra {
+    display: none;
+  }
+
+  .compacto .progresoAnillo {
+    display: block;
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .compacto .nav {
+    width: 100%;
+  }
+
+  .compacto .navItem {
+    position: relative;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 0.45rem 0.2rem;
+  }
+
+  .compacto .navTexto {
+    align-items: center;
+  }
+
+  .compacto .navLabel {
+    font-size: 0.66rem;
+    text-align: center;
+  }
+
+  .compacto .navAyuda {
+    display: none;
+  }
+
+  .compacto .navEstado {
+    position: absolute;
+    top: 0.3rem;
+    right: 0.55rem;
+    font-size: 0.7rem;
+  }
+
+  .compacto .novedadDot {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.7rem;
+  }
+
+  .compacto .pie {
+    align-items: center;
+    padding: 0.75rem 0.5rem 0.85rem;
+  }
+
+  .compacto .toggleTexto,
+  .compacto .versionCompleta {
+    display: none;
+  }
+
+  .compacto .toggleCompacto {
+    width: 2.75rem;
+    padding: 0;
+  }
+
+  .compacto .versionCorta {
+    display: inline;
   }
 }
 
