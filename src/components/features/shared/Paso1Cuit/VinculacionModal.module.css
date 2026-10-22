@@ -1,0 +1,153 @@
+/* Rediseño 2026-10 (opción A del lienzo + check de la opción B). */
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.125rem;
+}
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.icono {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  background: var(--badge-amarillo-bg);
+  color: var(--badge-amarillo-text);
+}
+
+.titulo {
+  margin: 0;
+  color: var(--white);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.texto {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.empresa {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem;
+  border-radius: 0.875rem;
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid var(--border);
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.625rem;
+  display: grid;
+  place-items: center;
+  background: var(--color-amarillo-bind);
+  color: var(--on-amarillo-bind);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.empresaTexto {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.empresaTexto strong {
+  color: var(--white);
+  font-size: 1rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.empresaTexto span {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.aviso {
+  margin: 0;
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  color: var(--white-muted);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.aviso svg {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--warning);
+}
+
+.check {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.875rem;
+  border-radius: 0.75rem;
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1.5px solid var(--border);
+  color: var(--white-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.check input {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--color-amarillo-bind);
+  cursor: pointer;
+}
+
+.checkMarcado {
+  border-color: color-mix(in srgb, var(--color-amarillo-bind) 45%, var(--border));
+  background: color-mix(in srgb, var(--color-amarillo-bind) 6%, transparent);
+}
+
+.acciones {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.625rem;
+}
+
+.boton {
+  min-height: 2.875rem;
+  padding: 0 1.25rem;
+  border-radius: 0.75rem;
+}
+
+@media (max-width: 47.99rem) {
+  .acciones {
+    flex-direction: column-reverse;
+  }
+
+  .boton {
+    width: 100%;
+  }
+}

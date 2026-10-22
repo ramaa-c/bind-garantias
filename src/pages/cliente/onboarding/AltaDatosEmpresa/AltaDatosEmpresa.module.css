@@ -259,57 +259,160 @@
   animation: fadeIn 0.3s ease;
 }
 
+/* Modal "Empresa ya registrada" (correo no coincide / otro usuario).
+   Rediseño 2026-10, opción A del lienzo. */
 .modalContent {
   display: flex;
   flex-direction: column;
   gap: 1.125rem;
-  padding: 0.25rem 0;
+}
+
+.modalCabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.modalIcono {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+  color: var(--warning);
+}
+
+.modalCabeceraTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
 }
 
 .modalBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.625rem;
-  background: var(--badge-amarillo-bg);
-  border: 1px solid var(--badge-amarillo-border);
-  border-radius: 999px;
-  color: var(--badge-amarillo-text);
-  font-size: 0.65rem;
+  color: var(--warning);
+  font-size: 0.6875rem;
   font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  align-self: flex-start;
 }
 
 .modalTitle {
   margin: 0;
-  font-size: 1.125rem;
+  color: var(--white);
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--white, #fff);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 .modalText {
   margin: 0;
   color: var(--text-muted);
-  font-size: 0.875rem;
-  line-height: 1.65;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.modalHighlight {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  border-radius: 0.875rem;
+  background: rgba(var(--overlay-rgb), 0.04);
+  border: 1px solid var(--border);
+}
+
+.modalAvatar {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.625rem;
+  display: grid;
+  place-items: center;
+  background: rgba(var(--overlay-rgb), 0.08);
+  color: var(--white-muted);
+  font-weight: 700;
+}
+
+.modalHighlightTexto {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.modalHighlightTitle {
+  color: var(--white);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .modalHighlightSubtitle {
-  margin-left: 0.75rem;
   color: var(--text-muted);
-  font-size: 0.78rem;
-  font-family: var(--font-mono, monospace);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
 }
 
-.modalActionsSingle {
+.modalSoporte {
+  margin: 0;
+  color: var(--white-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.linkText {
+  color: var(--color-azul-bind-300);
+  font-weight: 600;
+}
+
+/* El azul claro no contrasta sobre blanco: en modo claro va el oscuro. */
+:global(:root[data-theme="light"]) .linkText {
+  color: var(--color-azul-bind-600);
+}
+
+.modalActions {
+  width: 100%;
   display: flex;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgba(var(--overlay-rgb), 0.05);
   justify-content: flex-end;
+  gap: 0.625rem;
 }
 
-.modalButton {
-  min-width: 8rem;
+.modalBoton,
+.modalBotonSecundario {
+  min-height: 2.875rem;
+  padding: 0 1.25rem;
+  border-radius: 0.75rem;
+}
+
+.modalBotonSecundario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-hover);
+  color: var(--white-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.modalBotonSecundario:hover {
+  color: var(--white);
+}
+
+@media (max-width: 47.99rem) {
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .modalBoton,
+  .modalBotonSecundario {
+    width: 100%;
+  }
 }

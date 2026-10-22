@@ -3,7 +3,7 @@ import { useFormContext, useFormState, useWatch } from "react-hook-form";
 import { FiShield, FiZap, FiCheckCircle } from "react-icons/fi";
 import { BuscadorCuit } from "../../../ui/BuscadorCuit/BuscadorCuit";
 import { ProcesamientoModal } from "../../../ui/ProcesamientoModal/ProcesamientoModal";
-import { ConfirmacionModal } from "../ConfirmacionModal/ConfirmacionModal";
+import VinculacionModal from "./VinculacionModal";
 import { sociosService } from "../../../../services/sociosService";
 import { useValidarSocioCore } from "../../../../hooks/useSgrPlusCore";
 import { useCdaEngine } from "../../../../hooks/useCdaEngine";
@@ -105,7 +105,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
   // confirmación de vinculación (ver handleValidar) — se guardan acá en
   // "limbo" para poder precargarlos en continuarValidacionCompleta sin
   // volver a golpear las integraciones si el usuario confirma. Si cancela,
-  // se descartan (ver onClose del ConfirmacionModal más abajo).
+  // se descartan (ver onClose del VinculacionModal más abajo).
   const datosEmpresaPrefetchRef = useRef(null);
 
   const [confirmVinculacion, setConfirmVinculacion] = useState({
@@ -453,17 +453,17 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
 
     setProcesoModal({
       isOpen: true,
-      titulo: "Validando Empresa",
+      titulo: "Validando tu empresa",
       pasos: [
         {
           id: "socio",
-          etiqueta: "Registro Inicial",
+          etiqueta: "Registro inicial",
           estado: yaCruzoUmbral ? "completado" : "cargando",
           descripcion: "Datos iniciales registrados con éxito.",
         },
         {
           id: "sgrcore",
-          etiqueta: "Validación de Información",
+          etiqueta: "Validación de información",
           estado: !yaCruzoUmbral
             ? "pendiente"
             : pasoQueFallo === "cda"
@@ -473,13 +473,13 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         },
         {
           id: "pyme",
-          etiqueta: "Revisión Detallada y Complementaria",
+          etiqueta: "Revisión complementaria",
           estado: yaCruzoUmbral && pasoQueFallo === "cda" ? "completado" : "pendiente",
           descripcion: "Estamos procesando verificaciones detalladas en curso.",
         },
         {
           id: "cda",
-          etiqueta: "Finalización de la Solicitud",
+          etiqueta: "Finalización",
           estado: yaCruzoUmbral && pasoQueFallo === "cda" ? "cargando" : "pendiente",
           descripcion: "Últimos chequeos antes de la decisión final.",
         },
@@ -777,7 +777,7 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
         onRetry={continuarValidacionCompleta}
       />
 
-      <ConfirmacionModal
+      <VinculacionModal
         isOpen={confirmVinculacion.isOpen}
         onClose={() => {
           setConfirmVinculacion({ isOpen: false, cuit: "", nombreEmpresa: "" });
@@ -787,10 +787,8 @@ export default function Paso1Cuit({ onValidar, onSocioExistente, onSocioCreado, 
           setConfirmVinculacion({ isOpen: false, cuit: "", nombreEmpresa: "" });
           continuarValidacionCompleta();
         }}
-        titulo="Confirmá tu empresa"
-        mensaje={`Vas a vincular la empresa ${confirmVinculacion.nombreEmpresa} (CUIT ${formatearCuit(confirmVinculacion.cuit)}) a tu usuario. Una vez que confirmes, no vas a poder modificarla — asegurate de que sea la correcta antes de continuar.`}
-        confirmText="Confirmar y continuar"
-        cancelText="Volver a revisar"
+        nombreEmpresa={confirmVinculacion.nombreEmpresa}
+        cuit={formatearCuit(confirmVinculacion.cuit)}
       />
     </div>
   );
