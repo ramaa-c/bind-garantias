@@ -610,6 +610,9 @@ export function DocumentosLegajo({
       name: activeFile.nombrearchivo,
       size: activeFile.contenido ? formatBase64Size(activeFile.contenido) : "Disponible",
       vialufe: activeFile.vialufe || activeFile.Vialufe || "0",
+      // Si el archivo es una imagen (ej. alguno histórico o vía LUFE), el
+      // base64 ya está acá y da la miniatura real; si es PDF, la hoja.
+      contenido: activeFile.contenido,
     } : null;
 
     const hasError =
@@ -742,9 +745,9 @@ export function DocumentosLegajo({
             const bloqueDropzone = (
               <div className={styles.dropzoneContainer}>
                 <CargaArchivos
-                  title={currentSubTab === "nuevo" ? "Arrastrá tu nuevo archivo acá" : doc.title}
-                  subtitle={currentSubTab === "nuevo" ? "o hacé click para buscar" : "Archivo cargado"}
+                  title={currentSubTab === "nuevo" ? `Otro archivo de ${doc.title}` : doc.title}
                   formatos={FORMATOS_ARCHIVO.pdf.etiqueta}
+                  admin={adminMode}
                   hasError={hasError}
                   isUploading={uploadingKey === doc.key}
                   faseDescarga={faseDe(doc.key)}

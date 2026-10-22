@@ -252,6 +252,8 @@ export const DocumentosEmpresaModal = ({
                                     currentFile.formattedSize ||
                                     currentFile.size,
                                   vialufe: currentFile.vialufe || "0",
+                                  // Miniatura real si es una imagen recién elegida.
+                                  fuente: currentFile instanceof Blob ? currentFile : null,
                                 }
                               : null
                           }
