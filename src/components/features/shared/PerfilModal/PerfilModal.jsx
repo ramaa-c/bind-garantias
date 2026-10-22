@@ -421,287 +421,356 @@ export const PerfilModal = ({ isOpen, onClose }) => {
     );
   };
 
+  // Secciones del menú de "Mi perfil": "Mi empresa" solo existe con una
+  // empresa activa ya dada de alta (ver hayEmpresa más arriba).
+  const secciones = [
+    ...(hayEmpresa
+      ? [
+          {
+            key: "empresa",
+            label: "Mi empresa",
+            icon: FiBriefcase,
+            hint: "Datos que podés actualizar vos mismo.",
+          },
+        ]
+      : []),
+    {
+      key: "cuenta",
+      label: "Mi cuenta",
+      icon: FiUser,
+      hint: "Este nombre se muestra dentro de la plataforma.",
+    },
+    {
+      key: "seguridad",
+      label: "Seguridad",
+      icon: FiLock,
+      hint: "Usá una contraseña que no utilices en otros sitios.",
+    },
+  ];
+  const seccionActiva = secciones.find((s) => s.key === tab) || secciones[0];
+  const tabRefs = useRef({});
+
+  // Navegación con flechas/Home/End entre pestañas (patrón WAI-ARIA de
+  // tablist): solo la pestaña activa queda en el orden de Tab, el resto se
+  // alcanza con las flechas - sirve igual para el menú vertical de
+  // escritorio y para los segmentos horizontales de mobile.
+  const handleTabKeyDown = (e, index) => {
+    const ultimo = secciones.length - 1;
+    let siguiente = null;
+    if (e.key === "ArrowDown" || e.key === "ArrowRight") siguiente = index === ultimo ? 0 : index + 1;
+    else if (e.key === "ArrowUp" || e.key === "ArrowLeft") siguiente = index === 0 ? ultimo : index - 1;
+    else if (e.key === "Home") siguiente = 0;
+    else if (e.key === "End") siguiente = ultimo;
+    if (siguiente === null) return;
+    e.preventDefault();
+    const destino = secciones[siguiente].key;
+    setTab(destino);
+    tabRefs.current[destino]?.focus();
+  };
+
+  // Mismo bloque de carga/error para "Mi cuenta" y "Seguridad": los dos
+  // formularios dependen de haber identificado al usuario web.
+  const renderEstadoUsuario = (alturas) =>
+    isLoadingUsuario ? (
+      <div className={styles.skeletonStack}>
+        {alturas.map((alto, i) => (
+          <Skeleton key={i} width="100%" height={alto} radius="0.9rem" />
+        ))}
+      </div>
+    ) : !usuarioWebId ? (
+      <div className={styles.avisoNoDisponible}>
+        <FiAlertCircle />
+        <p>No pudimos identificar tu cuenta de usuario. Intentá nuevamente más tarde.</p>
+      </div>
+    ) : null;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="MI PERFIL"
+      title="Mi perfil"
       subtitle={
         ocultarIdentityCard
           ? "Gestioná el acceso a tu cuenta."
           : "Gestioná los datos de tu empresa y el acceso a tu cuenta."
       }
-      maxWidth="46rem"
+      maxWidth="52rem"
     >
-      <div className={styles.modalBody}>
-        {!ocultarIdentityCard && (
-          <div className={styles.identityCard}>
-            {hayEmpresa ? (
-              <div
-                className={`${sidebarStyles.companyAvatar} ${sidebarStyles[`avatar--${obtenerVarianteAvatarEmpresa(nombreEmpresa || "")}`]} ${styles.identityAvatarSize}`}
+      {/* Mobile first: identidad, segmentos y contenido apilados. Desde
+          48rem pasa a dos columnas con menú lateral (ver .layout en el
+          CSS) - .content usa display:contents en mobile para que el
+          menú pueda quedar ENTRE la identidad y el contenido sin
+          duplicar el markup. */}
+      <div className={styles.layout}>
+        <div
+          className={styles.nav}
+          role="tablist"
+          aria-label="Secciones de mi perfil"
+        >
+          {secciones.map((seccion, index) => {
+            const Icono = seccion.icon;
+            const activa = seccion.key === seccionActiva.key;
+            return (
+              <button
+                key={seccion.key}
+                ref={(el) => {
+                  tabRefs.current[seccion.key] = el;
+                }}
+                type="button"
+                role="tab"
+                id={`perfil-tab-${seccion.key}`}
+                aria-selected={activa}
+                aria-controls="perfil-panel"
+                tabIndex={activa ? 0 : -1}
+                title={seccion.label}
+                className={`${styles.navItem} ${activa ? styles.navItemActive : ""}`}
+                onClick={() => setTab(seccion.key)}
+                onKeyDown={(e) => handleTabKeyDown(e, index)}
               >
-                {obtenerInicialesEmpresa(nombreEmpresa || "")}
+                <Icono className={styles.navIcon} aria-hidden="true" />
+                <span className={styles.navLabel}>{seccion.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className={styles.content}>
+          {!ocultarIdentityCard && (
+            <div className={styles.identityCard}>
+              {hayEmpresa ? (
+                <div
+                  className={`${sidebarStyles.companyAvatar} ${sidebarStyles[`avatar--${obtenerVarianteAvatarEmpresa(nombreEmpresa || "")}`]} ${styles.identityAvatarSize}`}
+                >
+                  {obtenerInicialesEmpresa(nombreEmpresa || "")}
+                </div>
+              ) : (
+                <div className={styles.identityAvatarUser}>
+                  <FaRegUserCircle />
+                </div>
+              )}
+              <div className={styles.identityInfo}>
+                <p className={styles.identityName}>
+                  {hayEmpresa ? nombreEmpresa : emailUsuario}
+                </p>
+                <p className={styles.identityMeta}>
+                  {hayEmpresa ? `CUIT ${cuitActivo} · ${emailUsuario}` : "Sin empresa vinculada"}
+                </p>
               </div>
-            ) : (
-              <div className={styles.identityAvatarUser}>
-                <FaRegUserCircle />
-              </div>
-            )}
-            <div className={styles.identityInfo}>
-              <p className={styles.identityName}>
-                {hayEmpresa ? nombreEmpresa : emailUsuario}
-              </p>
-              <p className={styles.identityMeta}>
-                {hayEmpresa ? `CUIT ${cuitActivo} · ${emailUsuario}` : "Sin empresa vinculada"}
-              </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {hayEmpresa && (
-          <div className={styles.tabs}>
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${tab === "empresa" ? styles.tabBtnActive : ""}`}
-              onClick={() => setTab("empresa")}
-            >
-              <FiBriefcase /> <span>Datos de la empresa</span>
-            </button>
-            <button
-              type="button"
-              className={`${styles.tabBtn} ${tab === "cuenta" ? styles.tabBtnActive : ""}`}
-              onClick={() => setTab("cuenta")}
-            >
-              <FiUser /> <span>Mi cuenta</span>
-            </button>
-          </div>
-        )}
+          <section
+            id="perfil-panel"
+            role="tabpanel"
+            aria-labelledby={`perfil-tab-${seccionActiva.key}`}
+            className={styles.panel}
+          >
+            <header className={styles.panelHeader}>
+              <h3 className={styles.panelTitle}>{seccionActiva.label}</h3>
+              <p className={styles.panelHint}>{seccionActiva.hint}</p>
+            </header>
 
-        {tab === "empresa" && hayEmpresa && (
-          <>
-            {isLoadingEmpresa || isPendingSocioWeb ? (
-              <div className={styles.skeletonStack}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} width="100%" height="4.25rem" radius="0.9rem" />
-                ))}
-              </div>
-            ) : (
-              <FormProvider {...metodosEmpresa}>
-                <div className={paso2Styles.taskList}>
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setUbicacionModalOpen(true);
-                      }
-                    }}
-                    className={`${paso2Styles.taskRow} ${ubicacionOk ? paso2Styles.rowSuccess : ""}`}
-                    onClick={() => setUbicacionModalOpen(true)}
-                  >
-                    <span
-                      className={`${paso2Styles.taskIcon} ${ubicacionOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
+            {seccionActiva.key === "empresa" &&
+              (isLoadingEmpresa || isPendingSocioWeb ? (
+                <div className={styles.skeletonStack}>
+                  {Array.from({ length: 2 }).map((_, i) => (
+                    <Skeleton key={i} width="100%" height="4.25rem" radius="0.9rem" />
+                  ))}
+                </div>
+              ) : (
+                <FormProvider {...metodosEmpresa}>
+                  <div className={paso2Styles.taskList}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setUbicacionModalOpen(true);
+                        }
+                      }}
+                      className={`${paso2Styles.taskRow} ${ubicacionOk ? paso2Styles.rowSuccess : ""}`}
+                      onClick={() => setUbicacionModalOpen(true)}
                     >
-                      {ubicacionOk ? <FiCheckCircle size={17} /> : <FiMapPin size={17} />}
-                    </span>
-                    <div className={paso2Styles.taskInfo}>
-                      <strong className={paso2Styles.taskTitle}>Datos de Ubicación</strong>
-                      <span className={paso2Styles.taskSub}>
-                        {ubicacionOk && direccion
-                          ? `${direccion}${localidadTexto ? `, ${localidadTexto}` : ""}`
-                          : "Dirección, Provincia y Localidad"}
+                      <span
+                        className={`${paso2Styles.taskIcon} ${ubicacionOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
+                      >
+                        {ubicacionOk ? <FiCheckCircle size={17} /> : <FiMapPin size={17} />}
+                      </span>
+                      <div className={paso2Styles.taskInfo}>
+                        <strong className={paso2Styles.taskTitle}>Datos de ubicación</strong>
+                        <span className={paso2Styles.taskSub}>
+                          {ubicacionOk && direccion
+                            ? `${direccion}${localidadTexto ? `, ${localidadTexto}` : ""}`
+                            : "Dirección, provincia y localidad"}
+                        </span>
+                      </div>
+                      <span
+                        className={`${paso2Styles.taskAction} ${ubicacionOk ? paso2Styles.taskActionEdit : ""}`}
+                      >
+                        {ubicacionOk ? (
+                          <>
+                            <FiEdit2 size={12} /> Modificar
+                          </>
+                        ) : (
+                          <>
+                            Completar <FiChevronRight size={13} />
+                          </>
+                        )}
                       </span>
                     </div>
-                    <span
-                      className={`${paso2Styles.taskAction} ${ubicacionOk ? paso2Styles.taskActionEdit : ""}`}
-                    >
-                      {ubicacionOk ? (
-                        <>
-                          <FiEdit2 size={12} /> Modificar
-                        </>
-                      ) : (
-                        <>
-                          Completar <FiChevronRight size={13} />
-                        </>
-                      )}
-                    </span>
-                  </div>
 
-                  <div
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        setContactoModalOpen(true);
-                      }
-                    }}
-                    className={`${paso2Styles.taskRow} ${contactoOk ? paso2Styles.rowSuccess : ""}`}
-                    onClick={() => setContactoModalOpen(true)}
-                  >
-                    <span
-                      className={`${paso2Styles.taskIcon} ${contactoOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setContactoModalOpen(true);
+                        }
+                      }}
+                      className={`${paso2Styles.taskRow} ${contactoOk ? paso2Styles.rowSuccess : ""}`}
+                      onClick={() => setContactoModalOpen(true)}
                     >
-                      {contactoOk ? <FiCheckCircle size={17} /> : <FiPhone size={17} />}
-                    </span>
-                    <div className={paso2Styles.taskInfo}>
-                      <strong className={paso2Styles.taskTitle}>Verificación de Contacto</strong>
-                      <span className={paso2Styles.taskSub}>
-                        {contactoOk ? `Cel: ${celular}` : "Ingresar teléfono celular"}
+                      <span
+                        className={`${paso2Styles.taskIcon} ${contactoOk ? paso2Styles.iconSuccess : paso2Styles.iconWarn}`}
+                      >
+                        {contactoOk ? <FiCheckCircle size={17} /> : <FiPhone size={17} />}
+                      </span>
+                      <div className={paso2Styles.taskInfo}>
+                        <strong className={paso2Styles.taskTitle}>Verificación de contacto</strong>
+                        <span className={paso2Styles.taskSub}>
+                          {contactoOk ? `Cel: ${celular}` : "Ingresar teléfono celular"}
+                        </span>
+                      </div>
+                      <span
+                        className={`${paso2Styles.taskAction} ${contactoOk ? paso2Styles.taskActionEdit : ""}`}
+                      >
+                        {contactoOk ? (
+                          <>
+                            <FiEdit2 size={12} /> Modificar
+                          </>
+                        ) : (
+                          <>
+                            Verificar <FiChevronRight size={13} />
+                          </>
+                        )}
                       </span>
                     </div>
-                    <span
-                      className={`${paso2Styles.taskAction} ${contactoOk ? paso2Styles.taskActionEdit : ""}`}
-                    >
-                      {contactoOk ? (
-                        <>
-                          <FiEdit2 size={12} /> Modificar
-                        </>
-                      ) : (
-                        <>
-                          Verificar <FiChevronRight size={13} />
-                        </>
-                      )}
-                    </span>
                   </div>
-                </div>
 
-                <UbicacionModal
-                  isOpen={modalUbicacionOpen}
-                  onClose={() => setUbicacionModalOpen(false)}
-                  onGuardar={handleGuardarUbicacion}
-                  bloquearSinCambios
-                />
-                <ContactoModal
-                  isOpen={modalContactoOpen}
-                  onClose={() => setContactoModalOpen(false)}
-                  onGuardar={handleGuardarContacto}
-                />
-              </FormProvider>
-            )}
-          </>
-        )}
-
-        {tab === "cuenta" && (
-          isLoadingUsuario ? (
-            <div className={styles.skeletonStack}>
-              <Skeleton width="100%" height="6rem" radius="0.9rem" />
-              <Skeleton width="100%" height="10rem" radius="0.9rem" />
-            </div>
-          ) : !usuarioWebId ? (
-            <div className={styles.avisoNoDisponible}>
-              <FiAlertCircle />
-              <p>No pudimos identificar tu cuenta de usuario. Intentá nuevamente más tarde.</p>
-            </div>
-          ) : (
-            <div className={styles.columnsGrid}>
-              <form
-                className={styles.sectionGroup}
-                onSubmit={handleUsernameSubmit(onSubmitUsername)}
-                noValidate
-              >
-                <h4 className={styles.sectionTitle}>
-                  <FiUser /> Nombre de usuario
-                </h4>
-                <p className={styles.sectionHint}>
-                  Este nombre se muestra dentro de la plataforma.
-                </p>
-                <div className={styles.sectionBody}>
-                  <InputSimple
-                    name="denominacion"
-                    control={usernameControl}
-                    label="Nombre de usuario"
-                    variant="client"
-                    error={usernameErrors.denominacion}
-                    disabled={actualizarUsuarioMutation.isPending}
+                  <UbicacionModal
+                    isOpen={modalUbicacionOpen}
+                    onClose={() => setUbicacionModalOpen(false)}
+                    onGuardar={handleGuardarUbicacion}
+                    bloquearSinCambios
                   />
-                </div>
-                <div className={styles.sectionActions}>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    isLoading={actualizarUsuarioMutation.isPending}
-                    disabled={!usernameIsDirty}
-                  >
-                    GUARDAR NOMBRE
-                  </Button>
-                </div>
-              </form>
-
-              <form
-                className={styles.sectionGroup}
-                onSubmit={handlePasswordSubmit(onSubmitPassword)}
-                noValidate
-              >
-                <h4 className={styles.sectionTitle}>
-                  <FiLock /> Cambiar contraseña
-                </h4>
-                <p className={styles.sectionHint}>
-                  Usá una contraseña que no utilices en otros sitios.
-                </p>
-
-                <div className={styles.sectionBody}>
-                  <InputSimple
-                    name="oldPassword"
-                    control={passwordControl}
-                    label="Contraseña actual"
-                    type="password"
-                    variant="client"
-                    error={passwordErrors.oldPassword}
-                    disabled={cambiarPasswordMutation.isPending}
+                  <ContactoModal
+                    isOpen={modalContactoOpen}
+                    onClose={() => setContactoModalOpen(false)}
+                    onGuardar={handleGuardarContacto}
                   />
+                </FormProvider>
+              ))}
 
-                  <Controller
-                    name="newPassword"
-                    control={passwordControl}
-                    render={({ field }) => (
-                      <InputPasswordSeguro
-                        {...field}
-                        label="Nueva contraseña"
-                        currentValue={newPasswordValue}
-                        email={emailUsuario}
-                        esValido={!passwordErrors.newPassword && !!newPasswordValue}
-                        disabled={cambiarPasswordMutation.isPending}
-                      />
-                    )}
-                  />
+            {seccionActiva.key === "cuenta" &&
+              (renderEstadoUsuario(["6rem"]) || (
+                <form
+                  className={styles.formCard}
+                  onSubmit={handleUsernameSubmit(onSubmitUsername)}
+                  noValidate
+                >
+                  <div className={styles.formBody}>
+                    <InputSimple
+                      name="denominacion"
+                      control={usernameControl}
+                      label="Nombre de usuario"
+                      variant="client"
+                      error={usernameErrors.denominacion}
+                      disabled={actualizarUsuarioMutation.isPending}
+                    />
+                  </div>
+                  <div className={styles.formActions}>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      isLoading={actualizarUsuarioMutation.isPending}
+                      disabled={!usernameIsDirty}
+                    >
+                      Guardar nombre
+                    </Button>
+                  </div>
+                </form>
+              ))}
 
-                  <InputSimple
-                    name="confirmPassword"
-                    control={passwordControl}
-                    label="Confirmar nueva contraseña"
-                    type="password"
-                    variant="client"
-                    esValido={
-                      !!confirmPasswordValue &&
-                      newPasswordValue === confirmPasswordValue &&
-                      !passwordErrors.confirmPassword
-                    }
-                    error={passwordErrors.confirmPassword}
-                    disabled={cambiarPasswordMutation.isPending}
-                  />
-                </div>
+            {seccionActiva.key === "seguridad" &&
+              (renderEstadoUsuario(["14rem"]) || (
+                <form
+                  className={styles.formCard}
+                  onSubmit={handlePasswordSubmit(onSubmitPassword)}
+                  noValidate
+                >
+                  <div className={styles.formBody}>
+                    <InputSimple
+                      name="oldPassword"
+                      control={passwordControl}
+                      label="Contraseña actual"
+                      type="password"
+                      variant="client"
+                      error={passwordErrors.oldPassword}
+                      disabled={cambiarPasswordMutation.isPending}
+                    />
 
-                <div className={styles.sectionActions}>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    isLoading={cambiarPasswordMutation.isPending}
-                    disabled={!isPasswordValid}
-                  >
-                    ACTUALIZAR CONTRASEÑA
-                  </Button>
-                </div>
-              </form>
-            </div>
-          )
-        )}
+                    <Controller
+                      name="newPassword"
+                      control={passwordControl}
+                      render={({ field }) => (
+                        <InputPasswordSeguro
+                          {...field}
+                          label="Nueva contraseña"
+                          currentValue={newPasswordValue}
+                          email={emailUsuario}
+                          esValido={!passwordErrors.newPassword && !!newPasswordValue}
+                          disabled={cambiarPasswordMutation.isPending}
+                        />
+                      )}
+                    />
+
+                    <InputSimple
+                      name="confirmPassword"
+                      control={passwordControl}
+                      label="Confirmar nueva contraseña"
+                      type="password"
+                      variant="client"
+                      esValido={
+                        !!confirmPasswordValue &&
+                        newPasswordValue === confirmPasswordValue &&
+                        !passwordErrors.confirmPassword
+                      }
+                      error={passwordErrors.confirmPassword}
+                      disabled={cambiarPasswordMutation.isPending}
+                    />
+                  </div>
+
+                  <div className={styles.formActions}>
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      isLoading={cambiarPasswordMutation.isPending}
+                      disabled={!isPasswordValid}
+                    >
+                      Actualizar contraseña
+                    </Button>
+                  </div>
+                </form>
+              ))}
+          </section>
+        </div>
       </div>
 
       <div className={styles.modalFoot}>
         <Button variant="outline" onClick={onClose}>
-          CERRAR
+          Cerrar
         </Button>
       </div>
     </Modal>
