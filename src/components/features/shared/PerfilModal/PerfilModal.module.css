@@ -132,18 +132,12 @@
   line-height: 1.4;
 }
 
-/* Sin el relleno gris de --bg-elevado (chocaba con la cabecera y con los
-   inputs, que ya son grises): borde suave y un toque del amarillo de la
-   cabecera. El padding de abajo es menor porque los inputs ya reservan
-   lugar para su mensaje de error. */
+/* Cada pestaña tiene un solo formulario: va directo sobre el modal, sin
+   tarjeta propia. */
 .formCard {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  padding: 1.1rem 1.25rem 0.6rem;
-  background: linear-gradient(160deg, rgba(245, 244, 0, 0.03), transparent 45%);
-  border: 1px solid rgba(var(--overlay-rgb), 0.08);
-  border-radius: 1rem;
 }
 
 .formTitulo {
