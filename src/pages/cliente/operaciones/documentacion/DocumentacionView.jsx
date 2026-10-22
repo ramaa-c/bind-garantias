@@ -197,7 +197,9 @@ export default function DocumentacionView() {
         onClose={() => setShowConfirmModal(false)}
         onConfirm={handleActualizarLufe}
         titulo="Consultar a LUFE"
-        mensaje="¿Estás seguro de que deseas actualizar los documentos de esta empresa desde LUFE? Esta acción puede agregar documentos nuevos al legajo."
+        mensaje="Vamos a buscar la documentación más reciente de tu empresa. Esto puede sumar documentos nuevos al legajo."
+        icono={<FiRefreshCw />}
+        confirmText="Consultar"
       />
     </section>
   );

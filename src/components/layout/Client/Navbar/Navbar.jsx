@@ -18,21 +18,13 @@ import styles from "./Navbar.module.css";
 import { PerfilModal } from "../../../features/shared/PerfilModal/PerfilModal";
 import { useAuthStore } from "../../../../store/useAuthStore";
 import { useThemeStore, LIGHT_MODE_ENABLED } from "../../../../store/useThemeStore";
+import { useSidebarStore } from "../../../../store/useSidebarStore";
 import { useEmpresaActiva } from "../../../../hooks/useEmpresaActiva";
 import { useVendor } from "../../../../hooks/useVendor";
 import { useObtenerPorNombreOEmail } from "../../../../hooks/useUsuario";
 import { useChannel } from "../../../../context/useChannel";
 import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
 import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
-
-const SECCIONES = [
-  { segmento: "/alta-operacion", titulo: "Nueva operación" },
-  { segmento: "/solicitudes", titulo: "Solicitudes" },
-  { segmento: "/legajo", titulo: "Legajo" },
-  { segmento: "/documentacion", titulo: "Documentación" },
-  { segmento: "/alta-datos-empresa", titulo: "Alta de empresa" },
-  { segmento: "/seleccionar-empresa", titulo: "Seleccionar empresa" },
-];
 
 const Navbar = ({
   texto = "¿No tenés cuenta?",
@@ -62,6 +54,8 @@ const Navbar = ({
   // empresa "activa" real que mostrar todavía.
   const enAltaDatosEmpresa = location.pathname.includes("/alta-datos-empresa");
   const isVinculado = !!nombreEmpresa && !enAltaDatosEmpresa;
+  // Con el sidebar compacto la empresa activa ya no se ve ahí: pasa acá.
+  const sidebarCompacto = useSidebarStore((state) => state.compacto);
 
   const emailUsuario =
     typeof user === "string"
@@ -83,8 +77,6 @@ const Navbar = ({
   const inicialesUsuario = obtenerInicialesEmpresa(denominacion || emailUsuario.split("@")[0]);
   const rolUsuario = isVendor ? "Vendor" : isVinculado ? "Socio" : "Sin empresa";
 
-  const tituloSeccion = SECCIONES.find((s) => location.pathname.includes(s.segmento))?.titulo;
-  const nombreCadena = channelInfo?.id !== "default" ? channelInfo?.nombre : null;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -140,19 +132,15 @@ const Navbar = ({
           )}
         </button>
 
-        {(tituloSeccion || nombreCadena) && (
-          <nav className={styles.contexto} aria-label="Ubicación">
-            {nombreCadena && <span className={styles.contextoMeta}>{nombreCadena}</span>}
-            {nombreCadena && tituloSeccion && (
-              <FiChevronRight className={styles.contextoSeparador} aria-hidden="true" />
-            )}
-            {tituloSeccion && (
-              <span className={styles.contextoTitulo} aria-current="page">
-                {tituloSeccion}
-              </span>
-            )}
-          </nav>
+        {sidebarCompacto && isVinculado && (
+          <span className={styles.empresaPill} title={nombreEmpresa}>
+            <span className={styles.empresaPillAvatar} aria-hidden="true">
+              {obtenerInicialesEmpresa(nombreEmpresa)}
+            </span>
+            <span className={styles.empresaPillNombre}>{nombreEmpresa}</span>
+          </span>
         )}
+
 
         {/* En mobile la identidad de vendor vive en el sidebar (ver
             Sidebar.jsx); acá va compacta, sin repetir el email. */}

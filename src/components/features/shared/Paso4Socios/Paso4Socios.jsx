@@ -5,6 +5,7 @@ import {
   FiAlertCircle,
   FiCheckCircle,
   FiTrash2,
+  FiUserMinus,
 } from "react-icons/fi";
 import {
   Button,
@@ -233,6 +234,7 @@ export default function Paso4Socios({
         mensaje={`¿Está seguro de que desea desvincular a ${deleteTargetIndex !== null ? socios[deleteTargetIndex]?.nombre : ""
           } de la operación?`}
         tone="danger"
+        icono={<FiUserMinus />}
         confirmText="Eliminar"
         isLoading={eliminandoSocio}
       />

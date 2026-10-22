@@ -14,10 +14,24 @@ export const BuscadorCuit = forwardRef(({
   buttonText = "VALIDAR CUIT",
   value,
   onChange,
+  inline = false,
   ...rest
 }, ref) => {
+  const boton = (
+    <Button
+      type="button"
+      variant="primary"
+      onClick={onValidar}
+      disabled={!esValido || disabled}
+      isLoading={isLoading}
+      className={inline ? styles.inlineBtn : styles.actionBtn}
+    >
+      {isLoading ? "BUSCANDO..." : buttonText}
+    </Button>
+  );
+
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${inline ? styles.containerInline : ""}`}>
       <div className={styles.inputWrapper}>
         <InputSocioMasked
           ref={ref}
@@ -28,6 +42,8 @@ export const BuscadorCuit = forwardRef(({
           esValido={esValido}
           error={error}
           disabled={isLoading || disabled}
+          size={inline ? "lg" : undefined}
+          endAdornment={inline ? boton : undefined}
           value={value}
           onChange={(val) => {
             // Aseguramos que siempre viaje el valor limpio (solo números) de 11 dígitos
@@ -41,18 +57,7 @@ export const BuscadorCuit = forwardRef(({
         />
       </div>
 
-      <div className={styles.buttonWrapper}>
-        <Button
-          type="button"
-          variant="primary"
-          onClick={onValidar}
-          disabled={!esValido || disabled}
-          isLoading={isLoading}
-          className={styles.actionBtn}
-        >
-          {isLoading ? "BUSCANDO..." : buttonText}
-        </Button>
-      </div>
+      {!inline && <div className={styles.buttonWrapper}>{boton}</div>}
     </div>
   );
 });

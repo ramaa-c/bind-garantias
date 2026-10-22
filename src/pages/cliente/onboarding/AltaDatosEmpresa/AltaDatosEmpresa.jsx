@@ -25,6 +25,7 @@ import { useVendor } from "../../../../hooks/useVendor";
 import { useChannel } from "../../../../context/useChannel";
 import { mensajeNegocio } from "../../../../utils/mensajesError";
 import styles from "./AltaDatosEmpresa.module.css";
+import { FiAlertCircle, FiMail } from "react-icons/fi";
 import { toast } from "sonner";
 import { useCadenaActiva } from "../../../../hooks/useCadenaActiva";
 
@@ -486,14 +487,14 @@ export const AltaDatosEmpresa = () => {
       case 1:
         return {
           badge: "Alta de empresa",
-          t: "Necesitamos conocer los datos de tu empresa",
-          s: "Completá el CUIT de tu empresa para comenzar.",
+          t: "¿Cuál es el CUIT de tu empresa?",
+          s: "Validamos tu información fiscal y crediticia en tiempo real para agilizar el registro de tu empresa.",
         };
       case 2:
         return {
           badge: "Alta de empresa",
           t: "Completá los datos de la empresa",
-          s: "Verificá y completá la información faltante.",
+          s: "Solo faltan estos datos para crear tu legajo.",
         };
       default:
         return { badge: "Alta de empresa", t: "Datos de la empresa", s: "" };
@@ -569,6 +570,16 @@ export const AltaDatosEmpresa = () => {
     );
   }
 
+  // Cerrar (Escape / click afuera) solo cierra; "Entendido" además limpia
+  // el formulario para cargar otro CUIT - mismo comportamiento de antes.
+  const cerrarSocioExistente = () =>
+    setSocioExistenteModal({ isOpen: false, socioData: null, reason: null });
+
+  const entendidoSocioExistente = () => {
+    cerrarSocioExistente();
+    reset();
+  };
+
   return (
     <div className={styles.pageContainer}>
       <div className={styles.formMainContainer}>
@@ -606,7 +617,9 @@ export const AltaDatosEmpresa = () => {
                 onReiniciar={null}
               />
 
-              <div className={styles.bienvenidaHeader}>
+              <div
+                className={`${styles.bienvenidaHeader} ${pasoActual === 2 ? styles.headerCompacto : ""}`}
+              >
                 {/* La identidad de vendor (usuario/correo/plataforma) se
                     muestra en el Sidebar (ver Sidebar.jsx) — visible ahí
                     durante todo el wizard sin duplicarla acá. */}
@@ -618,7 +631,6 @@ export const AltaDatosEmpresa = () => {
                 <h1 className={styles.tituloBienvenida}>
                   {obtenerTextosCabecera().t}
                 </h1>
-                <div className={styles.titleAccent} />
                 {obtenerTextosCabecera().s && (
                   <p className={styles.subtituloBienvenida}>
                     {obtenerTextosCabecera().s}
@@ -652,64 +664,82 @@ export const AltaDatosEmpresa = () => {
 
       <Modal
         isOpen={socioExistenteModal.isOpen}
-        onClose={() =>
-          setSocioExistenteModal({
-            isOpen: false,
-            socioData: null,
-            reason: null,
-          })
-        }
-        maxWidth="28rem"
-      >
-        <div className={styles.modalContent}>
-          <span className={styles.modalBadge}>Atención</span>
-          <h3 className={styles.modalTitle}>Empresa ya registrada</h3>
-
-          <p className={styles.modalText}>
-            {socioExistenteModal.reason === "email_mismatch" ? (
-              <>
-                El correo electrónico con el que estás intentando registrarte no
-                coincide con el registrado en SGRPlus para esta empresa. Por
-                favor, contactá a{" "}
-                <a
-                  href="mailto:soporte@bind.com.ar"
-                  className={styles.linkText || ""}
-                >
-                  soporte@bind.com.ar
-                </a>{" "}
-                para más información.
-              </>
-            ) : (
-              'El CUIT ingresado ya se encuentra registrado en la plataforma por otro usuario. Para operar con esta empresa, solicitale al administrador que te brinde acceso desde la sección "Documentación".'
+        onClose={cerrarSocioExistente}
+        maxWidth="31.25rem"
+        hideCloseButton
+        footer={
+          <div className={styles.modalActions}>
+            {socioExistenteModal.reason === "email_mismatch" && (
+              <a
+                href="mailto:soporte@bind.com.ar"
+                className={styles.modalBotonSecundario}
+              >
+                Escribir a soporte
+              </a>
             )}
-          </p>
-
-          <div className={styles.modalHighlight}>
-            {socioExistenteModal.socioData?.denominacion && (
-              <strong className={styles.modalHighlightTitle}>
-                {socioExistenteModal.socioData.denominacion}
-              </strong>
-            )}
-            <span className={styles.modalHighlightSubtitle}>
-              CUIT {socioExistenteModal.socioData?.cuit}
-            </span>
-          </div>
-
-          <div className={styles.modalActionsSingle}>
             <Button
               variant="primary"
-              onClick={() => {
-                setSocioExistenteModal({
-                  isOpen: false,
-                  socioData: null,
-                  reason: null,
-                });
-                reset();
-              }}
+              onClick={entendidoSocioExistente}
+              className={styles.modalBoton}
             >
               Entendido
             </Button>
           </div>
+        }
+      >
+        <div className={styles.modalContent}>
+          <div className={styles.modalCabecera}>
+            <span className={styles.modalIcono} aria-hidden="true">
+              {socioExistenteModal.reason === "email_mismatch" ? (
+                <FiMail />
+              ) : (
+                <FiAlertCircle />
+              )}
+            </span>
+            <div className={styles.modalCabeceraTexto}>
+              <span className={styles.modalBadge}>Empresa ya registrada</span>
+              <h3 className={styles.modalTitle}>
+                {socioExistenteModal.reason === "email_mismatch"
+                  ? "El correo no coincide"
+                  : "La empresa ya tiene usuario"}
+              </h3>
+            </div>
+          </div>
+
+          <p className={styles.modalText}>
+            {socioExistenteModal.reason === "email_mismatch"
+              ? "El correo con el que ingresaste no es el que tenemos registrado para esta empresa, así que no podemos vincularla a tu usuario."
+              : 'El CUIT ingresado ya se encuentra registrado en la plataforma por otro usuario. Para operar con esta empresa, solicitale al administrador que te brinde acceso desde la sección "Documentación".'}
+          </p>
+
+          <div className={styles.modalHighlight}>
+            <span className={styles.modalAvatar} aria-hidden="true">
+              {(socioExistenteModal.socioData?.denominacion || "?")
+                .trim()
+                .charAt(0)
+                .toUpperCase()}
+            </span>
+            <div className={styles.modalHighlightTexto}>
+              {socioExistenteModal.socioData?.denominacion && (
+                <strong className={styles.modalHighlightTitle}>
+                  {socioExistenteModal.socioData.denominacion}
+                </strong>
+              )}
+              <span className={styles.modalHighlightSubtitle}>
+                CUIT {socioExistenteModal.socioData?.cuit}
+              </span>
+            </div>
+          </div>
+
+          {socioExistenteModal.reason === "email_mismatch" && (
+            <p className={styles.modalSoporte}>
+              Escribinos a{" "}
+              <a href="mailto:soporte@bind.com.ar" className={styles.linkText}>
+                soporte@bind.com.ar
+              </a>{" "}
+              y te ayudamos a resolverlo.
+            </p>
+          )}
         </div>
       </Modal>
 

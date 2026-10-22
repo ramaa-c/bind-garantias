@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FiCheckCircle,
   FiCheck,
+  FiChevronLeft,
   FiArrowRight,
   FiLock,
   FiZap,
@@ -11,7 +11,6 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import { Button } from "../../../ui/Button/Button";
-import { BotonVolver } from "../../../ui/BotonVolver/BotonVolver";
 import { useChannel } from "../../../../context/useChannel";
 import { useAccesoDashboardCliente } from "../../../../hooks/useAccesoDashboardCliente";
 import { useValidacionLegajo } from "../../../../hooks/useValidacionLegajo";
@@ -22,6 +21,11 @@ const SIMBOLOS_MONEDA = {
   10: "UVAS",
   500: "€",
   5000: "$",
+};
+
+const NOMBRES_MONEDA = {
+  2: "Dólares",
+  5000: "Pesos",
 };
 
 const formatearPlazo = (plazo) => {
@@ -78,232 +82,199 @@ export default function Paso7Exito({
   const plazoFormateado = resumen ? formatearPlazo(resumen.plazo) : null;
   const rechazada = !!resumen?.rechazada;
 
+  // Acción principal según dónde quedó el socio: el próximo paso pendiente
+  // que ya esté habilitado. Si no queda ninguno, solo se ofrece volver.
+  const accionPrincipal = !legajoCompleto
+    ? legajoDesbloqueado
+      ? { texto: "Ir al Legajo", onClick: handleIrALegajo }
+      : null
+    : documentacionDesbloqueada && !documentacionCompleta
+      ? { texto: "Ir a Documentación", onClick: handleIrADocumentacion }
+      : null;
+
+  const pasos = [
+    {
+      titulo: "Completá tu Legajo",
+      texto: legajoCompleto
+        ? "Datos de tu empresa completos."
+        : "Datos de la empresa y personas vinculadas. Ya podés hacerlo.",
+      estado: legajoCompleto ? "hecho" : "activo",
+    },
+    {
+      titulo: "Cargá la Documentación",
+      texto: documentacionCompleta
+        ? "Documentación completa."
+        : documentacionDesbloqueada
+          ? "Subí la documentación requerida de tu empresa."
+          : "Se habilita al completar el Legajo al 100%.",
+      estado: documentacionCompleta
+        ? "hecho"
+        : documentacionDesbloqueada
+          ? "activo"
+          : "bloqueado",
+    },
+    {
+      titulo: "Línea activa",
+      texto: "Te avisamos apenas quede lista para operar.",
+      estado: "meta",
+    },
+  ];
+
   return (
     <div className={styles.container}>
-      <div className={`${styles.hero} ${rechazada ? styles.heroNeutral : ""}`}>
-        <div className={styles.heroGlow}></div>
-        <div className={styles.heroIconWrap}>
-          {rechazada ? (
-            <FiFileText className={styles.heroIcon} />
-          ) : (
-            <FiCheckCircle className={styles.heroIcon} />
-          )}
-        </div>
-        <div className={styles.heroText}>
-          <h1 className={styles.heroTitle}>
-            {rechazada
-              ? "Tu solicitud fue registrada"
-              : "¡Felicitaciones! Tu solicitud está pre-aprobada"}
-          </h1>
-          <p className={styles.heroSubtitle}>
-            {rechazada ? (
-              <>
-                No superó la evaluación automática de la línea. Podés realizar
-                una <strong>nueva solicitud</strong> cuando quieras.
-              </>
-            ) : (
-              <>
-                Restan estos <strong>2 pasos</strong> para activar tu línea de
-                crédito.
-              </>
-            )}
-          </p>
-        </div>
-      </div>
-
-      {resumen && (
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryHead}>
-            <span className={styles.summaryLabel}>Resumen de tu solicitud</span>
-            <div className={styles.summaryTags}>
-              {rechazada && (
-                <span className={styles.summaryEstadoTag}>No aprobada</span>
-              )}
-              {!!resumen.id && (
-                <span className={styles.summaryIdTag}>N° {resumen.id}</span>
+      <article className={styles.card} aria-labelledby="exito-titulo">
+        {/* ── ESTADO ── */}
+        <div className={`${styles.bloque} ${styles.head}`}>
+          <span
+            className={`${styles.estadoIcono} ${rechazada ? styles.estadoIconoNeutro : ""}`}
+            aria-hidden="true"
+          >
+            {rechazada ? <FiFileText /> : <FiCheck />}
+          </span>
+          <div className={styles.headTexto}>
+            <div className={styles.chips}>
+              <span
+                className={`${styles.chip} ${rechazada ? styles.chipRechazada : styles.chipOk}`}
+              >
+                {rechazada ? "No aprobada" : "Pre-aprobada"}
+              </span>
+              {!!resumen?.id && (
+                <span className={styles.chip}>Solicitud N° {resumen.id}</span>
               )}
             </div>
+            <h1 id="exito-titulo" className={styles.titulo}>
+              {rechazada
+                ? "Tu solicitud fue registrada"
+                : "¡Felicitaciones! Tu solicitud está pre-aprobada"}
+            </h1>
+            <p className={styles.subtitulo}>
+              {rechazada
+                ? "No superó la evaluación automática de la línea. Podés realizar una nueva solicitud cuando quieras."
+                : "Restan 2 pasos para activar tu línea de crédito."}
+            </p>
           </div>
+        </div>
 
-          {montoFormateado && (
-            <div className={styles.summaryAmountBlock}>
-              <span className={styles.summaryAmountLabel}>
-                Monto solicitado
-              </span>
-              <span className={styles.summaryAmountValue}>
-                {montoFormateado}
-              </span>
-            </div>
-          )}
+        {/* ── RESUMEN ── */}
+        {resumen && (montoFormateado || resumen.linea || plazoFormateado) && (
+          <dl className={`${styles.bloque} ${styles.resumen}`}>
+            {montoFormateado && (
+              <div className={`${styles.resumenItem} ${styles.resumenMonto}`}>
+                <dt>Monto solicitado</dt>
+                <dd>{montoFormateado}</dd>
+              </div>
+            )}
+            {resumen.linea && (
+              <div className={styles.resumenItem}>
+                <dt>Línea</dt>
+                <dd>{resumen.linea}</dd>
+              </div>
+            )}
+            {NOMBRES_MONEDA[resumen.monedaId] && (
+              <div className={styles.resumenItem}>
+                <dt>Moneda</dt>
+                <dd>{NOMBRES_MONEDA[resumen.monedaId]}</dd>
+              </div>
+            )}
+            {plazoFormateado && (
+              <div className={styles.resumenItem}>
+                <dt>Plazo estimado</dt>
+                <dd>{plazoFormateado}</dd>
+              </div>
+            )}
+          </dl>
+        )}
 
-          {(resumen.linea || plazoFormateado) && (
-            <div className={styles.summaryFootRow}>
-              {resumen.linea && (
-                <div className={styles.summaryFootItem}>
-                  <span className={styles.summaryFootLabel}>Línea</span>
-                  <span className={styles.summaryFootValue}>
-                    {resumen.linea}
-                  </span>
-                </div>
-              )}
-              {plazoFormateado && (
-                <div className={styles.summaryFootItem}>
-                  <span className={styles.summaryFootLabel}>
-                    Plazo estimado
-                  </span>
-                  <span className={styles.summaryFootValue}>
-                    {plazoFormateado}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {rechazada && (
-            <div className={styles.summaryMotivo}>
-              <span className={styles.summaryMotivoIcon}>
-                <FiAlertCircle size={15} />
-              </span>
-              <div className={styles.summaryMotivoText}>
-                <span className={styles.summaryMotivoLabel}>Motivo</span>
-                <p className={styles.summaryMotivoValue}>
-                  {resumen.motivoRechazo ||
+        {/* ── PRÓXIMOS PASOS / MOTIVO ── */}
+        {rechazada ? (
+          <div className={styles.bloque}>
+            <div className={styles.motivo}>
+              <FiAlertCircle className={styles.motivoIcono} aria-hidden="true" />
+              <div className={styles.motivoTexto}>
+                <span>Motivo</span>
+                <p>
+                  {resumen?.motivoRechazo ||
                     "No cumple los criterios de aprobación automática de esta línea."}
                 </p>
               </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Estos pasos son de la plataforma actual, no la anterior: ya no hay
-          que descargar/firmar/enviar por mail una nota de instrucción ni
-          esperar una firma electrónica externa del contrato - lo que activa
-          la línea hoy es completar el Legajo y cargar la Documentación,
-          ambos acá mismo (reemplazado el 2026-09-17, quedaban del flujo
-          viejo). El tercer nodo (Línea activa) no es un paso propio: es el
-          destino, para que la secuencia cierre con el objetivo en vez de
-          terminar en el paso 2 sin mostrar a dónde lleva todo esto. */}
-      {!rechazada && (
-        <>
-          <span className={styles.stepsGridLabel}>Para activar tu línea</span>
-          <div className={styles.timeline}>
-            <div className={styles.timelineItem}>
-              <div className={styles.timelineRail}>
-                <span
-                  className={`${styles.timelineDot} ${legajoCompleto ? styles.dotDone : styles.dotActive}`}
-                >
-                  {legajoCompleto ? <FiCheck size={14} /> : "1"}
-                </span>
-                <span
-                  className={`${styles.timelineLine} ${legajoCompleto ? styles.lineDone : ""}`}
-                />
-              </div>
-              <div className={styles.timelineContent}>
-                <h4 className={styles.timelineTitle}>Completá tu Legajo</h4>
-                {legajoCompleto ? (
-                  <p className={styles.timelineText}>
-                    Datos de tu empresa completos.
-                  </p>
-                ) : (
-                  <>
-                    <p className={styles.timelineText}>
-                      Cargá los datos de tu empresa y de las personas vinculadas
-                      a ella. No hace falta esperar: ya podés hacerlo.
-                    </p>
-                    {legajoDesbloqueado && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleIrALegajo}
-                        className={styles.timelineBtn}
-                        iconRight={<FiArrowRight size={14} />}
-                      >
-                        Ir al Legajo
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-
-            <div className={styles.timelineItem}>
-              <div className={styles.timelineRail}>
-                <span
-                  className={`${styles.timelineDot} ${documentacionCompleta ? styles.dotDone : documentacionDesbloqueada ? styles.dotActive : styles.dotLocked}`}
-                >
-                  {documentacionCompleta ? <FiCheck size={14} /> : documentacionDesbloqueada ? "2" : <FiLock size={12} />}
-                </span>
-                <span className={`${styles.timelineLine} ${documentacionCompleta ? styles.lineDone : ""}`} />
-              </div>
-              <div className={styles.timelineContent}>
-                <h4 className={styles.timelineTitle}>Cargá la Documentación</h4>
-                {documentacionCompleta ? (
-                  <p className={styles.timelineText}>
-                    Documentación completa.
-                  </p>
-                ) : documentacionDesbloqueada ? (
-                  <>
-                    <p className={styles.timelineText}>
-                      Subí la documentación requerida de tu empresa.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleIrADocumentacion}
-                      className={styles.timelineBtn}
-                      iconRight={<FiArrowRight size={14} />}
-                    >
-                      Ir a Documentación
-                    </Button>
-                  </>
-                ) : (
-                  <p className={styles.timelineText}>
-                    Se habilita cuando completes el Legajo al 100%.
-                  </p>
-                )}
-              </div>
-            </div>
-
-            <div className={styles.timelineItem}>
-              <div className={styles.timelineRail}>
-                <span className={styles.timelineDot}>
-                  <FiZap size={13} />
-                </span>
-              </div>
-              <div className={styles.timelineContent}>
-                <h4 className={styles.timelineTitle}>Línea activa</h4>
-                <p className={styles.timelineText}>
-                  Te avisamos apenas quede todo listo para operar.
-                </p>
-              </div>
-            </div>
           </div>
-        </>
-      )}
-
-      <div
-        className={`${styles.footer} ${rechazada ? styles.footerConAccion : ""}`}
-      >
-        {rechazada && onNuevaSolicitud && (
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            onClick={onNuevaSolicitud}
-            className={styles.footerAccionBtn}
-            iconRight={<FiRefreshCw size={14} />}
+        ) : (
+          <section
+            className={`${styles.bloque} ${styles.pasosBloque}`}
+            aria-labelledby="exito-pasos"
           >
-            Realizar otra solicitud
-          </Button>
+            <h2 id="exito-pasos" className={styles.pasosTitulo}>
+              Para activar tu línea
+            </h2>
+            <ol className={styles.pasos}>
+              {pasos.map((paso, i) => (
+                <li
+                  key={paso.titulo}
+                  className={`${styles.paso} ${styles[`paso_${paso.estado}`]}`}
+                >
+                  {i < pasos.length - 1 && (
+                    <span
+                      className={`${styles.pasoLinea} ${paso.estado === "hecho" ? styles.pasoLineaHecha : ""}`}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className={styles.pasoDot}>
+                    {paso.estado === "hecho" ? (
+                      <FiCheck aria-label="Completado" />
+                    ) : paso.estado === "bloqueado" ? (
+                      <FiLock aria-label="Bloqueado" />
+                    ) : paso.estado === "meta" ? (
+                      <FiZap aria-hidden="true" />
+                    ) : (
+                      i + 1
+                    )}
+                  </span>
+                  <div className={styles.pasoTexto}>
+                    <strong>{paso.titulo}</strong>
+                    <span>{paso.texto}</span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
         )}
-        <BotonVolver
-          texto="VOLVER A LA LISTA DE SOLICITUDES"
-          onClick={handleFinalizar}
-        />
-      </div>
+
+        {/* ── ACCIONES ── */}
+        <div className={`${styles.bloque} ${styles.acciones}`}>
+          <button
+            type="button"
+            className={styles.botonSecundario}
+            onClick={handleFinalizar}
+          >
+            <FiChevronLeft aria-hidden="true" />
+            Volver a mis solicitudes
+          </button>
+          {rechazada
+            ? onNuevaSolicitud && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={onNuevaSolicitud}
+                  className={styles.botonPrincipal}
+                  iconRight={<FiRefreshCw size={15} />}
+                >
+                  Realizar otra solicitud
+                </Button>
+              )
+            : accionPrincipal && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={accionPrincipal.onClick}
+                  className={styles.botonPrincipal}
+                  iconRight={<FiArrowRight size={15} />}
+                >
+                  {accionPrincipal.texto}
+                </Button>
+              )}
+        </div>
+      </article>
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   FiCheck,
   FiFile,
   FiX,
+  FiCalendar,
 } from "react-icons/fi";
 import { toast } from "sonner";
 import {
@@ -922,38 +923,67 @@ export function DocumentosLegajo({
   // Se referencia igual desde el return desktop y el mobile (ver más abajo)
   // en vez de duplicar el JSX: es un Modal con Portal, así que no importa
   // en qué punto del árbol se monte.
+  const archivoBalance = pendingBalanceUpload?.file;
   const fechaBalanceModal = (
     <Modal
       isOpen={!!pendingBalanceUpload}
       onClose={cancelarFechaBalanceModal}
-      title="Fecha del período del balance"
-      maxWidth="420px"
+      maxWidth="440px"
+      variant="confirm"
       preventClose={confirmandoFechaBalance}
     >
-      <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "1.25rem", lineHeight: 1.5 }}>
-        Para subir este balance necesitamos saber a qué período corresponde.
-      </p>
-      <SelectFecha
-        label=""
-        placeholder="Seleccionar fecha"
-        value={fechaModalValue}
-        onChange={setFechaModalValue}
-        variant="compact"
-        minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
-        maxDate={new Date()}
-      />
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem", marginTop: "1.5rem" }}>
-        <Button variant="outline" onClick={cancelarFechaBalanceModal} disabled={confirmandoFechaBalance}>
-          Cancelar
-        </Button>
-        <Button
-          variant="primary"
-          onClick={confirmarFechaBalanceModal}
-          disabled={confirmandoFechaBalance}
-          isLoading={confirmandoFechaBalance}
-        >
-          Confirmar y subir
-        </Button>
+      <div className={styles.fbBody}>
+        <div className={styles.fbHead}>
+          <span className={styles.fbTile} aria-hidden="true">
+            <FiCalendar />
+          </span>
+          <div className={styles.fbTexto}>
+            <h2 className={styles.fbTitulo}>¿A qué período corresponde?</h2>
+            <p className={styles.fbDescripcion}>
+              Para subir este balance necesitamos la fecha de cierre del período.
+            </p>
+          </div>
+        </div>
+
+        {archivoBalance && (
+          <div className={styles.fbArchivo}>
+            <span className={styles.fbArchivoBadge} aria-hidden="true">
+              {(archivoBalance.name?.split(".").pop() || "").slice(0, 4).toUpperCase()}
+            </span>
+            <span className={styles.fbArchivoTexto}>
+              <strong>{archivoBalance.name}</strong>
+              {pendingBalanceUpload?.docTitle && <span>{pendingBalanceUpload.docTitle}</span>}
+            </span>
+          </div>
+        )}
+
+        <div className={styles.fbCampo}>
+          <span className={styles.fbLabel}>Fecha de cierre del período</span>
+          <SelectFecha
+            label=""
+            placeholder="Seleccionar fecha"
+            value={fechaModalValue}
+            onChange={setFechaModalValue}
+            variant="compact"
+            minDate={new Date(new Date().getFullYear() - 8, 0, 1)}
+            maxDate={new Date()}
+          />
+          <span className={styles.fbHint}>No puede ser una fecha futura.</span>
+        </div>
+
+        <div className={styles.fbFooter}>
+          <Button variant="outline" onClick={cancelarFechaBalanceModal} disabled={confirmandoFechaBalance}>
+            Cancelar
+          </Button>
+          <Button
+            variant="primary"
+            onClick={confirmarFechaBalanceModal}
+            disabled={confirmandoFechaBalance}
+            isLoading={confirmandoFechaBalance}
+          >
+            Confirmar y subir
+          </Button>
+        </div>
       </div>
     </Modal>
   );
@@ -971,8 +1001,19 @@ export function DocumentosLegajo({
         setArchivoAEliminar(null);
       }}
       titulo="Eliminar archivo"
-      mensaje={`¿Estás seguro de que deseas eliminar el archivo "${archivoAEliminar?.nombreArchivo}"?`}
+      mensaje="Si lo eliminás, vas a tener que volver a subirlo para completar este requisito."
       tone="danger"
+      variant={adminMode ? "blue" : "default"}
+      icono={<FiTrash2 />}
+      detalle={
+        archivoAEliminar
+          ? {
+            badge: (archivoAEliminar.nombreArchivo?.split(".").pop() || "").slice(0, 4).toUpperCase(),
+            titulo: archivoAEliminar.nombreArchivo,
+            subtitulo: archivoAEliminar.docTitle,
+          }
+          : undefined
+      }
       confirmText="Eliminar"
       cancelText="Cancelar"
     />
@@ -1063,7 +1104,7 @@ export function DocumentosLegajo({
       {fechaBalanceModal}
       {confirmarEliminarArchivoModal}
       {legajoToolbar}
-      <div className={styles.workspace}>
+      <div className={`${styles.workspace} ${adminMode ? "" : styles.workspaceCliente}`}>
         <div className={styles.sidebar}>
           {estructuraFiltrada.map((doc, index) => {
             const isNewCategory =

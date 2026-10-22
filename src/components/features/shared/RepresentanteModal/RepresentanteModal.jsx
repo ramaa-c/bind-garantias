@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheckCircle, FiEdit2, FiMail, FiPhone, FiUser, FiShield, FiMapPin, FiMap } from "react-icons/fi";
+import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiPhone, FiUser, FiShield, FiMapPin, FiMap } from "react-icons/fi";
+import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 import { toast } from "sonner";
 import { Button } from "../../../ui/Button/Button";
 import { Modal } from "../../../ui/Modal/Modal";
@@ -1095,9 +1096,14 @@ export function RepresentanteModal({
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
         footer={
           (afipValidado || representante || representanteInicial) && (
-            <Button type="submit" form={REPRESENTANTE_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
-              {representante || representanteInicial ? "Guardar Cambios" : `Agregar ${etiquetaRol}`}
-            </Button>
+            <>
+              <Button type="button" variant={isAdmin ? "outlineBlue" : "outline"} onClick={handleCerrar} disabled={validando}>
+                Cancelar
+              </Button>
+              <Button type="submit" form={REPRESENTANTE_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
+                {representante || representanteInicial ? "Guardar cambios" : `Agregar ${etiquetaRol.toLowerCase()}`}
+              </Button>
+            </>
           )
         }
       >
@@ -1109,8 +1115,8 @@ export function RepresentanteModal({
                   <FiShield />
                 </div>
                 <div className={styles.cuitSearchBannerText}>
-                  <p className={styles.cuitSearchBannerTitle}>Validación segura con ARCA</p>
-                  <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del {etiquetaRol.toLowerCase()}</p>
+                  <p className={styles.cuitSearchBannerTitle}>Buscá al {etiquetaRol.toLowerCase()} por CUIT</p>
+                  <p className={styles.cuitSearchBannerSub}>Completamos sus datos automáticamente.</p>
                 </div>
               </div>
               <div className={styles.cuitSearchInputWrapper}>
@@ -1128,45 +1134,54 @@ export function RepresentanteModal({
             </div>
           ) : (
             <>
-              <div className={styles.summaryCard}>
-                <div className={styles.summaryTop}>
-                  <div className={styles.summaryLeft}>
+              <h4 className={styles.sectionTitle}>
+                <span className={`${styles.sectionNum} ${styles.sectionNumOk}`} aria-hidden="true"><FiCheck /></span>
+                {etiquetaRol}
+              </h4>
+              <div className={styles.identidadCard}>
+                <span className={styles.identidadAvatar} aria-hidden="true">
+                  {obtenerInicialesEmpresa(nombreValue || "") || <FiUser />}
+                </span>
+                <div className={styles.identidadTexto}>
+                  <div className={styles.identidadNombreFila}>
+                    <strong className={styles.identidadNombre}>{nombreValue || etiquetaRol}</strong>
                     <span className={styles.summaryStatus}>
                       {enriqueciendoAuto ? (
                         <>
-                          <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
-                          Enriqueciendo datos...
+                          <Spinner size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />
+                          Completando datos...
                         </>
                       ) : (
-                        <>
-                          <FiCheckCircle size={11} /> {etiquetaRol} validado con ARCA
-                        </>
+                        "Validado"
                       )}
                     </span>
-                    <h2 className={styles.summaryName}>{nombreValue || etiquetaRol}</h2>
-                    <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-                    {representante || representanteInicial ? (
-                      <button
-                        type="button"
-                        className={styles.editLink}
-                        onClick={handleAfipLookup}
-                        disabled={validando || enriqueciendoAuto}
-                      >
-                        <FiEdit2 size={12} /> {validando ? "Buscando..." : "Consultar ARCA"}
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        className={styles.editLink}
-                        onClick={() => setAfipValidado(false)}
-                      >
-                        <FiEdit2 size={12} /> Cambiar CUIT
-                      </button>
-                    )}
                   </div>
+                  <span className={styles.summaryCuit}>CUIT {cuitValue}</span>
                 </div>
+                {representante || representanteInicial ? (
+                  <button
+                    type="button"
+                    className={styles.editLink}
+                    onClick={handleAfipLookup}
+                    disabled={validando || enriqueciendoAuto}
+                  >
+                    <FiRefreshCw size={12} aria-hidden="true" /> {validando ? "Actualizando..." : "Actualizar datos"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.editLink}
+                    onClick={() => setAfipValidado(false)}
+                  >
+                    <FiEdit2 size={12} aria-hidden="true" /> Cambiar CUIT
+                  </button>
+                )}
               </div>
 
+              {/* El nombre viene de la fuente al validar el CUIT: el cliente
+                  no lo edita a mano, salvo que no haya llegado ninguno (sigue
+                  siendo obligatorio). Admin conserva la edición. */}
+              {(isAdmin || !String(nombreValue || "").trim()) && (
               <div className={styles.modalRow}>
                 <Controller
                   name="nombre"
@@ -1184,7 +1199,12 @@ export function RepresentanteModal({
                   )}
                 />
               </div>
+              )}
 
+              <h4 className={styles.sectionTitle}>
+                <span className={styles.sectionNum} aria-hidden="true">2</span>
+                Contacto
+              </h4>
               <div className={styles.modalRow2}>
                 <Controller
                   name="email"
@@ -1238,7 +1258,10 @@ export function RepresentanteModal({
                   cuando esta misma persona ya es accionista, se precargan
                   solos desde el tercero existente (ver handleAfipLookup),
                   para que quede consistente entre los dos roles. */}
-              <h4 className={styles.sectionTitle}>Domicilio</h4>
+              <h4 className={styles.sectionTitle}>
+                <span className={styles.sectionNum} aria-hidden="true">3</span>
+                Domicilio
+              </h4>
 
               <div className={styles.modalRow}>
                 <Controller
@@ -1358,6 +1381,7 @@ export function RepresentanteModal({
         onClose={() => setShowConfirm(false)}
         onConfirm={onConfirmSave}
         titulo={representante || representanteInicial ? `Actualizar ${etiquetaRol}` : `Agregar ${etiquetaRol}`}
+        variant={isAdmin ? "blue" : "default"}
         mensaje={representante || representanteInicial ? "¿Estás seguro de que deseas guardar los cambios?" : `¿Estás seguro de que deseas agregar este ${etiquetaRol.toLowerCase()}?`}
       />
 

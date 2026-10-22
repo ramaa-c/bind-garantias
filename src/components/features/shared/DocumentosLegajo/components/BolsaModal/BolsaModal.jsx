@@ -145,8 +145,18 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
         title={agenteBolsa ? "Editar Agente de Bolsa" : "Vincular Agente de Bolsa"}
         maxWidth="500px"
         variant={isAdmin ? "blue" : "default"}
+        footer={
+          <>
+            <Button type="button" variant={isAdmin ? "outlineBlue" : "outline"} onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" form="bolsa-form" variant={isAdmin ? "blue" : "primary"} disabled={cargandoAgentes}>
+              {agenteBolsa ? "Guardar cambios" : "Vincular agente"}
+            </Button>
+          </>
+        }
       >
-        <form onSubmit={handlePreSubmit} className={styles.modalForm}>
+        <form id="bolsa-form" onSubmit={handlePreSubmit} className={styles.modalForm}>
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <Controller
               name="sociedadBolsa"
@@ -183,11 +193,6 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
             />
           </div>
 
-          <div className={styles.modalFooter}>
-            <Button type="submit" variant={isAdmin ? "blue" : "primary"} disabled={cargandoAgentes}>
-              {agenteBolsa ? "Guardar Cambios" : "Vincular Agente"}
-            </Button>
-          </div>
         </form>
       </Modal>
 
@@ -196,6 +201,7 @@ export function BolsaModal({ isOpen, onClose, onSuccess, agenteBolsa, socioIdAct
         onClose={() => setShowConfirm(false)}
         onConfirm={onConfirmSave}
         titulo={agenteBolsa ? "Actualizar Agente" : "Vincular Agente"}
+        variant={isAdmin ? "blue" : "default"}
         mensaje={agenteBolsa ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas vincular este agente de bolsa?"}
       />
     </>

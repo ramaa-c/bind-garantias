@@ -59,6 +59,18 @@
   color: transparent;
 }
 
+/* Sin flechitas de aumentar/disminuir en los type="number". */
+.input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.input[type="number"]::-webkit-outer-spin-button,
+.input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* ── LABEL FLOTANTE ──────────────────────────────────────────────────────────── */
 .label {
   position: absolute;
@@ -166,9 +178,21 @@
 }
 
 /* ── DESHABILITADO ───────────────────────────────────────────────────────────── */
-.container.isDisabled {
+.container.isDisabled:not(.hasAdornment) {
   opacity: 0.45;
   pointer-events: none;
+}
+
+/* Con una acción adentro (endAdornment, ej. "S/N" en el número de calle)
+   solo se apaga el campo: la acción sigue clickeable, si no un check que
+   deshabilita el campo no se podría volver a desmarcar. */
+.container.isDisabled.hasAdornment .innerGroup > :not(.endAdornment) {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.container.isDisabled.hasAdornment .innerGroup {
+  border-color: rgba(var(--overlay-rgb), 0.06);
 }
 
 /* ── AUTOCOMPLETADO ──────────────────────────────────────────────────────────── */
@@ -253,4 +277,37 @@
   border-width: 6px;
   border-style: solid;
   border-color: rgba(22, 22, 22, 0.96) transparent transparent transparent;
+}
+
+/* ── TAMAÑO GRANDE + ACCIÓN INTERNA ──────────────────────────────────────────
+   Variante para el campo protagonista de una pantalla (ej. el CUIT del alta
+   de empresa): más alto, dígitos más grandes, y un slot a la derecha
+   (endAdornment) para alojar el botón de acción dentro del mismo borde. */
+.sizeLg .innerGroup {
+  height: 4rem;
+  border-radius: 0.875rem;
+}
+
+.sizeLg .icon {
+  width: 3.5rem;
+}
+
+.sizeLg .input {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.endAdornment {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding-right: 0.5rem;
+}
+
+@media (min-width: 48rem) {
+  .sizeLg .input {
+    font-size: 1.5rem;
+  }
 }

@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  FiCheck,
   FiCheckCircle,
-  FiCircle,
-  FiAlertTriangle,
+  FiChevronDown,
+  FiChevronUp,
   FiFileText,
   FiUsers,
   FiArrowRight,
@@ -23,48 +24,93 @@ import { ESTRUCTURA_LEGAJO } from "../DocumentosLegajo/DocumentosLegajo.constant
 import { ESTRUCTURA_SOCIOS } from "../SociosLegajo/SociosLegajo.constants";
 import styles from "./EstadoMigracionModal.module.css";
 
-function ChecklistSection({ icon, title, items, bloqueado, notaBloqueo, numero }) {
+// Lo pendiente va siempre arriba (con acceso directo a su pestaña) y los
+// completos se agrupan en un desplegable, para que la lista no crezca de
+// más cuando la cadena pide muchos documentos. Una sección 100% completa se
+// reduce a una sola fila.
+function ChecklistSection({ icon, title, items, bloqueado, notaBloqueo, numero, accion, onAccion }) {
+  const [verCompletos, setVerCompletos] = useState(false);
   if (items.length === 0) return null;
-  const completados = items.filter((item) => item.done).length;
+  const completados = items.filter((item) => item.done);
+  const pendientes = items.filter((item) => !item.done);
+  const titulo = `${numero != null ? `${numero}. ` : ""}${title}`;
+
+  if (!bloqueado && pendientes.length === 0) {
+    return (
+      <div className={`${styles.section} ${styles.sectionCompleta}`}>
+        <span className={styles.okBadge} aria-hidden="true">
+          <FiCheck />
+        </span>
+        <span className={styles.sectionTitle}>{titulo}</span>
+        <span className={`${styles.sectionTally} ${styles.tallyOk}`}>
+          {completados.length}/{items.length} · Completo
+        </span>
+      </div>
+    );
+  }
+
+  const renderItem = (item) => (
+    <li key={item.key} className={styles.checklistItem}>
+      {bloqueado ? (
+        <span className={styles.lockBadge} aria-hidden="true" />
+      ) : item.done ? (
+        <span className={styles.okBadge} aria-hidden="true">
+          <FiCheck />
+        </span>
+      ) : (
+        <span className={styles.pendBadge} aria-hidden="true" />
+      )}
+      <span
+        className={
+          bloqueado ? styles.labelBloqueado : item.done ? styles.labelDone : styles.labelPending
+        }
+      >
+        {item.label}
+      </span>
+      {!bloqueado && !item.done && onAccion && (
+        <button type="button" className={styles.itemAccion} onClick={onAccion}>
+          {accion} <FiArrowRight aria-hidden="true" />
+        </button>
+      )}
+    </li>
+  );
 
   return (
     <div className={`${styles.section} ${bloqueado ? styles.sectionBloqueada : ""}`}>
       <div className={styles.sectionHeader}>
         <span className={styles.sectionTitle}>
-          {icon} {numero != null ? `${numero}. ` : ""}{title}
-          {bloqueado && <FiLock className={styles.lockIcon} />}
+          {icon} {titulo}
+          {bloqueado && <FiLock className={styles.lockIcon} aria-label="Bloqueado" />}
         </span>
         <span className={styles.sectionTally}>
-          {completados}/{items.length}
+          {completados.length}/{items.length}
         </span>
       </div>
-      {bloqueado && notaBloqueo && (
-        <p className={styles.notaBloqueo}>{notaBloqueo}</p>
+      {bloqueado && notaBloqueo && <p className={styles.notaBloqueo}>{notaBloqueo}</p>}
+
+      {bloqueado ? (
+        <ul className={styles.checklist}>{items.map(renderItem)}</ul>
+      ) : (
+        <>
+          <ul className={styles.checklist}>{pendientes.map(renderItem)}</ul>
+          {completados.length > 0 && (
+            <>
+              <button
+                type="button"
+                className={styles.toggleCompletos}
+                aria-expanded={verCompletos}
+                onClick={() => setVerCompletos((v) => !v)}
+              >
+                {verCompletos
+                  ? `Ocultar ${completados.length} completo${completados.length !== 1 ? "s" : ""}`
+                  : `${completados.length} completo${completados.length !== 1 ? "s" : ""}`}
+                {verCompletos ? <FiChevronUp aria-hidden="true" /> : <FiChevronDown aria-hidden="true" />}
+              </button>
+              {verCompletos && <ul className={styles.checklist}>{completados.map(renderItem)}</ul>}
+            </>
+          )}
+        </>
       )}
-      <ul className={styles.checklist}>
-        {items.map((item) => (
-          <li key={item.key} className={styles.checklistItem}>
-            {bloqueado ? (
-              <FiCircle className={styles.iconBloqueado} />
-            ) : item.done ? (
-              <FiCheckCircle className={styles.iconDone} />
-            ) : (
-              <FiCircle className={styles.iconPending} />
-            )}
-            <span
-              className={
-                bloqueado
-                  ? styles.labelBloqueado
-                  : item.done
-                    ? styles.labelDone
-                    : styles.labelPending
-              }
-            >
-              {item.label}
-            </span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
@@ -164,13 +210,34 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
     onClose();
   };
 
+  const mostrarCtas = !cargando && !legajoCompleto && (faltanDocumentos || faltanLegajo);
+  const irALegajo = faltanLegajo && legajoDesbloqueado ? () => irA("/legajo") : null;
+  const irADocumentacion =
+    faltanDocumentos && documentacionDesbloqueada ? () => irA("/documentacion") : null;
+  // Acción principal: lo primero que falta y está habilitado.
+  const accionPrincipal = irALegajo || irADocumentacion;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title="Estado de tu legajo"
       subtitle={nombreEmpresa}
-      maxWidth="520px"
+      maxWidth="560px"
+      footer={
+        !cargando && (
+          <>
+            <Button variant="outline" onClick={onClose}>
+              Cerrar
+            </Button>
+            {mostrarCtas && accionPrincipal && (
+              <Button variant="primary" onClick={accionPrincipal} iconRight={<FiArrowRight size={14} />}>
+                Completar lo que falta
+              </Button>
+            )}
+          </>
+        )
+      }
     >
       {cargando ? (
         <Spinner center size={50} />
@@ -186,24 +253,27 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
             </div>
           ) : (
             totalItems > 0 && (
-              <p className={styles.pendingLead}>
-                <FiAlertTriangle size={13} /> Esto es lo que te falta completar:
-              </p>
-            )
-          )}
-
-          {totalItems > 0 && (
-            <div className={styles.progressRow}>
-              <div className={styles.progressTrack}>
-                <div
-                  className={`${styles.progressFill} ${styles[`fill-${tono}`]}`}
-                  style={{ transform: `scaleX(${porcentaje / 100})` }}
-                />
+              <div className={styles.resumen}>
+                <span className={styles.gauge} role="img" aria-label={`${porcentaje} % completo`}>
+                  <svg viewBox="0 0 76 44" className={styles.gaugeChart} aria-hidden="true">
+                    <path className={styles.gaugeTrack} d="M8 38 A30 30 0 0 1 68 38" pathLength="100" />
+                    <path
+                      className={styles.gaugeFill}
+                      d="M8 38 A30 30 0 0 1 68 38"
+                      pathLength="100"
+                      strokeDasharray={`${porcentaje} 100`}
+                    />
+                  </svg>
+                  <span className={styles.gaugeLabel}>{porcentaje}%</span>
+                </span>
+                <div className={styles.resumenTexto}>
+                  <strong>
+                    {itemsCompletados} de {totalItems} requisitos
+                  </strong>
+                  <span>Esto es lo que te falta completar.</span>
+                </div>
               </div>
-              <span className={styles.progressLabel}>
-                {itemsCompletados}/{totalItems}
-              </span>
-            </div>
+            )
           )}
 
           {mostrarPasoSolicitud && (
@@ -225,6 +295,8 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
             bloqueado={!legajoDesbloqueado}
             notaBloqueo="Se habilita cuando tengas una solicitud en curso."
             numero={numeroLegajo}
+            accion="Completar"
+            onAccion={irALegajo}
           />
           <ChecklistSection
             icon={<FiFileText size={13} />}
@@ -233,32 +305,9 @@ export function EstadoMigracionModal({ isOpen, onClose }) {
             bloqueado={!documentacionDesbloqueada}
             notaBloqueo="Se habilita cuando completes el Legajo al 100%."
             numero={numeroDocumentacion}
+            accion="Subir"
+            onAccion={irADocumentacion}
           />
-
-          {!legajoCompleto && (faltanDocumentos || faltanLegajo) && (
-            <div className={styles.ctaRow}>
-              {faltanDocumentos && documentacionDesbloqueada && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => irA("/documentacion")}
-                  iconRight={<FiArrowRight size={14} />}
-                >
-                  Completar documentación
-                </Button>
-              )}
-              {faltanLegajo && legajoDesbloqueado && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => irA("/legajo")}
-                  iconRight={<FiArrowRight size={14} />}
-                >
-                  Completar legajo
-                </Button>
-              )}
-            </div>
-          )}
         </div>
       )}
     </Modal>

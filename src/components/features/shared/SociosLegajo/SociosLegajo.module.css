@@ -1791,3 +1791,27 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+/* ── CLIENTE · RANGO 2 (Legajo) ─────────────────────────────────────────────
+   En la zona cliente, en Rango 2 = (max-width: 1440px) o (max-height:
+   716px), el área de trabajo toma su alto natural y scrollea solo la
+   página (sin scroll interno en el visor ni en la columna de secciones).
+   Rango 1 y admin (EmpresaDetalle, sin .workspaceCliente) no cambian. */
+@media (min-width: 64rem) and (max-width: 1440px),
+  (min-width: 64rem) and (max-height: 716px) {
+  .workspaceCliente {
+    grid-template-rows: auto;
+    align-items: start;
+  }
+
+  .workspaceCliente .sidebarNav {
+    overflow: visible;
+  }
+
+  .workspaceCliente .viewer {
+    position: static;
+    grid-column: 2;
+    grid-row: 1;
+    overflow: visible;
+  }
+}

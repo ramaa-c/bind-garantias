@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiRotateCcw } from "react-icons/fi";
+import { FiChevronLeft, FiRotateCcw } from "react-icons/fi";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AltaOperacionSchema } from "../../../../schemas/AltaOperacionSchema";
@@ -10,7 +10,7 @@ import {
   useFormPersist,
   getPersistedFormData,
 } from "../../../../hooks/useFormPersist";
-import { BarraProgreso, BotonVolver, Button } from "../../../../components/ui";
+import { BotonVolver, Button } from "../../../../components/ui";
 import {
   Paso3Simulador,
   Paso7Exito,
@@ -129,7 +129,6 @@ export const AltaOperacion = () => {
   const { ejecutarValidaciones } = useCdaEngine();
 
   const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
-  const [mostrarResultados, setMostrarResultados] = useState(false);
   // pasoActual queda en sessionStorage (ver useFormPersist), así que un
   // refresh en el paso de Éxito lo restaura en 2 - pero resumenSolicitud es
   // un useState aparte, nunca persistido, y volvía a null en ese refresh:
@@ -331,7 +330,7 @@ export const AltaOperacion = () => {
     }),
   });
 
-  const { handleSubmit, trigger, control, setValue, getValues, watch } =
+  const { handleSubmit, control, setValue, getValues, watch } =
     metodosFormulario;
 
   const { pasoActual, setPasoActual, clearStorage } = useFormPersist({
@@ -411,7 +410,6 @@ export const AltaOperacion = () => {
       plazo: "",
     });
     setPasoActual(1);
-    setMostrarResultados(false);
     setResumenSolicitud(null);
   };
 
@@ -875,6 +873,7 @@ export const AltaOperacion = () => {
         .map((l) => ({
           value: String(l.tipolimitecadenavalorid),
           label: l.descripcion || `Línea #${l.tipolimitecadenavalorid}`,
+          montoMaximo: Number(l.montolinea) || 0,
         }));
 
       const mostrarTipoCalculo = familiaProducto === "cheque";
@@ -887,23 +886,14 @@ export const AltaOperacion = () => {
 
       return (
         <Paso3Simulador
-          mostrarResultados={mostrarResultados}
-          onCalcular={async () => {
-            const campos = ["monto", "tipoProducto", "plazo"];
-            if (mostrarTipoCalculo) campos.push("tipoCalculo");
-
-            const esValido = await trigger(campos);
-
-            if (esValido) {
-              setMostrarResultados(true);
-            }
-          }}
+          // La simulación se ve en vivo en el panel lateral de
+          // Paso3Simulador (ya no hay modal de resultados): "Enviar
+          // solicitud" valida montos ahí y, si pasan, llega acá.
           onContinuar={async () => {
             handleSubmit(onSubmitFinal, (errors) => {
               console.error("Errores de validación del schema:", errors);
             })();
           }}
-          onCancelar={() => setMostrarResultados(false)}
           opcionesMoneda={opcionesMoneda}
           opcionesProducto={opcionesProducto}
           opcionesCalculo={opcionesCalculo}
@@ -939,23 +929,18 @@ export const AltaOperacion = () => {
     switch (pasoActual) {
       case 1:
         return {
-          badge: "Alta de Línea",
-          t: "Alta de Operación",
-          s: "Seleccioná el tipo de operación y las condiciones.",
+          badge: "Alta de línea",
+          t: "¿Qué querés financiar?",
+          s: "Elegí la línea, definí las condiciones y mirá la simulación al instante.",
         };
       default:
         return { badge: "Alta de Línea", t: "Alta de Operación", s: "" };
     }
   };
 
-  // Un solo paso visible (Operación) - Documentos/Bolsa ya no existen acá
-  // (ver renderPasoDinamico) y Éxito nunca se muestra en el stepper, igual
-  // que antes (showHeaderYStepper lo oculta).
-  const hitosVisuales = ["Operación"];
-  const hitoActualMapped = 1;
-  const maxHitoAlcanzadoMapped = 1;
-  const handleStepClickMapped = () => {};
-
+  // Con un solo paso visible (Operación) el stepper no aportaba nada: en su
+  // lugar queda una fila con las dos acciones que tenía (volver a
+  // Solicitudes y reiniciar). Éxito no la muestra, igual que antes.
   const showHeaderYStepper = pasoActual === 1;
 
   if (isLoadingEmpresa || validandoAcceso) {
@@ -1007,19 +992,24 @@ export const AltaOperacion = () => {
               className={`${styles.columnaFormulario} ${!showHeaderYStepper ? styles.columnaCentrada : ""}`}
             >
               {showHeaderYStepper && (
-                <BarraProgreso
-                  hitos={hitosVisuales}
-                  hitoActual={hitoActualMapped}
-                  maxHitoAlcanzado={maxHitoAlcanzadoMapped}
-                  onStepClick={handleStepClickMapped}
-                  onVolver={null}
-                  onVolverInicio={
-                    pasoActual === 1
-                      ? () => navigate(`${basePath}/solicitudes`)
-                      : null
-                  }
-                  onReiniciar={handleClickReiniciar}
-                />
+                <div className={styles.accionesTop}>
+                  <button
+                    type="button"
+                    className={styles.accionTop}
+                    onClick={() => navigate(`${basePath}/solicitudes`)}
+                  >
+                    <FiChevronLeft aria-hidden="true" />
+                    Mis solicitudes
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.accionTop}
+                    onClick={handleClickReiniciar}
+                  >
+                    <FiRotateCcw aria-hidden="true" />
+                    Reiniciar
+                  </button>
+                </div>
               )}
 
               {showHeaderYStepper && (
@@ -1032,7 +1022,6 @@ export const AltaOperacion = () => {
                   <h1 className={styles.tituloBienvenida}>
                     {obtenerTextosCabecera().t}
                   </h1>
-                  <div className={styles.titleAccent}></div>
                   {obtenerTextosCabecera().s && (
                     <p className={styles.subtituloBienvenida}>
                       {obtenerTextosCabecera().s}

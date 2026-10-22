@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useQueryClient } from "@tanstack/react-query";
-import { FiCheckCircle, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield, FiCreditCard } from "react-icons/fi";
+import { FiCheck, FiRefreshCw, FiEdit2, FiMail, FiSmartphone, FiMapPin, FiMap, FiUser, FiAlertCircle, FiShield, FiCreditCard } from "react-icons/fi";
 import { toast } from "sonner";
 import { Button } from "../../../../../ui/Button/Button";
 import { Modal } from "../../../../../ui/Modal/Modal";
@@ -28,6 +28,7 @@ import { obtenerDatosEmpresaPorCuit } from "../../../../../../utils/datosEmpresa
 import { ConfirmacionModal } from "../../../ConfirmacionModal/ConfirmacionModal";
 
 import styles from "./SocioAccionistaModal.module.css";
+import { obtenerInicialesEmpresa } from "../../../../../../utils/empresaAvatar";
 import { useCadenaActiva } from "../../../../../../hooks/useCadenaActiva";
 import { useDescargaConFeedback } from "../../../../../../hooks/useDescargaConFeedback";
 
@@ -1239,9 +1240,14 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         footerClassName={isAdmin ? styles.modalFooterAdmin : ""}
         footer={
           (afipValidado || socio) && (
-            <Button type="submit" form={ACCIONISTA_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
-              {socio ? "Guardar Cambios" : "Agregar Accionista"}
-            </Button>
+            <>
+              <Button type="button" variant={isAdmin ? "outlineBlue" : "outline"} onClick={handleCerrar} disabled={validando}>
+                Cancelar
+              </Button>
+              <Button type="submit" form={ACCIONISTA_FORM_ID} variant={isAdmin ? "blue" : "primary"} isLoading={validando} disabled={validando}>
+                {socio ? "Guardar cambios" : "Agregar accionista"}
+              </Button>
+            </>
           )
         }
       >
@@ -1253,8 +1259,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                   <FiShield />
                 </div>
                 <div className={styles.cuitSearchBannerText}>
-                  <p className={styles.cuitSearchBannerTitle}>Validación segura con ARCA</p>
-                  <p className={styles.cuitSearchBannerSub}>Ingresá el CUIT para autocompletar los datos del accionista</p>
+                  <p className={styles.cuitSearchBannerTitle}>Buscá al accionista por CUIT</p>
+                  <p className={styles.cuitSearchBannerSub}>Completamos sus datos automáticamente.</p>
                 </div>
               </div>
               <div className={styles.cuitSearchInputWrapper}>
@@ -1272,20 +1278,46 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
             </div>
           ) : (
             <>
-              <div className={styles.summaryCard}>
-                <div className={styles.summaryHeader}>
-                  <span className={styles.summaryStatus}>
-                    {enriqueciendoAuto ? (
-                      <>
-                        <Spinner size={10} style={{ marginRight: "0.25rem", display: "inline-block", verticalAlign: "middle" }} />
-                        Enriqueciendo datos...
-                      </>
-                    ) : (
-                      <>
-                        <FiCheckCircle size={12} /> Validado ARCA
-                      </>
-                    )}
+              <h4 className={styles.sectionTitle}>
+                <span className={`${styles.sectionNum} ${styles.sectionNumOk}`} aria-hidden="true"><FiCheck /></span>
+                Accionista
+              </h4>
+              <div className={styles.identidadRow}>
+                <div className={styles.identidadCard}>
+                  <span className={styles.identidadAvatar} aria-hidden="true">
+                    {obtenerInicialesEmpresa(nombreValue || "") || <FiUser />}
                   </span>
+                  <div className={styles.identidadTexto}>
+                    <div className={styles.identidadNombreFila}>
+                      {/* El nombre viene de la fuente al validar el CUIT: el
+                          cliente no lo edita a mano, salvo que no haya
+                          llegado ninguno. Admin conserva la edición para
+                          corregir casos puntuales. */}
+                      {isAdmin || !String(nombreValue || "").trim() ? (
+                        <input
+                          type="text"
+                          value={nombreValue || ""}
+                          onChange={(e) => setValue("nombre", e.target.value, { shouldDirty: true, shouldValidate: true })}
+                          className={styles.editableSummaryName}
+                          placeholder="Nombre o Razón Social"
+                          aria-label="Nombre o razón social"
+                        />
+                      ) : (
+                        <strong className={styles.identidadNombre}>{nombreValue || "Sin nombre"}</strong>
+                      )}
+                      <span className={styles.summaryStatus}>
+                        {enriqueciendoAuto ? (
+                          <>
+                            <Spinner size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />
+                            Completando datos...
+                          </>
+                        ) : (
+                          "Validado"
+                        )}
+                      </span>
+                    </div>
+                    <span className={styles.summaryCuit}>CUIT {cuitValue}</span>
+                  </div>
                   {socio ? (
                     <button
                       type="button"
@@ -1293,7 +1325,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       onClick={handleAfipLookup}
                       disabled={validando || enriqueciendoAuto}
                     >
-                      <FiEdit2 size={11} /> {validando ? "Buscando..." : "Consultar"}
+                      <FiRefreshCw size={12} aria-hidden="true" /> {validando ? "Actualizando..." : "Actualizar datos"}
                     </button>
                   ) : (
                     <button
@@ -1301,34 +1333,19 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                       className={styles.editLink}
                       onClick={() => setAfipValidado(false)}
                     >
-                      <FiEdit2 size={11} /> Cambiar CUIT
+                      <FiEdit2 size={12} aria-hidden="true" /> Cambiar CUIT
                     </button>
                   )}
                 </div>
 
-                <div className={styles.summaryBody}>
-                  <div className={styles.summaryInfo}>
-                    <input
-                      type="text"
-                      value={nombreValue || ""}
-                      onChange={(e) => setValue("nombre", e.target.value, { shouldDirty: true, shouldValidate: true })}
-                      className={styles.editableSummaryName}
-                      placeholder="Nombre o Razón Social"
-                    />
-                    <p className={styles.summaryCuit}>CUIT: {cuitValue}</p>
-                  </div>
-                </div>
-
-                <div className={styles.summaryFooter}>
-                  <div className={styles.pctInfo}>
-                    <span className={styles.pctLabel}>Participación accionaria</span>
+                <div className={styles.pctCampo}>
+                  <label className={styles.pctLabelFila} htmlFor="participacionSocioInput">
+                    <span className={styles.pctLabel}>Participación</span>
                     <span className={`${styles.availableText} ${maximoPermitido === 0 ? styles.availableTextError : ""}`}>
-                      {maximoPermitido > 0 ? `Máximo permitido: ${maximoPermitido}%` : "Cupo completo"}
+                      {maximoPermitido > 0 ? `máx. ${maximoPermitido}%` : "Cupo completo"}
                     </span>
-                  </div>
-
-                  <div className={styles.pctInputContainer}>
-                    <div className={`${styles.customInputWrapper} ${errors.participacion ? styles.wrapperError : ""}`}>
+                  </label>
+                  <div className={`${styles.customInputWrapper} ${isAdmin ? styles.customInputWrapperAdmin : ""} ${errors.participacion ? styles.wrapperError : ""}`}>
                       <Controller
                         name="participacion"
                         control={control}
@@ -1357,18 +1374,18 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                         )}
                       />
                       <span className={styles.percentageSymbol}>%</span>
-                    </div>
-                    {errors.participacion && (
-                      <span className={styles.errorText}>
-                        <FiAlertCircle size={11} /> {errors.participacion.message}
-                      </span>
-                    )}
                   </div>
+                  {errors.participacion && (
+                    <span className={styles.errorText}>
+                      <FiAlertCircle size={11} /> {errors.participacion.message}
+                    </span>
+                  )}
                 </div>
               </div>
 
               <h4 className={styles.sectionTitle}>
-                Datos Personales y Contacto
+                <span className={styles.sectionNum} aria-hidden="true">2</span>
+                Contacto
               </h4>
 
               <div className={styles.modalRow2}>
@@ -1413,6 +1430,10 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
                 />
               </div>
 
+              <h4 className={styles.sectionTitle}>
+                <span className={styles.sectionNum} aria-hidden="true">3</span>
+                Domicilio
+              </h4>
               <div className={styles.modalRow}>
                 <Controller
                   name="calle"
@@ -1525,7 +1546,8 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
               </div>
 
               <h4 className={styles.sectionTitle}>
-                Identidad (DNI)
+                <span className={styles.sectionNum} aria-hidden="true">4</span>
+                DNI
               </h4>
               <div className={styles.dropzoneGrid}>
                 <DropzoneField
@@ -1575,6 +1597,7 @@ export function SocioAccionistaModal({ isOpen, onClose, onSuccess, socio, socioI
         onClose={() => setShowConfirm(false)}
         onConfirm={onConfirmSave}
         titulo={socio ? "Actualizar Accionista" : "Agregar Accionista"}
+        variant={isAdmin ? "blue" : "default"}
         mensaje={socio ? "¿Estás seguro de que deseas guardar los cambios?" : "¿Estás seguro de que deseas agregar este accionista?"}
         isLoading={guardando}
       />
