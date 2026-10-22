@@ -188,8 +188,8 @@
    legajo) toma todo el alto que queda y scrollea por dentro (su columna de
    secciones y su visor ya tienen overflow propio), en vez de quedar con
    un alto mínimo fijo y aire vacío abajo.
-   Rango 2 = (max-width: 1440px) o (max-height: 716px): alto natural, la
-   página scrollea, con un piso razonable para el área de trabajo.
+   Rango 2 = (max-width: 1440px) o (max-height: 716px): alto natural y
+   scrollea solo la página.
    Ancho: punto medio entre el original (64rem) y el máximo probado (92rem). */
 @media (min-width: 64rem) {
   .pageContainer {
@@ -224,8 +224,10 @@
     padding: 1rem 1.5rem 1.5rem;
   }
 
+  /* Alto natural: el área de trabajo crece con su contenido y scrollea
+     solo la página (ver .workspaceCliente en SociosLegajo/DocumentosLegajo). */
   .formLayout {
     flex: none;
-    min-height: 34rem;
+    min-height: auto;
   }
 }

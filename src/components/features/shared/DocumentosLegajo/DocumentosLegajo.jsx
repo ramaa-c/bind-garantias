@@ -1063,7 +1063,7 @@ export function DocumentosLegajo({
       {fechaBalanceModal}
       {confirmarEliminarArchivoModal}
       {legajoToolbar}
-      <div className={styles.workspace}>
+      <div className={`${styles.workspace} ${adminMode ? "" : styles.workspaceCliente}`}>
         <div className={styles.sidebar}>
           {estructuraFiltrada.map((doc, index) => {
             const isNewCategory =

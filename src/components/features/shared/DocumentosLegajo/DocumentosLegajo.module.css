@@ -2295,3 +2295,21 @@
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* ── CLIENTE · RANGO 2 (Documentación) ──────────────────────────────────────
+   Mismo criterio que en SociosLegajo: en la zona cliente, en Rango 2 el
+   área de trabajo toma su alto natural y scrollea solo la página. Rango 1
+   y admin (sin .workspaceCliente) no cambian. */
+@media (min-width: 64rem) and (max-width: 1440px),
+  (min-width: 64rem) and (max-height: 716px) {
+  .workspaceCliente {
+    grid-template-rows: auto;
+    overflow: visible;
+  }
+
+  .workspaceCliente .sidebar,
+  .workspaceCliente .viewerContainer {
+    height: auto;
+    overflow: visible;
+  }
+}

@@ -26,15 +26,6 @@ import { useChannel } from "../../../../context/useChannel";
 import { extraerRegistroUsuario } from "../../../../utils/usuarioUtils";
 import { obtenerInicialesEmpresa } from "../../../../utils/empresaAvatar";
 
-const SECCIONES = [
-  { segmento: "/alta-operacion", titulo: "Nueva operación" },
-  { segmento: "/solicitudes", titulo: "Solicitudes" },
-  { segmento: "/legajo", titulo: "Legajo" },
-  { segmento: "/documentacion", titulo: "Documentación" },
-  { segmento: "/alta-datos-empresa", titulo: "Alta de empresa" },
-  { segmento: "/seleccionar-empresa", titulo: "Seleccionar empresa" },
-];
-
 const Navbar = ({
   texto = "¿No tenés cuenta?",
   textoEnlace = "Registrate",
@@ -86,8 +77,6 @@ const Navbar = ({
   const inicialesUsuario = obtenerInicialesEmpresa(denominacion || emailUsuario.split("@")[0]);
   const rolUsuario = isVendor ? "Vendor" : isVinculado ? "Socio" : "Sin empresa";
 
-  const tituloSeccion = SECCIONES.find((s) => location.pathname.includes(s.segmento))?.titulo;
-  const nombreCadena = channelInfo?.id !== "default" ? channelInfo?.nombre : null;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -152,19 +141,6 @@ const Navbar = ({
           </span>
         )}
 
-        {(tituloSeccion || nombreCadena) && (
-          <nav className={styles.contexto} aria-label="Ubicación">
-            {nombreCadena && <span className={styles.contextoMeta}>{nombreCadena}</span>}
-            {nombreCadena && tituloSeccion && (
-              <FiChevronRight className={styles.contextoSeparador} aria-hidden="true" />
-            )}
-            {tituloSeccion && (
-              <span className={styles.contextoTitulo} aria-current="page">
-                {tituloSeccion}
-              </span>
-            )}
-          </nav>
-        )}
 
         {/* En mobile la identidad de vendor vive en el sidebar (ver
             Sidebar.jsx); acá va compacta, sin repetir el email. */}

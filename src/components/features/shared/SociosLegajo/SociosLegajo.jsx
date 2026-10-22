@@ -577,7 +577,7 @@ export function SociosLegajo({
   };
 
   return (
-    <div className={styles.workspace}>
+    <div className={`${styles.workspace} ${adminMode ? "" : styles.workspaceCliente}`}>
       <div className={styles.sidebarBg} />
       {/* Columna de navegación propia de escritorio (ver .sidebarNav en el
           CSS): a diferencia de la lista de acá abajo (intercalada con el
